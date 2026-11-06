@@ -10,6 +10,7 @@ import { menuPublico } from "@/lib/pedir";
 import { rsvPublica } from "@/lib/reservas";
 import { citasPublica } from "@/lib/citas";
 import { oficiosPublico } from "@/lib/oficios-publico";
+import { tiendaPublica } from "@/lib/rentas";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
 import { vacantesFicha } from "@/lib/jobs";
@@ -34,7 +35,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -43,6 +44,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.pro ? vacantesFicha(f.id, u?.id ?? null) : Promise.resolve([]),
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
+    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? tiendaPublica(f.id) : Promise.resolve(null),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
@@ -55,6 +57,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       rsv={rsv}
       svc={svc}
       ofi={ofi}
+      tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}
       jobs={jobs}

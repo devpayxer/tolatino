@@ -9,6 +9,7 @@ import { citaPanel, citasLista, citasVivas, type FiltroCita } from "@/lib/citas-
 import { repararEstimados } from "@/lib/estimados";
 import { emergenciasPanel, solicitudPanel, solicitudesPanel } from "@/lib/solicitudes";
 import { planesNegocio } from "@/lib/planes";
+import { rentaPanel, rentasNegocio } from "@/lib/rentas";
 import { oficiosPanel, rubroDe } from "@/lib/oficios";
 import { ayudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import { pedidosPendientes } from "@/lib/pedidos";
@@ -32,7 +33,7 @@ import { serviciosPanel } from "@/lib/servicios";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -162,6 +163,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // Emergencias 24/7 abiertas que puede tomar (arriba en Hoy) y el detalle de una.
     em: oficio && ruta.sec === "hoy" ? await emergenciasPanel(d.id) : undefined,
     planes: oficio && ruta.sec === "hoy" ? await planesNegocio(d.id) : undefined,
+    // 4f-2: las rentas de herramienta (apartadas, fuera, devueltas con algo pendiente) y el detalle de una.
+    rentas: oficio && ruta.sec === "hoy" ? await rentasNegocio(d.id) : undefined,
+    rentaDet: oficio && ruta.det?.startsWith("renta:") ? await rentaPanel(d.id, ruta.det.slice(6)) : undefined,
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
     lista: ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,

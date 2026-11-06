@@ -27,6 +27,7 @@ export type PolOficio = { auto: boolean; resp: number; dep: number; cxh: number;
 export type OfiPanel = {
   rubro: Rubro; secciones: { id: string; name: Bi; sort: number }[]; servicios: Oficio[]; tool: Herramienta; pol: PolOficio; on: boolean;
   off: { svc: string | null; citas: string | null }; model: string;
+  rentas: { id: string; n: Bi; p: number; dep: number; on: boolean; quedan: number }[];
 };
 export const rubroDe = (cat: string): Rubro | null => (cat === "NEG-AUTO" ? "auto" : cat === "NEG-HOGAR" ? "hogar" : null);
 export const TOOL_DEF: Herramienta = { rate: 9500, warrM: 12, warrMi: 12000, cut: 14, zone: 20, h24: false, eta: 60, bays: null };
@@ -34,7 +35,7 @@ export const TOOL_DEF: Herramienta = { rate: 9500, warrM: 12, warrMi: 12000, cut
 export async function oficiosPanel(negocio: string, cat: string): Promise<OfiPanel | null> {
   const rubro = rubroDe(cat);
   if (!rubro) return null;
-  const [b, S, I, T, P] = await Promise.all([
+  const [b, S, I, T, P, R] = await Promise.all([
     db().query<{ mods: string[]; off: Record<string, { reason?: string }> | null; zone: number | null; model: string }>(`select modules_on as mods, modules_off as off, service_radius_mi as zone, svc_model as model from businesses where id = $1`, [negocio]),
     db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
     db().query<Oficio>(
@@ -45,12 +46,14 @@ export async function oficiosPanel(negocio: string, cat: string): Promise<OfiPan
     db().query<PolOficio>(
       `select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, staff_pick as pick, expires_h as exp, deposit_kinds as kinds,
               deposit_big_over_cents as "bigOver", deposit_big_cents as big, deposit_min_price_cents as min from booking_policies where business_id = $1`, [negocio]),
+    // 4f-2: lo que renta (Tu herramienta › RENTA DE HERRAMIENTA · APARTADA 48 H, encendido por artículo).
+    db().query<{ id: string; n: Bi; p: number; dep: number; on: boolean; quedan: number }>(`select id::text, name as n, price_cents as p, deposit_cents as dep, sell as on, stock_left as quedan from items where business_id = $1 and module = 'renta' and removed_at is null order by sort, id`, [negocio]),
   ]);
   const x = b.rows[0];
   if (!x) return null;
   const off = x.off ?? {};
   return {
-    rubro, secciones: S.rows, servicios: I.rows, model: x.model,
+    rubro, secciones: S.rows, servicios: I.rows, model: x.model, rentas: R.rows,
     tool: { ...TOOL_DEF, ...(rubro === "hogar" ? { warrM: null, warrMi: null, cut: null } : {}), ...(T.rows[0] ?? {}), zone: x.zone ?? (rubro === "hogar" ? 20 : null) },
     pol: P.rows[0] ?? { auto: false, resp: 30, dep: 0, cxh: 2, pick: true, exp: 2, kinds: [], bigOver: null, big: null, min: null },
     on: (x.mods ?? []).includes("citas"), off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

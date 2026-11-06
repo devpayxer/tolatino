@@ -71,6 +71,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "sop" ? { title: `${x.sopk === "appointment" ? "Ayuda con una cita" : "Ayuda con un pedido"} · ${b}`, sub: "El cliente espera una respuesta" }
+      : x.queue === "renta" ? { title: `Daño de renta · ${b}`, sub: "El cliente no está de acuerdo · el depósito sigue retenido" }
       : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
@@ -162,6 +163,14 @@ export async function caso(s: Staff, id: string) {
               coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar") };
+  }
+  if (q.queue === "renta") {
+    // Daño de una renta (4f-2): la herramienta, la foto, el monto, la nota del negocio, el depósito y el cliente.
+    const r = (await db().query<{ numero: string; n: { es: string }; cents: number; nota: string | null; foto: string | null; dep: number; late: number; st: string | null; cliente: string; uid: string; dias: number; due: string; back: string | null }>(
+      `select o.number as numero, r.item_name as n, r.damage_cents as cents, r.damage_note as nota, m.url as foto, r.deposit_cents as dep, r.late_cents as late, r.damage_status as st,
+              coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as cliente, u.id::text as uid, r.days as dias, r.due_on::text as due, r.back_at as back
+         from rentals r join operations o on o.id = r.operation_id join users u on u.id = r.user_id left join media m on m.id = r.damage_photo where r.id = $1::bigint`, [q.subject_id])).rows[0];
+    return { ...base, negocio, renta: r ?? null, puedeDinero: s.puede("tx", "aprobar") };
   }
   if (q.queue === "disputa") {
     // La disputa, el cliente y la evidencia que ya tenemos del pedido (línea de tiempo).

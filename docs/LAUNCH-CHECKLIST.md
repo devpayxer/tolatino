@@ -417,3 +417,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
       mire.
 - [ ] Planes semanales, quincenales, por temporada y por nevada: hoy se piden llamando; decidir si entran en la app.
 - [ ] Recordatorio 24 h antes de cada visita del plan: usa el de las citas (3c); confirmar que sale para citas de $0.
+
+## Fase 4 · 4f-2 (renta de herramienta)
+- [ ] El barrido de rentas (vencer apartados de 48 h, aviso de tarde, renovar depósitos de más de 6 d 20 h, daños sin
+      respuesta en 72 h) corre al abrir la renta o el panel de Hoy. En producción: tarea programada cada hora
+      (`barrerRentas({})`).
+- [ ] Editor de artículos de Tienda/Renta en el panel (nombre, precio por día, depósito, unidades, foto): llega con
+      Tiendas; mientras, los artículos salen de datos.
+- [ ] Si el depósito no se pudo renovar (el banco ya no deja), hoy solo se avisa al negocio: decidir si se le pide al
+      cliente devolverla antes.
+- [ ] Rentas en Super Admin › Transacciones (pestaña propia junto a citas y pedidos): bloque 4g.
+

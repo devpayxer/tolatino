@@ -462,3 +462,28 @@ export async function decidirDisputa(id: string, accion: "responder" | "aceptar"
   listo();
   return { ok: true, mensaje: accion === "responder" ? "Respondida. El banco decide; te avisamos el resultado y al negocio también." : "Aceptada: el dinero vuelve al cliente." };
 }
+
+/* Daño de una renta (4f-2): descontarlo del depósito o liberarlo. Pide decidir sobre dinero (tx:aprobar). */
+export async function decidirRenta(id: string, cobrar: boolean, texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  if (!s.puede("tx", "aprobar")) return no("Tu rol no decide sobre dinero.");
+  const m = motivoOk(texto);
+  if (m.length < 4) return no("Escribe el motivo.");
+  const q = await tx(async (c) => abrir(c, s, id));
+  if (typeof q === "string") return no(q);
+  if (q.queue !== "renta") return no("Ese caso no es de esta cola.");
+  const R = await import("@/lib/rentas"), num = await R.numeroDeRenta(q.subject_id);
+  if (!num) return no("Esa renta no existe.");
+  const r = await R.resolverDano(num, !!cobrar, s.id);
+  if (!r.ok) return no(r.msg.es);
+  await tx(async (c) => {
+    const q2 = await abrir(c, s, id);
+    if (typeof q2 === "string") return;
+    await cerrar(c, q2, s, cobrar ? "descontar" : "no_descontar", m);
+    await auditar(c, { actor: s.id, action: cobrar ? "renta.dano_descontar" : "renta.dano_no", targetKind: "rental", targetId: num, city: q.city_id,
+      before: { dano: "sin acuerdo" }, after: { dano: cobrar ? "descontado del depósito" : "no se descuenta · depósito liberado" }, reason: m });
+  });
+  listo();
+  return { ok: true, mensaje: cobrar ? "Descontado del depósito. Los dos ya lo saben." : "No se descuenta: el depósito se liberó. Los dos ya lo saben." };
+}

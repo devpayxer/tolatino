@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -236,6 +236,24 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
       ];
+    }
+    if (k.queue === "renta" && "renta" in k) {
+      // Daño de una renta (4f-2): la foto y el monto que mandó el negocio, el depósito retenido y el cliente que no está de
+      // acuerdo. Descontar (sale del depósito; lo demás se libera) o no descontar (se libera todo, menos los días tarde).
+      const r = k.renta, usd = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+      if (r) {
+        cuerpoB.push({ type: "kv", cols: 3, items: [
+          { k: "RENTA", v: `#${r.numero} · ${r.n.es}` }, { k: "CLIENTE", v: r.cliente }, { k: "DAÑO", v: usd(r.cents), fg: "var(--tl-pro-ink)" },
+          { k: "DEPÓSITO", v: `${usd(r.dep)} retenido` }, { k: "DÍAS TARDE", v: r.late ? usd(r.late) : "No" }, { k: "ESTADO", v: r.st === "disputed" ? "Sin acuerdo" : r.st === "asked" ? "Espera al cliente" : r.st ?? "—" },
+        ] });
+        if (r.foto) cuerpoB.push({ type: "photos", k: "FOTO DEL DAÑO (LA MANDÓ EL NEGOCIO)", cols: 3, items: [{ key: r.foto, bg: `url("${r.foto}")`, onClick: () => window.open(r.foto!, "_blank", "noopener") }] });
+        if (r.nota) cuerpoB.push({ type: "note", tone: "ink", icon: "bubble", t: `«${r.nota}»` });
+        if (!k.puedeDinero) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: "Tu rol no decide sobre dinero." });
+        if (k.puedeDinero && (r.st === "disputed" || r.st === "asked")) acts = [
+          { l: `Descontar ${usd(r.cents)}`, v: "action", icon: "dollar", onClick: () => setConf({ titulo: "¿Por qué se descuenta?", sub: `Sale del depósito; lo demás vuelve a su tarjeta. Los dos ven tu decisión.`, cta: "Descontar", plantillas: ["La foto muestra el daño y coincide con la herramienta.", "El cliente aceptó por teléfono.", "El daño está documentado por el negocio."], hacer: (m) => decidirRenta(k.id, true, m) }) },
+          { l: "No descontar", v: "secondary", icon: "close", onClick: () => setConf({ titulo: "¿Por qué no se descuenta?", sub: "Se libera el depósito (menos los días tarde, si los hubo). Los dos ven tu decisión.", cta: "No descontar", plantillas: ["La foto no muestra un daño claro.", "El daño parece desgaste normal.", "El negocio no respondió a nuestras preguntas."], hacer: (m) => decidirRenta(k.id, false, m) }) },
+        ];
+      }
     }
     if (k.queue === "disputa" && "disputa" in k) {
       // Disputas con el banco (diseño «disputa»): referencia, monto, negocio, cliente, plazo del banco y motivo; la evidencia

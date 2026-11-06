@@ -551,3 +551,25 @@ llamando; el Plan de confort de Cibao visita solo en octubre y abril (svc_attrs.
 (las paga el plan). En el sandbox, Hermanos Díaz tiene dueño de prueba y cuenta de cobro simulada._
 _Arreglado de paso (dinero): la clave idempotente del cobro del plan se repetía al reanudar o al cambiar la tarjeta (el
 segundo cobro «salía» sin cobrar, o el reintento repetía el rechazo); ahora es el número de intento, que no se repite._
+
+## Fase 4 · 4f-2 Renta de herramienta
+1. Marisol › **Multiservicios Hermanos Díaz** › pestaña **Tienda**: 4 herramientas con RENTA, precio por día y cuántas
+   quedan › **Apartar** en «Culebra de drenaje» › 2 días › hoy › **Apartar · $50 al recoger** → «Apartada · hoy no se
+   cobró nada».
+2. Como **Héctor Díaz** (570-555-0233): Hoy › «Rentas» › la renta › **La recogió** → se cobran $50 y se retienen $50.
+3. Marisol › tu renta: «La tienes» › **Un día más · $25**.
+4. Héctor › **La devolvió con un daño**: foto, monto y qué se dañó › Marisol ve la foto y elige **Está bien** o **No estoy
+   de acuerdo** (este último llega a Super Admin › Colas › «Daños de rentas»: Descontar / No descontar).
+5. Tu herramienta › «Renta de herramienta · apartada 48 h»: apagar un artículo lo quita de la Tienda.
+_Decidido por mí (reversible): la Tienda de Hogar muestra por ahora solo lo que se renta; lo que se vende («Apartar» de
+productos) usa el apartado de Tiendas del diseño (TLApartar → TLTiendaFlow) y llega en el bloque siguiente (4f-3). Al
+recoger, primero se retiene el depósito y después se cobra la renta; si la renta no pasa, se suelta el depósito y no se
+cobra nada. Los días tarde salen del depósito (hasta el depósito; sin depósito, a la tarjeta) con la comisión de renta; el
+daño no lleva comisión. El daño (con foto, monto hasta lo que queda del depósito y lo que se dañó) lo decide el cliente;
+si no está de acuerdo o no responde en 72 h, entra a una cola nueva del Super Admin. Las pantallas del panel (lista y
+detalle de rentas, el formulario del daño) y la tarjeta del daño en la renta del cliente no están en el diseño (hueco #5):
+se componen con los bloques del panel y como «algo más» del estimado (4d). «48 horas» se cuenta desde el inicio del día que
+elegiste para recoger. Los días para recoger: hoy (si falta más de media hora para cerrar), mañana y el sábado; si alguno
+no abre, el siguiente que abre. El editor de artículos de la Tienda (nombre, precio por día, depósito, unidades, foto)
+llega con el de Tiendas; hoy los artículos de prueba vienen de la semilla 0016 (solo sandbox)._
+

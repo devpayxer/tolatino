@@ -1,6 +1,6 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
    cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
-export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa";
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta";
 export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
@@ -11,9 +11,10 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   chat: { es: "Mensajes reportados", en: "Reported messages", icon: "chat", sla: 48, roles: ["admin", "moderador", "lectura"], regla: ["Solo con un reporte abierto se puede leer la conversación. Ocultar un mensaje avisa a quien lo escribió; nada se borra.", "A conversation can be read only with an open report. Hiding a message tells its author; nothing is deleted."] },
   disputa: { es: "Disputas con el banco", en: "Bank disputes", icon: "card", sla: 168, roles: ["admin", "finanzas", "lectura"], regla: ["El banco da un plazo para responder: responde con la evidencia antes de que venza. Aceptar devuelve el dinero al cliente.", "The bank sets a deadline: respond with evidence before it ends. Accepting returns the money to the customer."] },
   sop: { es: "Ayuda con pedidos y citas", en: "Order and booking help", icon: "help", sla: 24, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["El negocio no respondió en 24 horas o el cliente pidió que revisemos. Tu respuesta la ve el cliente en su pedido o su cita y el negocio en su panel. Lo pagado con tarjeta en la app (el pedido o el depósito de la cita) lo devuelves aquí o desde Transacciones; lo pagado en el local lo arregla el negocio.", "The business did not reply within 24 hours or the customer asked us to review. The customer sees your reply on the order or booking and the business in its dashboard. What was paid by card in the app (the order or the booking deposit) you refund here or from Transactions; what was paid in store the business settles."] },
+  renta: { es: "Daños de rentas", en: "Rental damage", icon: "wrench", sla: 72, roles: ["admin", "soporte", "finanzas", "ciudad", "lectura"], regla: ["El negocio enseñó un daño con foto y el cliente no está de acuerdo (o no respondió en 72 horas). El depósito sigue retenido: descuentas el daño o lo liberas. Los dos ven tu decisión.", "The business showed damage with a photo and the customer disagrees (or did not answer in 72 hours). The deposit stays held: deduct the damage or release it. Both see your decision."] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
-export const ORDEN_COLAS: Cola[] = ["disputa", "sop", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
+export const ORDEN_COLAS: Cola[] = ["disputa", "sop", "renta", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

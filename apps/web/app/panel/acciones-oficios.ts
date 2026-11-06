@@ -107,3 +107,15 @@ export async function citasOficioGuardar(negocio: string, p: CitasOficioIn): Pro
     return null;
   });
 }
+
+/* ── Tu herramienta › Renta de herramienta: encender o apagar un artículo (apagado = no sale en la Tienda ni se aparta;
+   lo ya apartado o rentado sigue). ── */
+export async function rentaVisible(negocio: string, itemId: string, visible: boolean): Promise<Res> {
+  return hacer(negocio, async (c, a) => {
+    if (!ID.test(String(itemId))) return no("Ese artículo no existe.", "That item does not exist.");
+    const r = await c.query<{ n: string }>(`update items set sell = $3, updated_at = now() where id = $2 and business_id = $1 and module = 'renta' and removed_at is null returning name->>'es' as n`, [a.negocio.id, itemId, !!visible]);
+    if (!r.rows[0]) return no("Ese artículo no existe.", "That item does not exist.");
+    await auditar(c, a, visible ? "renta.encender" : "renta.apagar", null, { articulo: r.rows[0].n });
+    return null;
+  });
+}
