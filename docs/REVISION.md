@@ -7,6 +7,17 @@ Cuentas de prueba: vecino Marisol (570) 555-0122 · dueño de Sabor Dominicano P
 
 Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
 
+## Al final: lo que hace falta de tu lado (resumen, 6 nov)
+Todo lo de abajo ya está construido y probado contra simuladores; se enciende solo cuando estén las llaves. Las llaves se
+cargan por el **formulario seguro de secretos del entorno** (nunca por el chat). Lo que un tercero pida en persona va como
+paquete de pasos para el teléfono.
+1. **Stripe** (cobros con tarjeta, Pro, disputas): `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
+   (webhook en `/api/stripe/webhook` con los eventos de cuenta, pagos, devoluciones y `charge.dispute.*`).
+2. **SMS · Telnyx** (códigos y avisos): `TELNYX_API_KEY`, `TELNYX_FROM` + registro 10DLC.
+3. **Correo · Amazon SES** (confirmar correo, recibos): `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`, `SES_REGION`,
+   `CORREO_DE` + verificar el dominio (DKIM/SPF/DMARC en Cloudflare) y salir del «sandbox» de SES.
+4. **Revisar en el sandbox** cada bloque con su guía de abajo (2a → 2s) y responder las decisiones pendientes.
+
 ## Decisiones pendientes (no se inventaron: se esperan aquí)
 1. **Alergias en el menú del cliente.** El panel las guarda por plato (picante, vegetariano, sin gluten…); el prototipo
    del cliente no las muestra. ¿Salen en la hoja del plato, como etiquetas, o no salen?
@@ -67,7 +78,7 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
    - «Solicitudes respondidas · suelen esperar 2–3 días» → «esperan tu respuesta» (no medimos aún cuánto tardan).
    - **Lo que vendes** ahora sale para todas las categorías (antes solo Comida), porque Jobs sirve a cualquier negocio Pro.
 11. **Mi cuenta: lo que no muestro todavía y lo que compuse** (dime si lo dejo así):
-   - Sin **Boletos** (llega con Eventos), **Mensajes** y el chat con el negocio (llega con Mensajes), **Pagos y Wallet**
+   - Sin **Boletos** (llega con Eventos), **Pagos y Wallet** (Mensajes y el chat con el negocio ya están: bloque 2p)
      (llega con Stripe, pregunta 3), **Apartados**, platos y eventos guardados, rango, monedas, puntos, «Ayuda y soporte»,
      «Letra más grande», «Descargar mis datos» y los ajustes de la comunidad (llegan con sus fases).
    - La tarjeta de vecino muestra **Reseñas, Guardados y Sigues** en vez de Rango, Monedas y Wallet.
