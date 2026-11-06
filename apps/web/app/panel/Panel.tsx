@@ -29,6 +29,8 @@ import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./MensajesPanel";
 import { citasBloques, modeloDetalle, servicioDetalle, serviciosBloques, sillasBloques } from "./Servicios";
+import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques } from "./Oficios";
+import type { OfiPanel } from "@/lib/oficios";
 import type { SvcPanel } from "@/lib/servicios";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
@@ -82,10 +84,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -124,7 +126,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -299,8 +301,9 @@ function secciones(c: Ctx): Sec {
     return { blocks: [cb[0]!, tabs, ...cb.slice(1)], ed: null };
   }
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
-  if (c.ruta.sec === "mod" && c.ruta.sub === "servicios") return serviciosBloques(c);
-  if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return citasBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "servicios") return c.ofi ? oficiosBloques(c) : serviciosBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ofi) return herramientaBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "sillas") return sillasBloques(c);
   if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : c.ruta.sub === "jobs" ? jobsBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
@@ -324,6 +327,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("rev:")) return resenaDetalle(c);
   if (id.startsWith("msg:")) return mensajeDetalle(c);
   if (id.startsWith("svc:")) return servicioDetalle(c, id.slice(4));
+  if (id.startsWith("of:") && c.ofi) return oficioDetalle(c, id.slice(3));
   if (id === "svm") return modeloDetalle(c);
   if (id.startsWith("nov:")) return novDetalle(c);
   if (id.startsWith("vac:") || id.startsWith("vap:")) return jobsDetalle(c);

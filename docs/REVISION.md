@@ -427,3 +427,18 @@ citas»). En el teléfono, «Te falta» va debajo de «Cómo funciona» (en el d
 _Arreglado de paso: en el teléfono, toda la sección `/cita/` mostraba la barra de pestañas de la app (Inicio · Negocios…)
 encima de la barra propia de la pantalla; nuevo guardián `barraFijaCompacta`._
 
+## Fase 4 · 4a Servicios de Auto y Hogar, Tu herramienta
+1. Entra como **Rafael Peña** (570-555-0211, Taller Hermanos Peña) › Lo que vendes: **Servicios** (resumen «Nada se hace
+   ni se cobra sin el OK del cliente», cada servicio con cómo se cobra), **Taller y estimados** (tarifa, garantía, mismo
+   día) y **Citas**. Abre un servicio y cambia «Cómo lo cobras»: «Así lo ve el cliente» cambia al momento.
+2. Entra como **Tomás Rodríguez** (570-555-0222, Plomería Rodríguez 24/7) › Lo que vendes: Servicios de Hogar (visita ·
+   precio cerrado · por hora · por medida · presupuesto · emergencia · plan) y **Visitas, planes y renta** (hasta dónde
+   vas, emergencias 24 h).
+3. Super Admin › Negocios › Taller Hermanos Peña › Lo que vende: Tu herramienta en solo lectura y cómo cobra cada servicio.
+_Decidido por mí (reversible): «Servicios de Hogar» no tiene pantalla en el diseño; es la de Auto (asvDet) con las formas de
+cobrar de Hogar. Tu herramienta guarda cada toque, como el diseño. Los planes y la renta de herramienta (sus interruptores
+en Tu herramienta) llegan con el bloque 4f; Mi vehículo y Mi casa, con el Booking (4b). El Booking de Belleza ya no se
+abre para un taller o un servicio del hogar (cada uno tendrá el suyo)._
+_Arreglado de paso: los campos de texto del panel no tenían nombre accesible propio (el lector de pantalla leía también
+el contador y la ayuda); ahora cada campo se llama como su etiqueta._
+

@@ -65,7 +65,7 @@ export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
             b.svc_model as model, b.subcategory_ids as subs, (b.temp_closed_until at time zone ci.timezone)::date::text as cerrado_hasta, coalesce(b.closed_on = (now() at time zone ci.timezone)::date, false) as cerrado_hoy,
             to_jsonb(p) as pol, (select a.stripe_account_id from stripe_accounts a where a.business_id = b.id and a.charges_enabled and not a.payouts_paused) as acct
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id left join booking_policies p on p.business_id = b.id
-      where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
+      where b.id = $1 and b.status = 'active' and b.category_id = 'NEG-BELL'`, [negocio])).rows[0]; // Auto y Hogar tienen su Booking (Fase 4)
   if (!b) return null;
   // Una tras otra: `c` puede ser el cliente de la transacción de enviarCita.
   const h = await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
