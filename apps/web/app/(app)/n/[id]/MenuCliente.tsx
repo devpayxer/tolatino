@@ -278,6 +278,8 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   })() : null;
 
   return {
+    // Abrir un plato desde fuera del menú (Novedades · «Pedir · $X»).
+    abrir: open,
     m, es, E2, est, canOrd, listo, cart, pop, cats, chips, sh, lines, has: lines.length > 0, empty: !lines.length, count: C.count,
     countL: items(C.count), countCaps: items(C.count).toUpperCase(), sub: money(C.sub), tax: money(C.tax), total: money(ENT.total), totalC: ENT.total,
     modo, dl, fee: ENT.fee ? money(ENT.fee) : E2("Gratis", "Free"), ENT,

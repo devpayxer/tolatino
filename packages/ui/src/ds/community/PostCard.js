@@ -30,7 +30,10 @@ const MUTED = 'rgba(11,14,18,.6)';
 
 /* 4c · Votos y comentarios en pastillas con borde; guardar y compartir en círculos. voted = tinte morado (29 oct). */
 const LINE = 'rgba(11,14,18,.12)';
+const btn = (fn, label) => fn ? { role: 'button', tabIndex: 0, 'aria-label': label, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } } } : {};
+const LBL = { up: 'Votar a favor', down: 'Votar en contra', comments: 'Comentarios', save: 'Guardar', share: 'Compartir' };
 function VoteBar({
+  labels = LBL,
   score = 0,
   onUp,
   onDown,
@@ -80,6 +83,7 @@ function VoteBar({
     }
   }, /*#__PURE__*/React.createElement("span", {
     onClick: onUp,
+    ...btn(onUp, labels.up),
     style: {
       width: 32,
       height: 34,
@@ -100,6 +104,7 @@ function VoteBar({
     }
   }, score), /*#__PURE__*/React.createElement("span", {
     onClick: onDown,
+    ...btn(onDown, labels.down),
     style: {
       width: 32,
       height: 34,
@@ -114,6 +119,7 @@ function VoteBar({
     color: downColor
   }))), comments != null ? /*#__PURE__*/React.createElement("span", {
     onClick: onComments,
+    ...btn(onComments, labels.comments),
     style: {
       height: 36,
       boxSizing: 'border-box',
@@ -137,6 +143,7 @@ function VoteBar({
     }
   }), onSave ? /*#__PURE__*/React.createElement("span", {
     onClick: onSave,
+    ...btn(onSave, labels.save),
     style: circ
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "heart",
@@ -145,6 +152,7 @@ function VoteBar({
     fill: saveFill
   })) : null, onShare ? /*#__PURE__*/React.createElement("span", {
     onClick: onShare,
+    ...btn(onShare, labels.share),
     style: circ
   }, /*#__PURE__*/React.createElement(__ds_scope.Icon, {
     name: "share",

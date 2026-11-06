@@ -96,6 +96,19 @@ for (const src of archivos) {
     if (t === antes || !t.includes("  compact,\n") || !t.includes("compact ? '6px 16px 10px'") || !t.includes("compact ? null :")) throw new Error("parche SiteHeader: el origen cambió, revisar");
   }
 
+  // PostCard (VoteBar): votar, comentar, guardar y compartir eran <span> con onClick: sin rol ni teclado. Aquí se vuelven
+  // botones accesibles (role, tabIndex, Enter/Espacio) con su nombre en el idioma de la pantalla (`labels`, ES por defecto).
+  if (rel.endsWith("community/PostCard.js")) {
+    const antes = t;
+    t = t.replace("function VoteBar({\n  score = 0,", "const btn = (fn, label) => fn ? { role: 'button', tabIndex: 0, 'aria-label': label, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(e); } } } : {};\nconst LBL = { up: 'Votar a favor', down: 'Votar en contra', comments: 'Comentarios', save: 'Guardar', share: 'Compartir' };\nfunction VoteBar({\n  labels = LBL,\n  score = 0,");
+    t = t.replace("    onClick: onUp,\n", "    onClick: onUp,\n    ...btn(onUp, labels.up),\n");
+    t = t.replace("    onClick: onDown,\n", "    onClick: onDown,\n    ...btn(onDown, labels.down),\n");
+    t = t.replace("    onClick: onComments,\n", "    onClick: onComments,\n    ...btn(onComments, labels.comments),\n");
+    t = t.replace("    onClick: onSave,\n", "    onClick: onSave,\n    ...btn(onSave, labels.save),\n");
+    t = t.replace("    onClick: onShare,\n", "    onClick: onShare,\n    ...btn(onShare, labels.share),\n");
+    if (t === antes || (t.match(/\.\.\.btn\(/g) || []).length !== 5) throw new Error("parche PostCard: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

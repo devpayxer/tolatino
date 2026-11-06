@@ -288,3 +288,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
   Contenido (2i).
 - [ ] **Mi cuenta › Reseñas** (escritas / por escribir): con Mi cuenta completa (2h).
 - [ ] **Semilla:** solo Sabor Dominicano trae reseñas de ejemplo (pregunta 8).
+
+## Novedades (bloque 2g-2, 6 nov 2026)
+- [ ] **«Hoy en el barrio»** en la portada (lo de las últimas 24 h de la ciudad, StoryCard) y su chip en la publicación.
+- [ ] **Cupón para seguidores** (código, compra mínima, usos): con los cupones en el pago (2d / Planes).
+- [ ] **Evento y vacante** como tipo y como botón: con Eventos y Jobs (2g-3). **«Escribir»**: con Mensajes.
+- [ ] **«Repetir»** (todos los días, lun · mié · vie…) y **«Avisar a tus seguidores»**: con las notificaciones.
+- [ ] **PEDIDOS** que salen de una novedad (hoy el detalle muestra comentarios en su lugar).
+- [ ] **Reportar una novedad o un comentario** desde la página (la cola «Reportes de contenido» ya acepta novedades y
+  comentarios; falta el botón en la tarjeta, que el diseño no trae).
+- [ ] **Elegir fotos de tu galería** en el editor (hoy se suben nuevas).

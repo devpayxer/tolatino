@@ -39,6 +39,15 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
 8. **Calificaciones de los negocios de ejemplo (sandbox).** Antes, la semilla ponía ★ y número de reseñas fijos a cada
    negocio. Ahora salen de reseñas reales: Sabor Dominicano trae las 14 del prototipo y los demás negocios salen «Nuevo»
    hasta que alguien escriba. ¿Siembro reseñas de ejemplo en más negocios del sandbox?
+9. **Novedades: lo que cambié del diseño para no prometer lo que no existe todavía** (dime si lo dejo así):
+   - Sin **«Hoy en el barrio»** (la fila de la portada con lo de las últimas 24 h) ni el chip «EN HOY EN EL BARRIO · QUEDAN N H»:
+     hace falta la portada con esa sección; por eso el panel dice «Sale en tu página».
+   - Sin **cupón** (no hay cupones en el pago todavía), **evento** y **vacante** como tipo o botón (llegan con Eventos y
+     Jobs), ni **«Escribir»** (con Mensajes), ni **«Repetir»** en la programación, ni **«Avisar a tus seguidores»** (con las
+     notificaciones).
+   - La tarjeta de seguir dice «Ve las publicaciones solo para seguidores» en vez de «recibe ofertas y cupones».
+   - En el detalle, la tercera cifra es **COMENTARIOS** en vez de **PEDIDOS** (no medimos aún cuántos pedidos salen de una novedad).
+   - En la oferta, el **precio normal es el del menú** y no se escribe (el diseño dejaba escribirlo): así el «antes» nunca es inventado.
 5. **«Avísame si se libera»** (lista de espera de una hora sin mesa) y **«Otros restaurantes con mesa»** en la pantalla
    de «no pudo»: necesitan los avisos por SMS para ser de verdad. Se hacen con las notificaciones.
 
@@ -147,3 +156,16 @@ _Marisol escribe; Pedro (Sabor Dominicano, Pro) responde; Ana (Super Admin) deci
 6. Un negocio **Free** (p. ej. Desayunos Mi Viejo): una sola página con el bloque de reseñas; Marisol escribe como
    visitante y su reseña dice «Este negocio no responde reseñas en To'Latino».
 7. Escritorio: la pestaña en dos columnas, «Escribir reseña» con «Así la van a ver» a la derecha.
+
+## Fase 2 · 2g-2 Novedades
+_Sabor Dominicano trae 5 del prototipo: la oferta del mofongo ($10, fijada), una encuesta, un aviso de horario, «hoy hay»
+flan y la terraza._
+1. Marisol › Sabor Dominicano › pestaña **Novedades**: **Seguir**; filtra por tipo; vota +; vota en la encuesta (ves los
+   porcentajes); abre los comentarios (con la respuesta del negocio) y comenta.
+2. En la oferta, **Pedir · $10** → el menú abre el mofongo a $10 → pide: el pedido cobra $10.
+3. Pedro › Panel › Tu página › **Novedades**: **Publicar** una encuesta y una novedad **programada para mañana** (no sale
+   todavía). **Fijar arriba** otra (la anterior se desfija). **Detener** una. Abre la oferta → responde el comentario de Marisol.
+4. Publica una oferta: elige un plato, pon un precio menor al del menú (si pones uno mayor, no deja).
+5. Ana › Negocios › Sabor › **Contenido**: **Ocultar la novedad** con motivo (sale de la página; Pedro ve OCULTA POR
+   TO'LATINO) y **Pausar Novedades** (la pestaña se va y la oferta deja de cobrarse; Pedro ve el motivo).
+6. Escritorio: la pestaña, y el panel con el editor a la derecha y «Así se ve».

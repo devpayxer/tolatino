@@ -135,8 +135,13 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
   const ahoraHora = b.hora;
   const tope = pro ? { cap: TOPE_FREE, usados: 0 } : await topeFreeDe(id);
+  // Novedades (2g): cuántas en vivo y programadas, para «Tu página › Novedades».
+  const nv = (await db().query<{ vivas: number; prog: number }>(
+    `select count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now()))::int as vivas,
+            count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at > now())::int as prog
+       from business_posts p where p.business_id = $1`, [id])).rows[0]!;
   return {
-    resenas: rs,
+    resenas: rs, novedades: nv,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },

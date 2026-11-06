@@ -219,10 +219,24 @@ export async function resenaOcultar(id: string, resena: string, ocultar: boolean
   }, ocultar ? "Reseña oculta. El autor ve el motivo." : "La reseña se ve otra vez.");
 }
 
+/* Contenido · ocultar o mostrar una novedad con motivo (neg:retirar). Sale de su página; el dueño ve el motivo en su panel. */
+export async function novedadOcultar(id: string, post: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(post))) return no("Esa novedad no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const p = (await c.query<{ title: string; hidden: boolean }>(`select title, hidden_at is not null as hidden from business_posts where id = $1::bigint and business_id = $2 and status <> 'removed' for update`, [post, b.id])).rows[0];
+    if (!p) return "Esa novedad ya no está.";
+    if (p.hidden === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
+    await c.query(`update business_posts set hidden_at = $3, hidden_reason = $4, hidden_by = $5, pinned = case when $3::timestamptz is null then pinned else false end, updated_at = now() where id = $1::bigint and business_id = $2`,
+      [post, b.id, ocultar ? new Date() : null, ocultar ? m : null, ocultar ? s.id : null]);
+    await auditar(c, { actor: s.id, action: ocultar ? "novedad.ocultar" : "novedad.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { novedad: p.title, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible" }, reason: m });
+    return null;
+  }, ocultar ? "Novedad oculta. El dueño ve el motivo en su panel." : "La novedad se ve otra vez.");
+}
+
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
-export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv", pausar: boolean, motivo: string): Promise<ResAdm> {
-  if (!["menu", "pedidos", "delivery", "rsv"].includes(modulo)) return no("Ese módulo no existe.");
-  const nombre = modulo === "menu" ? "Menú" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
+export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov", pausar: boolean, motivo: string): Promise<ResAdm> {
+  if (!["menu", "pedidos", "delivery", "rsv", "nov"].includes(modulo)) return no("Ese módulo no existe.");
+  const nombre = modulo === "menu" ? "Menú" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
   return hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
     if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";

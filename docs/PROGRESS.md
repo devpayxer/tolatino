@@ -372,7 +372,16 @@ _Actualizado: 5 nov 2026._
   `thread`. Super Admin: cola Reportes de contenido (Mantener / Ocultar / Ocultar y sancionar) y 360 › Contenido.
   Guardián nuevo `fechaIsoNavegador` (to_char con «OF» dejó «Tu reseña» en blanco). Probado con Playwright: 34
   comprobaciones (cliente, panel, admin, Free); 2b, 2c, 2e y 2f otra vez en verde. Ayuda `resenas.md`,
-  `panel-resenas.md`, `admin-negocios.md`. **Sigue: 2g-2 Novedades y 2g-3 Jobs.**
+  `panel-resenas.md`, `admin-negocios.md`.
+- **Fase 2 · bloque 2g-2 Novedades ✓ (6 nov):** migración 0028 (`business_posts` oferta / hoy / aviso / encuesta / novedad,
+  votos, encuesta, guardados, vistas, comentarios con respuesta y «Útil»; `post_en_vivo()` y `oferta_precio()`: **el precio
+  de la oferta se cobra** en el menú y el pedido mientras está en vivo; el «antes» es siempre el precio del menú). Semilla con
+  5 del prototipo. Ficha: pestaña Novedades con PostCard (seguir, filtros, votos, encuesta, comentarios, guardar,
+  compartir). Panel: Tu página › Novedades (lista con estados, fijar una, detener, publicar ya / de nuevo, duplicar,
+  quitar; editor con fotos, botón, oferta, audiencia, vencimiento y programación; responder comentarios); bloque `nprev`.
+  Super Admin: ocultar / mostrar y pausar Novedades (360 › Contenido). PostCard accesible (botones con rol y teclado, parche
+  en `scripts/portar-sistema.mjs`). Probado con Playwright: 22 comprobaciones (incluye que el pedido cobra la oferta y que en pausa vuelve el precio del menú); 2b, 2c, 2e, 2f y 2g-1 otra vez en verde.
+  Ayuda `novedades.md`. **Sigue: 2g-3 Jobs.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

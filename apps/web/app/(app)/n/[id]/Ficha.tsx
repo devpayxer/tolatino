@@ -11,6 +11,8 @@ import { guardarNegocio, registrarToque } from "../../acciones";
 import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
 import { RsvBarra, RsvRapida, RsvRiel, RsvTab, useRsv } from "./Reservar";
 import { ResCapas, ResResumen, ResTab, useResenas } from "./Resenas";
+import { NovTab } from "./Novedades";
+import type { NovedadesFicha } from "@/lib/novedades";
 import type { ResumenResenas } from "@/lib/resenas";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
@@ -22,9 +24,9 @@ type Textos = Record<string, string>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
-export function Ficha({ f, t, menu, rsv, resenas, sesion, es, tabInicial, rsvInicial }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; resenas: ResumenResenas | null; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, resenas, novedades, sesion, es, tabInicial, rsvInicial }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
-  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) ? tabInicial : "res");
+  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
   const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
@@ -38,7 +40,7 @@ export function Ficha({ f, t, menu, rsv, resenas, sesion, es, tabInicial, rsvIni
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -353,6 +355,9 @@ export function Ficha({ f, t, menu, rsv, resenas, sesion, es, tabInicial, rsvIni
             <div className="min-w-0"><div className="lg:hidden"><RsvTab v={rv} desk={false} /></div><div className="hidden lg:block"><RsvTab v={rv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><RsvRiel v={rv} /></div></div>
             <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><RsvRiel v={rv} /></aside>
           </div>
+        ) : tab === "nov" && novedades ? (
+          <div className="pb-6 lg:max-w-[680px]"><NovTab v={novedades} logo={f.logo ?? null} sesion={sesion} es={es} onHoras={() => setTab("res")}
+            onItem={(id) => { if (!mn) return; setTab("menu"); if (id) setTimeout(() => mn.abrir(id, window.innerWidth >= 1024), 60); }} /></div>
         ) : tab === "rev" && rs ? (
           <div className="pb-6"><div className="lg:hidden"><ResTab v={rs} desk={false} onMenu={() => setTab("menu")} /></div><div className="hidden lg:block"><ResTab v={rs} desk onMenu={() => setTab("menu")} /></div></div>
         ) : tab === "rel" ? (

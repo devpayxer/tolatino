@@ -42,6 +42,8 @@ export type Bloque =
   | { type: "timeline"; k?: string; items: { t: string; s?: string; now?: boolean; future?: boolean }[] }
   /* Panel v2 · bl('thread'): la reseña (o el mensaje) a la izquierda y la respuesta del negocio a la derecha. */
   | { type: "thread"; items: { t: string; mine?: boolean }[] }
+  /* Panel v2 · novPrev: «Así se ve» una novedad, con la PostCard del sistema. */
+  | { type: "nprev"; k?: string; name: string; logo?: string; tags: { label: string; tone: string }[]; body: string; photos: string[]; foot?: string }
   /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
      barra de selección en lote (SelectionBar 2af) y «Así se ve en tu menú» (MenuItemRow 2i). */
   | { type: "utabs"; wrap?: boolean; items: { l: string; icon: string; n?: string; warn?: boolean; on: boolean; onClick: Fn }[] }
@@ -64,6 +66,19 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
+    case "nprev": return (
+      <div>
+        {b.k ? <div style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</div> : null}
+        <DS.PostCard card screenLabel="Novedades · publicación" avatar={b.logo ? `url(${b.logo}) center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={b.logo ? undefined : b.name.slice(0, 1)}
+          name={b.name} nameFont="700 14.5px/1.2" tags={b.tags} body={b.body} bodyFont="500 14px/1.55" bodyGap={10}
+          vote={{ score: 0 }} voteStyle={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)", gap: 6 }}>
+          {b.photos.length ? (
+            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: `repeat(${Math.min(2, b.photos.length)},minmax(0,1fr))`, gap: 6, borderRadius: 14, overflow: "hidden" }}>
+              {b.photos.map((u, i) => <span key={i} style={{ height: b.photos.length > 2 ? 120 : b.photos.length > 1 ? 150 : 200, background: `url(${u}) center/cover`, backgroundColor: "var(--tl-photo-bg)" }} />)}
+            </div>) : null}
+          {b.foot ? <div style={{ marginTop: 12, padding: 13, borderRadius: 16, background: "var(--tl-paper)", font: "700 13px/1.4 Manrope,sans-serif" }}>{b.foot}</div> : null}
+        </DS.PostCard>
+      </div>);
     case "thread": return (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 14, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
         {b.items.map((m, i) => (

@@ -160,17 +160,18 @@ type FilaItem = {
   id: string; sec: string; name: Bi; desc: Bi; cents: number; tax: number; photos: string[]; sell: boolean; ch: string[]; agotado: boolean; stk: string; quedan: number;
   maxQ: number; tags: string[]; extra: number; feat: boolean; avail: string; av: Av | null; grp: string[]; sec_avail: string; sec_av: Av | null;
 };
-async function filas(c: Q, negocio: string, tz: string, lock = false) {
+/* Precio: el de la oferta en vivo (Novedades) si la hay para esta persona; si no, el del menú. Lo mismo al mostrar y al cobrar. */
+async function filas(c: Q, negocio: string, tz: string, lock = false, userId: string | null = null) {
   const tzq = `(select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1)`;
   const qS = () => c.query<{ id: string; name: Bi; avail: string; av: Av | null }>(
       `select id::text, name, avail, av from item_sections where business_id = $1 and module = 'menu' and removed_at is null and visible order by sort, id`, [negocio]);
   const qI = () => c.query<FilaItem>(
-      `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", i.price_cents as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
+      `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
               ${AGOTADO_SQL("i", tzq)} as agotado, i.stock_mode as stk, ${QUEDAN_SQL("i", tzq)} as quedan, i.max_qty as "maxQ", i.tags, i.extra_min as extra,
               i.featured as feat, i.avail, i.av, array(select x::text from unnest(i.group_ids) x) as grp, s.avail as sec_avail, s.av as sec_av
          from items i join item_sections s on s.id = i.section_id and s.removed_at is null and s.visible
         where i.business_id = $1 and i.module = 'menu' and i.removed_at is null and i.status = 'live'
-        order by s.sort, s.id, i.sort, i.id${lock ? " for update of i" : ""}`, [negocio]);
+        order by s.sort, s.id, i.sort, i.id${lock ? " for update of i" : ""}`, [negocio, userId]);
   const qG = () => c.query<{ id: string; name: Bi; required: boolean; max_pick: number; options: { es: string; en: string; cents: number; on: boolean }[] }>(
       `select id::text, name, required, max_pick, options from option_groups where business_id = $1 and removed_at is null`, [negocio]);
   // Con un cliente de transacción (lock) van en fila: nunca dos consultas a la vez sobre el mismo cliente.
@@ -223,7 +224,7 @@ export async function menuPublico(negocio: string, lang: Lang, userId?: string |
   const b = await base(db(), negocio);
   if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) return null;
   await vencer({ negocio }); // lo que nadie contestó a tiempo devuelve su inventario antes de mostrar el menú
-  const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz)]);
+  const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz, false, userId ?? null)]);
   const est = calcEstado(b, R, tope.usados, tope.cap, es);
   const m = armar(b, F, est, es);
   return {
@@ -281,7 +282,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     const b = await base(c, p.negocio);
     if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) { await c.query("rollback"); return no("Este negocio no toma pedidos en línea.", "This business does not take online orders."); }
     // Una conexión en transacción: las consultas van una tras otra (nunca en paralelo sobre el mismo cliente).
-    const R = await rangosHoy(c, b.id, b.dow), tope = await topeFree(c, b.id, b.mes), F = await filas(c, b.id, b.tz, true);
+    const R = await rangosHoy(c, b.id, b.dow), tope = await topeFree(c, b.id, b.mes), F = await filas(c, b.id, b.tz, true, userId);
     const est = calcEstado(b, R, tope.usados, tope.cap, true);
     const modo = p.modo === "delivery" ? "delivery" : "pickup";
     if (est.canOrd && !est.modes.includes(modo)) { await c.query("rollback"); return modo === "delivery" ? no(`${b.name} no hace delivery ahora. Pide pickup.`, `${b.name} is not delivering now. Order pickup.`, { menu: true }) : no(`${b.name} no tiene pickup ahora.`, `${b.name} has no pickup now.`, { menu: true }); }

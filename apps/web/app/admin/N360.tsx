@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
-import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -148,6 +148,17 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
           ],
         }))} />
         {!n.resenas.length ? <A.AdminNote tone="info" icon="star">Sin reseñas.</A.AdminNote> : null}
+        <A.AdminList label={`NOVEDADES · ${n.novedades.length}`} rows={n.novedades.map((p) => ({
+          icon: "news", title: p.title, sub: `${p.body ? `${p.body.slice(0, 90)} · ` : ""}${p.kind.toUpperCase()} · +${p.up} −${p.dn} · hace ${p.h < 24 ? `${Math.max(0, p.h)} h` : `${Math.floor(p.h / 24)} d`}${p.st === "adm" && p.hidden_reason ? ` · Oculta: ${p.hidden_reason}` : ""}`,
+          tag: p.st === "adm" ? "OCULTA" : p.st === "quitada" ? "QUITADA POR EL DUEÑO" : p.st === "detenida" ? "DETENIDA POR EL DUEÑO" : p.st === "programada" ? "PROGRAMADA" : p.st === "terminada" ? "TERMINADA" : undefined, tone: p.st === "adm" ? "danger" : "neutral",
+          actions: P.retirar && p.st !== "quitada" ? [p.st === "adm"
+            ? { label: "Mostrar la novedad", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${p.title}»?`, plantillas: ["No rompe las reglas del barrio", "El reporte no trae evidencia"], hacer: (m) => novedadOcultar(n.id, p.id, false, m) }) }
+            : { label: "Ocultar la novedad", variant: "danger", onClick: () => setConf({ titulo: `Ocultar «${p.title}»`, sub: "Sale de su página. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Spam o publicidad", "Precio engañoso", "Ofensiva o discriminatoria", "Tiene datos personales"], hacer: (m) => novedadOcultar(n.id, p.id, true, m) }) }] : undefined,
+        }))} />
+        {!n.novedades.length ? <A.AdminNote tone="info" icon="news">Sin novedades.</A.AdminNote> : null}
+        {P.retirar && n.plan === "pro" ? (n.modsOff.nov
+          ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Novedades?", hacer: (m) => moduloPausar(n.id, "nov", false, m) })}>{`Novedades en pausa: ${n.modsOff.nov.reason}`}</A.AdminNote>
+          : <A.AdminNote tone="info" icon="news" cta="Pausar Novedades" onCta={() => setConf({ titulo: "Pausar Novedades", sub: "La pestaña deja de salir en la ficha hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de clientes", "Precios engañosos", "Spam"], hacer: (m) => moduloPausar(n.id, "nov", true, m) })}>Novedades activas en su página.</A.AdminNote>) : null}
       </>);
   } else if (tab === "confianza") {
     const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };

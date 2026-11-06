@@ -10,12 +10,14 @@ import type { RsvPanel } from "../../Reservas";
 import { accesoPanel, datosPanel } from "@/lib/panel";
 import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
 import type { ResPanel } from "../../ResenasPanel";
+import { itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
+import type { NovData } from "../../NovedadesPanel";
 import { Panel, type Ruta } from "../../Panel";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
-const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18})$/;
+const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18}))$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string }> }) {
@@ -74,5 +76,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     det: ruta.det?.startsWith("rev:") && pag ? await resenaPanel(d.id, ruta.det.slice(4)) : undefined,
     hoy: ruta.sec === "hoy" && pag && d.pro ? await resenasSinResponder(d.id) : undefined,
   };
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} />;
+  // Novedades (Tu página › Novedades, su detalle y el editor).
+  const nd = ruta.det?.startsWith("nov:") && pag ? ruta.det.slice(4) : null, nid = nd ? nd.replace(/^(edit|dup):/, "") : null;
+  const nov: NovData = {
+    lista: ruta.sec === "pag" && ruta.sub === "nov" ? await novedadesPanel(d.id) : undefined,
+    det: nid && /^\d+$/.test(nid) ? await novedadPanel(d.id, nid) : undefined,
+    items: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await itemsNovedad(d.id) : undefined,
+  };
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} />;
 }

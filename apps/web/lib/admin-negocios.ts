@@ -160,6 +160,14 @@ export async function negocio360(s: Staff, id: string) {
               r.reply is not null as reply, r.status, r.hidden_reason,
               (select q.id::text from queue_items q where q.queue = 'rep' and q.subject_kind = 'review' and q.subject_id = r.id::text and q.status = 'open' limit 1) as caso
          from reviews r join users u on u.id = r.user_id where r.business_id = $1 and r.status <> 'removed' order by r.id desc limit 8`, [b.id])).rows,
+    // Contenido · novedades (hasta 20: primero las que no quitó el dueño, con su estado y votos).
+    novedades: (await db().query<{ id: string; kind: string; title: string; body: string; st: string; hidden_reason: string | null; up: number; dn: number; h: number }>(
+      `select p.id::text, p.kind, p.title, p.body, p.hidden_reason,
+              case when p.hidden_at is not null then 'adm' when p.status = 'removed' then 'quitada' when p.status = 'stopped' then 'detenida'
+                   when p.ends_at is not null and p.ends_at <= now() then 'terminada' when p.publish_at > now() then 'programada' else 'live' end as st,
+              (select count(*)::int from post_votes v where v.post_id = p.id and v.v = 1) as up, (select count(*)::int from post_votes v where v.post_id = p.id and v.v = -1) as dn,
+              floor(extract(epoch from now() - p.publish_at) / 3600)::int as h
+         from business_posts p where p.business_id = $1 order by (p.status = 'removed'), p.id desc limit 20`, [b.id])).rows,
     resenasN: (await db().query<{ n: number; rep: number }>(`select count(*)::int as n, count(*) filter (where reply is not null)::int as rep from reviews where business_id = $1 and status <> 'removed'`, [b.id])).rows[0]!,
   };
 }
