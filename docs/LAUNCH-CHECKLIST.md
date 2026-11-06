@@ -428,3 +428,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
       cliente devolverla antes.
 - [ ] Rentas en Super Admin › Transacciones (pestaña propia junto a citas y pedidos): bloque 4g.
 
+## Fase 4 · 4f-3 (apartar productos)
+- [ ] El barrido de apartados (sin respuesta a tiempo, no pasó en 48 h) corre al abrir el apartado, la ficha o el panel de
+      Hoy. En producción: tarea programada cada 15 min (`barrerApartados({})`).
+- [ ] «Avisos por SMS» del apartado: salen cuando estén las llaves de Telnyx (lista del fundador); hoy quedan en la
+      bandeja de avisos y el SMS en modo pruebas.
+- [ ] Editor de artículos de Tienda en el panel (precio, existencia, foto, nueva/usada, medida): con Tiendas.
+- [ ] Apartados en Super Admin › Transacciones y en Mi cuenta: bloque 4g.
+

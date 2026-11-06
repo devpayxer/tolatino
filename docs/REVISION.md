@@ -573,3 +573,22 @@ elegiste para recoger. Los días para recoger: hoy (si falta más de media hora 
 no abre, el siguiente que abre. El editor de artículos de la Tienda (nombre, precio por día, depósito, unidades, foto)
 llega con el de Tiendas; hoy los artículos de prueba vienen de la semilla 0016 (solo sandbox)._
 
+## Fase 4 · 4f-3 Apartar productos (Auto y Hogar)
+1. Marisol › **Taller Hermanos Peña** › **Tienda** › «Batería Interstate» › Apartar; «Limpiaparabrisas» › 2 › Apartar →
+   abajo «$207 en la caja · Ver apartado» › Continuar › mañana 9 AM › Continuar › **Apartar** → «Apartado enviado».
+2. Como **Rafael** (570-555-0211): Hoy › «Apartados · 1 por confirmar» › **Lo tengo · guárdalo** (o **Falta uno**: Marisol
+   ve «Falta algo» y toca **Quitarlo y seguir**) › cuando pasa, **Lo recogió**.
+3. **Llantera El Cibao** › Tienda: gomas NUEVA / USADA con filtros «Para tu …» (con la medida de Tu vehículo), Nuevas,
+   Usadas.
+_Decidido por mí (reversible): «Apartar» de Auto y Hogar es el apartado de Tiendas del diseño (TLApartar → TLTiendaFlow),
+construido ahora como motor común (`kind 'hold'`, A-…); el plan de pagos (abono), las tallas y el envío a casa llegan con
+el bloque de Tiendas. La tienda tiene hasta 30 min antes de la hora elegida para confirmar (mínimo 30 min); si no, vence
+(el diseño dice «en unos minutos» sin plazo). Las unidades se reservan al enviar; si la tienda dice que no lo tiene o que
+falta uno, esa existencia queda en 0 (la app la tenía mal). «Falta uno» sin tallas = quitarlo o cancelar; 24 h para
+decidir. El carrito vive en el teléfono (como en el diseño). El panel de apartados no está en el diseño (hueco #5): se
+compone con sus bloques. Máximo 3 apartados abiertos por tienda y persona. Las estrellas de «¿Cómo te fue?» llevan a la
+reseña verificada con el apartado._
+_Arreglado de paso: en la pestaña Tienda la barra de Booking de la ficha tapaba la barra «Tu apartado» (no se podía tocar);
+guardián `barraDoble`. Y una consulta con un parámetro sin tipo junto a un `interval` no dejaba mandar el apartado
+(42804); guardián `parametroSinTipo` (ambos probados al revés)._
+

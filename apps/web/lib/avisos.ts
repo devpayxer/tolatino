@@ -18,7 +18,7 @@ async function smsTelnyx(to: string, texto: string): Promise<"enviado" | "fallo"
   } catch { return "fallo"; }
 }
 
-export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}) {
+export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean } = {}) {
   try {
     const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean }>(
       `select t.grp, t.pref, t.sms, t.title, t.body, u.lang, u.phone, u.notif_prefs as prefs, u.home_city_id as city, coalesce(c.timezone, 'America/New_York') as tz,
@@ -27,7 +27,7 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
     if (!r) return;
     const es = r.lang !== "en", title = es ? r.title.es : r.title.en, body = llenar(es ? r.body.es : r.body.en, v).slice(0, 480);
     const apagado = r.pref ? r.prefs?.[r.pref] === false : false, quiet = r.grp !== "crit" && tpl !== "biz_req" && r.silencio && r.prefs?.quiet !== false;
-    const st = !r.sms ? "no" : apagado ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    const st = !r.sms ? "no" : apagado || o.sinSms ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
     const id = (await db().query<{ id: string }>(
       `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id::text`,
       [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null])).rows[0]!.id;

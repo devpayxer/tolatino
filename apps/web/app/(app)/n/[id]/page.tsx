@@ -11,6 +11,7 @@ import { rsvPublica } from "@/lib/reservas";
 import { citasPublica } from "@/lib/citas";
 import { oficiosPublico } from "@/lib/oficios-publico";
 import { tiendaPublica } from "@/lib/rentas";
+import { tiendaMia, tiendaVenta } from "@/lib/apartados";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
 import { vacantesFicha } from "@/lib/jobs";
@@ -44,7 +45,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.pro ? vacantesFicha(f.id, u?.id ?? null) : Promise.resolve([]),
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
-    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? tiendaPublica(f.id) : Promise.resolve(null),
+    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id), tiendaMia(u?.id ?? null, f.id)]).then(([L, V, mia]) => ({ L, V, mia })) : Promise.resolve(null),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);

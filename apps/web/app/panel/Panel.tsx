@@ -21,6 +21,7 @@ import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./
 import { citaDetalle, clientesCitas, hoyAyudasCitas, hoyPlanes, type CitasData } from "./Citas";
 import { hoyEmergencias, solicitudDetalle } from "./Solicitudes";
 import { hoyRentas, rentaDetalle } from "./Rentas";
+import { apartadoDetalle, hoyApartados } from "./Apartados";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
@@ -330,6 +331,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("cita:")) return citaDetalle(c);
   if (id.startsWith("sol:")) return solicitudDetalle(c);
   if (id.startsWith("renta:")) return rentaDetalle(c);
+  if (id.startsWith("apt:")) return apartadoDetalle(c);
   if (id.startsWith("rev:")) return resenaDetalle(c);
   if (id.startsWith("msg:")) return mensajeDetalle(c);
   if (id.startsWith("svc:")) return servicioDetalle(c, id.slice(4));
@@ -429,6 +431,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...hoyAyudas(c));
   out.push(...hoyAyudasCitas(c));
   out.push(...hoyPlanes(c));
+  out.push(...hoyApartados(c));
   out.push(...hoyRentas(c));
   out.push(...hoyJobs(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });

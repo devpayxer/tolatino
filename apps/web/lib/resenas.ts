@@ -52,13 +52,13 @@ const NEG_SQL = `(select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro f
 
 /* La operación terminada que hace verificada una reseña: pedido entregado/recogido o mesa terminada (no «no llegaron»),
    de esa persona en ese negocio, de los últimos 30 días y sin reseña. Con número, esa; sin número, la más reciente. */
-export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment"; src: Src; hoy: boolean; lineas: string[] };
+export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment" | "hold"; src: Src; hoy: boolean; lineas: string[] };
 export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negocio: string, userId: string, numero?: string | null): Promise<OpResena | null> {
-  const r = await c.query<{ id: string; number: string; kind: "order" | "table" | "appointment"; mode: string | null; hoy: boolean; lineas: string[] }>(
+  const r = await c.query<{ id: string; number: string; kind: "order" | "table" | "appointment" | "hold"; mode: string | null; hoy: boolean; lineas: string[] }>(
     `select o.id::text, o.number, o.kind, o.mode, (o.done_at at time zone ci.timezone)::date = (now() at time zone ci.timezone)::date as hoy,
             (select coalesce(array_agg(l.name->>'es' order by l.id), '{}') from operation_lines l where l.operation_id = o.id) as lineas
        from operations o join cities ci on ci.id = o.city_id
-      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment') and o.status = 'done' and coalesce(o.status_detail, '') <> 'noshow'
+      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment', 'hold') and o.status = 'done' and coalesce(o.status_detail, '') <> 'noshow'
         and o.done_at > now() - interval '${VERIFICADA_DIAS} days' and ($3::text is null or o.number = $3)
         and not exists (select 1 from reviews r where r.operation_id = o.id and r.status <> 'removed')
       order by o.done_at desc limit 1`, [negocio, userId, numero ?? null]);
