@@ -3,8 +3,8 @@
    estructurada): se compone con los bloques del panel. Lo que el negocio manda es lo que el cliente ve en su solicitud
    (neg-auto-pre.js / neg-hogar-pre.js › stVals): rango, qué incluye, qué puede cambiarlo y su respuesta. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
-import type { SolFila } from "@/lib/solicitudes";
-import { solicitudResponder } from "./acciones-solicitudes";
+import type { EmFila, SolFila } from "@/lib/solicitudes";
+import { emergenciaAceptar, solicitudResponder } from "./acciones-solicitudes";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -21,6 +21,7 @@ export function solicitudFila(c: Ctx, x: SolFila): Fila {
 }
 
 export function solicitudDetalle(c: Ctx): Sec {
+  if (c.ruta.det?.startsWith("sol:E-")) return emergenciaDetalle(c);
   const { E2, es } = c, x = c.citas?.solDet;
   if (!x) return { blocks: [{ type: "head", t: E2("Solicitud no encontrada", "Request not found"), onBack: c.closeDet }, { type: "empty", icon: "image", t: E2("Esa solicitud no existe", "That request does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), f = x.form, pq = x.mode === "pq";
@@ -68,5 +69,33 @@ export function solicitudDetalle(c: Ctx): Sec {
   out.push({ type: "acts", items: [{ l: E2("Mandar respuesta", "Send reply"), v: "primary", icon: "check", off: malo || c.pending,
     onClick: () => c.run(() => solicitudResponder(c.d.id, x.numero, { que, lo: cents(lo), hi: cents(hi), inc: L(inc), chg: L(chg), nota, visita: pq && vis !== "" ? cents(vis) : null, dias: dias || null }),
       E2(`${x.quien.split(" ")[0]} ya tiene tu respuesta.`, `${x.quien.split(" ")[0]} has your reply.`), () => c.setUi({ solQ: null, solLo: "", solHi: "", solInc: "", solChg: "", solN: "", solV: "", solD: "" })) }] });
+  return { blocks: out, ed: null };
+}
+
+/* Emergencias 24/7 (plan §1 hueco #4: el diseño no trae esta pantalla del panel). Arriba en Hoy, en rojo, con lo que se
+   necesita para decidir rápido; «Aceptar · salgo ahora» la toma si nadie la tomó antes (gana el primero). */
+const EK: Record<string, [string, string]> = { "e:fuga": ["Fuga que no para", "Leak that won’t stop"], "e:calef": ["Sin calefacción", "No heat"], "e:luz": ["Chispas o sin luz", "Sparks or no power"], "e:tapado": ["Inodoro o drenaje desbordado", "Toilet or drain overflowing"], "e:cerrado": ["Te quedaste afuera", "Locked out"], "e:tormenta": ["Daño por tormenta", "Storm damage"] };
+export function hoyEmergencias(c: Ctx): Bloque[] {
+  const { E2, es } = c, L = c.citas?.em ?? [];
+  return L.map((x: EmFila): Bloque => ({ type: "note", tone: "danger", icon: "warning", t: `${E2("EMERGENCIA", "EMERGENCY")} #${x.numero} · ${(EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1]}${x.millas != null ? ` · ${x.millas} mi` : ""} · ${E2(`quedan ${x.min} min`, `${x.min} min left`)}. ${E2("El primero que acepta la toma.", "First to accept takes it.")}`,
+    cta: E2("Ver y aceptar", "View and accept"), onCta: () => c.det(`sol:${x.numero}`) }));
+}
+export function emergenciaDetalle(c: Ctx): Sec {
+  const { E2, es } = c, x = c.citas?.emDet;
+  if (!x) return { blocks: [{ type: "head", t: E2("Emergencia no encontrada", "Emergency not found"), onBack: c.closeDet }, { type: "empty", icon: "warning", t: E2("Esa emergencia no es para ti", "That emergency is not for you"), s: E2("Solo la ven los negocios a los que se mandó.", "Only the businesses it was sent to see it.") }], ed: null };
+  const out: (Bloque | null)[] = [
+    { type: "head", eye: `${E2("EMERGENCIA", "EMERGENCY")} · ${x.quien.toUpperCase()}`, t: `#${x.numero}`, s: (EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1], onBack: c.closeDet },
+    { type: "kv", items: [
+      { k: E2("QUÉ PASA", "WHAT HAPPENED"), v: (EK[x.ek] ?? [x.ek, x.ek])[es ? 0 : 1] }, { k: E2("CASA", "HOME"), v: `${x.casa}${x.millas != null ? ` · ${x.millas} mi` : ""}` },
+      { k: E2("TU SALIDA", "YOUR CALL-OUT"), v: money(x.salida) }, ...(x.acceso ? [{ k: E2("CÓMO ENTRAR", "ACCESS"), v: x.acceso }] : []),
+    ] },
+    x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
+    x.fotos.length ? { type: "photos", k: E2("FOTOS", "PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) } : null,
+  ];
+  if (x.st === "sent") {
+    out.push({ type: "note", tone: "danger", icon: "clock", t: E2(`Quedan ${x.min} min. Se mandó a varios negocios 24/7: el primero que acepta la toma. Al aceptar, el cliente ve tu nombre, tu salida y que vas en camino.`, `${x.min} min left. It went to several 24/7 businesses: the first to accept takes it. When you accept, the client sees your name, your call-out and that you are on the way.`) });
+    out.push({ type: "acts", items: [{ l: E2("Aceptar · salgo ahora", "Accept · leaving now"), v: "primary", icon: "truck", off: c.pending, onClick: () => c.run(() => emergenciaAceptar(c.d.id, x.numero), E2("Es tuya. El cliente ya sabe que vas en camino.", "It is yours. The client knows you are on the way."), (r: { cita?: string }) => { if (r?.cita) c.det(`cita:${r.cita}`); }) }] });
+  } else out.push({ type: "note", tone: x.st === "taken" ? "ok" : "info", t: x.st === "taken" ? E2("La tomaste tú.", "You took it.") : x.st === "lost" ? E2("Ya la tomó otro negocio.", "Another business took it.") : E2("Se cerró sin que nadie la tomara.", "It closed without anyone taking it.") });
+  if (x.cita) out.push({ type: "acts", items: [{ l: E2("Ver la visita", "See the visit"), v: "secondary", icon: "calendar", onClick: () => c.det(`cita:${x.cita}`) }] });
   return { blocks: out, ed: null };
 }

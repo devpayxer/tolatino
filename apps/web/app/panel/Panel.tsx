@@ -19,7 +19,7 @@ import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { citaDetalle, clientesCitas, hoyAyudasCitas, type CitasData } from "./Citas";
-import { solicitudDetalle } from "./Solicitudes";
+import { hoyEmergencias, solicitudDetalle } from "./Solicitudes";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
@@ -112,7 +112,9 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => {
     start(async () => {
       const r = await f().catch(() => ({ ok: false as const, mensaje: { es: "No se pudo guardar. Revisa tu conexión.", en: "Couldn’t save. Check your connection." } }));
-      if (!r.ok) { toast(r.mensaje[lang]); return; }
+      // Si no se pudo (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la pantalla se pone al día igual:
+      // lo escrito no se pierde (vive en el cliente) y lo que cambió en el servidor se ve.
+      if (!r.ok) { toast(r.mensaje[lang]); router.refresh(); return; }
       const t = typeof ok === "function" ? ok(r) : ok;
       if (t) toast(t);
       after?.(r);
@@ -418,6 +420,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
   out.push(...avisosPrueba(c, "hoy"));
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
+  out.push(...hoyEmergencias(c));
   out.push(...hoyPedidos(c));
   out.push(...hoyMensajes(c));
   out.push(...hoyResenas(c));

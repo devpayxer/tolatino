@@ -519,3 +519,20 @@ _Pendiente para 4g: la tarjeta «Tu pre-estimado» en la ficha y la lista en Mi 
 _Decidido por mí (reversible): los candidatos son negocios Pro de Hogar con un servicio «presupuesto» que comparten al
 menos una subcategoría con el de la ficha (el diseño lo saca por tipo de trabajo). En el sandbox aparece también «To'Latino
 Demo · Hogar» (negocio de ejemplo)._
+
+## Fase 4 · 4e-3 Emergencia 24/7
+1. Marisol › Plomería Rodríguez › el servicio de emergencia › **Pedir ayuda ahora**: arriba la línea del 911; «Fuga que no
+   para» ya elegida, salida con recargo $179–$189 › **Pedir ayuda ahora** → «Buscando quien vaya · se lo mandamos a 2
+   negocios 24/7».
+2. Tomás › Hoy: la emergencia arriba en rojo › **Ver y aceptar** › **Aceptar · salgo ahora** → abre la visita «en camino».
+   Marisol ve «Aceptó · va en camino · Plomería Rodríguez 24/7 · llega en unos 60 min · salida $189 con el recargo de
+   $100 incluido» y su visita.
+3. Si dos negocios aceptan a la vez, gana uno; el otro ve «Ya la tomó otro negocio». Si nadie acepta en 15 min: «Nadie
+   disponible» y «Mandarla otra vez».
+_Decidido por mí (reversible): la salida no se retiene al llegar (el diseño lo dice): se paga al terminar, como el resto de
+la visita; si el negocio cobra con tarjeta, entra en la primera retención de lo que el cliente apruebe (4d). Así no hace
+falta cobrar fuera de sesión a alguien en plena emergencia. El panel de emergencias no está en el diseño (hueco #4): es una
+nota roja arriba en Hoy y un detalle con «Aceptar · salgo ahora» (sin sonido: el aviso llega por SMS). Por ahora se entra
+desde la ficha del negocio; la banda de la página de categoría Hogar llega con su bloque._
+_Arreglado de paso: si una acción del panel no se podía (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la
+pantalla no se ponía al día; ahora se refresca igual (lo escrito no se pierde). Guardián `emergencia911`._

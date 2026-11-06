@@ -22,7 +22,8 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
   const d = s.destinos[0]!, auto = s.rubro === "auto", who = d.negocio.quien?.split(" ")[0] ?? d.negocio.nombre;
   const st = s.st === "cancelled" ? "cx" : s.st === "used" ? "used" : s.st === "expired" ? "exp" : d.st === "sent" ? "sent" : d.st === "used" ? "used" : d.st;
-  useEffect(() => { if (st !== "sent") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [st, router]);
+  // Mientras espera, se mira solo (cada 15 s; la emergencia cada 5 s: el primero que acepta, va).
+  useEffect(() => { if (s.st !== "sent" && !(s.mode === "pq" && s.st === "answered")) return; const t = setInterval(() => router.refresh(), s.mode === "em" ? 5000 : 15000); return () => clearInterval(t); }, [s.st, s.mode, router]);
   const hacer = async (que: "cancelar" | "reenviar") => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await solicitudAccion(s.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
@@ -50,8 +51,18 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
     H.used = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("RESERVASTE", "YOU BOOKED"), chosen?.negocio.nombre ?? "", E2("Los otros presupuestos se cerraron. No se cobró nada.", "The other estimates were closed. Nothing was charged.")];
     H.cx = ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADA", "CANCELLED"), E2("Ya no los necesitas", "No longer needed"), E2("No se cobró nada.", "Nothing was charged.")];
   }
-  const h = (pq ? H[stQ] : H[st]) ?? H.sent!;
-  const steps = pq ? [{ label: E2(`Enviada a ${n}`, `Sent to ${n}`), time: s.enviada, state: "done" }, { label: `${E2("Respuestas", "Replies")} · ${s.destinos.filter((x) => !["sent", "expired"].includes(x.st)).length}/${n}`, time: got.at(-1)?.at ?? "", state: ["all", "used"].includes(stQ) ? "done" : "current" },
+  // Emergencia 24/7 (diseño emStatus): buscando quien vaya · aceptó (ya es una visita en camino) · nadie disponible.
+  const em = s.mode === "em", acc = s.destinos.find((x) => x.st === "taken");
+  const stE = s.st === "cancelled" ? "cx" : s.st === "nobody" ? "exp" : s.st === "taken" ? "used" : "sent";
+  if (em) {
+    H.sent = ["warning", "bg-danger/10", "var(--tl-danger)", E2("BUSCANDO QUIEN VAYA", "FINDING SOMEONE"), E2(`Se lo mandamos a ${n} ${n === 1 ? "negocio" : "negocios"} 24/7`, `Sent to ${n} ${n === 1 ? "business" : "businesses"} on 24/7 call`), E2("El primero que acepta, va. Suele tardar menos de 5 minutos. Hoy no se cobra nada.", "The first to accept comes. Usually under 5 minutes. Nothing is charged now.")];
+    H.used = ["truck", "bg-action/10", "var(--tl-action)", E2("ACEPTÓ · VA EN CAMINO", "ACCEPTED · ON THE WAY"), acc?.negocio.nombre ?? "", acc ? E2(`Llega en unos ${acc.eta ?? 60} min. Salida ${dinero(acc.precio ?? 0)}${acc.recargo ? `, con el recargo de ${dinero(acc.recargo)} incluido` : ""}.`, `Arrives in about ${acc.eta ?? 60} min. Call-out ${dinero(acc.precio ?? 0)}${acc.recargo ? `, ${dinero(acc.recargo)} surcharge included` : ""}.`) : ""];
+    H.exp = ["warning", "bg-danger/10", "var(--tl-danger)", E2("NADIE DISPONIBLE", "NOBODY AVAILABLE"), E2("Nadie aceptó en 15 minutos", "Nobody accepted in 15 minutes"), E2("No se cobró nada. Mándalo otra vez o llama directo a uno.", "Nothing was charged. Send it again or call one directly.")];
+    H.cx = ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADA", "CANCELLED"), E2("Ya no la necesitas", "No longer needed"), E2("No se cobró nada.", "Nothing was charged.")];
+  }
+  const h = (em ? H[stE] : pq ? H[stQ] : H[st]) ?? H.sent!;
+  const steps = em ? [{ label: E2(`Enviada a ${n}`, `Sent to ${n}`), time: s.enviada, state: "done" }, { label: `${E2("Aceptó ", "Accepted by ")}${acc ? acc.negocio.nombre : "…"}`, time: acc?.at ?? "", state: stE === "used" ? "done" : stE === "sent" ? "current" : "next" },
+    { label: E2("En camino", "On the way"), time: "", state: stE === "used" ? "current" : "next" }] : pq ? [{ label: E2(`Enviada a ${n}`, `Sent to ${n}`), time: s.enviada, state: "done" }, { label: `${E2("Respuestas", "Replies")} · ${s.destinos.filter((x) => !["sent", "expired"].includes(x.st)).length}/${n}`, time: got.at(-1)?.at ?? "", state: ["all", "used"].includes(stQ) ? "done" : "current" },
     { label: E2("Reservas una visita", "You book a visit"), time: "", state: stQ === "used" ? "done" : ["all", "part"].includes(stQ) ? "current" : "next" }] : [{ label: E2("Enviado", "Sent"), time: s.enviada, state: "done" }, { label: `${E2("Respuesta de ", "Reply from ")}${who}`, time: d.at ?? "", state: st === "sent" ? "current" : "done" },
     { label: E2("Reservas", "You book"), time: "", state: st === "used" ? "done" : ["rng", "see"].includes(st) ? "current" : "next" }];
   const reservar = (svc: string, b = d.negocio.id) => router.push(`/n/${b}?tab=svc&of=${svc}&pre=${s.numero}`);
@@ -60,7 +71,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
   const filas: [string, string][] = [
     ...(s.form.veh ? [[E2("VEHÍCULO", "VEHICLE"), `${s.form.veh.t}${s.form.veh.mi ? ` · ${s.form.veh.mi.toLocaleString("en-US")} mi` : ""}`] as [string, string]] : []),
     ...(s.form.casa ? [[E2("CASA", "HOME"), s.form.casa.dir] as [string, string]] : []),
-    [E2("SERVICIO", "SERVICE"), nm(s.svc)],
+    [em ? E2("QUÉ PASA", "WHAT HAPPENED") : E2("SERVICIO", "SERVICE"), nm(s.svc)],
     ...(s.form.area ? [[E2("DÓNDE", "WHERE"), (AREAS[s.form.area] ?? [s.form.area, s.form.area])[es ? 0 : 1]] as [string, string]] : []),
     ...(s.form.areas?.length ? [[E2("DÓNDE", "WHERE"), s.form.areas.map((k) => (AREAS[k] ?? [k, k])[es ? 0 : 1]).join(" · ")] as [string, string]] : []),
     ...(s.form.medidas ? [[E2("MEDIDAS", "MEASUREMENTS"), s.form.medidas] as [string, string]] : []),
@@ -68,9 +79,11 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
     ...(s.form.code ? [[E2("CÓDIGO", "CODE"), s.form.code] as [string, string]] : []),
     ...(s.form.marca || s.form.edad ? [[E2("EQUIPO", "EQUIPMENT"), [s.form.marca, s.form.edad].filter(Boolean).join(" · ")] as [string, string]] : []),
     ...(s.form.nota ? [[pq ? E2("LES CONTASTE", "YOU SAID") : E2("LE CONTASTE", "YOU SAID"), `«${s.form.nota}»`] as [string, string]] : []),
-    ...(pq ? [] : [[E2("PARA", "NEEDED"), s.form.cuando === "hoy" ? E2("Lo necesito hoy", "I need it today") : s.form.cuando === "nada" ? E2("Sin prisa", "No rush") : E2("Esta semana", "This week")] as [string, string]]),
+    ...(s.form.acceso ? [[E2("CÓMO ENTRAR", "ACCESS"), s.form.acceso] as [string, string]] : []),
+    ...(pq || em ? [] : [[E2("PARA", "NEEDED"), s.form.cuando === "hoy" ? E2("Lo necesito hoy", "I need it today") : s.form.cuando === "nada" ? E2("Sin prisa", "No rush") : E2("Esta semana", "This week")] as [string, string]]),
   ];
-  const acts: [string, string, () => void][] = pq ? (["sent", "part", "all"].includes(stQ) ? [["close", E2("Ya no los necesito", "No longer needed"), () => void hacer("cancelar")]] : stQ === "exp" ? [["image", E2("Mandarlo otra vez", "Send again"), () => void hacer("reenviar")]] : stQ === "used" && s.cita ? [["calendar", E2("Ver tu visita", "See your visit"), () => router.push(`/cita/${s.cita}`)]] : [])
+  const acts: [string, string, () => void][] = em ? (stE === "sent" ? [["close", E2("Ya no la necesito", "No longer needed"), () => void hacer("cancelar")]] : stE === "exp" ? [["warning", E2("Mandarla otra vez", "Send again"), () => void hacer("reenviar")]] : [])
+    : pq ? (["sent", "part", "all"].includes(stQ) ? [["close", E2("Ya no los necesito", "No longer needed"), () => void hacer("cancelar")]] : stQ === "exp" ? [["image", E2("Mandarlo otra vez", "Send again"), () => void hacer("reenviar")]] : stQ === "used" && s.cita ? [["calendar", E2("Ver tu visita", "See your visit"), () => router.push(`/cita/${s.cita}`)]] : [])
     : st === "sent" ? [["close", E2("Ya no lo necesito", "No longer needed"), () => void hacer("cancelar")]]
     : ["rng", "see"].includes(st) ? [["bubble", E2("Preguntar algo", "Ask a question"), () => router.push(`/cuenta/mensajes/${d.negocio.id}`)], ["close", E2("Ya no lo necesito", "No longer needed"), () => void hacer("cancelar")]]
       : st === "exp" ? [["image", E2("Mandarlo otra vez", "Send again"), () => void hacer("reenviar")]] : st === "used" && s.cita ? [["calendar", E2("Ver tu cita", "See your booking"), () => router.push(`/cita/${s.cita}`)]] : [];
@@ -79,16 +92,28 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al negocio", "Back to the business")} onClick={() => router.push(`/n/${d.negocio.id}?tab=svc`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
         <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{nm(s.svc)}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${pq ? E2("PRESUPUESTOS #", "ESTIMATES #") : E2("PRE-ESTIMADO #", "PRE-ESTIMATE #")}${s.numero} · ${pq ? s.form.casa?.dir ?? "" : d.negocio.nombre}`.toUpperCase()}</div></div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${em ? E2("EMERGENCIA #", "EMERGENCY #") : pq ? E2("PRESUPUESTOS #", "ESTIMATES #") : E2("PRE-ESTIMADO #", "PRE-ESTIMATE #")}${s.numero} · ${pq || em ? s.form.casa?.dir ?? "" : d.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
         <div data-screen-label="Pre-estimado · estado" className="rounded-[20px] border border-ink/[.07] bg-white px-[18px] pb-5 pt-6 text-center">
           <div className={`mx-auto grid h-[60px] w-[60px] place-items-center rounded-[20px] ${h[1]}`}><Icon name={h[0]} size={26} color={h[2]} strokeWidth={2.2} /></div>
           <div className="mt-[13px] font-mono text-[9.5px] font-bold tracking-[0.14em]" style={{ color: h[2] }}>{h[3]}</div>
-          <h1 className={`m-0 mt-2 font-display font-extrabold leading-[1.12] tracking-[-0.04em] ${(pq ? ["part", "all"].includes(stQ) && got.length > 0 : ["rng", "see", "used"].includes(st)) ? "text-[32px]" : "text-[22px]"}`}>{h[4]}</h1>
+          <h1 className={`m-0 mt-2 font-display font-extrabold leading-[1.12] tracking-[-0.04em] ${(em ? stE === "used" : pq ? ["part", "all"].includes(stQ) && got.length > 0 : ["rng", "see", "used"].includes(st)) ? "text-[32px]" : "text-[22px]"}`}>{h[4]}</h1>
           <p className="m-0 mt-[9px] text-pretty text-[13px] leading-[1.55] text-ink/[.62]">{h[5]}</p>
         </div>
+        {em && <div role="note" data-screen-label="Emergencia · 911" className="flex items-start gap-2.5 rounded-[14px] bg-danger/[.09] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="warning" size={16} color="var(--tl-danger)" /></span><span className="text-pretty text-[13px] font-extrabold leading-[1.4] text-danger">{es ? s.linea911.es : s.linea911.en}</span></div>}
+        {em && stE === "used" && s.cita && <div className="grid"><Button block icon="truck" onClick={() => router.push(`/cita/${s.cita}`)}>{E2("Ver en camino", "See it on the way")}</Button></div>}
+        {em && (stE === "sent" || stE === "exp") && (
+          <div data-screen-label="Emergencia · a quién" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{stE === "exp" ? E2("LLAMA DIRECTO", "CALL DIRECTLY") : E2("SE LO MANDAMOS A", "SENT TO")}</div>
+            <div className="mt-2.5 flex flex-col gap-2">{s.destinos.map((x) => <a key={x.negocio.id} href={x.negocio.telefono ? `tel:${x.negocio.telefono}` : `/n/${x.negocio.id}`} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5">
+              <span className="h-10 w-10 flex-none rounded-xl bg-photo-bg" style={fondo(x.negocio.foto)} />
+              <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold">{x.negocio.nombre}</span>
+                <span className="mt-0.5 block font-mono text-[9.5px] font-semibold text-ink/55">{`${stE === "sent" ? E2("ESPERANDO · ", "WAITING · ") : ""}${E2("SALIDA ", "CALL-OUT ")}${dinero(x.precio ?? 0)}${x.eta ? E2(` · LLEGA EN ~${x.eta} MIN`, ` · ~${x.eta} MIN`) : ""}`}</span></span>
+              <Icon name={x.negocio.telefono ? "phone" : "chevronRight"} size={15} color="rgba(11,14,18,.35)" /></a>)}</div>
+          </div>
+        )}
         {pq && (
           <div data-screen-label="Presupuestos · comparar" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{stQ === "used" ? E2("PRESUPUESTOS", "ESTIMATES") : E2("COMPARA · TOCA UNO PARA RESERVAR SU VISITA", "COMPARE · TAP ONE TO BOOK ITS VISIT")}</div>
@@ -103,7 +128,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
                 {puede && <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" />}</button>; })}</div>
           </div>
         )}
-        {!pq && (st === "rng" || st === "see") && (
+        {!pq && !em && (st === "rng" || st === "see") && (
           <div data-screen-label="Pre-estimado · respuesta" className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="flex items-center gap-2.5"><span className="h-9 w-9 flex-none rounded-full bg-photo-bg" style={fondo(d.negocio.foto)} />
               <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{`${E2("RESPUESTA DE ", "REPLY FROM ")}${who}`.toUpperCase()}</div><div className="mt-0.5 font-mono text-[9.5px] font-semibold text-ink/40">{d.at}</div></div></div>
@@ -124,7 +149,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
             {s.fotos.length > 0 && <div className="flex flex-wrap gap-2 border-t border-ink/[.06] py-[11px]">{s.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
           </div>
         </div>
-        {!pq && s.otros.length > 0 && (
+        {!pq && !em && s.otros.length > 0 && (
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4">
             <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("LO HACEN EN TU CIUDAD", "BUSINESSES IN YOUR CITY THAT DO IT")}</div>
             <div className="mt-2.5 flex flex-col gap-2">{s.otros.map((o) => <button key={o.id} type="button" onClick={() => router.push(`/n/${o.id}?tab=svc`)} className="flex items-center gap-3 rounded-[14px] border border-ink/[.08] px-3 py-2.5 text-left">
@@ -133,7 +158,7 @@ export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
           </div>
         )}
         {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} disabled={ocupado} onClick={on}>{l}</Button></div>)}</div>}
-        <div className="flex items-center gap-2.5 rounded-[14px] bg-signal/[.12] px-3.5 py-3"><Icon name="shield" size={16} color="var(--tl-open-text)" /><span className="text-pretty text-[12.5px] font-extrabold leading-[1.4] text-open-text">{pq ? E2("Son rangos con fotos. El presupuesto por línea sale en la visita y apruebas cada parte.", "Ranges from photos. The line-by-line estimate comes at the visit and you approve each part.") : E2("Un rango con fotos no es un precio final. Nada se hace ni se cobra sin tu OK.", "A range from photos is not a final price. Nothing is done or charged without your OK.")}</span></div>
+        <div className="flex items-center gap-2.5 rounded-[14px] bg-signal/[.12] px-3.5 py-3"><Icon name="shield" size={16} color="var(--tl-open-text)" /><span className="text-pretty text-[12.5px] font-extrabold leading-[1.4] text-open-text">{em ? E2("Hoy no se cobra nada. Lo que haga falta después de la salida te lo cotizan en la app antes de hacerlo.", "Nothing is charged now. Anything beyond the call-out is quoted in the app before it is done.") : pq ? E2("Son rangos con fotos. El presupuesto por línea sale en la visita y apruebas cada parte.", "Ranges from photos. The line-by-line estimate comes at the visit and you approve each part.") : E2("Un rango con fotos no es un precio final. Nada se hace ni se cobra sin tu OK.", "A range from photos is not a final price. Nothing is done or charged without your OK.")}</span></div>
       </div>
     </div>
   );
