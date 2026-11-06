@@ -707,3 +707,8 @@ _Decidido por mí (reversible):_
 - _«Cambiar de seguro» y «Buscar otro consultorio» cancelan la solicitud (gratis) y te llevan al Booking o a Doctores._
 - _«Avísame si se libera una hora» no se manda en Salud (el aviso nombraría el consultorio)._
 
+## Fase 4 · 4k Ficha de Profesionales
+1. Bufete Almonte › Servicios: «Renovar la green card · $815 · HONORARIO $350 + GOBIERNO $465»; ábrelo: EL TOTAL desglosado.
+2. Ferreira Injury Law: «33 % · SOLO SI GANAS · SI NO, $0». TecnoFix (escritorio): sin textos de abogado, «LISTO EN».
+_Decidido por mí (reversible): hasta la consulta en línea (4l) la hoja ofrece «Llama para tu consulta»; las preguntas frecuentes por tipo quedan para 4m._
+
