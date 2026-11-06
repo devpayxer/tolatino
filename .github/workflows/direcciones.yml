@@ -1,0 +1,57 @@
+name: Direcciones · tramos del Censo
+# Comprueba de punta a punta las direcciones propias: carga los tramos de calle (TIGER) de nuestros condados en una base
+# real y ubica direcciones verdaderas de las cinco ciudades. Corre a mano o cuando cambian el script o la migración.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["infra/direcciones/**", "packages/db/migrations/0025_direcciones.sql", ".github/workflows/direcciones.yml"]
+
+jobs:
+  direcciones:
+    name: cargar · ubicar
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Base real con las migraciones
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          $C up -d db
+          for i in $(seq 1 60); do $C exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
+          bash packages/db/migrar.sh $C
+      - name: Cargar los tramos (dos veces; la segunda no hace nada)
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          time bash infra/direcciones/generar.sh "$RUNNER_TEMP/dir" $C
+          bash infra/direcciones/generar.sh "$RUNNER_TEMP/dir" $C | grep -q "al día"
+      - name: Ubicar direcciones reales
+        env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          q() { $C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c "$1"; }
+          q "select county, count(*) from geo_streets group by 1 order by 1"
+          ok=0
+          # Ayuntamientos y lugares conocidos de cada ciudad: el número exacto, a menos de 8 km del centro de su ciudad.
+          while IFS='|' read -r calle cp ciudad; do
+            r=$(q "select round(u.lat::numeric,5)||'|'||round(u.lng::numeric,5)||'|'||u.calidad||'|'||u.nombre||'|'||round(st_distance(st_point(u.lng,u.lat)::geography, c.center::geography)::numeric) from dir_ubicar('$calle', '$cp') u, cities c where c.id = '$ciudad'")
+            echo "$calle $cp → ${r:-NO ENCONTRADA}"
+            d=$(echo "$r" | cut -d'|' -f5); k=$(echo "$r" | cut -d'|' -f3)
+            if [ "$k" = "numero" ] && [ "${d:-99999}" -lt 8000 ]; then ok=$((ok+1)); fi
+          done <<'LISTA'
+          40 N Church St|18201|hzl
+          412 N Wyoming St|18201|hzl
+          435 Hamilton St|18101|alw
+          815 Washington St|19601|rdg
+          340 North Washington Avenue|18503|scr
+          40 E Market St|18701|wbr
+          LISTA
+          echo "ubicadas con su número: $ok de 6"
+          test "$ok" -ge 5
+          # Mal escrita y con «Street» completo
+          q "select calidad, nombre from dir_ubicar('412 North Wyomin Street', '18201')"
+          test -n "$(q "select 1 from dir_ubicar('412 North Wyomin Street', '18201')")"
+          # Rapidez: 50 búsquedas
+          time (for i in $(seq 1 50); do q "select 1 from dir_ubicar('$((i*2)) N Wyoming St', '18201')" >/dev/null; done)

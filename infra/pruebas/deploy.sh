@@ -58,6 +58,13 @@ elif ! systemctl is-active --quiet tolatino-mapa; then
   systemd-run --unit tolatino-mapa --collect bash -c "bash '$REPO/infra/mapa/generar.sh' '$MAPA' && ${COMPOSE_MAPA[*]} up -d mapa" || true
 fi
 
+# 3e) Direcciones propias: tramos de calle del Censo (TIGER) para ubicar direcciones de entrega. Aparte y sin esperar;
+#     el script mismo no hace nada si la carga tiene menos de 90 días.
+if ! systemctl is-active --quiet tolatino-direcciones; then
+  systemd-run --unit tolatino-direcciones --collect bash "$REPO/infra/direcciones/generar.sh" /var/lib/tolatino/direcciones \
+    docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" || true
+fi
+
 # 4) nginx: la app en /, la página de estado del servidor en /estado.
 install -m 0644 "$REPO/infra/pruebas/nginx-pruebas.conf" /etc/nginx/sites-available/tolatino-pruebas
 ln -sf /etc/nginx/sites-available/tolatino-pruebas /etc/nginx/sites-enabled/tolatino-pruebas
