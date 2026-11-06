@@ -1,7 +1,7 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { cancelarDelCliente, lineasComoCarrito } from "@/lib/pedidos";
-import { pedirAyuda, pedirRevisionAyuda, type AyudaIn } from "@/lib/ayuda";
+import { avisarAyuda, pedirAyuda, pedirRevisionAyuda, type AyudaIn } from "@/lib/ayuda";
 
 /* El cliente sobre su pedido (APP-NEG-PEDIDO): cancelar gratis mientras el negocio no lo acepta, y traer las líneas para
    «Volver a pedir» o «Cancelar y editar». Solo quien hizo el pedido. */
@@ -28,6 +28,7 @@ export async function ayudaPedir(numero: string, p: AyudaIn): Promise<ResCli> {
   const u = await yo();
   if (!u) return { ok: false, msg: { es: "Entra para pedir ayuda.", en: "Sign in to ask for help." } };
   const r = await pedirAyuda(u.id, String(numero ?? ""), p && typeof p === "object" ? p : { reason: "" });
+  if (r.ok) await avisarAyuda(String(numero), "biz_help");
   return r.ok ? { ok: true } : r;
 }
 export async function ayudaRevision(numero: string): Promise<ResCli> {

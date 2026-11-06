@@ -236,3 +236,19 @@ _Hace falta un pedido terminado de los últimos 7 días (Marisol pide en Sabor y
    Marisol ve «Solicitud resuelta por To'Latino».
 _Cambios del diseño: Soporte es por ahora esta cola (sin tickets por WhatsApp o correo, macros ni CSAT); no hay devolución con
 tarjeta (todo se paga en el local), así que «devolver» se arregla con el negocio; sin El Compa antes de la ayuda._
+
+## Fase 2 · 2j Notificaciones
+_Hace falta un pedido nuevo (Marisol pide en Sabor) y Pedro en el panel._
+1. Pedro › **Hoy** → **Aceptar** el pedido → Marisol: la campana tiene un punto → tócala → «Pedido aceptado · NUEVO» →
+   tócalo y abre el pedido. Al volver, el punto ya no está.
+2. Pedro › **Listo para recoger** → Marisol ve «Tu pedido está listo».
+3. Marisol › Mi cuenta › **Avisos** → apaga «Pedidos» → Pedro marca otro paso → el aviso llega a la bandeja; en Super Admin ›
+   Notificaciones › **Envíos** sale «SMS APAGADO».
+4. Ana › **Notificaciones** › Plantillas → «Pedido aceptado» › **Editar español** → cambia el texto (prueba poner
+   `{propina}`: lo rechaza) → Guardar con motivo → **Probar en mi teléfono** → mira tu campana.
+5. Ana › **Reglas**: lee las seis reglas.
+_Cambios del diseño: la bandeja (APP-NOTIF) no tiene pantalla en el diseño: se compuso con el marco de Mi cuenta (filas con
+icono, NUEVO, hace cuánto, el texto y a dónde lleva). En el Super Admin las cifras son de 24 h y reales (no hay «abiertos»
+ni costo hasta que salgan SMS de verdad); «Anuncios in-app» queda para cuando exista el banner del home. Sin push todavía
+(apps, Fase 8); el SMS sale cuando esté la clave de Telnyx (decisión E2). Decisión tomada sin preguntar (AB): la solicitud
+nueva al negocio no respeta las horas de silencio, porque el negocio solo recibe pedidos mientras está abierto._

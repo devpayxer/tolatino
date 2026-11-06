@@ -37,10 +37,20 @@ const stop = f => e => {
 };
 function Bell({
   unread,
-  onClick
+  onClick,
+  label
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
+    role: "button",
+    tabIndex: 0,
+    "aria-label": label,
+    onKeyDown: e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onClick && onClick();
+      }
+    },
     style: {
       position: 'relative',
       width: 40,
@@ -125,6 +135,7 @@ function SiteHeader({
   onCity,
   onLang,
   onBell,
+  bellLabel,
   onLogin,
   onAvatar,
   onPublish,
@@ -174,7 +185,8 @@ function SiteHeader({
     onClick: onLang
   }), /*#__PURE__*/React.createElement(Bell, {
     unread: unread,
-    onClick: onBell
+    onClick: onBell,
+    label: bellLabel || (lang === 'EN' ? (unread ? 'Notifications, unread' : 'Notifications') : unread ? 'Notificaciones, sin leer' : 'Notificaciones')
   }), auth || /*#__PURE__*/React.createElement(__ds_scope.Button, {
     size: "sm",
     onClick: onLogin
@@ -311,7 +323,8 @@ function SiteHeader({
     onClick: onLang
   }), /*#__PURE__*/React.createElement(Bell, {
     unread: unread,
-    onClick: onBell
+    onClick: onBell,
+    label: bellLabel || (lang === 'EN' ? (unread ? 'Notifications, unread' : 'Notifications') : unread ? 'Notificaciones, sin leer' : 'Notificaciones')
   }), auth || /*#__PURE__*/React.createElement(__ds_scope.Button, {
     variant: "secondary",
     size: "md",

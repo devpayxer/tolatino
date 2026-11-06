@@ -6,7 +6,8 @@ import { revalidatePath } from "next/cache";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
-import { tx } from "@/lib/db";
+import { avisar } from "@/lib/avisos";
+import { db, tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -207,7 +208,7 @@ export async function platoOcultar(id: string, itemId: string, ocultar: boolean,
 /* Contenido · ocultar o restaurar una reseña con motivo (neg:retirar). Sale de la página y de las ★; el autor ve el motivo. */
 export async function resenaOcultar(id: string, resena: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
   if (!/^\d{1,18}$/.test(String(resena))) return no("Esa reseña no existe.");
-  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+  const res = await hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const r = (await c.query<{ status: string; quien: string }>(
       `select r.status, coalesce(u.first_name, 'Vecino') as quien from reviews r join users u on u.id = r.user_id where r.id = $1::bigint and r.business_id = $2 and r.status <> 'removed' for update of r`, [resena, b.id])).rows[0];
     if (!r) return "Esa reseña ya no está.";
@@ -217,6 +218,8 @@ export async function resenaOcultar(id: string, resena: string, ocultar: boolean
     await auditar(c, { actor: s.id, action: ocultar ? "resena.ocultar" : "resena.restaurar", targetKind: "review", targetId: resena, city: b.city_id, before: { resena: `de ${r.quien}`, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible", negocio: b.id }, reason: m });
     return null;
   }, ocultar ? "Reseña oculta. El autor ve el motivo." : "La reseña se ve otra vez.");
+  if (res.ok && ocultar) await avisarOculto("reviews", resena, "reseña", motivo, "/cuenta/resenas");
+  return res;
 }
 
 /* Contenido · ocultar o mostrar una novedad con motivo (neg:retirar). Sale de su página; el dueño ve el motivo en su panel. */
@@ -251,7 +254,7 @@ export async function vacanteOcultar(id: string, job: string, ocultar: boolean, 
 /* Contenido · ocultar o mostrar un comentario de una novedad con motivo (neg:retirar). Sale de la novedad; queda en la auditoría. */
 export async function comentarioOcultar(id: string, comentario: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
   if (!/^\d{1,18}$/.test(String(comentario))) return no("Ese comentario no existe.");
-  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+  const res = await hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const x = (await c.query<{ status: string; body: string }>(
       `select c.status, c.body from post_comments c join business_posts p on p.id = c.post_id where c.id = $1::bigint and p.business_id = $2 and c.status <> 'removed' for update of c`, [comentario, b.id])).rows[0];
     if (!x) return "Ese comentario ya no está.";
@@ -260,6 +263,14 @@ export async function comentarioOcultar(id: string, comentario: string, ocultar:
     await auditar(c, { actor: s.id, action: ocultar ? "comentario.ocultar" : "comentario.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { comentario: x.body.slice(0, 80), estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
     return null;
   }, ocultar ? "Comentario oculto." : "El comentario se ve otra vez.");
+  if (res.ok && ocultar) await avisarOculto("post_comments", comentario, "comentario", motivo, `/n/${encodeURIComponent(String(id))}`);
+  return res;
+}
+
+/* Aviso al autor cuando To'Latino oculta lo que escribió (plantilla mod_hide), con el motivo. Nunca rompe la acción. */
+async function avisarOculto(tabla: "reviews" | "post_comments", fila: string, tipo: string, motivo: string, href: string) {
+  const u = (await db().query<{ uid: string }>(`select user_id::text as uid from ${tabla} where id = $1::bigint`, [fila]).catch(() => ({ rows: [] as { uid: string }[] }))).rows[0];
+  if (u) await avisar(u.uid, "mod_hide", { tipo, motivo: String(motivo).trim().slice(0, 140) }, { href, ref: [tabla === "reviews" ? "review" : "comment", fila] });
 }
 
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */

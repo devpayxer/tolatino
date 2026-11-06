@@ -100,3 +100,13 @@ export async function responderAyuda(negocio: string, numero: string, texto: str
       where o.id = h.operation_id and o.number = $1 and h.business_id = $2 and h.status = 'open'`, [numero, negocio, t, actorId]);
   return r.rowCount ? { ok: true } : no("Esta solicitud ya cambió (pasó a To'Latino o ya respondiste).", "This request already changed (it went to To'Latino or you already replied).");
 }
+
+/* Avisos de la ayuda: al cliente cuando responden o se resuelve; al negocio cuando se abre. */
+export async function avisarAyuda(numeroPedido: string, tpl: "help_reply" | "help_done" | "biz_help") {
+  const { avisar, avisarNegocio } = await import("./avisos");
+  const h = (await db().query<{ uid: string; hnum: string; negocio: string; biz: string; cliente: string | null }>(
+    `select h.user_id::text as uid, h.number as hnum, b.name as negocio, b.id as biz, u.first_name as cliente from help_requests h join operations o on o.id = h.operation_id join businesses b on b.id = h.business_id join users u on u.id = h.user_id where o.number = $1`, [numeroPedido])).rows[0];
+  if (!h) return;
+  if (tpl === "biz_help") await avisarNegocio(h.biz, "biz_help", { cliente: h.cliente ?? "", num: numeroPedido }, { href: `/panel/${h.biz}/hoy?det=ped:${numeroPedido}`, ref: ["help", h.hnum] });
+  else await avisar(h.uid, tpl, { negocio: h.negocio, num: h.hnum }, { href: `/pedido/${numeroPedido}`, ref: ["help", h.hnum] });
+}

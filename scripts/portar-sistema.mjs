@@ -94,6 +94,14 @@ for (const src of archivos) {
     t = t.replace("padding: '6px 20px 14px',", "padding: compact ? '6px 16px 10px' : '6px 20px 14px',");
     t = t.replace('loginLabel)), /*#__PURE__*/React.createElement("div", {\n    onClick: onSearch,', 'loginLabel)), compact ? null : /*#__PURE__*/React.createElement("div", {\n    onClick: onSearch,');
     if (t === antes || !t.includes("  compact,\n") || !t.includes("compact ? '6px 16px 10px'") || !t.includes("compact ? null :")) throw new Error("parche SiteHeader: el origen cambió, revisar");
+    // La campana era un <span> con onClick: sin rol, nombre ni teclado (6 nov, 2j: la bandeja de avisos). Botón accesible
+    // con su nombre en el idioma del encabezado («Notificaciones, sin leer»), o el que pase la pantalla (`bellLabel`).
+    const b0 = t;
+    t = t.replace("function Bell({\n  unread,\n  onClick\n}) {\n  return /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onClick,\n",
+      "function Bell({\n  unread,\n  onClick,\n  label\n}) {\n  return /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onClick,\n    role: \"button\",\n    tabIndex: 0,\n    \"aria-label\": label,\n    onKeyDown: e => {\n      if (e.key === 'Enter' || e.key === ' ') {\n        e.preventDefault();\n        onClick && onClick();\n      }\n    },\n");
+    t = t.replace("  onBell,\n  onLogin,", "  onBell,\n  bellLabel,\n  onLogin,");
+    t = t.replaceAll("React.createElement(Bell, {\n    unread: unread,\n    onClick: onBell\n  })", "React.createElement(Bell, {\n    unread: unread,\n    onClick: onBell,\n    label: bellLabel || (lang === 'EN' ? (unread ? 'Notifications, unread' : 'Notifications') : unread ? 'Notificaciones, sin leer' : 'Notificaciones')\n  })");
+    if (t === b0 || (t.match(/label: bellLabel/g) || []).length !== 2 || !t.includes('"aria-label": label')) throw new Error("parche SiteHeader (campana): el origen cambió, revisar");
   }
 
   // PostCard (VoteBar): votar, comentar, guardar y compartir eran <span> con onClick: sin rol ni teclado. Aquí se vuelven

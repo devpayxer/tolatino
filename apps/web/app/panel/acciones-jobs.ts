@@ -1,7 +1,7 @@
 "use server";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db } from "@/lib/db";
-import { guardarVacante, moduloJobs, pasoVacante, responderSolicitud, verSolicitud, type PasoVac, type VacIn } from "@/lib/jobs";
+import { avisarSolicitud, guardarVacante, moduloJobs, pasoVacante, responderSolicitud, verSolicitud, type PasoVac, type VacIn } from "@/lib/jobs";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { Res } from "./acciones";
 
@@ -50,6 +50,7 @@ export async function vacResponder(id: string, appId: string, paso: "contact" | 
   const r = await responderSolicitud(a.negocio.id, String(appId ?? ""), paso, iv && typeof iv === "object" ? { d: Number(iv.d), h: Number(iv.h) } : null);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, `solicitud.${paso}`, { solicitud: String(appId), ...(paso === "interview" && iv ? { dia: Number(iv.d), hora: Number(iv.h) } : {}) });
+  await avisarSolicitud(String(appId), paso);
   return { ok: true };
 }
 export async function vacModulo(id: string, on: boolean): Promise<Res> {

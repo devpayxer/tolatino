@@ -327,3 +327,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones.
 - [ ] **Avisos** al negocio de una solicitud nueva y al cliente de la respuesta (SMS/push).
 - [ ] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero).
+
+## Notificaciones (bloque 2j, 6 nov 2026)
+- [ ] **SMS de verdad:** con la clave de Telnyx (`TELNYX_API_KEY`, `TELNYX_FROM`) en los secretos del entorno de producción
+      y el registro 10DLC, los avisos salen solos (`lib/avisos.ts`). Hoy en el sandbox quedan «en modo pruebas». Sin
+      reintentos todavía: un SMS que falla queda «falló» en Envíos (agregar reintento con espera antes de la fase 9).
+- [ ] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es.
+- [ ] **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio.
+- [ ] **Plantillas que faltan** porque su función aún no existe: código de entrada como plantilla editable, pedido tarde,
+      recibo por correo, propuesta de evento privado, citas (confirmada / otra hora), devolución, evento cancelado, sello
+      decidido, ciudad abierta, resumen semanal. Se agregan con su función.
+- [ ] **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push.
+- [ ] **Avisos que la pantalla ya promete y ahora pueden salir:** reporte de foto («te avisamos el resultado»), invitación al
+      equipo, «Avísame cuando haya», recomendar. Engancharlos a `avisar()` con su plantilla.

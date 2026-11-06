@@ -29,7 +29,7 @@ function useDesk() {
 const RUTAS: Record<string, string> = { home: "/", neg: "/negocios", com: "/comunidad", evt: "/eventos", me: "/cuenta" };
 const ICONOS = ["home", "store", "users", "ticket", "wallet"]; // prototipo navIcons
 
-export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string } | null; ciudad: CiudadShell; children: ReactNode }) {
+export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en"; t: TextosShell; yo: { iniciales: string; avisos?: number } | null; ciudad: CiudadShell; children: ReactNode }) {
   const desk = useDesk();
   const router = useRouter();
   const ruta = usePathname();
@@ -82,6 +82,8 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
           onLang={() => pasar(async () => { await cambiarIdioma(lang === "es" ? "en" : "es"); router.refresh(); })}
           onLogin={() => router.push("/entrar")}
           onAvatar={() => router.push("/cuenta")}
+          unread={!!yo?.avisos && ruta !== "/avisos"}
+          onBell={() => router.push(yo ? "/avisos" : "/entrar?volver=%2Favisos")}
           onPublish={() => router.push("/publica")}
           assetBase="/assets/"
         />

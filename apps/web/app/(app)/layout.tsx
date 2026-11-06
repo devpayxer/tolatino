@@ -1,4 +1,5 @@
 import { yo } from "@/lib/cuenta";
+import { noLeidos } from "@/lib/avisos";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { etiquetaCentro, ubicacion } from "@/lib/ubicacion";
@@ -24,7 +25,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
   const c = (s: string) => s.replace("{c}", loc.c.name);
   return (
-    <AppShell lang={lang} t={{ searchIn: c(t.searchIn), searchDesk: c(t.searchDesk), nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales } : null} ciudad={ciudad}>
+    <AppShell lang={lang} t={{ searchIn: c(t.searchIn), searchDesk: c(t.searchDesk), nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales, avisos: await noLeidos(u.id).catch(() => 0) } : null} ciudad={ciudad}>
       {children}
     </AppShell>
   );

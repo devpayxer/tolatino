@@ -52,7 +52,7 @@ export async function abiertoAhora(p: Punto, lang: Lang, n: number): Promise<Fil
     const sub = (b.sub ?? "").toUpperCase();
     out.push({
       id: b.id, name: b.name, verified: b.verified, image: foto(b.url),
-      meta: `${b.r ? `★ ${b.r} · ` : ""}${b.mi} MI · ${sub.length > 18 ? (sub.split(" ")[0] ?? sub) : sub}`,
+      meta: `${b.r ? `★ ${b.r} · ` : ""}${b.mi != null ? `${b.mi} MI` : lang === "en" ? "COMES TO YOU" : "A DOMICILIO"} · ${sub.length > 18 ? (sub.split(" ")[0] ?? sub) : sub}`,
       slot: ((b.eta ?? "").split(" · ")[0] ?? "").replace(" hasta las ", " hasta ").replace(" until ", " till ") || null,
     });
   }

@@ -326,7 +326,10 @@ export async function decidirSop(id: string, mensaje: string): Promise<ResAdm> {
     if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
     await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
     await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta" }, reason: m });
-    return { ok: true as const, mensaje: "Resuelta. El cliente la ve en su pedido." };
+    return { ok: true as const, mensaje: "Resuelta. El cliente la ve en su pedido.", caso: q.subject_id };
+  }).then(async (r) => {
+    if (r.ok && r.caso) { const n = (await import("@/lib/db")).db; const o = (await n().query<{ num: string }>(`select o.number as num from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [r.caso])).rows[0]; if (o) await (await import("@/lib/ayuda")).avisarAyuda(o.num, "help_done"); }
+    return r.ok ? { ok: true as const, mensaje: r.mensaje } : r;
   });
 }
 

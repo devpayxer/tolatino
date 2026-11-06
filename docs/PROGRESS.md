@@ -412,6 +412,16 @@ _Actualizado: 5 nov 2026._
   respuesta». Super Admin: Soporte = cola «Ayuda con pedidos» (pasa sola a las 24 h sin respuesta) con «Resolver con un
   mensaje», auditado. Probado: 13 comprobaciones; 2b, 2c, 2f, 2h y Usuarios otra vez en verde. Ayuda
   `ayuda-con-el-pedido.md`.
+- **Fase 2 · bloque 2j Notificaciones ✓ (6 nov):** migración 0032 (`notif_templates` 14 plantillas ES/EN por grupo,
+  `notifications` con estado del SMS). `lib/avisos.ts`: cada evento deja el aviso en la bandeja y decide el SMS (lo crítico
+  siempre; preferencias de Mi cuenta › Avisos; horas de silencio 10 PM–7 AM de su ciudad; la solicitud nueva al negocio no
+  espera); en el sandbox «en modo pruebas», en producción Telnyx con la clave del entorno o «sin proveedor». Enganchado a:
+  pedido (aceptar, rechazar, listo, en camino, nuevo al negocio), mesa (confirmar, otra hora, no hay, nueva al negocio),
+  Jobs (respuesta, nueva solicitud), ayuda (al negocio, respuesta, resuelta) y moderación (reseña o comentario oculto).
+  Bandeja `/avisos` (compuesta con el marco de Mi cuenta) y la campana con punto. Super Admin › Notificaciones: cifras de
+  24 h, Plantillas (editar ES/EN con motivo y variables controladas, probar en mi teléfono), Envíos y Reglas. Además: «null
+  MI» en Abierto ahora (guardián `distanciaNula`), la campana del sistema es un botón accesible (parche en
+  `portar-sistema.mjs`) y el subtítulo de las cifras oscuras se ve. Probado: 14 comprobaciones. Ayuda `notificaciones.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

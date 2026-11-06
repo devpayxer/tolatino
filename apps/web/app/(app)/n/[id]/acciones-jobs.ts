@@ -1,6 +1,7 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
-import { aplicar, confirmarEntrevista, guardarVacanteCliente, retirarSolicitud, type AplicarIn } from "@/lib/jobs";
+import { aplicar, confirmarEntrevista, guardarVacanteCliente, retirarSolicitud, tituloVacante, type AplicarIn } from "@/lib/jobs";
+import { avisarNegocio } from "@/lib/avisos";
 
 /* Jobs desde la ficha: guardar, aplicar, confirmar la entrevista y retirar. Todo pide sesión; el servidor revisa la
    vacante (en vivo), los requisitos y que la solicitud sea de la persona. */
@@ -19,7 +20,9 @@ export async function vacAplicar(negocio: string, p: AplicarIn): Promise<R> {
   const q = await quien();
   if (q.e) return q.e;
   if (typeof negocio !== "string" || !ID.test(negocio)) return { ok: false, msg: { es: "Ese negocio no existe.", en: "That business does not exist." } };
-  return aplicar(q.u.id, negocio, p && typeof p === "object" ? p : ({} as AplicarIn));
+  const r = await aplicar(q.u.id, negocio, p && typeof p === "object" ? p : ({} as AplicarIn));
+  if (r.ok) await avisarNegocio(negocio, "biz_job", { cliente: q.u.first_name ?? "", puesto: await tituloVacante(String(p?.job ?? "")) }, { href: `/panel/${negocio}/vendes/jobs`, ref: ["job", String(p?.job ?? "")] });
+  return r;
 }
 export async function vacConfirmar(numero: string): Promise<R> { const q = await quien(); return q.e ?? confirmarEntrevista(q.u.id, String(numero ?? "")); }
 export async function vacRetirar(numero: string): Promise<R> { const q = await quien(); return q.e ?? retirarSolicitud(q.u.id, String(numero ?? "")); }

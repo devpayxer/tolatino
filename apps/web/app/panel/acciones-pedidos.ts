@@ -1,4 +1,6 @@
 "use server";
+import { avisarAyuda } from "@/lib/ayuda";
+import { avisarPedido } from "@/lib/avisos";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -33,6 +35,8 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   const r = await cambiarPaso(a.negocio.id, String(numero ?? ""), paso, a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, ACCION[paso], { pedido: `#${numero}` }, { pedido: `#${numero}`, paso: PASO_L[paso] });
+  const AV = { aceptar: "ord_ok", rechazar: "ord_no", listo: "ord_ready", encamino: "ord_way" } as const;
+  if (paso in AV) await avisarPedido(String(numero), AV[paso as keyof typeof AV]);
   return { ok: true };
 }
 
@@ -124,5 +128,6 @@ export async function ayudaResponder(id: string, numero: string, texto: string):
   const r = await responderAyuda(a.negocio.id, String(numero ?? ""), String(texto ?? ""), a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, "pedido.ayuda.responder", { pedido: String(numero) }, { respuesta: String(texto).trim().slice(0, 120) });
+  await avisarAyuda(String(numero), "help_reply");
   return { ok: true };
 }

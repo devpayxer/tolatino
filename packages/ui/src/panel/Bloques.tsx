@@ -142,7 +142,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           <div key={i} role={x.onClick ? "button" : undefined} onClick={x.onClick} style={{ minWidth: 0, padding: "13px 14px", borderRadius: 16, background: x.bg ?? "var(--tl-white)", color: x.fg ?? "var(--tl-ink)", border: x.bd ?? "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 5, cursor: x.onClick ? "pointer" : "default" }}>
             <span style={{ font: `700 8.5px ${MONO}`, letterSpacing: ".12em", opacity: 0.62 }}>{x.k}</span>
             <span style={{ font: "800 22px/1 Sora,sans-serif", letterSpacing: "-.03em" }}>{x.v}</span>
-            {x.s ? <span style={{ font: "600 11px/1.3 Manrope,sans-serif", color: x.sFg ?? "rgba(11,14,18,.6)" }}>{x.s}</span> : null}
+            {x.s ? <span style={{ font: "600 11px/1.3 Manrope,sans-serif", color: x.sFg ?? x.fg ?? "rgba(11,14,18,.6)", opacity: !x.sFg && x.fg ? 0.7 : 1 }}>{x.s}</span> : null}
           </div>))}
       </div>);
     case "tabs": return (

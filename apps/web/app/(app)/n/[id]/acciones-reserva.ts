@@ -1,4 +1,6 @@
 "use server";
+import { avisarNegocio } from "@/lib/avisos";
+import { db } from "@/lib/db";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ENTORNO } from "@/lib/entorno";
 import { rsvEnviar, rsvHoras, rsvRapido, rsvRetener, type DetallesIn } from "@/lib/reservas";
@@ -33,5 +35,12 @@ export async function enviarMesa(hold: string, f: DetallesIn): Promise<{ ok: tru
   if (!(await mismoOrigen())) return { ok: false, msg: NO_ORIGEN };
   const u = await yo();
   if (!u?.first_name) return { ok: false, entrar: true, msg: { es: "Entra para reservar.", en: "Sign in to book." } };
-  return rsvEnviar(u.id, String(hold ?? ""), f && typeof f === "object" ? f : {}, ENTORNO);
+  const r = await rsvEnviar(u.id, String(hold ?? ""), f && typeof f === "object" ? f : {}, ENTORNO);
+  if (r.ok) await avisarDeMesa(r.numero, u.first_name);
+  return r;
+}
+
+async function avisarDeMesa(numero: string, cliente: string) {
+  const o = (await db().query<{ biz: string; st: string }>(`select business_id as biz, status as st from operations where number = $1 and kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
+  if (o) await avisarNegocio(o.biz, "biz_req", { tipo: "reservación", cliente, min: 10 }, { href: `/panel/${o.biz}/hoy?det=rsv:${numero}`, ref: ["table", numero] });
 }

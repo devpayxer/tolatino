@@ -1,4 +1,5 @@
 "use server";
+import { avisarMesa } from "@/lib/avisos";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
@@ -29,6 +30,8 @@ export async function mesaPaso(id: string, numero: string, paso: PasoMesa): Prom
   const r = await rsvPaso(a.negocio.id, String(numero ?? ""), paso, a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, `reserva.${paso}`, { reservacion: numero }, { reservacion: numero, paso: PASO_L[paso] });
+  const AV = { confirmar: "rsv_ok", otra: "rsv_alt", nohay: "rsv_no" } as const;
+  if (paso in AV) await avisarMesa(String(numero), AV[paso as keyof typeof AV]);
   return { ok: true };
 }
 
