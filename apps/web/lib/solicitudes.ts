@@ -182,10 +182,10 @@ export async function solicitudCliente(userId: string, numero: string, que: "can
 
 /* ── Lo que ve la persona ── */
 export type Destino = { negocio: { id: string; nombre: string; telefono: string | null; foto: string | null; quien: string | null }; item: string | null; st: string; reply: { lo?: number; hi?: number; inc?: string[]; chg?: string[]; nota?: string; visita?: number | null; dias?: string | null } | null;
-  at: string | null; diag: { id: string; name: Bi; cents: number; cred: boolean } | null; resp: number };
+  at: string | null; diag: { id: string; name: Bi; cents: number; cred: boolean } | null; resp: number; precio: number | null; dias: [number, number] | null };
 export type SolicitudVista = {
   numero: string; mode: "pre" | "pq" | "em"; rubro: "auto" | "hogar"; st: string; enviada: string; vence: Bi | null; valida: Bi | null; svc: Bi; k: string;
-  form: { nota: string; luces: string[]; code: string | null; cuando: string; area: string | null; marca: string | null; edad: string | null; veh: { t: string; mi: number | null } | null; casa: { dir: string } | null };
+  form: { nota: string; luces: string[]; code: string | null; cuando: string; area: string | null; marca: string | null; edad: string | null; veh: { t: string; mi: number | null } | null; casa: { dir: string } | null; areas?: string[]; medidas?: string | null };
   fotos: string[]; destinos: Destino[]; otros: { id: string; nombre: string; foto: string | null; meta: string }[]; cita: string | null;
 };
 export async function solicitudVista(userId: string, numero: string): Promise<SolicitudVista | null> {
@@ -203,7 +203,8 @@ export async function solicitudVista(userId: string, numero: string): Promise<So
             t.item_id::text as item, t.status as st, t.reply, to_char(t.answered_at at time zone 'America/New_York', 'FMHH12:MI AM') as at, i.svc_kind as k, i.name as svc,
             (select jsonb_build_object('id', d.id::text, 'name', d.name, 'cents', d.price_cents, 'cred', coalesce((d.svc_attrs->>'cred')::boolean, false)) from items d
               where d.business_id = b.id and d.module = 'svc' and d.removed_at is null and d.sell and d.status = 'live' and d.svc_kind in ('diag', 'visita') order by d.price_cents limit 1) as diag,
-            coalesce((select response_min from booking_policies where business_id = b.id), 30) as resp
+            coalesce((select response_min from booking_policies where business_id = b.id), 30) as resp, i.price_cents as precio,
+            case when i.svc_attrs ? 'days' then array[(i.svc_attrs->'days'->>0)::int, (i.svc_attrs->'days'->>1)::int] end as dias
        from request_targets t join businesses b on b.id = t.business_id left join items i on i.id = t.item_id where t.request_id = $1::bigint order by t.sort, t.id`, [s.id])).rows;
   const f = s.form as Record<string, never>;
   const fotos = (await db().query<{ url: string }>(`select url from media where owner_kind = 'request' and owner_id = $1 and status = 'visible' order by sort`, [s.id])).rows.map((x) => x.url);
@@ -215,7 +216,7 @@ export async function solicitudVista(userId: string, numero: string): Promise<So
       order by (coalesce(st.plan, 'free') = 'pro') desc, b.name limit 3`, [s.cat, s.city, D.map((d) => d.negocio.id), PRE_K[s.rubro]])).rows : [];
   return { numero, mode: s.mode, rubro: s.rubro, st: s.st, enviada: s.enviada, vence: fechaBi(s.vence, s.tz, true), valida: fechaBi(s.valida, s.tz, false), svc: (f.svc as unknown as Bi) ?? { es: "", en: "" }, k: String(f.k ?? ""),
     form: { nota: String(f.nota ?? ""), luces: (f.luces as unknown as string[]) ?? [], code: (f.code as unknown as string) ?? null, cuando: String(f.cuando ?? "sem"), area: (f.area as unknown as string) ?? null, marca: (f.marca as unknown as string) ?? null, edad: (f.edad as unknown as string) ?? null,
-      veh: (f.veh as unknown as { t: string; mi: number | null }) ?? null, casa: (f.casa as unknown as { dir: string }) ?? null },
+      veh: (f.veh as unknown as { t: string; mi: number | null }) ?? null, casa: (f.casa as unknown as { dir: string }) ?? null, areas: (f.areas as unknown as string[]) ?? [], medidas: (f.medidas as unknown as string) ?? null },
     fotos, destinos: D.map(({ bid: _b, k: _k, svc: _s, ...d }) => d), otros, cita: s.cita };
 }
 
@@ -278,4 +279,71 @@ export async function preVigente(userId: string, numero: string, negocio: string
   return (await db().query<{ num: string; lo: number; hi: number; nota: string; mode: string }>(
     `select r.number as num, (t.reply->>'lo')::int as lo, (t.reply->>'hi')::int as hi, coalesce(r.form->>'nota', '') as nota, r.mode from service_requests r join request_targets t on t.request_id = r.id
       where r.user_id = $1 and r.number = $2 and t.business_id = $3 and t.status in ('rng', 'see') and r.status = 'answered' and r.valid_until > now()`, [userId, numero, negocio])).rows[0] ?? null;
+}
+
+/* ── Presupuesto a hasta 3 (Hogar, servicios «presupuesto»): candidatos y pedir ── */
+export const AREAS_PQ = ["cocina", "bano", "sotano", "techo", "afuera", "toda"];
+export type CandPq = { id: string; nombre: string; foto: string | null; item: string; visita: number; ok: boolean; millas: number | null; dias: [number, number] | null };
+/* Negocios Pro de Hogar con un servicio «presupuesto» del mismo tipo de trabajo (comparten subcategoría con el de la ficha);
+   el de la ficha primero; los que no llegan a la casa salen marcados y no se pueden elegir. */
+export async function candidatosPq(userId: string | null, negocio: string, svc: string): Promise<CandPq[]> {
+  if (!/^\d{1,18}$/.test(svc)) return [];
+  return (await db().query<CandPq>(
+    `with o as (select b.subcategory_ids as subs, b.city_id from businesses b join items i on i.business_id = b.id where b.id = $1 and i.id = $2::bigint and i.svc_kind = 'pres' and b.category_id = 'NEG-HOGAR'),
+          casa as (select a.geo from user_homes h join user_addresses a on a.id = h.address_id where h.user_id = $3::uuid and h.removed_at is null and a.removed_at is null order by h.is_default desc, h.created_at desc limit 1)
+     select b.id, b.name as nombre, b.logo_url as foto, p.id::text as item, p.price_cents as visita,
+            coalesce((select a.geo is null or b.geo is null or ST_DWithin(a.geo, b.geo, coalesce(b.service_radius_mi, 20) * 1609.344) from casa a), true) as ok,
+            (select round((ST_Distance(a.geo, b.geo) / 1609.344)::numeric, 1)::float from casa a where a.geo is not null and b.geo is not null) as millas,
+            case when p.svc_attrs ? 'days' then array[(p.svc_attrs->'days'->>0)::int, (p.svc_attrs->'days'->>1)::int] end as dias
+       from o, businesses b left join business_stats_cache st on st.business_id = b.id
+       join lateral (select i.id, i.price_cents, i.svc_attrs from items i where i.business_id = b.id and i.module = 'svc' and i.svc_kind = 'pres' and i.removed_at is null and i.sell and i.status = 'live'
+                      order by (i.id = $2::bigint) desc, i.sort, i.id limit 1) p on true
+      where b.category_id = 'NEG-HOGAR' and b.status = 'active' and b.city_id = o.city_id and (b.id = $1 or (coalesce(st.plan, 'free') = 'pro' and b.subcategory_ids && o.subs))
+      order by (b.id = $1) desc, ok desc, b.name limit 12`, [negocio, svc, userId])).rows;
+}
+
+export type PqIn = { negocio: string; svc: string; negocios: string[]; areas?: string[]; nota: string; medidas?: string; fotos: string[]; clave: string };
+export async function pedirPq(userId: string, f: PqIn): Promise<Res<{ numero: string }>> {
+  if (!UUID.test(String(f?.clave)) || !/^\d{1,18}$/.test(String(f?.svc)) || typeof f.negocio !== "string") return no("Revisa tu solicitud y vuelve a intentarlo.", "Check your request and try again.");
+  const nota = String(f.nota ?? "").trim().replace(/\s+/g, " ").slice(0, 500), medidas = String(f.medidas ?? "").trim().slice(0, 60);
+  if (TEL.test(nota) || TEL.test(medidas)) return no("Por seguridad, sin teléfonos en la nota.", "For safety, no phone numbers in the note.");
+  if (nota.length < 10) return no("Cuéntales qué quieres hacer (al menos 10 letras).", "Tell them what you want done (at least 10 characters).");
+  const fotos = Array.isArray(f.fotos) ? [...new Set(f.fotos.map(String).filter((x) => UUID.test(x)))] : [];
+  if (!fotos.length) return no("Agrega al menos una foto.", "Add at least one photo.");
+  if (fotos.length > 6) return no("Hasta 6 fotos.", "Up to 6 photos.");
+  const sel = Array.isArray(f.negocios) ? [...new Set(f.negocios.map(String))] : [];
+  if (!sel.length) return no("Elige al menos un negocio.", "Pick at least one business.");
+  if (sel.length > 3) return no("Hasta 3 negocios.", "Up to 3 businesses.");
+  const areas = (Array.isArray(f.areas) ? f.areas : []).map(String).filter((x) => AREAS_PQ.includes(x)).slice(0, 6);
+  const C = await candidatosPq(userId, f.negocio, f.svc);
+  const elegidos = sel.map((id) => C.find((x) => x.id === id));
+  if (elegidos.some((x) => !x)) return no("Uno de esos negocios ya no recibe presupuestos.", "One of those businesses no longer takes estimate requests.");
+  if (elegidos.some((x) => !x!.ok)) return no("Uno de esos negocios no llega hasta tu casa.", "One of those businesses does not reach your home.");
+  let numero = "";
+  const r = await tx(async (c): Promise<Res<{ numero: string }>> => {
+    const ya = (await c.query<{ number: string }>(`select number from service_requests where user_id = $1 and form->>'clave' = $2`, [userId, f.clave])).rows[0];
+    if (ya) return { ok: true, numero: ya.number };
+    const s = (await c.query<{ id: string; name: Bi; city: string }>(`select i.id::text, i.name, b.city_id as city from items i join businesses b on b.id = i.business_id where i.id = $1::bigint and i.business_id = $2`, [f.svc, f.negocio])).rows[0];
+    if (!s) return no("Ese servicio ya no está.", "That service is no longer available.");
+    const casa = (await c.query<{ id: string; dir: string; tenure: string }>(
+      `select h.id::text, concat_ws(', ', a.street || coalesce(' ' || nullif(a.apt, ''), ''), a.zip) as dir, h.tenure from user_homes h join user_addresses a on a.id = h.address_id
+        where h.user_id = $1 and h.removed_at is null and a.removed_at is null order by h.is_default desc, h.created_at desc limit 1`, [userId])).rows[0];
+    if (!casa) return no("Agrega tu casa.", "Add your home.");
+    numero = `Q-${(await c.query<{ n: string }>(`select nextval('service_request_seq')::text as n`)).rows[0]!.n}`;
+    const form = { clave: f.clave, svc: s.name, k: "pres", nota, areas, medidas: medidas || null, cuando: "sem", casa: { dir: casa.dir, tenure: casa.tenure } };
+    const id = (await c.query<{ id: string }>(
+      `insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ($1, 'pq', $2, $3, 'NEG-HOGAR', 'hogar', $4::uuid, $5::jsonb, now() + interval '48 hours') returning id::text`,
+      [numero, userId, s.city, casa.id, JSON.stringify(form)])).rows[0]!.id;
+    let k = 0;
+    for (const x of elegidos) await c.query(`insert into request_targets (request_id, business_id, item_id, sort) values ($1::bigint, $2, $3::bigint, $4)`, [id, x!.id, x!.item, k++]);
+    const ok = await c.query(`update media set owner_kind = 'request', owner_id = $1, sort = array_position($3::uuid[], id) where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [id, userId, fotos]);
+    if (ok.rowCount !== fotos.length) { await c.query("rollback"); return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
+    return { ok: true, numero };
+  });
+  if (r.ok && numero) {
+    const cl = (await db().query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "";
+    const svc = (await db().query<{ s: string }>(`select form#>>'{svc,es}' as s from service_requests where number = $1`, [numero])).rows[0]?.s ?? "";
+    for (const x of elegidos) await (await import("./avisos")).avisarNegocio(x!.id, "biz_pq", { cliente: cl, svc }, { href: `/panel/${x!.id}/hoy?det=sol:${numero}`, ref: ["request", numero] });
+  }
+  return r;
 }

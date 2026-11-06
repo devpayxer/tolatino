@@ -251,6 +251,16 @@ export function OfHoja({ v }: { v: Of }) {
             <div className="mt-[11px] flex flex-col gap-2">{extras.map((x, i) => <div key={i} className="grid"><AddOnRow label={`${v.nm(x.n)}${x.m ? ` · +${x.m} min` : ""}`} price={`+${dinero(x.p)}`} checked={q.adds.includes(i)} onToggle={() => up({ adds: q.adds.includes(i) ? q.adds.filter((z) => z !== i) : [...q.adds, i] })} /></div>)}</div>
           </div>
         )}
+        {!auto && s.k === "pres" && op.can && (
+          <div data-screen-label="Servicio · presupuesto a hasta 3" className="mt-[18px] rounded-2xl border-[1.5px] border-dashed border-action/35 bg-action/[.04] p-3.5">
+            <div className="flex items-start gap-[11px]">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-action/[.12]"><Icon name="image" size={18} color="var(--tl-action)" /></span>
+              <div className="min-w-0 flex-1"><div className="text-[14px] font-extrabold leading-[1.3]">{E2("¿Quieres comparar?", "Want to compare?")}</div>
+                <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{E2("Manda la misma solicitud a hasta 3 negocios y compara los presupuestos en la app.", "Send the same request to up to 3 businesses and compare estimates in the app.")}</div></div>
+            </div>
+            <div className="mt-3 flex"><Button variant="secondary" size="md" icon="image" block onClick={() => router.push(`/n/${op.negocio.id}/presupuestos?s=${s.id}`)}>{E2("Pedir a hasta 3", "Ask up to 3")}</Button></div>
+          </div>
+        )}
         {(auto ? ["desde", "cotiza"] : ["visita", "hora", "area"]).includes(s.k) && op.can && (
           <div data-screen-label="Servicio · pre-estimado" className="mt-[18px] rounded-2xl border-[1.5px] border-dashed border-action/35 bg-action/[.04] p-3.5">
             <div className="flex items-start gap-[11px]">

@@ -508,3 +508,14 @@ desde/hasta, «qué incluye» y «qué puede cambiarlo» una por línea, cuánto
 «desde», se pide «Hay que verlo». La página del estado es `/pre/{número}` (`/solicitud/` ya es de los empleos)._
 _Arreglado de paso: guardián `fechaEnInglesSQL` (to_char con «Dy»/«Mon» sale en inglés en una pantalla en español)._
 _Pendiente para 4g: la tarjeta «Tu pre-estimado» en la ficha y la lista en Mi cuenta._
+
+## Fase 4 · 4e-2 Presupuesto a hasta 3
+1. Marisol › Plomería Rodríguez › **Cambiar tubería** › «¿Quieres comparar?» › **Pedir a hasta 3**: la plomería viene
+   elegida; elige otro (los que no llegan a tu casa no se pueden), dónde, qué quieres, medidas, una foto › **Pedir 2
+   presupuestos**.
+2. Tomás › Hoy › **Presupuesto #Q-…** («lo pidió a 2 negocios»): rango, visita para medir ($0 = gratis), cuánto tarda.
+3. Marisol ve «Respondieron 1 de 2» y luego «Ya respondieron todos · Desde $1,200», compara y toca la plomería: hoja del
+   servicio › Booking «Con tu presupuesto». Los otros se cierran y se les avisa.
+_Decidido por mí (reversible): los candidatos son negocios Pro de Hogar con un servicio «presupuesto» que comparten al
+menos una subcategoría con el de la ficha (el diseño lo saca por tipo de trabajo). En el sandbox aparece también «To'Latino
+Demo · Hogar» (negocio de ejemplo)._
