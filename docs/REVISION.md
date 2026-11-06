@@ -313,3 +313,11 @@ procesa el servidor cada vez que alguien usa la app (cada 5 minutos a lo sumo) y
 servidor queda para el lanzamiento. Los negocios de ejemplo del sandbox que ya eran Pro siguen Pro sin suscripción. «Ver
 Pro» en el panel ahora lleva a Tu plan. El cobro de Pro va a la cuenta de To'Latino (no a Stripe Connect) con la tarjeta del
 dueño._
+
+## Fase 2 · 2n Super Admin › Planes
+1. Ana › **Planes y suscripciones**: las cifras; pestañas Planes, Suscripciones, Comisiones.
+2. Suscripciones › un negocio en prueba › **Extender prueba** (7 días, con motivo) → el dueño lo ve en Tu plan.
+3. **Cortesía** 30 días → el negocio queda Pro sin cobro.
+4. Comisiones › Pedidos › **Programar cambio** → sale PROGRAMADO a 30 días.
+_Del diseño queda para después la pestaña «Ingresos» (con Analítica de dinero) y editar el precio, la prueba y el techo
+desde la pantalla (hoy son decisión tuya y se cambian con una actualización)._

@@ -186,3 +186,49 @@ export async function recibosPro(negocio: string) {
   return (await db().query<{ at: string; monto: number }>(
     `select to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, amount_cents as monto from subscription_events where business_id = $1 and kind = 'charged' order by at desc limit 24`, [negocio])).rows;
 }
+
+/* ── Super Admin › Planes ── */
+async function adminEvento(c: { query: (q: string, v: unknown[]) => Promise<unknown> }, negocio: string, kind: string, actor: string, note: unknown) {
+  await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, $2, $3, $4::jsonb)`, [negocio, kind, actor, JSON.stringify(note)]);
+}
+/* Extender la prueba N días (solo en prueba). */
+export async function extenderPrueba(negocio: string, dias: number, actor: string, motivo: string): Promise<ResS> {
+  const n = Math.round(dias);
+  if (!(n >= 1 && n <= 60)) return no("Entre 1 y 60 días.", "Between 1 and 60 days.");
+  return tx(async (c) => {
+    const r = await c.query(`update subscriptions set trial_ends_at = trial_ends_at + make_interval(days => $2), updated_at = now() where business_id = $1 and status = 'trial'`, [negocio, n]);
+    if (!r.rowCount) return no("Solo se extiende una prueba activa.", "Only an active trial can be extended.");
+    await adminEvento(c, negocio, "trial_extended", actor, { dias: n, motivo });
+    return { ok: true } as const;
+  });
+}
+/* Cortesía: Pro sin cobro hasta una fecha (después, Free; el contenido se guarda). */
+export async function darCortesia(negocio: string, dias: number, actor: string, motivo: string): Promise<ResS> {
+  const n = Math.round(dias);
+  if (!(n >= 1 && n <= 365)) return no("Entre 1 y 365 días.", "Between 1 and 365 days.");
+  return tx(async (c) => {
+    await c.query(`insert into subscriptions (business_id, status, courtesy_until, courtesy_reason) values ($1, 'courtesy', now() + make_interval(days => $2), $3)
+                   on conflict (business_id) do update set status = 'courtesy', courtesy_until = now() + make_interval(days => $2), courtesy_reason = $3, failed_attempts = 0, next_attempt_at = null, updated_at = now()`, [negocio, n, motivo.slice(0, 200)]);
+    await plan(c, negocio, "pro");
+    await adminEvento(c, negocio, "courtesy", actor, { dias: n, motivo });
+    return { ok: true } as const;
+  });
+}
+export async function quitarCortesia(negocio: string, actor: string, motivo: string): Promise<ResS> {
+  return tx(async (c) => {
+    const r = await c.query(`update subscriptions set status = 'ended', ended_at = now(), courtesy_until = null, updated_at = now() where business_id = $1 and status = 'courtesy'`, [negocio]);
+    if (!r.rowCount) return no("Ese negocio no tiene cortesía.", "That business has no courtesy.");
+    await plan(c, negocio, "free");
+    await adminEvento(c, negocio, "courtesy_removed", actor, { motivo });
+    return { ok: true } as const;
+  });
+}
+/* Reintentar ya un cobro fallido. */
+export async function reintentarCobro(negocio: string, actor: string): Promise<ResS> {
+  const r = await db().query(`update subscriptions set next_attempt_at = now() where business_id = $1 and status = 'past_due' returning 1`, [negocio]);
+  if (!r.rowCount) return no("No hay un cobro fallido que reintentar.", "There is no failed charge to retry.");
+  await evento(negocio, "retry_admin", { actor });
+  await procesar(negocio);
+  const s = (await db().query<{ status: string }>(`select status from subscriptions where business_id = $1`, [negocio])).rows[0];
+  return s?.status === "active" ? { ok: true } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
+}
