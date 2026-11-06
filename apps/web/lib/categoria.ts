@@ -28,7 +28,21 @@ export async function categoriaPorSlug(slug: string) {
     `select id, short->>'es' as es, page, page_admin from categories where status = 'on' order by sort`);
   const c = r.rows.find((x) => slugCat(x.es) === slug);
   if (!c || !c.page || !("title" in c.page)) return null;
-  return { id: c.id, page: { ...c.page, ...c.page_admin } as Pagina };
+  const vivas = new Set((await db().query<{ id: string }>(`select id from subcategorias_vivas where category_id = $1`, [c.id])).rows.map((x) => x.id));
+  return { id: c.id, page: sinApagadas({ ...c.page, ...c.page_admin } as Pagina, vivas) };
+}
+
+/* Una subcategoría que el equipo quitó (Super Admin › Catálogo) no sale como mosaico ni como capítulo: la regla de
+   cada mosaico pierde esa subcategoría y, si no le queda ninguna, el mosaico sale de la página. */
+function sinApagadas(p: Pagina, vivas: Set<string>): Pagina {
+  const ok = (t: Mosaico) => !t.match?.subs || t.match.subs.some((x) => vivas.has(x));
+  const limpio = (t: Mosaico): Mosaico => (t.match?.subs ? { ...t, match: { ...t.match, subs: t.match.subs.filter((x) => vivas.has(x)) } } : t);
+  return {
+    ...p,
+    rows: p.rows.map((r) => ({ ...r, items: r.items.filter(ok).map(limpio), more: r.more.filter(ok).map(limpio) })),
+    chapters: p.chapters.map((g) => ({ ...g, items: g.items.filter(ok).map(limpio) })),
+    band: p.band && p.band.match?.subs && !p.band.match.subs.some((x) => vivas.has(x)) ? null : p.band,
+  };
 }
 
 export async function filtros(cat: string, lang: Lang): Promise<Filtro[]> {
@@ -187,7 +201,7 @@ export async function horarios(ciudad: string, ids: string[]) {
 /* Nombres de subcategorías (para la línea de la tarjeta). */
 export async function nombresSub(ids: string[], lang: Lang) {
   if (!ids.length) return new Map<string, string>();
-  const r = await db().query<{ id: string; n: string }>(`select id, name->>$2 as n from subcategories where id = any($1::text[])`, [ids, lang]);
+  const r = await db().query<{ id: string; n: string }>(`select id, name->>$2 as n from subcategorias_vivas where id = any($1::text[])`, [ids, lang]);
   return new Map(r.rows.map((x) => [x.id, x.n]));
 }
 

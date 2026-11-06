@@ -30,7 +30,7 @@ export async function abiertoAhora(p: Punto, lang: Lang, n: number): Promise<Fil
           ahora as (select (now() at time zone c.timezone) as t from c)
      select b.id, b.name, b.category_id as cat, s.rating_avg::text as r,
             round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float as mi,
-            (select sc.name->>$2 from subcategories sc where sc.id = b.subcategory_ids[1]) as sub,
+            (select sc.name->>$2 from subcategorias_vivas sc where sc.id = any(b.subcategory_ids) order by array_position(b.subcategory_ids, sc.id) limit 1) as sub,
             s.verified, b.category_attrs->'tarjeta'->'eta'->>$2 as eta,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url
        from businesses b join business_stats_cache s on s.business_id = b.id, c, ahora

@@ -185,8 +185,7 @@ async function subcategorias(ciudad: string): Promise<Sub[]> {
      select s.id, s.category_id as cat, s.name->>'es' as es, s.name->>'en' as en, coalesce(n.n, 0) as n,
             c.name->>'es' as "catEs", c.name->>'en' as "catEn", c.short->>'es' as "catCorto", c.short->>'en' as "catCortoEn", c.icon,
             (select x.photo from jsonb_to_recordset(c.page->'rows'->0->'items') as x(match jsonb, photo text) where x.match->'subs' ? s.id limit 1) as foto
-       from subcategories s join categories c on c.id = s.category_id and c.status = 'on' left join n on n.id = s.id
-      where s.status = 'on'`, [ciudad]);
+       from subcategorias_vivas s join categories c on c.id = s.category_id left join n on n.id = s.id`, [ciudad]);
   subsCache = { at: Date.now(), ciudad, subs: r.rows };
   return r.rows;
 }

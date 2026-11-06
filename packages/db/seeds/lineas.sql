@@ -1,0 +1,20 @@
+-- Generado por scripts/catalogo/extraer-lineas.cjs desde el prototipo. No editar a mano.
+begin;
+update categories set fixed_line = null, op_kind = 'order' where id = 'NEG-FOOD';
+update categories set fixed_line = null, op_kind = 'booking' where id = 'NEG-BELL';
+update categories set fixed_line = '{"es":"Nada se hace ni se cobra sin tu OK.","en":"Nothing gets done or charged without your OK."}'::jsonb, op_kind = 'booking' where id = 'NEG-AUTO';
+update categories set fixed_line = '{"es":"Precio completo antes de empezar. Si algo cambia, te pregunta primero.","en":"Full price before they start. If anything changes, they ask you first."}'::jsonb, op_kind = 'booking' where id = 'NEG-HOGAR';
+update categories set fixed_line = '{"es":"El cover que ves es el que pagas en la puerta.","en":"The cover you see is what you pay at the door."}'::jsonb, op_kind = 'ticket' where id = 'NEG-NOCHE';
+update categories set fixed_line = '{"es":"Lo que va por peso se pesa delante de ti y pagas el peso real.","en":"Anything sold by weight is weighed in front of you and you pay the real weight."}'::jsonb, op_kind = 'order' where id = 'NEG-MERC';
+update categories set fixed_line = '{"es":"La fecha no es tuya hasta que te la confirmen.","en":"The date is not yours until they confirm it."}'::jsonb, op_kind = 'booking' where id = 'NEG-FIESTA';
+update categories set fixed_line = '{"es":"Si es una emergencia, llama al 911.","en":"If it is an emergency, call 911."}'::jsonb, op_kind = 'booking' where id = 'NEG-SALUD';
+update categories set fixed_line = '{"es":"Nadie te garantiza un resultado.","en":"No one can guarantee you a result."}'::jsonb, op_kind = 'booking' where id = 'NEG-PRO';
+update categories set fixed_line = '{"es":"El precio que ves es el que pagas en la caja.","en":"The price you see is what you pay at the register."}'::jsonb, op_kind = 'order' where id = 'NEG-TIENDA';
+update categories set fixed_line = '{"es":"El precio del viaje es cerrado antes de salir.","en":"The trip price is fixed before you leave."}'::jsonb, op_kind = 'booking' where id = 'NEG-TRANS';
+update categories set fixed_line = '{"es":"El precio del curso es el total: libros y examen incluidos o dichos aparte.","en":"The course price is the total: books and exam included or listed separately."}'::jsonb, op_kind = 'booking' where id = 'NEG-EDU';
+update categories set fixed_line = '{"es":"Toda guardería muestra su licencia del estado; si no la tiene, se dice.","en":"Every daycare shows its state license; if it has none, it says so."}'::jsonb, op_kind = 'booking' where id = 'NEG-NINOS';
+update categories set fixed_line = '{"es":"La cuota es la que ves: sin cargos escondidos, y si hay contrato, se dice.","en":"The fee is what you see: no hidden charges, and any contract is stated."}'::jsonb, op_kind = 'booking' where id = 'NEG-DEPORTE';
+update categories set fixed_line = '{"es":"La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.","en":"Church help is free; food, clothing and prayer are never charged."}'::jsonb, op_kind = 'none' where id = 'NEG-FE';
+update categories set fixed_line = '{"es":"Lo que pagas para mudarte está completo aquí: nadie cobra por ver una propiedad.","en":"What you pay to move in is all here: no one charges to see a property."}'::jsonb, op_kind = 'booking' where id = 'NEG-INMUEBLE';
+update categories set fixed_line = '{"es":"El precio en la puerta: con impuestos, placas y cargos del dealer, antes de firmar.","en":"The out-the-door price: with taxes, tags and dealer fees, before you sign."}'::jsonb, op_kind = 'booking' where id = 'NEG-DEALER';
+commit;

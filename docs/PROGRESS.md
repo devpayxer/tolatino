@@ -247,7 +247,7 @@ _Actualizado: 5 nov 2026._
   comprobaciones → ficha y panel; nuevo «Todo bien»; cierre temporal → ficha y panel → reabrir; editar nombre →
   aviso en el panel; admin en teléfono; el dueño no entra al admin). Ayuda: `docs/ayuda/admin-negocios.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓ · 1l Usuarios 360° ✓.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓ · 1l Usuarios 360° ✓ · 1m Catálogo ✓.
 - **Fase 1 · bloque 1k Licencia ✓ (5 nov, espera OK del fundador):** `/n/{id}/licencia` (diseño «Licencia», portado
   1:1: línea fija, una tarjeta por licencia con estado real, número, próxima revisión y registro oficial, «Cómo la
   verificamos»), tarjeta «¿Puede hacerlo por ley?» en el Resumen de la ficha (Pro; va a Servicios cuando exista esa
@@ -281,7 +281,17 @@ _Actualizado: 5 nov 2026._
   levantar; bloquear dispositivo → otra cuenta no entra; ciudad → lista de espera; exportar; borrar (quien lo pide no
   lo aplica, otro Admin sí) → no entra → restaurar; Soporte no ve Sancionar ni Exportar.
   Ayuda: `docs/ayuda/admin-usuarios.md` (+ `cuenta-entrar.md`, `admin-negocios.md`).
-  Sigue (PLAN fila 1): Catálogo · analítica propia (eventos).
+- **Fase 1 · bloque 1m Catálogo ✓ (6 nov, espera OK del fundador):** `/admin/catalogo` con Categorías (clave,
+  subcategorías, negocios, Pro, transacción, línea fija; detalle con agregar / quitar con «afecta a N negocios» /
+  restaurar subcategorías), Sinónimos (agregar, apagar, encender), Búsquedas sin oferta (avisos pedidos 30 días),
+  Familias de filtros (interruptor por opción, encender todos) y Módulos y Free/Pro (solo lectura). Migración 0020:
+  vista `subcategorias_vivas` (todas las lecturas públicas la usan: tarjeta, ficha, mapa, directorio, Buscar, página de
+  categoría y sus mosaicos), documento de búsqueda sin subcategorías apagadas y recalculado sin tocar la «última
+  actividad». Semilla `lineas.sql` (línea fija y transacción de cada categoría, sacada del prototipo con
+  `scripts/catalogo/extraer-lineas.cjs`). Guardián nuevo `subcategoriasVivas`. Probado con Playwright: quitar
+  «Dominicana» → sale de /c/comida (3 → 0) → restaurar; agregar subcategoría; sinónimo nuevo → Buscar lo usa al minuto;
+  apagar «Delivery» → deja de salir como filtro rápido; sin errores de consola. Ayuda: `docs/ayuda/admin-catalogo.md`.
+  Sigue (PLAN fila 1): analítica propia (eventos).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

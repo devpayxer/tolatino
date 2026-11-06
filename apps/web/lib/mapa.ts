@@ -34,7 +34,7 @@ export async function negociosMapa(loc: Ubicacion, o: { cat: string | null; sub:
             case when b.geo is null then null when b.works_from_home then round(st_x(b.geo::geometry) / ${GRID}) * ${GRID} else st_x(b.geo::geometry) end as lng,
             (b.geo is not null and b.works_from_home) as casa, (b.service_radius_mi is not null) as domicilio,
             (b.geo is null or st_dwithin(b.geo, c.center, c.default_radius * 1609.34)) as dentro,
-            (select sc.name->>$2 from subcategories sc where sc.id = b.subcategory_ids[1]) as sub,
+            (select sc.name->>$2 from subcategorias_vivas sc where sc.id = any(b.subcategory_ids) order by array_position(b.subcategory_ids, sc.id) limit 1) as sub,
             b.category_attrs->'tarjeta'->'eta'->>$2 as eta, ${FOTO("b")},
             count(*) over () as total,
             count(*) filter (where b.geo is not null and st_dwithin(b.geo, c.center, c.default_radius * 1609.34)) over () as adentro,

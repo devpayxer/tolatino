@@ -70,7 +70,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
   const [fotos, horas, subs, faqs, enlaces, gente, amen, lic] = await Promise.all([
     db().query<{ url: string }>(`select url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort limit $2`, [id, b.plan === "pro" ? FOTOS_PRO : FOTOS_FREE]),
     db().query<Dia>(`select weekday, open, ranges from business_hours where business_id = $1 and module = '' order by weekday`, [id]),
-    db().query<{ n: string }>(`select name->>$2 as n from subcategories where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
+    db().query<{ n: string }>(`select name->>$2 as n from subcategorias_vivas where id = any($1::text[]) order by array_position($1::text[], id)`, [b.subs, lang]),
     db().query<{ q: string; a: string }>(`select question->>$2 as q, answer->>$2 as a from faqs where business_id = $1 order by sort`, [id, lang]),
     relacionados(id, lang, desde),
     // Quién está detrás (Tu página · Equipo): solo quien aceptó y sale en la página, el dueño primero.
@@ -209,7 +209,7 @@ async function relacionados(id: string, lang: Lang, desde: string) {
             s.review_count as reviews, case when o.geo is null then null else round((st_distance(o.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             o.address, negocio_abierto(o.id, now() at time zone c.timezone) as open, o.filter_values as tags,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = o.id and m.status = 'visible' order by m.sort limit 1) as foto,
-            (select string_agg(sc.name->>$2, ' · ' order by array_position(o.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(o.subcategory_ids[1:2])) as subs,
+            (select string_agg(x.n, ' · ' order by x.p) from (select sc.name->>$2 as n, array_position(o.subcategory_ids, sc.id) as p from subcategorias_vivas sc where sc.id = any(o.subcategory_ids) order by 2 limit 2) x) as subs,
             o.service_radius_mi as radius, o.works_from_home as from_home, st_y(o.geo::geometry) as lat, st_x(o.geo::geometry) as lng, o.phone
        from business_links l
        join businesses o on o.id = case when l.a_id = $1 then l.b_id else l.a_id end and o.status = 'active'

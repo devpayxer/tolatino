@@ -104,7 +104,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
   if (!fotos.length || fotos[0] !== d.cover) return no("Falta tu foto.", "Your photo is missing.", "F1");
   const mias = (await db().query<{ id: string }>(`select id::text from media where id = any($1::uuid[]) and owner_kind = 'user' and owner_id = $2 and status = 'visible'`, [fotos, me.id])).rows.map((r) => r.id);
   if (!mias.includes(d.cover!)) return no("Vuelve a subir tu foto.", "Upload your photo again.", "F1");
-  const subs = (await db().query<{ id: string; es: string }>(`select id, name->>'es' as es from subcategories where category_id = $1`, [d.cat])).rows;
+  const subs = (await db().query<{ id: string; es: string }>(`select id, name->>'es' as es from subcategorias_vivas where category_id = $1`, [d.cat])).rows;
   const subIds = d.subs.map((s) => subs.find((x) => NN(x.es) === NN(s))?.id).filter((x): x is string => !!x);
   const dias = diasPrueba(d);
   const fin = new Date(Date.now() + dias * 864e5);

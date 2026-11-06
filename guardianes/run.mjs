@@ -167,6 +167,15 @@ const guardianes = {
     }
   },
 
+  /* Lo que ve el público solo lee subcategorías vivas (vista subcategorias_vivas): una que el equipo quitó en Catálogo
+     no puede seguir saliendo en tarjetas, ficha, mapa o Buscar (1m). El admin y sus libs sí leen la tabla. */
+  subcategoriasVivas() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || /^apps\/web\/app\/admin\//.test(f) || /^apps\/web\/lib\/admin[-.]/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\b(from|join)\s+subcategories\b/.test(l)) falla("subcategoriasVivas", f, i + 1, "usa la vista subcategorias_vivas"); });
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {

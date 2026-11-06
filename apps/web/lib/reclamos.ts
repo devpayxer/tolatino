@@ -21,7 +21,7 @@ export async function recuperar(id: string, userId: string | null, lang: Lang) {
     `select b.id, b.name, b.address, c.name as ciudad, b.phone, b.owner_user_id as owner,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as cover,
             s.rating_avg::float as rating, coalesce(s.review_count, 0) as reviews, coalesce(s.verified, false) as verified,
-            (select sc.name->>$2 from subcategories sc where sc.id = b.subcategory_ids[1]) as sub
+            (select sc.name->>$2 from subcategorias_vivas sc where sc.id = any(b.subcategory_ids) order by array_position(b.subcategory_ids, sc.id) limit 1) as sub
        from businesses b join cities c on c.id = b.city_id left join business_stats_cache s on s.business_id = b.id
       where b.id = $1 and b.status = 'active'`, [id, lang])).rows[0];
   if (!b) return null;
