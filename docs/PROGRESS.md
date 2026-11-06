@@ -400,7 +400,12 @@ _Actualizado: 5 nov 2026._
   30 días; entrar lo cancela), Invita vecinos. Marco con bloques nuevos (tarjeta de vecino, completa tu cuenta, semana,
   accesos, apoyo, negocios, chips, «Ver más», solo teléfono / escritorio). Super Admin › Usuarios 360 muestra correo y
   borrado. Guardián nuevo `idSegunTipo` (cerrar sesión no cerraba: id uuid pasado como bigint). Probado con Playwright:
-  29 comprobaciones. Ayuda `mi-cuenta.md`. **Sigue: 2i admin.**
+  29 comprobaciones. Ayuda `mi-cuenta.md`.
+- **Fase 2 · bloque 2i (1) Super Admin › Contenido y Transacciones ✓ (6 nov):** Contenido (reseñas, novedades, comentarios y
+  vacantes en una lista; cifras, pestañas, búsqueda, filtros con reporte / ocultos / votos negativos; ocultar o mostrar con
+  motivo, también comentarios) y Transacciones (pedidos y reservaciones de 90 días; cifras, pestañas, estados, búsqueda y CSV
+  protegido contra fórmulas, en la auditoría; `lib/csv.ts` compartido con Analítica). Probado: 13 comprobaciones. Ayuda
+  `admin-contenido.md`. **Sigue: 2i (2) Soporte y «Ayuda con el pedido».**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

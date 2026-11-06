@@ -248,6 +248,20 @@ export async function vacanteOcultar(id: string, job: string, ocultar: boolean, 
   }, ocultar ? "Vacante oculta. El dueño ve el motivo en su panel." : "La vacante se ve otra vez.");
 }
 
+/* Contenido · ocultar o mostrar un comentario de una novedad con motivo (neg:retirar). Sale de la novedad; queda en la auditoría. */
+export async function comentarioOcultar(id: string, comentario: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(comentario))) return no("Ese comentario no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const x = (await c.query<{ status: string; body: string }>(
+      `select c.status, c.body from post_comments c join business_posts p on p.id = c.post_id where c.id = $1::bigint and p.business_id = $2 and c.status <> 'removed' for update of c`, [comentario, b.id])).rows[0];
+    if (!x) return "Ese comentario ya no está.";
+    if ((x.status === "hidden") === ocultar) return ocultar ? "Ya está oculto." : "Ya se ve.";
+    await c.query(`update post_comments set status = $2 where id = $1::bigint`, [comentario, ocultar ? "hidden" : "visible"]);
+    await auditar(c, { actor: s.id, action: ocultar ? "comentario.ocultar" : "comentario.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { comentario: x.body.slice(0, 80), estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
+    return null;
+  }, ocultar ? "Comentario oculto." : "El comentario se ve otra vez.");
+}
+
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
 export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs", pausar: boolean, motivo: string): Promise<ResAdm> {
   if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs"].includes(modulo)) return no("Ese módulo no existe.");

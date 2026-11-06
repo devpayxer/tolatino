@@ -14,7 +14,7 @@ import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNue
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const Icono = UI.Icon as ComponentType<any>;
-const PLANT = {
+export const PLANT = {
   selloNo: ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"],
   selloInfo: ["Mándanos una foto de la fachada con el letrero", "Confírmanos el teléfono fijo del local", "Dinos en qué horario podemos llamar"],
   biz: ["Varios reportes coinciden", "El negocio no responde a To’Latino", "Datos de contacto falsos", "Se resolvió con el dueño"],

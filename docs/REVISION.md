@@ -219,3 +219,10 @@ _Entra como Marisol (5705550122). En el sandbox los códigos salen en pantalla (
    sesión desde aquí.
 7. **Borrar mi cuenta**: los 3 pasos con el código → Mi cuenta dice la fecha → **Cancelar el borrado** (o entra otra vez).
 8. Escritorio: la navegación a la izquierda y la tarjeta de invitar a la derecha.
+
+## Fase 2 · 2i (1) Super Admin › Contenido y Transacciones
+1. Ana › **Contenido**: pestañas; busca «mofongo»; **Ocultar** un comentario o una vacante con motivo → sale OCULTO (Pedro ve
+   el motivo de la vacante en su panel) → **Mostrar**.
+2. Ana › **Transacciones**: filtra **Terminado**, busca un número de pedido, **Exportar** (abre el CSV en Sheets).
+_Contenido no trae todavía publicaciones de la comunidad, «Hoy en el barrio», auto-moderación ni cuenta oficial (Fase 5);
+Transacciones no trae retenido, devoluciones ni comisión (Stripe, pregunta 3)._

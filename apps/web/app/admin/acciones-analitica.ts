@@ -3,16 +3,11 @@
    quien exporta, y cada exportación queda en la auditoría. Las celdas que empiezan con = + - @ se neutralizan (una
    hoja de cálculo nunca ejecuta lo que escribió un negocio o un vecino). */
 import { auditar, staff } from "@/lib/admin";
+import { csv } from "@/lib/csv";
 import { tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 
 const TOPE = 50_000;
-const celda = (v: unknown) => {
-  let t = v == null ? "" : v instanceof Date ? v.toISOString() : typeof v === "object" ? JSON.stringify(v) : String(v);
-  if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`;
-  return /[",\n\r;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
-};
-const csv = (cab: string[], filas: unknown[][]) => [cab, ...filas].map((f) => f.map(celda).join(",")).join("\r\n");
 const NOMBRES: Record<string, string> = { biz: "Negocios", audit: "Historial", nosup: "Búsquedas sin oferta" };
 
 export async function exportar(tipo: "biz" | "audit" | "nosup"): Promise<ResAdm & { archivo?: string; nombre?: string }> {
