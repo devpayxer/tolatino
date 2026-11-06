@@ -637,3 +637,13 @@ del plan):
 5. **Nota de Profesionales:** opcional, con aviso de no escribir números de caso ni documentos; cifrada y borrada a los 30
    días; sin subir documentos.
 
+## Fase 4 · 4h-1 Servicios de Doctores y Profesionales
+1. Como **Dra. Altagracia Reyes** (570-555-0244, Centro Médico Quisqueya): Lo que vendes › Servicios › Agregar → «Cómo lo
+   cobras»: Consulta · Por video · Sin cita · Gratis con tu seguro · Precio fijo; «Según tus ingresos»; IMPORTANTE.
+2. Como **Luis Ferreira** (570-555-0255, Ferreira Injury Law): honorario $350 + gobierno $465 → «Tu página dice el total:
+   $815»; «% solo si ganas» (1–50 %).
+_Decidido por mí (reversible): los servicios de Doctores y Profesionales usan el mismo editor y el mismo motor de citas por
+persona de Belleza (3a–3b), con su forma de cobrar; el editor propio que pide el plan (copia de Auto) no hace falta. El
+catálogo de seguros de PA (13) y las licencias de salud (17 tipos, buscador oficial PALS) entran en la migración 0057
+(son datos reales, no de ejemplo). Dueños de prueba solo en el sandbox._
+

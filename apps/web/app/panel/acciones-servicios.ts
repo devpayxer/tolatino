@@ -1,4 +1,5 @@
 "use server";
+import { limpiarSP, rubroSP, type AttrsSP } from "@/lib/servicios";
 import { invitarCobro } from "@/lib/sillas";
 /* Servicios y reglas de citas desde el panel (Lo que vendes › Servicios, Citas y Sillas y agenda). Cada acción: mismo
    sitio, miembro activo con acceso a «Lo que vendes» (parte cat), datos revisados en el servidor y una línea en la
@@ -30,7 +31,7 @@ async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown
 /* ── Servicio: crear o guardar ── */
 export type ServicioIn = {
   name: string; en: string; desc: string; descEn: string; sec: string; newSec: string; price: number; desde: boolean; dur: number; buf: number;
-  foto: string | null; visible: boolean; extra: boolean; hacen: Record<string, number | null>; opts: { t: string; tEn: string; o: { n: string; nEn: string; p: number; m: number }[] }[];
+  foto: string | null; visible: boolean; extra: boolean; hacen: Record<string, number | null>; k?: string; a?: AttrsSP; opts: { t: string; tEn: string; o: { n: string; nEn: string; p: number; m: number }[] }[];
 };
 export async function servicioGuardar(negocio: string, itemId: string, p: ServicioIn): Promise<Res & { id?: string }> {
   let nuevoId: string | undefined;
@@ -38,7 +39,14 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     const name = txt(p?.name, 50), en = txt(p?.en, 50), desc = txt(p?.desc, 120), descEn = txt(p?.descEn, 120), extra = !!p?.extra;
     if (name.length < 2) return no("Escribe el nombre del servicio.", "Type the service name.");
     const cents = ent(Number(p?.price) * 100, 0, 1_000_000, -1);
-    if (cents < 0 || (!extra && cents === 0 && !Object.values(p?.hacen ?? {}).some((v) => (v ?? 0) > 0))) return no("Ponle precio.", "Set a price.");
+    // Doctores y Profesionales: la forma de cobrar decide si el precio puede ser $0 (gratis con tu seguro, consulta gratis…).
+    const cat = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [a.negocio.id])).rows[0]?.cat ?? "", rub = extra ? null : rubroSP(cat);
+    let k: string | null = null, attrs: AttrsSP | null = null, cents2 = cents;
+    if (rub) {
+      const v = limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
+      if (!v.ok) return no(v.es, v.en);
+      k = v.k; attrs = v.a; cents2 = v.cents;
+    } else if (cents < 0 || (!extra && cents === 0 && !Object.values(p?.hacen ?? {}).some((v) => (v ?? 0) > 0))) return no("Ponle precio.", "Set a price.");
     const dur = ent(p?.dur, 5, 480, 30), buf = extra ? 0 : [0, 5, 10, 15].includes(Number(p?.buf)) ? Number(p.buf) : 0;
     const foto = typeof p?.foto === "string" && /^(https?:\/\/|\/)[^\s"']{1,500}$/.test(p.foto) ? p.foto : null;
     // Opciones: hasta 3 grupos de 2 a 5 opciones; cada una cambia el precio (−$200 a +$500) y el tiempo (−120 a +240 min).
@@ -53,17 +61,18 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     if (!sec && nueva) sec = (await c.query<{ id: string }>(`insert into item_sections (business_id, module, name, sort) values ($1, 'svc', $2::jsonb, (select coalesce(max(sort), -1) + 1 from item_sections where business_id = $1 and module = 'svc')) returning id::text`,
       [a.negocio.id, JSON.stringify({ es: nueva, en: nueva })])).rows[0]!.id;
     if (!sec) return no("Elige la categoría.", "Pick the category.");
-    const vals = [a.negocio.id, sec, JSON.stringify({ es: name, en }), JSON.stringify({ es: desc, en: descEn }), cents, dur, buf, !!p?.desde && !extra, JSON.stringify(opts), extra, foto ? [foto] : [], p?.visible !== false];
+    const vals = [a.negocio.id, sec, JSON.stringify({ es: name, en }), JSON.stringify({ es: desc, en: descEn }), cents2, dur, buf, !!p?.desde && !extra, JSON.stringify(opts), extra, foto ? [foto] : [], p?.visible !== false, k, JSON.stringify(attrs ?? {})];
     let id = itemId;
     if (itemId === "new") {
       id = (await c.query<{ id: string }>(
-        `insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, buffer_min, price_from, svc_opts, is_extra, photos, sell, sort)
-         values ($1, 'svc', $2, $3::jsonb, $4::jsonb, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, (select coalesce(max(sort), -1) + 1 from items where business_id = $1 and module = 'svc')) returning id::text`, vals)).rows[0]!.id;
+        `insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, buffer_min, price_from, svc_opts, is_extra, photos, sell, svc_kind, svc_attrs, sort)
+         values ($1, 'svc', $2, $3::jsonb, $4::jsonb, $5, $6, $7, $8, $9::jsonb, $10, $11, $12, $13, $14::jsonb, (select coalesce(max(sort), -1) + 1 from items where business_id = $1 and module = 'svc')) returning id::text`, vals)).rows[0]!.id;
       nuevoId = id;
     } else {
       if (!ID.test(itemId)) return no("Ese servicio no existe.", "That service does not exist.");
-      const u = await c.query(`update items set section_id = $2, name = $3::jsonb, descr = $4::jsonb, price_cents = $5, duration_min = $6, buffer_min = $7, price_from = $8, svc_opts = $9::jsonb, is_extra = $10, photos = $11, sell = $12, updated_at = now()
-                               where id = $13 and business_id = $1 and module = 'svc' and removed_at is null`, [...vals, itemId]);
+      const u = await c.query(`update items set section_id = $2, name = $3::jsonb, descr = $4::jsonb, price_cents = $5, duration_min = $6, buffer_min = $7, price_from = $8, svc_opts = $9::jsonb, is_extra = $10, photos = $11, sell = $12,
+                               svc_kind = coalesce($13, svc_kind), svc_attrs = case when $13::text is null then svc_attrs else $14::jsonb end, updated_at = now()
+                               where id = $15 and business_id = $1 and module = 'svc' and removed_at is null`, [...vals, itemId]);
       if (!u.rowCount) return no("Ese servicio ya no está.", "That service is gone.");
     }
     // Quién lo hace (y su precio, con sillas rentadas). Solo gente activa de este negocio.

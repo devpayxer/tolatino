@@ -8,14 +8,54 @@ import { db } from "./db";
    cada silla decide si confirma al instante, cuánto tarda en contestar y el depósito. */
 export type Bi = { es: string; en: string };
 export type OpcionSvc = { t: Bi; o: { n: Bi; p: number; m: number }[] };
+/* Doctores y Profesionales (4h · fase4-salud-pro.md §2): cada servicio con su forma de cobrar (svc_kind) y lo propio en
+   svc_attrs. Salud: consulta · por video · sin cita · gratis con tu seguro · precio fijo (esc = «según tus ingresos»).
+   Pro: consulta (cred = se descuenta si lo contratas) · honorario fijo (gov = tarifa del gobierno aparte; mes = por mes) ·
+   por hora (hrs = horas estimadas) · % solo si ganas (price_cents = % × 100, nunca dinero; unit = de qué) · sin cita ·
+   se cotiza. rem = por video o teléfono. no = «IMPORTANTE» / lo que no hacen (hasta 2 líneas). Se valida AQUÍ. */
+export type RubroSP = "salud" | "pro";
+export const rubroSP = (cat: string): RubroSP | null => (cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : null);
+export const KINDS_SP: Record<RubroSP, string[]> = { salud: ["cons", "tele", "walk", "free", "proc"], pro: ["cons", "fijo", "hora", "pct", "walk", "cotiza"] };
+export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boolean; hrs?: string; mes?: boolean; unit?: "cheque" | "fianza" | "carga" | "caso"; no?: Bi[] };
+export function limpiarSP(rubro: RubroSP, k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+  const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
+  if (!KINDS_SP[rubro].includes(k)) return { ok: false, es: "Elige cómo lo cobras.", en: "Pick how you charge." };
+  const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const no = (Array.isArray(x.no) ? x.no : []).slice(0, 2).map((z) => ({ es: t((z as Bi)?.es, 90), en: t((z as Bi)?.en, 90) })).filter((z) => z.es.length >= 3);
+  if (no.length) a.no = no.map((z) => ({ es: z.es, en: z.en || z.es }));
+  if (rubro === "salud") {
+    if (x.esc === true && k !== "free") a.esc = true;
+    if (k === "free") cents = 0;
+    else if (cents <= 0 && k !== "cons" && k !== "walk") return { ok: false, es: "Ponle el precio sin seguro.", en: "Set the price without insurance." };
+  } else {
+    if (x.rem === true) a.rem = true;
+    if (k === "cons" && x.cred === true) a.cred = true;
+    if (k === "fijo") {
+      const g = Math.round(Number(x.gov ?? 0));
+      if (g) { if (!(g >= 100 && g <= 5_000_000 && g % 100 === 0)) return { ok: false, es: "La tarifa del gobierno va en dólares enteros.", en: "The government fee goes in whole dollars." }; a.gov = g; }
+      if (x.mes === true) a.mes = true;
+      if (cents <= 0) return { ok: false, es: "Ponle el honorario.", en: "Set the fee." };
+    }
+    if (k === "hora") { const h = t(x.hrs, 10); if (h && !/^\d{1,3}(–\d{1,3})?$/.test(h.replace("-", "–"))) return { ok: false, es: "Las horas estimadas van así: 8–15.", en: "Estimated hours go like this: 8–15." }; if (h) a.hrs = h.replace("-", "–"); if (cents <= 0) return { ok: false, es: "Ponle el precio por hora.", en: "Set the hourly price." }; }
+    if (k === "pct") {
+      if (!(cents >= 100 && cents <= 5000 && cents % 100 === 0)) return { ok: false, es: "El porcentaje va de 1 a 50.", en: "The percentage goes from 1 to 50." };
+      if (x.gov) return { ok: false, es: "Un servicio por porcentaje no lleva tarifa del gobierno.", en: "A percentage service has no government fee." };
+      a.unit = (["cheque", "fianza", "carga", "caso"] as const).find((u) => u === x.unit) ?? "caso";
+    }
+    if (k === "cotiza" && cents < 0) cents = 0;
+  }
+  return { ok: true, k, a, cents };
+}
+
 export type Servicio = {
-  id: string; sec: string | null; name: Bi; desc: Bi; cents: number; dur: number; buf: number; desde: boolean; opts: OpcionSvc[];
+  id: string; sec: string | null; name: Bi; desc: Bi; cents: number; dur: number; buf: number; desde: boolean; opts: OpcionSvc[]; k: string | null; a: AttrsSP;
   extra: boolean; foto: string | null; oculto: boolean; adm: string | null; sort: number; hacen: { id: string; cents: number | null }[];
 };
 export type Persona = { id: string; nombre: string; kind: "owner" | "staff" | "renter"; silla: number | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mostrar: boolean; foto: string | null;
   cobro: "none" | "pending" | "restricted" | "enabled"; banco: string | null; invitado: boolean; usuario: boolean }; // cuenta de cobro propia (sillas rentadas, 3d)
 export type Politica = { auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number };
 export type SvcPanel = {
+  rubro: RubroSP | null;
   model: "emp" | "comm" | "chair"; rent: number | null; comm: number | null;
   secciones: { id: string; name: Bi; sort: number }[]; servicios: Servicio[]; gente: Persona[]; pol: Politica;
   on: boolean; off: { svc: string | null; citas: string | null };
@@ -24,12 +64,12 @@ export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 1
 
 export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   const [b, S, I, H, G, P] = await Promise.all([
-    db().query<{ model: SvcPanel["model"]; rent: number | null; comm: number | null; mods: string[]; off: Record<string, { reason?: string }> | null }>(
-      `select svc_model as model, svc_rent_cents as rent, svc_comm_pct as comm, modules_on as mods, modules_off as off from businesses where id = $1`, [negocio]),
+    db().query<{ model: SvcPanel["model"]; rent: number | null; comm: number | null; mods: string[]; off: Record<string, { reason?: string }> | null; cat: string }>(
+      `select svc_model as model, svc_rent_cents as rent, svc_comm_pct as comm, modules_on as mods, modules_off as off, category_id as cat from businesses where id = $1`, [negocio]),
     db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
     db().query<Omit<Servicio, "hacen">>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur, i.buffer_min as buf,
-              i.price_from as desde, i.svc_opts as opts, i.is_extra as extra, i.photos[1] as foto, not i.sell as oculto, case when i.status = 'hidden' then coalesce(i.hidden_reason, '') end as adm, i.sort
+              i.price_from as desde, i.svc_opts as opts, i.svc_kind as k, coalesce(i.svc_attrs, '{}'::jsonb) as a, i.is_extra as extra, i.photos[1] as foto, not i.sell as oculto, case when i.status = 'hidden' then coalesce(i.hidden_reason, '') end as adm, i.sort
          from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null order by i.is_extra, i.sort, i.id`, [negocio]),
     db().query<{ item: string; member: string; cents: number | null }>(
       `select s.item_id::text as item, s.member_id::text as member, s.price_cents as cents from staff_services s join items i on i.id = s.item_id where i.business_id = $1`, [negocio]),
@@ -43,7 +83,7 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   ]);
   const x = b.rows[0]!, off = x.off ?? {};
   return {
-    model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    rubro: rubroSP(x.cat), model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },
