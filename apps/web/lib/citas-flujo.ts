@@ -38,8 +38,8 @@ const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system",
 
 /* ── Avisos ── */
 async function datos(numero: string) {
-  return (await db().query<{ uid: string; biz: string; negocio: string; dia: string; hora: string; cliente: string; servicio: string; dep: number; pay: string | null; alt_dia: string | null; alt_hora: string | null }>(
-    `select o.user_id::text as uid, o.business_id as biz, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
+  return (await db().query<{ uid: string; biz: string; negocio: string; dia: string; hora: string; cliente: string; servicio: string; dep: number; pay: string | null; alt_dia: string | null; alt_hora: string | null; rubro: string | null }>(
+    `select o.details->>'rubro' as rubro, o.user_id::text as uid, o.business_id as biz, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora,
             coalesce(u.first_name, '') as cliente, coalesce(o.details #>> '{svc,es}', '') as servicio, o.deposit_cents as dep, p.status as pay,
             to_char((cp.proposed->>'ymd')::date, 'FMDD/FMMM') as alt_dia, case when cp.proposed ? 'm' then to_char(make_time(((cp.proposed->>'m')::int / 60), ((cp.proposed->>'m')::int % 60), 0), 'FMHH12:MI AM') end as alt_hora
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
@@ -47,9 +47,13 @@ async function datos(numero: string) {
        left join lateral (select proposed from change_proposals where operation_id = o.id order by id desc limit 1) cp on true
       where o.number = $1 and o.kind = 'appointment'`, [numero]).catch(() => ({ rows: [] }))).rows[0] ?? null;
 }
+/* Doctores (4j · §3): cada aviso tiene su versión neutra (sin consultorio, servicio ni paciente); el que no la tiene no sale. */
+const SAL_C: Record<string, string> = { cita_ok: "sal_cita_ok", cita_ok_dep: "sal_cita_ok", cita_no: "sal_cita_no", cita_alt: "sal_cita_alt", cita_exp: "sal_cita_exp", cita_rec: "sal_cita_rec", cita_alt_fin: "sal_cita_alt_fin" };
+const SAL_N: Record<string, string> = { biz_cita_cx: "biz_sal_cx", biz_cita_alt_ok: "biz_sal_alt_ok", biz_cita_tarde: "biz_sal_tarde" };
 async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
   const d = await datos(numero);
   if (!d) return;
+  if (d.rubro === "salud") { const t = SAL_C[tpl]; if (!t) return; tpl = t; }
   const { avisar } = await import("./avisos");
   const dev = extra.dev ?? "";
   await avisar(d.uid, tpl, { negocio: d.negocio, dia: d.dia, hora: d.hora, dep: money(d.dep), alt: d.alt_dia && d.alt_hora ? `${d.alt_dia} ${d.alt_hora}` : "", ...extra, dev }, { href: `/cita/${numero}`, ref: ["appointment", numero] });
@@ -57,6 +61,7 @@ async function avisarCliente(numero: string, tpl: string, extra: Record<string, 
 async function avisarNeg(numero: string, tpl: string, extra: Record<string, string | number> = {}) {
   const d = await datos(numero);
   if (!d) return;
+  if (d.rubro === "salud") { const t = SAL_N[tpl]; if (!t) return; tpl = t; }
   const { avisarNegocio } = await import("./avisos");
   await avisarNegocio(d.biz, tpl, { cliente: d.cliente, servicio: d.servicio, dia: d.dia, hora: d.hora, dep: "", ...extra }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
 }
@@ -65,10 +70,10 @@ const devL = (dep: number) => (dep ? ` Te devolvemos ${money(dep)} del depósito
 /* «Avísame si se libera una hora»: una cita de ese día se cayó; se avisa una vez a quien lo pidió (con esa persona o
    con cualquiera). */
 async function horaLibre(numero: string) {
-  const o = (await db().query<{ biz: string; mid: string | null; ymd: string; negocio: string }>(
-    `select o.business_id as biz, o.member_id::text as mid, (o.scheduled_at at time zone c.timezone)::date::text as ymd, b.name as negocio
+  const o = (await db().query<{ biz: string; mid: string | null; ymd: string; negocio: string; rubro: string | null }>(
+    `select o.business_id as biz, o.member_id::text as mid, (o.scheduled_at at time zone c.timezone)::date::text as ymd, b.name as negocio, o.details->>'rubro' as rubro
        from operations o join cities c on c.id = o.city_id join businesses b on b.id = o.business_id where o.number = $1`, [numero])).rows[0];
-  if (!o) return;
+  if (!o || o.rubro === "salud") return;
   const L = (await db().query<{ id: string; uid: string }>(
     `update appointment_alerts set notified_at = now() where business_id = $1 and day = $2::date and removed_at is null and notified_at is null and (member_id is null or member_id::text = $3)
      returning id::text, user_id::text as uid`, [o.biz, o.ymd, o.mid])).rows;
@@ -83,9 +88,20 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
   // Solicitudes sin respuesta: vencen a las `expires_h` o al llegar la hora.
   const venc = (await db().query<{ id: string; number: string }>(
     `update operations o set status = 'expired', updated_at = now()
-      where o.kind = 'appointment' and o.status = 'pending' and o.respond_by < now()
+      where o.kind = 'appointment' and o.status = 'pending' and o.respond_by < now() and coalesce(o.status_detail, '') <> 'seg'
         and ($1::text is null or o.business_id = $1) and ($2::uuid is null or o.user_id = $2) and ($3::text is null or o.number = $3)
       returning o.id::text, o.number`, [f.negocio ?? null, f.userId ?? null, f.numero ?? null])).rows;
+  // Doctores · «No aceptan tu seguro»: la hora se guarda 2 h; si el paciente no elige, se libera (nunca queda tomada).
+  const seg = (await db().query<{ id: string; number: string }>(
+    `update operations o set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'seg_vencida', updated_at = now()
+      where o.kind = 'appointment' and o.status = 'pending' and o.status_detail = 'seg' and o.respond_by < now()
+        and ($1::text is null or o.business_id = $1) and ($2::uuid is null or o.user_id = $2) and ($3::text is null or o.number = $3)
+      returning o.id::text, o.number`, [f.negocio ?? null, f.userId ?? null, f.numero ?? null])).rows;
+  for (const x of seg) {
+    await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, 'cancelled', 'system', $2::jsonb)`, [x.id, JSON.stringify({ es: "No eligió a tiempo: se liberó la hora", en: "Did not choose in time: the time was released" })]);
+    const d = await datos(x.number);
+    if (d) { const { avisar } = await import("./avisos"); await avisar(d.uid, "sal_cita_seg_fin", { dia: d.dia }, { href: `/cita/${x.number}`, ref: ["appointment", x.number] }); }
+  }
   // «Otra hora» sin respuesta del cliente en 2 h (o al llegar la hora propuesta): no hay cita.
   const alt = (await db().query<{ id: string; number: string }>(
     `with v as (update change_proposals p set status = 'expired', answered_at = now() from operations o
@@ -111,7 +127,16 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
   }
   for (const x of chg) await avisarCliente(x.number, "cita_chg_no");
   // Recordatorios: a lo sumo una vez por minuto por proceso.
-  if (Date.now() - ultimoBarrido > 60_000) { ultimoBarrido = Date.now(); await recordatorios().catch(() => undefined); }
+  if (Date.now() - ultimoBarrido > 60_000) { ultimoBarrido = Date.now(); await recordatorios().catch(() => undefined); await borrarNotas().catch(() => undefined); }
+}
+
+/* §3: la nota cifrada de una cita (op_private) se borra a los 30 días de que la cita termina (terminada, cancelada, vencida o
+   no confirmada). Lo hace el barrido de citas; el guardián privacidadSalud vigila que nadie más la toque. */
+async function borrarNotas() {
+  await db().query(
+    `update op_private p set note_enc = null, purge_at = now() from operations o
+      where o.id = p.operation_id and p.note_enc is not null and o.status in ('done', 'cancelled', 'expired', 'declined')
+        and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - interval '30 days'`);
 }
 
 /* Recordatorios 24 h y 2 h antes, a quien lo pidió (Booking › Detalles), una vez cada uno. */
@@ -128,7 +153,7 @@ async function recordatorios() {
 }
 
 /* ── El negocio responde ── */
-export type PasoCita = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada"
+export type PasoCita = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "noseguro"
   // Auto y Hogar (Fase 4 · 4c): recibido · en camino · llegué · empezar · listo · entregado · no había nadie.
   | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 export async function citaPaso(negocio: string, numero: string, paso: PasoCita, actorId: string): Promise<ResC> {
@@ -140,6 +165,16 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     const ya = no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
+    // Doctores: «No aceptamos su seguro» — la hora queda guardada 2 h y el paciente elige (seguir sin seguro, otro seguro u otro consultorio).
+    if (paso === "noseguro") {
+      const sg = o.det?.seguro as { kind?: string } | undefined;
+      if (o.det?.rubro !== "salud" || o.status !== "pending" || o.detail || !sg || sg.kind === "none") return ya;
+      await c.query(`update operations set status_detail = 'seg', respond_by = now() + interval '2 hours', answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
+      await ev(c, o.id, "declined", "member", actorId, { es: "No aceptan su seguro: elige el paciente", en: "Insurance not accepted: the patient chooses" });
+      despues = async () => { await avisarSeg(numero); };
+      return { ok: true };
+    }
+    if (o.detail === "seg") return no("El paciente está eligiendo qué hacer (hasta 2 h).", "The patient is choosing what to do (up to 2 h).");
     if (paso === "confirmar" || paso === "nopuedo") {
       if (o.status !== "pending") return o.status === "expired" ? no("Pasó el tiempo para responder: la solicitud venció y se devolvió el depósito.", "The time to reply passed: the request expired and the deposit was returned.") : ya;
       const ok = paso === "confirmar";
@@ -249,7 +284,7 @@ export async function citaCambio(negocio: string, numero: string, que: "aceptar"
 }
 
 /* ── El cliente ── */
-export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi";
+export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi" | "sinseguro";
 export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ userId, numero });
@@ -261,8 +296,21 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     const ya = no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
+    // Doctores: seguir con el precio sin seguro → la cita queda confirmada (se copia el precio; nada se cobra en la app).
+    if (que === "sinseguro") {
+      if (o.status !== "pending" || o.detail !== "seg" || o.det?.rubro !== "salud") return ya;
+      const sin = Math.max(0, Math.round(Number(o.det?.sinSeg ?? 0))), L = sin ? `$${(sin / 100).toLocaleString("en-US")}` : "";
+      await c.query(`update operations set status = 'confirmed', status_detail = null, respond_by = null, confirmed_at = now(), total_cents = $2, subtotal_cents = $2,
+                       details = jsonb_set(jsonb_set(details, '{seguro,acepta}', 'false'::jsonb), '{precio}', $3::jsonb), updated_at = now() where id = $1::bigint`,
+        [o.id, sin, JSON.stringify({ es: L ? `${L} · SIN SEGURO` : "Gratis", en: L ? `${L} · UNINSURED` : "Free" })]);
+      await ev(c, o.id, "accepted", "user", userId, { es: "Sigue con el precio sin seguro", en: "Continues at the uninsured price" });
+      despues = async () => { const d = await datos(numero); if (!d) return; const { avisar, avisarNegocio } = await import("./avisos");
+        await avisarNegocio(d.biz, "biz_sal_seg_ok", { dia: d.dia, hora: d.hora }, { href: `/panel/${d.biz}/hoy?det=cita:${numero}`, ref: ["appointment", numero] });
+        await avisar(d.uid, "sal_cita_ok", { dia: d.dia, hora: d.hora }, { href: `/cita/${numero}`, ref: ["appointment", numero] }); };
+      return { ok: true };
+    }
     if (que === "cancelar") {
-      if (!["pending", "change_proposed", "confirmed"].includes(o.status) || o.detail) return ya;
+      if (!["pending", "change_proposed", "confirmed"].includes(o.status) || (o.detail && o.detail !== "seg")) return ya;
       const conf = o.status === "confirmed", aTiempo = !conf || o.mins_to >= o.cxh * 60, pierde = conf && !aTiempo && o.dep > 0 && o.pay === "captured";
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);
@@ -323,3 +371,12 @@ export async function avisarCambioPedido(numero: string) {
   if (!p) return;
   await avisarNeg(numero, "biz_cita_chg", { dia: `${Number(p.ymd.slice(8))}/${Number(p.ymd.slice(5, 7))}`, hora: horaL(p.m), min: p.min });
 }
+
+/* Doctores · «No aceptan tu seguro» (neutro). */
+async function avisarSeg(numero: string) {
+  const d = await datos(numero);
+  if (!d) return;
+  const { avisar } = await import("./avisos");
+  await avisar(d.uid, "sal_cita_seg", {}, { href: `/cita/${numero}`, ref: ["appointment", numero] });
+}
+

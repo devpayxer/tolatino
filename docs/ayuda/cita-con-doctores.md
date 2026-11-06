@@ -26,6 +26,14 @@ _Pantalla: la página de un consultorio › un servicio › «Elegir hora» (Boo
 | La hora se ocupó mientras elegías | Te pide otra hora. |
 | El consultorio solo atiende a sus pacientes | Solo puedes pedir si ya tuviste una cita ahí. |
 | Cambiar la hora | Cancela gratis y pide otra: el consultorio revisa tu seguro de nuevo. |
+| El consultorio no acepta tu seguro | Tu hora sigue guardada **2 horas**. Eliges: **Seguir sin seguro · $85** (queda confirmada), **Cambiar de seguro** o **Buscar otro consultorio** (cancelan gratis). Si no eliges, la hora se libera sola. |
+| Confirmada | «Llega 15 minutos antes con tu tarjeta del seguro y una identificación.» Por video: el enlace llega a tus Avisos. |
+
+## Para el consultorio (Panel › Hoy › la cita)
+- Ves el seguro (con los últimos 4), para quién es, lo que paga en la consulta, el motivo, si pidió intérprete y la **nota
+  privada** (se borra 30 días después de la cita).
+- **Confirmar · Otra hora · No puedo** y, si no aceptan ese seguro, **No aceptamos su seguro**: el paciente decide en 2 horas.
+- El día de la cita: **Llegó · en atención**, **Terminada** o **No llegó**.
 
 ---
 ## What it does (EN)

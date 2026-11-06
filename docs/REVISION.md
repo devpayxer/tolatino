@@ -699,3 +699,11 @@ _Decidido por mí (reversible):_
 - _Cambiar una cita de Doctores = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo)._
 - _El enlace del video y los avisos dicen «a tus Avisos» hasta que el SMS salga de verdad (Telnyx al final)._
 
+## Fase 4 · 4j-2 La cita de Doctores entre el consultorio y el paciente
+1. Pide una cita como Marisol; como Dra. Reyes ábrela en Hoy: ves el seguro, el motivo y la nota privada. Toca «No aceptamos
+   su seguro». Como Marisol: «Seguir sin seguro · $85» → confirmada.
+2. Los avisos (Avisos y SMS) nunca dicen el consultorio, el servicio ni la nota.
+_Decidido por mí (reversible):_
+- _«Cambiar de seguro» y «Buscar otro consultorio» cancelan la solicitud (gratis) y te llevan al Booking o a Doctores._
+- _«Avísame si se libera una hora» no se manda en Salud (el aviso nombraría el consultorio)._
+

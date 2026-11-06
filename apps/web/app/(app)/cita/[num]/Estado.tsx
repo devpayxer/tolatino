@@ -30,11 +30,11 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const aviso = (t: string) => { setFlash(t); setTimeout(() => setFlash(null), 3200); };
-  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi", ok: string, extra?: number) => {
+  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi" | "sinseguro", ok: string, extra?: number, luego?: () => void) => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await citaAccion(c.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setHoja(null);
-    if (r.ok) { aviso(ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+    if (r.ok) { if (luego) return luego(); aviso(ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
   // Mientras espera respuesta, se mira cada 15 s (la respuesta también llega a Avisos).
   useEffect(() => { if (c.st !== "pend" && c.st !== "alt") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [c.st, router]);
@@ -144,6 +144,16 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   // Doctores: cambiar = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo); por video, sin «Cómo llegar».
   const actsV = sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
+  // Doctores · «No aceptan tu seguro»: la hora sigue guardada 2 h; el paciente elige.
+  const segOpc = sal?.seg && pend ? (
+    <div data-screen-label="Cita · no aceptan tu seguro" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
+      <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("¿QUÉ QUIERES HACER?", "WHAT DO YOU WANT TO DO?")}</div>
+      <Button block disabled={ocupado} onClick={() => void hacer("sinseguro", E2("Listo: tu cita quedó confirmada con el precio sin seguro.", "Done: your visit is confirmed at the uninsured price."))}>{`${E2("Seguir sin seguro", "Continue uninsured")}${sal.sinSeg ? ` · ${dinero(sal.sinSeg)}` : ""}`}</Button>
+      <Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push(`/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}`))}>{E2("Cambiar de seguro", "Change insurance")}</Button>
+      <Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push("/c/doctores"))}>{E2("Buscar otro consultorio", "Find another clinic")}</Button>
+      <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Cambiar de seguro o buscar otro consultorio cancela esta solicitud (es gratis). Si no eliges, la hora se libera sola.", "Changing insurance or finding another clinic cancels this request (free). If you do not choose, the time frees up on its own.")}</div>
+    </div>
+  ) : null;
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
   const cxS = pend ? `${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
     : aTiempo ? `${E2(`Faltan más de ${c.cxh} h: es gratis. `, `More than ${c.cxh} h to go: it is free. `)}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
@@ -166,6 +176,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
           <p className="m-0 mt-[9px] text-pretty text-[13px] leading-[1.55] text-ink/[.62]">{line}</p>
           <div className={`mt-[13px] inline-flex items-center gap-2 rounded-[10px] px-3 py-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] ${pillBg}`} style={{ color: pillFg }}><span className="h-[7px] w-[7px] rounded-full" style={{ background: pillFg }} />{pill}</div>
         </div>
+        {segOpc}
         {c.est && (ok || done) && !c.noshow && <EstimadoCliente c={c} es={es} pago={pago} aviso={aviso} />}
         {ok && c.late && <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="clock" size={16} color="var(--tl-pro-ink)" /></span><span className="text-[12.5px] font-semibold leading-[1.5] text-pro-ink">{E2(`Le avisaste a ${who1} que llegas ${c.late} min tarde. Tolerancia: ${c.tol} min.`, `You told ${who1} you are ${c.late} min late. Grace period: ${c.tol} min.`)}</span></div>}
         {c.chg && (ok || pend) && <div className="flex items-start gap-2.5 rounded-2xl bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="calendar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-semibold leading-[1.5] text-ink/75">{E2(`Pediste cambiarla a ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. Esta hora sigue tuya hasta que ${who1} confirme la nueva.`, `You asked to move it to ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. This time stays yours until ${who1} confirms the new one.`)}</span></div>}

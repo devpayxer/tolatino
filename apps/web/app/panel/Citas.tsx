@@ -16,7 +16,7 @@ import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado
 
 export type CitasData = { apartados?: ApartadoFila[]; aptDet?: ApartadoVista | null; rentas?: RentaFila[]; rentaDet?: RentaVista | null; planes?: PlanPanelFila[]; em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
+type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "noseguro" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
 const MDAY: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
@@ -27,7 +27,7 @@ const diaL = (c: Ctx, ymd: string, n: number) => {
 };
 const dias = (ymd: string, hoy: string) => Math.round((Date.parse(ymd) - Date.parse(hoy)) / 864e5);
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
-  ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], alt: [E2("OTRA HORA", "NEW TIME"), "action"], in: [E2("EN ATENCIÓN", "IN PROGRESS"), "action"], done: [E2("TERMINADA", "DONE"), "neutral"],
+  seg: [E2("ELIGE EL PACIENTE", "PATIENT CHOOSING"), "action"], ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], alt: [E2("OTRA HORA", "NEW TIME"), "action"], in: [E2("EN ATENCIÓN", "IN PROGRESS"), "action"], done: [E2("TERMINADA", "DONE"), "neutral"],
   est: [E2("ESPERA SU OK", "AWAITING OK"), "action"], xtra: [E2("ESPERA SU OK", "AWAITING OK"), "action"],
   road: [E2("EN CAMINO", "ON THE WAY"), "action"], work: [E2("TRABAJANDO", "IN PROGRESS"), "action"], ready: [E2("LISTO", "READY"), "signal"],
   nos: [E2("NO LLEGÓ", "NO-SHOW"), "danger"], no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADA", "CANCELLED"), "neutral"],
@@ -42,6 +42,7 @@ function paso(c: Ctx, x: { numero: string; who: string }, p: Paso) {
     recibido: E2(`${n} ya sabe que su carro está en el taller.`, `${n} now knows the car is at the shop.`), camino: E2(`${n} ya sabe que vas en camino.`, `${n} now knows you are on the way.`),
     llegue: E2("Anotado · en la casa.", "Noted · at the home."), empezar: E2("Anotado · trabajando.", "Noted · in progress."), listo: E2(`${n} ya sabe que está listo.`, `${n} now knows it is ready.`),
     entregado: E2("Anotado · terminada.", "Noted · done."), nadie: E2("Anotado · no había nadie.", "Noted · nobody home."),
+    noseguro: E2(`${n} ya sabe que no aceptan su seguro. Su hora sigue guardada 2 horas mientras decide.`, `${n} now knows their insurance is not accepted. The time is held 2 hours while they decide.`),
   }[p];
   c.run(() => citaResponder(c.d.id, x.numero, p), t);
 }
@@ -89,6 +90,20 @@ export function citaDetalle(c: Ctx): Sec {
     ...x.adds.map((a) => ({ icon: "plus", t: nm(a.name), r: `+${money(a.cents)}`, compact: true, chev: false } as Fila)),
   ];
   if (det.length) out.push({ type: "rows", k: E2("LO QUE PIDIÓ", "WHAT THEY ASKED FOR"), items: det });
+  // Doctores (4j): el seguro, para quién, el motivo y la nota (cifrada; se borra 30 días después de la cita).
+  if (x.sal) {
+    const s = x.sal, MOT: Record<string, [string, string]> = { nuevo: ["Algo nuevo", "Something new"], seguimiento: ["Seguimiento", "Follow-up"], receta: ["Receta o resultados", "Prescription or results"], papeles: ["Papeles (trabajo, escuela)", "Forms (work, school)"], chequeo: ["Chequeo", "Checkup"] };
+    const PA: Record<string, [string, string]> = { yo: ["El paciente", "The patient"], hijo: ["Su hijo o hija", "Their child"], otro: ["Otra persona", "Someone else"] };
+    out.push({ type: "kv", items: [
+      { k: E2("SEGURO", "INSURANCE"), v: s.ninguno ? E2("Sin seguro", "No insurance") : `${nm(s.seguro)}${s.last4 ? ` · ••• ${s.last4}` : ""}${s.acepta ? "" : E2(" · no está en tu lista", " · not on your list")}` },
+      { k: E2("PARA", "FOR"), v: (PA[s.para] ?? PA.yo!)[es ? 0 : 1] }, { k: E2("EN LA CONSULTA", "AT THE VISIT"), v: nm(s.precio) },
+      ...(s.motivo ? [{ k: E2("MOTIVO", "REASON"), v: (MOT[s.motivo] ?? [s.motivo, s.motivo])[es ? 0 : 1] }] : []),
+      ...(s.tele ? [{ k: E2("CÓMO", "HOW"), v: E2("Por video", "By video") }] : []),
+      ...(s.interp ? [{ k: E2("INTÉRPRETE", "INTERPRETER"), v: E2("Lo pidió · gratis, es su derecho", "Requested · free, it is their right") }] : []),
+    ] });
+    if (s.nota) out.push({ type: "note", tone: "warn", icon: "lock", t: `${E2("Nota del paciente (privada): ", "Patient note (private): ")}${s.nota}` });
+    if (x.st === "seg") out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Le dijiste que no aceptan su seguro. ${n} tiene 2 horas para seguir sin seguro o buscar otro consultorio; si no elige, la hora se libera sola.`, `You said their insurance is not accepted. ${n} has 2 hours to continue uninsured or look elsewhere; if not, the time frees up automatically.`) });
+  }
   if (x.late && x.st === "ok") out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Avisó que llega ${x.late} min tarde.`, `They said they will be ${x.late} min late.`) });
   if (x.of) {
     const L: Record<string, [string, string]> = { ce: ["Check engine", "Check engine"], bat: ["Batería", "Battery"], temp: ["Temperatura", "Temperature"], abs: ["Frenos o ABS", "Brakes or ABS"], oil: ["Aceite", "Oil"], tpms: ["Presión de gomas", "Tire pressure"] };
@@ -120,6 +135,7 @@ export function citaDetalle(c: Ctx): Sec {
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), now: false, future: true } as never] : []) });
   if (x.st === "pend") {
     out.push({ type: "acts", pt: "4px", items: accionesPend(c, who) });
+    if (x.sal && !x.sal.ninguno) out.push({ type: "acts", items: [{ l: E2("No aceptamos su seguro", "We do not take their insurance"), v: "secondary", icon: "insurance", off: c.pending, onClick: () => paso(c, who, "noseguro") }] });
     out.push({ type: "note", tone: "info", t: E2(`Hasta que respondas, el cliente ve «Solicitud enviada». Nunca se confirma sola. «Otra hora» le propone tu siguiente hora libre.${x.responde ? ` Si no respondes antes de las ${x.responde}, vence${x.dep ? " y se devuelve el depósito" : ""}.` : ""}`, `Until you reply, the client sees “Request sent”. It never confirms itself. “Other time” suggests your next open time.${x.responde ? ` If you don't reply by ${x.responde}, it expires${x.dep ? " and the deposit is returned" : ""}.` : ""}`) });
   }
   // Auto y Hogar (4c): recibido · en camino / llegué · empezar · listo · entregado · no había nadie.

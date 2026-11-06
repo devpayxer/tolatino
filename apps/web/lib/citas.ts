@@ -464,7 +464,7 @@ export type CitaVista = {
   est: EstadoEstimado | null; garantia: string | null;
   pre: { num: string; lo: number; hi: number } | null; // 4e: el pre-estimado o presupuesto con que reservó
   // Doctores (4j): el seguro copiado a la cita, si lo aceptan, el precio en la consulta, para quién y si es por video.
-  salud: { seguro: Bi; acepta: boolean; ninguno: boolean; precio: Bi; para: "yo" | "hijo" | "otro"; tele: boolean; seg: boolean; segHasta: string | null } | null;
+  salud: { seguro: Bi; acepta: boolean; ninguno: boolean; precio: Bi; para: "yo" | "hijo" | "otro"; tele: boolean; seg: boolean; segHasta: string | null; sinSeg: number } | null;
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -517,9 +517,9 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     garantia: r.warr?.m ? `${r.warr.m}|${r.warr.mi ?? 0}` : null,
     pre: (r.det as { pre?: { num: string; lo: number; hi: number } }).pre ?? null,
     salud: (r.det as { rubro?: string }).rubro === "salud" ? (() => {
-      const z = r.det as { seguro?: { kind?: string; acepta?: boolean; nombre?: Bi }; precio?: Bi; para?: "yo" | "hijo" | "otro"; tele?: boolean };
+      const z = r.det as { seguro?: { kind?: string; acepta?: boolean; nombre?: Bi }; precio?: Bi; para?: "yo" | "hijo" | "otro"; tele?: boolean; sinSeg?: number };
       return { seguro: z.seguro?.nombre ?? { es: "", en: "" }, acepta: !!z.seguro?.acepta, ninguno: z.seguro?.kind === "none", precio: z.precio ?? { es: "", en: "" }, para: z.para ?? "yo", tele: !!z.tele,
-        seg: r.paso === "seg", segHasta: r.paso === "seg" ? r.seg_hasta : null };
+        seg: r.paso === "seg", segHasta: r.paso === "seg" ? r.seg_hasta : null, sinSeg: Number(z.sinSeg ?? 0) };
     })() : null,
   };
 }

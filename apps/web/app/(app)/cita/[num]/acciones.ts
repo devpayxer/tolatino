@@ -6,7 +6,7 @@ import { decidirEstimado, decidirExtra } from "@/lib/estimados";
 /* El cliente sobre su cita (APP-NEG-CITA): cancelar, aceptar la otra hora o no, avisar que llega tarde. Solo quien la
    pidió; el servidor decide el depósito (devolver, liberar o se queda). */
 type Bi = { es: string; en: string };
-const QUE = new Set<QueCliente>(["cancelar", "aceptar", "nogracias", "tarde", "recibi"]);
+const QUE = new Set<QueCliente>(["cancelar", "aceptar", "nogracias", "tarde", "recibi", "sinseguro"]);
 export async function citaAccion(numero: string, que: QueCliente, extra?: number): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
   const u = await yo();
