@@ -20,6 +20,11 @@ _Actualizado: 5 nov 2026._
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
+  sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
+  confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›
+  Servicios, Citas, Staff, techo Free; Admin › citas y staff. Diseño: `docs/diseno/pantallas/datos/neg-beauty.js`,
+  `neg-bell-book.js`, `neg-bell-listing.js`, `neg-cita-help.js`, `dash2-svc.js`, `dash2-stf.js`.
 - **Plan APROBADO (5 nov 2026). Sigue: Fase 0 — Cimientos.** Todas las decisiones
   (A–Z) están en `docs/DECISIONES.md`; `docs/PLAN.md` v2 y `CLAUDE.md` las integran.
   No hay código de la app todavía.
