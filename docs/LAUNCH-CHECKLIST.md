@@ -453,3 +453,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 - [ ] **Pro · cobrar en la app (4l):** hoy nada de Profesionales se cobra en la app (Preguntas #1 del plan Salud/Pro: honorarios de abogados, IOLTA, CROA). Verificar con abogado antes de encender cobros para los no legales.
 - [ ] **Salud · HIPAA (4j):** consulta legal sobre si To’Latino es «business associate» de los consultorios antes de producción (Preguntas #2).
+
+## Fase 4 · 4m (Doctores y Profesionales: reseñas y ayuda)
+- [ ] Acceso «vidrio roto» del Super Admin a una foto o nota de Salud: hoy queda en la auditoría al abrirla; falta pedir un
+      motivo escrito antes de mostrarla (plan §3).
+- [ ] La lista de términos de PRIVADO (`lib/resenas-filtro.ts`) es corta (diagnósticos y medicinas comunes): ampliarla con
+      un listado revisado por alguien de salud antes de abrir, y medir falsos positivos en reseñas reales.
+- [ ] Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local).

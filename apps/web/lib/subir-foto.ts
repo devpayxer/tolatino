@@ -11,6 +11,11 @@ export async function reducir(file: File): Promise<Blob> {
 }
 
 export type Subida = { ok: boolean; id?: string; url?: string; mensaje?: { es: string; en: string } };
+/* Fotos privadas (ayuda de Salud y Pro): nunca públicas; se ven por /api/ayuda/foto/{id} con permiso. */
+export async function subirFotoPrivada(file: File): Promise<Subida> {
+  const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
+  return ((await fetch("/api/ayuda/foto", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };
+}
 export async function subirFoto(file: File): Promise<Subida> {
   const fd = new FormData(); fd.append("foto", await reducir(file), "foto.jpg");
   return ((await fetch("/api/medios", { method: "POST", body: fd }).then((x) => x.json()).catch(() => null)) as Subida | null) ?? { ok: false };

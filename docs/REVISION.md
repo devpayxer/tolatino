@@ -733,4 +733,13 @@ y se paga a la oficina. Para fijo/% el flujo es el mismo (la oficina manda el to
 2. Con un trámite terminado: /n/bufete-almonte/resena → «TOTAL POR ESCRITO $740 · lo que dijo» y las preguntas del trámite.
 3. En la ficha (pestaña Reseñas): las marcas «Aceptaron su seguro», «El médico habló español», «Hizo lo que dijo que podía».
 _Decidido por mí (reversible): el filtro de datos privados vale para todas las reseñas (no solo Salud y Pro); la reseña nunca
-guarda el nombre del plan del seguro, solo si tenía y si lo aceptaron. Las 6 barras salen con 5 reseñas o más (como las demás)._
+guarda el nombre del plan del seguro, solo si tenía y si lo aceptaron. Las 6 barras salen desde la primera reseña con respuestas (el % se calcula sobre quienes contestaron)._
+
+## Fase 4 · 4m-2 Ayuda con la cita de Doctores y con el trámite
+1. Como Marisol: /cita/{cita de Salud terminada} › «Ayuda con la cita» → «Me cobraron algo que no dijeron» → foto de la
+   factura → «Que corrijan el cobro a mi seguro» → Enviar. Como la Dra. Reyes: Hoy › la cita › «Tiene razón» → responder.
+2. Como Marisol: /cita/{consulta del bufete} › «Ayuda con el trámite» → «Ofreció algo que no podía hacer por ley» (ver el
+   aviso de la Fiscalía) → Enviar. Super Admin › Colas › Licencias: las licencias del bufete con prioridad alta.
+_Decidido por mí (reversible): las fotos de ayuda de Salud y Pro son privadas (nunca por /medios) y se borran del
+almacenamiento a los 90 días de cerrada la solicitud; el equipo de To'Latino las ve con registro en la auditoría (sin pedir un
+motivo escrito todavía: va a LAUNCH-CHECKLIST). «Ley» manda a revisión todas las licencias del negocio, no lo suspende._

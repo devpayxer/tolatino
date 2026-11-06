@@ -1,0 +1,29 @@
+/* Los nombres de los motivos y de lo que se pide en una ayuda con una cita, para el panel del negocio y el Super Admin
+   (en la pantalla de la persona salen del diseño de cada rubro). Una sola lista: antes había dos copias que se desfasaban.
+   «cobro» y «espera» dicen distinto en Doctores y Profesionales. */
+type L = [string, string];
+const BASE: Record<string, L> = {
+  win: ["No llegó en la franja", "Did not arrive in the window"], more: ["Cobró más de lo aprobado", "Charged more than approved"], bad: ["Quedó mal o volvió a fallar", "Not fixed or failed again"],
+  dmg: ["Dañó algo de la casa", "Damaged something in the home"], who: ["Vino otra persona", "Someone else came"], tarde: ["No estuvo listo cuando prometieron", "Not ready when promised"],
+  igual: ["Sigue el mismo problema", "Same problem is back"], dano: ["Dañaron algo del carro", "Damaged something on the car"], piezas: ["No le dieron las piezas viejas", "Old parts not returned"],
+  cobro: ["Cobraron más del precio publicado", "Charged more than the posted price"], quien: ["No la atendió quien reservó", "Not the person they booked"], quedo: ["No quedó como lo pidió", "It did not turn out as asked"],
+  espera: ["Esperó mucho a pesar de la cita", "Long wait despite the booking"], dep: ["No le devolvieron el depósito", "Deposit not returned"], otro: ["Otra cosa", "Something else"],
+  // Doctores
+  seguro: ["Cobraron a su seguro algo que no pidió", "Billed their insurance for something not requested"], noseg: ["No aceptaron su seguro después de confirmar", "Insurance not taken after confirming"],
+  interp: ["No había intérprete", "No interpreter"], trato: ["Mal trato", "Treated badly"],
+  // Profesionales
+  ley: ["Ofreció algo que no podía hacer por ley", "Offered something they could not legally do"], nohizo: ["No hizo lo acordado", "Did not do what was agreed"],
+  fecha: ["Perdió una fecha o un documento", "Missed a deadline or lost a document"], contesta: ["No le contesta", "Does not answer"],
+};
+const POR_RUBRO: Record<string, Record<string, L>> = {
+  salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },
+  pro: { cobro: ["Cobró más del total por escrito", "Charged more than the written total"] },
+};
+export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;
+/* Lo que pide (corr/rev/avis/seg/fin, o como se guarda: reponer/devolver/avisar/seguro/terminar). */
+const QUIERE: Record<string, L> = {
+  corr: ["Que se lo arreglen sin cargo (otra cita)", "Fix it at no charge (a new booking)"], rev: ["Que le devuelvan", "A refund"], avis: ["Solo quiere avisar", "Just letting you know"],
+  seg: ["Que corrijan el cobro a su seguro", "Fix the charge to their insurance"], fin: ["Que terminen lo acordado, sin cobrar más", "Finish what was agreed, at no extra charge"],
+};
+const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin" };
+export const quiereAyuda = (k: string): L => QUIERE[W2Q[k] ?? k] ?? QUIERE.avis!;

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { CitaAyudaVista, MotivoCita, QuiereCita } from "@/lib/ayuda-cita";
 import type { CitaVista } from "@/lib/citas";
-import { subirFoto } from "@/lib/subir-foto";
+import { subirFoto, subirFotoPrivada } from "@/lib/subir-foto";
 import { ayudaCitaPedir, ayudaCitaResponder } from "./acciones";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
@@ -27,20 +27,27 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   // Auto (CFG.ahelp) y Hogar (neg-hogar-rev.js): sus motivos, lo que se pide y sus textos; Belleza sigue igual (bhelp).
-  const rub = v.rubro, cosa = rub === "hogar" ? E2("la visita", "the visit") : E2("la cita", "the appointment");
-  const RSN: [MotivoCita, string, string, boolean][] = rub === "hogar" ? [["win", "No llegó en la franja", "Did not arrive in the window", false], ["more", "Cobró más de lo aprobado", "Charged more than approved", false], ["bad", "Quedó mal o volvió a fallar", "Not fixed or failed again", true], ["dmg", "Dañó algo de la casa", "Damaged something in the home", true], ["who", "Vino otra persona", "Someone else came", false], ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]]
+  // Doctores (neg-salud-rev.js RSN) y Profesionales (neg-pro-rev.js RSN): nada se cobra en la app; fotos privadas.
+  const rub = v.rubro, sp = rub === "salud" || rub === "pro";
+  const RSN: [MotivoCita, string, string, boolean][] = rub === "salud" ? [["cobro", "Me cobraron algo que no dijeron", "They charged me something they did not mention", true], ["seguro", "Cobraron a mi seguro algo que no pedí", "They billed my insurance for something I did not ask for", true], ["noseg", "No aceptaron mi seguro después de confirmar", "They did not take my insurance after confirming", true], ["interp", "No había intérprete", "There was no interpreter", false], ["espera", "Esperé mucho más de lo que dijeron", "I waited much longer than they said", false], ["trato", "Mal trato", "I was treated badly", false], ["otro", "Otra cosa", "Something else", false]]
+    : rub === "pro" ? [["cobro", "Cobró más del total por escrito", "Charged more than the written total", true], ["ley", "Ofreció algo que no podía hacer por ley", "Offered something they could not legally do", false], ["nohizo", "No hizo lo acordado", "Did not do what was agreed", false], ["fecha", "Perdió una fecha o un documento", "Missed a deadline or lost a document", false], ["contesta", "No me contesta", "Does not answer me", false], ["trato", "Mal trato", "I was treated badly", false], ["otro", "Otra cosa", "Something else", false]]
+    : rub === "hogar" ? [["win", "No llegó en la franja", "Did not arrive in the window", false], ["more", "Cobró más de lo aprobado", "Charged more than approved", false], ["bad", "Quedó mal o volvió a fallar", "Not fixed or failed again", true], ["dmg", "Dañó algo de la casa", "Damaged something in the home", true], ["who", "Vino otra persona", "Someone else came", false], ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]]
     : rub === "auto" ? [["cobro", "Cobraron más del estimado sin mi OK", "Charged more than the estimate without my OK", true], ["tarde", "No estuvo listo cuando prometieron", "Not ready when promised", false], ["igual", "Sigue el mismo problema", "Same problem is back", false], ["dano", "Dañaron algo del carro", "They damaged something on the car", true], ["piezas", "No me dieron las piezas viejas", "They did not give me the old parts", false], ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]]
       : RSN_B;
   const quien = c.con && c.model === "chair" ? c.con.corto : c.negocio.nombre;
-  const SOL: [QuiereCita, string, string, string, string][] = [rub === "hogar" ? ["corr", "Que vuelva sin cargo", "Come back at no charge", "Por la garantía de la mano de obra", "Under the labor warranty"] : rub === "auto" ? ["corr", "Que lo revisen otra vez sin cargo", "Check it again at no charge", "Por la garantía del trabajo", "Under the work warranty"] : ["corr", "Que me lo arreglen sin cargo", "Fix it at no charge", "Te dan otra cita para arreglarlo", "They give you a new booking to fix it"],
+  const SOL: [QuiereCita, string, string, string, string][] = rub === "salud" ? [["rev", "Que lo revisen y me devuelvan", "Review it and refund me", "Lo cobrado de más · te lo devuelve el consultorio", "The overcharge · the office refunds you"], ["seg", "Que corrijan el cobro a mi seguro", "Fix the charge to my insurance", "Te mandan la factura corregida", "They send you the corrected bill"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${c.negocio.nombre} y To’Latino`, `Read by ${c.negocio.nombre} and To’Latino`]]
+    : rub === "pro" ? [["rev", "Que me devuelvan", "Refund me", "Lo cobrado de más · te lo devuelve la oficina", "The overcharge · the office refunds you"], ["fin", "Que terminen lo acordado", "Finish what was agreed", "Sin cobrarte más", "At no extra charge"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${c.negocio.nombre} y To’Latino`, `Read by ${c.negocio.nombre} and To’Latino`]]
+    : [rub === "hogar" ? ["corr", "Que vuelva sin cargo", "Come back at no charge", "Por la garantía de la mano de obra", "Under the labor warranty"] : rub === "auto" ? ["corr", "Que lo revisen otra vez sin cargo", "Check it again at no charge", "Por la garantía del trabajo", "Under the work warranty"] : ["corr", "Que me lo arreglen sin cargo", "Fix it at no charge", "Te dan otra cita para arreglarlo", "They give you a new booking to fix it"],
     rub !== "belleza" ? ["rev", "Devolución a mi tarjeta", "Refund to my card", "Lo cobrado de más · 3–5 días hábiles", "The overcharge · 3–5 business days"] : ["rev", "Que me devuelvan", "Refund me", "Lo cobrado de más o el depósito", "The overcharge or the deposit"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${quien} y To’Latino`, `Read by ${quien} and To’Latino`]];
   const sinDar = !v.hecho, rsn = RSN.filter((r) => !sinDar || r[0] === "dep" || r[0] === "otro"), sols = SOL.filter((s) => !sinDar || s[0] !== "corr");
-  const [r, setR] = useState<MotivoCita | null>(null), [nota, setNota] = useState(""), [sol, setSol] = useState<QuiereCita>(sinDar ? "rev" : "corr"), [amt, setAmt] = useState("");
+  const [r, setR] = useState<MotivoCita | null>(null), [nota, setNota] = useState(""), [sol, setSol] = useState<QuiereCita>(sp ? "rev" : sinDar ? "rev" : "corr"), [amt, setAmt] = useState("");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false), [flash, setFlash] = useState("");
   const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
   const volver = () => router.push(`/cita/${c.numero}`);
-  const titulo = rub === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help");
-  const honest = rub === "hogar" ? E2("Solo se devuelve lo que se cobró de más o lo que el negocio acepte. La solicitud no borra tu reseña.", "Only what was overcharged or what the business agrees to is refunded. The request does not remove your review.")
+  const titulo = rub === "hogar" ? E2("Ayuda con la visita", "Visit help") : rub === "pro" ? E2("Ayuda con el trámite", "Case help") : E2("Ayuda con la cita", "Appointment help");
+  const honest = rub === "salud" ? E2("Nada se cobra en To’Latino: lo que se devuelve, lo devuelve el consultorio. La solicitud no borra tu reseña.", "Nothing is charged on To’Latino: any refund comes from the office. The request does not remove your review.")
+    : rub === "pro" ? E2("Nada se cobra en To’Latino: lo que se devuelve, lo devuelve la oficina. Nadie te garantiza un resultado; sí lo acordado por escrito.", "Nothing is charged on To’Latino: any refund comes from the office. No one guarantees a result; what was agreed in writing, yes.")
+    : rub === "hogar" ? E2("Solo se devuelve lo que se cobró de más o lo que el negocio acepte. La solicitud no borra tu reseña.", "Only what was overcharged or what the business agrees to is refunded. The request does not remove your review.")
     : rub === "auto" ? E2("Nada se hace ni se cobra sin tu OK.", "Nothing is done or charged without your OK.") : E2("Lo que pagas es el precio publicado.", "You pay the posted price.");
   const svcT = es ? c.svc.es : c.svc.en || c.svc.es;
   const hora = (iso: string | null) => (iso ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "").toUpperCase() : "");
@@ -78,8 +85,10 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   if (v.a) {
     const a = v.a, sol1 = SOL.find((s) => s[0] === a.wants), rs = RSN.find((x) => x[0] === a.reason);
     const st = a.status === "open" ? "sent" : a.status === "escalated" ? "rev" : a.status === "resolved" ? "done" : a.decision ?? "ok";
-    const okT = a.wants === "rev" ? `${E2("Te devolvemos ", "Refunding ")}${dinero(a.offer ?? a.refunded ?? 0)}` : a.wants === "corr" ? (es ? SOL[0]![1] : SOL[0]![2]) : E2("Gracias por avisar", "Thanks for letting us know");
-    const okS = a.wants === "rev" ? (a.refunded > 0 || v.devolvible > 0 ? E2("Devuelto a tu tarjeta en 3–5 días hábiles.", "Back to your card in 3–5 business days.") : E2("Lo pagaste en el local: te lo devuelven en el local.", "You paid at the shop: they refund you at the shop.")) : a.wants === "corr" ? E2("Te dan otra cita para arreglarlo.", "They give you a new booking to fix it.") : "";
+    const okT = a.wants === "seg" ? E2("Corrigen el cobro a tu seguro", "They fix the charge to your insurance") : a.wants === "fin" ? E2("Terminan lo acordado", "They finish what was agreed") : a.wants === "rev" ? `${E2("Te devolvemos ", "Refunding ")}${dinero(a.offer ?? a.refunded ?? 0)}` : a.wants === "corr" ? (es ? SOL[0]![1] : SOL[0]![2]) : E2("Gracias por avisar", "Thanks for letting us know");
+    const okS = a.wants === "seg" ? E2("Te mandan la factura corregida en 10 días.", "They send you the corrected bill within 10 days.") : a.wants === "fin" ? E2("Sin cobrarte más.", "At no extra charge.")
+      : a.wants === "rev" && sp ? (rub === "salud" ? E2("Te lo devuelve el consultorio, como pagaste.", "The office refunds you the way you paid.") : E2("Te lo devuelve la oficina, como pagaste.", "The office refunds you the way you paid."))
+      : a.wants === "rev" ? (a.refunded > 0 || v.devolvible > 0 ? E2("Devuelto a tu tarjeta en 3–5 días hábiles.", "Back to your card in 3–5 business days.") : E2("Lo pagaste en el local: te lo devuelven en el local.", "You paid at the shop: they refund you at the shop.")) : a.wants === "corr" ? E2("Te dan otra cita para arreglarlo.", "They give you a new booking to fix it.") : "";
     const doneT = a.closedBy === "user" ? (a.decision === "alt" ? `${E2("Devuelto ", "Refunded ")}${dinero(a.refunded || a.offer || 0)}` : okT) : a.resolution ?? "";
     const H: Record<string, [string, string, string, string, string, string]> = {
       sent: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${quien}`, E2("Responde en 24 h. Si no, To’Latino la revisa en 48 h.", "Replies within 24 h. Otherwise, To’Latino reviews it within 48 h.")],
@@ -105,7 +114,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
     const steps = [{ label: E2("Enviada", "Sent"), time: hora(a.at), state: "done" }, { label: `${E2("Respuesta de ", "Reply from ")}${quien}`, time: hora(a.replyAt), state: st !== "sent" ? "done" : "current" },
       { label: E2("Terminada", "Finished"), time: hora(a.resolvedAt), state: st === "done" ? "done" : st !== "sent" ? "current" : "next" }];
     const filas: [string, string][] = [[E2("MOTIVO", "REASON"), rs ? (es ? rs[1] : rs[2]) : "—"], [E2("QUIERES", "YOU WANT"), sol1 ? (es ? sol1[1] : sol1[2]) : "—"], ...(a.amount ? [[E2("MONTO", "AMOUNT"), dinero(a.amount)] as [string, string]] : []), [E2("LES CONTASTE", "YOU SAID"), `«${a.body}»`]];
-    const sub = `${E2("SOLICITUD #", "REQUEST #")}${a.number} · ${rub === "hogar" ? E2("VISITA #", "VISIT #") : E2("CITA #", "APPOINTMENT #")}${c.numero}`.toUpperCase();
+    const sub = `${E2("SOLICITUD #", "REQUEST #")}${a.number} · ${rub === "hogar" ? E2("VISITA #", "VISIT #") : rub === "pro" ? E2("CONSULTA #", "CONSULTATION #") : E2("CITA #", "APPOINTMENT #")}${c.numero}`.toUpperCase();
     const hdr = (
       <div data-screen-label="Ayuda con la cita · estado" className="flex items-start gap-3.5 rounded-[20px] border border-ink/[.08] bg-white p-[18px]">
         <span className={`grid h-[46px] w-[46px] flex-none place-items-center rounded-[15px] ${h[1]}`}><Icon name={h[0]} size={22} color={h[2]} /></span>
@@ -138,7 +147,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   }
 
   // ── El formulario (APP-NEG-CITA-AYUDA) ──
-  const sub = `${rub === "hogar" ? E2("VISITA #", "VISIT #") : E2("CITA #", "APPOINTMENT #")}${c.numero} · ${c.negocio.nombre}`.toUpperCase();
+  const sub = `${rub === "hogar" ? E2("VISITA #", "VISIT #") : rub === "pro" ? E2("CONSULTA #", "CONSULTATION #") : E2("CITA #", "APPOINTMENT #")}${c.numero} · ${c.negocio.nombre}`.toUpperCase();
   if (!v.puede) return (
     <div data-pantalla="APP-NEG-CITA-AYUDA">
       {marco(sub, <div className={caja}><div className="text-[14px] font-bold">{v.motivo === "tarde" ? E2("La ayuda con una cita se pide hasta 7 días después.", "Booking help can be asked up to 7 days after.") : E2("La ayuda se pide cuando la cita ya pasó.", "Help can be asked once the booking is over.")}</div>
@@ -149,7 +158,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const subir = async (file: File | undefined) => {
     if (!file || fotos.length >= 4) return;
     setSubiendo(true); setError("");
-    const x = await subirFoto(file);
+    const x = sp ? await subirFotoPrivada(file) : await subirFoto(file);
     setSubiendo(false);
     if (x.ok && x.id && x.url) setFotos((L) => [...L, { id: x.id!, url: x.url! }]);
     else setError(x.mensaje ? (es ? x.mensaje.es : x.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
@@ -157,7 +166,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const enviar = async () => {
     if (miss.length || ocupado) return;
     setOcupado(true); setError("");
-    const x = await ayudaCitaPedir(c.numero, { reason: r!, body: nota, wants: sol, amount: (r === "cobro" || r === "more") && sol === "rev" ? amt : null, fotos: fotos.map((f) => f.id) }).catch(() => null);
+    const x = await ayudaCitaPedir(c.numero, { reason: r!, body: nota, wants: sol, amount: (r === "cobro" || r === "more") && (sol === "rev" || sp) ? amt : null, fotos: fotos.map((f) => f.id) }).catch(() => null);
     if (x?.ok) { router.refresh(); return; }
     setOcupado(false); setError(x && !x.ok ? (es ? x.msg.es : x.msg.en) : E2("No se pudo enviar. Revisa tu conexión.", "Could not send. Check your connection."));
   };
@@ -169,14 +178,14 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
         <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="verified" size={20} color="var(--tl-white)" /></span>
         <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("TU CITA", "YOUR APPOINTMENT")}</span><span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{svcT}</span>
           <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{(c.con ? c.con.nombre : c.negocio.nombre).toUpperCase()}</span>
-          <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="var(--tl-open-text)" />{sinDar ? `${E2("Depósito: ", "Deposit: ")}${dinero(c.dep)}` : `${E2("Precio publicado: ", "Posted price: ")}${dinero(c.total)}`}</span></span>
+          <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="var(--tl-open-text)" />{sp ? (rub === "pro" && c.pro?.total ? `${E2("Total por escrito: ", "Written total: ")}${dinero(c.pro.total.total)}` : E2("Nada se cobró en la app", "Nothing was charged in the app")) : sinDar ? `${E2("Depósito: ", "Deposit: ")}${dinero(c.dep)}` : `${E2("Precio publicado: ", "Posted price: ")}${dinero(c.total)}`}</span></span>
         <span className="flex-none text-[12.5px] font-bold text-action">{E2("Ver", "See")}</span>
       </button>
     </div>);
   const fotosB = (
     <div data-screen-label="Ayuda con la cita · fotos" className={caja}>
-      <div className={T17}>{conFoto ? E2("Fotos · obligatorias", "Photos · required") : E2("Fotos · opcional", "Photos · optional")}</div>
-      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{rub === "hogar" ? E2("De cómo quedó o del daño.", "Of how it looks or the damage.") : rub === "auto" ? E2("Del recibo, del estimado o del daño.", "Of the receipt, the estimate or the damage.") : E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
+      <div className={T17}>{rub === "salud" ? (conFoto ? E2("Foto de la factura · obligatoria", "Photo of the bill · required") : E2("Foto de la factura · opcional", "Photo of the bill · optional")) : rub === "pro" ? (conFoto ? E2("Foto del recibo o del total por escrito · obligatoria", "Photo of the receipt or written total · required") : E2("Foto del recibo · opcional", "Photo of the receipt · optional")) : conFoto ? E2("Fotos · obligatorias", "Photos · required") : E2("Fotos · opcional", "Photos · optional")}</div>
+      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{rub === "salud" ? E2("Tapa los datos médicos si aparecen; solo hace falta el cobro. Solo la ven el consultorio y To’Latino.", "Cover any medical details; only the charge is needed. Only the office and To’Latino see it.") : rub === "pro" ? E2("Tapa los números de tu caso si aparecen. Solo la ven la oficina y To’Latino.", "Cover your case numbers if they show. Only the office and To’Latino see it.") : rub === "hogar" ? E2("De cómo quedó o del daño.", "Of how it looks or the damage.") : rub === "auto" ? E2("Del recibo, del estimado o del daño.", "Of the receipt, the estimate or the damage.") : E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url)}>
           <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/95"><Icon name="close" size={10} strokeWidth={2.6} /></span></button>)}
@@ -192,10 +201,11 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
       <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("Cuéntalo con calma: qué pediste y qué pasó.", "Take your time: what you asked for and what happened.")}</div>
       <div className="mt-3.5"><div className={K}>{E2("MOTIVO", "REASON")}</div>
         <div className="mt-[9px] flex flex-wrap gap-2">{rsn.map(([k, l1, l2]) => <Chip key={k} variant={r === k ? "selected" : "filter"} onClick={() => setR(r === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
-      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={rub === "hogar" ? E2("Ej.: el grifo volvió a gotear a los dos días…", "E.g. the faucet started dripping again two days later…") : rub === "auto" ? E2("Ej.: me cobraron $80 de más por una pieza que no aprobé…", "E.g. they charged $80 more for a part I did not approve…") : E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
+      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={rub === "salud" ? E2("Ej.: me dijeron $0 con Medicaid y me llegó una factura de $60…", "E.g. they said $0 with Medicaid and I got a $60 bill…") : rub === "pro" ? E2("Ej.: el total decía $740 y me pidieron $900 para mandar los papeles…", "E.g. the total said $740 and they asked for $900 to file the papers…") : rub === "hogar" ? E2("Ej.: el grifo volvió a gotear a los dos días…", "E.g. the faucet started dripping again two days later…") : rub === "auto" ? E2("Ej.: me cobraron $80 de más por una pieza que no aprobé…", "E.g. they charged $80 more for a part I did not approve…") : E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
         className="mt-3.5 box-border w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-3.5 py-3 text-[13.5px] font-medium leading-[1.5] text-ink outline-none" />
       <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/40">{nota.length} / 500</div>
-      {(r === "cobro" || r === "more") && sol === "rev" && <div className="mt-2"><div className={K}>{E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
+      {r === "ley" && <div className="mt-2 rounded-[13px] bg-paper px-3.5 py-3 text-pretty text-[12px] font-semibold leading-[1.5] text-ink/70">{E2("Si te ofrecieron un trámite de inmigración sin ser abogado ni representante acreditado, también puedes reportarlo a la Fiscalía de Pennsylvania.", "If someone offered you an immigration case without being a lawyer or accredited representative, you can also report it to the Pennsylvania Attorney General.")}</div>}
+      {(r === "cobro" || r === "more") && (sol === "rev" || sp) && <div className="mt-2"><div className={K}>{sp ? E2("¿CUÁNTO TE COBRARON DE MÁS? · OPCIONAL", "HOW MUCH WERE YOU OVERCHARGED? · OPTIONAL") : E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
         <input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^\d.]/g, "").slice(0, 7))} inputMode="decimal" aria-label={E2("Cuánto", "How much")} placeholder={E2("Ej.: 40", "E.g. 40")}
           className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3.5 font-mono text-[13.5px] font-bold tracking-[0.06em] text-ink outline-none" /></div>}
     </div>);
@@ -211,7 +221,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const como = (
     <div data-screen-label="Ayuda con la cita · cómo funciona" className={caja}>
       <div className={K}>{E2("CÓMO FUNCIONA", "HOW IT WORKS")}</div>
-      <div className="mt-[11px] flex flex-col gap-2.5">{[E2(`${quien} recibe tu solicitud y responde en 24 h.`, `${quien} gets your request and replies within 24 h.`), E2("Si no responde o no estás de acuerdo, To’Latino la revisa en 48 h.", "If they do not reply or you disagree, To’Latino reviews it within 48 h."), E2("Nada se da por resuelto hasta que respondan.", "Nothing is resolved until they reply.")].map((t, i) => (
+      <div className="mt-[11px] flex flex-col gap-2.5">{[E2(`${quien} recibe tu solicitud y responde en 24 h.`, `${quien} gets your request and replies within 24 h.`), E2("Si no responde o no estás de acuerdo, To’Latino la revisa en 48 h.", "If they do not reply or you disagree, To’Latino reviews it within 48 h."), sp ? E2("Tu foto y lo que cuentas no se publican: solo los ven ellos y To’Latino.", "Your photo and what you write are never published: only they and To’Latino see them.") : E2("Nada se da por resuelto hasta que respondan.", "Nothing is resolved until they reply.")].map((t, i) => (
         <div key={i} className="flex items-start gap-2.5"><span className="grid h-5 w-5 flex-none place-items-center rounded-full bg-ink font-mono text-[9.5px] font-extrabold text-white">{i + 1}</span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/75">{t}</span></div>))}</div>
     </div>);
   const falta = miss.length > 0 && <div className="rounded-[14px] bg-pro/[.14] px-3.5 py-3"><div className={K}>{E2("TE FALTA", "STILL NEEDED")}</div><div className="mt-1.5 flex flex-col gap-1">{miss.map((m) => <div key={m} className="text-[12.5px] font-semibold text-pro-ink">{m}</div>)}</div></div>;

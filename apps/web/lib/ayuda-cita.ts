@@ -8,19 +8,27 @@ import { escalarVencidas } from "./ayuda";
    (acepta, propone un monto o no puede); si no responde, o la persona no está de acuerdo, To'Latino revisa en 48 h.
    Lo que vuelve a la tarjeta sale del depósito pagado en la app (Stripe); lo pagado en el local se arregla en el local. */
 type Bi = { es: string; en: string };
-export type MotivoCita = "cobro" | "quien" | "quedo" | "espera" | "dep" | "otro" | "win" | "more" | "bad" | "dmg" | "who" | "tarde" | "igual" | "dano" | "piezas";
-export type RubroAyuda = "belleza" | "auto" | "hogar";
+export type MotivoCita = "cobro" | "quien" | "quedo" | "espera" | "dep" | "otro" | "win" | "more" | "bad" | "dmg" | "who" | "tarde" | "igual" | "dano" | "piezas"
+  | "seguro" | "noseg" | "interp" | "trato" | "ley" | "nohizo" | "fecha" | "contesta";
+export type RubroAyuda = "belleza" | "auto" | "hogar" | "salud" | "pro";
 /* Los motivos de cada rubro (Belleza: bhelp · Auto: ahelp · Hogar: neg-hogar-rev.js RSN). */
-export const MOTIVOS: Record<RubroAyuda, MotivoCita[]> = { belleza: ["cobro", "quien", "quedo", "espera", "dep", "otro"], auto: ["cobro", "tarde", "igual", "dano", "piezas", "dep", "otro"], hogar: ["win", "more", "bad", "dmg", "who", "dep", "otro"] };
+export const MOTIVOS: Record<RubroAyuda, MotivoCita[]> = { belleza: ["cobro", "quien", "quedo", "espera", "dep", "otro"], auto: ["cobro", "tarde", "igual", "dano", "piezas", "dep", "otro"], hogar: ["win", "more", "bad", "dmg", "who", "dep", "otro"],
+  // Doctores (neg-salud-rev.js RSN) y Profesionales (neg-pro-rev.js RSN): nada se cobra en la app, así que no hay depósito.
+  salud: ["cobro", "seguro", "noseg", "interp", "espera", "trato", "otro"], pro: ["cobro", "ley", "nohizo", "fecha", "contesta", "trato", "otro"] };
+/* Salud y Pro: las fotos son privadas (factura, recibo) y lo que se pide cambia (corregir el cobro al seguro / terminar). */
+export const PRIVADA = (r: RubroAyuda) => r === "salud" || r === "pro";
+export const QUIERE: Record<RubroAyuda, QuiereCita[]> = { belleza: ["corr", "rev", "avis"], auto: ["corr", "rev", "avis"], hogar: ["corr", "rev", "avis"], salud: ["rev", "seg", "avis"], pro: ["rev", "fin", "avis"] };
+/* La URL de una foto de ayuda: las privadas solo por la ruta con permiso, nunca por /medios. */
+export const FOTO_AYUDA_SQL = `case when m.private then '/api/ayuda/foto/' || m.id::text else m.url end`;
 export const MOTIVOS_CITA: MotivoCita[] = MOTIVOS.belleza;
 /* Los que piden foto (diseño: RSN[3] = 1; Hogar: needPh = quedó mal o dañó algo). */
-export const CON_FOTO = new Set<MotivoCita>(["cobro", "quedo", "bad", "dmg", "dano"]);
-const rubroDeCat = (cat: string): RubroAyuda => (cat === "NEG-AUTO" ? "auto" : cat === "NEG-HOGAR" ? "hogar" : "belleza");
+export const CON_FOTO = new Set<MotivoCita>(["cobro", "quedo", "bad", "dmg", "dano", "seguro", "noseg"]);
+const rubroDeCat = (cat: string): RubroAyuda => (cat === "NEG-AUTO" ? "auto" : cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : "belleza");
 /* Si la cita no se dio (cancelada, vencida o no llegó), solo cabe el depósito u otra cosa. */
 export const SIN_CITA = new Set<MotivoCita>(["dep", "otro"]);
-export type QuiereCita = "corr" | "rev" | "avis";
-const Q2W: Record<QuiereCita, "reponer" | "devolver" | "avisar"> = { corr: "reponer", rev: "devolver", avis: "avisar" };
-export const W2Q: Record<string, QuiereCita> = { reponer: "corr", devolver: "rev", avisar: "avis" };
+export type QuiereCita = "corr" | "rev" | "avis" | "seg" | "fin";
+const Q2W: Record<QuiereCita, "reponer" | "devolver" | "avisar" | "seguro" | "terminar"> = { corr: "reponer", rev: "devolver", avis: "avisar", seg: "seguro", fin: "terminar" };
+export const W2Q: Record<string, QuiereCita> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin" };
 export type ResC = { ok: true; numero?: string; mensaje?: Bi } | { ok: false; msg: Bi };
 const no = (es: string, en: string): ResC => ({ ok: false, msg: { es, en } });
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
@@ -36,7 +44,7 @@ export type AyudaCita = {
 const COLS = `h.id::text, h.number, h.reason, h.wants, coalesce(h.body, '') as body, h.amount_cents as amount, h.status, h.decision, h.offer_cents as offer, h.reply, ${ISO("h.reply_at")} as "replyAt",
   h.resolution, ${ISO("h.resolved_at")} as "resolvedAt", h.refunded_cents as refunded, h.closed_by as "closedBy", coalesce(h.escalated_by = 'user', false) as "porUsuario",
   ${ISO("h.created_at")} as at, ${ISO("h.created_at + interval '24 hours'")} as vence,
-  array(select m.url from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos`;
+  array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos`;
 const fila = (x: Omit<AyudaCita, "wants"> & { wants: string }): AyudaCita => ({ ...x, wants: W2Q[x.wants] ?? "avis" });
 
 /* Lo que se puede devolver a la tarjeta: el depósito cobrado en la app, menos lo ya devuelto. */
@@ -56,7 +64,8 @@ export async function ayudaDeCita(userId: string, numero: string): Promise<CitaA
   if (!NUM.test(numero)) return null;
   await escalarVencidas();
   const o = (await db().query<{ id: string; status: string; reciente: boolean; cat: string }>(
-    `select o.id::text, case when o.status_detail = 'noshow' then 'noshow' else o.status end as status, coalesce(o.done_at, o.updated_at) > now() - interval '7 days' as reciente, b.category_id as cat
+    `select o.id::text, case when o.status_detail = 'noshow' then 'noshow' when o.status_detail = 'hired' and b.category_id = 'NEG-PRO' then 'done' else o.status end as status,
+            coalesce(o.done_at, o.updated_at) > now() - interval '7 days' or (o.status_detail = 'hired' and b.category_id = 'NEG-PRO') as reciente, b.category_id as cat
        from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
   if (!o) return null;
   const a = (await db().query<Parameters<typeof fila>[0]>(`select ${COLS} from help_requests h where h.operation_id = $1::bigint and h.user_id = $2`, [o.id, userId])).rows[0];
@@ -64,7 +73,10 @@ export async function ayudaDeCita(userId: string, numero: string): Promise<CitaA
   const conDep = !!p && p.status !== "failed";
   // Terminada: hasta 7 días. Sin darse: solo si hubo depósito (para reclamarlo), también hasta 7 días.
   const motivo = !o.reciente ? "tarde" : hecho ? null : ["cancelled", "expired", "declined", "noshow"].includes(o.status) && conDep ? null : "aun";
-  return { rubro: rubroDeCat(o.cat), puede: !motivo && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p) };
+  const rubro = rubroDeCat(o.cat);
+  // Salud y Pro no tienen depósito: si no se dio la cita, no hay nada que reclamar aquí.
+  const motivo2 = PRIVADA(rubro) && !hecho && !motivo ? "aun" : motivo;
+  return { rubro, puede: !motivo2 && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p) };
 }
 
 export type AyudaCitaIn = { reason: string; wants?: string; body?: string; amount?: string | number | null; fotos?: string[] };
@@ -72,10 +84,11 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   const reason = String(p?.reason ?? "") as MotivoCita;
   const cat = (await db().query<{ cat: string }>(`select b.category_id as cat from operations o join businesses b on b.id = o.business_id where o.number = $1`, [numero])).rows[0]?.cat ?? "";
-  if (!MOTIVOS[rubroDeCat(cat)].includes(reason)) return no("Elige qué pasó.", "Pick what happened.");
+  const rubro = rubroDeCat(cat);
+  if (!MOTIVOS[rubro].includes(reason)) return no("Elige qué pasó.", "Pick what happened.");
   const body = String(p?.body ?? "").trim().slice(0, 500);
   if (body.length < 15) return no("Cuéntanos qué pasó (15 letras o más).", "Tell us what happened (15+ characters).");
-  const q = (["corr", "rev", "avis"].includes(String(p?.wants)) ? String(p.wants) : "corr") as QuiereCita;
+  const q = (QUIERE[rubro].includes(String(p?.wants) as QuiereCita) ? String(p.wants) : QUIERE[rubro][0]) as QuiereCita;
   const cents = p?.amount == null || p.amount === "" ? null : Math.round((parseFloat(String(p.amount).replace(/[^0-9.]/g, "")) || 0) * 100);
   if (cents !== null && !(cents > 0 && cents <= 1000000)) return no("Escribe el monto en dólares.", "Write the amount in dollars.");
   const fotos = Array.isArray(p?.fotos) ? [...new Set(p.fotos.map(String).filter((x) => UUID.test(x)))] : [];
@@ -83,7 +96,8 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
   if (CON_FOTO.has(reason) && !fotos.length) return no("Agrega una foto.", "Add a photo.");
   const r = await tx(async (c): Promise<ResC> => {
     const o = (await c.query<{ id: string; business_id: string; city_id: string; status: string; ok: boolean; dep: boolean }>(
-      `select o.id::text, o.business_id, o.city_id, case when o.status_detail = 'noshow' then 'noshow' else o.status end as status, coalesce(o.done_at, o.updated_at) > now() - interval '7 days' as ok,
+      `select o.id::text, o.business_id, o.city_id, case when o.status_detail = 'noshow' then 'noshow' when o.status_detail = 'hired' and o.details->>'rubro' = 'pro' then 'done' else o.status end as status,
+              coalesce(o.done_at, o.updated_at) > now() - interval '7 days' or (o.status_detail = 'hired' and o.details->>'rubro' = 'pro') as ok,
               exists (select 1 from payments p where p.operation_id = o.id and p.kind = 'deposit' and p.status <> 'failed') as dep
          from operations o where o.number = $1 and o.user_id = $2 and o.kind = 'appointment' for update`, [numero, userId])).rows[0];
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
@@ -99,13 +113,17 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
       [o.id, o.business_id, o.city_id, userId, reason, Q2W[q], body, cents])).rows[0];
     if (!h) return no("Ya tienes una solicitud para esta cita.", "You already have a request for this booking.");
     if (fotos.length) {
+      // Salud y Pro: solo fotos privadas (una pública con una factura médica no entra).
       const ok = await c.query(`update media set owner_kind = 'help', owner_id = $1, sort = array_position($3::uuid[], id)
-                                 where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [h.id, userId, fotos]);
+                                 where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible' and ($4::boolean = false or private)`, [h.id, userId, fotos, PRIVADA(rubro)]);
       if (ok.rowCount !== fotos.length) throw new FotoPerdida();
     }
     return { ok: true, numero: h.number };
   }).catch((e) => { if (e instanceof FotoPerdida) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); throw e; });
-  if (r.ok) await avisarAyudaCita(numero, "biz_help_cita");
+  if (r.ok) {
+    await avisarAyudaCita(numero, "biz_help_cita");
+    if (reason === "ley") await marcarLicencia(numero).catch(() => undefined);
+  }
   return r;
 }
 class FotoPerdida extends Error {}
@@ -212,8 +230,8 @@ export async function responderAyudaCita(negocio: string, numero: string, x: { d
 /* Hoy · «Ayuda con citas»: las que esperan respuesta (24 h). */
 export async function ayudasCitasNegocio(negocio: string) {
   await escalarVencidas();
-  return (await db().query<{ num: string; quien: string; reason: MotivoCita; vence: string }>(
-    `select o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, ${ISO("h.created_at + interval '24 hours'")} as vence
+  return (await db().query<{ num: string; quien: string; reason: MotivoCita; vence: string; rub: string | null }>(
+    `select o.number as num, coalesce(u.first_name, 'Cliente') as quien, h.reason, o.details->>'rubro' as rub, ${ISO("h.created_at + interval '24 hours'")} as vence
        from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id
       where h.business_id = $1 and h.status = 'open' and o.kind = 'appointment' order by h.created_at limit 10`, [negocio])).rows;
 }
@@ -221,10 +239,44 @@ export async function ayudasCitasNegocio(negocio: string) {
 /* Avisos de la ayuda con una cita (enlace a su solicitud o al detalle en el panel). */
 export async function avisarAyudaCita(numero: string, tpl: "help_reply" | "help_done" | "biz_help_cita" | "biz_help_rev") {
   const { avisar, avisarNegocio } = await import("./avisos");
-  const h = (await db().query<{ uid: string; hnum: string; negocio: string; biz: string; cliente: string | null }>(
-    `select h.user_id::text as uid, h.number as hnum, b.name as negocio, b.id as biz, u.first_name as cliente from help_requests h join operations o on o.id = h.operation_id
+  const h = (await db().query<{ uid: string; hnum: string; negocio: string; biz: string; cliente: string | null; cat: string }>(
+    `select h.user_id::text as uid, h.number as hnum, b.name as negocio, b.id as biz, u.first_name as cliente, b.category_id as cat from help_requests h join operations o on o.id = h.operation_id
        join businesses b on b.id = h.business_id join users u on u.id = h.user_id where o.number = $1 and o.kind = 'appointment'`, [numero])).rows[0];
   if (!h) return;
+  // Salud (§3): avisos neutros, sin consultorio ni paciente.
+  if (h.cat === "NEG-SALUD") {
+    const t = ({ help_reply: "sal_help_reply", help_done: "sal_help_done", biz_help_cita: "biz_sal_help", biz_help_rev: "biz_sal_help_rev" } as const)[tpl];
+    const num = tpl === "biz_help_cita" ? numero : h.hnum;
+    if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, t, { num }, { href: `/panel/${h.biz}/hoy?det=cita:${numero}`, ref: ["help", h.hnum] });
+    else await avisar(h.uid, t, { num }, { href: `/cita/${numero}/ayuda`, ref: ["help", h.hnum] });
+    return;
+  }
   if (tpl === "biz_help_cita" || tpl === "biz_help_rev") await avisarNegocio(h.biz, tpl, { cliente: h.cliente ?? "", num: tpl === "biz_help_cita" ? numero : h.hnum }, { href: `/panel/${h.biz}/hoy?det=cita:${numero}`, ref: ["help", h.hnum] });
   else await avisar(h.uid, tpl, { negocio: h.negocio, num: h.hnum }, { href: `/cita/${numero}/ayuda`, ref: ["help", h.hnum] });
+}
+
+/* Pro · «Ofreció algo que no podía hacer por ley»: cada licencia del negocio (y de su equipo) vuelve a la cola Licencias,
+   con prioridad alta, para que To'Latino la revise contra el registro (fase4-salud-pro §4m). La solicitud sigue su camino
+   normal (24 h el negocio, luego To'Latino). Sin duplicados: una entrada abierta por licencia. */
+async function marcarLicencia(numero: string) {
+  await db().query(
+    `insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
+     select 'lic', 'license', l.id::text, o.business_id, o.city_id, 'alta' from operations o join licenses l on l.business_id = o.business_id
+      where o.number = $1 and l.status in ('valid', 'review')
+     on conflict do nothing`, [numero]);
+}
+
+/* Las fotos privadas de una ayuda (Salud y Pro) se borran 90 días después de cerrarse (§3): el archivo sale del
+   almacenamiento y la fila queda como borrada (nada se borra de la base; la URL ya no lleva a nada). */
+export async function purgarFotosAyuda() {
+  const L = (await db().query<{ id: string; url: string }>(
+    `select m.id::text, m.url from media m join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id
+      where m.private and m.status = 'visible' and h.status = 'resolved' and h.resolved_at < now() - interval '90 days' limit 50`)).rows;
+  if (!L.length) return 0;
+  const { borrarObjeto, mediosListos } = await import("./medios");
+  for (const m of L) {
+    if (mediosListos() && m.url.startsWith("privado/")) await borrarObjeto(m.url);
+    await db().query(`update media set status = 'removed', removed_reason = 'Borrada a los 90 días (ayuda cerrada)', url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
+  }
+  return L.length;
 }

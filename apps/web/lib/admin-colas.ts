@@ -1,4 +1,5 @@
 import "server-only";
+import { FOTO_AYUDA_SQL } from "./ayuda-cita";
 const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
@@ -155,11 +156,11 @@ export async function caso(s: Staff, id: string) {
     // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
     // Citas (3e): también el monto que pide, la decisión del negocio, sus fotos y lo que se puede devolver a la tarjeta.
     const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string;
-      k: "order" | "appointment"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null }>(
+      k: "order" | "appointment"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
       `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid,
-              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc,
-              array(select m.url from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos,
+              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc, o.details->>'rubro' as rub,
+              array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos,
               coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar") };

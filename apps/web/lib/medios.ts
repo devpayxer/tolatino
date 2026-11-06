@@ -22,7 +22,11 @@ export async function guardarObjeto(clave: string, cuerpo: Buffer, tipo: string)
 export async function leerObjeto(clave: string): Promise<Buffer> {
   return (await pedir("GET", clave)) as Buffer;
 }
-async function pedir(metodo: "PUT" | "GET", clave: string, cuerpo?: Buffer, tipo?: string): Promise<Buffer | void> {
+/* DELETE de un objeto: el borrado de fotos privadas que vencen (ayuda de Salud y Pro, 90 días después de cerrarse). */
+export async function borrarObjeto(clave: string) {
+  await pedir("DELETE", clave);
+}
+async function pedir(metodo: "PUT" | "GET" | "DELETE", clave: string, cuerpo?: Buffer, tipo?: string): Promise<Buffer | void> {
   const c = C();
   if (!mediosListos()) throw new Error("almacenamiento sin configurar");
   if (!/^[a-z0-9][a-z0-9/._-]{2,120}$/.test(clave)) throw new Error("clave inválida");
@@ -40,6 +44,6 @@ async function pedir(metodo: "PUT" | "GET", clave: string, cuerpo?: Buffer, tipo
   const kFirma = hmac(hmac(hmac(hmac(`AWS4${c.secret}`, dia), c.region), "s3"), "aws4_request");
   const firma = createHmac("sha256", kFirma).update(aFirmar).digest("hex");
   const r = await fetch(u, { method: metodo, body: metodo === "PUT" ? new Uint8Array(cuerpo!) : undefined, headers: { ...cab, authorization: `AWS4-HMAC-SHA256 Credential=${c.key}/${alcance}, SignedHeaders=${nombres.join(";")}, Signature=${firma}` } });
-  if (!r.ok) throw new Error(`almacenamiento ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  if (!r.ok && !(metodo === "DELETE" && r.status === 404)) throw new Error(`almacenamiento ${r.status}: ${(await r.text()).slice(0, 200)}`);
   if (metodo === "GET") return Buffer.from(await r.arrayBuffer());
 }

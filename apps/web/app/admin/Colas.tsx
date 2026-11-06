@@ -8,6 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
+import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -184,12 +185,11 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "appointment") {
       // Ayuda con una cita (3e): qué pasó, qué quiere y cuánto, su nota y fotos, la decisión del negocio y lo que se puede
       // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
-      const h = k.ayuda, MOT: Record<string, string> = { win: "No llegó en la franja", more: "Cobró más de lo aprobado", bad: "Quedó mal o volvió a fallar", dmg: "Dañó algo de la casa", who: "Vino otra persona", tarde: "No estuvo listo cuando prometieron", igual: "Sigue el mismo problema", dano: "Dañaron algo del carro", piezas: "No le dieron las piezas viejas", cobro: "Cobraron más del precio publicado", quien: "No la atendió quien reservó", quedo: "No quedó como lo pidió", espera: "Esperó mucho a pesar de la cita", dep: "No le devolvieron el depósito", otro: "Otra cosa" };
-      const Q: Record<string, string> = { reponer: "Que se lo arreglen sin cargo", devolver: "Que le devuelvan", avisar: "Solo quiere avisar" };
+      const h = k.ayuda;
       const DEC: Record<string, string> = { ok: "Aceptó", alt: `Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, no: "Dijo que no puede" };
       const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: MOT[h.reason] ?? h.reason },
-        { k: "QUÉ QUIERE", v: `${Q[h.wants] ?? h.wants}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (depósito)` : "Nada: pagó en el local" }] });
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.rub)[0] },
+        { k: "QUÉ QUIERE", v: `${quiereAyuda(h.wants)[0]}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (depósito)` : h.rub === "salud" || h.rub === "pro" ? "Nada: no se cobra en la app" : "Nada: pagó en el local" }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
       if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
       cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · ${DEC[h.decision ?? ""] ?? "Respondió"} · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
