@@ -442,3 +442,16 @@ abre para un taller o un servicio del hogar (cada uno tendrá el suyo)._
 _Arreglado de paso: los campos de texto del panel no tenían nombre accesible propio (el lector de pantalla leía también
 el contador y la ayuda); ahora cada campo se llama como su etiqueta._
 
+## Fase 4 · 4b Ficha y Booking de Auto y Hogar
+1. Entra como **Marisol** (570-555-0122) › **Taller Hermanos Peña** › Servicios: toca «¿Qué carro es?» y agrega tu carro
+   (Honda · CR-V · 2016). La hoja dice «Trabajan con tu CR-V». En **Hazleton Diesel & Truck** dice que no trabaja con Honda.
+2. Pide **Cambio de aceite** (elige el aceite) › Elegir día y hora › Booking de 3 pasos (Tu carro · Día y hora · Revisa
+   y envía, con «Guárdame las piezas viejas»). Entra como **Rafael** (570-555-0211): la solicitud está en Hoy; Confirmar.
+3. **Plomería Rodríguez 24/7** › Servicios › «¿Dónde es?» › Tu casa (dirección de Mi cuenta, dueño o inquilino, año…).
+   Pide **Cambiar grifo**: franja de llegada de 2 h, depósito de $40 y, si alquilas, el permiso del landlord.
+_Decidido por mí (reversible): la dirección de Tu casa sale de Mis direcciones (para medir la zona en millas de verdad; en
+el diseño era texto libre). Tu vehículo y Tu casa piden entrar para guardarse (el diseño dejaba «solo esta visita» sin
+cuenta). Un carro que se deja (o un trabajo de días) ocupa media hora de entrega en la agenda, no la bahía todo el día.
+Mientras llegan sus bloques: grúa, emergencia y plan se piden llamando; la página de la cita es la de Belleza (la de Auto y
+Hogar, con sus pasos En camino / Llegó / Estimado, llega en 4c)._
+

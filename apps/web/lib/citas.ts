@@ -55,7 +55,7 @@ export type Ctx = {
 };
 export type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null; cuenta: string | null }; // cuenta: a dónde va el depósito
 
-export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
+export async function contexto(c: Q, negocio: string, cats: string[] = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR"]): Promise<Ctx | null> {
   const b = (await c.query<{
     id: string; name: string; tz: string; city: string; plan: string; address: string | null; phone: string | null; foto: string | null; mods: string[]; off: Record<string, { reason?: string }> | null;
     hoy: string; hm: string; mes: string; model: CitasPublica["model"] | null; cerrado_hasta: string | null; cerrado_hoy: boolean; pol: Record<string, unknown> | null; acct: string | null; subs: string[];
@@ -65,7 +65,7 @@ export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
             b.svc_model as model, b.subcategory_ids as subs, (b.temp_closed_until at time zone ci.timezone)::date::text as cerrado_hasta, coalesce(b.closed_on = (now() at time zone ci.timezone)::date, false) as cerrado_hoy,
             to_jsonb(p) as pol, (select a.stripe_account_id from stripe_accounts a where a.business_id = b.id and a.charges_enabled and not a.payouts_paused) as acct
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id left join booking_policies p on p.business_id = b.id
-      where b.id = $1 and b.status = 'active' and b.category_id = 'NEG-BELL'`, [negocio])).rows[0]; // Auto y Hogar tienen su Booking (Fase 4)
+      where b.id = $1 and b.status = 'active' and b.category_id = any($2::text[])`, [negocio, cats])).rows[0]; // el Booking de Belleza pide solo Belleza (Auto y Hogar tienen el suyo, Fase 4)
   if (!b) return null;
   // Una tras otra: `c` puede ser el cliente de la transacción de enviarCita.
   const h = await c.query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio]);
@@ -138,7 +138,7 @@ async function puede(c: Q, x: Ctx): Promise<CitasPublica["off"]> {
 }
 
 export async function citasPublica(negocio: string, userId: string | null): Promise<CitasPublica | null> {
-  const pool = db(), x = await contexto(pool, negocio); // el pool (sin transacción): se puede en paralelo
+  const pool = db(), x = await contexto(pool, negocio, ["NEG-BELL"]); // el pool (sin transacción): se puede en paralelo
   if (!x || !(x.mods.includes("svc") || x.mods.includes("citas"))) return null;
   const G = await gente(pool, x);
   const [{ secciones, servicios: S, extras }, off, mia] = await Promise.all([servicios(pool, x, G), puede(pool, x), userId ? miaCita(pool, x, userId) : Promise.resolve(null)]);
@@ -245,7 +245,7 @@ export type HorasCita = {
 };
 type Pedido = Eleccion & { con: string; i: number };
 export async function preparar(c: Q, negocio: string, q: Pedido, sinOp?: string | null) {
-  const x = await contexto(c, negocio);
+  const x = await contexto(c, negocio, ["NEG-BELL"]);
   if (!x) return null;
   const G = await gente(c, x);
   const { servicios: S, extras } = await servicios(c, x, G);
@@ -282,7 +282,7 @@ export async function horasCita(negocio: string, q: Pedido, sinOp?: string | nul
 
 /* Próxima hora libre de cada persona para un servicio típico de 40 min (pestaña Servicios › Por barbero, la hoja). */
 export async function proximas(negocio: string, dur = 40): Promise<Record<string, { i: number; m: number } | null>> {
-  const pool = db(), x = await contexto(pool, negocio);
+  const pool = db(), x = await contexto(pool, negocio, ["NEG-BELL"]);
   if (!x) return {};
   const [G, occ] = await Promise.all([gente(pool, x), ocupadas(pool, x)]);
   const out: Record<string, { i: number; m: number } | null> = {};
