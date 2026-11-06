@@ -183,10 +183,39 @@ const guardianes = {
     if (!existsSync(lib)) return;
     const tipo = (readFileSync(lib, "utf8").match(/export type Evento = ([^;]+);/) || [])[1];
     const migs = archivos.filter((f) => /^packages\/db\/migrations\/.*\.sql$/.test(f)).sort().reverse();
-    const sql = migs.map((f) => readFileSync(f, "utf8").match(/name\s+text not null check \(name in \(([^)]+)\)\)/)).find(Boolean);
+    const sql = migs.map((f) => readFileSync(f, "utf8").match(/(?:name\s+text not null|app_events_name_check)\s+check \(name in \(([^)]+)\)\)/)).find(Boolean);
     if (!tipo || !sql) { falla("eventosEnLista", lib, 0, "no encuentro la lista de eventos en el código o en la base"); return; }
     const a = [...tipo.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]).sort().join(","), b = [...sql[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort().join(",");
     if (a !== b) falla("eventosEnLista", lib, 0, `la lista del código (${a}) no es la de la base (${b})`);
+  },
+
+  /* 3k. El dinero lo decide el servidor (6 nov, 2b): lo que manda el teléfono para un pedido (los tipos …In de
+     lib/pedir.ts) nunca trae precios, impuestos ni totales; el servidor los calcula del menú al enviar. */
+  dineroDelServidor() {
+    const f = "apps/web/lib/pedir.ts";
+    if (!existsSync(f)) return;
+    const t = readFileSync(f, "utf8");
+    for (const m of t.matchAll(/export type (\w+In) = \{([^}]*)\}/g)) {
+      if (/\b(cents|price|precio|total|tax|impuesto|subtotal)\w*\??:/i.test(m[2])) falla("dineroDelServidor", f, 0, `«${m[1]}» trae un precio o total desde el teléfono; lo calcula el servidor`);
+    }
+  },
+
+  /* 3l. Debajo del encabezado de la app (sticky, 57 px en el teléfono) nada se pega con «sticky top-0»: queda tapado
+     (6 nov, 2b: chips del menú y barra del checkout). Excepción: pantallas sin encabezado (Buscar, Licencia). */
+  pegadoBajoEncabezado() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/\(app\)\/.*\.tsx$/.test(f) || /AppShell\.tsx$|\/buscar\/|\/licencia\//.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\bsticky top-0\b/.test(l)) falla("pegadoBajoEncabezado", f, i + 1, "«sticky top-0» queda debajo del encabezado; usar top-[57px] en el teléfono"); });
+    }
+  },
+
+  /* 3m. Una conexión en transacción (el cliente «c») no recibe dos consultas a la vez (6 nov, 2b: pg lo deja de aceptar en
+     su versión 9 y el orden dentro de la transacción deja de estar garantizado). Prohibido Promise.all con «c» dentro. */
+  transaccionEnFila() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/Promise\.all\(.*(\(c[,)]|\bc\.query\b)/.test(l)) falla("transaccionEnFila", f, i + 1, "consultas en paralelo sobre el cliente de una transacción; van una tras otra"); });
+    }
   },
 
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */

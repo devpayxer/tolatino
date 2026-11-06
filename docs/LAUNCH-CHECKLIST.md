@@ -214,12 +214,31 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): con las páginas legales (Fase 9).
 
 ## Menú (bloque 2a, 6 nov 2026)
-- [ ] **Pestaña Menú en la ficha, carrito y pedido:** bloque 2b. Hasta entonces «Lo que vendes» no dice «EN TU PÁGINA».
+- [x] **Pestaña Menú en la ficha, carrito y pedido:** hecho en el bloque 2b.
 - [ ] **«Lo que vendes» con los demás módulos** (Servicios, Tienda, Renta, Citas, Reservaciones, Pedidos en línea,
   Staff, Eventos, Novedades, Jobs) y «Tu herramienta» de la categoría: con sus fases. Hoy solo Menú (Comida).
 - [ ] **Traducir con El Compa** (plato, categoría, grupo): Fase 7.
 - [ ] **«Últimos 30 días» del plato** (pedidos, vendido, puesto) y Populares por lo más pedido: con los pedidos (2b/2c).
 - [ ] **Aviso por SMS de «quedan pocos»:** la preferencia se guarda; el SMS llega con las notificaciones.
-- [ ] **«Listo en N min»** usa 25 min de preparación hasta que exista Entrega (2f).
+- [x] **«Listo en N min»:** desde 2b sale de `delivery_settings.prep_min` (20 por defecto) + tiempo extra + el plato que más tarda.
 - [ ] **Fotos de ejemplo del sandbox** vienen de Pexels (como el prototipo); las de los negocios reales son propias.
 
+
+## Pedir comida (bloque 2b, 6 nov 2026)
+- [ ] **Aceptar / rechazar / proponer cambio, etapas (cocina, listo, recogido) y avisos al cliente:** bloque 2c. Hoy el
+  panel › Hoy muestra los pedidos que esperan respuesta (sin acciones) y a los 10 min quedan SIN RESPUESTA.
+- [ ] **Cancelar y Ayuda con el pedido** (APP-NEG-PEDIDO-CANCELAR / -AYUDA): bloque 2c. Hoy: Llamar al negocio.
+- [ ] **Pedidos en línea en el panel** (DeliverySettings: pickup, preparación, programados, auto-aceptar, nota de pickup,
+  formas de pago): bloque 2c. Hoy valen los de fábrica (pickup, 20 min, programados sí, pago en el local) y la semilla.
+- [ ] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
+  el local y no hay cupones.
+- [ ] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): 2f. Hoy solo Pickup (Comida Free: solo pickup).
+- [ ] **Hoja «Entra para pedir» (AuthSheet 2m):** el componente del sistema solo trae textos en español y no muestra
+  errores; mientras, «Ir a pagar» sin cuenta usa la pantalla Entra (bilingüe) y vuelve al pago con el pedido igual.
+- [ ] **Accesibilidad del sistema de diseño:** `Button` es un `div` sin `role="button"` ni teclado (lo cazó la prueba del
+  2b). Corregir en `packages/ui` y sumar la regla a la revisión de accesibilidad.
+- [ ] **Mi cuenta › Pedidos** (la lista de los pedidos de la persona): 2h. Hoy se llega por el enlace del pedido.
+- [ ] **Super Admin › Transacciones** (línea de tiempo por pedido): 2i. Hoy el 360° muestra cuántos pedidos van este mes.
+- [ ] **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
+  fundador dónde salen.
+- [ ] **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM.

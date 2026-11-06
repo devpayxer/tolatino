@@ -37,8 +37,8 @@ const img = (i: MItem): Partial<Fila> => (i.photos[0] ? { img: `url("${i.photos[
 const avDef = (c: Ctx): Av => { const h = c.d.horas.find((z) => z.on), f = h ? Math.round(h.a * 60) : 660, t = h ? Math.round((h.two ? h.b2 : h.b) * 60) : 1260; return { f, t: t > f ? t : f + 60, d: [0, 1, 2, 3, 4, 5, 6] }; };
 const usos = (M: MenuPanel, gid: string) => M.items.filter((i) => i.grp.includes(gid));
 const N = (c: Ctx) => c.menu!;
-/* La pestaña Menú de la ficha (con carrito) llega en el bloque 2b; hasta entonces no se dice «EN TU PÁGINA». */
-const MENU_EN_FICHA = false;
+/* La pestaña Menú de la ficha (con carrito) está desde el bloque 2b: el módulo dice «EN TU PÁGINA». */
+const MENU_EN_FICHA = true;
 
 /* ── Lo que vendes (secBlocks mod): por ahora el módulo Menú; los demás llegan con sus fases. ── */
 export function vendesBloques(c: Ctx): (Bloque | null)[] {
@@ -55,7 +55,7 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
     permitido ? { type: "rows", k: tiene ? (MENU_EN_FICHA ? E2("CON CONTENIDO · SALEN EN TU PÁGINA", "WITH CONTENT · SHOWING") : E2("CON CONTENIDO", "WITH CONTENT")) : E2("ACTIVADOS, SIN CONTENIDO", "ON, NO CONTENT YET"), items: [{
       icon: "restaurant", t: E2("Menú", "Menu"), s: tiene ? E2(`${nAll} platos · ${nOn} en línea`, `${nAll} items · ${nOn} online`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
-      tag: MENU_EN_FICHA && tiene && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") }] }
+      tag: MENU_EN_FICHA && tiene && d.mods.includes("menu") && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") }] }
       : { type: "note", tone: "info", t: E2("Los módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
   ];
 }

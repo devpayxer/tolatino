@@ -6,6 +6,7 @@ import { yo } from "@/lib/cuenta";
 import { guardados } from "@/lib/categoria";
 import { contexto, evento } from "@/lib/eventos";
 import { ficha, registrarVista } from "@/lib/ficha";
+import { menuPublico } from "@/lib/pedir";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { ubicacion } from "@/lib/ubicacion";
@@ -19,19 +20,23 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return f ? { title: `${f.nombre} · To'Latino`, description: f.subsLinea } : { title: "To'Latino" };
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+  const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
   const f = await ficha(id, lang, loc);
   if (!f) notFound();
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const fav = await guardados(u?.id ?? null, [f.id]);
+  const [fav, menu] = await Promise.all([guardados(u?.id ?? null, [f.id]), f.cat === "NEG-FOOD" ? menuPublico(f.id, lang) : Promise.resolve(null)]);
   const t = T[lang].ficha;
   return (
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
+      menu={menu}
+      sesion={!!u}
+      es={lang === "es"}
+      tabInicial={sp.tab}
       t={{
         ...t,
         photosAll: f.nFotos === 1 ? t.photosOne : t.photosN.replace("{n}", String(f.nFotos)),

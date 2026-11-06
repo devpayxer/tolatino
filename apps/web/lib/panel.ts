@@ -5,6 +5,7 @@ import type { Lang } from "./idioma";
 import { TLOnbNeg } from "./onb/datos";
 import { aPanel, fuerza, prueba, seDuerme, type DiaPanel } from "./panel-reglas";
 import { EQUIPO_FREE, ITEMS_FREE, TOPE_FREE } from "./plan";
+import { esperanRespuesta, topeFreeDe } from "./pedir";
 import { estado } from "./tarjeta";
 import { licenciasDe } from "./licencias";
 
@@ -129,6 +130,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const k = cifras.rows[0] ?? { v7: 0, vhoy: 0, vprueba: 0, c7: 0, cprueba: 0 };
   const onb = !!b.attrs?.onb && Date.now() - Date.parse(b.created) < 45 * D;
   const ahoraHora = b.hora;
+  const tope = pro ? { cap: TOPE_FREE, usados: 0 } : await topeFreeDe(id);
+  const esperan = b.cat === "NEG-FOOD" ? await esperanRespuesta(id) : [];
   return {
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
@@ -140,7 +143,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     kpis: { views7: k.v7, contacts7: k.c7, viewsToday: k.vhoy, viewsTrial: k.vprueba, contactsTrial: k.cprueba },
     fuerza: f, duerme: seDuerme({ galeria: fotos.rows.length, equipo: okEquipo.length, items, itemsW, itemsFree: ITEMS_FREE }, es),
     fotos: fotos.rows, horas: dias, about: b.about, amen: b.amen, amenAll: amen.rows.map((a) => ({ key: a.key, l: a.label[lang] })),
-    owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: TOPE_FREE, usadosMes: 0,
+    owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: tope.cap, usadosMes: tope.usados, esperan,
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },
     // Tus licencias (Trámites y profesionales): las del negocio con su estado y las del catálogo que puede agregar.
     lic: b.cat === "NEG-PRO" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,

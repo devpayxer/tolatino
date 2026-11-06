@@ -128,7 +128,13 @@ export async function negocio360(s: Staff, id: string) {
     db().query<{ id: string; name: string; sec: string | null; cents: number; hidden: boolean; reason: string | null }>(
       `select i.id::text, i.name->>'es' as name, s.name->>'es' as sec, i.price_cents as cents, i.status = 'hidden' as hidden, i.hidden_reason as reason
          from items i left join item_sections s on s.id = i.section_id where i.business_id = $1 and i.module = 'menu' and i.removed_at is null order by s.sort, i.sort, i.id`, [id]),
-    db().query<{ off: Record<string, { reason: string; at: string }> }>(`select modules_off as off from businesses where id = $1`, [id]),
+    // Pedidos en línea de este mes (mes de la ciudad): los que cuentan para el techo Free y todos.
+    db().query<{ off: Record<string, { reason: string; at: string }>; mes: number; free: number; cap: number | null }>(
+      `select b.modules_off as off,
+              (select count(*)::int from operations o where o.business_id = b.id and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone) as mes,
+              (select count(*)::int from operations o where o.business_id = b.id and o.free_quota_month = to_char(now() at time zone c.timezone, 'YYYY-MM')) as free,
+              (select (value #>> '{}')::int from platform_config where key = 'free_ops_cap') as cap
+         from businesses b join cities c on c.id = b.city_id where b.id = $1`, [id]),
   ]);
   const tr = prueba(b.trial_until, b.trial_days);
   const dias = aPanel(horas.rows), visibles = fotos.rows.filter((x) => x.status === "visible").length;
@@ -142,7 +148,7 @@ export async function negocio360(s: Staff, id: string) {
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
     casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
-    menu: menu.rows, modsOff: mods.rows[0]?.off ?? {},
+    menu: menu.rows, modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
   };
 }

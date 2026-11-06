@@ -5,7 +5,9 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { ficha } from "@/lib/ficha";
+import type { MenuPublico } from "@/lib/pedir";
 import { guardarNegocio, registrarToque } from "../../acciones";
+import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
 
 type N = "Icon" | "Button" | "IconButton" | "Tabs" | "DesktopTabs" | "TodayCard" | "HoursPro" | "Tag" | "Chip" | "OwnerCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,13 +18,19 @@ type Textos = Record<string, string>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
-export function Ficha({ f, t }: { f: F; t: Textos }) {
+export function Ficha({ f, t, menu, sesion, es, tabInicial }: { f: F; t: Textos; menu: MenuPublico | null; sesion: boolean; es: boolean; tabInicial?: string }) {
   const router = useRouter();
-  const [tab, setTab] = useState("res");
+  const [tab, setTabS] = useState(tabInicial === "menu" ? "menu" : "res");
+  // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
+  const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
+  const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
+  // Free con pedidos este mes: se pide desde el Resumen; Free sin pedidos: la lista de platos y Llamar.
+  const freeOn = !!mn && !f.pro && (mn.est.freeLeft ?? 0) > 0;
+  const setTab = (id: string) => { setTabS(id); window.scrollTo({ top: 0 }); };
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -327,7 +335,12 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
       </div>
 
       {/* ── Contenido ── */}
-        {tab === "rel" ? (
+        {tab === "menu" && mn ? (
+          <div className="lg:grid lg:items-start lg:gap-12 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><MenuMovil mn={mn} /><MenuDesk mn={mn} unaColumna={false} /><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><PedidoTarjeta mn={mn} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><PedidoTarjeta mn={mn} /></aside>
+          </div>
+        ) : tab === "rel" ? (
           <div className="lg:mt-8">{relacionados}</div>
         ) : (
           <div data-screen-label="Ficha · resumen" className="lg:mt-8 lg:grid lg:items-start lg:gap-12 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
@@ -338,14 +351,65 @@ export function Ficha({ f, t }: { f: F; t: Textos }) {
               {ley && <div className="mx-5 mt-3.5 lg:mx-0 lg:mt-0">{ley}</div>}
               <div className="hidden lg:block">{hoy(true)}</div>
               {oferta && <div className="mx-5 mt-3.5 lg:mx-0 lg:mt-0">{oferta}</div>}
+              {mn && (f.pro || freeOn) && mn.tiles.length > 0 && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><MenuResumen mn={mn} desk={false} onAll={f.pro ? () => setTab("menu") : undefined} /></div>
+                  <div className="hidden lg:block"><MenuResumen mn={mn} desk onAll={f.pro ? () => setTab("menu") : undefined} /></div>
+                </>
+              )}
+              {menu && !menu.vacio && !f.pro && !freeOn && (
+                <div data-screen-label="Resumen · menú" className="px-5 pt-[26px] lg:px-0 lg:pt-0">
+                  <div className={h2}>{es ? "Menú" : "Menu"}</div>
+                  <div className="mt-3 rounded-[18px] border border-line px-[15px] py-0.5 lg:grid lg:grid-cols-2 lg:gap-x-8">
+                    {menu.secs.flatMap((s) => s.items).map((id) => menu.items[id]!).map((it) => (
+                      <div key={it.id} className="flex items-baseline gap-3 border-t border-ink/[.07] py-[13px] first:border-t-0 lg:[&:nth-child(2)]:border-t-0">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[13.5px] font-bold leading-[1.3]">{it.name}</div>
+                          {it.desc && <div className="mt-[3px] text-[11.5px] font-medium leading-[1.45] text-ink/55">{it.desc}</div>}
+                        </div>
+                        <span className="flex-none font-display text-[15px] font-extrabold leading-none tracking-[-0.02em]">${(it.cents / 100).toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               {fotos && <div className="pt-[26px] lg:pt-0">{fotos}</div>}
               <div className="px-5 pt-[26px] lg:hidden">{horario}</div>
               <div className="px-5 pt-[26px] lg:px-0 lg:pt-0">{comoLlegar}</div>
               {preguntas && <div className="px-5 pt-[26px] lg:px-0 lg:pt-0">{preguntas}</div>}
             </div>
-            <aside className="hidden lg:block min-[1100px]:sticky min-[1100px]:top-[96px]">{horario}</aside>
+            <aside className="hidden lg:flex lg:flex-col lg:gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">
+              {mn && (
+                <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
+                  <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
+                  <div className="mt-2.5 text-pretty text-[13px] font-medium leading-[1.6] text-ink/60">
+                    {f.pro || freeOn ? (es ? "Pide aquí y pasa a recoger. Pagas en el local." : "Order here and pick it up. You pay at the store.") : (es ? "Llama para pedir o pasa por el local. Pago en el local." : "Call to order or stop by. Pay in store.")}
+                  </div>
+                  {(f.pro || freeOn) && mn.canOrd && <div className="mt-3.5 flex flex-wrap gap-1.5"><Chip variant="feature">Pickup</Chip><Chip variant="feature">{mn.etaL}</Chip></div>}
+                  <div className="mt-[18px] flex">
+                    {f.pro || freeOn ? <Button icon="bag" block onClick={() => (f.pro ? setTab("menu") : document.querySelector('[data-screen-label="Resumen desktop · menú"]')?.scrollIntoView({ behavior: "smooth", block: "center" }))}>{es ? "Pedir" : "Order"}</Button>
+                      : f.telefono ? <Button icon="phone" block onClick={llamar}>{t.call}</Button> : null}
+                  </div>
+                </div>
+              )}
+              {horario}
+            </aside>
           </div>
         )}
+      {mn && !mn.has && (f.pro || freeOn || !mn.canOrd) && (
+        <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
+            <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">
+              {f.pro ? mn.etaCaps : freeOn ? (es ? "PICKUP · PAGAS EN EL LOCAL" : "PICKUP · PAY AT THE STORE") : (es ? "PAGO EN EL LOCAL" : "PAY IN STORE")}
+            </div>
+          </div>
+          {f.pro || freeOn ? (
+            <Button icon="bag" onClick={() => { if (f.pro) return setTab("menu"); const el = document.querySelector('[data-screen-label="Resumen · menú"]'); if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" }); }}>{es ? "Pedir" : "Order"}</Button>
+          ) : f.telefono ? <Button icon="phone" onClick={llamar}>{t.call}</Button> : null}
+        </div>
+      )}
+      {mn && <MenuCapas mn={mn} nombre={f.nombre} />}
     </div>
   );
 }

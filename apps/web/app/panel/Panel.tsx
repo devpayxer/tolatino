@@ -340,14 +340,18 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
   out.push(...avisosPrueba(c, "hoy"));
   out.push({ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
-    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: "0" },
+    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(d.esperan.length) },
     { k: E2("HOY EN TU AGENDA", "ON TODAY’S AGENDA"), v: "0" },
     { k: E2("VENDIDO HOY", "SOLD TODAY"), v: "$0" },
     { k: E2("VISTAS HOY", "VIEWS TODAY"), v: String(d.kpis.viewsToday) },
   ] });
   if (!d.pro) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Free: ${d.usadosMes} de ${d.tope} pedidos o citas en línea este mes. Al llegar a ${d.tope}, te contactan por teléfono.`, `Free: ${d.usadosMes} of ${d.tope} online orders or bookings this month. After ${d.tope}, clients call you.`) });
-  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: [] });
-  out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
+  // Pedidos de Comida que esperan respuesta (aceptar o rechazar: bloque 2c). Si nadie contesta a tiempo, se liberan solos.
+  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: d.esperan.map((o) => ({
+    icon: "bag", t: `${E2("Pedido", "Order")} #${o.numero} · ${o.quien}`, m: o.total, tag: E2(`ANTES DE LAS ${o.responde}`, `BY ${o.responde}`), tone: "action",
+    s: `${o.count} ${E2(o.count === 1 ? "artículo" : "artículos", o.count === 1 ? "item" : "items")} · Pickup · ${o.programado ? E2(`para las ${o.programado}`, `for ${o.programado}`) : E2("lo antes posible", "as soon as possible")} · ${E2("pagan en el local", "pay at the store")}`,
+  })) });
+  if (!d.esperan.length) out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday
     ? { l: E2("Abrir de nuevo", "Reopen"), icon: "clock", onClick: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) }

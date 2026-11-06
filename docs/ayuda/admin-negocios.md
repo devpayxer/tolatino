@@ -30,6 +30,8 @@ Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latin
 | Quitar / Restaurar foto | 360 › Ficha | neg · retirar | Igual que en Medios marcados |
 | Quitar de la página / Volver a mostrar (staff) | 360 › Equipo | neg · retirar | La persona sigue en su equipo; en su panel «QUITADO POR TO’LATINO» |
 | Nota interna | 360 › Resumen | neg · editar | Nunca la ve el negocio |
+| Pausar / Reanudar Menú o Pedidos en línea (Comida) | 360 › Lo que vende | neg · retirar | Menú: la pestaña sale de su página. Pedidos: el menú se ve, sin poder pedir. Aviso con el motivo en su panel. El módulo dice cuántos pedidos en línea lleva este mes (y, con Free, cuántos de su techo) |
+| Ocultar / Volver a mostrar un plato | 360 › Lo que vende | neg · retirar | El plato sale de su menú; «OCULTO POR TO’LATINO» con el motivo en su panel |
 
 Toda acción pide motivo (salvo las aprobaciones, que guardan uno fijo) y queda en la auditoría: quién, qué, antes →
 después, motivo y cuándo. Nada se borra.

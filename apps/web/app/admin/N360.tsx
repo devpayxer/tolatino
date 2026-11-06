@@ -88,7 +88,7 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         <PanelBloques bloques={[{ type: "group", k: "HORARIO" }, { type: "kv", cols: 2, items: DIAS.map(([d], i) => { const x = n.horas[i]!; return { k: d.toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : "Cerrado", fg: x.on ? undefined : "rgba(11,14,18,.45)" }; }) }]} />
       </>);
   } else if (tab === "vende" && n.cat_id === "NEG-FOOD") {
-    const MOD: ["menu" | "pedidos", string, string][] = [["menu", "Menú", "La pestaña Menú de su página"], ["pedidos", "Pedidos en línea", "Que se pueda pedir desde su menú"]];
+    const MOD: ["menu" | "pedidos", string, string][] = [["menu", "Menú", "La pestaña Menú de su página"], ["pedidos", "Pedidos en línea", `Que se pueda pedir desde su menú · ${n.pedidosMes} este mes${n.plan === "pro" ? "" : ` (${n.pedidosFree} de ${n.pedidosCap} con Free)`}`]];
     const PL = ["Platos que no corresponden a su categoría", "Precios o fotos engañosos", "Lo pidió el dueño", "Reportes de clientes"];
     const ocultos = n.menu.filter((i) => i.hidden).length;
     cuerpo = (

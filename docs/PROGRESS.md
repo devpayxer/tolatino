@@ -303,7 +303,7 @@ _Actualizado: 5 nov 2026._
   Ayuda: `docs/ayuda/admin-analitica.md`.
   **Fila 1 del PLAN completa** (salvo lo anotado en LAUNCH-CHECKLIST).
 - **Fase 2 · Comida (modelo) · bloques:** 2a menú (datos, panel, admin) ✓ · 2b pestaña Menú en la ficha + carrito + pedido
-  con pago en el local · 2c pedidos en el panel y seguimiento · 2d pago con tarjeta (Stripe Connect, checkout propio) ·
+  con pago en el local ✓ · 2c pedidos en el panel y seguimiento · 2d pago con tarjeta (Stripe Connect, checkout propio) ·
   2e reservaciones · 2f entrega y Repartidor · 2g reseñas, novedades, Jobs · 2h Mi cuenta completa · 2i admin
   (Transacciones, Soporte, devoluciones, disputas, Planes, Contenido, Notificaciones) y SMS.
 - **Fase 2 · bloque 2a Menú ✓ (6 nov, espera OK del fundador):** migración 0022 (`item_sections`, `items`,
@@ -316,6 +316,21 @@ _Actualizado: 5 nov 2026._
   dueño lo ve en su panel. Semilla del sandbox `0004_menu.sql` (la carta de Sabor Dominicano del prototipo, con
   `scripts/semilla/extraer-menu.cjs`). Probado con Playwright: precio, agotar y activar, − / +, categoría y plato nuevos,
   opción agotada, +$1 en lote, pausa, sin acceso; admin oculta y pausa → el dueño lo ve. Ayuda `docs/ayuda/panel-menu.md`.
+- **Fase 2 · bloque 2b Pedir comida ✓ (6 nov, espera OK del fundador):** migración 0023 (`delivery_settings`,
+  `operations` (número #1001…, pago `local`, `client_key` para no duplicar, `free_quota_month`), `operation_lines` (copia
+  de nombre, precio y opciones), `operation_events` solo inserción; `free_ops_cap` en platform_config; evento `pedir`).
+  `lib/pedir.ts`: menú público (horarios propios de plato y categoría, agotado, cuenta del día, Free = 5 platos, módulos
+  `menu` / `pedidos` encendidos, pausas de To'Latino y del negocio, último pedido antes de cerrar, programar para hoy) y
+  `crearPedido` (el servidor recalcula precios, opciones, impuestos, inventario y techo Free, en una transacción con
+  candado por negocio; tres pendientes por persona como máximo). Ficha: pestaña Menú (Pro), Resumen · menú, barra
+  «Desde $X · Pedir», hoja del plato, «otra igual o con cambios», «cuál quitas», carrito (24 h en el teléfono) y tarjeta
+  de pedido en escritorio (`MenuCliente.tsx`). `/n/{id}/pagar` (pickup, cuándo, pago en el local, resumen) y
+  `/pedido/{n}` (OrderTracker, listo a las, pagas en el local, sin respuesta a los 10 min). Panel › Hoy: «Esperan tu
+  respuesta» real y el techo Free real; «Lo que vendes» dice «EN TU PÁGINA». 360° › Lo que vende: pedidos del mes.
+  Semilla `0005_pedidos.sql` (módulos y pickup de Sabor Dominicano). Guardianes nuevos: `dineroDelServidor`,
+  `pegadoBajoEncabezado`, `transaccionEnFila`. Probado con Playwright (teléfono y escritorio): +, opciones obligatorias,
+  precio con opciones, otra igual, carrito, pagar, pedido #, totales servidor = pantalla, inventario del día, plato
+  agotado entre carrito y pago, pausa, sin sesión, Free (5 platos, techo lleno), panel Hoy. Ayuda `docs/ayuda/pedir-comida.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama
