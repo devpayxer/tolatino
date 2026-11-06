@@ -5,7 +5,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
-import { ayudaResponder, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
+import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 
@@ -17,6 +17,7 @@ export type PedPanel = {
 };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+const PAGO_L: Record<string, [string, string]> = { held: ["retenido", "held"], captured: ["cobrado", "charged"], released: ["liberado", "released"], refunded: ["devuelto", "refunded"], partially_refunded: ["devuelto en parte", "partly refunded"], failed: ["falló", "failed"] };
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], out: [E2("EN CAMINO", "ON THE WAY"), "action"], done: [E2("LISTO", "DONE"), "neutral"],
   no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADO", "CANCELLED"), "neutral"],
@@ -73,7 +74,7 @@ function ayudaBloques(c: Ctx, numero: string): (Bloque | null)[] {
   const out: (Bloque | null)[] = [{ type: "group", k: `${E2("AYUDA CON EL PEDIDO · ", "ORDER HELP · ")}${a.number}` },
     { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, ...(a.items.length ? [{ k: E2("PLATOS", "DISHES"), v: a.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.body ? [{ k: E2("SU NOTA", "THEIR NOTE"), v: a.body }] : [])] }];
   if (a.status === "open") out.push(
-    { type: "note", tone: "warn", icon: "clock", t: E2("Respóndele en 24 horas. Si no, To’Latino revisa el caso. Hoy se paga en el local: si acuerdan una devolución, la arreglan ustedes.", "Reply within 24 hours. If not, To’Latino reviews the case. Today payment is in store: if you agree on a refund, you settle it yourselves.") },
+    { type: "note", tone: "warn", icon: "clock", t: E2("Respóndele en 24 horas. Si no, To’Latino revisa el caso. Si pagó con tarjeta, puedes devolverle dinero desde el pedido; si pagó en el local, la devolución la arreglan ustedes.", "Reply within 24 hours. If not, To’Latino reviews the case. If they paid by card, you can refund from the order; if they paid in store, you settle the refund yourselves.") },
     { type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER"), val: txt, count: `${txt.length}/500`, ph: E2("Ej. Disculpa, te mandamos el plato que faltó en 30 minutos.", "e.g. Sorry, we'll send the missing dish in 30 minutes."), onChange: (v) => c.setUi({ ayT: v.slice(0, 500) }) },
     { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending, onClick: () => c.run(() => ayudaResponder(d.id, numero, txt), E2("Respuesta enviada. La ve en su pedido.", "Reply sent. They see it on their order."), () => c.setUi({ ayT: "" })) }] });
   else out.push({ type: "note", tone: a.status === "resolved" ? "ok" : a.status === "escalated" ? "warn" : "info", icon: a.status === "answered" ? "chat" : "shield",
@@ -86,7 +87,7 @@ export function pedidoDetalle(c: Ctx): Sec {
   if (!x) return { blocks: [{ type: "head", t: E2("Pedido no encontrado", "Order not found"), onBack: c.closeDet }, { type: "empty", icon: "bag", t: E2("Ese pedido no existe", "That order does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("PEDIDO", "ORDER")} · ${x.who.toUpperCase()}`, t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: es ? x.s.es : x.s.en, onBack: c.closeDet },
-    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.who }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
+    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.who }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.pago ? `${E2("Tarjeta", "Card")}${x.pago.ultimos4 ? ` ·· ${x.pago.ultimos4}` : ""} · ${(PAGO_L[x.pago.estado] ?? [x.pago.estado, x.pago.estado])[es ? 0 : 1]}` : x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
   ];
   // Delivery: a dónde, cómo se entrega y qué hacer al llegar (Checkout · cómo entregar), y el teléfono del cliente.
   const ENT = x.entrega;
@@ -110,8 +111,24 @@ export function pedidoDetalle(c: Ctx): Sec {
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), future: true } as never] : []) });
   const row = reqRow(c, x);
   if (row.acts?.length) out.push({ type: "acts", pt: "4px", items: row.acts.map((a) => ({ ...a, off: c.pending })) });
-  if (x.st === "pend") out.push({ type: "note", tone: "info", t: ENT ? E2(`Pagan en efectivo al recibir. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay cash on delivery. If you do not reply by ${x.responde}, it cancels on its own.`)
+  if (x.st === "pend" && x.pago) out.push({ type: "note", tone: "info", t: E2(`Pagó con tarjeta: ${money(x.pago.monto)} retenidos. Se cobran cuando aceptas; si no respondes antes de las ${x.responde}, se liberan y el pedido se cancela solo.`, `Paid by card: ${money(x.pago.monto)} held. Charged when you accept; if you do not reply by ${x.responde}, it is released and the order cancels on its own.`) });
+  else if (x.st === "pend") out.push({ type: "note", tone: "info", t: ENT ? E2(`Pagan en efectivo al recibir. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay cash on delivery. If you do not reply by ${x.responde}, it cancels on its own.`)
     : E2(`Pagan en el local al recoger. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay at the store at pickup. If you do not reply by ${x.responde}, it cancels on its own.`) });
+  // Tarjeta: devolver dinero (solo el dueño). La comisión baja en proporción; el cliente recibe el aviso.
+  const pg = x.pago, puedeDev = !!pg && (pg.estado === "captured" || pg.estado === "partially_refunded") && (c.d.kind === "owner" || c.d.partes.includes("all"));
+  if (pg && pg.devuelto) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Devueltos ${money(pg.devuelto)} de ${money(pg.monto)} a la tarjeta del cliente.`, `${money(pg.devuelto)} of ${money(pg.monto)} refunded to the client's card.`) });
+  if (puedeDev && !c.ui.dev) out.push({ type: "acts", items: [{ l: E2("Devolver dinero", "Refund money"), v: "secondary", icon: "dollar", onClick: () => c.setUi({ dev: { n: ((pg!.monto - pg!.devuelto) / 100).toFixed(2), m: "", k: crypto.randomUUID() } }) }] });
+  if (puedeDev && c.ui.dev) {
+    const dv = c.ui.dev as { n: string; m: string; k: string }, cents = Math.round((parseFloat(dv.n) || 0) * 100), max = pg!.monto - pg!.devuelto;
+    out.push({ type: "group", k: E2("DEVOLVER DINERO", "REFUND MONEY") });
+    out.push({ type: "field", k: E2(`MONTO · HASTA ${money(max)}`, `AMOUNT · UP TO ${money(max)}`), val: dv.n, onChange: (v: string) => c.setUi({ dev: { ...dv, n: v.replace(/[^0-9.]/g, "").slice(0, 8) } }) });
+    out.push({ type: "field", k: E2("MOTIVO · LO VE EL CLIENTE", "REASON · THE CLIENT SEES IT"), val: dv.m, area: true, rows: 2, max: 200, count: `${dv.m.length}/200`, onChange: (v: string) => c.setUi({ dev: { ...dv, m: v.slice(0, 200) } }) });
+    out.push({ type: "note", tone: "ink", icon: "info", t: E2("Vuelve a su tarjeta en 3 a 5 días hábiles. Si ya te pagamos esta semana, se descuenta del próximo martes.", "It goes back to their card in 3 to 5 business days. If we already paid you this week, it comes off next Tuesday.") });
+    out.push({ type: "acts", items: [
+      { l: cents > 0 && cents <= max ? `${E2("Devolver", "Refund")} ${money(cents)}` : E2("Revisa el monto", "Check the amount"), v: "primary", icon: "check", off: c.pending || !(cents > 0 && cents <= max) || dv.m.trim().length < 3,
+        onClick: () => c.run(() => pedidoDevolver(c.d.id, x.numero, cents, dv.m, dv.k), E2("Devuelto. El cliente ya lo sabe.", "Refunded. The client already knows."), () => c.setUi({ dev: null })) },
+      { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ dev: null }) }] });
+  }
   // Panel v2 · detBlocks: pickup → Listo para recoger → Entregado; delivery → Salió en camino → Entregado.
   if (x.st === "ok") out.push({ type: "acts", items: [ENT ? { l: E2("Salió en camino", "Out for delivery"), v: "primary", icon: "truck", off: c.pending, onClick: () => paso(c, x, "encamino") }
     : { l: E2("Listo para recoger", "Ready for pickup"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, x, "listo") }] });
@@ -177,7 +194,8 @@ export function pedidosModBloques(c: Ctx): Sec {
   const RQ = [...(H?.pend ?? []), ...(H?.agenda ?? [])], nP = H?.pend.length ?? 0;
   if (RQ.length) out.push({ type: "rows", k: `${E2("PEDIDOS · ", "ORDERS · ")}${RQ.length}${nP ? E2(` · ${nP} POR ACEPTAR`, ` · ${nP} TO ACCEPT`) : ""}`, link: E2("Ver en Hoy", "See in Today"), onLink: () => c.go("hoy"), items: RQ.slice(0, 5).map((x) => reqRow(c, x)) });
   const M = c.menu?.cfg, pausa = M?.pause ? new Date(M.pause).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null;
-  const F = c.form("ped:" + d.id, { prep: a.prep, sched: a.sched, auto: a.auto, cashP: a.cashP, cashD: a.cashD, tip: a.tip }), v = F.d, pk = v.prep + a.busy;
+  const F = c.form("ped:" + d.id, { prep: a.prep, sched: a.sched, auto: a.auto, cashP: a.cashP, cashD: a.cashD, tip: a.tip, card: a.card }), v = F.d, pk = v.prep + a.busy;
+  const stOn = a.stripe === "enabled" || a.stripe === "restricted";
   const ext = a.delivery && a.who === "external", extN = a.ext === "doordash" ? "DoorDash" : a.ext === "uber_eats" ? "Uber Eats" : E2("una app externa", "an external app");
   const stT = a.admOff || !a.on ? E2("Hoy no recibes pedidos en la app", "No app orders today") : pausa ? `${E2("En pausa hasta ", "Paused until ")}${pausa}` : d.st.closedToday ? E2("Hoy cierras: no se pide", "Closed today: no orders") : d.st.open ? E2("Recibes pedidos ahora", "Taking orders now") : E2("Cerrado ahora", "Closed now");
   out.push({ type: "group", k: E2("HOY", "TODAY"), first: !RQ.length }, { type: "rows", items: [{ icon: "clock", t: stT, s: `${E2("Pickup listo en ", "Pickup ready in ")}${pk} min${a.busy ? E2(` · con +${a.busy} min por mucho trabajo`, ` · with +${a.busy} min busy`) : ""}`, chev: false }] });
@@ -190,7 +208,8 @@ export function pedidosModBloques(c: Ctx): Sec {
   out.push({ type: "rows", items: [{ icon: "check", t: E2("Aceptar pedidos al instante", "Accept orders instantly"), s: v.auto ? E2("Se aceptan solos mientras estés abierto y sin pausa. Igual llegan a Hoy para prepararlos.", "They are accepted on their own while you are open and not paused. They still arrive in Today.") : E2("Apagado: tú aceptas cada uno. Si no respondes en 10 min, se cancela solo.", "Off: you accept each one. If you do not reply in 10 min, it cancels on its own."), tgOn: v.auto, onTg: () => F.set({ auto: !v.auto }) }] });
   out.push({ type: "group", k: E2("CÓMO TE PAGAN", "HOW THEY PAY") });
   out.push({ type: "rows", items: [
-    { icon: "card", t: E2("Tarjeta en la app", "Card in the app"), s: E2("Conecta tus cobros para recibir tarjeta.", "Connect payouts to take cards."), tgOn: false, lock: true, onTg: () => c.toast(E2("Los cobros con tarjeta llegan pronto.", "Card payouts are coming soon.")) },
+    { icon: "card", t: E2("Tarjeta en la app", "Card in the app"), s: stOn ? E2("Se retiene al pedir y se cobra cuando aceptas.", "Held when ordering, charged when you accept.") : a.stripe === "pending" ? E2("Tu cuenta de cobro se está revisando.", "Your payout account is being reviewed.") : E2("Conecta tus cobros para recibir tarjeta.", "Connect payouts to take cards."),
+      tgOn: stOn && !!v.card, lock: !stOn, onTg: () => (stOn ? F.set({ card: !v.card }) : c.go("pay")), ...(stOn ? {} : { onClick: () => c.go("pay") }) },
     ...(a.pickup ? [{ icon: "store", t: E2("Efectivo al recoger", "Cash at pickup"), s: E2("Pagan en tu caja. No se retiene nada.", "They pay at your register. Nothing is held."), tgOn: v.cashP, onTg: () => F.set({ cashP: !v.cashP }) }] : []),
     ...(a.delivery ? [{ icon: "dollar", t: E2("Efectivo al entregar", "Cash on delivery"), s: ext ? E2(`Con ${extN} no se cobra en efectivo: solo con tu equipo.`, `${extN} does not collect cash: only your own team.`) : E2("Cobra tu repartidor y lo cuadras en Entrega.", "Your driver collects and you settle it in Delivery."),
       tgOn: v.cashD && !ext, lock: ext, onTg: () => (ext ? c.go("dlv") : F.set({ cashD: !v.cashD })) }] : []),
@@ -205,7 +224,7 @@ export function pedidosModBloques(c: Ctx): Sec {
     ...(a.delivery ? [["dollar", v.cashD && !ext ? E2(`Paga en efectivo al recibir${v.tip ? ", con propina si quiere" : ""}.`, `Pays cash on delivery${v.tip ? ", with a tip if they want" : ""}.`) : E2("No tiene cómo pagar el delivery.", "No way to pay for delivery.")]] : []),
     v.auto ? ["check", E2("Su pedido queda aceptado al instante.", "Their order is accepted instantly.")] : ["bubble", E2(`${d.name} lo acepta en unos minutos.`, `${d.name} accepts it within minutes.`)],
   ].map(([icon, t]) => ({ icon: icon!, t: t!, compact: true, chev: false })) });
-  const faltaP = a.pickup && !v.cashP, faltaD = a.delivery && !(v.cashD && !ext);
+  const conTarjeta = stOn && !!v.card, faltaP = a.pickup && !v.cashP && !conTarjeta, faltaD = a.delivery && !(v.cashD && !ext) && !conTarjeta;
   if (faltaP || faltaD) out.push({ type: "note", tone: "warn", t: `${F.dirty ? E2("Para guardar falta: ", "To save, add: ") : E2("Hoy falta: ", "Missing today: ")}${[faltaP ? E2("cómo te pagan en pickup", "how they pay for pickup") : "", faltaD ? E2("cómo te pagan en delivery", "how they pay for delivery") : ""].filter(Boolean).join(" · ")}.` });
   if (a.on && !a.admOff) out.push({ type: "acts", items: [{ l: E2("Apagar Pedidos en línea", "Turn off Online orders"), v: "secondary", icon: null, onClick: () => c.run(() => pedidosModulo(d.id, false), E2("Pedidos en línea apagado.", "Online orders off.")) }] });
   const ed: Editor = { F, l: E2("Guardar", "Save"), valid: !faltaP && !faltaD, apply: (x: typeof v) => pedidosAjustes(d.id, x), toast: E2("Guardado · el cliente ya lo ve así.", "Saved · clients see it like this now.") };

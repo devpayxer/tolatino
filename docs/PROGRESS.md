@@ -428,6 +428,15 @@ _Actualizado: 5 nov 2026._
   «Cambio confirmado.». Panel (compuesto): «PIDE CAMBIO» en Hoy y el detalle con «Aceptar el cambio» (vuelve a revisar la
   mesa) / «No se puede», auditado. Vence a los 30 min o a la hora; con «Confirmar al instante» se hace solo. Probado: 17
   comprobaciones. Ayuda en `reservar-mesa.md` y `panel-reservaciones.md`.
+- **Fase 2 · bloque 2d Pagar con tarjeta ✓ (6 nov, simulador):** migración 0034 (stripe_accounts, fee_rules con las
+  comisiones del diseño, payments, refunds, payment_methods, stripe_events, sim_intents). `lib/pagos/stripe.ts` (API REST sin
+  SDK, versión fija, claves idempotentes, firma del webhook) y `lib/pagos/pasarela.ts` (Stripe de verdad con clave; sin
+  clave, simulador propio en el sandbox y apagado en producción). `lib/cobros.ts`: retener al enviar, cobrar al aceptar,
+  liberar si no se da, devolver total o parcial (comisión en proporción), reparar lo que quedó a medias. Cliente: PAGO
+  Tarjeta / En el local y la hoja «Método de pago». Panel: **Cobros** (conectar con Stripe, la semana, cada cobro), «Tarjeta
+  en la app» en Pedidos, «Devolver dinero» en el pedido. Super Admin › Transacciones: retenido, comisión, devuelto y
+  «Devolver». Webhook `/api/stripe/webhook`. Contrato con stripe-mock en el CI. Guardianes `tarjetaEnServidor`,
+  `simuladorAislado`, `retencionPorTarjeta`. Probado: 21 + 7 (webhook) + 11 (contrato). Ayuda `pagar-con-tarjeta.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

@@ -19,6 +19,10 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
    - Claude: el servidor publica su llave pública; una acción de GitHub cifra la clave con esa llave y la deja en el
      repo; solo el servidor la puede abrir y la pone en su configuración. Lo mismo servirá para SMS (Telnyx) y correo.
    - Mientras tanto se sigue con los bloques que no cobran (2e reservaciones, 2f entrega, 2g reseñas…).
+   **Hecho sin la cuenta (6 nov, decisión AB, bloque 2d):** todo el cobro con tarjeta está construido y probado contra el
+   simulador propio del sandbox y contra `stripe-mock` (el simulador oficial de Stripe, en el CI). Se enciende solo cuando
+   estén las claves en el entorno (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`): se piden por el
+   formulario seguro de secretos, nunca por el chat.
 4. **Cambiar una reservación ya confirmada.** El prototipo del cliente lo permite («Cambiar reservación» → el cambio queda
    pendiente y la reservación actual sigue en pie), pero el panel del restaurante no tiene diseño para aceptar o
    rechazar ese cambio. Hoy solo se cambia una solicitud que todavía no contestan. ¿Se diseña ese lado o se queda así?
@@ -267,3 +271,19 @@ _Cambios del diseño: el lado del panel no tiene diseño; se compuso con el deta
 instante», el cambio se hace solo (como una reservación nueva). Si nadie responde en 30 minutos (o llega la hora), el
 cambio se cierra y todo queda como estaba. Decisión sin preguntar (AB): con «Confirmar al instante» al negocio no le llega
 aviso del cambio (lo ve en el historial)._
+
+## Fase 2 · 2d Pagar con tarjeta (simulador del sandbox)
+1. Pedro › **Cobros** → **Conectar con Stripe** → en el sandbox vuelve al instante con «Tu cuenta de cobros» (banco ·· 6789).
+2. Pedro › Lo que vendes › **Pedidos** → enciende **Tarjeta en la app** → Guardar.
+3. Marisol › Sabor Dominicano › pide → **Finalizar pedido** → PAGO: **Tarjeta** → «Agregar tarjeta» → 4000 0000 0000 0002 →
+   Enviar → «Tu banco la rechazó». Cambia a 4242 4242 4242 4242 → Enviar → el pedido dice **RETENIDO**.
+4. Pedro › Hoy → el pedido dice «Pagó con tarjeta: retenidos» → **Aceptar** → Marisol ve **PAGADO**.
+5. Pedro › el pedido → **Devolver dinero** → $2.00 con motivo → Marisol recibe «Te devolvimos dinero».
+6. Ana › **Transacciones** → busca el pedido → **Devolver** el resto → DEVUELTO.
+7. Otro pedido con tarjeta → Marisol lo cancela → «Liberamos tu dinero».
+8. Pedro › **Cobros**: la semana (cobrado, comisión, devuelto, te llega el martes) y cada cobro.
+_Cambios y decisiones (AB): el campo de la tarjeta con Stripe de verdad es el de Stripe (un iframe con nuestra letra y
+color), no nuestro campo: así To'Latino nunca toca el número (norma PCI). «Cambiar banco» abre el panel de Stripe (ahí se
+verifica), en lugar del formulario con código del prototipo: To'Latino no guarda números de banco. El Wallet de To'Latino
+todavía no existe (no sale en la hoja). La verificación 3D Secure por ahora pide otra tarjeta. La última tarjeta que pagó
+queda como predeterminada. Con «Confirmar al instante» un cambio o un pedido se cobra al enviar._

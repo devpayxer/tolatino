@@ -62,30 +62,34 @@ export async function pedidosModulo(id: string, on: boolean): Promise<Res> {
 }
 
 /* Pedidos en línea: tiempo de preparación, programados, aceptar al instante y efectivo al recoger. */
-export async function pedidosAjustes(id: string, p: { prep: number; sched: boolean; auto: boolean; cashP: boolean; cashD?: boolean; tip?: boolean }): Promise<Res> {
+export async function pedidosAjustes(id: string, p: { prep: number; sched: boolean; auto: boolean; cashP: boolean; cashD?: boolean; tip?: boolean; card?: boolean }): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
   const prep = Math.round(Number(p?.prep));
   if (!(prep >= 5 && prep <= 120 && prep % 5 === 0)) return no("El tiempo de preparación va de 5 a 120 minutos.", "Prep time goes from 5 to 120 minutes.");
   // La tarjeta llega con los cobros: cada forma de entrega encendida necesita su efectivo, o nadie podría pagar.
-  const e = (await db().query<{ pickup: boolean; delivery: boolean; who: string }>(
-    `select coalesce(pickup, true) as pickup, coalesce(delivery, false) as delivery, coalesce(who, 'team') as who from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? { pickup: true, delivery: false, who: "team" };
+  const e = (await db().query<{ pickup: boolean; delivery: boolean; who: string; cargos: boolean }>(
+    `select coalesce(d.pickup, true) as pickup, coalesce(d.delivery, false) as delivery, coalesce(d.who, 'team') as who, coalesce((select charges_enabled from stripe_accounts where business_id = $1), false) as cargos
+       from (select $1::text as id) x left join delivery_settings d on d.business_id = x.id`, [a.negocio.id])).rows[0] ?? { pickup: true, delivery: false, who: "team", cargos: false };
   const cashD = !!p.cashD && e.who !== "external"; // con una app externa no se cobra en efectivo al entregar
-  if (e.pickup && !p.cashP) return no("Para guardar falta: cómo te pagan en pickup.", "To save, add: how they pay for pickup.");
-  if (e.delivery && !cashD) return no("Para guardar falta: cómo te pagan en delivery.", "To save, add: how they pay for delivery.");
+  // La tarjeta pide la cuenta de cobro activa (Cobros); sin ella, cada forma de entrega necesita su efectivo.
+  if (p.card && !e.cargos) return no("Para cobrar con tarjeta, conecta tu cuenta en Cobros.", "To take cards, connect your account in Payouts.");
+  const card = !!p.card && e.cargos;
+  if (e.pickup && !p.cashP && !card) return no("Para guardar falta: cómo te pagan en pickup.", "To save, add: how they pay for pickup.");
+  if (e.delivery && !cashD && !card) return no("Para guardar falta: cómo te pagan en delivery.", "To save, add: how they pay for delivery.");
   const antes = await tx(async (c) => {
-    const x = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean; cashd: boolean; tip: boolean }>(
-      `select prep_min as prep, scheduled_orders as sched, auto_accept as auto, pay_cash_pickup as cash, pay_cash_delivery as cashd, ask_tip as tip from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
+    const x = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean; cashd: boolean; tip: boolean; card: boolean }>(
+      `select prep_min as prep, scheduled_orders as sched, auto_accept as auto, pay_cash_pickup as cash, pay_cash_delivery as cashd, ask_tip as tip, pay_card as card from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
     await c.query(
-      `insert into delivery_settings (business_id, prep_min, scheduled_orders, auto_accept, pay_cash_pickup, pay_cash_delivery, ask_tip) values ($1, $2, $3, $4, $5, $6, $7)
-       on conflict (business_id) do update set prep_min = $2, scheduled_orders = $3, auto_accept = $4, pay_cash_pickup = $5, pay_cash_delivery = $6, ask_tip = $7, updated_at = now()`,
-      [a.negocio.id, prep, !!p.sched, !!p.auto, !!p.cashP, cashD, p.tip !== false]);
+      `insert into delivery_settings (business_id, prep_min, scheduled_orders, auto_accept, pay_cash_pickup, pay_cash_delivery, ask_tip, pay_card) values ($1, $2, $3, $4, $5, $6, $7, $8)
+       on conflict (business_id) do update set prep_min = $2, scheduled_orders = $3, auto_accept = $4, pay_cash_pickup = $5, pay_cash_delivery = $6, ask_tip = $7, pay_card = $8, updated_at = now()`,
+      [a.negocio.id, prep, !!p.sched, !!p.auto, !!p.cashP, cashD, p.tip !== false, card]);
     return x;
   });
   const si = (v: boolean | undefined) => (v === undefined ? null : v ? "Sí" : "No");
   await auditar(a, "pedidos.ajustes",
-    antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash), efectivo_al_entregar: si(antes.cashd), propina: si(antes.tip) } : null,
-    { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP), efectivo_al_entregar: si(cashD), propina: si(p.tip !== false) });
+    antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash), efectivo_al_entregar: si(antes.cashd), propina: si(antes.tip), tarjeta: si(antes.card) } : null,
+    { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP), efectivo_al_entregar: si(cashD), propina: si(p.tip !== false), tarjeta: si(card) });
   return { ok: true };
 }
 
@@ -129,5 +133,23 @@ export async function ayudaResponder(id: string, numero: string, texto: string):
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, "pedido.ayuda.responder", { pedido: String(numero) }, { respuesta: String(texto).trim().slice(0, 120) });
   await avisarAyuda(String(numero), "help_reply");
+  return { ok: true };
+}
+
+/* Devolver dinero de un pedido pagado con tarjeta (total o parcial, con motivo). Solo el dueño (Cobros): mueve dinero.
+   La comisión de To'Latino baja en proporción; el cliente recibe el aviso. Idempotente por la clave del intento. */
+export async function pedidoDevolver(id: string, numero: string, centavos: number, motivo: string, clave: string): Promise<Res> {
+  const a = await entrar(id, "pay");
+  if (!a) return no("Solo el dueño puede devolver dinero.", "Only the owner can refund money.");
+  if (!/^\d{1,12}$/.test(String(numero ?? "")) || !/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Ese pedido no existe.", "That order does not exist.");
+  const m = String(motivo ?? "").trim();
+  if (m.length < 3) return no("Escribe el motivo: lo ve el cliente.", "Write the reason: the client sees it.");
+  const p = (await db().query<{ id: string }>(
+    `select p.id::text from payments p join operations o on o.id = p.operation_id where o.business_id = $1 and o.number = $2 and o.kind = 'order' and p.kind = 'full'`, [a.negocio.id, String(numero)])).rows[0];
+  if (!p) return no("Este pedido no se pagó con tarjeta.", "This order was not paid by card.");
+  const { devolverPago } = await import("@/lib/cobros");
+  const r = await devolverPago({ paymentId: p.id, centavos: Math.round(Number(centavos)), por: "business", actorId: a.yo.id, motivo: m, idem: `neg-${clave}` });
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.devolver", { pedido: `#${numero}` }, { pedido: `#${numero}`, monto: `$${(Math.round(Number(centavos)) / 100).toFixed(2)}`, motivo: m.slice(0, 120) });
   return { ok: true };
 }

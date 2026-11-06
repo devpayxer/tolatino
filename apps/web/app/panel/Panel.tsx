@@ -19,6 +19,8 @@ import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { entregaBloques } from "./Entrega";
+import { cobrosBloques } from "./Cobros";
+import type { CobrosPanel } from "@/lib/cobros";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
@@ -28,7 +30,7 @@ const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod" | "dlv" | "mas"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod" | "dlv" | "mas" | "pay"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -72,10 +74,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -87,7 +89,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -114,7 +116,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -142,6 +144,8 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
+  // Cobros (DASH-COBROS): solo el dueño (toca dinero), en negocios que venden por la app.
+  const cobra = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay"));
   // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
   const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
@@ -199,6 +203,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
                   {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
                   {vende ? navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod")) : null}
                   {entrega ? navIt(sec === "dlv", "truck", E2("Entrega", "Delivery"), () => go("dlv")) : null}
+                  {cobra ? navIt(sec === "pay", "card", E2("Cobros", "Payouts"), () => go("pay")) : null}
                 </div>
               ) : vende ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
@@ -229,7 +234,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
         </div>
       ) : !desk && mnav.length > 1 ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: `repeat(${mnav.length},minmax(0,1fr))` }}>
-          {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && (sec === "mod" || sec === "dlv")); return (
+          {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && (sec === "mod" || sec === "dlv" || sec === "pay")); return (
             <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
               <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
             </div>); })}
@@ -257,6 +262,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
   if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
   if (c.ruta.sec === "dlv") return entregaBloques(c);
+  if (c.ruta.sec === "pay") return { blocks: cobrosBloques(c, c.cob), ed: null };
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
   if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : c.ruta.sub === "jobs" ? jobsBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
@@ -559,6 +565,7 @@ function masBloques(c: Ctx): Bloque[] {
     { type: "rows", items: [
       ...(vende ? [{ icon: "grid", t: E2("Lo que vendes", "What you sell"), onClick: () => c.go("mod") }] : []),
       ...(entrega ? [{ icon: "truck", t: E2("Entrega", "Delivery"), onClick: () => c.go("dlv") }] : []),
+      ...(d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay")) ? [{ icon: "card", t: E2("Cobros", "Payouts"), onClick: () => c.go("pay") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") }] },
   ];

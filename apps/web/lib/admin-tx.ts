@@ -18,7 +18,8 @@ export function leerFiltrosTx(sp: Record<string, string | undefined>): FiltrosTx
 const EST = `case when o.status in ('pending', 'change_proposed') then 'pend'
   when o.status = 'confirmed' and (o.kind <> 'order' or coalesce(o.stage, '') not in ('delivered', 'picked_up')) then 'curso'
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'done' when o.status = 'cancelled' then 'cx' else 'no' end`;
-export type FilaTx = { num: string; k: "order" | "table"; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null };
+export type FilaTx = { num: string; k: "order" | "table"; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
+  pago: string | null; devuelto: number; comision: number; tarjeta: string | null };
 function donde(s: Staff, f: FiltrosTx) {
   const w = ["o.kind in ('order', 'table')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
   if (f.tab !== "all") w.push(f.tab === "ped" ? "o.kind = 'order'" : "o.kind = 'table'");
@@ -32,13 +33,18 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
   const [L, n, k] = await Promise.all([
     db().query<FilaTx>(
       `select o.number as num, o.kind as k, o.business_id as biz, b.name as bname, u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien,
-              to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST} as st, o.cancelled_by as detalle
-         ${DESDE} where ${w} order by o.id desc limit ${POR_PAGINA_TX} offset ${(f.pag - 1) * POR_PAGINA_TX}`, v),
+              to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST} as st, o.cancelled_by as detalle,
+              py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta
+         ${DESDE} left join payments py on py.operation_id = o.id and py.kind = 'full' where ${w} order by o.id desc limit ${POR_PAGINA_TX} offset ${(f.pag - 1) * POR_PAGINA_TX}`, v),
     db().query<{ n: number }>(`select count(*)::int as n ${DESDE} where ${w}`, v),
-    db().query<{ hoy: number; hoyc: number; done: number; donec: number; perdidos: number; rsv: number }>(
+    db().query<{ hoy: number; hoyc: number; done: number; donec: number; perdidos: number; rsv: number; ret: number; retc: number; com: number; dev: number }>(
       `select count(*) filter (where o.sent_at > now() - interval '1 day')::int as hoy, coalesce(sum(o.total_cents) filter (where o.sent_at > now() - interval '1 day' and o.kind = 'order'), 0)::int as hoyc,
               count(*) filter (where (${EST}) = 'done' and o.kind = 'order')::int as done, coalesce(sum(o.total_cents) filter (where (${EST}) = 'done' and o.kind = 'order'), 0)::int as donec,
-              count(*) filter (where (${EST}) in ('cx', 'no'))::int as perdidos, count(*) filter (where o.kind = 'table')::int as rsv
+              count(*) filter (where (${EST}) in ('cx', 'no'))::int as perdidos, count(*) filter (where o.kind = 'table')::int as rsv,
+              (select count(*)::int from payments p where p.status = 'held' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as ret,
+              (select coalesce(sum(amount_cents), 0)::int from payments p where p.status = 'held' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as retc,
+              (select coalesce(sum(fee_cents * (amount_cents - refunded_cents) / amount_cents), 0)::int from payments p where p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as com,
+              (select coalesce(sum(refunded_cents), 0)::int from payments p where p.updated_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as dev
          from operations o where o.kind in ('order', 'table') and o.sent_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))`, [s.cities]),
   ]);
   return { filas: L.rows, total: n.rows[0]!.n, kpi: k.rows[0]! };

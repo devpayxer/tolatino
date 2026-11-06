@@ -1,0 +1,26 @@
+/* Contrato con Stripe: el código real de la pasarela (no el simulador) contra stripe-mock, que valida cada llamada contra
+   la especificación oficial de la API (rutas, parámetros y tipos). Si mandamos un parámetro que Stripe no acepta, falla. */
+process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+process.env.STRIPE_API_BASE = process.env.STRIPE_API_BASE || 'http://127.0.0.1:12111';
+const { pasarela } = require(process.env.CONTRATO_OUT + '/pagos/pasarela.js');
+const { formulario, firmaValida } = require(process.env.CONTRATO_OUT + '/pagos/stripe.js');
+const crypto = require('crypto');
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
+(async () => {
+  ok(pasarela.modo() === 'stripe', 'con clave: modo Stripe');
+  ok(formulario({ a: { b: 1 }, c: ['x', 'y'], d: [{ e: 2 }] }).join('&') === 'a%5Bb%5D=1&c%5B0%5D=x&c%5B1%5D=y&d%5B0%5D%5Be%5D=2', 'codifica objetos anidados como Stripe');
+  const acct = await pasarela.cuentaCrear('sabor-dominicano', 'Sabor Dominicano'); ok(/^acct_/.test(acct), 'crear cuenta Express (accounts)');
+  const link = await pasarela.cuentaEnlace(acct, 'https://pruebas.tolatino.com/panel/x/cobros?vuelta=1', 'https://pruebas.tolatino.com/panel/x/cobros?otra=1'); ok(/^https?:/.test(link), 'enlace de alta (account_links)');
+  const login = await pasarela.cuentaPanel(acct); ok(/^https?:/.test(login), 'panel de Stripe (login_links)');
+  const e = await pasarela.cuentaLeer(acct); ok(e && typeof e.cargos === 'boolean' && Array.isArray(e.pide), 'leer estado de la cuenta');
+  const r = await pasarela.retener({ centavos: 2500, comision: 220, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-' + Date.now(), meta: { order: '1001', business_id: 'sabor-dominicano' } });
+  // stripe-mock no guarda estado: responde «requires_payment_method»; lo que importa es que aceptó cada parámetro.
+  ok(r.ok || r.codigo === 'requires_payment_method', 'retener: payment_intents con captura manual, comisión y destino (parámetros válidos)');
+  const pi = r.ok ? r.pi : 'pi_123';
+  const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
+  const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');
+  const d = await pasarela.devolver(pi, 500, 'contrato-' + Date.now()); ok(d.ok && /^re_/.test(d.id), 'devolver: refunds con reverse_transfer y refund_application_fee');
+  const t = Math.floor(Date.now() / 1000), cuerpo = '{"id":"evt_1"}', s = `t=${t},v1=${crypto.createHmac('sha256', 'whsec_x').update(`${t}.${cuerpo}`).digest('hex')}`;
+  ok(firmaValida(cuerpo, s, 'whsec_x') && !firmaValida(cuerpo, s, 'whsec_y') && !firmaValida(cuerpo + ' ', s, 'whsec_x'), 'firma del webhook: buena pasa, otro secreto o cuerpo cambiado no');
+  console.log('OK');
+})().catch((e) => { console.error(e); process.exit(1); });

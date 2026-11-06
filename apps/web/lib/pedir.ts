@@ -5,6 +5,7 @@ import type { Lang } from "./idioma";
 import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
 import { ITEMS_FREE, TOPE_FREE } from "./plan";
 import { vencer } from "./pedidos";
+import { cobrarOperacion, registrarRetencion, retenerPedido, tarjetaDe } from "./cobros";
 
 /* El menú que ve el cliente (pestaña Menú de la ficha, Resumen · menú y checkout) y las reglas del pedido de Comida
    con pago en el local (Fase 2 · bloque 2b). El servidor decide todo: qué se ve, qué se puede pedir, a qué precio,
@@ -43,6 +44,7 @@ export type PSlot = { v: string; l: string };
 export type PEstado = {
   canOrd: boolean; later: boolean; closed: boolean; closedT: string; closedS: string; readyMin: number; now: number; openAt: number | null;
   sched: boolean; slots: PSlot[]; free: boolean; freeLeft: number | null; low: number; dia: string;
+  auto: boolean; // acepta pedidos al instante ahora (abierto y sin pausa): con tarjeta, se cobra al enviar
   // Delivery (Panel · Entrega): las formas de entrega de ahora, en el orden del diseño (delivery primero), y sus reglas.
   modes: ("delivery" | "pickup")[]; slotsD: PSlot[];
   dlv: { zone: number; fee: number; free: number; min: number; travel: number; tip: boolean; ext: string | null; hasta: number | null; d1: number; d2: number } | null;
@@ -146,7 +148,7 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
   const dlv = dlvOk ? { zone: b.zone_mi, fee: b.fee_cents, free: b.free_over_cents, min: b.min_order_cents, travel: b.travel_min, tip: b.ask_tip, ext: b.who === "external" ? b.external_app : null,
     hasta: dlvTo, d1: readyMin + b.travel_min, d2: readyMin + 2 * b.travel_min } : null;
   return { canOrd: canOrd && (!later || slots.length > 0) && modes.length > 0, later, closed: !!closedT, closedT, closedS, readyMin, now, openAt: sig?.[0] ?? null, sched: b.scheduled_orders, slots,
-    free, freeLeft, low: b.low_alert, dia, modes, slotsD, dlv };
+    free, freeLeft, low: b.low_alert, dia, modes, slotsD, dlv, auto: b.auto_accept && b.open && !b.pause_until };
 }
 
 async function topeFree(c: Q, negocio: string, mes: string) {
@@ -251,8 +253,9 @@ export type LineaIn = { item: string; ch: Record<string, number[]>; k?: Record<s
 export type PedidoIn = {
   negocio: string; lineas: LineaIn[]; cuando: string; nota?: string; clave: string;
   modo?: "pickup" | "delivery"; direccion?: string; propina?: { k: string; monto?: number }; entrega?: DropPref & { guardar?: boolean };
+  pago?: { tipo: "tarjeta" | "efectivo"; pm?: string };   // tarjeta: la referencia de Stripe (pm_…), nunca el número
 };
-export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true };
+export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true; tarjeta?: true };
 
 const ID = /^\d{1,18}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -268,6 +271,12 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
   if (cuando !== "asap" && !/^\d{2}:\d{2}$/.test(cuando)) return no("Elige cuándo lo recoges.", "Pick when you pick it up.");
   const notaCliente = typeof p.nota === "string" ? p.nota.trim().slice(0, 200) : "";
   await vencer({ negocio: p.negocio });
+  const conTarjeta = p.pago?.tipo === "tarjeta";
+  const pm = conTarjeta && typeof p.pago?.pm === "string" && /^pm_[A-Za-z0-9_]{3,80}$/.test(p.pago.pm) ? p.pago.pm : null;
+  if (conTarjeta && !pm) return no("Elige con qué tarjeta pagas.", "Choose the card you pay with.", { tarjeta: true });
+  const T = conTarjeta ? await tarjetaDe(p.negocio) : null;
+  if (conTarjeta && !T?.on) return no("Este negocio no está cobrando con tarjeta ahora. Paga en el local.", "This business is not taking cards right now. Pay at the store.", { tarjeta: true });
+  let retenido: string | null = null;
 
   const c = await db().connect();
   try {
@@ -353,12 +362,20 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
       }
     }
     const total = sub + tax + envio + propina;
+    const num = (await c.query<{ n: string }>(`select nextval('operations_order_seq')::text as n`)).rows[0]!.n;
+    // Tarjeta: se retiene el total antes de guardar el pedido (si el banco la rechaza, no hay pedido).
+    let ret: Awaited<ReturnType<typeof retenerPedido>> | null = null;
+    if (conTarjeta && T?.cuenta && pm) {
+      ret = await retenerPedido({ negocio: b.id, cuenta: T.cuenta, clave: p.clave, total, subtotal: sub, pm, userId, numero: num }, c);
+      if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
+      retenido = ret.pi;
+      if (ret.estado === "accion") { await c.query("rollback"); await liberarSilencioso(ret.pi); return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o paga en el local.", "Your bank asks for an extra verification we can't do here yet. Try another card or pay at the store.", { tarjeta: true }); }
+    }
     const drop: DropPref | null = modo === "delivery" && p.entrega && typeof p.entrega === "object" ? {
       drop: p.entrega.drop === "puerta" ? "puerta" : "mano", at: Array.isArray(p.entrega.at) ? p.entrega.at.filter((x) => ["timbre", "noTimbre", "llamar", "texto"].includes(x)).slice(0, 4) : [],
       note: String(p.entrega.note ?? "").trim().slice(0, 200) } : null;
     const listoMin = programado != null ? programado - (modo === "delivery" && D ? D.travel : 0) : est.now + est.readyMin + extra;
     const auto = b.auto_accept && b.open && !b.pause_until && programado == null;
-    const num = (await c.query<{ n: string }>(`select nextval('operations_order_seq')::text as n`)).rows[0]!.n;
     const op = await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, customer_note, subtotal_cents, tax_cents, total_cents,
                                pay_mode, respond_by, confirmed_at, answered_at, free_quota_month, client_key, is_test, details, delivery_cents, tip_cents)
@@ -374,9 +391,10 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
           to: { label: dir.label, street: dir.street, apt: dir.apt, zip: dir.zip, mi: dir.mi, addressId: dir.id }, drop, ext: D.ext,
           eta: { d1: (programado ?? est.now + extra) + (programado != null ? 0 : D.d1), d2: (programado ?? est.now + extra) + (programado != null ? 10 : D.d2) },
         } : { pickupNote: b.pickup_note ?? null, address: b.address }),
-        modo, modo === "delivery" ? "entrega" : "local", envio, propina],
+        modo, ret?.ok ? "app" : modo === "delivery" ? "entrega" : "local", envio, propina],
     );
     const opId = op.rows[0]!.id;
+    if (ret?.ok) await registrarRetencion(c, { opId, userId, negocio: b.id, city: b.city, total, comision: ret.comision, r: ret, pm: pm ?? undefined });
     for (const x of L) {
       await c.query(
         `insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options, instructions)
@@ -396,14 +414,19 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [opId, userId]);
     if (auto) await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'accepted', 'system', $2::jsonb)`, [opId, JSON.stringify({ es: "Aceptado al instante", en: "Accepted instantly" })]);
     await c.query("commit");
+    retenido = null;
+    if (ret?.ok && auto) await cobrarOperacion(opId); // acepta pedidos al instante: se cobra al enviar
     return { ok: true, numero: num };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);
+    if (retenido) await liberarSilencioso(retenido); // se retuvo y el pedido no se guardó: se libera completo
     throw e;
   } finally {
     c.release();
   }
 }
+
+async function liberarSilencioso(pi: string) { await (await import("./pagos/pasarela")).pasarela.liberar(pi).catch(() => undefined); }
 
 /* ── El pedido (APP-NEG-PEDIDO): solo lo ve quien lo hizo. ── */
 export type PedidoVista = {
@@ -415,6 +438,8 @@ export type PedidoVista = {
   // Delivery: a dónde, cómo, cuánto el envío y la propina, cuándo llega y el enlace de la app externa.
   delivery: boolean; envio: string | null; propina: string | null;
   entrega: { to: { label: string; street: string; apt: string | null; zip: string } | null; drop: DropPref | null; ext: string | null; seguimiento: string | null; llega: string | null } | null;
+  // Tarjeta en la app: el estado del dinero (retenido, cobrado, liberado, devuelto) y con qué tarjeta.
+  pago: { estado: string; monto: string; devuelto: string | null; tarjeta: string | null } | null;
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
@@ -447,7 +472,11 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
       where e.operation_id = $1 order by e.at, e.id`, [o.id]);
   const tiempos: Record<string, string> = {};
   for (const e of ev.rows) tiempos[e.kind] = hora(hm2m(e.at));
+  const pg = (await db().query<{ st: string; amount: number; refunded: number; brand: string | null; l4: string | null }>(
+    `select status as st, amount_cents as amount, refunded_cents as refunded, card_brand as brand, card_last4 as l4 from payments where operation_id = $1 and kind = 'full'`, [o.id])).rows[0];
+  const MARCA: Record<string, string> = { visa: "Visa", mc: "Mastercard", mastercard: "Mastercard", amex: "Amex", disc: "Discover", discover: "Discover" };
   return {
+    pago: pg ? { estado: pg.st, monto: money(pg.amount), devuelto: pg.refunded ? money(pg.refunded) : null, tarjeta: pg.brand && pg.l4 ? `${MARCA[pg.brand] ?? pg.brand} ·· ${pg.l4}` : null } : null,
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, direccion: o.address, telefono: o.phone, lat: o.lat, lng: o.lng },
     status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: hora(hm2m(o.enviado)), listo: hora(hm2m(o.listo)), programado: o.programado ? hora(hm2m(o.programado)) : null,
     respondeHasta: hora(hm2m(o.responde)),

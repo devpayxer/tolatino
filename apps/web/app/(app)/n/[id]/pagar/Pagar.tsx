@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState, type ComponentType } from "react";
 import type { DropPref, MenuPublico } from "@/lib/pedir";
 import { calc, carritoGuardado, entrega, EnvioGratis, guardarCarrito, guardarModo, limpiar, modoDe, modoGuardado, Modos, type Linea, type Modo } from "../MenuCliente";
 import { enviarPedido } from "../acciones-pedido";
+import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,8 @@ const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
 const AT = [["timbre", "Toca el timbre", "Ring the bell"], ["noTimbre", "No toques el timbre", "Don't ring the bell"], ["llamar", "Llámame al llegar", "Call me on arrival"], ["texto", "Escríbeme al llegar", "Text me on arrival"]] as const;
 const LB: Record<string, [string, string]> = { casa: ["Casa", "Home"], trabajo: ["Trabajo", "Work"], otra: ["Otra", "Other"] };
 
-export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
+export type PagoCheckout = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
+export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: PagoCheckout }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const biz = m.negocio.id, est = m.estado, D = est.dlv, dir = m.dir;
@@ -39,6 +41,12 @@ export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
   const [guardar, setGuardar] = useState(true);
   const [tip, setTip] = useState("p18");
   const [tipAmt, setTipAmt] = useState("");
+  // Cómo pagas: tarjeta (si el negocio cobra con tarjeta) o efectivo / en el local. La tarjeta se retiene al enviar.
+  const [payK, setPayK] = useState<"card" | "cash">(pago ? "card" : "cash");
+  const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []);
+  const [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas[0] ?? null);
+  const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null);
+  const conTarjeta = !!pago && payK === "card";
   const clave = useMemo(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16).padStart(8, "0")}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, "0")}`), []);
   useEffect(() => { setCart(limpiar(m, carritoGuardado(biz))); setModoG(modoGuardado(biz)); window.scrollTo(0, 0); }, [m, biz]);
   useEffect(() => { setCuando(est.later ? slotsAll[0]?.v ?? "asap" : "asap"); setVerHoras(false); }, [dl]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -69,7 +77,10 @@ export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
   const sinDir = dl && !dir, sinMapa = dl && !!dir && dir.mi == null;
   const bloqueo = ENT.blk || (sinMapa ? E2("No encontramos tu dirección en el mapa. Revisa la calle y el número, o pide pickup.", "We couldn't find your address on the map. Check the street and number, or order pickup.") : "");
   const cta = sinDir ? E2("Agrega tu dirección", "Add your address") : ENT.blk ? ENT.blkS : `${E2("Enviar pedido · ", "Place order · ")}${money(total)}`;
-  const hold = dl ? E2(`Pagas ${money(total)} en efectivo al recibir. No se cobra nada en la app.`, `You pay ${money(total)} in cash on delivery. Nothing is charged in the app.`)
+  const auto = !!m.estado.auto && cuando === "asap"; // programado: lo acepta el negocio
+  const hold = conTarjeta ? (auto ? E2(`Se cobran ${money(total)} al enviar: ${m.negocio.nombre} acepta pedidos al instante. Si algo falla, te lo devolvemos completo.`, `We charge ${money(total)} when you place it: ${m.negocio.nombre} accepts orders instantly. If anything goes wrong, you get it all back.`)
+      : E2(`Retenemos ${money(total)} en tu tarjeta. Se cobra cuando ${m.negocio.nombre} acepta el pedido; si no lo acepta en 10 minutos, se libera completo.`, `We hold ${money(total)} on your card. It is charged when ${m.negocio.nombre} accepts the order; if not accepted in 10 minutes, it is fully released.`))
+    : dl ? E2(`Pagas ${money(total)} en efectivo al recibir. No se cobra nada en la app.`, `You pay ${money(total)} in cash on delivery. Nothing is charged in the app.`)
     : E2(`Pagas ${money(total)} en el local al recoger. No se cobra nada en la app.`, `You pay ${money(total)} at the store when you pick up. Nothing is charged in the app.`);
   const sinPedidos = !est.canOrd;
   const dropL = drop === "mano" ? E2("En la mano", "Hand it to me") : E2("Dejar en la puerta", "Leave at door");
@@ -86,14 +97,17 @@ export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
     if (!lines.length || enviando || sinPedidos) return;
     if (sinDir) { router.push(`/cuenta/direcciones/nueva?volver=${aqui}`); return; }
     if (bloqueo) { setError({ msg: bloqueo, menu: !!ENT.blk && !ENT.blk.includes(" mi ") }); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (conTarjeta && !tarjeta) { setHoja(true); return; }
     setEnviando(true); setError(null);
     try {
       const r = await enviarPedido({
         negocio: biz, cuando, clave, modo, lineas: lines.map((l) => ({ item: l.id, ch: l.ch, k: l.k, q: l.q, nota: l.nt })),
+        pago: conTarjeta && tarjeta ? { tipo: "tarjeta", pm: tarjeta.pm } : { tipo: "efectivo" },
         ...(dl ? { direccion: dir?.id, propina: tipOn ? { k: tip, monto: tipC } : undefined, entrega: { drop, at, note: nota.trim(), guardar } } : {}),
       });
       if (r.ok) { guardarCarrito(biz, []); router.push(`/pedido/${r.numero}`); return; }
       if (r.entrar || r.perfil) { router.push(`/entrar?volver=${aqui}`); return; }
+      if (r.tarjeta && tarjeta) setDeclinada(tarjeta.pm);
       setError({ msg: es ? r.msg.es : r.msg.en, menu: !!r.menu }); window.scrollTo({ top: 0, behavior: "smooth" });
     } catch {
       setError({ msg: E2("No se pudo enviar. Revisa tu conexión y prueba de nuevo.", "Could not send. Check your connection and try again."), menu: false });
@@ -278,9 +292,22 @@ export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
             )}
             <div className={caja}>
               <div className={K}>{E2("PAGO", "PAYMENT")}</div>
-              <div className="mt-[11px] flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
-                <div className="flex h-[38px] min-w-0 flex-1 items-center justify-center gap-[7px] rounded-[11px] bg-white text-[12.5px] font-bold text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]"><Icon name="dollar" size={15} />{dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")}</div>
+              <div role="tablist" className="mt-[11px] flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
+                {(pago ? [["card", "card", E2("Tarjeta", "Card")], ["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const
+                  : [["cash", "dollar", dl ? E2("Efectivo al recibir", "Cash on delivery") : E2("Pagas en el local", "Pay at the store")]] as const).map(([k, ic, l]) => (
+                  <button key={k} type="button" role="tab" aria-selected={payK === k} onClick={() => { setPayK(k); setError(null); }}
+                    className={`flex h-[38px] min-w-0 flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${payK === k ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "text-ink/55"}`}><Icon name={ic} size={15} />{l}</button>
+                ))}
               </div>
+              {conTarjeta && (
+                <button type="button" data-screen-label="Checkout · tarjeta" onClick={() => setHoja(true)} className="mt-2.5 flex w-full items-center gap-3 rounded-[14px] border border-ink/[.12] px-3.5 py-3 text-left">
+                  {tarjeta ? <span className="grid h-[26px] w-[40px] flex-none place-items-center rounded-[6px] bg-ink font-mono text-[8.5px] font-extrabold tracking-[0.06em] text-white">{marcaB(tarjeta.marca)}</span>
+                    : <span className="grid size-[26px] flex-none place-items-center rounded-[8px] bg-action/10"><Icon name="plus" size={14} color="var(--tl-action)" /></span>}
+                  <span className="min-w-0 flex-1"><span className="block text-[14px] font-bold">{tarjeta ? tarjetaL(tarjeta) : E2("Agregar tarjeta", "Add a card")}</span>
+                    {declinada && tarjeta?.pm === declinada && <span className="mt-0.5 block font-mono text-[9.5px] font-bold tracking-[0.08em] text-danger">{E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD")}</span>}</span>
+                  <span className="flex-none text-[12.5px] font-bold text-action">{tarjeta ? E2("Cambiar", "Change") : ""}</span>
+                </button>
+              )}
             </div>
             <div className={`${caja} lg:hidden`}>{resumen}</div>
             <div className="lg:hidden">{notaPago}</div>
@@ -301,6 +328,12 @@ export function Pagar({ m, es }: { m: MenuPublico; es: boolean }) {
         <div data-screen-label="Checkout · barra" className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-paper/95 px-4 pb-5 pt-3 backdrop-blur-[14px] lg:hidden">
           <div className="flex">{boton}</div>
         </div>
+      )}
+      {hoja && pago && (
+        <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
+          nota={`${E2("PARA TU PEDIDO DE ", "FOR YOUR ORDER OF ")}${money(total)}${auto ? E2(" · SE COBRA AL ENVIAR", " · CHARGED WHEN YOU ORDER") : E2(" · SE RETIENE AL ENVIAR", " · HELD WHEN YOU ORDER")}`}
+          onClose={() => setHoja(false)}
+          onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((L) => [nueva, ...L]); setTarjeta(t); setHoja(false); if (declinada && t.pm !== declinada) setError(null); }} />
       )}
     </div>
   );

@@ -340,3 +340,18 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push.
 - [ ] **Avisos que la pantalla ya promete y ahora pueden salir:** reporte de foto («te avisamos el resultado»), invitación al
       equipo, «Avísame cuando haya», recomendar. Engancharlos a `avisar()` con su plantilla.
+
+## Pagos con tarjeta (bloque 2d, 6 nov 2026)
+- [ ] **Cuenta de Stripe (modo prueba y luego real) + Connect Express.** Claves en los secretos del entorno, por el formulario
+      seguro: `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY` y `STRIPE_WEBHOOK_SECRET` (endpoint `/api/stripe/webhook`, eventos
+      `account.updated`, `payment_intent.succeeded`, `payment_intent.canceled`, `charge.refunded`, `charge.dispute.created`).
+      Sin clave: el sandbox usa el simulador; producción deja la tarjeta apagada (candado + guardián `simuladorAislado`).
+- [ ] **3D Secure:** hoy, si el banco pide verificación extra, se pide otra tarjeta. Falta completar la acción con Stripe.js
+      (`handleNextAction`) y confirmar el pedido después.
+- [ ] **Disputas:** el webhook las marca y deja auditoría; falta la cola «Disputas» (120 h) con evidencia (Super Admin).
+- [ ] **Pagos al banco (Payout) y conciliación diaria** Stripe ↔ libro propio (guardián del dinero, HERRAMIENTAS 20):
+      hoy Stripe paga según su calendario; falta fijarlo a martes y el reporte diario de diferencias.
+- [ ] **Quitar una tarjeta guardada** desde Mi cuenta (Pagos) y el Wallet de To'Latino.
+- [ ] **Depósitos de citas, boletos y apartados** (comisiones 8 %, 5 % + $1, 6 % ya están en `fee_rules`): llegan con sus
+      bloques. Super Admin › Planes › Comisiones (programar cambios con 30 días) también.
+- [ ] **Recibo por correo** del pedido pagado (Fase 2, con el correo).

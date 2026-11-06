@@ -15,6 +15,7 @@ import { itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
 import type { NovData } from "../../NovedadesPanel";
 import { horarioVac, solicitudesNuevas, vacantePanel, vacantesPanel, verSolicitud } from "@/lib/jobs";
 import { db } from "@/lib/db";
+import { actualizarCuenta, cobrosPanel } from "@/lib/cobros";
 import type { JobsData } from "../../JobsPanel";
 import { Panel, type Ruta } from "../../Panel";
 
@@ -24,7 +25,7 @@ const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas"
 const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
   const [{ id, r = [] }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent(`/panel/${id}${r.length ? `/${r.join("/")}` : ""}`)}`);
   let ruta: Ruta;
@@ -35,10 +36,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "mas" ? undefined : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "mas" ? undefined : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -106,5 +108,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     hoy: ruta.sec === "hoy" && cat && d.pro ? await solicitudesNuevas(d.id) : undefined,
   };
   if (ruta.det && /^va[cp]:/.test(ruta.det) && !cat) ruta.det = null;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} />;
+  // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
+  if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
+  const cob = ruta.sec === "pay" ? await cobrosPanel(d.id) : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} />;
 }

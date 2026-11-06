@@ -64,7 +64,15 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
         hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)", cxAt: "" };
   const etaK = cerrado ? (p.status === "cancelled" ? E2("CANCELADO A LAS", "CANCELLED AT") : "") : fin ? (dl ? E2("ENTREGADO", "DELIVERED") : E2("RECOGIDO", "PICKED UP")) : dl ? E2("LLEGA", "ARRIVES") : E2("LISTO A LAS", "READY AT");
   const eta = cerrado ? V.cxAt : fin ? (dl ? p.tiempos.delivered : p.tiempos.picked_up) ?? p.listo : dl ? ENT?.llega ?? p.listo : p.programado ?? p.listo;
-  const money = cerrado ? E2("SIN COBRO", "NOT CHARGED") : dl ? E2(`PAGAS ${p.total} EN EFECTIVO AL RECIBIR`, `PAY ${p.total} IN CASH ON DELIVERY`) : E2(`PAGAS ${p.total} EN EL LOCAL AL RECOGER`, `PAY ${p.total} AT THE STORE AT PICKUP`);
+  const g = p.pago, tj = g?.tarjeta ? ` · ${g.tarjeta.toUpperCase()}` : "";
+  const money = g ? ({
+    held: E2(`RETENIDO ${g.monto}${tj} · SE COBRA AL ACEPTAR`, `HELD ${g.monto}${tj} · CHARGED WHEN ACCEPTED`),
+    captured: E2(`PAGADO ${g.monto}${tj}`, `PAID ${g.monto}${tj}`),
+    released: E2(`LIBERADO · NO SE TE COBRÓ`, `RELEASED · YOU WERE NOT CHARGED`),
+    refunded: E2(`DEVUELTO ${g.devuelto ?? g.monto}${tj}`, `REFUNDED ${g.devuelto ?? g.monto}${tj}`),
+    partially_refunded: E2(`PAGADO ${g.monto} · DEVUELTOS ${g.devuelto}`, `PAID ${g.monto} · ${g.devuelto} REFUNDED`),
+  } as Record<string, string>)[g.estado] ?? E2(`PAGO CON TARJETA${tj}`, `CARD PAYMENT${tj}`)
+    : cerrado ? E2("SIN COBRO", "NOT CHARGED") : dl ? E2(`PAGAS ${p.total} EN EFECTIVO AL RECIBIR`, `PAY ${p.total} IN CASH ON DELIVERY`) : E2(`PAGAS ${p.total} EN EL LOCAL AL RECOGER`, `PAY ${p.total} AT THE STORE AT PICKUP`);
   const volver = () => router.push(`/n/${p.negocio.id}`);
   const llamar = p.negocio.telefono ? () => { location.href = `tel:${p.negocio.telefono}`; } : null;
 

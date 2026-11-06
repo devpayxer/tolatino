@@ -7,8 +7,9 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
 import type { EstTx, FiltrosTx, ListaTx } from "@/lib/admin-tx";
-import { exportarTx } from "./acciones-tx";
-import { Toast, useAncho, useToast } from "./Colas";
+import { devolverTx, exportarTx } from "./acciones-tx";
+import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import type { ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminList" | "Pager" | "Icon", ComponentType<any>>;
@@ -16,9 +17,10 @@ const ST: Record<EstTx, [string, string]> = { pend: ["PENDIENTE", "neutral"], cu
 const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
-export function Transacciones({ d, f, porPagina, exportar }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean }) {
+export function Transacciones({ d, f, porPagina, exportar, devolver }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean; devolver: boolean }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
-  const [q, setQ] = useState(f.q), [toast, setToast] = useToast(), [pend, start] = useTransition();
+  const [q, setQ] = useState(f.q), [toast, setToast] = useToast(), [pend, start] = useTransition(), [conf, setConf] = useState<Confirmar | null>(null);
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const tg = (k: EstTx) => { const l = f.st.includes(k) ? f.st.filter((x) => x !== k) : [...f.st, k]; ir({ st: l.join(",") || null }); };
   const bajar = () => start(async () => {
@@ -28,14 +30,27 @@ export function Transacciones({ d, f, porPagina, exportar }: { d: ListaTx; f: Fi
     setToast(r.mensaje ?? "Descargado.");
   });
   const k = d.kpi;
+  if (conf) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <PanelBloques bloques={[{ type: "head", eye: "TRANSACCIONES", t: "Devolver dinero", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
+      <Toast t={toast} desk={desk} />
+    </div>
+  );
+  const PG: Record<string, string> = { held: "RETENIDO", captured: "COBRADO", released: "LIBERADO", refunded: "DEVUELTO", partially_refunded: "DEVUELTO EN PARTE", failed: "FALLÓ" };
   const bloques: Bloque[] = [
-    { type: "head", eye: `${d.total} EN 90 DÍAS`, t: "Transacciones", s: "Pedidos y reservaciones de los últimos 90 días. Hoy se paga en el local o al recibir: sin cobro con tarjeta ni devoluciones todavía.", h1: desk ? 26 : 22,
+    { type: "head", eye: `${d.total} EN 90 DÍAS`, t: "Transacciones", s: "Pedidos y reservaciones de los últimos 90 días: en el local, al recibir o con tarjeta en la app (retenido, cobrado, liberado, devuelto).", h1: desk ? 26 : 22,
       act: exportar ? { l: pend ? "Exportando…" : "Exportar", icon: "folder", onClick: bajar } : undefined },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "HOY", v: String(k.hoy), s: `${money(k.hoyc)} en pedidos`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
       { k: "PEDIDOS TERMINADOS 90 D", v: String(k.done), s: `${money(k.donec)} pagados en el local`, onClick: () => ir({ st: "done" }) },
       { k: "NO SE DIERON 90 D", v: String(k.perdidos), s: "cancelados, rechazados o sin respuesta", onClick: () => ir({ st: "cx,no" }) },
       { k: "RESERVACIONES 90 D", v: String(k.rsv), s: "mesas", onClick: () => ir({ tab: "rsv" }) },
+    ] },
+    { type: "kpis", cols: desk ? "repeat(3,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+      { k: "RETENIDO AHORA", v: money(k.retc), s: `${k.ret} ${k.ret === 1 ? "pedido espera" : "pedidos esperan"} que el negocio acepte` },
+      { k: "COMISIÓN 90 D", v: money(k.com), s: "solo tarjeta en la app" },
+      { k: "DEVUELTO 90 D", v: money(k.dev), s: "a tarjetas" },
     ] },
     { type: "tabs", items: ([["all", "Todas"], ["ped", "Pedidos"], ["rsv", "Reservaciones"]] as const).map(([t, l]) => ({ l, on: f.tab === t, onClick: () => ir({ tab: t === "all" ? null : t }) })) },
   ];
@@ -52,9 +67,13 @@ export function Transacciones({ d, f, porPagina, exportar }: { d: ListaTx; f: Fi
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "card", t: "Nada con esos filtros", s: "Prueba otro estado o busca por número." }]} />
         : <A.AdminList rows={d.filas.map((x) => ({
           icon: x.k === "order" ? "bag" : "restaurant", title: `${x.k === "order" ? "Pedido" : "Reservación"} ${x.k === "order" ? `#${x.num}` : x.num} · ${x.bname}`,
-          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
+          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}` : " · en el local"}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
           tag: ST[x.st][0], tone: ST[x.st][1],
-          actions: [{ label: "Ver negocio", variant: "secondary", onClick: () => router.push(`/admin/negocios/${x.biz}`) }, { label: "Ver cliente", variant: "secondary", onClick: () => router.push(`/admin/usuarios/${x.uid}`) }],
+          actions: [{ label: "Ver negocio", variant: "secondary", onClick: () => router.push(`/admin/negocios/${x.biz}`) }, { label: "Ver cliente", variant: "secondary", onClick: () => router.push(`/admin/usuarios/${x.uid}`) },
+            ...(devolver && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Devolver", variant: "secondary", onClick: () => { const clave = crypto.randomUUID(); setConf({
+              titulo: `Devolver dinero · pedido #${x.num}`, cta: "Devolver", peligro: true, sub: `Hasta ${money(x.total - x.devuelto)}. Vuelve a la tarjeta del cliente en 3 a 5 días hábiles; la comisión baja en proporción. El motivo lo ve el cliente y queda en la auditoría.`,
+              valor: { k: "MONTO EN DÓLARES", ini: ((x.total - x.devuelto) / 100).toFixed(2), max: 8 }, plantillas: ["Falta un plato del pedido.", "El pedido llegó mal.", "El negocio no entregó el pedido.", "Cobro duplicado."],
+              hacer: (m, _e, v) => devolverTx(x.num, v, m, clave) }); } }] : [])],
         }))} />}
       {d.total > porPagina ? <A.Pager label={`${a}–${b} · ${d.total}`} hasPrev={f.pag > 1} hasNext={b < d.total} onPrev={() => ir({ pag: String(f.pag - 1) })} onNext={() => ir({ pag: String(f.pag + 1) })} /> : null}
       <Toast t={toast} desk={desk} />

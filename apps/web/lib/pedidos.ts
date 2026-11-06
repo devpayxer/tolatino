@@ -1,5 +1,6 @@
 import "server-only";
 import type { PoolClient } from "pg";
+import { cobrarOperacion, liberarOperacion, pagoDe, repararPagos, type PagoVista } from "./cobros";
 import { db, tx } from "./db";
 import type { Lang } from "./idioma";
 import { hora } from "./pedir";
@@ -37,14 +38,17 @@ export async function vencer(f: { negocio?: string; userId?: string; numero?: st
   // Barato: solo si hay alguno (índice parcial de pendientes).
   const hay = await db().query(`select 1 from operations where kind = 'order' and status = 'pending' and respond_by <= now() and ${w.join(" and ")} limit 1`, v);
   if (!hay.rowCount) return;
-  await tx(async (c) => {
+  const vencidos = await tx(async (c) => {
     const ids = (await c.query<{ id: string }>(
       `update operations set status = 'expired', updated_at = now() where kind = 'order' and status = 'pending' and respond_by <= now() and ${w.join(" and ")} returning id::text`, v)).rows;
     for (const { id } of ids) {
       await devolver(c, id);
       await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'expired', 'system', $2::jsonb)`, [id, JSON.stringify({ es: "Nadie contestó en 10 minutos", en: "No reply in 10 minutes" })]);
     }
+    return ids;
   });
+  // Lo retenido en tarjeta de un pedido que nadie aceptó se libera completo.
+  for (const { id } of vencidos) await liberarOperacion(id);
 }
 
 /* ── Lo que ve el panel ── */
@@ -88,6 +92,7 @@ const fila = (x: FilaDb): Fila => {
 
 /* Panel › Hoy: los que esperan respuesta, la agenda de hoy (aceptados, listos y en camino) y lo vendido hoy. */
 export async function pedidosHoy(negocio: string) {
+  await repararPagos(negocio).catch(() => undefined);
   await vencer({ negocio });
   const r = await db().query<FilaDb & { hoy: boolean }>(
     `select ${COLS}, (o.sent_at at time zone c.timezone)::date = (now() at time zone c.timezone)::date as hoy
@@ -140,6 +145,7 @@ export type DetallePed = Fila & {
   lineas: { q: number; name: Bi; opts: Bi[]; nota: string | null; cents: number }[]; nota: string | null; listo: string; sub: number; tax: number;
   envio: number; propina: number; entrega: EntregaPed | null; telCliente: string | null;
   tl: { t: Bi; at: string }[];
+  pago: PagoVista | null; // tarjeta en la app (retenido, cobrado, liberado, devuelto)
 };
 export async function pedidoNegocio(negocio: string, numero: string): Promise<DetallePed | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
@@ -160,15 +166,16 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
          from operation_events e join operations o on o.id = e.operation_id join cities c on c.id = o.city_id
         where e.operation_id = $1 order by e.at, e.id`, [o.id]),
   ]);
+  const pago = await pagoDe(o.id);
   const T: Record<string, (q: string | null) => Bi> = {
     sent: () => ({ es: "Llegó por To’Latino", en: "Came in through To’Latino" }),
     accepted: (q) => (q ? { es: `Aceptado por ${q}`, en: `Accepted by ${q}` } : { es: "Aceptado al instante", en: "Accepted instantly" }),
     declined: (q) => ({ es: `Rechazado${q ? ` por ${q}` : ""}`, en: `Declined${q ? ` by ${q}` : ""}` }),
     ready: (q) => ({ es: `Listo para recoger${q ? ` · ${q}` : ""}`, en: `Ready for pickup${q ? ` · ${q}` : ""}` }),
     on_the_way: (q) => ({ es: `Salió en camino${q ? ` · ${q}` : ""}`, en: `Out for delivery${q ? ` · ${q}` : ""}` }),
-    delivered: (q) => ({ es: `Entregado · cobrado en efectivo${q ? ` · ${q}` : ""}`, en: `Delivered · paid in cash${q ? ` · ${q}` : ""}` }),
+    delivered: (q) => (pago ? { es: `Entregado${q ? ` · ${q}` : ""}`, en: `Delivered${q ? ` · ${q}` : ""}` } : { es: `Entregado · cobrado en efectivo${q ? ` · ${q}` : ""}`, en: `Delivered · paid in cash${q ? ` · ${q}` : ""}` }),
     tracking: (q) => ({ es: `Enlace de seguimiento${q ? ` · ${q}` : ""}`, en: `Tracking link${q ? ` · ${q}` : ""}` }),
-    picked_up: (q) => ({ es: `Entregado · pagó en el local${q ? ` · ${q}` : ""}`, en: `Delivered · paid at the store${q ? ` · ${q}` : ""}` }),
+    picked_up: (q) => (pago ? { es: `Entregado${q ? ` · ${q}` : ""}`, en: `Delivered${q ? ` · ${q}` : ""}` } : { es: `Entregado · pagó en el local${q ? ` · ${q}` : ""}`, en: `Delivered · paid at the store${q ? ` · ${q}` : ""}` }),
     expired: () => ({ es: "Nadie contestó en 10 minutos", en: "No reply in 10 minutes" }),
     cancelled: () => ({ es: "Lo canceló el cliente", en: "Cancelled by the client" }),
   };
@@ -180,6 +187,7 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
       llega: o.details?.eta ? `${hora(o.details.eta.d1)}–${hora(o.details.eta.d2)}` : null } : null,
     lineas: ls.rows.map((l) => ({ q: l.q, name: l.name, opts: (Array.isArray(l.options) ? l.options : []).map((x) => x.o), nota: l.instructions, cents: l.total })),
     tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien), at: hora(hm2m(e.at)) })),
+    pago,
   };
 }
 
@@ -216,7 +224,12 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
     if (paso === "rechazar") await devolver(c, o.id);
     const kind = { aceptar: "accepted", rechazar: "declined", listo: "ready", encamino: "on_the_way", entregado: o.mode === "delivery" ? "delivered" : "picked_up" }[paso];
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, $2, 'member', $3)`, [o.id, kind, actorId]);
-    return { ok: true } as const;
+    return { ok: true, op: o.id } as const;
+  }).then(async (r) => {
+    // La tarjeta: se cobra al aceptar; se libera si se rechaza (después de guardar el paso, fuera de la transacción).
+    if (r.ok && "op" in r && paso === "aceptar") await cobrarOperacion(r.op as string);
+    if (r.ok && "op" in r && paso === "rechazar") await liberarOperacion(r.op as string);
+    return r.ok ? { ok: true as const } : r;
   });
 }
 
@@ -250,7 +263,10 @@ export async function cancelarDelCliente(userId: string, numero: string, motivo:
     await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'user', cancel_reason = $2, updated_at = now() where id = $1`, [o.id, m]);
     await devolver(c, o.id);
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'cancelled', 'user', $2)`, [o.id, userId]);
-    return { ok: true } as const;
+    return { ok: true, op: o.id } as const;
+  }).then(async (r) => {
+    if (r.ok && "op" in r) await liberarOperacion(r.op as string);
+    return r.ok ? { ok: true as const } : r;
   });
 }
 
@@ -272,22 +288,24 @@ export type AjustesPed = {
   // Entrega (DASH-ENTREGA) y cómo se paga en delivery.
   pickup: boolean; delivery: boolean; cashD: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dEnd: number;
   who: "team" | "external"; ext: "doordash" | "uber_eats" | "other" | null; dlvAdm: string | null;
+  stripe: "none" | "pending" | "enabled" | "restricted"; // la cuenta de cobro (Cobros): la tarjeta pide «enabled» o «restricted» con cargos
 };
 export async function ajustesPedidos(negocio: string): Promise<AjustesPed> {
   const r = await db().query<{ prep: number; sched: boolean; auto: boolean; cashp: boolean; card: boolean; on: boolean; adm: string | null; note: Bi | null; busy: number; last: number;
-    pickup: boolean; delivery: boolean; cashd: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dend: number; who: "team" | "external"; ext: AjustesPed["ext"]; dadm: string | null }>(
+    pickup: boolean; delivery: boolean; cashd: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dend: number; who: "team" | "external"; ext: AjustesPed["ext"]; dadm: string | null; stripe: string | null; cargos: boolean | null }>(
     `select coalesce(d.prep_min, 20) as prep, coalesce(d.scheduled_orders, true) as sched, coalesce(d.auto_accept, false) as auto,
             coalesce(d.pay_cash_pickup, true) as cashp, coalesce(d.pay_card, false) as card, 'pedidos' = any(b.modules_on) as on,
             b.modules_off->'pedidos'->>'reason' as adm, d.pickup_note as note, coalesce(m.busy_min, 0) as busy, coalesce(m.last_min, 15) as last,
             coalesce(d.pickup, true) as pickup, coalesce(d.delivery, false) as delivery, coalesce(d.pay_cash_delivery, false) as cashd, coalesce(d.ask_tip, true) as tip,
             coalesce(d.zone_mi, 3) as zone, coalesce(d.fee_cents, 300) as fee, coalesce(d.free_over_cents, 0) as free, coalesce(d.min_order_cents, 0) as min,
             coalesce(d.travel_min, 15) as travel, coalesce(d.last_delivery_min, 0) as dend, coalesce(d.who, 'team') as who, d.external_app as ext,
-            b.modules_off->'delivery'->>'reason' as dadm
-       from businesses b left join delivery_settings d on d.business_id = b.id left join menu_settings m on m.business_id = b.id where b.id = $1`, [negocio]);
+            b.modules_off->'delivery'->>'reason' as dadm, sa.status as stripe, sa.charges_enabled as cargos
+       from businesses b left join delivery_settings d on d.business_id = b.id left join menu_settings m on m.business_id = b.id left join stripe_accounts sa on sa.business_id = b.id where b.id = $1`, [negocio]);
   const x = r.rows[0];
   return { prep: x?.prep ?? 20, sched: x?.sched ?? true, auto: x?.auto ?? false, cashP: x?.cashp ?? true, card: x?.card ?? false, on: !!x?.on, admOff: x?.adm ?? null, pickupNote: x?.note ?? null, busy: x?.busy ?? 0, last: x?.last ?? 15,
     pickup: x?.pickup ?? true, delivery: x?.delivery ?? false, cashD: x?.cashd ?? false, tip: x?.tip ?? true, zone: x?.zone ?? 3, fee: x?.fee ?? 300, free: x?.free ?? 0, min: x?.min ?? 0,
-    travel: x?.travel ?? 15, dEnd: x?.dend ?? 0, who: x?.who ?? "team", ext: x?.ext ?? null, dlvAdm: x?.dadm ?? null };
+    travel: x?.travel ?? 15, dEnd: x?.dend ?? 0, who: x?.who ?? "team", ext: x?.ext ?? null, dlvAdm: x?.dadm ?? null,
+    stripe: !x?.stripe ? "none" : x.cargos ? (x.stripe === "restricted" ? "restricted" : "enabled") : "pending" };
 }
 
 /* Cuántos pedidos esperan respuesta del negocio (pestañas de Clientes). */

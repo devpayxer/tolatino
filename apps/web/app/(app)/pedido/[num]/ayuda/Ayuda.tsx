@@ -1,7 +1,7 @@
 "use client";
 /* APP-NEG-PEDIDO-AYUDA · móvil y desktop (prototipo helpVals, pedido entregado): qué pasó (falta, equivocado, frío, dañado y,
    en delivery, tarde o no llegó; pago; otro), qué platos y cuántos, qué te gustaría y un detalle. Todo es una solicitud al
-   negocio: responde en 24 horas; si no, To'Latino revisa. Hoy se paga en el local: una devolución se arregla con el negocio. */
+   negocio: responde en 24 horas; si no, To'Latino revisa. Con tarjeta, la devolución vuelve a la tarjeta; en el local, se arregla con el negocio. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -28,7 +28,7 @@ export function Ayuda({ p, puede, delivery, lineas, es }: { p: PedidoVista; pued
     danado: ["water", E2("Llegó dañado o derramado", "Damaged or spilled"), E2("Derramado, aplastado o con el envase roto", "Spilled, crushed or broken container")],
     tarde: ["clock", E2("Llegó tarde", "Arrived late"), E2("Después de la hora que te dijeron", "After the time they told you")],
     nollego: ["home", E2("No me llegó", "It never arrived"), E2("Lo marcaron entregado y no lo tienes", "Marked delivered and you don't have it")],
-    pago: ["card", E2("Problema con el pago", "Payment issue"), E2("Lo que pagaste al recibir o en el local", "What you paid on delivery or in store")],
+    pago: ["card", E2("Problema con el pago", "Payment issue"), p.pago ? E2(`Lo que se cobró en tu ${p.pago.tarjeta ?? "tarjeta"}`, `What was charged to your ${p.pago.tarjeta ?? "card"}`) : E2("Lo que pagaste al recibir o en el local", "What you paid on delivery or in store")],
     otro: ["chat", E2("Otro problema", "Something else"), E2(`Cuéntale a ${p.negocio.nombre} qué pasó`, `Tell ${p.negocio.nombre} what happened`)],
   };
   const keys: Motivo[] = delivery ? ["falta", "equivocado", "frio", "danado", "tarde", "nollego", "pago", "otro"] : ["falta", "equivocado", "frio", "danado", "pago", "otro"];
@@ -82,7 +82,7 @@ export function Ayuda({ p, puede, delivery, lineas, es }: { p: PedidoVista; pued
         <div className={K}>{E2("¿QUÉ TE GUSTARÍA?", "WHAT WOULD YOU LIKE?")}</div>
         <div className="mt-2.5 flex flex-col gap-2">
           {([...(reponer ? [["reponer", E2("Que me lo repongan", "Replace it"), E2("Pides que te lo vuelvan a mandar, sin costo", "You ask them to send it again, at no cost")]] : []),
-            ["devolver", E2("Que me devuelvan lo de esos platos", "Refund those dishes"), E2("Pagaste al recibir o en el local: lo arreglas con el negocio", "You paid on delivery or in store: you settle it with the business")],
+            ["devolver", E2("Que me devuelvan lo de esos platos", "Refund those dishes"), p.pago ? E2(`Si lo aprueban, vuelve a tu ${p.pago.tarjeta ?? "tarjeta"} en 3 a 5 días hábiles`, `If approved, it goes back to your ${p.pago.tarjeta ?? "card"} in 3 to 5 business days`) : E2("Pagaste al recibir o en el local: lo arreglas con el negocio", "You paid on delivery or in store: you settle it with the business")],
             ["avisar", E2("Solo quiero que lo sepan", "I just want them to know"), E2("Para que no vuelva a pasar", "So it doesn't happen again")]] as [Quiere, string, string][]).map(([v, l, s]) => (
             <button key={v} type="button" role="radio" aria-checked={quiere === v} onClick={() => setQuiere(v)} className={`flex items-center gap-3 rounded-[14px] border px-3.5 py-3 text-left ${quiere === v ? "border-ink border-[1.5px]" : "border-ink/[.1]"}`}>
               <span className={`box-border grid size-5 flex-none place-items-center rounded-full border-[1.5px] ${quiere === v ? "border-ink bg-ink" : "border-ink/25"}`}>{quiere === v && <span className="size-2 rounded-full bg-white" />}</span>
