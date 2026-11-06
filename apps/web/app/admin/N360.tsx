@@ -63,7 +63,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" || n.cat_id === "NEG-BELL" ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -109,6 +109,23 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
           actions: P.retirar ? [i.hidden ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${i.name}»?`, hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }
             : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su menú. El dueño ve el motivo en su panel.", peligro: true, plantillas: PL, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
         }))} /> : <A.AdminNote tone="info" icon="restaurant">Todavía no tiene platos en su menú.</A.AdminNote>}
+      </>);
+  } else if (tab === "vende" && n.cat_id === "NEG-BELL") {
+    // Servicios y citas (Fase 3 · 3a): pausar Servicios o Citas y ocultar un servicio, siempre con motivo.
+    const MODB: ["svc" | "citas", string, string][] = [["svc", "Servicios", "La pestaña Servicios de su página"], ["citas", "Citas", "Que se pueda pedir cita en línea (si se pausa, su página dice «llama o pasa por el local»)"]];
+    const PLS = ["Servicios que no corresponden a su categoría", "Precios o fotos engañosos", "Lo pidió el dueño", "Reportes de clientes"];
+    const ocS = n.servicios.filter((i) => i.hidden).length;
+    cuerpo = (
+      <>
+        <A.AdminList label="MÓDULOS" rows={MODB.map(([k, t, sub]) => { const off = n.modsOff[k] as { reason?: string } | undefined; return {
+          icon: k === "svc" ? "scissors" : "calendar", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
+          actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
+            : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
+        {n.servicios.length ? <A.AdminList label={`SERVICIOS · ${n.servicios.length} · COMO LOS DEJÓ EL DUEÑO${ocS ? ` · ${ocS} OCULTOS` : ""}`} rows={n.servicios.map((i) => ({
+          icon: i.extra ? "plus" : "scissors", title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? "Sin categoría"} · $${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}${!i.own ? " · apagado por el dueño" : ""}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",
+          actions: P.retirar ? [i.hidden ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${i.name}»?`, hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }
+            : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su página y no se puede reservar. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
+        }))} /> : <A.AdminNote tone="info" icon="scissors">Todavía no tiene servicios.</A.AdminNote>}
       </>);
   } else if (tab === "vende") {
     cuerpo = (

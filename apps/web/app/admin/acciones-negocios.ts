@@ -274,9 +274,9 @@ async function avisarOculto(tabla: "reviews" | "post_comments", fila: string, ti
 }
 
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
-export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs", pausar: boolean, motivo: string): Promise<ResAdm> {
-  if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs"].includes(modulo)) return no("Ese módulo no existe.");
-  const nombre = modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
+export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs" | "svc" | "citas", pausar: boolean, motivo: string): Promise<ResAdm> {
+  if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs", "svc", "citas"].includes(modulo)) return no("Ese módulo no existe.");
+  const nombre = modulo === "svc" ? "Servicios" : modulo === "citas" ? "Citas" : modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
   return hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
     if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";

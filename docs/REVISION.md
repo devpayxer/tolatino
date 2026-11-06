@@ -380,3 +380,10 @@ evidencia: LAUNCH-CHECKLIST._
 ## Fase 2 · 2s Planes › Ingresos
 1. Ana › Planes y suscripciones › **Ingresos**: comisiones y Pro de 8 semanas, comisión por categoría → **Exportar CSV**.
 _Del diseño (pestaña «ing»), con el BarChart y HBars del sistema. Las cifras salen del libro propio (cobros y Pro)._
+
+## Fase 3 · 3a Servicios y reglas de citas
+1. Entra como **Luis** (570-555-0166, Barbería El Primo) › Lo que vendes › **Servicios**: categorías Cortes/Barba, pestañas Servicios · Extras · Barberos. Abre **Fade**: duración, tiempo entre citas, precio por silla (Luis, Kelvin, Andy, Johan) y el grupo de opciones «Largo del pelo».
+2. **Cómo trabaja tu negocio** (empleados / comisión / rentan silla) y Lo que vendes › **Citas** (al instante o revisar, tiempo de respuesta, depósito, cancelar gratis) y **Sillas** (cada barbero con sus reglas).
+3. Ana › Negocios › Barbería El Primo › **Lo que vende**: pausar Servicios o Citas y ocultar un servicio (el dueño ve el motivo).
+_Decidido por mí (reversible): depósitos $0/5/10/20/50; con sillas rentadas cada silla decide sus reglas y las del negocio valen para quien no tenga; los servicios son `items` con módulo `svc` (igual que el menú, mismo ocultar del admin)._
+

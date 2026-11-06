@@ -20,6 +20,7 @@ _Actualizado: 5 nov 2026._
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
+- **Fase 3 en curso:** 3a (servicios y reglas de citas: migración 0043, semilla 0010 Barbería El Primo con 4 sillas, Panel › Servicios/Citas/Sillas, Admin › Lo que vende) hecho. Sigue 3b ficha y reserva de citas (`docs/diseno/plan/fase3-citas.md`).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

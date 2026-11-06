@@ -10,6 +10,7 @@ import { ITEMS_FREE, TOPE_FREE } from "@/lib/plan";
 import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn } from "./acciones-menu";
 import { pedLine } from "./Pedidos";
 import { rsvLine } from "./Reservas";
+import { vendesCitas } from "./Servicios";
 import type { Ctx, Sec } from "./Panel";
 
 type Bi = [string, string];
@@ -52,6 +53,10 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   const jobs: Fila = { icon: "brief", t: "Jobs", s: !d.pro ? E2("Vacantes con pago real por hora · con Pro", "Openings with real hourly pay · with Pro") : nV ? E2(`${nV} ${nV === 1 ? "vacante abierta" : "vacantes abiertas"}${nP ? ` · ${nP} por responder` : ""}`, `${nV} ${nV === 1 ? "opening" : "openings"} live${nP ? ` · ${nP} to answer` : ""}`) : E2("Sin vacantes abiertas", "No openings live"),
     ...(J?.pausa ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
     lock: !d.pro, tag: !d.pro ? "PRO" : nP ? E2("POR RESPONDER", "TO ANSWER") : nV && J?.on && !J.pausa ? E2("EN TU PÁGINA", "LIVE") : null, tone: !d.pro ? "pro" : nP ? "action" : "signal", chev: true, onClick: () => c.go("mod", "jobs") };
+  if (!permitido && c.svc) return [
+    { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [...vendesCitas(c), jobs] },
+  ];
   if (!permitido) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
     { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [jobs] },
