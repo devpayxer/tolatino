@@ -73,6 +73,8 @@ commit → CI (tipos, pruebas, punta a punta en 9 dispositivos, visual, segurida
 accesibilidad, velocidad, build) → `pruebas` avanza → el sandbox se actualiza solo
 (60 s) → captura + «qué mirar y en qué condiciones» al fundador → OK → `produccion`
 avanza → producción se actualiza; vuelta atrás automática si suben los errores.
+**Desde el 6 nov (decisión AA):** en el sandbox los bloques se encadenan sin esperar OK; lo que el fundador debe mirar
+se anota en `docs/REVISION.md` y se revisa al final, paso a paso. Producción sigue pidiendo su OK.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
