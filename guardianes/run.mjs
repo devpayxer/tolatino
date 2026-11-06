@@ -574,7 +574,8 @@ const guardianes = {
     if (!existsSync(F)) return;
     const src = readFileSync(F, "utf8"), L = src.split("\n");
     const lista = (n) => { const m = new RegExp(`const ${n} = \\[([^\\]]*)\\]`).exec(src); return m ? m[1].split(",").map((x) => x.trim()) : null; };
-    const svc = lista("VENDE_SVC") ?? [], todo = (lista("VENDE") ?? []).flatMap((x) => (x === "...VENDE_SVC" ? svc : [x])).map((x) => x.replace(/"/g, ""));
+    // Cualquier sub-lista (...VENDE_SVC, ...VENDE_RET) se abre: antes solo se abría la de Salud/Pro.
+    const todo = (lista("VENDE") ?? []).flatMap((x) => (x.startsWith("...") ? lista(x.slice(3)) ?? [] : [x])).map((x) => x.replace(/"/g, ""));
     if (!todo.length) { falla("pestanaVende", F, 1, "falta la lista VENDE de categorías con «Lo que vende»"); return; }
     L.forEach((l, i) => {
       if (/\["vende", "Lo que vende"\]/.test(l) && !/VENDE\.includes\(n\.cat_id\)/.test(l)) falla("pestanaVende", F, i + 1, "la pestaña «Lo que vende» tiene que salir de VENDE.includes(n.cat_id)");

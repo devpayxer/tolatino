@@ -42,11 +42,11 @@ export async function planAnular(negocio: string, motivo: string): Promise<ResAd
 }
 
 /* Comisiones: un cambio se programa con 30 días (los negocios reciben el aviso); lo ya vendido no cambia. */
-const KINDS = new Set(["ped", "cita", "bol", "apt"]);
 export async function comisionProgramar(kind: string, pct: string, motivo: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("plan", "aprobar")) return { ok: false, mensaje: "Tu rol no cambia comisiones." };
-  if (!KINDS.has(String(kind))) return { ok: false, mensaje: "Esa comisión no existe." };
+  // Las comisiones que existen salen de la base (antes era una lista a mano y Planes, Rentas y Mercado no se podían cambiar).
+  if (!/^[a-z]{2,8}$/.test(String(kind)) || !(await db().query(`select 1 from fee_rules where kind = $1 limit 1`, [String(kind)])).rowCount) return { ok: false, mensaje: "Esa comisión no existe." };
   const m = String(motivo ?? "").trim(), p = Number(String(pct ?? "").replace(",", ".").replace(/[^0-9.]/g, ""));
   if (m.length < 3) return { ok: false, mensaje: "Escribe el motivo: queda en la auditoría." };
   if (!(p >= 0 && p <= 30)) return { ok: false, mensaje: "La comisión va de 0 a 30 %." };

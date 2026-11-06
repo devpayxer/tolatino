@@ -15,7 +15,7 @@ import type { ResAdm } from "./acciones-colas";
 const A = UI as unknown as Record<"AdminList" | "BarChart" | "HBars", ComponentType<any>>;
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const EST: Record<string, [string, string, string]> = { trial: ["EN PRUEBA", "action", "En prueba"], active: ["PRO", "signal", "Pro"], canceling: ["PASA A FREE", "neutral", "Pasa a Free"], past_due: ["COBRO FALLIDO", "danger", "Cobro fallido"], courtesy: ["CORTESÍA", "action", "Cortesía"], ended: ["FREE", "neutral", "Free"] };
-const KIND: Record<string, string> = { ped: "Pedidos (Comida, Mercados, Tiendas)", cita: "Citas y solicitudes", bol: "Boletos", apt: "Apartados", rsv: "Reservaciones de mesa" };
+const KIND: Record<string, string> = { ped: "Pedidos de comida", merc: "Pedidos del mercado", cita: "Citas y solicitudes", bol: "Boletos", apt: "Apartados y layaway", rsv: "Reservaciones de mesa", plan: "Planes del hogar", renta: "Rentas" };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "") : "—");
 
 export function Planes({ d, ing, tab, est, editar, aprobar, exportar }: { d: DatosPlanes; ing?: Ingresos | null; tab: TabPlan; est: string | null; editar: boolean; aprobar: boolean; exportar?: boolean }) {

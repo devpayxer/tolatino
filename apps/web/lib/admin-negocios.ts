@@ -2,6 +2,8 @@ import "server-only";
 import type { Staff } from "./admin";
 import { herramientaSP } from "./salud-pro";
 import { aceptaTexto, resumenSP } from "./salud-pro-comun";
+import { herramientaRetail, rubroRetail } from "./retail";
+import { resumenRetail } from "./retail-comun";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
@@ -128,10 +130,11 @@ export async function negocio360(s: Staff, id: string) {
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as c30`, [id]),
     licenciasTodas(id),
     // Menú (Comida): los platos con su estado, para ocultar uno con motivo (el dueño lo ve en su panel).
-    db().query<{ id: string; name: string; sec: string | null; cents: number; hidden: boolean; reason: string | null; module: string; dur: number | null; extra: boolean; own: boolean; k: string | null; a: Record<string, unknown> }>(
+    db().query<{ id: string; name: string; sec: string | null; cents: number; hidden: boolean; reason: string | null; module: string; dur: number | null; extra: boolean; own: boolean; k: string | null; a: Record<string, unknown>; sk: string | null; edad: number; tienda: boolean; tallas: string | null }>(
       `select i.id::text, i.name->>'es' as name, s.name->>'es' as sec, i.price_cents as cents, i.status = 'hidden' as hidden, i.hidden_reason as reason, i.module,
-              i.duration_min as dur, i.is_extra as extra, i.sell as own, i.svc_kind as k, i.svc_attrs as a
-         from items i left join item_sections s on s.id = i.section_id where i.business_id = $1 and i.module in ('menu', 'svc') and i.removed_at is null order by i.module, s.sort, i.sort, i.id`, [id]),
+              i.duration_min as dur, i.is_extra as extra, i.sell as own, i.svc_kind as k, i.svc_attrs as a, i.shop_kind as sk, i.age_min as edad, i.in_store_only as tienda,
+              (select string_agg(v.label || ' ' || v.stock_left, ' · ' order by v.sort) from item_variants v where v.item_id = i.id and v.removed_at is null) as tallas
+         from items i left join item_sections s on s.id = i.section_id where i.business_id = $1 and i.module in ('menu', 'svc', 'shop') and i.removed_at is null order by i.module, s.sort, i.sort, i.id`, [id]),
     // Pedidos en línea de este mes (mes de la ciudad): los que cuentan para el techo Free y todos.
     db().query<{ off: Record<string, { reason: string; at: string }>; mes: number; free: number; cap: number | null; rmes: number; rpend: number; rsv: boolean }>(
       `select b.modules_off as off,
@@ -154,10 +157,12 @@ export async function negocio360(s: Staff, id: string) {
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
     casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
-    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
+    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc'), productos: menu.rows.filter((x) => x.module === 'shop'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     // Tu herramienta (Auto y Hogar, 4a): solo lectura en el Super Admin.
     herramienta: (await db().query<{ rate: number; warrM: number | null; warrMi: number | null; cut: number | null; h24: boolean; zone: number | null }>(`select t.labor_rate_cents as rate, t.warranty_months as "warrM", t.warranty_miles as "warrMi", t.same_day_cutoff_h as cut, t.h24, b.service_radius_mi as zone from trade_settings t join businesses b on b.id = t.business_id where t.business_id = $1`, [id])).rows[0] ?? null,
     // Tu herramienta de Doctores y Profesionales (4h-2): el mismo resumen que ve el dueño, en solo lectura.
+    // Mercados y Tiendas (4n): Tu herramienta en solo lectura.
+    herramientaRetail: rubroRetail(b.cat_id) ? await (async () => { const h = await herramientaRetail(id); return h ? { titulo: h.rubro === "merc" ? "Balanza y pedidos" : "Tallas y apartados", resumen: resumenRetail(h, true) } : null; })() : null,
     herramientaSP: b.cat_id === "NEG-SALUD" || b.cat_id === "NEG-PRO" ? await (async () => { const h = await herramientaSP(id, b.cat_id === "NEG-SALUD" ? "salud" : "pro"); return h ? { resumen: resumenSP(h, true, { ok: lic.filter((l) => l.status === "valid").length, rev: lic.filter((l) => l.status === "review").length }), gov: h.rubro === "pro" ? h.gov : [], acepta: h.rubro === "salud" && h.ins.length ? aceptaTexto(h, true) : null } : null; })() : null,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },

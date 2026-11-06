@@ -751,3 +751,19 @@ motivo escrito todavía: va a LAUNCH-CHECKLIST). «Ley» manda a revisión todas
 _Decidido por mí (reversible): en Transacciones de Doctores no sale el servicio (dice demasiado de la salud de alguien); en
 Profesionales sí (el nombre del servicio, nunca la situación ni la nota). Los plazos de Salud/Pro se hacen editables con la
 sección Configuración (Fase 5); hoy están en el código._
+
+## Fase 4 · Mercados + Tiendas · decisiones del plan (fase4-mercados-tiendas.md §7, todas reversibles)
+EBT solo en la tienda (cobrar EBT en línea pide aprobación del USDA y un procesador pagado) · el cliente que no toca «Está bien,
+cobrar» paga lo real ≤ lo retenido al recoger · impuesto por producto (víveres y ropa exentos, comida lista y no-comida 6 %:
+validar con contador) · licor, tabaco y vape solo en la tienda · 6 pedidos por franja · «ANTES $X» solo desde una Oferta de
+Novedades · «Llámame» sin respuesta en 10 min = se quita · comisión del mercado 10 % aparte · mínimo solo del envío · envío de
+la tienda con tarjeta · layaway pagado a mano (sin cargos automáticos), 20 % · 4 pagos · 14 días · 10 % · devoluciones de lo
+pagado en la caja las hace el negocio · número M-6101… · servicios de Tiendas solo catálogo.
+
+## Fase 4 · 4n-1 Tu herramienta de Mercados y Tiendas
+1. Como Héctor (Supermercado La Cosecha, 5705550288): Panel › Lo que vendes › «Balanza y pedidos»: apagar EBT, subir el
+   precio por libra de la pierna, marcar «Yuca» agotada hoy.
+2. Como Yaritza (Boutique Yaritza, 5705550299): «Tallas y apartados»: 72 h, encender Layaway (salen abono, pagos, cada cuánto,
+   cargo), subir una talla.
+3. Super Admin › Negocios › La Cosecha › Lo que vende: productos con «Por libra», ocultar con motivo.
+_Huecos del diseño compuestos (REVISION): «Pedidos por franja», «Si algo no hay» y los números del layaway en Tu herramienta._

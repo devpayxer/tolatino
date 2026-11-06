@@ -40,7 +40,8 @@ const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde �
   visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan" };
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO"];
-const VENDE = ["NEG-FOOD", ...VENDE_SVC];
+const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
+const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
@@ -116,6 +117,24 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su menú. El dueño ve el motivo en su panel.", peligro: true, plantillas: PL, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
         }))} /> : <A.AdminNote tone="info" icon="restaurant">Todavía no tiene platos en su menú.</A.AdminNote>}
       </>);
+  } else if (tab === "vende" && VENDE_RET.includes(n.cat_id)) {
+    // Mercados y Tiendas (4n): pausar Productos o Pedidos y ocultar un producto con motivo (el dueño lo ve en su panel).
+    const merc = n.cat_id === "NEG-MERC", MODR: ["menu" | "pedidos", string, string][] = [["menu", "Productos", "La pestaña Productos de su página"], ["pedidos", merc ? "Pedidos del mercado" : "Apartados", merc ? "Que se pueda pedir pickup o envío" : "Que se pueda apartar"]];
+    const PLR = ["Producto que no corresponde a su categoría", "Precios o fotos engañosos", "Venta que la ley no permite en la app", "Lo pidió el dueño", "Reportes de clientes"];
+    const SK: Record<string, string> = { peso: "Por libra", unid: "Por unidad", plato: "Listo para llevar", talla: "Con tallas", plan: "Con plan", serv: "En la tienda" };
+    const ocultos = n.productos.filter((i) => i.hidden).length;
+    cuerpo = (
+      <>
+        <A.AdminList label="MÓDULOS" rows={MODR.map(([k, t, sub]) => { const off = n.modsOff[k] as { reason?: string } | undefined; return {
+          icon: k === "menu" ? "grid" : "bag", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
+          actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
+            : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: "El dueño ve el motivo en su panel; lo que ya pidieron sigue.", peligro: true, plantillas: PLR, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
+        {n.productos.length ? <A.AdminList label={`PRODUCTOS · ${n.productos.length}${ocultos ? ` · ${ocultos} OCULTOS` : ""}`} rows={n.productos.map((i) => ({
+          icon: i.sk === "peso" ? "scale" : "bag", title: i.name, sub: `${i.sec ?? "Sin sección"} · $${(i.cents / 100).toFixed(2)}${i.sk === "peso" ? "/lb" : ""} · ${SK[i.sk ?? ""] ?? "Producto"}${i.tallas ? ` · ${i.tallas}` : ""}${i.edad ? " · 21+ · solo en la tienda" : i.tienda ? " · solo en la tienda" : ""}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",
+          actions: P.retirar ? [i.hidden ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${i.name}»?`, hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }
+            : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su página. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLR, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
+        }))} /> : <A.AdminNote tone="info" icon="bag">Todavía no tiene productos.</A.AdminNote>}
+      </>);
   } else if (tab === "vende" && VENDE_SVC.includes(n.cat_id)) {
     // Servicios y citas (Fase 3 · 3a; Auto y Hogar 4a): pausar Servicios o Citas y ocultar un servicio, siempre con motivo.
     // Auto y Hogar: además, cómo cobra cada servicio y Tu herramienta en solo lectura.
@@ -129,6 +148,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
           icon: k === "svc" ? "scissors" : "calendar", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
           actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
+        {n.herramientaRetail ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-MERC" ? "scale" : "bag", title: n.herramientaRetail.titulo, sub: n.herramientaRetail.resumen }]} /> : null}
         {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
           ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
         {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {

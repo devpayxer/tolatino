@@ -13,6 +13,7 @@ import { rsvLine } from "./Reservas";
 import { vendesCitas } from "./Servicios";
 import { vendesOficios } from "./Oficios";
 import type { Ctx, Sec } from "./Panel";
+import { filaHerramientaRetail } from "./Retail";
 
 type Bi = [string, string];
 const MTAGS: [string, string, string][] = [["pica", "Picante", "Spicy"], ["veg", "Vegetariano", "Vegetarian"], ["sg", "Sin gluten", "Gluten-free"], ["mar", "Pescado o mariscos", "Fish or shellfish"], ["lac", "Lácteos", "Dairy"], ["hue", "Huevo", "Egg"], ["nuez", "Maní o nueces", "Peanuts or nuts"]];
@@ -57,6 +58,11 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   if (!permitido && (c.svc || c.ofi)) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
     { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [...(c.ofi ? vendesOficios(c) : vendesCitas(c)), jobs] },
+  ];
+  // Mercados y Tiendas (4n): Productos y Tu herramienta.
+  if (!permitido && c.ret) return [
+    { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [filaHerramientaRetail(c)!, jobs] },
   ];
   if (!permitido) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },

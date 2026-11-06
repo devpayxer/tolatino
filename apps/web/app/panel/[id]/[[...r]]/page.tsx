@@ -30,6 +30,7 @@ import { Panel, type Ruta } from "../../Panel";
 import type { MsjPanel } from "../../MensajesPanel";
 import { conversacionNegocio, hilosNegocio } from "@/lib/mensajes";
 import { serviciosPanel } from "@/lib/servicios";
+import { herramientaRetail, rubroRetail } from "@/lib/retail";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
@@ -150,6 +151,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const svc = conCitas && !oficio && (ruta.sec === "mod" || ruta.det?.startsWith("svc:") || ruta.det === "svm") && catOk ? await serviciosPanel(d.id) : undefined;
   const ofi = oficio && (ruta.sec === "mod" || ruta.det?.startsWith("of:")) && catOk ? (await oficiosPanel(d.id, d.cat)) ?? undefined : undefined;
   if (ruta.det?.startsWith("of:") && !ofi) ruta.det = null;
+  // Mercados y Tiendas (4n): Tu herramienta (Balanza y pedidos / Tallas y apartados).
+  const ret = rubroRetail(d.cat) && ruta.sec === "mod" && catOk ? (await herramientaRetail(d.id)) ?? undefined : undefined;
   // Citas (Belleza): las vivas para Hoy, Clientes › Citas y el detalle. Responder pide «Hoy y pedidos».
   if (ruta.det?.startsWith("cita:") && !(conCitas && ord)) ruta.det = null;
   // Auto y Hogar (4d): al mirar Hoy se reintenta lo que quedó a medias (cobros de una liquidación, retenciones de citas
@@ -176,5 +179,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ayuda: ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
     ayudas: ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} />;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} />;
 }
