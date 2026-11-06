@@ -718,3 +718,10 @@ _Decidido por mí (reversible): hasta la consulta en línea (4l) la hoja ofrece 
 _Decidido por mí (reversible): si la oficina no tiene a nadie con licencia de persona verificada, la consulta es con cualquiera
 del equipo que reciba citas (como en Doctores). La nota rechaza A-number y números de caso._
 
+## Fase 4 · 4l-2 El total por escrito
+1. Como dueño del bufete: Hoy › la consulta confirmada › «Pasó la consulta» → honorario $350, gobierno $465, extra «Traducción
+   certificada» $60 → «Mandar el total por escrito». Ver $740 (con el crédito de la consulta de $75).
+2. Como Marisol: /cita/… → marca el extra → «Aceptar y contratar» → «Tu trámite está en manos de…». Luego «Terminó el trámite».
+_Decidido por mí (reversible, Preguntas #1): nada de Pro se cobra en la app; la app guarda el total y la aceptación (el acuerdo),
+y se paga a la oficina. Para fijo/% el flujo es el mismo (la oficina manda el total después de la consulta)._
+

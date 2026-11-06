@@ -6,6 +6,7 @@ import type { AyudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CitaPanel, FilaCita, FiltroCita, citasLista } from "@/lib/citas-panel";
 import { citaAyudaResponder, citaCambioResponder, citaResponder } from "./acciones-citas";
+import { proPaso, totalMandar } from "./acciones-total";
 import type { Ctx, Editor } from "./Panel";
 import type { EmFila, SolFila, SolPanel } from "@/lib/solicitudes";
 import type { PlanPanelFila } from "@/lib/planes";
@@ -168,6 +169,38 @@ export function citaDetalle(c: Ctx): Sec {
       ? E2(`Nada se hace ni se cobra sin su OK. Cobras el resto en el taller${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Nothing is done or charged without their OK. Collect the rest at the shop${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`)
       : E2(`Precio completo antes de empezar; si algo cambia, le preguntas primero. Cobras el resto al terminar${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Full price before starting; if something changes, ask first. Collect the rest when done${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`) });
     out.push({ type: "acts", items: [{ l: E2("Escribirle", "Message"), icon: "chat", v: "secondary", onClick: () => c.nav(`/panel/${c.d.id}/mensajes`) }] });
+    out.push(...ayudaCita(c, x.numero, n ?? x.who));
+    return { blocks: out, ed: null };
+  }
+  // Profesionales (4l-2): pasó la consulta → el total por escrito (versión nueva reemplaza) → contrató → terminó el trámite.
+  if (x.prof) {
+    const p = x.prof, t = p.total, usd = (c0: number) => `$${(c0 / 100).toLocaleString("en-US")}`;
+    if (t) out.push({ type: "rows", k: `${E2("TOTAL POR ESCRITO", "WRITTEN TOTAL")} · V${t.version}`, items: [
+      { icon: "dollar", t: E2("Honorario", "Fee"), r: usd(t.fee), compact: true, chev: false },
+      ...(t.credit ? [{ icon: "check", t: E2("Crédito de la consulta", "Consultation credit"), r: `−${usd(t.credit)}`, compact: true, chev: false } as Fila] : []),
+      ...(t.gov ? [{ icon: "law", t: E2("Gobierno (aparte, a la agencia)", "Government (separately, to the agency)"), r: usd(t.gov), compact: true, chev: false } as Fila] : []),
+      ...t.extras.map((z, k) => ({ icon: "plus", t: `${nm(z.name)} · ${E2("opcional", "optional")}${t.status === "accepted" ? (t.extrasOk.includes(k) ? E2(" · lo aceptó", " · accepted") : E2(" · no lo quiso", " · declined")) : ""}`, r: usd(z.cents), compact: true, chev: false } as Fila)),
+      { icon: "check", t: `Total · ${t.status === "accepted" ? `${E2("aceptado", "accepted")} ${t.aceptado ?? ""}` : t.status === "declined" ? E2("no contrató", "did not hire") : t.status === "expired" ? E2("venció", "expired") : `${E2("vale hasta el", "valid until")} ${t.vence}`}`, r: usd(t.total), compact: true, chev: false }] });
+    if (x.st === "ok" && !p.paso) {
+      out.push({ type: "acts", items: [{ l: E2("Pasó la consulta", "Consultation done"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => proPaso(c.d.id, x.numero, "consulta"), E2("Anotado. Ahora manda el total por escrito.", "Noted. Now send the written total.")) }] });
+      out.push({ type: "note", tone: "info", t: E2("Después de la consulta le mandas el total por escrito: el honorario y lo del gobierno, por separado. Nada se cobra en la app.", "After the consultation you send the written total: the fee and the government fee, separately. Nothing is charged in the app.") });
+    }
+    if (x.st === "ok" && p.paso === "hired") out.push({ type: "acts", items: [{ l: E2("Terminó el trámite", "Case finished"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => proPaso(c.d.id, x.numero, "terminado"), E2(`${n} ya sabe que su trámite terminó.`, `${n} now knows the case is finished.`)) }] });
+    if (x.st === "ok" && (p.paso === "consulted" || p.paso === "quote")) {
+      const d0 = (c0: number) => (c0 ? String(Math.round(c0 / 100)) : "");
+      const F = c.form(`tot:${x.numero}`, { fee: d0(t?.fee ?? p.honorario), gov: d0(t?.gov ?? p.gov), hrs: t?.hours ?? p.hrs ?? "", xn: "", xp: "", nota: "" }), z = F.d;
+      const num = (v: string) => v.replace(/\D/g, "").slice(0, 6), fee = Number(z.fee || 0) * 100, gov = Number(z.gov || 0) * 100;
+      out.push({ type: "group", k: p.paso === "quote" ? E2("MANDAR UNA VERSIÓN NUEVA", "SEND A NEW VERSION") : E2("EL TOTAL, POR ESCRITO", "THE TOTAL, IN WRITING") },
+        { type: "field", k: E2("TU HONORARIO", "YOUR FEE"), val: z.fee, pre: "$", im: "numeric", ph: "350", onChange: (v) => F.set({ fee: num(v) }) },
+        { type: "field", k: E2("TARIFA DEL GOBIERNO · APARTE · OPCIONAL", "GOVERNMENT FEE · SEPARATE · OPTIONAL"), val: z.gov, pre: "$", im: "numeric", ph: "0", onChange: (v) => F.set({ gov: num(v) }), help: E2("La paga el cliente a la agencia. To’Latino nunca la cobra.", "The client pays it to the agency. To’Latino never charges it.") },
+        { type: "field", k: E2("HORAS ESTIMADAS · OPCIONAL", "ESTIMATED HOURS · OPTIONAL"), val: z.hrs, ph: "8–15", max: 9, onChange: (v) => F.set({ hrs: v.replace(/[^0-9–-]/g, "") }), help: E2("Si pasa, le pides su OK antes.", "If it goes over, ask for their OK first.") },
+        { type: "field", k: E2("EXTRA OPCIONAL · OPCIONAL", "OPTIONAL EXTRA · OPTIONAL"), val: z.xn, ph: E2("Ej. Traducción certificada", "e.g. Certified translation"), max: 60, onChange: (v) => F.set({ xn: v }) },
+        ...(z.xn.trim() ? [{ type: "field", k: E2("PRECIO DEL EXTRA", "EXTRA PRICE"), val: z.xp, pre: "$", im: "numeric", ph: "60", onChange: (v: string) => F.set({ xp: num(v) }), help: E2("El cliente lo acepta aparte; puede traerlo él.", "The client accepts it separately; they can bring it themselves.") } as Bloque] : []),
+        { type: "note", tone: "ink", icon: "law", t: E2(`Total por escrito: ${usd(fee + gov)}${gov ? ` (honorario ${usd(fee)} + gobierno ${usd(gov)})` : ""}. Vale 30 días. Nadie garantiza un resultado: es lo que cobras por el trabajo.`, `Written total: ${usd(fee + gov)}${gov ? ` (fee ${usd(fee)} + government ${usd(gov)})` : ""}. Valid 30 days. No one guarantees a result: it is what you charge for the work.`) });
+      return { blocks: out, ed: { F, l: E2("Mandar el total por escrito", "Send the written total"), valid: fee > 0 && (!z.xn.trim() || Number(z.xp) > 0), always: true,
+        apply: (q: typeof z) => totalMandar(c.d.id, x.numero, { fee: Number(q.fee || 0) * 100, gov: Number(q.gov || 0) * 100, hours: q.hrs || null, extras: q.xn.trim() ? [{ es: q.xn.trim(), cents: Number(q.xp || 0) * 100 }] : [] }),
+        toast: E2(`${n} ya tiene el total por escrito.`, `${n} now has the written total.`) } };
+    }
     out.push(...ayudaCita(c, x.numero, n ?? x.who));
     return { blocks: out, ed: null };
   }

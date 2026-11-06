@@ -2,6 +2,8 @@
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { citaCliente, type QueCliente } from "@/lib/citas-flujo";
 import { decidirEstimado, decidirExtra } from "@/lib/estimados";
+import { ipCliente } from "@/lib/cuenta";
+import { decidirTotal } from "@/lib/total-escrito";
 
 /* El cliente sobre su cita (APP-NEG-CITA): cancelar, aceptar la otra hora o no, avisar que llega tarde. Solo quien la
    pidió; el servidor decide el depósito (devolver, liberar o se queda). */
@@ -31,3 +33,12 @@ export async function extraDecidir(numero: string, si: boolean, pm: string | nul
   const r = await decidirExtra(u.id, String(numero ?? ""), si === true, typeof pm === "string" ? pm : null);
   return r.ok ? { ok: true } : r;
 }
+
+/* «El total, por escrito» (4l-2): aceptar (con los extras que quieras) o no contratar. Queda tu acuerdo con hora, versión e IP. */
+export async function totalDecidir(numero: string, acepta: boolean, version: number, extras: number[]): Promise<{ ok: true } | { ok: false; msg: Bi }> {
+  if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
+  const u = await yo();
+  if (!u) return { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
+  return decidirTotal(u.id, String(numero ?? ""), acepta === true, Number(version), Array.isArray(extras) ? extras : [], await ipCliente());
+}
+

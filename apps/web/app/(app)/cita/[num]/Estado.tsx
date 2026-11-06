@@ -5,7 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
-import { citaAccion } from "./acciones";
+import { citaAccion, totalDecidir } from "./acciones";
 import type { CitaVista } from "@/lib/citas";
 import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
 
@@ -92,7 +92,13 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const prof = c.pro;
   if (prof) {
     H.pend = ["clock", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Solicitud enviada", "Request sent"), E2(`Confirman la hora en unos ${mins}. No se ha cobrado nada.`, `They confirm the time in about ${mins}. Nothing has been charged.`), E2("PENDIENTE DE CONFIRMAR", "WAITING FOR CONFIRMATION"), "bg-pro/20", "var(--tl-pro-ink)"];
-    H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Consulta confirmada", "Consultation confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${prof.modo === "oficina" ? E2("Trae tu identificación y los papeles de tu trámite.", "Bring your ID and the papers for your case.") : E2("El enlace o la llamada te llegan a tus Avisos 10 minutos antes.", "The link or call arrives in your Alerts 10 minutes before.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
+    const tot = prof.total, tl = tot ? dinero(tot.total) : "";
+    if (c.paso === "consulted") H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Pasó tu consulta", "Your consultation is done"), E2("La oficina te manda el total por escrito. Nada se cobra hasta que lo aceptes.", "The office sends you the written total. Nothing is charged until you accept."), E2("CONSULTA HECHA", "CONSULTATION DONE"), "bg-signal/20", "var(--tl-open-text)"];
+    else if (c.paso === "quote" && tot) H.ok = ["dollar", "bg-pro/[.18]", "var(--tl-pro-ink)", E2(`Te mandaron el total: ${tl}`, `Your total: ${tl}`), E2("Revísalo con calma. Nada se cobra hasta que lo aceptes.", "Review it calmly. Nothing is charged until you accept."), E2("TOTAL POR ESCRITO", "TOTAL IN WRITING"), "bg-pro/20", "var(--tl-pro-ink)"];
+    else if (c.paso === "hired") H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2(`Tu trámite está en manos de ${c.con?.nombre ?? c.negocio.nombre}`, `Your case is with ${c.con?.nombre ?? c.negocio.nombre}`), E2(`Total por escrito: ${dinero(c.total + (tot?.gov ?? 0))}. Si algo cambia, te piden tu OK primero.`, `Written total: ${dinero(c.total + (tot?.gov ?? 0))}. If anything changes, they ask for your OK first.`), E2("CONTRATADO", "HIRED"), "bg-signal/20", "var(--tl-open-text)"];
+    else H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Consulta confirmada", "Consultation confirmed"),     `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${prof.modo === "oficina" ? E2("Trae tu identificación y los papeles de tu trámite.", "Bring your ID and the papers for your case.") : E2("El enlace o la llamada te llegan a tus Avisos 10 minutos antes.", "The link or call arrives in your Alerts 10 minutes before.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
+    if (c.st === "done") H.done = c.paso === "nohire" ? ["check", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("No contrataste", "You did not hire"), c.total ? E2(`Solo pagaste la consulta: ${dinero(c.total)}.`, `You only paid the consultation: ${dinero(c.total)}.`) : E2("Solo fue la consulta.", "It was only the consultation."), E2("TERMINADA", "DONE"), "bg-ink/[.06]", "rgba(11,14,18,.6)"]
+      : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Trámite terminado", "Case finished"), E2(`${c.negocio.nombre} terminó tu trámite.`, `${c.negocio.nombre} finished your case.`), E2("TERMINADO", "FINISHED"), "bg-signal/20", "var(--tl-open-text)"];
   }
   const [ic, icBg, icFg, t, line, pill, pillBg, pillFg] = H[c.st];
   const pend = c.st === "pend", ok = c.st === "ok", alt = c.st === "alt", done = c.st === "done", dead = c.st === "no" || c.st === "exp" || c.st === "cx";
@@ -106,6 +112,12 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     const LB: Record<string, string> = { road: E2("Va en camino", "On the way"), in: auto ? E2("En el taller", "At the shop") : E2("En tu casa", "At your home"), est: auto ? E2("Estimado aprobado", "Estimate approved") : E2("Precio aprobado", "Price approved"), work: E2("Trabajando", "In progress"), ready: auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminado · revisa el trabajo", "Done · check the work") };
     steps.splice(2, steps.length - 2, ...ORD.map((p, j) => ({ label: LB[p]!, time: j === 0 && !c.paso && !done ? `${diaS} ${hogar ? win : horaL(c.m)}`.toUpperCase() : "", state: j < k ? "done" : j === k ? (done ? "done" : "current") : "next" })),
       { label: `${E2("Calificas a ", "You rate ")}${who1}`, time: "", state: done ? "current" : "next" });
+  }
+  // Profesionales (4l): consulta → total por escrito → contratado → terminado.
+  if (prof && (ok || done)) {
+    const ORD = ["consulted", "quote", "hired", "done"], k = done ? (c.paso === "nohire" ? 2 : 4) : Math.max(0, ORD.indexOf(c.paso ?? ""));
+    const LB = [E2("Consulta", "Consultation"), E2("Total por escrito", "Total in writing"), E2("Contratado", "Hired"), E2("Terminado", "Finished")];
+    steps.splice(2, steps.length - 2, ...LB.map((label, j) => ({ label: done && c.paso === "nohire" && j >= 2 ? (j === 2 ? E2("No contrataste", "You did not hire") : label) : label, time: j === 0 && !c.paso ? `${diaS} ${horaL(c.m)}`.toUpperCase() : "", state: j < k ? "done" : j === k && !done ? "current" : done && j < k ? "done" : "next" })));
   }
   const optL = c.opts.map((o) => nm(o.o)).join(" · "), addL = c.adds.map((a) => nm(a.name)).join(" · ");
   const paraL = c.para === "me" ? yo : `${c.nombre ?? E2("Otra persona", "Someone else")}${c.para === "kid" && c.edad ? ` · ${c.edad}${E2(" años", " yrs")}` : ""}`;
@@ -130,7 +142,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     else if (c.perdio || c.pago === "captured") plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(c.dep), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
     else plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
   }
-  if (!dead && prof) plata.push(["store", E2("En la oficina", "At the office"), c.total ? dinero(c.total) : "$0", "var(--tl-ink)", E2("Antes de contratar te dan el total por escrito. Nada se cobró en la app.", "Before hiring you get the total in writing. Nothing was charged in the app.")]);
+  if (!dead && prof) plata.push(["store", E2("En la oficina", "At the office"), c.total ? dinero(c.total) : "$0", "var(--tl-ink)", c.paso === "hired" ? E2("Honorario − crédito + extras que aceptaste. Lo del gobierno, aparte, a la agencia. Nada se cobra en la app.", "Fee − credit + extras you accepted. The government fee goes separately to the agency. Nothing is charged in the app.") : E2("Antes de contratar te dan el total por escrito. Nada se cobró en la app.", "Before hiring you get the total in writing. Nothing was charged in the app.")]);
   else if (!dead && sal) plata.push(["store", E2("En la consulta", "At the visit"), nm(sal.precio).split(" · ")[0] ?? "", "var(--tl-ink)", E2("Copago o precio sin seguro. Nada se cobró en la app.", "Copay or uninsured price. Nothing was charged in the app.")]);
   else if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
   const foto = silla && c.con?.foto ? c.con.foto : c.negocio.foto;
@@ -155,15 +167,42 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", c.rubro === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   // Doctores: cambiar = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo); por video, sin «Cómo llegar».
-  const actsV = prof ? acts.filter(([i]) => i !== "edit" && !(prof.modo !== "oficina" && i === "pin")) : sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
+  const actsV = prof ? (c.paso && c.st === "ok" ? [] : acts.filter(([i]) => i !== "edit" && !(prof.modo !== "oficina" && i === "pin"))) : sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
   // Doctores · «No aceptan tu seguro»: la hora sigue guardada 2 h; el paciente elige.
   const segOpc = sal?.seg && pend ? (
     <div data-screen-label="Cita · no aceptan tu seguro" className="flex flex-col gap-2.5 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
       <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("¿QUÉ QUIERES HACER?", "WHAT DO YOU WANT TO DO?")}</div>
-      <Button block disabled={ocupado} onClick={() => void hacer("sinseguro", E2("Listo: tu cita quedó confirmada con el precio sin seguro.", "Done: your visit is confirmed at the uninsured price."))}>{`${E2("Seguir sin seguro", "Continue uninsured")}${sal.sinSeg ? ` · ${dinero(sal.sinSeg)}` : ""}`}</Button>
-      <Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push(`/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}`))}>{E2("Cambiar de seguro", "Change insurance")}</Button>
-      <Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push("/c/doctores"))}>{E2("Buscar otro consultorio", "Find another clinic")}</Button>
+      <div className="flex"><Button block disabled={ocupado} onClick={() => void hacer("sinseguro", E2("Listo: tu cita quedó confirmada con el precio sin seguro.", "Done: your visit is confirmed at the uninsured price."))}>{`${E2("Seguir sin seguro", "Continue uninsured")}${sal.sinSeg ? ` · ${dinero(sal.sinSeg)}` : ""}`}</Button></div>
+      <div className="flex"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push(`/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}`))}>{E2("Cambiar de seguro", "Change insurance")}</Button></div>
+      <div className="flex"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("cancelar", "", undefined, () => router.push("/c/doctores"))}>{E2("Buscar otro consultorio", "Find another clinic")}</Button></div>
       <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Cambiar de seguro o buscar otro consultorio cancela esta solicitud (es gratis). Si no eliges, la hora se libera sola.", "Changing insurance or finding another clinic cancels this request (free). If you do not choose, the time frees up on its own.")}</div>
+    </div>
+  ) : null;
+  const [xOk, setXOk] = useState<number[]>([]);
+  const tot = prof?.total;
+  const totalCard = prof && tot && (c.paso === "quote" || c.paso === "hired") ? (
+    <div data-screen-label="Cita · total por escrito" className="flex flex-col gap-3 rounded-[20px] border-[1.5px] border-ink bg-white p-4">
+      <div className="flex items-baseline justify-between gap-3"><div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{`${E2("DE ", "FROM ")}${c.negocio.nombre}`.toUpperCase()}</div><div className="font-mono text-[9px] font-bold tracking-[0.1em] text-ink/45">{tot.status === "accepted" ? `${E2("ACEPTADO ", "ACCEPTED ")}${tot.aceptado ?? ""}` : `${E2("VÁLIDO HASTA ", "VALID UNTIL ")}${tot.vence} · V${tot.version}`}</div></div>
+      {prof.legal && <div className="rounded-[12px] bg-paper px-3 py-2.5 text-[12px] font-semibold leading-[1.5] text-ink/70">{E2("Nadie te garantiza un resultado. Este total es lo que cobran por el trabajo, no una promesa de resultado.", "No one can guarantee a result. This total is what they charge for the work, not a promise of a result.")}</div>}
+      <div className="flex flex-col">
+        {[[E2("Honorario", "Fee"), dinero(tot.fee), tot.hours ? E2(`Estimado de ${tot.hours} horas. Si pasa, te piden tu OK antes.`, `Estimated ${tot.hours} hours. If it goes over, they ask for your OK first.`) : E2(`A ${c.negocio.nombre}`, `To ${c.negocio.nombre}`)],
+          ...(tot.credit ? [[E2("Crédito de la consulta", "Consultation credit"), `−${dinero(tot.credit)}`, ""]] : []),
+          ...(tot.gov ? [[E2("Gobierno", "Government"), dinero(tot.gov), E2("Se paga aparte, a la agencia. Lo pagas tú.", "Paid separately, to the agency. You pay it.")]] : [])].map(([k, v2, sub]) => (
+          <div key={k} className="flex items-start justify-between gap-3 border-b border-ink/[.06] py-2.5"><div><div className="text-[13px] font-bold">{k}</div>{sub && <div className="text-[11.5px] font-medium text-ink/55">{sub}</div>}</div><div className="text-[13px] font-bold">{v2}</div></div>))}
+        {tot.extras.map((z, k) => { const on = tot.status === "accepted" ? tot.extrasOk.includes(k) : xOk.includes(k); return (
+          <label key={k} className="flex cursor-pointer items-start justify-between gap-3 border-b border-ink/[.06] py-2.5">
+            <span className="flex items-start gap-2.5"><input type="checkbox" aria-label={nm(z.name)} checked={on} disabled={tot.status === "accepted"} onChange={() => setXOk(on ? xOk.filter((q) => q !== k) : [...xOk, k])} className="mt-0.5 h-[18px] w-[18px] accent-[var(--tl-ink)]" />
+              <span><span className="block text-[13px] font-bold">{nm(z.name)}</span><span className="block font-mono text-[9px] font-bold tracking-[0.1em] text-pro-ink">{E2("OPCIONAL · TU OK", "OPTIONAL · YOUR OK")}</span><span className="block text-[11.5px] font-medium text-ink/55">{E2("Te lo piden aparte. Puedes traerlo tú.", "Asked separately. You can bring it yourself.")}</span></span></span>
+            <span className="text-[13px] font-bold">{dinero(z.cents)}</span>
+          </label>); })}
+        <div className="flex justify-between gap-3 py-3 text-[15px] font-extrabold"><span>{E2("TOTAL POR ESCRITO", "TOTAL IN WRITING")}</span><span>{dinero(tot.total + (tot.status === "accepted" ? tot.extras.filter((_, k) => tot.extrasOk.includes(k)).reduce((n, z) => n + z.cents, 0) : tot.extras.filter((_, k) => xOk.includes(k)).reduce((n, z) => n + z.cents, 0)))}</span></div>
+      </div>
+      {c.paso === "quote" && <>
+        <div className="flex"><Button block disabled={ocupado} onClick={async () => { setOcupado(true); setError(null); const r = await totalDecidir(c.numero, true, tot.version, xOk).catch(() => ({ ok: false as const, msg: { es: "No se pudo.", en: "Could not." } })); setOcupado(false); if (r.ok) { aviso(E2("Contrataste. Tu acuerdo quedó guardado.", "Hired. Your agreement is saved.")); router.refresh(); } else setError(es ? r.msg.es : r.msg.en); }}>{E2("Aceptar y contratar", "Accept and hire")}</Button></div>
+        <div className="flex"><Button block variant="secondary" icon="phone" onClick={llamar}>{E2("Llamar para preguntar", "Call to ask")}</Button></div>
+        <div className="flex"><Button block variant="ghost" disabled={ocupado} onClick={async () => { setOcupado(true); const r = await totalDecidir(c.numero, false, tot.version, []).catch(() => ({ ok: false as const, msg: { es: "No se pudo.", en: "Could not." } })); setOcupado(false); if (r.ok) router.refresh(); else setError(es ? r.msg.es : r.msg.en); }}>{E2("No, gracias · solo la consulta", "No, thanks · consultation only")}</Button></div>
+        <div className="text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{E2("Nada se cobra en la app: pagas a la oficina; lo del gobierno, a la agencia.", "Nothing is charged in the app: you pay the office; the government fee, the agency.")}</div>
+      </>}
     </div>
   ) : null;
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
@@ -189,6 +228,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
           <div className={`mt-[13px] inline-flex items-center gap-2 rounded-[10px] px-3 py-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] ${pillBg}`} style={{ color: pillFg }}><span className="h-[7px] w-[7px] rounded-full" style={{ background: pillFg }} />{pill}</div>
         </div>
         {segOpc}
+        {totalCard}
         {c.est && (ok || done) && !c.noshow && <EstimadoCliente c={c} es={es} pago={pago} aviso={aviso} />}
         {ok && c.late && <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="clock" size={16} color="var(--tl-pro-ink)" /></span><span className="text-[12.5px] font-semibold leading-[1.5] text-pro-ink">{E2(`Le avisaste a ${who1} que llegas ${c.late} min tarde. Tolerancia: ${c.tol} min.`, `You told ${who1} you are ${c.late} min late. Grace period: ${c.tol} min.`)}</span></div>}
         {c.chg && (ok || pend) && <div className="flex items-start gap-2.5 rounded-2xl bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="calendar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-semibold leading-[1.5] text-ink/75">{E2(`Pediste cambiarla a ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. Esta hora sigue tuya hasta que ${who1} confirme la nueva.`, `You asked to move it to ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. This time stays yours until ${who1} confirms the new one.`)}</span></div>}
@@ -254,7 +294,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
           {c.negocio.telefono && <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button></div>}
           <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="bubble" onClick={() => router.push(`/cuenta/mensajes/${c.negocio.id}?op=${encodeURIComponent(c.numero)}`)}>{E2("Mensaje", "Message")}</Button></div>
         </div>
-        {ok && !enCurso && <div className="py-1 text-center"><button type="button" onClick={() => setHoja("cx")} className="text-[12.5px] font-bold text-danger">{E2("Cancelar cita", "Cancel booking")}</button></div>}
+        {ok && !enCurso && !(prof && c.paso) && <div className="py-1 text-center"><button type="button" onClick={() => setHoja("cx")} className="text-[12.5px] font-bold text-danger">{E2("Cancelar cita", "Cancel booking")}</button></div>}
       </div>
       {hoja && (
         <div className="fixed inset-0 z-[60]">

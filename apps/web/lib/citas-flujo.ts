@@ -130,7 +130,7 @@ export async function vencerCitas(f: { negocio?: string; userId?: string; numero
   }
   for (const x of chg) await avisarCliente(x.number, "cita_chg_no");
   // Recordatorios: a lo sumo una vez por minuto por proceso.
-  if (Date.now() - ultimoBarrido > 60_000) { ultimoBarrido = Date.now(); await recordatorios().catch(() => undefined); await borrarNotas().catch(() => undefined); }
+  if (Date.now() - ultimoBarrido > 60_000) { ultimoBarrido = Date.now(); await recordatorios().catch(() => undefined); await borrarNotas().catch(() => undefined); await import("./total-escrito").then((t) => t.vencerTotales()).catch(() => undefined); }
 }
 
 /* §3: la nota cifrada de una cita (op_private) se borra a los 30 días de que la cita termina (terminada, cancelada, vencida o
