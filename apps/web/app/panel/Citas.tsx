@@ -10,7 +10,7 @@ import type { Ctx, Editor } from "./Panel";
 
 export type CitasData = { vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
-type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada";
+type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 const money = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
 const MDAY: [string, string][] = [["Dom", "Sun"], ["Lun", "Mon"], ["Mar", "Tue"], ["Mié", "Wed"], ["Jue", "Thu"], ["Vie", "Fri"], ["Sáb", "Sat"]];
@@ -22,6 +22,7 @@ const diaL = (c: Ctx, ymd: string, n: number) => {
 const dias = (ymd: string, hoy: string) => Math.round((Date.parse(ymd) - Date.parse(hoy)) / 864e5);
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], alt: [E2("OTRA HORA", "NEW TIME"), "action"], in: [E2("EN ATENCIÓN", "IN PROGRESS"), "action"], done: [E2("TERMINADA", "DONE"), "neutral"],
+  road: [E2("EN CAMINO", "ON THE WAY"), "action"], work: [E2("TRABAJANDO", "IN PROGRESS"), "action"], ready: [E2("LISTO", "READY"), "signal"],
   nos: [E2("NO LLEGÓ", "NO-SHOW"), "danger"], no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADA", "CANCELLED"), "neutral"],
 });
 
@@ -31,6 +32,9 @@ function paso(c: Ctx, x: { numero: string; who: string }, p: Paso) {
     confirmar: E2(`${n} ya ve su cita confirmada.`, `${n} now sees the booking confirmed.`), otra: E2(`${n} ya ve la hora que le propones.`, `${n} now sees the time you suggest.`),
     nopuedo: E2(`${n} ya sabe que no se pudo.`, `${n} now knows you can’t.`), llego: E2("Anotado · en atención.", "Noted · in progress."),
     nollego: E2("Anotado · no llegó.", "Noted · no-show."), terminada: E2("Anotado · terminada.", "Noted · done."),
+    recibido: E2(`${n} ya sabe que su carro está en el taller.`, `${n} now knows the car is at the shop.`), camino: E2(`${n} ya sabe que vas en camino.`, `${n} now knows you are on the way.`),
+    llegue: E2("Anotado · en la casa.", "Noted · at the home."), empezar: E2("Anotado · trabajando.", "Noted · in progress."), listo: E2(`${n} ya sabe que está listo.`, `${n} now knows it is ready.`),
+    entregado: E2("Anotado · terminada.", "Noted · done."), nadie: E2("Anotado · no había nadie.", "Noted · nobody home."),
   }[p];
   c.run(() => citaResponder(c.d.id, x.numero, p), t);
 }
@@ -42,7 +46,8 @@ const accionesPend = (c: Ctx, x: { numero: string; who: string }) => [
 
 /* Fila de una cita (reqRow k='cita'). */
 export function citaRow(c: Ctx, x: FilaCita, conActs = true): Fila {
-  const { E2, es } = c, tg = x.chg ? [E2("PIDE CAMBIO", "CHANGE ASKED"), "action"] as const : x.late && x.st === "ok" ? [E2(`LLEGA ${x.late} MIN TARDE`, `${x.late} MIN LATE`), "action"] as const : TG(E2)[x.st];
+  const { E2, es } = c, tg = x.chg ? [E2("PIDE CAMBIO", "CHANGE ASKED"), "action"] as const : x.late && x.st === "ok" ? [E2(`LLEGA ${x.late} MIN TARDE`, `${x.late} MIN LATE`), "action"] as const
+    : x.st === "in" && x.rubro ? [x.rubro === "auto" ? E2("EN EL TALLER", "AT THE SHOP") : E2("EN LA CASA", "AT THE HOME"), "action"] as const : x.st === "nos" && x.rubro === "hogar" ? [E2("NO HABÍA NADIE", "NOBODY HOME"), "danger"] as const : TG(E2)[x.st];
   const svc = es ? x.svc.es : x.svc.en || x.svc.es;
   return {
     icon: "calendar", t: `${E2("Cita", "Booking")} #${x.numero}`, s: `${x.who} · ${svc} · ${diaL(c, x.ymd, x.dia)} · ${hora(x.m)}${x.con ? ` · ${E2("con", "with")} ${x.con.split(" ")[0]}` : ""}`,
@@ -53,7 +58,7 @@ export function citaRow(c: Ctx, x: FilaCita, conActs = true): Fila {
 /* Para Hoy: las que esperan respuesta (o piden cambio) y las de hoy. */
 export function hoyCitas(c: Ctx): { pend: Fila[]; agenda: Fila[] } {
   const V = c.citas?.vivas ?? [];
-  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
+  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt", "road", "work", "ready"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
 }
 
 /* Detalle de una cita (detBlocks k='cita'). */
@@ -78,6 +83,19 @@ export function citaDetalle(c: Ctx): Sec {
   ];
   if (det.length) out.push({ type: "rows", k: E2("LO QUE PIDIÓ", "WHAT THEY ASKED FOR"), items: det });
   if (x.late && x.st === "ok") out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Avisó que llega ${x.late} min tarde.`, `They said they will be ${x.late} min late.`) });
+  if (x.of) {
+    const L: Record<string, [string, string]> = { ce: ["Check engine", "Check engine"], bat: ["Batería", "Battery"], temp: ["Temperatura", "Temperature"], abs: ["Frenos o ABS", "Brakes or ABS"], oil: ["Aceite", "Oil"], tpms: ["Presión de gomas", "Tire pressure"] };
+    const A: Record<string, [string, string]> = { cocina: ["Cocina", "Kitchen"], bano: ["Baño", "Bathroom"], sotano: ["Sótano", "Basement"], cuarto: ["Cuarto", "Bedroom"], sala: ["Sala", "Living room"], afuera: ["Afuera", "Outside"], toda: ["Toda la casa", "Whole house"] };
+    const o = x.of, it = (k: string, v: string) => ({ k, v });
+    out.push({ type: "kv", items: [
+      ...(o.veh ? [it(E2("VEHÍCULO", "VEHICLE"), `${o.veh}${o.mi ? ` · ${o.mi.toLocaleString("en-US")} mi` : ""}`), it(E2("EL CLIENTE", "THE CLIENT"), o.w === "deja" ? E2("Lo deja y le avisas", "Drops it off; you text them") : o.w === "dom" ? E2("Vas donde está el carro", "You go to the car") : E2("Espera en el taller", "Waits at the shop"))] : []),
+      ...(o.luces.length ? [it(E2("LUCES ENCENDIDAS", "LIGHTS ON"), o.luces.map((k) => (L[k] ?? [k, k])[es ? 0 : 1]).join(" · "))] : []),
+      ...(o.casa ? [it(E2("CASA", "HOME"), `${o.casa}${o.inq ? E2(" · inquilino con permiso del landlord", " · renter with landlord’s permission") : ""}`), it(E2("FRANJA", "WINDOW"), `${hora(x.m)} – ${hora(o.win ?? x.m + 120)}`)] : []),
+      ...(o.area ? [it(E2("DÓNDE", "WHERE"), (A[o.area] ?? [o.area, o.area])[es ? 0 : 1])] : []),
+      ...(o.casa ? [it(E2("CÓMO ENTRAR", "ACCESS"), o.acceso === "llave" ? `${E2("No estará: ", "Not home: ")}${o.accesoNota ?? ""}` : E2("Estará en casa", "Will be home"))] : []),
+      ...(o.piezas ? [it(E2("PIEZAS VIEJAS", "OLD PARTS"), E2("Las quiere de vuelta", "Wants them back"))] : []),
+    ] });
+  }
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   if (x.fotos.length) out.push({ type: "photos", k: E2("FOTOS DE REFERENCIA", "REFERENCE PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
   if (x.st === "alt" && x.alt) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Propusiste ${diaL(c, x.alt.ymd, dias(x.alt.ymd, x.ymd) + x.dia).toLowerCase()} a las ${hora(x.alt.m)}. ${n} tiene hasta las ${x.alt.hasta} para responder.`, `You proposed ${diaL(c, x.alt.ymd, dias(x.alt.ymd, x.ymd) + x.dia)} at ${hora(x.alt.m)}. ${n} has until ${x.alt.hasta} to reply.`) });
@@ -94,6 +112,22 @@ export function citaDetalle(c: Ctx): Sec {
   if (x.st === "pend") {
     out.push({ type: "acts", pt: "4px", items: accionesPend(c, who) });
     out.push({ type: "note", tone: "info", t: E2(`Hasta que respondas, el cliente ve «Solicitud enviada». Nunca se confirma sola. «Otra hora» le propone tu siguiente hora libre.${x.responde ? ` Si no respondes antes de las ${x.responde}, vence${x.dep ? " y se devuelve el depósito" : ""}.` : ""}`, `Until you reply, the client sees “Request sent”. It never confirms itself. “Other time” suggests your next open time.${x.responde ? ` If you don't reply by ${x.responde}, it expires${x.dep ? " and the deposit is returned" : ""}.` : ""}`) });
+  }
+  // Auto y Hogar (4c): recibido · en camino / llegué · empezar · listo · entregado · no había nadie.
+  if (x.rubro) {
+    const b = (l: string, p: Paso, v = "primary", icon: string | null = "check") => ({ l, v, icon, off: c.pending, onClick: () => paso(c, who, p) });
+    const auto = x.rubro === "auto", A = (L: ReturnType<typeof b>[]) => out.push({ type: "acts", items: L });
+    if (x.st === "ok" && x.dia <= 0) A(auto ? [b(E2("Recibí el carro", "Car received"), "recibido")] : [b(E2("Voy en camino", "On my way"), "camino", "primary", "truck"), b(E2("Llegué", "I arrived"), "llegue", "secondary", null), b(E2("No había nadie", "Nobody home"), "nadie", "secondary", null)]);
+    if (x.st === "road") A([b(E2("Llegué", "I arrived"), "llegue"), b(E2("No había nadie", "Nobody home"), "nadie", "secondary", null)]);
+    if (x.st === "in") A([b(E2("Empezar", "Start"), "empezar", "primary", "wrench"), b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo", "secondary", null)]);
+    if (x.st === "work") A([b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo")]);
+    if (x.st === "ready") A([b(auto ? E2("Lo entregué", "Handed back") : E2("Cerrar la visita", "Close the visit"), "entregado")]);
+    if (["ok", "road", "in", "work", "ready"].includes(x.st)) out.push({ type: "note", tone: "info", t: auto
+      ? E2(`Nada se hace ni se cobra sin su OK. Cobras el resto en el taller${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Nothing is done or charged without their OK. Collect the rest at the shop${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`)
+      : E2(`Precio completo antes de empezar; si algo cambia, le preguntas primero. Cobras el resto al terminar${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Full price before starting; if something changes, ask first. Collect the rest when done${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`) });
+    out.push({ type: "acts", items: [{ l: E2("Escribirle", "Message"), icon: "chat", v: "secondary", onClick: () => c.nav(`/panel/${c.d.id}/mensajes`) }] });
+    out.push(...ayudaCita(c, x.numero, n ?? x.who));
+    return { blocks: out, ed: null };
   }
   if (x.st === "ok" && x.dia <= 0) out.push({ type: "acts", items: [
     { l: E2("Llegó · en atención", "Arrived · in progress"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, who, "llego") },

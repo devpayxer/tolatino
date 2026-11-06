@@ -127,7 +127,9 @@ async function recordatorios() {
 }
 
 /* ── El negocio responde ── */
-export type PasoCita = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada";
+export type PasoCita = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada"
+  // Auto y Hogar (Fase 4 · 4c): recibido · en camino · llegué · empezar · listo · entregado · no había nadie.
+  | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 export async function citaPaso(negocio: string, numero: string, paso: PasoCita, actorId: string): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ negocio, numero });
@@ -154,7 +156,8 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
       if (!p) return no("Esa persona ya no recibe citas. Usa «No puedo».", "That person no longer takes bookings. Use “Can’t”.");
       const occ = await ocupadas(c, x, o.id), i0 = Math.round((Date.parse(o.ymd) - Date.parse(x.hoy)) / 864e5), m0 = hm2m(o.hm);
       let alt: { i: number; m: number } | null = null;
-      for (let i = Math.max(0, i0); i < DIAS && !alt; i++) { const h = huecos(x, [p], i, o.dur, o.buf, occ).find((z) => z.free && (i > i0 || z.m > m0)); if (h) alt = { i, m: h.m }; }
+      const hogar = o.det?.rubro === "hogar";
+      for (let i = Math.max(0, i0); i < DIAS && !alt; i++) { const h = huecos(x, [p], i, o.dur, o.buf, occ).find((z) => z.free && (i > i0 || z.m > m0) && (!hogar || z.m % 120 === 0)); if (h) alt = { i, m: h.m }; }
       if (!alt) return no("No hay otra hora libre en los próximos 14 días. Usa «No puedo».", "There is no other open time in the next 14 days. Use “Can’t”.");
       const ymd = fecha(x.hoy, alt.i);
       await c.query(`insert into change_proposals (operation_id, kind, proposed, created_by, side, respond_by)
@@ -166,6 +169,31 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
       return { ok: true };
     }
     if (o.status !== "confirmed") return ya;
+    // ── Auto y Hogar: la cita o la visita en curso (status_detail road → in → work → ready → done; noshow). ──
+    const rubro = o.det?.rubro as string | undefined;
+    if (["recibido", "camino", "llegue", "empezar", "listo", "entregado", "nadie"].includes(paso)) {
+      if (rubro !== "auto" && rubro !== "hogar") return ya;
+      const pasa = async (detalle: string, kind: string, nota?: Bi) => { await c.query(`update operations set status_detail = $2, updated_at = now() where id = $1::bigint`, [o.id, detalle]); await ev(c, o.id, kind, "member", actorId, nota); };
+      const d = o.detail ?? "";
+      if (paso === "camino") { if (rubro !== "hogar" || d) return ya; await pasa("road", "on_the_way"); despues = async () => { await avisarCliente(numero, "cita_camino"); }; return { ok: true }; }
+      if (paso === "llegue") { if (rubro !== "hogar" || !["", "road"].includes(d)) return ya; await pasa("in", "arrived"); return { ok: true }; }
+      if (paso === "recibido") { if (rubro !== "auto" || d) return ya; await pasa("in", "received"); despues = async () => { await avisarCliente(numero, "cita_recibido"); }; return { ok: true }; }
+      if (paso === "empezar") { if (d !== "in") return ya; await pasa("work", "started"); return { ok: true }; }
+      if (paso === "listo") { if (!["in", "work"].includes(d)) return ya; await pasa("ready", "ready"); despues = async () => { await avisarCliente(numero, rubro === "auto" ? "cita_listo_auto" : "cita_listo"); }; return { ok: true }; }
+      if (paso === "entregado") {
+        if (d !== "ready") return ya;
+        await c.query(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
+        await ev(c, o.id, "done", "member", actorId, rubro === "auto" ? { es: "Entregó el carro", en: "Car handed back" } : { es: "Terminó la visita", en: "Visit finished" });
+        return { ok: true };
+      }
+      // No había nadie (Hogar): solo desde que empieza la franja; el depósito sigue la regla de cancelar tarde.
+      if (rubro !== "hogar" || !["", "road"].includes(d)) return ya;
+      if (o.mins_to > 0) return no("Todavía no empieza la franja.", "The window has not started yet.");
+      await c.query(`update operations set status = 'done', status_detail = 'noshow', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
+      await ev(c, o.id, "noshow", "member", actorId, o.dep ? { es: `No había nadie · el depósito de ${money(o.dep)} se queda`, en: `Nobody home · ${money(o.dep)} deposit kept` } : { es: "No había nadie", en: "Nobody home" });
+      despues = async () => { await avisarCliente(numero, "cita_nadie"); };
+      return { ok: true };
+    }
     if (paso === "llego") { if (o.detail) return ya; await c.query(`update operations set status_detail = 'live', updated_at = now() where id = $1::bigint`, [o.id]); await ev(c, o.id, "arrived", "member", actorId); return { ok: true }; }
     if (paso === "nollego") {
       if (o.detail) return ya;
@@ -212,7 +240,7 @@ export async function citaCambio(negocio: string, numero: string, que: "aceptar"
 }
 
 /* ── El cliente ── */
-export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde";
+export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi";
 export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ userId, numero });
@@ -254,6 +282,13 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
       await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1`, [p.id]);
       await ev(c, o.id, "alt_accepted", "user", userId);
       despues = async () => { await cobrarOperacion(o.id); await avisarNeg(numero, "biz_cita_alt_ok"); };
+      return { ok: true };
+    }
+    // Auto y Hogar: «Ya lo recogí» / «Todo bien»: la cita lista se cierra (lo pagado en el local no pasa por aquí).
+    if (que === "recibi") {
+      if (o.status !== "confirmed" || o.detail !== "ready") return ya;
+      await c.query(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
+      await ev(c, o.id, "done", "user", userId, o.det?.rubro === "auto" ? { es: "Recogió el carro", en: "Picked up the car" } : { es: "Revisó el trabajo: todo bien", en: "Checked the work: all good" });
       return { ok: true };
     }
     // Voy tarde: confirmada, hasta 2 h antes y hasta 15 min después de la hora.

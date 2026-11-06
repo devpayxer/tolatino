@@ -29,7 +29,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
   const [error, setError] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const aviso = (t: string) => { setFlash(t); setTimeout(() => setFlash(null), 3200); };
-  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde", ok: string, extra?: number) => {
+  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi", ok: string, extra?: number) => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await citaAccion(c.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setHoja(null);
@@ -56,16 +56,42 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
         : c.cxRazon === "alt_no" || c.cxRazon === "alt_vencida" ? `${E2("No hay cita. ", "No booking. ")}${dev}` : c.cxPor === "user" ? `${E2("Cancelaste a tiempo. ", "Cancelled in time. ")}${dev}` : dev, E2("CANCELADA", "CANCELLED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Appointment done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}.${c.dep ? E2(` El depósito de ${dinero(c.dep)} se descontó del total.`, ` The ${dinero(c.dep)} deposit came off the total.`) : ""}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"],
   };
+  // Auto y Hogar (diseño neg-auto-flow / neg-hogar-flow): en camino · en el taller o en tu casa · trabajando · listo · no había nadie.
+  const auto = c.rubro === "auto", hogar = c.rubro === "hogar", carro = c.veh ? c.veh.split(" ").slice(2).join(" ") : E2("carro", "car");
+  const hl = (m: number) => { const h = Math.floor(m / 60) % 24; return `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`; };
+  const win = hogar ? `${hl(c.m)}–${hl(c.win ?? c.m + 120)}` : "";
+  if (c.rubro && c.st === "ok" && c.paso) {
+    const R: Record<string, [string, string, string, string, string, string, string, string]> = {
+      road: ["truck", "bg-action/10", "var(--tl-action)", E2(`${c.negocio.nombre} va en camino`, `${c.negocio.nombre} is on the way`), E2(`Llega dentro de tu franja de ${win}.`, `Arrives within your ${win} window.`), E2("VA EN CAMINO", "ON THE WAY"), "bg-action/10", "var(--tl-action)"],
+      in: [auto ? "wrench" : "home", "bg-action/10", "var(--tl-action)", auto ? E2(`Revisando tu ${carro}`, `Inspecting your ${carro}`) : E2(`${c.negocio.nombre} está revisando`, `${c.negocio.nombre} is checking`),
+        auto ? E2("Nada se hace ni se cobra sin tu OK.", "Nothing is done or charged without your OK.") : E2("Precio completo antes de empezar. Si algo cambia, te pregunta primero.", "Full price before starting. If something changes, they ask you first."), auto ? E2("EN EL TALLER", "AT THE SHOP") : E2("EN TU CASA", "AT YOUR HOME"), "bg-action/10", "var(--tl-action)"],
+      work: ["wrench", "bg-action/10", "var(--tl-action)", auto ? E2(`Arreglando tu ${carro}`, `Working on your ${carro}`) : E2(`${c.negocio.nombre} está trabajando`, `${c.negocio.nombre} is working`), E2("Te avisamos cuando esté listo.", "We let you know when it is ready."), E2("TRABAJANDO", "IN PROGRESS"), "bg-action/10", "var(--tl-action)"],
+      ready: ["check", "bg-signal/[.18]", "var(--tl-open-text)", auto ? (c.w === "dom" ? E2("Tu carro está listo", "Your car is ready") : E2("Listo para recoger", "Ready for pickup")) : E2("Revisa el trabajo antes de pagar", "Check the work before paying"),
+        `${auto ? E2(`Pasa por tu ${carro} a ${c.negocio.nombre}.`, `Pick up your ${carro} at ${c.negocio.nombre}.`) : E2("Si todo quedó bien, confírmalo.", "If everything is fine, confirm it.")}${c.total - c.dep > 0 ? E2(` Pagas ${dinero(c.total - c.dep)} ${auto ? "al recogerlo" : "al terminar"}${c.dep ? ` (el depósito de ${dinero(c.dep)} ya está pagado)` : ""}.`, ` You pay ${dinero(c.total - c.dep)} ${auto ? "at pickup" : "when done"}${c.dep ? ` (the ${dinero(c.dep)} deposit is already paid)` : ""}.`) : ""}`,
+        auto ? E2("LISTO", "READY") : E2("TERMINADO", "DONE"), "bg-signal/20", "var(--tl-open-text)"],
+    };
+    if (R[c.paso]) H.ok = R[c.paso]!;
+  }
+  if (hogar && c.st === "done" && c.noshow) H.done = ["warning", "bg-danger/10", "var(--tl-danger)", E2("No había nadie", "Nobody home"), `${E2(`${c.negocio.nombre} llegó y no pudo entrar. `, `${c.negocio.nombre} arrived and could not get in. `)}${c.dep ? E2(`El depósito de ${dinero(c.dep)} se queda con el negocio.`, `The ${dinero(c.dep)} deposit stays with the business.`) : E2("No se cobró nada.", "Nothing was charged.")}`, E2("NO HABÍA NADIE", "NOBODY HOME"), "bg-danger/10", "var(--tl-danger)"];
+  if (c.rubro && c.st === "ok" && !c.paso) H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", hogar ? E2("Visita confirmada", "Visit confirmed") : E2("Cita confirmada", "Booking confirmed"),
+    hogar ? E2(`${cap(diaL)}: llega entre ${win}.`, `${cap(diaL)}: arrives between ${win}.`) : `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}${c.veh ? ` · ${c.veh}` : ""}.`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
   const [ic, icBg, icFg, t, line, pill, pillBg, pillFg] = H[c.st];
   const pend = c.st === "pend", ok = c.st === "ok", alt = c.st === "alt", done = c.st === "done", dead = c.st === "no" || c.st === "exp" || c.st === "cx";
   const steps = [{ label: E2("Solicitud enviada", "Request sent"), time: horaL(c.enviada), state: "done" },
     { label: pend ? `${E2("Esperando a ", "Waiting for ")}${who1}` : ok || done ? (c.auto ? E2("Confirmada al instante", "Confirmed instantly") : `${E2("Confirmada por ", "Confirmed by ")}${who1}`) : alt ? E2("Propuso otra hora", "Proposed another time") : c.st === "no" ? E2("No pudo tomarla", "Could not take it") : c.st === "exp" ? E2("Sin respuesta", "No reply") : E2("Cancelada", "Cancelled"),
       time: c.contestada != null ? horaL(c.contestada) : `~${mins.toUpperCase()}`, state: pend || alt ? "current" : "done" },
     ...(dead ? [] : [{ label: E2("Tu cita", "Your appointment"), time: `${diaS} ${horaL(c.m)}`.toUpperCase(), state: done ? "done" : ok ? "current" : "next" }, { label: `${E2("Calificas a ", "You rate ")}${who1}`, time: "", state: done ? "current" : "next" }])];
+  // Auto y Hogar: el camino de la visita (diseño: en camino → en tu casa / en el taller → trabajando → listo).
+  if (c.rubro && (ok || done) && !c.noshow) {
+    const ORD = hogar ? ["road", "in", "work", "ready"] : ["in", "work", "ready"], k = done ? ORD.length : c.paso ? ORD.indexOf(c.paso) : -1;
+    const LB: Record<string, string> = { road: E2("Va en camino", "On the way"), in: auto ? E2("En el taller", "At the shop") : E2("En tu casa", "At your home"), work: E2("Trabajando", "In progress"), ready: auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminado · revisa el trabajo", "Done · check the work") };
+    steps.splice(2, steps.length - 2, ...ORD.map((p, j) => ({ label: LB[p]!, time: j === 0 && !c.paso && !done ? `${diaS} ${hogar ? win : horaL(c.m)}`.toUpperCase() : "", state: j < k ? "done" : j === k ? (done ? "done" : "current") : "next" })),
+      { label: `${E2("Calificas a ", "You rate ")}${who1}`, time: "", state: done ? "current" : "next" });
+  }
   const optL = c.opts.map((o) => nm(o.o)).join(" · "), addL = c.adds.map((a) => nm(a.name)).join(" · ");
   const paraL = c.para === "me" ? yo : `${c.nombre ?? E2("Otra persona", "Someone else")}${c.para === "kid" && c.edad ? ` · ${c.edad}${E2(" años", " yrs")}` : ""}`;
   const rows = [[E2("SERVICIO", "SERVICE"), `${nm(c.svc)}${optL ? ` · ${optL}` : ""}`], ...(addL ? [["EXTRAS", addL]] : []), [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`],
-    [E2("CON", "WITH"), withL], [E2("DÓNDE", "WHERE"), c.negocio.direccion ?? c.negocio.nombre], [E2("PARA", "FOR"), paraL], ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.total)]];
+    [E2("CON", "WITH"), withL], ...(c.veh ? [[E2("VEHÍCULO", "VEHICLE"), c.veh]] : []), [E2("DÓNDE", "WHERE"), c.casa ?? c.negocio.direccion ?? c.negocio.nombre], ...(c.rubro ? [] : [[E2("PARA", "FOR"), paraL]]), ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.total)]];
   const rest = c.total - c.dep, tarjeta = c.tarjeta ?? E2("tu tarjeta", "your card");
   const restW = silla && c.con ? E2(`en la silla de ${c.con.corto}`, `at ${c.con.corto}'s chair`) : E2("en el local", "at the shop");
   const plata: [string, string, string, string, string][] = [];
@@ -89,11 +115,16 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `${c.numero}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
   const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.negocio.direccion ?? c.negocio.nombre)}`, "_blank", "noopener");
-  const acts: [string, string, () => void][] = ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
+  // Hogar: el profesional va a la casa; el cliente no se mueve (sin «Cómo llegar» ni «Voy tarde»).
+  const enCurso = !!c.rubro && ok && !!c.paso;
+  const acts: [string, string, () => void][] = enCurso ? (c.paso === "ready" ? [["check", auto ? E2("Ya lo recogí", "I picked it up") : E2("Todo bien", "All good"), () => void hacer("recibi", auto ? E2("Listo: cita terminada", "Done: booking finished") : E2("Listo: visita terminada", "Done: visit finished"))],
+      ["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][] : [["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][])
+    : ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
       ["clock", E2("Voy tarde", "Running late"), () => (lateOk ? setHoja("late") : aviso(c.late ? E2(`Ya avisaste: llegas ${c.late} min tarde`, `Already sent: ${c.late} min late`) : E2("Disponible 2 h antes de tu cita", "Available 2 h before your booking")))],
       ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
     : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
+  const actsV = hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
   const cxS = pend ? `${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
     : aTiempo ? `${E2(`Faltan más de ${c.cxh} h: es gratis. `, `More than ${c.cxh} h to go: it is free. `)}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
@@ -175,12 +206,12 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
             ))}
           </div>
         </div>
-        {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} onClick={on}>{l}</Button></div>)}</div>}
+        {actsV.length > 0 && <div className="grid grid-cols-2 gap-2">{actsV.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} onClick={on}>{l}</Button></div>)}</div>}
         <div className="flex gap-2">
           {c.negocio.telefono && <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button></div>}
           <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="bubble" onClick={() => router.push(`/cuenta/mensajes/${c.negocio.id}?op=${encodeURIComponent(c.numero)}`)}>{E2("Mensaje", "Message")}</Button></div>
         </div>
-        {ok && <div className="py-1 text-center"><button type="button" onClick={() => setHoja("cx")} className="text-[12.5px] font-bold text-danger">{E2("Cancelar cita", "Cancel booking")}</button></div>}
+        {ok && !enCurso && <div className="py-1 text-center"><button type="button" onClick={() => setHoja("cx")} className="text-[12.5px] font-bold text-danger">{E2("Cancelar cita", "Cancel booking")}</button></div>}
       </div>
       {hoja && (
         <div className="fixed inset-0 z-[60]">

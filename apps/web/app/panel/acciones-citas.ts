@@ -10,8 +10,9 @@ import type { Res } from "./acciones";
    aceptar o no el cambio que pide el cliente. Pide «Hoy y pedidos» (ord). Todo queda en la auditoría. */
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
-const PASOS = new Set<PasoCita>(["confirmar", "otra", "nopuedo", "llego", "nollego", "terminada"]);
-const PASO_L: Record<PasoCita, string> = { confirmar: "Confirmada", otra: "Otra hora propuesta", nopuedo: "No se pudo", llego: "Llegó · en atención", nollego: "No llegó", terminada: "Terminada" };
+const PASOS = new Set<PasoCita>(["confirmar", "otra", "nopuedo", "llego", "nollego", "terminada", "recibido", "camino", "llegue", "empezar", "listo", "entregado", "nadie"]);
+const PASO_L: Record<PasoCita, string> = { confirmar: "Confirmada", otra: "Otra hora propuesta", nopuedo: "No se pudo", llego: "Llegó · en atención", nollego: "No llegó", terminada: "Terminada",
+  recibido: "Carro recibido", camino: "Va en camino", llegue: "Llegó a la casa", empezar: "Trabajando", listo: "Listo", entregado: "Entregado", nadie: "No había nadie" };
 
 async function entrar(id: unknown): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;

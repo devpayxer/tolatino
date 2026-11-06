@@ -455,3 +455,16 @@ cuenta). Un carro que se deja (o un trabajo de días) ocupa media hora de entreg
 Mientras llegan sus bloques: grúa, emergencia y plan se piden llamando; la página de la cita es la de Belleza (la de Auto y
 Hogar, con sus pasos En camino / Llegó / Estimado, llega en 4c)._
 
+
+## Fase 4 · 4c La cita en el taller y la visita a la casa (en curso)
+1. Entra como **Marisol** y pide **Cambio de aceite** en Taller Hermanos Peña (o usa la que ya tengas confirmada para hoy).
+   Entra como **Rafael** (570-555-0211) › Hoy › la cita: el detalle muestra el carro, el millaje, si lo deja, las luces y
+   las piezas viejas. Toca **Recibí el carro** → **Empezar** → **Listo para recoger**. En el teléfono de Marisol, Tu cita
+   cambia a «Revisando tu CR-V · EN EL TALLER», «TRABAJANDO» y «Listo para recoger»; toca **Ya lo recogí**.
+2. Pide **Cambiar grifo** en Plomería Rodríguez 24/7 para hoy. Entra como **Tomás** (570-555-0222): **Voy en camino** →
+   **Llegué** → **Terminé**. Marisol ve «va en camino · llega dentro de tu franja», «EN TU CASA» y «Revisa el trabajo antes
+   de pagar»; toca **Todo bien**. Prueba también **No había nadie** con otra visita.
+_Decidido por mí (reversible): «Cómo llegar» y «Voy tarde» no aparecen en una visita a casa (el profesional va al cliente).
+Una vez que el negocio marca el primer paso, el cliente ya no cancela desde la app: usa Ayuda con la cita. «No había
+nadie» se puede marcar desde que empieza la franja y sigue la regla del depósito de cancelar tarde (el depósito se queda).
+El cliente cierra la cita con «Ya lo recogí» / «Todo bien», o el negocio con «Lo entregué» / «Cerrar la visita»._
