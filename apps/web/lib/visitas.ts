@@ -1,4 +1,5 @@
 import "server-only";
+import { ligarCita, usarPre } from "./solicitudes";
 import { db } from "./db";
 import { comision, cobrarOperacion, registrarRetencion } from "./cobros";
 import { contexto, fecha, gente, horaL, huecos, ocupadas, type Ctx, type Hueco, type Persona, type Q } from "./citas";
@@ -76,6 +77,7 @@ export async function horasVisita(negocio: string, q: PedidoVisita, i0: number, 
 export type VisitaIn = PedidoVisita & {
   i: number; m: number; nota?: string; sms?: boolean; pm?: string | null; clave: string; fotos?: string[];
   luces?: string[]; area?: string | null; acceso?: "casa" | "llave" | null; accesoNota?: string; landlord?: boolean; piezas?: boolean;
+  pre?: string | null; // 4e: reservar con un pre-estimado o un presupuesto (P-/Q-)
 };
 type Res = { ok: true; numero: string; st: "pend" | "ok" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true };
 const no = (es: string, en: string, extra?: { tarjeta?: true; hora?: true }): Res => ({ ok: false, msg: { es, en }, ...extra });
@@ -150,9 +152,13 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
       retenido = ret.pi;
       if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
     }
+    // Con un pre-estimado o un presupuesto: debe ser suyo, de este negocio y vigente; queda en la cita (y se compara con el estimado).
+    const pre = f.pre ? await usarPre(c, userId, String(f.pre), negocio) : null;
+    if (f.pre && !pre) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Ese pre-estimado ya no está vigente. Pídelo otra vez o reserva sin él.", "That pre-estimate is no longer valid. Ask again or book without it."); }
     const luces = (Array.isArray(f.luces) ? f.luces : []).map(String).filter((z) => LUCES.includes(z)).slice(0, 8);
     const area = AREAS.includes(String(f.area)) ? String(f.area) : null;
     const det = {
+      ...(pre ? { pre: { num: pre.num, lo: pre.lo, hi: pre.hi }, preFotos: pre.fotos } : {}),
       svc: s.name, svcId: s.id, k: s.k, opts: calc.ol, adds: calc.al.map((a) => ({ name: a.n, cents: a.cents })), sel: q.opts, rubro, sms: f.sms !== false,
       ...(veh ? { veh: { id: veh.id, t: veh.t, size: veh.size, mi: veh.mileage }, w: q.w ?? s.a?.w ?? "espera", luces, piezas: !!f.piezas } : {}),
       ...(casa ? { casa: { id: casa.id, dir: casa.dir, tenure: casa.tenure }, win: m + 120, area, acceso: f.acceso === "llave" ? "llave" : "casa", accesoNota: String(f.accesoNota ?? casa.access ?? "").slice(0, 120) || null, landlord: casa.tenure === "inq" ? true : null, piezas: !!f.piezas } : {}),
@@ -178,6 +184,7 @@ export async function enviarVisita(userId: string, negocio: string, f: VisitaIn,
     await c.query("commit");
     retenido = null;
     if (auto && dep > 0) await cobrarOperacion(op);
+    if (pre) await ligarCita(pre.num, numero).catch(() => undefined);
     return { ok: true, numero, st: auto ? "ok" : "pend" };
   } catch (e) {
     await c.query("rollback").catch(() => undefined);

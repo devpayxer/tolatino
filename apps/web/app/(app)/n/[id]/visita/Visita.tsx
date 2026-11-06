@@ -28,16 +28,16 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const LIGHTS: [string, string, string][] = [["ce", "Check engine", "Check engine"], ["bat", "Batería", "Battery"], ["temp", "Temperatura", "Temperature"], ["abs", "Frenos o ABS", "Brakes or ABS"], ["oil", "Aceite", "Oil"], ["tpms", "Presión de gomas", "Tire pressure"]];
 const AREAS: [string, string, string][] = [["cocina", "Cocina", "Kitchen"], ["bano", "Baño", "Bathroom"], ["sotano", "Sótano", "Basement"], ["cuarto", "Cuarto", "Bedroom"], ["sala", "Sala", "Living room"], ["afuera", "Afuera", "Outside"], ["toda", "Toda la casa", "Whole house"]];
 
-export function Visita({ op, svcId, inicial, es, pago, yo }: {
+export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
   op: OficiosPublico; svcId: string; inicial: { opts: Record<string, number>; adds: number[]; w: string | null; z: number | null }; es: boolean;
-  pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean;
+  pago: { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null; yo: boolean; pre?: { num: string; lo: number; hi: number; nota: string; mode: string } | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const v = useOficio(op, es, yo)!;
   const s = op.servicios.find((x) => x.id === svcId)!, a = s.a ?? {}, auto = op.rubro === "auto", nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [paso, setPaso] = useState(0), [i, setI] = useState(0), [hSel, setH] = useState<number | null>(null), [H, setHoras] = useState<HorasVisita | null>(null), [cargando, setCargando] = useState(true);
-  const [luces, setLuces] = useState<string[]>([]), [area, setArea] = useState<string | null>(null), [nota, setNota] = useState(""), [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false);
+  const [luces, setLuces] = useState<string[]>([]), [area, setArea] = useState<string | null>(null), [nota, setNota] = useState(pre?.nota ?? ""), [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false);
   const [acceso, setAcceso] = useState<"casa" | "llave">("casa"), [accNota, setAccNota] = useState(""), [landlord, setLandlord] = useState(false), [piezas, setPiezas] = useState(false), [sms, setSms] = useState(true);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
@@ -83,7 +83,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo }: {
     if (!listo || ocupado || hSel == null) return;
     if (!yo) return entrar();
     setOcupado(true); setError(null);
-    const r = await pedirVisita(op.negocio.id, { ...q, i, m: hSel, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), luces, area, acceso: auto ? null : acceso, accesoNota: accNota, landlord, piezas })
+    const r = await pedirVisita(op.negocio.id, { ...q, i, m: hSel, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), pre: pre?.num ?? null, luces, area, acceso: auto ? null : acceso, accesoNota: accNota, landlord, piezas })
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     if (r.ok) { router.push(`/cita/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
@@ -106,8 +106,12 @@ export function Visita({ op, svcId, inicial, es, pago, yo }: {
       <button type="button" onClick={volver} className="flex-none text-[12px] font-bold text-action">{E2("Cambiar", "Change")}</button>
     </div>
   );
+  const rangoPre = pre ? `${dinero(pre.lo)}–${dinero(pre.hi)}` : "";
   const bloqueDato = (
     <div className={`flex flex-col gap-4 p-4 ${caja}`}>
+      {pre && <div data-screen-label="Booking · con tu pre-estimado" className="flex items-start gap-2.5 rounded-[14px] bg-signal/[.14] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="dollar" size={16} color="var(--tl-open-text)" /></span>
+        <span className="text-pretty text-[12.5px] font-bold leading-[1.45] text-open-text">{pre.mode === "pq" ? E2(`Con tu presupuesto ${pre.num}: ${rangoPre}. Tus fotos ya van en la cita.`, `With your quote ${pre.num}: ${rangoPre}. Your photos go with the booking.`)
+          : E2(`Con tu pre-estimado ${pre.num}: ${rangoPre}. Tus fotos ya van en la cita.`, `With your pre-estimate ${pre.num}: ${rangoPre}. Your photos go with the booking.`)}</span></div>}
       <button type="button" onClick={() => v.setSheet(auto ? "veh" : "casa")} className="flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
         <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name={auto ? "car" : "home"} size={20} color="var(--tl-white)" /></span>
         <span className="min-w-0 flex-1">

@@ -462,6 +462,7 @@ export type CitaVista = {
   rubro: "auto" | "hogar" | null; paso: string | null; veh: string | null; casa: string | null; w: string | null; win: number | null;
   // 4d: el estimado, «algo más» y el dinero (lo calcula el servidor).
   est: EstadoEstimado | null; garantia: string | null;
+  pre: { num: string; lo: number; hi: number } | null; // 4e: el pre-estimado o presupuesto con que reservó
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -511,6 +512,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     w: (r.det as { w?: string }).w ?? null, win: (r.det as { win?: number }).win ?? null,
     est: (r.det as { rubro?: string }).rubro ? await estadoEstimado(db(), r.oid) : null,
     garantia: r.warr?.m ? `${r.warr.m}|${r.warr.mi ?? 0}` : null,
+    pre: (r.det as { pre?: { num: string; lo: number; hi: number } }).pre ?? null,
   };
 }
 

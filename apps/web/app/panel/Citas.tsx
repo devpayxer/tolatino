@@ -7,9 +7,11 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CitaPanel, FilaCita, FiltroCita, citasLista } from "@/lib/citas-panel";
 import { citaAyudaResponder, citaCambioResponder, citaResponder } from "./acciones-citas";
 import type { Ctx, Editor } from "./Panel";
+import type { SolFila, SolPanel } from "@/lib/solicitudes";
+import { solicitudFila } from "./Solicitudes";
 import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
 
-export type CitasData = { vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
+export type CitasData = { sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -60,7 +62,7 @@ export function citaRow(c: Ctx, x: FilaCita, conActs = true): Fila {
 /* Para Hoy: las que esperan respuesta (o piden cambio) y las de hoy. */
 export function hoyCitas(c: Ctx): { pend: Fila[]; agenda: Fila[] } {
   const V = c.citas?.vivas ?? [];
-  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt", "road", "work", "ready", "est", "xtra"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
+  return { pend: [...(c.citas?.sol ?? []).map((x) => solicitudFila(c, x)), ...V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x))], agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt", "road", "work", "ready", "est", "xtra"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
 }
 
 /* Detalle de una cita (detBlocks k='cita'). */
@@ -98,6 +100,7 @@ export function citaDetalle(c: Ctx): Sec {
       ...(o.piezas ? [it(E2("PIEZAS VIEJAS", "OLD PARTS"), E2("Las quiere de vuelta", "Wants them back"))] : []),
     ] });
   }
+  if (x.pre) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Reservó con el ${x.pre.num.startsWith("Q") ? "presupuesto" : "pre-estimado"} ${x.pre.num}: ${money(x.pre.lo)}–${money(x.pre.hi)}. Si el estimado se pasa, explica por qué en cada línea.`, `Booked with ${x.pre.num.startsWith("Q") ? "quote" : "pre-estimate"} ${x.pre.num}: ${money(x.pre.lo)}–${money(x.pre.hi)}. If the estimate goes over, explain why on each line.`) });
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   if (x.fotos.length) out.push({ type: "photos", k: E2("FOTOS DE REFERENCIA", "REFERENCE PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
   if (x.st === "alt" && x.alt) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Propusiste ${diaL(c, x.alt.ymd, dias(x.alt.ymd, x.ymd) + x.dia).toLowerCase()} a las ${hora(x.alt.m)}. ${n} tiene hasta las ${x.alt.hasta} para responder.`, `You proposed ${diaL(c, x.alt.ymd, dias(x.alt.ymd, x.ymd) + x.dia)} at ${hora(x.alt.m)}. ${n} has until ${x.alt.hasta} to reply.`) });

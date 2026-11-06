@@ -493,3 +493,18 @@ cerrado no existe: ahí solo hay «algo más». Las plantillas son las líneas d
 _Arreglado de paso: (a) en la pasarela, un comentario se tragaba `transfer_data` del cobro real de Stripe (el dinero no
 iba al negocio); guardián nuevo `comentarioTragaCodigo`. (b) Los −/+ del panel (mano de obra, tiempos, horario) no se
 podían usar con teclado; ahora son botones. Guardián `panelClicMudo` (trinquete para los 18 que quedan)._
+
+## Fase 4 · 4e-1 Pre-estimado con fotos
+1. Marisol › Taller Hermanos Peña › Servicios › **Pastillas de freno** › «¿No sabes cuánto va a salir?» › **Pedir
+   pre-estimado**: luces, qué le pasa, una foto, para cuándo › Enviar. Ves «Esperando a Rafael».
+2. Rafael › Hoy › **Pre-estimado #P-…**: ve la nota, las luces y la foto; manda un **rango** ($180–$260, qué incluye, qué
+   puede cambiarlo). Marisol ve «TU PRE-ESTIMADO $180–$260» › **Reservar con este pre-estimado** › elige el eje › Booking
+   con «Con tu pre-estimado». En el panel, la cita dice «Reservó con el pre-estimado».
+3. Plomería Rodríguez › Visita y diagnóstico › pre-estimado del baño › Tomás responde **No lo hacemos**: Marisol ve otros
+   negocios de la ciudad.
+_Decidido por mí (reversible): el pre-estimado acepta fotos (no video todavía: el almacenamiento de video y su revisión
+van en el bloque de medios). El panel para responder no está en el diseño (hueco #3): lo compuse con chips, campos de
+desde/hasta, «qué incluye» y «qué puede cambiarlo» una por línea, cuánto tarda y un mensaje. Si «hasta» pasa 4 veces
+«desde», se pide «Hay que verlo». La página del estado es `/pre/{número}` (`/solicitud/` ya es de los empleos)._
+_Arreglado de paso: guardián `fechaEnInglesSQL` (to_char con «Dy»/«Mon» sale en inglés en una pantalla en español)._
+_Pendiente para 4g: la tarjeta «Tu pre-estimado» en la ficha y la lista en Mi cuenta._

@@ -5,7 +5,7 @@
    (Ficha · servicios / Servicio · opciones), compuestas con el sistema de diseño. El servidor recalcula todo al enviar. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType, type MouseEvent } from "react";
+import { useEffect, useState, type ComponentType, type MouseEvent } from "react";
 import type { Casa, OficioPub, OficiosPublico, Vehiculo } from "@/lib/oficios-publico";
 import { detalleL, precioL } from "@/lib/oficios-texto";
 import { casaElegir, casaGuardar, vehiculoElegir, vehiculoGuardar } from "./acciones-oficio";
@@ -79,6 +79,13 @@ export function useOficio(op: OficiosPublico | null, es: boolean, sesion: boolea
   const [vehs, setVehs] = useState<Vehiculo[]>(op?.vehiculos ?? []);
   const [casas, setCasas] = useState<Casa[]>(op?.casas ?? []);
   const [sheet, setSheet] = useState<null | "veh" | "casa">(null);
+  // 4e: «Reservar con este pre-estimado» abre la hoja del servicio (?of=servicio&pre=P-…) y el Booking lleva el pre-estimado.
+  const [pre, setPre] = useState<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search), of = q.get("of"), p = q.get("pre");
+    if (p && /^[PQ]-\d{1,10}$/.test(p)) setPre(p);
+    if (of && /^\d{1,18}$/.test(of) && op?.servicios.some((s) => s.id === of)) setHoja({ svc: of, opts: {}, adds: [], sz: null, wm: null });
+  }, [op]);
   if (!op) return null;
   const auto = op.rubro === "auto", nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const veh = vehs.find((v) => v.def) ?? vehs[0] ?? null, casa = casas.find((c) => c.def) ?? casas[0] ?? null;
@@ -108,7 +115,7 @@ export function useOficio(op: OficiosPublico | null, es: boolean, sesion: boolea
   return {
     op, es, E2, auto, nm, secs, notes, top: op.servicios.slice(0, 4).map(item), desde, riel, nota, abrir, hoja, setHoja, cerrar: () => setHoja(null),
     veh, casa, vehs, casas, setVehs, setCasas, cp, sheet, setSheet: (x: null | "veh" | "casa") => { if (x && !sesion) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`); return; } setSheet(x); },
-    llamar: () => { if (op.negocio.telefono) location.href = `tel:${op.negocio.telefono}`; },
+    llamar: () => { if (op.negocio.telefono) location.href = `tel:${op.negocio.telefono}`; }, pre,
   };
 }
 export type Of = NonNullable<ReturnType<typeof useOficio>>;
@@ -215,6 +222,7 @@ export function OfHoja({ v }: { v: Of }) {
     if (q.adds.length) p.set("a", q.adds.join(","));
     if (q.wm) p.set("w", q.wm);
     if (a.sz && !v.veh && q.sz != null) p.set("z", String(q.sz));
+    if (v.pre) p.set("pre", v.pre);
     router.push(`/n/${op.negocio.id}/visita?${p.toString()}`);
   };
   const lbl = { req: E2("OBLIGATORIO", "REQUIRED"), ready: E2("LISTO", "DONE") };
@@ -241,6 +249,16 @@ export function OfHoja({ v }: { v: Of }) {
             <div className="text-[15px] font-bold">Extras</div>
             <div className="mt-1 font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/45">{E2("OPCIONAL", "OPTIONAL")}</div>
             <div className="mt-[11px] flex flex-col gap-2">{extras.map((x, i) => <div key={i} className="grid"><AddOnRow label={`${v.nm(x.n)}${x.m ? ` · +${x.m} min` : ""}`} price={`+${dinero(x.p)}`} checked={q.adds.includes(i)} onToggle={() => up({ adds: q.adds.includes(i) ? q.adds.filter((z) => z !== i) : [...q.adds, i] })} /></div>)}</div>
+          </div>
+        )}
+        {(auto ? ["desde", "cotiza"] : ["visita", "hora", "area"]).includes(s.k) && op.can && (
+          <div data-screen-label="Servicio · pre-estimado" className="mt-[18px] rounded-2xl border-[1.5px] border-dashed border-action/35 bg-action/[.04] p-3.5">
+            <div className="flex items-start gap-[11px]">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-[11px] bg-action/[.12]"><Icon name="image" size={18} color="var(--tl-action)" /></span>
+              <div className="min-w-0 flex-1"><div className="text-[14px] font-extrabold leading-[1.3]">{E2("¿No sabes cuánto va a salir?", "Not sure what it will cost?")}</div>
+                <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{auto ? E2(`Manda fotos y ${op.negocio.nombre} te da un rango antes de reservar. No te compromete.`, `Send photos and ${op.negocio.nombre} gives you a range before you book. No commitment.`) : E2(`Manda fotos y ${op.negocio.nombre} te da un rango antes de reservar. No te compromete.`, `Send photos and ${op.negocio.nombre} gives you a range before you book. No commitment.`)}</div></div>
+            </div>
+            <div className="mt-3 flex"><Button variant="secondary" size="md" icon="image" block onClick={() => router.push(`/n/${op.negocio.id}/preestimado?s=${s.id}`)}>{E2("Pedir pre-estimado", "Ask for a pre-estimate")}</Button></div>
           </div>
         )}
         {depT && !llamar && <div className="mt-[18px] grid"><DepositNote>{depT}</DepositNote></div>}

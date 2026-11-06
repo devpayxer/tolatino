@@ -19,6 +19,7 @@ import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { citaDetalle, clientesCitas, hoyAyudasCitas, type CitasData } from "./Citas";
+import { solicitudDetalle } from "./Solicitudes";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
@@ -324,6 +325,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("ped:")) return pedidoDetalle(c);
   if (id.startsWith("rsv:")) return rsvDetalle(c);
   if (id.startsWith("cita:")) return citaDetalle(c);
+  if (id.startsWith("sol:")) return solicitudDetalle(c);
   if (id.startsWith("rev:")) return resenaDetalle(c);
   if (id.startsWith("msg:")) return mensajeDetalle(c);
   if (id.startsWith("svc:")) return servicioDetalle(c, id.slice(4));

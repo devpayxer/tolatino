@@ -93,6 +93,12 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
         <div data-screen-label="Cita auto · estimado" className="rounded-[18px] border border-ink/[.08] bg-white p-4">
           <div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{auto ? E2("Estimado", "Estimate") : E2("Precio completo", "Full price")}</div>
           <div className="mt-1.5 font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">{`${auto ? E2("ESTIMADO #", "ESTIMATE #") : E2("PRECIO COMPLETO #", "FULL PRICE #")}${c.numero.replace("C-", "E-")}${est.v > 1 ? ` · V${est.v}` : ""}${c.veh ? ` · ${c.veh.toUpperCase()}` : c.casa ? ` · ${c.casa.toUpperCase()}` : ""}`}</div>
+          {c.pre && (() => { const rep = abierto ? selRep : est.lineas.filter((l) => l.dec === "ok").reduce((n, l) => n + l.tot, 0), inR = rep <= c.pre.hi + 50, extra = (abierto ? selL : est.lineas.filter((l) => l.dec === "ok")).some((l) => l.urg !== "now");
+            const rg = `${dinero(c.pre.lo)}–${dinero(c.pre.hi)}`;
+            return <div data-screen-label="Cita · contra tu pre-estimado" className={`mt-3 flex items-start gap-[9px] rounded-[13px] px-[13px] py-[11px] ${inR ? "bg-signal/[.14]" : "bg-pro/[.16]"}`}><span className="grid flex-none pt-px"><Icon name={inR ? "check" : "warning"} size={15} color={inR ? "var(--tl-open-text)" : "var(--tl-pro-ink)"} /></span>
+              <span className="text-pretty text-[12.5px] font-bold leading-[1.45]" style={{ color: inR ? "var(--tl-open-text)" : "var(--tl-pro-ink)" }}>{inR ? E2(`Dentro de tu pre-estimado (${rg}).`, `Within your pre-estimate (${rg}).`)
+                : extra ? E2(`Pasa tu pre-estimado (${rg}) porque marcaste trabajos recomendados. Puedes quitarlos.`, `Over your pre-estimate (${rg}) because you checked recommended work. You can uncheck it.`)
+                  : E2(`Pasa tu pre-estimado (${rg}). Cada línea explica por qué; pregunta antes de aprobar.`, `Over your pre-estimate (${rg}). Each line explains why; ask before approving.`)}</span></div>; })()}
           <div className="mt-[3px] text-[12px] font-medium text-ink/55">{`${E2("Lo hizo ", "By ")}${est.by ?? who}${E2(` · mano de obra ${dinero(est.rate)} la hora`, ` · labor ${dinero(est.rate)}/h`)}`}</div>
           {(["now", "soon", "later"] as const).map((k) => { const L = est.lineas.filter((l) => l.urg === k); if (!L.length) return null; return (
             <div key={k} className="mt-4">
