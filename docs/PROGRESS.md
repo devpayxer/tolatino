@@ -453,6 +453,9 @@ _Actualizado: 5 nov 2026._
 - **Fase 2 · bloque 2n Super Admin › Planes ✓ (6 nov):** `/admin/planes` (MRR, en prueba, cobro fallido, Free al techo;
   Planes; Suscripciones con extender prueba, cortesía, quitar cortesía y reintentar; Comisiones vigentes y programadas a 30
   días). Acciones con motivo, por ciudad y auditadas. Probado: 8. Ayuda `admin-planes.md`.
+- **Fase 2 · bloque 2o Negocio 360° › Dinero ✓ (6 nov):** migración 0037 (`stripe_accounts.paused_at/paused_by`, avisos
+  `pay_hold`/`pay_resume`), `lib/admin-dinero.ts`, `app/admin/N360Dinero.tsx`, `acciones-dinero.ts` (pausar/reanudar con
+  `pasarela.cuentaPagos`: calendario manual en Stripe), `anularSuscripcion` + `planAnular`. Ayuda: admin-negocio-dinero.md.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

@@ -321,3 +321,13 @@ dueño._
 4. Comisiones › Pedidos › **Programar cambio** → sale PROGRAMADO a 30 días.
 _Del diseño queda para después la pestaña «Ingresos» (con Analítica de dinero) y editar el precio, la prueba y el techo
 desde la pantalla (hoy son decisión tuya y se cambian con una actualización)._
+
+## Fase 2 · 2o Super Admin › Negocio 360° › Dinero
+1. Ana › Negocios › Sabor Dominicano › pestaña **Dinero**: cobrado, retenido, devuelto, comisión; Stripe y pagos al banco.
+2. **Pausar pagos** con un motivo → Pedro recibe el aviso y en su panel › Cobros ve «retenidos por To’Latino» con el motivo.
+3. **Reanudar pagos** → vuelve a «Cada semana · los martes».
+4. Plan y facturas: **Extender prueba** (7/14/30), **Pro de cortesía** (30/60/90), **Anular suscripción**.
+_Compuesto de la pestaña «din» del prototipo. Decisiones (AB): pausar pagos lo puede quien aprueba transacciones (Admin y
+Finanzas); con Stripe real se pone el calendario de pagos en manual (lo más seguro y reversible). Los pagos al banco se
+calculan de lo cobrado (Stripe hace el pago los martes); al encender Stripe se leerán de Stripe. Agregué «Anular
+suscripción», que estaba en el diseño y faltaba. La pestaña «Operación» del diseño llega con Analítica._

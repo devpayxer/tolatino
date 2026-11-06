@@ -3,7 +3,7 @@
    Permiso plan:editar (o plan:aprobar para cortesía), solo negocios de tus ciudades; todo con motivo y en la auditoría. */
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { db, tx } from "@/lib/db";
-import { darCortesia, extenderPrueba, quitarCortesia, reintentarCobro } from "@/lib/suscripcion";
+import { anularSuscripcion, darCortesia, extenderPrueba, quitarCortesia, reintentarCobro } from "@/lib/suscripcion";
 import type { ResAdm } from "./acciones-colas";
 
 async function negocioMio(s: Staff, negocio: string) {
@@ -35,6 +35,10 @@ export async function planQuitarCortesia(negocio: string, motivo: string): Promi
 }
 export async function planReintentar(negocio: string, motivo: string): Promise<ResAdm> {
   return hacer("editar", negocio, motivo, (s) => reintentarCobro(String(negocio), s.id), "plan.reintentar_cobro", null, "Cobrado: sigue con Pro.");
+}
+
+export async function planAnular(negocio: string, motivo: string): Promise<ResAdm> {
+  return hacer("aprobar", negocio, motivo, (s) => anularSuscripcion(String(negocio), s.id, String(motivo ?? "").trim()), "plan.anular", null, "Suscripción anulada: pasa a Free al final del período (nada se borra).");
 }
 
 /* Comisiones: un cambio se programa con 30 días (los negocios reciben el aviso); lo ya vendido no cambia. */

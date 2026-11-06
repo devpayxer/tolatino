@@ -13,6 +13,10 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const link = await pasarela.cuentaEnlace(acct, 'https://pruebas.tolatino.com/panel/x/cobros?vuelta=1', 'https://pruebas.tolatino.com/panel/x/cobros?otra=1'); ok(/^https?:/.test(link), 'enlace de alta (account_links)');
   const login = await pasarela.cuentaPanel(acct); ok(/^https?:/.test(login), 'panel de Stripe (login_links)');
   const e = await pasarela.cuentaLeer(acct); ok(e && typeof e.cargos === 'boolean' && Array.isArray(e.pide), 'leer estado de la cuenta');
+  ok(await pasarela.cuentaPagos(acct, true), 'pausar pagos al banco: calendario manual (accounts)');
+  ok(await pasarela.cuentaPagos(acct, false), 'reanudar pagos: semanal los martes (accounts)');
+  const dir = await pasarela.cobrarDirecto({ centavos: 1499, pm: 'pm_card_visa', cliente: null, idem: 'contrato-pro-' + Date.now(), meta: { business_id: 'sabor-dominicano', kind: 'pro' } });
+  ok(dir.ok || /requires_/.test(dir.codigo), 'cobro de Pro: payment_intents off_session con confirm (parámetros válidos)');
   const r = await pasarela.retener({ centavos: 2500, comision: 220, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-' + Date.now(), meta: { order: '1001', business_id: 'sabor-dominicano' } });
   // stripe-mock no guarda estado: responde «requires_payment_method»; lo que importa es que aceptó cada parámetro.
   ok(r.ok || r.codigo === 'requires_payment_method', 'retener: payment_intents con captura manual, comisión y destino (parámetros válidos)');

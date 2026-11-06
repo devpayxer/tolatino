@@ -135,6 +135,15 @@ export const pasarela = {
     const l = await stripe<{ url: string }>("POST", `/v1/accounts/${encodeURIComponent(cuenta)}/login_links`, {});
     return l.url;
   },
+  /* Pausar o reanudar los pagos al banco (Super Admin). Con Stripe el calendario pasa a manual y vuelve a semanal (martes);
+     en el simulador basta la marca en stripe_accounts. */
+  async cuentaPagos(cuenta: string, pausar: boolean): Promise<boolean> {
+    if (cuenta.startsWith("acct_sim_")) return true;
+    try {
+      await stripe("POST", `/v1/accounts/${encodeURIComponent(cuenta)}`, { settings: { payouts: { schedule: pausar ? { interval: "manual" } : { interval: "weekly", weekly_anchor: "tuesday" } } } });
+      return true;
+    } catch { return false; }
+  },
   async cuentaLeer(cuenta: string): Promise<EstadoCuenta | null> {
     if (cuenta.startsWith("acct_sim_")) return null; // el simulador escribe el estado al completar el alta
     const a = await stripe<{ charges_enabled: boolean; payouts_enabled: boolean; requirements?: { currently_due?: string[] }; external_accounts?: { data?: { last4?: string }[] } }>(

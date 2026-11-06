@@ -1,16 +1,18 @@
 "use client";
 /* ADM-NEG · 360° (Super Admin.dc.html negDetail): el negocio como lo ve el cliente, como lo edita el dueño y lo que
-   hizo el equipo. Pestañas de la Fase 1: Resumen, Ficha, Equipo, Confianza (Lo que vende, Operación, Dinero y
-   Contenido llegan con sus módulos). Cada acción pide motivo y queda en la auditoría. */
+   hizo el equipo. Pestañas: Resumen, Ficha, Lo que vende, Dinero (2o), Equipo, Contenido y Confianza (Operación llega con
+   Analítica). Cada acción pide motivo y queda en la auditoría. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
+import type { Dinero } from "@/lib/admin-dinero";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { N360Dinero } from "./N360Dinero";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "HBars" | "Icon", ComponentType<any>>;
@@ -23,7 +25,7 @@ const VERBO: Record<string, string> = {
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
   "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de",
   "negocio.ocultar": "ocultó", "negocio.suspender": "suspendió", "negocio.cerrar": "cerró", "negocio.restaurar": "restauró", "negocio.cierre_temporal": "cerró temporalmente",
-  "negocio.reabrir": "reabrió", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
+  "negocio.reabrir": "reabrió", "negocio.dueno.cambiar": "cambió el dueño de", "negocio.pagos.pausar": "pausó los pagos al banco de", "plan.cortesia": "dio Pro de cortesía a", "plan.quitar_cortesia": "quitó la cortesía a", "plan.extender_prueba": "extendió la prueba de", "plan.reintentar_cobro": "reintentó el cobro de Pro de", "plan.anular": "anuló la suscripción de",  "negocio.pagos.reanudar": "reanudó los pagos al banco de", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
   "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.foto.quitar": "quitó una foto de",
   "negocio.foto.restaurar": "restauró una foto de", "negocio.staff.quitar": "quitó de la página a alguien de", "negocio.staff.mostrar": "volvió a mostrar a alguien de",
   "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó", "licencia.verificar": "verificó la licencia de", "licencia.vencida": "marcó vencida la licencia de", "licencia.no_aparece": "no encontró la licencia de",
@@ -33,7 +35,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 
-export function N360({ n, tab }: { n: Negocio360; tab: string }) {
+export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -61,7 +63,7 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" ? [["vende", "Lo que vende"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -121,6 +123,8 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         })} /> : <A.AdminNote tone="info" icon="law">No declaró licencias.</A.AdminNote>}
         <A.AdminNote tone="info">Menú, servicios y lo demás que vende llegan con sus módulos.</A.AdminNote>
       </>);
+  } else if (tab === "din" && din) {
+    cuerpo = <N360Dinero d={din} id={n.id} nombre={n.name} desk={desk} setConf={setConf} />;
   } else if (tab === "equipo") {
     const dueño = n.equipo.find((m) => m.kind === "owner"), staff = n.equipo.filter((m) => m.kind !== "owner");
     cuerpo = (

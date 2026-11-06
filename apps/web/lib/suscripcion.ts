@@ -232,3 +232,22 @@ export async function reintentarCobro(negocio: string, actor: string): Promise<R
   const s = (await db().query<{ status: string }>(`select status from subscriptions where business_id = $1`, [negocio])).rows[0];
   return s?.status === "active" ? { ok: true } : no("Se intentó y el banco volvió a rechazarla.", "We tried and the bank declined again.");
 }
+/* Anular la suscripción (Super Admin, prototipo subX): Pro pagado sigue hasta el fin del período y luego Free; en prueba,
+   el día 30 pasa a Free; con cobro fallido, Free hoy (ese período no se pagó). No se devuelve lo cobrado; nada se borra. */
+export async function anularSuscripcion(negocio: string, actor: string, motivo: string): Promise<ResS> {
+  const s = (await db().query<Fila>(`select * from subscriptions where business_id = $1`, [negocio])).rows[0];
+  if (s?.status === "active") {
+    await tx(async (c) => { await c.query(`update subscriptions set status = 'canceling', updated_at = now() where business_id = $1 and status = 'active'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); });
+    return { ok: true };
+  }
+  if (s?.status === "trial") {
+    await tx(async (c) => { await c.query(`update subscriptions set trial_choice = 'no_continue', updated_at = now() where business_id = $1 and status = 'trial'`, [negocio]); await adminEvento(c, negocio, "canceled_admin", actor, { motivo }); });
+    return { ok: true };
+  }
+  if (s?.status === "past_due") {
+    await tx((c) => adminEvento(c, negocio, "canceled_admin", actor, { motivo }));
+    await aFree(negocio, "admin");
+    return { ok: true };
+  }
+  return no("No hay una suscripción que anular.", "There is no subscription to cancel.");
+}

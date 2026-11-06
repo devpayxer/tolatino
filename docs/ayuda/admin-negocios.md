@@ -12,7 +12,8 @@ Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latin
 - **Negocios:** lista con buscador (nombre, id, teléfono, dirección, subcategoría), categoría, plan, estado, «Más
   filtros» y orden. El **360°** muestra el negocio como lo ve el cliente, lo que hizo el dueño y lo que hizo el equipo:
   Resumen (datos, fuerza del perfil, notas internas, acciones), Ficha (fotos y campos que se editan en su nombre,
-  horario), Equipo (quién entra al panel, staff) y Confianza (casos abiertos, sello, sanciones).
+  horario), Dinero (cobros, pagos al banco y su pausa, plan; ver `admin-negocio-dinero.md`), Equipo (quién entra al
+  panel, staff) y Confianza (casos abiertos, sello, sanciones).
 
 ## Decisiones y lo que ve el negocio
 | Acción | Dónde | Permiso | Qué ve el dueño / la página |
