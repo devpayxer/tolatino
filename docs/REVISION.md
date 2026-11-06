@@ -601,3 +601,15 @@ _Decidido por mí (reversible): «llegó en la franja» = «Llegué» antes del 
 el precio (sale del dato). La variante de lavado (precio publicado · a tiempo · quedó limpio · cuidaron tu carro) usa por
 ahora las preguntas de Auto; «Lo que importa en el hogar / en autos» en la pestaña Reseñas (porcentajes) llega con 4g-3._
 
+## Fase 4 · 4g-2 Ayuda con la visita y con la cita
+1. Marisol › una visita terminada de Plomería Rodríguez › «Ayuda con la visita» › «Quedó mal o volvió a fallar» (foto
+   obligatoria) › Devolución a mi tarjeta › Enviar.
+2. Como Tomás (570-555-0222): el detalle de la cita › «Proponer otra cosa» (puedes devolver hasta lo cobrado del estimado)
+   › $40 › Enviar. Marisol › «Aceptar $40» → vuelven a su tarjeta.
+3. Auto (Taller Hermanos Peña): «Dañaron algo del carro» › «Que lo revisen otra vez sin cargo» › Rafael «Tiene razón».
+_Decidido por mí (reversible): «Que vuelva sin cargo» aceptado se coordina por Mensajes o teléfono; la reserva de garantía a
+$0 desde la app (el diseño: Booking con `warr: true`) queda en LAUNCH-CHECKLIST. «Devolución al To'Latino Wallet» no está
+porque no hay Wallet. Lo que se devuelve sale del cobro de la visita con más saldo (estimado, «algo más», visita o depósito)._
+_Arreglado de paso: la ayuda de Belleza tomaba el texto de Hogar/Auto («belleza» cuenta como verdadero); guardián
+`rubroComoBooleano` (probado al revés)._
+

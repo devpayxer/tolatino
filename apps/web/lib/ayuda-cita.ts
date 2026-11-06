@@ -8,10 +8,14 @@ import { escalarVencidas } from "./ayuda";
    (acepta, propone un monto o no puede); si no responde, o la persona no está de acuerdo, To'Latino revisa en 48 h.
    Lo que vuelve a la tarjeta sale del depósito pagado en la app (Stripe); lo pagado en el local se arregla en el local. */
 type Bi = { es: string; en: string };
-export type MotivoCita = "cobro" | "quien" | "quedo" | "espera" | "dep" | "otro";
-export const MOTIVOS_CITA: MotivoCita[] = ["cobro", "quien", "quedo", "espera", "dep", "otro"];
-/* Los que piden foto (diseño: RSN[3] = 1). */
-export const CON_FOTO = new Set<MotivoCita>(["cobro", "quedo"]);
+export type MotivoCita = "cobro" | "quien" | "quedo" | "espera" | "dep" | "otro" | "win" | "more" | "bad" | "dmg" | "who" | "tarde" | "igual" | "dano" | "piezas";
+export type RubroAyuda = "belleza" | "auto" | "hogar";
+/* Los motivos de cada rubro (Belleza: bhelp · Auto: ahelp · Hogar: neg-hogar-rev.js RSN). */
+export const MOTIVOS: Record<RubroAyuda, MotivoCita[]> = { belleza: ["cobro", "quien", "quedo", "espera", "dep", "otro"], auto: ["cobro", "tarde", "igual", "dano", "piezas", "dep", "otro"], hogar: ["win", "more", "bad", "dmg", "who", "dep", "otro"] };
+export const MOTIVOS_CITA: MotivoCita[] = MOTIVOS.belleza;
+/* Los que piden foto (diseño: RSN[3] = 1; Hogar: needPh = quedó mal o dañó algo). */
+export const CON_FOTO = new Set<MotivoCita>(["cobro", "quedo", "bad", "dmg", "dano"]);
+const rubroDeCat = (cat: string): RubroAyuda => (cat === "NEG-AUTO" ? "auto" : cat === "NEG-HOGAR" ? "hogar" : "belleza");
 /* Si la cita no se dio (cancelada, vencida o no llegó), solo cabe el depósito u otra cosa. */
 export const SIN_CITA = new Set<MotivoCita>(["dep", "otro"]);
 export type QuiereCita = "corr" | "rev" | "avis";
@@ -37,35 +41,38 @@ const fila = (x: Omit<AyudaCita, "wants"> & { wants: string }): AyudaCita => ({ 
 
 /* Lo que se puede devolver a la tarjeta: el depósito cobrado en la app, menos lo ya devuelto. */
 async function depositoDe(opId: string) {
+  // El cobro con más por devolver (Belleza: el depósito; Auto y Hogar: también estimado, «algo más» y visita).
   return (await db().query<{ id: string; amount: number; refunded: number; status: string; brand: string | null; l4: string | null }>(
     `select id::text, amount_cents as amount, refunded_cents as refunded, status, card_brand as brand, card_last4 as l4 from payments
-      where operation_id = $1::bigint and kind = 'deposit' order by id desc limit 1`, [opId])).rows[0] ?? null;
+      where operation_id = $1::bigint and kind in ('deposit', 'estimate', 'extra', 'visit', 'full')
+      order by (status in ('captured', 'partially_refunded')) desc, amount_cents - refunded_cents desc, id desc limit 1`, [opId])).rows[0] ?? null;
 }
 const devolvible = (p: Awaited<ReturnType<typeof depositoDe>>) => (p && ["captured", "partially_refunded"].includes(p.status) ? p.amount - p.refunded : 0);
 const tarjetaL = (p: { brand: string | null; l4: string | null } | null) => (p?.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand ?? ""] ?? "Tarjeta"} ·· ${p.l4}` : null);
 
 /* ── La persona ── */
-export type CitaAyudaVista = { puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null };
+export type CitaAyudaVista = { rubro: RubroAyuda; puede: boolean; hecho: boolean; motivo: string | null; a: AyudaCita | null; depPagado: number; devolvible: number; tarjeta: string | null };
 export async function ayudaDeCita(userId: string, numero: string): Promise<CitaAyudaVista | null> {
   if (!NUM.test(numero)) return null;
   await escalarVencidas();
-  const o = (await db().query<{ id: string; status: string; reciente: boolean }>(
-    `select o.id::text, case when o.status_detail = 'noshow' then 'noshow' else o.status end as status, coalesce(o.done_at, o.updated_at) > now() - interval '7 days' as reciente
-       from operations o where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
+  const o = (await db().query<{ id: string; status: string; reciente: boolean; cat: string }>(
+    `select o.id::text, case when o.status_detail = 'noshow' then 'noshow' else o.status end as status, coalesce(o.done_at, o.updated_at) > now() - interval '7 days' as reciente, b.category_id as cat
+       from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
   if (!o) return null;
   const a = (await db().query<Parameters<typeof fila>[0]>(`select ${COLS} from help_requests h where h.operation_id = $1::bigint and h.user_id = $2`, [o.id, userId])).rows[0];
   const p = await depositoDe(o.id), hecho = o.status === "done";
   const conDep = !!p && p.status !== "failed";
   // Terminada: hasta 7 días. Sin darse: solo si hubo depósito (para reclamarlo), también hasta 7 días.
   const motivo = !o.reciente ? "tarde" : hecho ? null : ["cancelled", "expired", "declined", "noshow"].includes(o.status) && conDep ? null : "aun";
-  return { puede: !motivo && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p) };
+  return { rubro: rubroDeCat(o.cat), puede: !motivo && !a, hecho, motivo, a: a ? fila(a) : null, depPagado: p && ["captured", "partially_refunded", "refunded"].includes(p.status) ? p.amount : 0, devolvible: devolvible(p), tarjeta: tarjetaL(p) };
 }
 
 export type AyudaCitaIn = { reason: string; wants?: string; body?: string; amount?: string | number | null; fotos?: string[] };
 export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCitaIn): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   const reason = String(p?.reason ?? "") as MotivoCita;
-  if (!MOTIVOS_CITA.includes(reason)) return no("Elige qué pasó.", "Pick what happened.");
+  const cat = (await db().query<{ cat: string }>(`select b.category_id as cat from operations o join businesses b on b.id = o.business_id where o.number = $1`, [numero])).rows[0]?.cat ?? "";
+  if (!MOTIVOS[rubroDeCat(cat)].includes(reason)) return no("Elige qué pasó.", "Pick what happened.");
   const body = String(p?.body ?? "").trim().slice(0, 500);
   if (body.length < 15) return no("Cuéntanos qué pasó (15 letras o más).", "Tell us what happened (15+ characters).");
   const q = (["corr", "rev", "avis"].includes(String(p?.wants)) ? String(p.wants) : "corr") as QuiereCita;

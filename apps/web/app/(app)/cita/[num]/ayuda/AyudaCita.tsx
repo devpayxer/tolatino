@@ -19,23 +19,29 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
 const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
-const RSN: [MotivoCita, string, string, boolean][] = [["cobro", "Cobraron más del precio publicado", "Charged more than the posted price", true], ["quien", "No me atendió quien reservé", "Not the person I booked", false],
+const RSN_B: [MotivoCita, string, string, boolean][] = [["cobro", "Cobraron más del precio publicado", "Charged more than the posted price", true], ["quien", "No me atendió quien reservé", "Not the person I booked", false],
   ["quedo", "No quedó como lo pedí", "It did not turn out as I asked", true], ["espera", "Esperé mucho a pesar de la cita", "Long wait despite the booking", false],
   ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]];
 
 export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
+  // Auto (CFG.ahelp) y Hogar (neg-hogar-rev.js): sus motivos, lo que se pide y sus textos; Belleza sigue igual (bhelp).
+  const rub = v.rubro, cosa = rub === "hogar" ? E2("la visita", "the visit") : E2("la cita", "the appointment");
+  const RSN: [MotivoCita, string, string, boolean][] = rub === "hogar" ? [["win", "No llegó en la franja", "Did not arrive in the window", false], ["more", "Cobró más de lo aprobado", "Charged more than approved", false], ["bad", "Quedó mal o volvió a fallar", "Not fixed or failed again", true], ["dmg", "Dañó algo de la casa", "Damaged something in the home", true], ["who", "Vino otra persona", "Someone else came", false], ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]]
+    : rub === "auto" ? [["cobro", "Cobraron más del estimado sin mi OK", "Charged more than the estimate without my OK", true], ["tarde", "No estuvo listo cuando prometieron", "Not ready when promised", false], ["igual", "Sigue el mismo problema", "Same problem is back", false], ["dano", "Dañaron algo del carro", "They damaged something on the car", true], ["piezas", "No me dieron las piezas viejas", "They did not give me the old parts", false], ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]]
+      : RSN_B;
   const quien = c.con && c.model === "chair" ? c.con.corto : c.negocio.nombre;
-  const SOL: [QuiereCita, string, string, string, string][] = [["corr", "Que me lo arreglen sin cargo", "Fix it at no charge", "Te dan otra cita para arreglarlo", "They give you a new booking to fix it"],
-    ["rev", "Que me devuelvan", "Refund me", "Lo cobrado de más o el depósito", "The overcharge or the deposit"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${quien} y To’Latino`, `Read by ${quien} and To’Latino`]];
+  const SOL: [QuiereCita, string, string, string, string][] = [rub === "hogar" ? ["corr", "Que vuelva sin cargo", "Come back at no charge", "Por la garantía de la mano de obra", "Under the labor warranty"] : rub === "auto" ? ["corr", "Que lo revisen otra vez sin cargo", "Check it again at no charge", "Por la garantía del trabajo", "Under the work warranty"] : ["corr", "Que me lo arreglen sin cargo", "Fix it at no charge", "Te dan otra cita para arreglarlo", "They give you a new booking to fix it"],
+    rub !== "belleza" ? ["rev", "Devolución a mi tarjeta", "Refund to my card", "Lo cobrado de más · 3–5 días hábiles", "The overcharge · 3–5 business days"] : ["rev", "Que me devuelvan", "Refund me", "Lo cobrado de más o el depósito", "The overcharge or the deposit"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${quien} y To’Latino`, `Read by ${quien} and To’Latino`]];
   const sinDar = !v.hecho, rsn = RSN.filter((r) => !sinDar || r[0] === "dep" || r[0] === "otro"), sols = SOL.filter((s) => !sinDar || s[0] !== "corr");
   const [r, setR] = useState<MotivoCita | null>(null), [nota, setNota] = useState(""), [sol, setSol] = useState<QuiereCita>(sinDar ? "rev" : "corr"), [amt, setAmt] = useState("");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false), [flash, setFlash] = useState("");
   const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
   const volver = () => router.push(`/cita/${c.numero}`);
-  const titulo = E2("Ayuda con la cita", "Appointment help");
-  const honest = E2("Lo que pagas es el precio publicado.", "You pay the posted price.");
+  const titulo = rub === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help");
+  const honest = rub === "hogar" ? E2("Solo se devuelve lo que se cobró de más o lo que el negocio acepte. La solicitud no borra tu reseña.", "Only what was overcharged or what the business agrees to is refunded. The request does not remove your review.")
+    : rub === "auto" ? E2("Nada se hace ni se cobra sin tu OK.", "Nothing is done or charged without your OK.") : E2("Lo que pagas es el precio publicado.", "You pay the posted price.");
   const svcT = es ? c.svc.es : c.svc.en || c.svc.es;
   const hora = (iso: string | null) => (iso ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "").toUpperCase() : "");
   const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
@@ -99,7 +105,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
     const steps = [{ label: E2("Enviada", "Sent"), time: hora(a.at), state: "done" }, { label: `${E2("Respuesta de ", "Reply from ")}${quien}`, time: hora(a.replyAt), state: st !== "sent" ? "done" : "current" },
       { label: E2("Terminada", "Finished"), time: hora(a.resolvedAt), state: st === "done" ? "done" : st !== "sent" ? "current" : "next" }];
     const filas: [string, string][] = [[E2("MOTIVO", "REASON"), rs ? (es ? rs[1] : rs[2]) : "—"], [E2("QUIERES", "YOU WANT"), sol1 ? (es ? sol1[1] : sol1[2]) : "—"], ...(a.amount ? [[E2("MONTO", "AMOUNT"), dinero(a.amount)] as [string, string]] : []), [E2("LES CONTASTE", "YOU SAID"), `«${a.body}»`]];
-    const sub = `${E2("SOLICITUD #", "REQUEST #")}${a.number} · ${E2("CITA #", "APPOINTMENT #")}${c.numero}`.toUpperCase();
+    const sub = `${E2("SOLICITUD #", "REQUEST #")}${a.number} · ${rub === "hogar" ? E2("VISITA #", "VISIT #") : E2("CITA #", "APPOINTMENT #")}${c.numero}`.toUpperCase();
     const hdr = (
       <div data-screen-label="Ayuda con la cita · estado" className="flex items-start gap-3.5 rounded-[20px] border border-ink/[.08] bg-white p-[18px]">
         <span className={`grid h-[46px] w-[46px] flex-none place-items-center rounded-[15px] ${h[1]}`}><Icon name={h[0]} size={22} color={h[2]} /></span>
@@ -132,7 +138,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   }
 
   // ── El formulario (APP-NEG-CITA-AYUDA) ──
-  const sub = `${E2("CITA #", "APPOINTMENT #")}${c.numero} · ${c.negocio.nombre}`.toUpperCase();
+  const sub = `${rub === "hogar" ? E2("VISITA #", "VISIT #") : E2("CITA #", "APPOINTMENT #")}${c.numero} · ${c.negocio.nombre}`.toUpperCase();
   if (!v.puede) return (
     <div data-pantalla="APP-NEG-CITA-AYUDA">
       {marco(sub, <div className={caja}><div className="text-[14px] font-bold">{v.motivo === "tarde" ? E2("La ayuda con una cita se pide hasta 7 días después.", "Booking help can be asked up to 7 days after.") : E2("La ayuda se pide cuando la cita ya pasó.", "Help can be asked once the booking is over.")}</div>
@@ -151,7 +157,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const enviar = async () => {
     if (miss.length || ocupado) return;
     setOcupado(true); setError("");
-    const x = await ayudaCitaPedir(c.numero, { reason: r!, body: nota, wants: sol, amount: r === "cobro" && sol === "rev" ? amt : null, fotos: fotos.map((f) => f.id) }).catch(() => null);
+    const x = await ayudaCitaPedir(c.numero, { reason: r!, body: nota, wants: sol, amount: (r === "cobro" || r === "more") && sol === "rev" ? amt : null, fotos: fotos.map((f) => f.id) }).catch(() => null);
     if (x?.ok) { router.refresh(); return; }
     setOcupado(false); setError(x && !x.ok ? (es ? x.msg.es : x.msg.en) : E2("No se pudo enviar. Revisa tu conexión.", "Could not send. Check your connection."));
   };
@@ -170,7 +176,7 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
   const fotosB = (
     <div data-screen-label="Ayuda con la cita · fotos" className={caja}>
       <div className={T17}>{conFoto ? E2("Fotos · obligatorias", "Photos · required") : E2("Fotos · opcional", "Photos · optional")}</div>
-      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
+      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{rub === "hogar" ? E2("De cómo quedó o del daño.", "Of how it looks or the damage.") : rub === "auto" ? E2("Del recibo, del estimado o del daño.", "Of the receipt, the estimate or the damage.") : E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
       <div className="mt-3 flex flex-wrap gap-2">
         {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url)}>
           <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/95"><Icon name="close" size={10} strokeWidth={2.6} /></span></button>)}
@@ -186,10 +192,10 @@ export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: b
       <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("Cuéntalo con calma: qué pediste y qué pasó.", "Take your time: what you asked for and what happened.")}</div>
       <div className="mt-3.5"><div className={K}>{E2("MOTIVO", "REASON")}</div>
         <div className="mt-[9px] flex flex-wrap gap-2">{rsn.map(([k, l1, l2]) => <Chip key={k} variant={r === k ? "selected" : "filter"} onClick={() => setR(r === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
-      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
+      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={rub === "hogar" ? E2("Ej.: el grifo volvió a gotear a los dos días…", "E.g. the faucet started dripping again two days later…") : rub === "auto" ? E2("Ej.: me cobraron $80 de más por una pieza que no aprobé…", "E.g. they charged $80 more for a part I did not approve…") : E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
         className="mt-3.5 box-border w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-3.5 py-3 text-[13.5px] font-medium leading-[1.5] text-ink outline-none" />
       <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/40">{nota.length} / 500</div>
-      {r === "cobro" && sol === "rev" && <div className="mt-2"><div className={K}>{E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
+      {(r === "cobro" || r === "more") && sol === "rev" && <div className="mt-2"><div className={K}>{E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
         <input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^\d.]/g, "").slice(0, 7))} inputMode="decimal" aria-label={E2("Cuánto", "How much")} placeholder={E2("Ej.: 40", "E.g. 40")}
           className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3.5 font-mono text-[13.5px] font-bold tracking-[0.06em] text-ink outline-none" /></div>}
     </div>);

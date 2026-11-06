@@ -126,7 +126,7 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     : ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
       ["clock", E2("Voy tarde", "Running late"), () => (lateOk ? setHoja("late") : aviso(c.late ? E2(`Ya avisaste: llegas ${c.late} min tarde`, `Already sent: ${c.late} min late`) : E2("Disponible 2 h antes de tu cita", "Available 2 h before your booking")))],
       ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
-    : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
+    : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", c.rubro === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   const actsV = hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");

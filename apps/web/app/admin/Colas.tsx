@@ -184,7 +184,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "appointment") {
       // Ayuda con una cita (3e): qué pasó, qué quiere y cuánto, su nota y fotos, la decisión del negocio y lo que se puede
       // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
-      const h = k.ayuda, MOT: Record<string, string> = { cobro: "Cobraron más del precio publicado", quien: "No la atendió quien reservó", quedo: "No quedó como lo pidió", espera: "Esperó mucho a pesar de la cita", dep: "No le devolvieron el depósito", otro: "Otra cosa" };
+      const h = k.ayuda, MOT: Record<string, string> = { win: "No llegó en la franja", more: "Cobró más de lo aprobado", bad: "Quedó mal o volvió a fallar", dmg: "Dañó algo de la casa", who: "Vino otra persona", tarde: "No estuvo listo cuando prometieron", igual: "Sigue el mismo problema", dano: "Dañaron algo del carro", piezas: "No le dieron las piezas viejas", cobro: "Cobraron más del precio publicado", quien: "No la atendió quien reservó", quedo: "No quedó como lo pidió", espera: "Esperó mucho a pesar de la cita", dep: "No le devolvieron el depósito", otro: "Otra cosa" };
       const Q: Record<string, string> = { reponer: "Que se lo arreglen sin cargo", devolver: "Que le devuelvan", avisar: "Solo quiere avisar" };
       const DEC: Record<string, string> = { ok: "Aceptó", alt: `Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, no: "Dijo que no puede" };
       const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;

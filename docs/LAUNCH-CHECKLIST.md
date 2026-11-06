@@ -436,3 +436,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] Editor de artículos de Tienda en el panel (precio, existencia, foto, nueva/usada, medida): con Tiendas.
 - [ ] Apartados en Super Admin › Transacciones y en Mi cuenta: bloque 4g.
 
+## Fase 4 · 4g-2 (ayuda con la visita)
+- [ ] Reserva de garantía a $0 desde la ayuda aceptada («que vuelva sin cargo»): Booking con `warr` (sin depósito ni
+      retención) en vez de coordinar por Mensajes.
+- [ ] Si se devuelve más que un cobro (estimado + «algo más»), hoy sale del de más saldo: repartir entre cobros.
+
