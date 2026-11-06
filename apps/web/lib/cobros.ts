@@ -141,7 +141,7 @@ export type CobrosPanel = {
   modo: "stripe" | "simulador" | "apagado";
   cuenta: { estado: "none" | "pending" | "enabled" | "restricted"; banco: string | null; pide: string[]; pausado: boolean; motivo: string | null; simulado: boolean };
   semana: { n: number; cobrado: number; comision: number; devuelto: number; neto: number; martes: string };
-  cobros: { num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null }[];
+  cobros: { num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null; disputa: string | null }[];
   tasa: number;
 };
 export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
@@ -155,9 +155,10 @@ export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
        select count(*)::int as n, coalesce(sum(p.amount_cents), 0)::int as cobrado, coalesce(sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / p.amount_cents), 0)::int as comision,
               coalesce(sum(p.refunded_cents), 0)::int as devuelto, to_char((select ini from w) + interval '8 days', 'YYYY-MM-DD') as martes
          from payments p, c, w where p.business_id = $1 and p.status in ('captured', 'partially_refunded', 'refunded') and p.captured_at at time zone c.tz >= w.ini`, [negocio]),
-    db().query<{ num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; brand: string | null; l4: string | null }>(
+    db().query<{ num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; brand: string | null; l4: string | null; disputa: string | null }>(
       `select o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), '—') as quien, p.amount_cents as monto, p.fee_cents as comision,
-              p.refunded_cents as devuelto, p.status as estado, to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.card_brand as brand, p.card_last4 as l4
+              p.refunded_cents as devuelto, p.status as estado, to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.card_brand as brand, p.card_last4 as l4,
+              (select d.status from disputes d where d.payment_id = p.id order by d.id desc limit 1) as disputa
          from payments p join operations o on o.id = p.operation_id join users u on u.id = p.user_id where p.business_id = $1 order by p.id desc limit 30`, [negocio]),
     db().query<{ r: number }>(`select rate_bp as r from fee_rules where kind = 'ped' and effective_from <= now() order by effective_from desc, id desc limit 1`),
   ]);
@@ -167,7 +168,7 @@ export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
     modo: pasarela.modo(),
     cuenta: x ? { estado: x.status as CobrosPanel["cuenta"]["estado"], banco: x.bank, pide: x.req ?? [], pausado: x.paused, motivo: x.why, simulado: x.sim } : { estado: "none", banco: null, pide: [], pausado: false, motivo: null, simulado: false },
     semana: { n: k.n, cobrado: k.cobrado, comision: k.comision, devuelto: k.devuelto, neto: Math.max(0, neto), martes: k.martes },
-    cobros: L.rows.map((r) => ({ num: r.num, quien: r.quien, monto: r.monto, comision: r.comision, devuelto: r.devuelto, estado: r.estado, at: r.at, tarjeta: r.brand && r.l4 ? `${r.brand.toUpperCase()} ·· ${r.l4}` : null })),
+    cobros: L.rows.map((r) => ({ num: r.num, quien: r.quien, monto: r.monto, comision: r.comision, devuelto: r.devuelto, estado: r.estado, at: r.at, tarjeta: r.brand && r.l4 ? `${r.brand.toUpperCase()} ·· ${r.l4}` : null, disputa: r.disputa })),
     tasa: f.rows[0]?.r ?? 1000,
   };
 }

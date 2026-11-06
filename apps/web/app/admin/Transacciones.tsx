@@ -7,7 +7,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
 import type { EstTx, FiltrosTx, ListaTx } from "@/lib/admin-tx";
-import { devolverTx, exportarTx } from "./acciones-tx";
+import { devolverTx, disputaSimular, disputaSimularResultado, exportarTx } from "./acciones-tx";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
@@ -17,7 +17,8 @@ const ST: Record<EstTx, [string, string]> = { pend: ["PENDIENTE", "neutral"], cu
 const money = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
-export function Transacciones({ d, f, porPagina, exportar, devolver }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean; devolver: boolean }) {
+const DISP: Record<string, string> = { needs_response: "DISPUTA · FALTA RESPONDER", under_review: "DISPUTA · EL BANCO REVISA", won: "DISPUTA GANADA", lost: "DISPUTA PERDIDA", accepted: "DISPUTA ACEPTADA" };
+export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean; devolver: boolean; sim?: boolean }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [toast, setToast] = useToast(), [pend, start] = useTransition(), [conf, setConf] = useState<Confirmar | null>(null);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -67,13 +68,22 @@ export function Transacciones({ d, f, porPagina, exportar, devolver }: { d: List
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "card", t: "Nada con esos filtros", s: "Prueba otro estado o busca por número." }]} />
         : <A.AdminList rows={d.filas.map((x) => ({
           icon: x.k === "order" ? "bag" : "restaurant", title: `${x.k === "order" ? "Pedido" : "Reservación"} ${x.k === "order" ? `#${x.num}` : x.num} · ${x.bname}`,
-          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}` : " · en el local"}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
+          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}${x.disputa ? ` · ${DISP[x.disputa] ?? "disputa"}` : ""}` : " · en el local"}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
           tag: ST[x.st][0], tone: ST[x.st][1],
           actions: [{ label: "Ver negocio", variant: "secondary", onClick: () => router.push(`/admin/negocios/${x.biz}`) }, { label: "Ver cliente", variant: "secondary", onClick: () => router.push(`/admin/usuarios/${x.uid}`) },
             ...(devolver && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Devolver", variant: "secondary", onClick: () => { const clave = crypto.randomUUID(); setConf({
               titulo: `Devolver dinero · pedido #${x.num}`, cta: "Devolver", peligro: true, sub: `Hasta ${money(x.total - x.devuelto)}. Vuelve a la tarjeta del cliente en 3 a 5 días hábiles; la comisión baja en proporción. El motivo lo ve el cliente y queda en la auditoría.`,
               valor: { k: "MONTO EN DÓLARES", ini: ((x.total - x.devuelto) / 100).toFixed(2), max: 8 }, plantillas: ["Falta un plato del pedido.", "El pedido llegó mal.", "El negocio no entregó el pedido.", "Cobro duplicado."],
-              hacer: (m, _e, v) => devolverTx(x.num, v, m, clave) }); } }] : [])],
+              hacer: (m, _e, v) => devolverTx(x.num, v, m, clave) }); } }] : []),
+            // Sandbox (2r): simular la disputa del banco y, ya respondida, el resultado.
+            ...(sim && devolver && x.pid && !x.disputa && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Simular disputa", variant: "secondary", onClick: () => setConf({
+              titulo: `Simular disputa · pedido #${x.num}`, cta: "Simular", sub: "Solo en el sandbox: como si el cliente reclamara el cobro con su banco. Abre el caso en Colas y avisa al negocio.",
+              elegir: { label: "MOTIVO DEL BANCO", items: [{ k: "product_not_received", l: "No recibió el pedido" }, { k: "fraudulent", l: "No hizo la compra" }, { k: "product_unacceptable", l: "Llegó mal" }, { k: "duplicate", l: "Cobro doble" }] },
+              plantillas: ["Prueba de disputa en el sandbox."], hacer: (_m, e) => disputaSimular(x.pid!, e ?? "product_not_received") }) }] : []),
+            ...(sim && devolver && x.pid && x.disputa === "under_review" ? [
+              { label: "Banco: gana el negocio", variant: "secondary", onClick: () => setConf({ titulo: "Simular resultado · gana el negocio", cta: "Simular", plantillas: ["Prueba en el sandbox."], hacer: () => disputaSimularResultado(x.pid!, true) }) },
+              { label: "Banco: gana el cliente", variant: "secondary", onClick: () => setConf({ titulo: "Simular resultado · gana el cliente", cta: "Simular", peligro: true, plantillas: ["Prueba en el sandbox."], hacer: () => disputaSimularResultado(x.pid!, false) }) },
+            ] : [])],
         }))} />}
       {d.total > porPagina ? <A.Pager label={`${a}–${b} · ${d.total}`} hasPrev={f.pag > 1} hasNext={b < d.total} onPrev={() => ir({ pag: String(f.pag - 1) })} onNext={() => ir({ pag: String(f.pag + 1) })} /> : null}
       <Toast t={toast} desk={desk} />

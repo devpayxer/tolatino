@@ -12,6 +12,7 @@ const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"],
 const fecha = (c: Ctx, ymd: string) => { const d = new Date(`${ymd}T12:00:00Z`), m = MES[d.getUTCMonth()]!; return c.es ? `mar ${d.getUTCDate()} ${m[0]}` : `Tue ${m[1]} ${d.getUTCDate()}`; };
 const cuando = (c: Ctx, iso: string) => new Intl.DateTimeFormat(c.es ? "es-US" : "en-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
+const DSP = (E2: (a: string, b: string) => string): Record<string, [string, string]> => ({ needs_response: [E2("EN DISPUTA", "DISPUTED"), "danger"], under_review: [E2("EN DISPUTA", "DISPUTED"), "danger"], won: [E2("GANADA", "WON"), "signal"], lost: [E2("PERDIDA", "LOST"), "danger"], accepted: [E2("DEVUELTO", "REFUNDED"), "danger"] });
 export function cobrosBloques(c: Ctx, x: CobrosPanel | undefined): Bloque[] {
   const { E2, d } = c;
   if (!x) return [{ type: "head", t: E2("Cobros", "Payouts") }, { type: "empty", icon: "card", t: E2("Sin acceso", "No access"), s: E2("Solo el dueño maneja los cobros.", "Only the owner manages payouts.") }];
@@ -51,9 +52,12 @@ export function cobrosBloques(c: Ctx, x: CobrosPanel | undefined): Bloque[] {
       { k: E2("TE LLEGA", "YOU GET"), v: money(x.semana.neto), s: E2(`el ${fecha(c, x.semana.martes)}`, `on ${fecha(c, x.semana.martes)}`) },
     ] });
     const TG: Record<string, [string, string]> = { held: [E2("RETENIDO", "HELD"), "neutral"], captured: [E2("COBRADO", "CHARGED"), "signal"], released: [E2("LIBERADO", "RELEASED"), "neutral"], refunded: [E2("DEVUELTO", "REFUNDED"), "danger"], partially_refunded: [E2("DEVUELTO EN PARTE", "PARTLY REFUNDED"), "action"], failed: [E2("FALLÓ", "FAILED"), "danger"] };
+    // Disputas (2r): el cliente reclamó el cobro con su banco. To'Latino responde con la evidencia del pedido.
+    const enDisputa = x.cobros.filter((p) => p.disputa === "needs_response" || p.disputa === "under_review");
+    if (enDisputa.length) out.push({ type: "note", tone: "warn", icon: "warning", t: E2(`${enDisputa.length === 1 ? `El pedido #${enDisputa[0]!.num} está` : `${enDisputa.length} pedidos están`} en disputa con el banco del cliente. To’Latino responde con la evidencia del pedido; no tienes que hacer nada. Te avisamos el resultado.`, `${enDisputa.length === 1 ? `Order #${enDisputa[0]!.num} is` : `${enDisputa.length} orders are`} disputed with the customer’s bank. To’Latino responds with the order evidence; you don’t need to do anything. We will tell you the result.`) });
     out.push(x.cobros.length ? { type: "rows", k: E2("ÚLTIMOS COBROS CON TARJETA", "LATEST CARD CHARGES"), items: x.cobros.map((p): Fila => ({
       key: p.num, icon: "card", t: `${E2("Pedido", "Order")} #${p.num} · ${p.quien}`, s: `${cuando(c, p.at)}${p.tarjeta ? ` · ${p.tarjeta}` : ""}${p.estado === "captured" || p.estado === "partially_refunded" ? ` · ${E2("comisión", "fee")} ${money(Math.round(p.comision * (p.monto - p.devuelto) / p.monto))}` : ""}${p.devuelto ? ` · ${E2("devuelto", "refunded")} ${money(p.devuelto)}` : ""}`,
-      r: money(p.monto), tag: TG[p.estado]?.[0] ?? p.estado, tone: TG[p.estado]?.[1] ?? "neutral", chev: true, onClick: () => c.nav(`/panel/${d.id}/hoy?det=ped:${p.num}`) })) }
+      r: money(p.monto), tag: p.disputa ? DSP(E2)[p.disputa]?.[0] ?? p.disputa : TG[p.estado]?.[0] ?? p.estado, tone: p.disputa ? DSP(E2)[p.disputa]?.[1] ?? "danger" : TG[p.estado]?.[1] ?? "neutral", chev: true, onClick: () => c.nav(`/panel/${d.id}/hoy?det=ped:${p.num}`) })) }
       : { type: "empty", icon: "card", t: E2("Todavía no hay cobros con tarjeta", "No card charges yet"), s: E2("Cuando alguien pague con tarjeta, lo ves aquí con su comisión.", "When someone pays by card, you see it here with its fee.") });
   } else if (st === "pending") {
     out.push({ type: "note", tone: "info", icon: "clock", t: E2("Revisando… te avisamos cuando esté lista. Mientras, sigues vendiendo en el local.", "Reviewing… we will let you know when it is ready. Meanwhile you keep selling in person.") });

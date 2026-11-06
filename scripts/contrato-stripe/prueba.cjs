@@ -2,7 +2,7 @@
    la especificación oficial de la API (rutas, parámetros y tipos). Si mandamos un parámetro que Stripe no acepta, falla. */
 process.env.STRIPE_SECRET_KEY = 'sk_test_123';
 process.env.STRIPE_API_BASE = process.env.STRIPE_API_BASE || 'http://127.0.0.1:12111';
-const { pasarela } = require(process.env.CONTRATO_OUT + '/pagos/pasarela.js');
+const { pasarela, evidenciaStripe } = require(process.env.CONTRATO_OUT + '/pagos/pasarela.js');
 const { formulario, firmaValida } = require(process.env.CONTRATO_OUT + '/pagos/stripe.js');
 const crypto = require('crypto');
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
@@ -24,6 +24,11 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
   const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');
   const d = await pasarela.devolver(pi, 500, 'contrato-' + Date.now()); ok(d.ok && /^re_/.test(d.id), 'devolver: refunds con reverse_transfer y refund_application_fee');
+  ok(await pasarela.disputaResponder('dp_123', { texto: 'Delivered as ordered.', producto: '1 x Mofongo', cliente: 'Marisol P', fecha: '2026-11-06', envio: '420 N Wyoming St, 18201' }), 'disputa: responder con evidencia (disputes, submit)');
+  ok(await pasarela.disputaAceptar('dp_123'), 'disputa: aceptar (disputes/close)');
+  const dp = await (await fetch(process.env.STRIPE_API_BASE + '/v1/disputes/dp_123', { headers: { authorization: 'Bearer sk_test_123' } })).json();
+  const nuestros = Object.keys(evidenciaStripe({ texto: 'x', producto: 'x', cliente: 'x', fecha: 'x', envio: 'x' })), deStripe = Object.keys(dp.evidence || {});
+  ok(deStripe.length > 10 && nuestros.every((k) => deStripe.includes(k)), 'disputa: cada campo de evidencia existe en la especificación (' + nuestros.join(', ') + ')');
   const t = Math.floor(Date.now() / 1000), cuerpo = '{"id":"evt_1"}', s = `t=${t},v1=${crypto.createHmac('sha256', 'whsec_x').update(`${t}.${cuerpo}`).digest('hex')}`;
   ok(firmaValida(cuerpo, s, 'whsec_x') && !firmaValida(cuerpo, s, 'whsec_y') && !firmaValida(cuerpo + ' ', s, 'whsec_x'), 'firma del webhook: buena pasa, otro secreto o cuerpo cambiado no');
   console.log('OK');

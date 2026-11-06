@@ -33,6 +33,11 @@ function simRechazo(l4: string) { return l4 === "0002" ? "card_declined" : l4 ==
 const simId = (p: string) => `${p}_sim_${randomBytes(9).toString("hex")}`;
 
 type InRetener = { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> };
+/* La evidencia de una disputa con los nombres de campo de Stripe (la prueba de contrato los compara con el objeto disputa
+   de la especificación: stripe-mock no valida los campos dentro de «evidence»). */
+export function evidenciaStripe(e: { texto: string; producto: string; cliente: string; fecha: string; envio?: string | null }) {
+  return { uncategorized_text: e.texto.slice(0, 20000), product_description: e.producto.slice(0, 20000), customer_name: e.cliente, service_date: e.fecha, ...(e.envio ? { shipping_address: e.envio.slice(0, 500) } : {}) };
+}
 export const pasarela = {
   modo: modoPago,
 
@@ -134,6 +139,20 @@ export const pasarela = {
     if (cuenta.startsWith("acct_sim_")) return null;
     const l = await stripe<{ url: string }>("POST", `/v1/accounts/${encodeURIComponent(cuenta)}/login_links`, {});
     return l.url;
+  },
+  /* Disputas (contracargos). Responder: la evidencia va en un solo envío (submit). Aceptar: se cierra y el banco devuelve.
+     En el simulador (dp_sim_…) no hay banco: la app guarda el estado. */
+  async disputaResponder(id: string, e: { texto: string; producto: string; cliente: string; fecha: string; envio?: string | null }): Promise<boolean> {
+    if (id.startsWith("dp_sim_") || modoPago() === "simulador") return true;
+    try {
+      await stripe("POST", `/v1/disputes/${encodeURIComponent(id)}`, { evidence: evidenciaStripe(e), submit: true }, { idem: `dpr-${id}` });
+      return true;
+    } catch { return false; }
+  },
+  async disputaAceptar(id: string): Promise<boolean> {
+    if (id.startsWith("dp_sim_") || modoPago() === "simulador") return true;
+    try { await stripe("POST", `/v1/disputes/${encodeURIComponent(id)}/close`, {}, { idem: `dpc-${id}` }); return true; }
+    catch (e) { return e instanceof ErrorStripe && /closed|already/i.test(e.message); }
   },
   /* Pausar o reanudar los pagos al banco (Super Admin). Con Stripe el calendario pasa a manual y vuelve a semanal (martes);
      en el simulador basta la marca en stripe_accounts. */

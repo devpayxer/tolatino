@@ -8,7 +8,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -215,6 +215,29 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
       ];
+    }
+    if (k.queue === "disputa" && "disputa" in k) {
+      // Disputas con el banco (diseño «disputa»): referencia, monto, negocio, cliente, plazo del banco y motivo; la evidencia
+      // que ya tenemos; Responder con evidencia / Aceptar devolución.
+      const dp = k.disputa, ev = k.evidencia, dias = dp?.due ? Math.ceil((new Date(dp.due).getTime() - Date.now()) / 86_400_000) : null;
+      if (dp) {
+        cuerpoB.push({ type: "kv", cols: 3, items: [
+          { k: "REFERENCIA", v: dp.num ? `Pedido #${dp.num}` : dp.sid }, { k: "MONTO", v: `$${(dp.amount / 100).toFixed(2)}` }, { k: "CLIENTE", v: dp.cliente ?? "—" },
+          { k: "PLAZO DEL BANCO", v: dp.due ? `${new Date(dp.due).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", year: "numeric" })} · ${dias! > 0 ? `${dias} días` : "vence hoy"}` : "—", fg: dias != null && dias <= 3 ? "var(--tl-danger)" : "var(--tl-pro-ink)" },
+          { k: "MOTIVO", v: dp.motivo }, { k: "ESTADO", v: ({ needs_response: "Falta responder", under_review: "El banco revisa", won: "Ganada", lost: "Perdida", accepted: "Aceptada" } as Record<string, string>)[dp.status] ?? dp.status },
+        ] });
+        if (dp.sim) cuerpoB.push({ type: "note", tone: "info", icon: "info", t: "Sandbox: disputa simulada. No hay banco; el resultado se simula desde Transacciones." });
+        if (ev) cuerpoB.push({ type: "timeline", k: "EVIDENCIA QUE TENEMOS", items: ev.lineas.map((t) => ({ t })) });
+        else cuerpoB.push({ type: "note", tone: "warn", icon: "warning", t: "No encontramos el pedido de este cobro: responde con lo que sepas o acepta." });
+        if (!k.puedeDinero) cuerpoB.push({ type: "note", tone: "warn", icon: "lock", t: "Tu rol no decide sobre dinero." });
+        if (dp.status === "needs_response" && k.puedeDinero) acts = [
+          { l: "Responder con evidencia", v: "action", icon: "right", onClick: () => setConf({ titulo: "Resumen para el banco", sub: "Se envía junto con la evidencia de arriba. Escribe en inglés si puedes: lo lee el banco.", cta: "Enviar al banco",
+            plantillas: ["The customer placed this order from their verified account and it was delivered as shown in the timeline.", "The customer picked up the order in person; the business confirmed the pickup at the time shown.", "We already refunded part of this order as shown; the rest was delivered as ordered."],
+            hacer: (x) => decidirDisputa(k.id, "responder", x) }) },
+          { l: "Aceptar devolución", v: "danger", icon: "dollar", onClick: () => setConf({ titulo: "¿Por qué se acepta?", sub: "El dinero vuelve al cliente y la disputa se cierra. No se puede deshacer.", peligro: true, cta: "Aceptar devolución",
+            plantillas: ["El negocio confirmó que el pedido no se entregó.", "No tenemos evidencia suficiente.", "Cobro duplicado confirmado."], hacer: (x) => decidirDisputa(k.id, "aceptar", x) }) },
+        ];
+      }
     }
     if (k.queue === "chat" && "chat" in k) {
       // Mensajes reportados (2p): el hilo se lee solo con el caso abierto. Ocultar un mensaje avisa a quien lo escribió.

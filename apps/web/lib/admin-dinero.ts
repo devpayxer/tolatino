@@ -40,11 +40,12 @@ export async function datosDinero(s: Staff, negocio: string) {
               (select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Equipo') from users u join staff_members m on m.user_id = u.id where u.id = e.actor_id limit 1) as actor
          from subscription_events e where e.business_id = $1 and e.kind in ('charged', 'failed', 'trial_extended', 'courtesy', 'courtesy_removed', 'ended')
         order by e.at desc, e.id desc limit 12`, [negocio]),
-    db().query<{ op: string; num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null }>(
+    db().query<{ op: string; num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null; disputa: string | null }>(
       `select o.id::text as op, o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), '—') as quien,
               p.amount_cents as monto, p.fee_cents as comision, p.refunded_cents as devuelto, p.status as estado,
               to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
-              case when p.card_brand is not null and p.card_last4 is not null then upper(p.card_brand) || ' ·· ' || p.card_last4 end as tarjeta
+              case when p.card_brand is not null and p.card_last4 is not null then upper(p.card_brand) || ' ·· ' || p.card_last4 end as tarjeta,
+              (select d.status from disputes d where d.payment_id = p.id order by d.id desc limit 1) as disputa
          from payments p join operations o on o.id = p.operation_id join users u on u.id = p.user_id
         where p.business_id = $1 order by p.id desc limit 12`, [negocio]),
   ]);

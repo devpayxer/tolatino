@@ -32,3 +32,18 @@ export async function devolverTx(numero: string, monto: string, motivo: string, 
   await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "payment", targetId: p.id, city: p.city, after: { pedido: `#${numero}`, monto: `$${(cents / 100).toFixed(2)}` }, reason: String(motivo ?? "").trim() }));
   return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
 }
+
+/* Sandbox: simular una disputa del banco sobre un cobro, y el resultado del banco después de responder (2r). Solo con el
+   simulador de pagos (en producción las disputas llegan de Stripe). */
+export async function disputaSimular(pago: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no toca dinero." };
+  const r = await (await import("@/lib/disputas")).simularDisputa(String(pago ?? "").replace(/\D/g, "") || "0", String(motivo ?? ""));
+  return r.ok ? { ok: true, mensaje: "Disputa simulada: está en Colas › Disputas con el banco." } : { ok: false, mensaje: r.msg };
+}
+export async function disputaSimularResultado(pago: string, gana: boolean): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no toca dinero." };
+  const r = await (await import("@/lib/disputas")).simularResultado(String(pago ?? "").replace(/\D/g, "") || "0", !!gana);
+  return r.ok ? { ok: true, mensaje: gana ? "El banco dio la razón: el dinero se queda." : "El banco dio la razón al cliente." } : { ok: false, mensaje: r.msg };
+}

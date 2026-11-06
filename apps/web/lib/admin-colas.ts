@@ -3,6 +3,7 @@ const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "O
 import type { Staff } from "./admin";
 import { COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
 import { db } from "./db";
+import { MOTIVO, evidenciaDe } from "./disputas";
 import { telefonoBonito } from "./panel";
 
 /* ADM-COLAS: lo que espera una decisión. El servidor decide qué ve cada persona: las colas de su rol (lib/colas.ts),
@@ -24,7 +25,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
-    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean;
+    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -40,7 +41,11 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz,
             (select cr.reason from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.created_at limit 1) as chreason,
             (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open') as chn,
-            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz
+            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz,
+            (select o.number from disputes d join operations o on o.id = d.operation_id where q.queue = 'disputa' and d.id::text = q.subject_id) as dpnum,
+            (select d.amount_cents from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpamt,
+            (select d.reason from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpreason,
+            (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -65,6 +70,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "sop" ? { title: `Ayuda con un pedido · ${b}`, sub: "El cliente espera una respuesta" }
+      : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
@@ -150,6 +156,14 @@ export async function caso(s: Staff, id: string) {
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, ayuda: h ?? null };
+  }
+  if (q.queue === "disputa") {
+    // La disputa, el cliente y la evidencia que ya tenemos del pedido (línea de tiempo).
+    const d = (await db().query<{ id: string; sid: string; amount: number; reason: string; status: string; due: string | null; num: string | null; uid: string | null; cliente: string | null; resp: string | null; sim: boolean }>(
+      `select d.id::text, d.stripe_dispute_id as sid, d.amount_cents as amount, d.reason, d.status, to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as due,
+              o.number as num, o.user_id::text as uid, nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') as cliente, d.response_text as resp, d.simulated as sim
+         from disputes d left join operations o on o.id = d.operation_id left join users u on u.id = o.user_id where d.id = $1::bigint`, [q.subject_id])).rows[0];
+    return { ...base, negocio, disputa: d ? { ...d, motivo: MOTIVO[d.reason]?.es ?? "Otro motivo del banco" } : null, evidencia: d ? await evidenciaDe(d.id) : null, puedeDinero: s.puede("tx", "aprobar") };
   }
   if (q.queue === "chat") {
     // La conversación reportada: solo se lee con el caso abierto (si ya se decidió, no se muestra el hilo).

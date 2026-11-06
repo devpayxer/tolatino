@@ -355,3 +355,13 @@ _Decisiones (AB): PLAN §8 dice SES; la firma la hacemos nosotros (sin SDK) y se
 CI. Solo correos confirmados (enlace de un solo uso, 24 h). En el sandbox ningún correo sale (modo pruebas, candado: nunca
 en producción). El equipo ve los correos enmascarados y el enlace de confirmar tapado. El «Resumen semanal del barrio»
 (Avisos) llega con Comunidad._
+
+## Fase 2 · 2r Disputas con el banco
+1. Ana › Transacciones › un pedido pagado con tarjeta › **Simular disputa** (solo sandbox) → Colas › **Disputas con el banco**.
+2. En el caso: monto, cliente, plazo del banco, motivo y **la evidencia que tenemos** → **Responder con evidencia**.
+3. Transacciones › **Banco: gana el negocio** (o el cliente) → Pedro recibe el resultado y lo ve en Cobros (GANADA / PERDIDA).
+4. Otro caso › **Aceptar devolución** → el dinero vuelve al cliente.
+_Decisiones (AB): la cola la trabajan Admin y Finanzas (Finanzas ahora ve Colas, solo esta). Decidir pide también permiso
+de dinero. La evidencia sale de nuestros datos (pedido, línea de tiempo, entrega, mensajes, devoluciones); el resumen para
+el banco lo escribe el equipo. Una disputa ya cerrada no cambia con un aviso tarde del banco. Subir fotos de entrega como
+evidencia: LAUNCH-CHECKLIST._

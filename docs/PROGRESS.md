@@ -469,6 +469,11 @@ _Actualizado: 5 nov 2026._
   `recibos.ts` pedido terminado, mesa confirmada, cobro de Pro; uno por cosa). Perfil «Confirma tu correo» + `/cuenta/correo`.
   Super Admin › Notificaciones › Correos + ver un correo (enmascarado). CI: `scripts/prueba-firma-ses` (vector de AWS).
   Guardián `correo` (colores = tokens; sin modo pruebas en producción). Ayuda: correo.md.
+- **Fase 2 · bloque 2r Disputas ✓ (6 nov):** migración 0042 (`disputes`, cola `disputa`, Finanzas ve Colas, avisos
+  `biz_dispute`/`biz_dispute_end`); `lib/disputas.ts` (registrar idempotente, evidencia de nuestros datos, responder,
+  aceptar, cerrar, simulador); webhook `charge.dispute.*`; pasarela `disputaResponder/Aceptar` + `evidenciaStripe`
+  (contrato: campos de evidencia contra la especificación); Colas (detalle con evidencia), Transacciones (estado +
+  simulador), Panel › Cobros y 360 › Dinero (etiquetas). Ayuda: disputas.md.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

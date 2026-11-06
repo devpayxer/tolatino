@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { db, tx } from "@/lib/db";
+import { cerrarDisputa, registrarDisputa } from "@/lib/disputas";
 import { firmaValida } from "@/lib/pagos/stripe";
 
 /* Webhook de Stripe. Solo acepta eventos firmados con STRIPE_WEBHOOK_SECRET (y frescos); cada evento se guarda una vez
@@ -62,14 +63,16 @@ async function aplicar(ev: Ev) {
       });
       return;
     }
-    case "charge.dispute.created": {
-      // Disputa: queda en la auditoría y en la cola de Soporte con plazo; el cobro se marca.
-      const pi = String(o.payment_intent ?? "");
-      const p = (await db().query<{ id: string; city: string | null; biz: string }>(`update payments set failure_code = 'dispute', updated_at = now() where stripe_payment_intent = $1 returning id::text, city_id as city, business_id as biz`, [pi])).rows[0];
-      if (p) await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after) values ('system', null, 'pago.disputa', 'payment', $1, $2, $3::jsonb)`,
-        [p.id, p.city, JSON.stringify({ negocio: p.biz, motivo: String(o.reason ?? ""), monto: Number(o.amount ?? 0) })]);
+    case "charge.dispute.created":
+    case "charge.dispute.updated": {
+      // Disputa (2r): queda en el libro (disputes), abre el caso en la cola «Disputas con el banco» y avisa al dueño.
+      const due = Number((o.evidence_details as { due_by?: number } | undefined)?.due_by ?? 0);
+      await registrarDisputa({ stripeId: String(o.id), pi: String(o.payment_intent ?? ""), amount: Number(o.amount ?? 0), reason: String(o.reason ?? "general"), dueBy: due ? new Date(due * 1000).toISOString() : null, status: String(o.status ?? "needs_response") });
       return;
     }
+    case "charge.dispute.closed":
+      await cerrarDisputa(String(o.id), String(o.status ?? ""));
+      return;
     default: return;
   }
 }

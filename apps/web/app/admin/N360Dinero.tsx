@@ -20,6 +20,7 @@ const CUENTA: Record<string, [string, string]> = { enabled: ["Habilitada · reci
 const SUB: Record<string, string> = { trial: "En prueba", active: "Activa", canceling: "Pasa a Free al final del período", past_due: "Cobro fallido", courtesy: "Pro de cortesía", ended: "Free · el contenido Pro está guardado" };
 const FAC: Record<string, [string, string, string]> = { charged: ["Cobro de Pro", "PAGADA", "signal"], failed: ["Cobro fallido", "FALLÓ", "danger"], trial_extended: ["Prueba extendida", "EQUIPO", "neutral"], courtesy: ["Pro de cortesía", "EQUIPO", "action"], courtesy_removed: ["Cortesía quitada", "EQUIPO", "neutral"], ended: ["Pasó a Free", "FREE", "neutral"] };
 const PAGO: Record<string, [string, string]> = { held: ["RETENIDO", "action"], captured: ["COBRADO", "signal"], released: ["LIBERADO", "neutral"], refunded: ["DEVUELTO", "neutral"], partially_refunded: ["DEVOLUCIÓN PARCIAL", "action"], failed: ["FALLÓ", "danger"] };
+const DISP: Record<string, string> = { needs_response: "DISPUTA · FALTA RESPONDER", under_review: "DISPUTA · EL BANCO REVISA", won: "DISPUTA GANADA", lost: "DISPUTA PERDIDA", accepted: "DISPUTA ACEPTADA" };
 const POR = ["Disputa abierta con el banco", "Sospecha de fraude", "Muchas devoluciones seguidas", "Pedido del dueño"];
 const D = (n: number) => ({ k: String(n), l: `${n} días` });
 
@@ -77,7 +78,7 @@ export function N360Dinero({ d, id, nombre, desk, setConf }: { d: Dinero; id: st
     <>
       <PanelBloques bloques={[...B, pagos, ...L, ...plan, ...cobros]} />
       {d.cobros.length ? <A.AdminList rows={d.cobros.map((x) => ({ icon: "card", title: `${x.num} · ${money(x.monto)}`, sub: `${x.quien} · ${dia(x.at)}${x.tarjeta ? ` · ${x.tarjeta}` : ""} · comisión ${money(x.comision)}${x.devuelto ? ` · devuelto ${money(x.devuelto)}` : ""}`,
-        tag: PAGO[x.estado]?.[0] ?? x.estado, tone: PAGO[x.estado]?.[1] ?? "neutral" }))} />
+        tag: x.disputa ? DISP[x.disputa] ?? "DISPUTA" : PAGO[x.estado]?.[0] ?? x.estado, tone: x.disputa ? (x.disputa === "won" ? "signal" : "danger") : PAGO[x.estado]?.[1] ?? "neutral" }))} />
         : <A.AdminNote tone="info" icon="card">Sin cobros con tarjeta todavía.</A.AdminNote>}
     </>
   );

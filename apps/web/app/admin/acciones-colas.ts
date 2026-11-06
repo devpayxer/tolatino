@@ -417,3 +417,28 @@ export async function decidirChat(id: string, accion: "mantener" | "resuelto", m
   listo();
   return { ok: true, mensaje: accion === "resuelto" ? "Caso cerrado. La conversación ya no se puede leer desde aquí." : "Todo bien. Caso cerrado." };
 }
+
+/* Disputas con el banco: responder con evidencia (resumen del equipo + lo que tenemos) o aceptar la devolución. Pide
+   colas:aprobar y, por tocar dinero, tx:aprobar. El banco decide después (webhook). */
+export async function decidirDisputa(id: string, accion: "responder" | "aceptar", texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  if (!s.puede("tx", "aprobar")) return no("Tu rol no decide sobre dinero.");
+  const m = motivoOk(texto);
+  if (m.length < 10) return no(accion === "responder" ? "Escribe el resumen para el banco (mínimo 10 letras)." : "Escribe el motivo.");
+  const q = await tx(async (c) => abrir(c, s, id));
+  if (typeof q === "string") return no(q);
+  if (q.queue !== "disputa") return no("Ese caso no es de esta cola.");
+  const D = await import("@/lib/disputas");
+  const r = accion === "responder" ? await D.responderDisputa(q.subject_id, s.id, m) : await D.aceptarDisputa(q.subject_id);
+  if (!r.ok) return no(r.msg);
+  await tx(async (c) => {
+    const q2 = await abrir(c, s, id);
+    if (typeof q2 === "string") return;
+    await cerrar(c, q2, s, accion, m);
+    await auditar(c, { actor: s.id, action: accion === "responder" ? "disputa.responder" : "disputa.aceptar", targetKind: "dispute", targetId: q.subject_id, city: q.city_id,
+      before: { disputa: "abierta" }, after: { disputa: accion === "responder" ? "respondida con evidencia" : "aceptada · devuelto al cliente" }, reason: m });
+  });
+  listo();
+  return { ok: true, mensaje: accion === "responder" ? "Respondida. El banco decide; te avisamos el resultado y al negocio también." : "Aceptada: el dinero vuelve al cliente." };
+}
