@@ -25,10 +25,12 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "clientes") ruta = { sec: "cli", sub: null, det: null };
   else if (r.length === 2 && r[0] === "pagina" && SUBS.has(r[1]!)) ruta = { sec: "pag", sub: r[1]!, det: null };
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "mas" ? undefined : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -51,7 +53,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     hoy: ruta.sec === "hoy" || (ruta.sec === "mod" && ruta.sub === "pedidos") ? await pedidosHoy(d.id) : undefined,
     lista: ruta.sec === "cli" && sp.t !== "rsv" ? await pedidosLista(d.id, f, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f, q,
     det: ruta.det?.startsWith("ped:") ? await pedidoNegocio(d.id, ruta.det.slice(4)) : undefined,
-    aj: ruta.sec === "mod" ? await ajustesPedidos(d.id) : undefined,
+    aj: ruta.sec === "mod" || ruta.sec === "dlv" ? await ajustesPedidos(d.id) : undefined,
   } : undefined;
   // Reservaciones (Comida): las vivas para Hoy y el módulo, la lista de Clientes (?t=rsv), el detalle y los ajustes.
   const tRsv = ruta.sec === "cli" && sp.t === "rsv";

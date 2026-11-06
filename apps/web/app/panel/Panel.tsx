@@ -18,13 +18,14 @@ import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
+import { entregaBloques } from "./Entrega";
 import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod" | "dlv" | "mas"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -81,7 +82,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: Datos
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -136,7 +137,9 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: Datos
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
   const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
-  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [{ k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
+  // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
+  const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
+  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
@@ -189,9 +192,10 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: Datos
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("CADA DÍA", "EVERY DAY")}</span>
                   {navIt(sec === "hoy", "home", E2("Hoy", "Today"), () => go("hoy"))}
                   {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
+                  {vende ? navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod")) : null}
+                  {entrega ? navIt(sec === "dlv", "truck", E2("Entrega", "Delivery"), () => go("dlv")) : null}
                 </div>
-              ) : null}
-              {vende ? (
+              ) : vende ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod"))}
@@ -220,7 +224,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: Datos
         </div>
       ) : !desk && mnav.length > 1 ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: `repeat(${mnav.length},minmax(0,1fr))` }}>
-          {mnav.map((n) => { const on = n.k === sec; return (
+          {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && (sec === "mod" || sec === "dlv")); return (
             <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
               <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
             </div>); })}
@@ -247,6 +251,8 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
   if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
+  if (c.ruta.sec === "dlv") return entregaBloques(c);
+  if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
   if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
@@ -527,4 +533,20 @@ function licencias(c: Ctx): Sec {
   out.push({ type: "note", tone: "ink", icon: "law", t: E2("Nadie te garantiza un resultado. En EE. UU. un notario no es abogado: tu página lo dice.", "No one can guarantee a result. In the U.S. a notary is not a lawyer: your page says so.") });
   return { blocks: out, ed: { F, l: E2("Guardar", "Save"), valid: true, toast: E2("Enviado. To’Latino lo revisa en 72 h.", "Sent. To’Latino checks it within 72 h."),
     apply: async (z: { nums: Record<string, string> }) => { for (const x of vivas) { const v = (z.nums[x.id] ?? "").trim(); if (v && v !== (x.number ?? "")) { const r = await licenciaNumero(d.id, x.id, v); if (!r.ok) return r; } } return { ok: true } as Res; } } };
+}
+
+/* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes y Entrega; El Compa, Moderadores, Cobros y plan y Ajustes llegan con
+   sus bloques. «También»: ver mi página como cliente. */
+function masBloques(c: Ctx): Bloque[] {
+  const { E2, d } = c;
+  const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
+  const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
+  return [
+    { type: "head", t: E2("Más", "More") },
+    { type: "rows", items: [
+      ...(vende ? [{ icon: "grid", t: E2("Lo que vendes", "What you sell"), onClick: () => c.go("mod") }] : []),
+      ...(entrega ? [{ icon: "truck", t: E2("Entrega", "Delivery"), onClick: () => c.go("dlv") }] : []),
+    ] },
+    { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") }] },
+  ];
 }

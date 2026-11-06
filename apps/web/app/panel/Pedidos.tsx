@@ -117,8 +117,9 @@ export function pedLine(c: Ctx): string {
   if (!a) return "";
   if (a.admOff) return E2("Pausado por To’Latino", "Paused by To’Latino");
   if (!a.on) return E2("Apagado · tu página se ve, pero nadie pide en la app", "Off · your page shows but nobody orders in the app");
-  if (!a.cashP && !a.card) return E2("Sin forma de pago: nadie puede pedir", "No payment method: nobody can order");
-  return `Pickup${E2(" · listo en ", " · ready in ")}${a.prep + a.busy} min${a.auto ? E2(" · aceptas al instante", " · instant accept") : ""}`;
+  if (!(a.pickup && (a.cashP || a.card)) && !(a.delivery && (a.cashD || a.card))) return E2("Sin forma de pago: nadie puede pedir", "No payment method: nobody can order");
+  const modos = [a.pickup ? "Pickup" : "", a.delivery && !a.dlvAdm ? "Delivery" : ""].filter(Boolean).join(E2(" y ", " and "));
+  return `${modos || E2("Sin forma de entrega", "No delivery method")}${E2(" · listo en ", " · ready in ")}${a.prep + a.busy} min${a.auto ? E2(" · aceptas al instante", " · instant accept") : ""}`;
 }
 
 /* Lo que vendes › Pedidos en línea (pedBlocks): tiempos, cómo aceptas, cómo te pagan y así lo ve el cliente. */
@@ -131,7 +132,8 @@ export function pedidosModBloques(c: Ctx): Sec {
   const RQ = [...(H?.pend ?? []), ...(H?.agenda ?? [])], nP = H?.pend.length ?? 0;
   if (RQ.length) out.push({ type: "rows", k: `${E2("PEDIDOS · ", "ORDERS · ")}${RQ.length}${nP ? E2(` · ${nP} POR ACEPTAR`, ` · ${nP} TO ACCEPT`) : ""}`, link: E2("Ver en Hoy", "See in Today"), onLink: () => c.go("hoy"), items: RQ.slice(0, 5).map((x) => reqRow(c, x)) });
   const M = c.menu?.cfg, pausa = M?.pause ? new Date(M.pause).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : null;
-  const F = c.form("ped:" + d.id, { prep: a.prep, sched: a.sched, auto: a.auto, cashP: a.cashP }), v = F.d, pk = v.prep + a.busy;
+  const F = c.form("ped:" + d.id, { prep: a.prep, sched: a.sched, auto: a.auto, cashP: a.cashP, cashD: a.cashD, tip: a.tip }), v = F.d, pk = v.prep + a.busy;
+  const ext = a.delivery && a.who === "external", extN = a.ext === "doordash" ? "DoorDash" : a.ext === "uber_eats" ? "Uber Eats" : E2("una app externa", "an external app");
   const stT = a.admOff || !a.on ? E2("Hoy no recibes pedidos en la app", "No app orders today") : pausa ? `${E2("En pausa hasta ", "Paused until ")}${pausa}` : d.st.closedToday ? E2("Hoy cierras: no se pide", "Closed today: no orders") : d.st.open ? E2("Recibes pedidos ahora", "Taking orders now") : E2("Cerrado ahora", "Closed now");
   out.push({ type: "group", k: E2("HOY", "TODAY"), first: !RQ.length }, { type: "rows", items: [{ icon: "clock", t: stT, s: `${E2("Pickup listo en ", "Pickup ready in ")}${pk} min${a.busy ? E2(` · con +${a.busy} min por mucho trabajo`, ` · with +${a.busy} min busy`) : ""}`, chev: false }] });
   if (pausa) out.push({ type: "note", tone: "ink", icon: "clock", t: E2(`Pedidos en línea en pausa hasta las ${pausa}. Tu menú se sigue viendo.`, `Online orders paused until ${pausa}. Your menu still shows.`), cta: E2("Reanudar", "Resume"), onCta: () => c.run(() => menuAjustes(d.id, { pause: null }), E2("Pedidos en línea otra vez.", "Online orders back on.")) });
@@ -144,17 +146,23 @@ export function pedidosModBloques(c: Ctx): Sec {
   out.push({ type: "group", k: E2("CÓMO TE PAGAN", "HOW THEY PAY") });
   out.push({ type: "rows", items: [
     { icon: "card", t: E2("Tarjeta en la app", "Card in the app"), s: E2("Conecta tus cobros para recibir tarjeta.", "Connect payouts to take cards."), tgOn: false, lock: true, onTg: () => c.toast(E2("Los cobros con tarjeta llegan pronto.", "Card payouts are coming soon.")) },
-    { icon: "store", t: E2("Efectivo al recoger", "Cash at pickup"), s: E2("Pagan en tu caja. No se retiene nada.", "They pay at your register. Nothing is held."), tgOn: v.cashP, onTg: () => F.set({ cashP: !v.cashP }) },
+    ...(a.pickup ? [{ icon: "store", t: E2("Efectivo al recoger", "Cash at pickup"), s: E2("Pagan en tu caja. No se retiene nada.", "They pay at your register. Nothing is held."), tgOn: v.cashP, onTg: () => F.set({ cashP: !v.cashP }) }] : []),
+    ...(a.delivery ? [{ icon: "dollar", t: E2("Efectivo al entregar", "Cash on delivery"), s: ext ? E2(`Con ${extN} no se cobra en efectivo: solo con tu equipo.`, `${extN} does not collect cash: only your own team.`) : E2("Cobra tu repartidor y lo cuadras en Entrega.", "Your driver collects and you settle it in Delivery."),
+      tgOn: v.cashD && !ext, lock: ext, onTg: () => (ext ? c.go("dlv") : F.set({ cashD: !v.cashD })) }] : []),
   ] });
+  if (a.delivery) out.push({ type: "rows", items: [{ icon: "dollar", t: E2("Pedir propina en delivery", "Ask for a tip on delivery"), s: v.tip ? E2("El cliente elige 15, 18 o 20 % u otra cantidad. Va completa a quien entrega.", "The client picks 15, 18 or 20% or another amount. All of it goes to the driver.") : E2("Apagado: el pago no pide propina.", "Off: checkout does not ask for a tip."), tgOn: v.tip, onTg: () => F.set({ tip: !v.tip }) }] });
   out.push({ type: "note", tone: "ink", icon: "shield", t: E2(`Siempre igual: ${v.auto ? "" : "el cliente cancela gratis mientras no aceptes. "}En los pedidos que pagan en tu local, To’Latino no cobra nada.`, `Always the same: ${v.auto ? "" : "the client cancels for free until you accept. "}On orders paid at your store, To’Latino takes nothing.`) });
   out.push({ type: "rows", k: E2("ASÍ LO VE EL CLIENTE", "HOW THE CLIENT SEES IT"), items: [
-    ["store", E2(`Pickup: listo en ${pk} min.`, `Pickup: ready in ${pk} min.`)],
+    ...(a.pickup ? [["store", E2(`Pickup: listo en ${pk} min.`, `Pickup: ready in ${pk} min.`)]] : []),
+    ...(a.delivery ? [["truck", E2(`Delivery: llega en ${pk + a.travel}–${pk + 2 * a.travel} min.`, `Delivery: arrives in ${pk + a.travel}–${pk + 2 * a.travel} min.`)]] : []),
     ["calendar", v.sched ? E2("Puede pedir para más tarde hoy.", "Can order for later today.") : E2("Solo «lo antes posible».", "Only “as soon as possible”.")],
-    ["card", v.cashP ? E2("Paga en efectivo al recoger.", "Pays cash at pickup.") : E2("No tiene cómo pagar: no puede pedir.", "No way to pay: cannot order.")],
+    ...(a.pickup ? [["card", v.cashP ? E2("Paga en efectivo al recoger.", "Pays cash at pickup.") : E2("No tiene cómo pagar el pickup.", "No way to pay for pickup.")]] : []),
+    ...(a.delivery ? [["dollar", v.cashD && !ext ? E2(`Paga en efectivo al recibir${v.tip ? ", con propina si quiere" : ""}.`, `Pays cash on delivery${v.tip ? ", with a tip if they want" : ""}.`) : E2("No tiene cómo pagar el delivery.", "No way to pay for delivery.")]] : []),
     v.auto ? ["check", E2("Su pedido queda aceptado al instante.", "Their order is accepted instantly.")] : ["bubble", E2(`${d.name} lo acepta en unos minutos.`, `${d.name} accepts it within minutes.`)],
   ].map(([icon, t]) => ({ icon: icon!, t: t!, compact: true, chev: false })) });
-  if (!v.cashP) out.push({ type: "note", tone: "warn", t: `${F.dirty ? E2("Para guardar falta: ", "To save, add: ") : E2("Hoy falta: ", "Missing today: ")}${E2("cómo te pagan en pickup", "how they pay for pickup")}.` });
+  const faltaP = a.pickup && !v.cashP, faltaD = a.delivery && !(v.cashD && !ext);
+  if (faltaP || faltaD) out.push({ type: "note", tone: "warn", t: `${F.dirty ? E2("Para guardar falta: ", "To save, add: ") : E2("Hoy falta: ", "Missing today: ")}${[faltaP ? E2("cómo te pagan en pickup", "how they pay for pickup") : "", faltaD ? E2("cómo te pagan en delivery", "how they pay for delivery") : ""].filter(Boolean).join(" · ")}.` });
   if (a.on && !a.admOff) out.push({ type: "acts", items: [{ l: E2("Apagar Pedidos en línea", "Turn off Online orders"), v: "secondary", icon: null, onClick: () => c.run(() => pedidosModulo(d.id, false), E2("Pedidos en línea apagado.", "Online orders off.")) }] });
-  const ed: Editor = { F, l: E2("Guardar", "Save"), valid: v.cashP, apply: (x: typeof v) => pedidosAjustes(d.id, x), toast: E2("Guardado · el cliente ya lo ve así.", "Saved · clients see it like this now.") };
+  const ed: Editor = { F, l: E2("Guardar", "Save"), valid: !faltaP && !faltaD, apply: (x: typeof v) => pedidosAjustes(d.id, x), toast: E2("Guardado · el cliente ya lo ve así.", "Saved · clients see it like this now.") };
   return { blocks: out, ed };
 }

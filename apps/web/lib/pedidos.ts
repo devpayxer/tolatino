@@ -233,15 +233,27 @@ export async function lineasComoCarrito(userId: string, numero: string) {
 }
 
 /* ── Pedidos en línea (ajustes del negocio, DeliverySettings) ── */
-export type AjustesPed = { prep: number; sched: boolean; auto: boolean; cashP: boolean; card: boolean; on: boolean; admOff: string | null; pickupNote: Bi | null; busy: number; last: number };
+export type AjustesPed = {
+  prep: number; sched: boolean; auto: boolean; cashP: boolean; card: boolean; on: boolean; admOff: string | null; pickupNote: Bi | null; busy: number; last: number;
+  // Entrega (DASH-ENTREGA) y cómo se paga en delivery.
+  pickup: boolean; delivery: boolean; cashD: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dEnd: number;
+  who: "team" | "external"; ext: "doordash" | "uber_eats" | "other" | null; dlvAdm: string | null;
+};
 export async function ajustesPedidos(negocio: string): Promise<AjustesPed> {
-  const r = await db().query<{ prep: number; sched: boolean; auto: boolean; cashp: boolean; card: boolean; on: boolean; adm: string | null; note: Bi | null; busy: number; last: number }>(
+  const r = await db().query<{ prep: number; sched: boolean; auto: boolean; cashp: boolean; card: boolean; on: boolean; adm: string | null; note: Bi | null; busy: number; last: number;
+    pickup: boolean; delivery: boolean; cashd: boolean; tip: boolean; zone: number; fee: number; free: number; min: number; travel: number; dend: number; who: "team" | "external"; ext: AjustesPed["ext"]; dadm: string | null }>(
     `select coalesce(d.prep_min, 20) as prep, coalesce(d.scheduled_orders, true) as sched, coalesce(d.auto_accept, false) as auto,
             coalesce(d.pay_cash_pickup, true) as cashp, coalesce(d.pay_card, false) as card, 'pedidos' = any(b.modules_on) as on,
-            b.modules_off->'pedidos'->>'reason' as adm, d.pickup_note as note, coalesce(m.busy_min, 0) as busy, coalesce(m.last_min, 15) as last
+            b.modules_off->'pedidos'->>'reason' as adm, d.pickup_note as note, coalesce(m.busy_min, 0) as busy, coalesce(m.last_min, 15) as last,
+            coalesce(d.pickup, true) as pickup, coalesce(d.delivery, false) as delivery, coalesce(d.pay_cash_delivery, false) as cashd, coalesce(d.ask_tip, true) as tip,
+            coalesce(d.zone_mi, 3) as zone, coalesce(d.fee_cents, 300) as fee, coalesce(d.free_over_cents, 0) as free, coalesce(d.min_order_cents, 0) as min,
+            coalesce(d.travel_min, 15) as travel, coalesce(d.last_delivery_min, 0) as dend, coalesce(d.who, 'team') as who, d.external_app as ext,
+            b.modules_off->'delivery'->>'reason' as dadm
        from businesses b left join delivery_settings d on d.business_id = b.id left join menu_settings m on m.business_id = b.id where b.id = $1`, [negocio]);
   const x = r.rows[0];
-  return { prep: x?.prep ?? 20, sched: x?.sched ?? true, auto: x?.auto ?? false, cashP: x?.cashp ?? true, card: x?.card ?? false, on: !!x?.on, admOff: x?.adm ?? null, pickupNote: x?.note ?? null, busy: x?.busy ?? 0, last: x?.last ?? 15 };
+  return { prep: x?.prep ?? 20, sched: x?.sched ?? true, auto: x?.auto ?? false, cashP: x?.cashp ?? true, card: x?.card ?? false, on: !!x?.on, admOff: x?.adm ?? null, pickupNote: x?.note ?? null, busy: x?.busy ?? 0, last: x?.last ?? 15,
+    pickup: x?.pickup ?? true, delivery: x?.delivery ?? false, cashD: x?.cashd ?? false, tip: x?.tip ?? true, zone: x?.zone ?? 3, fee: x?.fee ?? 300, free: x?.free ?? 0, min: x?.min ?? 0,
+    travel: x?.travel ?? 15, dEnd: x?.dend ?? 0, who: x?.who ?? "team", ext: x?.ext ?? null, dlvAdm: x?.dadm ?? null };
 }
 
 /* Cuántos pedidos esperan respuesta del negocio (pestañas de Clientes). */

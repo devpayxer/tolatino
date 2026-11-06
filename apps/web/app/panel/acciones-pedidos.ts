@@ -47,25 +47,61 @@ export async function pedidosModulo(id: string, on: boolean): Promise<Res> {
 }
 
 /* Pedidos en línea: tiempo de preparación, programados, aceptar al instante y efectivo al recoger. */
-export async function pedidosAjustes(id: string, p: { prep: number; sched: boolean; auto: boolean; cashP: boolean }): Promise<Res> {
+export async function pedidosAjustes(id: string, p: { prep: number; sched: boolean; auto: boolean; cashP: boolean; cashD?: boolean; tip?: boolean }): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
   const prep = Math.round(Number(p?.prep));
   if (!(prep >= 5 && prep <= 120 && prep % 5 === 0)) return no("El tiempo de preparación va de 5 a 120 minutos.", "Prep time goes from 5 to 120 minutes.");
-  // Hoy solo hay pickup y la tarjeta llega con los cobros: sin efectivo al recoger, nadie podría pagar.
-  if (!p.cashP) return no("Para guardar falta: cómo te pagan en pickup.", "To save, add: how they pay for pickup.");
+  // La tarjeta llega con los cobros: cada forma de entrega encendida necesita su efectivo, o nadie podría pagar.
+  const e = (await db().query<{ pickup: boolean; delivery: boolean; who: string }>(
+    `select coalesce(pickup, true) as pickup, coalesce(delivery, false) as delivery, coalesce(who, 'team') as who from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? { pickup: true, delivery: false, who: "team" };
+  const cashD = !!p.cashD && e.who !== "external"; // con una app externa no se cobra en efectivo al entregar
+  if (e.pickup && !p.cashP) return no("Para guardar falta: cómo te pagan en pickup.", "To save, add: how they pay for pickup.");
+  if (e.delivery && !cashD) return no("Para guardar falta: cómo te pagan en delivery.", "To save, add: how they pay for delivery.");
   const antes = await tx(async (c) => {
-    const x = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean }>(
-      `select prep_min as prep, scheduled_orders as sched, auto_accept as auto, pay_cash_pickup as cash from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
+    const x = (await c.query<{ prep: number; sched: boolean; auto: boolean; cash: boolean; cashd: boolean; tip: boolean }>(
+      `select prep_min as prep, scheduled_orders as sched, auto_accept as auto, pay_cash_pickup as cash, pay_cash_delivery as cashd, ask_tip as tip from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
     await c.query(
-      `insert into delivery_settings (business_id, prep_min, scheduled_orders, auto_accept, pay_cash_pickup) values ($1, $2, $3, $4, $5)
-       on conflict (business_id) do update set prep_min = $2, scheduled_orders = $3, auto_accept = $4, pay_cash_pickup = $5, updated_at = now()`,
-      [a.negocio.id, prep, !!p.sched, !!p.auto, !!p.cashP]);
+      `insert into delivery_settings (business_id, prep_min, scheduled_orders, auto_accept, pay_cash_pickup, pay_cash_delivery, ask_tip) values ($1, $2, $3, $4, $5, $6, $7)
+       on conflict (business_id) do update set prep_min = $2, scheduled_orders = $3, auto_accept = $4, pay_cash_pickup = $5, pay_cash_delivery = $6, ask_tip = $7, updated_at = now()`,
+      [a.negocio.id, prep, !!p.sched, !!p.auto, !!p.cashP, cashD, p.tip !== false]);
     return x;
   });
   const si = (v: boolean | undefined) => (v === undefined ? null : v ? "Sí" : "No");
   await auditar(a, "pedidos.ajustes",
-    antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash) } : null,
-    { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP) });
+    antes ? { preparacion: `${antes.prep} min`, programados: si(antes.sched), aceptar_al_instante: si(antes.auto), efectivo_al_recoger: si(antes.cash), efectivo_al_entregar: si(antes.cashd), propina: si(antes.tip) } : null,
+    { preparacion: `${prep} min`, programados: si(!!p.sched), aceptar_al_instante: si(!!p.auto), efectivo_al_recoger: si(!!p.cashP), efectivo_al_entregar: si(cashD), propina: si(p.tip !== false) });
+  return { ok: true };
+}
+
+/* Entrega (DASH-ENTREGA): cómo entregas, zona y costo, tiempos y quién lleva. Pide el permiso «Entrega» (dlv). */
+export type EntregaIn = { delivery: boolean; pickup: boolean; pkNote: string; zone: number; fee: number; free: number; min: number; travel: number; dEnd: number; who: "team" | "external"; ext: string | null };
+const ZONAS = [1, 3, 5, 10], ENVIOS = [0, 200, 300, 400, 500], GRATIS = [0, 2500, 4000, 6000], MINIMOS = [0, 1000, 1500, 2000, 2500], CAMINO = [10, 15, 20], ULTIMO = [0, 30, 60];
+export async function entregaAjustes(id: string, p: EntregaIn): Promise<Res> {
+  const a = await entrar(id, "dlv");
+  if (!a) return SIN_ACCESO;
+  if (!p?.delivery && !p?.pickup) return no("Para guardar falta: una forma de entrega.", "To save, add: a delivery method.");
+  const n = (v: unknown, ok: number[]) => ok.includes(Number(v));
+  if (!n(p.zone, ZONAS) || !n(p.fee, ENVIOS) || !n(p.free, GRATIS) || !n(p.min, MINIMOS) || !n(p.travel, CAMINO) || !n(p.dEnd, ULTIMO) || !["team", "external"].includes(p.who))
+    return no("Revisa la zona, el costo y los tiempos.", "Check the area, fee and times.");
+  const ext = p.who === "external" && ["doordash", "uber_eats", "other"].includes(String(p.ext)) ? String(p.ext) : null;
+  if (p.who === "external" && !ext) return no("Elige cuál app externa lleva tus pedidos.", "Pick which external app delivers your orders.");
+  const nota = String(p.pkNote ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
+  const antes = await tx(async (c) => {
+    const x = (await c.query<Record<string, unknown>>(
+      `select pickup, delivery, zone_mi, fee_cents, free_over_cents, min_order_cents, travel_min, last_delivery_min, who, external_app, pickup_note->>'es' as nota from delivery_settings where business_id = $1`, [a.negocio.id])).rows[0] ?? null;
+    await c.query(
+      `insert into delivery_settings (business_id, pickup, delivery, pickup_note, zone_mi, fee_cents, free_over_cents, min_order_cents, travel_min, last_delivery_min, who, external_app)
+       values ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12)
+       on conflict (business_id) do update set pickup = $2, delivery = $3, pickup_note = $4::jsonb, zone_mi = $5, fee_cents = $6, free_over_cents = $7, min_order_cents = $8,
+         travel_min = $9, last_delivery_min = $10, who = $11, external_app = $12,
+         pay_cash_delivery = case when $11 = 'external' then false else delivery_settings.pay_cash_delivery end, updated_at = now()`,
+      [a.negocio.id, !!p.pickup, !!p.delivery, nota ? JSON.stringify({ es: nota, en: nota }) : null, Number(p.zone), Number(p.fee), Number(p.free), Number(p.min), Number(p.travel), Number(p.dEnd), p.who, ext]);
+    return x;
+  });
+  const usd = (c: unknown) => (Number(c) ? `$${(Number(c) / 100).toFixed(0)}` : "—");
+  const L = (x: Record<string, unknown> | null) => x && { pickup: x.pickup ? "Sí" : "No", delivery: x.delivery ? "Sí" : "No", zona: `${x.zone_mi} mi`, envio: usd(x.fee_cents), gratis_desde: usd(x.free_over_cents),
+    minimo: usd(x.min_order_cents), camino: `${x.travel_min} min`, quien: x.who === "external" ? `App externa (${x.external_app})` : "Mi equipo", nota: x.nota ?? "" };
+  await auditar(a, "entrega.ajustes", L(antes), L({ pickup: p.pickup, delivery: p.delivery, zone_mi: p.zone, fee_cents: p.fee, free_over_cents: p.free, min_order_cents: p.min, travel_min: p.travel, who: p.who, external_app: ext, nota }));
   return { ok: true };
 }
