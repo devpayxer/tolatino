@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { codigoReclamo, ErrorCuenta, ipCliente, mismoOrigen, verificarCodigoReclamo, yo } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
+import { evento } from "@/lib/eventos";
 
 type Bi = { es: string; en: string };
 export type ResRec = { ok: true; codigoPrueba?: string; reclamo?: string } | { ok: false; mensaje: Bi; entrar?: boolean };
@@ -94,5 +95,6 @@ export async function enviarReclamo(id: string, x: { rol: string; metodo: "codig
     return no(t[0]!, t[1]!);
   }
   revalidatePath(`/recuperar/${a.b.id}`);
+  await evento("reclamar", { ref: a.b.id, ciudad: a.b.city_id, userId: a.me.id, props: { metodo: x.metodo } });
   return { ok: true, reclamo: r.id };
 }

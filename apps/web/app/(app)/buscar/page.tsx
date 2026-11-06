@@ -9,6 +9,8 @@ import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
+import { contexto, evento } from "@/lib/eventos";
+import { after } from "next/server";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Buscar · To'Latino" };
@@ -73,7 +75,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
   const nada = r.total === 0;
   const dym = nada && E.grupos.some((g) => g.corregida) ? E.palabras.map((w) => E.grupos.find((g) => g.w === w)?.corregida ?? w).join(" ") : null;
-  if (q && pagina === 0 && tab === "all") await registrar(CIUDAD, u?.id ?? null, q, E, dom, r.total);
+  if (q && pagina === 0 && tab === "all") {
+    await registrar(CIUDAD, u?.id ?? null, q, E, dom, r.total);
+    const ctx = await contexto();
+    after(() => evento("buscar", { ciudad: CIUDAD, userId: u?.id ?? null, props: { resultados: r.total, cat: dom } }, ctx));
+  }
 
   const [tarjetas, nom] = await Promise.all([
     armarTarjetas(CIUDAD, r.items, lang, u?.id ?? null),

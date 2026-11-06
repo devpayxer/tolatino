@@ -3,12 +3,16 @@ import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { etiquetaCentro, ubicacion } from "@/lib/ubicacion";
 import { AppShell } from "./AppShell";
+import { actividad, contexto } from "@/lib/eventos";
+import { after } from "next/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const [lang, u] = await Promise.all([idioma(), yo().catch(() => null)]);
   const loc = await ubicacion(u);
+  const ctx = await contexto();
+  after(() => actividad(u?.id ?? null, loc.c.id, ctx));
   const t = T[lang], es = lang === "es";
   const iniciales = u ? (((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() || "TL") : "";
   // Encabezado (prototipo locLabel / locShort): «Hazleton, PA · 5 mi · tú» o «Allentown, PA · pronto».

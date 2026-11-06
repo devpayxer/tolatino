@@ -4,6 +4,7 @@ import { db, tx } from "@/lib/db";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
 import { daysOf, derive, descEs, items as itemsDe, needZone, ok as okPaso, opOf, own as ownDe, SEQ, zoneOf, type Borrador } from "./logica";
+import { evento } from "@/lib/eventos";
 
 /* Publica tu negocio v2: el borrador vive en el servidor (onboarding_drafts) para seguir desde otro teléfono. La
    pantalla lo guarda solo, con pausas; el servidor valida tamaño y forma. Las fotos nunca van aquí (son media). */
@@ -171,6 +172,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
       [me.id, JSON.stringify({ ...d, cover: null, gallery: [] }), d.promoOk ? d.promo : null, slug]);
     return slug;
   });
+  await evento("publicar_negocio", { ref: id, ciudad: loc.ciudad, userId: me.id, props: { cat: d.cat } });
   return { ok: true, negocio: { id, nombre: d.name, minutos, hasta, items: productos.length, fotos: mias.length } };
 }
 

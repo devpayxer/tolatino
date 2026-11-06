@@ -247,7 +247,7 @@ _Actualizado: 5 nov 2026._
   comprobaciones → ficha y panel; nuevo «Todo bien»; cierre temporal → ficha y panel → reabrir; editar nombre →
   aviso en el panel; admin en teléfono; el dueño no entra al admin). Ayuda: `docs/ayuda/admin-negocios.md`.
 - **Fase 1 · orden:** 1a modelo ✓ · 1b semilla de pruebas desde el prototipo ✓ · 1c shell + Inicio ✓ · 1d página de categoría ✓ · 1e ficha base ✓ ·
-  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓ · 1l Usuarios 360° ✓ · 1m Catálogo ✓.
+  1f Buscar ✓ · Ciudad ✓ · Mapa ✓ · 1g Recomendar ✓ + Publica tu negocio v2 ✓ · 1h panel base ✓ · 1i admin Negocios + colas ✓ · 1k Licencia ✓ · 1j Recuperar negocio + semillas ✓ · 1l Usuarios 360° ✓ · 1m Catálogo ✓ · 1n Analítica ✓.
 - **Fase 1 · bloque 1k Licencia ✓ (5 nov, espera OK del fundador):** `/n/{id}/licencia` (diseño «Licencia», portado
   1:1: línea fija, una tarjeta por licencia con estado real, número, próxima revisión y registro oficial, «Cómo la
   verificamos»), tarjeta «¿Puede hacerlo por ley?» en el Resumen de la ficha (Pro; va a Servicios cuando exista esa
@@ -291,7 +291,17 @@ _Actualizado: 5 nov 2026._
   `scripts/catalogo/extraer-lineas.cjs`). Guardián nuevo `subcategoriasVivas`. Probado con Playwright: quitar
   «Dominicana» → sale de /c/comida (3 → 0) → restaurar; agregar subcategoría; sinónimo nuevo → Buscar lo usa al minuto;
   apagar «Delivery» → deja de salir como filtro rápido; sin errores de consola. Ayuda: `docs/ayuda/admin-catalogo.md`.
-  Sigue (PLAN fila 1): analítica propia (eventos).
+- **Fase 1 · bloque 1n Analítica propia ✓ (6 nov, espera OK del fundador):** migración 0021 (`app_events` solo de
+  inserción con lista cerrada de eventos, `user_days` y `device_days`), `lib/eventos.ts` (nunca rompe la pantalla; sin
+  datos personales; robots fuera), cookie de dispositivo `tl_dev` creada en `middleware.ts`. Eventos conectados: ver
+  categoría, ver ficha, buscar, contactar, entrar, registrarse, publicar negocio, recomendar, reclamar, reportar foto,
+  pedir aviso; día activo en cada carga de la app. `/admin/analitica`: Resumen (embudo buscar → ficha → contactar),
+  Gente y negocios (vecinos, activos, Pro/Free, verificados, retención D1/D7/D30, por categoría), Soporte y confianza
+  (sancionados, SLA cumplido, colas abiertas), Búsquedas sin oferta y Exportar (CSV auditado, celdas neutralizadas).
+  Guardián nuevo `eventosEnLista`. Probado con Playwright: el vecino deja ver_categoria → ver_ficha → buscar →
+  registrarse con su dispositivo; un robot no suma; CSV de 449 negocios con su auditoría; sin errores de consola.
+  Ayuda: `docs/ayuda/admin-analitica.md`.
+  **Fila 1 del PLAN completa** (salvo lo anotado en LAUNCH-CHECKLIST). Sigue: Fase 2 (con el OK del fundador).
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

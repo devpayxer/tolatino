@@ -202,3 +202,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Búsquedas sin oferta** cuenta solo «Avísame cuando haya»; las búsquedas sin resultado (search_logs) entran con la
   analítica.
 
+## Analítica propia (bloque 1n, 6 nov 2026)
+- [ ] **Escala:** `app_events` sin particiones (BRIN por fecha); particionar por mes y resúmenes diarios cuando crezca
+  (necesita trabajos programados). Política de cuánto tiempo se guardan los eventos (privacidad): decidir y programar.
+- [ ] **Pestañas del diseño pendientes:** Dinero (MRR, conversión a Pro, devoluciones, ticket promedio), Comunidad y
+  eventos, vecinos por rango, reportes por mil operaciones y tickets: con sus módulos. Envío semanal de reportes por
+  correo (interruptor del diseño): con las notificaciones.
+- [ ] **Embudo:** el diseño termina en «El negocio aceptó»; en la Fase 1 termina en «Contactaron» (Llamar, WhatsApp,
+  Cómo llegar). Confirmar el texto con el fundador. Etiquetas cortas porque el componente de barras corta las largas.
+- [ ] **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte.
+- [ ] **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): con las páginas legales (Fase 9).
+

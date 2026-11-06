@@ -2,6 +2,7 @@
 import { db } from "@/lib/db";
 import { mismoOrigen, normalizarTelefono, yo } from "@/lib/cuenta";
 import { ciudades } from "@/lib/ubicacion";
+import { evento } from "@/lib/eventos";
 
 /* APP-NEG-RECOMENDAR: un vecino recomienda un negocio que no está. Va a la cola de Recomendaciones del Super Admin.
    El SMS al negocio («X te recomendó…», una sola vez) se manda con las notificaciones (Fase 2); nada se publica sin
@@ -48,5 +49,6 @@ export async function enviarRecomendacion(r: Recomendacion): Promise<RespRec> {
      select id::text, to_char(created_at at time zone (select timezone from cities where id = $2), 'HH12:MI AM') as at from ins`,
     [me.id, c.id, name, cat, casa ? "sin_local" : "address", casa ? null : where, contacto, kind, know, know === "mio", !!r.show, why || null]);
   if (!ins.rows[0]) return { ok: false, error: "repetida" };
+  await evento("recomendar", { ref: ins.rows[0].id, ciudad: c.id, userId: me.id, props: { cat } });
   return { ok: true, id: ins.rows[0].id, at: ins.rows[0].at.replace(/^0/, ""), name, ciudad: c.name };
 }

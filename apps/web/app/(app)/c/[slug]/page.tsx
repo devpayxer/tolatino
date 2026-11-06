@@ -10,6 +10,8 @@ import { armarTarjetas } from "@/lib/tarjetas";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../../PantallaPronto";
 import { Categoria, type Vista } from "./Categoria";
+import { after } from "next/server";
+import { contexto, evento } from "@/lib/eventos";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +30,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const loc = await ubicacion(u);
   if (loc.c.status !== "on") return <PantallaPronto loc={loc} lang={lang} userId={u?.id ?? null} />;
   const CIUDAD = loc.ciudad, ciudad = loc.c;
+  const ctx = await contexto();
+  after(() => evento("ver_categoria", { ref: c.id, ciudad: loc.c.id, userId: u?.id ?? null, props: { filtros: String(sp.f ?? "").slice(0, 80) || null, sub: typeof sp.sub === "string" ? sp.sub.slice(0, 40) : null } }, ctx));
   const t = T[lang], P = c.page, L = (b: { es: string; en: string }) => b[lang];
 
   // Lo que pide la URL, validado contra lo que la categoría ofrece de verdad.

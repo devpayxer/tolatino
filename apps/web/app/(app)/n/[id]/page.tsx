@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { after } from "next/server";
 import { yo } from "@/lib/cuenta";
 import { guardados } from "@/lib/categoria";
+import { contexto, evento } from "@/lib/eventos";
 import { ficha, registrarVista } from "@/lib/ficha";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
@@ -20,10 +21,12 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
-  const f = await ficha(id, lang, await ubicacion(u));
+  const loc = await ubicacion(u);
+  const f = await ficha(id, lang, loc);
   if (!f) notFound();
-  const ua = (await headers()).get("user-agent");
+  const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
+  after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
   const fav = await guardados(u?.id ?? null, [f.id]);
   const t = T[lang].ficha;
   return (

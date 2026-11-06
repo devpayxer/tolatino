@@ -74,6 +74,7 @@ export async function sinOferta(s: Staff) {
   return (await db().query<{ q: string; cat: string | null; n: number }>(
     `select min(a.query) as q, (array_agg(c.name->>'es') filter (where c.id is not null))[1] as cat, count(distinct a.user_id)::int as n
        from search_alerts a left join categories c on c.id = a.filters->>'cat'
+         or trim(both '-' from regexp_replace(lower(unaccent(c.short->>'es')), '[^a-z0-9]+', '-', 'g')) = a.filters->>'cat'
       where a.removed_at is null and a.created_at > now() - interval '30 days' and (cardinality($1::text[]) = 0 or a.city_id = any($1::text[]))
       group by lower(a.query) order by n desc, 1 limit 50`, [s.cities])).rows;
 }

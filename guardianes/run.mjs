@@ -176,6 +176,19 @@ const guardianes = {
     }
   },
 
+  /* Analítica: un evento que la base no acepta se pierde en silencio (evento() nunca rompe la pantalla). La lista del
+     tipo Evento (lib/eventos.ts) y el check de app_events en la última migración que lo define deben ser idénticas (1n). */
+  eventosEnLista() {
+    const lib = "apps/web/lib/eventos.ts";
+    if (!existsSync(lib)) return;
+    const tipo = (readFileSync(lib, "utf8").match(/export type Evento = ([^;]+);/) || [])[1];
+    const migs = archivos.filter((f) => /^packages\/db\/migrations\/.*\.sql$/.test(f)).sort().reverse();
+    const sql = migs.map((f) => readFileSync(f, "utf8").match(/name\s+text not null check \(name in \(([^)]+)\)\)/)).find(Boolean);
+    if (!tipo || !sql) { falla("eventosEnLista", lib, 0, "no encuentro la lista de eventos en el código o en la base"); return; }
+    const a = [...tipo.matchAll(/"([a-z_]+)"/g)].map((m) => m[1]).sort().join(","), b = [...sql[1].matchAll(/'([a-z_]+)'/g)].map((m) => m[1]).sort().join(",");
+    if (a !== b) falla("eventosEnLista", lib, 0, `la lista del código (${a}) no es la de la base (${b})`);
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {

@@ -3,9 +3,9 @@ import type { GrupoNav } from "@/app/admin/ui";
 import { db } from "./db";
 
 /* Lo que ya existe en la Fase 0; el resto se ve en el menú con su fase (nada de botones muertos). */
-export const HECHAS: Record<string, string> = { home: "/admin", colas: "/admin/colas", neg: "/admin/negocios", usr: "/admin/usuarios", ciud: "/admin/ciudades", cat: "/admin/catalogo", sys: "/admin/sistema" };
+export const HECHAS: Record<string, string> = { home: "/admin", colas: "/admin/colas", neg: "/admin/negocios", usr: "/admin/usuarios", analit: "/admin/analitica", ciud: "/admin/ciudades", cat: "/admin/catalogo", sys: "/admin/sistema" };
 export const FASE: Record<string, string> = {
-  analit: "Fase 1", tx: "Fase 2", sop: "Fase 2", plan: "Fase 2", notif: "Fase 2",
+  tx: "Fase 2", sop: "Fase 2", plan: "Fase 2", notif: "Fase 2",
   cont: "Fase 2", conf: "Fase 5", gam: "Fase 5", evt: "Fase 6", mkt: "Fase 9", cms: "Fase 9",
 };
 const GRUPOS: Record<string, string> = { operar: "Operar", contenido: "Contenido y oferta", dinero: "Dinero y crecimiento", control: "Control" };

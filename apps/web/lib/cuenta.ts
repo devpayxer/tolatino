@@ -78,7 +78,7 @@ export async function pedirCodigo(entrada: string): Promise<{ reenviarEn: number
 }
 
 /* Paso 2: verificar el código → crea la cuenta si no existe y abre la sesión. */
-export async function verificarCodigo(entrada: string, codigo: string): Promise<{ nuevo: boolean; nombre: string | null }> {
+export async function verificarCodigo(entrada: string, codigo: string): Promise<{ nuevo: boolean; nombre: string | null; id: string }> {
   const tel = normalizarTelefono(entrada);
   if (!tel || !/^\d{6}$/.test(codigo)) throw new ErrorCuenta("codigo_invalido");
   const ip = await ipCliente();
@@ -133,7 +133,7 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
        values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid)`,
       [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS, dev],
     );
-    return { token, nuevo: user.nuevo, nombre: user.first_name };
+    return { token, nuevo: user.nuevo, nombre: user.first_name, id: user.id };
   });
   if ("error" in res) throw new ErrorCuenta(res.error!, undefined, "detalle" in res ? res.detalle : undefined);
 
@@ -145,7 +145,7 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
     path: "/",
     maxAge: SESION_DIAS * 86400,
   });
-  return { nuevo: res.nuevo, nombre: res.nombre };
+  return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
 }
 
 export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string; estado: string; hasta: string | null };
