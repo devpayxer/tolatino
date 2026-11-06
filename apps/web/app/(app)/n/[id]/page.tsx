@@ -14,6 +14,7 @@ import { saludPublico } from "@/lib/salud-publico";
 import { proPublico } from "@/lib/pro-publico";
 import { tiendaPublica } from "@/lib/rentas";
 import { tiendaMia, tiendaVenta } from "@/lib/apartados";
+import { mercPublico } from "@/lib/merc-publico";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
 import { vacantesFicha } from "@/lib/jobs";
@@ -38,7 +39,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -52,6 +53,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-SALUD" ? saludPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Profesionales (4k): el total (honorario + gobierno), la licencia y lo que no puede.
     f.cat === "NEG-PRO" ? proPublico(f.id) : Promise.resolve(null),
+    // Mercados (4o): productos por libra, corte o punto, y si toma pedidos.
+    f.cat === "NEG-MERC" ? mercPublico(f.id) : Promise.resolve(null),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
@@ -66,6 +69,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       ofi={ofi}
       salud={salud}
       prof={prof}
+      merc={merc}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}
