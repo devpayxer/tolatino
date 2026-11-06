@@ -1,18 +1,19 @@
 import "server-only";
+import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import { db } from "./db";
 import { vencerCitas } from "./citas-flujo";
 
 /* Citas en el panel del negocio (Panel v2 · reqRow/detBlocks k='cita', Hoy y Clientes). El servidor decide el estado:
    antes de leer se vencen las que nadie contestó. Con sillas rentadas cada barbero ve las suyas y el dueño todas. */
 type Bi = { es: string; en: string };
-export type StCita = "pend" | "ok" | "alt" | "in" | "road" | "work" | "ready" | "done" | "nos" | "no" | "exp" | "cx"; // road/work/ready: Auto y Hogar (4c)
+export type StCita = "pend" | "ok" | "alt" | "in" | "road" | "work" | "ready" | "est" | "xtra" | "done" | "nos" | "no" | "exp" | "cx"; // road/work/ready: Auto y Hogar (4c)
 export type FilaCita = {
   numero: string; who: string; svc: Bi; ymd: string; dia: number; m: number; dur: number; st: StCita; con: string | null; dep: number; chg: boolean; late: number | null; hace: number;
   rubro: "auto" | "hogar" | null; // obligatorio: un campo opcional se pierde en silencio al copiar fila por fila
 };
 export type FiltroCita = "all" | "pend" | "cur" | "done" | "no";
 const ST = `case when o.status = 'pending' then 'pend' when o.status = 'change_proposed' then 'alt'
-                 when o.status = 'confirmed' and o.status_detail in ('live', 'in') then 'in' when o.status = 'confirmed' and o.status_detail in ('road', 'work', 'ready') then o.status_detail when o.status = 'confirmed' then 'ok'
+                 when o.status = 'confirmed' and o.status_detail in ('live', 'in') then 'in' when o.status = 'confirmed' and o.status_detail in ('road', 'work', 'ready', 'est', 'xtra') then o.status_detail when o.status = 'confirmed' then 'ok'
                  when o.status = 'done' and o.status_detail = 'noshow' then 'nos' when o.status = 'done' then 'done'
                  when o.status = 'declined' then 'no' when o.status = 'expired' then 'exp' else 'cx' end`;
 const COLS = `o.number as numero, trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1) || '.', '')) as who, coalesce(o.details->'svc', '{"es":"","en":""}'::jsonb) as svc,
@@ -56,6 +57,7 @@ export type CitaPanel = FilaCita & {
   tel: string | null; nota: string | null; para: string; nombre: string | null; edad: string | null; opts: { g: Bi; o: Bi; p: number }[]; adds: { name: Bi; cents: number }[];
   total: number; pago: string | null; fotos: string[]; responde: string | null; alt: { ymd: string; m: number; hasta: string } | null; cambio: { ymd: string; m: number; hasta: string } | null;
   tl: { t: Bi; at: string }[]; auto: boolean;
+  est: EstadoEstimado | null; rate: number; taxBp: number; // 4d: el estimado, la tarifa y el impuesto de piezas (para ver el total mientras se arma)
   of: { veh: string | null; mi: number | null; casa: string | null; inq: boolean; w: string | null; win: number | null; luces: string[]; area: string | null; acceso: string | null; accesoNota: string | null; piezas: boolean } | null;
 };
 export async function citaPanel(negocio: string, numero: string): Promise<CitaPanel | null> {
@@ -85,13 +87,19 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
     changed: { es: "Cambió la hora", en: "Changed the time" }, change_requested: { es: "Pidió cambiar la hora", en: "Asked to change the time" }, change_accepted: { es: "Aceptaste el cambio", en: "You accepted the change" },
     change_declined: { es: "No se pudo el cambio", en: "Change declined" }, payment_captured: { es: "Depósito cobrado", en: "Deposit charged" }, payment_released: { es: "Depósito liberado", en: "Deposit released" }, refunded: { es: "Depósito devuelto", en: "Deposit refunded" },
   };
-  const d = r.det as { opts?: CitaPanel["opts"]; adds?: CitaPanel["adds"]; para?: string; nombre?: string | null; edad?: string | null; veh?: { t: string; mi?: number | null }; casa?: { dir: string; tenure: string }; w?: string; win?: number; luces?: string[]; area?: string | null; acceso?: string; accesoNota?: string | null; piezas?: boolean };
+  const d = r.det as { opts?: CitaPanel["opts"]; adds?: CitaPanel["adds"]; para?: string; nombre?: string | null; edad?: string | null; veh?: { t: string; mi?: number | null }; casa?: { dir: string; tenure: string }; w?: string; win?: number; luces?: string[]; area?: string | null; acceso?: string; accesoNota?: string | null; piezas?: boolean; rubro?: string };
+  const est = d.rubro ? await estadoEstimado(db(), r.id) : null;
+  const x4d = d.rubro ? (await db().query<{ rate: number; tax: number }>(
+    `select coalesce((select labor_rate_cents from trade_settings where business_id = o.business_id), 0) as rate,
+            coalesce((select parts_bp from tax_rules t join businesses b on b.id = o.business_id where t.city_id = o.city_id and t.category_id = b.category_id and t.effective_from <= now() order by t.effective_from desc, t.id desc limit 1), 0) as tax
+       from operations o where o.id = $1::bigint`, [r.id])).rows[0] ?? { rate: 0, tax: 0 } : { rate: 0, tax: 0 };
   const tel = (await db().query<{ tel: string | null }>(`select case when o.status in ('confirmed', 'done') then u.phone end as tel from operations o join users u on u.id = o.user_id where o.id = $1::bigint`, [r.id])).rows[0]?.tel ?? null;
   return {
     numero: r.numero, who: r.who, svc: r.svc, ymd: r.ymd, dia: r.dia, m: r.m, dur: r.dur, st: r.st, con: r.con, dep: r.dep, chg: r.chg, late: r.late, hace: r.hace, rubro: (r as { rubro?: "auto" | "hogar" | null }).rubro ?? null,
     tel, nota: r.nota, para: d.para ?? "me", nombre: d.nombre ?? null, edad: d.edad ?? null, opts: d.opts ?? [], adds: d.adds ?? [], total: r.total, pago: r.pago, fotos: r.fotos ?? [], responde: r.responde, auto: r.auto,
     alt: r.alt ? { ymd: r.alt.ymd, m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, cambio: r.chgp ? { ymd: r.chgp.ymd, m: r.chgp.m, hasta: r.chg_hasta ?? "" } : null,
     tl: tl.map((e) => ({ t: e.note ?? K[e.kind] ?? { es: e.kind, en: e.kind }, at: e.at })),
+    est, rate: x4d.rate, taxBp: x4d.tax,
     of: d.veh || d.casa ? { veh: d.veh?.t ?? null, mi: d.veh?.mi ?? null, casa: d.casa?.dir ?? null, inq: d.casa?.tenure === "inq", w: d.w ?? null, win: d.win ?? null, luces: d.luces ?? [], area: d.area ?? null, acceso: d.acceso ?? null, accesoNota: d.accesoNota ?? null, piezas: !!d.piezas } : null,
   };
 }

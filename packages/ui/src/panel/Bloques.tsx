@@ -224,9 +224,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 16, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
         <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px Manrope,sans-serif" }}>{b.t}</span>{b.s ? <span style={{ display: "block", marginTop: 3, font: "500 12.5px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}</span>
         <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span role="button" aria-label="−" onClick={b.onM} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></span>
+          <button type="button" aria-label={`${b.t} −`} onClick={b.onM} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></button>
           <span style={{ minWidth: 64, textAlign: "center", font: "800 14px Sora,sans-serif" }}>{b.v}</span>
-          <span role="button" aria-label="+" onClick={b.onP} style={{ width: 32, height: 32, borderRadius: 10, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></span>
+          <button type="button" aria-label={`${b.t} +`} onClick={b.onP} style={{ width: 32, height: 32, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-paper)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></button>
         </span>
       </div>);
     case "photos": return (
@@ -262,9 +262,9 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                     <div key={k} style={{ padding: 9, borderRadius: 13, background: "var(--tl-paper)", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                       <span style={{ font: `700 9px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{k}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span role="button" aria-label="−" onClick={m} style={{ width: 30, height: 30, borderRadius: 10, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></span>
+                        <button type="button" aria-label="−" onClick={m} style={{ width: 30, height: 30, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="minus" size={14} /></button>
                         <span style={{ minWidth: 66, textAlign: "center", font: "800 14px Sora,sans-serif" }}>{v}</span>
-                        <span role="button" aria-label="+" onClick={p} style={{ width: 30, height: 30, borderRadius: 10, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></span>
+                        <button type="button" aria-label="+" onClick={p} style={{ width: 30, height: 30, borderRadius: 10, border: 0, padding: 0, background: "var(--tl-white)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="plus" size={14} /></button>
                       </div>
                     </div>))}
                 </div>))}

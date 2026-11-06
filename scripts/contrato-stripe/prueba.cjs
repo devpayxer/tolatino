@@ -20,6 +20,8 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const r = await pasarela.retener({ centavos: 2500, comision: 220, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-' + Date.now(), meta: { order: '1001', business_id: 'sabor-dominicano' } });
   // stripe-mock no guarda estado: responde «requires_payment_method»; lo que importa es que aceptó cada parámetro.
   ok(r.ok || r.codigo === 'requires_payment_method', 'retener: payment_intents con captura manual, comisión y destino (parámetros válidos)');
+  const rf = await pasarela.retener({ centavos: 2500, comision: 220, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-fuera-' + Date.now(), meta: { appointment: 'C-1', business_id: 'plomeria-rodriguez', kind: 'estimate' }, fuera: true });
+  ok(rf.ok || /requires_/.test(rf.codigo), 'renovar fuera de sesión: off_session con captura manual (parámetros válidos)');
   const pi = r.ok ? r.pi : 'pi_123';
   const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
   const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');

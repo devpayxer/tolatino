@@ -40,9 +40,9 @@ export async function retenerPedido(x: { negocio: string; cuenta: string; clave:
 }
 export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string; kind?: "full" | "deposit" }) {
   await c.query(
-    `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, fee_cents, status, card_brand, card_last4, held_at, simulated)
-     values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $7, 'held', $8, $9, now(), $10)`,
-    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_"), x.kind ?? "full"]);
+    `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, held_at, simulated, payment_method)
+     values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $6, $7, 'held', $8, $9, now(), $10, $12)`,
+    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_"), x.kind ?? "full", x.pm && /^pm_[A-Za-z0-9_]{3,200}$/.test(x.pm) ? x.pm : null]);
   await c.query(`update operations set pay_status = 'held' where id = $1::bigint`, [x.opId]);
   // La última tarjeta guardada que pagó queda como predeterminada (la que se rechazó deja de serlo).
   if (x.pm) await c.query(`update payment_methods set is_default = (stripe_pm_id = $2) where user_id = $1 and status = 'active' and exists (select 1 from payment_methods where user_id = $1 and stripe_pm_id = $2)`, [x.userId, x.pm]);
@@ -101,6 +101,8 @@ export async function repararPagos(negocio: string) {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
     else await liberarOperacion(x.op);
   }
+  // Auto y Hogar (4d): estimado y «algo más» (liquidaciones a medias, retenciones que vencen).
+  await (await import("./estimados")).repararEstimados(negocio);
 }
 
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o

@@ -468,3 +468,28 @@ _Decidido por mí (reversible): «Cómo llegar» y «Voy tarde» no aparecen en 
 Una vez que el negocio marca el primer paso, el cliente ya no cancela desde la app: usa Ayuda con la cita. «No había
 nadie» se puede marcar desde que empieza la franja y sigue la regla del depósito de cancelar tarde (el depósito se queda).
 El cliente cierra la cita con «Ya lo recogí» / «Todo bien», o el negocio con «Lo entregué» / «Cerrar la visita»._
+
+## Fase 4 · 4d El estimado línea por línea, «algo más» y el dinero
+1. Pide **Diagnóstico con escáner** en **Taller Hermanos Peña** (Marisol, 570-555-0122). Como **Rafael** (570-555-0211):
+   Hoy › la cita › **Recibí el carro** › **Armar el estimado** › plantilla **Frenos** (agrega pastillas, discos, líquido y
+   pastillas traseras; las «necesario ahora» piden foto) › **Mandar al cliente**.
+2. En el teléfono de Marisol, Tu cita dice «Revisa lo que encontraron»: las líneas en necesario ahora / recomendado /
+   puede esperar, con por qué, pieza, mano de obra e impuesto. Marca el líquido y **Aprobar 3 arreglos**.
+3. Rafael: **Encontré algo más** (manguera de freno, con foto) › Marisol dice **No, déjalo así**. Rafael: **Lo final** (baja
+   las pastillas $10) › **Listo para recoger**. Marisol ve «Al recogerlo» y **Ya lo recogí · pagar**.
+4. Repite con **Plomería Rodríguez 24/7** (Tomás, 570-555-0222; cobra con tarjeta): **Visita y diagnóstico** › Llegué ›
+   **Armar el precio completo** escribiendo una línea a mano › Marisol aprueba con su tarjeta (se retiene) › algo más › Sí ›
+   lo final baja $15 › Terminé › **Todo bien · pagar**: Tu dinero dice «Cobrado … Se liberaron $15».
+5. Super Admin › Transacciones › Citas: cada cita dice «estimado: aprobado $X · cobrado en la app $Y» y el KPI
+   «Retenciones que fallaron».
+_Decidido por mí (reversible): el panel para armar el estimado no está en el diseño (hueco #1 del plan): lo compuse con
+los bloques del panel (plantillas por clase, urgencia, qué es, por qué, pieza y precio, horas, foto, total para mirar).
+Se retiene en la tarjeta del cliente cuando aprueba (él está en la app y elige la tarjeta), no al dejar el carro: así no
+hace falta cobrar fuera de sesión salvo para renovar retenciones de más de 7 días. La primera retención incluye lo que
+falta del servicio o el diagnóstico (menos el depósito), para que al final todo se pague en la app. Un negocio sin cobro
+con tarjeta (como el taller de ejemplo) no retiene nada: el panel dice cuánto cobrar en el local. «Algo más» se pregunta
+de a uno. Mandar una versión nueva solo mientras el cliente no ha respondido. El estimado de un servicio de precio
+cerrado no existe: ahí solo hay «algo más». Las plantillas son las líneas de ejemplo del prototipo (solo en pruebas)._
+_Arreglado de paso: (a) en la pasarela, un comentario se tragaba `transfer_data` del cobro real de Stripe (el dinero no
+iba al negocio); guardián nuevo `comentarioTragaCodigo`. (b) Los −/+ del panel (mano de obra, tiempos, horario) no se
+podían usar con teclado; ahora son botones. Guardián `panelClicMudo` (trinquete para los 18 que quedan)._

@@ -6,6 +6,7 @@ import { ajustesPedidos, pedidoNegocio, pedidosHoy, pedidosLista, type FiltroPed
 import type { PedPanel } from "../../Pedidos";
 import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa } from "@/lib/reservas";
 import { citaPanel, citasLista, citasVivas, type FiltroCita } from "@/lib/citas-panel";
+import { repararEstimados } from "@/lib/estimados";
 import { oficiosPanel, rubroDe } from "@/lib/oficios";
 import { ayudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import { pedidosPendientes } from "@/lib/pedidos";
@@ -147,6 +148,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det?.startsWith("of:") && !ofi) ruta.det = null;
   // Citas (Belleza): las vivas para Hoy, Clientes › Citas y el detalle. Responder pide «Hoy y pedidos».
   if (ruta.det?.startsWith("cita:") && !(conCitas && ord)) ruta.det = null;
+  // Auto y Hogar (4d): al mirar Hoy se reintenta lo que quedó a medias (cobros de una liquidación, retenciones de citas
+  // que ya no siguen) y se renuevan las retenciones que pasan de 7 días.
+  if (oficio && ord && ruta.sec === "hoy") await repararEstimados(d.id).catch(() => undefined);
   const fC = (["all", "pend", "cur", "done", "no"].includes(sp.f ?? "") ? sp.f : "all") as FiltroCita;
   const citas = conCitas && ord ? {
     vivas: ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,

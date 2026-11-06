@@ -399,3 +399,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Ley HIC de PA (contratistas del hogar):** el fundador decidió no mostrarla; el servidor topará el depósito de
       trabajos de Hogar de más de $1,000 a un tercio (bloque 4b/4d). Confirmar con abogado antes de abrir.
 
+
+## Fase 4 · 4d (estimado y dinero de Auto y Hogar)
+- [ ] Plantillas del estimado para producción: hoy son las líneas de ejemplo del prototipo (solo en pruebas). El fundador
+      aprueba la lista por categoría (o se arranca sin plantillas).
+- [ ] Renovar retenciones de más de 7 días corre al abrir el panel (Hoy). En producción: tarea programada cada hora
+      (mismo `repararEstimados`), para que no dependa de que el negocio abra el panel.
+- [ ] Rechazo de tarjeta al aprobar el estimado: sigue el mismo camino del Booking (error, elegir otra), sin prueba
+      punta a punta propia todavía. Agregarla con la tarjeta 0002.
+- [ ] Si la base falla justo después de retener (entre la pasarela y el commit), la retención queda suelta hasta que
+      Stripe la suelte (7 días). Conciliación diaria contra Stripe (PaymentIntents `requires_capture` sin fila).
+- [ ] Validar con el contador: impuesto de PA solo sobre piezas/materiales en reparaciones de carro y de casa (tax_rules).

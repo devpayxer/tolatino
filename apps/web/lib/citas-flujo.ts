@@ -1,6 +1,7 @@
 import "server-only";
 import { db, tx } from "./db";
 import { cobrarOperacion, devolverPago, liberarOperacion } from "./cobros";
+import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
 import { contexto, fecha, gente, hm2m, horaL, huecos, ocupadas, DIAS, type Q } from "./citas";
 
 /* La vida de una cita después de enviarla (Fase 3 · 3c; prototipo citaVals y Panel v2 reqRow/detBlocks k='cita'):
@@ -178,12 +179,20 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
       if (paso === "camino") { if (rubro !== "hogar" || d) return ya; await pasa("road", "on_the_way"); despues = async () => { await avisarCliente(numero, "cita_camino"); }; return { ok: true }; }
       if (paso === "llegue") { if (rubro !== "hogar" || !["", "road"].includes(d)) return ya; await pasa("in", "arrived"); return { ok: true }; }
       if (paso === "recibido") { if (rubro !== "auto" || d) return ya; await pasa("in", "received"); despues = async () => { await avisarCliente(numero, "cita_recibido"); }; return { ok: true }; }
-      if (paso === "empezar") { if (d !== "in") return ya; await pasa("work", "started"); return { ok: true }; }
+      if (paso === "empezar") {
+        if (d !== "in") return ya;
+        // Un servicio con estimado (diagnóstico, visita, «desde», se cotiza…) no empieza sin el OK del cliente (4d).
+        const k = (await c.query<{ k: string | null }>(`select svc_kind as k from items where id::text = $1`, [o.det?.svcId ?? ""])).rows[0]?.k;
+        if (conEstimado(rubro, k)) return no("Primero manda el estimado: nada se hace sin su OK.", "Send the estimate first: nothing is done without their OK.");
+        await pasa("work", "started"); return { ok: true };
+      }
       if (paso === "listo") { if (!["in", "work"].includes(d)) return ya; await pasa("ready", "ready"); despues = async () => { await avisarCliente(numero, rubro === "auto" ? "cita_listo_auto" : "cita_listo"); }; return { ok: true }; }
       if (paso === "entregado") {
         if (d !== "ready") return ya;
         await c.query(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
         await ev(c, o.id, "done", "member", actorId, rubro === "auto" ? { es: "Entregó el carro", en: "Car handed back" } : { es: "Terminó la visita", en: "Visit finished" });
+        await planLiquidar(c, o.id, "member", actorId);
+        despues = async () => { await cobrarLiquidacion(o.id); };
         return { ok: true };
       }
       // No había nadie (Hogar): solo desde que empieza la franja; el depósito sigue la regla de cancelar tarde.
@@ -289,6 +298,8 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
       if (o.status !== "confirmed" || o.detail !== "ready") return ya;
       await c.query(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "done", "user", userId, o.det?.rubro === "auto" ? { es: "Recogió el carro", en: "Picked up the car" } : { es: "Revisó el trabajo: todo bien", en: "Checked the work: all good" });
+      await planLiquidar(c, o.id, "user", userId);
+      despues = async () => { await cobrarLiquidacion(o.id); };
       return { ok: true };
     }
     // Voy tarde: confirmada, hasta 2 h antes y hasta 15 min después de la hora.

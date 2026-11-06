@@ -1,4 +1,5 @@
 import "server-only";
+import { estadoEstimado, type EstadoEstimado } from "./estimados";
 import type { PoolClient } from "pg";
 import { db } from "./db";
 import { pasarela } from "./pagos/pasarela";
@@ -459,6 +460,8 @@ export type CitaVista = {
   ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean;
   // Auto y Hogar (4b–4c): el rubro, el paso en curso y el vehículo o la casa.
   rubro: "auto" | "hogar" | null; paso: string | null; veh: string | null; casa: string | null; w: string | null; win: number | null;
+  // 4d: el estimado, «algo más» y el dinero (lo calcula el servidor).
+  est: EstadoEstimado | null; garantia: string | null;
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -467,7 +470,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     con: string | null; silla: number | null; cfoto: string | null; det: Record<string, unknown>; mid: string | null; razon: string | null; mins: number; resena: boolean;
     alt: { ymd: string; m: number } | null; alt_hasta: string | null; chg: { ymd: string; m: number } | null; ymd: string; hm: string; hoy: string; dur: number; total: number; dep: number; nota: string | null;
     enviada: string; contestada: string | null; cxh: number; tol: number; brand: string | null; l4: string | null; pago: string | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
-    ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean; paso: string | null;
+    ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean; paso: string | null; oid: string; warr: { m: number | null; mi: number | null } | null;
   }>(
     `select o.number as numero, o.status, b.id as biz, b.name as nombre, b.address as direccion, b.phone as telefono, b.logo_url as foto, b.svc_model as model, b.subcategory_ids as subs,
             m.display_name as con, case when b.svc_model = 'chair' then m.chair_seat end as silla, m.photo_url as cfoto, o.details as det, o.member_id::text as mid, o.cancel_reason as razon,
@@ -483,7 +486,8 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
             coalesce(case when b.svc_model = 'chair' then m.chair_auto end, bp.auto_approve, false) as auto,
             coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, bp.response_min, 30) as resp, coalesce(bp.expires_h, 2) as exp, o.cancelled_by as cx, coalesce(bp.cancel_free_h, 2) as cxh, coalesce(bp.tolerance_min, 15) as tol,
             array(select x.url from media x where x.owner_kind = 'appointment' and x.owner_id = o.id::text and x.status = 'visible' order by x.sort) as fotos,
-            (select jsonb_build_object('n', h.number, 'st', h.status) from help_requests h where h.operation_id = o.id) as ayuda, coalesce(o.status_detail = 'noshow', false) as noshow, o.status_detail as paso
+            (select jsonb_build_object('n', h.number, 'st', h.status) from help_requests h where h.operation_id = o.id) as ayuda, coalesce(o.status_detail = 'noshow', false) as noshow, o.status_detail as paso, o.id::text as oid,
+            (select jsonb_build_object('m', t.warranty_months, 'mi', t.warranty_miles) from trade_settings t where t.business_id = o.business_id) as warr
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join business_members m on m.id = o.member_id
        left join booking_policies bp on bp.business_id = o.business_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
@@ -505,6 +509,8 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     ayuda: r.ayuda, noshow: r.noshow,
     rubro: (r.det as { rubro?: "auto" | "hogar" }).rubro ?? null, paso: r.paso, veh: (r.det as { veh?: { t: string } }).veh?.t ?? null, casa: (r.det as { casa?: { dir: string } }).casa?.dir ?? null,
     w: (r.det as { w?: string }).w ?? null, win: (r.det as { win?: number }).win ?? null,
+    est: (r.det as { rubro?: string }).rubro ? await estadoEstimado(db(), r.oid) : null,
+    garantia: r.warr?.m ? `${r.warr.m}|${r.warr.mi ?? 0}` : null,
   };
 }
 

@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import { citaAccion } from "./acciones";
 import type { CitaVista } from "@/lib/citas";
+import { EstimadoCliente, type PagoEst } from "./EstimadoCliente";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep",
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 
-export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: boolean; cambio?: boolean }) {
+export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: string; es: boolean; cambio?: boolean; pago?: PagoEst }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
@@ -70,6 +71,10 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
         `${auto ? E2(`Pasa por tu ${carro} a ${c.negocio.nombre}.`, `Pick up your ${carro} at ${c.negocio.nombre}.`) : E2("Si todo quedó bien, confírmalo.", "If everything is fine, confirm it.")}${c.total - c.dep > 0 ? E2(` Pagas ${dinero(c.total - c.dep)} ${auto ? "al recogerlo" : "al terminar"}${c.dep ? ` (el depósito de ${dinero(c.dep)} ya está pagado)` : ""}.`, ` You pay ${dinero(c.total - c.dep)} ${auto ? "at pickup" : "when done"}${c.dep ? ` (the ${dinero(c.dep)} deposit is already paid)` : ""}.`) : ""}`,
         auto ? E2("LISTO", "READY") : E2("TERMINADO", "DONE"), "bg-signal/20", "var(--tl-open-text)"],
     };
+    // 4d: el estimado (o el precio completo) espera tu OK; «algo más» paró el trabajo hasta que decidas.
+    R.est = ["dollar", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Revisa lo que encontraron", "Review what they found"), E2("Nada se hace ni se cobra sin tu OK. Aprueba solo lo que quieras.", "Nothing is done or charged without your OK. Approve only what you want."), auto ? E2("ESTIMADO LISTO · TU OK", "ESTIMATE READY · YOUR OK") : E2("PRECIO COMPLETO · TU OK", "FULL PRICE · YOUR OK"), "bg-pro/20", "var(--tl-pro-ink)"];
+    R.xtra = ["warning", "bg-pro/[.18]", "var(--tl-pro-ink)", auto ? E2("Encontraron algo más", "They found something else") : E2("Encontró algo más", "Found something else"), auto ? E2("Pararon hasta que decidas. Sin tu OK no se hace ni se cobra.", "They stopped until you decide. Without your OK it is not done or charged.") : E2("Paró hasta que decidas. Sin tu OK no se hace ni se cobra.", "Stopped until you decide. Without your OK it is not done or charged."), E2("ALGO MÁS · TU OK", "SOMETHING ELSE · YOUR OK"), "bg-pro/20", "var(--tl-pro-ink)"];
+    if (c.paso === "in" && c.est?.conEst) R.in = [R.in![0], R.in![1], R.in![2], R.in![3], auto ? E2("El estimado te llega aquí antes de tocar nada.", "The estimate arrives here before anything is touched.") : E2("El precio completo te llega aquí antes de empezar.", "The full price reaches you here before they start."), R.in![5], R.in![6], R.in![7]];
     if (R[c.paso]) H.ok = R[c.paso]!;
   }
   if (hogar && c.st === "done" && c.noshow) H.done = ["warning", "bg-danger/10", "var(--tl-danger)", E2("No había nadie", "Nobody home"), `${E2(`${c.negocio.nombre} llegó y no pudo entrar. `, `${c.negocio.nombre} arrived and could not get in. `)}${c.dep ? E2(`El depósito de ${dinero(c.dep)} se queda con el negocio.`, `The ${dinero(c.dep)} deposit stays with the business.`) : E2("No se cobró nada.", "Nothing was charged.")}`, E2("NO HABÍA NADIE", "NOBODY HOME"), "bg-danger/10", "var(--tl-danger)"];
@@ -83,15 +88,15 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
     ...(dead ? [] : [{ label: E2("Tu cita", "Your appointment"), time: `${diaS} ${horaL(c.m)}`.toUpperCase(), state: done ? "done" : ok ? "current" : "next" }, { label: `${E2("Calificas a ", "You rate ")}${who1}`, time: "", state: done ? "current" : "next" }])];
   // Auto y Hogar: el camino de la visita (diseño: en camino → en tu casa / en el taller → trabajando → listo).
   if (c.rubro && (ok || done) && !c.noshow) {
-    const ORD = hogar ? ["road", "in", "work", "ready"] : ["in", "work", "ready"], k = done ? ORD.length : c.paso ? ORD.indexOf(c.paso) : -1;
-    const LB: Record<string, string> = { road: E2("Va en camino", "On the way"), in: auto ? E2("En el taller", "At the shop") : E2("En tu casa", "At your home"), work: E2("Trabajando", "In progress"), ready: auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminado · revisa el trabajo", "Done · check the work") };
+    const ce = !!c.est?.conEst, ORD = [...(hogar ? ["road", "in"] : ["in"]), ...(ce ? ["est"] : []), "work", "ready"], k = done ? ORD.length : c.paso ? ORD.indexOf(c.paso === "xtra" ? "work" : c.paso) : -1;
+    const LB: Record<string, string> = { road: E2("Va en camino", "On the way"), in: auto ? E2("En el taller", "At the shop") : E2("En tu casa", "At your home"), est: auto ? E2("Estimado aprobado", "Estimate approved") : E2("Precio aprobado", "Price approved"), work: E2("Trabajando", "In progress"), ready: auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminado · revisa el trabajo", "Done · check the work") };
     steps.splice(2, steps.length - 2, ...ORD.map((p, j) => ({ label: LB[p]!, time: j === 0 && !c.paso && !done ? `${diaS} ${hogar ? win : horaL(c.m)}`.toUpperCase() : "", state: j < k ? "done" : j === k ? (done ? "done" : "current") : "next" })),
       { label: `${E2("Calificas a ", "You rate ")}${who1}`, time: "", state: done ? "current" : "next" });
   }
   const optL = c.opts.map((o) => nm(o.o)).join(" · "), addL = c.adds.map((a) => nm(a.name)).join(" · ");
   const paraL = c.para === "me" ? yo : `${c.nombre ?? E2("Otra persona", "Someone else")}${c.para === "kid" && c.edad ? ` · ${c.edad}${E2(" años", " yrs")}` : ""}`;
   const rows = [[E2("SERVICIO", "SERVICE"), `${nm(c.svc)}${optL ? ` · ${optL}` : ""}`], ...(addL ? [["EXTRAS", addL]] : []), [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`],
-    [E2("CON", "WITH"), withL], ...(c.veh ? [[E2("VEHÍCULO", "VEHICLE"), c.veh]] : []), [E2("DÓNDE", "WHERE"), c.casa ?? c.negocio.direccion ?? c.negocio.nombre], ...(c.rubro ? [] : [[E2("PARA", "FOR"), paraL]]), ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.total)]];
+    [E2("CON", "WITH"), withL], ...(c.veh ? [[E2("VEHÍCULO", "VEHICLE"), c.veh]] : []), [E2("DÓNDE", "WHERE"), c.casa ?? c.negocio.direccion ?? c.negocio.nombre], ...(c.rubro ? [] : [[E2("PARA", "FOR"), paraL]]), ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.est && (c.est.estimado || c.est.extras.length) ? c.est.dinero.final : c.total)]];
   const rest = c.total - c.dep, tarjeta = c.tarjeta ?? E2("tu tarjeta", "your card");
   const restW = silla && c.con ? E2(`en la silla de ${c.con.corto}`, `at ${c.con.corto}'s chair`) : E2("en el local", "at the shop");
   const plata: [string, string, string, string, string][] = [];
@@ -117,8 +122,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
   const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.negocio.direccion ?? c.negocio.nombre)}`, "_blank", "noopener");
   // Hogar: el profesional va a la casa; el cliente no se mueve (sin «Cómo llegar» ni «Voy tarde»).
   const enCurso = !!c.rubro && ok && !!c.paso;
-  const acts: [string, string, () => void][] = enCurso ? (c.paso === "ready" ? [["check", auto ? E2("Ya lo recogí", "I picked it up") : E2("Todo bien", "All good"), () => void hacer("recibi", auto ? E2("Listo: cita terminada", "Done: booking finished") : E2("Listo: visita terminada", "Done: visit finished"))],
-      ["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][] : [["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][])
+  const acts: [string, string, () => void][] = enCurso ? [["pin", E2("Cómo llegar", "Directions"), llegar]] as [string, string, () => void][]
     : ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
       ["clock", E2("Voy tarde", "Running late"), () => (lateOk ? setHoja("late") : aviso(c.late ? E2(`Ya avisaste: llegas ${c.late} min tarde`, `Already sent: ${c.late} min late`) : E2("Disponible 2 h antes de tu cita", "Available 2 h before your booking")))],
       ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
@@ -147,6 +151,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
           <p className="m-0 mt-[9px] text-pretty text-[13px] leading-[1.55] text-ink/[.62]">{line}</p>
           <div className={`mt-[13px] inline-flex items-center gap-2 rounded-[10px] px-3 py-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] ${pillBg}`} style={{ color: pillFg }}><span className="h-[7px] w-[7px] rounded-full" style={{ background: pillFg }} />{pill}</div>
         </div>
+        {c.est && (ok || done) && !c.noshow && <EstimadoCliente c={c} es={es} pago={pago} aviso={aviso} />}
         {ok && c.late && <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="clock" size={16} color="var(--tl-pro-ink)" /></span><span className="text-[12.5px] font-semibold leading-[1.5] text-pro-ink">{E2(`Le avisaste a ${who1} que llegas ${c.late} min tarde. Tolerancia: ${c.tol} min.`, `You told ${who1} you are ${c.late} min late. Grace period: ${c.tol} min.`)}</span></div>}
         {c.chg && (ok || pend) && <div className="flex items-start gap-2.5 rounded-2xl bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="calendar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-semibold leading-[1.5] text-ink/75">{E2(`Pediste cambiarla a ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. Esta hora sigue tuya hasta que ${who1} confirme la nueva.`, `You asked to move it to ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. This time stays yours until ${who1} confirms the new one.`)}</span></div>}
         {alt && c.alt && (
@@ -193,7 +198,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
             {c.fotos.length > 0 && <div className="flex gap-2 border-t border-ink/[.06] py-[11px]">{c.fotos.map((u) => <span key={u} className="h-14 w-14 rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
           </div>
         </div>
-        <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
+        {!(c.est && (c.est.estimado || c.est.extras.length) && (ok || done)) && <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
           <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("DINERO", "MONEY")}</div>
           {c.dep > 0 && !dead && <div className="mt-3 flex h-1.5 gap-[3px]"><span className="rounded-full bg-ink" style={{ flex: c.dep }} /><span className="rounded-full bg-ink/[.12]" style={{ flex: Math.max(rest, 1) }} /></div>}
           <div className="mt-3 flex flex-col gap-[11px]">
@@ -205,7 +210,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
               </div>
             ))}
           </div>
-        </div>
+        </div>}
         {actsV.length > 0 && <div className="grid grid-cols-2 gap-2">{actsV.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} onClick={on}>{l}</Button></div>)}</div>}
         <div className="flex gap-2">
           {c.negocio.telefono && <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button></div>}

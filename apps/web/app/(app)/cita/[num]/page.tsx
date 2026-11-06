@@ -5,6 +5,8 @@ import { idioma } from "@/lib/idioma";
 import { citaVista } from "@/lib/citas";
 import { vencerCitas } from "@/lib/citas-flujo";
 import { Estado } from "./Estado";
+import { pasarela } from "@/lib/pagos/pasarela";
+import { misTarjetas } from "@/lib/cobros";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Tu cita · To'Latino" };
@@ -16,5 +18,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (/^C-\d{1,10}$/.test(num)) await vencerCitas({ userId: u.id, numero: num });
   const c = await citaVista(u.id, num);
   if (!c) notFound();
-  return <Estado c={c} yo={[u.first_name, u.last_name].filter(Boolean).join(" ")} es={lang === "es"} cambio={sp.cambio === "1"} />;
+  // 4d: si el negocio cobra con tarjeta, el cliente elige con cuál se retiene lo que aprueba.
+  const modo = pasarela.modo();
+  const pago = c.est?.dinero.tarjeta && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  return <Estado c={c} yo={[u.first_name, u.last_name].filter(Boolean).join(" ")} es={lang === "es"} cambio={sp.cambio === "1"} pago={pago} />;
 }

@@ -32,7 +32,8 @@ const SIM_PM = /^pm_sim_(visa|mc|amex|disc)_(\d{4})(?:_[0-9a-f]{8})?$/;
 function simRechazo(l4: string) { return l4 === "0002" ? "card_declined" : l4 === "9995" ? "insufficient_funds" : l4 === "0069" ? "expired_card" : null; }
 const simId = (p: string) => `${p}_sim_${randomBytes(9).toString("hex")}`;
 
-type InRetener = { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> };
+// fuera: la persona no está en la app (renovar una retención de más de 7 días con su tarjeta guardada).
+type InRetener = { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string>; fuera?: boolean };
 /* La evidencia de una disputa con los nombres de campo de Stripe (la prueba de contrato los compara con el objeto disputa
    de la especificación: stripe-mock no valida los campos dentro de «evidence»). */
 export function evidenciaStripe(e: { texto: string; producto: string; cliente: string; fecha: string; envio?: string | null }) {
@@ -55,7 +56,7 @@ export const pasarela = {
     if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El pago con tarjeta no está disponible. Paga en el local.", en: "Card payment is not available. Pay at the store." } };
     try {
       const pi = await stripe<{ id: string; status: string; client_secret: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
-        amount: x.centavos, currency: "usd", capture_method: "manual", confirm: true, payment_method: x.pm, customer: x.cliente ?? undefined,
+        amount: x.centavos, currency: "usd", capture_method: "manual", confirm: true, payment_method: x.pm, customer: x.cliente ?? undefined, off_session: x.fuera ? true : undefined,
         // Tarjeta y billeteras, sin salir de la app. El dinero va al negocio (destino) y To'Latino cobra su comisión.
         automatic_payment_methods: { enabled: true, allow_redirects: "never" }, application_fee_amount: x.comision, transfer_data: { destination: x.destino }, metadata: x.meta, expand: ["payment_method"],
       }, { idem: `ret-${x.idem}` });

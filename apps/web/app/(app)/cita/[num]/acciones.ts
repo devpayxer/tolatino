@@ -1,6 +1,7 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { citaCliente, type QueCliente } from "@/lib/citas-flujo";
+import { decidirEstimado, decidirExtra } from "@/lib/estimados";
 
 /* El cliente sobre su cita (APP-NEG-CITA): cancelar, aceptar la otra hora o no, avisar que llega tarde. Solo quien la
    pidió; el servidor decide el depósito (devolver, liberar o se queda). */
@@ -13,4 +14,20 @@ export async function citaAccion(numero: string, que: QueCliente, extra?: number
   if (!QUE.has(que)) return { ok: false, msg: { es: "Esa acción no existe.", en: "That action does not exist." } };
   const r = await citaCliente(u.id, String(numero ?? ""), que, Number(extra));
   return r.ok ? { ok: true } : { ok: false, msg: r.msg };
+}
+
+/* Estimado línea por línea (4d): aprueba las líneas que quiere (se retiene solo eso) y responde «algo más». */
+export async function estimadoDecidir(numero: string, ids: string[], pm: string | null): Promise<{ ok: true } | { ok: false; msg: Bi; tarjeta?: boolean }> {
+  if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
+  const u = await yo();
+  if (!u) return { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
+  const r = await decidirEstimado(u.id, String(numero ?? ""), ids, typeof pm === "string" ? pm : null);
+  return r.ok ? { ok: true } : r;
+}
+export async function extraDecidir(numero: string, si: boolean, pm: string | null): Promise<{ ok: true } | { ok: false; msg: Bi; tarjeta?: boolean }> {
+  if (!(await mismoOrigen())) return { ok: false, msg: { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." } };
+  const u = await yo();
+  if (!u) return { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
+  const r = await decidirExtra(u.id, String(numero ?? ""), si === true, typeof pm === "string" ? pm : null);
+  return r.ok ? { ok: true } : r;
 }

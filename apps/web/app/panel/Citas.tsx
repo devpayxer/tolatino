@@ -7,6 +7,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CitaPanel, FilaCita, FiltroCita, citasLista } from "@/lib/citas-panel";
 import { citaAyudaResponder, citaCambioResponder, citaResponder } from "./acciones-citas";
 import type { Ctx, Editor } from "./Panel";
+import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
 
 export type CitasData = { vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -22,6 +23,7 @@ const diaL = (c: Ctx, ymd: string, n: number) => {
 const dias = (ymd: string, hoy: string) => Math.round((Date.parse(ymd) - Date.parse(hoy)) / 864e5);
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
   ok: [E2("CONFIRMADA", "CONFIRMED"), "signal"], alt: [E2("OTRA HORA", "NEW TIME"), "action"], in: [E2("EN ATENCIÓN", "IN PROGRESS"), "action"], done: [E2("TERMINADA", "DONE"), "neutral"],
+  est: [E2("ESPERA SU OK", "AWAITING OK"), "action"], xtra: [E2("ESPERA SU OK", "AWAITING OK"), "action"],
   road: [E2("EN CAMINO", "ON THE WAY"), "action"], work: [E2("TRABAJANDO", "IN PROGRESS"), "action"], ready: [E2("LISTO", "READY"), "signal"],
   nos: [E2("NO LLEGÓ", "NO-SHOW"), "danger"], no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADA", "CANCELLED"), "neutral"],
 });
@@ -58,7 +60,7 @@ export function citaRow(c: Ctx, x: FilaCita, conActs = true): Fila {
 /* Para Hoy: las que esperan respuesta (o piden cambio) y las de hoy. */
 export function hoyCitas(c: Ctx): { pend: Fila[]; agenda: Fila[] } {
   const V = c.citas?.vivas ?? [];
-  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt", "road", "work", "ready"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
+  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => citaRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt", "road", "work", "ready", "est", "xtra"].includes(x.st) && !x.chg).map((x) => citaRow(c, x, false)) };
 }
 
 /* Detalle de una cita (detBlocks k='cita'). */
@@ -119,10 +121,20 @@ export function citaDetalle(c: Ctx): Sec {
     const auto = x.rubro === "auto", A = (L: ReturnType<typeof b>[]) => out.push({ type: "acts", items: L });
     if (x.st === "ok" && x.dia <= 0) A(auto ? [b(E2("Recibí el carro", "Car received"), "recibido")] : [b(E2("Voy en camino", "On my way"), "camino", "primary", "truck"), b(E2("Llegué", "I arrived"), "llegue", "secondary", null), b(E2("No había nadie", "Nobody home"), "nadie", "secondary", null)]);
     if (x.st === "road") A([b(E2("Llegué", "I arrived"), "llegue"), b(E2("No había nadie", "Nobody home"), "nadie", "secondary", null)]);
-    if (x.st === "in") A([b(E2("Empezar", "Start"), "empezar", "primary", "wrench"), b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo", "secondary", null)]);
-    if (x.st === "work") A([b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo")]);
-    if (x.st === "ready") A([b(auto ? E2("Lo entregué", "Handed back") : E2("Cerrar la visita", "Close the visit"), "entregado")]);
-    if (["ok", "road", "in", "work", "ready"].includes(x.st)) out.push({ type: "note", tone: "info", t: auto
+    // 4d: el estimado (o el precio completo) y «algo más».
+    const conEst = !!x.est?.conEst, armando = !!c.ui.estOpen && ["in", "est"].includes(x.st), xt = !!c.ui.xtOpen && x.st === "work";
+    const estB = { l: x.st === "est" ? E2("Mandar una versión nueva", "Send a new version") : auto ? E2("Armar el estimado", "Build the estimate") : E2("Armar el precio completo", "Build the full price"), v: x.st === "est" ? "secondary" : "primary", icon: "edit", off: c.pending, onClick: () => abrirEstimado(c, x) };
+    out.push(...estimadoVista(c, x));
+    if (armando) out.push(...estimadoArmar(c, x));
+    else if (xt) out.push(...estimadoArmar(c, x, true));
+    else {
+      if (x.st === "in") A(conEst ? [estB, b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo", "secondary", null)] : [b(E2("Empezar", "Start"), "empezar", "primary", "wrench"), b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo", "secondary", null)]);
+      if (x.st === "est") { out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`${n} está revisando ${auto ? "el estimado" : "el precio completo"}. Nada se hace hasta que apruebe.`, `${n} is reviewing the ${auto ? "estimate" : "full price"}. Nothing is done until they approve.`) }); A([estB]); }
+      if (x.st === "work") { A([b(auto ? E2("Listo para recoger", "Ready for pickup") : E2("Terminé", "Done"), "listo"), { l: E2("Encontré algo más", "Found something else"), v: "secondary", icon: "warning", off: c.pending, onClick: () => abrirEstimado(c, x, true) }]); out.push(...loFinal(c, x)); }
+      if (x.st === "xtra") out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Paraste hasta que ${n} decida lo que encontraste. Si dice que no, no se hace ni se cobra.`, `You stopped until ${n} decides. If they say no, it is not done or charged.`) });
+      if (x.st === "ready") { A([b(auto ? E2("Lo entregué", "Handed back") : E2("Cerrar la visita", "Close the visit"), "entregado")]); out.push(...loFinal(c, x)); }
+    }
+    if (!x.est?.estimado && !x.est?.extras.length && ["ok", "road", "in", "work", "ready"].includes(x.st)) out.push({ type: "note", tone: "info", t: auto
       ? E2(`Nada se hace ni se cobra sin su OK. Cobras el resto en el taller${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Nothing is done or charged without their OK. Collect the rest at the shop${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`)
       : E2(`Precio completo antes de empezar; si algo cambia, le preguntas primero. Cobras el resto al terminar${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Full price before starting; if something changes, ask first. Collect the rest when done${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`) });
     out.push({ type: "acts", items: [{ l: E2("Escribirle", "Message"), icon: "chat", v: "secondary", onClick: () => c.nav(`/panel/${c.d.id}/mensajes`) }] });
