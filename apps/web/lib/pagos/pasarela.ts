@@ -122,12 +122,13 @@ export const pasarela = {
   },
 
   /* ── Cuentas de cobro (Connect Express) ── */
-  async cuentaCrear(negocio: string, nombre: string): Promise<string> {
-    if (modoPago() === "simulador") return `acct_sim_${negocio}`;
+  /* `clave` = el negocio (su cuenta) o «m-<miembro>» (la cuenta propia de una silla rentada, 3d). */
+  async cuentaCrear(clave: string, nombre: string, o: { mcc?: string; meta?: Record<string, string> } = {}): Promise<string> {
+    if (modoPago() === "simulador") return `acct_sim_${clave}`;
     const a = await stripe<{ id: string }>("POST", "/v1/accounts", {
       type: "express", country: "US", capabilities: { card_payments: { requested: true }, transfers: { requested: true } },
-      business_type: "individual", business_profile: { name: nombre, mcc: "5812" }, metadata: { business_id: negocio },
-    }, { idem: `acct-${negocio}` });
+      business_type: "individual", business_profile: { name: nombre, mcc: o.mcc ?? "5812" }, metadata: o.meta ?? { business_id: clave },
+    }, { idem: `acct-${clave}` });
     return a.id;
   },
   async cuentaEnlace(cuenta: string, volver: string, otraVez: string): Promise<string> {

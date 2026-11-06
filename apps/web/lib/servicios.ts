@@ -12,7 +12,8 @@ export type Servicio = {
   id: string; sec: string | null; name: Bi; desc: Bi; cents: number; dur: number; buf: number; desde: boolean; opts: OpcionSvc[];
   extra: boolean; foto: string | null; oculto: boolean; adm: string | null; sort: number; hacen: { id: string; cents: number | null }[];
 };
-export type Persona = { id: string; nombre: string; kind: "owner" | "staff" | "renter"; silla: number | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mostrar: boolean; foto: string | null };
+export type Persona = { id: string; nombre: string; kind: "owner" | "staff" | "renter"; silla: number | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mostrar: boolean; foto: string | null;
+  cobro: "none" | "pending" | "restricted" | "enabled"; banco: string | null; invitado: boolean; usuario: boolean }; // cuenta de cobro propia (sillas rentadas, 3d)
 export type Politica = { auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number };
 export type SvcPanel = {
   model: "emp" | "comm" | "chair"; rent: number | null; comm: number | null;
@@ -34,8 +35,9 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
       `select s.item_id::text as item, s.member_id::text as member, s.price_cents as cents from staff_services s join items i on i.id = s.item_id where i.business_id = $1`, [negocio]),
     db().query<Persona>(
       `select m.id::text, m.display_name as nombre, m.kind, m.chair_seat as silla, m.chair_auto as auto, m.chair_response_min as resp, m.chair_deposit_cents as dep,
-              m.takes_bookings as recibe, m.show_on_page and m.hidden_by_admin is null as mostrar, m.photo_url as foto
-         from business_members m where m.business_id = $1 and m.status = 'active' order by (m.kind = 'owner') desc, m.chair_seat nulls last, m.sort, m.id`, [negocio]),
+              m.takes_bookings as recibe, m.show_on_page and m.hidden_by_admin is null as mostrar, m.photo_url as foto,
+              coalesce(mp.status, 'none') as cobro, mp.bank_last4 as banco, m.payout_invited_at is not null as invitado, m.user_id is not null as usuario
+         from business_members m left join member_payout_accounts mp on mp.member_id = m.id where m.business_id = $1 and m.status = 'active' order by (m.kind = 'owner') desc, m.chair_seat nulls last, m.sort, m.id`, [negocio]),
     db().query<{ auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number }>(
       `select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, tolerance_min as tol, staff_pick as pick, expires_h as exp from booking_policies where business_id = $1`, [negocio]),
   ]);

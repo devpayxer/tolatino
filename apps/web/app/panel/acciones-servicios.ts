@@ -1,4 +1,5 @@
 "use server";
+import { invitarCobro } from "@/lib/sillas";
 /* Servicios y reglas de citas desde el panel (Lo que vendes › Servicios, Citas y Sillas y agenda). Cada acción: mismo
    sitio, miembro activo con acceso a «Lo que vendes» (parte cat), datos revisados en el servidor y una línea en la
    auditoría. Nada se borra (removed_at). Las citas ya pedidas guardan su copia del servicio: cambiar aquí no las toca. */
@@ -149,6 +150,16 @@ export async function sillaGuardar(negocio: string, miembro: string, p: { auto: 
                                            where id = $2 and business_id = $1 and status = 'active' returning display_name as n`, [a.negocio.id, miembro, !!p?.auto, resp, dep, p?.recibe !== false]);
     if (!r.rowCount) return no("Esa silla ya no está.", "That chair is gone.");
     await auditar(c, a, "citas.silla", null, { silla: r.rows[0]!.n, al_instante: p?.auto ? "sí" : "no", deposito: `$${dep / 100}` });
+    return null;
+  });
+}
+
+/* Pedirle a una silla rentada que conecte su cuenta de cobro (3d): le llega el aviso con el enlace. */
+export async function sillaInvitarCobro(negocio: string, miembro: string): Promise<Res> {
+  return hacer(negocio, async (c, a) => {
+    const r = await invitarCobro(a.negocio.id, String(miembro ?? ""));
+    if (!r.ok) return no(r.msg.es, r.msg.en);
+    await auditar(c, a, "citas.silla.cobro", null, { silla: r.nombre ?? "", pedido: "Conectar su cuenta de cobro" });
     return null;
   });
 }

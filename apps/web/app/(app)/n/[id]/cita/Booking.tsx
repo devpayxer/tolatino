@@ -139,7 +139,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
 
   // ── Revisa y envía ──
   const paraL = para === "me" ? (yo?.nombre ?? E2("Tú", "You")) : para === "kid" ? `${nombre || E2("Tu hijo o hija", "Your child")}${edad ? ` · ${edad}${E2(" años", " yrs")}` : ""}` : nombre || E2("Otra persona", "Someone else");
-  const conL = silla && quien ? `${quien.nombre} · ${w.silla.toLowerCase()} ${quien.silla ?? ""}` : stfN ? cp.gente.find((p) => p.id === con)!.nombre : people.length ? `${E2("Cualquiera", "Anyone")}${asigN ? ` · ${asigN}` : ""}` : cp.negocio.nombre;
+  const conL = silla && quien ? `${quien.nombre} · ${w.silla.toLowerCase()} ${quien.silla ?? ""}` : stfN ? (cp.gente.find((p) => p.id === con)?.nombre ?? stfN) : people.length ? `${E2("Cualquiera", "Anyone")}${asigN ? ` · ${asigN}` : ""}` : cp.negocio.nombre;
   const restW = silla && quien ? E2(`en la silla de ${quien.corto}`, `at ${quien.corto}'s chair`) : E2("en el local", "at the shop");
   const filas = [[E2("SERVICIO", "SERVICE"), `${nm(s.name)}${optL ? ` · ${optL}` : ""}`], ...(addL ? [[E2("EXTRAS", "EXTRAS"), addL]] : []),
     [E2("CUÁNDO", "WHEN"), hSel != null ? `${cap(diaLargo(cp.hoy, i, es))} · ${horaL(hSel)} – ${horaL(end!)}` : E2("Elige día y hora", "Choose day and time")],

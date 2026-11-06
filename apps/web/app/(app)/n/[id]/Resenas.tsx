@@ -52,7 +52,9 @@ function hechos(c: Tarjeta, es: boolean) {
 export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summary?: boolean; preview?: boolean; helpOn?: boolean; help?: number; reported?: boolean;
   onHelp?: () => void; onRep?: () => void; onEdit?: () => void; onPhoto?: (i: number) => void; padding?: number; bodySize?: number }) {
   const E2 = (a: string, b: string) => (o.es ? a : b), S = !!o.summary, foot = !o.preview && !S;
-  const hOn = o.helpOn ?? c.helpOn, hN = o.help ?? c.help, rep = o.reported ?? c.reported, src = SRC[c.src];
+  const hOn = o.helpOn ?? c.helpOn, hN = o.help ?? c.help, rep = o.reported ?? c.reported;
+  // Cita con una persona (3d): «VERIFICADA · CON KELVIN».
+  const src: [string, string, string] = c.src === "cita" && c.pro ? [`VERIFICADA · CON ${c.pro.toUpperCase()}`, `VERIFIED · WITH ${c.pro.toUpperCase()}`, "signal"] : SRC[c.src];
   return {
     summary: S, padding: o.padding, bodySize: o.bodySize,
     border: c.mine ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", initials: c.ini, name: c.name, mine: c.mine ? E2("TU RESEÑA", "YOUR REVIEW") : undefined,
@@ -246,7 +248,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
   const [cargando, setCargando] = useState(false);
   const pedir = async (nq: typeof q, cursor: string | null) => {
     setCargando(true);
-    const x = await masResenas(v.negocioId, { ...nq, cursor }).catch(() => null);
+    const x = await masResenas(v.negocioId, { ...nq, cursor, miembro: v.r.miembro }).catch(() => null);
     setCargando(false);
     if (!x) return;
     setLista((l) => (cursor && l ? { cards: [...l.cards, ...x.cards], n: x.n, cursor: x.cursor } : x));

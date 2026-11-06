@@ -390,6 +390,4 @@ en el momento. Se marca solo cuando está hecho de verdad.
       rol ni teclado en `packages/ui/src/ds` (AdminBar 23, Thread 18, SiteHeader 17, Patio 11, DeliveryPrefs 10, OnbTopBar 10,
       CompaFrame 10, MenuItemRow 9…). Se corrigen con nombre y estado en `scripts/portar-sistema.mjs` (como Button, IconButton,
       PostCard, Chip y el Booking); el guardián `sistemaClicMudo` no deja que suban y pide bajar el tope.
-- [ ] **Citas — depósito de las sillas rentadas:** hoy una silla rentada no pide depósito en línea; con el bloque 3d cada
-      silla cobra con su propia cuenta de Stripe Connect.
 

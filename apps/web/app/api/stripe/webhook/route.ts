@@ -38,6 +38,10 @@ async function aplicar(ev: Ev) {
       await db().query(`update stripe_accounts set charges_enabled = $2, payouts_enabled = $3, requirements = $4::jsonb, bank_last4 = coalesce($5, bank_last4),
                                status = case when $2 and $3 and jsonb_array_length($4::jsonb) = 0 then 'enabled' when $2 or jsonb_array_length($4::jsonb) > 0 then 'restricted' else 'pending' end, updated_at = now()
                          where stripe_account_id = $1`, [String(o.id), cargos, pagos, JSON.stringify(req.slice(0, 20)), ext]);
+      // La cuenta propia de una silla rentada (3d).
+      await db().query(`update member_payout_accounts set charges_enabled = $2, payouts_enabled = $3, requirements = $4::jsonb, bank_last4 = coalesce($5, bank_last4),
+                               status = case when $2 and $3 and jsonb_array_length($4::jsonb) = 0 then 'enabled' when $2 or jsonb_array_length($4::jsonb) > 0 then 'restricted' else 'pending' end, updated_at = now()
+                         where stripe_account_id = $1`, [String(o.id), cargos, pagos, JSON.stringify(req.slice(0, 20)), ext]);
       return;
     }
     case "payment_intent.canceled":

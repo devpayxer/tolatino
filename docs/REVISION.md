@@ -403,3 +403,10 @@ _Accesibilidad: día, hora, persona, opciones, extras y los Chip del sistema aho
 _Decidido por mí (reversible): las solicitudes vencen a las 2 h o al llegar la hora (lo que pase antes); «otra hora» da 2 h al cliente; un cambio pedido por el cliente vence si el negocio no contesta en 2 h y la cita sigue igual; el teléfono del cliente se ve en el panel solo con la cita confirmada; «No llegó» solo después de la hora de la cita; el recordatorio sale 24 h y 2 h antes por Avisos. Las reseñas de una cita salen «VERIFICADA · CON CITA»._
 _Arreglado de paso: la etiqueta del sistema con un tono desconocido rompía la pantalla; ahora usa el neutro (parche en portar-sistema)._
 
+## Fase 3 · 3d Staff con silla propia
+1. Abre **Barbería El Primo › Servicios › Por barbero › Ver su página** (Kelvin): «Barbero · Silla 2 en Barbería El Primo», la tarjeta del local, sus precios y «confirma al instante».
+2. Entra como **Luis** › Lo que vendes › **Sillas**: «Pedirle a Kelvin que la conecte». Luego entra como **Kelvin** (570-555-0177): en Avisos toca «Conecta tu cuenta de cobro» › **Conectar mi cuenta** (en el sandbox se completa sola).
+3. Pide una cita con Kelvin: ahora pide $5 de depósito y va a la cuenta de Kelvin, no a la del local.
+_Decidido por mí (reversible): cada silla rentada tiene su propia cuenta de Stripe Connect (MCC 7230 barberías/salones) y la conecta el barbero, porque Stripe exige que el alta la haga el titular; hasta conectarla su silla no pide depósito. La página «Tu cuenta de cobro» del barbero no estaba en el diseño (la decisión era «sin panel aparte del rentero»): es la única pantalla suya y está hecha con el marco de Mi cuenta._
+_Arreglado de paso: la página de una silla se caía si había servicios que esa persona no hace; nuevo guardián `findSeguro` («.find(...)!.»)._
+

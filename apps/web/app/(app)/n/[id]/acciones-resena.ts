@@ -11,7 +11,7 @@ const ENTRA: Bi = { es: "Entra para seguir.", en: "Sign in to continue." };
 const CALLADO: Bi = { es: "Tu cuenta no puede publicar por ahora.", en: "Your account cannot post right now." };
 
 // solo lectura
-export async function masResenas(negocio: string, q: { f?: string; star?: number; sort?: string; cursor?: string | null }) {
+export async function masResenas(negocio: string, q: { f?: string; star?: number; sort?: string; cursor?: string | null; miembro?: string | null }) {
   if (typeof negocio !== "string" || !ID.test(negocio)) return { cards: [], n: 0, cursor: null };
   const u = await yo();
   return listaResenas(negocio, u?.id ?? null, q && typeof q === "object" ? q : {});

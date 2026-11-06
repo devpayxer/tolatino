@@ -28,7 +28,8 @@ type Textos = Record<string, string>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
-export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
+export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
   const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && svc && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
@@ -39,7 +40,7 @@ export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, 
   // Reseñas: en el Resumen siempre; en Pro, además su pestaña (siempre visible, como el Resumen).
   const rs = useResenas(resenas, f.id, sesion, es);
   // Servicios y citas (Belleza): pestaña en Pro, lista en el Resumen, columna en escritorio, la hoja y la barra.
-  const sv = useSvc(svc, es);
+  const sv = useSvc(svc, es, silla?.miembro ?? null);
   // Free con pedidos este mes: se pide desde el Resumen; Free sin pedidos: la lista de platos y Llamar.
   const freeOn = !!mn && !f.pro && (mn.est.freeLeft ?? 0) > 0;
   const setTab = (id: string) => { setTabS(id); window.scrollTo({ top: 0 }); };
@@ -56,6 +57,14 @@ export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, 
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
+  // La página de una silla rentada (3d, prototipo «Ficha · renta su silla en»): el local donde renta, con «Ver el local».
+  const sillaCard = silla ? (
+    <button type="button" data-screen-label="Ficha · renta su silla en" onClick={() => router.push(silla.href)} className="mt-3.5 flex w-full items-center gap-3 rounded-[17px] border border-ink/[.07] bg-paper px-3.5 py-[13px] text-left">
+      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] bg-photo-bg font-display text-[14px] font-extrabold text-ink/40" style={fondo(silla.logo)}>{silla.logo ? null : silla.name.charAt(0)}</span>
+      <div className="min-w-0 flex-1"><div className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{silla.k}</div><div className="mt-[5px] text-[13.5px] font-bold">{silla.name}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{silla.meta}</div></div>
+      <Icon name="chevronRight" size={16} color="rgba(11,14,18,.35)" />
+    </button>
+  ) : null;
   const escribir = () => { void registrarToque(f.id, "message", "ficha"); router.push(`/cuenta/mensajes/${f.id}`); };
   const llamar = () => { if (!f.telefono) return; void registrarToque(f.id, "call", "ficha"); location.href = `tel:${f.telefono}`; };
   const llegar = () => {
@@ -290,6 +299,7 @@ export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, 
               </div>
             </div>
           </div>
+          {sillaCard && <div className="w-[360px] flex-none self-end">{sillaCard}</div>}
           <div className="flex flex-none gap-2">
             <Button variant={guardado ? "soft" : "secondary"} size="md" icon="heart" onClick={guardar}>{guardado ? t.saved : t.save}</Button>
             <Button variant="secondary" size="md" icon="share" onClick={compartir}>{copiado ? t.copied : t.share}</Button>
@@ -351,6 +361,7 @@ export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, 
             <IconButton icon="share" label={t.share} onClick={compartir} />
           </div>
           {copiado && <div className="mt-2 text-center text-[12px] font-semibold text-open-text">{t.copied}</div>}
+          {sillaCard}
         </div>
         {conTabs ? (
           <div className="mt-[18px] bg-white"><Tabs items={tabs} active={tab} onChange={setTab} /></div>

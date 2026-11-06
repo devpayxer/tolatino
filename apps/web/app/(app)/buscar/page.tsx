@@ -104,7 +104,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const rapidos = ["open", "near", "ver", ...(dom ? RAPIDOS[dom] ?? [] : [])].map((k) => {
     const it = DATOS.intenciones.find((i) => i.key === k)!;
     const on = E.intenciones.some((i) => i.k === k);
-    return { k, l: es ? it.label.es : it.label.en, on, href: on ? intenciones.find((i) => i.k === k)!.quitar : (() => { const qs = new URLSearchParams(); if (q) qs.set("q", q); if (catSel) qs.set("cat", catSel.slug); qs.set("f", [...extra, k].join(",")); return `/buscar?${qs}`; })() };
+    return { k, l: es ? it.label.es : it.label.en, on, href: on ? intenciones.find((i) => i.k === k)?.quitar ?? "/buscar" : (() => { const qs = new URLSearchParams(); if (q) qs.set("q", q); if (catSel) qs.set("cat", catSel.slug); qs.set("f", [...extra, k].join(",")); return `/buscar?${qs}`; })() };
   });
   const filas = r.items.slice(0, 5).map((b) => ({
     id: b.id, pro: b.pro, parts: resaltar(b.name, E.grupos), image: b.photo,

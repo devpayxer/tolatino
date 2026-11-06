@@ -46,11 +46,11 @@ export function citaUrl(negocio: string, h: Hoja) {
   return `/n/${negocio}/cita?${q.toString()}`;
 }
 
-export function useSvc(cp: CitasPublica | null, es: boolean) {
+export function useSvc(cp: CitasPublica | null, es: boolean, sillaFija: string | null = null) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [modo, setModo] = useState<"svc" | "pro">("svc");
-  const [fijo, setFijo] = useState<string | null>(null); // «Por barbero › Booking»: los servicios de esa persona, con sus precios
+  const [fijo, setFijo] = useState<string | null>(sillaFija); // en la página de una silla, siempre esa persona // «Por barbero › Booking»: los servicios de esa persona, con sus precios
   const [hoja, setHoja] = useState<Hoja | null>(null);
   const [prox, setProx] = useState<Record<string, { i: number; m: number } | null>>({});
   useEffect(() => { if (!cp) return; let vivo = true; void proximasHoras(cp.negocio.id, 40).then((x) => { if (vivo) setProx(x); }); return () => { vivo = false; }; }, [cp]);
@@ -69,7 +69,7 @@ export function useSvc(cp: CitasPublica | null, es: boolean) {
   const item = (s: ServicioPub) => {
     const meta = [durL(s.dur).toUpperCase()];
     let p: string;
-    if (persona) p = dinero(s.hacen.find((h) => h.id === persona.id)!.cents);
+    if (persona) p = dinero(s.hacen.find((h) => h.id === persona.id)?.cents ?? s.cents);
     else if (silla) {
       const ps = s.hacen.map((h) => h.cents), lo = Math.min(...ps), hi = Math.max(...ps);
       p = lo === hi ? dinero(lo) : `${dinero(lo)}–${dinero(hi)}`;
@@ -85,7 +85,12 @@ export function useSvc(cp: CitasPublica | null, es: boolean) {
 
   // ── Notas ──
   const notes: [string, string][] = [];
-  if (persona) notes.push(["users", E2(`Servicios de ${persona.corto}, con sus precios. Tocas uno para ver su agenda.`, `${persona.corto}'s services, with their prices. Tap one to see their schedule.`)]);
+  if (persona && sillaFija) {
+    // La página de la silla (prototipo listingAdd, kind 'silla'): quién pone los precios y cobra, y cómo confirma.
+    notes.push(["dollar", E2(`${persona.corto} pone estos precios y ${persona.corto} cobra. El local solo le renta la ${w.silla.toLowerCase()}.`, `${persona.corto} sets these prices and gets paid. The shop only rents the ${w.silla.toLowerCase()}.`)]);
+    notes.push(persona.auto ? ["check", E2(`${persona.corto} activó la confirmación automática: si ves la hora libre, es tuya.`, `${persona.corto} turned on instant confirmation: if the time is open, it is yours.`)]
+      : ["clock", E2(`${persona.corto} responde en unos ${persona.resp} min. Tu solicitud se guarda ${cp.pol.exp} horas.`, `${persona.corto} replies in about ${persona.resp} min. Your request holds for ${cp.pol.exp} hours.`)]);
+  } else if (persona) notes.push(["users", E2(`Servicios de ${persona.corto}, con sus precios. Tocas uno para ver su agenda.`, `${persona.corto}'s services, with their prices. Tap one to see their schedule.`)]);
   else if (silla) notes.push(["users", E2(`Cada ${w.uno} renta su ${w.silla.toLowerCase()} y pone su precio. Aquí ves el rango; el precio exacto, al elegir con quién.`, `Each ${w.uno} rents their ${w.silla.toLowerCase()} and sets their price. Here you see the range; the exact price when you choose who.`)]);
   if (!cp.can) notes.push(["clock", cp.off === "apagado" ? E2("Sin cita: llegas y esperas turno.", "Walk-in only: come in and wait your turn.") : cp.off === "tope" ? E2("Llama para pedir tu hora o pasa por el local.", "Call for a time or stop by.") : E2("Por ahora no toma citas en línea: llama o pasa por el local.", "Not taking online bookings right now: call or stop by.")]);
   else if (!silla && depNeg) notes.push(["lock", E2(`Depósito de ${dinero(depNeg)}: se cobra al enviar y se descuenta del total. Si no se confirma, te lo devolvemos.`, `${dinero(depNeg)} deposit: charged when you send, taken off the total. Refunded if not confirmed.`)]);
@@ -93,7 +98,7 @@ export function useSvc(cp: CitasPublica | null, es: boolean) {
 
   // ── Por barbero ──
   const pros = cp.gente.map((p) => {
-    const mios = cp.servicios.filter((s) => s.hacen.some((h) => h.id === p.id)), mn = Math.min(...mios.map((s) => s.hacen.find((h) => h.id === p.id)!.cents)), nx = prx(p.id);
+    const mios = cp.servicios.filter((s) => s.hacen.some((h) => h.id === p.id)), mn = Math.min(...mios.map((s) => s.hacen.find((h) => h.id === p.id)?.cents ?? s.cents)), nx = prx(p.id);
     return { p, seat: p.silla ? `${w.silla} ${p.silla}`.toUpperCase() : "", meta: mios.length ? `${E2("DESDE ", "FROM ")}${dinero(mn)}` : "", next: nx ? `${E2("Próxima hora: ", "Next opening: ")}${nxL(nx).toLowerCase()}` : prox[p.id] === null ? E2("Sin horas en 14 días", "No openings in 14 days") : "", hoy: nx?.i === 0 };
   });
 
@@ -107,26 +112,29 @@ export function useSvc(cp: CitasPublica | null, es: boolean) {
   } : null;
 
   // ── Resumen, columna y barra ──
-  const todos = cp.servicios.flatMap((s) => s.hacen.map((h) => h.cents));
+  const todos = persona ? lista.map((s) => s.hacen.find((h) => h.id === persona.id)?.cents ?? s.cents) : cp.servicios.flatMap((s) => s.hacen.map((h) => h.cents));
   const desde = todos.length ? Math.min(...todos) : 0;
-  const prxs = cp.gente.map((p) => prx(p.id)).filter(Boolean) as { i: number; m: number }[];
+  // En la página de una silla, todo de esa persona (su próxima hora, cómo confirma y su depósito).
+  const deQuien = sillaFija && persona ? [persona] : cp.gente;
+  const prxs = deQuien.map((p) => prx(p.id)).filter(Boolean) as { i: number; m: number }[];
   const primera = prxs.sort((a, b) => a.i - b.i || a.m - b.m)[0] ?? null;
-  const algunoAuto = cp.gente.some((p) => p.auto), todosAuto = cp.gente.length > 0 && cp.gente.every((p) => p.auto);
-  const deps = [...new Set(cp.gente.map((p) => p.dep))];
+  const algunoAuto = deQuien.some((p) => p.auto), todosAuto = deQuien.length > 0 && deQuien.every((p) => p.auto);
+  const deps = [...new Set(deQuien.map((p) => p.dep))];
   const riel = [
     { k: E2("PRÓXIMA HORA", "NEXT OPENING"), v: primera ? nxL(primera) : "—" },
-    { k: E2("RESPONDE", "REPLIES"), v: todosAuto ? E2("Al instante", "Instantly") : algunoAuto && silla ? E2("Según la silla", "Per chair") : `~${Math.min(...cp.gente.map((p) => p.resp)) >= 60 ? `${Math.round(Math.min(...cp.gente.map((p) => p.resp)) / 60)} h` : `${Math.min(...cp.gente.map((p) => p.resp))} min`}` },
+    { k: E2("RESPONDE", "REPLIES"), v: todosAuto ? E2("Al instante", "Instantly") : algunoAuto && silla ? E2("Según la silla", "Per chair") : `~${Math.min(...deQuien.map((p) => p.resp)) >= 60 ? `${Math.round(Math.min(...deQuien.map((p) => p.resp)) / 60)} h` : `${Math.min(...deQuien.map((p) => p.resp))} min`}` },
     { k: E2("DEPÓSITO", "DEPOSIT"), v: deps.length === 1 ? (deps[0] ? dinero(deps[0]) : E2("No pide", "None")) : `${E2("Hasta ", "Up to ")}${dinero(Math.max(...deps))}` },
   ];
-  const nota = !cp.can ? notes.find((n) => n[0] === "clock")?.[1] ?? "" : todosAuto ? E2("Confirman al instante: si ves la hora libre, es tuya. Si pide depósito, se cobra al confirmar.", "Confirmed instantly: if the time is open, it is yours. Deposits are charged on confirmation.")
+  const nota = !cp.can ? notes.find((n) => n[0] === "clock")?.[1] ?? "" : sillaFija && persona ? (persona.auto ? E2(`${persona.corto} confirma al instante: si ves la hora libre, es tuya. Si pide depósito, se cobra al confirmar.`, `${persona.corto} confirms instantly: if the time is open, it is yours. Deposits are charged on confirmation.`) : E2(`Booking es una solicitud: ${persona.corto} confirma. Si pide depósito, se cobra al enviar y se devuelve si no confirma.`, `Booking is a request: ${persona.corto} confirms. Deposits are charged when you send and refunded if not confirmed.`)) : todosAuto ? E2("Confirman al instante: si ves la hora libre, es tuya. Si pide depósito, se cobra al confirmar.", "Confirmed instantly: if the time is open, it is yours. Deposits are charged on confirmation.")
     : silla ? E2("Booking es una solicitud: confirma la persona que elijas. Si pide depósito, se cobra al enviar y se devuelve si no confirma.", "Booking is a request: the person you choose confirms. Deposits are charged when you send and refunded if not confirmed.")
       : E2("Booking es una solicitud: el negocio confirma. Si pide depósito, se cobra al enviar y se devuelve si no confirma.", "Booking is a request: the business confirms. Deposits are charged when you send and refunded if not confirmed.");
 
   return {
-    cp, es, E2, w, silla, modo, setModo: (m: "svc" | "pro") => { setModo(m); setFijo(null); }, fijo, persona, quitarFijo: () => setFijo(null),
+    cp, es, E2, w, silla, sillaFija, modo, setModo: (m: "svc" | "pro") => { setModo(m); setFijo(null); }, fijo, persona, quitarFijo: () => setFijo(null),
     porPersona: (id: string) => { setFijo(id); setModo("svc"); window.scrollTo({ top: 0 }); },
+    verSilla: (n: number) => router.push(`/n/${cp.negocio.id}/silla/${n}`),
     secs, notes, pros, mia, abrir, hoja, setHoja, cerrar: () => setHoja(null), prx, nxL, nm, g,
-    top: cp.servicios.slice(0, 4).map(item), desde, riel, nota,
+    top: lista.slice(0, 4).map(item), desde, riel, nota,
   };
 }
 export type Svc = NonNullable<ReturnType<typeof useSvc>>;
@@ -152,7 +160,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
   return (
     <div data-screen-label={desk ? "Ficha · servicios · desktop" : "Ficha · servicios"} className={desk ? "flex max-w-[760px] flex-col gap-4 pt-6" : "flex flex-col gap-4 px-5 pt-[18px]"}>
       {v.mia && <div className="grid"><ReservationCard label={v.mia.k} tag={v.mia.tag} tone={v.mia.tone} title={v.mia.t} sub={v.mia.s} onClick={v.mia.onClick} /></div>}
-      {v.silla && (
+      {v.silla && !v.sillaFija && (
         <div className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
           {([["svc", E2("Por servicio", "By service"), "scissors"], ["pro", E2(`Por ${v.w.uno}`, `By ${v.w.uno}`), "users"]] as const).map(([k, l, ic]) => {
             const on = v.modo === k;
@@ -168,7 +176,7 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
         <div key={t} className="flex items-start gap-[11px] rounded-2xl bg-action/[.07] px-3.5 py-[13px]">
           <span className="grid flex-none pt-px"><Icon name={ic} size={17} color="var(--tl-action)" /></span>
           <span className="flex-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/75">{t}</span>
-          {ic === "users" && v.fijo && <button type="button" onClick={v.quitarFijo} className="flex-none text-[12px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
+          {ic === "users" && v.fijo && !v.sillaFija && <button type="button" onClick={v.quitarFijo} className="flex-none text-[12px] font-bold text-action">{E2("Ver todos", "See all")}</button>}
         </div>
       ))}
       {v.modo === "svc" ? (
@@ -195,7 +203,10 @@ export function SvcTab({ v, desk }: { v: Svc; desk: boolean }) {
                   </div>
                 </div>
               </div>
-              {v.cp.can && <div className="flex"><Button variant="primary" size="md" icon="calendar" block onClick={() => v.porPersona(p.id)}>Booking</Button></div>}
+              <div className="flex gap-2">
+                {p.silla != null && <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="store" onClick={() => v.verSilla(p.silla!)}>{E2("Ver su página", "See profile")}</Button></div>}
+                {v.cp.can && <div className="grid min-w-0 flex-1"><Button variant="primary" size="md" icon="calendar" onClick={() => v.porPersona(p.id)}>Booking</Button></div>}
+              </div>
             </div>
           ))}
         </div>

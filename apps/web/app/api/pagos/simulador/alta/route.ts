@@ -2,12 +2,21 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { pasarela } from "@/lib/pagos/pasarela";
 import { accesoPanel } from "@/lib/panel";
+import { yo } from "@/lib/cuenta";
+import { simularAltaSilla } from "@/lib/sillas";
 
 /* Simulador del sandbox: «completar el alta en Stripe». Solo existe sin clave de Stripe y fuera de producción; solo el dueño
    de esa cuenta simulada la completa. Deja la cuenta habilitada con un banco de prueba y vuelve al panel. */
 export async function GET(req: NextRequest) {
   if (pasarela.modo() !== "simulador") return new NextResponse("No disponible", { status: 404 });
   const cuenta = req.nextUrl.searchParams.get("cuenta") ?? "", volver = req.nextUrl.searchParams.get("volver") ?? "";
+  // La cuenta propia de una silla rentada (3d): solo el barbero de esa silla la completa.
+  if (cuenta.startsWith("acct_sim_m-")) {
+    const u = await yo();
+    if (!u) return new NextResponse("Sin acceso", { status: 403 });
+    const a = await simularAltaSilla(u.id, cuenta);
+    return a ? new NextResponse(null, { status: 303, headers: { location: a } }) : new NextResponse("Enlace no válido", { status: 400 });
+  }
   const m = /^acct_sim_([a-z0-9-]{1,80})$/.exec(cuenta);
   if (!m || !/^\/panel\/[a-z0-9-]{1,80}\/cobros\?vuelta=1$/.test(volver)) return new NextResponse("Enlace no válido", { status: 400 });
   const a = await accesoPanel(m[1]!, "pay");

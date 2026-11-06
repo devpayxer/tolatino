@@ -15,7 +15,7 @@ export type Hechos = { promised?: string; done?: string; late?: number };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
   answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
-  help: number; helpOn: boolean; reported: boolean;
+  help: number; helpOn: boolean; reported: boolean; pro?: string | null; // la cita fue con esa persona (3d)
 };
 
 export const MIN_TEXTO = 20, MAX_TEXTO = 1000, MAX_FOTOS = 6, EDITAR_H = 48, PAGINA = 6;
@@ -35,16 +35,17 @@ const TARJETA_SQL = `
   (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'review' and m.owner_id = r.id::text and m.status = 'visible') as fotos,
   coalesce($2::uuid is not null and exists (select 1 from review_helpful h where h.review_id = r.id and h.user_id = $2::uuid), false) as help_on,
   coalesce($2::uuid is not null and exists (select 1 from content_reports c where c.target_kind = 'review' and c.target_id = r.id::text and c.reporter_user_id = $2::uuid), false) as reported,
-  (select coalesce(jsonb_agg(i.name order by array_position(r.rec, i.id::text)), '[]') from items i where i.business_id = r.business_id and i.id::text = any(r.rec) and i.removed_at is null) as rec_names`;
+  (select coalesce(jsonb_agg(i.name order by array_position(r.rec, i.id::text)), '[]') from items i where i.business_id = r.business_id and i.id::text = any(r.rec) and i.removed_at is null) as rec_names,
+  (select split_part(m.display_name, ' ', 1) from operations o join business_members m on m.id = o.member_id where o.id = r.operation_id and o.kind = 'appointment') as con_pro`;
 type FilaT = {
   id: string; mine: boolean; first_name: string | null; last_name: string | null; src: Src; stars: number; answers: Respuestas; facts: Hechos; body: string;
-  rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[];
+  rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[]; con_pro: string | null;
 };
 const tarjeta = (x: FilaT): Tarjeta => {
   const name = nombreCorto(x.first_name, x.last_name);
   return {
     id: x.id, name, ini: iniciales(name), mine: x.mine, cnt: x.cnt, d: x.d, editada: x.editada, src: x.src, stars: x.stars, answers: x.answers ?? {}, facts: x.facts ?? {},
-    body: x.body, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0 } : null, help: x.help, helpOn: x.help_on, reported: x.reported,
+    body: x.body, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0 } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
   };
 };
 const NEG_SQL = `(select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active') b`;
@@ -68,7 +69,10 @@ export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negoci
 
 /* Lo que va en la ficha: cifras, barras, verificadas, lo que importa (Comida, de pedidos calificados en 90 días), los más
    recomendados, la reseña propia y las destacadas del Resumen. Todo derivado de las reseñas visibles. */
-export async function resumenResenas(negocio: string, userId: string | null) {
+/* miembro: la página de una silla (3d) muestra solo las reseñas de citas con esa persona. */
+const DE_MIEMBRO = (miembro?: string | null) => (miembro && /^[0-9a-f-]{36}$/.test(miembro) ? ` and operation_id in (select o.id from operations o where o.kind = 'appointment' and o.member_id = '${miembro}'::uuid)` : "");
+export async function resumenResenas(negocio: string, userId: string | null, miembro?: string | null) {
+  const fm = DE_MIEMBRO(miembro);
   const b = (await db().query<{ id: string; name: string; pro: boolean; food: boolean; dlv: boolean }>(
     `select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro, b.category_id = 'NEG-FOOD' as food, coalesce(d.delivery, false) as dlv
        from businesses b left join business_stats_cache s on s.business_id = b.id left join delivery_settings d on d.business_id = b.id
@@ -79,7 +83,7 @@ export async function resumenResenas(negocio: string, userId: string | null) {
       `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where stars = 5)::int as s5, count(*) filter (where stars = 4)::int as s4,
               count(*) filter (where stars = 3)::int as s3, count(*) filter (where stars = 2)::int as s2, count(*) filter (where stars = 1)::int as s1,
               count(*) filter (where src <> 'vis')::int as ver
-         from reviews where business_id = $1 and status = 'visible'`, [negocio]),
+         from reviews where business_id = $1 and status = 'visible'${fm}`, [negocio]),
     // Lo que importa en la comida: solo pedidos calificados en To'Latino en los últimos 90 días.
     db().query<{ orders: number; hot: number | null; time: number | null; val: number | null; taste: number | null }>(
       `select count(*)::int as orders,
@@ -97,7 +101,7 @@ export async function resumenResenas(negocio: string, userId: string | null) {
     // Resumen: Pro = las 2 mejores (★4+, más útiles); Free = las 3 más recientes. La propia va primero.
     db().query<FilaT>(
       `select ${TARJETA_SQL} from reviews r join users u on u.id = r.user_id cross join ${NEG_SQL}
-        where r.business_id = $1 and r.status = 'visible' and ($2::uuid is null or r.user_id <> $2::uuid) and (not b.pro or r.stars >= 4)
+        where r.business_id = $1 and r.status = 'visible'${fm} and ($2::uuid is null or r.user_id <> $2::uuid) and (not b.pro or r.stars >= 4)
         order by case when b.pro then r.helpful_count else 0 end desc, r.created_at desc limit 3`, [negocio, userId]),
     userId ? opParaResena(db(), negocio, userId) : null,
   ]);
@@ -109,7 +113,7 @@ export async function resumenResenas(negocio: string, userId: string | null) {
     n, avg: c.avg, ver: c.ver, bars: [[5, pct(c.s5)], [4, pct(c.s4)], [3, pct(c.s3)], [2, pct(c.s2)], [1, pct(c.s1)]] as [number, number][],
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
     top: top.rows.map((x) => ({ id: x.id, name: x.name, ph: x.ph, n: x.n })),
-    mine, tengo, destacadas,
+    mine: fm ? null : mine, tengo, destacadas, miembro: fm ? miembro! : null,
     // «TU PEDIDO DE HOY · ¿Cómo estuvo?»: solo si terminó hoy y aún no tiene reseña.
     prompt: !tengo && op?.hoy ? { numero: op.numero, kind: op.kind } : null,
   };
@@ -124,11 +128,12 @@ const ORDEN_SQL: Record<Orden, { by: string; key: string }> = {
   rec: { by: "r.created_at desc, r.id desc", key: "(extract(epoch from r.created_at) * 1000)::bigint" }, help: { by: "r.helpful_count desc, r.id desc", key: "r.helpful_count" },
   hi: { by: "r.stars desc, r.id desc", key: "r.stars" }, lo: { by: "r.stars asc, r.id desc", key: "r.stars" },
 };
-export async function listaResenas(negocio: string, userId: string | null, q: { f?: string; star?: number; sort?: string; cursor?: string | null }) {
+export async function listaResenas(negocio: string, userId: string | null, q: { f?: string; star?: number; sort?: string; cursor?: string | null; miembro?: string | null }) {
   const f: Filtro = (["all", "ver", "ph", "reply", "crit"] as const).includes(q.f as Filtro) ? (q.f as Filtro) : "all";
   const sort: Orden = (["rec", "help", "hi", "lo"] as const).includes(q.sort as Orden) ? (q.sort as Orden) : "rec";
   const star = Number.isInteger(q.star) && q.star! >= 1 && q.star! <= 5 ? q.star! : 0;
   const w = [`r.business_id = $1`, `r.status = 'visible'`];
+  if (DE_MIEMBRO(q.miembro)) w.push(`true${DE_MIEMBRO(q.miembro).replace(" and operation_id", " and r.operation_id")}`);
   const filtro: Record<Filtro, string> = {
     all: "true", ver: "r.src <> 'vis'", reply: "b.pro and r.reply is not null", crit: "r.stars <= 3",
     ph: "exists (select 1 from media m where m.owner_kind = 'review' and m.owner_id = r.id::text and m.status = 'visible')",

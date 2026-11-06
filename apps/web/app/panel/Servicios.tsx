@@ -4,6 +4,7 @@
    cada silla), opciones que cambian precio y tiempo, extras. Citas: aprobar al instante, cuánto tardas en contestar,
    depósito, cancelar gratis hasta, el cliente elige con quién. Con sillas rentadas, cada silla decide lo suyo. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
+import { sillaInvitarCobro } from "./acciones-servicios";
 import { subirFoto } from "@/lib/subir-foto";
 import type { Persona, Servicio, SvcPanel } from "@/lib/servicios";
 import { citasGuardar, citasModulo, modeloGuardar, servicioGuardar, servicioMover, servicioQuitar, servicioVisible, sillaGuardar, type ServicioIn } from "./acciones-servicios";
@@ -217,6 +218,19 @@ export function sillasBloques(c: Ctx): Sec {
         { icon: "calendar", t: E2("Recibe citas en línea", "Takes online bookings"), s: p.recibe ? E2("Sale en el Booking del local.", "Shows in the shop’s Booking.") : E2("No sale en el Booking.", "Not in Booking."), tgOn: p.recibe, onTg: () => guardar(p, { recibe: !p.recibe }) }] });
     if (!p.auto) out.push({ type: "chips", k: E2("RESPONDE EN", "REPLIES IN"), items: ([[15, "15 min"], [30, "30 min"], [60, "1 h"]] as [number, string][]).map(([n, l]) => ({ l, v: (p.resp ?? 30) === n ? "selected" : "filter", onClick: () => guardar(p, { resp: n }) })) });
     out.push({ type: "chips", k: E2("DEPÓSITO AL PEDIR", "DEPOSIT WHEN BOOKING"), items: ([[0, E2("Sin depósito", "No deposit")], [500, "$5"], [1000, "$10"], [1500, "$15"]] as [number, string][]).map(([n, l]) => ({ l, v: (p.dep ?? 0) === n ? "selected" : "filter", onClick: () => guardar(p, { dep: n }) })) });
+    if (p.kind === "renter") {
+      // Su propia cuenta de cobro (3d): el depósito llega a su banco, no al tuyo. La conecta él desde su cuenta.
+      const n = p.nombre.split(" ")[0], on = p.cobro === "enabled";
+      out.push({ type: "rows", items: [{ icon: "wallet", t: E2("Su cuenta de cobro", "Their payout account"),
+        s: on ? E2(`Conectada · banco ·· ${p.banco ?? "····"}. Los depósitos de su silla llegan a su banco.`, `Connected · bank ·· ${p.banco ?? "····"}. Their chair's deposits go to their bank.`)
+          : p.cobro === "pending" || p.cobro === "restricted" ? E2(`${n} empezó a conectarla; falta terminar en Stripe.`, `${n} started connecting it; Stripe signup not finished.`)
+            : p.invitado ? E2(`Ya se lo pediste a ${n}. Mientras no la conecte, su silla no pide depósito en línea.`, `You already asked ${n}. Until it is connected, the chair takes no online deposit.`)
+              : E2(`Sin conectar: su silla no pide depósito en línea.`, `Not connected: the chair takes no online deposit.`),
+        tag: on ? E2("CONECTADA", "CONNECTED") : E2("SIN CONECTAR", "NOT CONNECTED"), tone: on ? "signal" : "neutral",
+        acts: on ? undefined : [{ l: p.invitado ? E2("Pedírselo otra vez", "Ask again") : E2(`Pedirle a ${n} que la conecte`, `Ask ${n} to connect it`), v: "secondary", icon: "bell", off: c.pending,
+          onClick: () => c.run(() => sillaInvitarCobro(c.d.id, p.id), E2(`Le avisamos a ${n}.`, `${n} was notified.`)) }] }] });
+    }
+    if (p.silla) out.push({ type: "acts", items: [{ l: E2("Ver su página", "See their page"), v: "ghost", icon: "store", onClick: () => window.open(`/n/${c.d.id}/silla/${p.silla}`, "_blank", "noopener") }] });
   }
   if (!G.length) out.push({ type: "empty", icon: "users", t: E2("Sin sillas", "No chairs"), s: E2("Invita a tus barberos en Tu página › Equipo.", "Invite your barbers in Your page › Team."), cta: E2("Equipo", "Team"), onCta: () => c.go("pag", "equipo") });
   return { blocks: out, ed: null };

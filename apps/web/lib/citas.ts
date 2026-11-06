@@ -53,7 +53,7 @@ export type Ctx = {
   horas: Record<number, [number, number][]>; especiales: { desde: string; hasta: string; closed: boolean; ranges: [number, number][] }[];
   cerradoHasta: string | null; cerradoHoy: boolean; pol: Politica; cuenta: string | null; barberia: boolean;
 };
-export type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null };
+export type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null; cuenta: string | null }; // cuenta: a dónde va el depósito
 
 export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
   const b = (await c.query<{
@@ -86,20 +86,24 @@ export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
 }
 
 export async function gente(c: Q, x: Ctx): Promise<Persona[]> {
-  const r = await c.query<{ id: string; nombre: string; kind: Persona["kind"]; silla: number | null; foto: string | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mismo: boolean; wk: Persona["wk"] }>(
+  const r = await c.query<{ id: string; nombre: string; kind: Persona["kind"]; silla: number | null; foto: string | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mismo: boolean; wk: Persona["wk"]; macct: string | null }>(
     `select m.id::text, m.display_name as nombre, m.kind, m.chair_seat as silla, m.photo_url as foto, m.chair_auto as auto, m.chair_response_min as resp, m.chair_deposit_cents as dep,
-            m.takes_bookings as recibe, m.same_as_business_hours as mismo, m.weekly_schedule as wk
-       from business_members m where m.business_id = $1 and m.status = 'active' and m.show_on_page and m.hidden_by_admin is null
+            m.takes_bookings as recibe, m.same_as_business_hours as mismo, m.weekly_schedule as wk, mp.stripe_account_id as macct
+       from business_members m left join member_payout_accounts mp on mp.member_id = m.id and mp.charges_enabled
+      where m.business_id = $1 and m.status = 'active' and m.show_on_page and m.hidden_by_admin is null
       order by (m.kind = 'owner') desc, m.chair_seat nulls last, m.sort, m.id`, [x.id]);
-  const silla = x.model === "chair";
+  const silla = x.model === "chair", modo = pasarela.modo();
+  // Una cuenta simulada solo cobra en el sandbox; una real, solo con la clave de Stripe.
+  const valida = (a: string | null) => (a && modo !== "apagado" && a.startsWith("acct_sim_") === (modo === "simulador") ? a : null);
   return r.rows.map((m) => {
     const dep = silla ? (m.dep ?? x.pol.dep) : x.pol.dep;
+    // Silla rentada: el depósito va a SU cuenta de cobro (3d); sin cuenta conectada no pide depósito en línea.
+    const cuenta = silla && m.kind === "renter" ? valida(m.macct) : x.cuenta;
     return {
       id: m.id, nombre: m.nombre, corto: m.nombre.split(" ")[0] ?? m.nombre, kind: m.kind, silla: silla ? m.silla : null, foto: m.foto,
       auto: silla ? m.auto : x.pol.auto, resp: silla ? (m.resp ?? x.pol.resp) : x.pol.resp,
-      // Sin cuenta de cobro no hay depósito; una silla rentada cobra con su propia cuenta (3d).
-      dep: x.cuenta && !(silla && m.kind === "renter") ? dep : 0,
-      recibe: m.recibe, mismo: m.mismo, wk: m.wk,
+      dep: cuenta ? dep : 0,
+      recibe: m.recibe, mismo: m.mismo, wk: m.wk, cuenta,
     };
   });
 }
@@ -142,7 +146,7 @@ export async function citasPublica(negocio: string, userId: string | null): Prom
   const usados = new Set(S.flatMap((s) => s.hacen.map((h) => h.id)));
   return {
     negocio: { id: x.id, nombre: x.name, direccion: x.address, telefono: x.phone, foto: x.foto }, model: x.model, secciones: secciones.filter((s) => S.some((v) => v.sec === s.id)),
-    servicios: S, extras, gente: G.filter((p) => p.recibe && usados.has(p.id)).map(({ recibe: _r, mismo: _m, wk: _w, ...p }) => p),
+    servicios: S, extras, gente: G.filter((p) => p.recibe && usados.has(p.id)).map(({ recibe: _r, mismo: _m, wk: _w, cuenta: _c, ...p }) => p),
     pol: x.pol, can: off === null, off, mia, hoy: x.hoy,
     w: x.barberia ? { uno: { es: "barbero", en: "barber" }, varios: { es: "barberos", en: "barbers" }, silla: { es: "Silla", en: "Chair" } }
       : { uno: { es: "estilista", en: "stylist" }, varios: { es: "estilistas", en: "stylists" }, silla: { es: "Estación", en: "Station" } },
@@ -363,10 +367,10 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     let ret: Awaited<ReturnType<typeof pasarela.retener>> | null = null, fee = 0;
     if (dep > 0) {
       const pm = typeof f.pm === "string" && /^pm_[A-Za-z0-9_]{3,200}$/.test(f.pm) ? f.pm : null;
-      if (!pm || !P.x.cuenta) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
+      if (!pm || !quien.cuenta) { await c.query("rollback"); return no("Elige la tarjeta para el depósito.", "Choose the card for the deposit.", { tarjeta: true }); }
       fee = Math.min(await comision(c, "cita", dep), dep);
       const cliente = await pasarela.cliente(userId).catch(() => null);
-      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: P.x.cuenta, pm, cliente, idem: `cita-${f.clave}-${pm.slice(-24)}`, meta: { appointment: numero, business_id: P.x.id } });
+      ret = await pasarela.retener({ centavos: dep, comision: fee, destino: quien.cuenta, pm, cliente, idem: `cita-${f.clave}-${pm.slice(-24)}`, meta: { appointment: numero, business_id: P.x.id } });
       if (!ret.ok) { await c.query("rollback"); return no(ret.mensaje.es, ret.mensaje.en, { tarjeta: true }); }
       retenido = ret.pi;
       if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta.", "Your bank asks for an extra verification we can't do here yet. Try another card.", { tarjeta: true }); }
@@ -494,4 +498,17 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     late: d.late ?? null, perdio: !!d.perdio, cxRazon: r.razon, mins: r.mins, resena: r.resena, cxh: r.cxh, tol: r.tol,
     alt: r.alt ? { ymd: r.alt.ymd, i: idx(r.alt.ymd), m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, chg: r.chg ? { ymd: r.chg.ymd, i: idx(r.chg.ymd), m: r.chg.m } : null,
   };
+}
+
+/* La página de una silla (3d): la persona de esa silla en un local que renta sillas, si sale en la página. */
+export async function sillaPublica(negocio: string, n: number) {
+  if (!Number.isInteger(n) || n < 1 || n > 30) return null;
+  const r = (await db().query<{ id: string; nombre: string; foto: string | null; silla: number; since: number | null; bio: Bi | null; kind: string; negocio: string; logo: string | null; direccion: string | null; subs: string[] }>(
+    `select m.id::text, m.display_name as nombre, m.photo_url as foto, m.chair_seat as silla, m.since_year as since, m.bio, m.kind,
+            b.name as negocio, b.logo_url as logo, b.address as direccion, b.subcategory_ids as subs
+       from business_members m join businesses b on b.id = m.business_id
+      where m.business_id = $1 and m.chair_seat = $2 and m.status = 'active' and m.show_on_page and m.hidden_by_admin is null and b.svc_model = 'chair' and b.status = 'active'`, [negocio, n])).rows[0];
+  if (!r) return null;
+  const barberia = (r.subs ?? []).includes("NEG-BELL-01");
+  return { ...r, oficio: barberia ? { es: "Barbero", en: "Barber" } : { es: "Estilista", en: "Stylist" }, puesto: barberia ? { es: "Silla", en: "Chair" } : { es: "Estación", en: "Station" } };
 }
