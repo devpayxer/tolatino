@@ -1,0 +1,34 @@
+# Pedir una cita con un doctor · Booking a clinic visit
+
+_Pantalla: la página de un consultorio › un servicio › «Elegir hora» (Booking de Doctores). Versión: Fase 4 · bloque 4j (6 nov 2026)._
+
+## Qué hace (ES)
+1. **Tu seguro** (obligatorio): eliges uno de tu cuenta o «No tengo seguro». Te decimos si lo aceptan; si no, puedes pedir la
+   cita igual y pagar el precio sin seguro. **¿Para quién es?** (para mí, mi hijo o hija, otra persona) y, si quieres, **¿para qué
+   es la cita?** y una **nota**.
+2. **Día y hora**, con quién (solo profesionales con licencia verificada, o «el primero libre»). Hoy, desde dentro de 1 hora
+   (por video, 30 minutos).
+3. **Revisa y envía**: hoy pagas **$0**; en la consulta pagas tu copago o el precio sin seguro. Si el profesional no habla
+   español, puedes pedir **intérprete gratis** (es tu derecho).
+
+## Tu privacidad
+- **El motivo** lo ve solo el consultorio de esa cita; nunca sale en reseñas.
+- **La nota** se guarda **cifrada** y se borra 30 días después de la cita. No mandes fotos de documentos ni resultados.
+- **Los avisos** (SMS, Avisos) no dicen el nombre del consultorio ni del servicio: «Tu cita del jue 24 a las 3:40 PM está
+  confirmada. Detalles en la app.»
+- To'Latino no ve tu historial médico ni da consejo médico. Si es una emergencia, llama al 911.
+
+## Qué pasa en cada caso
+| Caso | Qué pasa |
+|---|---|
+| Enviaste la solicitud | «Revisan tu seguro y confirman en unos 30 min. No se ha cobrado nada.» |
+| Tienes 3 solicitudes esperando | No puedes mandar otra hasta que te contesten. |
+| La hora se ocupó mientras elegías | Te pide otra hora. |
+| El consultorio solo atiende a sus pacientes | Solo puedes pedir si ya tuviste una cita ahí. |
+| Cambiar la hora | Cancela gratis y pide otra: el consultorio revisa tu seguro de nuevo. |
+
+---
+## What it does (EN)
+Pick your insurance (or “No insurance”), who it is for and optionally the reason and a note; choose the day, time and provider;
+review and send. You pay $0 today and the copay or uninsured price at the visit. The reason is seen only by the clinic, the note
+is encrypted and deleted 30 days after the visit, and alerts never name the clinic or the service.

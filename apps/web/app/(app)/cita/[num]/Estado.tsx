@@ -80,6 +80,14 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   if (hogar && c.st === "done" && c.noshow) H.done = ["warning", "bg-danger/10", "var(--tl-danger)", E2("No había nadie", "Nobody home"), `${E2(`${c.negocio.nombre} llegó y no pudo entrar. `, `${c.negocio.nombre} arrived and could not get in. `)}${c.dep ? E2(`El depósito de ${dinero(c.dep)} se queda con el negocio.`, `The ${dinero(c.dep)} deposit stays with the business.`) : E2("No se cobró nada.", "Nothing was charged.")}`, E2("NO HABÍA NADIE", "NOBODY HOME"), "bg-danger/10", "var(--tl-danger)"];
   if (c.rubro && c.st === "ok" && !c.paso) H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", hogar ? E2("Visita confirmada", "Visit confirmed") : E2("Cita confirmada", "Booking confirmed"),
     hogar ? E2(`${cap(diaL)}: llega entre ${win}.`, `${cap(diaL)}: arrives between ${win}.`) : `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}${c.veh ? ` · ${c.veh}` : ""}.`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
+  // Doctores (4j): el seguro manda en los textos; nada se cobra en la app.
+  const sal = c.salud;
+  if (sal) {
+    H.pend = ["clock", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("Solicitud enviada", "Request sent"), E2(`Revisan tu seguro y confirman en unos ${mins}. No se ha cobrado nada.`, `They check your insurance and confirm in about ${mins}. Nothing has been charged.`), E2("PENDIENTE DE CONFIRMAR", "WAITING FOR CONFIRMATION"), "bg-pro/20", "var(--tl-pro-ink)"];
+    if (sal.seg) H.pend = ["warning", "bg-pro/[.18]", "var(--tl-pro-ink)", E2("No aceptan tu seguro", "They do not take your insurance"), E2(`La hora sigue guardada${sal.segHasta ? ` hasta las ${sal.segHasta}` : " 2 horas"}. Puedes seguir con el precio sin seguro o buscar otro consultorio.`, `Your time is held${sal.segHasta ? ` until ${sal.segHasta}` : " 2 hours"}. You can continue at the uninsured price or find another clinic.`), E2("NO ACEPTAN TU SEGURO", "INSURANCE NOT ACCEPTED"), "bg-pro/20", "var(--tl-pro-ink)"];
+    H.ok = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita confirmada", "Visit confirmed"), `${cap(diaL)}${E2(" a las ", " at ")}${horaL(c.m)}. ${sal.acepta ? E2("Aceptaron tu seguro. ", "They took your insurance. ") : ""}${sal.tele ? E2("El enlace del video te llega a tus Avisos 10 minutos antes.", "The video link arrives in your Alerts 10 minutes before.") : E2("Llega 15 minutos antes con tu tarjeta del seguro y una identificación.", "Arrive 15 minutes early with your insurance card and an ID.")}`, E2("CONFIRMADA", "CONFIRMED"), "bg-signal/20", "var(--tl-open-text)"];
+    H.done = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Visit done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}. ${E2("Pagaste en la consulta.", "You paid at the visit.")}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"];
+  }
   const [ic, icBg, icFg, t, line, pill, pillBg, pillFg] = H[c.st];
   const pend = c.st === "pend", ok = c.st === "ok", alt = c.st === "alt", done = c.st === "done", dead = c.st === "no" || c.st === "exp" || c.st === "cx";
   const steps = [{ label: E2("Solicitud enviada", "Request sent"), time: horaL(c.enviada), state: "done" },
@@ -97,6 +105,11 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
   const paraL = c.para === "me" ? yo : `${c.nombre ?? E2("Otra persona", "Someone else")}${c.para === "kid" && c.edad ? ` · ${c.edad}${E2(" años", " yrs")}` : ""}`;
   const rows = [[E2("SERVICIO", "SERVICE"), `${nm(c.svc)}${optL ? ` · ${optL}` : ""}`], ...(addL ? [["EXTRAS", addL]] : []), [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`],
     [E2("CON", "WITH"), withL], ...(c.veh ? [[E2("VEHÍCULO", "VEHICLE"), c.veh]] : []), [E2("DÓNDE", "WHERE"), c.casa ?? c.negocio.direccion ?? c.negocio.nombre], ...(c.rubro ? [] : [[E2("PARA", "FOR"), paraL]]), ...(c.nota ? [[E2("NOTA", "NOTE"), c.nota]] : []), ["TOTAL", dinero(c.est && (c.est.estimado || c.est.extras.length) ? c.est.dinero.final : c.total)]];
+  if (sal) {
+    const PA: Record<string, string> = { yo: E2("Para mí", "For me"), hijo: E2("Para mi hijo o hija", "For my child"), otro: E2("Para otra persona", "For someone else") };
+    rows.splice(0, rows.length, [E2("SERVICIO", "SERVICE"), nm(c.svc)], [E2("CUÁNDO", "WHEN"), `${cap(diaL)} · ${horaL(c.m)} – ${horaL(c.m + c.dur)}`], [E2("CON", "WITH"), c.con?.nombre ?? E2("El primero libre", "First available")],
+      [E2("SEGURO", "INSURANCE"), nm(sal.seguro)], [E2("PACIENTE", "PATIENT"), PA[sal.para] ?? ""], [E2("DÓNDE", "WHERE"), sal.tele ? E2("Por video", "By video") : c.negocio.direccion ?? c.negocio.nombre], [E2("EN LA CONSULTA", "AT THE VISIT"), nm(sal.precio)]);
+  }
   const rest = c.total - c.dep, tarjeta = c.tarjeta ?? E2("tu tarjeta", "your card");
   const restW = silla && c.con ? E2(`en la silla de ${c.con.corto}`, `at ${c.con.corto}'s chair`) : E2("en el local", "at the shop");
   const plata: [string, string, string, string, string][] = [];
@@ -106,11 +119,12 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
     else if (c.perdio || c.pago === "captured") plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(c.dep), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
     else plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
   }
-  if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
+  if (!dead && sal) plata.push(["store", E2("En la consulta", "At the visit"), nm(sal.precio).split(" · ")[0] ?? "", "var(--tl-ink)", E2("Copago o precio sin seguro. Nada se cobró en la app.", "Copay or uninsured price. Nothing was charged in the app.")]);
+  else if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
   const foto = silla && c.con?.foto ? c.con.foto : c.negocio.foto;
   const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
   const DLs = (i: number, ymd: string) => { const z = new Date(`${ymd}T12:00:00Z`); return i === 0 ? E2("hoy", "today") : i === 1 ? E2("mañana", "tomorrow") : `${(DS[es ? "es" : "en"][z.getUTCDay()] ?? "").toLowerCase()} ${z.getUTCDate()}`; };
-  const otra = `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
+  const otra = sal ? `/n/${c.negocio.id}/consulta?s=${c.svcId ?? ""}` : `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
   const aTiempo = c.mins >= c.cxh * 60, lateOk = ok && !c.late && c.mins <= 120 && c.mins > -15;
   // «Al calendario»: un .ics con la hora de la cita (hora local del negocio).
   const ics = () => {
@@ -128,7 +142,8 @@ export function Estado({ c, yo, es, cambio, pago = null }: { c: CitaVista; yo: s
       ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
     : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", c.rubro === "hogar" ? E2("Ayuda con la visita", "Visit help") : E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
-  const actsV = hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
+  // Doctores: cambiar = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo); por video, sin «Cómo llegar».
+  const actsV = sal ? acts.filter(([i]) => i !== "edit" && !(sal.tele && i === "pin")) : hogar && ok ? acts.filter(([i]) => i !== "pin" && i !== "clock") : acts;
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
   const cxS = pend ? `${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
     : aTiempo ? `${E2(`Faltan más de ${c.cxh} h: es gratis. `, `More than ${c.cxh} h to go: it is free. `)}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`

@@ -687,3 +687,15 @@ _Decidido por mí (reversible):_
 - _Mientras llega el Booking de Doctores (4j), la hoja ofrece «Llama para tu cita». «Próxima cita» de cada profesional llega con 4j._
 - _Las preguntas frecuentes de Salud por tipo (TLSaludK) quedan para 4m; hoy salen las que puso el consultorio._
 
+## Fase 4 · 4j-1 Booking de Doctores
+1. Como **Marisol** (570-555-0122): Centro Médico Quisqueya › Consulta de medicina general › Elegir hora → 3 pasos → «Enviar
+   solicitud». Ver «Revisan tu seguro y confirman… No se ha cobrado nada.»
+2. Como **Dra. Reyes**: el aviso dice solo «Nueva solicitud de cita para el … a las …» (sin nombres).
+_Decidido por mí (reversible):_
+- _Si un consultorio no tiene a nadie con licencia verificada, la cita es «con el consultorio» (el primero libre) en vez de
+  no dejar pedir. Cuando verifican a alguien, solo esa persona atiende._
+- _La nota se cifra en la aplicación (AES-256-GCM) con DATOS_SECRET, que el servidor crea solo (infra/pruebas/deploy.sh);
+  en el sandbox local, sin esa llave, se deriva de AUTH_SECRET. En producción es obligatoria._
+- _Cambiar una cita de Doctores = cancelar gratis y pedir otra (el consultorio revisa el seguro de nuevo)._
+- _El enlace del video y los avisos dicen «a tus Avisos» hasta que el SMS salga de verdad (Telnyx al final)._
+

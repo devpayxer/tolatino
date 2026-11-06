@@ -57,7 +57,7 @@ export async function saludPublico(negocio: string, userId: string | null): Prom
     secciones: S.rows.filter((s) => usados.has(s.id)), servicios: I.rows, gente: G.rows,
     clinica: { ins: h.ins, sin: h.sin, cash: h.cash, escala: h.escala }, h, espera, tags: b.fv ?? [], cat, segs, sesion: !!userId,
     can: (b.mods ?? []).includes("citas") && !off.citas && h.nuevos,
-    // El Booking de Salud llega en 4j: hasta entonces la hoja ofrece llamar.
-    booking: false,
+    // 4j: el Booking de Doctores (/n/{id}/consulta) cuando el consultorio toma citas en línea.
+    booking: (b.mods ?? []).includes("citas") && !off.citas && h.nuevos,
   };
 }

@@ -24,6 +24,8 @@ EOF
 fi
 # Secretos que se agregaron después: se completan sin tocar los que ya existen.
 grep -q '^AUTH_SECRET=' "$ENV_FILE" || echo "AUTH_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
+# Llave del cifrado de columna (op_private, 4j): se crea una vez en el servidor; perderla vuelve ilegibles las notas vivas.
+grep -q '^DATOS_SECRET=' "$ENV_FILE" || echo "DATOS_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 # 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar

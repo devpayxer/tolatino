@@ -448,3 +448,5 @@ en el momento. Se marca solo cuando está hecho de verdad.
       regla de impuesto (tax_rules) editables con motivo; hoy viven en el código y en datos.
 - [ ] «Devolver» desde Transacciones para cobros de planes y rentas.
 
+
+- [ ] **DATOS_SECRET (4j):** respaldar la llave del cifrado de columna de producción (op_private) en un lugar seguro fuera del servidor; sin ella, las notas vivas (máx. 30 días) quedan ilegibles.

@@ -138,7 +138,7 @@ export function SaHoja({ v }: { v: Sa }) {
     if (walk) return v.llegar();
     if (llamar) return v.llamar();
     const q = new URLSearchParams({ s: s.id }); if (con !== "any") q.set("c", con); if (v.seg && v.seg.cuenta) q.set("seg", v.seg.id);
-    v.router.push(`/n/${sp.negocio.id}/cita?${q.toString()}`);
+    v.router.push(`/n/${sp.negocio.id}/consulta?${q.toString()}`);
   };
   const pagoT = P.l === "$0" ? E2("Con tu seguro no pagas esta consulta. Lleva tu tarjeta del seguro.", "With your insurance you do not pay for this visit. Bring your insurance card.")
     : P.l === E2("Copago", "Copay") ? E2("Pagas tu copago en la consulta. Nada se cobra antes.", "You pay your copay at the visit. Nothing is charged before.")
