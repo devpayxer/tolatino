@@ -56,7 +56,8 @@ export const pasarela = {
     try {
       const pi = await stripe<{ id: string; status: string; client_secret: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
         amount: x.centavos, currency: "usd", capture_method: "manual", confirm: true, payment_method: x.pm, customer: x.cliente ?? undefined,
-        automatic_payment_methods: { enabled: true, allow_redirects: "never" }, application_fee_amount: x.comision, // tarjeta y billeteras, sin salir de la app transfer_data: { destination: x.destino }, metadata: x.meta, expand: ["payment_method"],
+        // Tarjeta y billeteras, sin salir de la app. El dinero va al negocio (destino) y To'Latino cobra su comisión.
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" }, application_fee_amount: x.comision, transfer_data: { destination: x.destino }, metadata: x.meta, expand: ["payment_method"],
       }, { idem: `ret-${x.idem}` });
       const card = pi.payment_method?.card;
       if (pi.status === "requires_capture") return { ok: true, pi: pi.id, estado: "retenido", marca: card?.brand ?? null, ultimos4: card?.last4 ?? null };
