@@ -3,11 +3,11 @@ begin;
 do $$
 declare b text := 'centro-medico-quisqueya'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
   insert into users (phone, first_name, last_name, lang, home_city_id) values ('+15705550244', 'Altagracia', 'Reyes', 'es', 'hzl') on conflict (phone) do nothing;
   if not exists (select 1 from business_members where business_id = b and kind = 'owner' and user_id is not null) then insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours) select b, u.id, 'owner', 'Altagracia Reyes', '{"es":"Directora médica","en":"Medical director"}'::jsonb, 'active', true, array['all'], 0, true from users u where u.phone = '+15705550244'; end if;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de medicina general","en":"Primary care visit"}'::jsonb, '{"es":"Fiebre, gripe, presión, dolores. Te ve un médico o una enfermera practicante.","en":"Fever, flu, blood pressure, aches. A doctor or nurse practitioner sees you."}'::jsonb, 8500, 20, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/39192358/pexels-photo-39192358.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Chequeo anual","en":"Annual checkup"}'::jsonb, '{"es":"Examen completo y análisis básicos. Con Medicaid o Medicare no pagas.","en":"Full exam and basic labs. With Medicaid or Medicare you pay nothing."}'::jsonb, 0, 40, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/20100299/pexels-photo-20100299.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -20,9 +20,9 @@ end $$;
 do $$
 declare b text := 'urgencias-express-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Sin cita","en":"Walk-in"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Urgencia sin cita","en":"Walk-in urgent care"}'::jsonb, '{"es":"Cortadas, torceduras, fiebre alta, infecciones. Llegas y te ponen en la fila.","en":"Cuts, sprains, high fever, infections. Walk in and join the line."}'::jsonb, 12500, 30, 'walk', '{"no":[{"es":"Dolor de pecho, falta de aire o sangrado fuerte: llama al 911.","en":"Chest pain, trouble breathing or heavy bleeding: call 911."}]}'::jsonb, array['https://images.pexels.com/photos/3845129/pexels-photo-3845129.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Rayos X","en":"X-ray"}'::jsonb, '{"es":"El mismo día, con la lectura del médico.","en":"Same day, read by the doctor."}'::jsonb, 9500, 20, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/10972100/pexels-photo-10972100.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -32,9 +32,9 @@ end $$;
 do $$
 declare b text := 'clinica-esperanza'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta según tus ingresos","en":"Income-based visit"}'::jsonb, '{"es":"Pagas de $20 a $60 según lo que ganas. No piden papeles ni seguro social.","en":"Pay $20 to $60 based on income. No papers or SSN required."}'::jsonb, 2000, 20, 'cons', '{"esc":true}'::jsonb, array['https://images.pexels.com/photos/7108319/pexels-photo-7108319.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Sin cita en la mañana","en":"Morning walk-in"}'::jsonb, '{"es":"De 8 a 11 AM. Llegas temprano, te atienden por orden.","en":"8 to 11 AM. Come early, seen in order."}'::jsonb, 2000, 25, 'walk', '{"esc":true}'::jsonb, array['https://images.pexels.com/photos/39192358/pexels-photo-39192358.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -44,9 +44,9 @@ end $$;
 do $$
 declare b text := 'pediatria-los-pinos'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Niño enfermo","en":"Sick visit"}'::jsonb, '{"es":"Fiebre, tos, dolor de oído. Cita el mismo día si llamas antes de las 10.","en":"Fever, cough, ear pain. Same-day visit if you call before 10."}'::jsonb, 9500, 20, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7447001/pexels-photo-7447001.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Chequeo del niño sano","en":"Well-child checkup"}'::jsonb, '{"es":"Crecimiento, vacunas y formulario de la escuela.","en":"Growth, vaccines and school form."}'::jsonb, 0, 30, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/20100299/pexels-photo-20100299.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -56,9 +56,9 @@ end $$;
 do $$
 declare b text := 'dental-sonrisa'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Dientes","en":"Teeth"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Dolor de muela · el mismo día","en":"Toothache · same day"}'::jsonb, '{"es":"Examen, radiografía y te dicen el precio del arreglo antes de hacerlo.","en":"Exam, X-ray and the repair price before they do it."}'::jsonb, 7900, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5624170/pexels-photo-5624170.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Limpieza y examen","en":"Cleaning and exam"}'::jsonb, '{"es":"Cada 6 meses. Con Medicaid, gratis.","en":"Every 6 months. Free with Medicaid."}'::jsonb, 0, 45, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/8413334/pexels-photo-8413334.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -70,9 +70,9 @@ end $$;
 do $$
 declare b text := 'dr-rafael-pena'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de medicina general","en":"Primary care visit"}'::jsonb, '{"es":"Presión, colesterol, recetas, chequeo.","en":"Blood pressure, cholesterol, refills, checkup."}'::jsonb, 7000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/39192358/pexels-photo-39192358.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Control de diabetes","en":"Diabetes follow-up"}'::jsonb, '{"es":"Azúcar, dieta y medicinas, con el resultado del A1c en la visita.","en":"Sugar, diet and meds, with the A1c result at the visit."}'::jsonb, 9000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/6823510/pexels-photo-6823510.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -81,9 +81,9 @@ end $$;
 do $$
 declare b text := 'optica-vision-clara'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Vista","en":"Eyes"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Examen de la vista","en":"Eye exam"}'::jsonb, '{"es":"Con la receta para lentes el mismo día.","en":"With your glasses prescription the same day."}'::jsonb, 0, 30, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/5715882/pexels-photo-5715882.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Examen para lentes de contacto","en":"Contact lens exam"}'::jsonb, '{"es":"Incluye la prueba y la primera caja.","en":"Includes the fitting and the first box."}'::jsonb, 11000, 40, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/5201993/pexels-photo-5201993.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -92,9 +92,9 @@ end $$;
 do $$
 declare b text := 'terapia-movimiento'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Terapia","en":"Therapy"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Evaluación de terapia física","en":"Physical therapy evaluation"}'::jsonb, '{"es":"Primera visita: te evalúan y te dan el plan de sesiones.","en":"First visit: evaluation and a session plan."}'::jsonb, 9000, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/20860622/pexels-photo-20860622.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Sesión de terapia física","en":"Physical therapy session"}'::jsonb, '{"es":"Con tu plan. Desde las 7 AM y hasta las 7 PM.","en":"On your plan. From 7 AM until 7 PM."}'::jsonb, 7500, 45, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/20860622/pexels-photo-20860622.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -103,9 +103,9 @@ end $$;
 do $$
 declare b text := 'consejeria-renacer'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consejería","en":"Counseling"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Primera cita de consejería","en":"First counseling session"}'::jsonb, '{"es":"En persona o por video. Con Medicaid no pagas.","en":"In person or by video. With Medicaid you pay nothing."}'::jsonb, 6000, 50, 'cons', '{"esc":true}'::jsonb, array['https://images.pexels.com/photos/9064679/pexels-photo-9064679.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Terapia de pareja o familia","en":"Couples or family therapy"}'::jsonb, '{"es":"Hasta 4 personas. De noche.","en":"Up to 4 people. Evenings."}'::jsonb, 9000, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7176182/pexels-photo-7176182.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -114,9 +114,9 @@ end $$;
 do $$
 declare b text := 'mujer-plena'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Mujer","en":"Women"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta ginecológica","en":"Gynecology visit"}'::jsonb, '{"es":"Papanicolaou, anticonceptivos, dolor o cambios.","en":"Pap smear, birth control, pain or changes."}'::jsonb, 11000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7089045/pexels-photo-7089045.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Control prenatal","en":"Prenatal care"}'::jsonb, '{"es":"Con ultrasonido. Con Medicaid de embarazo, sin costo.","en":"With ultrasound. No cost with pregnancy Medicaid."}'::jsonb, 0, 40, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/7088480/pexels-photo-7088480.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -125,9 +125,9 @@ end $$;
 do $$
 declare b text := 'laboratorio-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Análisis","en":"Lab work"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Análisis de sangre","en":"Blood work"}'::jsonb, '{"es":"Con la orden de tu médico. Sin cita; resultados en la app en 24–48 h.","en":"With your doctor’s order. Walk-in; results in the app in 24–48 h."}'::jsonb, 3500, 15, 'walk', '{}'::jsonb, array['https://images.pexels.com/photos/9629693/pexels-photo-9629693.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Panel completo sin orden","en":"Full panel without an order"}'::jsonb, '{"es":"Azúcar, colesterol, riñones e hígado.","en":"Sugar, cholesterol, kidneys and liver."}'::jsonb, 8900, 15, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/4047146/pexels-photo-4047146.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -135,9 +135,9 @@ end $$;
 do $$
 declare b text := 'piel-sana-dermatologia'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Piel","en":"Skin"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de dermatología","en":"Dermatology visit"}'::jsonb, '{"es":"Manchas, acné, lunares, caída del pelo. Te dicen el precio de cualquier procedimiento antes.","en":"Spots, acne, moles, hair loss. Any procedure price is given first."}'::jsonb, 12000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7446669/pexels-photo-7446669.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Revisión de lunares","en":"Mole check"}'::jsonb, '{"es":"De pies a cabeza, con foto para comparar.","en":"Head to toe, with photos to compare."}'::jsonb, 14000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7446669/pexels-photo-7446669.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -146,9 +146,9 @@ end $$;
 do $$
 declare b text := 'corazon-pulmon-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Corazón","en":"Heart"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de cardiología","en":"Cardiology visit"}'::jsonb, '{"es":"Presión, palpitaciones, colesterol. Con electrocardiograma.","en":"Blood pressure, palpitations, cholesterol. With an EKG."}'::jsonb, 18000, 40, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5207116/pexels-photo-5207116.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Prueba de esfuerzo","en":"Stress test"}'::jsonb, '{"es":"En caminadora, con la lectura del cardiólogo.","en":"On a treadmill, read by the cardiologist."}'::jsonb, 35000, 60, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/5207116/pexels-photo-5207116.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -159,9 +159,9 @@ end $$;
 do $$
 declare b text := 'especialistas-del-valle'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Especialistas","en":"Specialists"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de gastroenterología","en":"GI visit"}'::jsonb, '{"es":"Estómago, acidez, hígado. Te explican si hace falta colonoscopía y cuánto cuesta.","en":"Stomach, heartburn, liver. They explain if you need a colonoscopy and the cost."}'::jsonb, 19000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7659873/pexels-photo-7659873.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de urología","en":"Urology visit"}'::jsonb, '{"es":"Próstata, vías urinarias, piedras.","en":"Prostate, urinary tract, stones."}'::jsonb, 19000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/6129104/pexels-photo-6129104.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -170,9 +170,9 @@ end $$;
 do $$
 declare b text := 'neuro-dolor-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de neurología","en":"Neurology visit"}'::jsonb, '{"es":"Dolores de cabeza, mareos, hormigueo.","en":"Headaches, dizziness, tingling."}'::jsonb, 17000, 40, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/39192371/pexels-photo-39192371.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Manejo del dolor","en":"Pain management"}'::jsonb, '{"es":"Espalda, cuello, rodillas: el plan por escrito antes de empezar.","en":"Back, neck, knees: the plan in writing before starting."}'::jsonb, 17000, 40, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7298429/pexels-photo-7298429.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -182,9 +182,9 @@ end $$;
 do $$
 declare b text := 'ortopedia-pies-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Huesos y pies","en":"Bones and feet"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de ortopedia","en":"Orthopedic visit"}'::jsonb, '{"es":"Rodilla, hombro, espalda, fracturas. Con rayos X si hace falta.","en":"Knee, shoulder, back, fractures. X-ray if needed."}'::jsonb, 15000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7446985/pexels-photo-7446985.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Podología","en":"Podiatry"}'::jsonb, '{"es":"Uñas encarnadas, callos, pie diabético.","en":"Ingrown nails, calluses, diabetic foot."}'::jsonb, 11000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/8376285/pexels-photo-8376285.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -193,9 +193,9 @@ end $$;
 do $$
 declare b text := 'oido-nariz-alergias'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Oído, nariz y garganta","en":"Ear, nose and throat"}'::jsonb, '{"es":"Infecciones de oído, sinusitis, ronquidos. Niños y adultos.","en":"Ear infections, sinusitis, snoring. Kids and adults."}'::jsonb, 14000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5996651/pexels-photo-5996651.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Prueba de alergias","en":"Allergy testing"}'::jsonb, '{"es":"En la piel; resultado el mismo día.","en":"Skin test; results the same day."}'::jsonb, 22000, 60, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/30425693/pexels-photo-30425693.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -204,9 +204,9 @@ end $$;
 do $$
 declare b text := 'psiquiatria-nuevo-amanecer'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Psiquiatría","en":"Psychiatry"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Primera evaluación","en":"First evaluation"}'::jsonb, '{"es":"Una hora, en persona o por video. Con Medicaid no pagas.","en":"One hour, in person or by video. With Medicaid you pay nothing."}'::jsonb, 15000, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/6255808/pexels-photo-6255808.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Control de medicamentos","en":"Medication follow-up"}'::jsonb, '{"es":"Cada 1 a 3 meses.","en":"Every 1 to 3 months."}'::jsonb, 9000, 20, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/6255808/pexels-photo-6255808.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -215,9 +215,9 @@ end $$;
 do $$
 declare b text := 'hablemos-terapias'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Niños","en":"Kids"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Evaluación del habla","en":"Speech evaluation"}'::jsonb, '{"es":"Para niños que hablan poco o no se les entiende, en español o inglés.","en":"For kids who speak little or are hard to understand, in Spanish or English."}'::jsonb, 9500, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7943248/pexels-photo-7943248.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Terapia ocupacional","en":"Occupational therapy"}'::jsonb, '{"es":"Motricidad, comer, vestirse, atención.","en":"Motor skills, eating, dressing, attention."}'::jsonb, 9000, 45, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/4506166/pexels-photo-4506166.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -226,9 +226,9 @@ end $$;
 do $$
 declare b text := 'enfermeria-cuidar'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"En tu casa","en":"At home"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Evaluación en casa","en":"Home evaluation"}'::jsonb, '{"es":"Una enfermera va, revisa y te da el plan por escrito. Sin costo.","en":"A nurse visits, checks and gives you the written plan. No cost."}'::jsonb, 0, 60, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/6753262/pexels-photo-6753262.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Visita de enfermería","en":"Nursing visit"}'::jsonb, '{"es":"Curaciones, inyecciones, control de presión y azúcar. Con orden del médico.","en":"Wound care, injections, blood pressure and sugar checks. With a doctor’s order."}'::jsonb, 0, 45, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/6753262/pexels-photo-6753262.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -237,9 +237,9 @@ end $$;
 do $$
 declare b text := 'cirugia-oral-pimentel'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Cirugía oral","en":"Oral surgery"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta con radiografía","en":"Consult with X-ray"}'::jsonb, '{"es":"Te dan el plan y el precio por escrito antes.","en":"You get the plan and price in writing first."}'::jsonb, 15000, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/38857366/pexels-photo-38857366.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Extracción de muela del juicio","en":"Wisdom tooth removal"}'::jsonb, '{"es":"Precio por muela; anestesia aparte si la necesitas.","en":"Price per tooth; sedation extra if needed."}'::jsonb, 25000, 45, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/38857366/pexels-photo-38857366.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -248,9 +248,9 @@ end $$;
 do $$
 declare b text := 'farmacia-san-rafael'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Farmacia","en":"Pharmacy"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Preparación de fórmula","en":"Compounded prescription"}'::jsonb, '{"es":"Con receta; te dicen el precio antes de prepararla.","en":"With a prescription; price given before compounding."}'::jsonb, 0, 30, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/15831830/pexels-photo-15831830.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Equipo médico","en":"Medical equipment"}'::jsonb, '{"es":"Andadores, sillas de ruedas y tensiómetros; te enseñan a usarlos.","en":"Walkers, wheelchairs and BP monitors; they show you how to use them."}'::jsonb, 0, 30, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/15831830/pexels-photo-15831830.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -258,9 +258,9 @@ end $$;
 do $$
 declare b text := 'peso-sano-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Peso","en":"Weight"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta inicial","en":"First visit"}'::jsonb, '{"es":"Análisis, medidas y un plan por escrito; sin promesas de libras.","en":"Labs, measurements and a written plan; no promises on pounds."}'::jsonb, 9900, 45, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/4474052/pexels-photo-4474052.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Seguimiento mensual","en":"Monthly follow-up"}'::jsonb, '{"es":"En persona o por video.","en":"In person or by video."}'::jsonb, 14900, 20, 'tele', '{}'::jsonb, array['https://images.pexels.com/photos/4474052/pexels-photo-4474052.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -268,9 +268,9 @@ end $$;
 do $$
 declare b text := 'hidrata-iv'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Sueros","en":"IV"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Suero de hidratación","en":"Hydration IV"}'::jsonb, '{"es":"Una enfermera te evalúa primero; si no es para ti, no se cobra.","en":"A nurse checks you first; if it is not for you, no charge."}'::jsonb, 12900, 45, 'proc', '{}'::jsonb, array['https://images.pexels.com/photos/6129691/pexels-photo-6129691.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Evaluación de enfermería","en":"Nurse assessment"}'::jsonb, '{"es":"","en":""}'::jsonb, 0, 15, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/6129691/pexels-photo-6129691.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -278,9 +278,9 @@ end $$;
 do $$
 declare b text := 'fertilidad-esperanza'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Fertilidad","en":"Fertility"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de fertilidad","en":"Fertility consult"}'::jsonb, '{"es":"Para la pareja; te explican opciones y precios por escrito.","en":"For the couple; options and prices in writing."}'::jsonb, 25000, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5915409/pexels-photo-5915409.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta por video","en":"Video consult"}'::jsonb, '{"es":"","en":""}'::jsonb, 15000, 30, 'tele', '{}'::jsonb, array['https://images.pexels.com/photos/5915409/pexels-photo-5915409.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -288,9 +288,9 @@ end $$;
 do $$
 declare b text := 'oncologia-del-valle'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Oncología","en":"Oncology"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Primera consulta","en":"First visit"}'::jsonb, '{"es":"Con referido de tu médico; trabajadora social en español.","en":"With a referral from your doctor; Spanish-speaking social worker."}'::jsonb, 0, 60, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/7659870/pexels-photo-7659870.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Orientación sobre ayuda para pagar","en":"Help paying for care"}'::jsonb, '{"es":"Gratis.","en":"Free."}'::jsonb, 0, 30, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/7659870/pexels-photo-7659870.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -298,9 +298,9 @@ end $$;
 do $$
 declare b text := 'demo-salud'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-SALUD') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultas","en":"Visits"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de medicina general","en":"Primary care visit"}'::jsonb, '{"es":"Fiebre, gripe, presión, dolores.","en":"Fever, flu, blood pressure, aches."}'::jsonb, 8500, 20, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/7579823/pexels-photo-7579823.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Chequeo anual","en":"Annual checkup"}'::jsonb, '{"es":"Con Medicaid o Medicare no pagas.","en":"With Medicaid or Medicare you pay nothing."}'::jsonb, 0, 40, 'free', '{}'::jsonb, array['https://images.pexels.com/photos/39192344/pexels-photo-39192344.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -332,9 +332,9 @@ end $$;
 do $$
 declare b text := 'bufete-almonte'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Inmigración","en":"Immigration"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de inmigración","en":"Immigration consultation"}'::jsonb, '{"es":"Una abogada revisa tu caso, te dice qué opciones tienes y cuánto cuesta cada una. Se descuenta si la contratas.","en":"An attorney reviews your case, tells you your options and what each costs. Credited if you hire."}'::jsonb, 7500, 45, 'cons', '{"rem":true,"cred":true}'::jsonb, array['https://images.pexels.com/photos/4427431/pexels-photo-4427431.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Renovar la green card (I-90)","en":"Renew green card (I-90)"}'::jsonb, '{"es":"Llenan y envían el formulario, revisan tus papeles y te acompañan hasta la cita de huellas.","en":"They fill and file the form, check your papers and guide you to the biometrics appointment."}'::jsonb, 35000, 60, 'fijo', '{"rem":true,"gov":46500}'::jsonb, array['https://images.pexels.com/photos/39356223/pexels-photo-39356223.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -347,9 +347,9 @@ end $$;
 do $$
 declare b text := 'centro-legal-comunitario'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Inmigración","en":"Immigration"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta gratis de inmigración","en":"Free immigration consultation"}'::jsonb, '{"es":"Con un representante acreditado por el Departamento de Justicia. Los martes y jueves.","en":"With a Department of Justice accredited representative. Tuesdays and Thursdays."}'::jsonb, 0, 45, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/6927356/pexels-photo-6927356.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Renovar DACA","en":"Renew DACA"}'::jsonb, '{"es":"Formulario y revisión. El honorario baja según tus ingresos.","en":"Form and review. Fee lowers based on income."}'::jsonb, 15000, 60, 'fijo', '{"gov":55500}'::jsonb, array['https://images.pexels.com/photos/39356223/pexels-photo-39356223.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -361,9 +361,9 @@ end $$;
 do $$
 declare b text := 'multiservicios-la-patria'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Documentos","en":"Documents"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Notarizar una firma","en":"Notarize a signature"}'::jsonb, '{"es":"Traes tu documento sin firmar y una identificación con foto.","en":"Bring your unsigned document and a photo ID."}'::jsonb, 500, 10, 'walk', '{"no":[{"es":"Notaria no es abogada: no llena formularios de inmigración ni da consejo legal.","en":"A notary is not a lawyer: no immigration forms or legal advice."}]}'::jsonb, array['https://images.pexels.com/photos/18687845/pexels-photo-18687845.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Traducción certificada de un acta","en":"Certified translation of a record"}'::jsonb, '{"es":"Nacimiento, matrimonio o divorcio. La acepta USCIS. Lista en 24 h.","en":"Birth, marriage or divorce. USCIS accepts it. Ready in 24 h."}'::jsonb, 3000, 10, 'walk', '{}'::jsonb, array['https://images.pexels.com/photos/34369598/pexels-photo-34369598.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -375,9 +375,9 @@ end $$;
 do $$
 declare b text := 'rosario-tax-itin'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Impuestos","en":"Taxes"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Declaración con W-2","en":"Return with W-2"}'::jsonb, '{"es":"Federal y de Pennsylvania. Te dicen el reembolso antes de firmar.","en":"Federal and Pennsylvania. They tell you the refund before you sign."}'::jsonb, 9500, 45, 'fijo', '{"no":[{"es":"Nadie puede prometerte un reembolso: depende de tus papeles.","en":"No one can promise a refund: it depends on your paperwork."}],"rem":true}'::jsonb, array['https://images.pexels.com/photos/6863330/pexels-photo-6863330.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Declaración con 1099 o negocio propio","en":"Return with 1099 or self-employed"}'::jsonb, '{"es":"Con gastos del trabajo, millas y herramientas.","en":"With work expenses, miles and tools."}'::jsonb, 17500, 60, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/7654131/pexels-photo-7654131.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -391,9 +391,9 @@ end $$;
 do $$
 declare b text := 'mercedes-guzman-cpa'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Servicios","en":"Services"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta con la contadora","en":"Consultation with the CPA"}'::jsonb, '{"es":"Impuestos, cartas del IRS o abrir un negocio. Por video o en la oficina.","en":"Taxes, IRS letters or starting a business. Video or in the office."}'::jsonb, 6000, 30, 'cons', '{"rem":true,"cred":true}'::jsonb, array['https://images.pexels.com/photos/7654131/pexels-photo-7654131.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Abrir una LLC","en":"Form an LLC"}'::jsonb, '{"es":"Registro en Pennsylvania, EIN y cuenta de banco del negocio.","en":"Pennsylvania registration, EIN and business bank account."}'::jsonb, 45000, 60, 'fijo', '{"rem":true,"gov":12500}'::jsonb, array['https://images.pexels.com/photos/6476797/pexels-photo-6476797.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -403,9 +403,9 @@ end $$;
 do $$
 declare b text := 'lcda-ines-cabrera'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Familia","en":"Family"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de familia","en":"Family law consultation"}'::jsonb, '{"es":"Divorcio, custodia, manutención o testamento. Te digo el precio total antes de empezar.","en":"Divorce, custody, support or will. You get the total before we start."}'::jsonb, 6000, 45, 'cons', '{"rem":true,"cred":true}'::jsonb, array['https://images.pexels.com/photos/7876154/pexels-photo-7876154.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Divorcio sin pelea","en":"Uncontested divorce"}'::jsonb, '{"es":"Cuando los dos están de acuerdo. Papeles y una audiencia.","en":"When both agree. Papers and one hearing."}'::jsonb, 120000, 60, 'fijo', '{"gov":25000}'::jsonb, array['https://images.pexels.com/photos/7841454/pexels-photo-7841454.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -415,11 +415,11 @@ end $$;
 do $$
 declare b text := 'ferreira-injury-law'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
   insert into users (phone, first_name, last_name, lang, home_city_id) values ('+15705550255', 'Luis', 'Ferreira', 'es', 'hzl') on conflict (phone) do nothing;
   if not exists (select 1 from business_members where business_id = b and kind = 'owner' and user_id is not null) then insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours) select b, u.id, 'owner', 'Luis Ferreira', '{"es":"Abogado","en":"Attorney"}'::jsonb, 'active', true, array['all'], 0, true from users u where u.phone = '+15705550255'; end if;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Accidentes","en":"Accidents"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta gratis de accidente","en":"Free accident consultation"}'::jsonb, '{"es":"Carro, trabajo, caída. Te llaman hoy y te dicen si hay caso.","en":"Car, work, fall. They call you today and tell you if there is a case."}'::jsonb, 0, 30, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/35784044/pexels-photo-35784044.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Caso de accidente de carro","en":"Car accident case"}'::jsonb, '{"es":"Solo cobran si ganas: 33 % de lo que recibas, 40 % si llega a juicio. Si no ganas, no pagas.","en":"Paid only if you win: 33% of what you get, 40% if it goes to trial. No win, no fee."}'::jsonb, 3300, 60, 'pct', '{"no":[{"es":"Nadie puede decirte cuánto vas a recibir antes de ver el caso.","en":"No one can tell you how much you will get before reviewing the case."}],"unit":"caso"}'::jsonb, array['https://images.pexels.com/photos/29271763/pexels-photo-29271763.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -428,9 +428,9 @@ end $$;
 do $$
 declare b text := 'seguros-el-cibao'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Seguros","en":"Insurance"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Cotización de seguro de auto","en":"Auto insurance quote"}'::jsonb, '{"es":"Comparamos 6 compañías y te damos el precio por mes. Con licencia dominicana o internacional también.","en":"We compare 6 insurers and give you the monthly price. Dominican or international license welcome."}'::jsonb, 0, 20, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/7736045/pexels-photo-7736045.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Seguro de renta","en":"Renter''s insurance"}'::jsonb, '{"es":"Desde $12 al mes. Lo necesita tu landlord en el contrato.","en":"From $12 a month. Your landlord may require it."}'::jsonb, 1200, 15, 'fijo', '{"rem":true,"mes":true}'::jsonb, array['https://images.pexels.com/photos/5849553/pexels-photo-5849553.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -440,9 +440,9 @@ end $$;
 do $$
 declare b text := 'imprenta-quisqueya'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Imprenta","en":"Printing"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"500 tarjetas de presentación","en":"500 business cards"}'::jsonb, '{"es":"A dos lados, listas en 24 h. Si traes tu diseño.","en":"Double-sided, ready in 24 h. With your design."}'::jsonb, 4500, 15, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/34491716/pexels-photo-34491716.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Diseño de logo","en":"Logo design"}'::jsonb, '{"es":"3 ideas y 2 cambios. Te lo damos en todos los formatos.","en":"3 concepts and 2 revisions. All formats."}'::jsonb, 15000, 30, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/7675023/pexels-photo-7675023.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -452,9 +452,11 @@ end $$;
 do $$
 declare b text := 'tecnofix-hazleton'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  insert into users (phone, first_name, last_name, lang, home_city_id) values ('+15705550277', 'Edwin', 'Paulino', 'es', 'hzl') on conflict (phone) do nothing;
+  if not exists (select 1 from business_members where business_id = b and kind = 'owner' and user_id is not null) then insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours) select b, u.id, 'owner', 'Edwin Paulino', '{"es":"Dueño","en":"Owner"}'::jsonb, 'active', true, array['all'], 0, true from users u where u.phone = '+15705550277'; end if;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Reparaciones","en":"Repairs"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Cambio de pantalla","en":"Screen replacement"}'::jsonb, '{"es":"iPhone y Samsung. En 1 hora, con 90 días de garantía.","en":"iPhone and Samsung. In 1 hour, 90-day warranty."}'::jsonb, 8900, 60, 'walk', '{"no":[{"es":"No desbloquea teléfonos reportados o de otra persona.","en":"Does not unlock reported phones or phones that are not yours."}]}'::jsonb, array['https://images.pexels.com/photos/6755075/pexels-photo-6755075.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Diagnóstico","en":"Diagnosis"}'::jsonb, '{"es":"Gratis. Te dicen el precio antes de arreglar.","en":"Free. You get the price before any repair."}'::jsonb, 0, 20, 'walk', '{}'::jsonb, array['https://images.pexels.com/photos/4705634/pexels-photo-4705634.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -463,9 +465,9 @@ end $$;
 do $$
 declare b text := 'lopez-defensa-penal'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Defensa","en":"Defense"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta gratis","en":"Free consultation"}'::jsonb, '{"es":"Arresto, citación o cargos. Si es urgente, te llaman en 15 minutos a cualquier hora.","en":"Arrest, summons or charges. If urgent, they call within 15 minutes, any hour."}'::jsonb, 0, 30, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/34817073/pexels-photo-34817073.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Multa de tránsito","en":"Traffic ticket"}'::jsonb, '{"es":"Van a la audiencia por ti. Muchas veces no tienes que ir.","en":"They go to the hearing for you. Often you do not need to attend."}'::jsonb, 25000, 30, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/7715194/pexels-photo-7715194.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -475,9 +477,9 @@ end $$;
 do $$
 declare b text := 'peguero-law'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Bancarrota","en":"Bankruptcy"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de bancarrota","en":"Bankruptcy consultation"}'::jsonb, '{"es":"Revisa tus deudas y te dice si te conviene, qué protege la ley y cuánto cuesta. Gratis.","en":"Reviews your debts and tells you if it makes sense, what the law protects and the cost. Free."}'::jsonb, 0, 45, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/7111490/pexels-photo-7111490.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Bancarrota capítulo 7","en":"Chapter 7 bankruptcy"}'::jsonb, '{"es":"Formularios, la audiencia con el síndico y el seguimiento hasta el final.","en":"Forms, the trustee hearing and follow-up to the end."}'::jsonb, 150000, 60, 'fijo', '{"no":[{"es":"No todas las deudas se borran: impuestos recientes y manutención se quedan.","en":"Not every debt is cleared: recent taxes and child support remain."}],"gov":33800}'::jsonb, array['https://images.pexels.com/photos/7111490/pexels-photo-7111490.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -488,9 +490,9 @@ end $$;
 do $$
 declare b text := 'hogar-propio-prestamos'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Préstamos","en":"Loans"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de hipoteca","en":"Mortgage consultation"}'::jsonb, '{"es":"Revisa tus ingresos y tu crédito, y te dice cuánto podrías pedir. Gratis.","en":"Reviews your income and credit and tells you how much you could borrow. Free."}'::jsonb, 0, 40, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/31424880/pexels-photo-31424880.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Comparar bancos","en":"Compare lenders"}'::jsonb, '{"es":"Te trae ofertas de varios bancos con la tasa, el pago por mes y todos los cargos.","en":"Brings offers from several lenders with rate, monthly payment and every fee."}'::jsonb, 0, 30, 'cons', '{"no":[{"es":"Quien aprueba el préstamo es el banco.","en":"The lender approves the loan."}],"rem":true}'::jsonb, array['https://images.pexels.com/photos/8293768/pexels-photo-8293768.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -499,9 +501,9 @@ end $$;
 do $$
 declare b text := 'ortega-consultoria'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Consultoría","en":"Consulting"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Primera cita","en":"First meeting"}'::jsonb, '{"es":"Revisamos tu negocio y te digo por escrito qué haría y cuánto cuesta. Gratis.","en":"We review your business and I tell you in writing what I would do and the cost. Free."}'::jsonb, 0, 45, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/36765718/pexels-photo-36765718.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Plan de negocio","en":"Business plan"}'::jsonb, '{"es":"Números, precios y metas; sirve para pedir un préstamo.","en":"Numbers, prices and goals; useful for a loan application."}'::jsonb, 45000, 60, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/36765718/pexels-photo-36765718.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -510,9 +512,9 @@ end $$;
 do $$
 declare b text := 'solis-foto-video'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Foto y video","en":"Photo and video"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Fotos de productos o del menú","en":"Product or menu photos"}'::jsonb, '{"es":"Hasta 20 fotos editadas, listas en 5 días.","en":"Up to 20 edited photos, ready in 5 days."}'::jsonb, 25000, 120, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/18880006/pexels-photo-18880006.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Video de 1 minuto","en":"1-minute video"}'::jsonb, '{"es":"Para redes y tu página, con música y subtítulos.","en":"For social and your site, with music and captions."}'::jsonb, 60000, 240, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/19623305/pexels-photo-19623305.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -521,9 +523,9 @@ end $$;
 do $$
 declare b text := 'nunez-software'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Software","en":"Software"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Primera llamada","en":"First call"}'::jsonb, '{"es":"Me cuentas qué necesitas y te doy el precio total por escrito. Gratis.","en":"Tell me what you need and I give you the total in writing. Free."}'::jsonb, 0, 30, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/36706459/pexels-photo-36706459.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Página para tu negocio","en":"Business website"}'::jsonb, '{"es":"5 páginas, en español e inglés. Todo queda a tu nombre.","en":"5 pages, Spanish and English. Everything stays in your name."}'::jsonb, 90000, 60, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -532,9 +534,9 @@ end $$;
 do $$
 declare b text := 'ventura-arquitectura'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Planos","en":"Plans"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Visita para medir","en":"Measuring visit"}'::jsonb, '{"es":"Vamos a tu casa o local, medimos y te escuchamos.","en":"We visit your home or space, measure and listen."}'::jsonb, 15000, 60, 'cons', '{"cred":true}'::jsonb, array['https://images.pexels.com/photos/4458205/pexels-photo-4458205.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Planos para permiso","en":"Permit plans"}'::jsonb, '{"es":"Firmados y sellados, como los pide la ciudad de Hazleton.","en":"Signed and sealed, as Hazleton requires."}'::jsonb, 120000, 60, 'cotiza', '{"no":[{"es":"El permiso lo aprueba la ciudad; la tarifa de la ciudad va aparte.","en":"The city approves the permit; the city fee is separate."}]}'::jsonb, array['https://images.pexels.com/photos/4458205/pexels-photo-4458205.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -543,9 +545,9 @@ end $$;
 do $$
 declare b text := 'envios-caribe'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Envíos","en":"Transfers"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Envío a República Dominicana","en":"Transfer to the DR"}'::jsonb, '{"es":"El total con la tasa del día antes de pagar.","en":"Total with today’s rate before you pay."}'::jsonb, 599, 30, 'walk', '{}'::jsonb, array['https://images.pexels.com/photos/12008048/pexels-photo-12008048.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Cambio de cheque","en":"Check cashing"}'::jsonb, '{"es":"1 % del cheque, con ID.","en":"1% of the check, with ID."}'::jsonb, 100, 30, 'pct', '{"unit":"caso"}'::jsonb, array['https://images.pexels.com/photos/12008048/pexels-photo-12008048.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -553,9 +555,9 @@ end $$;
 do $$
 declare b text := 'traducciones-ana-beltre'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Traducción","en":"Translation"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Traducción certificada · por página","en":"Certified translation · per page"}'::jsonb, '{"es":"Actas, diplomas y récords; lista en 2 días.","en":"Birth certificates, diplomas and records; ready in 2 days."}'::jsonb, 3500, 15, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/34369598/pexels-photo-34369598.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Apostilla","en":"Apostille"}'::jsonb, '{"es":"Te dicen qué paga el estado aparte.","en":"State fee stated separately."}'::jsonb, 7500, 15, 'fijo', '{"gov":1500}'::jsonb, array['https://images.pexels.com/photos/34369598/pexels-photo-34369598.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -563,9 +565,9 @@ end $$;
 do $$
 declare b text := 'hazleton-notary-tags'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Notaría","en":"Notary"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Notarizar un documento","en":"Notarize a document"}'::jsonb, '{"es":"Con tu ID.","en":"With your ID."}'::jsonb, 500, 30, 'walk', '{}'::jsonb, array['https://images.pexels.com/photos/18687845/pexels-photo-18687845.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Placas y título del carro","en":"Tags and title"}'::jsonb, '{"es":"El cargo del estado va aparte y te lo dicen antes.","en":"State fees are separate and stated first."}'::jsonb, 4500, 20, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/18687845/pexels-photo-18687845.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -573,9 +575,9 @@ end $$;
 do $$
 declare b text := 'fianzas-luzerne'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Fianzas","en":"Bail"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Fianza","en":"Bail bond"}'::jsonb, '{"es":"10 % de la fianza; te explican en español qué firmas.","en":"10% of the bail; they explain in Spanish what you sign."}'::jsonb, 1000, 30, 'pct', '{"unit":"caso"}'::jsonb, array['https://images.pexels.com/photos/15452106/pexels-photo-15452106.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta","en":"Consultation"}'::jsonb, '{"es":"24 horas, por teléfono.","en":"24 hours, by phone."}'::jsonb, 0, 15, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/15452106/pexels-photo-15452106.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -583,9 +585,9 @@ end $$;
 do $$
 declare b text := 'agencia-progreso'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Empleo","en":"Jobs"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Registro para buscar trabajo","en":"Job seeker sign-up"}'::jsonb, '{"es":"Gratis para ti; nunca te cobran por un empleo.","en":"Free for you; never charged for a job."}'::jsonb, 0, 30, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5439455/pexels-photo-5439455.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Recursos humanos para negocios","en":"HR for businesses"}'::jsonb, '{"es":"Nómina, I-9 y reglas del trabajo.","en":"Payroll, I-9 and workplace rules."}'::jsonb, 30000, 30, 'cotiza', '{}'::jsonb, array['https://images.pexels.com/photos/5439455/pexels-photo-5439455.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -593,9 +595,9 @@ end $$;
 do $$
 declare b text := 'dr-truck-dispatch'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Despacho","en":"Dispatch"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Despacho de cargas","en":"Load dispatch"}'::jsonb, '{"es":"5 % por carga; sin contrato largo.","en":"5% per load; no long contract."}'::jsonb, 500, 30, 'pct', '{"unit":"caso"}'::jsonb, array['https://images.pexels.com/photos/6563903/pexels-photo-6563903.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Papeles DOT y CDL","en":"DOT and CDL paperwork"}'::jsonb, '{"es":"","en":""}'::jsonb, 15000, 45, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/6563903/pexels-photo-6563903.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -603,9 +605,9 @@ end $$;
 do $$
 declare b text := 'credito-nuevo'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Crédito","en":"Credit"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta de crédito","en":"Credit consultation"}'::jsonb, '{"es":"Revisan tu reporte contigo; gratis.","en":"They review your report with you; free."}'::jsonb, 0, 30, 'cons', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/4691474/pexels-photo-4691474.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Plan mensual","en":"Monthly plan"}'::jsonb, '{"es":"Cartas de disputa y seguimiento; cancelas cuando quieras.","en":"Dispute letters and follow-up; cancel any time."}'::jsonb, 7900, 30, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/4691474/pexels-photo-4691474.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -613,9 +615,9 @@ end $$;
 do $$
 declare b text := 'latino-web-studio'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Web","en":"Web"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Página web","en":"Website"}'::jsonb, '{"es":"Hasta 5 páginas, en español e inglés; lista en 3 semanas.","en":"Up to 5 pages, Spanish and English; ready in 3 weeks."}'::jsonb, 60000, 30, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Logotipo","en":"Logo"}'::jsonb, '{"es":"3 ideas y 2 cambios.","en":"3 ideas and 2 revisions."}'::jsonb, 25000, 30, 'fijo', '{"rem":true}'::jsonb, array['https://images.pexels.com/photos/9052803/pexels-photo-9052803.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -623,9 +625,9 @@ end $$;
 do $$
 declare b text := 'rev-carmen-soto'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Ceremonias","en":"Ceremonies"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Boda","en":"Wedding"}'::jsonb, '{"es":"Ceremonia en español o inglés; ensayo incluido.","en":"Ceremony in Spanish or English; rehearsal included."}'::jsonb, 25000, 60, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/17529847/pexels-photo-17529847.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Renovación de votos","en":"Vow renewal"}'::jsonb, '{"es":"","en":""}'::jsonb, 15000, 45, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/17529847/pexels-photo-17529847.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -633,9 +635,9 @@ end $$;
 do $$
 declare b text := 'paredes-seguridad'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Seguridad","en":"Security"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Guardia para tu evento","en":"Event guard"}'::jsonb, '{"es":"Guardia con licencia; mínimo 4 horas.","en":"Licensed guard; 4-hour minimum."}'::jsonb, 3500, 30, 'hora', '{}'::jsonb, array['https://images.pexels.com/photos/35562107/pexels-photo-35562107.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Investigación privada","en":"Private investigation"}'::jsonb, '{"es":"Primero una consulta; el precio por escrito.","en":"Consultation first; price in writing."}'::jsonb, 40000, 30, 'cotiza', '{}'::jsonb, array['https://images.pexels.com/photos/35562107/pexels-photo-35562107.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -643,9 +645,9 @@ end $$;
 do $$
 declare b text := 'mensajeria-rapida-hzl'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Mensajería","en":"Courier"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Entrega en Hazleton","en":"Hazleton delivery"}'::jsonb, '{"es":"El mismo día; foto al entregar.","en":"Same day; photo on delivery."}'::jsonb, 1500, 30, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/6868621/pexels-photo-6868621.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Documentos a la corte o al condado","en":"Court or county filings"}'::jsonb, '{"es":"","en":""}'::jsonb, 2500, 30, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/6868621/pexels-photo-6868621.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
@@ -653,11 +655,30 @@ end $$;
 do $$
 declare b text := 'lugo-interiores'; s bigint;
 begin
-  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
+  if not exists (select 1 from businesses where id = b and is_demo and category_id = 'NEG-PRO') then return; end if;
   update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;
-  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;
+  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;
   insert into item_sections (business_id, module, name, sort) values (b, 'svc', '{"es":"Diseño","en":"Design"}'::jsonb, 0) returning id into s;
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta en tu casa","en":"In-home consult"}'::jsonb, '{"es":"Una hora; te dejo ideas y un presupuesto por escrito.","en":"One hour; ideas and a written budget."}'::jsonb, 9500, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5393592/pexels-photo-5393592.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Diseño de un cuarto","en":"One-room design"}'::jsonb, '{"es":"Plano, colores y lista de compras.","en":"Layout, colors and shopping list."}'::jsonb, 45000, 60, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/5393592/pexels-photo-5393592.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
 end $$;
+insert into health_settings (business_id, insurers, uninsured, cash_cents, langs, tele, sliding, no_id, interp, walk_wait_min)
+  select b.id, x.ins, b.filter_values @> '{sinseguro}' or cardinality(x.ins) = 0,
+         least(40000, greatest(2000, round(coalesce((b.category_attrs->>'cash')::numeric, 85) * 100 / 500) * 500))::int, '{es,en}',
+         'tele' = any(b.filter_values), 'escala' = any(b.filter_values), 'sinid' = any(b.filter_values), 'interp' = any(b.filter_values),
+         case when b.category_attrs ? 'wait' then least(180, greatest(0, (b.category_attrs->>'wait')::int)) end
+    from businesses b, lateral (select coalesce(array(select v from jsonb_array_elements_text(case when jsonb_typeof(b.category_attrs->'ins') = 'array' then b.category_attrs->'ins' else '[]'::jsonb end) v
+                                                     where v in (select key from insurers)), '{}') as ins) x
+   where b.is_demo and b.category_id = 'NEG-SALUD'
+  on conflict (business_id) do update set insurers = excluded.insurers, uninsured = excluded.uninsured, cash_cents = excluded.cash_cents, tele = excluded.tele, sliding = excluded.sliding,
+     no_id = excluded.no_id, interp = excluded.interp, walk_wait_min = excluded.walk_wait_min where health_settings.updated_by is null;
+insert into pro_settings (business_id, days, warranty_days, estimate_first, insurers_n, compares, payment_plan, urgent)
+  select b.id, case when k.n between 46 and 48 then 1 when k.n between 39 and 41 then 2 when k.n = 38 or k.n between 42 and 45 then 14 when k.n between 56 and 59 then 21
+                    when k.n in (25, 26, 49, 50, 54, 55) then 7 else 2 end,
+         case when k.n between 46 and 48 then 90 when k.n = 38 or k.n between 42 and 45 then 30 else 0 end, true,
+         case when k.n between 27 and 30 then 6 end, k.n between 27 and 30, 'plan' = any(b.filter_values), 'urgente' = any(b.filter_values)
+    from businesses b, lateral (select coalesce(substring(b.subcategory_ids[1] from '^NEG-PRO-(\d{2})$')::int, 4) as n) k
+   where b.is_demo and b.category_id = 'NEG-PRO'
+  on conflict (business_id) do update set days = excluded.days, warranty_days = excluded.warranty_days, estimate_first = excluded.estimate_first, insurers_n = excluded.insurers_n,
+     compares = excluded.compares, payment_plan = excluded.payment_plan, urgent = excluded.urgent where pro_settings.updated_by is null;
 commit;

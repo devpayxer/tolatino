@@ -35,14 +35,13 @@ for (const [cat, L, rub] of [["NEG-SALUD", w.TLSaludL, "salud"], ["NEG-PRO", w.T
   for (const [id, secs] of Object.entries((L && L.SVC) || {})) {
     if (!NEG.has(id) || !secs.length) continue;
     out.push("do $$", "declare b text := " + q(id) + "; s bigint;", "begin",
-      `  if not exists (select 1 from businesses where id = b and is_demo and category_id = ${q(cat)}) or exists (select 1 from items where business_id = b and module = 'svc') then return; end if;`,
+      `  if not exists (select 1 from businesses where id = b and is_demo and category_id = ${q(cat)}) then return; end if;`,
       `  update businesses set modules_on = (select array(select distinct unnest(modules_on || array['svc','citas']::text[]))) where id = b;`);
-    // Dueños de prueba (para entrar al panel en el sandbox): la Dra. del centro médico y el abogado de Ferreira.
-    const DUENO = { "centro-medico-quisqueya": ["+15705550244", "Altagracia", "Reyes", "Directora médica", "Medical director"], "ferreira-injury-law": ["+15705550255", "Luis", "Ferreira", "Abogado", "Attorney"] }[id];
+    // Dueños de prueba (para entrar al panel en el sandbox): la Dra. del centro médico, el abogado de Ferreira y el taller de celulares.
+    const DUENO = { "centro-medico-quisqueya": ["+15705550244", "Altagracia", "Reyes", "Directora médica", "Medical director"], "ferreira-injury-law": ["+15705550255", "Luis", "Ferreira", "Abogado", "Attorney"], "tecnofix-hazleton": ["+15705550277", "Edwin", "Paulino", "Dueño", "Owner"] }[id];
     if (DUENO) out.push(`  insert into users (phone, first_name, last_name, lang, home_city_id) values (${q(DUENO[0])}, ${q(DUENO[1])}, ${q(DUENO[2])}, 'es', 'hzl') on conflict (phone) do nothing;`,
       `  if not exists (select 1 from business_members where business_id = b and kind = 'owner' and user_id is not null) then insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours) select b, u.id, 'owner', ${q(DUENO[1] + " " + DUENO[2])}, ${J(bi(DUENO[3], DUENO[4]))}, 'active', true, array['all'], 0, true from users u where u.phone = ${q(DUENO[0])}; end if;`);
-    if (rub === "salud") out.push(`  insert into health_settings (business_id, insurers, uninsured, cash_cents, langs) values (b, '{medicaid,medicare,chip,highmark,geisinger}', true, 8500, '{es,en}') on conflict (business_id) do nothing;`);
-    else out.push(`  insert into pro_settings (business_id) values (b) on conflict (business_id) do nothing;`);
+    out.push("  if exists (select 1 from items where business_id = b and module = 'svc') then return; end if;");
     secs.forEach((g, gi) => {
       out.push(`  insert into item_sections (business_id, module, name, sort) values (b, 'svc', ${J(bi(g[0], g[1]))}, ${gi}) returning id into s;`);
       g[2].forEach((it, ii) => {
@@ -54,6 +53,27 @@ for (const [cat, L, rub] of [["NEG-SALUD", w.TLSaludL, "salud"], ["NEG-PRO", w.T
     out.push("end $$;");
   }
 }
+// Tu herramienta de TODOS los de prueba (tengan o no servicios del prototipo): lo que ya dice su página (seguros, precio sin
+// seguro, espera, filtros) y, para Profesionales, los valores de su tipo (neg-pro-kind.js DEF). No pisa lo que el dueño guardó.
+out.push(`insert into health_settings (business_id, insurers, uninsured, cash_cents, langs, tele, sliding, no_id, interp, walk_wait_min)
+  select b.id, x.ins, b.filter_values @> '{sinseguro}' or cardinality(x.ins) = 0,
+         least(40000, greatest(2000, round(coalesce((b.category_attrs->>'cash')::numeric, 85) * 100 / 500) * 500))::int, '{es,en}',
+         'tele' = any(b.filter_values), 'escala' = any(b.filter_values), 'sinid' = any(b.filter_values), 'interp' = any(b.filter_values),
+         case when b.category_attrs ? 'wait' then least(180, greatest(0, (b.category_attrs->>'wait')::int)) end
+    from businesses b, lateral (select coalesce(array(select v from jsonb_array_elements_text(case when jsonb_typeof(b.category_attrs->'ins') = 'array' then b.category_attrs->'ins' else '[]'::jsonb end) v
+                                                     where v in (select key from insurers)), '{}') as ins) x
+   where b.is_demo and b.category_id = 'NEG-SALUD'
+  on conflict (business_id) do update set insurers = excluded.insurers, uninsured = excluded.uninsured, cash_cents = excluded.cash_cents, tele = excluded.tele, sliding = excluded.sliding,
+     no_id = excluded.no_id, interp = excluded.interp, walk_wait_min = excluded.walk_wait_min where health_settings.updated_by is null;`);
+out.push(`insert into pro_settings (business_id, days, warranty_days, estimate_first, insurers_n, compares, payment_plan, urgent)
+  select b.id, case when k.n between 46 and 48 then 1 when k.n between 39 and 41 then 2 when k.n = 38 or k.n between 42 and 45 then 14 when k.n between 56 and 59 then 21
+                    when k.n in (25, 26, 49, 50, 54, 55) then 7 else 2 end,
+         case when k.n between 46 and 48 then 90 when k.n = 38 or k.n between 42 and 45 then 30 else 0 end, true,
+         case when k.n between 27 and 30 then 6 end, k.n between 27 and 30, 'plan' = any(b.filter_values), 'urgente' = any(b.filter_values)
+    from businesses b, lateral (select coalesce(substring(b.subcategory_ids[1] from '^NEG-PRO-(\\d{2})$')::int, 4) as n) k
+   where b.is_demo and b.category_id = 'NEG-PRO'
+  on conflict (business_id) do update set days = excluded.days, warranty_days = excluded.warranty_days, estimate_first = excluded.estimate_first, insurers_n = excluded.insurers_n,
+     compares = excluded.compares, payment_plan = excluded.payment_plan, urgent = excluded.urgent where pro_settings.updated_by is null;`);
 out.push("commit;");
 process.stdout.write(out.join("\n") + "\n");
 process.stderr.write(`servicios: ${n}\n`);

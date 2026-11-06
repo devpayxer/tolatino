@@ -1,5 +1,7 @@
 import "server-only";
 import { db } from "./db";
+import { herramientaSP } from "./salud-pro";
+import type { HerrSP } from "./salud-pro-comun";
 
 /* Servicios y reglas de citas (Fase 3 · 3a). Los servicios son `items` con module 'svc' (como el menú): categoría en
    item_sections, duración, tiempo entre citas (el cliente no lo ve), «desde · varía», opciones que cambian precio y
@@ -59,6 +61,7 @@ export type SvcPanel = {
   model: "emp" | "comm" | "chair"; rent: number | null; comm: number | null;
   secciones: { id: string; name: Bi; sort: number }[]; servicios: Servicio[]; gente: Persona[]; pol: Politica;
   on: boolean; off: { svc: string | null; citas: string | null };
+  sp: HerrSP | null; // Tu herramienta de Doctores y Profesionales (4h-2)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -81,9 +84,9 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
     db().query<{ auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number }>(
       `select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, tolerance_min as tol, staff_pick as pick, expires_h as exp from booking_policies where business_id = $1`, [negocio]),
   ]);
-  const x = b.rows[0]!, off = x.off ?? {};
+  const x = b.rows[0]!, off = x.off ?? {}, rub = rubroSP(x.cat);
   return {
-    rubro: rubroSP(x.cat), model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    rubro: rub, sp: rub ? await herramientaSP(negocio, rub) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

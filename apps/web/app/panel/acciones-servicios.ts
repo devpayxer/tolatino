@@ -1,6 +1,7 @@
 "use server";
 import { limpiarSP, rubroSP, type AttrsSP } from "@/lib/servicios";
 import { invitarCobro } from "@/lib/sillas";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 /* Servicios y reglas de citas desde el panel (Lo que vendes › Servicios, Citas y Sillas y agenda). Cada acción: mismo
    sitio, miembro activo con acceso a «Lo que vendes» (parte cat), datos revisados en el servidor y una línea en la
    auditoría. Nada se borra (removed_at). Las citas ya pedidas guardan su copia del servicio: cambiar aquí no las toca. */
@@ -20,7 +21,12 @@ async function hacer(id: string, fn: (c: PoolClient, a: Acceso) => Promise<Res |
   if (!(await mismoOrigen())) return SIN_ACCESO;
   const a = typeof id === "string" ? await accesoPanel(id, "cat") : null;
   if (!a) return SIN_ACCESO;
-  const r = await tx((c) => fn(c, a));
+  const r = await tx(async (c) => {
+    const x = await fn(c, a);
+    // Doctores y Profesionales: sus filtros salen de los servicios (sin cita, consulta gratis, por video…).
+    if (!x || x.ok) await recalcularFiltrosSP(c, a.negocio.id);
+    return x;
+  });
   return r ?? { ok: true };
 }
 async function auditar(c: PoolClient, a: Acceso, action: string, before: unknown, after: unknown) {

@@ -500,6 +500,23 @@ const guardianes = {
     }
   },
 
+  /* 4h-2. La pestaña «Lo que vende» del 360 solo salía para Comida, Belleza y Profesionales: lo de Auto, Hogar y Doctores
+     estaba construido pero nadie llegaba (solo escribiendo la dirección). La pestaña y su contenido salen de la misma lista
+     (VENDE); ninguna rama «tab === "vende"» nombra una categoría que la lista no tenga, y la línea de pestañas no compara
+     categorías a mano. */
+  pestanaVende() {
+    const F = "apps/web/app/admin/N360.tsx";
+    if (!existsSync(F)) return;
+    const src = readFileSync(F, "utf8"), L = src.split("\n");
+    const lista = (n) => { const m = new RegExp(`const ${n} = \\[([^\\]]*)\\]`).exec(src); return m ? m[1].split(",").map((x) => x.trim()) : null; };
+    const svc = lista("VENDE_SVC") ?? [], todo = (lista("VENDE") ?? []).flatMap((x) => (x === "...VENDE_SVC" ? svc : [x])).map((x) => x.replace(/"/g, ""));
+    if (!todo.length) { falla("pestanaVende", F, 1, "falta la lista VENDE de categorías con «Lo que vende»"); return; }
+    L.forEach((l, i) => {
+      if (/\["vende", "Lo que vende"\]/.test(l) && !/VENDE\.includes\(n\.cat_id\)/.test(l)) falla("pestanaVende", F, i + 1, "la pestaña «Lo que vende» tiene que salir de VENDE.includes(n.cat_id)");
+      if (/tab === "vende"/.test(l)) for (const c of l.matchAll(/"(NEG-[A-Z]+)"/g)) if (!todo.includes(c[1])) falla("pestanaVende", F, i + 1, `«Lo que vende» de ${c[1]} existe pero su pestaña no sale: agrégalo a VENDE`);
+    });
+  },
+
   /* 4f-3. Dos barras fijas abajo en la misma pantalla: la pestaña Tienda trae su barra «Tu apartado» y la barra de Booking
      de la ficha la tapaba (no se podía tocar). Cada pestaña cuyo componente pinta su propia barra fija tiene que quedar fuera
      de las barras generales de la ficha (`tab !== "id"`). */

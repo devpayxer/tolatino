@@ -33,6 +33,7 @@ import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./Rese
 import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./MensajesPanel";
 import { citasBloques, modeloDetalle, servicioDetalle, serviciosBloques, sillasBloques } from "./Servicios";
 import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques } from "./Oficios";
+import { herramientaSPBloques } from "./SaludPro";
 import type { OfiPanel } from "@/lib/oficios";
 import type { SvcPanel } from "@/lib/servicios";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
@@ -308,6 +309,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
   if (c.ruta.sec === "mod" && c.ruta.sub === "servicios") return c.ofi ? oficiosBloques(c) : serviciosBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ofi) return herramientaBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.sp) return herramientaSPBloques(c, licencias);
   if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "sillas") return sillasBloques(c);
   if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : c.ruta.sub === "jobs" ? jobsBloques(c) : { blocks: vendesBloques(c), ed: null };

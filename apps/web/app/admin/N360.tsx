@@ -38,6 +38,9 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
 const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
   visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan" };
+/* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO"];
+const VENDE = ["NEG-FOOD", ...VENDE_SVC];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
@@ -66,7 +69,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" || n.cat_id === "NEG-BELL" ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -113,7 +116,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su menú. El dueño ve el motivo en su panel.", peligro: true, plantillas: PL, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
         }))} /> : <A.AdminNote tone="info" icon="restaurant">Todavía no tiene platos en su menú.</A.AdminNote>}
       </>);
-  } else if (tab === "vende" && ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR"].includes(n.cat_id)) {
+  } else if (tab === "vende" && VENDE_SVC.includes(n.cat_id)) {
     // Servicios y citas (Fase 3 · 3a; Auto y Hogar 4a): pausar Servicios o Citas y ocultar un servicio, siempre con motivo.
     // Auto y Hogar: además, cómo cobra cada servicio y Tu herramienta en solo lectura.
     const of = n.cat_id !== "NEG-BELL", h = n.herramienta, ic = n.cat_id === "NEG-AUTO" ? "wrench" : n.cat_id === "NEG-HOGAR" ? "home" : "scissors";
@@ -126,6 +129,16 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
           icon: k === "svc" ? "scissors" : "calendar", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
           actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
+        {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
+          ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
+        {n.cat_id === "NEG-PRO" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
+          const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
+          return { icon: "law", title: l.title.es, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
+            actions: P.editar && l.status !== "valid" ? [
+              { label: "Verificar", variant: "secondary", onClick: () => setConf({ titulo: `Verificar la licencia: ${l.title.es}`, sub: "Confirma que el número existe en el registro oficial del estado.", plantillas: ["Coincide con el registro oficial"], hacer: (m) => licencia(n.id, l.id, "valid", m) }) },
+              ...(l.status === "review" ? [{ label: "No se pudo", variant: "secondary", onClick: () => setConf({ titulo: `No se pudo verificar: ${l.title.es}`, peligro: true, hacer: (m) => licencia(n.id, l.id, "not_found", m) }) }] : []),
+            ] : undefined };
+        })} /> : <A.AdminNote tone="info" icon="law">No declaró licencias.</A.AdminNote>) : null}
         {of && h ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: ic, title: `Mano de obra $${h.rate / 100}/h`, sub: n.cat_id === "NEG-AUTO" ? `Garantía ${h.warrM ?? "—"} meses · ${(h.warrMi ?? 0).toLocaleString("en-US")} mi · listo el mismo día si lo dejan antes de las ${h.cut ? `${h.cut % 12 || 12} ${h.cut < 12 ? "AM" : "PM"}` : "—"}` : `Hasta ${h.zone ?? "—"} mi · ${h.h24 ? "emergencias 24 h" : "sin emergencias"}` }]} /> : null}
         {n.servicios.length ? <A.AdminList label={`SERVICIOS · ${n.servicios.length} · COMO LOS DEJÓ EL DUEÑO${ocS ? ` · ${ocS} OCULTOS` : ""}`} rows={n.servicios.map((i) => ({
           icon: i.extra ? "plus" : ic, title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? "Sin categoría"} · ${of && i.k ? `${KIND_L[i.k] ?? i.k} · ` : ""}$${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}${!i.own ? " · apagado por el dueño" : ""}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",

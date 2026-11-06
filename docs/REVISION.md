@@ -647,3 +647,18 @@ persona de Belleza (3a–3b), con su forma de cobrar; el editor propio que pide 
 catálogo de seguros de PA (13) y las licencias de salud (17 tipos, buscador oficial PALS) entran en la migración 0057
 (son datos reales, no de ejemplo). Dueños de prueba solo en el sandbox._
 
+## Fase 4 · 4h-2 Tu herramienta de Doctores y Profesionales
+1. Como **Dra. Altagracia Reyes** (570-555-0244): Lo que vendes › «Seguros e idiomas». Enciende Cigna, apaga Medicaid (la
+   tarjeta de Buscar pasa a «Medicare y CHIP · sin seguro $85»), sube la consulta sin seguro, marca Português e intérprete.
+2. Como dueño de **Bufete Almonte** (570-555-0166): «Licencias y el total por escrito» → en «Renovar la green card» sube la
+   tarifa del gobierno: el total pasa de $815 a $820.
+3. Como **Edwin Paulino** (570-555-0277, TecnoFix): «Listo en» y «Garantía» (de 15 en 15 días).
+4. Super Admin › Negocios › cualquiera de los tres › «Lo que vende»: su herramienta en solo lectura.
+_Decidido por mí (reversible):_
+- _«Plan de pagos» y «Casos urgentes» se encienden en Tu herramienta de Profesionales (el plan pide esos filtros y el diseño no
+  traía de dónde salen); compuestos con la fila con interruptor del sistema._
+- _«Intérprete en la consulta» sale como interruptor (hueco #5 del plan). El enlace del video va con la cita (4j), no aquí._
+- _El tipo de profesional (legal, seguros, reparación…) sale de su primera subcategoría, como en el prototipo._
+- _Arreglado: la pestaña «Lo que vende» del Super Admin no salía para Auto, Hogar ni Doctores (solo escribiendo la dirección).
+  Ahora sale de la misma lista que su contenido; queda un guardián (pestanaVende)._
+

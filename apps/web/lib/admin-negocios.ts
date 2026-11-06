@@ -1,5 +1,7 @@
 import "server-only";
 import type { Staff } from "./admin";
+import { herramientaSP } from "./salud-pro";
+import { aceptaTexto, resumenSP } from "./salud-pro-comun";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
@@ -155,6 +157,8 @@ export async function negocio360(s: Staff, id: string) {
     menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     // Tu herramienta (Auto y Hogar, 4a): solo lectura en el Super Admin.
     herramienta: (await db().query<{ rate: number; warrM: number | null; warrMi: number | null; cut: number | null; h24: boolean; zone: number | null }>(`select t.labor_rate_cents as rate, t.warranty_months as "warrM", t.warranty_miles as "warrMi", t.same_day_cutoff_h as cut, t.h24, b.service_radius_mi as zone from trade_settings t join businesses b on b.id = t.business_id where t.business_id = $1`, [id])).rows[0] ?? null,
+    // Tu herramienta de Doctores y Profesionales (4h-2): el mismo resumen que ve el dueño, en solo lectura.
+    herramientaSP: b.cat_id === "NEG-SALUD" || b.cat_id === "NEG-PRO" ? await (async () => { const h = await herramientaSP(id, b.cat_id === "NEG-SALUD" ? "salud" : "pro"); return h ? { resumen: resumenSP(h, true, { ok: lic.filter((l) => l.status === "valid").length, rev: lic.filter((l) => l.status === "review").length }), gov: h.rubro === "pro" ? h.gov : [], acepta: h.rubro === "salud" && h.ins.length ? aceptaTexto(h, true) : null } : null; })() : null,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
     // Contenido · reseñas (las 8 más recientes, visibles u ocultas; el caso abierto si alguien la reportó).
