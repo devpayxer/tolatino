@@ -35,6 +35,21 @@ function hechos(c: Tarjeta, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
   // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
   const A = c.answers, F = c.facts;
+  // Doctores y Profesionales (4m): seguro aceptado, idioma, espera, explicación, cobro, lo que podía por ley, fecha, trato.
+  if (["lengua", "explico", "cobro", "ley", "fecha", "seguro"].some((k) => k in A) || F.seg != null || F.hired != null) {
+    const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
+    if (F.seg) add(!!F.segOk, "shield", F.segOk ? E2("Aceptaron su seguro", "Took their insurance") : E2("No aceptaron su seguro · avisaron antes", "Did not take their insurance · told them first"));
+    else if (A.seguro) add(A.seguro === "sin" ? null : A.seguro === "si", "shield", A.seguro === "si" ? E2("Aceptaron su seguro", "Took their insurance") : A.seguro === "no" ? E2("No aceptaron su seguro", "Did not take their insurance") : E2("Fue sin seguro", "Went uninsured"));
+    if (F.hired != null && F.tot != null && F.hired) add(true, "dollar", E2(`Total por escrito: $${Math.round(F.tot / 100).toLocaleString("en-US")}`, `Written total: $${Math.round(F.tot / 100).toLocaleString("en-US")}`));
+    if (A.lengua) add(A.lengua === "no" ? false : true, "bubble", A.lengua === "es" ? ("ley" in A || "fecha" in A || F.hired != null ? E2("Lo atendieron en español", "Served in Spanish") : E2("El médico habló español", "The doctor spoke Spanish")) : A.lengua === "int" ? E2("Con intérprete", "With an interpreter") : E2("No lo entendieron", "Not understood"));
+    if (A.wait) add(A.wait === "a" ? true : A.wait === "c" ? false : null, "clock", { a: E2("Lo atendieron a la hora", "Seen on time"), b: E2("Esperó hasta 30 min", "Waited up to 30 min"), c: E2("Esperó más de 30 min", "Waited over 30 min") }[A.wait]);
+    if (A.explico != null && A.explico !== 0) add(A.explico === 1, "check", A.explico === 1 ? E2("Le explicaron todo", "Explained everything") : E2("No le explicaron", "Did not explain"));
+    if (A.cobro != null) add(A.cobro === 1, "dollar", A.cobro === 1 ? E2("Cobraron lo que dijeron", "Charged what they said") : E2("Cobraron algo que no dijeron", "Charged something not mentioned"));
+    if (A.ley != null) add(A.ley === 1, "law", A.ley === 1 ? E2("Hizo lo que dijo que podía", "Did what they said they could") : E2("Ofreció algo que no podía", "Offered something they could not do"));
+    if (A.fecha) add(A.fecha === "a" ? true : A.fecha === "c" ? false : null, "calendar", { a: E2("Cumplió la fecha", "Met the date"), b: E2("Un poco tarde, avisó", "A bit late, with notice"), c: E2("Tarde, sin avisar", "Late, no notice") }[A.fecha]);
+    if (A.trato != null && A.trato !== 0) add(A.trato === 1, "bubble", A.trato === 1 ? E2("Buen trato", "Treated well") : E2("Mal trato", "Treated badly"));
+    return f.slice(0, 6);
+  }
   if (["first", "trato", "clean", "care", "who", "ask", "part", "carro", "precio"].some((k) => k in A) || F.ok != null) {
     const casa = "clean" in A || "care" in A || "who" in A || F.win != null, add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
     if (F.win != null) add(F.win <= 0, "clock", F.win <= 0 ? E2("Llegó en la franja", "Arrived in the window") : E2(`Llegó ${F.win} min tarde`, `Arrived ${F.win} min late`));
@@ -149,6 +164,20 @@ function Verif({ v }: { v: CtlResenas }) {
 }
 function aspectos(v: CtlResenas) {
   const { r, es } = v, a = r.asp, dlv = r.negocio.dlv, E2 = (x: string, y: string) => (es ? x : y);
+  const z = r.aspSP;
+  if (z) {
+    const P = (k: string) => z.v[k] ?? null;
+    const L: [string, string, string, string, string][] = z.rub === "salud" ? [
+      ["shield", E2("ACEPTARON TU SEGURO", "TOOK YOUR INSURANCE"), "seg", "rgba(0,229,196,.16)", BIEN], ["bubble", E2("TE ENTENDIERON EN TU IDIOMA", "UNDERSTOOD YOU IN YOUR LANGUAGE"), "lengua", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["clock", E2("ESPERASTE LO QUE DIJERON", "WAITED AS SAID"), "wait", "rgba(75,55,245,.1)", "var(--tl-action)"], ["check", E2("TE EXPLICARON", "EXPLAINED"), "explico", "rgba(0,229,196,.16)", BIEN],
+      ["dollar", E2("COBRARON LO QUE DIJERON", "CHARGED WHAT THEY SAID"), "cobro", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : [
+      ["dollar", E2("COBRÓ EL TOTAL QUE DIJO", "CHARGED THE STATED TOTAL"), "cobro", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["law", E2("HIZO LO QUE PODÍA POR LEY", "DID WHAT THE LAW ALLOWS"), "ley", "rgba(0,229,196,.16)", BIEN],
+      ["check", E2("TE EXPLICÓ", "EXPLAINED"), "explico", "rgba(0,229,196,.16)", BIEN], ["bubble", E2("EN TU IDIOMA", "IN YOUR LANGUAGE"), "lengua", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["calendar", E2("CUMPLIÓ LA FECHA", "MET THE DATE"), "fecha", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ];
+    return L.filter(([, , k]) => P(k) != null).map(([ic, k, key, bg, fg]) => ({ ic, k, v: `${P(key)}%`, bg, fg }));
+  }
   if (!a) return [];
   return ([
     a.hot != null ? ["hot", dlv ? E2("LLEGA CALIENTE", "ARRIVES HOT") : E2("SALE CALIENTE", "SERVED HOT"), `${a.hot}%`, "rgba(0,229,196,.16)", BIEN] : null,
@@ -157,9 +186,12 @@ function aspectos(v: CtlResenas) {
     a.taste != null ? ["restaurant", E2("SABOR", "FLAVOR"), a.taste.toFixed(1), "rgba(11,14,18,.06)", "var(--tl-ink)"] : null,
   ].filter(Boolean) as [string, string, string, string, string][]).map(([ic, k, val, bg, fg]) => ({ ic, k, v: val, bg, fg }));
 }
-const aspNota = (v: CtlResenas) => v.es
+const aspNota = (v: CtlResenas) => v.r.aspSP ? (v.es
+  ? `De ${v.r.aspSP.n} reseñas del último año. Es el % que contestó que sí. Nunca se publica el motivo de la consulta ni de qué trata un caso.`
+  : `From ${v.r.aspSP.n} reviews in the last year. It is the % who answered yes. The reason for a visit or what a case is about is never published.`) : v.es
   ? `De ${v.r.asp?.orders} pedidos calificados en To'Latino en los últimos 90 días. A tiempo = hasta 5 min después de la hora prometida.`
   : `From ${v.r.asp?.orders} rated To'Latino orders in the last 90 days. On time = up to 5 min after the promised time.`;
+const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
 function Pocas({ v }: { v: CtlResenas }) {
   const { r, es } = v;
   return r.n > 0 ? (
@@ -320,7 +352,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
   )) : <Pocas v={v} />;
   const aspB = asp.length > 0 && (desk ? (
     <div className="border-t border-ink/[.08] pt-3.5">
-      <div className={K}>{E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</div>
+      <div className={K}>{aspTit(v)}</div>
       <div className="mt-3 flex flex-col gap-[11px]">
         {asp.map((a) => (
           <div key={a.k} className="flex items-center gap-2.5">
@@ -334,7 +366,7 @@ export function ResTab({ v, desk, onMenu }: { v: CtlResenas; desk: boolean; onMe
     </div>
   ) : (
     <div className="rounded-[18px] border border-ink/[.07] bg-white p-[15px]">
-      <div className={K}>{E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</div>
+      <div className={K}>{aspTit(v)}</div>
       <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3.5">
         {asp.map((a) => (
           <div key={a.k} className="flex min-w-0 items-center gap-[9px]">

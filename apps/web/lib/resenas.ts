@@ -13,10 +13,16 @@ export type Src = "dl" | "pk" | "rsv" | "cita" | "vis";
 export type Respuestas = { taste?: -1 | 0 | 1; hot?: -1 | 0 | 1; val?: -1 | 0 | 1; wait?: "a" | "b" | "c";
   // Hogar y Auto (4g, neg-hogar-rev.js / TLAutoRev): a la primera, llegó quien reservaste, limpió, cuidó la casa, trato;
   // Auto: pidieron tu OK, pieza vieja, carro limpio. Visitante: cobró lo que dijo (precio).
-  first?: -1 | 0 | 1; who?: 0 | 1; clean?: -1 | 0 | 1; care?: -1 | 1; trato?: -1 | 0 | 1; ask?: 0 | 1; part?: -1 | 0 | 1; carro?: -1 | 1; precio?: 0 | 1 };
+  first?: -1 | 0 | 1; who?: 0 | 1; clean?: -1 | 0 | 1; care?: -1 | 1; trato?: -1 | 0 | 1; ask?: 0 | 1; part?: -1 | 0 | 1; carro?: -1 | 1; precio?: 0 | 1;
+  // Doctores y Profesionales (4m · TLSaludRev / TLProRev): te entendieron en tu idioma (es · intérprete · no), te explicaron,
+  // cobraron lo que dijeron; Salud visitante: aceptaron tu seguro; Pro: hizo lo que podía por ley, cumplió la fecha.
+  lengua?: "es" | "int" | "no"; explico?: -1 | 0 | 1; cobro?: 0 | 1; seguro?: "si" | "no" | "sin"; ley?: 0 | 1; fecha?: "a" | "b" | "c" };
 /* El dato del pedido o de la visita (no se edita). Visita de Hogar/Auto: win = minutos tarde sobre la franja (0 = en la
    franja), ok / cob = aprobado y cobrado, xtra = hubo algo extra con su OK. */
-export type Hechos = { promised?: string; done?: string; late?: number; win?: number; ok?: number; cob?: number; xtra?: boolean };
+export type Hechos = { promised?: string; done?: string; late?: number; win?: number; ok?: number; cob?: number; xtra?: boolean;
+  // Salud: el seguro de la cita y si lo aceptaron, lo que pagó (vista); Pro: el total por escrito y si contrató. Nunca el motivo.
+  // Del seguro solo si tenía y si lo aceptaron (nunca el nombre del plan en una reseña pública).
+  seg?: boolean; segOk?: boolean; pago?: Bi; tot?: number; hired?: boolean };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
   answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
@@ -25,7 +31,8 @@ export type Tarjeta = {
 
 export const MIN_TEXTO = 20, MAX_TEXTO = 1000, MAX_FOTOS = 6, EDITAR_H = 48, PAGINA = 6;
 // Teléfonos y correos: la reseña no se publica con ellos (mismo patrón que el prototipo).
-export const PII = /(\d[\s().-]*){10}|\S+@\S+\.\S+/;
+import { PII, PRIVADO } from "./resenas-filtro";
+export { PII, PRIVADO };
 const VERIFICADA_DIAS = 30;
 
 const nombreCorto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
@@ -76,14 +83,17 @@ export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negoci
    recomendados, la reseña propia y las destacadas del Resumen. Todo derivado de las reseñas visibles. */
 /* miembro: la página de una silla (3d) muestra solo las reseñas de citas con esa persona. */
 const DE_MIEMBRO = (miembro?: string | null) => (miembro && /^[0-9a-f-]{36}$/.test(miembro) ? ` and operation_id in (select o.id from operations o where o.kind = 'appointment' and o.member_id = '${miembro}'::uuid)` : "");
+const PCT = (k: string, si: string, base: string) =>
+  `round(100.0 * count(*) filter (where ${si}) / nullif(count(*) filter (where ${base}), 0))::int as ${k}`;
 export async function resumenResenas(negocio: string, userId: string | null, miembro?: string | null) {
   const fm = DE_MIEMBRO(miembro);
-  const b = (await db().query<{ id: string; name: string; pro: boolean; food: boolean; dlv: boolean }>(
-    `select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro, b.category_id = 'NEG-FOOD' as food, coalesce(d.delivery, false) as dlv
+  const b = (await db().query<{ id: string; name: string; pro: boolean; food: boolean; dlv: boolean; cat: string }>(
+    `select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro, b.category_id = 'NEG-FOOD' as food, coalesce(d.delivery, false) as dlv, b.category_id as cat
        from businesses b left join business_stats_cache s on s.business_id = b.id left join delivery_settings d on d.business_id = b.id
       where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   if (!b) return null;
-  const [cifras, asp, top, mia, dest, op] = await Promise.all([
+  const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : null;
+  const [cifras, asp, top, mia, dest, op, aspSP] = await Promise.all([
     db().query<{ n: number; avg: number | null; s5: number; s4: number; s3: number; s2: number; s1: number; ver: number }>(
       `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where stars = 5)::int as s5, count(*) filter (where stars = 4)::int as s4,
               count(*) filter (where stars = 3)::int as s3, count(*) filter (where stars = 2)::int as s2, count(*) filter (where stars = 1)::int as s1,
@@ -109,6 +119,18 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
         where r.business_id = $1 and r.status = 'visible'${fm} and ($2::uuid is null or r.user_id <> $2::uuid) and (not b.pro or r.stars >= 4)
         order by case when b.pro then r.helpful_count else 0 end desc, r.created_at desc limit 3`, [negocio, userId]),
     userId ? opParaResena(db(), negocio, userId) : null,
+    // Lo que importa en Salud / en un trámite: % de «sí» entre quienes contestaron, del último año.
+    sp ? db().query<Record<string, number | null>>(
+      `select count(*)::int as n,
+              ${PCT("seg", "(facts->>'segOk')::boolean or answers->>'seguro' = 'si'", "(facts->>'seg')::boolean or answers->>'seguro' in ('si', 'no')")},
+              ${PCT("lengua", "answers->>'lengua' in ('es', 'int')", "answers ? 'lengua'")},
+              ${PCT("wait", "answers->>'wait' = 'a'", "answers ? 'wait'")},
+              ${PCT("explico", "(answers->>'explico')::int = 1", "answers ? 'explico'")},
+              ${PCT("cobro", "(answers->>'cobro')::int = 1", "answers ? 'cobro'")},
+              ${PCT("ley", "(answers->>'ley')::int = 1", "answers ? 'ley'")},
+              ${PCT("fecha", "answers->>'fecha' = 'a'", "answers ? 'fecha'")},
+              ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
+         from reviews where business_id = $1 and status = 'visible' and created_at > now() - interval '365 days'${fm}`, [negocio]) : null,
   ]);
   const c = cifras.rows[0]!, a = asp.rows[0]!, m0 = mia?.rows[0], mine = m0?.visible ? tarjeta(m0) : null, tengo = !!m0;
   const n = c.n, pct = (k: number) => (n ? Math.round((100 * k) / n) : 0);
@@ -117,6 +139,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, dlv: b.dlv },
     n, avg: c.avg, ver: c.ver, bars: [[5, pct(c.s5)], [4, pct(c.s4)], [3, pct(c.s3)], [2, pct(c.s2)], [1, pct(c.s1)]] as [number, number][],
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
+    aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
     top: top.rows.map((x) => ({ id: x.id, name: x.name, ph: x.ph, n: x.n })),
     mine: fm ? null : mine, tengo, destacadas, miembro: fm ? miembro! : null,
     // «TU PEDIDO DE HOY · ¿Cómo estuvo?»: solo si terminó hoy y aún no tiene reseña.
@@ -185,7 +208,7 @@ export async function paraEscribir(negocio: string, userId: string, numero: stri
       where r.business_id = $1 and r.user_id = $2::uuid and r.status <> 'removed' limit 1`, [negocio, userId])).rows[0];
   const op = mia ? null : await opParaResena(db(), negocio, userId, numero);
   // El dato del pedido que se va a guardar (se muestra antes de publicar; no se edita).
-  const rubro: "hogar" | "auto" | null = b.cat === "NEG-HOGAR" ? "hogar" : b.cat === "NEG-AUTO" ? "auto" : null;
+  const rubro: Rubro = rubroRes(b.cat);
   const hechos = op?.kind === "order" ? await hechosDe(db(), op.id) : op?.kind === "appointment" && rubro ? await hechosCita(db(), op.id, rubro) : mia ? mia.facts ?? {} : {};
   // La visita de Hogar/Auto: el servicio, quién fue y el carro (se muestra en «Tu visita · dato de la visita»).
   const cita = op?.kind === "appointment" && rubro ? (await db().query<{ svc: string | null; svcEn: string | null; quien: string | null; veh: string | null }>(
@@ -229,7 +252,19 @@ async function hechosDe(c: PoolClient | Pool, opId: string): Promise<Hechos> {
 
 /* El dato de una visita de Hogar o de una cita de Auto (no se edita): llegó en la franja (Hogar: «Llegué» contra el final
    de la franja de 2 h), lo aprobado del estimado contra lo cobrado, y si hubo algo extra con su OK. */
-async function hechosCita(c: PoolClient | Pool, opId: string, rubro: "hogar" | "auto"): Promise<Hechos> {
+type Rubro = "hogar" | "auto" | "salud" | "pro" | null;
+const rubroRes = (cat: string): Rubro => (cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-AUTO" ? "auto" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : null);
+async function hechosCita(c: PoolClient | Pool, opId: string, rubro: Exclude<Rubro, null>): Promise<Hechos> {
+  if (rubro === "salud" || rubro === "pro") {
+    const o = (await c.query<{ det: Record<string, unknown>; tot: number | null; hired: boolean }>(
+      `select o.details as det, (select t.total_cents from written_totals t where t.operation_id = o.id and t.status in ('accepted', 'declined', 'expired') order by t.version desc limit 1) as tot,
+              o.status_detail in ('hired', 'done') as hired from operations o where o.id = $1::bigint`, [opId])).rows[0];
+    if (!o) return {};
+    const z = o.det as { seguro?: { acepta?: boolean; kind?: string } | null; precio?: Bi };
+    const tiene = !!z.seguro && !!z.seguro.kind && z.seguro.kind !== "none";
+    if (rubro === "salud") return { seg: tiene, segOk: tiene && !!z.seguro?.acepta, ...(z.precio ? { pago: z.precio } : {}) };
+    return { ...(o.tot != null ? { tot: o.tot } : {}), hired: o.hired };
+  }
   const o = (await c.query<{ win: number | null; ok: number | null; cob: number | null; xtra: boolean; total: number }>(
     `select (select greatest(0, round(extract(epoch from e.at - (o.scheduled_at + interval '120 minutes')) / 60))::int from operation_events e where e.operation_id = o.id and e.kind = 'arrived' order by e.at limit 1) as win,
             (select sum(l.line_total_cents)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as ok,
@@ -243,14 +278,23 @@ async function hechosCita(c: PoolClient | Pool, opId: string, rubro: "hogar" | "
 
 const OK3 = (v: unknown) => (v === 1 || v === 0 || v === -1 ? (v as -1 | 0 | 1) : undefined);
 const OK2 = (v: unknown) => (v === 1 || v === 0 ? (v as 0 | 1) : undefined), OKM = (v: unknown) => (v === 1 || v === -1 ? (v as -1 | 1) : undefined);
-function limpiarRespuestas(a: unknown, ord: boolean, rubro: "hogar" | "auto" | null = null, cita = false): Respuestas {
+function limpiarRespuestas(a: unknown, ord: boolean, rubro: Rubro = null, cita = false): Respuestas {
   const x = (a && typeof a === "object" ? a : {}) as Record<string, unknown>, r: Respuestas = {};
   const t = OK3(x.taste), h = OK3(x.hot), v = OK3(x.val);
   if (t !== undefined) r.taste = t;
   if (h !== undefined) r.hot = h;
   if (v !== undefined) r.val = v;
   // Cuánto esperó: solo sin pedido (con pedido sale del dato del pedido).
-  if (!ord && !(rubro && cita) && (x.wait === "a" || x.wait === "b" || x.wait === "c")) r.wait = x.wait;
+  if (!ord && !((rubro === "hogar" || rubro === "auto") && cita) && (x.wait === "a" || x.wait === "b" || x.wait === "c")) r.wait = x.wait;
+  if (rubro === "salud" || rubro === "pro") {
+    const put = <K extends keyof Respuestas>(k: K, v: Respuestas[K] | undefined) => { if (v !== undefined) r[k] = v; };
+    if (x.lengua === "es" || x.lengua === "int" || x.lengua === "no") r.lengua = x.lengua;
+    put("explico", OK3(x.explico)); put("cobro", OK2(x.cobro)); put("trato", OK3(x.trato));
+    if (rubro === "salud" && !cita && (x.seguro === "si" || x.seguro === "no" || x.seguro === "sin")) r.seguro = x.seguro;
+    if (rubro === "pro") { put("ley", OK2(x.ley)); if (x.fecha === "a" || x.fecha === "b" || x.fecha === "c") r.fecha = x.fecha; delete r.wait; }
+    delete r.taste; delete r.hot; delete r.val;
+    return r;
+  }
   if (rubro) {
     const put = <K extends keyof Respuestas>(k: K, v: Respuestas[K] | undefined) => { if (v !== undefined) r[k] = v; };
     put("first", OK3(x.first)); put("trato", OK3(x.trato));
@@ -274,6 +318,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   if (body.length < MIN_TEXTO) return no(`Escribe al menos ${MIN_TEXTO} letras.`, `Write at least ${MIN_TEXTO} characters.`);
   if (body.length > MAX_TEXTO) return no(`Máximo ${MAX_TEXTO} letras.`, `${MAX_TEXTO} characters max.`);
   if (PII.test(body)) return no("Quita teléfonos y correos: por seguridad, la reseña no se publica con ellos.", "Remove phones and emails: for safety, reviews cannot include them.");
+  if (PRIVADO.test(body)) return no("Quita datos de salud o de tu caso: la reseña no se publica con ellos.", "Remove health or case details: the review cannot be published with them.");
   const fotos = Array.isArray(p.fotos) ? [...new Set(p.fotos.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)))] : [];
   if (fotos.length > MAX_FOTOS) return no(`Hasta ${MAX_FOTOS} fotos.`, `Up to ${MAX_FOTOS} photos.`);
   const rec0 = Array.isArray(p.rec) ? [...new Set(p.rec.filter((x): x is string => typeof x === "string" && /^\d{1,18}$/.test(x)))].slice(0, 12) : [];
@@ -281,7 +326,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   return tx(async (c) => {
     const b = (await c.query<{ id: string; city_id: string; cat: string }>(`select id, city_id, category_id as cat from businesses where id = $1 and status = 'active' for share`, [p.negocio])).rows[0];
     if (!b) return no("Ese negocio no existe.", "That business does not exist.");
-    const rubro: "hogar" | "auto" | null = b.cat === "NEG-HOGAR" ? "hogar" : b.cat === "NEG-AUTO" ? "auto" : null;
+    const rubro: Rubro = rubroRes(b.cat);
     // Solo platos de ese negocio.
     const rec = rec0.length ? (await c.query<{ id: string }>(`select id::text from items where business_id = $1 and id::text = any($2) and removed_at is null`, [b.id, rec0])).rows.map((x) => x.id) : [];
     const ya = (await c.query<{ id: string; src: Src; puede: boolean; status: string }>(

@@ -17,7 +17,7 @@ const { Icon, Button, Chip, Tag, ReviewCard } = UI as unknown as Record<N, Compo
 
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
 const caja = "rounded-[18px] border border-ink/[.07] bg-white p-[15px]";
-const PII = /(\d[\s().-]*){10}|\S+@\S+\.\S+/;
+import { PII, PRIVADO } from "@/lib/resenas-filtro";
 type Foto = { id: string; url: string };
 
 export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: boolean; nombre: string; estrellas: number }) {
@@ -39,8 +39,8 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const recSel = rec.length || !m ? rec : recIni;
 
   const opSrc = m ? m.src : d.op?.src ?? "vis", isOrd = src === "op" && (opSrc === "dl" || opSrc === "pk"), dl = src === "op" && opSrc === "dl";
-  const len = text.trim().length, pii = PII.test(text);
-  const miss = !stars ? E2("TU CALIFICACIÓN", "YOUR RATING") : len < 20 ? E2("ESCRIBIR AL MENOS 20 LETRAS", "WRITE AT LEAST 20 CHARACTERS") : pii ? E2("QUITAR TELÉFONOS O CORREOS", "REMOVE PHONES OR EMAILS") : "";
+  const len = text.trim().length, pii = PII.test(text), priv = PRIVADO.test(text);
+  const miss = !stars ? E2("TU CALIFICACIÓN", "YOUR RATING") : len < 20 ? E2("ESCRIBIR AL MENOS 20 LETRAS", "WRITE AT LEAST 20 CHARACTERS") : pii ? E2("QUITAR TELÉFONOS O CORREOS", "REMOVE PHONES OR EMAILS") : priv ? E2("QUITAR DATOS DE SALUD O DE TU CASO", "REMOVE HEALTH OR CASE DETAILS") : "";
   const numeroOp = m?.numero ?? d.op?.numero ?? null, mesa = (m ? m.src === "rsv" : d.op?.kind === "table"), cita = (m ? m.src === "cita" : d.op?.kind === "appointment");
   const title = editar ? E2("Editar reseña", "Edit review") : E2("Escribir reseña", "Write a review");
   const meta = `${b.name}${src === "op" && numeroOp ? (mesa || cita ? ` · ${numeroOp}` : E2(` · PEDIDO #${numeroOp}`, ` · ORDER #${numeroOp}`)) : ""}`.toUpperCase();
@@ -50,10 +50,11 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const srcs: { k: "op" | "vis"; t: string; s: string; tag: string; tone: string }[] = [];
   if (m ? m.src !== "vis" : d.op) {
     const lin = (d.op?.lineas ?? []).slice(0, 2).join(", ");
-    srcs.push({ k: "op", t: cita && b.rubro === "hogar" ? `${E2("Visita ", "Visit ")}${numeroOp}${d.cita?.svc ? ` · ${es ? d.cita.svc : d.cita.svcEn || d.cita.svc}` : ""}` : cita && b.rubro === "auto" ? `${E2("Cita ", "Appointment ")}${numeroOp}${d.cita?.svc ? ` · ${es ? d.cita.svc : d.cita.svcEn || d.cita.svc}` : ""}` : cita ? E2(`Cita ${numeroOp}`, `Booking ${numeroOp}`) : mesa ? E2(`Reservación ${numeroOp} · mesa`, `Booking ${numeroOp} · table`) : E2(`Pedido #${numeroOp} · ${dl ? "delivery" : "pickup"}`, `Order #${numeroOp} · ${dl ? "delivery" : "pickup"}`),
+    const sv = d.cita?.svc ? ` · ${es ? d.cita.svc : d.cita.svcEn || d.cita.svc}` : "";
+    srcs.push({ k: "op", t: cita && b.rubro === "salud" ? `${E2("Cita ", "Appointment ")}${numeroOp}${sv}` : cita && b.rubro === "pro" ? `${E2("Consulta ", "Consultation ")}${numeroOp}${sv}` : cita && b.rubro === "hogar" ? `${E2("Visita ", "Visit ")}${numeroOp}${d.cita?.svc ? ` · ${es ? d.cita.svc : d.cita.svcEn || d.cita.svc}` : ""}` : cita && b.rubro === "auto" ? `${E2("Cita ", "Appointment ")}${numeroOp}${d.cita?.svc ? ` · ${es ? d.cita.svc : d.cita.svcEn || d.cita.svc}` : ""}` : cita ? E2(`Cita ${numeroOp}`, `Booking ${numeroOp}`) : mesa ? E2(`Reservación ${numeroOp} · mesa`, `Booking ${numeroOp} · table`) : E2(`Pedido #${numeroOp} · ${dl ? "delivery" : "pickup"}`, `Order #${numeroOp} · ${dl ? "delivery" : "pickup"}`),
       s: lin || (cita ? E2("Fuiste con tu cita", "You went with your booking") : mesa ? E2("Fuiste con tu reservación", "You went with your booking") : ""), tag: E2("VERIFICADA", "VERIFIED"), tone: "signal" });
   }
-  if (!m || m.src === "vis") srcs.push({ k: "vis", t: b.rubro === "hogar" ? E2("Me atendieron sin reservar por To'Latino", "They came without a To'Latino booking") : b.rubro === "auto" ? E2("Fui sin reservar por To'Latino", "I went without a To'Latino booking") : E2("Fui sin pedir por To'Latino", "I went without ordering on To'Latino"), s: E2("En el local, por teléfono o hace tiempo", "In person, by phone or a while ago"), tag: E2("VISITANTE", "VISITOR"), tone: "neutral" });
+  if (!m || m.src === "vis") srcs.push({ k: "vis", t: b.rubro === "hogar" ? E2("Me atendieron sin reservar por To'Latino", "They came without a To'Latino booking") : b.rubro === "auto" ? E2("Fui sin reservar por To'Latino", "I went without a To'Latino booking") : b.rubro === "salud" || b.rubro === "pro" ? E2("Fui sin cita por To'Latino", "I went without a To'Latino appointment") : E2("Fui sin pedir por To'Latino", "I went without ordering on To'Latino"), s: E2("En el local, por teléfono o hace tiempo", "In person, by phone or a while ago"), tag: E2("VISITANTE", "VISITOR"), tone: "neutral" });
 
   const SL = [E2("Toca una estrella", "Tap a star"), E2("Malo", "Bad"), E2("Regular", "Fair"), E2("Bien", "Good"), E2("Muy bien", "Very good"), E2("Excelente", "Excellent")];
   type G = { k: string; key: keyof Respuestas; opts: [string | number, string][] };
@@ -75,6 +76,20 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
     { k: E2("¿TE ENSEÑARON LA PIEZA VIEJA?", "SHOWED YOU THE OLD PART?"), key: "part", opts: [[1, E2("Sí", "Yes")], [0, E2("No hizo falta", "Not needed")], [-1, E2("No", "No")]] },
     { k: E2("¿TE DEVOLVIERON EL CARRO LIMPIO?", "CAR RETURNED CLEAN?"), key: "carro", opts: [[1, E2("Sí", "Yes")], [-1, E2("No", "No")]] },
     { k: E2("TRATO Y EXPLICACIÓN", "CARE AND EXPLANATION"), key: "trato", opts: [[1, E2("Te explicaron sin enredos", "Explained clearly")], [0, E2("Normal", "Okay")], [-1, E2("Mal trato", "Treated badly")]] },
+  ] : rub === "salud" ? [
+    { k: E2("¿TE ENTENDIERON EN TU IDIOMA?", "DID THEY UNDERSTAND YOU IN YOUR LANGUAGE?"), key: "lengua", opts: [["es", E2("El médico habló español", "The doctor spoke Spanish")], ["int", E2("Con intérprete", "With an interpreter")], ["no", E2("No me entendieron", "They did not understand me")]] },
+    { k: E2("¿ESPERASTE LO QUE DIJERON?", "DID YOU WAIT AS LONG AS THEY SAID?"), key: "wait", opts: [["a", E2("A la hora", "On time")], ["b", E2("Hasta 30 min", "Up to 30 min")], ["c", E2("Más de 30 min", "Over 30 min")]] },
+    { k: E2("¿TE EXPLICARON?", "DID THEY EXPLAIN?"), key: "explico", opts: [[1, E2("Sí, todo", "Yes, everything")], [0, E2("Más o menos", "Sort of")], [-1, E2("No", "No")]] },
+    { k: E2("¿COBRARON LO QUE DIJERON?", "DID THEY CHARGE WHAT THEY SAID?"), key: "cobro", opts: [[1, E2("Sí", "Yes")], [0, E2("Cobraron algo más", "Charged something extra")]] },
+    ...(conCita ? [] : [{ k: E2("¿ACEPTARON TU SEGURO?", "DID THEY TAKE YOUR INSURANCE?"), key: "seguro" as const, opts: [["si", E2("Sí", "Yes")], ["no", E2("No", "No")], ["sin", E2("Fui sin seguro", "I went uninsured")]] as [string, string][] }]),
+    { k: E2("TRATO", "HOW THEY TREATED YOU"), key: "trato", opts: [[1, E2("Buen trato", "Treated well")], [0, E2("Normal", "Okay")], [-1, E2("Mal trato", "Treated badly")]] },
+  ] : rub === "pro" ? [
+    { k: E2("¿COBRÓ EL TOTAL QUE DIJO?", "DID THEY CHARGE THE TOTAL THEY SAID?"), key: "cobro", opts: [[1, E2("Sí", "Yes")], [0, E2("Cobró más", "Charged more")]] },
+    { k: E2("¿HIZO LO QUE DIJO QUE PODÍA?", "DID THEY DO WHAT THEY SAID THEY COULD?"), key: "ley", opts: [[1, E2("Sí", "Yes")], [0, E2("Ofreció algo que no podía", "Offered something they could not do")]] },
+    { k: E2("¿TE EXPLICÓ?", "DID THEY EXPLAIN?"), key: "explico", opts: [[1, E2("Sí, todo", "Yes, everything")], [0, E2("Más o menos", "Sort of")], [-1, E2("No", "No")]] },
+    { k: E2("¿EN TU IDIOMA?", "IN YOUR LANGUAGE?"), key: "lengua", opts: [["es", E2("En español", "In Spanish")], ["int", E2("Con intérprete", "With an interpreter")], ["no", E2("No me entendieron", "They did not understand me")]] },
+    { k: E2("¿CUMPLIÓ LA FECHA?", "DID THEY MEET THE DATE?"), key: "fecha", opts: [["a", E2("Sí", "Yes")], ["b", E2("Un poco tarde, avisó", "A bit late, with notice")], ["c", E2("Tarde, sin avisar", "Late, no notice")]] },
+    { k: E2("TRATO", "HOW THEY TREATED YOU"), key: "trato", opts: [[1, E2("Buen trato", "Treated well")], [0, E2("Normal", "Okay")], [-1, E2("Mal trato", "Treated badly")]] },
   ] : [];
   const grupos: G[] = rub ? gH : !b.food ? [] : [
     { k: E2("SABOR", "FLAVOR"), key: "taste", opts: [[1, E2("Muy bueno", "Great")], [0, E2("Normal", "Okay")], [-1, E2("No me gustó", "Did not like it")]] },
@@ -84,7 +99,14 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   ];
   const dinero = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
   // «Tu visita · dato de la visita» (Hogar) / «Tu cita · dato de la cita» (Auto): no se edita.
-  const tmC = rub && conCita && d.hechos.ok != null ? [
+  const Hs = d.hechos, svcV = d.cita?.svc ? [{ k: E2("SERVICIO", "SERVICE"), v: es ? d.cita.svc : d.cita.svcEn || d.cita.svc, fg: "var(--tl-ink)" }] : [];
+  const conV = d.cita?.quien ? [{ k: E2("CON", "WITH"), v: d.cita.quien, fg: "var(--tl-ink)" }] : [];
+  const tmC = rub === "salud" && conCita ? [...svcV,
+    { k: E2("SEGURO", "INSURANCE"), v: Hs.seg ? (Hs.segOk ? E2("Aceptado", "Accepted") : E2("No lo aceptaron", "Not accepted")) : E2("Sin seguro", "Uninsured"), fg: Hs.seg && !Hs.segOk ? "var(--tl-danger)" : Hs.seg ? "var(--tl-open-text)" : "var(--tl-ink)" },
+    ...(Hs.pago ? [{ k: E2("PAGASTE", "YOU PAID"), v: es ? Hs.pago.es : Hs.pago.en, fg: "var(--tl-ink)" }] : []), ...conV,
+  ] : rub === "pro" && conCita ? [...svcV,
+    Hs.tot != null && Hs.hired ? { k: E2("TOTAL POR ESCRITO", "WRITTEN TOTAL"), v: `${dinero(Hs.tot)} · ${E2("lo que dijo", "as stated")}`, fg: "var(--tl-open-text)" } : { k: E2("TOTAL POR ESCRITO", "WRITTEN TOTAL"), v: E2("No contrataste", "You did not hire"), fg: "var(--tl-ink)" }, ...conV,
+  ] : rub && conCita && d.hechos.ok != null ? [
     ...(d.cita?.svc ? [{ k: E2("SERVICIO", "SERVICE"), v: es ? d.cita.svc : d.cita.svcEn || d.cita.svc, fg: "var(--tl-ink)" }] : []),
     ...(rub === "auto" && d.cita?.veh ? [{ k: E2("VEHÍCULO", "VEHICLE"), v: d.cita.veh, fg: "var(--tl-ink)" }] : []),
     ...(rub === "hogar" && d.hechos.win != null ? [{ k: E2("LLEGÓ", "ARRIVED"), v: d.hechos.win <= 0 ? E2("En la franja", "In the window") : E2(`${d.hechos.win} min tarde`, `${d.hechos.win} min late`), fg: d.hechos.win <= 0 ? "var(--tl-open-text)" : "var(--tl-danger)" }] : []),
@@ -149,7 +171,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
           );
         })}
       </div>
-      <div className="mt-2.5 text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{rub === "hogar" ? E2("Solo sale verificada si la visita fue por To'Latino.", "It only shows as verified if the visit was through To'Latino.") : rub === "auto" ? E2("Solo sale verificada si la cita fue por To'Latino.", "It only shows as verified if the booking was through To'Latino.") : E2("Solo sale verificada si pediste, recogiste o reservaste por To'Latino.", "It only shows as verified if you ordered, picked up or booked on To'Latino.")}</div>
+      <div className="mt-2.5 text-pretty text-[11.5px] font-medium leading-[1.5] text-ink/55">{rub === "hogar" ? E2("Solo sale verificada si la visita fue por To'Latino.", "It only shows as verified if the visit was through To'Latino.") : rub === "auto" || rub === "salud" || rub === "pro" ? E2("Solo sale verificada si la cita fue por To'Latino.", "It only shows as verified if the booking was through To'Latino.") : E2("Solo sale verificada si pediste, recogiste o reservaste por To'Latino.", "It only shows as verified if you ordered, picked up or booked on To'Latino.")}</div>
     </div>
   );
   const estrellasB = (
@@ -167,7 +189,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   );
   const importa = grupos.length > 0 && (
     <div data-screen-label="Reseña · lo que importa" className={caja}>
-      <div className="flex justify-between gap-2.5"><span className={K}>{rub === "hogar" ? E2("LO QUE IMPORTA EN EL HOGAR", "WHAT MATTERS AT HOME") : rub === "auto" ? E2("LO QUE IMPORTA EN AUTOS", "WHAT MATTERS WITH CARS") : E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/[.42]">{E2("OPCIONAL", "OPTIONAL")}</span></div>
+      <div className="flex justify-between gap-2.5"><span className={K}>{rub === "hogar" ? E2("LO QUE IMPORTA EN EL HOGAR", "WHAT MATTERS AT HOME") : rub === "salud" ? E2("LO QUE IMPORTA EN SALUD", "WHAT MATTERS IN HEALTH") : rub === "pro" ? E2("LO QUE IMPORTA EN UN TRÁMITE", "WHAT MATTERS IN A CASE") : rub === "auto" ? E2("LO QUE IMPORTA EN AUTOS", "WHAT MATTERS WITH CARS") : E2("LO QUE IMPORTA EN LA COMIDA", "WHAT MATTERS IN FOOD")}</span><span className="font-mono text-[9.5px] font-semibold tracking-[0.1em] text-ink/[.42]">{E2("OPCIONAL", "OPTIONAL")}</span></div>
       <div className="mt-0.5 flex flex-col">
         {grupos.map((g) => (
           <div key={g.key} className="border-b border-ink/[.06] py-[13px]">
@@ -180,11 +202,11 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
       </div>
       {tm.length > 0 && (
         <div className="mt-[13px] rounded-[14px] border border-ink/[.06] bg-paper px-3.5 py-[13px]">
-          <div className="flex items-center gap-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/50"><Icon name="lock" size={12} color="rgba(11,14,18,.5)" />{rub === "hogar" ? E2("TU VISITA · DATO DE LA VISITA", "YOUR VISIT · FROM THE BOOKING") : rub === "auto" ? E2("TU CITA · DATO DE LA CITA", "YOUR APPOINTMENT · FROM THE BOOKING") : dl ? E2("HORA DE ENTREGA · DATO DEL PEDIDO", "DELIVERY TIME · FROM THE ORDER") : E2("PICKUP · DATO DEL PEDIDO", "PICKUP · FROM THE ORDER")}</div>
+          <div className="flex items-center gap-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/50"><Icon name="lock" size={12} color="rgba(11,14,18,.5)" />{rub === "hogar" ? E2("TU VISITA · DATO DE LA VISITA", "YOUR VISIT · FROM THE BOOKING") : rub === "pro" ? E2("TU CONSULTA · DATO DE LA CONSULTA", "YOUR CONSULTATION · FROM THE BOOKING") : rub === "auto" || rub === "salud" ? E2("TU CITA · DATO DE LA CITA", "YOUR APPOINTMENT · FROM THE BOOKING") : dl ? E2("HORA DE ENTREGA · DATO DEL PEDIDO", "DELIVERY TIME · FROM THE ORDER") : E2("PICKUP · DATO DEL PEDIDO", "PICKUP · FROM THE ORDER")}</div>
           <div className="mt-2.5 grid grid-cols-3 gap-2.5">
             {tm.map((x) => <div key={x.k} className="min-w-0"><div className="font-mono text-[9px] font-bold tracking-[0.12em] text-ink/45">{x.k}</div><div className="mt-1 text-[13.5px] font-bold leading-[1.3]" style={{ color: x.fg }}>{x.v}</div></div>)}
           </div>
-          <div className="mt-[9px] text-pretty text-[11.5px] font-medium leading-[1.45] text-ink/55">{rub === "hogar" ? E2("La franja y lo cotizado contra lo cobrado salen de tu visita en To'Latino. No se editan.", "The window and quoted vs. charged come from your To'Latino visit. They cannot be edited.") : rub === "auto" ? E2("Lo aprobado contra lo cobrado sale de tu cita en To'Latino. No se edita.", "Approved vs. charged comes from your To'Latino booking. It cannot be edited.") : E2("Sale de la hora prometida y la hora real del pedido. No se edita.", "Taken from the promised and actual order times. It cannot be edited.")}</div>
+          <div className="mt-[9px] text-pretty text-[11.5px] font-medium leading-[1.45] text-ink/55">{rub === "hogar" ? E2("La franja y lo cotizado contra lo cobrado salen de tu visita en To'Latino. No se editan.", "The window and quoted vs. charged come from your To'Latino visit. They cannot be edited.") : rub === "salud" ? E2("El seguro y lo que pagaste salen de tu cita. Nunca se publica el motivo de la consulta.", "Insurance and what you paid come from your appointment. The reason for the visit is never published.") : rub === "pro" ? E2("El total por escrito sale de tu consulta. Nunca se publica de qué trata tu caso.", "The written total comes from your consultation. What your case is about is never published.") : rub === "auto" ? E2("Lo aprobado contra lo cobrado sale de tu cita en To'Latino. No se edita.", "Approved vs. charged comes from your To'Latino booking. It cannot be edited.") : E2("Sale de la hora prometida y la hora real del pedido. No se edita.", "Taken from the promised and actual order times. It cannot be edited.")}</div>
         </div>
       )}
     </div>
@@ -204,7 +226,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
         <span className={K}>{E2(`CUÉNTALE A ${b.ciudad.toUpperCase()}`, `TELL ${b.ciudad.toUpperCase()}`)}</span>
         <span className="font-mono text-[9.5px] font-semibold" style={{ color: len < 20 ? "rgba(11,14,18,.42)" : "var(--tl-open-text)" }}>{len < 20 ? `${len} / 20 MÍN.` : `${len} / 1000`}</span>
       </div>
-      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 1000))} rows={5} aria-label={E2("Tu reseña", "Your review")} placeholder={rub === "hogar" ? E2("Qué te hicieron, cómo quedó, si los volverías a llamar…", "What they did, how it came out, whether you would call them again…") : rub === "auto" ? E2("Qué le hicieron, cómo quedó, si lo volverías a llevar…", "What they did, how it came out, whether you would go back…") : E2("Qué pediste, cómo llegó, si volverías…", "What you ordered, how it arrived, whether you would go back…")}
+      <textarea value={text} onChange={(e) => setText(e.target.value.slice(0, 1000))} rows={5} aria-label={E2("Tu reseña", "Your review")} placeholder={rub === "salud" ? E2("No escribas diagnósticos, medicinas ni resultados. Cuenta cómo te atendieron.", "Do not write diagnoses, medicines or results. Say how they treated you.") : rub === "pro" ? E2("No escribas datos de tu caso, números de expediente ni documentos. Cuenta cómo te atendieron.", "Do not write case details, file numbers or documents. Say how they treated you.") : rub === "hogar" ? E2("Qué te hicieron, cómo quedó, si los volverías a llamar…", "What they did, how it came out, whether you would call them again…") : rub === "auto" ? E2("Qué le hicieron, cómo quedó, si lo volverías a llevar…", "What they did, how it came out, whether you would go back…") : E2("Qué pediste, cómo llegó, si volverías…", "What you ordered, how it arrived, whether you would go back…")}
         className="mt-2.5 w-full resize-none rounded-[13px] border border-ink/[.12] px-[13px] py-3 text-[13.5px] font-medium leading-[1.55] text-ink outline-none" />
       {pii && (
         <div className="mt-[9px] flex items-start gap-2">
@@ -235,10 +257,12 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const bajo = low && (
     <div data-screen-label="Reseña · calificación baja" className="flex items-start gap-2.5 rounded-[14px] bg-[rgba(192,57,43,.07)] px-3.5 py-[13px]">
       <span className="grid flex-none pt-px"><Icon name="help" size={16} color="var(--tl-danger)" /></span>
-      <div className="min-w-0 flex-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/80">{rub ? (rub === "hogar" ? E2(`La reseña no devuelve dinero ni pide que vuelvan. Si algo quedó mal, pídelo en Ayuda con la visita: ${b.name} responde en 24 h.`, `A review does not refund money or request a return visit. If something is wrong, ask in Visit help: ${b.name} replies within 24 h.`)
+      <div className="min-w-0 flex-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/80">{rub ? (rub === "pro" ? E2(`La reseña no devuelve dinero ni cambia tu trámite. Si algo quedó mal, pídelo en Ayuda con el trámite: ${b.name} responde en 24 h.`, `A review does not refund money or change your case. If something is wrong, ask in Case help: ${b.name} replies within 24 h.`)
+          : rub === "salud" ? E2(`La reseña no devuelve dinero ni corrige un cobro. Si algo quedó mal, pídelo en Ayuda con la cita: ${b.name} responde en 24 h.`, `A review does not refund money or fix a charge. If something is wrong, ask in Appointment help: ${b.name} replies within 24 h.`)
+          : rub === "hogar" ? E2(`La reseña no devuelve dinero ni pide que vuelvan. Si algo quedó mal, pídelo en Ayuda con la visita: ${b.name} responde en 24 h.`, `A review does not refund money or request a return visit. If something is wrong, ask in Visit help: ${b.name} replies within 24 h.`)
         : E2(`La reseña no devuelve dinero ni pide que lo revisen. Si algo quedó mal, pídelo en Ayuda con la cita: ${b.name} responde en 24 h.`, `A review does not refund money or request a recheck. If something is wrong, ask in Appointment help: ${b.name} replies within 24 h.`))
         : E2("Cuenta qué pasó, sin insultos ni datos personales. Así el negocio puede responder y los vecinos entienden.", "Say what happened, without insults or personal data. That way the business can reply and neighbors understand.")}
-        {rub && conCita && numeroOp && <div className="mt-2 flex"><Button variant="secondary" size="sm" icon="help" onClick={() => router.push(`/cita/${numeroOp}/ayuda`)}>{rub === "hogar" ? E2("Ir a Ayuda con la visita", "Go to Visit help") : E2("Ir a Ayuda con la cita", "Go to Appointment help")}</Button></div>}</div>
+        {rub && conCita && numeroOp && <div className="mt-2 flex"><Button variant="secondary" size="sm" icon="help" onClick={() => router.push(`/cita/${numeroOp}/ayuda`)}>{rub === "hogar" ? E2("Ir a Ayuda con la visita", "Go to Visit help") : rub === "pro" ? E2("Ir a Ayuda con el trámite", "Go to Case help") : E2("Ir a Ayuda con la cita", "Go to Appointment help")}</Button></div>}</div>
     </div>
   );
   const reglasB = (
