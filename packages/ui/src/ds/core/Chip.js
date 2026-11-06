@@ -65,6 +65,7 @@ function Chip({
 }) {
   return /*#__PURE__*/React.createElement("span", {
     onClick: onClick,
+    ...(onClick ? { role: 'button', tabIndex: 0, 'aria-pressed': variant === 'selected' ? true : undefined, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onClick(e); } } } : {}),
     style: {
       ...V[variant],
       display: 'inline-flex',

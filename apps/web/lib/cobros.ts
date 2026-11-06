@@ -38,11 +38,11 @@ export async function retenerPedido(x: { negocio: string; cuenta: string; clave:
   const r = await pasarela.retener({ centavos: x.total, comision: fee, destino: x.cuenta, pm: x.pm, cliente, idem: `ord-${x.clave}-${x.pm.slice(-24)}` /* otra tarjeta = otro intento; la misma = idempotente */, meta: { order: x.numero, business_id: x.negocio } });
   return { ...r, comision: fee };
 }
-export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string }) {
+export async function registrarRetencion(c: Q, x: { opId: string; userId: string; negocio: string; city: string | null; total: number; comision: number; r: Extract<Retencion, { ok: true }>; pm?: string; kind?: "full" | "deposit" }) {
   await c.query(
     `insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, fee_cents, status, card_brand, card_last4, held_at, simulated)
-     values ($1::bigint, $2, $3, $4, 'full', 'card', $5, $6, $7, 'held', $8, $9, now(), $10)`,
-    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_")]);
+     values ($1::bigint, $2, $3, $4, $11, 'card', $5, $6, $7, 'held', $8, $9, now(), $10)`,
+    [x.opId, x.userId, x.negocio, x.city, x.r.pi, x.total, x.comision, x.r.marca, x.r.ultimos4, x.r.pi.startsWith("pi_sim_"), x.kind ?? "full"]);
   await c.query(`update operations set pay_status = 'held' where id = $1::bigint`, [x.opId]);
   // La última tarjeta guardada que pagó queda como predeterminada (la que se rechazó deja de serlo).
   if (x.pm) await c.query(`update payment_methods set is_default = (stripe_pm_id = $2) where user_id = $1 and status = 'active' and exists (select 1 from payment_methods where user_id = $1 and stripe_pm_id = $2)`, [x.userId, x.pm]);
@@ -52,11 +52,15 @@ async function evento(c: Q, opId: string, kind: string, note: { es: string; en: 
   await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1::bigint, $2, 'system', $3::jsonb)`, [opId, kind, JSON.stringify(note)]);
 }
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+/* Cómo se nombra y a dónde lleva una operación en los avisos de dinero: pedido #1051 o cita C-4801. */
+const refDe = (kind: string, num: string) => kind === "appointment"
+  ? { num, href: `/cita/${num}`, ref: ["appointment", num] as [string, string] }
+  : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
 /* Cobrar lo retenido de una operación (el negocio aceptó). */
 export async function cobrarOperacion(opId: string) {
   const p = (await db().query<{ id: string; pi: string; amount: number; fee: number }>(
-    `select id::text, stripe_payment_intent as pi, amount_cents as amount, fee_cents as fee from payments where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [opId])).rows[0];
+    `select id::text, stripe_payment_intent as pi, amount_cents as amount, fee_cents as fee from payments where operation_id = $1::bigint and kind in ('full', 'deposit') and status = 'held'`, [opId])).rows[0];
   if (!p) return;
   const r = await pasarela.cobrar(p.pi, p.amount, p.fee);
   if (!r.ok) { await db().query(`update payments set failure_code = $2, updated_at = now() where id = $1`, [p.id, r.codigo ?? "error"]); return; }
@@ -70,9 +74,9 @@ export async function cobrarOperacion(opId: string) {
 
 /* Liberar lo retenido (el pedido no se dio). Avisa a la persona. */
 export async function liberarOperacion(opId: string) {
-  const p = (await db().query<{ id: string; pi: string; amount: number; uid: string; num: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.user_id::text as uid, o.number as num from payments p join operations o on o.id = p.operation_id
-      where p.operation_id = $1::bigint and p.kind = 'full' and p.status = 'held'`, [opId])).rows[0];
+  const p = (await db().query<{ id: string; pi: string; amount: number; uid: string; num: string; kind: string }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.user_id::text as uid, o.number as num, o.kind from payments p join operations o on o.id = p.operation_id
+      where p.operation_id = $1::bigint and p.kind in ('full', 'deposit') and p.status = 'held'`, [opId])).rows[0];
   if (!p) return;
   const r = await pasarela.liberar(p.pi);
   if (!r.ok) return;
@@ -83,7 +87,8 @@ export async function liberarOperacion(opId: string) {
     await evento(c, opId, "payment_released", { es: `Se liberaron ${money(p.amount)} retenidos`, en: `${money(p.amount)} held was released` });
     return true;
   });
-  if (hecho) await (await import("./avisos")).avisar(p.uid, "pay_released", { monto: money(p.amount), num: p.num }, { href: `/pedido/${p.num}`, ref: ["order", p.num] });
+  const R = refDe(p.kind, p.num);
+  if (hecho) await (await import("./avisos")).avisar(p.uid, "pay_released", { monto: money(p.amount), num: R.num }, { href: R.href, ref: R.ref });
 }
 
 /* Repara lo que quedó a medias (una llamada a la pasarela que falló): retenido de un pedido que ya no se da → liberar;
@@ -101,8 +106,8 @@ export async function repararPagos(negocio: string) {
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o
    Transacciones). Idempotente por `idem`. La comisión baja en proporción. */
 export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
-  const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents as refunded, p.status, p.user_id::text as uid, o.number as num,
+  const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string; kind: string }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents as refunded, p.status, p.user_id::text as uid, o.number as num, o.kind,
             p.card_brand as brand, p.card_last4 as l4, p.operation_id::text as op
        from payments p join operations o on o.id = p.operation_id where p.id = $1::bigint`, [x.paymentId])).rows[0];
   if (!p) return { ok: false, msg: { es: "Ese cobro no existe.", en: "That charge does not exist." } };
@@ -123,7 +128,8 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
     await evento(c, p.op, "refunded", { es: `Devolución de ${money(n)}`, en: `Refund of ${money(n)}` });
   });
   const tarjeta = p.brand && p.l4 ? `${({ visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" } as Record<string, string>)[p.brand] ?? p.brand} ·· ${p.l4}` : "tarjeta";
-  await (await import("./avisos")).avisar(p.uid, "pay_refund", { monto: money(n), num: p.num, tarjeta }, { href: `/pedido/${p.num}`, ref: ["order", p.num] });
+  const R = refDe(p.kind, p.num);
+  await (await import("./avisos")).avisar(p.uid, "pay_refund", { monto: money(n), num: R.num, tarjeta }, { href: R.href, ref: R.ref });
   return { ok: true };
 }
 

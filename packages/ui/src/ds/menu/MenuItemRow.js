@@ -343,6 +343,7 @@ function OptionGroup({
     return /*#__PURE__*/React.createElement("div", {
       key: i,
       onClick: () => onToggle && onToggle(i),
+      role: multi ? 'checkbox' : 'radio', 'aria-checked': on, 'aria-disabled': o.disabled ? true : undefined, tabIndex: o.disabled ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !o.disabled && onToggle && onToggle(i); } },
       style: {
         padding: on ? '11.5px 13.5px' : '12px 14px',
         borderRadius: 13,

@@ -387,3 +387,11 @@ _Del diseño (pestaña «ing»), con el BarChart y HBars del sistema. Las cifras
 3. Ana › Negocios › Barbería El Primo › **Lo que vende**: pausar Servicios o Citas y ocultar un servicio (el dueño ve el motivo).
 _Decidido por mí (reversible): depósitos $0/5/10/20/50; con sillas rentadas cada silla decide sus reglas y las del negocio valen para quien no tenga; los servicios son `items` con módulo `svc` (igual que el menú, mismo ocultar del admin)._
 
+## Fase 3 · 3b Ficha y reserva de citas
+1. Entra como **Marisol** (570-555-0122) › Barbería El Primo › **Servicios**: por servicio (rangos «$22–$28») y **Por barbero** (confirma al instante / responde en ~15 min, próxima hora).
+2. Toca **Fade** › elige **Luis** (depósito $10) › **Elegir día y hora**: mañana las 10:00 y 10:30 salen tachadas (cita de ejemplo de Juan + limpieza). Elige 11:00 › Detalles › Revisa y envía › **Enviar solicitud** con la tarjeta 4242 → «Solicitud enviada · PENDIENTE DE CONFIRMAR».
+3. Prueba la tarjeta 0002 (rechazada): no se crea la cita. Con **Kelvin** (confirma al instante) sale **Confirmar cita** y queda confirmada.
+4. En el teléfono de Luis (570-555-0166) llega el aviso de la solicitud.
+_Decidido por mí (reversible): el depósito se **retiene** al enviar y se cobra al confirmar (al instante si confirma solo); si no se confirma se libera sin esperar un reembolso. Las sillas rentadas no piden depósito en línea hasta tener su propia cuenta de cobro (3d): así nunca va el dinero del barbero a la cuenta del local. «Por barbero › Booking» muestra los servicios de esa persona con sus precios (la página propia de cada silla llega en 3d). El Booking abre en el primer día con horas libres. Los textos que en el diseño decían «por SMS» dicen «en Avisos» hasta que haya proveedor de SMS._
+_Accesibilidad: día, hora, persona, opciones, extras y los Chip del sistema ahora son radios/casillas/botones con teclado (parche en scripts/portar-sistema.mjs); sirve también a la reserva de mesa._
+

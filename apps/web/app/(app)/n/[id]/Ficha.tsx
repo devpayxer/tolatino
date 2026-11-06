@@ -7,9 +7,11 @@ import { useState, type ComponentType } from "react";
 import type { ficha } from "@/lib/ficha";
 import type { MenuPublico } from "@/lib/pedir";
 import type { RsvPublica } from "@/lib/reservas";
+import type { CitasPublica } from "@/lib/citas";
 import { guardarNegocio, registrarToque } from "../../acciones";
 import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } from "./MenuCliente";
 import { RsvBarra, RsvRapida, RsvRiel, RsvTab, useRsv } from "./Reservar";
+import { SvcBarra, SvcHoja, SvcResumen, SvcRiel, SvcTab, useSvc } from "./Servicios";
 import { ResCapas, ResResumen, ResTab, useResenas } from "./Resenas";
 import { NovTab } from "./Novedades";
 import { JobsTab } from "./Jobs";
@@ -26,9 +28,9 @@ type Textos = Record<string, string>;
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
-export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, svc, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
-  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) ? tabInicial : "res");
+  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && svc && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
   const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
@@ -36,13 +38,21 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
   const rv = useRsv(rsv, es, sesion, rsvInicial?.editar ?? null, rsvInicial);
   // Reseñas: en el Resumen siempre; en Pro, además su pestaña (siempre visible, como el Resumen).
   const rs = useResenas(resenas, f.id, sesion, es);
+  // Servicios y citas (Belleza): pestaña en Pro, lista en el Resumen, columna en escritorio, la hoja y la barra.
+  const sv = useSvc(svc, es);
   // Free con pedidos este mes: se pide desde el Resumen; Free sin pedidos: la lista de platos y Llamar.
   const freeOn = !!mn && !f.pro && (mn.est.freeLeft ?? 0) > 0;
   const setTab = (id: string) => { setTabS(id); window.scrollTo({ top: 0 }); };
+  // «Booking»: en Pro, la pestaña Servicios; en Free (una sola página), la lista del Resumen.
+  const irSvc = () => {
+    if (f.pro) return setTab("svc");
+    const el = document.querySelector('[data-screen-label="Resumen · servicios"]') ?? document.querySelector('[data-screen-label="Resumen desktop · servicios"]');
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: "smooth" });
+  };
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...(sv && f.pro ? [{ id: "svc", label: es ? "Servicios" : "Services", icon: "scissors" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -355,6 +365,11 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
             <div className="min-w-0"><MenuMovil mn={mn} /><MenuDesk mn={mn} unaColumna={false} /><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><PedidoTarjeta mn={mn} /></div></div>
             <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><PedidoTarjeta mn={mn} /></aside>
           </div>
+        ) : tab === "svc" && sv ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><SvcTab v={sv} desk={false} /></div><div className="hidden lg:block"><SvcTab v={sv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><SvcRiel v={sv} onCta={irSvc} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><SvcRiel v={sv} onCta={irSvc} /></aside>
+          </div>
         ) : tab === "rsv" && rv ? (
           <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
             <div className="min-w-0"><div className="lg:hidden"><RsvTab v={rv} desk={false} /></div><div className="hidden lg:block"><RsvTab v={rv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><RsvRiel v={rv} /></div></div>
@@ -401,6 +416,12 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
                   </div>
                 </div>
               )}
+              {sv && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><SvcResumen v={sv} desk={false} onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><SvcResumen v={sv} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
               {rs && (
                 <>
                   <div className="px-5 pt-[26px] lg:hidden"><ResResumen v={rs} desk={false} onAll={f.pro ? () => setTab("rev") : undefined} /></div>
@@ -414,6 +435,7 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
             </div>
             <aside className="hidden lg:flex lg:flex-col lg:gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">
               {rv && <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } setTab("rsv"); }} />}
+              {sv && <SvcRiel v={sv} onCta={irSvc} />}
               {mn && (
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
                   <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
@@ -437,6 +459,8 @@ export function Ficha({ f, t, menu, rsv, resenas, novedades, jobs, sesion, es, t
           </div>
         )}
       {tab === "rsv" && rv && <RsvBarra v={rv} />}
+      {sv && tab !== "svc" && <SvcBarra v={sv} onCta={irSvc} />}
+      {sv && <SvcHoja v={sv} />}
       {tab !== "rsv" && mn && !mn.has && (f.pro || freeOn || !mn.canOrd) && (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1">

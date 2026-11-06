@@ -138,6 +138,39 @@ for (const src of archivos) {
     if (t === antes || (t.match(/\.\.\.btn\(/g) || []).length !== 5) throw new Error("parche PostCard: el origen cambió, revisar");
   }
 
+  // Reserva (Booking de citas y de mesas) y Chip: las opciones eran <div>/<span> con onClick, sin rol, sin foco y sin
+  // teclado (6 nov, 3b: ni un lector de pantalla ni el teclado podían elegir día, hora, persona, opción o extra). Aquí cada
+  // una dice qué es (radio, casilla o botón), si está elegida o no se puede, y responde a Enter/Espacio. Se ven igual.
+  if (rel.endsWith("core/Chip.js")) {
+    const antes = t;
+    t = t.replace("  return /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onClick,\n    style: {\n      ...V[variant],",
+      "  return /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onClick,\n    ...(onClick ? { role: 'button', tabIndex: 0, 'aria-pressed': variant === 'selected' ? true : undefined, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onClick(e); } } } : {}),\n    style: {\n      ...V[variant],");
+    if (t === antes) throw new Error("parche Chip: el origen cambió, revisar");
+  }
+  if (rel.endsWith("booking/StaffPicker.js")) {
+    const antes = t, n0 = (t.match(/role: '/g) || []).length;
+    t = t.replace("      key: p.id,\n      onClick: () => onSelect && onSelect(p.id),\n",
+      "      key: p.id,\n      onClick: () => onSelect && onSelect(p.id),\n      role: 'radio', 'aria-checked': on, 'aria-label': p.name, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect(p.id); } },\n");
+    t = t.replace("  }), anyoneLabel ? /*#__PURE__*/React.createElement(\"div\", {\n    onClick: () => onSelect && onSelect('any'),\n",
+      "  }), anyoneLabel ? /*#__PURE__*/React.createElement(\"div\", {\n    onClick: () => onSelect && onSelect('any'),\n    role: 'radio', 'aria-checked': selected === 'any', 'aria-label': anyoneLabel, tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onSelect && onSelect('any'); } },\n");
+    t = t.replace("      key: d.id,\n      onClick: () => !d.off && onSelect && onSelect(d.id),\n",
+      "      key: d.id,\n      onClick: () => !d.off && onSelect && onSelect(d.id),\n      role: 'radio', 'aria-checked': on, 'aria-disabled': d.off ? true : undefined, 'aria-label': d.dow + ' ' + d.num, tabIndex: d.off ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !d.off && onSelect && onSelect(d.id); } },\n");
+    t = t.replace("      key: s.t,\n      onClick: () => !s.taken && onSelect && onSelect(s.t),\n",
+      "      key: s.t,\n      onClick: () => !s.taken && onSelect && onSelect(s.t),\n      role: 'radio', 'aria-checked': on, 'aria-disabled': s.taken ? true : undefined, 'aria-label': s.t, tabIndex: s.taken ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !s.taken && onSelect && onSelect(s.t); } },\n");
+    t = t.replace("  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: onToggle,\n    style: {\n      padding: '13px 14px',",
+      "  return /*#__PURE__*/React.createElement(\"div\", {\n    onClick: onToggle,\n    role: 'checkbox', 'aria-checked': !!checked, 'aria-label': label + (price ? ' ' + price : ''), tabIndex: 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onToggle && onToggle(e); } },\n    style: {\n      padding: '13px 14px',");
+    t = t.replace("  }, /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onBack,\n    style: {\n      transform: 'rotate(180deg)',",
+      "  }, /*#__PURE__*/React.createElement(\"span\", {\n    onClick: onBack,\n    ...(onBack ? { role: 'button', tabIndex: 0, 'aria-label': backLabel, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); onBack(e); } } } : {}),\n    style: {\n      transform: 'rotate(180deg)',");
+    t = t.replace("function StepHeader({\n  title,\n  step,\n  total,\n  onBack\n}) {", "function StepHeader({\n  title,\n  step,\n  total,\n  onBack,\n  backLabel = 'Volver'\n}) {");
+    if (t === antes || (t.match(/role: '/g) || []).length - n0 !== 6 || !t.includes("backLabel = 'Volver'")) throw new Error("parche StaffPicker/DateStrip/TimeSlots/AddOnRow/StepHeader: el origen cambió, revisar");
+  }
+  if (rel.endsWith("menu/MenuItemRow.js")) {
+    const antes = t;
+    t = t.replace("      key: i,\n      onClick: () => onToggle && onToggle(i),\n",
+      "      key: i,\n      onClick: () => onToggle && onToggle(i),\n      role: multi ? 'checkbox' : 'radio', 'aria-checked': on, 'aria-disabled': o.disabled ? true : undefined, tabIndex: o.disabled ? -1 : 0, onKeyDown: e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) { e.preventDefault(); !o.disabled && onToggle && onToggle(i); } },\n");
+    if (t === antes) throw new Error("parche OptionGroup: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();
