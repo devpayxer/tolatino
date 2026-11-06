@@ -210,11 +210,12 @@ export function OfHoja({ v }: { v: Of }) {
   // Lo que no tiene Booking en este bloque: la grúa y «solo sin cita» se llaman o se visitan; emergencia, presupuesto a
   // varios y planes llegan con sus bloques (4e y 4f): por ahora se llama al negocio.
   // 4e: la emergencia se pide a todos los 24/7 que llegan a tu casa (/emergencia); la grúa y los planes, todavía llamando.
-  const emer = s.k === "emer" && op.tool.h24, llamar = s.k === "grua" || (s.k === "emer" && !emer) || s.k === "plan" || !op.can;
-  const cta = emer ? E2("Pedir ayuda ahora", "Get help now") : llamar ? E2("Llamar al negocio", "Call the business") : a.walk ? E2("Cómo llegar", "Directions") : sinDato ? (auto ? E2("Agrega tu vehículo", "Add your vehicle") : E2("Agrega tu casa", "Add your home"))
+  const emer = s.k === "emer" && op.tool.h24, plan = s.k === "plan" && (!a.fr || a.fr === "mes") && !auto, llamar = s.k === "grua" || (s.k === "emer" && !emer) || (s.k === "plan" && !plan) || !op.can;
+  const cta = emer ? E2("Pedir ayuda ahora", "Get help now") : plan && !llamar ? `${E2("Empezar el plan · ", "Start the plan · ")}${dinero(s.cents)}${E2("/mes", "/mo")}` : llamar ? E2("Llamar al negocio", "Call the business") : a.walk ? E2("Cómo llegar", "Directions") : sinDato ? (auto ? E2("Agrega tu vehículo", "Add your vehicle") : E2("Agrega tu casa", "Add your home"))
     : bad ? E2("No se puede con este", "Not possible with this one") : pend ? `${E2("Elige: ", "Choose: ")}${pend.title.toLowerCase()}` : auto ? E2("Elegir día y hora", "Choose day and time") : E2("Elegir franja", "Choose a time window");
   const go = () => {
     if (emer) return router.push(`/emergencia?b=${op.negocio.id}${a.sym?.[0] ? `&ek=${encodeURIComponent(a.sym[0])}` : ""}`);
+    if (plan && !llamar) return router.push(`/n/${op.negocio.id}/plan?s=${s.id}`);
     if (llamar) return v.llamar();
     if (a.walk) return void window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(op.negocio.direccion ?? op.negocio.nombre)}`, "_blank", "noopener");
     if (sinDato) return v.setSheet(auto ? "veh" : "casa");
@@ -280,7 +281,7 @@ export function OfHoja({ v }: { v: Of }) {
   const pie = (
     <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
       <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("TOTAL", "TOTAL")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{totalL}</div></div>
-      <div className="flex min-w-0 flex-1"><Button block icon={emer ? "warning" : llamar ? "phone" : undefined} variant={emer ? "danger" : undefined} disabled={!emer && !llamar && !a.walk && !sinDato && (bad || !!pend)} onClick={go}>{cta}</Button></div>
+      <div className="flex min-w-0 flex-1"><Button block icon={emer ? "warning" : llamar ? "phone" : undefined} variant={emer ? "danger" : undefined} disabled={!emer && !plan && !llamar && !a.walk && !sinDato && (bad || !!pend)} onClick={go}>{cta}</Button></div>
     </div>
   );
   return (

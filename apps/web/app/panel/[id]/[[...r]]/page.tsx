@@ -8,6 +8,7 @@ import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa }
 import { citaPanel, citasLista, citasVivas, type FiltroCita } from "@/lib/citas-panel";
 import { repararEstimados } from "@/lib/estimados";
 import { emergenciasPanel, solicitudPanel, solicitudesPanel } from "@/lib/solicitudes";
+import { planesNegocio } from "@/lib/planes";
 import { oficiosPanel, rubroDe } from "@/lib/oficios";
 import { ayudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import { pedidosPendientes } from "@/lib/pedidos";
@@ -160,6 +161,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     solDet: oficio && /^sol:[PQ]-/.test(ruta.det ?? "") ? await solicitudPanel(d.id, ruta.det!.slice(4)) : undefined,
     // Emergencias 24/7 abiertas que puede tomar (arriba en Hoy) y el detalle de una.
     em: oficio && ruta.sec === "hoy" ? await emergenciasPanel(d.id) : undefined,
+    planes: oficio && ruta.sec === "hoy" ? await planesNegocio(d.id) : undefined,
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
     lista: ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,

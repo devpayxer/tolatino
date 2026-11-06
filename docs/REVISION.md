@@ -536,3 +536,18 @@ nota roja arriba en Hoy y un detalle con «Aceptar · salgo ahora» (sin sonido:
 desde la ficha del negocio; la banda de la página de categoría Hogar llega con su bloque._
 _Arreglado de paso: si una acción del panel no se podía (p. ej. «ya la tomó otro negocio», «esta cita ya cambió»), la
 pantalla no se ponía al día; ahora se refresca igual (lo escrito no se pierde). Guardián `emergencia911`._
+
+## Fase 4 · 4f-1 Planes del hogar
+1. Marisol › **Multiservicios Hermanos Díaz** › «Mantenimiento de la casa» › **Empezar el plan · $149/mes**: tu casa, día
+   fijo, primera visita, qué revisar, cómo entrar, tarjeta › Empezar. Ves «Plan activo · próxima visita · hoy no se cobró
+   nada» y las 4 próximas visitas.
+2. Como **Héctor Díaz** (570-555-0233, dueño de prueba): Hoy › «Tus planes · 1 activo».
+3. En tu plan: **Saltar la próxima**, **Pausar un mes**, **Reanudar**, **Cancelar el plan**.
+_Decidido por mí (reversible): «el mismo día cada mes» es el N-ésimo día de la semana (p. ej. el 2.º lunes) para que la
+visita caiga siempre en un día que el negocio abre; el cobro es el mismo día del mes que la primera visita (tope 28). Saltar
+también salta el cobro de ese mes. Al tercer rechazo del banco, el plan queda en pausa hasta cambiar la tarjeta. Los planes
+semanales, quincenales, por temporada o por nevada del ejemplo (fr semana/quincena/temp/nevada) se siguen pidiendo
+llamando; el Plan de confort de Cibao visita solo en octubre y abril (svc_attrs.vis). Las visitas del plan son citas de $0
+(las paga el plan). En el sandbox, Hermanos Díaz tiene dueño de prueba y cuenta de cobro simulada._
+_Arreglado de paso (dinero): la clave idempotente del cobro del plan se repetía al reanudar o al cambiar la tarjeta (el
+segundo cobro «salía» sin cobrar, o el reintento repetía el rechazo); ahora es el número de intento, que no se repite._

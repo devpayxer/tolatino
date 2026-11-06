@@ -12,7 +12,7 @@ import { pasarela, type Retencion } from "./pagos/pasarela";
      vuelve a intentar la próxima vez que alguien mira ese negocio (y el guardián del dinero lo reporta). */
 type Q = PoolClient | ReturnType<typeof db>;
 
-export async function comision(c: Q, kind: "ped" | "cita" | "bol" | "apt" | "rsv", subtotal: number, n = 1): Promise<number> {
+export async function comision(c: Q, kind: "ped" | "cita" | "bol" | "apt" | "rsv" | "plan" | "renta", subtotal: number, n = 1): Promise<number> {
   const r = (await c.query<{ rate_bp: number; fixed_cents: number }>(
     `select rate_bp, fixed_cents from fee_rules where kind = $1 and effective_from <= now() order by effective_from desc, id desc limit 1`, [kind])).rows[0];
   if (!r) return 0;

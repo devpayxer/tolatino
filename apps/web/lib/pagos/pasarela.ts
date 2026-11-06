@@ -94,6 +94,32 @@ export const pasarela = {
     }
   },
 
+  /* Cobro fuera de sesión para un negocio (el plan de cada mes): captura automática con la tarjeta guardada, la comisión
+     de To'Latino y el resto al negocio. Idempotente por `idem` (un cobro por período). */
+  async cobrarFuera(x: { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string; marca: string | null; ultimos4: string | null } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {
+    if (modoPago() === "simulador") {
+      const m = SIM_PM.exec(x.pm);
+      if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
+      const id = `pi_sim_${x.idem}`, ya = (await db().query<{ status: string }>(`select status from sim_intents where id = $1`, [id])).rows[0];
+      if (ya) return ya.status === "succeeded" ? { ok: true, id, marca: m[1]!, ultimos4: m[2]! } : { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
+      const r = simRechazo(m[2]!);
+      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, captured_cents, card) values ($1, $2, $3, $4, $5, $6, $7)`, [id, x.centavos, x.comision, x.destino, r ? "failed" : "succeeded", r ? 0 : x.centavos, x.pm]);
+      return r ? { ok: false, codigo: r, mensaje: traducir(r) } : { ok: true, id, marca: m[1]!, ultimos4: m[2]! };
+    }
+    if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El cobro con tarjeta no está disponible.", en: "Card charging is not available." } };
+    try {
+      const pi = await stripe<{ id: string; status: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
+        amount: x.centavos, currency: "usd", customer: x.cliente ?? undefined, payment_method: x.pm, off_session: true, confirm: true,
+        application_fee_amount: x.comision, transfer_data: { destination: x.destino }, metadata: x.meta, expand: ["payment_method"],
+      }, { idem: `fue-${x.idem}` });
+      const card = pi.payment_method?.card;
+      return pi.status === "succeeded" ? { ok: true, id: pi.id, marca: card?.brand ?? null, ultimos4: card?.last4 ?? null } : { ok: false, codigo: pi.status, mensaje: traducir(null) };
+    } catch (e) {
+      const err = e instanceof ErrorStripe ? e : null;
+      return { ok: false, codigo: err?.rechazo ?? err?.codigo ?? "error", mensaje: traducir(err?.rechazo ?? err?.codigo ?? null) };
+    }
+  },
+
   /* Cobrar lo retenido (el negocio aceptó). Idempotente: si ya se cobró, no vuelve a cobrar. */
   async cobrar(pi: string, centavos: number, comision: number): Promise<{ ok: boolean; codigo?: string }> {
     if (pi.startsWith("pi_sim_")) {

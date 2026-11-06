@@ -22,6 +22,8 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   ok(r.ok || r.codigo === 'requires_payment_method', 'retener: payment_intents con captura manual, comisión y destino (parámetros válidos)');
   const rf = await pasarela.retener({ centavos: 2500, comision: 220, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-fuera-' + Date.now(), meta: { appointment: 'C-1', business_id: 'plomeria-rodriguez', kind: 'estimate' }, fuera: true });
   ok(rf.ok || /requires_/.test(rf.codigo), 'renovar fuera de sesión: off_session con captura manual (parámetros válidos)');
+  const cf = await pasarela.cobrarFuera({ centavos: 14900, comision: 1192, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-plan-' + Date.now(), meta: { plan: 'PL-1', business_id: 'hermanos-diaz-multiservicios' } });
+  ok(cf.ok || /requires_|succeeded/.test(cf.codigo), 'plan: cobro fuera de sesión con comisión y destino (parámetros válidos)');
   const pi = r.ok ? r.pi : 'pi_123';
   const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
   const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');

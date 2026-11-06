@@ -410,3 +410,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] Si la base falla justo después de retener (entre la pasarela y el commit), la retención queda suelta hasta que
       Stripe la suelte (7 días). Conciliación diaria contra Stripe (PaymentIntents `requires_capture` sin fila).
 - [ ] Validar con el contador: impuesto de PA solo sobre piezas/materiales en reparaciones de carro y de casa (tax_rules).
+
+## Fase 4 · 4f (planes)
+- [ ] El barrido de planes (cobro del período, próxima visita, fin de la pausa) corre al abrir el plan o el panel de Hoy.
+      En producción: tarea programada cada hora (`barrerPlanes()` sin filtro) para que los cobros no dependan de que alguien
+      mire.
+- [ ] Planes semanales, quincenales, por temporada y por nevada: hoy se piden llamando; decidir si entran en la app.
+- [ ] Recordatorio 24 h antes de cada visita del plan: usa el de las citas (3c); confirmar que sale para citas de $0.

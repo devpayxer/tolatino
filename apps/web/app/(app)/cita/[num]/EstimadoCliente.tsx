@@ -140,7 +140,7 @@ export function EstimadoCliente({ c, es, pago, aviso }: { c: CitaVista; es: bool
           </div>
           <div className="mt-2.5 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{E2("Si al recogerlo algo no está bien, dilo antes de irte. Después, en Ayuda con la cita.", "If something is not right at pickup, say so before leaving. Afterwards, use Appointment help.")}</div>
           <div className="mt-3.5 grid"><Button size="md" block disabled={ocupado} onClick={() => correr(() => citaAccion(c.numero, "recibi"), auto ? E2("Listo: cita terminada", "Done: booking finished") : E2("Listo: visita terminada", "Done: visit finished"))}>
-            {`${auto ? E2("Ya lo recogí · pagar ", "Picked it up · pay ") : E2("Todo bien · pagar ", "All good · pay ")}${dinero(pagaAhora)}`}</Button></div>
+            {pagaAhora > 0 ? `${auto ? E2("Ya lo recogí · pagar ", "Picked it up · pay ") : E2("Todo bien · pagar ", "All good · pay ")}${dinero(pagaAhora)}` : auto ? E2("Ya lo recogí", "I picked it up") : E2("Todo bien", "All good")}</Button></div>
         </div>
       )}
       {(est || e.extras.length > 0) && (

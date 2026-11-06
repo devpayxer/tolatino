@@ -8,10 +8,11 @@ import type { CitaPanel, FilaCita, FiltroCita, citasLista } from "@/lib/citas-pa
 import { citaAyudaResponder, citaCambioResponder, citaResponder } from "./acciones-citas";
 import type { Ctx, Editor } from "./Panel";
 import type { EmFila, SolFila, SolPanel } from "@/lib/solicitudes";
+import type { PlanPanelFila } from "@/lib/planes";
 import { solicitudFila } from "./Solicitudes";
 import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
 
-export type CitasData = { em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
+export type CitasData = { planes?: PlanPanelFila[]; em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada" | "recibido" | "camino" | "llegue" | "empezar" | "listo" | "entregado" | "nadie";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -100,6 +101,7 @@ export function citaDetalle(c: Ctx): Sec {
       ...(o.piezas ? [it(E2("PIEZAS VIEJAS", "OLD PARTS"), E2("Las quiere de vuelta", "Wants them back"))] : []),
     ] });
   }
+  if (x.plan) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Visita del plan ${x.plan}: la paga el plan cada mes. Si hace falta algo más, pregúntale con «Encontré algo más».`, `Plan visit ${x.plan}: the plan pays for it monthly. If something else is needed, ask with “Found something else”.`) });
   if (x.pre) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Reservó con el ${x.pre.num.startsWith("Q") ? "presupuesto" : "pre-estimado"} ${x.pre.num}: ${money(x.pre.lo)}–${money(x.pre.hi)}. Si el estimado se pasa, explica por qué en cada línea.`, `Booked with ${x.pre.num.startsWith("Q") ? "quote" : "pre-estimate"} ${x.pre.num}: ${money(x.pre.lo)}–${money(x.pre.hi)}. If the estimate goes over, explain why on each line.`) });
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   if (x.fotos.length) out.push({ type: "photos", k: E2("FOTOS DE REFERENCIA", "REFERENCE PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
@@ -189,6 +191,16 @@ function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
 }
 
 /* Hoy · «Ayuda con citas»: las solicitudes que esperan tu respuesta (24 h). */
+/* Los planes del negocio (4f, hueco #5 del plan: lista compuesta con filas del panel). Cada visita ya entra a Hoy como cita. */
+export function hoyPlanes(c: Ctx): Bloque[] {
+  const { E2, es } = c, L = c.citas?.planes ?? [];
+  if (!L.length) return [];
+  const fL = (f: string | null) => { if (!f) return "—"; const d = new Date(`${f}T12:00:00Z`); return `${MDAY[d.getUTCDay()]![es ? 0 : 1]} ${es ? `${d.getUTCDate()} ${MES[d.getUTCMonth()]![0]}` : `${MES[d.getUTCMonth()]![1]} ${d.getUTCDate()}`}`; };
+  return [{ type: "rows", k: (() => { const n = L.filter((x) => x.st === "active").length; return `${E2("TUS PLANES", "YOUR PLANS")} · ${n} ${n === 1 ? E2("ACTIVO", "ACTIVE") : E2("ACTIVOS", "ACTIVE")}`; })(), items: L.map((x): Fila => ({ key: x.numero, icon: "calendar", t: `${x.quien} · ${es ? x.svc.es : x.svc.en || x.svc.es}`,
+    s: `${E2("Próxima visita: ", "Next visit: ")}${fL(x.next)} · ${money(x.precio)}${E2("/mes", "/mo")} · ${x.cobros} ${x.cobros === 1 ? E2("cobro", "charge") : E2("cobros", "charges")}`,
+    tag: x.st === "paused" ? (x.fallos >= 3 ? E2("TARJETA RECHAZADA", "CARD DECLINED") : E2("EN PAUSA", "PAUSED")) : x.fallos ? E2("COBRO PENDIENTE", "CHARGE PENDING") : E2("ACTIVO", "ACTIVE"), tone: x.st === "paused" || x.fallos ? "danger" : "signal", chev: false })) }];
+}
+
 export function hoyAyudasCitas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.citas?.ayudas ?? [];
   if (!L.length) return [];

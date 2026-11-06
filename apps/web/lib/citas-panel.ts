@@ -57,7 +57,7 @@ export type CitaPanel = FilaCita & {
   tel: string | null; nota: string | null; para: string; nombre: string | null; edad: string | null; opts: { g: Bi; o: Bi; p: number }[]; adds: { name: Bi; cents: number }[];
   total: number; pago: string | null; fotos: string[]; responde: string | null; alt: { ymd: string; m: number; hasta: string } | null; cambio: { ymd: string; m: number; hasta: string } | null;
   tl: { t: Bi; at: string }[]; auto: boolean;
-  est: EstadoEstimado | null; rate: number; taxBp: number; pre: { num: string; lo: number; hi: number } | null; // 4d: el estimado, la tarifa y el impuesto de piezas (para ver el total mientras se arma)
+  est: EstadoEstimado | null; rate: number; taxBp: number; pre: { num: string; lo: number; hi: number } | null; plan: string | null; // 4d: el estimado, la tarifa y el impuesto de piezas (para ver el total mientras se arma)
   of: { veh: string | null; mi: number | null; casa: string | null; inq: boolean; w: string | null; win: number | null; luces: string[]; area: string | null; acceso: string | null; accesoNota: string | null; piezas: boolean } | null;
 };
 export async function citaPanel(negocio: string, numero: string): Promise<CitaPanel | null> {
@@ -87,7 +87,7 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
     changed: { es: "Cambió la hora", en: "Changed the time" }, change_requested: { es: "Pidió cambiar la hora", en: "Asked to change the time" }, change_accepted: { es: "Aceptaste el cambio", en: "You accepted the change" },
     change_declined: { es: "No se pudo el cambio", en: "Change declined" }, payment_captured: { es: "Depósito cobrado", en: "Deposit charged" }, payment_released: { es: "Depósito liberado", en: "Deposit released" }, refunded: { es: "Depósito devuelto", en: "Deposit refunded" },
   };
-  const d = r.det as { opts?: CitaPanel["opts"]; adds?: CitaPanel["adds"]; para?: string; nombre?: string | null; edad?: string | null; veh?: { t: string; mi?: number | null }; casa?: { dir: string; tenure: string }; w?: string; win?: number; luces?: string[]; area?: string | null; acceso?: string; accesoNota?: string | null; piezas?: boolean; rubro?: string; pre?: { num: string; lo: number; hi: number }; preFotos?: string[] };
+  const d = r.det as { opts?: CitaPanel["opts"]; adds?: CitaPanel["adds"]; para?: string; nombre?: string | null; edad?: string | null; veh?: { t: string; mi?: number | null }; casa?: { dir: string; tenure: string }; w?: string; win?: number; luces?: string[]; area?: string | null; acceso?: string; accesoNota?: string | null; piezas?: boolean; rubro?: string; plan?: string; pre?: { num: string; lo: number; hi: number }; preFotos?: string[] };
   const est = d.rubro ? await estadoEstimado(db(), r.id) : null;
   const x4d = d.rubro ? (await db().query<{ rate: number; tax: number }>(
     `select coalesce((select labor_rate_cents from trade_settings where business_id = o.business_id), 0) as rate,
@@ -99,7 +99,7 @@ export async function citaPanel(negocio: string, numero: string): Promise<CitaPa
     tel, nota: r.nota, para: d.para ?? "me", nombre: d.nombre ?? null, edad: d.edad ?? null, opts: d.opts ?? [], adds: d.adds ?? [], total: r.total, pago: r.pago, fotos: [...(r.fotos ?? []), ...(d.preFotos ?? [])], responde: r.responde, auto: r.auto,
     alt: r.alt ? { ymd: r.alt.ymd, m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, cambio: r.chgp ? { ymd: r.chgp.ymd, m: r.chgp.m, hasta: r.chg_hasta ?? "" } : null,
     tl: tl.map((e) => ({ t: e.note ?? K[e.kind] ?? { es: e.kind, en: e.kind }, at: e.at })),
-    est, rate: x4d.rate, taxBp: x4d.tax, pre: d.pre ?? null,
+    est, rate: x4d.rate, taxBp: x4d.tax, pre: d.pre ?? null, plan: d.plan ?? null,
     of: d.veh || d.casa ? { veh: d.veh?.t ?? null, mi: d.veh?.mi ?? null, casa: d.casa?.dir ?? null, inq: d.casa?.tenure === "inq", w: d.w ?? null, win: d.win ?? null, luces: d.luces ?? [], area: d.area ?? null, acceso: d.acceso ?? null, accesoNota: d.accesoNota ?? null, piezas: !!d.piezas } : null,
   };
 }
