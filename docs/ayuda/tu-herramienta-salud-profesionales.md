@@ -42,3 +42,13 @@ Clinics set the insurers they take, the uninsured visit price, languages, video 
 walk-in wait and who can come (income-based, no papers). Professionals: legal ones manage licenses, what they do not do,
 payment plan, urgent cases and THE TOTAL, IN WRITING (fee + government fee per flat-fee service); others set delivery days,
 warranty, estimate first, or how many insurers they compare. Every tap saves; your page and Search update right away.
+
+## La licencia de cada profesional (4h-3) · Each professional's license
+- **Panel › Tu página › Equipo › (la persona) › SU LICENCIA:** eliges su licencia (Médico MD/DO, PA-C, enfermera
+  practicante, dentista, abogado…), escribes el número y tocas **Mandar a verificar**. To'Latino la busca en el registro oficial
+  del estado (en Pensilvania, PALS) en 72 h.
+- Mientras no esté verificada, la persona sale en tu equipo pero **no para elegir en «¿Con quién?»**. Recepción nunca se elige.
+- Si alguien del equipo con licencia verificada habla español, Buscar dice **«El médico habla español»**.
+- Si la persona sale del equipo, su licencia se retira con ella.
+- EN: add each professional's license and number from their Team page; it shows only after To'Latino verifies it in the
+  state registry. Only verified professionals can be picked when booking.

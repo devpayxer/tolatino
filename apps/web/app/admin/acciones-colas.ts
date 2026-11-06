@@ -2,6 +2,7 @@
 /* Decisiones de las colas (ADM-COLAS). Cada una: permiso (colas:aprobar), la cola es de su rol y de su ciudad, el
    caso sigue abierto → cambio en la fuente + caso decidido + auditoría con motivo, en una transacción. */
 import { revalidatePath } from "next/cache";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { colasVisibles } from "@/lib/admin-colas";
@@ -192,6 +193,7 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
               next_review = case when $2 = 'valid' then (now() + interval '3 months')::date else next_review end
         where id = $1::bigint`, [q.subject_id, accion, m, s.id]);
     await c.query(`select licencias_refrescar($1)`, [q.business_id]);
+    if (q.business_id) await recalcularFiltrosSP(c, q.business_id); // «El médico habla español» sale de las licencias verificadas del equipo
     await cerrar(c, q, s, accion, m);
     const L: Record<string, string> = { valid: "verificada", expired: "vencida", not_found: "no se pudo verificar" };
     await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.titulo, estado: "por verificar" }, after: { licencia: l.titulo, estado: L[accion] }, reason: m });

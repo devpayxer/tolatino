@@ -54,7 +54,7 @@ const NAV: ([string, string] | [string, string, string, string, string])[] = [
   ["USR-CITAS", "Citas y reservas", "Bookings", "calendar", "/cuenta/citas"], ["USR-FAVORITOS", "Guardados", "Saved", "heart", "/cuenta/guardados"],
   ["USR-RESENAS", "Reseñas", "Reviews", "star", "/cuenta/resenas"], ["USR-EMPLEOS", "Empleos", "Jobs", "brief", "/cuenta/empleos"],
   ["USR-MENSAJES", "Mensajes", "Messages", "chat", "/cuenta/mensajes"],
-  ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"],
+  ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"], ["USR-SEGUROS", "Mis seguros", "My insurance", "insurance", "/cuenta/seguros"],
   ["USR-AVISOS", "Avisos", "Notifications", "bell", "/cuenta/avisos"], ["USR-AJUSTES", "Ajustes", "Settings", "shield", "/cuenta/ajustes"], ["USR-INVITAR", "Invita vecinos", "Invite neighbors", "share", "/cuenta/invitar"],
 ];
 

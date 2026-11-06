@@ -662,6 +662,18 @@ begin
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Consulta en tu casa","en":"In-home consult"}'::jsonb, '{"es":"Una hora; te dejo ideas y un presupuesto por escrito.","en":"One hour; ideas and a written budget."}'::jsonb, 9500, 60, 'cons', '{}'::jsonb, array['https://images.pexels.com/photos/5393592/pexels-photo-5393592.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, photos, sort) values (b, 'svc', s, '{"es":"Diseño de un cuarto","en":"One-room design"}'::jsonb, '{"es":"Plano, colores y lista de compras.","en":"Layout, colors and shopping list."}'::jsonb, 45000, 60, 'fijo', '{}'::jsonb, array['https://images.pexels.com/photos/5393592/pexels-photo-5393592.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
 end $$;
+insert into business_members (business_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours, languages)
+  select 'centro-medico-quisqueya', 'staff', 'Luis Fernández, PA-C', '{"es":"Asistente médico","en":"Physician assistant"}'::jsonb, 'active', true, '{}', 1, true, '{es,en}'
+   where exists (select 1 from businesses where id = 'centro-medico-quisqueya' and is_demo)
+     and not exists (select 1 from business_members where business_id = 'centro-medico-quisqueya' and display_name = 'Luis Fernández, PA-C');
+insert into business_members (business_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours, languages)
+  select 'centro-medico-quisqueya', 'staff', 'Dra. Yesenia Rosario', '{"es":"Pediatra","en":"Pediatrician"}'::jsonb, 'active', true, '{}', 2, true, '{es,en}'
+   where exists (select 1 from businesses where id = 'centro-medico-quisqueya' and is_demo)
+     and not exists (select 1 from business_members where business_id = 'centro-medico-quisqueya' and display_name = 'Dra. Yesenia Rosario');
+insert into business_members (business_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours, languages)
+  select 'centro-medico-quisqueya', 'staff', 'Marisol Peña', '{"es":"Recepción y seguros","en":"Front desk and insurance"}'::jsonb, 'active', true, '{}', 3, true, '{es}'
+   where exists (select 1 from businesses where id = 'centro-medico-quisqueya' and is_demo)
+     and not exists (select 1 from business_members where business_id = 'centro-medico-quisqueya' and display_name = 'Marisol Peña');
 insert into health_settings (business_id, insurers, uninsured, cash_cents, langs, tele, sliding, no_id, interp, walk_wait_min)
   select b.id, x.ins, b.filter_values @> '{sinseguro}' or cardinality(x.ins) = 0,
          least(40000, greatest(2000, round(coalesce((b.category_attrs->>'cash')::numeric, 85) * 100 / 500) * 500))::int, '{es,en}',

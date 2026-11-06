@@ -42,8 +42,8 @@ export async function herramientaSP(negocio: string, rubro: "salud" | "pro", c?:
 }
 
 /* Los filtros de Doctores y Profesionales que salen de los datos. Los que no salen de aquí (hoy, noche, finde, niños,
-   esp de Pro, presencial, sábado, y10, medesp, lic…) se conservan tal cual. */
-const DER_S = ["walk", "cita", "online", "seguro", "medicaid", "medicare", "chip", "sinseguro", "escala", "sinid", "esp", "tele", "interp"];
+   esp de Pro, presencial, sábado, y10, lic…) se conservan tal cual. */
+const DER_S = ["walk", "cita", "online", "seguro", "medicaid", "medicare", "chip", "sinseguro", "escala", "sinid", "esp", "tele", "interp", "medesp"];
 // «lic» la pone y la quita la base al verificar o retirar una licencia (licencias_refrescar): aquí no se toca.
 const DER_P = ["walk", "cita", "online", "gratis", "fijo", "hora", "plan", "remoto", "urgente"];
 export async function recalcularFiltrosSP(c: PoolClient, negocio: string) {
@@ -65,6 +65,8 @@ export async function recalcularFiltrosSP(c: PoolClient, negocio: string) {
     if (h.langs.includes("es")) F.add("esp");
     if (h.tele || S.some((s) => s.k === "tele")) F.add("tele");
     if (h.interp) F.add("interp");
+    // «El médico habla español»: alguien del equipo con licencia VERIFICADA que habla español (nunca lo dice el negocio).
+    if ((await c.query(`select 1 from licenses l join business_members m on m.id = l.member_id where l.business_id = $1 and l.status = 'valid' and m.status = 'active' and 'es' = any(m.languages) limit 1`, [negocio])).rowCount) F.add("medesp");
   } else {
     if (S.some((s) => s.k === "cons" && !s.c)) F.add("gratis");
     if (S.some((s) => s.k === "fijo")) F.add("fijo");

@@ -5,7 +5,7 @@ import { aceptaTexto, resumenSP } from "./salud-pro-comun";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
-import { licenciasDe } from "./licencias";
+import { licenciasTodas } from "./licencias";
 import { telefonoBonito } from "./panel";
 
 /* ADM-NEG · Negocios: lista con filtros y el 360° de un negocio. Todo acotado a las ciudades de la persona
@@ -126,7 +126,7 @@ export async function negocio360(s: Staff, id: string) {
     db().query<{ v30: number; c30: number }>(
       `select (select coalesce(sum(n),0)::int from business_views_daily where business_id = $1 and day > current_date - 30) as v30,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as c30`, [id]),
-    licenciasDe(id),
+    licenciasTodas(id),
     // Menú (Comida): los platos con su estado, para ocultar uno con motivo (el dueño lo ve en su panel).
     db().query<{ id: string; name: string; sec: string | null; cents: number; hidden: boolean; reason: string | null; module: string; dur: number | null; extra: boolean; own: boolean; k: string | null; a: Record<string, unknown> }>(
       `select i.id::text, i.name->>'es' as name, s.name->>'es' as sec, i.price_cents as cents, i.status = 'hidden' as hidden, i.hidden_reason as reason, i.module,

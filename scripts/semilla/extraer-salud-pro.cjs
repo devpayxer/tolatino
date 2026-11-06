@@ -53,6 +53,13 @@ for (const [cat, L, rub] of [["NEG-SALUD", w.TLSaludL, "salud"], ["NEG-PRO", w.T
     out.push("end $$;");
   }
 }
+// Equipo del centro médico (dash2-cat.js REAL['centro-medico-quisqueya'].team): para probar «SU LICENCIA» y «¿Con quién?».
+// Sin licencia: cada una se agrega desde el panel y la verifica To'Latino (nunca sale verificada desde la semilla).
+for (const [n, r, re, L, sort] of [["Luis Fernández, PA-C", "Asistente médico", "Physician assistant", "{es,en}", 1], ["Dra. Yesenia Rosario", "Pediatra", "Pediatrician", "{es,en}", 2], ["Marisol Peña", "Recepción y seguros", "Front desk and insurance", "{es}", 3]])
+  out.push(`insert into business_members (business_id, kind, display_name, role, status, show_on_page, panel_access, sort, same_as_business_hours, languages)
+  select 'centro-medico-quisqueya', 'staff', ${q(n)}, ${J(bi(r, re))}, 'active', true, '{}', ${sort}, true, '${L}'
+   where exists (select 1 from businesses where id = 'centro-medico-quisqueya' and is_demo)
+     and not exists (select 1 from business_members where business_id = 'centro-medico-quisqueya' and display_name = ${q(n)});`);
 // Tu herramienta de TODOS los de prueba (tengan o no servicios del prototipo): lo que ya dice su página (seguros, precio sin
 // seguro, espera, filtros) y, para Profesionales, los valores de su tipo (neg-pro-kind.js DEF). No pisa lo que el dueño guardó.
 out.push(`insert into health_settings (business_id, insurers, uninsured, cash_cents, langs, tele, sliding, no_id, interp, walk_wait_min)

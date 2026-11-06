@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { tx } from "@/lib/db";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -116,3 +117,23 @@ export async function filtrosTodos(cat: string): Promise<ResAdm> {
     return null;
   }, "Todos salen en la página.");
 }
+
+/* Catálogo › Seguros: ocultar o volver a mostrar un seguro. Los consultorios que lo tenían lo conservan guardado y vuelve
+   solo si se muestra otra vez; sus filtros (medicaid, seguro…) se recalculan ahora. */
+export async function seguroVisible(key: string, mostrar: boolean, motivo: string): Promise<ResAdm> {
+  if (typeof key !== "string" || !/^[a-z0-9_]{2,40}$/.test(key)) return no("Ese seguro no existe.");
+  const m = limpio(motivo, 300);
+  if (m.length < 3) return no("Escribe el motivo.");
+  return hacer(async (c, s) => {
+    const x = (await c.query<{ es: string; hidden: boolean }>(`select name->>'es' as es, hidden from insurers where key = $1 for update`, [key])).rows[0];
+    if (!x) return "Ese seguro no existe.";
+    if (x.hidden === !mostrar) return mostrar ? "Ya sale." : "Ya está oculto.";
+    await c.query(`update insurers set hidden = $2, updated_at = now() where key = $1`, [key, !mostrar]);
+    const negs = (await c.query<{ id: string }>(`select business_id as id from health_settings where $1 = any(insurers)`, [key])).rows;
+    for (const b of negs) await recalcularFiltrosSP(c, b.id);
+    await auditar(c, { actor: s.id, action: mostrar ? "catalogo.seguro.mostrar" : "catalogo.seguro.ocultar", targetKind: "insurer", targetId: key,
+      before: { seguro: x.es, estado: mostrar ? "oculto" : "visible" }, after: { estado: mostrar ? "visible" : "oculto", consultorios: String(negs.length) }, reason: m });
+    return null;
+  }, mostrar ? "Sale otra vez en Tu herramienta y en las fichas." : "Oculto: ya no sale en Tu herramienta ni en las fichas.");
+}
+

@@ -101,3 +101,14 @@ export async function modulosAdmin() {
   ]);
   return m.rows.map((x) => ({ ...x, cats: c.rows.filter((k) => k.mods.includes(x.key)).map((k) => k.short) }));
 }
+
+/* Catálogo › Seguros (4h-3): el catálogo de Pensilvania con cuántos consultorios lo aceptan y cuántas personas lo
+   guardaron en Mis seguros. Ocultar uno lo saca de Tu herramienta, de la ficha y de «Tu seguro» (nada se borra). */
+export async function segurosAdmin() {
+  return (await db().query<{ key: string; kind: "pub" | "priv"; es: string; en: string; hidden: boolean; planes: number; consultorios: number; personas: number }>(
+    `select i.key, i.kind, i.name->>'es' as es, i.name->>'en' as en, i.hidden, jsonb_array_length(i.plans) as planes,
+            (select count(*)::int from health_settings h where i.key = any(h.insurers)) as consultorios,
+            (select count(*)::int from user_insurances u where u.insurer = i.key and u.removed_at is null) as personas
+       from insurers i where i.state = 'PA' order by i.kind desc, i.sort, i.key`)).rows;
+}
+

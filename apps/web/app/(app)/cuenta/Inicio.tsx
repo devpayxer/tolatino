@@ -61,6 +61,7 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   B.push({ type: "tel", b: [{ type: "sec", t: E2("Tu cuenta", "Your account") }, { type: "rows", rows: [
     { ic: "users", t: E2("Perfil", "Profile"), s: E2("NOMBRE, FOTO, CORREO", "NAME, PHOTO, EMAIL"), chev: true, on: () => ir("/cuenta/perfil") },
     { ic: "home", t: E2("Direcciones", "Addresses"), s: `${dirs}${E2(" GUARDADAS", " SAVED")}`, chev: true, on: () => ir("/cuenta/direcciones") },
+    { ic: "insurance", t: E2("Mis seguros", "My insurance"), s: E2("PARA SABER SI LO ACEPTAN Y CUÁNTO PAGAS", "TO KNOW IF IT IS TAKEN AND WHAT YOU PAY"), chev: true, on: () => ir("/cuenta/seguros") },
     { ic: "bell", t: E2("Avisos", "Notifications"), s: E2("QUÉ TE LLEGA Y CUÁNDO", "WHAT YOU GET AND WHEN"), chev: true, on: () => ir("/cuenta/avisos") },
     { ic: "shield", t: E2("Ajustes", "Settings"), s: E2("IDIOMA · MI CIUDAD · PRIVACIDAD", "LANGUAGE · MY CITY · PRIVACY"), chev: true, on: () => ir("/cuenta/ajustes") },
     { ic: "share", t: E2("Invita vecinos", "Invite neighbors"), s: E2("TU ENLACE PARA INVITAR", "YOUR INVITE LINK"), chev: true, on: () => ir("/cuenta/invitar") },

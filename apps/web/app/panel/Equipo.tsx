@@ -2,18 +2,20 @@
 /* Tu página · Equipo (Panel v2 stfBlocks / stfDet): quién sale en tu página. Solo sale quien aceptó; la foto, la bio y
    los idiomas los pone cada persona (el dueño, los suyos); el negocio pone rol, desde, especialidades y horario.
    Con Free sale 1 persona (el dueño); con Pro, todo el equipo. */
+import { primerNombre } from "@/lib/nombre";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { Persona } from "@/lib/panel";
 import { fmtHora, hoyPersona, semanaNegocio, type Semana } from "@/lib/panel-reglas";
 import { subirFoto } from "@/lib/subir-foto";
 import { equipoCancelar, equipoGuardar, equipoInvitar, equipoMostrar, equipoQuitar, equipoReenviar, equipoResponder } from "./acciones-equipo";
+import { licenciaAgregar, licenciaQuitar } from "./acciones";
 import type { Ctx, Editor, Sec } from "./Panel";
 
 type Bi = [string, string];
 const NO_RENTA = ["NEG-FOOD", "NEG-MERC", "NEG-TIENDA", "NEG-NOCHE", "NEG-BELL"];
 const LANG: Record<string, string> = { es: "Español", en: "English", pt: "Português", qu: "Quechua" };
 const SP: Record<string, Bi> = { "NEG-BELL": ["silla", "chair"], "NEG-AUTO": ["bahía", "bay"], "NEG-SALUD": ["consultorio", "office"] };
-const first = (n: string) => n.split(" ")[0] ?? n;
+const first = (n: string) => primerNombre(n) || n;
 const ahoraDec = (hm: string) => Number(hm.slice(0, 2)) + Number(hm.slice(3)) / 60;
 const L = (c: Ctx, b: { es: string; en: string } | null | undefined) => (b ? (c.es ? b.es : b.en || b.es) : "");
 function cuando(c: Ctx, iso: string | null) {
@@ -147,6 +149,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
   out.push(txt(E2("ROL EN INGLÉS", "ROLE IN ENGLISH"), x.role[1], (v) => F.set({ role: [x.role[0], v] }), E2("Si lo dejas vacío, sale en español.", "Leave empty to show the Spanish one."), 40));
   x.sp.forEach((s, i) => out.push(txt(`${E2("ESPECIALIDAD EN INGLÉS · ", "SPECIALTY IN ENGLISH · ")}${s[0].toUpperCase()}`, s[1], (v) => F.set({ sp: x.sp.map((y, j) => (j === i ? [y[0], v] as Bi : y)) }), "", 24)));
   if (propio && x.bio[0].trim()) out.push(txt(E2("TUS PALABRAS EN INGLÉS", "YOUR WORDS IN ENGLISH"), x.bio[1], (v) => F.set({ bio: [x.bio[0], v] }), "", 280, { area: true }));
+  out.push(...licenciaPersona(c, m));
   out.push({ type: "group", k: E2("HORARIO", "SCHEDULE") });
   if (rent) {
     out.push({ type: "note", tone: "info", icon: "key", t: E2(`Renta ${sp[0]} contigo: su agenda es suya y la maneja en su página. Así sale hoy.`, `Rents a ${sp[1]} from you: the schedule is theirs, managed on their page. This is how it shows today.`) });
@@ -184,4 +187,29 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
       : [{ l: E2("Quitar del equipo", "Remove from team"), icon: "trash", v: "secondary", onClick: () => c.setUi({ stfDel: m.id }) }] });
   }
   return { blocks: out, ed, tail };
+}
+
+/* SU LICENCIA (Doctores y Profesionales, 4h-3 · fase4-salud-pro.md §4h «Equipo / Staff»): cada profesional con su licencia
+   y su número; To’Latino la verifica en el registro oficial antes de que salga. Solo quien la tiene VERIFICADA sale para
+   elegir en «¿Con quién?»; recepción sale en el equipo pero no se elige. Quitarla no pide nada: es de la persona. */
+function licenciaPersona(c: Ctx, m: Persona): Bloque[] {
+  const { d, E2 } = c, L0 = d.licEq;
+  if (!L0 || m.st !== "ok") return [];
+  const mias = L0.filas.filter((x) => x.member === m.id), fn = first(m.name);
+  const F = c.form<{ k: string; n: string }>(`licp:${m.id}`, { k: "", n: "" });
+  const out: Bloque[] = [{ type: "group", k: E2("SU LICENCIA", "THEIR LICENSE") }];
+  const ST = (st: string) => st === "valid" ? { s: E2("Verificada por To’Latino · sale en tu página", "Verified by To’Latino · shows on your page"), tag: E2("VERIFICADA", "VERIFIED"), tone: "signal", ibg: "rgba(0,229,196,.14)", ifg: "var(--tl-open-text)" }
+    : st === "review" ? { s: E2("En revisión · To’Latino la verifica en 72 h", "In review · To’Latino verifies it within 72 h"), tag: E2("EN REVISIÓN", "IN REVIEW"), tone: "action", ibg: "rgba(255,176,32,.14)", ifg: "var(--tl-pro-ink)" }
+      : { s: E2("No se pudo verificar · revisa el número", "Could not be verified · check the number"), tag: E2("NO VERIFICADA", "NOT VERIFIED"), tone: "danger", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)" };
+  if (mias.length) out.push({ type: "rows", items: mias.map((x): Fila => { const st = ST(x.status); return { key: x.id, icon: "law", ibg: st.ibg, ifg: st.ifg, t: c.es ? x.title.es : x.title.en || x.title.es, s: `${st.s} · ${x.label} ${x.number ?? "—"}`, tag: st.tag, tone: st.tone,
+    acts: [{ l: E2("Quitar", "Remove"), v: "secondary", off: c.pending, onClick: () => c.run(() => licenciaQuitar(d.id, x.id), E2("Licencia quitada.", "License removed.")) }] }; }) });
+  if (!mias.some((x) => x.status === "valid")) out.push({ type: "note", tone: "info", icon: "law", t: E2(`${fn} sale en tu equipo, pero no para elegir en «¿Con quién?» hasta que su licencia esté verificada.`, `${fn} shows on your team, but cannot be picked in “With whom?” until their license is verified.`) });
+  const libres = L0.catalogo.filter((k) => !mias.some((x) => x.kind === k.key));
+  if (!libres.length) return out;
+  out.push({ type: "chips", k: E2("AGREGAR SU LICENCIA", "ADD THEIR LICENSE"), help: E2("se verifica antes de salir", "verified before it shows"), items: libres.map((k) => ({ l: k.l, v: F.d.k === k.key ? "selected" : "filter", onClick: () => F.set({ k: F.d.k === k.key ? "" : k.key }) })) });
+  if (F.d.k) {
+    out.push({ type: "field", k: E2("NÚMERO DE LICENCIA", "LICENSE NUMBER"), val: F.d.n, max: 40, ph: E2("Como sale en su licencia", "As it appears on their license"), onChange: (v) => F.set({ n: v.replace(/[^A-Za-z0-9 #./-]/g, "") }), help: E2("Con el número, el equipo la busca en el registro oficial del estado.", "With the number, the team looks it up in the state’s official registry.") });
+    out.push({ type: "acts", items: [{ l: E2("Mandar a verificar", "Send for verification"), v: "primary", icon: "law", off: c.pending || !F.d.n.trim(), onClick: () => c.run(() => licenciaAgregar(d.id, F.d.k, m.id, F.d.n), E2("Enviada. To’Latino la verifica en 72 h.", "Sent. To’Latino verifies it within 72 h."), () => F.set({ k: "", n: "" })) }] });
+  }
+  return out;
 }

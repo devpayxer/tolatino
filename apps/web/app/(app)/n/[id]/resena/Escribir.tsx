@@ -2,6 +2,7 @@
 /* APP-NEG-RESENA (prototipo «APP-NEG-RESENA · móvil / · desktop», revWVals): sobre qué visita (verificada si hay un pedido
    o una mesa terminada; si no, visitante), estrellas, lo que importa (Comida), qué recomiendas, el texto (20 a 1000 letras,
    sin teléfonos ni correos), hasta 6 fotos y las reglas. En escritorio, «Así la van a ver» con la ReviewCard real. */
+import { primerNombre } from "@/lib/nombre";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ComponentType } from "react";
@@ -57,7 +58,7 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const SL = [E2("Toca una estrella", "Tap a star"), E2("Malo", "Bad"), E2("Regular", "Fair"), E2("Bien", "Good"), E2("Muy bien", "Very good"), E2("Excelente", "Excellent")];
   type G = { k: string; key: keyof Respuestas; opts: [string | number, string][] };
   // Hogar y Auto (4g · neg-hogar-rev.js groups / TLAutoRev.groups): con la visita, lo que pasó; el resto sale del dato.
-  const rub = b.rubro, conCita = src === "op" && cita, quien = (d.cita?.quien ?? "").split(" ")[0];
+  const rub = b.rubro, conCita = src === "op" && cita, quien = primerNombre(d.cita?.quien);
   const gH: G[] = rub === "hogar" ? [
     ...(conCita ? [] : [{ k: E2("¿LLEGÓ EN LA FRANJA?", "DID THEY ARRIVE IN THE WINDOW?"), key: "wait" as const, opts: [["a", E2("Sí", "Yes")], ["b", E2("Hasta 30 min tarde", "Up to 30 min late")], ["c", E2("Más tarde o no avisó", "Later or no notice")]] as [string, string][] },
       { k: E2("¿COBRÓ LO QUE DIJO?", "DID THEY CHARGE WHAT THEY SAID?"), key: "precio" as const, opts: [[1, E2("Sí", "Yes")], [0, E2("Cobró más", "Charged more")]] as [number, string][] }]),

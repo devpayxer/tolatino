@@ -3,6 +3,7 @@
    Admin) y ciudad de la persona → cambio → auditoría con motivo (y antes → después), en una transacción. El dueño ve
    el resultado y el motivo en su panel; la página, lo que corresponde (triángulo panel ↔ página ↔ admin). */
 import { revalidatePath } from "next/cache";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
 import { normalizarTelefono } from "@/lib/cuenta";
@@ -185,6 +186,7 @@ export async function licencia(id: string, licId: string, accion: "valid" | "not
               verified_at = case when $2 = 'valid' then now() else verified_at end, verified_by = case when $2 = 'valid' then $4 else verified_by end,
               next_review = case when $2 = 'valid' then (now() + interval '3 months')::date else next_review end where id = $1::bigint`, [licId, accion, m, s.id]);
     await c.query(`select licencias_refrescar($1)`, [b.id]);
+    await recalcularFiltrosSP(c, b.id); // «El médico habla español» sale de las licencias verificadas del equipo
     await c.query(`update queue_items set status = 'decided', decision = $2, reason = $3, decided_by = $4, decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId), accion, m, s.id]);
     await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : "licencia.no_aparece", targetKind: "business", targetId: b.id, city: b.city_id, before: { licencia: l.titulo, estado: LIC_EST[l.status] ?? "en revisión" }, after: { licencia: l.titulo, estado: accion === "valid" ? "verificada" : "no se pudo verificar" }, reason: m });
     return null;

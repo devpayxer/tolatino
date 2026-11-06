@@ -35,7 +35,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select pr.note from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mnote,
             (select pr.reason from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mreason,
             (select count(*)::int from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open') as nrep,
-            (select coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' from licenses l join license_kinds k on k.key = l.kind where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle,
+            (select (coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es') || coalesce(' · ' || m.display_name, '') from licenses l join license_kinds k on k.key = l.kind left join business_members m on m.id = l.member_id where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle,
             (select cr.reason from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.by_business desc, cr.created_at limit 1) as rpreason,
             (select count(*)::int from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open') as rpn,
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz,

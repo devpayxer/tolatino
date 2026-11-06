@@ -662,3 +662,18 @@ _Decidido por mí (reversible):_
 - _Arreglado: la pestaña «Lo que vende» del Super Admin no salía para Auto, Hogar ni Doctores (solo escribiendo la dirección).
   Ahora sale de la misma lista que su contenido; queda un guardián (pestanaVende)._
 
+## Fase 4 · 4h-3 Licencias de cada profesional, Seguros y Mis seguros
+1. Como **Dra. Reyes** (570-555-0244): Tu página › Equipo › Luis Fernández, PA-C › SU LICENCIA → «Asistente médico (PA-C)»,
+   número, «Mandar a verificar».
+2. Super Admin › Negocios › Centro Médico › Lo que vende: «Asistente médico (PA-C) · Luis Fernández, PA-C» → Verificar.
+   Desde ahí Buscar puede decir «El médico habla español».
+3. Super Admin › Catálogo › Seguros: ocultar uno (pide motivo) y volverlo a mostrar.
+4. Como **Marisol** (570-555-0122): Mi cuenta › Mis seguros → Medicaid · UPMC for You con número (solo se guardan los últimos 4).
+_Decidido por mí (reversible):_
+- _Mis seguros (hueco #6) se compuso con la hoja «Tu seguro» de la ficha de Salud y la lista de Direcciones; también se agrega
+  desde aquí (no solo desde la ficha). Hasta 6 por persona._
+- _Un seguro nuevo del catálogo entra por migración (son datos reales); el Super Admin solo oculta o muestra._
+- _El equipo de prueba del centro médico (Luis, Dra. Rosario, Marisol de recepción) sale del prototipo, sin licencias: se
+  verifican como en la vida real._
+- _Arreglado: el nombre corto de un profesional tomaba su título («LO PONE DRA.»). Guardián nombreConTitulo._
+

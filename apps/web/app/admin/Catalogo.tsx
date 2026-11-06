@@ -6,7 +6,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { filtroActivo, filtrosTodos, sinActivo, sinAgregar, subAgregar, subEstado } from "./acciones-catalogo";
+import { filtroActivo, filtrosTodos, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -23,6 +23,7 @@ export type DatosCatalogo = {
   nosup?: { q: string; cat: string | null; n: number }[];
   filt?: { id: string; es: string; slug: string; opciones: { id: string; group_key: string; grupo: string; key: string; es: string; quick: boolean; active: boolean; negocios: number }[]; historial: Hist };
   mods?: { key: string; es: string; cats: string[] }[];
+  seg?: { filas: { key: string; kind: "pub" | "priv"; es: string; en: string; hidden: boolean; planes: number; consultorios: number; personas: number }[]; historial: Hist };
   topeFree?: number;
 };
 const TX: Record<string, string> = { order: "Pedido", booking: "Cita / solicitud", ticket: "Boletos", none: "Sin transacción" };
@@ -110,7 +111,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
       </div>);
   }
 
-  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"]] as [string, string, string?][])
+  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"]] as [string, string, string?][])
     .map(([k, l, n]) => ({ l, n, on: d.tab === k, onClick: () => router.push(k === "cats" ? path : `${path}?tab=${k}`, { scroll: false }) })) };
   let cuerpo: ReactNode = null;
   if (d.tab === "cats" && d.cats) {
@@ -160,6 +161,21 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
           { type: "rows", cols: desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined, items: d.cats.map((c) => ({
             key: c.id, icon: c.icon || "grid", t: c.es, s: c.filtros ? `${c.filtros} opciones${c.filtros_off ? ` · ${c.filtros_off} apagadas` : ""}` : "Solo los globales",
             tag: c.filtros_off ? "EDITADO" : null, tone: "action", chev: true, onClick: () => ir({ f: c.id }) })) }]} />
+      </>);
+  } else if (d.tab === "seg" && d.seg) {
+    // Catálogo › Seguros (4h-3): el de Pensilvania. Ocultar pide motivo; nada se borra.
+    const fila = (x: NonNullable<DatosCatalogo["seg"]>["filas"][number]) => ({ key: x.key, icon: "insurance", t: x.es, s: `${x.hidden ? "Oculto · " : ""}${x.consultorios} ${x.consultorios === 1 ? "consultorio lo acepta" : "consultorios lo aceptan"} · ${x.personas} en Mis seguros${x.planes ? ` · ${x.planes} planes` : ""}`,
+      tag: x.hidden ? "OCULTO" : null, tone: "danger", tgOn: !x.hidden,
+      onTg: !d.puede ? () => setToast("Tu rol no edita el catálogo.") : x.hidden ? () => setConf({ titulo: `¿Por qué vuelve ${x.es}?`, hacer: (m) => seguroVisible(x.key, true, m) })
+        : () => setConf({ titulo: `Ocultar ${x.es}`, sub: `Deja de salir en Tu herramienta, en las fichas y en «Tu seguro». ${x.consultorios} consultorios lo tienen marcado: lo conservan y vuelve si lo muestras otra vez.`, peligro: true, plantillas: ["El seguro ya no opera en Pensilvania", "Nombre equivocado o duplicado"], hacer: (m) => seguroVisible(x.key, false, m) }) });
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "insurance", t: "Los seguros que un consultorio puede marcar en «Seguros e idiomas» y que el vecino elige en «Tu seguro». To’Latino no guarda el historial médico de nadie: de la tarjeta del seguro solo se guardan los últimos 4." },
+          { type: "rows", k: "PÚBLICOS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "pub").map(fila) },
+          { type: "rows", k: "PRIVADOS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: d.seg.filas.filter((x) => x.kind === "priv").map(fila) },
+          { type: "note", tone: "ink", t: "Un seguro nuevo entra con una migración del catálogo (datos reales, revisados), no desde aquí." },
+          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        {historial(d.seg.historial)}
       </>);
   } else if (d.tab === "mod" && d.mods) {
     cuerpo = (

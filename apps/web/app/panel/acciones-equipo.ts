@@ -4,6 +4,7 @@ import { mismoOrigen, normalizarTelefono } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { semanaValida } from "@/lib/panel-reglas";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 
 /* Tu página · Equipo (dash2-stf.js): invitar por SMS, reenviar, cancelar, aceptar a quien pide unirse, lo que pone el
    negocio de cada persona, si sale en la página y quitar del equipo. Nada se borra: estados ('removed' + motivo).
@@ -111,7 +112,14 @@ export async function equipoQuitar(id: string, mid: string): Promise<ResEq> {
   if (!a) return SIN_ACCESO;
   const m = await persona(a, mid);
   if (!m || m.status !== "active" || m.kind === "owner") return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");
-  await db().query(`update business_members set status = 'removed', removed_reason = 'owner', removed_at = now(), show_on_page = false, panel_access = '{}', updated_at = now() where id = $1`, [m.id]);
+  await tx(async (c) => {
+    await c.query(`update business_members set status = 'removed', removed_reason = 'owner', removed_at = now(), show_on_page = false, panel_access = '{}', updated_at = now() where id = $1`, [m.id]);
+    // Su licencia se va con la persona (nada se borra: queda retirada) y los filtros dejan de contarla.
+    await c.query(`update licenses set status = 'withdrawn', updated_at = now() where member_id = $1 and status <> 'withdrawn'`, [m.id]);
+    await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'La persona salió del equipo', decided_at = now() where queue = 'lic' and status = 'open' and subject_id in (select id::text from licenses where member_id = $1)`, [m.id]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await recalcularFiltrosSP(c, a.negocio.id);
+  });
   await auditar(a, "panel.equipo_quitar", m.id, null);
   return { ok: true };
 }
@@ -152,6 +160,7 @@ export async function equipoGuardar(id: string, mid: string, x: {
       await c.query(`update business_members set bio = $2::jsonb, languages = $3, photo_url = $4, updated_at = now() where id = $1`,
         [m.id, bio.es || bio.en ? JSON.stringify(bio) : null, langs.length ? langs : ["es"], photo]);
     }
+    await recalcularFiltrosSP(c, a.negocio.id); // sus idiomas cuentan para «El médico habla español»
   });
   await auditar(a, "panel.equipo_guardar", m.id, { role, y, sp, same });
   return { ok: true };

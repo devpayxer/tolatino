@@ -3,6 +3,7 @@
    (enviado · tu pre-estimado · hay que verlo · no lo hacen · sin respuesta · reservaste · cancelado), el camino, la respuesta
    del negocio (rango, qué incluye, qué puede cambiarlo, válido 7 días) con «Reservar con este pre-estimado», lo que mandaste
    y, si no lo hacen, otros negocios de la ciudad. Se actualiza solo mientras espera. */
+import { primerNombre } from "@/lib/nombre";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -20,7 +21,7 @@ const AREAS: Record<string, [string, string]> = { techo: ["Techo", "Roof"], coci
 export function Solicitud({ s, es }: { s: SolicitudVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
-  const d = s.destinos[0]!, auto = s.rubro === "auto", who = d.negocio.quien?.split(" ")[0] ?? d.negocio.nombre;
+  const d = s.destinos[0]!, auto = s.rubro === "auto", who = d.negocio.quien ? primerNombre(d.negocio.quien) : d.negocio.nombre;
   const st = s.st === "cancelled" ? "cx" : s.st === "used" ? "used" : s.st === "expired" ? "exp" : d.st === "sent" ? "sent" : d.st === "used" ? "used" : d.st;
   // Mientras espera, se mira solo (cada 15 s; la emergencia cada 5 s: el primero que acepta, va).
   useEffect(() => { if (s.st !== "sent" && !(s.mode === "pq" && s.st === "answered")) return; const t = setInterval(() => router.refresh(), s.mode === "em" ? 5000 : 15000); return () => clearInterval(t); }, [s.st, s.mode, router]);

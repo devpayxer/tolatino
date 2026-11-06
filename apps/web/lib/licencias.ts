@@ -9,13 +9,23 @@ type Bi = { es: string; en: string };
 export type LicFila = {
   id: string; kind: string; status: "review" | "valid" | "expired" | "not_found" | "revoked" | "withdrawn"; title: Bi; can: Bi; cannot: Bi | null;
   issuer: Bi; site: string; url: string; label: string; number: string | null; checked: string | null; next: string | null; sort: number;
+  member: string | null; who: string | null; // licencia de una persona del equipo (4h-3: Doctores y Profesionales)
 };
 const FILAS = `select l.id::text, l.kind, l.status, coalesce(nullif(l.title, '{}'::jsonb), k.title) as title, k.can, k.cannot, k.issuer, k.registry_site as site,
-                      k.registry_url as url, k.number_label as label, l.number, l.checked_at as checked, l.next_review as next, l.sort
-                 from licenses l join license_kinds k on k.key = l.kind`;
+                      k.registry_url as url, k.number_label as label, l.number, l.checked_at as checked, l.next_review as next, l.sort,
+                      l.member_id::text as member, m.display_name as who
+                 from licenses l join license_kinds k on k.key = l.kind left join business_members m on m.id = l.member_id`;
 
 export async function licenciasDe(businessId: string): Promise<LicFila[]> {
-  return (await db().query<LicFila>(`${FILAS} where l.business_id = $1 and l.status <> 'withdrawn' order by l.sort, l.created_at`, [businessId])).rows;
+  return (await db().query<LicFila>(`${FILAS} where l.business_id = $1 and l.member_id is null and l.status <> 'withdrawn' order by l.sort, l.created_at`, [businessId])).rows;
+}
+/* Las licencias de cada persona del equipo (solo las que siguen en el equipo). */
+export async function licenciasEquipo(businessId: string): Promise<LicFila[]> {
+  return (await db().query<LicFila>(`${FILAS} where l.business_id = $1 and l.member_id is not null and m.status = 'active' and l.status <> 'withdrawn' order by m.sort, l.sort, l.created_at`, [businessId])).rows;
+}
+/* Todas (negocio y equipo): lo que revisa el Super Admin. */
+export async function licenciasTodas(businessId: string): Promise<LicFila[]> {
+  return (await db().query<LicFila>(`${FILAS} where l.business_id = $1 and l.status <> 'withdrawn' order by l.member_id nulls first, l.sort, l.created_at`, [businessId])).rows;
 }
 
 export async function licenciaPagina(id: string, lang: Lang) {

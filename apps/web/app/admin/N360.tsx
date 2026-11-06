@@ -131,9 +131,9 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
           ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
-        {n.cat_id === "NEG-PRO" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
+        {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
           const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
-          return { icon: "law", title: l.title.es, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
+          return { icon: "law", title: `${l.title.es}${l.who ? ` · ${l.who}` : ""}`, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
             actions: P.editar && l.status !== "valid" ? [
               { label: "Verificar", variant: "secondary", onClick: () => setConf({ titulo: `Verificar la licencia: ${l.title.es}`, sub: "Confirma que el número existe en el registro oficial del estado.", plantillas: ["Coincide con el registro oficial"], hacer: (m) => licencia(n.id, l.id, "valid", m) }) },
               ...(l.status === "review" ? [{ label: "No se pudo", variant: "secondary", onClick: () => setConf({ titulo: `No se pudo verificar: ${l.title.es}`, peligro: true, hacer: (m) => licencia(n.id, l.id, "not_found", m) }) }] : []),
@@ -151,7 +151,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
       <>
         {n.licencias.length ? <A.AdminList label={`SU HERRAMIENTA · LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
           const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
-          return { icon: "law", title: l.title.es, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
+          return { icon: "law", title: `${l.title.es}${l.who ? ` · ${l.who}` : ""}`, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
             actions: P.editar && l.status !== "valid" ? [
               { label: "Verificar", variant: "secondary", onClick: () => setConf({ titulo: `Verificar la licencia: ${l.title.es}`, sub: "Confirma que el número existe en el registro oficial del estado.", plantillas: ["Coincide con el registro oficial"], hacer: (m) => licencia(n.id, l.id, "valid", m) }) },
               ...(l.status === "review" ? [{ label: "No se pudo", variant: "secondary", onClick: () => setConf({ titulo: `No se pudo verificar: ${l.title.es}`, peligro: true, hacer: (m) => licencia(n.id, l.id, "not_found", m) }) }] : []),

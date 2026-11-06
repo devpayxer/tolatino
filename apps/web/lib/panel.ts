@@ -7,7 +7,7 @@ import { aPanel, fuerza, prueba, seDuerme, type DiaPanel } from "./panel-reglas"
 import { EQUIPO_FREE, ITEMS_FREE, TOPE_FREE } from "./plan";
 import { topeFreeDe } from "./pedir";
 import { estado } from "./tarjeta";
-import { licenciasDe } from "./licencias";
+import { licenciasDe, licenciasEquipo } from "./licencias";
 
 /* Panel del negocio: quién entra. El servidor decide en cada lectura y cada cambio: la persona tiene que ser miembro
    activo del negocio (dueño, o equipo con acceso a esa parte del panel). Nunca se confía en lo que diga la pantalla. */
@@ -112,6 +112,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     b.cat === "NEG-PRO" ? licenciasDe(id) : Promise.resolve([]),
     db().query<{ key: string; title: Bi }>(`select key, title from license_kinds where category_id = $1 order by sort`, [b.cat]),
   ]);
+  const licEq = b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? await licenciasEquipo(id) : [];
 
   const pro = b.plan === "pro", c = cfg(b.cat), itemsW = (c.items ?? ["servicios", "services"]) as [string, string];
   const items = Array.isArray(b.attrs?.items) ? b.attrs.items.length : 0;
@@ -162,6 +163,8 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },
     // Tus licencias (Trámites y profesionales): las del negocio con su estado y las del catálogo que puede agregar.
     lic: b.cat === "NEG-PRO" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,
+    // Licencias de cada persona del equipo (Doctores y Profesionales, 4h-3): solo quien la tiene verificada atiende citas.
+    licEq: b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? { filas: licEq, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })) } : null,
     negocios: negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
   };
 }

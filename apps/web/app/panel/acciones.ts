@@ -1,5 +1,6 @@
 "use server";
 import { claveAmenidad } from "@/lib/amenidades";
+import { recalcularFiltrosSP } from "@/lib/salud-pro";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
@@ -190,26 +191,33 @@ export async function selloCancelar(id: string): Promise<Res> {
 
 /* ── Tus licencias (Trámites y profesionales) ── Agregar una del catálogo (en revisión + caso en la cola Licencias),
    ponerle el número (vuelve a revisión), quitarla (retirada, nada se borra; queda al menos una) y «lo que no hago». */
-export async function licenciaAgregar(id: string, kind: string): Promise<Res> {
+export async function licenciaAgregar(id: string, kind: string, miembro?: string | null, numero?: string | null): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
   if (typeof kind !== "string" || !/^[a-z]{2,12}$/.test(kind)) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  // 4h-3: la licencia de una persona del equipo (Doctores y Profesionales) lleva su número desde el principio.
+  const mid = miembro == null ? null : String(miembro), num = typeof numero === "string" ? numero.trim().slice(0, 40) : "";
+  if (mid !== null && !/^[0-9a-f-]{36}$/.test(mid)) return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");
+  if (mid !== null && !(a.negocio.category_id === "NEG-SALUD" || a.negocio.category_id === "NEG-PRO")) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  if (mid !== null && (!num || !/^[A-Za-z0-9 #./-]+$/.test(num))) return no("Escribe el número como sale en su licencia.", "Type the number as it appears on their license.");
   const r = await tx(async (c) => {
     const n = (await c.query<{ n: number }>(`select count(*)::int as n from licenses where business_id = $1 and created_at > now() - interval '1 day'`, [a.negocio.id])).rows[0]!.n;
     if (n >= 10) return "muchas";
+    if (mid !== null && !(await c.query(`select 1 from business_members where id = $1::uuid and business_id = $2 and status = 'active'`, [mid, a.negocio.id])).rowCount) return "persona";
     const ins = (await c.query<{ id: string }>(
-      `insert into licenses (business_id, city_id, kind, title, can, cannot, issuer, registry_url, status, source, sort)
+      `insert into licenses (business_id, city_id, kind, title, can, cannot, issuer, registry_url, status, source, sort, member_id, number)
        select $1, $2, k.key, k.title, k.can, coalesce(k.cannot, '[]'::jsonb), k.issuer->>'es', k.registry_url, 'review', 'panel',
-              (select coalesce(max(sort), 0) + 1 from licenses where business_id = $1)
+              (select coalesce(max(sort), 0) + 1 from licenses where business_id = $1), $5::uuid, nullif($6, '')
          from license_kinds k where k.key = $3 and k.category_id = $4
-       on conflict do nothing returning id::text`, [a.negocio.id, a.negocio.city_id, kind, a.negocio.category_id])).rows[0];
+       on conflict do nothing returning id::text`, [a.negocio.id, a.negocio.city_id, kind, a.negocio.category_id, mid, num])).rows[0];
     if (!ins) return "ya";
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3)`, [ins.id, a.negocio.id, a.negocio.city_id]);
     return null;
   });
-  if (r === "ya") return no("Ya tienes esa licencia.", "You already have that license.");
+  if (r === "ya") return mid ? no("Esa persona ya tiene esa licencia.", "That person already has that license.") : no("Ya tienes esa licencia.", "You already have that license.");
+  if (r === "persona") return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");
   if (r === "muchas") return no("Agregaste muchas licencias hoy. Prueba mañana.", "You added many licenses today. Try tomorrow.");
-  await auditar(a, "panel.licencia_agregar", null, { kind });
+  await auditar(a, "panel.licencia_agregar", null, mid ? { kind, persona: mid } : { kind });
   return { ok: true };
 }
 export async function licenciaNumero(id: string, licId: string, numero: string): Promise<Res> {
@@ -225,6 +233,7 @@ export async function licenciaNumero(id: string, licId: string, numero: string):
     // Un número nuevo se vuelve a revisar: sale «en revisión» hasta que el equipo lo confirme en el registro.
     await c.query(`update licenses set number = $2, status = 'review', updated_at = now() where id = $1::bigint`, [licId, n]);
     await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3) on conflict do nothing`, [l.id, a.negocio.id, a.negocio.city_id]);
     return null;
   });
@@ -237,12 +246,15 @@ export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
   if (!a) return SIN_ACCESO;
   if (!/^\d{1,18}$/.test(String(licId))) return no("Esa licencia no existe.", "That license doesn’t exist.");
   const r = await tx(async (c) => {
-    const vivas = (await c.query<{ n: number }>(`select count(*)::int as n from licenses where business_id = $1 and status <> 'withdrawn'`, [a.negocio.id])).rows[0]!.n;
-    if (vivas <= 1) return "una";
+    const deP = (await c.query<{ m: string | null }>(`select member_id::text as m from licenses where id = $1::bigint and business_id = $2`, [licId, a.negocio.id])).rows[0];
+    if (!deP) return "no";
+    const vivas = (await c.query<{ n: number }>(`select count(*)::int as n from licenses where business_id = $1 and member_id is null and status <> 'withdrawn'`, [a.negocio.id])).rows[0]!.n;
+    if (deP.m === null && vivas <= 1) return "una";
     const u = await c.query(`update licenses set status = 'withdrawn', updated_at = now() where id = $1::bigint and business_id = $2 and status <> 'withdrawn'`, [licId, a.negocio.id]);
     if (!u.rowCount) return "no";
     await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'El dueño la quitó', decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId)]);
     await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
     return null;
   });
   if (r === "una") return no("Tu página necesita al menos una licencia aquí.", "Your page needs at least one license here.");
