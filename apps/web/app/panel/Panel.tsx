@@ -18,7 +18,7 @@ import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
-import { citaDetalle, clientesCitas, type CitasData } from "./Citas";
+import { citaDetalle, clientesCitas, hoyAyudasCitas, type CitasData } from "./Citas";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
@@ -416,6 +416,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...hoyMensajes(c));
   out.push(...hoyResenas(c));
   out.push(...hoyAyudas(c));
+  out.push(...hoyAyudasCitas(c));
   out.push(...hoyJobs(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday

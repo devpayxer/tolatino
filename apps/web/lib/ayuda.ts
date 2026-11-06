@@ -86,7 +86,7 @@ export async function ayudasNegocio(negocio: string) {
   await escalarVencidas();
   return (await db().query<Ayuda & { num: string; quien: string }>(
     `select ${COLS}, o.number as num, coalesce(u.first_name, 'Cliente') as quien from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id
-      where h.business_id = $1 and h.status = 'open' order by h.created_at limit 10`, [negocio])).rows;
+      where h.business_id = $1 and h.status = 'open' and o.kind = 'order' order by h.created_at limit 10`, [negocio])).rows;
 }
 export async function ayudaPanel(negocio: string, numero: string) {
   return (await db().query<Ayuda>(`select ${COLS} from help_requests h join operations o on o.id = h.operation_id where o.number = $1 and h.business_id = $2`, [numero, negocio])).rows[0] ?? null;

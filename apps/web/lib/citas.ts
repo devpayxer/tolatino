@@ -456,6 +456,7 @@ export type CitaVista = {
   enviada: number; contestada: number | null; tarjeta: string | null; pago: string | null; cxPor: string | null;
   svcId: string | null; optIdx: string; addIds: string[]; mid: string | null; late: number | null; perdio: boolean; cxRazon: string | null; mins: number;
   alt: { ymd: string; i: number; m: number; hasta: string } | null; chg: { ymd: string; i: number; m: number } | null; resena: boolean; cxh: number; tol: number;
+  ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean;
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
@@ -464,6 +465,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     con: string | null; silla: number | null; cfoto: string | null; det: Record<string, unknown>; mid: string | null; razon: string | null; mins: number; resena: boolean;
     alt: { ymd: string; m: number } | null; alt_hasta: string | null; chg: { ymd: string; m: number } | null; ymd: string; hm: string; hoy: string; dur: number; total: number; dep: number; nota: string | null;
     enviada: string; contestada: string | null; cxh: number; tol: number; brand: string | null; l4: string | null; pago: string | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
+    ayuda: { n: string; st: "open" | "answered" | "escalated" | "resolved" } | null; noshow: boolean;
   }>(
     `select o.number as numero, o.status, b.id as biz, b.name as nombre, b.address as direccion, b.phone as telefono, b.logo_url as foto, b.svc_model as model, b.subcategory_ids as subs,
             m.display_name as con, case when b.svc_model = 'chair' then m.chair_seat end as silla, m.photo_url as cfoto, o.details as det, o.member_id::text as mid, o.cancel_reason as razon,
@@ -478,7 +480,8 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
             p.card_brand as brand, p.card_last4 as l4, p.status as pago,
             coalesce(case when b.svc_model = 'chair' then m.chair_auto end, bp.auto_approve, false) as auto,
             coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, bp.response_min, 30) as resp, coalesce(bp.expires_h, 2) as exp, o.cancelled_by as cx, coalesce(bp.cancel_free_h, 2) as cxh, coalesce(bp.tolerance_min, 15) as tol,
-            array(select x.url from media x where x.owner_kind = 'appointment' and x.owner_id = o.id::text and x.status = 'visible' order by x.sort) as fotos
+            array(select x.url from media x where x.owner_kind = 'appointment' and x.owner_id = o.id::text and x.status = 'visible' order by x.sort) as fotos,
+            (select jsonb_build_object('n', h.number, 'st', h.status) from help_requests h where h.operation_id = o.id) as ayuda, coalesce(o.status_detail = 'noshow', false) as noshow
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join business_members m on m.id = o.member_id
        left join booking_policies bp on bp.business_id = o.business_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
@@ -497,6 +500,7 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     svcId: d.svcId ?? null, optIdx: Object.entries(d.sel ?? {}).map(([g, k]) => `${g}-${k}`).join(","), addIds: (d.adds ?? []).map((a) => a.id).filter((x): x is string => !!x), mid: r.mid,
     late: d.late ?? null, perdio: !!d.perdio, cxRazon: r.razon, mins: r.mins, resena: r.resena, cxh: r.cxh, tol: r.tol,
     alt: r.alt ? { ymd: r.alt.ymd, i: idx(r.alt.ymd), m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, chg: r.chg ? { ymd: r.chg.ymd, i: idx(r.chg.ymd), m: r.chg.m } : null,
+    ayuda: r.ayuda, noshow: r.noshow,
   };
 }
 

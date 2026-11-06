@@ -3,6 +3,7 @@ import { mismoOrigen } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { citaCambio, citaPaso, type PasoCita } from "@/lib/citas-flujo";
+import { responderAyudaCita } from "@/lib/ayuda-cita";
 import type { Res } from "./acciones";
 
 /* Citas desde el panel (Hoy, Clientes y el detalle): Confirmar / Otra hora / No puedo; Llegó / No llegó / Terminada;
@@ -38,5 +39,17 @@ export async function citaCambioResponder(id: string, numero: string, que: "acep
   const r = await citaCambio(a.negocio.id, String(numero ?? ""), que, a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, `cita.cambio.${que}`, { cita: numero, cambio: que === "aceptar" ? "Aceptado" : "No se pudo" });
+  return { ok: true };
+}
+
+/* Ayuda con la cita (3e): responder en 24 h con una decisión (acepta, propone un monto o no puede) y un mensaje que el
+   cliente ve. Devolver dinero a su tarjeta pide además el permiso de Cobros (solo el dueño). */
+export async function citaAyudaResponder(id: string, numero: string, decision: "ok" | "alt" | "no", texto: string, monto: string | null, clave: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const pagar = typeof id === "string" && !!(await accesoPanel(id, "pay"));
+  const r = await responderAyudaCita(a.negocio.id, String(numero ?? ""), { decision: String(decision ?? ""), texto: String(texto ?? ""), monto: monto == null ? null : String(monto), clave: String(clave ?? "") }, a.yo.id, pagar);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "cita.ayuda.responder", { cita: numero, decision: { ok: "Acepta", alt: "Propone un monto", no: "No puede" }[decision] ?? decision, monto: monto ?? null, respuesta: String(texto).trim().slice(0, 120) });
   return { ok: true };
 }

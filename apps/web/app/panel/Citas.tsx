@@ -2,12 +2,13 @@
 /* Citas en el panel (Panel v2 · reqRow/detBlocks k='cita'): fila con Confirmar / Otra hora / No puedo; el detalle con lo
    que pidió (servicio, opciones, extras, para quién, nota y fotos), el depósito, el historial y lo que sigue (Llegó · en
    atención / No llegó / Terminada · cobrar; aceptar el cambio que pide el cliente); Clientes › Citas con filtros. */
+import type { AyudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CitaPanel, FilaCita, FiltroCita, citasLista } from "@/lib/citas-panel";
-import { citaCambioResponder, citaResponder } from "./acciones-citas";
+import { citaAyudaResponder, citaCambioResponder, citaResponder } from "./acciones-citas";
 import type { Ctx, Editor } from "./Panel";
 
-export type CitasData = { vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null };
+export type CitasData = { vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Paso = "confirmar" | "otra" | "nopuedo" | "llego" | "nollego" | "terminada";
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
@@ -100,8 +101,50 @@ export function citaDetalle(c: Ctx): Sec {
   if (x.st === "ok" && x.dia <= 0 && x.dep) out.push({ type: "note", tone: "info", t: E2(`Si no llega, el depósito de ${money(x.dep)} se queda contigo.`, `If they don't show, the ${money(x.dep)} deposit stays with you.`) });
   if (x.st === "in") out.push({ type: "acts", items: [{ l: E2("Terminada · cobrar", "Done · charge"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, who, "terminada") }] });
   if (x.st === "in" || x.st === "ok") out.push({ type: "note", tone: "info", t: E2(`Cobras en el local ${money(x.total - x.dep)}${x.dep ? ` (el depósito de ${money(x.dep)} ya está pagado)` : ""}.`, `Collect ${money(x.total - x.dep)} at the shop${x.dep ? ` (the ${money(x.dep)} deposit is already paid)` : ""}.`) });
+  out.push(...ayudaCita(c, x.numero, n ?? x.who));
   out.push({ type: "acts", items: [{ l: E2("Escribirle", "Message"), icon: "chat", v: "secondary", onClick: () => c.nav(`/panel/${c.d.id}/mensajes`) }] });
   return { blocks: out, ed: null };
+}
+
+/* Ayuda con la cita en el detalle (diseño TLCitaHelp: el negocio responde en 24 h; acepta, propone otra cosa o no puede).
+   Lo que vuelve a la tarjeta sale del depósito pagado en la app; lo pagado en el local se arregla en el local. */
+const MOT_C: Record<string, [string, string]> = { cobro: ["Cobraron más del precio publicado", "Charged more than the posted price"], quien: ["No la atendió quien reservó", "Not the person they booked"], quedo: ["No quedó como lo pidió", "It did not turn out as asked"], espera: ["Esperó mucho a pesar de la cita", "Long wait despite the booking"], dep: ["No le devolvieron el depósito", "Deposit not returned"], otro: ["Otra cosa", "Something else"] };
+const QUI_C: Record<string, [string, string]> = { corr: ["Que se lo arreglen sin cargo (otra cita)", "Fix it at no charge (a new booking)"], rev: ["Que le devuelvan", "A refund"], avis: ["Solo quiere avisar", "Just letting you know"] };
+function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
+  const { E2, es, d } = c, a = c.citas?.ayuda;
+  if (!a) return [];
+  const m = MOT_C[a.reason] ?? MOT_C.otro!, q = QUI_C[a.wants] ?? QUI_C.avis!, txt = (c.ui.acT as string | undefined) ?? "", dec = (c.ui.acD as string | undefined) ?? "", monto = (c.ui.acM as string | undefined) ?? "";
+  const out: (Bloque | null)[] = [{ type: "group", k: `${E2("AYUDA CON LA CITA · ", "BOOKING HELP · ")}${a.number}` },
+    { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.amount ? [{ k: E2("CUÁNTO", "HOW MUCH"), v: money(a.amount) }] : []), { k: E2("LO QUE CUENTA", "WHAT THEY SAY"), v: a.body }] }];
+  if (a.fotos.length) out.push({ type: "photos", k: E2("SUS FOTOS", "THEIR PHOTOS"), cols: 3, items: a.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
+  if (a.status === "open") {
+    const tarjeta = a.devolvible > 0 ? E2(`A su tarjeta puedes devolver hasta ${money(a.devolvible)} (el depósito${a.tarjeta ? ` · ${a.tarjeta}` : ""}). Lo pagado en el local se arregla en el local.`, `You can refund up to ${money(a.devolvible)} to their card (the deposit${a.tarjeta ? ` · ${a.tarjeta}` : ""}). What was paid at the shop is settled at the shop.`) : E2("No pagó nada en la app: lo que acuerden se arregla en el local.", "Nothing was paid in the app: whatever you agree is settled at the shop.");
+    const ph: Record<string, [string, string]> = { ok: ["Ej.: Tienes razón, disculpa. Ven el jueves y te lo arreglamos sin cargo.", "e.g. You are right, sorry. Come Thursday and we fix it at no charge."], alt: ["Ej.: Tienes razón en parte. Te devolvemos $10.", "e.g. You are partly right. We refund $10."], no: ["Ej.: Hicimos el servicio que reservaste. Si quieres, ven y lo vemos juntos.", "e.g. We did the service you booked. Come by and we can look at it together."] };
+    const pideMonto = dec === "alt" || (dec === "ok" && a.wants === "rev" && a.devolvible > 0);
+    out.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Respóndele a ${n} en 24 horas. Si no, o si no está de acuerdo, To’Latino revisa el caso en 48 h.`, `Reply to ${n} within 24 hours. Otherwise, or if they disagree, To’Latino reviews the case within 48 h.`) },
+      { type: "chips", items: ([["ok", E2("Tiene razón", "They are right")], ["alt", E2("Proponer otra cosa", "Propose something else")], ["no", E2("No puedo", "I can’t")]] as const).map(([k, l]) => ({ l, v: dec === k ? "selected" : "filter", onClick: () => c.setUi({ acD: k }) })) });
+    if (dec) {
+      out.push({ type: "note", tone: "info", icon: "card", t: tarjeta });
+      if (pideMonto) out.push({ type: "field", k: dec === "alt" ? E2("CUÁNTO LE PROPONES DEVOLVER · DÓLARES", "HOW MUCH YOU PROPOSE TO REFUND · DOLLARS") : E2("CUÁNTO LE DEVUELVES A SU TARJETA · DÓLARES", "HOW MUCH YOU REFUND TO THEIR CARD · DOLLARS"), val: monto, ph: a.amount ? (a.amount / 100).toFixed(2) : a.devolvible ? (a.devolvible / 100).toFixed(2) : "10", onChange: (v) => c.setUi({ acM: v.replace(/[^\d.]/g, "").slice(0, 7) }) });
+      out.push({ type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU CITA", "YOUR REPLY · SHOWN ON THEIR BOOKING"), val: txt, count: `${txt.length}/500`, ph: es ? ph[dec]![0] : ph[dec]![1], onChange: (v) => c.setUi({ acT: v.slice(0, 500) }) },
+        { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending || (dec === "alt" && !monto), onClick: () => c.run(() => citaAyudaResponder(d.id, numero, dec as "ok" | "alt" | "no", txt, pideMonto ? monto || (a.amount ? (a.amount / 100).toFixed(2) : null) : null, crypto.randomUUID()), E2(`Respuesta enviada. ${n} la ve en su cita.`, `Reply sent. ${n} sees it on their booking.`), () => c.setUi({ acT: "", acD: "", acM: "" })) }] });
+    }
+  } else {
+    const D: Record<string, string> = { ok: E2("Aceptaste", "You accepted"), alt: E2(`Propusiste devolver ${money(a.offer ?? 0)}`, `You proposed a ${money(a.offer ?? 0)} refund`), no: E2("Dijiste que no puedes", "You said you can’t") };
+    out.push({ type: "note", tone: a.status === "resolved" ? "ok" : a.status === "escalated" ? "warn" : "info", icon: a.status === "escalated" ? "shield" : a.status === "resolved" ? "check" : "chat",
+      t: a.status === "answered" ? `${D[a.decision ?? "ok"]}: “${a.reply ?? ""}”${a.decision === "alt" ? E2(` · ${n} decide si lo acepta.`, ` · ${n} decides whether to accept.`) : ""}`
+        : a.status === "escalated" ? (a.porUsuario ? E2(`${n} pidió que To’Latino lo revise. Revisamos en 48 h.`, `${n} asked To’Latino to review it. We review within 48 h.`) : E2("No respondiste en 24 horas: To’Latino está revisando el caso.", "You did not reply within 24 hours: To’Latino is reviewing the case."))
+          : a.closedBy === "user" ? `${E2("Terminada: ", "Finished: ")}${D[a.decision ?? "ok"]}${a.refunded ? E2(` · devuelto ${money(a.refunded)} a su tarjeta`, ` · ${money(a.refunded)} refunded to their card`) : ""}.` : `${E2("To’Latino lo resolvió: ", "To’Latino resolved it: ")}${a.resolution ?? ""}${a.refunded ? E2(` · devuelto ${money(a.refunded)}`, ` · ${money(a.refunded)} refunded`) : ""}` });
+  }
+  return out;
+}
+
+/* Hoy · «Ayuda con citas»: las solicitudes que esperan tu respuesta (24 h). */
+export function hoyAyudasCitas(c: Ctx): Bloque[] {
+  const { E2, es, d } = c, L = c.citas?.ayudas ?? [];
+  if (!L.length) return [];
+  return [{ type: "rows", k: E2("AYUDA CON CITAS · RESPONDE EN 24 H", "BOOKING HELP · REPLY WITHIN 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${E2("Cita", "Booking")} #${a.num}`,
+    s: (MOT_C[a.reason] ?? MOT_C.otro!)[es ? 0 : 1], tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.nav(`/panel/${d.id}/hoy?det=cita:${a.num}`) })) }];
 }
 
 /* Clientes › Citas (Belleza): todas con filtros, buscar y ver más. */

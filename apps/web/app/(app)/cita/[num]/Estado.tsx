@@ -92,7 +92,7 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
   const acts: [string, string, () => void][] = ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
       ["clock", E2("Voy tarde", "Running late"), () => (lateOk ? setHoja("late") : aviso(c.late ? E2(`Ya avisaste: llegas ${c.late} min tarde`, `Already sent: ${c.late} min late`) : E2("Disponible 2 h antes de tu cita", "Available 2 h before your booking")))],
       ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
-    : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)]]
+    : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)], ["help", E2("Ayuda con la cita", "Appointment help"), () => router.push(`/cita/${c.numero}/ayuda`)]]
       : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
   const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
   const cxS = pend ? `${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
@@ -144,6 +144,11 @@ export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: bo
             )}
           </div>
         )}
+        {c.ayuda && <button type="button" onClick={() => router.push(`/cita/${c.numero}/ayuda`)} className="flex w-full items-center gap-3 rounded-[18px] border border-ink/[.07] bg-white px-[15px] py-3.5 text-left">
+          <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-action/10"><Icon name="help" size={16} color="var(--tl-action)" /></span>
+          <span className="min-w-0 flex-1"><span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{`${E2("SOLICITUD ", "REQUEST ")}#${c.ayuda.n}`}</span><span className="mt-1 block text-[13px] font-bold">{{ open: E2("Ayuda con la cita · esperando respuesta", "Appointment help · waiting for a reply"), answered: E2("Ayuda con la cita · ya respondieron", "Appointment help · they replied"), escalated: E2("Ayuda con la cita · To’Latino revisa", "Appointment help · To’Latino is reviewing"), resolved: E2("Ayuda con la cita · terminada", "Appointment help · finished") }[c.ayuda.st]}</span></span>
+          <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /></button>}
+        {dead && c.dep > 0 && !c.ayuda && (c.pago === "captured" || c.pago === "partially_refunded") && <div className="py-1 text-center"><button type="button" onClick={() => router.push(`/cita/${c.numero}/ayuda`)} className="text-[12.5px] font-bold text-action">{E2("Ayuda con el depósito", "Help with the deposit")}</button></div>}
         {dead && c.cxRazon !== "chg" && <div className="flex"><Button variant="primary" icon="calendar" block onClick={() => router.push(otra)}>{E2("Buscar otra hora", "Find another time")}</Button></div>}
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">

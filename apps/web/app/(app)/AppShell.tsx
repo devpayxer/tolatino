@@ -55,7 +55,7 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
   // Buscar en el teléfono es pantalla completa: sin encabezado ni barra inferior (prototipo showMHeader / showNav).
   const pantallaCompleta = !desk && (ruta.startsWith("/buscar") || /^\/n\/[^/]+\/licencia/.test(ruta)); // Licencia: su propia barra (showMHeader false)
   // Pantallas de detalle (prototipo showMBrand): encabezado compacto y sin barra inferior en el teléfono.
-  const compacto = !desk && /^\/(mapa|n\/|pedido\/|reserva\/|cuenta\/|recomendar|publica|recuperar)/.test(ruta);
+  const compacto = !desk && /^\/(mapa|n\/|pedido\/|reserva\/|cita\/|cuenta\/|recomendar|publica|recuperar)/.test(ruta);
   const ir = (id: string) => router.push(id === "me" && !yo ? "/entrar" : RUTAS[id] ?? "/");
   return (
     <div className="min-h-dvh bg-white">

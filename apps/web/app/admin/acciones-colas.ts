@@ -311,24 +311,44 @@ export async function crearSemilla(id: string): Promise<ResAdm> {
 /* Reportes de contenido · reseña: se queda (los reportes se descartan; si el negocio la pidió revisar, queda «revisada»)
    u se oculta con motivo (sale de la página y de las ★; el autor ve el motivo). Con sanción, además, al autor. */
 const SANC_CONTENIDO = ["adv", "mute7", "nopub", "susp14"] as const;
-/* Ayuda con pedidos: To'Latino resuelve con un mensaje que el cliente ve en su pedido y el negocio en su panel. */
-export async function decidirSop(id: string, mensaje: string): Promise<ResAdm> {
+/* Ayuda con pedidos y citas: To'Latino resuelve con un mensaje que el cliente ve en su pedido o su cita y el negocio en
+   su panel. Con monto (solo quien aprueba dinero en Transacciones), además devuelve a la tarjeta lo pagado en la app
+   (el pedido con tarjeta o el depósito de la cita); idempotente por la clave del intento. */
+export async function decidirSop(id: string, mensaje: string, monto?: string | null, clave?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = motivoOk(mensaje);
   if (!m) return no("Escribe la respuesta para el cliente.");
   if (m.length > 500) return no("Máximo 500 letras.");
+  const cents = monto ? Math.round((parseFloat(String(monto).replace(/[^0-9.]/g, "")) || 0) * 100) : 0;
+  let devuelto = 0;
+  if (cents > 0) {
+    if (!s.puede("tx", "aprobar")) return no("Tu rol no devuelve dinero.");
+    if (!/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Prueba de nuevo.");
+    const p = (await (await import("@/lib/db")).db().query<{ pid: string; hid: string }>(
+      `select p.id::text as pid, h.id::text as hid from queue_items q join help_requests h on h.id = q.subject_id::bigint join payments p on p.operation_id = h.operation_id
+        where q.id = $1::bigint and q.queue = 'sop' and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [id, s.cities])).rows[0];
+    if (!p) return no("Ahí no hay nada pagado en la app para devolver (o el caso ya se decidió).");
+    const d = await (await import("@/lib/cobros")).devolverPago({ paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem: `sop-${clave}` });
+    if (!d.ok) return no(d.msg.es);
+    devuelto = cents;
+  }
   return tx(async (c) => {
     const q = (await c.query<{ subject_id: string; business_id: string | null; city_id: string }>(
       `select subject_id, business_id, city_id from queue_items where id = $1::bigint and queue = 'sop' and status = 'open' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
     if (!q) return no("Este caso ya se decidió.");
-    const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, updated_at = now() where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id]);
+    const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, closed_by = 'admin', refunded_cents = refunded_cents + $4, updated_at = now()
+                              where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id, devuelto]);
     if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
     await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
-    await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta" }, reason: m });
-    return { ok: true as const, mensaje: "Resuelta. El cliente la ve en su pedido.", caso: q.subject_id };
+    await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta", ...(devuelto ? { devuelto: `$${(devuelto / 100).toFixed(2)}` } : {}) }, reason: m });
+    return { ok: true as const, mensaje: `Resuelta${devuelto ? ` y devueltos $${(devuelto / 100).toFixed(2)}` : ""}. El cliente la ve en su pedido o su cita.`, caso: q.subject_id };
   }).then(async (r) => {
-    if (r.ok && r.caso) { const n = (await import("@/lib/db")).db; const o = (await n().query<{ num: string }>(`select o.number as num from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [r.caso])).rows[0]; if (o) await (await import("@/lib/ayuda")).avisarAyuda(o.num, "help_done"); }
+    if (r.ok && r.caso) {
+      const n = (await import("@/lib/db")).db; const o = (await n().query<{ num: string; k: string }>(`select o.number as num, o.kind as k from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [r.caso])).rows[0];
+      if (o?.k === "appointment") await (await import("@/lib/ayuda-cita")).avisarAyudaCita(o.num, "help_done");
+      else if (o) await (await import("@/lib/ayuda")).avisarAyuda(o.num, "help_done");
+    }
     return r.ok ? { ok: true as const, mensaje: r.mensaje } : r;
   });
 }

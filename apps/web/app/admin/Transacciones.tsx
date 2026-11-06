@@ -40,7 +40,7 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d:
   );
   const PG: Record<string, string> = { held: "RETENIDO", captured: "COBRADO", released: "LIBERADO", refunded: "DEVUELTO", partially_refunded: "DEVUELTO EN PARTE", failed: "FALLÓ" };
   const bloques: Bloque[] = [
-    { type: "head", eye: `${d.total} EN 90 DÍAS`, t: "Transacciones", s: "Pedidos y reservaciones de los últimos 90 días: en el local, al recibir o con tarjeta en la app (retenido, cobrado, liberado, devuelto).", h1: desk ? 26 : 22,
+    { type: "head", eye: `${d.total} EN 90 DÍAS`, t: "Transacciones", s: "Pedidos, reservaciones y citas de los últimos 90 días: en el local, al recibir o con tarjeta en la app (retenido, cobrado, liberado, devuelto). En citas, la tarjeta es el depósito y la comisión (8 %) va sobre el depósito.", h1: desk ? 26 : 22,
       act: exportar ? { l: pend ? "Exportando…" : "Exportar", icon: "folder", onClick: bajar } : undefined },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "HOY", v: String(k.hoy), s: `${money(k.hoyc)} en pedidos`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
@@ -48,12 +48,13 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d:
       { k: "NO SE DIERON 90 D", v: String(k.perdidos), s: "cancelados, rechazados o sin respuesta", onClick: () => ir({ st: "cx,no" }) },
       { k: "RESERVACIONES 90 D", v: String(k.rsv), s: "mesas", onClick: () => ir({ tab: "rsv" }) },
     ] },
-    { type: "kpis", cols: desk ? "repeat(3,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
-      { k: "RETENIDO AHORA", v: money(k.retc), s: `${k.ret} ${k.ret === 1 ? "pedido espera" : "pedidos esperan"} que el negocio acepte` },
+    { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+      { k: "CITAS 90 D", v: String(k.cit), s: `${money(k.citd)} en depósitos`, onClick: () => ir({ tab: "cita" }) },
+      { k: "RETENIDO AHORA", v: money(k.retc), s: `${k.ret} ${k.ret === 1 ? "cobro espera" : "cobros esperan"} que el negocio acepte` },
       { k: "COMISIÓN 90 D", v: money(k.com), s: "solo tarjeta en la app" },
       { k: "DEVUELTO 90 D", v: money(k.dev), s: "a tarjetas" },
     ] },
-    { type: "tabs", items: ([["all", "Todas"], ["ped", "Pedidos"], ["rsv", "Reservaciones"]] as const).map(([t, l]) => ({ l, on: f.tab === t, onClick: () => ir({ tab: t === "all" ? null : t }) })) },
+    { type: "tabs", items: ([["all", "Todas"], ["ped", "Pedidos"], ["rsv", "Reservaciones"], ["cita", "Citas"]] as const).map(([t, l]) => ({ l, on: f.tab === t, onClick: () => ir({ tab: t === "all" ? null : t }) })) },
   ];
   const a = d.total ? (f.pag - 1) * porPagina + 1 : 0, b = Math.min(d.total, f.pag * porPagina);
   return (
@@ -61,19 +62,19 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d:
       <PanelBloques bloques={bloques} h1={desk ? 26 : 22} />
       <form onSubmit={(e) => { e.preventDefault(); ir({ q: q.trim() || null }); }} style={{ position: "relative" }}>
         <span style={{ position: "absolute", left: 15, top: 14.5, display: "grid" }}><A.Icon name="search" size={17} color="rgba(11,14,18,.45)" /></span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="# de pedido o reservación, negocio o cliente" aria-label="Buscar transacción"
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="# de pedido, reservación o cita, negocio o cliente" aria-label="Buscar transacción"
           style={{ width: "100%", height: 46, boxSizing: "border-box", padding: "0 40px 0 42px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", font: "600 14.5px Manrope,sans-serif", outline: "none" }} />
       </form>
       <PanelBloques bloques={[{ type: "chips", items: (Object.keys(ST) as EstTx[]).map((x) => ({ l: { pend: "Pendiente", curso: "En curso", done: "Terminado", cx: "Cancelado", no: "No se dio" }[x], v: f.st.includes(x) ? "selected" : "filter", onClick: () => tg(x) })) }]} />
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "card", t: "Nada con esos filtros", s: "Prueba otro estado o busca por número." }]} />
         : <A.AdminList rows={d.filas.map((x) => ({
-          icon: x.k === "order" ? "bag" : "restaurant", title: `${x.k === "order" ? "Pedido" : "Reservación"} ${x.k === "order" ? `#${x.num}` : x.num} · ${x.bname}`,
-          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}${x.disputa ? ` · ${DISP[x.disputa] ?? "disputa"}` : ""}` : " · en el local"}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
+          icon: x.k === "order" ? "bag" : x.k === "appointment" ? "calendar" : "restaurant", title: `${x.k === "order" ? "Pedido" : x.k === "appointment" ? "Cita" : "Reservación"} ${x.k === "order" ? `#${x.num}` : x.num} · ${x.bname}`,
+          sub: `${x.quien} · ${cuando(x.at)} · ${x.k === "order" ? `${money(x.total)}${x.mode === "delivery" ? " · delivery" : " · pickup"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}${x.disputa ? ` · ${DISP[x.disputa] ?? "disputa"}` : ""}` : " · en el local"}` : x.k === "appointment" ? `${x.svc ? `${x.svc} · ` : ""}${money(x.total)}${x.dep ? ` · depósito ${money(x.dep)}` : " · sin depósito"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}${x.disputa ? ` · ${DISP[x.disputa] ?? "disputa"}` : ""}` : ""}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
           tag: ST[x.st][0], tone: ST[x.st][1],
           actions: [{ label: "Ver negocio", variant: "secondary", onClick: () => router.push(`/admin/negocios/${x.biz}`) }, { label: "Ver cliente", variant: "secondary", onClick: () => router.push(`/admin/usuarios/${x.uid}`) },
             ...(devolver && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Devolver", variant: "secondary", onClick: () => { const clave = crypto.randomUUID(); setConf({
-              titulo: `Devolver dinero · pedido #${x.num}`, cta: "Devolver", peligro: true, sub: `Hasta ${money(x.total - x.devuelto)}. Vuelve a la tarjeta del cliente en 3 a 5 días hábiles; la comisión baja en proporción. El motivo lo ve el cliente y queda en la auditoría.`,
-              valor: { k: "MONTO EN DÓLARES", ini: ((x.total - x.devuelto) / 100).toFixed(2), max: 8 }, plantillas: ["Falta un plato del pedido.", "El pedido llegó mal.", "El negocio no entregó el pedido.", "Cobro duplicado."],
+              titulo: x.k === "appointment" ? `Devolver depósito · cita ${x.num}` : `Devolver dinero · pedido #${x.num}`, cta: "Devolver", peligro: true, sub: `Hasta ${money((x.k === "appointment" ? x.dep : x.total) - x.devuelto)}. Vuelve a la tarjeta del cliente en 3 a 5 días hábiles; la comisión baja en proporción. El motivo lo ve el cliente y queda en la auditoría.`,
+              valor: { k: "MONTO EN DÓLARES", ini: (((x.k === "appointment" ? x.dep : x.total) - x.devuelto) / 100).toFixed(2), max: 8 }, plantillas: x.k === "appointment" ? ["El negocio canceló la cita.", "No se devolvió el depósito a tiempo.", "Cobro duplicado."] : ["Falta un plato del pedido.", "El pedido llegó mal.", "El negocio no entregó el pedido.", "Cobro duplicado."],
               hacer: (m, _e, v) => devolverTx(x.num, v, m, clave) }); } }] : []),
             // Sandbox (2r): simular la disputa del banco y, ya respondida, el resultado.
             ...(sim && devolver && x.pid && !x.disputa && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Simular disputa", variant: "secondary", onClick: () => setConf({

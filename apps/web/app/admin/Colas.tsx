@@ -94,7 +94,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `Ayuda con un pedido · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${"ayuda" in k && k.ayuda?.k === "appointment" ? "Ayuda con una cita" : "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -181,7 +181,28 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Quitar foto", v: "danger", icon: "trash", off: unica, onClick: () => setConf({ titulo: "¿Por qué se quita?", plantillas: PLANT.foto, peligro: true, hacer: (m) => decidirMedios(k.id, "quitar", m) }) },
       ];
     }
-    if (k.queue === "sop" && "ayuda" in k && k.ayuda) {
+    if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "appointment") {
+      // Ayuda con una cita (3e): qué pasó, qué quiere y cuánto, su nota y fotos, la decisión del negocio y lo que se puede
+      // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
+      const h = k.ayuda, MOT: Record<string, string> = { cobro: "Cobraron más del precio publicado", quien: "No la atendió quien reservó", quedo: "No quedó como lo pidió", espera: "Esperó mucho a pesar de la cita", dep: "No le devolvieron el depósito", otro: "Otra cosa" };
+      const Q: Record<string, string> = { reponer: "Que se lo arreglen sin cargo", devolver: "Que le devuelvan", avisar: "Solo quiere avisar" };
+      const DEC: Record<string, string> = { ok: "Aceptó", alt: `Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, no: "Dijo que no puede" };
+      const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: MOT[h.reason] ?? h.reason },
+        { k: "QUÉ QUIERE", v: `${Q[h.wants] ?? h.wants}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (depósito)` : "Nada: pagó en el local" }] });
+      if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
+      if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
+      cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · ${DEC[h.decision ?? ""] ?? "Respondió"} · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
+      const plant = ["Revisamos la cita y tus fotos: tienes razón. Te devolvemos lo cobrado de más.", "Hablamos con el negocio: te dan otra cita para arreglarlo sin cargo.", "Revisamos la cita: el servicio fue el publicado. Gracias por avisar."];
+      acts = [
+        { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su cita; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver", plantillas: plant, hacer: (m) => decidirSop(k.id, m) }) },
+        ...(dinero && h.pago > 0 ? [{ l: "Resolver y devolver", v: "secondary", icon: "card", onClick: () => { const clave = crypto.randomUUID(); setConf({ titulo: `Resolver y devolver · cita ${h.num}`, cta: "Resolver y devolver", peligro: true,
+          sub: `Hasta ${usd(h.pago)} (el depósito pagado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; la comisión baja en proporción.`,
+          valor: { k: "MONTO EN DÓLARES", ini: ((Math.min(h.amount ?? h.pago, h.pago)) / 100).toFixed(2), max: 8 }, plantillas: plant, hacer: (m, _e, v) => decidirSop(k.id, m, v, clave) }); } }] : []),
+        { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
+      ];
+    }
+    if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k !== "appointment") {
       // Ayuda con un pedido: qué pasó, qué platos, qué quiere, su nota, la respuesta del negocio y el pedido.
       const h = k.ayuda, MOT: Record<string, string> = { falta: "Falta algo", equivocado: "Llegó algo equivocado", frio: "Llegó frío o mal preparado", danado: "Llegó dañado o derramado", tarde: "Llegó tarde", nollego: "No le llegó", pago: "Problema con el pago", otro: "Otro problema" };
       const Q: Record<string, string> = { reponer: "Que se lo repongan", devolver: "Que le devuelvan lo de esos platos", avisar: "Solo quiere que lo sepan" };

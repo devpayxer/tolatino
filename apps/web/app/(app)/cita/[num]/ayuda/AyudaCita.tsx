@@ -1,0 +1,223 @@
+"use client";
+/* APP-NEG-CITA-AYUDA y APP-NEG-CITA-AYUDA-ESTADO · móvil y desktop (diseño neg-cita-help.js, vistas pe / ps del
+   prototipo): tu cita, fotos, qué pasó (motivo + nota + cuánto), qué quieres, cómo funciona y «Enviar solicitud»; luego el
+   estado (pendiente, aceptó, te proponen un cambio, no pudo, en revisión de To'Latino, terminada), la respuesta del
+   negocio, el camino (OrderTracker) y lo que mandaste. Compuesto con el sistema de diseño (Chip, Button, Icon, OrderTracker). */
+import * as UI from "@tolatino/ui";
+import { useRouter } from "next/navigation";
+import { useRef, useState, type ComponentType, type ReactNode } from "react";
+import type { CitaAyudaVista, MotivoCita, QuiereCita } from "@/lib/ayuda-cita";
+import type { CitaVista } from "@/lib/citas";
+import { subirFoto } from "@/lib/subir-foto";
+import { ayudaCitaPedir, ayudaCitaResponder } from "./acciones";
+
+type N = "Icon" | "Button" | "Chip" | "OrderTracker";
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const { Icon, Button, Chip, OrderTracker } = UI as unknown as Record<N, ComponentType<any>>;
+const dinero = (c: number) => (c % 100 === 0 ? `$${c / 100}` : `$${(c / 100).toFixed(2)}`);
+const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
+const K = "font-mono text-[10px] font-bold tracking-[0.18em] text-ink/45";
+const caja = "rounded-[18px] border border-ink/[.07] bg-white p-4";
+const T17 = "font-display text-[17px] font-extrabold leading-[1.2] tracking-[-0.03em]";
+const RSN: [MotivoCita, string, string, boolean][] = [["cobro", "Cobraron más del precio publicado", "Charged more than the posted price", true], ["quien", "No me atendió quien reservé", "Not the person I booked", false],
+  ["quedo", "No quedó como lo pedí", "It did not turn out as I asked", true], ["espera", "Esperé mucho a pesar de la cita", "Long wait despite the booking", false],
+  ["dep", "No me devolvieron el depósito", "Deposit not returned", false], ["otro", "Otra cosa", "Something else", false]];
+
+export function AyudaCita({ c, v, es }: { c: CitaVista; v: CitaAyudaVista; es: boolean }) {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const router = useRouter();
+  const quien = c.con && c.model === "chair" ? c.con.corto : c.negocio.nombre;
+  const SOL: [QuiereCita, string, string, string, string][] = [["corr", "Que me lo arreglen sin cargo", "Fix it at no charge", "Te dan otra cita para arreglarlo", "They give you a new booking to fix it"],
+    ["rev", "Que me devuelvan", "Refund me", "Lo cobrado de más o el depósito", "The overcharge or the deposit"], ["avis", "Solo quiero avisar", "I just want to let them know", `Lo lee ${quien} y To’Latino`, `Read by ${quien} and To’Latino`]];
+  const sinDar = !v.hecho, rsn = RSN.filter((r) => !sinDar || r[0] === "dep" || r[0] === "otro"), sols = SOL.filter((s) => !sinDar || s[0] !== "corr");
+  const [r, setR] = useState<MotivoCita | null>(null), [nota, setNota] = useState(""), [sol, setSol] = useState<QuiereCita>(sinDar ? "rev" : "corr"), [amt, setAmt] = useState("");
+  const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false), [flash, setFlash] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const volver = () => router.push(`/cita/${c.numero}`);
+  const titulo = E2("Ayuda con la cita", "Appointment help");
+  const honest = E2("Lo que pagas es el precio publicado.", "You pay the posted price.");
+  const svcT = es ? c.svc.es : c.svc.en || c.svc.es;
+  const hora = (iso: string | null) => (iso ? new Intl.DateTimeFormat(es ? "es-US" : "en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "").toUpperCase() : "");
+  const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
+
+  const cabeza = (sub: string) => (
+    <>
+      <div data-screen-label={`${v.a ? "APP-NEG-CITA-AYUDA-ESTADO" : "APP-NEG-CITA-AYUDA"} · móvil`} className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:hidden">
+        <button type="button" aria-label={E2("Volver", "Back")} onClick={volver} className="grid h-[34px] w-[34px] flex-none place-items-center rounded-[11px] bg-paper"><Icon name="chevronLeft" size={16} strokeWidth={2} /></button>
+        <div className="min-w-0 flex-1"><div className="truncate font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{titulo}</div><div className="mt-[3px] truncate font-mono text-[9px] font-semibold tracking-[0.06em] text-ink/50">{sub}</div></div>
+      </div>
+      <div className="hidden lg:block">
+        <button type="button" onClick={volver} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{v.a ? E2("Volver a la cita", "Back to the appointment") : E2("Volver", "Back")}</button>
+        <div className="mt-4 font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{sub}</div>
+        <h1 className="m-0 mt-1.5 font-display text-[30px] font-extrabold leading-[1.1] tracking-[-0.04em]">{titulo}</h1>
+      </div>
+    </>
+  );
+  const nota1 = <div className="flex items-start gap-2.5 rounded-[14px] bg-signal/[.12] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="shield" size={16} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12.5px] font-semibold leading-[1.5] text-open-text">{honest}</span></div>;
+  const avisos = (error || flash) ? <>{error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}{flash && <div role="status" className="rounded-[14px] bg-signal/[.16] px-3.5 py-3 text-[12.5px] font-bold text-open-text">{flash}</div>}</> : null;
+  const marco = (sub: string, izq: ReactNode, der: ReactNode, barra?: ReactNode) => (
+    <div className="min-h-dvh bg-paper pb-[130px] lg:px-[30px] lg:pb-[60px] lg:pt-[22px]">
+      <div className="mx-auto lg:max-w-[1080px]">
+        {cabeza(sub)}
+        <div className="flex flex-col gap-3 px-4 pt-4 lg:mt-6 lg:grid lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-x-12 lg:px-0 lg:pt-0">
+          <div className="flex min-w-0 flex-col gap-3">{avisos}{izq}</div>
+          <div className="flex flex-col gap-3.5 lg:sticky lg:top-6">{der}</div>
+        </div>
+      </div>
+      {barra}
+    </div>
+  );
+
+  // ── Estado de la solicitud (APP-NEG-CITA-AYUDA-ESTADO) ──
+  if (v.a) {
+    const a = v.a, sol1 = SOL.find((s) => s[0] === a.wants), rs = RSN.find((x) => x[0] === a.reason);
+    const st = a.status === "open" ? "sent" : a.status === "escalated" ? "rev" : a.status === "resolved" ? "done" : a.decision ?? "ok";
+    const okT = a.wants === "rev" ? `${E2("Te devolvemos ", "Refunding ")}${dinero(a.offer ?? a.refunded ?? 0)}` : a.wants === "corr" ? (es ? SOL[0]![1] : SOL[0]![2]) : E2("Gracias por avisar", "Thanks for letting us know");
+    const okS = a.wants === "rev" ? (a.refunded > 0 || v.devolvible > 0 ? E2("Devuelto a tu tarjeta en 3–5 días hábiles.", "Back to your card in 3–5 business days.") : E2("Lo pagaste en el local: te lo devuelven en el local.", "You paid at the shop: they refund you at the shop.")) : a.wants === "corr" ? E2("Te dan otra cita para arreglarlo.", "They give you a new booking to fix it.") : "";
+    const doneT = a.closedBy === "user" ? (a.decision === "alt" ? `${E2("Devuelto ", "Refunded ")}${dinero(a.refunded || a.offer || 0)}` : okT) : a.resolution ?? "";
+    const H: Record<string, [string, string, string, string, string, string]> = {
+      sent: ["clock", "bg-action/10", "var(--tl-action)", E2("PENDIENTE", "PENDING"), `${E2("Esperando a ", "Waiting for ")}${quien}`, E2("Responde en 24 h. Si no, To’Latino la revisa en 48 h.", "Replies within 24 h. Otherwise, To’Latino reviews it within 48 h.")],
+      ok: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("ACEPTÓ", "ACCEPTED"), okT, okS],
+      alt: ["dollar", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE"), `${E2("Devolverte ", "Refund ")}${dinero(a.offer ?? 0)}`, E2("Tú decides. Si no te sirve, pide revisión a To’Latino.", "You decide. If it does not work for you, ask To’Latino to review.")],
+      no: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUDO", "COULD NOT"), `${quien}${E2(" dice que cumplió lo acordado", " says they did what was agreed")}`, E2("Si no estás de acuerdo, To’Latino revisa la cita y tus fotos en 48 h.", "If you disagree, To’Latino reviews the booking and your photos within 48 h.")],
+      rev: ["shield", "bg-action/10", "var(--tl-action)", E2("EN REVISIÓN DE TO’LATINO", "UNDER TO’LATINO REVIEW"), E2("Revisamos en 48 h", "We review within 48 h"), E2("Miramos lo publicado, la cita, lo cobrado y tus fotos. Te avisamos en Avisos.", "We check the listing, the booking, what was charged and your photos. We let you know in Alerts.")],
+      done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("TERMINADA", "FINISHED"), doneT, E2("Gracias por avisarnos.", "Thanks for letting us know.")],
+    };
+    const h = H[st]!;
+    const hacer = async (acc: "entendido" | "aceptar" | "revisar", ok: string) => {
+      if (ocupado) return;
+      setOcupado(true); setError("");
+      const x = await ayudaCitaResponder(c.numero, acc, clave.current).catch(() => null);
+      setOcupado(false);
+      if (x?.ok) { setFlash(x.mensaje ? (es ? x.mensaje.es : x.mensaje.en) : ok); router.refresh(); return; }
+      setError(x && !x.ok ? (es ? x.msg.es : x.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection."));
+    };
+    const acts: [string, string, () => void][] = st === "ok" ? [["check", E2("Entendido", "Got it"), () => void hacer("entendido", E2("Listo: solicitud terminada", "Done: request finished"))]]
+      : st === "alt" ? [["dollar", `${E2("Aceptar ", "Accept ")}${dinero(a.offer ?? 0)}`, () => void hacer("aceptar", E2("Listo: aceptaste la propuesta", "Done: you accepted the proposal"))], ["shield", E2("Pedir revisión a To’Latino", "Ask To’Latino to review"), () => void hacer("revisar", E2("Listo: To’Latino la revisa en 48 h", "Done: To’Latino reviews it within 48 h"))]]
+        : st === "no" ? [["shield", E2("Pedir revisión a To’Latino", "Ask To’Latino to review"), () => void hacer("revisar", E2("Listo: To’Latino la revisa en 48 h", "Done: To’Latino reviews it within 48 h"))]] : [];
+    const respondio = st !== "sent" && !!a.reply;
+    const steps = [{ label: E2("Enviada", "Sent"), time: hora(a.at), state: "done" }, { label: `${E2("Respuesta de ", "Reply from ")}${quien}`, time: hora(a.replyAt), state: st !== "sent" ? "done" : "current" },
+      { label: E2("Terminada", "Finished"), time: hora(a.resolvedAt), state: st === "done" ? "done" : st !== "sent" ? "current" : "next" }];
+    const filas: [string, string][] = [[E2("MOTIVO", "REASON"), rs ? (es ? rs[1] : rs[2]) : "—"], [E2("QUIERES", "YOU WANT"), sol1 ? (es ? sol1[1] : sol1[2]) : "—"], ...(a.amount ? [[E2("MONTO", "AMOUNT"), dinero(a.amount)] as [string, string]] : []), [E2("LES CONTASTE", "YOU SAID"), `«${a.body}»`]];
+    const sub = `${E2("SOLICITUD #", "REQUEST #")}${a.number} · ${E2("CITA #", "APPOINTMENT #")}${c.numero}`.toUpperCase();
+    const hdr = (
+      <div data-screen-label="Ayuda con la cita · estado" className="flex items-start gap-3.5 rounded-[20px] border border-ink/[.08] bg-white p-[18px]">
+        <span className={`grid h-[46px] w-[46px] flex-none place-items-center rounded-[15px] ${h[1]}`}><Icon name={h[0]} size={22} color={h[2]} /></span>
+        <div className="min-w-0 flex-1"><div className="font-mono text-[9.5px] font-bold tracking-[0.14em]" style={{ color: h[2] }}>{h[3]}</div>
+          <div className="mt-1.5 text-pretty font-display text-[19px] font-extrabold leading-[1.2] tracking-[-0.03em]">{h[4]}</div>
+          {h[5] && <div className="mt-2 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/[.62]">{h[5]}</div>}</div>
+      </div>);
+    const rep = respondio && (
+      <div data-screen-label="Ayuda con la cita · respuesta" className={caja}>
+        <div className="flex items-center gap-[11px]"><span className="h-[38px] w-[38px] flex-none rounded-xl bg-photo-bg" style={fondo(c.con?.foto && c.model === "chair" ? c.con.foto : c.negocio.foto)} />
+          <div className="min-w-0 flex-1"><div className={K}>{`${E2("RESPUESTA DE ", "REPLY FROM ")}${quien.toUpperCase()}`}</div><div className="mt-[3px] font-mono text-[9.5px] font-semibold text-ink/45">{hora(a.replyAt)}</div></div></div>
+        <div className="mt-3 text-pretty text-[13.5px] font-medium leading-[1.55]">«{a.reply}»</div>
+        {c.negocio.telefono && <div className="mt-3.5 flex"><Button size="md" icon="phone" block onClick={llamar}>{`${E2("Llamar a ", "Call ")}${c.negocio.nombre}`}</Button></div>}
+      </div>);
+    const res = st === "done" && a.closedBy === "admin" && a.resolution && <div className={caja}><div className={K}>{E2("RESPUESTA DE TO’LATINO", "TO’LATINO’S ANSWER")}</div><div className="mt-2.5 text-pretty text-[13.5px] font-medium leading-[1.55]">«{a.resolution}»{a.refunded > 0 ? E2(` Te devolvimos ${dinero(a.refunded)} a tu tarjeta.`, ` We refunded ${dinero(a.refunded)} to your card.`) : ""}</div></div>;
+    const mandaste = (
+      <div data-screen-label="Ayuda con la cita · lo que mandaste" className={caja}>
+        <div className={K}>{E2("LO QUE MANDASTE", "WHAT YOU SENT")}</div>
+        {a.fotos.length > 0 && <div className="mt-2.5 flex flex-wrap gap-2">{a.fotos.map((u) => <span key={u} className="h-[60px] w-[60px] rounded-xl bg-photo-bg" style={fondo(u)} />)}</div>}
+        <div className="mt-2 flex flex-col">{filas.map(([k, x]) => <div key={k} className="grid grid-cols-[110px_minmax(0,1fr)] gap-2.5 border-t border-ink/[.06] py-[9px]"><span className="font-mono text-[9.5px] font-bold leading-[1.6] tracking-[0.12em] text-ink/45">{k}</span><span className="text-pretty text-[13px] font-semibold leading-[1.45]">{x}</span></div>)}</div>
+      </div>);
+    const botones = acts.length > 0 && <div className="grid grid-cols-1 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} block disabled={ocupado} onClick={on}>{l}</Button></div>)}</div>;
+    const track = <div className="grid"><OrderTracker steps={steps} /></div>;
+    return (
+      <div data-pantalla="APP-NEG-CITA-AYUDA-ESTADO">
+        {marco(sub, <>{hdr}{rep}{res}<div className="lg:hidden">{track}</div>{mandaste}<div className="flex flex-col gap-3 lg:hidden">{nota1}{botones}</div></>,
+          <div className="hidden flex-col gap-3.5 lg:flex">{track}{nota1}{botones}</div>)}
+      </div>
+    );
+  }
+
+  // ── El formulario (APP-NEG-CITA-AYUDA) ──
+  const sub = `${E2("CITA #", "APPOINTMENT #")}${c.numero} · ${c.negocio.nombre}`.toUpperCase();
+  if (!v.puede) return (
+    <div data-pantalla="APP-NEG-CITA-AYUDA">
+      {marco(sub, <div className={caja}><div className="text-[14px] font-bold">{v.motivo === "tarde" ? E2("La ayuda con una cita se pide hasta 7 días después.", "Booking help can be asked up to 7 days after.") : E2("La ayuda se pide cuando la cita ya pasó.", "Help can be asked once the booking is over.")}</div>
+        <div className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2(`Si necesitas algo ahora, escríbele o llama a ${quien}.`, `If you need something now, message or call ${quien}.`)}</div></div>, null)}
+    </div>);
+  const conFoto = !!r && !!RSN.find((x) => x[0] === r)?.[3];
+  const miss = [!r ? E2("Elige qué pasó", "Pick what happened") : null, nota.trim().length < 15 ? E2("Cuéntanos qué pasó (15 letras o más)", "Tell us what happened (15+ characters)") : null, conFoto && !fotos.length ? E2("Agrega una foto", "Add a photo") : null].filter((x): x is string => !!x);
+  const subir = async (file: File | undefined) => {
+    if (!file || fotos.length >= 4) return;
+    setSubiendo(true); setError("");
+    const x = await subirFoto(file);
+    setSubiendo(false);
+    if (x.ok && x.id && x.url) setFotos((L) => [...L, { id: x.id!, url: x.url! }]);
+    else setError(x.mensaje ? (es ? x.mensaje.es : x.mensaje.en) : E2("No se pudo subir la foto.", "Could not upload the photo."));
+  };
+  const enviar = async () => {
+    if (miss.length || ocupado) return;
+    setOcupado(true); setError("");
+    const x = await ayudaCitaPedir(c.numero, { reason: r!, body: nota, wants: sol, amount: r === "cobro" && sol === "rev" ? amt : null, fotos: fotos.map((f) => f.id) }).catch(() => null);
+    if (x?.ok) { router.refresh(); return; }
+    setOcupado(false); setError(x && !x.ok ? (es ? x.msg.es : x.msg.en) : E2("No se pudo enviar. Revisa tu conexión.", "Could not send. Check your connection."));
+  };
+  const cta = E2("Enviar solicitud", "Send request"), free = E2("RESPONDE EN 24 H", "REPLIES WITHIN 24 H");
+  const tuCita = (
+    <div data-screen-label="Ayuda con la cita · tu cita" className={caja}>
+      <div className={T17}>{E2("Tu cita", "Your appointment")}</div>
+      <button type="button" onClick={volver} className="mt-3 flex w-full items-center gap-3 rounded-[15px] bg-paper px-3.5 py-[13px] text-left">
+        <span className="grid h-[42px] w-[42px] flex-none place-items-center rounded-[13px] bg-ink"><Icon name="verified" size={20} color="var(--tl-white)" /></span>
+        <span className="min-w-0 flex-1"><span className="block font-mono text-[9px] font-bold tracking-[0.14em] text-ink/45">{E2("TU CITA", "YOUR APPOINTMENT")}</span><span className="mt-1 block text-[14.5px] font-bold leading-[1.3]">{svcT}</span>
+          <span className="mt-[3px] block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{(c.con ? c.con.nombre : c.negocio.nombre).toUpperCase()}</span>
+          <span className="mt-1.5 flex items-center gap-[5px] text-[11.5px] font-bold text-open-text"><Icon name="check" size={13} color="var(--tl-open-text)" />{sinDar ? `${E2("Depósito: ", "Deposit: ")}${dinero(c.dep)}` : `${E2("Precio publicado: ", "Posted price: ")}${dinero(c.total)}`}</span></span>
+        <span className="flex-none text-[12.5px] font-bold text-action">{E2("Ver", "See")}</span>
+      </button>
+    </div>);
+  const fotosB = (
+    <div data-screen-label="Ayuda con la cita · fotos" className={caja}>
+      <div className={T17}>{conFoto ? E2("Fotos · obligatorias", "Photos · required") : E2("Fotos · opcional", "Photos · optional")}</div>
+      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("De cómo quedó, o del recibo si es un cobro.", "Of how it turned out, or of the receipt for a charge.")}</div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {fotos.map((f) => <button key={f.id} type="button" aria-label={E2("Quitar foto", "Remove photo")} onClick={() => setFotos((L) => L.filter((z) => z.id !== f.id))} className="relative h-[76px] w-[76px] overflow-hidden rounded-[14px] bg-photo-bg" style={fondo(f.url)}>
+          <span className="absolute right-1 top-1 grid h-5 w-5 place-items-center rounded-full bg-white/95"><Icon name="close" size={10} strokeWidth={2.6} /></span></button>)}
+        {fotos.length < 4 && <button type="button" disabled={subiendo} onClick={() => fileRef.current?.click()} className="box-border flex h-[76px] w-[76px] flex-col items-center justify-center gap-1 rounded-[14px] border-[1.5px] border-dashed border-ink/20">
+          <Icon name="image" size={20} color="rgba(11,14,18,.5)" /><span className="font-mono text-[9px] font-bold text-ink/55">{subiendo ? "…" : E2("Foto", "Photo")}</span></button>}
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { void subir(e.target.files?.[0]); e.target.value = ""; }} />
+      </div>
+      <div className="mt-1.5 text-right font-mono text-[9.5px] font-semibold text-ink/40">{fotos.length} / 4</div>
+    </div>);
+  const quePaso = (
+    <div data-screen-label="Ayuda con la cita · qué pasó" className={caja}>
+      <div className={T17}>{E2("¿Qué pasó?", "What happened?")}</div>
+      <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2("Cuéntalo con calma: qué pediste y qué pasó.", "Take your time: what you asked for and what happened.")}</div>
+      <div className="mt-3.5"><div className={K}>{E2("MOTIVO", "REASON")}</div>
+        <div className="mt-[9px] flex flex-wrap gap-2">{rsn.map(([k, l1, l2]) => <Chip key={k} variant={r === k ? "selected" : "filter"} onClick={() => setR(r === k ? null : k)}>{es ? l1 : l2}</Chip>)}</div></div>
+      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 500))} aria-label={E2("Qué pasó", "What happened")} placeholder={E2("Ej.: pedí un fade bajo y me lo dejaron alto…", "E.g. I asked for a low fade and it came out high…")} rows={3}
+        className="mt-3.5 box-border w-full resize-none rounded-[13px] border border-ink/[.12] bg-white px-3.5 py-3 text-[13.5px] font-medium leading-[1.5] text-ink outline-none" />
+      <div className="mt-1 text-right font-mono text-[9.5px] font-semibold text-ink/40">{nota.length} / 500</div>
+      {r === "cobro" && sol === "rev" && <div className="mt-2"><div className={K}>{E2("¿CUÁNTO? · OPCIONAL", "HOW MUCH? · OPTIONAL")}</div>
+        <input value={amt} onChange={(e) => setAmt(e.target.value.replace(/[^\d.]/g, "").slice(0, 7))} inputMode="decimal" aria-label={E2("Cuánto", "How much")} placeholder={E2("Ej.: 40", "E.g. 40")}
+          className="mt-2 box-border h-11 w-full rounded-[13px] border border-ink/[.12] bg-white px-3.5 font-mono text-[13.5px] font-bold tracking-[0.06em] text-ink outline-none" /></div>}
+    </div>);
+  const quieres = (
+    <div data-screen-label="Ayuda con la cita · qué quieres" className={caja}>
+      <div className={T17}>{E2("¿Qué quieres?", "What would you like?")}</div>
+      <div role="radiogroup" aria-label={E2("Qué quieres", "What would you like")} className="mt-3 flex flex-col gap-2">
+        {sols.map(([k, l1, l2, s1, s2]) => <button key={k} type="button" role="radio" aria-checked={sol === k} onClick={() => setSol(k)} className={`flex items-center gap-3 rounded-[14px] px-3.5 py-3 text-left ${sol === k ? "border-[1.5px] border-ink" : "border border-ink/10"}`}>
+          <span className={`box-border h-5 w-5 flex-none rounded-full ${sol === k ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25"}`} />
+          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{es ? l1 : l2}</span><span className="mt-0.5 block text-[12px] font-medium text-ink/55">{es ? s1 : s2}</span></span></button>)}
+      </div>
+    </div>);
+  const como = (
+    <div data-screen-label="Ayuda con la cita · cómo funciona" className={caja}>
+      <div className={K}>{E2("CÓMO FUNCIONA", "HOW IT WORKS")}</div>
+      <div className="mt-[11px] flex flex-col gap-2.5">{[E2(`${quien} recibe tu solicitud y responde en 24 h.`, `${quien} gets your request and replies within 24 h.`), E2("Si no responde o no estás de acuerdo, To’Latino la revisa en 48 h.", "If they do not reply or you disagree, To’Latino reviews it within 48 h."), E2("Nada se da por resuelto hasta que respondan.", "Nothing is resolved until they reply.")].map((t, i) => (
+        <div key={i} className="flex items-start gap-2.5"><span className="grid h-5 w-5 flex-none place-items-center rounded-full bg-ink font-mono text-[9.5px] font-extrabold text-white">{i + 1}</span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/75">{t}</span></div>))}</div>
+    </div>);
+  const falta = miss.length > 0 && <div className="rounded-[14px] bg-pro/[.14] px-3.5 py-3"><div className={K}>{E2("TE FALTA", "STILL NEEDED")}</div><div className="mt-1.5 flex flex-col gap-1">{miss.map((m) => <div key={m} className="text-[12.5px] font-semibold text-pro-ink">{m}</div>)}</div></div>;
+  return (
+    <div data-pantalla="APP-NEG-CITA-AYUDA">
+      {marco(sub, <><div className="lg:hidden">{nota1}</div><div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">{tuCita}{fotosB}</div><div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:items-start">{quePaso}{quieres}</div><div className="flex flex-col gap-3 lg:hidden">{como}{falta}</div></>,
+        <div className="hidden flex-col gap-3.5 lg:flex">{nota1}{como}{falta}<div className="flex"><Button size="md" icon="image" block disabled={miss.length > 0 || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : cta}</Button></div>
+          <div className="text-center font-mono text-[10px] font-bold tracking-[0.08em] text-open-text">{free}</div></div>,
+        <div data-screen-label="Ayuda con la cita · barra" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-ink/[.08] bg-paper/95 px-5 pb-[22px] pt-3 backdrop-blur-[14px] lg:hidden">
+          <div className="min-w-0 flex-1 font-mono text-[9.5px] font-bold leading-[1.5] tracking-[0.1em] text-open-text">{free}</div>
+          <Button icon="image" disabled={miss.length > 0 || ocupado} onClick={() => void enviar()}>{ocupado ? E2("Enviando…", "Sending…") : cta}</Button>
+        </div>)}
+    </div>
+  );
+}

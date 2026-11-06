@@ -410,3 +410,20 @@ _Arreglado de paso: la etiqueta del sistema con un tono desconocido rompía la p
 _Decidido por mí (reversible): cada silla rentada tiene su propia cuenta de Stripe Connect (MCC 7230 barberías/salones) y la conecta el barbero, porque Stripe exige que el alta la haga el titular; hasta conectarla su silla no pide depósito. La página «Tu cuenta de cobro» del barbero no estaba en el diseño (la decisión era «sin panel aparte del rentero»): es la única pantalla suya y está hecha con el marco de Mi cuenta._
 _Arreglado de paso: la página de una silla se caía si había servicios que esa persona no hace; nuevo guardián `findSeguro` («.find(...)!.»)._
 
+## Fase 3 · 3e Ayuda con la cita + Admin › Transacciones › Citas
+1. Entra como **Marisol** (570-555-0122) y abre una cita **terminada** (Mi cuenta › Citas): toca **Ayuda con la cita**.
+   Elige «No quedó como lo pedí» (pide foto), cuéntalo, agrega una foto, elige **Que me devuelvan** y envía: queda
+   «PENDIENTE · Esperando a Luis».
+2. Entra como **Luis** (570-555-0166): en **Hoy** sale «Ayuda con citas · responde en 24 h». Abre la cita: elige
+   **Proponer otra cosa**, pon $6 y un mensaje. Vuelve como Marisol: «TE PROPONEN UN CAMBIO» › **Aceptar $6** (vuelve a su
+   tarjeta, del depósito).
+3. Con otra cita, Luis responde **No puedo** y Marisol toca **Pedir revisión a To'Latino**. Entra como **Ana** (admin):
+   Colas › **Ayuda con pedidos y citas** › «Ayuda con una cita»: **Resolver con un mensaje** o **Resolver y devolver**.
+4. Super Admin › **Transacciones › Citas**: cada cita con servicio, total, depósito, cobro, devuelto y comisión (8 %).
+_Decidido por mí (reversible): a la tarjeta solo vuelve el depósito pagado en la app (lo pagado en el local se arregla en
+el local, y así lo dice cada pantalla); devolver dinero desde la respuesta pide el permiso de Cobros (solo el dueño); la
+solicitud usa la misma tabla y la misma cola de soporte que la ayuda con pedidos (cola renombrada «Ayuda con pedidos y
+citas»). En el teléfono, «Te falta» va debajo de «Cómo funciona» (en el diseño solo estaba en la columna de escritorio)._
+_Arreglado de paso: en el teléfono, toda la sección `/cita/` mostraba la barra de pestañas de la app (Inicio · Negocios…)
+encima de la barra propia de la pantalla; nuevo guardián `barraFijaCompacta`._
+

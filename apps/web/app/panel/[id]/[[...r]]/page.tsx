@@ -6,6 +6,7 @@ import { ajustesPedidos, pedidoNegocio, pedidosHoy, pedidosLista, type FiltroPed
 import type { PedPanel } from "../../Pedidos";
 import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa } from "@/lib/reservas";
 import { citaPanel, citasLista, citasVivas, type FiltroCita } from "@/lib/citas-panel";
+import { ayudaCitaPanel, ayudasCitasNegocio } from "@/lib/ayuda-cita";
 import { pedidosPendientes } from "@/lib/pedidos";
 import { ayudaPanel, ayudasNegocio } from "@/lib/ayuda";
 import type { RsvPanel } from "../../Reservas";
@@ -146,6 +147,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     vivas: ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
     lista: ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
+    ayuda: ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
+    ayudas: ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} />;
 }

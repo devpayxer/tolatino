@@ -1,7 +1,7 @@
 # Ayuda con el pedido · Order help
 
 _Pantallas: `/pedido/{n}` (botón y estado), `/pedido/{n}/ayuda` (APP-NEG-PEDIDO-AYUDA), Panel › Hoy («Ayuda con pedidos») y el
-detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos»). Versión: Fase 2 · bloque 2i (6 nov 2026)._
+detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos y citas»). Versión: Fase 2 · bloque 2i (6 nov 2026)._
 
 ## Qué hace
 - **El cliente**, en un pedido ya recibido (hasta **7 días** después), toca **Ayuda con el pedido** y elige qué pasó: falta
@@ -12,7 +12,7 @@ detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos»). Vers
   To'Latino. Si el negocio respondió y no se arregló, el cliente toca **Pedir que To'Latino lo revise**.
 - **El negocio** la ve en **Hoy** («Ayuda con pedidos · responde en 24 h») y en el detalle del pedido, con qué pasó, los
   platos, qué quiere y su nota, y **Enviar respuesta** (500 letras).
-- **To'Latino** (Super Admin › Soporte = cola «Ayuda con pedidos», plazo 24 h): el caso con la solicitud, la respuesta del
+- **To'Latino** (Super Admin › Soporte = cola «Ayuda con pedidos y citas», plazo 24 h): el caso con la solicitud, la respuesta del
   negocio y **Resolver con un mensaje** (plantillas). El cliente ve «Solicitud resuelta por To'Latino» en su pedido.
 
 ## Qué pasa en cada caso
@@ -21,7 +21,7 @@ detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos»). Vers
 | Pedido no recibido o de hace más de 7 días | No sale el botón; la pantalla dice que se pide hasta 7 días después. |
 | Ya hay una solicitud | Una por pedido: el pedido muestra su estado. |
 | Muchas solicitudes | Hasta 5 al día por persona. |
-| Pasan 24 h sin respuesta | Pasa a To'Latino (cola Ayuda con pedidos). |
+| Pasan 24 h sin respuesta | Pasa a To'Latino (cola Ayuda con pedidos y citas). |
 | Devolución | Hoy se paga en el local o al recibir: la devolución se arregla con el negocio. Con Stripe será a la tarjeta. |
 
 ## Preguntas frecuentes
