@@ -5,13 +5,13 @@ import { db } from "./db";
 /* ADM-TX · Transacciones (Super Admin.dc.html secTx / txRow): pedidos, reservaciones y citas (3e: el depósito con
    tarjeta y la comisión de citas sobre el depósito) de los últimos 90 días de tus ciudades. Hoy todo se paga en el local o al recibir: no hay retenido, cobro con tarjeta, devoluciones ni comisión
    (llegan con Stripe, bloque 2d). Estados: pendiente · en curso · terminado · cancelado · no se dio (no lo aceptaron / sin respuesta). */
-export type TabTx = "all" | "ped" | "rsv" | "cita" | "plan" | "renta" | "apt";
+export type TabTx = "all" | "ped" | "rsv" | "cita" | "sal" | "pro" | "plan" | "renta" | "apt";
 export type EstTx = "pend" | "curso" | "done" | "cx" | "no";
 export type FiltrosTx = { tab: TabTx; q: string; st: EstTx[]; pag: number };
 export const POR_PAGINA_TX = 20;
 const ESTS = new Set<EstTx>(["pend", "curso", "done", "cx", "no"]);
 export function leerFiltrosTx(sp: Record<string, string | undefined>): FiltrosTx {
-  const tab = (["all", "ped", "rsv", "cita", "plan", "renta", "apt"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
+  const tab = (["all", "ped", "rsv", "cita", "sal", "pro", "plan", "renta", "apt"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
   const st = String(sp.st ?? "").split(",").filter((x): x is EstTx => ESTS.has(x as EstTx));
   return { tab, q: String(sp.q ?? "").trim().slice(0, 60), st, pag: Math.max(1, Math.min(500, Number(sp.pag) || 1)) };
 }
@@ -23,10 +23,13 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // 4d: estimado de Auto y Hogar (versiones, aprobado, cobrado en la app y retenciones que no se pudieron renovar).
   estV: number; estAp: number; estCob: number; estFallo: number;
   // 4f: planes, rentas y apartados (lo cobrado con tarjeta en la app y lo retenido, de todos sus cobros).
-  cob: number; reten: number };
+  cob: number; reten: number;
+  // 4m: Doctores (solo si el seguro se aceptó; nunca el servicio, el motivo ni la nota) y Profesionales (el total por escrito y el paso).
+  rub: string | null; segOk: boolean | null; proTot: number | null; proPaso: string | null };
 function donde(s: Staff, f: FiltrosTx) {
   const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
-  if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold" } as const)[f.tab]}'`);
+  if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
+  else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold" } as const)[f.tab]}'`);
   if (f.st.length) { v.push(f.st); w.push(`(${EST}) = any($${v.length}::text[])`); }
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
@@ -40,7 +43,10 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.total_cents as total, o.party_size as p, o.mode, ${EST} as st, o.cancelled_by as detalle,
               py.status as pago, coalesce(py.refunded_cents, 0) as devuelto, coalesce(py.fee_cents, 0) as comision, case when py.card_last4 is null then null else upper(py.card_brand) || ' ·· ' || py.card_last4 end as tarjeta,
               py.id::text as pid, (select d.status from disputes d where d.payment_id = py.id order by d.id desc limit 1) as disputa,
-              o.details->'svc'->>'es' as svc, coalesce(o.deposit_cents, 0) as dep,
+              case when o.details->>'rubro' = 'salud' then null else o.details->'svc'->>'es' end as svc, coalesce(o.deposit_cents, 0) as dep,
+              o.details->>'rubro' as rub, case when o.details->>'rubro' = 'salud' and coalesce(o.details->'seguro'->>'kind', 'none') <> 'none' then (o.details->'seguro'->>'acepta')::boolean end as "segOk",
+              case when o.details->>'rubro' = 'pro' then (select t.total_cents from written_totals t where t.operation_id = o.id order by t.version desc limit 1) end as "proTot",
+              case when o.details->>'rubro' = 'pro' then o.status_detail end as "proPaso",
               (select count(distinct l.estimate_id)::int from estimate_lines l where l.operation_id = o.id and not l.is_extra) as "estV",
               (select coalesce(sum(coalesce(l.final_cents, l.line_total_cents)), 0)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as "estAp",
               (select coalesce(sum(p2.amount_cents), 0)::int from payments p2 where p2.operation_id = o.id and p2.kind in ('estimate', 'extra') and p2.status in ('captured', 'partially_refunded', 'refunded')) as "estCob",

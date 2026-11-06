@@ -6,6 +6,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useTransition, type ComponentType, type ReactNode } from "react";
 import { exportar } from "./acciones-analitica";
+import { motivoAyuda } from "@/lib/ayuda-motivos";
 import { Toast, useAncho, useToast } from "./Colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,6 +17,8 @@ export type DatosAnalitica = {
   embudo?: { buscar: number; ficha: number; contactar: number };
   confianza?: { sancionados: number; abiertas: { queue: string; n: number; es: string; sla: number }[]; cumplido: { total: number; a_tiempo: number } };
   nosup?: { q: string; cat: string | null; n: number }[];
+  sp?: { sal: { n: number; conseg: number; segok: number; segno: number; hechas: number; noshow: number; resp: number | null }; pro: { n: number; consultas: number; contrato: number; total: number; resp: number | null };
+    rev: { cobro: number; base: number }; ayuda: { rub: string; reason: string; n: number }[] };
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -24,7 +27,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -65,6 +68,28 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         {c.abiertas.length ? <A.HBars label="COLAS ABIERTAS" help="SLA en horas" items={c.abiertas.map((x) => ({ label: x.es, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: `${x.n} · ${x.sla} h` }))} />
           : <A.AdminNote tone="ok" icon="check">No hay casos abiertos en tus colas.</A.AdminNote>}
         <PanelBloques bloques={[{ type: "note", tone: "info", t: "Reportes por cada mil operaciones y tickets de soporte llegan con los pedidos y con Soporte." }]} />
+      </>);
+  } else if (d.tab === "sp" && d.sp) {
+    // Doctores y Profesionales: solo cifras (nunca motivos de consulta, notas ni seguros de nadie).
+    const { sal, pro, rev, ayuda } = d.sp, min = (m: number | null) => (m == null ? "—" : m < 60 ? `${m} min` : `${Math.round(m / 60)} h`), mx = Math.max(1, ...ayuda.map((x) => x.n));
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "DOCTORES" }, kpis([
+          { k: "CITAS PEDIDAS", v: String(sal.n), s: `${sal.hechas} terminadas` },
+          { k: "SEGURO ACEPTADO", v: pct(sal.segok, sal.conseg), s: `de ${sal.conseg} con seguro`, dark: true },
+          { k: "«NO ACEPTAMOS SU SEGURO»", v: pct(sal.segno, sal.conseg), s: `${sal.segno} veces` },
+          { k: "NO LLEGÓ", v: pct(sal.noshow, sal.hechas + sal.noshow), s: `${sal.noshow} citas` },
+          { k: "RESPONDEN EN", v: min(sal.resp), s: "promedio, de pedir a la respuesta" },
+        ]), { type: "group", k: "PROFESIONALES" }, kpis([
+          { k: "CONSULTAS PEDIDAS", v: String(pro.n), s: `${pro.consultas} pasaron la consulta` },
+          { k: "CONSULTA → CONTRATÓ", v: pct(pro.contrato, pro.consultas), s: `${pro.contrato} contrataron`, dark: true },
+          { k: "CON TOTAL POR ESCRITO", v: String(pro.total), s: "consultas con total mandado" },
+          { k: "«COBRÓ EL TOTAL QUE DIJO»", v: pct(rev.cobro, rev.base), s: `de ${rev.base} reseñas que contestaron` },
+          { k: "RESPONDEN EN", v: min(pro.resp), s: "promedio, de pedir a la respuesta" },
+        ])]} />
+        {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Doctores y Profesionales`} items={ayuda.map((x) => ({ label: `${x.rub === "salud" ? "Doctores" : "Profesionales"} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+          : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con Doctores ni Profesionales en el período.</A.AdminNote>}
+        <PanelBloques bloques={[{ type: "note", tone: "info", icon: "lock", t: "Solo cifras. Los motivos de consulta, las notas y los seguros de cada persona nunca salen en Analítica ni en un CSV." }]} />
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;

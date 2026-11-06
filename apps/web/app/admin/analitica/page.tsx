@@ -1,10 +1,10 @@
 import { requerir } from "@/lib/admin";
-import { confianza, embudo, gente, PERIODOS } from "@/lib/admin-analitica";
+import { confianza, embudo, gente, PERIODOS, saludPro } from "@/lib/admin-analitica";
 import { sinOferta } from "@/lib/admin-catalogo";
 import { Analitica, type DatosAnalitica } from "../Analitica";
 
 /* ADM-ANALIT · Analítica. ?tab= sum | ppl | trust | nosup | exp · ?p= 7 | 30 | 90 días. */
-const TABS = new Set(["sum", "ppl", "trust", "nosup", "exp"]);
+const TABS = new Set(["sum", "ppl", "trust", "sp", "nosup", "exp"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("analit", "ver");
   const sp = await searchParams;
@@ -15,5 +15,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   if (tab === "ppl") d.gente = await gente(s, dias);
   if (tab === "trust") d.confianza = await confianza(s, dias);
   if (tab === "nosup") d.nosup = await sinOferta(s);
+  if (tab === "sp") d.sp = await saludPro(s, dias);
   return <Analitica d={d} />;
 }

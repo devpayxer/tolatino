@@ -460,3 +460,5 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] La lista de términos de PRIVADO (`lib/resenas-filtro.ts`) es corta (diagnósticos y medicinas comunes): ampliarla con
       un listado revisado por alguien de salud antes de abrir, y medir falsos positivos en reseñas reales.
 - [ ] Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local).
+- [ ] Configuración (Fase 5): hacer editables los plazos de Doctores y Profesionales (2 h «no aceptamos su seguro», 24 h
+      cancelar, 30 d total por escrito, 24/48 h ayuda, 30 d notas, 90 d fotos de ayuda).

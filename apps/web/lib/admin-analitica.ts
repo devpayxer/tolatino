@@ -62,3 +62,32 @@ export async function confianza(s: Staff, dias: number) {
   ]);
   return { sancionados: sanc.rows[0]?.n ?? 0, abiertas: abiertas.rows.map((x) => ({ ...x, es: COLAS[x.queue]?.es ?? x.queue, sla: COLAS[x.queue]?.sla ?? 24 })), cumplido: cumplido.rows[0]! };
 }
+
+/* Doctores y Profesionales (fase4-salud-pro §4m): seguro aceptado, «no aceptamos su seguro», no llegó, tiempo de respuesta,
+   consultas que terminan en contratar, «cobró el total» de las reseñas y los motivos de ayuda. Solo cifras: ni motivos de
+   consulta, ni notas, ni seguros de nadie. */
+export async function saludPro(s: Staff, dias: number) {
+  const [sal, pro, rev, ayuda] = await Promise.all([
+    db().query<{ n: number; conseg: number; segok: number; segno: number; hechas: number; noshow: number; resp: number | null }>(
+      `select count(*)::int as n,
+              count(*) filter (where coalesce(o.details->'seguro'->>'kind', 'none') <> 'none')::int as conseg,
+              count(*) filter (where coalesce(o.details->'seguro'->>'kind', 'none') <> 'none' and (o.details->'seguro'->>'acepta')::boolean)::int as segok,
+              count(*) filter (where exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'declined' and e.note->>'es' like 'No aceptan su seguro%'))::int as segno,
+              count(*) filter (where o.status = 'done')::int as hechas, count(*) filter (where o.status_detail = 'noshow')::int as noshow,
+              round(avg(extract(epoch from o.answered_at - o.sent_at) / 60) filter (where o.answered_at is not null))::int as resp
+         from operations o where o.kind = 'appointment' and o.details->>'rubro' = 'salud' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ n: number; consultas: number; contrato: number; total: number; resp: number | null }>(
+      `select count(*)::int as n, count(*) filter (where o.status = 'done' or o.status_detail in ('consulted', 'quote', 'hired'))::int as consultas,
+              count(*) filter (where o.status_detail in ('hired', 'done'))::int as contrato,
+              count(*) filter (where exists (select 1 from written_totals t where t.operation_id = o.id))::int as total,
+              round(avg(extract(epoch from o.answered_at - o.sent_at) / 60) filter (where o.answered_at is not null))::int as resp
+         from operations o where o.kind = 'appointment' and o.details->>'rubro' = 'pro' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ cobro: number; base: number }>(
+      `select count(*) filter (where (r.answers->>'cobro')::int = 1)::int as cobro, count(*) filter (where r.answers ? 'cobro')::int as base
+         from reviews r join businesses b on b.id = r.business_id where b.category_id = 'NEG-PRO' and r.status = 'visible' and r.created_at > now() - make_interval(days => $2) and ${scope("b.city_id")}`, [s.cities, dias]),
+    db().query<{ rub: string; reason: string; n: number }>(
+      `select o.details->>'rubro' as rub, h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
+        where o.details->>'rubro' in ('salud', 'pro') and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
+  ]);
+  return { sal: sal.rows[0]!, pro: pro.rows[0]!, rev: rev.rows[0]!, ayuda: ayuda.rows };
+}

@@ -743,3 +743,11 @@ guarda el nombre del plan del seguro, solo si tenía y si lo aceptaron. Las 6 ba
 _Decidido por mí (reversible): las fotos de ayuda de Salud y Pro son privadas (nunca por /medios) y se borran del
 almacenamiento a los 90 días de cerrada la solicitud; el equipo de To'Latino las ve con registro en la auditoría (sin pedir un
 motivo escrito todavía: va a LAUNCH-CHECKLIST). «Ley» manda a revisión todas las licencias del negocio, no lo suspende._
+
+## Fase 4 · 4m-3 Super Admin de Doctores y Profesionales
+1. Super Admin › Transacciones › Doctores: «Cita de salud · seguro aceptado · nada se cobra en la app» (sin servicio).
+   › Profesionales: «total por escrito $740.00 · trámite terminado».
+2. Super Admin › Analítica › Doctores y Profesionales (90 días): las cifras y los motivos de ayuda.
+_Decidido por mí (reversible): en Transacciones de Doctores no sale el servicio (dice demasiado de la salud de alguien); en
+Profesionales sí (el nombre del servicio, nunca la situación ni la nota). Los plazos de Salud/Pro se hacen editables con la
+sección Configuración (Fase 5); hoy están en el código._
