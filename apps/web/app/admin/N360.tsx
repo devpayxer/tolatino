@@ -88,15 +88,16 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         <PanelBloques bloques={[{ type: "group", k: "HORARIO" }, { type: "kv", cols: 2, items: DIAS.map(([d], i) => { const x = n.horas[i]!; return { k: d.toUpperCase(), v: x.on ? `${fmtHora(x.a)} – ${fmtHora(x.b)}${x.two ? ` · ${fmtHora(x.a2)} – ${fmtHora(x.b2)}` : ""}` : "Cerrado", fg: x.on ? undefined : "rgba(11,14,18,.45)" }; }) }]} />
       </>);
   } else if (tab === "vende" && n.cat_id === "NEG-FOOD") {
-    const MOD: ["menu" | "pedidos", string, string][] = [["menu", "Menú", "La pestaña Menú de su página"], ["pedidos", "Pedidos en línea", `Que se pueda pedir desde su menú · ${n.pedidosMes} este mes${n.plan === "pro" ? "" : ` (${n.pedidosFree} de ${n.pedidosCap} con Free)`}`]];
+    const MOD: ["menu" | "pedidos" | "rsv", string, string][] = [["menu", "Menú", "La pestaña Menú de su página"], ["pedidos", "Pedidos en línea", `Que se pueda pedir desde su menú · ${n.pedidosMes} este mes${n.plan === "pro" ? "" : ` (${n.pedidosFree} de ${n.pedidosCap} con Free)`}`],
+      ["rsv", "Reservaciones", n.plan !== "pro" ? "Es de Pro: este negocio no la ofrece" : `${n.rsvOn ? "La pestaña Reservaciones de su página" : "Apagada por el dueño"} · ${n.rsvMes} este mes${n.rsvPend ? ` · ${n.rsvPend} esperan respuesta` : ""}`]];
     const PL = ["Platos que no corresponden a su categoría", "Precios o fotos engañosos", "Lo pidió el dueño", "Reportes de clientes"];
     const ocultos = n.menu.filter((i) => i.hidden).length;
     cuerpo = (
       <>
         <A.AdminList label="MÓDULOS" rows={MOD.map(([k, t, sub]) => { const off = n.modsOff[k] as { reason?: string } | undefined; return {
-          icon: k === "menu" ? "restaurant" : "bag", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
+          icon: k === "menu" ? "restaurant" : k === "rsv" ? "calendar" : "bag", title: t, sub: off ? `Pausado por To’Latino: ${off.reason ?? ""}` : sub, tag: off ? "PAUSADO" : "ACTIVO", tone: off ? "danger" : "signal",
           actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
-            : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "menu" ? "La pestaña Menú deja de salir en su página. El dueño ve el motivo en su panel." : "Su menú se ve, pero no se puede pedir. El dueño ve el motivo en su panel.", peligro: true, plantillas: PL, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
+            : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "menu" ? "La pestaña Menú deja de salir en su página. El dueño ve el motivo en su panel." : k === "rsv" ? "La pestaña Reservaciones deja de salir en su página; las reservaciones hechas siguen. El dueño ve el motivo en su panel." : "Su menú se ve, pero no se puede pedir. El dueño ve el motivo en su panel.", peligro: true, plantillas: PL, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.menu.length ? <A.AdminList label={`MENÚ · ${n.menu.length} PLATOS${ocultos ? ` · ${ocultos} OCULTOS` : ""}`} rows={n.menu.map((i) => ({
           icon: "restaurant", title: i.name, sub: `${i.sec ?? "Sin categoría"} · $${(i.cents / 100).toFixed(2)}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",
           actions: P.retirar ? [i.hidden ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${i.name}»?`, hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }

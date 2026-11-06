@@ -128,7 +128,7 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
 async function topeFree(c: Q, negocio: string, mes: string) {
   const r = await c.query<{ cap: number; usados: number }>(
     `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $3) as cap,
-            (select count(*)::int from operations where business_id = $1 and free_quota_month = $2) as usados`, [negocio, mes, TOPE_FREE]);
+            (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [negocio, mes, TOPE_FREE]);
   return r.rows[0] ?? { cap: TOPE_FREE, usados: 0 };
 }
 
@@ -236,7 +236,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     await c.query(`select pg_advisory_xact_lock(hashtext('pedido:' || $1))`, [p.negocio]);
     const ya = await c.query<{ number: string }>(`select number from operations where user_id = $1 and client_key = $2`, [userId, p.clave]);
     if (ya.rows[0]) { await c.query("rollback"); return { ok: true, numero: ya.rows[0].number }; }
-    const pend = await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and status = 'pending' and respond_by > now()`, [userId]);
+    const pend = await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and kind = 'order' and status = 'pending' and respond_by > now()`, [userId]);
     if ((pend.rows[0]?.n ?? 0) >= 3) { await c.query("rollback"); return no("Tienes 3 pedidos esperando respuesta. Espera a que te contesten.", "You have 3 orders waiting for a reply. Wait for an answer."); }
 
     const b = await base(c, p.negocio);
@@ -392,10 +392,10 @@ export async function topeFreeDe(negocio: string) {
   return topeFree(db(), negocio, r.rows[0]?.mes ?? "");
 }
 
-/* Pedidos en línea de un negocio este mes (todos los planes). */
+/* Pedidos (y citas) en línea de un negocio este mes, todos los planes. Las mesas no cuentan: Reservaciones es de Pro. */
 export async function usadosMes(negocio: string) {
   const r = await db().query<{ n: number }>(
     `select count(*)::int as n from operations o join cities c on c.id = o.city_id
-      where o.business_id = $1 and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone`, [negocio]);
+      where o.business_id = $1 and o.kind <> 'table' and o.sent_at >= date_trunc('month', now() at time zone c.timezone) at time zone c.timezone`, [negocio]);
   return r.rows[0]?.n ?? 0;
 }

@@ -340,6 +340,17 @@ _Actualizado: 5 nov 2026._
   (`/pedido/N/cancelar`), volver a pedir. Acciones `acciones-pedidos.ts` (ord / cat) con auditoría. Probado con
   Playwright (31 comprobaciones): aceptar → cocina → listo → entregado, historial, cancelar con motivo, rechazar,
   vencer, inventario devuelto en los tres, Clientes, ajustes y auditoría. Ayuda `docs/ayuda/panel-pedidos.md`.
+- **Fase 2 · bloque 2e Reservaciones de mesa ✓ (6 nov, decisión AA):** migración 0024 (ajustes, días cerrados,
+  retenciones de 5 min, propuestas de cambio; mesa = operación `table`, R-9301…). `lib/reservas.ts`: disponibilidad real
+  (mesas por área y tamaño, juntar mesas, mesas sin reservar, turnos, duración, horario, días cerrados, anticipación) con
+  candado por negocio; retener, enviar, cambiar una solicitud pendiente, vencer al leer (30 min sin respuesta, 15 min
+  una propuesta), cancelar (tardía sin cargo), voy tarde, aceptar / rechazar la otra hora. Cliente: pestaña, tarjeta
+  rápida, riel «Tu mesa», `/n/{id}/reservar`, `/reserva/{R-…}`. Panel: Hoy (Confirmar / Otra hora / No hay mesa),
+  detalle (llegaron / no llegaron / se fueron), Clientes › Reservaciones, Lo que vendes › Reservaciones (bloques nuevos
+  `rvar` y `evbuy`). Super Admin: módulo con cuentas y Pausar. Solo Pro. Guardianes nuevos: `clienteMismoOrigen`,
+  `fechaEnCrudo`, `operacionesConTipo` (cazó que el vencer de pedidos cerraba reservaciones y que el tope de 3 pedidos
+  pendientes contaba mesas). Probado con Playwright: cliente 29, panel 18, admin 3 comprobaciones; 2b y 2c otra vez en
+  verde. Ayuda `docs/ayuda/reservar-mesa.md` y `panel-reservaciones.md`. **Sigue: 2f Entrega / Repartidor.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

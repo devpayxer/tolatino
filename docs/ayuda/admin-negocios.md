@@ -47,6 +47,11 @@ todo en su panel.
 **¿Dónde veo la foto del documento de un reclamo?** En el caso de Cambios sensibles. Es privada: no tiene enlace
 público y cada vez que se abre queda en la auditoría. Más en `recuperar-negocio.md` y `licencia.md`.
 
+### Lo que vende · Reservaciones (bloque 2e)
+En el 360° › **Lo que vende** de un restaurante sale **Reservaciones** con cuántas van este mes y cuántas esperan respuesta.
+**Pausar** (con motivo, permiso de retirar) quita la pestaña de su página; las reservaciones hechas siguen y el dueño ve el
+motivo en su panel. **Reanudar** la devuelve. Los pedidos del mes ya no cuentan las reservaciones.
+
 ---
 
 ## English
@@ -59,4 +64,5 @@ reason (approvals store a fixed one), writes the audit log, and the owner sees t
 dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Owner texts arrive with
 notifications (Phase 2). "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
 makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
-documents are private and every view is audited.
+documents are private and every view is audited. In What it sells, Reservations shows this month's bookings and pending
+requests; Pause (with a reason) removes the tab from the page and the owner sees why.

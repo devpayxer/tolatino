@@ -316,16 +316,16 @@ export async function rsvEnviar(userId: string, holdId: string, f: DetallesIn, e
 
 /* Cierra lo que nadie contestó: solicitudes después de 30 min (o a la hora) y propuestas de otra hora después de 15. */
 export async function vencerMesas(f: { negocio?: string; userId?: string; numero?: string }) {
-  const w: string[] = ["kind = 'table'"], v: unknown[] = [];
+  const w: string[] = [], v: unknown[] = [];
   if (f.negocio) { v.push(f.negocio); w.push(`business_id = $${v.length}`); }
   if (f.userId) { v.push(f.userId); w.push(`user_id = $${v.length}::uuid`); }
   if (f.numero) { v.push(f.numero); w.push(`number = $${v.length}`); }
   if (v.length === 0) return;
   const cond = `((status = 'pending' and respond_by <= now()) or (status = 'change_proposed' and exists (select 1 from change_proposals p where p.operation_id = operations.id and p.status = 'open' and p.created_at < now() - interval '15 minutes')))`;
-  const hay = await db().query(`select 1 from operations where ${w.join(" and ")} and ${cond} limit 1`, v);
+  const hay = await db().query(`select 1 from operations where kind = 'table' and ${w.join(" and ")} and ${cond} limit 1`, v);
   if (!hay.rowCount) return;
   await tx(async (c) => {
-    const ids = (await c.query<{ id: string }>(`update operations set status = 'expired', updated_at = now() where ${w.join(" and ")} and ${cond} returning id::text`, v)).rows;
+    const ids = (await c.query<{ id: string }>(`update operations set status = 'expired', updated_at = now() where kind = 'table' and ${w.join(" and ")} and ${cond} returning id::text`, v)).rows;
     for (const { id } of ids) {
       await c.query(`update change_proposals set status = 'expired', answered_at = now() where operation_id = $1 and status = 'open'`, [id]);
       await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'expired', 'system', $2::jsonb)`, [id, JSON.stringify({ es: "Nadie contestó a tiempo", en: "No reply in time" })]);
@@ -485,7 +485,7 @@ const FILTRO_MESA: Record<FiltroMesa, string> = {
 export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: FiltroMesa; q?: string; antes?: string | null }) {
   void lang;
   await vencerMesas({ negocio });
-  const v: unknown[] = [negocio], w = ["o.business_id = $1", "o.kind = 'table'"];
+  const v: unknown[] = [negocio], w = ["o.business_id = $1"];
   const busca = (f?.q ?? "").trim().slice(0, 40);
   if (busca) { v.push(`%${busca.toLowerCase()}%`); w.push(`(lower(o.number) like $${v.length} or lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like $${v.length})`); }
   if (f?.antes && /^R-\d{1,10}$/.test(f.antes)) { v.push(f.antes); w.push(`o.id < (select id from operations where number = $${v.length})`); }
@@ -495,7 +495,7 @@ export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: Fil
     `select o.number, u.first_name, u.last_name, o.party_size as party, (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm,
             o.status, o.status_detail as detail, coalesce(o.details->>'area', 'salon') as area, (now() at time zone c.timezone)::date::text as hoy, (o.details->>'late')::int as late,
             floor(extract(epoch from now() - o.sent_at) / 60)::int as sent_mins, o.details->>'occ' as occ, coalesce(o.details->'needs', '[]'::jsonb) as needs, o.customer_note as nota
-       from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id where ${w.join(" and ")}
+       from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id where o.kind = 'table' and ${w.join(" and ")}
       order by ${f ? "o.id desc" : "o.scheduled_at"} limit ${f ? 31 : 200}`, v);
   const filas: FilaMesa[] = r.rows.map((x) => {
     const st = estadoMesa(x.status, x.detail), dia = Math.round((Date.parse(x.ymd) - Date.parse(x.hoy)) / 864e5), h = hm2m(x.hm);
@@ -509,11 +509,11 @@ export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: Fil
   // Cuentas por filtro (con la misma búsqueda), para los chips de Clientes.
   let cuentas: Record<FiltroMesa, number> | null = null;
   if (f) {
-    const vc: unknown[] = [negocio], wc = ["o.business_id = $1", "o.kind = 'table'"];
+    const vc: unknown[] = [negocio], wc = ["o.business_id = $1"];
     if (busca) { vc.push(`%${busca.toLowerCase()}%`); wc.push(`(lower(o.number) like $2 or lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like $2)`); }
     const k = (await db().query<Record<FiltroMesa, number>>(
       `select ${(Object.keys(FILTRO_MESA) as FiltroMesa[]).map((z) => `count(*) filter (where ${FILTRO_MESA[z]})::int as "${z}"`).join(", ")}
-         from operations o join users u on u.id = o.user_id where ${wc.join(" and ")}`, vc)).rows[0]!;
+         from operations o join users u on u.id = o.user_id where o.kind = 'table' and ${wc.join(" and ")}`, vc)).rows[0]!;
     cuentas = k;
   }
   return { filas: filas.slice(0, f ? 30 : 200), mas: f && r.rows.length > 30 ? filas[29]!.numero : null, cuentas, total: cuentas ? cuentas.all : filas.length };

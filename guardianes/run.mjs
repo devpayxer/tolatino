@@ -160,6 +160,22 @@ const guardianes = {
     }
   },
 
+  /* 3f-quater. Pedidos y reservaciones viven en la misma tabla (operations). Toda consulta que cuente, liste o cambie
+     operaciones dice de qué tipo (kind) o va a una sola por su número / id / clave (6 nov, 2e: el vencer de pedidos cerraba
+     reservaciones, y el tope de 3 pedidos pendientes contaba mesas). */
+  operacionesConTipo() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = readFileSync(f, "utf8"), re = /(from|update) operations\b/g;
+      let m;
+      while ((m = re.exec(t))) {
+        const fin = t.indexOf("`", m.index), q = t.slice(m.index, fin < 0 ? m.index + 600 : fin);
+        if (/\bkind\b|\bnumber = |\bid = \$|\.id = \$|client_key|operation_id|where id = /.test(q)) continue;
+        falla("operacionesConTipo", f, t.slice(0, m.index).split("\n").length, "consulta sobre operations sin kind (pedido o mesa) ni número/id");
+      }
+    }
+  },
+
   /* 3g. Un archivo «use server» solo exporta funciones async (5 nov, 1k: una lista exportada desde acciones rompe Next).
      Las constantes compartidas van a lib/. */
   servidorSoloFunciones() {

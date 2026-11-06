@@ -26,7 +26,8 @@ async function devolver(c: PoolClient, opId: string) {
   }
 }
 
-/* Vence los pendientes que nadie contestó a tiempo (de un negocio, de una persona o un pedido). */
+/* Vence los pedidos pendientes que nadie contestó a tiempo (de un negocio, de una persona o un pedido). Solo pedidos: las
+   reservaciones tienen su propio vencer (lib/reservas.ts · vencerMesas). */
 export async function vencer(f: { negocio?: string; userId?: string; numero?: string }) {
   const w: string[] = [], v: unknown[] = [];
   if (f.negocio) { v.push(f.negocio); w.push(`business_id = $${v.length}`); }
@@ -34,11 +35,11 @@ export async function vencer(f: { negocio?: string; userId?: string; numero?: st
   if (f.numero) { v.push(f.numero); w.push(`number = $${v.length}`); }
   if (!w.length) return;
   // Barato: solo si hay alguno (índice parcial de pendientes).
-  const hay = await db().query(`select 1 from operations where status = 'pending' and respond_by <= now() and ${w.join(" and ")} limit 1`, v);
+  const hay = await db().query(`select 1 from operations where kind = 'order' and status = 'pending' and respond_by <= now() and ${w.join(" and ")} limit 1`, v);
   if (!hay.rowCount) return;
   await tx(async (c) => {
     const ids = (await c.query<{ id: string }>(
-      `update operations set status = 'expired', updated_at = now() where status = 'pending' and respond_by <= now() and ${w.join(" and ")} returning id::text`, v)).rows;
+      `update operations set status = 'expired', updated_at = now() where kind = 'order' and status = 'pending' and respond_by <= now() and ${w.join(" and ")} returning id::text`, v)).rows;
     for (const { id } of ids) {
       await devolver(c, id);
       await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'expired', 'system', $2::jsonb)`, [id, JSON.stringify({ es: "Nadie contestó en 10 minutos", en: "No reply in 10 minutes" })]);
@@ -106,13 +107,13 @@ const FILTROS: Record<FiltroPed, string> = {
 export async function pedidosLista(negocio: string, f: FiltroPed, q: string, antes: string | null) {
   await vencer({ negocio });
   const v: unknown[] = [negocio];
-  const w = ["o.business_id = $1", "o.kind = 'order'", FILTROS[f] ?? "true"];
+  const w = ["o.business_id = $1", FILTROS[f] ?? "true"];
   const busca = q.trim().replace(/^#/, "").slice(0, 40);
   if (busca) { v.push(`%${busca.toLowerCase()}%`); w.push(`(o.number like $${v.length} or lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like $${v.length})`); }
   if (antes && /^\d{1,12}$/.test(antes)) { v.push(antes); w.push(`o.id < (select id from operations where number = $${v.length})`); }
   const r = await db().query<FilaDb>(
     `select ${COLS} from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id
-      where ${w.join(" and ")} order by o.id desc limit 31`, v);
+      where o.kind = 'order' and ${w.join(" and ")} order by o.id desc limit 31`, v);
   const filas = r.rows.slice(0, 30).map(fila);
   // Cuántos hay en cada filtro (con la búsqueda aplicada), para los chips.
   const vq = busca ? [negocio, `%${busca.toLowerCase()}%`] : [negocio];

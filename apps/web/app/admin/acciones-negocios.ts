@@ -204,10 +204,10 @@ export async function platoOcultar(id: string, itemId: string, ocultar: boolean,
   }, ocultar ? "Plato oculto. El dueño ve el motivo en su panel." : "El plato se ve otra vez.");
 }
 
-/* Pausar o reanudar un módulo (Menú, Pedidos en línea) con motivo (neg:retirar). */
-export async function moduloPausar(id: string, modulo: "menu" | "pedidos", pausar: boolean, motivo: string): Promise<ResAdm> {
-  if (!["menu", "pedidos"].includes(modulo)) return no("Ese módulo no existe.");
-  const nombre = modulo === "menu" ? "Menú" : "Pedidos en línea";
+/* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
+export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "rsv", pausar: boolean, motivo: string): Promise<ResAdm> {
+  if (!["menu", "pedidos", "rsv"].includes(modulo)) return no("Ese módulo no existe.");
+  const nombre = modulo === "menu" ? "Menú" : modulo === "rsv" ? "Reservaciones" : "Pedidos en línea";
   return hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
     if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";

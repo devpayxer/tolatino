@@ -245,3 +245,17 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Alergias en el menú del cliente:** el panel las guarda; el prototipo del cliente no las muestra. Preguntar al
   fundador dónde salen.
 - [ ] **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM.
+
+## Reservaciones de mesa (bloque 2e, 6 nov 2026)
+- [ ] **Cambiar una reservación ya confirmada** (el cambio queda pendiente y la actual sigue en pie): falta el diseño del
+  lado del panel. Hoy solo se cambia una solicitud sin respuesta. Pregunta en `docs/REVISION.md`.
+- [ ] **«Avísame si se libera» (lista de espera) y «Otros restaurantes con mesa»** en la pantalla de «no pudo»: con las
+  notificaciones (SMS).
+- [ ] **Avisos por SMS** (al confirmar, el día de la reservación, al proponer otra hora) y al restaurante (solicitud
+  nueva): con las notificaciones. Hoy la pantalla se actualiza sola cada 20 s y el panel al abrirlo.
+- [ ] **Evento privado** (grupos grandes, APP-NEG-EVENTO-PRIVADO): hoy se ofrece Llamar; la solicitud de evento llega con
+  Cotizaciones.
+- [ ] **Historial de no-show del cliente** visible para el restaurante (cuántas veces no llegó): con Mi cuenta / Usuarios 360°.
+- [ ] **Plan Pro:** Reservaciones es de Pro; el botón «Ver Pro» del candado espera la Fase de Planes.
+- [ ] **Fotos de Pexels** (semilla) no cargan en el entorno de pruebas sin salida a internet: la tarjeta de la solicitud
+  muestra el fondo gris. En el sandbox real sí cargan.
