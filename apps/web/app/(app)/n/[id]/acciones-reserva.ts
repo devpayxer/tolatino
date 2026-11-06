@@ -36,10 +36,20 @@ export async function enviarMesa(hold: string, f: DetallesIn): Promise<{ ok: tru
   const u = await yo();
   if (!u?.first_name) return { ok: false, entrar: true, msg: { es: "Entra para reservar.", en: "Sign in to book." } };
   const r = await rsvEnviar(u.id, String(hold ?? ""), f && typeof f === "object" ? f : {}, ENTORNO);
-  if (r.ok) await avisarDeMesa(r.numero, u.first_name);
+  if (r.ok && r.cambio === "pend") await avisarCambio(r.numero, u.first_name);
+  else if (r.ok && !r.cambio) await avisarDeMesa(r.numero, u.first_name);
   return r;
 }
 
+/* El cliente pidió cambiar una reservación confirmada: al negocio, con la hora que pide y cuánto tiene para responder. */
+async function avisarCambio(numero: string, cliente: string) {
+  const o = (await db().query<{ biz: string; dia: string; hora: string; min: number }>(
+    `select o.business_id as biz, to_char((p.proposed->>'ymd')::date, 'FMDD/FMMM') as dia, p.proposed->>'at' as hora, greatest(1, ceil(extract(epoch from p.respond_by - now()) / 60))::int as min
+       from operations o join change_proposals p on p.operation_id = o.id and p.side = 'customer' and p.status = 'open' where o.number = $1 and o.kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
+  if (!o) return;
+  const [h, m] = o.hora.split(":").map(Number);
+  await avisarNegocio(o.biz, "biz_rsv_chg", { cliente, num: numero, dia: o.dia, hora: `${(h! % 12) || 12}:${String(m ?? 0).padStart(2, "0")} ${h! < 12 ? "AM" : "PM"}`, min: o.min }, { href: `/panel/${o.biz}/hoy?det=rsv:${numero}`, ref: ["table", numero] });
+}
 async function avisarDeMesa(numero: string, cliente: string) {
   const o = (await db().query<{ biz: string; st: string }>(`select business_id as biz, status as st from operations where number = $1 and kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (o) await avisarNegocio(o.biz, "biz_req", { tipo: "reservación", cliente, min: 10 }, { href: `/panel/${o.biz}/hoy?det=rsv:${numero}`, ref: ["table", numero] });

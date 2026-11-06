@@ -33,6 +33,10 @@ Versión: Fase 2 · bloque 2e (6 nov 2026). Restaurantes Pro._
 | «Otra hora» sin ninguna hora libre cerca | Te dice que uses «No hay mesa». |
 | El cliente no contesta tu propuesta en 15 minutos | Se cierra sola. |
 | El cliente cancela tarde | Lo ves en el historial como cancelación tardía. No hay cargo para nadie. |
+| El cliente pide cambiar una reservación confirmada | Sale en **Hoy** con «PIDE CAMBIO» (y te llega un aviso). En el detalle: la hora, personas y área que pide, **Aceptar el cambio** o **No se puede**. Su reservación actual sigue en pie hasta que respondas. |
+| No respondes al cambio en 30 minutos (o llega la hora) | Se cierra solo y la reservación queda como estaba. |
+| Aceptas un cambio y ya no tienes mesa a esa hora | No deja aceptarlo: usa «No se puede». |
+| Tienes «Confirmar al instante» | Los cambios con mesa libre se hacen solos; lo ves en el historial. |
 | Dos de tu equipo tocan a la vez | Gana el primero; el otro ve «Esta reservación ya cambió». |
 | Guardar sin mesas, sin turno o sin días | No deja: dice qué falta. |
 | Plan Free | La fila de Reservaciones sale con candado Pro. |
@@ -45,7 +49,8 @@ ajustes, «Lo que vendes».
 ## Preguntas frecuentes
 **¿To’Latino cobra por las reservaciones?** No. Sin cargo ni comisión.
 
-**¿Se puede cambiar una reservación ya confirmada?** Todavía no desde el panel; el cliente cancela y reserva otra.
+**¿Se puede cambiar una reservación ya confirmada?** El cliente lo pide desde su reservación; tú lo aceptas o no desde el
+detalle. Si no puedes, todo queda como estaba.
 
 ---
 
@@ -56,6 +61,8 @@ late notice and history, then **Arrived · seated** / **No-show** → **Left · 
 filters with counts and search. **What you sell › Reservations**: today's summary, pending and upcoming requests,
 tables by area (2, 4, 6, 8 seats), tables kept for walk-ins, joining tables for groups, days, shifts and duration
 (with warnings against your hours), days without bookings (saved instantly), rules (instant confirm, hold time,
-cancellation notice, minimum and maximum advance, reply time) and "How the client sees it". Requests close on their own
+cancellation notice, minimum and maximum advance, reply time) and "How the client sees it". A client can ask to change
+a confirmed booking: it shows in Today as "CHANGE ASKED", with **Accept the change** or **Can't**; the current booking
+stands until you reply (30 minutes, or it closes on its own). Requests close on their own
 after 30 minutes without a reply; proposals after 15. Free plans see the Pro lock; a To’Latino pause shows its reason.
 No fees.

@@ -218,7 +218,11 @@ export async function rsvRetener(userId: string, negocio: string, i: number, h: 
     if (!(pp >= 1 && pp <= 40) || !(hh >= 0 && hh < 1440 && hh % 30 === 0) || !(ii >= 0)) return no("Elige otra vez la hora.", "Pick the time again.");
     let op: string | null = null;
     if (editar) {
-      op = (await c.query<{ id: string }>(`select id::text from operations where number = $1 and business_id = $2 and user_id = $3 and kind = 'table' and status = 'pending'`, [editar, x.id, userId])).rows[0]?.id ?? null;
+      // Una solicitud sin respuesta, o una confirmada que todavía no empieza y sin otro cambio esperando respuesta.
+      op = (await c.query<{ id: string }>(
+        `select o.id::text from operations o where o.number = $1 and o.business_id = $2 and o.user_id = $3 and o.kind = 'table'
+            and (o.status = 'pending' or (o.status = 'confirmed' and o.status_detail is null and o.scheduled_at > now()
+                 and not exists (select 1 from change_proposals p where p.operation_id = o.id and p.side = 'customer' and p.status = 'open')))`, [editar, x.id, userId])).rows[0]?.id ?? null;
       if (!op) return no("Esa reservación ya no se puede cambiar.", "That reservation can no longer be changed.");
     }
     await c.query(`delete from reservation_holds where user_id = $1 and business_id = $2`, [userId, x.id]); // una retención a la vez por persona y restaurante
@@ -236,16 +240,17 @@ export async function rsvRetener(userId: string, negocio: string, i: number, h: 
 /* La solicitud en curso (APP-NEG-RESERVA): lo retenido y cuánto le queda. Solo quien la retuvo. */
 export type RsvHold = {
   id: string; negocio: { id: string; nombre: string; foto: string | null }; ymd: string; dia: number; h: number; p: number; area: string; segundos: number;
-  editar: string | null; auto: boolean; reply: number; hold: number; cxH: number; dur: number; quien: string; telefono: string;
+  editar: string | null; editarConfirmada: boolean; auto: boolean; reply: number; hold: number; cxH: number; dur: number; quien: string; telefono: string;
 };
 export async function rsvHold(userId: string, holdId: string): Promise<RsvHold | null> {
   if (!/^[0-9a-f-]{36}$/.test(String(holdId))) return null;
-  const h = (await db().query<{ business_id: string; name: string; url: string | null; ymd: string; hoy: string; hm: string; party: number; area: string; seg: number; editar: string | null;
+  const h = (await db().query<{ business_id: string; name: string; url: string | null; ymd: string; hoy: string; hm: string; party: number; area: string; seg: number; editar: string | null; edconf: boolean | null;
     first_name: string | null; last_name: string | null; phone: string }>(
     `select h.business_id, b.name, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url,
             (h.starts_at at time zone ci.timezone)::date::text as ymd, (now() at time zone ci.timezone)::date::text as hoy, to_char(h.starts_at at time zone ci.timezone, 'HH24:MI') as hm,
             h.party_size as party, h.area, greatest(0, floor(extract(epoch from h.expires_at - now())))::int as seg,
-            (select o.number from operations o where o.id = h.edit_of and o.status = 'pending') as editar, u.first_name, u.last_name, u.phone
+            (select o.number from operations o where o.id = h.edit_of and o.status in ('pending', 'confirmed')) as editar,
+            (select o.status = 'confirmed' from operations o where o.id = h.edit_of) as edconf, u.first_name, u.last_name, u.phone
        from reservation_holds h join businesses b on b.id = h.business_id join cities ci on ci.id = b.city_id join users u on u.id = h.user_id
       where h.id = $1 and h.user_id = $2`, [holdId, userId])).rows[0];
   if (!h) return null;
@@ -253,14 +258,22 @@ export async function rsvHold(userId: string, holdId: string): Promise<RsvHold |
   if (!x) return null;
   return {
     id: holdId, negocio: { id: h.business_id, nombre: h.name, foto: h.url ? foto(h.url, 200) : null }, ymd: h.ymd, dia: Math.round((Date.parse(h.ymd) - Date.parse(h.hoy)) / 864e5),
-    h: hm2m(h.hm), p: h.party, area: h.area, segundos: h.seg, editar: h.editar, auto: x.s.auto, reply: x.s.reply, hold: x.s.hold, cxH: x.s.cxH, dur: x.s.dur,
+    h: hm2m(h.hm), p: h.party, area: h.area, segundos: h.seg, editar: h.editar, editarConfirmada: !!h.edconf && !!h.editar, auto: x.s.auto, reply: x.s.reply, hold: x.s.hold, cxH: x.s.cxH, dur: x.s.dur,
     quien: [h.first_name, h.last_name].filter(Boolean).join(" "), telefono: h.phone,
   };
 }
 
 export type DetallesIn = { occ?: string; needs?: string[]; note?: string; other?: boolean; otherName?: string; sms?: boolean };
 const OCC = new Set(["cumple", "aniv", "cita", "neg", "cele"]), NEED = new Set(["bebe", "ruedas", "alergia", "tranq"]);
-export async function rsvEnviar(userId: string, holdId: string, f: DetallesIn, entorno: string): Promise<ResR<{ numero: string }>> {
+/* Mueve una reservación confirmada a la hora, personas y área del cambio (el aviso de «voy tarde» ya no aplica). */
+type Cambio = { ymd: string; at: string; party: number; area: string };
+async function aplicarCambio(c: Q, opId: string, p: Cambio, tz: string) {
+  await (c as ReturnType<typeof db>).query(
+    `update operations set scheduled_at = ($2::date + make_interval(mins => $3::int)) at time zone $4, party_size = $5,
+            details = (details - 'late') || jsonb_build_object('area', $6::text), late_notice_at = null, updated_at = now() where id = $1::bigint`,
+    [opId, p.ymd, hm2m(p.at), tz, p.party, p.area]);
+}
+export async function rsvEnviar(userId: string, holdId: string, f: DetallesIn, entorno: string): Promise<ResR<{ numero: string; cambio?: "pend" | "ok" }>> {
   if (!/^[0-9a-f-]{36}$/.test(String(holdId))) return no("Elige otra vez la hora.", "Pick the time again.");
   return tx(async (c) => {
     const h = (await c.query<{ business_id: string; ymd: string; hm: string; party: number; area: string; vivo: boolean; edit_of: string | null }>(
@@ -282,6 +295,31 @@ export async function rsvEnviar(userId: string, holdId: string, f: DetallesIn, e
     };
     const nota = String(f.note ?? "").trim().slice(0, 200);
     let numero: string;
+    const ed = h.edit_of ? (await c.query<{ status: string; number: string }>(`select status, number from operations where id = $1::bigint and user_id = $2 for update`, [h.edit_of, userId])).rows[0] : null;
+    if (h.edit_of && ed?.status === "confirmed") {
+      // Cambiar una reservación confirmada (prototipo: el cambio queda pendiente y la actual sigue en pie). Los detalles
+      // (ocasión, necesidades, nota) se actualizan ya; la hora, las personas y el área esperan al restaurante. Con
+      // «Confirmar al instante» el cambio se hace solo.
+      const abierto = await c.query(`select 1 from change_proposals where operation_id = $1::bigint and side = 'customer' and status = 'open'`, [h.edit_of]);
+      if (abierto.rowCount) return no("Ya pediste un cambio: espera la respuesta del restaurante.", "You already asked for a change: wait for the restaurant's reply.");
+      await c.query(`update operations set details = details || $2::jsonb, customer_note = nullif($3, ''), updated_at = now() where id = $1::bigint`,
+        [h.edit_of, JSON.stringify({ occ: det.occ, needs: det.needs, otherName: det.otherName, sms: det.sms }), nota]);
+      const prop = { ymd: h.ymd, at: h.hm, party: h.party, area: h.area };
+      if (x.s.auto) {
+        await aplicarCambio(c, h.edit_of, prop, x.tz);
+        await c.query(`insert into change_proposals (operation_id, kind, proposed, created_by, side, status, answered_at) values ($1::bigint, 'time', $2::jsonb, $3, 'customer', 'accepted', now())`, [h.edit_of, JSON.stringify(prop), userId]);
+        await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'change_accepted', 'system', $2, $3::jsonb)`, [h.edit_of, userId, JSON.stringify({ es: "Cambio confirmado al instante", en: "Change confirmed instantly" })]);
+        await c.query(`delete from reservation_holds where id = $1`, [holdId]);
+        return { ok: true, numero: ed.number, cambio: "ok" };
+      }
+      await c.query(
+        `insert into change_proposals (operation_id, kind, proposed, created_by, side, respond_by)
+         select $1::bigint, 'time', $2::jsonb, $3, 'customer', least(now() + interval '30 minutes', o.scheduled_at, ($4::date + make_interval(mins => $5::int)) at time zone $6) from operations o where o.id = $1::bigint`,
+        [h.edit_of, JSON.stringify(prop), userId, h.ymd, hm2m(h.hm), x.tz]);
+      await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1::bigint, 'change_requested', 'user', $2)`, [h.edit_of, userId]);
+      await c.query(`delete from reservation_holds where id = $1`, [holdId]);
+      return { ok: true, numero: ed.number, cambio: "pend" };
+    }
     if (h.edit_of) {
       // Cambiar una solicitud que el restaurante todavía no contestó: misma solicitud, nueva hora.
       const r = await c.query<{ number: string }>(
@@ -321,7 +359,16 @@ export async function vencerMesas(f: { negocio?: string; userId?: string; numero
   if (f.userId) { v.push(f.userId); w.push(`user_id = $${v.length}::uuid`); }
   if (f.numero) { v.push(f.numero); w.push(`number = $${v.length}`); }
   if (v.length === 0) return;
-  const cond = `((status = 'pending' and respond_by <= now()) or (status = 'change_proposed' and exists (select 1 from change_proposals p where p.operation_id = operations.id and p.status = 'open' and p.created_at < now() - interval '15 minutes')))`;
+  const cond = `((status = 'pending' and respond_by <= now()) or (status = 'change_proposed' and exists (select 1 from change_proposals p where p.operation_id = operations.id and p.side = 'business' and p.status = 'open' and p.created_at < now() - interval '15 minutes')))`;
+  // Un cambio pedido por el cliente que el restaurante no contestó a tiempo: se cierra y la reservación sigue como está.
+  const chg = (await db().query<{ id: string; num: string }>(
+    `update change_proposals p set status = 'expired', answered_at = now() from operations o
+      where p.operation_id = o.id and p.side = 'customer' and p.status = 'open' and p.respond_by <= now() and o.kind = 'table' and ${w.map((z) => `o.${z}`).join(" and ")}
+      returning o.id::text, o.number as num`, v)).rows;
+  for (const z of chg) {
+    await db().query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'change_expired', 'system', $2::jsonb)`, [z.id, JSON.stringify({ es: "El cambio no se contestó a tiempo", en: "The change got no reply in time" })]);
+    await (await import("./avisos")).avisarMesa(z.num, "rsv_chg_no");
+  }
   const hay = await db().query(`select 1 from operations where kind = 'table' and ${w.join(" and ")} and ${cond} limit 1`, v);
   if (!hay.rowCount) return;
   await tx(async (c) => {
@@ -338,7 +385,8 @@ export type RsvVista = {
   numero: string; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null; lat: number | null; lng: number | null };
   st: "pend" | "alt" | "ok" | "in" | "done" | "nos" | "no" | "exp" | "cx"; cxPorAlt: boolean; ymd: string; dia: number; h: number; p: number; area: string; dur: number;
   hold: number; cxH: number; reply: number; enviado: string; respondido: string | null; occ: string | null; needs: string[]; nota: string | null; otro: string | null; sms: boolean;
-  alt: { h: number; area: string; hasta: string } | null; tarde: number | null; minutosFaltan: number; quien: string; responde: string | null;
+  alt: { h: number; area: string; hasta: string } | null; tarde: number | null;
+  chg: { st: "pend" | "no"; ymd: string; dia: number; h: number; p: number; area: string; hasta: string | null } | null; chgOk: boolean; minutosFaltan: number; quien: string; responde: string | null;
 };
 const estadoMesa = (s: string, d: string | null): RsvVista["st"] =>
   s === "pending" ? "pend" : s === "change_proposed" ? "alt" : s === "confirmed" ? (d === "seated" ? "in" : "ok") : s === "done" ? (d === "noshow" ? "nos" : "done") : s === "declined" ? "no" : s === "expired" ? "exp" : "cx";
@@ -361,21 +409,31 @@ export async function rsvDe(userId: string | null, numero: string, negocio?: str
   const o = r.rows[0];
   if (!o) return null;
   const p = (await db().query<{ proposed: { at: string; area: string }; hasta: string }>(
-    `select p.proposed, to_char((p.created_at + interval '15 minutes') at time zone $2, 'HH24:MI') as hasta from change_proposals p where p.operation_id = $1 and p.status = 'open' order by p.created_at desc limit 1`, [o.id, o.tz])).rows[0];
+    `select p.proposed, to_char((p.created_at + interval '15 minutes') at time zone $2, 'HH24:MI') as hasta from change_proposals p where p.operation_id = $1 and p.side = 'business' and p.status = 'open' order by p.created_at desc limit 1`, [o.id, o.tz])).rows[0];
+  // El último cambio que pidió el cliente: esperando, no confirmado (hasta que toque «Entendido») o confirmado (24 h).
+  const ch = (await db().query<{ proposed: Cambio; status: string; visto: boolean; reciente: boolean; hoy: string; hasta: string | null }>(
+    `select p.proposed, p.status, p.seen_at is not null as visto, coalesce(p.answered_at, now()) > now() - interval '24 hours' as reciente,
+            (now() at time zone $2)::date::text as hoy, to_char(p.respond_by at time zone $2, 'HH24:MI') as hasta
+       from change_proposals p where p.operation_id = $1 and p.side = 'customer' order by p.created_at desc limit 1`, [o.id, o.tz])).rows[0];
+  const vivaC = o.status === "confirmed" && !o.detail;
+  const chg: RsvVista["chg"] = ch && vivaC && (ch.status === "open" || ((ch.status === "declined" || ch.status === "expired") && !ch.visto))
+    ? { st: ch.status === "open" ? "pend" : "no", ymd: ch.proposed.ymd, dia: Math.round((Date.parse(ch.proposed.ymd) - Date.parse(ch.hoy)) / 864e5), h: hm2m(ch.proposed.at), p: ch.proposed.party, area: ch.proposed.area, hasta: ch.hasta ? hora(hm2m(ch.hasta)) : null }
+    : null;
   const d = o.details as { area?: string; occ?: string; needs?: string[]; otherName?: string; sms?: boolean; cxWhy?: string };
   return {
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, telefono: o.phone, direccion: o.address, lat: o.lat, lng: o.lng },
     st: estadoMesa(o.status, o.detail), cxPorAlt: d.cxWhy === "alt", ymd: o.ymd, dia: Math.round((Date.parse(o.ymd) - Date.parse(o.hoy)) / 864e5), h: hm2m(o.hm), p: o.party, area: d.area ?? "salon", dur: o.dur,
     hold: o.s?.hold_min ?? 15, cxH: o.s?.cancel_free_h ?? 2, reply: o.s?.reply_min ?? 10, enviado: hora(hm2m(o.sent)), respondido: o.answered ? hora(hm2m(o.answered)) : null,
     occ: d.occ ?? null, needs: d.needs ?? [], nota: o.customer_note, otro: d.otherName ?? null, sms: d.sms !== false,
-    alt: p ? { h: hm2m(p.proposed.at), area: p.proposed.area, hasta: hora(hm2m(p.hasta)) } : null, tarde: o.late, minutosFaltan: o.faltan,
+    alt: p ? { h: hm2m(p.proposed.at), area: p.proposed.area, hasta: hora(hm2m(p.hasta)) } : null, tarde: o.late,
+    chg, chgOk: !!ch && vivaC && ch.status === "accepted" && ch.reciente, minutosFaltan: o.faltan,
     quien: [o.first_name, o.last_name].filter(Boolean).join(" ") || "—", responde: o.status === "pending" && o.resp ? hora(hm2m(o.resp)) : null,
   };
 }
 
 /* ── El cliente: cancelar, aceptar la hora propuesta, avisar que llega tarde ── */
 const CX = new Set(["planes", "otro", "hora", "grupo"]);
-export async function rsvCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias" | "tarde", extra?: string | number): Promise<ResR> {
+export async function rsvCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "chgvisto", extra?: string | number): Promise<ResR> {
   if (!/^R-\d{1,10}$/.test(numero)) return no("Esa reservación no existe.", "That reservation does not exist.");
   await vencerMesas({ numero });
   return tx(async (c) => {
@@ -384,6 +442,10 @@ export async function rsvCliente(userId: string, numero: string, que: "cancelar"
               coalesce((select cancel_free_h from reservation_settings where business_id = o.business_id), 2) as cxh
          from operations o where o.number = $1 and o.user_id = $2 and o.kind = 'table' for update`, [numero, userId])).rows[0];
     if (!o) return no("Esa reservación no existe.", "That reservation does not exist.");
+    if (que === "chgvisto") {
+      await c.query(`update change_proposals set seen_at = now() where operation_id = $1 and side = 'customer' and status in ('declined', 'expired') and seen_at is null`, [o.id]);
+      return { ok: true };
+    }
     if (que === "cancelar") {
       if (!["pending", "confirmed", "change_proposed"].includes(o.status) || o.detail) return no("Esta reservación ya no se puede cancelar.", "This reservation can no longer be cancelled.");
       const why = typeof extra === "string" && CX.has(extra) ? extra : "user";
@@ -397,7 +459,7 @@ export async function rsvCliente(userId: string, numero: string, que: "cancelar"
     }
     if (que === "aceptar" || que === "nogracias") {
       if (o.status !== "change_proposed") return no("Esa propuesta ya no está.", "That proposal is no longer available.");
-      const p = (await c.query<{ id: string; proposed: { at: string; area: string } }>(`select id::text, proposed from change_proposals where operation_id = $1 and status = 'open' order by created_at desc limit 1 for update`, [o.id])).rows[0];
+      const p = (await c.query<{ id: string; proposed: { at: string; area: string } }>(`select id::text, proposed from change_proposals where operation_id = $1 and side = 'business' and status = 'open' order by created_at desc limit 1 for update`, [o.id])).rows[0];
       if (!p) return no("Esa propuesta ya no está.", "That proposal is no longer available.");
       if (que === "nogracias") {
         await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
@@ -467,6 +529,32 @@ export async function rsvPaso(negocio: string, numero: string, paso: PasoMesa, a
   });
 }
 
+/* ── El restaurante responde al cambio que pidió el cliente: aceptarlo (si la mesa sigue libre) o «no se puede» ── */
+export async function rsvCambio(negocio: string, numero: string, que: "aceptar" | "rechazar", actorId: string): Promise<ResR> {
+  if (!/^R-\d{1,10}$/.test(numero)) return no("Esa reservación no existe.", "That reservation does not exist.");
+  await vencerMesas({ negocio, numero });
+  return tx(async (c) => {
+    await c.query(`select pg_advisory_xact_lock(hashtext('mesa:' || $1))`, [negocio]);
+    const o = (await c.query<{ id: string; status: string; detail: string | null }>(
+      `select o.id::text, o.status, o.status_detail as detail from operations o where o.business_id = $1 and o.number = $2 and o.kind = 'table' for update`, [negocio, numero])).rows[0];
+    if (!o) return no("Esa reservación no existe.", "That reservation does not exist.");
+    const p = (await c.query<{ id: string; proposed: Cambio }>(`select id::text, proposed from change_proposals where operation_id = $1 and side = 'customer' and status = 'open' for update`, [o.id])).rows[0];
+    if (!p || o.status !== "confirmed" || o.detail) return no("Ese cambio ya no está: actualiza la pantalla.", "That change is no longer there: refresh the screen.");
+    if (que === "rechazar") {
+      await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
+      await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'change_declined', 'member', $2)`, [o.id, actorId]);
+      return { ok: true };
+    }
+    const x = (await contexto(c, negocio))!, d = dia(x, Math.round((Date.parse(p.proposed.ymd) - Date.parse(x.hoy)) / 864e5));
+    const libre = areaLibre(x, d, hm2m(p.proposed.at), p.proposed.party, p.proposed.area, await ocupacion(c, x, p.proposed.ymd, { op: o.id }), await bloqueos(c, x, p.proposed.ymd, p.proposed.ymd));
+    if (!libre) return no("Ya no tienes mesa a esa hora para ese grupo. Usa «No se puede»: su reservación sigue como está.", "You no longer have a table at that time for that group. Use “Can't”: the reservation stays as it is.");
+    await aplicarCambio(c, o.id, { ...p.proposed, area: libre }, x.tz);
+    await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1`, [p.id]);
+    await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'change_accepted', 'member', $2)`, [o.id, actorId]);
+    return { ok: true };
+  });
+}
+
 /* ── El panel: listas y detalle ── */
 const DIAS_C: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
 const MESES_C: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
@@ -475,11 +563,11 @@ function fechaCorta(ymd: string): Bi {
   const d = new Date(`${ymd}T12:00:00Z`), w = DIAS_C[d.getUTCDay()]!, m = MESES_C[d.getUTCMonth()]!, n = d.getUTCDate();
   return { es: `${w[0]} ${n} ${m[0]}`, en: `${w[1]} ${m[1]} ${n}` };
 }
-export type FilaMesa = { numero: string; who: string; p: number; ymd: string; h: number; dia: number; area: string; st: RsvVista["st"]; s: Bi; tarde: number | null; hace: number; occ: string | null; needs: string[]; nota: string | null };
+export type FilaMesa = { numero: string; who: string; p: number; ymd: string; h: number; dia: number; area: string; st: RsvVista["st"]; s: Bi; tarde: number | null; hace: number; occ: string | null; needs: string[]; nota: string | null; chg: boolean };
 /* Clientes › Reservaciones: los mismos filtros que Pedidos. */
 export type FiltroMesa = "all" | "pend" | "cur" | "done" | "no";
 const FILTRO_MESA: Record<FiltroMesa, string> = {
-  all: "true", pend: "o.status in ('pending', 'change_proposed')", cur: "o.status = 'confirmed'",
+  all: "true", pend: "(o.status in ('pending', 'change_proposed') or exists (select 1 from change_proposals p where p.operation_id = o.id and p.side = 'customer' and p.status = 'open'))", cur: "o.status = 'confirmed'",
   done: "o.status = 'done'", no: "o.status in ('declined', 'expired', 'cancelled')",
 };
 export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: FiltroMesa; q?: string; antes?: string | null }) {
@@ -491,10 +579,11 @@ export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: Fil
   if (f?.antes && /^R-\d{1,10}$/.test(f.antes)) { v.push(f.antes); w.push(`o.id < (select id from operations where number = $${v.length})`); }
   if (!f) w.push(`(o.status in ('pending', 'change_proposed') or (o.status = 'confirmed' and o.scheduled_at > now() - interval '4 hours'))`);
   else w.push(FILTRO_MESA[f.estado && FILTRO_MESA[f.estado] ? f.estado : "all"]);
-  const r = await db().query<{ number: string; first_name: string | null; last_name: string | null; party: number; ymd: string; hm: string; status: string; detail: string | null; area: string; hoy: string; late: number | null; sent_mins: number; occ: string | null; needs: string[]; nota: string | null }>(
+  const r = await db().query<{ number: string; first_name: string | null; last_name: string | null; party: number; ymd: string; hm: string; status: string; detail: string | null; area: string; hoy: string; late: number | null; sent_mins: number; occ: string | null; needs: string[]; nota: string | null; chg: boolean }>(
     `select o.number, u.first_name, u.last_name, o.party_size as party, (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm,
             o.status, o.status_detail as detail, coalesce(o.details->>'area', 'salon') as area, (now() at time zone c.timezone)::date::text as hoy, (o.details->>'late')::int as late,
-            floor(extract(epoch from now() - o.sent_at) / 60)::int as sent_mins, o.details->>'occ' as occ, coalesce(o.details->'needs', '[]'::jsonb) as needs, o.customer_note as nota
+            floor(extract(epoch from now() - o.sent_at) / 60)::int as sent_mins, o.details->>'occ' as occ, coalesce(o.details->'needs', '[]'::jsonb) as needs, o.customer_note as nota,
+            exists (select 1 from change_proposals p where p.operation_id = o.id and p.side = 'customer' and p.status = 'open') as chg
        from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id where o.kind = 'table' and ${w.join(" and ")}
       order by ${f ? "o.id desc" : "o.scheduled_at"} limit ${f ? 31 : 200}`, v);
   const filas: FilaMesa[] = r.rows.map((x) => {
@@ -503,7 +592,7 @@ export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: Fil
     const per: Bi = { es: `${x.party} ${x.party === 1 ? "persona" : "personas"}`, en: `${x.party} ${x.party === 1 ? "guest" : "guests"}` };
     const ar = AREAS[x.area] ?? AREAS.salon!;
     return { numero: x.number, who: [x.first_name, x.last_name ? `${x.last_name[0]}.` : ""].filter(Boolean).join(" ") || "—", p: x.party, ymd: x.ymd, h, dia, area: x.area, st, tarde: x.late,
-      hace: x.sent_mins, occ: x.occ, needs: x.needs, nota: x.nota,
+      hace: x.sent_mins, occ: x.occ, needs: x.needs, nota: x.nota, chg: x.chg,
       s: { es: `${cuando.es} · ${hora(h)} · ${per.es} · ${ar.es}${x.late ? ` · llega ${x.late} min tarde` : ""}`, en: `${cuando.en} · ${hora(h)} · ${per.en} · ${ar.en}${x.late ? ` · ${x.late} min late` : ""}` } };
   });
   // Cuentas por filtro (con la misma búsqueda), para los chips de Clientes.
@@ -533,6 +622,10 @@ export async function mesaDetalle(negocio: string, numero: string) {
     proposal_accepted: () => ({ es: "El cliente aceptó la hora propuesta", en: "The client accepted the proposed time" }),
     proposal_declined: () => ({ es: "El cliente no tomó la hora propuesta", en: "The client didn't take the proposed time" }),
     changed: () => ({ es: "El cliente cambió la solicitud", en: "The client changed the request" }),
+    change_requested: () => ({ es: "El cliente pidió un cambio", en: "The client asked for a change" }),
+    change_accepted: (q, n) => n ?? (q ? { es: `Cambio aceptado por ${q}`, en: `Change accepted by ${q}` } : { es: "Cambio aceptado", en: "Change accepted" }),
+    change_declined: (q) => ({ es: `Cambio no se pudo${q ? ` · ${q}` : ""}`, en: `Change declined${q ? ` · ${q}` : ""}` }),
+    change_expired: () => ({ es: "El cambio no se contestó a tiempo", en: "The change got no reply in time" }),
     late: (_q, n) => n ?? { es: "Llega tarde", en: "Running late" },
     seated: () => ({ es: "Llegaron · en su mesa", en: "Arrived · seated" }),
     noshow: () => ({ es: "No llegaron · queda en su historial", en: "No-show · noted on their history" }),
@@ -546,7 +639,7 @@ export async function mesaDetalle(negocio: string, numero: string) {
 /* Cuántas solicitudes esperan respuesta del negocio (pestañas de Clientes). */
 export async function mesasPendientes(negocio: string) {
   await vencerMesas({ negocio });
-  return (await db().query<{ n: number }>(`select count(*)::int as n from operations where business_id = $1 and kind = 'table' and status = 'pending'`, [negocio])).rows[0]?.n ?? 0;
+  return (await db().query<{ n: number }>(`select count(*)::int as n from operations o where o.business_id = $1 and o.kind = 'table' and (o.status = 'pending' or (o.status = 'confirmed' and exists (select 1 from change_proposals p where p.operation_id = o.id and p.side = 'customer' and p.status = 'open')))`, [negocio])).rows[0]?.n ?? 0;
 }
 
 /* ── Ajustes (Panel › Lo que vendes › Reservaciones) ── */

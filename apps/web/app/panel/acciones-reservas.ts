@@ -3,7 +3,7 @@ import { avisarMesa } from "@/lib/avisos";
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
-import { rsvPaso, type PasoMesa } from "@/lib/reservas";
+import { rsvCambio, rsvPaso, type PasoMesa } from "@/lib/reservas";
 import type { Res } from "./acciones";
 
 /* Reservaciones desde el panel (Panel v2 · Hoy, Clientes y Lo que vendes › Reservaciones). Responder y marcar llegadas
@@ -23,6 +23,17 @@ async function auditar(a: Acceso, action: string, before: unknown, after: unknow
     [a.yo.id, action, a.negocio.id, a.negocio.city_id, JSON.stringify(before ?? null), JSON.stringify(after ?? null)]);
 }
 
+/* Responder al cambio que pidió el cliente en una reservación confirmada. */
+export async function mesaCambio(id: string, numero: string, que: "aceptar" | "rechazar"): Promise<Res> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  if (que !== "aceptar" && que !== "rechazar") return no("Esa acción no existe.", "That action does not exist.");
+  const r = await rsvCambio(a.negocio.id, String(numero ?? ""), que, a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, `reserva.cambio.${que}`, { reservacion: numero }, { reservacion: numero, cambio: que === "aceptar" ? "Aceptado" : "No se pudo" });
+  await avisarMesa(String(numero), que === "aceptar" ? "rsv_chg_ok" : "rsv_chg_no");
+  return { ok: true };
+}
 export async function mesaPaso(id: string, numero: string, paso: PasoMesa): Promise<Res> {
   const a = await entrar(id, "ord");
   if (!a) return SIN_ACCESO;

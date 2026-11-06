@@ -11,7 +11,7 @@ import { reservaAccion } from "./acciones";
 
 type N = "Icon" | "Button" | "Chip" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Chip } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Chip, Tag } = UI as unknown as Record<N, ComponentType<any>>;
 const hora = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 // «a la 1:00 PM» / «a las 7:30 PM»
 const aLas = (m: number) => `${hora(m).startsWith("1:") ? "a la" : "a las"} ${hora(m)}`;
@@ -68,7 +68,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
   const cxFree = pend || r.minutosFaltan >= r.cxH * 60;
   const lateOn = ok && r.dia === 0 && r.minutosFaltan <= 120;
 
-  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde", extra: string | number | undefined, msg: string, luego?: () => void) => {
+  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "chgvisto", extra: string | number | undefined, msg: string, luego?: () => void) => {
     if (ocupado) return;
     setOcupado(true); setError("");
     const x = await reservaAccion(r.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
@@ -104,7 +104,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
         <div className="min-w-0 flex-1">
           <div className={K}>{eyebrow}</div>
           <h1 className={`mt-[7px] text-pretty font-display font-extrabold leading-[1.1] tracking-[-0.04em] ${desk ? "text-[30px]" : "text-[24px]"}`}>{title}</h1>
-          <div className={`mt-[7px] text-pretty font-medium leading-[1.5] text-ink/[.62] ${desk ? "text-[14px]" : "text-[13.5px]"}`}>{sub}</div>
+          <div className={`mt-[7px] text-pretty font-medium leading-[1.5] text-ink/[.62] ${desk ? "text-[14px]" : "text-[13.5px]"}`}>{ok && r.chgOk ? E2("Cambio confirmado. ", "Change confirmed. ") : ""}{sub}</div>
         </div>
       </div>
       <div className="mt-[18px] flex flex-wrap items-end justify-between gap-3 border-t border-line pt-4">
@@ -135,6 +135,20 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
           </button>
         ))}
       </div>
+    </div>
+  );
+  // El cambio que pediste a una reservación confirmada (prototipo rvs.hasChg): pendiente, o no confirmado con «Entendido».
+  const cambio = r.chg && (
+    <div data-screen-label="Reserva · cambio solicitado" className="rounded-[18px] border-[1.5px] border-ink bg-white px-4 py-3.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={K}>{r.chg.st === "no" ? E2("CAMBIO NO CONFIRMADO", "CHANGE NOT CONFIRMED") : E2("CAMBIO SOLICITADO", "CHANGE REQUESTED")}</span>
+        <Tag tone={r.chg.st === "no" ? "danger" : "neutral"}>{r.chg.st === "no" ? E2("NO CONFIRMADO", "NOT CONFIRMED") : E2("PENDIENTE", "PENDING")}</Tag>
+      </div>
+      <div className="mt-2 text-[13.5px] font-bold leading-[1.3]">{`${diaL(r.chg.ymd, r.chg.dia, es, true)} · ${hora(r.chg.h)} · ${P(r.chg.p)}`}</div>
+      <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{r.chg.st === "no"
+        ? E2(`No pudieron hacer el cambio. Tu reservación ${aT} sigue en pie.`, `They couldn't make the change. Your ${T} reservation stands.`)
+        : E2(`Tu reservación ${aT} sigue en pie hasta que ${n} confirme el cambio.`, `Your ${T} reservation stands until ${n} confirms the change.`)}</div>
+      {r.chg.st === "no" && <button type="button" disabled={ocupado} onClick={() => hacer("chgvisto", undefined, "")} className="mt-[9px] text-[12.5px] font-bold text-action">{E2("Entendido", "Got it")}</button>}
     </div>
   );
   const horasOtra = lost && otras.length > 0 && (
@@ -196,7 +210,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
       {!cxd && !ok && llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{`${E2("Llamar a ", "Call ")}${n}`}</Button></div>}
       {(ok || pend) && (
         <div className="flex flex-wrap items-center justify-center gap-[22px] py-1">
-          {pend && <button type="button" onClick={() => tab(`&editar=${r.numero}&p=${r.p}&d=${Math.max(0, r.dia)}&h=${r.h}`)} className="text-[13px] font-bold text-action">{E2("Cambiar solicitud", "Change request")}</button>}
+          {(pend || (ok && !r.chg && r.minutosFaltan > 0)) && <button type="button" onClick={() => tab(`&editar=${r.numero}&p=${r.p}&d=${Math.max(0, r.dia)}&h=${r.h}`)} className="text-[13px] font-bold text-action">{pend ? E2("Cambiar solicitud", "Change request") : E2("Cambiar reservación", "Change reservation")}</button>}
           <button type="button" onClick={() => { setWhy(""); setCx(true); }} className="text-[13px] font-bold text-danger">{pend ? E2("Cancelar solicitud", "Cancel request") : E2("Cancelar reservación", "Cancel reservation")}</button>
         </div>
       )}
@@ -226,13 +240,13 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
           <button type="button" aria-label={E2("Cerrar", "Close")} onClick={() => tab()} className="grid size-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
           <div className="min-w-0 flex-1"><div className="font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{n}</div><div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{num}</div></div>
         </div>
-        <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{propuesta}{horasOtra}{linea}{tarde}{detalles}{recuerda}{botones}</div>
+        <div className="flex flex-col gap-3 px-4 pt-4">{aviso}{principal(false)}{propuesta}{cambio}{horasOtra}{linea}{tarde}{detalles}{recuerda}{botones}</div>
       </div>
       <div data-screen-label="APP-NEG-RESERVA-ESTADO · desktop" className="mx-auto hidden max-w-[1380px] lg:block">
         <button type="button" onClick={() => tab()} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{`${E2("Volver a ", "Back to ")}${n}`}</button>
         <div className="mt-3 font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{num}</div>
         <div className="mt-4 grid items-start gap-x-12 gap-y-8 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
-          <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{propuesta}{horasOtra}{linea}{tarde}</div>
+          <div className="flex min-w-0 flex-col gap-3.5">{aviso}{principal(true)}{propuesta}{cambio}{horasOtra}{linea}{tarde}</div>
           <div className="flex flex-col gap-3.5 min-[1100px]:sticky min-[1100px]:top-[96px]">{detalles}{recuerda}{botones}</div>
         </div>
       </div>

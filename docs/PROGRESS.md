@@ -422,6 +422,12 @@ _Actualizado: 5 nov 2026._
   24 h, Plantillas (editar ES/EN con motivo y variables controladas, probar en mi teléfono), Envíos y Reglas. Además: «null
   MI» en Abierto ahora (guardián `distanciaNula`), la campana del sistema es un botón accesible (parche en
   `portar-sistema.mjs`) y el subtítulo de las cifras oscuras se ve. Probado: 14 comprobaciones. Ayuda `notificaciones.md`.
+- **Fase 2 · bloque 2k Cambiar una reservación confirmada ✓ (6 nov):** migración 0033 (`change_proposals.side` negocio o
+  cliente, `respond_by`, `seen_at`; plantillas rsv_chg_ok, rsv_chg_no, biz_rsv_chg). Cliente (prototipo): «Cambiar
+  reservación» → «Solicitar cambio»; la actual sigue en pie; tarjeta «CAMBIO SOLICITADO / NO CONFIRMADO» con «Entendido»;
+  «Cambio confirmado.». Panel (compuesto): «PIDE CAMBIO» en Hoy y el detalle con «Aceptar el cambio» (vuelve a revisar la
+  mesa) / «No se puede», auditado. Vence a los 30 min o a la hora; con «Confirmar al instante» se hace solo. Probado: 17
+  comprobaciones. Ayuda en `reservar-mesa.md` y `panel-reservaciones.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

@@ -45,7 +45,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   const left = Math.max(0, Math.ceil((fin - ahora) / 1000)), exp = left <= 0;
   const P = (n: number) => `${n} ${n > 1 ? E2("personas", "guests") : E2("persona", "guest")}`;
   const areaL = AREA[h.area] ? (es ? AREA[h.area]![0] : AREA[h.area]![1]) : h.area;
-  const nombre = h.negocio.nombre, ed = !!h.editar;
+  const nombre = h.negocio.nombre, ed = !!h.editar, edConf = ed && h.editarConfirmada;
   const meta = `${nombre} · ${P(h.p)}`.toUpperCase();
   const volver = () => router.push(`/n/${h.negocio.id}?tab=rsv${ed ? `&editar=${h.editar}` : ""}`);
   const title = ed ? E2("Cambiar reservación", "Change reservation") : E2("Solicitud de mesa", "Table request");
@@ -57,8 +57,8 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
     ["restaurant", E2(`La mesa es tuya por ${durL}.`, `The table is yours for ${durL}.`)],
     ["info", E2("Si no llegas ni avisas, queda en tu historial de reservaciones.", "If you don't show up or let them know, it stays in your reservation history.")],
   ] as const;
-  const cta = exp ? E2("Se liberó la mesa", "Table released") : ed ? E2("Actualizar solicitud", "Update request") : E2("Enviar solicitud", "Send request");
-  const ctaNote = (h.auto && !ed ? E2("SIN DEPÓSITO · SE CONFIRMA AL INSTANTE", "NO DEPOSIT · CONFIRMED INSTANTLY") : `${E2("SIN DEPÓSITO · ", "NO DEPOSIT · ")}${nombre}${E2(" RESPONDE EN UNOS ", " REPLIES IN ABOUT ")}${h.reply} MIN`).toUpperCase();
+  const cta = exp ? E2("Se liberó la mesa", "Table released") : ed ? (edConf ? E2("Solicitar cambio", "Request change") : E2("Actualizar solicitud", "Update request")) : E2("Enviar solicitud", "Send request");
+  const ctaNote = (h.auto && (!ed || edConf) ? E2("SIN DEPÓSITO · SE CONFIRMA AL INSTANTE", "NO DEPOSIT · CONFIRMED INSTANTLY") : `${E2("SIN DEPÓSITO · ", "NO DEPOSIT · ")}${nombre}${E2(" RESPONDE EN UNOS ", " REPLIES IN ABOUT ")}${h.reply} MIN`).toUpperCase();
 
   const enviar = async () => {
     if (exp || enviando) return;
@@ -97,7 +97,7 @@ export function Detalles({ h, es }: { h: RsvHold; es: boolean }) {
   const editando = ed && (
     <div className="flex items-start gap-2.5 rounded-[14px] bg-ink/[.04] px-3.5 py-3">
       <span className="grid flex-none pt-px"><Icon name="info" size={15} color="rgba(11,14,18,.6)" /></span>
-      <div className="min-w-0"><div className="text-[12.5px] font-bold leading-[1.4]">{E2("Actualizas tu solicitud", "You update your request")}</div><div className="mt-0.5 text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{E2(`${nombre} todavía no ha respondido: verá la nueva hora.`, `${nombre} hasn't replied yet: they will see the new time.`)}</div></div>
+      <div className="min-w-0"><div className="text-[12.5px] font-bold leading-[1.4]">{edConf ? E2("Tu reservación actual sigue en pie", "Your current reservation stands") : E2("Actualizas tu solicitud", "You update your request")}</div><div className="mt-0.5 text-pretty text-[12px] font-medium leading-[1.5] text-ink/65">{edConf ? E2(`Si ${nombre} no puede hacer el cambio, se queda como está.`, `If ${nombre} can't make the change, it stays as it is.`) : E2(`${nombre} todavía no ha respondido: verá la nueva hora.`, `${nombre} hasn't replied yet: they will see the new time.`)}</div></div>
     </div>
   );
   const mesa = (desk: boolean) => (

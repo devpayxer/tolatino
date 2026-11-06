@@ -4,7 +4,7 @@
    el cliente»). La disponibilidad y los estados los decide el servidor (lib/reservas.ts). */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FiltroMesa, FilaMesa, mesaDetalle, mesasPanel, rsvAjustes } from "@/lib/reservas";
-import { mesaPaso, reservasAjustes, reservasBloqueo, reservasModulo } from "./acciones-reservas";
+import { mesaCambio, mesaPaso, reservasAjustes, reservasBloqueo, reservasModulo } from "./acciones-reservas";
 import type { Ctx, Editor } from "./Panel";
 
 export type RsvPanel = {
@@ -51,17 +51,17 @@ const accionesPend = (c: Ctx, x: { numero: string; who: string }) => [
 
 /* Fila de una reservación (reqRow k='rsv'): pendiente con Confirmar / Otra hora / No hay mesa; las demás con su etiqueta. */
 export function rsvRow(c: Ctx, x: FilaMesa, conActs = true): Fila {
-  const { E2, es } = c, tg = TG(E2)[x.st];
+  const { E2, es } = c, tg = x.chg ? [E2("PIDE CAMBIO", "CHANGE ASKED"), "action"] as const : TG(E2)[x.st];
   return {
     icon: "restaurant", t: `${E2("Reservación", "Reservation")} #${x.numero}`, s: `${x.who} · ${es ? x.s.es : x.s.en}`,
-    tag: tg ? tg[0] : null, tone: tg ? tg[1] : "neutral", chev: !conActs, onClick: () => c.det(`rsv:${x.numero}`),
-    acts: conActs && x.st === "pend" ? accionesPend(c, x) : undefined, bd: x.st === "pend" ? "1.5px solid var(--tl-ink)" : undefined,
+    tag: tg ? tg[0] : null, tone: tg ? tg[1] : "neutral", chev: !conActs || x.chg, onClick: () => c.det(`rsv:${x.numero}`),
+    acts: conActs && x.st === "pend" ? accionesPend(c, x) : undefined, bd: x.st === "pend" || x.chg ? "1.5px solid var(--tl-ink)" : undefined,
   };
 }
 /* Para Hoy: las que esperan respuesta y las de hoy (confirmadas, sentados, otra hora propuesta). */
 export function hoyMesas(c: Ctx): { pend: Fila[]; agenda: Fila[] } {
   const V = c.rsv?.vivas ?? [];
-  return { pend: V.filter((x) => x.st === "pend").map((x) => rsvRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt"].includes(x.st)).map((x) => rsvRow(c, x, false)) };
+  return { pend: V.filter((x) => x.st === "pend" || x.chg).map((x) => rsvRow(c, x)), agenda: V.filter((x) => x.dia === 0 && ["ok", "in", "alt"].includes(x.st)).map((x) => rsvRow(c, x, false)) };
 }
 
 /* Detalle de una reservación (detBlocks k='rsv'). */
@@ -80,6 +80,17 @@ export function rsvDetalle(c: Ctx): Sec {
     .filter(Boolean).map((r) => ({ ...r!, compact: true, chev: false } as Fila));
   if (extra.length) out.push({ type: "rows", k: E2("DETALLE", "DETAIL"), items: extra });
   if (x.st === "alt" && x.alt) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Propusiste las ${hora(x.alt.h)} · ${areaL(c, x.alt.area)}. El cliente tiene hasta las ${x.alt.hasta} para responder.`, `You proposed ${hora(x.alt.h)} · ${areaL(c, x.alt.area)}. The client has until ${x.alt.hasta} to reply.`) });
+  if (x.chg?.st === "pend") {
+    // El cliente pidió cambiar su reservación confirmada (compuesto: el diseño no trae este lado). La actual sigue en pie.
+    const n = x.quien.split(" ")[0], PC = `${x.chg.p} ${x.chg.p === 1 ? E2("persona", "guest") : E2("personas", "guests")}`;
+    const min1 = (t: string) => (es ? t.charAt(0).toLowerCase() + t.slice(1) : t), nuevo = `${min1(diaL(c, x.chg.ymd, x.chg.dia))} · ${hora(x.chg.h)}`, actual = min1(cuando);
+    out.push({ type: "note", tone: "warn", icon: "calendar", t: E2(
+      `${n} pide cambiarla a ${nuevo} · ${PC} · ${areaL(c, x.chg.area)}. Si no puedes, su reservación de ${actual} sigue en pie.${x.chg.hasta ? ` Responde antes de las ${x.chg.hasta}.` : ""}`,
+      `${n} asks to move it to ${diaL(c, x.chg.ymd, x.chg.dia)} · ${hora(x.chg.h)} · ${PC} · ${areaL(c, x.chg.area)}. If you can't, the ${cuando} reservation stands.${x.chg.hasta ? ` Reply by ${x.chg.hasta}.` : ""}`) });
+    out.push({ type: "acts", pt: "4px", items: [
+      { l: E2("Aceptar el cambio", "Accept the change"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mesaCambio(c.d.id, x.numero, "aceptar"), E2(`${n} ya ve su mesa nueva.`, `${n} now sees the new table.`)) },
+      { l: E2("No se puede", "Can't"), v: "secondary", icon: null, off: c.pending, onClick: () => c.run(() => mesaCambio(c.d.id, x.numero, "rechazar"), E2(`${n} ya sabe que su reservación sigue como estaba.`, `${n} now knows the reservation stays as it was.`)) }] });
+  }
   if (x.tl.length) out.push({ type: "timeline", k: E2("HISTORIAL", "HISTORY"), items: x.tl.map((t, i) => ({ t: es ? t.t.es : t.t.en, s: t.at, now: i === x.tl.length - 1 && x.st !== "pend" }))
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), now: false, future: true } as never] : []) });
   if (x.st === "pend") {

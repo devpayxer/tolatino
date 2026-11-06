@@ -83,6 +83,8 @@ export function useRsv(r: RsvPublica | null, es: boolean, sesion: boolean, edita
     r, es, E2, P, p, i, a, sel: selOk, big, dia, grupos, hasSlots, siguientes: G?.siguientes ?? [], cargando: p != null && !big && !G, error, ocupado, mine, pol,
     setP: (n: number) => { setP(n); setSel(null); }, setI: (n: number) => { setI(n); setSel(null); }, setA: (k: string) => { setA(k); setSel(null); }, setSel, continuar, areaL,
     editando: !!editar, onEditCancel: () => router.push(`/reserva/${editar}`),
+    // Cambiar una reservación ya confirmada (no una solicitud): la actual sigue en pie hasta que confirmen el cambio.
+    editConf: !!editar && r.mia?.numero === editar && r.mia.st === "ok" ? r.mia : null,
     qp, setQp, Q,
     barLabel: selOk != null ? `${diaL(dia.ymd, i, es)} · ${hora(selOk)}` : E2("Reservar mesa", "Book a table"),
     barSub: selOk != null && p != null ? `${P(p)} · ${a ? areaL(a) : E2("Cualquier área", "Any area")}`.toUpperCase() : p == null ? E2("ELIGE CUÁNTOS SON", "CHOOSE HOW MANY") : `${P(p)}${E2(" · SIN DEPÓSITO", " · NO DEPOSIT")}`.toUpperCase(),
@@ -134,7 +136,7 @@ export function RsvTab({ v, desk }: { v: Rsv; desk: boolean }) {
       {v.editando && (
         <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-[13px]">
           <span className="grid flex-none pt-px"><Icon name="edit" size={16} color="var(--tl-pro-ink)" /></span>
-          <div className="min-w-0 flex-1"><div className="text-[13px] font-bold leading-[1.4] text-pro-ink">{E2("Cambiando tu solicitud", "Changing your request")}</div><div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-pro-ink">{E2(`Tu hora actual está marcada; elige la nueva. ${r.negocio.nombre} todavía no ha respondido.`, `Pick the new time. ${r.negocio.nombre} hasn't replied yet.`)}</div></div>
+          <div className="min-w-0 flex-1"><div className="text-[13px] font-bold leading-[1.4] text-pro-ink">{v.editConf ? (es ? `Cambiando tu reservación de ${diaL(v.editConf.at, v.editConf.dia, es).toLowerCase()} · ${hora(v.editConf.h)}` : `Changing your reservation for ${diaL(v.editConf.at, v.editConf.dia, es)} · ${hora(v.editConf.h)}`) : E2("Cambiando tu solicitud", "Changing your request")}</div><div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-pro-ink">{v.editConf ? E2("Tu hora actual está marcada; elige la nueva. La actual sigue en pie hasta que confirmen el cambio.", "Pick the new time. The current one stands until they confirm the change.") : E2(`Tu hora actual está marcada; elige la nueva. ${r.negocio.nombre} todavía no ha respondido.`, `Pick the new time. ${r.negocio.nombre} hasn't replied yet.`)}</div></div>
           <button type="button" onClick={v.onEditCancel} className="flex-none text-[12px] font-bold text-action">{E2("Cancelar cambio", "Cancel change")}</button>
         </div>
       )}

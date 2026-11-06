@@ -15,6 +15,10 @@ escritorio. Versión: Fase 2 · bloque 2e (6 nov 2026). Solo restaurantes Pro co
 - **Tu reservación:** su número (R-…), el estado con la hora real de cada paso, los detalles y lo que conviene
   recordar. Confirmada: **Calendario** (descarga el evento), **Compartir**, **Cómo llegar** y **Llamar**.
 - **Cambiar solicitud** (mientras el restaurante no responde): eliges otra hora y se actualiza la misma solicitud.
+- **Cambiar reservación** (ya confirmada, antes de la hora): eliges otra hora, día o personas y **Solicitar cambio**. Tu
+  reservación actual **sigue en pie** hasta que el restaurante confirme el cambio; mientras tanto ves «CAMBIO SOLICITADO ·
+  PENDIENTE» y no puedes pedir otro. Si lo confirma: «Cambio confirmado.» y tu mesa nueva. Si no puede (o no responde en
+  30 minutos o antes de la hora), ves «CAMBIO NO CONFIRMADO» y todo queda como estaba; «Entendido» lo quita.
 - **Cancelar** con motivo opcional. **¿Vas tarde?** el mismo día, ya confirmada y faltando 2 horas o menos: avisas
   5, 10 o 15 minutos.
 
@@ -27,6 +31,8 @@ escritorio. Versión: Fase 2 · bloque 2e (6 nov 2026). Solo restaurantes Pro co
 | El restaurante confirma solo (si lo encendió) | Queda **CONFIRMADA** al instante. |
 | El restaurante te propone otra hora | **Te proponen otra hora:** Aceptar (queda confirmada), Buscar otra hora o No, gracias. Tienes 15 minutos. |
 | No hay mesa | «No tiene mesa a esa hora» con las horas de ese día que sí tienen. |
+| Cambias una reservación confirmada y el restaurante confirma solo | El cambio se hace al instante. |
+| Cambias y el restaurante ya no tiene mesa a la hora nueva | No puede aceptarlo: tu reservación sigue como estaba. |
 | Nadie responde en 30 minutos (o llega la hora) | **SIN RESPUESTA**: se cierra la solicitud, sin cargo. |
 | Cancelas con menos aviso del que pide el restaurante | Se puede igual; el restaurante lo ve como cancelación tardía. **Nunca hay cargo.** |
 | Llegas y te sientan | **EN TU MESA**. Al irte: **TERMINADA**. Si no llegas: **NO LLEGASTE** (queda en tu historial, sin cargo). |

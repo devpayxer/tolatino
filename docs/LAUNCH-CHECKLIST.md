@@ -247,8 +247,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Hora del pedido programado** con el reloj del negocio: los horarios que cruzan la medianoche se programan solo hasta las 11:30 PM.
 
 ## Reservaciones de mesa (bloque 2e, 6 nov 2026)
-- [ ] **Cambiar una reservación ya confirmada** (el cambio queda pendiente y la actual sigue en pie): falta el diseño del
-  lado del panel. Hoy solo se cambia una solicitud sin respuesta. Pregunta en `docs/REVISION.md`.
+- [x] **Cambiar una reservación ya confirmada** (el cambio queda pendiente y la actual sigue en pie): hecho en el 2k
+  (6 nov); el lado del panel compuesto, pendiente del OK del fundador (REVISION 4).
 - [ ] **«Avísame si se libera» (lista de espera) y «Otros restaurantes con mesa»** en la pantalla de «no pudo»: con las
   notificaciones (SMS).
 - [ ] **Avisos por SMS** (al confirmar, el día de la reservación, al proponer otra hora) y al restaurante (solicitud

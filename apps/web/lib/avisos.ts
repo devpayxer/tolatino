@@ -51,7 +51,7 @@ export async function avisarPedido(numero: string, tpl: "ord_ok" | "ord_no" | "o
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'order'`, [numero]).catch(() => ({ rows: [] }))).rows[0];
   if (o) await avisar(o.uid, tpl, { negocio: o.negocio, num: numero, hora: o.hora }, { href: `/pedido/${numero}`, ref: ["order", numero] });
 }
-export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no", alt?: string) {
+export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rsv_no" | "rsv_chg_ok" | "rsv_chg_no", alt?: string) {
   const o = (await db().query<{ uid: string; negocio: string; dia: string; hora: string }>(
     `select o.user_id::text as uid, b.name as negocio, to_char(o.scheduled_at at time zone c.timezone, 'FMDD/FMMM') as dia, to_char(o.scheduled_at at time zone c.timezone, 'FMHH12:MI AM') as hora
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id where o.number = $1 and o.kind = 'table'`, [numero]).catch(() => ({ rows: [] }))).rows[0];

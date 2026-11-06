@@ -22,6 +22,8 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
 4. **Cambiar una reservación ya confirmada.** El prototipo del cliente lo permite («Cambiar reservación» → el cambio queda
    pendiente y la reservación actual sigue en pie), pero el panel del restaurante no tiene diseño para aceptar o
    rechazar ese cambio. Hoy solo se cambia una solicitud que todavía no contestan. ¿Se diseña ese lado o se queda así?
+   **Hecho (6 nov, decisión AB, bloque 2k):** el lado del panel se compuso con el detalle de la reservación (aviso con lo
+   que pide + «Aceptar el cambio» / «No se puede»). Míralo en la guía 2k abajo y dime si lo dejo así.
 6. **App To’Latino Repartidor** (`/repartidor`, una de las 4 apps de la decisión B). El plan la describe
    (`docs/diseno/plan/apps-delivery-checkin.md`: Inicio en línea/fuera de línea, oferta de pedido, mis pedidos con sus
    pasos, cobro en efectivo, problemas, ganancias, perfil, sin señal), pero **no tiene pantallas** en el diseño ni en el
@@ -252,3 +254,16 @@ icono, NUEVO, hace cuánto, el texto y a dónde lleva). En el Super Admin las ci
 ni costo hasta que salgan SMS de verdad); «Anuncios in-app» queda para cuando exista el banner del home. Sin push todavía
 (apps, Fase 8); el SMS sale cuando esté la clave de Telnyx (decisión E2). Decisión tomada sin preguntar (AB): la solicitud
 nueva al negocio no respeta las horas de silencio, porque el negocio solo recibe pedidos mientras está abierto._
+
+## Fase 2 · 2k Cambiar una reservación confirmada
+_Hace falta una mesa confirmada de Marisol en Sabor (para mañana)._
+1. Marisol › su reservación → **Cambiar reservación** → la ficha dice «Cambiando tu reservación de…» → elige otra hora y 4
+   personas → **Continuar** → «Tu reservación actual sigue en pie» → **Solicitar cambio** → ve «CAMBIO SOLICITADO ·
+   PENDIENTE» y su mesa de siempre.
+2. Pedro › **Hoy**: la reservación con «PIDE CAMBIO» → el detalle dice qué pide → **Aceptar el cambio** → Marisol ve «Cambio
+   confirmado.» con la mesa nueva (y le llega el aviso).
+3. Otra vez, y Pedro toca **No se puede** → Marisol ve «CAMBIO NO CONFIRMADO» y su mesa igual → **Entendido**.
+_Cambios del diseño: el lado del panel no tiene diseño; se compuso con el detalle. Si el restaurante tiene «Confirmar al
+instante», el cambio se hace solo (como una reservación nueva). Si nadie responde en 30 minutos (o llega la hora), el
+cambio se cierra y todo queda como estaba. Decisión sin preguntar (AB): con «Confirmar al instante» al negocio no le llega
+aviso del cambio (lo ve en el historial)._
