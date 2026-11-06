@@ -9,6 +9,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { ITEMS_FREE, TOPE_FREE } from "@/lib/plan";
 import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn } from "./acciones-menu";
 import { pedLine } from "./Pedidos";
+import { rsvLine } from "./Reservas";
 import type { Ctx, Sec } from "./Panel";
 
 type Bi = [string, string];
@@ -58,7 +59,9 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
       ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
       tag: MENU_EN_FICHA && tiene && d.mods.includes("menu") && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") },
       // Pedidos en línea (pedLine): cómo te piden por la app.
-      { icon: "bag", t: E2("Pedidos en línea", "Online orders"), s: pedLine(c), tag: c.ped?.aj?.on && !c.ped.aj.admOff && c.ped.aj.cashP ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "pedidos") }] }
+      { icon: "bag", t: E2("Pedidos en línea", "Online orders"), s: pedLine(c), tag: c.ped?.aj?.on && !c.ped.aj.admOff && c.ped.aj.cashP ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "pedidos") },
+      // Reservaciones (Pro): mesas, turnos y reglas.
+      ...(c.rsv?.aj ? [{ icon: "calendar", t: E2("Reservaciones", "Reservations"), s: rsvLine(c), lock: !c.rsv.aj.pro, tag: c.rsv.aj.pro && c.rsv.aj.on && !c.rsv.aj.admOff ? E2("ENCENDIDO", "ON") : !c.rsv.aj.pro ? "PRO" : null, tone: c.rsv.aj.pro ? "signal" : "pro", chev: true, onClick: () => c.go("mod", "reservaciones") }] : [])] }
       : { type: "note", tone: "info", t: E2("Los módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
   ];
 }

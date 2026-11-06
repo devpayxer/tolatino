@@ -242,3 +242,9 @@ export async function ajustesPedidos(negocio: string): Promise<AjustesPed> {
   const x = r.rows[0];
   return { prep: x?.prep ?? 20, sched: x?.sched ?? true, auto: x?.auto ?? false, cashP: x?.cashp ?? true, card: x?.card ?? false, on: !!x?.on, admOff: x?.adm ?? null, pickupNote: x?.note ?? null, busy: x?.busy ?? 0, last: x?.last ?? 15 };
 }
+
+/* Cuántos pedidos esperan respuesta del negocio (pestañas de Clientes). */
+export async function pedidosPendientes(negocio: string) {
+  await vencer({ negocio });
+  return (await db().query<{ n: number }>(`select count(*)::int as n from operations where business_id = $1 and kind = 'order' and status = 'pending'`, [negocio])).rows[0]?.n ?? 0;
+}

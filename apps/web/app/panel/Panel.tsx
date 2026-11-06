@@ -17,6 +17,7 @@ import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
+import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
@@ -65,10 +66,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -88,7 +89,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped }: { d: DatosPanel
   }, [router, desk]); // eslint-disable-line react-hooks/exhaustive-deps
   const det = useCallback((id: string) => { const q = new URLSearchParams(sp.toString()); q.set("det", id); router.push(`${path}?${q}`, { scroll: !desk }); }, [router, path, sp, desk]);
   const nav = useCallback((href: string) => router.push(href, { scroll: false }), [router]);
-  const closeDet = useCallback(() => { setForms((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith("det:")))); router.push(path, { scroll: false }); }, [router, path]);
+  const closeDet = useCallback(() => { setForms((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith("det:")))); const q = new URLSearchParams(sp.toString()); q.delete("det"); router.push(q.size ? `${path}?${q}` : path, { scroll: false }); }, [router, path, sp]);
   const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => {
     start(async () => {
       const r = await f().catch(() => ({ ok: false as const, mensaje: { es: "No se pudo guardar. Revisa tu conexión.", en: "Couldn’t save. Check your connection." } }));
@@ -107,7 +108,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped }: { d: DatosPanel
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -245,8 +246,8 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 /* ─────────────────────────── Secciones ─────────────────────────── */
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
-  if (c.ruta.sec === "cli") return { blocks: clientesBloques(c), ed: null };
-  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : { blocks: vendesBloques(c), ed: null };
+  if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
+  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
   const head: Bloque[] = [
@@ -263,6 +264,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("stf:")) return equipoDetalle(c, id.slice(4));
   if (/^(item|mcat|mgrp):/.test(id)) return menuDetalle(c, id);
   if (id.startsWith("ped:")) return pedidoDetalle(c);
+  if (id.startsWith("rsv:")) return rsvDetalle(c);
   return null;
 }
 

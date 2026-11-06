@@ -338,7 +338,7 @@ export type RsvVista = {
   numero: string; negocio: { id: string; nombre: string; telefono: string | null; direccion: string | null; lat: number | null; lng: number | null };
   st: "pend" | "alt" | "ok" | "in" | "done" | "nos" | "no" | "exp" | "cx"; cxPorAlt: boolean; ymd: string; dia: number; h: number; p: number; area: string; dur: number;
   hold: number; cxH: number; reply: number; enviado: string; respondido: string | null; occ: string | null; needs: string[]; nota: string | null; otro: string | null; sms: boolean;
-  alt: { h: number; area: string; hasta: string } | null; tarde: number | null; minutosFaltan: number; quien: string;
+  alt: { h: number; area: string; hasta: string } | null; tarde: number | null; minutosFaltan: number; quien: string; responde: string | null;
 };
 const estadoMesa = (s: string, d: string | null): RsvVista["st"] =>
   s === "pending" ? "pend" : s === "change_proposed" ? "alt" : s === "confirmed" ? (d === "seated" ? "in" : "ok") : s === "done" ? (d === "noshow" ? "nos" : "done") : s === "declined" ? "no" : s === "expired" ? "exp" : "cx";
@@ -348,13 +348,13 @@ export async function rsvDe(userId: string | null, numero: string, negocio?: str
   const r = await db().query<{
     id: string; number: string; business_id: string; name: string; phone: string | null; address: string | null; lat: number | null; lng: number | null; status: string; detail: string | null;
     ymd: string; hm: string; party: number; dur: number; details: Record<string, unknown>; customer_note: string | null; sent: string; answered: string | null; tz: string; hoy: string;
-    late: number | null; faltan: number; first_name: string | null; last_name: string | null; s: Record<string, number> | null;
+    late: number | null; faltan: number; first_name: string | null; last_name: string | null; s: Record<string, number> | null; resp: string | null;
   }>(
     `select o.id::text, o.number, o.business_id, b.name, b.phone, b.address, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng, o.status, o.status_detail as detail,
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm, o.party_size as party, coalesce(o.duration_min, 90) as dur,
             o.details, o.customer_note, to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as sent, to_char(o.answered_at at time zone c.timezone, 'HH24:MI') as answered, c.timezone as tz,
             (now() at time zone c.timezone)::date::text as hoy, (o.details->>'late')::int as late, floor(extract(epoch from o.scheduled_at - now()) / 60)::int as faltan,
-            u.first_name, u.last_name, to_jsonb(rs) as s
+            u.first_name, u.last_name, to_jsonb(rs) as s, to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as resp
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id join users u on u.id = o.user_id
        left join reservation_settings rs on rs.business_id = o.business_id
       where o.number = $1 and o.kind = 'table' and ($2::uuid is null or o.user_id = $2::uuid) and ($3::text is null or o.business_id = $3)`, [numero, userId, negocio ?? null]);
@@ -369,7 +369,7 @@ export async function rsvDe(userId: string | null, numero: string, negocio?: str
     hold: o.s?.hold_min ?? 15, cxH: o.s?.cancel_free_h ?? 2, reply: o.s?.reply_min ?? 10, enviado: hora(hm2m(o.sent)), respondido: o.answered ? hora(hm2m(o.answered)) : null,
     occ: d.occ ?? null, needs: d.needs ?? [], nota: o.customer_note, otro: d.otherName ?? null, sms: d.sms !== false,
     alt: p ? { h: hm2m(p.proposed.at), area: p.proposed.area, hasta: hora(hm2m(p.hasta)) } : null, tarde: o.late, minutosFaltan: o.faltan,
-    quien: [o.first_name, o.last_name].filter(Boolean).join(" ") || "—",
+    quien: [o.first_name, o.last_name].filter(Boolean).join(" ") || "—", responde: o.status === "pending" && o.resp ? hora(hm2m(o.resp)) : null,
   };
 }
 
@@ -468,8 +468,21 @@ export async function rsvPaso(negocio: string, numero: string, paso: PasoMesa, a
 }
 
 /* ── El panel: listas y detalle ── */
-export type FilaMesa = { numero: string; who: string; p: number; ymd: string; h: number; dia: number; area: string; st: RsvVista["st"]; s: Bi; tarde: number | null };
-export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: string; q?: string; antes?: string | null }) {
+const DIAS_C: [string, string][] = [["dom", "Sun"], ["lun", "Mon"], ["mar", "Tue"], ["mié", "Wed"], ["jue", "Thu"], ["vie", "Fri"], ["sáb", "Sat"]];
+const MESES_C: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
+// «sáb 7 nov» / «Sat Nov 7»: nunca la fecha en crudo (2026-11-07) en una pantalla.
+function fechaCorta(ymd: string): Bi {
+  const d = new Date(`${ymd}T12:00:00Z`), w = DIAS_C[d.getUTCDay()]!, m = MESES_C[d.getUTCMonth()]!, n = d.getUTCDate();
+  return { es: `${w[0]} ${n} ${m[0]}`, en: `${w[1]} ${m[1]} ${n}` };
+}
+export type FilaMesa = { numero: string; who: string; p: number; ymd: string; h: number; dia: number; area: string; st: RsvVista["st"]; s: Bi; tarde: number | null; hace: number; occ: string | null; needs: string[]; nota: string | null };
+/* Clientes › Reservaciones: los mismos filtros que Pedidos. */
+export type FiltroMesa = "all" | "pend" | "cur" | "done" | "no";
+const FILTRO_MESA: Record<FiltroMesa, string> = {
+  all: "true", pend: "o.status in ('pending', 'change_proposed')", cur: "o.status = 'confirmed'",
+  done: "o.status = 'done'", no: "o.status in ('declined', 'expired', 'cancelled')",
+};
+export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: FiltroMesa; q?: string; antes?: string | null }) {
   void lang;
   await vencerMesas({ negocio });
   const v: unknown[] = [negocio], w = ["o.business_id = $1", "o.kind = 'table'"];
@@ -477,21 +490,33 @@ export async function mesasPanel(negocio: string, lang: Lang, f?: { estado?: str
   if (busca) { v.push(`%${busca.toLowerCase()}%`); w.push(`(lower(o.number) like $${v.length} or lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like $${v.length})`); }
   if (f?.antes && /^R-\d{1,10}$/.test(f.antes)) { v.push(f.antes); w.push(`o.id < (select id from operations where number = $${v.length})`); }
   if (!f) w.push(`(o.status in ('pending', 'change_proposed') or (o.status = 'confirmed' and o.scheduled_at > now() - interval '4 hours'))`);
-  const r = await db().query<{ number: string; first_name: string | null; last_name: string | null; party: number; ymd: string; hm: string; status: string; detail: string | null; area: string; hoy: string; late: number | null; sent_mins: number }>(
+  else w.push(FILTRO_MESA[f.estado && FILTRO_MESA[f.estado] ? f.estado : "all"]);
+  const r = await db().query<{ number: string; first_name: string | null; last_name: string | null; party: number; ymd: string; hm: string; status: string; detail: string | null; area: string; hoy: string; late: number | null; sent_mins: number; occ: string | null; needs: string[]; nota: string | null }>(
     `select o.number, u.first_name, u.last_name, o.party_size as party, (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm,
             o.status, o.status_detail as detail, coalesce(o.details->>'area', 'salon') as area, (now() at time zone c.timezone)::date::text as hoy, (o.details->>'late')::int as late,
-            floor(extract(epoch from now() - o.sent_at) / 60)::int as sent_mins
+            floor(extract(epoch from now() - o.sent_at) / 60)::int as sent_mins, o.details->>'occ' as occ, coalesce(o.details->'needs', '[]'::jsonb) as needs, o.customer_note as nota
        from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id where ${w.join(" and ")}
       order by ${f ? "o.id desc" : "o.scheduled_at"} limit ${f ? 31 : 200}`, v);
   const filas: FilaMesa[] = r.rows.map((x) => {
     const st = estadoMesa(x.status, x.detail), dia = Math.round((Date.parse(x.ymd) - Date.parse(x.hoy)) / 864e5), h = hm2m(x.hm);
-    const cuando: Bi = dia === 0 ? { es: "Hoy", en: "Today" } : dia === 1 ? { es: "Mañana", en: "Tomorrow" } : { es: x.ymd, en: x.ymd };
+    const cuando: Bi = dia === 0 ? { es: "Hoy", en: "Today" } : dia === 1 ? { es: "Mañana", en: "Tomorrow" } : fechaCorta(x.ymd);
     const per: Bi = { es: `${x.party} ${x.party === 1 ? "persona" : "personas"}`, en: `${x.party} ${x.party === 1 ? "guest" : "guests"}` };
     const ar = AREAS[x.area] ?? AREAS.salon!;
     return { numero: x.number, who: [x.first_name, x.last_name ? `${x.last_name[0]}.` : ""].filter(Boolean).join(" ") || "—", p: x.party, ymd: x.ymd, h, dia, area: x.area, st, tarde: x.late,
+      hace: x.sent_mins, occ: x.occ, needs: x.needs, nota: x.nota,
       s: { es: `${cuando.es} · ${hora(h)} · ${per.es} · ${ar.es}${x.late ? ` · llega ${x.late} min tarde` : ""}`, en: `${cuando.en} · ${hora(h)} · ${per.en} · ${ar.en}${x.late ? ` · ${x.late} min late` : ""}` } };
   });
-  return { filas: filas.slice(0, f ? 30 : 200), mas: f && r.rows.length > 30 ? filas[29]!.numero : null };
+  // Cuentas por filtro (con la misma búsqueda), para los chips de Clientes.
+  let cuentas: Record<FiltroMesa, number> | null = null;
+  if (f) {
+    const vc: unknown[] = [negocio], wc = ["o.business_id = $1", "o.kind = 'table'"];
+    if (busca) { vc.push(`%${busca.toLowerCase()}%`); wc.push(`(lower(o.number) like $2 or lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')) like $2)`); }
+    const k = (await db().query<Record<FiltroMesa, number>>(
+      `select ${(Object.keys(FILTRO_MESA) as FiltroMesa[]).map((z) => `count(*) filter (where ${FILTRO_MESA[z]})::int as "${z}"`).join(", ")}
+         from operations o join users u on u.id = o.user_id where ${wc.join(" and ")}`, vc)).rows[0]!;
+    cuentas = k;
+  }
+  return { filas: filas.slice(0, f ? 30 : 200), mas: f && r.rows.length > 30 ? filas[29]!.numero : null, cuentas, total: cuentas ? cuentas.all : filas.length };
 }
 export async function mesaDetalle(negocio: string, numero: string) {
   const v = await rsvDe(null, numero, negocio);
@@ -518,6 +543,12 @@ export async function mesaDetalle(negocio: string, numero: string) {
   return { ...v, tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien, e.note), at: hora(hm2m(e.at)) })) };
 }
 
+/* Cuántas solicitudes esperan respuesta del negocio (pestañas de Clientes). */
+export async function mesasPendientes(negocio: string) {
+  await vencerMesas({ negocio });
+  return (await db().query<{ n: number }>(`select count(*)::int as n from operations where business_id = $1 and kind = 'table' and status = 'pending'`, [negocio])).rows[0]?.n ?? 0;
+}
+
 /* ── Ajustes (Panel › Lo que vendes › Reservaciones) ── */
 export async function rsvAjustes(negocio: string) {
   const x = await contexto(db(), negocio);
@@ -527,7 +558,10 @@ export async function rsvAjustes(negocio: string) {
     `select count(*)::int as n, coalesce(sum(party_size), 0)::int as p from operations o join cities c on c.id = o.city_id
       where o.business_id = $1 and o.kind = 'table' and o.status in ('pending', 'confirmed', 'change_proposed') and coalesce(o.status_detail, '') <> 'noshow'
         and (o.scheduled_at at time zone c.timezone)::date = (now() at time zone c.timezone)::date`, [negocio]);
-  return { s: x.s, on: x.mods.includes("rsv"), admOff: x.off.rsv?.reason ?? null, hoy: x.hoy, dow: x.dow, abiertos: Object.entries(x.horas).filter(([, r]) => r.length).map(([k]) => Number(k)),
+  return { s: x.s, on: x.mods.includes("rsv"), admOff: x.off.rsv?.reason ?? null, pro: x.plan === "pro", hoy: x.hoy, dow: x.dow, now: x.now, cerradoHoy: x.cerradoHoy,
+    abiertos: Object.entries(x.horas).filter(([, r]) => r.length).map(([k]) => Number(k)),
+    // Por día de la semana: la hora en que abre y la última en que cierra (minutos), para avisar si un turno no cabe.
+    horas: Object.fromEntries(Object.entries(x.horas).filter(([, r]) => r.length).map(([k, r]) => [k, [Math.min(...r.map((z) => z[0])), Math.max(...r.map((z) => z[1]))]])) as Record<string, [number, number]>,
     blk: blk.map((b) => ({ ...b, dia: Math.round((Date.parse(b.day) - Date.parse(x.hoy)) / 864e5) })), hoyN: hoyR.rows[0]?.n ?? 0, hoyP: hoyR.rows[0]?.p ?? 0 };
 }
 export { FABRICA as AJUSTES_FABRICA, tablasDe, total as totalMesas, SZ as TAMANOS };

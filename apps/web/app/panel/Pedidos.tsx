@@ -6,6 +6,7 @@ import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pe
 import { menuAjustes } from "./acciones-menu";
 import { pedidoPaso, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
+import { clientesTabs, hoyMesas } from "./Reservas";
 
 export type PedPanel = {
   hoy?: Awaited<ReturnType<typeof pedidosHoy>>; lista?: Awaited<ReturnType<typeof pedidosLista>>; f?: FiltroPed; q?: string;
@@ -39,7 +40,8 @@ export function reqRow(c: Ctx, x: FilaPed, conActs = true): Fila {
 
 /* Hoy: cifras, los que esperan respuesta y la agenda de hoy. */
 export function hoyPedidos(c: Ctx): (Bloque | null)[] {
-  const { E2, d } = c, H = c.ped?.hoy, pend = H?.pend ?? [], agenda = H?.agenda ?? [];
+  // Pedidos y reservaciones de mesa juntos: lo que espera respuesta primero (Panel v2 · DASH-HOY).
+  const { E2, d } = c, H = c.ped?.hoy, M = hoyMesas(c), pend = [...(H?.pend ?? []).map((x) => reqRow(c, x)), ...M.pend], agenda = [...(H?.agenda ?? []).map((x) => reqRow(c, x, false)), ...M.agenda];
   const cols2 = c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)";
   const out: (Bloque | null)[] = [{ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
     { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(pend.length), bg: pend.length ? "var(--tl-ink)" : undefined, fg: pend.length ? "var(--tl-white)" : undefined, bd: pend.length ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: pend.length ? E2("responde en menos de 10 min", "reply within 10 min") : undefined },
@@ -50,9 +52,9 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
   if (!d.pro) out.push({ type: "note", tone: "warn", icon: "star", t: d.usadosMes >= d.tope
     ? E2(`Free: llegaste a ${d.tope} de ${d.tope} pedidos o citas en línea este mes. Hasta el día 1, los vecinos te llaman o te escriben. Con Pro no hay límite.`, `Free: you reached ${d.tope} of ${d.tope} online orders or bookings this month. Until the 1st, neighbors call or message you. Pro has no limit.`)
     : E2(`Free: ${d.usadosMes} de ${d.tope} pedidos o citas en línea este mes. Al llegar a ${d.tope}, te contactan por teléfono.`, `Free: ${d.usadosMes} of ${d.tope} online orders or bookings this month. After ${d.tope}, clients call you.`) });
-  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), cols: cols2, items: pend.map((x) => reqRow(c, x)) });
+  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), cols: cols2, items: pend });
   if (!pend.length) out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
-  if (agenda.length) out.push({ type: "rows", k: E2("HOY EN TU AGENDA", "TODAY’S AGENDA"), link: E2("Ver Clientes", "See Clients"), onLink: () => c.go("cli"), cols: cols2, items: agenda.map((x) => reqRow(c, x, false)) });
+  if (agenda.length) out.push({ type: "rows", k: E2("HOY EN TU AGENDA", "TODAY’S AGENDA"), link: E2("Ver Clientes", "See Clients"), onLink: () => c.go("cli"), cols: cols2, items: agenda });
   return out;
 }
 
@@ -97,7 +99,7 @@ export function clientesBloques(c: Ctx): (Bloque | null)[] {
     if (p.antes) s.set("antes", p.antes);
     c.nav(`/panel/${c.d.id}/clientes${s.size ? `?${s}` : ""}`);
   };
-  out.push({ type: "tabs", items: [{ l: E2("Pedidos", "Orders"), n: L.pend ? String(L.pend) : undefined, on: true, onClick: () => ir({ antes: null }) }] });
+  out.push(clientesTabs(c, "ped") ?? { type: "tabs", items: [{ l: E2("Pedidos", "Orders"), n: L.pend ? String(L.pend) : undefined, on: true, onClick: () => ir({ antes: null }) }] });
   out.push({ type: "search", val: q, ph: E2("Buscar por nombre o número", "Search by name or number"),
     onChange: (v) => { c.setUi({ cliQ: v.slice(0, 40) }); clearTimeout((window as unknown as { _cliT?: number })._cliT); (window as unknown as { _cliT?: number })._cliT = window.setTimeout(() => ir({ q: v.slice(0, 40), antes: null }), 400); },
     onClear: () => { c.setUi({ cliQ: "" }); ir({ q: "", antes: null }); } });

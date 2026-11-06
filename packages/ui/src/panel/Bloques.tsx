@@ -47,6 +47,12 @@ export type Bloque =
   | { type: "bulk"; t: string; allL?: string; onAll?: Fn; onClose: Fn; acts: { l: string; icon: string; on?: boolean; off?: boolean; onClick: Fn }[]; subK?: string; sub?: { l: string; danger?: boolean; onClick: Fn }[]; top?: string }
   | { type: "gprev"; k: string; title: string; meta: string; req: boolean; reqL: string; multi: boolean; options: { label: string; price: string; disabled?: boolean }[] }
   | { type: "mprev"; k: string; name: string; desc?: string; price: string; tags?: { label: string; tone: string }[]; image?: string; off?: boolean }
+  /* Plantilla del Panel v2 (isRvar): un área de mesas (Salón, Terraza, Barra) con su interruptor y sus mesas por tamaño. */
+  | { type: "rvar"; icon: string; t: string; s: string; on: boolean; onTg: Fn; onClick: Fn; chips: { l: string }[]; editL?: string; open?: boolean }
+  /* Plantilla del Panel v2 (isEvbuy): tarjetas que se abren (reservaciones, compras de entradas): iniciales, nombre, hora,
+     etiqueta, líneas con ícono y, abierta, el detalle y las acciones. */
+  | { type: "evbuy"; items: { key?: string; ini: string; pend?: boolean; n: string; m?: string; total?: string; tag?: string; tone?: string; dim?: boolean; open: boolean; onClick: Fn;
+      lines: { icon: string; l: string; tone?: "ink" | "action" | "pro" }[]; det: { l: string; v: string }[]; totL?: string; totV?: string; acts: Accion[] }[] }
   | { type: "rvsum"; icon: string; t: string; s?: string; tag?: string; tone?: string; progT: string; progR: string; pct: string; barC: string; stats: { k: string; v: string; s?: string; fg?: string }[]; tools: { l: string; icon: string; onClick?: Fn }[] };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
@@ -249,6 +255,42 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         <span style={{ font: "800 15px/1.3 Sora,sans-serif", letterSpacing: "-.02em" }}>{b.t}</span>
         <span style={{ font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span>
         {b.cta ? <span role="button" onClick={b.onCta} style={{ marginTop: 6, font: "700 13px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}>{b.cta}</span> : null}
+      </div>);
+    case "rvar": return (
+      <div style={{ padding: "13px 14px", borderRadius: 17, background: "var(--tl-white)", border: b.open ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 11, opacity: b.on ? 1 : 0.7 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span role="button" onClick={b.onClick} style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+            <span style={{ width: 40, height: 40, flex: "none", borderRadius: 12, background: "rgba(75,55,245,.08)", display: "grid", placeItems: "center" }}><Icon name={b.icon} size={18} color="var(--tl-action)" /></span>
+            <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.t}</span><span style={{ display: "block", marginTop: 2, font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span></span>
+          </span>
+          <span role="switch" aria-checked={b.on} aria-label={b.t} onClick={b.onTg} style={toque(b.on)}><span style={bolita(b.on)} /></span>
+        </div>
+        {b.on && (b.chips.length > 0 || !b.open) ? (
+          <div role="button" onClick={b.onClick} style={{ display: "flex", flexWrap: "wrap", gap: 6, cursor: "pointer" }}>
+            {b.chips.map((l, i) => <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 9, background: "rgba(11,14,18,.05)", font: "700 11.5px Manrope,sans-serif", color: "var(--tl-ink)" }}><span style={{ display: "grid" }}><Icon name="users" size={13} color="rgba(11,14,18,.55)" /></span>{l.l}</span>)}
+            {b.editL ? <span style={{ display: "inline-flex", alignItems: "center", height: 28, padding: "0 4px", font: "700 12px Manrope,sans-serif", color: "var(--tl-action)" }}>{b.editL}</span> : null}
+          </div>) : null}
+      </div>);
+    case "evbuy": return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {b.items.map((x, i) => (
+          <div key={x.key ?? i} style={{ padding: "13px 14px", borderRadius: 17, background: "var(--tl-white)", border: x.pend ? "1.5px solid var(--tl-ink)" : x.open ? "1.5px solid rgba(11,14,18,.5)" : "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10, opacity: x.dim ? 0.6 : 1 }}>
+            <div role="button" aria-expanded={x.open} onClick={x.onClick} style={{ display: "flex", alignItems: "center", gap: 12, cursor: "pointer" }}>
+              <span style={{ width: 40, height: 40, flex: "none", borderRadius: 99, background: x.pend ? "rgba(75,55,245,.1)" : "rgba(11,14,18,.06)", color: x.pend ? "var(--tl-action)" : "var(--tl-ink)", display: "grid", placeItems: "center", font: "800 13px Sora,sans-serif", letterSpacing: "-.02em" }}>{x.ini}</span>
+              <span style={{ flex: 1, minWidth: 0 }}><span style={{ display: "block", font: "700 14px/1.3 Manrope,sans-serif", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.n}</span>{x.m ? <span style={{ display: "block", marginTop: 3, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span> : null}</span>
+              <span style={{ flex: "none", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>{x.total ? <span style={{ font: "800 15px/1 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{x.total}</span> : null}{x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}</span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {x.lines.map((l, j) => { const [bg, fg] = ({ ink: ["rgba(11,14,18,.05)", "var(--tl-ink)"], action: ["rgba(75,55,245,.08)", "var(--tl-action-ink)"], pro: ["rgba(255,176,32,.14)", "var(--tl-pro-ink)"] } as const)[l.tone ?? "ink"]; return (
+                <span key={j} style={{ display: "inline-flex", alignItems: "center", gap: 6, height: 28, padding: "0 10px", borderRadius: 9, background: bg, color: fg, font: "700 11.5px Manrope,sans-serif", maxWidth: "100%", boxSizing: "border-box" }}><span style={{ display: "grid", flex: "none" }}><Icon name={l.icon} size={13} color={fg} /></span><span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{l.l}</span></span>); })}
+            </div>
+            {x.open ? (
+              <div style={{ paddingTop: 11, borderTop: "1px solid rgba(11,14,18,.07)", display: "flex", flexDirection: "column", gap: 8 }}>
+                {x.det.map((d, j) => <div key={j} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, font: "500 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.68)" }}><span style={{ minWidth: 0 }}>{d.l}</span><span style={{ flex: "none", maxWidth: "55%", textAlign: "right", font: `700 12px ${MONO}`, color: "var(--tl-ink)" }}>{d.v}</span></div>)}
+                {x.totL ? <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingTop: 8, borderTop: "1px solid rgba(11,14,18,.07)" }}><span style={{ font: "700 13px Manrope,sans-serif" }}>{x.totL}</span><span style={{ font: "800 15px Sora,sans-serif", letterSpacing: "-.02em" }}>{x.totV}</span></div> : null}
+                {x.acts.length ? <div style={{ display: "flex", flexWrap: "wrap", gap: 8, paddingTop: 2 }}>{x.acts.map((a, j) => <Button key={j} variant={a.v ?? "secondary"} size="md" icon={a.icon ?? undefined} disabled={a.off} onClick={a.onClick}>{a.l}</Button>)}</div> : null}
+              </div>) : null}
+          </div>))}
       </div>);
     case "rvsum": return (
       <div style={{ padding: 14, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
