@@ -132,6 +132,10 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
         op === "home", needZone(op) ? Math.max(1, Math.min(100, zoneOf(d))) : null, tel,
         (dv.tags ?? []) as string[], ((dv.amen ?? []) as string[]).map(claveAmenidad), Object.keys(dv.mods ?? {}), JSON.stringify(attrs)]);
     await c.query(`insert into business_stats_cache (business_id, plan, photo_count) values ($1, 'pro', $2)`, [slug, mias.length]);
+    // La prueba Pro (Cobros y plan): 30 días (o 60 con HZL30). El día 30 sigue con tarjeta o pasa a Free (lib/suscripcion.ts).
+    await c.query(`insert into subscriptions (business_id, status, trial_started_at, trial_ends_at, promo_code, payer_user_id) values ($1, 'trial', now(), $2, $3, $4)`,
+      [slug, fin.toISOString(), d.promoOk ? d.promo : null, me.id]);
+    await c.query(`insert into subscription_events (business_id, kind, actor_id, note) values ($1, 'trial_start', $2, $3::jsonb)`, [slug, me.id, JSON.stringify({ dias })]);
     // Revisión ligera del equipo (Super Admin › Colas › Negocios nuevos). El negocio ya sale; esto no lo detiene.
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('nuevo', 'business', $1, $1, $2) on conflict do nothing`, [slug, loc.ciudad]);
     // Si vino de una semilla («Reclámalo gratis»): la semilla queda reclamada y la recomendación del vecino, enlazada.

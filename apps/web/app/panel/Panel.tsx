@@ -20,6 +20,9 @@ import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloque
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
+import { planBloques, type PlanPanel } from "./Plan";
+import { MetodoPago } from "../(app)/pago/MetodoPago";
+import { planSeguir } from "./acciones-cobros";
 import type { CobrosPanel } from "@/lib/cobros";
 import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
@@ -75,10 +78,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[] }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -90,7 +93,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -117,7 +120,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -145,8 +148,8 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
-  // Cobros (DASH-COBROS): solo el dueño (toca dinero), en negocios que venden por la app.
-  const cobra = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay"));
+  // Cobros y plan (DASH-COBROS): solo el dueño (toca dinero). Comida: cobros con tarjeta y plan; el resto: su plan.
+  const cobra = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay");
   // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
   const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
@@ -204,7 +207,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
                   {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
                   {vende ? navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod")) : null}
                   {entrega ? navIt(sec === "dlv", "truck", E2("Entrega", "Delivery"), () => go("dlv")) : null}
-                  {cobra ? navIt(sec === "pay", "card", E2("Cobros", "Payouts"), () => go("pay")) : null}
+                  {cobra ? navIt(sec === "pay", "card", E2("Cobros y plan", "Payouts and plan"), () => go("pay", d.cat === "NEG-FOOD" ? null : "plan")) : null}
                 </div>
               ) : vende ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
@@ -250,6 +253,12 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
         </div>
       ) : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
+      {ui.planHoja && plan && plan.modo !== "apagado" ? (
+        <MetodoPago es={es} tarjetas={plan.tarjetas} sel={plan.plan.tarjeta?.pm ?? null} declinada={null} modo={plan.modo} pk={plan.pk} guardarSiempre
+          nota={plan.plan.st === "trial" ? E2(`PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "ANUAL" : "MENSUAL"} · HOY NO SE COBRA`, `PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "YEARLY" : "MONTHLY"} · NOTHING CHARGED TODAY`) : E2("PRO · SE COBRA HOY", "PRO · CHARGED TODAY")}
+          onClose={() => setUi({ planHoja: null })}
+          onUsar={(t) => { const ciclo = (ui.planHoja as { ciclo: "month" | "year" }).ciclo; setUi({ planHoja: null }); run(() => planSeguir(d.id, t.pm, ciclo), (r) => (r?.cobrado ? E2("Listo: ya tienes Pro. Te mandamos el recibo.", "Done: you have Pro. We sent the receipt.") : E2("Listo: sigues con Pro. El primer cobro es el día 30.", "Done: you keep Pro. The first charge is on day 30."))); }} />
+      ) : null}
     </div>
   );
 }
@@ -263,7 +272,12 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
   if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
   if (c.ruta.sec === "dlv") return entregaBloques(c);
-  if (c.ruta.sec === "pay") return { blocks: cobrosBloques(c, c.cob), ed: null };
+  if (c.ruta.sec === "pay") {
+    const E2 = c.E2, tabs: Bloque = { type: "tabs", items: [{ l: E2("Tu plan", "Your plan"), on: c.ruta.sub === "plan", onClick: () => c.go("pay", "plan") }, { l: E2("Cobros con tarjeta", "Card payouts"), on: c.ruta.sub !== "plan", onClick: () => c.go("pay") }] };
+    if (c.ruta.sub === "plan") return { blocks: [{ type: "head", eye: E2("COBROS Y PLAN", "PAYOUTS AND PLAN"), t: E2("Tu plan", "Your plan"), s: E2("Pro: todo tu negocio en To’Latino. Free: una sola página. Nada se borra al cambiar.", "Pro: your whole business on To’Latino. Free: a single page. Nothing is deleted when you switch.") }, tabs, ...planBloques(c, c.plan)], ed: null };
+    const cb = cobrosBloques(c, c.cob);
+    return { blocks: [cb[0]!, tabs, ...cb.slice(1)], ed: null };
+  }
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
   if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : c.ruta.sub === "jobs" ? jobsBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
@@ -289,26 +303,26 @@ function detalle(c: Ctx): Sec | null {
   return null;
 }
 
-/* Avisos de la prueba Pro (trialHome): en Tu página y en Hoy. Los botones «Tu plan / Decidir» llegan con Cobros y plan. */
+/* Avisos de la prueba Pro (trialHome): en Tu página y en Hoy. Cada aviso lleva a Cobros y plan (Tu plan / Decidir / Seguir con Pro). */
 function avisosPrueba(c: Ctx, donde: "pag" | "hoy"): Bloque[] {
   const { d, E2, es } = c, t = d.trial;
   if (!t) return [];
-  const fin = fechaCorta(t.end, d.hoy.tz, es);
-  if (t.phase === "last") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Mañana termina tu prueba Pro. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends tomorrow. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`) }];
-  if (t.phase === "d25") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Tu prueba Pro termina el ${fin}. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends ${fin}. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`) }];
+  const fin = fechaCorta(t.end, d.hoy.tz, es), plan = () => c.go("pay", "plan");
+  if (t.phase === "last") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Mañana termina tu prueba Pro. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends tomorrow. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), cta: E2("Decidir", "Decide"), onCta: plan } ];
+  if (t.phase === "d25") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Tu prueba Pro termina el ${fin}. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends ${fin}. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), cta: E2("Decidir", "Decide"), onCta: plan } ];
   if (t.phase === "d20") {
-    if (donde === "hoy") return [{ type: "note", tone: "ink", icon: "bolt", t: E2(`En ${t.day} días con Pro: ${d.kpis.viewsTrial} vistas y ${d.kpis.contactsTrial} contactos.`, `In ${t.day} days with Pro: ${d.kpis.viewsTrial} views and ${d.kpis.contactsTrial} contacts.`) }];
+    if (donde === "hoy") return [{ type: "note", tone: "ink", icon: "bolt", t: E2(`En ${t.day} días con Pro: ${d.kpis.viewsTrial} vistas y ${d.kpis.contactsTrial} contactos.`, `In ${t.day} days with Pro: ${d.kpis.viewsTrial} views and ${d.kpis.contactsTrial} contacts.`), cta: E2("Ver", "See"), onCta: plan }];
     return [
       { type: "group", k: E2(`LO QUE PASÓ EN TU PRUEBA · ${t.day} DÍAS`, `WHAT HAPPENED IN YOUR TRIAL · ${t.day} DAYS`), first: true },
       { type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
         { k: E2("VISTAS", "VIEWS"), v: String(d.kpis.viewsTrial), s: E2("en Destacados y en tu página", "in Featured and on your page") },
         { k: E2("CONTACTOS", "CONTACTS"), v: String(d.kpis.contactsTrial), s: E2("llamadas, WhatsApp y mensajes", "calls, WhatsApp and messages") },
       ] },
-      { type: "note", tone: "info", icon: "star", t: E2(`Todo esto sigue por ${dinero(PRECIO_PRO)} al mes. Tu prueba termina el ${fin}.`, `All of this continues for ${dinero(PRECIO_PRO)} a month. Your trial ends ${fin}.`) },
+      { type: "note", tone: "info", icon: "star", t: E2(`Todo esto sigue por ${dinero(PRECIO_PRO)} al mes. Tu prueba termina el ${fin}.`, `All of this continues for ${dinero(PRECIO_PRO)} a month. Your trial ends ${fin}.`), cta: E2("Seguir con Pro", "Keep Pro"), onCta: plan },
     ];
   }
   if (donde === "hoy") return [];
-  return [{ type: "note", tone: "info", icon: "star", t: E2(`Estás construyendo con Pro · quedan ${t.left} días de prueba. Termina el ${fin}.`, `You are building with Pro · ${t.left} trial days left. Ends ${fin}.`) }];
+  return [{ type: "note", tone: "info", icon: "star", t: E2(`Estás construyendo con Pro · quedan ${t.left} días de prueba. Termina el ${fin}.`, `You are building with Pro · ${t.left} trial days left. Ends ${fin}.`), cta: E2("Tu plan", "Your plan"), onCta: plan }];
 }
 
 function resumen(c: Ctx, k: string) {
@@ -566,7 +580,7 @@ function masBloques(c: Ctx): Bloque[] {
     { type: "rows", items: [
       ...(vende ? [{ icon: "grid", t: E2("Lo que vendes", "What you sell"), onClick: () => c.go("mod") }] : []),
       ...(entrega ? [{ icon: "truck", t: E2("Entrega", "Delivery"), onClick: () => c.go("dlv") }] : []),
-      ...(d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay")) ? [{ icon: "card", t: E2("Cobros", "Payouts"), onClick: () => c.go("pay") }] : []),
+      ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") }] },
   ];

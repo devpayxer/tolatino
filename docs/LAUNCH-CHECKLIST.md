@@ -366,3 +366,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Repartidores de To'Latino** (registro, verificación, payout por Stripe Connect): «más adelante», por ciudad.
 - [ ] **Accesibilidad:** el botón base ya es accesible (guardián `botonAccesible`); revisar el resto de piezas del sistema
       que usan `div` con onClick (auditoría por clase, decisión T).
+
+## Plan Pro (bloque 2m, 6 nov 2026)
+- [ ] **Reloj del servidor** (systemd timer o similar) que llame al proceso del plan cada hora, además del proceso «al usar
+      la app» de hoy: que el día 30 llegue aunque nadie entre.
+- [ ] **Super Admin › Planes** (secPlan): suscripciones, MRR, extender prueba, cortesía, precio y comisiones programadas
+      con 30 días (fee_rules ya lo soporta en datos).
+- [ ] **Recibo por correo** de cada cobro de Pro e **impuesto** si aplica (consultar con el contador antes de la fase 9).
+- [ ] **3D Secure fuera de sesión** en renovaciones: si el banco pide verificación, avisar al dueño con un enlace para
+      confirmar (hoy cuenta como intento fallido).

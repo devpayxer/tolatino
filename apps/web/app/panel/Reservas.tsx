@@ -162,7 +162,7 @@ export function reservasModBloques(c: Ctx): Sec {
   const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: E2("Reservaciones", "Reservations"), s: E2("Mesas, turnos y reglas: la gente reserva desde tu página y tú confirmas.", "Tables, shifts and rules: people book from your page and you confirm."), onBack: () => c.go("mod") }];
   if (!a) return { blocks: out, ed: null };
   if (!a.pro) {
-    out.push({ type: "lock", t: E2("Reservaciones es de Pro", "Reservations is Pro"), s: E2("Con Pro, la gente reserva mesa desde tu página: eliges tus mesas, turnos y reglas, y confirmas cada una.", "With Pro, people book a table from your page: you set your tables, shifts and rules, and confirm each one."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.toast(E2("Los planes llegan con los cobros.", "Plans arrive with payouts.")) });
+    out.push({ type: "lock", t: E2("Reservaciones es de Pro", "Reservations is Pro"), s: E2("Con Pro, la gente reserva mesa desde tu página: eliges tus mesas, turnos y reglas, y confirmas cada una.", "With Pro, people book a table from your page: you set your tables, shifts and rules, and confirm each one."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
     return { blocks: out, ed: null };
   }
   const s0 = a.s, abiertos = new Set(a.abiertos);

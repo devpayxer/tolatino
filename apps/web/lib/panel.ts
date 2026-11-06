@@ -35,7 +35,8 @@ export async function misNegocios(userId: string) {
   return (await db().query<{ id: string; name: string; kind: string; plan: string; foto: string | null; until: string | null; days: number | null }>(
     `select b.id, b.name, m.kind, coalesce(s.plan, 'free') as plan,
             (select x.url from media x where x.owner_kind = 'business' and x.owner_id = b.id and x.status = 'visible' order by x.sort limit 1) as foto,
-            b.category_attrs->'onb'->'trial'->>'until' as until, (b.category_attrs->'onb'->'trial'->>'days')::int as days
+            (select to_char(x.trial_ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from subscriptions x where x.business_id = b.id and x.status = 'trial') as until,
+            (select round(extract(epoch from x.trial_ends_at - x.trial_started_at) / 86400)::int from subscriptions x where x.business_id = b.id and x.status = 'trial') as days
        from business_members m join businesses b on b.id = m.business_id left join business_stats_cache s on s.business_id = b.id
       where m.user_id = $1 and m.status = 'active' and b.status <> 'merged'
       order by (m.kind = 'owner') desc, b.created_at`, [userId])).rows;
@@ -57,12 +58,14 @@ export type Persona = {
    fijas en paralelo, sin N+1. */
 export async function datosPanel(acc: Acceso, lang: Lang) {
   const id = acc.negocio.id, es = lang === "es";
+  // La prueba Pro y el plan viven en subscriptions (lib/suscripcion.ts): lo vencido se procesa antes de mostrar.
+  await (await import("./suscripcion")).procesar(id).catch(() => undefined);
   const b = (await db().query<{
     id: string; name: string; cat: string; city: string; ciudad: string; status: string; plan: string; verified: boolean; review_count: number;
     attrs: Record<string, any>; logo: string | null; about: Bi | null; amen: string[]; op: string; from_home: boolean; mods: string[];
     email_ok: boolean; owner: string | null; tz: string; dow: number; hm: string; hoy: string; hora: number; open: boolean; closed_today: boolean; created: string;
     status_reason: string | null; temp_until: string | null; temp_reason: string | null; admin_edits: Record<string, unknown>; phone: string | null; owner_phone: string | null;
-    email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null;
+    email: string | null; sello: string | null; sello_note: string | null; reclamo_aviso: string | null; sub_until: string | null; sub_days: number | null; sub_used: boolean;
   }>(
     `select b.id, b.name, b.category_id as cat, b.city_id as city, c.name as ciudad, b.status, coalesce(s.plan, 'free') as plan,
             coalesce(s.verified, false) as verified, coalesce(s.review_count, 0) as review_count, b.category_attrs as attrs, b.logo_url as logo,
@@ -76,12 +79,15 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
             b.phone, u.phone as owner_phone, u.email,
             (select v.status from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello,
             (select v.note from verification_requests v where v.business_id = b.id order by v.created_at desc limit 1) as sello_note,
-            (select cl.owner_notified_at from claims cl where cl.business_id = b.id and cl.status = 'pending' and cl.had_owner_id = b.owner_user_id order by cl.created_at limit 1) as reclamo_aviso
+            (select cl.owner_notified_at from claims cl where cl.business_id = b.id and cl.status = 'pending' and cl.had_owner_id = b.owner_user_id order by cl.created_at limit 1) as reclamo_aviso,
+            (select to_char(x.trial_ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from subscriptions x where x.business_id = b.id and x.status = 'trial') as sub_until,
+            (select round(extract(epoch from x.trial_ends_at - x.trial_started_at) / 86400)::int from subscriptions x where x.business_id = b.id and x.status = 'trial') as sub_days,
+            exists (select 1 from subscriptions x where x.business_id = b.id and x.trial_started_at is not null) as sub_used
        from businesses b join cities c on c.id = b.city_id left join business_stats_cache s on s.business_id = b.id
        left join users u on u.id = b.owner_user_id
       where b.id = $1`, [id])).rows[0];
   if (!b) return null;
-  const tr = prueba(b.attrs?.onb?.trial?.until, b.attrs?.onb?.trial?.days);
+  const tr = prueba(b.sub_until, b.sub_days);
   const desde = tr ? tr.start : new Date(0).toISOString();
   const [fotos, horas, miembros, cifras, faqs, amen, negocios, lic, licCat] = await Promise.all([
     db().query<{ id: string; url: string }>(`select id, url from media where owner_kind = 'business' and owner_id = $1 and status = 'visible' order by sort, created_at`, [id]),
@@ -143,7 +149,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   return {
     resenas: rs, novedades: nv,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
-    trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
+    trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },
     // Lo que hizo To'Latino (triángulo): el dueño siempre ve qué pasó y por qué.
     adm: { status: b.status, reason: b.status_reason, tempUntil: b.temp_until, tempReason: b.temp_reason, nombre: !!b.admin_edits?.name, about: !!b.admin_edits?.about, fotos: quitadas.map((x) => x.note ?? ""), reclamo: acc.kind === "owner" && b.reclamo_aviso ? b.reclamo_aviso : null },

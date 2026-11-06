@@ -37,9 +37,9 @@ function cargarStripe(pk: string): Promise<StripeJs> {
   return stripeJs;
 }
 
-export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsar, onClose }: {
+export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsar, onClose, guardarSiempre }: {
   es: boolean; tarjetas: Tarjeta[]; sel: string | null; declinada: string | null; nota: string; modo: ModoTarjeta; pk: string | null;
-  onUsar: (t: Tarjeta, nueva?: Tarjeta) => void; onClose: () => void;
+  onUsar: (t: Tarjeta, nueva?: Tarjeta) => void; onClose: () => void; guardarSiempre?: boolean; // Pro: la tarjeta queda guardada para cobrar cada mes
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [paso, setPaso] = useState<"list" | "add">(tarjetas.length ? "list" : "add");
@@ -146,10 +146,10 @@ export function MetodoPago({ es, tarjetas, sel, declinada, nota, modo, pk, onUsa
             </>
           )}
           <div><div className={K}>{E2("NOMBRE EN LA TARJETA", "NAME ON CARD")}</div><input value={f.nm} onChange={(e) => uf({ nm: e.target.value.replace(/[0-9]/g, "").slice(0, 40) })} autoComplete="cc-name" placeholder={E2("Como aparece en la tarjeta", "As it appears on the card")} aria-label={E2("Nombre en la tarjeta", "Name on card")} className={`mt-1.5 ${campo(false)}`} /></div>
-          <button type="button" role="switch" aria-checked={f.save} onClick={() => uf({ save: !f.save })} className="flex w-full items-center gap-3 text-left">
+          {!guardarSiempre && <button type="button" role="switch" aria-checked={f.save} onClick={() => uf({ save: !f.save })} className="flex w-full items-center gap-3 text-left">
             <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Guardar para la próxima", "Save for next time")}</span><span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2("To'Latino nunca ve el número completo.", "To'Latino never sees the full number.")}</span></span>
             <span className={`relative h-[22px] w-10 flex-none rounded-full ${f.save ? "bg-ink" : "bg-ink/[.18]"}`}><span className="absolute top-0.5 size-[18px] rounded-full bg-white transition-all" style={{ left: f.save ? 20 : 2 }} /></span>
-          </button>
+          </button>}
           {modo === "simulador" && <div className="rounded-[12px] bg-action/[.08] px-3 py-2.5 text-[11.5px] font-semibold leading-[1.5] text-action">{E2("Sandbox: usa 4242 4242 4242 4242 (aprobada), 4000 0000 0000 0002 (rechazada) o 4000 0000 0000 9995 (sin fondos). No se cobra nada real.", "Sandbox: use 4242 4242 4242 4242 (approved), 4000 0000 0000 0002 (declined) or 4000 0000 0000 9995 (no funds). Nothing real is charged.")}</div>}
           {error && <div role="alert" className="text-[12px] font-semibold text-danger">{error}</div>}
           <div className="flex"><Button variant="primary" block disabled={!ok || ocupado} onClick={usarNueva}>{ocupado ? E2("Guardando…", "Saving…") : ok ? E2("Usar esta tarjeta", "Use this card") : `${E2("Falta: ", "Missing: ")}${falta}`}</Button></div>

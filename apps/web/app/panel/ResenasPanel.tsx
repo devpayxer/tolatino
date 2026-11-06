@@ -15,7 +15,7 @@ const cuando = (c: Ctx, d: number) => {
   return d <= 0 ? E2("hoy", "today") : d === 1 ? E2("ayer", "yesterday") : d < 7 ? E2(`hace ${d} días`, `${d} days ago`) : d < 30 ? E2(`hace ${Math.floor(d / 7)} sem.`, `${Math.floor(d / 7)} wk ago`) : E2(`hace ${Math.floor(d / 30)} meses`, `${Math.floor(d / 30)} mo ago`);
 };
 const VISITA = (c: Ctx): Record<FilaPanel["src"], string> => ({ dl: "Delivery", pk: "Pickup", rsv: c.E2("Reservó mesa", "Reserved a table"), vis: c.E2("Visitante · sin pedido", "Visitor · no order") });
-const verPro = (c: Ctx) => c.toast(c.E2("Los planes llegan con los cobros.", "Plans arrive with payouts."));
+const verPro = (c: Ctx) => c.go("pay", "plan");
 
 /* Fila de una reseña (lista y Hoy). */
 function fila(c: Ctx, x: FilaPanel, compact = false): Fila {

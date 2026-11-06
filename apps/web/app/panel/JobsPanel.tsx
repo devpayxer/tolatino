@@ -10,7 +10,7 @@ import type { Ctx, Sec } from "./Panel";
 
 export type JobsData = { lista?: VacPanel; det?: VacPanelDet | null; app?: string | null; hor?: { abre: number[]; a: number; z: number }; hoy?: { id: string; job: string; name: string; title: { es: string; en: string }; at: string }[] };
 const pl = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
-const verPro = (c: Ctx) => c.toast(c.E2("Los planes llegan con los cobros.", "Plans arrive with payouts."));
+const verPro = (c: Ctx) => c.go("pay", "plan");
 const ST_V = (c: Ctx): Record<string, [string, string]> => ({
   draft: [c.E2("BORRADOR", "DRAFT"), "neutral"], live: [c.E2("ABIERTA", "LIVE"), "signal"], paused: [c.E2("PAUSADA", "PAUSED"), "neutral"], filled: [c.E2("CUBIERTA", "FILLED"), "neutral"], adm: [c.E2("OCULTA POR TO’LATINO", "HIDDEN BY TO’LATINO"), "danger"],
 });

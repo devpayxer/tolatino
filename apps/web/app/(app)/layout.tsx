@@ -14,6 +14,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const loc = await ubicacion(u);
   const ctx = await contexto();
   after(() => actividad(u?.id ?? null, loc.c.id, ctx));
+  // Plan Pro: fin de pruebas, renovaciones y reintentos (cada 5 min a lo sumo; nunca frena la página).
+  after(async () => { await (await import("@/lib/suscripcion")).procesar().catch(() => undefined); });
   const t = T[lang], es = lang === "es";
   const iniciales = u ? (((u.first_name?.[0] ?? "") + (u.last_name?.[0] ?? "")).toUpperCase() || "TL") : "";
   // Encabezado (prototipo locLabel / locShort): «Hazleton, PA · 5 mi · tú» o «Allentown, PA · pronto».

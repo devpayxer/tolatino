@@ -63,3 +63,32 @@ export async function cobrosStripe(id: string): Promise<Res & { url?: string }> 
     return url ? { ok: true, url } : no("No se pudo abrir Stripe.", "Could not open Stripe.");
   } catch { return no("Stripe no respondió. Prueba de nuevo en un momento.", "Stripe did not respond. Try again in a moment."); }
 }
+
+/* Plan Pro (Cobros y plan): seguir con Pro (o volver), pasar a Free y deshacer. Solo el dueño; paga con su tarjeta guardada. */
+export async function planSeguir(id: string, pm: string, ciclo: "month" | "year"): Promise<Res & { cobrado?: boolean }> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const { seguirConPro } = await import("@/lib/suscripcion");
+  const r = await seguirConPro(a.negocio.id, a.yo.id, String(pm ?? ""), ciclo === "year" ? "year" : "month");
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "plan.seguir_pro", { ciclo: ciclo === "year" ? "anual" : "mensual", cobrado: !!("cobrado" in r && r.cobrado) });
+  return { ok: true, cobrado: "cobrado" in r ? r.cobrado : undefined };
+}
+export async function planFree(id: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const { pasarAFree } = await import("@/lib/suscripcion");
+  const r = await pasarAFree(a.negocio.id, a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "plan.pasar_a_free", null);
+  return { ok: true };
+}
+export async function planDeshacer(id: string): Promise<Res> {
+  const a = await entrar(id);
+  if (!a) return SIN_ACCESO;
+  const { deshacerFree } = await import("@/lib/suscripcion");
+  const r = await deshacerFree(a.negocio.id, a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "plan.deshacer", null);
+  return { ok: true };
+}

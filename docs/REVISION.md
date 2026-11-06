@@ -302,3 +302,14 @@ _Hace falta un teléfono de prueba para el repartidor (p. ej. 570-555-0144) y Sa
 _Compuesto sin diseño propio (plan apps-delivery-checkin §1.3). No hay todavía: mapa en vivo, llamada enmascarada, foto o
 código de entrega, ofertas con cuenta regresiva, entregas múltiples, repartidores de To'Latino ni sección del Super Admin
 (anotado en LAUNCH-CHECKLIST). Además: el botón del sistema de diseño ahora es un botón accesible (rol, foco y teclado)._
+
+## Fase 2 · 2m Plan Pro (Cobros y plan › Tu plan)
+1. Pedro › **Cobros y plan** › **Tu plan**: la prueba con los días que quedan y qué pasa el día 30.
+2. **Seguir con Pro** → agrega la tarjeta 4242 → «El primer cobro es el día 30».
+3. Prueba los cambios: «No seguir con Pro» y «Seguir con Pro» de nuevo; «Cambiar a anual · 2 meses gratis».
+4. Con Free (en el sandbox se puede simular el día 30): «Tu contenido Pro está guardado» → **Volver a Pro**.
+_Compuesto del prototipo (pro-trial.js y la pestaña Plan del Panel v2). Decisiones (AB): el día 30 y las renovaciones los
+procesa el servidor cada vez que alguien usa la app (cada 5 minutos a lo sumo) y al abrir el panel; un reloj propio del
+servidor queda para el lanzamiento. Los negocios de ejemplo del sandbox que ya eran Pro siguen Pro sin suscripción. «Ver
+Pro» en el panel ahora lleva a Tu plan. El cobro de Pro va a la cuenta de To'Latino (no a Stripe Connect) con la tarjeta del
+dueño._

@@ -444,6 +444,12 @@ _Actualizado: 5 nov 2026._
   Panel: Tus repartidores y Efectivo de hoy en Entrega, «¿Quién lo lleva?» en el pedido. Cliente: «Te lo lleva / llegó».
   `Button` del sistema accesible (parche en portar-sistema + guardián `botonAccesible`). Probado: 17 + regresión completa.
   Ayuda `repartidor.md`.
+- **Fase 2 · bloque 2m Plan Pro ✓ (6 nov):** migración 0036 (`subscriptions`, `subscription_events` solo inserción, las
+  pruebas existentes migradas; avisos pro_d25, pro_charged, pro_failed, pro_free). `lib/suscripcion.ts`: estado del plan,
+  seguir con Pro (cobro el día 30) / no seguir / pasar a Free al fin del período / volver a Pro (cobro hoy), renovaciones,
+  3 reintentos en 7 días, cortesía, recibos; claves idempotentes por período, tarjeta e intento (guardián extendido).
+  Cobro directo en la pasarela (Stripe o simulador). Panel: Cobros y plan › **Tu plan** para todo dueño; «Ver Pro» y los
+  avisos de la prueba llevan ahí. Publica crea la suscripción. Probado: 16 + regresión. Ayuda `plan-pro.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

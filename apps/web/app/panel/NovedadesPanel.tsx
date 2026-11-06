@@ -14,7 +14,7 @@ const NOVT = (c: Ctx): [Tipo, string, string][] => [
   ["oferta", c.E2("Oferta", "Deal"), "dollar"], ["hoy", c.E2("Hoy hay", "Today"), "hot"], ["aviso", c.E2("Aviso de horario", "Hours notice"), "clock"],
   ["encuesta", c.E2("Encuesta", "Poll"), "help"], ["novedad", c.E2("Novedad", "News"), "news"],
 ];
-const verPro = (c: Ctx) => c.toast(c.E2("Los planes llegan con los cobros.", "Plans arrive with payouts."));
+const verPro = (c: Ctx) => c.go("pay", "plan");
 const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 
 /* «Cuándo»: ahora · quedan N h / programada para … / terminada. */

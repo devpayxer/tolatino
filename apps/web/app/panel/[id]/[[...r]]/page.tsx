@@ -38,6 +38,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
   else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
+  else if (r.length === 2 && r[0] === "cobros" && r[1] === "plan") ruta = { sec: "pay", sub: "plan", det: null };
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
@@ -54,6 +55,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   const d = await datosPanel(acc, lang);
   if (!d) notFound();
+  // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan».
+  if (ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD") ruta.sub = "plan";
   // Lo que vendes · Menú (Comida): el menú del negocio, calculado en el servidor.
   const menu = ruta.sec === "mod" && d.cat === "NEG-FOOD" ? await menuPanel(d.id) : undefined;
   // Pedidos (Comida): lo que pide cada sección, y el detalle solo con acceso a «Hoy y pedidos».
@@ -111,8 +114,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det && /^va[cp]:/.test(ruta.det) && !cat) ruta.det = null;
   // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
   if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
-  const cob = ruta.sec === "pay" ? await cobrosPanel(d.id) : undefined;
+  const cob = ruta.sec === "pay" && ruta.sub !== "plan" ? await cobrosPanel(d.id) : undefined;
+  // Tu plan (Cobros y plan): el estado del plan, los recibos y las tarjetas guardadas del dueño.
+  const plan = ruta.sec === "pay" && ruta.sub === "plan" ? await (async () => {
+    const S = await import("@/lib/suscripcion"), { pasarela } = await import("@/lib/pagos/pasarela"), { misTarjetas } = await import("@/lib/cobros");
+    return { plan: await S.planDe(d.id), recibos: await S.recibosPro(d.id), modo: pasarela.modo(), pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(acc.yo.id) };
+  })() : undefined;
   // Repartidores: Entrega (Tus repartidores, cuadre) y el detalle de un pedido de delivery (despacho).
   const reps = food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:")) ? await repartidoresDe(d.id) : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} />;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} />;
 }
