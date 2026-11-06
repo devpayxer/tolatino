@@ -31,7 +31,7 @@ jobs:
         env: { POSTGRES_PASSWORD: ci, TOLATINO_COMMIT: ci }
         run: |
           C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
-          q() { $C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c "$1"; }
+          q() { $C exec -T db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c "$1" < /dev/null; }
           q "select county, count(*) from geo_streets group by 1 order by 1"
           ok=0
           # Ayuntamientos y lugares conocidos de cada ciudad: el número exacto, a menos de 8 km del centro de su ciudad.
