@@ -677,3 +677,13 @@ _Decidido por mí (reversible):_
   verifican como en la vida real._
 - _Arreglado: el nombre corto de un profesional tomaba su título («LO PONE DRA.»). Guardián nombreConTitulo._
 
+## Fase 4 · 4i Ficha de Doctores y «Tu seguro»
+1. Sin entrar: Centro Médico Quisqueya › Servicios → «Agrega tu seguro» → Seguro privado · Cigna → «No aceptan Cigna · sin seguro $85».
+2. Como **Marisol** (570-555-0122, Medicaid · UPMC for You): todo dice «$0 · CON TU SEGURO»; en la hoja, ¿Con quién? solo Luis.
+3. Urgencias Express (escritorio): «SIN CITA · AHORA · Espera ~25 min» solo si la espera se actualizó hace menos de 3 h.
+_Decidido por mí (reversible):_
+- _La espera sin cita se esconde si tiene más de 3 horas (el prototipo siempre la muestra; mostrar una vieja sería mentir)._
+- _Sin cuenta, «Tu seguro» vale solo para esta visita (no se guarda en el teléfono)._
+- _Mientras llega el Booking de Doctores (4j), la hoja ofrece «Llama para tu cita». «Próxima cita» de cada profesional llega con 4j._
+- _Las preguntas frecuentes de Salud por tipo (TLSaludK) quedan para 4m; hoy salen las que puso el consultorio._
+

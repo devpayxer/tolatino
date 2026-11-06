@@ -10,6 +10,7 @@ import { menuPublico } from "@/lib/pedir";
 import { rsvPublica } from "@/lib/reservas";
 import { citasPublica } from "@/lib/citas";
 import { oficiosPublico } from "@/lib/oficios-publico";
+import { saludPublico } from "@/lib/salud-publico";
 import { tiendaPublica } from "@/lib/rentas";
 import { tiendaMia, tiendaVenta } from "@/lib/apartados";
 import { resumenResenas } from "@/lib/resenas";
@@ -36,7 +37,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -46,6 +47,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id), tiendaMia(u?.id ?? null, f.id)]).then(([L, V, mia]) => ({ L, V, mia })) : Promise.resolve(null),
+    // Doctores (4i): servicios con el precio según tu seguro, quién atiende y «Tu seguro».
+    f.cat === "NEG-SALUD" ? saludPublico(f.id, u?.id ?? null) : Promise.resolve(null),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
@@ -58,6 +61,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       rsv={rsv}
       svc={svc}
       ofi={ofi}
+      salud={salud}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}

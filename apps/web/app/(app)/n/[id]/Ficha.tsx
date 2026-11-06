@@ -16,6 +16,8 @@ import { MenuCapas, MenuDesk, MenuMovil, MenuResumen, PedidoTarjeta, useMenu } f
 import { RsvBarra, RsvRapida, RsvRiel, RsvTab, useRsv } from "./Reservar";
 import { SvcBarra, SvcHoja, SvcResumen, SvcRiel, SvcTab, useSvc } from "./Servicios";
 import { HojaCasa, HojaVehiculo, OfBarra, OfHoja, OfResumen, OfRiel, OfTab, useOficio } from "./Oficios";
+import { SaBarra, SaHoja, SaResumen, SaRiel, SaSeguro, SaTab, useSalud } from "./Salud";
+import type { SaludPublico } from "@/lib/salud-publico";
 import type { OficiosPublico } from "@/lib/oficios-publico";
 import { ResCapas, ResResumen, ResTab, useResenas } from "./Resenas";
 import { NovTab } from "./Novedades";
@@ -34,9 +36,9 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
 export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
-export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null } } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, svc, ofi, salud, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null } } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
-  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
+  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
   const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
@@ -48,6 +50,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
   const sv = useSvc(svc, es, silla?.miembro ?? null);
   // Servicios de Auto y Hogar (Fase 4 · 4b): la misma pestaña, la hoja con Tu vehículo o Tu casa.
   const ov = useOficio(ofi ?? null, es, sesion);
+  // Doctores (Fase 4 · 4i): la misma pestaña con «Tu seguro» y el precio según el seguro de la persona.
+  const sa = useSalud(salud ?? null, es);
   // Free con pedidos este mes: se pide desde el Resumen; Free sin pedidos: la lista de platos y Llamar.
   const freeOn = !!mn && !f.pro && (mn.est.freeLeft ?? 0) > 0;
   const setTab = (id: string) => { setTabS(id); window.scrollTo({ top: 0 }); };
@@ -60,7 +64,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov) && f.pro ? [{ id: "svc", label: es ? "Servicios" : "Services", icon: ov ? (ov.auto ? "wrench" : "home") : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: es ? "Tienda" : "Shop", icon: "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov || sa) && f.pro ? [{ id: "svc", label: es ? "Servicios" : "Services", icon: ov ? (ov.auto ? "wrench" : "home") : sa ? "insurance" : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: es ? "Tienda" : "Shop", icon: "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -393,6 +397,11 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
             <div className="min-w-0"><div className="lg:hidden"><OfTab v={ov} desk={false} /></div><div className="hidden lg:block"><OfTab v={ov} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><OfRiel v={ov} onCta={irSvc} /></div></div>
             <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><OfRiel v={ov} onCta={irSvc} /></aside>
           </div>
+        ) : tab === "svc" && sa ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><SaTab v={sa} desk={false} /></div><div className="hidden lg:block"><SaTab v={sa} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><SaRiel v={sa} onCta={irSvc} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><SaRiel v={sa} onCta={irSvc} /></aside>
+          </div>
         ) : tab === "rsv" && rv ? (
           <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
             <div className="min-w-0"><div className="lg:hidden"><RsvTab v={rv} desk={false} /></div><div className="hidden lg:block"><RsvTab v={rv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><RsvRiel v={rv} /></div></div>
@@ -453,6 +462,12 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
                   <div className="hidden lg:block"><OfResumen v={ov} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
                 </>
               )}
+              {sa && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><SaResumen v={sa} desk={false} onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><SaResumen v={sa} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
               {rs && (
                 <>
                   <div className="px-5 pt-[26px] lg:hidden"><ResResumen v={rs} desk={false} onAll={f.pro ? () => setTab("rev") : undefined} /></div>
@@ -468,6 +483,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
               {rv && <RsvRapida v={rv} onMas={(p, i, h) => { if (p) { rv.setP(p); if (i != null) rv.setI(i); if (h != null) rv.setSel(h); } setTab("rsv"); }} />}
               {sv && <SvcRiel v={sv} onCta={irSvc} />}
               {ov && <OfRiel v={ov} onCta={irSvc} />}
+              {sa && <SaRiel v={sa} onCta={irSvc} />}
               {mn && (
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
                   <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
@@ -497,6 +513,9 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, tienda, resenas, novedades, j
       {ov && <OfHoja v={ov} />}
       {ov && <HojaVehiculo v={ov} />}
       {ov && <HojaCasa v={ov} />}
+      {sa && tab !== "svc" && tab !== "shop" && f.pro && <SaBarra v={sa} onCta={irSvc} />}
+      {sa && <SaHoja v={sa} />}
+      {sa && sa.segHoja && <SaSeguro v={sa} />}
       {tab !== "rsv" && mn && !mn.has && (f.pro || freeOn || !mn.canOrd) && (
         <div data-screen-label="Ficha · barra de pedido" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:hidden">
           <div className="min-w-0 flex-1">
