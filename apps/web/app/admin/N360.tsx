@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
-import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, platoOcultar, reabrir, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -58,7 +58,7 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" ? [["vende", "Lo que vende"]] : []), ["equipo", "Equipo"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(n.cat_id === "NEG-PRO" || n.cat_id === "NEG-FOOD" ? [["vende", "Lo que vende"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -132,6 +132,22 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
             : { label: "Quitar de la página", variant: "secondary", onClick: () => setConf({ titulo: `Quitar a ${m.name} de la página`, sub: "Sigue en el equipo del negocio; deja de salir en su página. El dueño ve el motivo en su panel.", plantillas: BIZ, peligro: true, hacer: (x) => staffPagina(n.id, m.id, true, x) }) }] : undefined,
         }))} />
         {!staff.length ? <A.AdminNote tone="info" icon="users">Solo el dueño. Las personas del equipo salen aquí cuando el dueño las invita.</A.AdminNote> : null}
+      </>);
+  } else if (tab === "cont") {
+    // ADM-NEG · Contenido (prototipo tab 'cont'): reseñas con su estado, el reporte abierto y ocultar / restaurar con motivo.
+    cuerpo = (
+      <>
+        <A.AdminList label={`RESEÑAS · ${n.resenasN.n} · RESPONDIÓ ${n.resenasN.rep}`} rows={n.resenas.map((r) => ({
+          icon: "star", title: `${r.name} · ${"★".repeat(r.stars)}`, sub: `${r.body.slice(0, 110)}${r.reply ? " · el negocio respondió" : " · sin respuesta"}${r.status === "hidden" && r.hidden_reason ? ` · Oculta: ${r.hidden_reason}` : ""}`,
+          tag: r.status === "hidden" ? "OCULTA" : r.caso ? "REPORTADA" : undefined, tone: "danger",
+          actions: [
+            ...(r.caso ? [{ label: "Reporte", variant: "secondary", onClick: () => router.push(`/admin/colas?caso=${r.caso}`) }] : []),
+            ...(P.retirar ? [r.status === "hidden"
+              ? { label: "Restaurar", variant: "secondary", onClick: () => setConf({ titulo: `Restaurar reseña de ${r.name}`, plantillas: ["No rompe las reglas del barrio", "Es una opinión sobre el servicio", "El reporte no trae evidencia"], hacer: (m) => resenaOcultar(n.id, r.id, false, m) }) }
+              : { label: "Ocultar", variant: "danger", onClick: () => setConf({ titulo: `Ocultar reseña de ${r.name}`, sub: "Sale de su página y de las estrellas. El autor ve el motivo.", peligro: true, plantillas: ["Tiene datos personales", "Ofensiva o discriminatoria", "No fue cliente: sin transacción", "Spam o publicidad", "Amenaza o acoso"], hacer: (m) => resenaOcultar(n.id, r.id, true, m) }) }] : []),
+          ],
+        }))} />
+        {!n.resenas.length ? <A.AdminNote tone="info" icon="star">Sin reseñas.</A.AdminNote> : null}
       </>);
   } else if (tab === "confianza") {
     const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };

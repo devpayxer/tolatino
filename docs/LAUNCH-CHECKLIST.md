@@ -232,7 +232,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Avisos** al cliente y al negocio (SMS / push: pedido nuevo, aceptado, listo): con las notificaciones. Hoy la
   página del pedido se actualiza sola cada 20 s y el panel al abrirlo.
 - [x] **Nota de cómo se recoge** (pickup_note): se edita en Entrega (DASH-ENTREGA): hecho en el 2f.
-- [ ] **Devolver dinero y Pedir reseña** en un pedido entregado: con tarjeta (2d) y reseñas (2g).
+- [ ] **Devolver dinero y Pedir reseña** (SMS «¿Cómo estuvo?») en un pedido entregado: con tarjeta (2d) y las notificaciones. El cliente ya escribe la reseña desde su pedido (2g).
 - [ ] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
   el local y no hay cupones.
 - [x] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): hecho en el 2f, con efectivo al entregar.
@@ -271,3 +271,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Delivery con tarjeta** (envío y propina cobrados en la app): con el 2d. Hoy solo efectivo al recibir.
 - [ ] **Calles del Censo (TIGER) en el sandbox:** se cargan con `.github/workflows/direcciones.yml`; en el entorno local
   de pruebas se usan calles sintéticas. Producción las carga en la fase 9.
+
+## Reseñas (bloque 2g-1, 6 nov 2026)
+- [ ] **Rango y puntos** del vecino en la tarjeta («SARGENTO · 23 RESEÑAS», «+15 puntos») y la nota de rango en «Tu reseña»: con
+  la gamificación. Hoy: «N RESEÑAS». Pregunta 7 en `docs/REVISION.md`.
+- [ ] **«Ver traducción» (D3)** en reseñas y respuestas: con el servicio de traducción.
+- [ ] **«Lo que más mencionan»** (temas): se calcula del texto; hoy no sale.
+- [ ] **Preguntas de cada categoría** en «Lo que importa» (belleza, autos, hogar, salud…): con la fase de cada categoría. Hoy:
+  Comida; las demás escriben estrellas, texto y fotos.
+- [ ] **Reseña de una cita** (VERIFICADA · CITA) y **de una reservación** desde su pantalla: la mesa ya cuenta como verificada;
+  el botón en la pantalla de la reservación terminada llega con Mi cuenta (2h).
+- [ ] **Ayuda con el pedido** desde una reseña de 2★ o menos: con Soporte (2i).
+- [ ] **Avisos** (al negocio: reseña nueva; al autor: respuesta, resultado de un reporte): con las notificaciones.
+- [ ] **El negocio «quiere arreglarlo»** (propuesta en la respuesta) y **editar la respuesta**: el panel del diseño no los tiene.
+- [ ] **Auto-moderación** («5 reseñas sin transacción en 10 min» → cola) y filtros de reseñas sospechosas en Contenido: con
+  Contenido (2i).
+- [ ] **Mi cuenta › Reseñas** (escritas / por escribir): con Mi cuenta completa (2h).
+- [ ] **Semilla:** solo Sabor Dominicano trae reseñas de ejemplo (pregunta 8).

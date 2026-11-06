@@ -40,6 +40,8 @@ export type Bloque =
   /* Línea de tiempo del Panel v2 (isTimeline): HISTORIAL de un pedido, una cita o la prueba. now = el punto actual (Action),
      future = lo que falta (hueco). */
   | { type: "timeline"; k?: string; items: { t: string; s?: string; now?: boolean; future?: boolean }[] }
+  /* Panel v2 · bl('thread'): la reseña (o el mensaje) a la izquierda y la respuesta del negocio a la derecha. */
+  | { type: "thread"; items: { t: string; mine?: boolean }[] }
   /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
      barra de selección en lote (SelectionBar 2af) y «Así se ve en tu menú» (MenuItemRow 2i). */
   | { type: "utabs"; wrap?: boolean; items: { l: string; icon: string; n?: string; warn?: boolean; on: boolean; onClick: Fn }[] }
@@ -62,6 +64,14 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
+    case "thread": return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 14, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
+        {b.items.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.mine ? "flex-end" : "flex-start" }}>
+            <span style={{ maxWidth: "82%", padding: "10px 13px", borderRadius: m.mine ? "16px 16px 4px 16px" : "16px 16px 16px 4px", background: m.mine ? "var(--tl-ink)" : "var(--tl-paper)", color: m.mine ? "var(--tl-white)" : "var(--tl-ink)", font: "600 13px/1.45 Manrope,sans-serif", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</span>
+          </div>
+        ))}
+      </div>);
     case "timeline": return (
       <div style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 2 }}>
         {b.k ? <span style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</span> : null}

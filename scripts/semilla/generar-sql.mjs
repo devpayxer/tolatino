@@ -2,7 +2,8 @@
 /* Semilla del SANDBOX (decisión I): negocios del prototipo → SQL idempotente.
    Entrada: infra/pruebas/semilla/negocios.json (sacado del prototipo con scripts/semilla/extraer-prototipo.cjs).
    Salida:  infra/pruebas/semilla/0001_negocios.sql. Solo lo aplica infra/pruebas/deploy.sh; nunca producción.
-   Teléfonos: rango 555-01xx (ficción, no timbra a nadie). Todo queda marcado is_demo = true. */
+   Teléfonos: rango 555-01xx (ficción, no timbra a nadie). Todo queda marcado is_demo = true.
+   ★ y número de reseñas: no se siembran; salen de las reseñas reales (reviews_stats, 0007_resenas.sql). */
 import { readFileSync, writeFileSync } from "node:fs";
 const RAIZ = new URL("../..", import.meta.url).pathname;
 const N = JSON.parse(readFileSync(RAIZ + "infra/pruebas/semilla/negocios.json", "utf8"));
@@ -20,9 +21,9 @@ values (${q(b.id)}, 'hzl', ${q(b.category_id)}, ${arr(b.subcategory_ids)}, ${q(b
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values (${q(b.id)}, ${q(b.plan)}, ${b.verified}, ${b.rating_avg ?? "null"}, ${b.review_count ?? 0}, ${b.photos.length})
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values (${q(b.id)}, ${q(b.plan)}, ${b.verified}, ${b.photos.length})
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = ${q(b.id)};
 ${b.hours.map((h) => `insert into business_hours (business_id, weekday, open, ranges) values (${q(b.id)}, ${h.weekday}, ${h.open}, ${j(h.ranges)});`).join("\n")}
 ${b.photos.map((u, i) => `insert into media (id, owner_kind, owner_id, url, credit, sort) values (md5(${q(`semilla:${b.id}:${i}`)})::uuid, 'business', ${q(b.id)}, ${q(u)}, 'Pexels', ${i})

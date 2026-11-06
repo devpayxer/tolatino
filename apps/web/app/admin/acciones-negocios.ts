@@ -204,6 +204,21 @@ export async function platoOcultar(id: string, itemId: string, ocultar: boolean,
   }, ocultar ? "Plato oculto. El dueño ve el motivo en su panel." : "El plato se ve otra vez.");
 }
 
+/* Contenido · ocultar o restaurar una reseña con motivo (neg:retirar). Sale de la página y de las ★; el autor ve el motivo. */
+export async function resenaOcultar(id: string, resena: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(resena))) return no("Esa reseña no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const r = (await c.query<{ status: string; quien: string }>(
+      `select r.status, coalesce(u.first_name, 'Vecino') as quien from reviews r join users u on u.id = r.user_id where r.id = $1::bigint and r.business_id = $2 and r.status <> 'removed' for update of r`, [resena, b.id])).rows[0];
+    if (!r) return "Esa reseña ya no está.";
+    if ((r.status === "hidden") === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
+    await c.query(`update reviews set status = $2, hidden_reason = $3, hidden_by = $4, hidden_at = $5 where id = $1::bigint`, [resena, ocultar ? "hidden" : "visible", ocultar ? m : null, ocultar ? s.id : null, ocultar ? new Date() : null]);
+    await c.query(`select reviews_stats($1)`, [b.id]);
+    await auditar(c, { actor: s.id, action: ocultar ? "resena.ocultar" : "resena.restaurar", targetKind: "review", targetId: resena, city: b.city_id, before: { resena: `de ${r.quien}`, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible", negocio: b.id }, reason: m });
+    return null;
+  }, ocultar ? "Reseña oculta. El autor ve el motivo." : "La reseña se ve otra vez.");
+}
+
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
 export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv", pausar: boolean, motivo: string): Promise<ResAdm> {
   if (!["menu", "pedidos", "delivery", "rsv"].includes(modulo)) return no("Ese módulo no existe.");

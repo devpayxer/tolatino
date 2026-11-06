@@ -8,12 +8,14 @@ import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa }
 import { pedidosPendientes } from "@/lib/pedidos";
 import type { RsvPanel } from "../../Reservas";
 import { accesoPanel, datosPanel } from "@/lib/panel";
+import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
+import type { ResPanel } from "../../ResenasPanel";
 import { Panel, type Ruta } from "../../Panel";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
-const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10})$/;
+const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas"]);
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string }> }) {
@@ -64,5 +66,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     det: ruta.det?.startsWith("rsv:") ? await mesaDetalle(d.id, ruta.det.slice(4)) : undefined,
     aj: ruta.sec === "mod" ? (await rsvAjustes(d.id)) ?? undefined : undefined,
   } : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} />;
+  // Reseñas (Tu página › Reseñas, su detalle y «Reseñas sin responder» en Hoy). Ver y responder piden acceso a Tu página.
+  const pag = acc.partes.includes("all") || acc.partes.includes("page");
+  const fRes = (["all", "norep", "5", "low"].includes(sp.f ?? "") ? sp.f : "all") as FiltroPanel;
+  const res: ResPanel = {
+    lista: ruta.sec === "pag" && ruta.sub === "resenas" ? await resenasPanel(d.id, fRes) : undefined, f: fRes,
+    det: ruta.det?.startsWith("rev:") && pag ? await resenaPanel(d.id, ruta.det.slice(4)) : undefined,
+    hoy: ruta.sec === "hoy" && pag && d.pro ? await resenasSinResponder(d.id) : undefined,
+  };
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} />;
 }

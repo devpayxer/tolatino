@@ -19,6 +19,7 @@ import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
 import { entregaBloques } from "./Entrega";
+import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
@@ -32,6 +33,7 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "hor", icon: "clock", l: ["Horario", "Hours"], s: ["Tu semana, feriados y vacaciones.", "Your week, holidays and time off."] },
   { k: "fotos", icon: "image", l: ["Fotos y portada", "Photos and cover"], s: ["Portada, logo y galería.", "Cover, logo and gallery."] },
   { k: "about", icon: "quote", l: ["Quiénes somos", "About us"], s: ["Tus palabras y lo que hay en tu negocio.", "Your words and what your place offers."] },
+  { k: "resenas", icon: "star", l: ["Reseñas", "Reviews"], s: ["Lo que dicen tus clientes; respóndeles.", "What clients say; reply to them."] },
   { k: "equipo", icon: "users", l: ["Equipo", "Team"], s: ["Las personas que salen en tu página.", "The people who show on your page."] },
   { k: "ver", icon: "shield", l: ["Verificación y sello", "Verification and badge"], s: ["Teléfono, correo y el sello Verificado.", "Phone, email and the Verified badge."] },
   { k: "lic", icon: "law", l: ["Tus licencias", "Your licenses"], s: ["Lo que puedes hacer por ley y lo que no haces.", "What you may do by law and what you do not do."] },
@@ -67,10 +69,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -109,7 +111,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv }: { d: Datos
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -261,7 +263,7 @@ function secciones(c: Ctx): Sec {
       act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : undefined },
     { type: "tabs", items: partesDe(c.d).map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 
@@ -271,6 +273,7 @@ function detalle(c: Ctx): Sec | null {
   if (/^(item|mcat|mgrp):/.test(id)) return menuDetalle(c, id);
   if (id.startsWith("ped:")) return pedidoDetalle(c);
   if (id.startsWith("rsv:")) return rsvDetalle(c);
+  if (id.startsWith("rev:")) return resenaDetalle(c);
   return null;
 }
 
@@ -302,6 +305,7 @@ function resumen(c: Ctx, k: string) {
   if (k === "fotos") return `${d.fotos.length} ${E2("fotos", "photos")} · ${d.logo ? "logo" : E2("sin logo", "no logo")}`;
   if (k === "about") { const a = d.about?.es ?? ""; return a ? (a.length > 56 ? `${a.slice(0, 56)}…` : a) : E2("Sin escribir", "Not written"); }
   if (k === "ver") return selloL(c).t;
+  if (k === "resenas") { const r = d.resenas; return r.n ? `★ ${r.avg?.toFixed(1)} · ${r.n}${d.pro && r.norep ? E2(` · ${r.norep} sin responder`, ` · ${r.norep} unanswered`) : ""}` : E2("Aún sin reseñas", "No reviews yet"); }
   if (k === "lic") { const f = d.lic?.filas ?? [], ok = f.filter((x) => x.status === "valid").length, rev = f.filter((x) => x.status === "review").length; return f.length ? `${ok} ${ok === 1 ? E2("licencia verificada", "verified license") : E2("licencias verificadas", "verified licenses")}${rev ? E2(` · ${rev} en revisión`, ` · ${rev} in review`) : ""}` : E2("Sin licencias", "No licenses"); }
   const ok = d.equipo.filter((p) => p.st === "ok").length, inv = d.equipo.filter((p) => p.st === "inv").length;
   return `${ok} ${E2("en tu página", "on your page")}${inv ? (inv === 1 ? E2(" · 1 invitación", " · 1 invite") : E2(` · ${inv} invitaciones`, ` · ${inv} invites`)) : ""}`;
@@ -339,7 +343,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
   }
   const cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
   const grp = (k: string, keys: string[]): Bloque => ({ type: "rows", k, cols: cols2, items: keys.map((p) => { const P = PARTS.find((x) => x.k === p)!; return { icon: P.icon, t: E2(...P.l), s: resumen(c, p), onClick: () => c.go("pag", p) }; }) });
-  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), d.lic ? ["lic", "ver"] : ["ver"]));
+  out.push(grp(E2("LO QUE VEN LOS CLIENTES", "WHAT CLIENTS SEE"), ["hor", "fotos", "about"]), grp(E2("CONTENIDO", "CONTENT"), ["resenas", "equipo"]), grp(E2("CONFIANZA Y NÚMEROS", "TRUST AND NUMBERS"), d.lic ? ["lic", "ver"] : ["ver"]));
   if (!d.pro && !d.trialUsed) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Con Free tu página es una sola, sin pestañas, y se ven ${FOTOS_FREE} fotos y ${ITEMS_FREE} ${d.itemsW[0]}. Nada se borra.`, `On Free your page is a single page, no tabs, showing ${FOTOS_FREE} photos and ${ITEMS_FREE} ${d.itemsW[1]}. Nothing is deleted.`) });
   return out;
 }
@@ -355,6 +359,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...avisosPrueba(c, "hoy"));
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
   out.push(...hoyPedidos(c));
+  out.push(...hoyResenas(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday
     ? { l: E2("Abrir de nuevo", "Reopen"), icon: "clock", onClick: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) }

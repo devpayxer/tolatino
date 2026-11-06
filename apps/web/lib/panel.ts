@@ -121,9 +121,13 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const st = estado(horas.rows, { dow: b.dow, hm: b.hm }, b.open, lang, null, b.closed_today, !!b.temp_until);
   // Fotos que quitó To'Latino (con su motivo): el dueño lo ve en Fotos y portada.
   const quitadas = (await db().query<{ note: string | null }>(`select removed_note as note from media where owner_kind = 'business' and owner_id = $1 and status = 'removed' and removed_reason = 'admin' order by removed_at desc limit 10`, [id])).rows;
+  // Reseñas (2g): cifras para «Tu página › Reseñas» y la regla «Responde tus reseñas críticas» (≤ 3 ★ sin respuesta).
+  const rs = (await db().query<{ n: number; avg: number | null; norep: number; crit: number }>(
+    `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where reply is null)::int as norep,
+            count(*) filter (where reply is null and stars <= 3)::int as crit from reviews where business_id = $1 and status = 'visible'`, [id])).rows[0]!;
   const f = fuerza({
     items, itemsW, galeria: fotos.rows.length, about: !!b.about?.es, logo: !!b.logo, sello: b.verified, correo: b.email_ok, faqs: faqs.rows[0]?.n ?? 0,
-    resenasSinResponder: 0, equipo: okEquipo.length, aDomicilio: b.op === "casa", diasAbiertos: dias.filter((d) => d.on).length, amenidades: b.amen.length, pro,
+    resenasSinResponder: rs.crit, equipo: okEquipo.length, aDomicilio: b.op === "casa", diasAbiertos: dias.filter((d) => d.on).length, amenidades: b.amen.length, pro,
   });
   // Derivado cacheado (lo leen las listas del Super Admin): se guarda solo si cambió.
   await db().query(`update business_stats_cache set profile_strength = $2, updated_at = now() where business_id = $1 and profile_strength <> $2`, [id, f.sc]);
@@ -132,6 +136,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
   const ahoraHora = b.hora;
   const tope = pro ? { cap: TOPE_FREE, usados: 0 } : await topeFreeDe(id);
   return {
+    resenas: rs,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: !!tr, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },

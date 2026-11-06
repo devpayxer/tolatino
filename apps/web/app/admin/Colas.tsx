@@ -7,8 +7,8 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
-import { COLAS, type Cola } from "@/lib/colas";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
+import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSello, tomarCaso, tomarSiguiente, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -18,6 +18,9 @@ const PLANT = {
   selloNo: ["La dirección no coincide con la página", "No pudimos confirmar que representas el negocio", "Las fotos no son del local", "El nombre puede confundirse con otro negocio"],
   selloInfo: ["Mándanos una foto de la fachada con el letrero", "Confírmanos el teléfono fijo del local", "Dinos en qué horario podemos llamar"],
   biz: ["Varios reportes coinciden", "El negocio no responde a To’Latino", "Datos de contacto falsos", "Se resolvió con el dueño"],
+  // Reseñas (adm-data TPL hide / keep).
+  hide: ["Tiene datos personales", "Ofensiva o discriminatoria", "No fue cliente: sin transacción", "Spam o publicidad", "Amenaza o acoso"],
+  keep: ["No rompe las reglas del barrio", "Es una opinión sobre el servicio", "El reporte no trae evidencia"],
   // Fotos: los mismos motivos con los que un vecino reporta (photo_reports.reason).
   foto: ["No es de este negocio", "Contenido inapropiado", "Muestra datos personales", "Es publicidad o spam"],
 };
@@ -91,7 +94,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -176,6 +179,26 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       acts = [
         { l: "Está bien", v: "action", icon: "check", onClick: () => run(() => decidirMedios(k.id, "mantener", ""), () => ir({ caso: null })) },
         { l: "Quitar foto", v: "danger", icon: "trash", off: unica, onClick: () => setConf({ titulo: "¿Por qué se quita?", plantillas: PLANT.foto, peligro: true, hacer: (m) => decidirMedios(k.id, "quitar", m) }) },
+      ];
+    }
+    if (k.queue === "rep" && "resena" in k) {
+      // Reportes de contenido · reseña (adm-data · rep): la cita, quién reportó, cuántos y hace cuánto; sigue visible mientras se decide.
+      const r = k.resena, reps = k.reportesR ?? [], hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      if (r) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `RESEÑA · ${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)} · ${r.autor} · «${r.body}»${r.reply ? ` — Respuesta del negocio: «${r.reply}»` : ""}` });
+      const r0 = reps[0];
+      cuerpoB.push({ type: "kv", cols: 3, items: [
+        { k: "REPORTADO POR", v: r0 ? (r0.by_business ? "El negocio" : r0.quien ?? "Un vecino") : "—" },
+        { k: "REPORTES", v: String(reps.length) },
+        { k: "HACE", v: r0 ? hace(r0.at) : "—" },
+      ] });
+      reps.forEach((x) => cuerpoB.push({ type: "note", tone: x.by_business ? "info" : "warn", t: `${x.by_business ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.reason] ?? "Otro motivo"}${x.note ? ` · «${x.note}»` : ""}` }));
+      cuerpoB.push({ type: "note", tone: "info", icon: "shield", t: "Sigue visible mientras decides (regla de 48 h). Ocultar avisa al autor con el motivo." });
+      const oculta = r?.status !== "visible";
+      acts = [
+        { l: "Mantener", v: "action", icon: "check", onClick: () => setConf({ titulo: "¿Por qué se queda?", plantillas: PLANT.keep, hacer: (m) => decidirRep(k.id, "mantener", m) }) },
+        { l: "Ocultar", v: "danger", icon: "close", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.hide, peligro: true, hacer: (m) => decidirRep(k.id, "ocultar", m) }) },
+        { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
+          elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
       ];
     }
     if (k.queue === "rec" && "rec" in k && k.rec) {

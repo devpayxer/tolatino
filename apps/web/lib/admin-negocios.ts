@@ -84,7 +84,7 @@ export async function negocio360(s: Staff, id: string) {
     created: string; updated: string; plan: string; verified: boolean; rating: number | null; reviews: number; perfil: number; origin: string;
     owner_id: string | null; owner: string | null; owner_phone: string | null; trial_until: string | null; trial_days: number | null;
     mi: number | null; admin_edits: Record<string, { at: string; by: string }>; staff_hidden: boolean; op: string; from_home: boolean;
-    items: number; email_ok: boolean; faqs: number; itemsw: [string, string] | null;
+    items: number; email_ok: boolean; faqs: number; crit: number; itemsw: [string, string] | null;
   }>(
     `select b.id, b.name, c.name->>'es' as cat, b.category_id as cat_id, b.city_id as city, ci.name as ciudad,
             (select string_agg(sc.name->>'es', ', ' order by array_position(b.subcategory_ids, sc.id)) from subcategories sc where sc.id = any(b.subcategory_ids[1:2])) as subs,
@@ -98,7 +98,8 @@ export async function negocio360(s: Staff, id: string) {
             case when b.geo is null then null else round((st_distance(b.geo, ci.center) / 1609.34)::numeric, 1)::float end as mi,
             b.admin_edits, b.staff_hidden, b.operation as op, b.works_from_home as from_home,
             case when jsonb_typeof(b.category_attrs->'items') = 'array' then jsonb_array_length(b.category_attrs->'items') else 0 end as items,
-            coalesce(u.email_verified, false) as email_ok, (select count(*)::int from faqs f where f.business_id = b.id) as faqs, null as itemsw
+            coalesce(u.email_verified, false) as email_ok, (select count(*)::int from faqs f where f.business_id = b.id) as faqs,
+            (select count(*)::int from reviews rv where rv.business_id = b.id and rv.status = 'visible' and rv.reply is null and rv.stars <= 3) as crit, null as itemsw
        from businesses b join categories c on c.id = b.category_id join cities ci on ci.id = b.city_id
        left join business_stats_cache s on s.business_id = b.id left join users u on u.id = b.owner_user_id
       where b.id = $1 and (cardinality($2::text[]) = 0 or b.city_id = any($2::text[]))`, [id, s.cities])).rows[0];
@@ -142,7 +143,7 @@ export async function negocio360(s: Staff, id: string) {
   const dias = aPanel(horas.rows), visibles = fotos.rows.filter((x) => x.status === "visible").length;
   const fz = fuerza({
     items: b.items, itemsW: ((TLOnbNeg.CFG?.[b.cat_id]?.items as [string, string] | undefined) ?? ["servicios", "services"]), galeria: visibles, about: !!b.about?.es, logo: !!b.logo,
-    sello: b.verified, correo: b.email_ok, faqs: b.faqs, resenasSinResponder: 0, equipo: equipo.rows.filter((m) => m.kind !== "owner" && m.status === "active").length,
+    sello: b.verified, correo: b.email_ok, faqs: b.faqs, resenasSinResponder: b.crit ?? 0, equipo: equipo.rows.filter((m) => m.kind !== "owner" && m.status === "active").length,
     aDomicilio: b.op === "casa", diasAbiertos: dias.filter((d) => d.on).length, amenidades: b.amen.length, pro: b.plan === "pro",
   });
   return {
@@ -153,6 +154,13 @@ export async function negocio360(s: Staff, id: string) {
     menu: menu.rows, modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
+    // Contenido · reseñas (las 8 más recientes, visibles u ocultas; el caso abierto si alguien la reportó).
+    resenas: (await db().query<{ id: string; name: string; stars: number; body: string; reply: boolean; status: string; hidden_reason: string | null; caso: string | null }>(
+      `select r.id::text, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1), '')), ''), 'Vecino') as name, r.stars, r.body,
+              r.reply is not null as reply, r.status, r.hidden_reason,
+              (select q.id::text from queue_items q where q.queue = 'rep' and q.subject_kind = 'review' and q.subject_id = r.id::text and q.status = 'open' limit 1) as caso
+         from reviews r join users u on u.id = r.user_id where r.business_id = $1 and r.status <> 'removed' order by r.id desc limit 8`, [b.id])).rows,
+    resenasN: (await db().query<{ n: number; rep: number }>(`select count(*)::int as n, count(*) filter (where reply is not null)::int as rep from reviews where business_id = $1 and status <> 'removed'`, [b.id])).rows[0]!,
   };
 }
 export type Negocio360 = NonNullable<Awaited<ReturnType<typeof negocio360>>>;

@@ -1,6 +1,6 @@
 import "server-only";
 import type { Staff } from "./admin";
-import { COLAS, colasDelRol, espera, type Cola } from "./colas";
+import { COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
 import { db } from "./db";
 import { telefonoBonito } from "./panel";
 
@@ -23,7 +23,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
-    subject_kind: string; sctype: string | null; sname: string | null;
+    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -33,7 +33,10 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select pr.note from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mnote,
             (select pr.reason from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open' order by pr.created_at limit 1) as mreason,
             (select count(*)::int from photo_reports pr where q.queue = 'medios' and pr.media_id::text = q.subject_id and pr.status = 'open') as nrep,
-            (select coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' from licenses l join license_kinds k on k.key = l.kind where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle
+            (select coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' from licenses l join license_kinds k on k.key = l.kind where q.queue = 'lic' and l.id::text = q.subject_id) as ltitle,
+            (select cr.reason from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.by_business desc, cr.created_at limit 1) as rpreason,
+            (select count(*)::int from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open') as rpn,
+            coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -57,6 +60,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
+      : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
@@ -132,6 +136,17 @@ export async function caso(s: Staff, id: string) {
     const reps = (await db().query<{ reason: string; note: string | null; at: string }>(
       `select reason, note, created_at as at from photo_reports where media_id = $1::uuid and status = 'open' order by created_at`, [q.subject_id])).rows;
     return { ...base, negocio, foto: m ?? null, reportes: reps };
+  }
+  if (q.queue === "rep") {
+    // La reseña (sigue visible mientras se decide), su autor y los reportes abiertos.
+    const r = (await db().query<{ stars: number; body: string; src: string; status: string; estado: string | null; autor: string; autor_id: string; reply: string | null; creada: string }>(
+      `select r.stars, r.body, r.src, r.status, r.review_state as estado, r.user_id::text as autor_id, r.reply, r.created_at as creada,
+              coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1), '')), ''), 'Vecino') as autor
+         from reviews r join users u on u.id = r.user_id where r.id = $1::bigint`, [q.subject_id])).rows[0];
+    const reps = (await db().query<{ reason: string; note: string | null; at: string; by_business: boolean; quien: string | null }>(
+      `select cr.reason, cr.note, cr.created_at as at, cr.by_business, nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1), '')), '') as quien
+         from content_reports cr join users u on u.id = cr.reporter_user_id where cr.target_kind = 'review' and cr.target_id = $1 and cr.status = 'open' order by cr.created_at`, [q.subject_id])).rows;
+    return { ...base, negocio, resena: r ?? null, reportesR: reps };
   }
   if (q.queue === "rec") {
     const r = (await db().query<{ business_name: string; cat: string | null; cat_id: string | null; where: string | null; address: string | null; contact_phone: string | null; how_known: string | null; note: string | null; ciudad: string; by_user_id: string; quien: string | null; reveal_me: boolean; is_mine: boolean }>(

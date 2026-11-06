@@ -32,6 +32,8 @@ Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latin
 | Nota interna | 360 › Resumen | neg · editar | Nunca la ve el negocio |
 | Pausar / Reanudar Menú o Pedidos en línea (Comida) | 360 › Lo que vende | neg · retirar | Menú: la pestaña sale de su página. Pedidos: el menú se ve, sin poder pedir. Aviso con el motivo en su panel. El módulo dice cuántos pedidos en línea lleva este mes (y, con Free, cuántos de su techo) |
 | Ocultar / Volver a mostrar un plato | 360 › Lo que vende | neg · retirar | El plato sale de su menú; «OCULTO POR TO’LATINO» con el motivo en su panel |
+| Mantener / Ocultar / Ocultar y sancionar (advertencia, silencio 7 días, bloquear publicación 30 días, suspender 14 días) | Reportes de contenido (reseñas, 24 h) | colas · aprobar | Mantener: la reseña se queda; si el negocio pidió revisarla, el cliente ve «Revisada». Ocultar: sale de la página y de las ★; el autor ve OCULTA y el motivo en «Tu reseña» |
+| Ocultar / Restaurar una reseña | 360 › Contenido | neg · retirar | Igual que Ocultar en Reportes de contenido; Restaurar la devuelve a la página y a las ★ |
 
 Toda acción pide motivo (salvo las aprobaciones, que guardan uno fijo) y queda en la auditoría: quién, qué, antes →
 después, motivo y cuándo. Nada se borra.
@@ -66,3 +68,6 @@ notifications (Phase 2). "Create seed" lists a recommended business as unclaimed
 makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
 documents are private and every view is audited. In What it sells, Reservations shows this month's bookings and pending
 requests; Pause (with a reason) removes the tab from the page and the owner sees why.
+Content reports (reviews, 24 h): Keep (if the business asked for a review, the client sees "Reviewed"), Hide, or Hide and
+sanction the author (warning, 7-day mute, 30-day posting block, 14-day suspension). The review stays visible while you
+decide. 360 › Content lists the latest reviews with their state and open report, with Hide / Restore and a reason.

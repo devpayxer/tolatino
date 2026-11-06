@@ -307,3 +307,46 @@ export async function crearSemilla(id: string): Promise<ResAdm> {
   listo();
   return { ok: true, mensaje: "Semilla creada. Sale al final de su categoría como «sin reclamar»." };
 }
+
+/* Reportes de contenido · reseña: se queda (los reportes se descartan; si el negocio la pidió revisar, queda «revisada»)
+   u se oculta con motivo (sale de la página y de las ★; el autor ve el motivo). Con sanción, además, al autor. */
+const SANC_CONTENIDO = ["adv", "mute7", "nopub", "susp14"] as const;
+export async function decidirRep(id: string, accion: "mantener" | "ocultar", motivo: string, sancion?: string | null): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const sk = accion === "ocultar" && sancion ? (SANC_CONTENIDO as readonly string[]).includes(sancion) ? sancion as typeof SANC_CONTENIDO[number] : null : null;
+  if (sancion && !sk) return no("Esa sanción no existe.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "rep") return "Ese caso no es de esta cola.";
+    const rv = (await c.query<{ id: string; user_id: string; business_id: string; status: string; estado: string | null; city_id: string }>(
+      `select id::text, user_id::text, business_id, status, review_state as estado, city_id from reviews where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!rv) return "Esa reseña ya no existe.";
+    if (accion === "ocultar") {
+      if (rv.status === "visible") await c.query(`update reviews set status = 'hidden', hidden_reason = $2, hidden_by = $3, hidden_at = now() where id = $1::bigint`, [rv.id, m, s.id]);
+      await c.query(`select reviews_stats($1)`, [rv.business_id]);
+      if (sk) {
+        const { SANCIONES } = await import("@/lib/sanciones");
+        const k = SANCIONES[sk], fin = k.dias ? `now() + interval '${k.dias} days'` : "null";
+        const yaStaff = (await c.query(`select 1 from staff_members where user_id = $1 and status = 'active'`, [rv.user_id])).rowCount;
+        if (yaStaff) return "El autor es del equipo de To’Latino: sanciónalo desde Sistema › Equipo.";
+        await c.query(`insert into sanctions (target_kind, target_id, city_id, kind, reason, by_staff, ends_at) values ('user', $1, $2, $3, $4, $5, ${fin})`, [rv.user_id, rv.city_id, sk, m, s.id]);
+        if (sk !== "adv") await c.query(`update users set status = $2, status_until = ${fin}, status_reason = $3 where id = $1 and status not in ('banned', 'deleted', 'merged')`, [rv.user_id, k.estado, m]);
+        if (sk === "susp14") await c.query(`update sessions set signed_out_at = now() where user_id = $1 and signed_out_at is null`, [rv.user_id]);
+        await auditar(c, { actor: s.id, action: "usuario.sancionar", targetKind: "user", targetId: rv.user_id, city: rv.city_id, before: null, after: { sancion: k.es, por: "reseña" }, reason: m });
+      }
+    } else if (rv.estado === "disp") {
+      await c.query(`update reviews set review_state = 'kept', review_state_at = now() where id = $1::bigint`, [rv.id]);
+    }
+    await c.query(`update content_reports set status = $2, decided_by = $3, decided_at = now() where target_kind = 'review' and target_id = $1 and status = 'open'`, [rv.id, accion === "ocultar" ? "actioned" : "dismissed", s.id]);
+    await cerrar(c, q, s, accion, m);
+    await auditar(c, { actor: s.id, action: accion === "ocultar" ? "resena.ocultar" : "resena.mantener", targetKind: "review", targetId: rv.id, city: rv.city_id, before: { resena: "reportada" }, after: { resena: accion === "ocultar" ? "oculta" : "se queda", negocio: rv.business_id }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: accion === "ocultar" ? (sk ? "Oculta y sanción aplicada. El autor ve el motivo." : "Oculta. El autor ve el motivo.") : "Se queda. Quedó en la auditoría." };
+}

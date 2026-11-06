@@ -28,6 +28,17 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
    sistema de diseño. Del panel faltan por lo mismo «Tus repartidores» (invitar con código), «Despacho» y «Cuadre de
    efectivo». Mientras: el negocio marca «Salió en camino» y «Entregado» en su panel. ¿Se diseñan las pantallas del
    Repartidor (en Claude Design) o las compongo yo con el sistema de diseño y te las muestro antes de conectarlas?
+7. **Reseñas: lo que el diseño promete y todavía no existe.** No se muestra hasta que exista (nada falso):
+   - El **rango** del vecino (Recluta, Vecino, Sargento…) y los **puntos** («+15 puntos», «sumas puntos para tu rango»):
+     llegan con la gamificación. Hoy la tarjeta dice solo «N RESEÑAS».
+   - **«Ver traducción»** (D3): con el servicio de traducción.
+   - **«Ir a Ayuda con el pedido»** en una reseña de 2★ o menos: con Ayuda con el pedido (2i). Hoy sale el aviso de visitante.
+   - **«Te avisamos el resultado por SMS»** al reportar: con las notificaciones.
+   - **«Lo que más mencionan»** (temas): necesita leer el texto de las reseñas; no se inventan temas.
+   ¿Te parece bien así, o prefieres esperar a tener todo antes de mostrar reseñas?
+8. **Calificaciones de los negocios de ejemplo (sandbox).** Antes, la semilla ponía ★ y número de reseñas fijos a cada
+   negocio. Ahora salen de reseñas reales: Sabor Dominicano trae las 14 del prototipo y los demás negocios salen «Nuevo»
+   hasta que alguien escriba. ¿Siembro reseñas de ejemplo en más negocios del sandbox?
 5. **«Avísame si se libera»** (lista de espera de una hora sin mesa) y **«Otros restaurantes con mesa»** en la pantalla
    de «no pudo»: necesitan los avisos por SMS para ser de verdad. Se hacen con las notificaciones.
 
@@ -117,3 +128,22 @@ de las 5 ciudades._
     ofrece Pickup y Pedro ve el motivo en Entrega.
 12. Escritorio: el menú con el riel «Pickup N min · Delivery $X», el pago en dos columnas y el panel con el detalle.
 _Quitado a propósito: el pago no promete la foto al dejarlo ni la espera de 5 min (lo hace la app Repartidor, pregunta 6)._
+
+## Fase 2 · 2g-1 Reseñas
+_Marisol escribe; Pedro (Sabor Dominicano, Pro) responde; Ana (Super Admin) decide los reportes._
+1. Sabor Dominicano › **Resumen**: «Lo que dicen los vecinos» con 4.4, verificadas, «Lo que importa en la comida» y 2
+   reseñas. **Ver las 14** abre la pestaña **Reseñas**: toca la barra de 5★ (filtra), los filtros, el orden y **Ver más
+   reseñas**.
+2. En una reseña de otro vecino: **Útil** (sube y se quita al tocar otra vez) y **Reportar** → elige un motivo → «Recibimos
+   tu reporte»; la tarjeta dice «Reportada · en revisión».
+3. Marisol › un pedido terminado › **Escribir una reseña**: sale «Pedido #… · pickup · VERIFICADA», el dato del pedido
+   (prometido, listo, resultado) bloqueado. Prueba escribir un teléfono (no deja). Publica → «Tu reseña» con «Reseña
+   publicada». **Editar** (dentro de 48 h) y **Borrar**.
+4. Pedro › Panel › Tu página › **Reseñas**: cifras, filtros; abre la de Marisol → «Empieza con» → **Publicar respuesta**.
+   Marisol ve «El negocio respondió». En otra, **Pedir revisión a To'Latino**.
+5. Ana › Colas › **Reportes de contenido**: la reseña con quién la reportó; **Mantener** (el cliente ve «Revisada»),
+   **Ocultar** u **Ocultar y sancionar** con motivo. Negocios › Sabor › **Contenido**: las reseñas con OCULTA / REPORTADA,
+   Ocultar y Restaurar.
+6. Un negocio **Free** (p. ej. Desayunos Mi Viejo): una sola página con el bloque de reseñas; Marisol escribe como
+   visitante y su reseña dice «Este negocio no responde reseñas en To'Latino».
+7. Escritorio: la pestaña en dos columnas, «Escribir reseña» con «Así la van a ver» a la derecha.

@@ -5,9 +5,9 @@ values ('sabor-dominicano', 'hzl', 'NEG-FOOD', array['NEG-FOOD-10','NEG-FOOD-05'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sabor-dominicano', 'pro', true, 4.8, 212, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sabor-dominicano', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sabor-dominicano';
 insert into business_hours (business_id, weekday, open, ranges) values ('sabor-dominicano', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sabor-dominicano', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -32,9 +32,9 @@ values ('sabor-dominicano-alter', 'hzl', 'NEG-FOOD', array['NEG-FOOD-10']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sabor-dominicano-alter', 'pro', true, 4.7, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sabor-dominicano-alter', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sabor-dominicano-alter';
 insert into business_hours (business_id, weekday, open, ranges) values ('sabor-dominicano-alter', 0, true, '[["11:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sabor-dominicano-alter', 1, true, '[["11:00","22:00"]]'::jsonb);
@@ -59,9 +59,9 @@ values ('panaderia-la-espiga', 'hzl', 'NEG-FOOD', array['NEG-FOOD-42','NEG-FOOD-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('panaderia-la-espiga', 'pro', true, 4.9, 301, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('panaderia-la-espiga', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'panaderia-la-espiga';
 insert into business_hours (business_id, weekday, open, ranges) values ('panaderia-la-espiga', 0, true, '[["06:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('panaderia-la-espiga', 1, true, '[["06:00","19:00"]]'::jsonb);
@@ -86,9 +86,9 @@ values ('el-fogon', 'hzl', 'NEG-FOOD', array['NEG-FOOD-33','NEG-FOOD-10']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('el-fogon', 'pro', true, 4.7, 158, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('el-fogon', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'el-fogon';
 insert into business_hours (business_id, weekday, open, ranges) values ('el-fogon', 0, true, '[["11:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('el-fogon', 1, true, '[["11:00","00:00"]]'::jsonb);
@@ -113,9 +113,9 @@ values ('cafe-quisqueya', 'hzl', 'NEG-FOOD', array['NEG-FOOD-49','NEG-FOOD-39']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cafe-quisqueya', 'pro', true, 4.8, 120, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cafe-quisqueya', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cafe-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('cafe-quisqueya', 0, true, '[["07:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cafe-quisqueya', 1, true, '[["07:00","15:00"]]'::jsonb);
@@ -140,9 +140,9 @@ values ('pollo-don-lucho', 'hzl', 'NEG-FOOD', array['NEG-FOOD-35','NEG-FOOD-15']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pollo-don-lucho', 'pro', true, 4.6, 97, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pollo-don-lucho', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pollo-don-lucho';
 insert into business_hours (business_id, weekday, open, ranges) values ('pollo-don-lucho', 0, true, '[["11:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pollo-don-lucho', 1, true, '[["11:00","22:00"]]'::jsonb);
@@ -167,9 +167,9 @@ values ('tacos-el-guero', 'hzl', 'NEG-FOOD', array['NEG-FOOD-27','NEG-FOOD-09','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tacos-el-guero', 'pro', false, 4.7, 140, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tacos-el-guero', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tacos-el-guero';
 insert into business_hours (business_id, weekday, open, ranges) values ('tacos-el-guero', 0, true, '[["11:00","02:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tacos-el-guero', 1, true, '[["11:00","02:00"]]'::jsonb);
@@ -194,9 +194,9 @@ values ('mariscos-la-bahia', 'hzl', 'NEG-FOOD', array['NEG-FOOD-32','NEG-FOOD-10
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mariscos-la-bahia', 'pro', true, 4.5, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mariscos-la-bahia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mariscos-la-bahia';
 insert into business_hours (business_id, weekday, open, ranges) values ('mariscos-la-bahia', 0, true, '[["16:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mariscos-la-bahia', 1, true, '[["16:00","22:00"]]'::jsonb);
@@ -221,9 +221,9 @@ values ('empanadas-dona-tere', 'hzl', 'NEG-FOOD', array['NEG-FOOD-30','NEG-FOOD-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('empanadas-dona-tere', 'pro', true, 4.9, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('empanadas-dona-tere', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'empanadas-dona-tere';
 insert into business_hours (business_id, weekday, open, ranges) values ('empanadas-dona-tere', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('empanadas-dona-tere', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -248,9 +248,9 @@ values ('jugos-tropical', 'hzl', 'NEG-FOOD', array['NEG-FOOD-48']::text[], 'Jugo
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('jugos-tropical', 'pro', true, 4.6, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('jugos-tropical', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'jugos-tropical';
 insert into business_hours (business_id, weekday, open, ranges) values ('jugos-tropical', 0, true, '[["07:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('jugos-tropical', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -275,9 +275,9 @@ values ('catering-hazleton', 'hzl', 'NEG-FOOD', array['NEG-FOOD-05','NEG-FOOD-10
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('catering-hazleton', 'pro', true, 4.8, 41, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('catering-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'catering-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('catering-hazleton', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('catering-hazleton', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -302,9 +302,9 @@ values ('fritura-dona-carmen', 'hzl', 'NEG-FOOD', array['NEG-FOOD-01','NEG-FOOD-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fritura-dona-carmen', 'free', false, 4.5, 18, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fritura-dona-carmen', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fritura-dona-carmen';
 insert into business_hours (business_id, weekday, open, ranges) values ('fritura-dona-carmen', 0, true, '[["11:00","23:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fritura-dona-carmen', 1, true, '[["11:00","23:00"]]'::jsonb);
@@ -325,9 +325,9 @@ values ('el-coqui-boricua', 'hzl', 'NEG-FOOD', array['NEG-FOOD-11','NEG-FOOD-36'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('el-coqui-boricua', 'pro', true, 4.7, 88, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('el-coqui-boricua', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'el-coqui-boricua';
 insert into business_hours (business_id, weekday, open, ranges) values ('el-coqui-boricua', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('el-coqui-boricua', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -352,9 +352,9 @@ values ('la-habana-sandwich', 'hzl', 'NEG-FOOD', array['NEG-FOOD-12','NEG-FOOD-3
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-habana-sandwich', 'pro', true, 4.8, 57, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-habana-sandwich', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-habana-sandwich';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-habana-sandwich', 0, true, '[["07:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-habana-sandwich', 1, true, '[["07:00","16:00"]]'::jsonb);
@@ -377,9 +377,9 @@ values ('asados-la-pampa', 'hzl', 'NEG-FOOD', array['NEG-FOOD-20','NEG-FOOD-34',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('asados-la-pampa', 'pro', true, 4.8, 73, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('asados-la-pampa', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'asados-la-pampa';
 insert into business_hours (business_id, weekday, open, ranges) values ('asados-la-pampa', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('asados-la-pampa', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -404,9 +404,9 @@ values ('meal-prep-yuli', 'hzl', 'NEG-FOOD', array['NEG-FOOD-03','NEG-FOOD-41']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('meal-prep-yuli', 'pro', true, 4.9, 46, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('meal-prep-yuli', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'meal-prep-yuli';
 insert into business_hours (business_id, weekday, open, ranges) values ('meal-prep-yuli', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('meal-prep-yuli', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -429,9 +429,9 @@ values ('chef-ramon', 'hzl', 'NEG-FOOD', array['NEG-FOOD-04']::text[], 'Chef Ram
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('chef-ramon', 'pro', true, 5, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('chef-ramon', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'chef-ramon';
 insert into business_hours (business_id, weekday, open, ranges) values ('chef-ramon', 0, true, '[["10:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('chef-ramon', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -454,9 +454,9 @@ values ('barra-movil-el-trago', 'hzl', 'NEG-FOOD', array['NEG-FOOD-52']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('barra-movil-el-trago', 'pro', true, 4.9, 34, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('barra-movil-el-trago', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'barra-movil-el-trago';
 insert into business_hours (business_id, weekday, open, ranges) values ('barra-movil-el-trago', 0, true, '[["10:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('barra-movil-el-trago', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -481,9 +481,9 @@ values ('pasteles-arte-dulce', 'hzl', 'NEG-FOOD', array['NEG-FOOD-44','NEG-FOOD-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pasteles-arte-dulce', 'pro', true, 4.9, 61, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pasteles-arte-dulce', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pasteles-arte-dulce';
 insert into business_hours (business_id, weekday, open, ranges) values ('pasteles-arte-dulce', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pasteles-arte-dulce', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -508,9 +508,9 @@ values ('cocina-alma-delivery', 'hzl', 'NEG-FOOD', array['NEG-FOOD-08','NEG-FOOD
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cocina-alma-delivery', 'pro', true, 4.6, 52, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cocina-alma-delivery', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cocina-alma-delivery';
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-alma-delivery', 0, true, '[["16:00","23:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-alma-delivery', 1, true, '[["16:00","23:00"]]'::jsonb);
@@ -533,9 +533,9 @@ values ('hielo-agua-cristal', 'hzl', 'NEG-FOOD', array['NEG-FOOD-53']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hielo-agua-cristal', 'free', false, 4.7, 14, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hielo-agua-cristal', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hielo-agua-cristal';
 insert into business_hours (business_id, weekday, open, ranges) values ('hielo-agua-cristal', 0, true, '[["08:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hielo-agua-cristal', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -560,9 +560,9 @@ values ('paella-valencia', 'hzl', 'NEG-FOOD', array['NEG-FOOD-22']::text[], 'Tap
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('paella-valencia', 'free', false, 4.6, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('paella-valencia', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'paella-valencia';
 insert into business_hours (business_id, weekday, open, ranges) values ('paella-valencia', 0, true, '[["12:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('paella-valencia', 1, true, '[["12:00","21:00"]]'::jsonb);
@@ -585,9 +585,9 @@ values ('tamales-dona-chayo', 'hzl', 'NEG-FOOD', array['NEG-FOOD-31','NEG-FOOD-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tamales-dona-chayo', 'free', false, 4.9, 17, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tamales-dona-chayo', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tamales-dona-chayo';
 insert into business_hours (business_id, weekday, open, ranges) values ('tamales-dona-chayo', 0, true, '[["09:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tamales-dona-chayo', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -612,9 +612,9 @@ values ('baleadas-la-ceiba', 'hzl', 'NEG-FOOD', array['NEG-FOOD-19']::text[], 'B
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('baleadas-la-ceiba', 'free', false, 4.7, 26, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('baleadas-la-ceiba', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'baleadas-la-ceiba';
 insert into business_hours (business_id, weekday, open, ranges) values ('baleadas-la-ceiba', 0, true, '[["10:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('baleadas-la-ceiba', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -637,9 +637,9 @@ values ('encebollado-el-guayas', 'hzl', 'NEG-FOOD', array['NEG-FOOD-16']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('encebollado-el-guayas', 'free', false, 4.6, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('encebollado-el-guayas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'encebollado-el-guayas';
 insert into business_hours (business_id, weekday, open, ranges) values ('encebollado-el-guayas', 0, true, '[["08:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('encebollado-el-guayas', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -662,9 +662,9 @@ values ('wok-chofan-express', 'hzl', 'NEG-FOOD', array['NEG-FOOD-25','NEG-FOOD-2
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('wok-chofan-express', 'free', false, 4.5, 39, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('wok-chofan-express', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'wok-chofan-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('wok-chofan-express', 0, true, '[["11:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('wok-chofan-express', 1, true, '[["11:00","22:00"]]'::jsonb);
@@ -687,9 +687,9 @@ values ('buffet-la-mesa-latina', 'hzl', 'NEG-FOOD', array['NEG-FOOD-40']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('buffet-la-mesa-latina', 'free', false, 4.4, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('buffet-la-mesa-latina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'buffet-la-mesa-latina';
 insert into business_hours (business_id, weekday, open, ranges) values ('buffet-la-mesa-latina', 0, true, '[["11:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('buffet-la-mesa-latina', 1, true, '[["11:00","20:00"]]'::jsonb);
@@ -712,9 +712,9 @@ values ('paleteria-la-michoacana', 'hzl', 'NEG-FOOD', array['NEG-FOOD-46','NEG-F
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('paleteria-la-michoacana', 'free', false, 4.8, 48, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('paleteria-la-michoacana', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'paleteria-la-michoacana';
 insert into business_hours (business_id, weekday, open, ranges) values ('paleteria-la-michoacana', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('paleteria-la-michoacana', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -739,9 +739,9 @@ values ('boba-tropical', 'hzl', 'NEG-FOOD', array['NEG-FOOD-50']::text[], 'Boba 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('boba-tropical', 'free', false, 4.6, 23, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('boba-tropical', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'boba-tropical';
 insert into business_hours (business_id, weekday, open, ranges) values ('boba-tropical', 0, true, '[["12:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('boba-tropical', 1, true, '[["12:00","21:00"]]'::jsonb);
@@ -764,9 +764,9 @@ values ('carrito-don-nico', 'hzl', 'NEG-FOOD', array['NEG-FOOD-07']::text[], 'El
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('carrito-don-nico', 'free', false, 4.8, 31, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('carrito-don-nico', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'carrito-don-nico';
 insert into business_hours (business_id, weekday, open, ranges) values ('carrito-don-nico', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('carrito-don-nico', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -789,9 +789,9 @@ values ('empanadas-dona-luz', 'hzl', 'NEG-FOOD', array['NEG-FOOD-30','NEG-FOOD-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('empanadas-dona-luz', 'free', false, 5, 3, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('empanadas-dona-luz', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'empanadas-dona-luz';
 insert into business_hours (business_id, weekday, open, ranges) values ('empanadas-dona-luz', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('empanadas-dona-luz', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -812,9 +812,9 @@ values ('dulces-mama-yoli', 'hzl', 'NEG-FOOD', array['NEG-FOOD-43','NEG-FOOD-01'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dulces-mama-yoli', 'free', false, 4.9, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dulces-mama-yoli', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dulces-mama-yoli';
 insert into business_hours (business_id, weekday, open, ranges) values ('dulces-mama-yoli', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dulces-mama-yoli', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -835,9 +835,9 @@ values ('cocina-miguelina', 'hzl', 'NEG-FOOD', array['NEG-FOOD-01','NEG-FOOD-02'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cocina-miguelina', 'free', false, 4.7, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cocina-miguelina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cocina-miguelina';
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-miguelina', 0, true, '[["11:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-miguelina', 1, true, '[["11:00","18:00"]]'::jsonb);
@@ -858,9 +858,9 @@ values ('pupuseria-morazan', 'hzl', 'NEG-FOOD', array['NEG-FOOD-28','NEG-FOOD-17
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pupuseria-morazan', 'free', false, 4.6, 31, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pupuseria-morazan', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pupuseria-morazan';
 insert into business_hours (business_id, weekday, open, ranges) values ('pupuseria-morazan', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pupuseria-morazan', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -881,9 +881,9 @@ values ('pizza-express', 'hzl', 'NEG-FOOD', array['NEG-FOOD-26']::text[], 'Hazle
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pizza-express', 'free', false, 4.2, 57, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pizza-express', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pizza-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('pizza-express', 0, true, '[["11:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pizza-express', 1, true, '[["11:00","00:00"]]'::jsonb);
@@ -904,9 +904,9 @@ values ('burger-81', 'hzl', 'NEG-FOOD', array['NEG-FOOD-38','NEG-FOOD-24']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('burger-81', 'free', false, 4.3, 26, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('burger-81', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'burger-81';
 insert into business_hours (business_id, weekday, open, ranges) values ('burger-81', 0, true, '[["11:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('burger-81', 1, true, '[["11:00","22:00"]]'::jsonb);
@@ -927,9 +927,9 @@ values ('arepas-caracas', 'hzl', 'NEG-FOOD', array['NEG-FOOD-29','NEG-FOOD-14']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('arepas-caracas', 'free', false, 4.7, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('arepas-caracas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'arepas-caracas';
 insert into business_hours (business_id, weekday, open, ranges) values ('arepas-caracas', 0, true, '[["07:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('arepas-caracas', 1, true, '[["07:00","20:00"]]'::jsonb);
@@ -950,9 +950,9 @@ values ('chimi-el-primo', 'hzl', 'NEG-FOOD', array['NEG-FOOD-06','NEG-FOOD-10']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('chimi-el-primo', 'free', false, 4.4, 38, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('chimi-el-primo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'chimi-el-primo';
 insert into business_hours (business_id, weekday, open, ranges) values ('chimi-el-primo', 0, true, '[["18:00","02:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('chimi-el-primo', 1, true, '[["18:00","02:00"]]'::jsonb);
@@ -973,9 +973,9 @@ values ('flan-y-mas', 'hzl', 'NEG-FOOD', array['NEG-FOOD-45','NEG-FOOD-43']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('flan-y-mas', 'free', false, 4.8, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('flan-y-mas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'flan-y-mas';
 insert into business_hours (business_id, weekday, open, ranges) values ('flan-y-mas', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('flan-y-mas', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -996,9 +996,9 @@ values ('desayunos-mi-viejo', 'hzl', 'NEG-FOOD', array['NEG-FOOD-39','NEG-FOOD-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('desayunos-mi-viejo', 'free', false, 4.5, 20, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('desayunos-mi-viejo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'desayunos-mi-viejo';
 insert into business_hours (business_id, weekday, open, ranges) values ('desayunos-mi-viejo', 0, true, '[["06:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('desayunos-mi-viejo', 1, true, '[["06:00","14:00"]]'::jsonb);
@@ -1019,9 +1019,9 @@ values ('taqueria-guerrero', 'hzl', 'NEG-FOOD', array['NEG-FOOD-27','NEG-FOOD-09
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('taqueria-guerrero', 'free', false, 4.4, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('taqueria-guerrero', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'taqueria-guerrero';
 insert into business_hours (business_id, weekday, open, ranges) values ('taqueria-guerrero', 0, true, '[["11:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('taqueria-guerrero', 1, true, '[["11:00","22:00"]]'::jsonb);
@@ -1042,9 +1042,9 @@ values ('batidos-dona-ana', 'hzl', 'NEG-FOOD', array['NEG-FOOD-48']::text[], 'Ba
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('batidos-dona-ana', 'free', false, 4.6, 11, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('batidos-dona-ana', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'batidos-dona-ana';
 insert into business_hours (business_id, weekday, open, ranges) values ('batidos-dona-ana', 0, true, '[["08:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('batidos-dona-ana', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -1065,9 +1065,9 @@ values ('antojitos-la-guera', 'hzl', 'NEG-FOOD', array['NEG-FOOD-47','NEG-FOOD-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('antojitos-la-guera', 'free', false, 4.5, 7, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('antojitos-la-guera', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'antojitos-la-guera';
 insert into business_hours (business_id, weekday, open, ranges) values ('antojitos-la-guera', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('antojitos-la-guera', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1088,9 +1088,9 @@ values ('demo-food', 'hzl', 'NEG-FOOD', array['NEG-FOOD-10','NEG-FOOD-39','NEG-F
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('demo-food', 'pro', true, 4.1, 20, 22)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('demo-food', 'pro', true, 22)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'demo-food';
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-food', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-food', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -1172,9 +1172,9 @@ values ('barberia-el-primo', 'hzl', 'NEG-BELL', array['NEG-BELL-01','NEG-BELL-04
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('barberia-el-primo', 'pro', true, 4.9, 176, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('barberia-el-primo', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'barberia-el-primo';
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-el-primo', 0, true, '[["09:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-el-primo', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -1199,9 +1199,9 @@ values ('salon-glamour', 'hzl', 'NEG-BELL', array['NEG-BELL-05','NEG-BELL-06','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-glamour', 'pro', true, 4.8, 143, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-glamour', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-glamour';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-glamour', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-glamour', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -1226,9 +1226,9 @@ values ('fade-factory', 'hzl', 'NEG-BELL', array['NEG-BELL-01','NEG-BELL-04']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fade-factory', 'pro', true, 4.7, 98, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fade-factory', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fade-factory';
 insert into business_hours (business_id, weekday, open, ranges) values ('fade-factory', 0, true, '[["10:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fade-factory', 1, true, '[["10:00","21:00"]]'::jsonb);
@@ -1253,9 +1253,9 @@ values ('trenzas-yaritza', 'hzl', 'NEG-BELL', array['NEG-BELL-07','NEG-BELL-09']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('trenzas-yaritza', 'pro', true, 4.9, 52, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('trenzas-yaritza', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'trenzas-yaritza';
 insert into business_hours (business_id, weekday, open, ranges) values ('trenzas-yaritza', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('trenzas-yaritza', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1280,9 +1280,9 @@ values ('junior-a-domicilio', 'hzl', 'NEG-BELL', array['NEG-BELL-02','NEG-BELL-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('junior-a-domicilio', 'pro', false, 4.8, 37, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('junior-a-domicilio', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'junior-a-domicilio';
 insert into business_hours (business_id, weekday, open, ranges) values ('junior-a-domicilio', 0, true, '[["08:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('junior-a-domicilio', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -1307,9 +1307,9 @@ values ('studio-bella-novia', 'hzl', 'NEG-BELL', array['NEG-BELL-12','NEG-BELL-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('studio-bella-novia', 'pro', true, 4.9, 61, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('studio-bella-novia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'studio-bella-novia';
 insert into business_hours (business_id, weekday, open, ranges) values ('studio-bella-novia', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('studio-bella-novia', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1334,9 +1334,9 @@ values ('pequenos-cortes', 'hzl', 'NEG-BELL', array['NEG-BELL-03','NEG-BELL-01']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pequenos-cortes', 'pro', true, 4.7, 44, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pequenos-cortes', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pequenos-cortes';
 insert into business_hours (business_id, weekday, open, ranges) values ('pequenos-cortes', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pequenos-cortes', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -1361,9 +1361,9 @@ values ('rizos-color', 'hzl', 'NEG-BELL', array['NEG-BELL-09','NEG-BELL-06','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rizos-color', 'pro', true, 4.8, 89, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rizos-color', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rizos-color';
 insert into business_hours (business_id, weekday, open, ranges) values ('rizos-color', 0, true, '[["09:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rizos-color', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -1388,9 +1388,9 @@ values ('barberia-quisqueya', 'hzl', 'NEG-BELL', array['NEG-BELL-01','NEG-BELL-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('barberia-quisqueya', 'pro', true, 4.6, 121, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('barberia-quisqueya', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'barberia-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-quisqueya', 0, true, '[["08:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-quisqueya', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -1415,9 +1415,9 @@ values ('salon-nuevo-estilo', 'hzl', 'NEG-BELL', array['NEG-BELL-05','NEG-BELL-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-nuevo-estilo', 'pro', false, 0, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-nuevo-estilo', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-nuevo-estilo';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-nuevo-estilo', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-nuevo-estilo', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -1442,9 +1442,9 @@ values ('barberia-la-esquina', 'hzl', 'NEG-BELL', array['NEG-BELL-01']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('barberia-la-esquina', 'free', false, 4.4, 23, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('barberia-la-esquina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'barberia-la-esquina';
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-la-esquina', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('barberia-la-esquina', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -1465,9 +1465,9 @@ values ('marys-beauty-salon', 'hzl', 'NEG-BELL', array['NEG-BELL-05','NEG-BELL-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('marys-beauty-salon', 'free', false, 4.6, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('marys-beauty-salon', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'marys-beauty-salon';
 insert into business_hours (business_id, weekday, open, ranges) values ('marys-beauty-salon', 0, true, '[["09:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('marys-beauty-salon', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -1488,9 +1488,9 @@ values ('cortes-don-pepe', 'hzl', 'NEG-BELL', array['NEG-BELL-01','NEG-BELL-03']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cortes-don-pepe', 'free', false, 4.5, 31, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cortes-don-pepe', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cortes-don-pepe';
 insert into business_hours (business_id, weekday, open, ranges) values ('cortes-don-pepe', 0, true, '[["09:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cortes-don-pepe', 1, false, '[]'::jsonb);
@@ -1511,9 +1511,9 @@ values ('extensiones-karla', 'hzl', 'NEG-BELL', array['NEG-BELL-07']::text[], 'E
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('extensiones-karla', 'free', false, 4.8, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('extensiones-karla', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'extensiones-karla';
 insert into business_hours (business_id, weekday, open, ranges) values ('extensiones-karla', 0, true, '[["11:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('extensiones-karla', 1, true, '[["11:00","19:00"]]'::jsonb);
@@ -1534,9 +1534,9 @@ values ('keratina-express', 'hzl', 'NEG-BELL', array['NEG-BELL-08']::text[], 'Ke
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keratina-express', 'free', false, 4.3, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keratina-express', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keratina-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('keratina-express', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keratina-express', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -1557,9 +1557,9 @@ values ('luis-el-barbero', 'hzl', 'NEG-BELL', array['NEG-BELL-02']::text[], 'Lui
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('luis-el-barbero', 'free', false, 4.7, 6, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('luis-el-barbero', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'luis-el-barbero';
 insert into business_hours (business_id, weekday, open, ranges) values ('luis-el-barbero', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('luis-el-barbero', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -1580,9 +1580,9 @@ values ('pelucas-la-reina', 'hzl', 'NEG-BELL', array['NEG-BELL-11','NEG-BELL-39'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pelucas-la-reina', 'free', false, 4.5, 4, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pelucas-la-reina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pelucas-la-reina';
 insert into business_hours (business_id, weekday, open, ranges) values ('pelucas-la-reina', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pelucas-la-reina', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1603,9 +1603,9 @@ values ('color-lab', 'hzl', 'NEG-BELL', array['NEG-BELL-06']::text[], 'Color Lab
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('color-lab', 'free', false, 0, 0, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('color-lab', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'color-lab';
 insert into business_hours (business_id, weekday, open, ranges) values ('color-lab', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('color-lab', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1626,9 +1626,9 @@ values ('unas-bella-luz', 'hzl', 'NEG-BELL', array['NEG-BELL-14','NEG-BELL-15','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('unas-bella-luz', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('unas-bella-luz', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'unas-bella-luz';
 insert into business_hours (business_id, weekday, open, ranges) values ('unas-bella-luz', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('unas-bella-luz', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -1653,9 +1653,9 @@ values ('lash-brow-yokasta', 'hzl', 'NEG-BELL', array['NEG-BELL-17','NEG-BELL-18
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lash-brow-yokasta', 'pro', true, 4.9, 38, 4)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lash-brow-yokasta', 'pro', true, 4)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lash-brow-yokasta';
 insert into business_hours (business_id, weekday, open, ranges) values ('lash-brow-yokasta', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lash-brow-yokasta', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1682,9 +1682,9 @@ values ('cejas-cera-express', 'hzl', 'NEG-BELL', array['NEG-BELL-20','NEG-BELL-2
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cejas-cera-express', 'free', false, 4.5, 17, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cejas-cera-express', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cejas-cera-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('cejas-cera-express', 0, true, '[["10:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cejas-cera-express', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -1705,9 +1705,9 @@ values ('laser-piel-hazleton', 'hzl', 'NEG-BELL', array['NEG-BELL-22','NEG-BELL-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('laser-piel-hazleton', 'pro', true, 4.7, 29, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('laser-piel-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'laser-piel-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('laser-piel-hazleton', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('laser-piel-hazleton', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1732,9 +1732,9 @@ values ('estetica-marisol', 'hzl', 'NEG-BELL', array['NEG-BELL-23','NEG-BELL-24'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('estetica-marisol', 'free', false, 4.6, 11, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('estetica-marisol', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'estetica-marisol';
 insert into business_hours (business_id, weekday, open, ranges) values ('estetica-marisol', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('estetica-marisol', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1755,9 +1755,9 @@ values ('manos-de-angel', 'hzl', 'NEG-BELL', array['NEG-BELL-25','NEG-BELL-26','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('manos-de-angel', 'pro', true, 4.8, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('manos-de-angel', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'manos-de-angel';
 insert into business_hours (business_id, weekday, open, ranges) values ('manos-de-angel', 0, true, '[["10:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('manos-de-angel', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -1782,9 +1782,9 @@ values ('drenaje-altagracia', 'hzl', 'NEG-BELL', array['NEG-BELL-28','NEG-BELL-3
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('drenaje-altagracia', 'pro', true, 4.9, 26, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('drenaje-altagracia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'drenaje-altagracia';
 insert into business_hours (business_id, weekday, open, ranges) values ('drenaje-altagracia', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('drenaje-altagracia', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -1809,9 +1809,9 @@ values ('spa-caribe', 'hzl', 'NEG-BELL', array['NEG-BELL-29','NEG-BELL-25']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('spa-caribe', 'free', false, 4.4, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('spa-caribe', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'spa-caribe';
 insert into business_hours (business_id, weekday, open, ranges) values ('spa-caribe', 0, true, '[["11:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('spa-caribe', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -1832,9 +1832,9 @@ values ('sonrisa-blanca', 'hzl', 'NEG-BELL', array['NEG-BELL-31']::text[], 'Sonr
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sonrisa-blanca', 'free', false, 4.2, 8, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sonrisa-blanca', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sonrisa-blanca';
 insert into business_hours (business_id, weekday, open, ranges) values ('sonrisa-blanca', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sonrisa-blanca', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -1855,9 +1855,9 @@ values ('tinta-quisqueya', 'hzl', 'NEG-BELL', array['NEG-BELL-32','NEG-BELL-34']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tinta-quisqueya', 'pro', true, 4.8, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tinta-quisqueya', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tinta-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('tinta-quisqueya', 0, true, '[["12:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tinta-quisqueya', 1, true, '[["12:00","21:00"]]'::jsonb);
@@ -1882,9 +1882,9 @@ values ('nutrivida-coach', 'hzl', 'NEG-BELL', array['NEG-BELL-36']::text[], 'Nut
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nutrivida-coach', 'free', false, 4.7, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nutrivida-coach', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nutrivida-coach';
 insert into business_hours (business_id, weekday, open, ranges) values ('nutrivida-coach', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nutrivida-coach', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -1905,9 +1905,9 @@ values ('naturales-la-salud', 'hzl', 'NEG-BELL', array['NEG-BELL-38','NEG-BELL-3
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('naturales-la-salud', 'pro', true, 4.6, 34, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('naturales-la-salud', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'naturales-la-salud';
 insert into business_hours (business_id, weekday, open, ranges) values ('naturales-la-salud', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('naturales-la-salud', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -1932,9 +1932,9 @@ values ('beauty-supply-hzl', 'hzl', 'NEG-BELL', array['NEG-BELL-39']::text[], 'B
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('beauty-supply-hzl', 'free', false, 4.3, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('beauty-supply-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'beauty-supply-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('beauty-supply-hzl', 0, true, '[["09:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('beauty-supply-hzl', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -1955,9 +1955,9 @@ values ('glam-nathaly', 'hzl', 'NEG-BELL', array['NEG-BELL-40','NEG-BELL-13','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('glam-nathaly', 'pro', true, 4.9, 31, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('glam-nathaly', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'glam-nathaly';
 insert into business_hours (business_id, weekday, open, ranges) values ('glam-nathaly', 0, true, '[["08:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('glam-nathaly', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -1982,9 +1982,9 @@ values ('capilar-renacer', 'hzl', 'NEG-BELL', array['NEG-BELL-10']::text[], 'Cen
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('capilar-renacer', 'free', false, 4.5, 7, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('capilar-renacer', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'capilar-renacer';
 insert into business_hours (business_id, weekday, open, ranges) values ('capilar-renacer', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('capilar-renacer', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -2005,9 +2005,9 @@ values ('demo-bell', 'hzl', 'NEG-BELL', array['NEG-BELL-05','NEG-BELL-01','NEG-B
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('demo-bell', 'pro', true, 4.4, 21, 22)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('demo-bell', 'pro', true, 22)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'demo-bell';
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-bell', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-bell', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -2070,9 +2070,9 @@ values ('taller-hermanos-pena', 'hzl', 'NEG-AUTO', array['NEG-AUTO-01','NEG-AUTO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('taller-hermanos-pena', 'pro', true, 4.8, 211, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('taller-hermanos-pena', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'taller-hermanos-pena';
 insert into business_hours (business_id, weekday, open, ranges) values ('taller-hermanos-pena', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('taller-hermanos-pena', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2097,9 +2097,9 @@ values ('quisqueya-auto-repair', 'hzl', 'NEG-AUTO', array['NEG-AUTO-07','NEG-AUT
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('quisqueya-auto-repair', 'pro', true, 4.7, 164, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('quisqueya-auto-repair', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'quisqueya-auto-repair';
 insert into business_hours (business_id, weekday, open, ranges) values ('quisqueya-auto-repair', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('quisqueya-auto-repair', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2124,9 +2124,9 @@ values ('lube-express-hazleton', 'hzl', 'NEG-AUTO', array['NEG-AUTO-03','NEG-AUT
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lube-express-hazleton', 'pro', true, 4.6, 302, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lube-express-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lube-express-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('lube-express-hazleton', 0, true, '[["10:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lube-express-hazleton', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -2151,9 +2151,9 @@ values ('llantera-el-cibao', 'hzl', 'NEG-AUTO', array['NEG-AUTO-13','NEG-AUTO-14
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('llantera-el-cibao', 'pro', true, 4.8, 256, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('llantera-el-cibao', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'llantera-el-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('llantera-el-cibao', 0, true, '[["09:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('llantera-el-cibao', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -2178,9 +2178,9 @@ values ('frenos-jimenez', 'hzl', 'NEG-AUTO', array['NEG-AUTO-05','NEG-AUTO-06']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('frenos-jimenez', 'pro', true, 4.9, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('frenos-jimenez', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'frenos-jimenez';
 insert into business_hours (business_id, weekday, open, ranges) values ('frenos-jimenez', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('frenos-jimenez', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -2205,9 +2205,9 @@ values ('ramon-mecanico-a-domicilio', 'hzl', 'NEG-AUTO', array['NEG-AUTO-02','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ramon-mecanico-a-domicilio', 'pro', true, 4.8, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ramon-mecanico-a-domicilio', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ramon-mecanico-a-domicilio';
 insert into business_hours (business_id, weekday, open, ranges) values ('ramon-mecanico-a-domicilio', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ramon-mecanico-a-domicilio', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -2232,9 +2232,9 @@ values ('electro-auto-diagnostico', 'hzl', 'NEG-AUTO', array['NEG-AUTO-09','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('electro-auto-diagnostico', 'pro', true, 4.7, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('electro-auto-diagnostico', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'electro-auto-diagnostico';
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-auto-diagnostico', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-auto-diagnostico', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -2259,9 +2259,9 @@ values ('hazleton-diesel-truck', 'hzl', 'NEG-AUTO', array['NEG-AUTO-29','NEG-AUT
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hazleton-diesel-truck', 'pro', true, 4.6, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hazleton-diesel-truck', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hazleton-diesel-truck';
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-diesel-truck', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-diesel-truck', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -2286,9 +2286,9 @@ values ('radiadores-don-nelson', 'hzl', 'NEG-AUTO', array['NEG-AUTO-11','NEG-AUT
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('radiadores-don-nelson', 'pro', true, 4.5, 39, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('radiadores-don-nelson', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'radiadores-don-nelson';
 insert into business_hours (business_id, weekday, open, ranges) values ('radiadores-don-nelson', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('radiadores-don-nelson', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2313,9 +2313,9 @@ values ('auto-taller-la-familia', 'hzl', 'NEG-AUTO', array['NEG-AUTO-01','NEG-AU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('auto-taller-la-familia', 'pro', false, 0, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('auto-taller-la-familia', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'auto-taller-la-familia';
 insert into business_hours (business_id, weekday, open, ranges) values ('auto-taller-la-familia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('auto-taller-la-familia', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2340,9 +2340,9 @@ values ('splash-car-wash', 'hzl', 'NEG-AUTO', array['NEG-AUTO-23','NEG-AUTO-22',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('splash-car-wash', 'pro', true, 4.7, 198, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('splash-car-wash', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'splash-car-wash';
 insert into business_hours (business_id, weekday, open, ranges) values ('splash-car-wash', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('splash-car-wash', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -2367,9 +2367,9 @@ values ('brillo-movil-detailing', 'hzl', 'NEG-AUTO', array['NEG-AUTO-24','NEG-AU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('brillo-movil-detailing', 'pro', true, 4.9, 34, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('brillo-movil-detailing', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'brillo-movil-detailing';
 insert into business_hours (business_id, weekday, open, ranges) values ('brillo-movil-detailing', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('brillo-movil-detailing', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2394,9 +2394,9 @@ values ('mecanica-los-compadres', 'hzl', 'NEG-AUTO', array['NEG-AUTO-01','NEG-AU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mecanica-los-compadres', 'free', false, 4.4, 26, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mecanica-los-compadres', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mecanica-los-compadres';
 insert into business_hours (business_id, weekday, open, ranges) values ('mecanica-los-compadres', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mecanica-los-compadres', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2417,9 +2417,9 @@ values ('gomera-la-22', 'hzl', 'NEG-AUTO', array['NEG-AUTO-13']::text[], 'Gomera
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('gomera-la-22', 'free', false, 4.3, 41, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('gomera-la-22', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'gomera-la-22';
 insert into business_hours (business_id, weekday, open, ranges) values ('gomera-la-22', 0, true, '[["09:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('gomera-la-22', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -2440,9 +2440,9 @@ values ('inspeccion-rapida-alter', 'hzl', 'NEG-AUTO', array['NEG-AUTO-36']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('inspeccion-rapida-alter', 'free', false, 4.2, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('inspeccion-rapida-alter', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'inspeccion-rapida-alter';
 insert into business_hours (business_id, weekday, open, ranges) values ('inspeccion-rapida-alter', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('inspeccion-rapida-alter', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2463,9 +2463,9 @@ values ('baterias-luis', 'hzl', 'NEG-AUTO', array['NEG-AUTO-15','NEG-AUTO-02']::
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('baterias-luis', 'free', false, 4.7, 8, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('baterias-luis', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'baterias-luis';
 insert into business_hours (business_id, weekday, open, ranges) values ('baterias-luis', 0, true, '[["07:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('baterias-luis', 1, true, '[["07:00","21:00"]]'::jsonb);
@@ -2486,9 +2486,9 @@ values ('hojalateria-el-chino', 'hzl', 'NEG-AUTO', array['NEG-AUTO-16','NEG-AUTO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hojalateria-el-chino', 'free', false, 4.5, 33, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hojalateria-el-chino', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hojalateria-el-chino';
 insert into business_hours (business_id, weekday, open, ranges) values ('hojalateria-el-chino', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hojalateria-el-chino', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2509,9 +2509,9 @@ values ('gruas-hazleton-24', 'hzl', 'NEG-AUTO', array['NEG-AUTO-34','NEG-AUTO-35
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('gruas-hazleton-24', 'free', false, 4.1, 57, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('gruas-hazleton-24', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'gruas-hazleton-24';
 insert into business_hours (business_id, weekday, open, ranges) values ('gruas-hazleton-24', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('gruas-hazleton-24', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -2532,9 +2532,9 @@ values ('car-wash-la-bomba', 'hzl', 'NEG-AUTO', array['NEG-AUTO-23','NEG-AUTO-22
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('car-wash-la-bomba', 'free', false, 4.4, 64, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('car-wash-la-bomba', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'car-wash-la-bomba';
 insert into business_hours (business_id, weekday, open, ranges) values ('car-wash-la-bomba', 0, true, '[["08:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('car-wash-la-bomba', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -2555,9 +2555,9 @@ values ('cerrajeria-llave-rapida', 'hzl', 'NEG-AUTO', array['NEG-AUTO-33','NEG-A
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cerrajeria-llave-rapida', 'pro', true, 4.8, 62, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cerrajeria-llave-rapida', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cerrajeria-llave-rapida';
 insert into business_hours (business_id, weekday, open, ranges) values ('cerrajeria-llave-rapida', 0, true, '[["09:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cerrajeria-llave-rapida', 1, true, '[["07:00","23:00"]]'::jsonb);
@@ -2582,9 +2582,9 @@ values ('cristales-hazleton', 'hzl', 'NEG-AUTO', array['NEG-AUTO-19','NEG-AUTO-2
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cristales-hazleton', 'pro', true, 4.7, 87, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cristales-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cristales-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('cristales-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cristales-hazleton', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2609,9 +2609,9 @@ values ('tapiceria-sonido-los-primos', 'hzl', 'NEG-AUTO', array['NEG-AUTO-25','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tapiceria-sonido-los-primos', 'pro', true, 4.7, 48, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tapiceria-sonido-los-primos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tapiceria-sonido-los-primos';
 insert into business_hours (business_id, weekday, open, ranges) values ('tapiceria-sonido-los-primos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tapiceria-sonido-los-primos', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -2636,9 +2636,9 @@ values ('revision-precompra-ortiz', 'hzl', 'NEG-AUTO', array['NEG-AUTO-40','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('revision-precompra-ortiz', 'pro', true, 4.9, 31, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('revision-precompra-ortiz', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'revision-precompra-ortiz';
 insert into business_hours (business_id, weekday, open, ranges) values ('revision-precompra-ortiz', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('revision-precompra-ortiz', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -2663,9 +2663,9 @@ values ('autopartes-yonke-el-cibaeno', 'hzl', 'NEG-AUTO', array['NEG-AUTO-37','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('autopartes-yonke-el-cibaeno', 'free', false, 4.3, 29, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('autopartes-yonke-el-cibaeno', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'autopartes-yonke-el-cibaeno';
 insert into business_hours (business_id, weekday, open, ranges) values ('autopartes-yonke-el-cibaeno', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('autopartes-yonke-el-cibaeno', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2686,9 +2686,9 @@ values ('traslado-autos-quisqueya', 'hzl', 'NEG-AUTO', array['NEG-AUTO-39']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('traslado-autos-quisqueya', 'free', false, 4.6, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('traslado-autos-quisqueya', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'traslado-autos-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('traslado-autos-quisqueya', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('traslado-autos-quisqueya', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -2709,9 +2709,9 @@ values ('offroad-wraps-hazleton', 'hzl', 'NEG-AUTO', array['NEG-AUTO-28','NEG-AU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('offroad-wraps-hazleton', 'free', false, 4.5, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('offroad-wraps-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'offroad-wraps-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('offroad-wraps-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('offroad-wraps-hazleton', 1, false, '[]'::jsonb);
@@ -2732,9 +2732,9 @@ values ('valley-rv-trailers', 'hzl', 'NEG-AUTO', array['NEG-AUTO-32']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('valley-rv-trailers', 'free', false, 4.4, 11, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('valley-rv-trailers', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'valley-rv-trailers';
 insert into business_hours (business_id, weekday, open, ranges) values ('valley-rv-trailers', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('valley-rv-trailers', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2755,9 +2755,9 @@ values ('mofles-el-rapido', 'hzl', 'NEG-AUTO', array['NEG-AUTO-12','NEG-AUTO-11'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mofles-el-rapido', 'free', false, 0, 0, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mofles-el-rapido', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mofles-el-rapido';
 insert into business_hours (business_id, weekday, open, ranges) values ('mofles-el-rapido', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mofles-el-rapido', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -2778,9 +2778,9 @@ values ('demo-auto', 'hzl', 'NEG-AUTO', array['NEG-AUTO-01','NEG-AUTO-04','NEG-A
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('demo-auto', 'pro', true, 4.3, 22, 22)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('demo-auto', 'pro', true, 22)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'demo-auto';
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-auto', 0, true, '[["10:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-auto', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2843,9 +2843,9 @@ values ('hermanos-diaz-multiservicios', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-01'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hermanos-diaz-multiservicios', 'pro', true, 4.8, 187, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hermanos-diaz-multiservicios', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hermanos-diaz-multiservicios';
 insert into business_hours (business_id, weekday, open, ranges) values ('hermanos-diaz-multiservicios', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hermanos-diaz-multiservicios', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -2870,9 +2870,9 @@ values ('plomeria-rodriguez', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-02','NEG-HOGA
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('plomeria-rodriguez', 'pro', true, 4.7, 241, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('plomeria-rodriguez', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'plomeria-rodriguez';
 insert into business_hours (business_id, weekday, open, ranges) values ('plomeria-rodriguez', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('plomeria-rodriguez', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -2897,9 +2897,9 @@ values ('julio-almonte-electricista', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-05','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('julio-almonte-electricista', 'pro', true, 4.9, 96, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('julio-almonte-electricista', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'julio-almonte-electricista';
 insert into business_hours (business_id, weekday, open, ranges) values ('julio-almonte-electricista', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('julio-almonte-electricista', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -2924,9 +2924,9 @@ values ('calefaccion-aire-cibao', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-06','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('calefaccion-aire-cibao', 'pro', true, 4.7, 152, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('calefaccion-aire-cibao', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'calefaccion-aire-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('calefaccion-aire-cibao', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('calefaccion-aire-cibao', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -2951,9 +2951,9 @@ values ('arreglos-ya-hazleton', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-01','NEG-HO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('arreglos-ya-hazleton', 'pro', true, 4.6, 118, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('arreglos-ya-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'arreglos-ya-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('arreglos-ya-hazleton', 0, true, '[["10:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('arreglos-ya-hazleton', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -2978,9 +2978,9 @@ values ('constructora-peralta', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-58','NEG-HO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('constructora-peralta', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('constructora-peralta', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'constructora-peralta';
 insert into business_hours (business_id, weekday, open, ranges) values ('constructora-peralta', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('constructora-peralta', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3005,9 +3005,9 @@ values ('destapes-express', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-03','NEG-HOGAR-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('destapes-express', 'pro', true, 4.6, 77, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('destapes-express', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'destapes-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('destapes-express', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('destapes-express', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -3032,9 +3032,9 @@ values ('nelson-electrodomesticos', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-08']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nelson-electrodomesticos', 'pro', true, 4.8, 89, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nelson-electrodomesticos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nelson-electrodomesticos';
 insert into business_hours (business_id, weekday, open, ranges) values ('nelson-electrodomesticos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nelson-electrodomesticos', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -3059,9 +3059,9 @@ values ('mantenimiento-la-montana', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-01','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mantenimiento-la-montana', 'pro', true, 4.5, 41, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mantenimiento-la-montana', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mantenimiento-la-montana';
 insert into business_hours (business_id, weekday, open, ranges) values ('mantenimiento-la-montana', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mantenimiento-la-montana', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3086,9 +3086,9 @@ values ('santana-calentadores', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-04','NEG-HO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('santana-calentadores', 'pro', true, 4.9, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('santana-calentadores', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'santana-calentadores';
 insert into business_hours (business_id, weekday, open, ranges) values ('santana-calentadores', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('santana-calentadores', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -3113,9 +3113,9 @@ values ('electro-hogar-pa', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-05','NEG-HOGAR-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('electro-hogar-pa', 'pro', false, 0, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('electro-hogar-pa', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'electro-hogar-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-hogar-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-hogar-pa', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3140,9 +3140,9 @@ values ('plomero-chelo', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-02']::text[], 'Plo
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('plomero-chelo', 'free', false, 4.5, 33, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('plomero-chelo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'plomero-chelo';
 insert into business_hours (business_id, weekday, open, ranges) values ('plomero-chelo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('plomero-chelo', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -3163,9 +3163,9 @@ values ('don-rafa-handyman', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-01','NEG-HOGAR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('don-rafa-handyman', 'free', false, 4.4, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('don-rafa-handyman', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'don-rafa-handyman';
 insert into business_hours (business_id, weekday, open, ranges) values ('don-rafa-handyman', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('don-rafa-handyman', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3186,9 +3186,9 @@ values ('electricista-wilfredo', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-05']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('electricista-wilfredo', 'free', false, 4.6, 17, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('electricista-wilfredo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'electricista-wilfredo';
 insert into business_hours (business_id, weekday, open, ranges) values ('electricista-wilfredo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('electricista-wilfredo', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3209,9 +3209,9 @@ values ('aire-frio-mateo', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-06']::text[], 'A
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('aire-frio-mateo', 'free', false, 4.3, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('aire-frio-mateo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'aire-frio-mateo';
 insert into business_hours (business_id, weekday, open, ranges) values ('aire-frio-mateo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('aire-frio-mateo', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3232,9 +3232,9 @@ values ('destapes-el-rapido', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-03']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('destapes-el-rapido', 'free', false, 4.2, 28, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('destapes-el-rapido', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'destapes-el-rapido';
 insert into business_hours (business_id, weekday, open, ranges) values ('destapes-el-rapido', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('destapes-el-rapido', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -3255,9 +3255,9 @@ values ('angel-lavadoras', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-08']::text[], 'Ã
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('angel-lavadoras', 'free', false, 4.7, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('angel-lavadoras', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'angel-lavadoras';
 insert into business_hours (business_id, weekday, open, ranges) values ('angel-lavadoras', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('angel-lavadoras', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -3278,9 +3278,9 @@ values ('cerrajeria-24-hazleton', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-52']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cerrajeria-24-hazleton', 'free', false, 4.1, 46, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cerrajeria-24-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cerrajeria-24-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('cerrajeria-24-hazleton', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cerrajeria-24-hazleton', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -3301,9 +3301,9 @@ values ('limpieza-yahaira', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-41','NEG-HOGAR-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('limpieza-yahaira', 'free', false, 4.8, 38, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('limpieza-yahaira', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'limpieza-yahaira';
 insert into business_hours (business_id, weekday, open, ranges) values ('limpieza-yahaira', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('limpieza-yahaira', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3324,9 +3324,9 @@ values ('techos-reyes', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-23','NEG-HOGAR-24',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('techos-reyes', 'pro', true, 4.8, 92, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('techos-reyes', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'techos-reyes';
 insert into business_hours (business_id, weekday, open, ranges) values ('techos-reyes', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('techos-reyes', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3353,9 +3353,9 @@ values ('remodelaciones-cabrera', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-19','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('remodelaciones-cabrera', 'pro', true, 4.7, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('remodelaciones-cabrera', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'remodelaciones-cabrera';
 insert into business_hours (business_id, weekday, open, ranges) values ('remodelaciones-cabrera', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('remodelaciones-cabrera', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3382,9 +3382,9 @@ values ('pisos-martinez', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-11','NEG-HOGAR-12
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pisos-martinez', 'pro', true, 4.8, 71, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pisos-martinez', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pisos-martinez';
 insert into business_hours (business_id, weekday, open, ranges) values ('pisos-martinez', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pisos-martinez', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3411,9 +3411,9 @@ values ('pintores-vargas', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-14','NEG-HOGAR-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pintores-vargas', 'pro', true, 4.7, 84, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pintores-vargas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pintores-vargas';
 insert into business_hours (business_id, weekday, open, ranges) values ('pintores-vargas', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pintores-vargas', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -3440,9 +3440,9 @@ values ('mudanzas-quisqueyano', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-47','NEG-HO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mudanzas-quisqueyano', 'pro', true, 4.6, 133, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mudanzas-quisqueyano', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mudanzas-quisqueyano';
 insert into business_hours (business_id, weekday, open, ranges) values ('mudanzas-quisqueyano', 0, true, '[["08:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mudanzas-quisqueyano', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -3469,9 +3469,9 @@ values ('plagas-fuera', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-40']::text[], 'Plag
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('plagas-fuera', 'pro', true, 4.7, 66, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('plagas-fuera', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'plagas-fuera';
 insert into business_hours (business_id, weekday, open, ranges) values ('plagas-fuera', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('plagas-fuera', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3496,9 +3496,9 @@ values ('seguridad-total', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-53','NEG-HOGAR-5
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('seguridad-total', 'pro', true, 4.6, 49, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('seguridad-total', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'seguridad-total';
 insert into business_hours (business_id, weekday, open, ranges) values ('seguridad-total', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('seguridad-total', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3525,9 +3525,9 @@ values ('sol-latino-solar', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-56']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sol-latino-solar', 'pro', true, 4.5, 27, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sol-latino-solar', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sol-latino-solar';
 insert into business_hours (business_id, weekday, open, ranges) values ('sol-latino-solar', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sol-latino-solar', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -3552,9 +3552,9 @@ values ('concreto-ortiz', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-17','NEG-HOGAR-33
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('concreto-ortiz', 'pro', true, 4.7, 77, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('concreto-ortiz', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'concreto-ortiz';
 insert into business_hours (business_id, weekday, open, ranges) values ('concreto-ortiz', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('concreto-ortiz', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3581,9 +3581,9 @@ values ('piscinas-caribe', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-39','NEG-HOGAR-3
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('piscinas-caribe', 'pro', true, 4.6, 31, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('piscinas-caribe', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'piscinas-caribe';
 insert into business_hours (business_id, weekday, open, ranges) values ('piscinas-caribe', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('piscinas-caribe', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3608,9 +3608,9 @@ values ('herreria-don-chepe', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-30']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('herreria-don-chepe', 'free', false, 4.8, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('herreria-don-chepe', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'herreria-don-chepe';
 insert into business_hours (business_id, weekday, open, ranges) values ('herreria-don-chepe', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('herreria-don-chepe', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3631,9 +3631,9 @@ values ('chimeneas-limpias', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-29']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('chimeneas-limpias', 'free', false, 4.6, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('chimeneas-limpias', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'chimeneas-limpias';
 insert into business_hours (business_id, weekday, open, ranges) values ('chimeneas-limpias', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('chimeneas-limpias', 1, true, '[["08:00","16:00"]]'::jsonb);
@@ -3654,9 +3654,9 @@ values ('ventanas-almonte', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-26']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ventanas-almonte', 'free', false, 4.5, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ventanas-almonte', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ventanas-almonte';
 insert into business_hours (business_id, weekday, open, ranges) values ('ventanas-almonte', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ventanas-almonte', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3677,9 +3677,9 @@ values ('poda-los-hermanos', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-36']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('poda-los-hermanos', 'free', false, 4.6, 28, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('poda-los-hermanos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'poda-los-hermanos';
 insert into business_hours (business_id, weekday, open, ranges) values ('poda-los-hermanos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('poda-los-hermanos', 1, true, '[["07:00","17:00"]]'::jsonb);
@@ -3700,9 +3700,9 @@ values ('brillo-comercial', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-43','NEG-HOGAR-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('brillo-comercial', 'free', false, 4.7, 17, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('brillo-comercial', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'brillo-comercial';
 insert into business_hours (business_id, weekday, open, ranges) values ('brillo-comercial', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('brillo-comercial', 1, true, '[["17:00","23:00"]]'::jsonb);
@@ -3723,9 +3723,9 @@ values ('tapiceria-la-fe', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-50']::text[], 'T
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tapiceria-la-fe', 'free', false, 4.9, 33, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tapiceria-la-fe', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tapiceria-la-fe';
 insert into business_hours (business_id, weekday, open, ranges) values ('tapiceria-la-fe', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tapiceria-la-fe', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -3746,9 +3746,9 @@ values ('cesped-nieve-los-primos', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-35','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cesped-nieve-los-primos', 'free', false, 4.5, 24, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cesped-nieve-los-primos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cesped-nieve-los-primos';
 insert into business_hours (business_id, weekday, open, ranges) values ('cesped-nieve-los-primos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cesped-nieve-los-primos', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -3769,9 +3769,9 @@ values ('demo-hogar', 'hzl', 'NEG-HOGAR', array['NEG-HOGAR-01','NEG-HOGAR-02','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('demo-hogar', 'pro', true, 4.3, 20, 22)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('demo-hogar', 'pro', true, 22)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'demo-hogar';
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-hogar', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-hogar', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -3834,9 +3834,9 @@ values ('centro-medico-quisqueya', 'hzl', 'NEG-SALUD', array['NEG-SALUD-01','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('centro-medico-quisqueya', 'pro', true, 4.8, 214, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('centro-medico-quisqueya', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'centro-medico-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-medico-quisqueya', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-medico-quisqueya', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3861,9 +3861,9 @@ values ('urgencias-express-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-02','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('urgencias-express-hazleton', 'pro', true, 4.5, 402, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('urgencias-express-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'urgencias-express-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('urgencias-express-hazleton', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('urgencias-express-hazleton', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -3888,9 +3888,9 @@ values ('clinica-esperanza', 'hzl', 'NEG-SALUD', array['NEG-SALUD-03','NEG-SALUD
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('clinica-esperanza', 'pro', true, 4.7, 318, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('clinica-esperanza', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'clinica-esperanza';
 insert into business_hours (business_id, weekday, open, ranges) values ('clinica-esperanza', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('clinica-esperanza', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3915,9 +3915,9 @@ values ('pediatria-los-pinos', 'hzl', 'NEG-SALUD', array['NEG-SALUD-04','NEG-SAL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pediatria-los-pinos', 'pro', true, 4.9, 176, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pediatria-los-pinos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pediatria-los-pinos';
 insert into business_hours (business_id, weekday, open, ranges) values ('pediatria-los-pinos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pediatria-los-pinos', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -3942,9 +3942,9 @@ values ('dental-sonrisa', 'hzl', 'NEG-SALUD', array['NEG-SALUD-10','NEG-SALUD-11
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dental-sonrisa', 'pro', true, 4.7, 233, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dental-sonrisa', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dental-sonrisa';
 insert into business_hours (business_id, weekday, open, ranges) values ('dental-sonrisa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dental-sonrisa', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -3969,9 +3969,9 @@ values ('dr-rafael-pena', 'hzl', 'NEG-SALUD', array['NEG-SALUD-01','NEG-SALUD-19
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dr-rafael-pena', 'pro', true, 4.9, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dr-rafael-pena', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dr-rafael-pena';
 insert into business_hours (business_id, weekday, open, ranges) values ('dr-rafael-pena', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dr-rafael-pena', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -3996,9 +3996,9 @@ values ('optica-vision-clara', 'hzl', 'NEG-SALUD', array['NEG-SALUD-15','NEG-SAL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('optica-vision-clara', 'pro', true, 4.6, 141, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('optica-vision-clara', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'optica-vision-clara';
 insert into business_hours (business_id, weekday, open, ranges) values ('optica-vision-clara', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('optica-vision-clara', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -4023,9 +4023,9 @@ values ('terapia-movimiento', 'hzl', 'NEG-SALUD', array['NEG-SALUD-34','NEG-SALU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('terapia-movimiento', 'pro', true, 4.8, 97, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('terapia-movimiento', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'terapia-movimiento';
 insert into business_hours (business_id, weekday, open, ranges) values ('terapia-movimiento', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('terapia-movimiento', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -4050,9 +4050,9 @@ values ('consejeria-renacer', 'hzl', 'NEG-SALUD', array['NEG-SALUD-37','NEG-SALU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('consejeria-renacer', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('consejeria-renacer', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'consejeria-renacer';
 insert into business_hours (business_id, weekday, open, ranges) values ('consejeria-renacer', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('consejeria-renacer', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -4077,9 +4077,9 @@ values ('mujer-plena', 'hzl', 'NEG-SALUD', array['NEG-SALUD-05','NEG-SALUD-06','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mujer-plena', 'pro', true, 4.7, 129, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mujer-plena', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mujer-plena';
 insert into business_hours (business_id, weekday, open, ranges) values ('mujer-plena', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mujer-plena', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4104,9 +4104,9 @@ values ('laboratorio-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-46']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('laboratorio-hazleton', 'pro', false, 0, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('laboratorio-hazleton', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'laboratorio-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('laboratorio-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('laboratorio-hazleton', 1, true, '[["07:00","16:00"]]'::jsonb);
@@ -4131,9 +4131,9 @@ values ('farmacia-la-dominicana', 'hzl', 'NEG-SALUD', array['NEG-SALUD-48']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('farmacia-la-dominicana', 'free', false, 4.6, 58, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('farmacia-la-dominicana', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'farmacia-la-dominicana';
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-la-dominicana', 0, true, '[["10:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-la-dominicana', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -4154,9 +4154,9 @@ values ('farmacia-popular', 'hzl', 'NEG-SALUD', array['NEG-SALUD-48']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('farmacia-popular', 'free', false, 4.4, 33, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('farmacia-popular', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'farmacia-popular';
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-popular', 0, true, '[["10:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-popular', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -4177,9 +4177,9 @@ values ('quiropractica-castillo', 'hzl', 'NEG-SALUD', array['NEG-SALUD-33']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('quiropractica-castillo', 'free', false, 4.7, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('quiropractica-castillo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'quiropractica-castillo';
 insert into business_hours (business_id, weekday, open, ranges) values ('quiropractica-castillo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('quiropractica-castillo', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -4200,9 +4200,9 @@ values ('dentista-urena', 'hzl', 'NEG-SALUD', array['NEG-SALUD-10','NEG-SALUD-13
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dentista-urena', 'free', false, 4.5, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dentista-urena', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dentista-urena';
 insert into business_hours (business_id, weekday, open, ranges) values ('dentista-urena', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dentista-urena', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4223,9 +4223,9 @@ values ('partera-luz-maria', 'hzl', 'NEG-SALUD', array['NEG-SALUD-07']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('partera-luz-maria', 'free', false, 4.9, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('partera-luz-maria', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'partera-luz-maria';
 insert into business_hours (business_id, weekday, open, ranges) values ('partera-luz-maria', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('partera-luz-maria', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -4246,9 +4246,9 @@ values ('nutriologa-ana-tejada', 'hzl', 'NEG-SALUD', array['NEG-SALUD-41']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nutriologa-ana-tejada', 'free', false, 4.8, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nutriologa-ana-tejada', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nutriologa-ana-tejada';
 insert into business_hours (business_id, weekday, open, ranges) values ('nutriologa-ana-tejada', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nutriologa-ana-tejada', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -4269,9 +4269,9 @@ values ('manos-amigas-cuidado', 'hzl', 'NEG-SALUD', array['NEG-SALUD-52','NEG-SA
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('manos-amigas-cuidado', 'free', false, 4.6, 27, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('manos-amigas-cuidado', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'manos-amigas-cuidado';
 insert into business_hours (business_id, weekday, open, ranges) values ('manos-amigas-cuidado', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('manos-amigas-cuidado', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -4292,9 +4292,9 @@ values ('transporte-siempre-a-tiempo', 'hzl', 'NEG-SALUD', array['NEG-SALUD-56']
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('transporte-siempre-a-tiempo', 'free', false, 4.3, 18, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('transporte-siempre-a-tiempo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'transporte-siempre-a-tiempo';
 insert into business_hours (business_id, weekday, open, ranges) values ('transporte-siempre-a-tiempo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('transporte-siempre-a-tiempo', 1, true, '[["06:00","19:00"]]'::jsonb);
@@ -4315,9 +4315,9 @@ values ('oye-bien-auditivos', 'hzl', 'NEG-SALUD', array['NEG-SALUD-51']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('oye-bien-auditivos', 'free', false, 4.4, 6, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('oye-bien-auditivos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'oye-bien-auditivos';
 insert into business_hours (business_id, weekday, open, ranges) values ('oye-bien-auditivos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('oye-bien-auditivos', 1, false, '[]'::jsonb);
@@ -4338,9 +4338,9 @@ values ('piel-sana-dermatologia', 'hzl', 'NEG-SALUD', array['NEG-SALUD-17','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('piel-sana-dermatologia', 'pro', true, 4.8, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('piel-sana-dermatologia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'piel-sana-dermatologia';
 insert into business_hours (business_id, weekday, open, ranges) values ('piel-sana-dermatologia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('piel-sana-dermatologia', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4365,9 +4365,9 @@ values ('corazon-pulmon-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-18','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('corazon-pulmon-hazleton', 'pro', true, 4.7, 112, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('corazon-pulmon-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'corazon-pulmon-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('corazon-pulmon-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('corazon-pulmon-hazleton', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4392,9 +4392,9 @@ values ('especialistas-del-valle', 'hzl', 'NEG-SALUD', array['NEG-SALUD-20','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('especialistas-del-valle', 'pro', true, 4.6, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('especialistas-del-valle', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'especialistas-del-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('especialistas-del-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('especialistas-del-valle', 1, true, '[["08:00","16:00"]]'::jsonb);
@@ -4419,9 +4419,9 @@ values ('neuro-dolor-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-21','NEG-SA
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('neuro-dolor-hazleton', 'pro', true, 4.7, 66, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('neuro-dolor-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'neuro-dolor-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('neuro-dolor-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('neuro-dolor-hazleton', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4446,9 +4446,9 @@ values ('ortopedia-pies-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-26','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ortopedia-pies-hazleton', 'pro', true, 4.6, 94, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ortopedia-pies-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ortopedia-pies-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('ortopedia-pies-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ortopedia-pies-hazleton', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4473,9 +4473,9 @@ values ('oido-nariz-alergias', 'hzl', 'NEG-SALUD', array['NEG-SALUD-29','NEG-SAL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('oido-nariz-alergias', 'pro', true, 4.7, 81, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('oido-nariz-alergias', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'oido-nariz-alergias';
 insert into business_hours (business_id, weekday, open, ranges) values ('oido-nariz-alergias', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('oido-nariz-alergias', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4500,9 +4500,9 @@ values ('psiquiatria-nuevo-amanecer', 'hzl', 'NEG-SALUD', array['NEG-SALUD-38']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('psiquiatria-nuevo-amanecer', 'pro', true, 4.8, 41, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('psiquiatria-nuevo-amanecer', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'psiquiatria-nuevo-amanecer';
 insert into business_hours (business_id, weekday, open, ranges) values ('psiquiatria-nuevo-amanecer', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('psiquiatria-nuevo-amanecer', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -4527,9 +4527,9 @@ values ('hablemos-terapias', 'hzl', 'NEG-SALUD', array['NEG-SALUD-36','NEG-SALUD
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hablemos-terapias', 'pro', true, 4.9, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hablemos-terapias', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hablemos-terapias';
 insert into business_hours (business_id, weekday, open, ranges) values ('hablemos-terapias', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hablemos-terapias', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -4554,9 +4554,9 @@ values ('enfermeria-cuidar', 'hzl', 'NEG-SALUD', array['NEG-SALUD-53','NEG-SALUD
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('enfermeria-cuidar', 'pro', true, 4.9, 49, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('enfermeria-cuidar', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'enfermeria-cuidar';
 insert into business_hours (business_id, weekday, open, ranges) values ('enfermeria-cuidar', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('enfermeria-cuidar', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -4581,9 +4581,9 @@ values ('cirugia-oral-pimentel', 'hzl', 'NEG-SALUD', array['NEG-SALUD-12','NEG-S
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cirugia-oral-pimentel', 'pro', true, 4.6, 23, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cirugia-oral-pimentel', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cirugia-oral-pimentel';
 insert into business_hours (business_id, weekday, open, ranges) values ('cirugia-oral-pimentel', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cirugia-oral-pimentel', 1, true, '[["08:00","16:00"]]'::jsonb);
@@ -4608,9 +4608,9 @@ values ('farmacia-san-rafael', 'hzl', 'NEG-SALUD', array['NEG-SALUD-49','NEG-SAL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('farmacia-san-rafael', 'pro', true, 4.5, 31, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('farmacia-san-rafael', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'farmacia-san-rafael';
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-san-rafael', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('farmacia-san-rafael', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -4635,9 +4635,9 @@ values ('peso-sano-hazleton', 'hzl', 'NEG-SALUD', array['NEG-SALUD-42']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('peso-sano-hazleton', 'pro', true, 4.4, 17, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('peso-sano-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'peso-sano-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('peso-sano-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('peso-sano-hazleton', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4662,9 +4662,9 @@ values ('hidrata-iv', 'hzl', 'NEG-SALUD', array['NEG-SALUD-44']::text[], 'Hidrat
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hidrata-iv', 'pro', true, 4.3, 12, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hidrata-iv', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hidrata-iv';
 insert into business_hours (business_id, weekday, open, ranges) values ('hidrata-iv', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hidrata-iv', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -4689,9 +4689,9 @@ values ('fertilidad-esperanza', 'hzl', 'NEG-SALUD', array['NEG-SALUD-08']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fertilidad-esperanza', 'pro', true, 4.7, 19, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fertilidad-esperanza', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fertilidad-esperanza';
 insert into business_hours (business_id, weekday, open, ranges) values ('fertilidad-esperanza', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fertilidad-esperanza', 1, true, '[["08:00","16:00"]]'::jsonb);
@@ -4716,9 +4716,9 @@ values ('oncologia-del-valle', 'hzl', 'NEG-SALUD', array['NEG-SALUD-31']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('oncologia-del-valle', 'pro', true, 4.8, 36, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('oncologia-del-valle', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'oncologia-del-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('oncologia-del-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('oncologia-del-valle', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -4743,9 +4743,9 @@ values ('demo-salud', 'hzl', 'NEG-SALUD', array['NEG-SALUD-01','NEG-SALUD-04','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('demo-salud', 'pro', true, 4.1, 20, 22)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('demo-salud', 'pro', true, 22)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'demo-salud';
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-salud', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('demo-salud', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -4808,9 +4808,9 @@ values ('bufete-almonte', 'hzl', 'NEG-PRO', array['NEG-PRO-01','NEG-PRO-02','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bufete-almonte', 'pro', true, 4.8, 188, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bufete-almonte', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bufete-almonte';
 insert into business_hours (business_id, weekday, open, ranges) values ('bufete-almonte', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bufete-almonte', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -4835,9 +4835,9 @@ values ('centro-legal-comunitario', 'hzl', 'NEG-PRO', array['NEG-PRO-02','NEG-PR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('centro-legal-comunitario', 'pro', true, 4.9, 241, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('centro-legal-comunitario', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'centro-legal-comunitario';
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-legal-comunitario', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-legal-comunitario', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4862,9 +4862,9 @@ values ('multiservicios-la-patria', 'hzl', 'NEG-PRO', array['NEG-PRO-15','NEG-PR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('multiservicios-la-patria', 'pro', true, 4.6, 352, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('multiservicios-la-patria', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'multiservicios-la-patria';
 insert into business_hours (business_id, weekday, open, ranges) values ('multiservicios-la-patria', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('multiservicios-la-patria', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -4889,9 +4889,9 @@ values ('rosario-tax-itin', 'hzl', 'NEG-PRO', array['NEG-PRO-20','NEG-PRO-21','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rosario-tax-itin', 'pro', true, 4.7, 296, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rosario-tax-itin', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rosario-tax-itin';
 insert into business_hours (business_id, weekday, open, ranges) values ('rosario-tax-itin', 0, true, '[["11:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rosario-tax-itin', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -4916,9 +4916,9 @@ values ('mercedes-guzman-cpa', 'hzl', 'NEG-PRO', array['NEG-PRO-19','NEG-PRO-24'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mercedes-guzman-cpa', 'pro', true, 4.9, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mercedes-guzman-cpa', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mercedes-guzman-cpa';
 insert into business_hours (business_id, weekday, open, ranges) values ('mercedes-guzman-cpa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mercedes-guzman-cpa', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4943,9 +4943,9 @@ values ('lcda-ines-cabrera', 'hzl', 'NEG-PRO', array['NEG-PRO-05','NEG-PRO-06','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lcda-ines-cabrera', 'pro', true, 4.8, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lcda-ines-cabrera', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lcda-ines-cabrera';
 insert into business_hours (business_id, weekday, open, ranges) values ('lcda-ines-cabrera', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lcda-ines-cabrera', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -4970,9 +4970,9 @@ values ('ferreira-injury-law', 'hzl', 'NEG-PRO', array['NEG-PRO-09','NEG-PRO-10'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ferreira-injury-law', 'pro', true, 4.6, 173, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ferreira-injury-law', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ferreira-injury-law';
 insert into business_hours (business_id, weekday, open, ranges) values ('ferreira-injury-law', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ferreira-injury-law', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -4997,9 +4997,9 @@ values ('seguros-el-cibao', 'hzl', 'NEG-PRO', array['NEG-PRO-27','NEG-PRO-28','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('seguros-el-cibao', 'pro', true, 4.5, 129, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('seguros-el-cibao', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'seguros-el-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('seguros-el-cibao', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('seguros-el-cibao', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5024,9 +5024,9 @@ values ('imprenta-quisqueya', 'hzl', 'NEG-PRO', array['NEG-PRO-40','NEG-PRO-39',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('imprenta-quisqueya', 'pro', false, 4.7, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('imprenta-quisqueya', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'imprenta-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('imprenta-quisqueya', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('imprenta-quisqueya', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5051,9 +5051,9 @@ values ('tecnofix-hazleton', 'hzl', 'NEG-PRO', array['NEG-PRO-48','NEG-PRO-47','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tecnofix-hazleton', 'pro', true, 4.6, 212, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tecnofix-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tecnofix-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('tecnofix-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tecnofix-hazleton', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -5078,9 +5078,9 @@ values ('lopez-defensa-penal', 'hzl', 'NEG-PRO', array['NEG-PRO-07','NEG-PRO-08'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lopez-defensa-penal', 'pro', true, 4.7, 96, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lopez-defensa-penal', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lopez-defensa-penal';
 insert into business_hours (business_id, weekday, open, ranges) values ('lopez-defensa-penal', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lopez-defensa-penal', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -5105,9 +5105,9 @@ values ('envios-caribe', 'hzl', 'NEG-PRO', array['NEG-PRO-31','NEG-PRO-32','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('envios-caribe', 'pro', true, 4.4, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('envios-caribe', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'envios-caribe';
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-caribe', 0, true, '[["10:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-caribe', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -5132,9 +5132,9 @@ values ('traducciones-ana-beltre', 'hzl', 'NEG-PRO', array['NEG-PRO-18','NEG-PRO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('traducciones-ana-beltre', 'pro', true, 4.9, 19, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('traducciones-ana-beltre', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'traducciones-ana-beltre';
 insert into business_hours (business_id, weekday, open, ranges) values ('traducciones-ana-beltre', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('traducciones-ana-beltre', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -5159,9 +5159,9 @@ values ('hazleton-notary-tags', 'hzl', 'NEG-PRO', array['NEG-PRO-15','NEG-PRO-25
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hazleton-notary-tags', 'pro', true, 4.3, 41, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hazleton-notary-tags', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hazleton-notary-tags';
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-notary-tags', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-notary-tags', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -5186,9 +5186,9 @@ values ('fianzas-luzerne', 'hzl', 'NEG-PRO', array['NEG-PRO-14']::text[], 'Fianz
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fianzas-luzerne', 'pro', true, 4.1, 12, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fianzas-luzerne', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fianzas-luzerne';
 insert into business_hours (business_id, weekday, open, ranges) values ('fianzas-luzerne', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fianzas-luzerne', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -5213,9 +5213,9 @@ values ('agencia-progreso', 'hzl', 'NEG-PRO', array['NEG-PRO-49','NEG-PRO-50']::
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('agencia-progreso', 'pro', true, 4, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('agencia-progreso', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'agencia-progreso';
 insert into business_hours (business_id, weekday, open, ranges) values ('agencia-progreso', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('agencia-progreso', 1, true, '[["07:00","16:00"]]'::jsonb);
@@ -5240,9 +5240,9 @@ values ('dr-truck-dispatch', 'hzl', 'NEG-PRO', array['NEG-PRO-54','NEG-PRO-55']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dr-truck-dispatch', 'pro', true, 4.6, 9, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dr-truck-dispatch', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dr-truck-dispatch';
 insert into business_hours (business_id, weekday, open, ranges) values ('dr-truck-dispatch', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dr-truck-dispatch', 1, true, '[["06:00","18:00"]]'::jsonb);
@@ -5267,9 +5267,9 @@ values ('credito-nuevo', 'hzl', 'NEG-PRO', array['NEG-PRO-35','NEG-PRO-34']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('credito-nuevo', 'pro', true, 4.2, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('credito-nuevo', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'credito-nuevo';
 insert into business_hours (business_id, weekday, open, ranges) values ('credito-nuevo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('credito-nuevo', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -5294,9 +5294,9 @@ values ('latino-web-studio', 'hzl', 'NEG-PRO', array['NEG-PRO-38','NEG-PRO-42','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('latino-web-studio', 'pro', true, 4.8, 3, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('latino-web-studio', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'latino-web-studio';
 insert into business_hours (business_id, weekday, open, ranges) values ('latino-web-studio', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('latino-web-studio', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5319,9 +5319,9 @@ values ('rev-carmen-soto', 'hzl', 'NEG-PRO', array['NEG-PRO-60']::text[], 'Rev. 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rev-carmen-soto', 'pro', true, 5, 14, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rev-carmen-soto', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rev-carmen-soto';
 insert into business_hours (business_id, weekday, open, ranges) values ('rev-carmen-soto', 0, true, '[["12:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rev-carmen-soto', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -5346,9 +5346,9 @@ values ('peguero-law', 'hzl', 'NEG-PRO', array['NEG-PRO-11','NEG-PRO-12']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('peguero-law', 'pro', true, 4.7, 61, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('peguero-law', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'peguero-law';
 insert into business_hours (business_id, weekday, open, ranges) values ('peguero-law', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('peguero-law', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5373,9 +5373,9 @@ values ('hogar-propio-prestamos', 'hzl', 'NEG-PRO', array['NEG-PRO-37','NEG-PRO-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hogar-propio-prestamos', 'pro', true, 4.6, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hogar-propio-prestamos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hogar-propio-prestamos';
 insert into business_hours (business_id, weekday, open, ranges) values ('hogar-propio-prestamos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hogar-propio-prestamos', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5400,9 +5400,9 @@ values ('ortega-consultoria', 'hzl', 'NEG-PRO', array['NEG-PRO-26']::text[], 'Or
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ortega-consultoria', 'pro', true, 4.8, 34, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ortega-consultoria', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ortega-consultoria';
 insert into business_hours (business_id, weekday, open, ranges) values ('ortega-consultoria', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ortega-consultoria', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -5425,9 +5425,9 @@ values ('solis-foto-video', 'hzl', 'NEG-PRO', array['NEG-PRO-43','NEG-PRO-44']::
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('solis-foto-video', 'pro', true, 4.9, 42, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('solis-foto-video', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'solis-foto-video';
 insert into business_hours (business_id, weekday, open, ranges) values ('solis-foto-video', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('solis-foto-video', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -5452,9 +5452,9 @@ values ('nunez-software', 'hzl', 'NEG-PRO', array['NEG-PRO-45','NEG-PRO-38']::te
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nunez-software', 'pro', true, 4.8, 29, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nunez-software', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nunez-software';
 insert into business_hours (business_id, weekday, open, ranges) values ('nunez-software', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nunez-software', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5479,9 +5479,9 @@ values ('ventura-arquitectura', 'hzl', 'NEG-PRO', array['NEG-PRO-56','NEG-PRO-57
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ventura-arquitectura', 'pro', true, 4.7, 38, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ventura-arquitectura', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ventura-arquitectura';
 insert into business_hours (business_id, weekday, open, ranges) values ('ventura-arquitectura', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ventura-arquitectura', 1, true, '[["08:00","17:00"]]'::jsonb);
@@ -5506,9 +5506,9 @@ values ('paredes-seguridad', 'hzl', 'NEG-PRO', array['NEG-PRO-51','NEG-PRO-52']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('paredes-seguridad', 'pro', true, 4.5, 16, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('paredes-seguridad', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'paredes-seguridad';
 insert into business_hours (business_id, weekday, open, ranges) values ('paredes-seguridad', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('paredes-seguridad', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -5533,9 +5533,9 @@ values ('mensajeria-rapida-hzl', 'hzl', 'NEG-PRO', array['NEG-PRO-53']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mensajeria-rapida-hzl', 'pro', true, 4.6, 11, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mensajeria-rapida-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mensajeria-rapida-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('mensajeria-rapida-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mensajeria-rapida-hzl', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -5560,9 +5560,9 @@ values ('lugo-interiores', 'hzl', 'NEG-PRO', array['NEG-PRO-59']::text[], 'Lugo 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lugo-interiores', 'pro', true, 4.8, 13, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lugo-interiores', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lugo-interiores';
 insert into business_hours (business_id, weekday, open, ranges) values ('lugo-interiores', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lugo-interiores', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -5587,9 +5587,9 @@ values ('salon-imperial', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-07','NEG-FIESTA
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-imperial', 'pro', true, 4.7, 162, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-imperial', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-imperial';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-imperial', 0, true, '[["10:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-imperial', 1, false, '[]'::jsonb);
@@ -5614,9 +5614,9 @@ values ('suenos-de-quince', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-02','NEG-FIES
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('suenos-de-quince', 'pro', true, 4.9, 87, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('suenos-de-quince', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'suenos-de-quince';
 insert into business_hours (business_id, weekday, open, ranges) values ('suenos-de-quince', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('suenos-de-quince', 1, false, '[]'::jsonb);
@@ -5641,9 +5641,9 @@ values ('hazleton-party-rentals', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-10','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hazleton-party-rentals', 'pro', true, 4.6, 241, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hazleton-party-rentals', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hazleton-party-rentals';
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-party-rentals', 0, true, '[["08:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-party-rentals', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -5668,9 +5668,9 @@ values ('dj-el-cibaeno', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-33','NEG-FIESTA-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dj-el-cibaeno', 'pro', true, 4.8, 133, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dj-el-cibaeno', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dj-el-cibaeno';
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-el-cibaeno', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-el-cibaeno', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -5695,9 +5695,9 @@ values ('mariachi-real-hazleton', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-35','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mariachi-real-hazleton', 'pro', true, 4.9, 96, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mariachi-real-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mariachi-real-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('mariachi-real-hazleton', 0, true, '[["09:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mariachi-real-hazleton', 1, true, '[["10:00","21:00"]]'::jsonb);
@@ -5722,9 +5722,9 @@ values ('globos-y-mas', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-14','NEG-FIESTA-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('globos-y-mas', 'pro', true, 4.8, 118, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('globos-y-mas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'globos-y-mas';
 insert into business_hours (business_id, weekday, open, ranges) values ('globos-y-mas', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('globos-y-mas', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -5749,9 +5749,9 @@ values ('momentos-foto-video', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-47','NEG-F
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('momentos-foto-video', 'pro', true, 4.9, 104, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('momentos-foto-video', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'momentos-foto-video';
 insert into business_hours (business_id, weekday, open, ranges) values ('momentos-foto-video', 0, true, '[["09:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('momentos-foto-video', 1, false, '[]'::jsonb);
@@ -5776,9 +5776,9 @@ values ('dulce-tentacion', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-23','NEG-FIEST
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dulce-tentacion', 'pro', true, 4.9, 209, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dulce-tentacion', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dulce-tentacion';
 insert into business_hours (business_id, weekday, open, ranges) values ('dulce-tentacion', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dulce-tentacion', 1, false, '[]'::jsonb);
@@ -5803,9 +5803,9 @@ values ('brincolines-la-alegria', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-18','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('brincolines-la-alegria', 'pro', false, 4.6, 76, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('brincolines-la-alegria', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'brincolines-la-alegria';
 insert into business_hours (business_id, weekday, open, ranges) values ('brincolines-la-alegria', 0, true, '[["07:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('brincolines-la-alegria', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -5830,9 +5830,9 @@ values ('andrea-events', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-03','NEG-FIESTA-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('andrea-events', 'pro', true, 5, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('andrea-events', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'andrea-events';
 insert into business_hours (business_id, weekday, open, ranges) values ('andrea-events', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('andrea-events', 1, false, '[]'::jsonb);
@@ -5857,9 +5857,9 @@ values ('barra-movil-tropical', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-27','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('barra-movil-tropical', 'pro', true, 4.7, 39, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('barra-movil-tropical', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'barra-movil-tropical';
 insert into business_hours (business_id, weekday, open, ranges) values ('barra-movil-tropical', 0, true, '[["10:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('barra-movil-tropical', 1, false, '[]'::jsonb);
@@ -5884,9 +5884,9 @@ values ('payasita-chispita', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-41','NEG-FIE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('payasita-chispita', 'pro', true, 4.9, 22, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('payasita-chispita', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'payasita-chispita';
 insert into business_hours (business_id, weekday, open, ranges) values ('payasita-chispita', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('payasita-chispita', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -5911,9 +5911,9 @@ values ('floreria-la-orquidea', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-30','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('floreria-la-orquidea', 'pro', true, 4.6, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('floreria-la-orquidea', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'floreria-la-orquidea';
 insert into business_hours (business_id, weekday, open, ranges) values ('floreria-la-orquidea', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('floreria-la-orquidea', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -5938,9 +5938,9 @@ values ('sonido-perez', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-34','NEG-FIESTA-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sonido-perez', 'pro', true, 4.4, 18, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sonido-perez', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sonido-perez';
 insert into business_hours (business_id, weekday, open, ranges) values ('sonido-perez', 0, true, '[["09:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sonido-perez', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -5965,9 +5965,9 @@ values ('hazleton-limo', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-52']::text[], 'H
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hazleton-limo', 'pro', true, 4.3, 31, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hazleton-limo', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hazleton-limo';
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-limo', 0, true, '[["09:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-limo', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -5992,9 +5992,9 @@ values ('salon-los-compadres', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-07']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-los-compadres', 'pro', true, 4.2, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-los-compadres', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-los-compadres';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-los-compadres', 0, true, '[["10:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-los-compadres', 1, false, '[]'::jsonb);
@@ -6019,9 +6019,9 @@ values ('taquiza-don-chuy', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-24']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('taquiza-don-chuy', 'pro', true, 4.8, 27, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('taquiza-don-chuy', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'taquiza-don-chuy';
 insert into business_hours (business_id, weekday, open, ranges) values ('taquiza-don-chuy', 0, true, '[["09:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('taquiza-don-chuy', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -6046,9 +6046,9 @@ values ('banda-la-dinastia', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-36','NEG-FIE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('banda-la-dinastia', 'pro', true, 4.7, 12, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('banda-la-dinastia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'banda-la-dinastia';
 insert into business_hours (business_id, weekday, open, ranges) values ('banda-la-dinastia', 0, true, '[["10:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('banda-la-dinastia', 1, true, '[["12:00","21:00"]]'::jsonb);
@@ -6073,9 +6073,9 @@ values ('fiesta-mart', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-32','NEG-FIESTA-20
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fiesta-mart', 'pro', true, 4.5, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fiesta-mart', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fiesta-mart';
 insert into business_hours (business_id, weekday, open, ranges) values ('fiesta-mart', 0, true, '[["10:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fiesta-mart', 1, true, '[["09:00","20:00"]]'::jsonb);
@@ -6100,9 +6100,9 @@ values ('invitaciones-gaby', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-31']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('invitaciones-gaby', 'pro', true, 5, 4, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('invitaciones-gaby', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'invitaciones-gaby';
 insert into business_hours (business_id, weekday, open, ranges) values ('invitaciones-gaby', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('invitaciones-gaby', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -6127,9 +6127,9 @@ values ('fiestas-magicas', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-05','NEG-FIEST
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fiestas-magicas', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fiestas-magicas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fiestas-magicas';
 insert into business_hours (business_id, weekday, open, ranges) values ('fiestas-magicas', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fiestas-magicas', 1, false, '[]'::jsonb);
@@ -6154,9 +6154,9 @@ values ('patio-en-grande', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-08','NEG-FIEST
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('patio-en-grande', 'pro', true, 4.7, 53, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('patio-en-grande', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'patio-en-grande';
 insert into business_hours (business_id, weekday, open, ranges) values ('patio-en-grande', 0, true, '[["08:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('patio-en-grande', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -6181,9 +6181,9 @@ values ('hora-loca-tropical', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-45','NEG-FI
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hora-loca-tropical', 'pro', true, 4.9, 47, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hora-loca-tropical', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hora-loca-tropical';
 insert into business_hours (business_id, weekday, open, ranges) values ('hora-loca-tropical', 0, true, '[["10:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hora-loca-tropical', 1, false, '[]'::jsonb);
@@ -6208,9 +6208,9 @@ values ('cabina-selfie-hazleton', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-50']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cabina-selfie-hazleton', 'pro', true, 4.7, 14, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cabina-selfie-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cabina-selfie-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('cabina-selfie-hazleton', 0, true, '[["09:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cabina-selfie-hazleton', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -6235,9 +6235,9 @@ values ('chispas-frias-pa', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-56']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('chispas-frias-pa', 'pro', true, 4.6, 9, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('chispas-frias-pa', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'chispas-frias-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('chispas-frias-pa', 0, true, '[["09:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('chispas-frias-pa', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -6262,9 +6262,9 @@ values ('keystone-eventos', 'hzl', 'NEG-FIESTA', array['NEG-FIESTA-06','NEG-FIES
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-eventos', 'pro', true, 4.5, 11, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-eventos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-eventos';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-eventos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-eventos', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -6289,9 +6289,9 @@ values ('supermercado-la-cosecha', 'hzl', 'NEG-MERC', array['NEG-MERC-02','NEG-M
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('supermercado-la-cosecha', 'pro', true, 4.6, 388, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('supermercado-la-cosecha', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'supermercado-la-cosecha';
 insert into business_hours (business_id, weekday, open, ranges) values ('supermercado-la-cosecha', 0, true, '[["08:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('supermercado-la-cosecha', 1, true, '[["07:00","22:00"]]'::jsonb);
@@ -6316,9 +6316,9 @@ values ('carniceria-el-cibao', 'hzl', 'NEG-MERC', array['NEG-MERC-04','NEG-MERC-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('carniceria-el-cibao', 'pro', true, 4.8, 276, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('carniceria-el-cibao', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'carniceria-el-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('carniceria-el-cibao', 0, true, '[["08:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('carniceria-el-cibao', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -6343,9 +6343,9 @@ values ('bodega-don-pepe', 'hzl', 'NEG-MERC', array['NEG-MERC-01','NEG-MERC-08',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bodega-don-pepe', 'pro', true, 4.7, 192, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bodega-don-pepe', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bodega-don-pepe';
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-don-pepe', 0, true, '[["07:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-don-pepe', 1, true, '[["06:00","23:00"]]'::jsonb);
@@ -6370,9 +6370,9 @@ values ('pescaderia-del-mar', 'hzl', 'NEG-MERC', array['NEG-MERC-05','NEG-MERC-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pescaderia-del-mar', 'pro', true, 4.7, 141, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pescaderia-del-mar', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pescaderia-del-mar';
 insert into business_hours (business_id, weekday, open, ranges) values ('pescaderia-del-mar', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pescaderia-del-mar', 1, false, '[]'::jsonb);
@@ -6397,9 +6397,9 @@ values ('mercado-quisqueyano', 'hzl', 'NEG-MERC', array['NEG-MERC-13','NEG-MERC-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mercado-quisqueyano', 'pro', true, 4.6, 233, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mercado-quisqueyano', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mercado-quisqueyano';
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-quisqueyano', 0, true, '[["09:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-quisqueyano', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -6424,9 +6424,9 @@ values ('la-guadalupana', 'hzl', 'NEG-MERC', array['NEG-MERC-12','NEG-MERC-07','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-guadalupana', 'pro', true, 4.8, 168, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-guadalupana', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-guadalupana';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-guadalupana', 0, true, '[["08:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-guadalupana', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -6451,9 +6451,9 @@ values ('frutas-el-conuco', 'hzl', 'NEG-MERC', array['NEG-MERC-06','NEG-MERC-16'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('frutas-el-conuco', 'pro', false, 4.5, 97, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('frutas-el-conuco', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'frutas-el-conuco';
 insert into business_hours (business_id, weekday, open, ranges) values ('frutas-el-conuco', 0, true, '[["08:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('frutas-el-conuco', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -6478,9 +6478,9 @@ values ('mayorista-caribe', 'hzl', 'NEG-MERC', array['NEG-MERC-17','NEG-MERC-03'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mayorista-caribe', 'pro', true, 4.5, 84, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mayorista-caribe', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mayorista-caribe';
 insert into business_hours (business_id, weekday, open, ranges) values ('mayorista-caribe', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mayorista-caribe', 1, true, '[["06:00","17:00"]]'::jsonb);
@@ -6505,9 +6505,9 @@ values ('la-esquinita-deli', 'hzl', 'NEG-MERC', array['NEG-MERC-08','NEG-MERC-28
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-esquinita-deli', 'pro', true, 4.7, 215, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-esquinita-deli', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-esquinita-deli';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-esquinita-deli', 0, true, '[["07:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-esquinita-deli', 1, true, '[["06:00","21:00"]]'::jsonb);
@@ -6532,9 +6532,9 @@ values ('los-catrachos', 'hzl', 'NEG-MERC', array['NEG-MERC-14','NEG-MERC-04','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('los-catrachos', 'pro', true, 4.6, 73, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('los-catrachos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'los-catrachos';
 insert into business_hours (business_id, weekday, open, ranges) values ('los-catrachos', 0, true, '[["08:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('los-catrachos', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -6559,9 +6559,9 @@ values ('agua-hielo-cristal', 'hzl', 'NEG-MERC', array['NEG-MERC-26','NEG-MERC-3
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('agua-hielo-cristal', 'pro', true, 4.8, 122, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('agua-hielo-cristal', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'agua-hielo-cristal';
 insert into business_hours (business_id, weekday, open, ranges) values ('agua-hielo-cristal', 0, true, '[["08:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('agua-hielo-cristal', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -6586,9 +6586,9 @@ values ('bodega-mi-barrio', 'hzl', 'NEG-MERC', array['NEG-MERC-01']::text[], 'Bo
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bodega-mi-barrio', 'free', false, 4.4, 36, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bodega-mi-barrio', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bodega-mi-barrio';
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-mi-barrio', 0, true, '[["08:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-mi-barrio', 1, true, '[["07:00","22:00"]]'::jsonb);
@@ -6609,9 +6609,9 @@ values ('botanica-san-lazaro', 'hzl', 'NEG-MERC', array['NEG-MERC-25']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('botanica-san-lazaro', 'free', false, 4.6, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('botanica-san-lazaro', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'botanica-san-lazaro';
 insert into business_hours (business_id, weekday, open, ranges) values ('botanica-san-lazaro', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('botanica-san-lazaro', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -6632,9 +6632,9 @@ values ('licoreria-la-palma', 'hzl', 'NEG-MERC', array['NEG-MERC-21','NEG-MERC-2
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('licoreria-la-palma', 'free', false, 4.3, 28, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('licoreria-la-palma', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'licoreria-la-palma';
 insert into business_hours (business_id, weekday, open, ranges) values ('licoreria-la-palma', 0, true, '[["12:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('licoreria-la-palma', 1, true, '[["09:00","22:00"]]'::jsonb);
@@ -6655,9 +6655,9 @@ values ('dollar-plus-hazleton', 'hzl', 'NEG-MERC', array['NEG-MERC-20']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dollar-plus-hazleton', 'free', false, 4.1, 52, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dollar-plus-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dollar-plus-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('dollar-plus-hazleton', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dollar-plus-hazleton', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -6678,9 +6678,9 @@ values ('tabaqueria-santiago', 'hzl', 'NEG-MERC', array['NEG-MERC-23']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tabaqueria-santiago', 'free', false, 4.7, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tabaqueria-santiago', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tabaqueria-santiago';
 insert into business_hours (business_id, weekday, open, ranges) values ('tabaqueria-santiago', 0, true, '[["12:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tabaqueria-santiago', 1, true, '[["10:00","21:00"]]'::jsonb);
@@ -6701,9 +6701,9 @@ values ('mascotas-y-mas', 'hzl', 'NEG-MERC', array['NEG-MERC-27']::text[], 'Masc
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mascotas-y-mas', 'free', false, 4.5, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mascotas-y-mas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mascotas-y-mas';
 insert into business_hours (business_id, weekday, open, ranges) values ('mascotas-y-mas', 0, true, '[["10:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mascotas-y-mas', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -6724,9 +6724,9 @@ values ('mercado-agricultores-hzl', 'hzl', 'NEG-MERC', array['NEG-MERC-18','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mercado-agricultores-hzl', 'free', false, 4.8, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mercado-agricultores-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mercado-agricultores-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-agricultores-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-agricultores-hzl', 1, false, '[]'::jsonb);
@@ -6747,9 +6747,9 @@ values ('bodega-los-primos', 'hzl', 'NEG-MERC', array['NEG-MERC-01','NEG-MERC-29
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bodega-los-primos', 'free', false, 4.2, 3, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bodega-los-primos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bodega-los-primos';
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-los-primos', 0, true, '[["08:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bodega-los-primos', 1, true, '[["07:00","23:00"]]'::jsonb);
@@ -6770,9 +6770,9 @@ values ('quesos-la-vaquita', 'hzl', 'NEG-MERC', array['NEG-MERC-10','NEG-MERC-14
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('quesos-la-vaquita', 'free', false, 4.9, 0, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('quesos-la-vaquita', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'quesos-la-vaquita';
 insert into business_hours (business_id, weekday, open, ranges) values ('quesos-la-vaquita', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('quesos-la-vaquita', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -6793,9 +6793,9 @@ values ('mercado-el-condor', 'hzl', 'NEG-MERC', array['NEG-MERC-15','NEG-MERC-11
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mercado-el-condor', 'pro', true, 4.7, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mercado-el-condor', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mercado-el-condor';
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-el-condor', 0, true, '[["09:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mercado-el-condor', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -6820,9 +6820,9 @@ values ('licores-la-cumbre', 'hzl', 'NEG-MERC', array['NEG-MERC-21','NEG-MERC-22
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('licores-la-cumbre', 'pro', true, 4.6, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('licores-la-cumbre', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'licores-la-cumbre';
 insert into business_hours (business_id, weekday, open, ranges) values ('licores-la-cumbre', 0, true, '[["12:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('licores-la-cumbre', 1, true, '[["10:00","22:00"]]'::jsonb);
@@ -6847,9 +6847,9 @@ values ('botanica-siete-potencias', 'hzl', 'NEG-MERC', array['NEG-MERC-25']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('botanica-siete-potencias', 'pro', true, 4.8, 52, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('botanica-siete-potencias', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'botanica-siete-potencias';
 insert into business_hours (business_id, weekday, open, ranges) values ('botanica-siete-potencias', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('botanica-siete-potencias', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -6874,9 +6874,9 @@ values ('la-economica', 'hzl', 'NEG-MERC', array['NEG-MERC-20','NEG-MERC-27']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-economica', 'pro', true, 4.4, 71, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-economica', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-economica';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-economica', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-economica', 1, true, '[["08:00","21:00"]]'::jsonb);
@@ -6901,9 +6901,9 @@ values ('mini-market-la-estrella', 'hzl', 'NEG-MERC', array['NEG-MERC-19']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mini-market-la-estrella', 'free', false, 4.3, 26, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mini-market-la-estrella', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mini-market-la-estrella';
 insert into business_hours (business_id, weekday, open, ranges) values ('mini-market-la-estrella', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mini-market-la-estrella', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -6924,9 +6924,9 @@ values ('vapor-zone-hzl', 'hzl', 'NEG-MERC', array['NEG-MERC-24']::text[], 'Vapo
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('vapor-zone-hzl', 'free', false, 4.2, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('vapor-zone-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'vapor-zone-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('vapor-zone-hzl', 0, true, '[["12:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('vapor-zone-hzl', 1, true, '[["11:00","21:00"]]'::jsonb);
@@ -6947,9 +6947,9 @@ values ('la-terraza-night', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-05','NEG-NOCHE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-terraza-night', 'pro', true, 4.5, 318, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-terraza-night', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-terraza-night';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-terraza-night', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-terraza-night', 1, false, '[]'::jsonb);
@@ -6974,9 +6974,9 @@ values ('mambo-lounge', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-04','NEG-NOCHE-17',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mambo-lounge', 'pro', true, 4.6, 204, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mambo-lounge', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mambo-lounge';
 insert into business_hours (business_id, weekday, open, ranges) values ('mambo-lounge', 0, true, '[["17:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mambo-lounge', 1, false, '[]'::jsonb);
@@ -7001,9 +7001,9 @@ values ('el-rincon-sports', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-02','NEG-NOCHE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('el-rincon-sports', 'pro', true, 4.4, 271, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('el-rincon-sports', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'el-rincon-sports';
 insert into business_hours (business_id, weekday, open, ranges) values ('el-rincon-sports', 0, true, '[["11:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('el-rincon-sports', 1, true, '[["11:00","02:00"]]'::jsonb);
@@ -7028,9 +7028,9 @@ values ('club-caliente', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-08','NEG-NOCHE-05'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('club-caliente', 'pro', true, 4.2, 189, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('club-caliente', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'club-caliente';
 insert into business_hours (business_id, weekday, open, ranges) values ('club-caliente', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('club-caliente', 1, false, '[]'::jsonb);
@@ -7055,9 +7055,9 @@ values ('karaoke-estrella', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-11','NEG-NOCHE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('karaoke-estrella', 'pro', true, 4.7, 143, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('karaoke-estrella', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'karaoke-estrella';
 insert into business_hours (business_id, weekday, open, ranges) values ('karaoke-estrella', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('karaoke-estrella', 1, false, '[]'::jsonb);
@@ -7082,9 +7082,9 @@ values ('cantina-don-beto', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-03','NEG-NOCHE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cantina-don-beto', 'pro', true, 4.6, 166, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cantina-don-beto', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cantina-don-beto';
 insert into business_hours (business_id, weekday, open, ranges) values ('cantina-don-beto', 0, true, '[["14:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cantina-don-beto', 1, true, '[["16:00","02:00"]]'::jsonb);
@@ -7109,9 +7109,9 @@ values ('casa-borinquen', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-06','NEG-NOCHE-09
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('casa-borinquen', 'pro', true, 4.8, 152, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('casa-borinquen', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'casa-borinquen';
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-borinquen', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-borinquen', 1, false, '[]'::jsonb);
@@ -7136,9 +7136,9 @@ values ('billar-los-amigos', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-13','NEG-NOCHE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('billar-los-amigos', 'pro', false, 4.3, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('billar-los-amigos', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'billar-los-amigos';
 insert into business_hours (business_id, weekday, open, ranges) values ('billar-los-amigos', 0, true, '[["12:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('billar-los-amigos', 1, true, '[["14:00","01:00"]]'::jsonb);
@@ -7163,9 +7163,9 @@ values ('coal-town-brewing', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-15','NEG-NOCHE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('coal-town-brewing', 'pro', true, 4.6, 97, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('coal-town-brewing', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'coal-town-brewing';
 insert into business_hours (business_id, weekday, open, ranges) values ('coal-town-brewing', 0, true, '[["12:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('coal-town-brewing', 1, false, '[]'::jsonb);
@@ -7190,9 +7190,9 @@ values ('el-palacio-show', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-19','NEG-NOCHE-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('el-palacio-show', 'pro', true, 4.7, 112, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('el-palacio-show', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'el-palacio-show';
 insert into business_hours (business_id, weekday, open, ranges) values ('el-palacio-show', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('el-palacio-show', 1, false, '[]'::jsonb);
@@ -7217,9 +7217,9 @@ values ('skyline-rooftop', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-18','NEG-NOCHE-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('skyline-rooftop', 'pro', true, 4.5, 76, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('skyline-rooftop', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'skyline-rooftop';
 insert into business_hours (business_id, weekday, open, ranges) values ('skyline-rooftop', 0, true, '[["16:00","23:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('skyline-rooftop', 1, false, '[]'::jsonb);
@@ -7244,9 +7244,9 @@ values ('dj-rafy-mejia', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-23','NEG-NOCHE-20'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dj-rafy-mejia', 'pro', true, 4.9, 37, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dj-rafy-mejia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dj-rafy-mejia';
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-rafy-mejia', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-rafy-mejia', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -7271,9 +7271,9 @@ values ('welly-cruz-eventos', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-22','NEG-NOCH
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('welly-cruz-eventos', 'pro', true, 4.5, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('welly-cruz-eventos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'welly-cruz-eventos';
 insert into business_hours (business_id, weekday, open, ranges) values ('welly-cruz-eventos', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('welly-cruz-eventos', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -7298,9 +7298,9 @@ values ('salon-las-palmas', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-25']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-las-palmas', 'pro', true, 4.7, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-las-palmas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-las-palmas';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-las-palmas', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-las-palmas', 1, false, '[]'::jsonb);
@@ -7325,9 +7325,9 @@ values ('bar-el-cibao', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-01']::text[], 'Bar 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bar-el-cibao', 'free', false, 4.3, 41, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bar-el-cibao', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bar-el-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('bar-el-cibao', 0, true, '[["12:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bar-el-cibao', 1, true, '[["12:00","02:00"]]'::jsonb);
@@ -7348,9 +7348,9 @@ values ('hookah-palace', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-12','NEG-NOCHE-04'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hookah-palace', 'free', false, 4.2, 33, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hookah-palace', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hookah-palace';
 insert into business_hours (business_id, weekday, open, ranges) values ('hookah-palace', 0, true, '[["18:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hookah-palace', 1, true, '[["18:00","02:00"]]'::jsonb);
@@ -7371,9 +7371,9 @@ values ('dj-flow', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-23']::text[], 'DJ Flow',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dj-flow', 'free', false, 4.8, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dj-flow', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dj-flow';
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-flow', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dj-flow', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -7394,9 +7394,9 @@ values ('noches-latinas-promo', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-22','NEG-NO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('noches-latinas-promo', 'free', false, 4.1, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('noches-latinas-promo', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'noches-latinas-promo';
 insert into business_hours (business_id, weekday, open, ranges) values ('noches-latinas-promo', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('noches-latinas-promo', 1, true, '[["12:00","22:00"]]'::jsonb);
@@ -7417,9 +7417,9 @@ values ('salon-la-esquina', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-25']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-la-esquina', 'free', false, 4.4, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-la-esquina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-la-esquina';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-la-esquina', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-la-esquina', 1, true, '[["12:00","00:00"]]'::jsonb);
@@ -7440,9 +7440,9 @@ values ('tragos-y-dardos', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-14','NEG-NOCHE-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tragos-y-dardos', 'free', false, 4, 6, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tragos-y-dardos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tragos-y-dardos';
 insert into business_hours (business_id, weekday, open, ranges) values ('tragos-y-dardos', 0, true, '[["14:00","23:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tragos-y-dardos', 1, true, '[["16:00","02:00"]]'::jsonb);
@@ -7463,9 +7463,9 @@ values ('la-barra-de-vinos', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-16']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('la-barra-de-vinos', 'free', false, 4.9, 4, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('la-barra-de-vinos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'la-barra-de-vinos';
 insert into business_hours (business_id, weekday, open, ranges) values ('la-barra-de-vinos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('la-barra-de-vinos', 1, false, '[]'::jsonb);
@@ -7486,9 +7486,9 @@ values ('el-charro-cantina', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-03','NEG-NOCHE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('el-charro-cantina', 'free', false, 4.4, 29, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('el-charro-cantina', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'el-charro-cantina';
 insert into business_hours (business_id, weekday, open, ranges) values ('el-charro-cantina', 0, true, '[["13:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('el-charro-cantina', 1, true, '[["15:00","02:00"]]'::jsonb);
@@ -7509,9 +7509,9 @@ values ('rumba-club', 'hzl', 'NEG-NOCHE', array['NEG-NOCHE-05','NEG-NOCHE-21']::
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rumba-club', 'free', false, 3.9, 0, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rumba-club', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rumba-club';
 insert into business_hours (business_id, weekday, open, ranges) values ('rumba-club', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rumba-club', 1, false, '[]'::jsonb);
@@ -7532,9 +7532,9 @@ values ('boutique-yaritza', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-01','NEG-TIEN
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('boutique-yaritza', 'pro', true, 4.7, 184, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('boutique-yaritza', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'boutique-yaritza';
 insert into business_hours (business_id, weekday, open, ranges) values ('boutique-yaritza', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('boutique-yaritza', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7559,9 +7559,9 @@ values ('zapateria-el-paso', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-07','NEG-TIE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('zapateria-el-paso', 'pro', true, 4.6, 211, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('zapateria-el-paso', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'zapateria-el-paso';
 insert into business_hours (business_id, weekday, open, ranges) values ('zapateria-el-paso', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('zapateria-el-paso', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7586,9 +7586,9 @@ values ('fresh-kicks-hzl', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-08','NEG-TIEND
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fresh-kicks-hzl', 'pro', true, 4.5, 132, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fresh-kicks-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fresh-kicks-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('fresh-kicks-hzl', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fresh-kicks-hzl', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7613,9 +7613,9 @@ values ('novias-y-quinces-ana', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-04','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('novias-y-quinces-ana', 'pro', true, 4.8, 96, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('novias-y-quinces-ana', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'novias-y-quinces-ana';
 insert into business_hours (business_id, weekday, open, ranges) values ('novias-y-quinces-ana', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('novias-y-quinces-ana', 1, false, '[]'::jsonb);
@@ -7640,9 +7640,9 @@ values ('celulares-y-mas', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-26','NEG-TIEND
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('celulares-y-mas', 'pro', true, 4.4, 267, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('celulares-y-mas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'celulares-y-mas';
 insert into business_hours (business_id, weekday, open, ranges) values ('celulares-y-mas', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('celulares-y-mas', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7667,9 +7667,9 @@ values ('muebleria-la-familia', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-20','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('muebleria-la-familia', 'pro', true, 4.5, 154, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('muebleria-la-familia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'muebleria-la-familia';
 insert into business_hours (business_id, weekday, open, ranges) values ('muebleria-la-familia', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('muebleria-la-familia', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7694,9 +7694,9 @@ values ('ferreteria-central', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-39','NEG-TI
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ferreteria-central', 'pro', true, 4.7, 198, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ferreteria-central', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ferreteria-central';
 insert into business_hours (business_id, weekday, open, ranges) values ('ferreteria-central', 0, true, '[["09:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ferreteria-central', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -7721,9 +7721,9 @@ values ('belleza-latina-supply', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-38']::te
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('belleza-latina-supply', 'pro', true, 4.6, 143, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('belleza-latina-supply', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'belleza-latina-supply';
 insert into business_hours (business_id, weekday, open, ranges) values ('belleza-latina-supply', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('belleza-latina-supply', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7748,9 +7748,9 @@ values ('joyeria-oro-fino', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-14','NEG-TIEN
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('joyeria-oro-fino', 'pro', true, 4.8, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('joyeria-oro-fino', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'joyeria-oro-fino';
 insert into business_hours (business_id, weekday, open, ranges) values ('joyeria-oro-fino', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('joyeria-oro-fino', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -7775,9 +7775,9 @@ values ('jugueteria-arcoiris', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-32','NEG-T
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('jugueteria-arcoiris', 'pro', false, 4.5, 71, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('jugueteria-arcoiris', 'pro', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'jugueteria-arcoiris';
 insert into business_hours (business_id, weekday, open, ranges) values ('jugueteria-arcoiris', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('jugueteria-arcoiris', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7802,9 +7802,9 @@ values ('electro-hogar-caribe', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-24','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('electro-hogar-caribe', 'pro', true, 4.3, 109, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('electro-hogar-caribe', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'electro-hogar-caribe';
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-hogar-caribe', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('electro-hogar-caribe', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7829,9 +7829,9 @@ values ('lavanderia-burbujas', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-13','NEG-T
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lavanderia-burbujas', 'free', false, 4.4, 57, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lavanderia-burbujas', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lavanderia-burbujas';
 insert into business_hours (business_id, weekday, open, ranges) values ('lavanderia-burbujas', 0, true, '[["06:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lavanderia-burbujas', 1, true, '[["06:00","22:00"]]'::jsonb);
@@ -7856,9 +7856,9 @@ values ('sastreria-don-julio', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-11']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sastreria-don-julio', 'free', false, 4.9, 34, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sastreria-don-julio', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sastreria-don-julio';
 insert into business_hours (business_id, weekday, open, ranges) values ('sastreria-don-julio', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sastreria-don-julio', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7879,9 +7879,9 @@ values ('empeno-hazleton', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-19','NEG-TIEND
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('empeno-hazleton', 'free', false, 4.1, 22, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('empeno-hazleton', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'empeno-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('empeno-hazleton', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('empeno-hazleton', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7906,9 +7906,9 @@ values ('articulos-religiosos-fe', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-37','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('articulos-religiosos-fe', 'free', false, 4.8, 12, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('articulos-religiosos-fe', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'articulos-religiosos-fe';
 insert into business_hours (business_id, weekday, open, ranges) values ('articulos-religiosos-fe', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('articulos-religiosos-fe', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7933,9 +7933,9 @@ values ('floreria-rosa', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-35','NEG-TIENDA-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('floreria-rosa', 'free', false, 4.6, 19, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('floreria-rosa', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'floreria-rosa';
 insert into business_hours (business_id, weekday, open, ranges) values ('floreria-rosa', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('floreria-rosa', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -7960,9 +7960,9 @@ values ('bici-hazleton', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-31','NEG-TIENDA-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bici-hazleton', 'free', false, 4.7, 8, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bici-hazleton', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bici-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('bici-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bici-hazleton', 1, false, '[]'::jsonb);
@@ -7987,9 +7987,9 @@ values ('segunda-mano-el-closet', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-17','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('segunda-mano-el-closet', 'free', false, 4.3, 5, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('segunda-mano-el-closet', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'segunda-mano-el-closet';
 insert into business_hours (business_id, weekday, open, ranges) values ('segunda-mano-el-closet', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('segunda-mano-el-closet', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8014,9 +8014,9 @@ values ('autopartes-rapidas', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-43']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('autopartes-rapidas', 'free', false, 4.4, 26, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('autopartes-rapidas', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'autopartes-rapidas';
 insert into business_hours (business_id, weekday, open, ranges) values ('autopartes-rapidas', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('autopartes-rapidas', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8041,9 +8041,9 @@ values ('patitas-pet-shop', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-45','NEG-TIEN
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('patitas-pet-shop', 'free', false, 4.9, 0, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('patitas-pet-shop', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'patitas-pet-shop';
 insert into business_hours (business_id, weekday, open, ranges) values ('patitas-pet-shop', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('patitas-pet-shop', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8068,9 +8068,9 @@ values ('moda-para-el-y-los-ninos', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-02','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('moda-para-el-y-los-ninos', 'pro', true, 4.6, 74, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('moda-para-el-y-los-ninos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'moda-para-el-y-los-ninos';
 insert into business_hours (business_id, weekday, open, ranges) values ('moda-para-el-y-los-ninos', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('moda-para-el-y-los-ninos', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8095,9 +8095,9 @@ values ('casa-linda-decoracion', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-22','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('casa-linda-decoracion', 'pro', true, 4.7, 66, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('casa-linda-decoracion', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'casa-linda-decoracion';
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-linda-decoracion', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-linda-decoracion', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8122,9 +8122,9 @@ values ('materiales-vivero-garcia', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-41','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('materiales-vivero-garcia', 'pro', true, 4.6, 92, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('materiales-vivero-garcia', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'materiales-vivero-garcia';
 insert into business_hours (business_id, weekday, open, ranges) values ('materiales-vivero-garcia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('materiales-vivero-garcia', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -8149,9 +8149,9 @@ values ('pc-gamer-hazleton', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-27','NEG-TIE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pc-gamer-hazleton', 'pro', true, 4.7, 81, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pc-gamer-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pc-gamer-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('pc-gamer-hazleton', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pc-gamer-hazleton', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8176,9 +8176,9 @@ values ('libreria-el-saber', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-47','NEG-TIE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('libreria-el-saber', 'pro', true, 4.8, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('libreria-el-saber', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'libreria-el-saber';
 insert into business_hours (business_id, weekday, open, ranges) values ('libreria-el-saber', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('libreria-el-saber', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -8203,9 +8203,9 @@ values ('musica-y-son', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-29']::text[], 'MÃ
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('musica-y-son', 'free', false, 4.6, 17, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('musica-y-son', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'musica-y-son';
 insert into business_hours (business_id, weekday, open, ranges) values ('musica-y-son', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('musica-y-son', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8226,9 +8226,9 @@ values ('telas-y-manualidades-maria', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-49'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('telas-y-manualidades-maria', 'free', false, 4.7, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('telas-y-manualidades-maria', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'telas-y-manualidades-maria';
 insert into business_hours (business_id, weekday, open, ranges) values ('telas-y-manualidades-maria', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('telas-y-manualidades-maria', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8249,9 +8249,9 @@ values ('mi-isla-en-linea', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-51']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mi-isla-en-linea', 'free', false, 4.5, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mi-isla-en-linea', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mi-isla-en-linea';
 insert into business_hours (business_id, weekday, open, ranges) values ('mi-isla-en-linea', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mi-isla-en-linea', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -8272,9 +8272,9 @@ values ('don-pepe-vendedor', 'hzl', 'NEG-TIENDA', array['NEG-TIENDA-52']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('don-pepe-vendedor', 'free', false, 4.8, 26, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('don-pepe-vendedor', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'don-pepe-vendedor';
 insert into business_hours (business_id, weekday, open, ranges) values ('don-pepe-vendedor', 0, true, '[["11:00","17:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('don-pepe-vendedor', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -8295,9 +8295,9 @@ values ('van-express-nyc', 'hzl', 'NEG-TRANS', array['NEG-TRANS-03','NEG-TRANS-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('van-express-nyc', 'pro', true, 4.6, 412, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('van-express-nyc', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'van-express-nyc';
 insert into business_hours (business_id, weekday, open, ranges) values ('van-express-nyc', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('van-express-nyc', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -8322,9 +8322,9 @@ values ('aeropuerto-seguro', 'hzl', 'NEG-TRANS', array['NEG-TRANS-02','NEG-TRANS
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('aeropuerto-seguro', 'pro', true, 4.8, 233, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('aeropuerto-seguro', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'aeropuerto-seguro';
 insert into business_hours (business_id, weekday, open, ranges) values ('aeropuerto-seguro', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('aeropuerto-seguro', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -8349,9 +8349,9 @@ values ('envios-quisqueya-cargo', 'hzl', 'NEG-TRANS', array['NEG-TRANS-17','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('envios-quisqueya-cargo', 'pro', true, 4.5, 298, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('envios-quisqueya-cargo', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'envios-quisqueya-cargo';
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-quisqueya-cargo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-quisqueya-cargo', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -8376,9 +8376,9 @@ values ('mudanzas-el-primo', 'hzl', 'NEG-TRANS', array['NEG-TRANS-24','NEG-TRANS
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mudanzas-el-primo', 'pro', true, 4.4, 121, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mudanzas-el-primo', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mudanzas-el-primo';
 insert into business_hours (business_id, weekday, open, ranges) values ('mudanzas-el-primo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mudanzas-el-primo', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -8403,9 +8403,9 @@ values ('traslados-abuela', 'hzl', 'NEG-TRANS', array['NEG-TRANS-09']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('traslados-abuela', 'pro', true, 4.9, 87, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('traslados-abuela', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'traslados-abuela';
 insert into business_hours (business_id, weekday, open, ranges) values ('traslados-abuela', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('traslados-abuela', 1, true, '[["06:00","20:00"]]'::jsonb);
@@ -8430,9 +8430,9 @@ values ('workers-shuttle-hzl', 'hzl', 'NEG-TRANS', array['NEG-TRANS-06']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('workers-shuttle-hzl', 'pro', true, 4.3, 164, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('workers-shuttle-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'workers-shuttle-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('workers-shuttle-hzl', 0, true, '[["04:00","23:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('workers-shuttle-hzl', 1, true, '[["04:00","23:00"]]'::jsonb);
@@ -8457,9 +8457,9 @@ values ('taxi-latino-hzl', 'hzl', 'NEG-TRANS', array['NEG-TRANS-01','NEG-TRANS-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('taxi-latino-hzl', 'pro', true, 4.4, 356, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('taxi-latino-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'taxi-latino-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('taxi-latino-hzl', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('taxi-latino-hzl', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -8484,9 +8484,9 @@ values ('grua-rapida-24', 'hzl', 'NEG-TRANS', array['NEG-TRANS-23']::text[], 'Gr
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('grua-rapida-24', 'free', false, 4.3, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('grua-rapida-24', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'grua-rapida-24';
 insert into business_hours (business_id, weekday, open, ranges) values ('grua-rapida-24', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('grua-rapida-24', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -8507,9 +8507,9 @@ values ('renta-autos-express', 'hzl', 'NEG-TRANS', array['NEG-TRANS-25']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('renta-autos-express', 'free', false, 4.1, 31, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('renta-autos-express', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'renta-autos-express';
 insert into business_hours (business_id, weekday, open, ranges) values ('renta-autos-express', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('renta-autos-express', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -8530,9 +8530,9 @@ values ('fletes-don-luis', 'hzl', 'NEG-TRANS', array['NEG-TRANS-18','NEG-TRANS-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fletes-don-luis', 'free', false, 4.7, 18, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fletes-don-luis', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fletes-don-luis';
 insert into business_hours (business_id, weekday, open, ranges) values ('fletes-don-luis', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fletes-don-luis', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -8553,9 +8553,9 @@ values ('shuttle-allentown', 'hzl', 'NEG-TRANS', array['NEG-TRANS-04']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('shuttle-allentown', 'free', false, 4.2, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('shuttle-allentown', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'shuttle-allentown';
 insert into business_hours (business_id, weekday, open, ranges) values ('shuttle-allentown', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('shuttle-allentown', 1, true, '[["05:00","21:00"]]'::jsonb);
@@ -8576,9 +8576,9 @@ values ('mensajeria-rapidito', 'hzl', 'NEG-TRANS', array['NEG-TRANS-13']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mensajeria-rapidito', 'free', false, 4.8, 3, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mensajeria-rapidito', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mensajeria-rapidito';
 insert into business_hours (business_id, weekday, open, ranges) values ('mensajeria-rapidito', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mensajeria-rapidito', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -8599,9 +8599,9 @@ values ('rapidito-same-day', 'hzl', 'NEG-TRANS', array['NEG-TRANS-14','NEG-TRANS
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rapidito-same-day', 'pro', true, 4.7, 63, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rapidito-same-day', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rapidito-same-day';
 insert into business_hours (business_id, weekday, open, ranges) values ('rapidito-same-day', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rapidito-same-day', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -8626,9 +8626,9 @@ values ('keystone-hotshot-cdl', 'hzl', 'NEG-TRANS', array['NEG-TRANS-19','NEG-TR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-hotshot-cdl', 'pro', true, 4.6, 48, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-hotshot-cdl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-hotshot-cdl';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-hotshot-cdl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-hotshot-cdl', 1, true, '[["06:00","20:00"]]'::jsonb);
@@ -8653,9 +8653,9 @@ values ('renta-camionetas-hzl', 'hzl', 'NEG-TRANS', array['NEG-TRANS-26','NEG-TR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('renta-camionetas-hzl', 'pro', true, 4.5, 57, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('renta-camionetas-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'renta-camionetas-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('renta-camionetas-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('renta-camionetas-hzl', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -8680,9 +8680,9 @@ values ('transporte-escolar-pasito', 'hzl', 'NEG-TRANS', array['NEG-TRANS-08','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('transporte-escolar-pasito', 'free', false, 4.8, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('transporte-escolar-pasito', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'transporte-escolar-pasito';
 insert into business_hours (business_id, weekday, open, ranges) values ('transporte-escolar-pasito', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('transporte-escolar-pasito', 1, true, '[["06:00","18:00"]]'::jsonb);
@@ -8703,9 +8703,9 @@ values ('reparto-express-moto', 'hzl', 'NEG-TRANS', array['NEG-TRANS-15','NEG-TR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('reparto-express-moto', 'free', false, 4.6, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('reparto-express-moto', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'reparto-express-moto';
 insert into business_hours (business_id, weekday, open, ranges) values ('reparto-express-moto', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('reparto-express-moto', 1, true, '[["11:00","23:00"]]'::jsonb);
@@ -8726,9 +8726,9 @@ values ('ingles-para-todos', 'hzl', 'NEG-EDU', array['NEG-EDU-01','NEG-EDU-03','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ingles-para-todos', 'pro', true, 4.8, 214, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ingles-para-todos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ingles-para-todos';
 insert into business_hours (business_id, weekday, open, ranges) values ('ingles-para-todos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ingles-para-todos', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -8753,9 +8753,9 @@ values ('escuela-cdl-keystone', 'hzl', 'NEG-EDU', array['NEG-EDU-21','NEG-EDU-22
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('escuela-cdl-keystone', 'pro', true, 4.6, 176, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('escuela-cdl-keystone', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'escuela-cdl-keystone';
 insert into business_hours (business_id, weekday, open, ranges) values ('escuela-cdl-keystone', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('escuela-cdl-keystone', 1, true, '[["07:00","18:00"]]'::jsonb);
@@ -8780,9 +8780,9 @@ values ('academia-barberia-elite', 'hzl', 'NEG-EDU', array['NEG-EDU-23','NEG-EDU
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('academia-barberia-elite', 'pro', true, 4.7, 98, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('academia-barberia-elite', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'academia-barberia-elite';
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-barberia-elite', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-barberia-elite', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -8807,9 +8807,9 @@ values ('tutores-sol', 'hzl', 'NEG-EDU', array['NEG-EDU-07','NEG-EDU-09','NEG-ED
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('tutores-sol', 'pro', true, 4.9, 132, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('tutores-sol', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'tutores-sol';
 insert into business_hours (business_id, weekday, open, ranges) values ('tutores-sol', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('tutores-sol', 1, true, '[["14:00","20:00"]]'::jsonb);
@@ -8834,9 +8834,9 @@ values ('instituto-salud-hzl', 'hzl', 'NEG-EDU', array['NEG-EDU-34','NEG-EDU-35'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('instituto-salud-hzl', 'pro', true, 4.7, 118, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('instituto-salud-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'instituto-salud-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('instituto-salud-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('instituto-salud-hzl', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -8861,9 +8861,9 @@ values ('computacion-facil', 'hzl', 'NEG-EDU', array['NEG-EDU-14','NEG-EDU-15','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('computacion-facil', 'pro', true, 4.8, 67, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('computacion-facil', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'computacion-facil';
 insert into business_hours (business_id, weekday, open, ranges) values ('computacion-facil', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('computacion-facil', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -8888,9 +8888,9 @@ values ('academia-baile-sabor', 'hzl', 'NEG-EDU', array['NEG-EDU-41','NEG-EDU-42
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('academia-baile-sabor', 'pro', true, 4.9, 145, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('academia-baile-sabor', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'academia-baile-sabor';
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-baile-sabor', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-baile-sabor', 1, true, '[["17:00","22:00"]]'::jsonb);
@@ -8915,9 +8915,9 @@ values ('oficios-luzerne', 'hzl', 'NEG-EDU', array['NEG-EDU-28','NEG-EDU-29','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('oficios-luzerne', 'pro', true, 4.5, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('oficios-luzerne', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'oficios-luzerne';
 insert into business_hours (business_id, weekday, open, ranges) values ('oficios-luzerne', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('oficios-luzerne', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -8942,9 +8942,9 @@ values ('manejo-seguro-hzl', 'hzl', 'NEG-EDU', array['NEG-EDU-22']::text[], 'Esc
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('manejo-seguro-hzl', 'free', false, 4.6, 41, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('manejo-seguro-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'manejo-seguro-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('manejo-seguro-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('manejo-seguro-hzl', 1, true, '[["08:00","19:00"]]'::jsonb);
@@ -8965,9 +8965,9 @@ values ('escuela-belleza-glam', 'hzl', 'NEG-EDU', array['NEG-EDU-24','NEG-EDU-27
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('escuela-belleza-glam', 'free', false, 4.3, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('escuela-belleza-glam', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'escuela-belleza-glam';
 insert into business_hours (business_id, weekday, open, ranges) values ('escuela-belleza-glam', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('escuela-belleza-glam', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -8988,9 +8988,9 @@ values ('cocina-con-dona-rosa', 'hzl', 'NEG-EDU', array['NEG-EDU-44']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cocina-con-dona-rosa', 'free', false, 5, 7, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cocina-con-dona-rosa', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cocina-con-dona-rosa';
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-con-dona-rosa', 0, true, '[["11:00","15:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cocina-con-dona-rosa', 1, true, '[["10:00","14:00"]]'::jsonb);
@@ -9011,9 +9011,9 @@ values ('musica-maestro-luis', 'hzl', 'NEG-EDU', array['NEG-EDU-40']::text[], 'C
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('musica-maestro-luis', 'free', false, 4.8, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('musica-maestro-luis', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'musica-maestro-luis';
 insert into business_hours (business_id, weekday, open, ranges) values ('musica-maestro-luis', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('musica-maestro-luis', 1, true, '[["15:00","20:00"]]'::jsonb);
@@ -9034,9 +9034,9 @@ values ('centro-adultos-hzl', 'hzl', 'NEG-EDU', array['NEG-EDU-05','NEG-EDU-06',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('centro-adultos-hzl', 'pro', true, 4.8, 93, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('centro-adultos-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'centro-adultos-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-adultos-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-adultos-hzl', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -9061,9 +9061,9 @@ values ('rumbo-universidad', 'hzl', 'NEG-EDU', array['NEG-EDU-10','NEG-EDU-11','
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rumbo-universidad', 'pro', true, 4.9, 58, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rumbo-universidad', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rumbo-universidad';
 insert into business_hours (business_id, weekday, open, ranges) values ('rumbo-universidad', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rumbo-universidad', 1, true, '[["14:00","20:00"]]'::jsonb);
@@ -9086,9 +9086,9 @@ values ('academia-negocios-latina', 'hzl', 'NEG-EDU', array['NEG-EDU-39','NEG-ED
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('academia-negocios-latina', 'pro', true, 4.7, 76, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('academia-negocios-latina', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'academia-negocios-latina';
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-negocios-latina', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('academia-negocios-latina', 1, true, '[["10:00","21:00"]]'::jsonb);
@@ -9111,9 +9111,9 @@ values ('codigo-latino', 'hzl', 'NEG-EDU', array['NEG-EDU-16','NEG-EDU-17']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('codigo-latino', 'pro', true, 4.8, 41, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('codigo-latino', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'codigo-latino';
 insert into business_hours (business_id, weekday, open, ranges) values ('codigo-latino', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('codigo-latino', 1, true, '[["17:00","21:00"]]'::jsonb);
@@ -9136,9 +9136,9 @@ values ('instituto-licencias-pa', 'hzl', 'NEG-EDU', array['NEG-EDU-36','NEG-EDU-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('instituto-licencias-pa', 'pro', true, 4.6, 52, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('instituto-licencias-pa', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'instituto-licencias-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('instituto-licencias-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('instituto-licencias-pa', 1, true, '[["09:00","21:00"]]'::jsonb);
@@ -9161,9 +9161,9 @@ values ('bella-mirada-academia', 'hzl', 'NEG-EDU', array['NEG-EDU-26','NEG-EDU-2
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bella-mirada-academia', 'pro', true, 4.8, 63, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bella-mirada-academia', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bella-mirada-academia';
 insert into business_hours (business_id, weekday, open, ranges) values ('bella-mirada-academia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bella-mirada-academia', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -9184,9 +9184,9 @@ values ('voz-y-rumbo', 'hzl', 'NEG-EDU', array['NEG-EDU-47','NEG-EDU-48']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('voz-y-rumbo', 'pro', true, 4.9, 37, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('voz-y-rumbo', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'voz-y-rumbo';
 insert into business_hours (business_id, weekday, open, ranges) values ('voz-y-rumbo', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('voz-y-rumbo', 1, true, '[["12:00","20:00"]]'::jsonb);
@@ -9207,9 +9207,9 @@ values ('oficios-del-valle', 'hzl', 'NEG-EDU', array['NEG-EDU-20','NEG-EDU-30']:
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('oficios-del-valle', 'free', false, 4.5, 19, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('oficios-del-valle', 'free', false, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'oficios-del-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('oficios-del-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('oficios-del-valle', 1, true, '[["16:00","21:00"]]'::jsonb);
@@ -9234,9 +9234,9 @@ values ('alimentos-seguros-hzl', 'hzl', 'NEG-EDU', array['NEG-EDU-32']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('alimentos-seguros-hzl', 'free', false, 4.7, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('alimentos-seguros-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'alimentos-seguros-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('alimentos-seguros-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('alimentos-seguros-hzl', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -9257,9 +9257,9 @@ values ('taller-las-manos', 'hzl', 'NEG-EDU', array['NEG-EDU-43','NEG-EDU-45','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('taller-las-manos', 'free', false, 4.9, 11, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('taller-las-manos', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'taller-las-manos';
 insert into business_hours (business_id, weekday, open, ranges) values ('taller-las-manos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('taller-las-manos', 1, true, '[["15:00","20:00"]]'::jsonb);
@@ -9282,9 +9282,9 @@ values ('guarderia-mis-angelitos', 'hzl', 'NEG-NINOS', array['NEG-NINOS-01','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('guarderia-mis-angelitos', 'pro', true, 4.8, 156, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('guarderia-mis-angelitos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'guarderia-mis-angelitos';
 insert into business_hours (business_id, weekday, open, ranges) values ('guarderia-mis-angelitos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('guarderia-mis-angelitos', 1, true, '[["06:00","18:00"]]'::jsonb);
@@ -9309,9 +9309,9 @@ values ('cuidado-dona-carmen', 'hzl', 'NEG-NINOS', array['NEG-NINOS-02','NEG-NIN
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cuidado-dona-carmen', 'pro', true, 4.9, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cuidado-dona-carmen', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cuidado-dona-carmen';
 insert into business_hours (business_id, weekday, open, ranges) values ('cuidado-dona-carmen', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cuidado-dona-carmen', 1, true, '[["05:00","23:00"]]'::jsonb);
@@ -9336,9 +9336,9 @@ values ('after-school-estrellas', 'hzl', 'NEG-NINOS', array['NEG-NINOS-09','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('after-school-estrellas', 'pro', true, 4.7, 98, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('after-school-estrellas', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'after-school-estrellas';
 insert into business_hours (business_id, weekday, open, ranges) values ('after-school-estrellas', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('after-school-estrellas', 1, true, '[["14:00","19:00"]]'::jsonb);
@@ -9363,9 +9363,9 @@ values ('karate-kids-hzl', 'hzl', 'NEG-NINOS', array['NEG-NINOS-19','NEG-NINOS-1
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('karate-kids-hzl', 'pro', true, 4.8, 121, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('karate-kids-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'karate-kids-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('karate-kids-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('karate-kids-hzl', 1, true, '[["15:00","20:00"]]'::jsonb);
@@ -9390,9 +9390,9 @@ values ('natacion-delfines', 'hzl', 'NEG-NINOS', array['NEG-NINOS-20']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('natacion-delfines', 'pro', true, 4.7, 76, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('natacion-delfines', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'natacion-delfines';
 insert into business_hours (business_id, weekday, open, ranges) values ('natacion-delfines', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('natacion-delfines', 1, true, '[["15:00","20:00"]]'::jsonb);
@@ -9417,9 +9417,9 @@ values ('futbol-hazleton-fc', 'hzl', 'NEG-NINOS', array['NEG-NINOS-16']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('futbol-hazleton-fc', 'pro', true, 4.6, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('futbol-hazleton-fc', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'futbol-hazleton-fc';
 insert into business_hours (business_id, weekday, open, ranges) values ('futbol-hazleton-fc', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('futbol-hazleton-fc', 1, true, '[["16:00","20:00"]]'::jsonb);
@@ -9444,9 +9444,9 @@ values ('terapias-pasitos', 'hzl', 'NEG-NINOS', array['NEG-NINOS-27','NEG-NINOS-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('terapias-pasitos', 'pro', true, 4.9, 54, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('terapias-pasitos', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'terapias-pasitos';
 insert into business_hours (business_id, weekday, open, ranges) values ('terapias-pasitos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('terapias-pasitos', 1, true, '[["08:00","18:00"]]'::jsonb);
@@ -9471,9 +9471,9 @@ values ('baile-mini-sabor', 'hzl', 'NEG-NINOS', array['NEG-NINOS-21']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('baile-mini-sabor', 'free', false, 4.8, 16, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('baile-mini-sabor', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'baile-mini-sabor';
 insert into business_hours (business_id, weekday, open, ranges) values ('baile-mini-sabor', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('baile-mini-sabor', 1, true, '[["16:00","19:00"]]'::jsonb);
@@ -9494,9 +9494,9 @@ values ('ninera-lucia', 'hzl', 'NEG-NINOS', array['NEG-NINOS-06']::text[], 'NiÃ±
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ninera-lucia', 'free', false, 5, 8, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ninera-lucia', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ninera-lucia';
 insert into business_hours (business_id, weekday, open, ranges) values ('ninera-lucia', 0, true, '[["12:00","22:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ninera-lucia', 1, true, '[["08:00","23:00"]]'::jsonb);
@@ -9517,9 +9517,9 @@ values ('jump-zone', 'hzl', 'NEG-NINOS', array['NEG-NINOS-24','NEG-NINOS-25']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('jump-zone', 'free', false, 4.3, 41, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('jump-zone', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'jump-zone';
 insert into business_hours (business_id, weekday, open, ranges) values ('jump-zone', 0, true, '[["11:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('jump-zone', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -9540,9 +9540,9 @@ values ('head-start-hzl', 'hzl', 'NEG-NINOS', array['NEG-NINOS-05','NEG-NINOS-33
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('head-start-hzl', 'pro', true, 4.8, 84, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('head-start-hzl', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'head-start-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('head-start-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('head-start-hzl', 1, true, '[["08:00","16:00"]]'::jsonb);
@@ -9563,9 +9563,9 @@ values ('campamento-pocono-kids', 'hzl', 'NEG-NINOS', array['NEG-NINOS-10','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('campamento-pocono-kids', 'pro', true, 4.7, 61, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('campamento-pocono-kids', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'campamento-pocono-kids';
 insert into business_hours (business_id, weekday, open, ranges) values ('campamento-pocono-kids', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('campamento-pocono-kids', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -9590,9 +9590,9 @@ values ('liga-infantil-hzl', 'hzl', 'NEG-NINOS', array['NEG-NINOS-17','NEG-NINOS
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('liga-infantil-hzl', 'pro', true, 4.6, 57, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('liga-infantil-hzl', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'liga-infantil-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-infantil-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-infantil-hzl', 1, true, '[["16:00","20:00"]]'::jsonb);
@@ -9615,9 +9615,9 @@ values ('pequenos-artistas', 'hzl', 'NEG-NINOS', array['NEG-NINOS-22','NEG-NINOS
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pequenos-artistas', 'pro', true, 4.9, 39, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pequenos-artistas', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pequenos-artistas';
 insert into business_hours (business_id, weekday, open, ranges) values ('pequenos-artistas', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pequenos-artistas', 1, true, '[["15:00","19:00"]]'::jsonb);
@@ -9638,9 +9638,9 @@ values ('nace-lactancia', 'hzl', 'NEG-NINOS', array['NEG-NINOS-30','NEG-NINOS-29
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nace-lactancia', 'pro', true, 4.9, 46, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nace-lactancia', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nace-lactancia';
 insert into business_hours (business_id, weekday, open, ranges) values ('nace-lactancia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nace-lactancia', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -9663,9 +9663,9 @@ values ('animaciones-mundo-magico', 'hzl', 'NEG-NINOS', array['NEG-NINOS-26']::t
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('animaciones-mundo-magico', 'free', false, 5, 18, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('animaciones-mundo-magico', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'animaciones-mundo-magico';
 insert into business_hours (business_id, weekday, open, ranges) values ('animaciones-mundo-magico', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('animaciones-mundo-magico', 1, true, '[["10:00","20:00"]]'::jsonb);
@@ -9686,9 +9686,9 @@ values ('nana-maritza', 'hzl', 'NEG-NINOS', array['NEG-NINOS-07']::text[], 'Nana
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('nana-maritza', 'free', false, 4.9, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('nana-maritza', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'nana-maritza';
 insert into business_hours (business_id, weekday, open, ranges) values ('nana-maritza', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('nana-maritza', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -9709,9 +9709,9 @@ values ('cool-kids-barberia', 'hzl', 'NEG-NINOS', array['NEG-NINOS-14']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cool-kids-barberia', 'free', false, 4.7, 27, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cool-kids-barberia', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cool-kids-barberia';
 insert into business_hours (business_id, weekday, open, ranges) values ('cool-kids-barberia', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cool-kids-barberia', 1, true, '[["10:00","19:00"]]'::jsonb);
@@ -9732,9 +9732,9 @@ values ('fotos-pequenos-momentos', 'hzl', 'NEG-NINOS', array['NEG-NINOS-32']::te
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('fotos-pequenos-momentos', 'free', false, 4.9, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('fotos-pequenos-momentos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'fotos-pequenos-momentos';
 insert into business_hours (business_id, weekday, open, ranges) values ('fotos-pequenos-momentos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('fotos-pequenos-momentos', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -9755,9 +9755,9 @@ values ('bebe-viajero-renta', 'hzl', 'NEG-NINOS', array['NEG-NINOS-31']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('bebe-viajero-renta', 'free', false, 4.8, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('bebe-viajero-renta', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'bebe-viajero-renta';
 insert into business_hours (business_id, weekday, open, ranges) values ('bebe-viajero-renta', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('bebe-viajero-renta', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -9778,9 +9778,9 @@ values ('familias-de-corazon', 'hzl', 'NEG-NINOS', array['NEG-NINOS-35']::text[]
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('familias-de-corazon', 'free', false, 4.9, 8, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('familias-de-corazon', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'familias-de-corazon';
 insert into business_hours (business_id, weekday, open, ranges) values ('familias-de-corazon', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('familias-de-corazon', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -9801,9 +9801,9 @@ values ('power-gym-hzl', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-01','NEG-DEPOR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('power-gym-hzl', 'pro', true, 4.5, 287, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('power-gym-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'power-gym-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('power-gym-hzl', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('power-gym-hzl', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -9828,9 +9828,9 @@ values ('boxeo-el-campeon', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-09','NEG-DE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('boxeo-el-campeon', 'pro', true, 4.8, 134, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('boxeo-el-campeon', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'boxeo-el-campeon';
 insert into business_hours (business_id, weekday, open, ranges) values ('boxeo-el-campeon', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('boxeo-el-campeon', 1, true, '[["06:00","21:00"]]'::jsonb);
@@ -9855,9 +9855,9 @@ values ('zumba-con-yari', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-05','NEG-DEPO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('zumba-con-yari', 'pro', true, 4.9, 176, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('zumba-con-yari', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'zumba-con-yari';
 insert into business_hours (business_id, weekday, open, ranges) values ('zumba-con-yari', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('zumba-con-yari', 1, true, '[["06:00","20:00"]]'::jsonb);
@@ -9882,9 +9882,9 @@ values ('liga-latina-futbol', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-17','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('liga-latina-futbol', 'pro', true, 4.6, 98, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('liga-latina-futbol', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'liga-latina-futbol';
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-latina-futbol', 0, true, '[["08:00","20:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-latina-futbol', 1, true, '[["17:00","22:00"]]'::jsonb);
@@ -9909,9 +9909,9 @@ values ('softbol-dominicano', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-22']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('softbol-dominicano', 'pro', true, 4.7, 71, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('softbol-dominicano', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'softbol-dominicano';
 insert into business_hours (business_id, weekday, open, ranges) values ('softbol-dominicano', 0, true, '[["09:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('softbol-dominicano', 1, true, '[["17:00","21:00"]]'::jsonb);
@@ -9936,9 +9936,9 @@ values ('yoga-calma', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-13','NEG-DEPORTE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('yoga-calma', 'free', false, 4.9, 18, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('yoga-calma', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'yoga-calma';
 insert into business_hours (business_id, weekday, open, ranges) values ('yoga-calma', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('yoga-calma', 1, true, '[["07:00","20:00"]]'::jsonb);
@@ -9959,9 +9959,9 @@ values ('hazleton-bowl', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-24']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hazleton-bowl', 'free', false, 4.2, 63, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hazleton-bowl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hazleton-bowl';
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-bowl', 0, true, '[["12:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hazleton-bowl', 1, true, '[["12:00","23:00"]]'::jsonb);
@@ -9982,9 +9982,9 @@ values ('corredores-hzl', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-28']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('corredores-hzl', 'free', false, 4.8, 11, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('corredores-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'corredores-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('corredores-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('corredores-hzl', 1, false, '[]'::jsonb);
@@ -10005,9 +10005,9 @@ values ('hierro-crossfit', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-07','NEG-DEP
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hierro-crossfit', 'pro', true, 4.7, 92, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hierro-crossfit', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hierro-crossfit';
 insert into business_hours (business_id, weekday, open, ranges) values ('hierro-crossfit', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hierro-crossfit', 1, true, '[["05:00","21:00"]]'::jsonb);
@@ -10032,9 +10032,9 @@ values ('ritmo-spin', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-06','NEG-DEPORTE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ritmo-spin', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ritmo-spin', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ritmo-spin';
 insert into business_hours (business_id, weekday, open, ranges) values ('ritmo-spin', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ritmo-spin', 1, true, '[["06:00","20:00"]]'::jsonb);
@@ -10059,9 +10059,9 @@ values ('cuerpo-en-balance', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-14','NEG-D
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cuerpo-en-balance', 'pro', true, 4.9, 58, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cuerpo-en-balance', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cuerpo-en-balance';
 insert into business_hours (business_id, weekday, open, ranges) values ('cuerpo-en-balance', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cuerpo-en-balance', 1, true, '[["07:00","19:00"]]'::jsonb);
@@ -10084,9 +10084,9 @@ values ('dojo-hazleton', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-11','NEG-DEPOR
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('dojo-hazleton', 'pro', true, 4.8, 81, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('dojo-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'dojo-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('dojo-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('dojo-hazleton', 1, true, '[["16:00","21:00"]]'::jsonb);
@@ -10111,9 +10111,9 @@ values ('liga-basquet-voley', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-20','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('liga-basquet-voley', 'pro', true, 4.6, 47, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('liga-basquet-voley', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'liga-basquet-voley';
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-basquet-voley', 0, true, '[["12:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('liga-basquet-voley', 1, true, '[["18:00","22:00"]]'::jsonb);
@@ -10134,9 +10134,9 @@ values ('aqua-hazleton', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-27']::text[], 
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('aqua-hazleton', 'pro', true, 4.7, 103, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('aqua-hazleton', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'aqua-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('aqua-hazleton', 0, true, '[["10:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('aqua-hazleton', 1, true, '[["06:00","21:00"]]'::jsonb);
@@ -10159,9 +10159,9 @@ values ('pedales-club-ciclista', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-29','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('pedales-club-ciclista', 'free', false, 4.8, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('pedales-club-ciclista', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'pedales-club-ciclista';
 insert into business_hours (business_id, weekday, open, ranges) values ('pedales-club-ciclista', 0, true, '[["08:00","12:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('pedales-club-ciclista', 1, false, '[]'::jsonb);
@@ -10182,9 +10182,9 @@ values ('golf-pickleball-hzl', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-25','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('golf-pickleball-hzl', 'free', false, 4.4, 39, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('golf-pickleball-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'golf-pickleball-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('golf-pickleball-hzl', 0, true, '[["07:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('golf-pickleball-hzl', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -10205,9 +10205,9 @@ values ('keystone-pesca-tiro', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-31','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-pesca-tiro', 'free', false, 4.5, 27, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-pesca-tiro', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-pesca-tiro';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-pesca-tiro', 0, true, '[["10:00","16:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-pesca-tiro', 1, false, '[]'::jsonb);
@@ -10228,9 +10228,9 @@ values ('aventura-pocono', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-33','NEG-DEP
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('aventura-pocono', 'free', false, 4.3, 52, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('aventura-pocono', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'aventura-pocono';
 insert into business_hours (business_id, weekday, open, ranges) values ('aventura-pocono', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('aventura-pocono', 1, false, '[]'::jsonb);
@@ -10251,9 +10251,9 @@ values ('hielo-y-ruedas', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-36','NEG-DEPO
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hielo-y-ruedas', 'free', false, 4.4, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hielo-y-ruedas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hielo-y-ruedas';
 insert into business_hours (business_id, weekday, open, ranges) values ('hielo-y-ruedas', 0, true, '[["11:00","19:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hielo-y-ruedas', 1, true, '[["15:00","21:00"]]'::jsonb);
@@ -10274,9 +10274,9 @@ values ('escalada-vertical', 'hzl', 'NEG-DEPORTE', array['NEG-DEPORTE-37']::text
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('escalada-vertical', 'free', false, 4.8, 21, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('escalada-vertical', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'escalada-vertical';
 insert into business_hours (business_id, weekday, open, ranges) values ('escalada-vertical', 0, true, '[["10:00","18:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('escalada-vertical', 1, true, '[["14:00","22:00"]]'::jsonb);
@@ -10297,9 +10297,9 @@ values ('parroquia-santa-maria', 'hzl', 'NEG-FE', array['NEG-FE-01','NEG-FE-02',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('parroquia-santa-maria', 'pro', true, 4.9, 188, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('parroquia-santa-maria', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'parroquia-santa-maria';
 insert into business_hours (business_id, weekday, open, ranges) values ('parroquia-santa-maria', 0, true, '[["07:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('parroquia-santa-maria', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -10324,9 +10324,9 @@ values ('iglesia-fuente-de-vida', 'hzl', 'NEG-FE', array['NEG-FE-03','NEG-FE-15'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-fuente-de-vida', 'pro', true, 4.8, 142, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-fuente-de-vida', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-fuente-de-vida';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-fuente-de-vida', 0, true, '[["09:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-fuente-de-vida', 1, false, '[]'::jsonb);
@@ -10351,9 +10351,9 @@ values ('iglesia-pentecostal-rhema', 'hzl', 'NEG-FE', array['NEG-FE-04','NEG-FE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-pentecostal-rhema', 'pro', true, 4.7, 76, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-pentecostal-rhema', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-pentecostal-rhema';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-pentecostal-rhema', 0, true, '[["09:00","13:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-pentecostal-rhema', 1, false, '[]'::jsonb);
@@ -10378,9 +10378,9 @@ values ('despensa-manos-unidas', 'hzl', 'NEG-FE', array['NEG-FE-36','NEG-FE-37',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('despensa-manos-unidas', 'pro', true, 4.9, 97, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('despensa-manos-unidas', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'despensa-manos-unidas';
 insert into business_hours (business_id, weekday, open, ranges) values ('despensa-manos-unidas', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('despensa-manos-unidas', 1, false, '[]'::jsonb);
@@ -10403,9 +10403,9 @@ values ('funeraria-la-paz', 'hzl', 'NEG-FE', array['NEG-FE-30','NEG-FE-32','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('funeraria-la-paz', 'pro', true, 4.8, 64, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('funeraria-la-paz', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'funeraria-la-paz';
 insert into business_hours (business_id, weekday, open, ranges) values ('funeraria-la-paz', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('funeraria-la-paz', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -10430,9 +10430,9 @@ values ('iglesia-bautista-hispana', 'hzl', 'NEG-FE', array['NEG-FE-05']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-bautista-hispana', 'free', false, 4.6, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-bautista-hispana', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-bautista-hispana';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-bautista-hispana', 0, true, '[["09:00","13:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-bautista-hispana', 1, false, '[]'::jsonb);
@@ -10453,9 +10453,9 @@ values ('iglesia-adventista-hzl', 'hzl', 'NEG-FE', array['NEG-FE-07']::text[], '
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-adventista-hzl', 'free', false, 4.7, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-adventista-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-adventista-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-adventista-hzl', 0, true, '[["10:00","12:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-adventista-hzl', 1, false, '[]'::jsonb);
@@ -10476,9 +10476,9 @@ values ('iglesia-metodista-esperanza', 'hzl', 'NEG-FE', array['NEG-FE-06','NEG-F
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-metodista-esperanza', 'pro', true, 4.8, 58, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-metodista-esperanza', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-metodista-esperanza';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-metodista-esperanza', 0, true, '[["08:00","13:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-metodista-esperanza', 1, false, '[]'::jsonb);
@@ -10501,9 +10501,9 @@ values ('comunidad-cristiana-nueva-vida', 'hzl', 'NEG-FE', array['NEG-FE-08','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('comunidad-cristiana-nueva-vida', 'pro', true, 4.8, 44, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('comunidad-cristiana-nueva-vida', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'comunidad-cristiana-nueva-vida';
 insert into business_hours (business_id, weekday, open, ranges) values ('comunidad-cristiana-nueva-vida', 0, true, '[["09:00","14:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('comunidad-cristiana-nueva-vida', 1, false, '[]'::jsonb);
@@ -10526,9 +10526,9 @@ values ('parroquia-san-gabriel', 'hzl', 'NEG-FE', array['NEG-FE-24','NEG-FE-25',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('parroquia-san-gabriel', 'pro', true, 4.9, 83, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('parroquia-san-gabriel', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'parroquia-san-gabriel';
 insert into business_hours (business_id, weekday, open, ranges) values ('parroquia-san-gabriel', 0, true, '[["08:00","12:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('parroquia-san-gabriel', 1, true, '[["09:00","16:00"]]'::jsonb);
@@ -10551,9 +10551,9 @@ values ('consejeria-familiar-shalom', 'hzl', 'NEG-FE', array['NEG-FE-26']::text[
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('consejeria-familiar-shalom', 'pro', true, 4.9, 31, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('consejeria-familiar-shalom', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'consejeria-familiar-shalom';
 insert into business_hours (business_id, weekday, open, ranges) values ('consejeria-familiar-shalom', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('consejeria-familiar-shalom', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -10574,9 +10574,9 @@ values ('cremacion-memorial-del-valle', 'hzl', 'NEG-FE', array['NEG-FE-31','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cremacion-memorial-del-valle', 'pro', true, 4.7, 29, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cremacion-memorial-del-valle', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cremacion-memorial-del-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('cremacion-memorial-del-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cremacion-memorial-del-valle', 1, true, '[["08:00","20:00"]]'::jsonb);
@@ -10599,9 +10599,9 @@ values ('linea-oracion-luz-del-valle', 'hzl', 'NEG-FE', array['NEG-FE-35','NEG-F
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('linea-oracion-luz-del-valle', 'pro', true, 5, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('linea-oracion-luz-del-valle', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'linea-oracion-luz-del-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('linea-oracion-luz-del-valle', 0, true, '[["00:00","00:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('linea-oracion-luz-del-valle', 1, true, '[["00:00","00:00"]]'::jsonb);
@@ -10622,9 +10622,9 @@ values ('ministerio-ayuda-al-inmigrante', 'hzl', 'NEG-FE', array['NEG-FE-39','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('ministerio-ayuda-al-inmigrante', 'pro', true, 4.9, 47, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('ministerio-ayuda-al-inmigrante', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'ministerio-ayuda-al-inmigrante';
 insert into business_hours (business_id, weekday, open, ranges) values ('ministerio-ayuda-al-inmigrante', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('ministerio-ayuda-al-inmigrante', 1, false, '[]'::jsonb);
@@ -10650,9 +10650,9 @@ values ('salon-del-reino-hazleton', 'hzl', 'NEG-FE', array['NEG-FE-09']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('salon-del-reino-hazleton', 'free', false, 4.6, 12, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('salon-del-reino-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'salon-del-reino-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-del-reino-hazleton', 0, true, '[["09:00","12:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('salon-del-reino-hazleton', 1, false, '[]'::jsonb);
@@ -10673,9 +10673,9 @@ values ('capilla-sud-hazleton', 'hzl', 'NEG-FE', array['NEG-FE-10']::text[], 'Ca
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('capilla-sud-hazleton', 'free', false, 4.7, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('capilla-sud-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'capilla-sud-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('capilla-sud-hazleton', 0, true, '[["09:00","13:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('capilla-sud-hazleton', 1, false, '[]'::jsonb);
@@ -10696,9 +10696,9 @@ values ('iglesia-ortodoxa-san-nicolas', 'hzl', 'NEG-FE', array['NEG-FE-11']::tex
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('iglesia-ortodoxa-san-nicolas', 'free', false, 4.8, 14, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('iglesia-ortodoxa-san-nicolas', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'iglesia-ortodoxa-san-nicolas';
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-ortodoxa-san-nicolas', 0, true, '[["08:00","13:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('iglesia-ortodoxa-san-nicolas', 1, false, '[]'::jsonb);
@@ -10719,9 +10719,9 @@ values ('centro-islamico-hazleton', 'hzl', 'NEG-FE', array['NEG-FE-12']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('centro-islamico-hazleton', 'free', false, 4.8, 11, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('centro-islamico-hazleton', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'centro-islamico-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-islamico-hazleton', 0, true, '[["10:00","21:00"]]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('centro-islamico-hazleton', 1, true, '[["12:00","21:00"]]'::jsonb);
@@ -10744,9 +10744,9 @@ values ('sinagoga-beth-shalom', 'hzl', 'NEG-FE', array['NEG-FE-13']::text[], 'Si
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('sinagoga-beth-shalom', 'free', false, 4.9, 8, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('sinagoga-beth-shalom', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'sinagoga-beth-shalom';
 insert into business_hours (business_id, weekday, open, ranges) values ('sinagoga-beth-shalom', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('sinagoga-beth-shalom', 1, false, '[]'::jsonb);
@@ -10769,9 +10769,9 @@ values ('rentas-hazleton-latino', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-14'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('rentas-hazleton-latino', 'pro', true, 4.5, 164, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('rentas-hazleton-latino', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'rentas-hazleton-latino';
 insert into business_hours (business_id, weekday, open, ranges) values ('rentas-hazleton-latino', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('rentas-hazleton-latino', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10796,9 +10796,9 @@ values ('realty-bilingue-hzl', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-02','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('realty-bilingue-hzl', 'pro', true, 4.8, 121, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('realty-bilingue-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'realty-bilingue-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('realty-bilingue-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('realty-bilingue-hzl', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10823,9 +10823,9 @@ values ('hipotecas-itin-pa', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-22','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('hipotecas-itin-pa', 'pro', true, 4.6, 77, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('hipotecas-itin-pa', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'hipotecas-itin-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('hipotecas-itin-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('hipotecas-itin-pa', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10850,9 +10850,9 @@ values ('cuartos-dona-mary', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-16','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cuartos-dona-mary', 'pro', true, 4.7, 43, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cuartos-dona-mary', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cuartos-dona-mary';
 insert into business_hours (business_id, weekday, open, ranges) values ('cuartos-dona-mary', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cuartos-dona-mary', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10877,9 +10877,9 @@ values ('derechos-inquilino-hzl', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-30'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('derechos-inquilino-hzl', 'free', false, 4.9, 28, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('derechos-inquilino-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'derechos-inquilino-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('derechos-inquilino-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('derechos-inquilino-hzl', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10900,9 +10900,9 @@ values ('locales-centro', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-39','NEG-IN
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('locales-centro', 'free', false, 4.3, 9, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('locales-centro', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'locales-centro';
 insert into business_hours (business_id, weekday, open, ranges) values ('locales-centro', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('locales-centro', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -10923,9 +10923,9 @@ values ('casa-propia-agentes', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-01','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('casa-propia-agentes', 'pro', true, 4.8, 66, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('casa-propia-agentes', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'casa-propia-agentes';
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-propia-agentes', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('casa-propia-agentes', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -10950,9 +10950,9 @@ values ('valle-nuevo-obra-nueva', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-07'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('valle-nuevo-obra-nueva', 'pro', true, 4.6, 27, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('valle-nuevo-obra-nueva', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'valle-nuevo-obra-nueva';
 insert into business_hours (business_id, weekday, open, ranges) values ('valle-nuevo-obra-nueva', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('valle-nuevo-obra-nueva', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -10977,9 +10977,9 @@ values ('mountain-view-casas-moviles', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('mountain-view-casas-moviles', 'pro', true, 4.4, 38, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('mountain-view-casas-moviles', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'mountain-view-casas-moviles';
 insert into business_hours (business_id, weekday, open, ranges) values ('mountain-view-casas-moviles', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('mountain-view-casas-moviles', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11002,9 +11002,9 @@ values ('keystone-inspeccion-cierre', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-inspeccion-cierre', 'pro', true, 4.8, 52, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-inspeccion-cierre', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-inspeccion-cierre';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-inspeccion-cierre', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-inspeccion-cierre', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11029,9 +11029,9 @@ values ('vivienda-accesible-hazleton', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('vivienda-accesible-hazleton', 'pro', true, 4.5, 71, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('vivienda-accesible-hazleton', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'vivienda-accesible-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('vivienda-accesible-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('vivienda-accesible-hazleton', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11054,9 +11054,9 @@ values ('amueblados-hazleton', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-18','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('amueblados-hazleton', 'pro', true, 4.6, 34, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('amueblados-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'amueblados-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('amueblados-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('amueblados-hazleton', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11081,9 +11081,9 @@ values ('propietarios-pa', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-29','NEG-I
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('propietarios-pa', 'pro', true, 4.5, 23, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('propietarios-pa', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'propietarios-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('propietarios-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('propietarios-pa', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11106,9 +11106,9 @@ values ('compramos-tu-casa-hzl', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-33',
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('compramos-tu-casa-hzl', 'pro', true, 4.3, 29, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('compramos-tu-casa-hzl', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'compramos-tu-casa-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('compramos-tu-casa-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('compramos-tu-casa-hzl', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11134,9 +11134,9 @@ values ('keystone-bodegas-espacios', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-bodegas-espacios', 'pro', true, 4.5, 31, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-bodegas-espacios', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-bodegas-espacios';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-bodegas-espacios', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-bodegas-espacios', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11159,9 +11159,9 @@ values ('almacenaje-hazleton', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-43','N
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('almacenaje-hazleton', 'free', false, 4.4, 19, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('almacenaje-hazleton', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'almacenaje-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('almacenaje-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('almacenaje-hazleton', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11182,9 +11182,9 @@ values ('lente-casa-foto', 'hzl', 'NEG-INMUEBLE', array['NEG-INMUEBLE-36','NEG-I
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lente-casa-foto', 'free', false, 4.9, 12, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lente-casa-foto', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lente-casa-foto';
 insert into business_hours (business_id, weekday, open, ranges) values ('lente-casa-foto', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lente-casa-foto', 1, true, '[["09:00","18:00"]]'::jsonb);
@@ -11207,9 +11207,9 @@ values ('autos-el-cibao', 'hzl', 'NEG-DEALER', array['NEG-DEALER-02','NEG-DEALER
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('autos-el-cibao', 'pro', true, 4.5, 211, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('autos-el-cibao', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'autos-el-cibao';
 insert into business_hours (business_id, weekday, open, ranges) values ('autos-el-cibao', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('autos-el-cibao', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11234,9 +11234,9 @@ values ('keystone-trucks', 'hzl', 'NEG-DEALER', array['NEG-DEALER-10','NEG-DEALE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('keystone-trucks', 'pro', true, 4.4, 132, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('keystone-trucks', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'keystone-trucks';
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-trucks', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('keystone-trucks', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11261,9 +11261,9 @@ values ('compre-aqui-hzl', 'hzl', 'NEG-DEALER', array['NEG-DEALER-04','NEG-DEALE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('compre-aqui-hzl', 'pro', true, 4.1, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('compre-aqui-hzl', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'compre-aqui-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('compre-aqui-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('compre-aqui-hzl', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11288,9 +11288,9 @@ values ('placas-y-titulos', 'hzl', 'NEG-DEALER', array['NEG-DEALER-36']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('placas-y-titulos', 'free', false, 4.6, 44, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('placas-y-titulos', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'placas-y-titulos';
 insert into business_hours (business_id, weekday, open, ranges) values ('placas-y-titulos', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('placas-y-titulos', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11311,9 +11311,9 @@ values ('cash-for-cars-pa', 'hzl', 'NEG-DEALER', array['NEG-DEALER-31']::text[],
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('cash-for-cars-pa', 'free', false, 4.2, 17, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('cash-for-cars-pa', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'cash-for-cars-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('cash-for-cars-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('cash-for-cars-pa', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11334,9 +11334,9 @@ values ('valle-motors', 'hzl', 'NEG-DEALER', array['NEG-DEALER-01','NEG-DEALER-0
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('valle-motors', 'pro', true, 4.6, 143, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('valle-motors', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'valle-motors';
 insert into business_hours (business_id, weekday, open, ranges) values ('valle-motors', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('valle-motors', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11361,9 +11361,9 @@ values ('primer-carro-financiamiento', 'hzl', 'NEG-DEALER', array['NEG-DEALER-07
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('primer-carro-financiamiento', 'pro', true, 4.5, 61, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('primer-carro-financiamiento', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'primer-carro-financiamiento';
 insert into business_hours (business_id, weekday, open, ranges) values ('primer-carro-financiamiento', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('primer-carro-financiamiento', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11384,9 +11384,9 @@ values ('power-sports-hazleton', 'hzl', 'NEG-DEALER', array['NEG-DEALER-18','NEG
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('power-sports-hazleton', 'pro', true, 4.6, 58, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('power-sports-hazleton', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'power-sports-hazleton';
 insert into business_hours (business_id, weekday, open, ranges) values ('power-sports-hazleton', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('power-sports-hazleton', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11411,9 +11411,9 @@ values ('lake-harmony-botes-campers', 'hzl', 'NEG-DEALER', array['NEG-DEALER-21'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lake-harmony-botes-campers', 'pro', true, 4.5, 39, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lake-harmony-botes-campers', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lake-harmony-botes-campers';
 insert into business_hours (business_id, weekday, open, ranges) values ('lake-harmony-botes-campers', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lake-harmony-botes-campers', 1, true, '[["10:00","18:00"]]'::jsonb);
@@ -11436,9 +11436,9 @@ values ('comercial-keystone', 'hzl', 'NEG-DEALER', array['NEG-DEALER-13','NEG-DE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('comercial-keystone', 'pro', true, 4.4, 47, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('comercial-keystone', 'pro', true, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'comercial-keystone';
 insert into business_hours (business_id, weekday, open, ranges) values ('comercial-keystone', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('comercial-keystone', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11459,9 +11459,9 @@ values ('clasicos-lujo-valle', 'hzl', 'NEG-DEALER', array['NEG-DEALER-09','NEG-D
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('clasicos-lujo-valle', 'pro', true, 4.7, 33, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('clasicos-lujo-valle', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'clasicos-lujo-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('clasicos-lujo-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('clasicos-lujo-valle', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11486,9 +11486,9 @@ values ('servicio-rapido-valle', 'hzl', 'NEG-DEALER', array['NEG-DEALER-37']::te
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('servicio-rapido-valle', 'pro', true, 4.5, 88, 3)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('servicio-rapido-valle', 'pro', true, 3)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'servicio-rapido-valle';
 insert into business_hours (business_id, weekday, open, ranges) values ('servicio-rapido-valle', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('servicio-rapido-valle', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11513,9 +11513,9 @@ values ('envios-carros-quisqueya', 'hzl', 'NEG-DEALER', array['NEG-DEALER-39']::
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('envios-carros-quisqueya', 'pro', true, 4.6, 72, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('envios-carros-quisqueya', 'pro', true, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'envios-carros-quisqueya';
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-carros-quisqueya', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('envios-carros-quisqueya', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11538,9 +11538,9 @@ values ('subasta-keystone', 'hzl', 'NEG-DEALER', array['NEG-DEALER-26','NEG-DEAL
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('subasta-keystone', 'free', false, 4.2, 41, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('subasta-keystone', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'subasta-keystone';
 insert into business_hours (business_id, weekday, open, ranges) values ('subasta-keystone', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('subasta-keystone', 1, true, '[["09:00","17:00"]]'::jsonb);
@@ -11563,9 +11563,9 @@ values ('remolques-traileres-pa', 'hzl', 'NEG-DEALER', array['NEG-DEALER-17','NE
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('remolques-traileres-pa', 'free', false, 4.3, 22, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('remolques-traileres-pa', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'remolques-traileres-pa';
 insert into business_hours (business_id, weekday, open, ranges) values ('remolques-traileres-pa', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('remolques-traileres-pa', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11586,9 +11586,9 @@ values ('lote-la-81', 'hzl', 'NEG-DEALER', array['NEG-DEALER-03','NEG-DEALER-12'
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('lote-la-81', 'free', false, 4.1, 26, 2)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('lote-la-81', 'free', false, 2)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'lote-la-81';
 insert into business_hours (business_id, weekday, open, ranges) values ('lote-la-81', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('lote-la-81', 1, true, '[["09:00","19:00"]]'::jsonb);
@@ -11611,9 +11611,9 @@ values ('carros-por-dueno-hzl', 'hzl', 'NEG-DEALER', array['NEG-DEALER-32','NEG-
 on conflict (id) do update set category_id = excluded.category_id, subcategory_ids = excluded.subcategory_ids, name = excluded.name, address = excluded.address,
   geo = excluded.geo, phone = excluded.phone, founded_year = excluded.founded_year, about = excluded.about, filter_values = excluded.filter_values, category_attrs = excluded.category_attrs,
   service_radius_mi = excluded.service_radius_mi, works_from_home = excluded.works_from_home;
-insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count, photo_count)
-values ('carros-por-dueno-hzl', 'free', false, 4.4, 15, 1)
-on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, rating_avg = excluded.rating_avg, review_count = excluded.review_count, photo_count = excluded.photo_count, updated_at = now();
+insert into business_stats_cache (business_id, plan, verified, photo_count)
+values ('carros-por-dueno-hzl', 'free', false, 1)
+on conflict (business_id) do update set plan = excluded.plan, verified = excluded.verified, photo_count = excluded.photo_count, updated_at = now();
 delete from business_hours where business_id = 'carros-por-dueno-hzl';
 insert into business_hours (business_id, weekday, open, ranges) values ('carros-por-dueno-hzl', 0, false, '[]'::jsonb);
 insert into business_hours (business_id, weekday, open, ranges) values ('carros-por-dueno-hzl', 1, true, '[["09:00","19:00"]]'::jsonb);

@@ -361,7 +361,18 @@ _Actualizado: 5 nov 2026._
   zona, mínimo, envío y propina (probado cambiando la dirección en la petición). Guardián nuevo `pedidoEnCurso` (el
   delivery en camino desaparecía de Hoy). Probado con Playwright: delivery 21 comprobaciones + 2 del servidor fuera de zona;
   2b, 2c, 2e, direcciones y Entrega otra vez en verde. Ayuda `mis-direcciones.md`, `panel-entrega.md`,
-  `pedir-comida.md`, `panel-pedidos.md`. Repartidor sin diseño (pregunta 6). **Sigue: 2g reseñas, novedades, Jobs.**
+  `pedir-comida.md`, `panel-pedidos.md`. Repartidor sin diseño (pregunta 6).
+- **Fase 2 · bloque 2g-1 Reseñas ✓ (6 nov, decisión AA):** migración 0027 (`reviews` una por persona y negocio, verificada
+  por pedido o mesa terminada con el dato del pedido que no se edita; `review_helpful`; `content_reports`; cola `rep`;
+  `reviews_stats` = ★ y conteo derivados de las visibles). Semilla: las 14 reseñas del prototipo en Sabor Dominicano
+  (`scripts/semilla/generar-resenas.py`); las ★ fijas de la semilla de negocios se quitaron. `lib/resenas.ts`. Ficha:
+  Resumen «Lo que dicen los vecinos», pestaña Reseñas (Pro) con filtros, orden y cursor, reportar, visor de fotos;
+  escribir / editar (48 h) / borrar (`/n/{id}/resena`, `/resena/tuya`); «Escribir una reseña» desde el pedido terminado.
+  Panel: Tu página › Reseñas (responder Pro, pedir revisión), Hoy y la fuerza del perfil con datos reales; bloque nuevo
+  `thread`. Super Admin: cola Reportes de contenido (Mantener / Ocultar / Ocultar y sancionar) y 360 › Contenido.
+  Guardián nuevo `fechaIsoNavegador` (to_char con «OF» dejó «Tu reseña» en blanco). Probado con Playwright: 34
+  comprobaciones (cliente, panel, admin, Free); 2b, 2c, 2e y 2f otra vez en verde. Ayuda `resenas.md`,
+  `panel-resenas.md`, `admin-negocios.md`. **Sigue: 2g-2 Novedades y 2g-3 Jobs.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

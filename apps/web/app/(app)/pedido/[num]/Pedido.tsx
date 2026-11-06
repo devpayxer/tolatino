@@ -136,6 +136,8 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
   const botones = (
     <div className="flex flex-col gap-2.5">
       {llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{E2("Llamar al negocio", "Call the business")}</Button></div>}
+      {/* Prototipo ord.lbl.review: al terminar, «Escribir una reseña» (sale verificada por este pedido). */}
+      {p.status === "done" && <div className="flex"><Button variant="primary" icon="star" block onClick={() => router.push(`/n/${p.negocio.id}/resena?pedido=${encodeURIComponent(p.numero)}`)}>{E2("Escribir una reseña", "Write a review")}</Button></div>}
       {(fin || cerrado) && <div className="flex"><Button variant="secondary" icon="bag" block onClick={otraVez}>{E2("Volver a pedir", "Order again")}</Button></div>}
       {puedeCancelar && (
         <div className="flex flex-wrap items-center gap-3">
