@@ -8,6 +8,7 @@ import type { MenuPanel, MGrp, MItem, MSec, Av } from "@/lib/menu";
 import { subirFoto } from "@/lib/subir-foto";
 import { ITEMS_FREE, TOPE_FREE } from "@/lib/plan";
 import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn } from "./acciones-menu";
+import { pedLine } from "./Pedidos";
 import type { Ctx, Sec } from "./Panel";
 
 type Bi = [string, string];
@@ -55,7 +56,9 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
     permitido ? { type: "rows", k: tiene ? (MENU_EN_FICHA ? E2("CON CONTENIDO · SALEN EN TU PÁGINA", "WITH CONTENT · SHOWING") : E2("CON CONTENIDO", "WITH CONTENT")) : E2("ACTIVADOS, SIN CONTENIDO", "ON, NO CONTENT YET"), items: [{
       icon: "restaurant", t: E2("Menú", "Menu"), s: tiene ? E2(`${nAll} platos · ${nOn} en línea`, `${nAll} items · ${nOn} online`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
-      tag: MENU_EN_FICHA && tiene && d.mods.includes("menu") && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") }] }
+      tag: MENU_EN_FICHA && tiene && d.mods.includes("menu") && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") },
+      // Pedidos en línea (pedLine): cómo te piden por la app.
+      { icon: "bag", t: E2("Pedidos en línea", "Online orders"), s: pedLine(c), tag: c.ped?.aj?.on && !c.ped.aj.admOff && c.ped.aj.cashP ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "pedidos") }] }
       : { type: "note", tone: "info", t: E2("Los módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
   ];
 }

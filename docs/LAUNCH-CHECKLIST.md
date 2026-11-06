@@ -225,11 +225,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 
 ## Pedir comida (bloque 2b, 6 nov 2026)
-- [ ] **Aceptar / rechazar / proponer cambio, etapas (cocina, listo, recogido) y avisos al cliente:** bloque 2c. Hoy el
-  panel › Hoy muestra los pedidos que esperan respuesta (sin acciones) y a los 10 min quedan SIN RESPUESTA.
-- [ ] **Cancelar y Ayuda con el pedido** (APP-NEG-PEDIDO-CANCELAR / -AYUDA): bloque 2c. Hoy: Llamar al negocio.
-- [ ] **Pedidos en línea en el panel** (DeliverySettings: pickup, preparación, programados, auto-aceptar, nota de pickup,
-  formas de pago): bloque 2c. Hoy valen los de fábrica (pickup, 20 min, programados sí, pago en el local) y la semilla.
+- [x] **Aceptar / rechazar, etapas (cocina, listo, entregado), SIN RESPUESTA a los 10 min, Cancelar del cliente, Clientes y
+  Pedidos en línea en el panel:** hecho en el 2c.
+- [ ] **Proponer un cambio** (falta un plato: ChangeProposal 2k) y **Ayuda con el pedido** (APP-NEG-PEDIDO-AYUDA con
+  HelpRequest y su cola): con Soporte (2i).
+- [ ] **Avisos** al cliente y al negocio (SMS / push: pedido nuevo, aceptado, listo): con las notificaciones. Hoy la
+  página del pedido se actualiza sola cada 20 s y el panel al abrirlo.
+- [ ] **Nota de cómo se recoge** (pickup_note): se edita en Entrega (DASH-ENTREGA, bloque 2f). Hoy viene de la semilla.
+- [ ] **Devolver dinero y Pedir reseña** en un pedido entregado: con tarjeta (2d) y reseñas (2g).
 - [ ] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
   el local y no hay cupones.
 - [ ] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): 2f. Hoy solo Pickup (Comida Free: solo pickup).

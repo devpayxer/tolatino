@@ -2,8 +2,8 @@
 
 _Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu`), **Finalizar pedido**
 (`/n/{negocio}/pagar`) y **Tu pedido** (`/pedido/{número}`), teléfono y escritorio. Versión: Fase 2 · bloque 2b
-(6 nov 2026). Comida y Bebidas. Pickup con pago en el local; tarjeta (2d), delivery (2f), cancelar y ayuda (2c) llegan
-en sus bloques._
+(6 nov 2026), con lo del 2c (estados reales, cancelar, volver a pedir). Comida y Bebidas. Pickup con pago en el local;
+tarjeta (2d), delivery (2f) y Ayuda con el pedido llegan en sus bloques._
 
 ## Qué hace
 - **Menú (Pro):** pestaña con las categorías arriba (se pegan al bajar), **Populares**, y cada plato con foto, precio y
@@ -18,8 +18,11 @@ en sus bloques._
 - **Resumen de la página:** hasta 4 platos para pedir directo y la barra «Desde $X · Pedir».
 - **Finalizar pedido:** dónde recoges (dirección, nota del negocio y Cómo llegar), cuándo (lo antes posible o una hora de
   hoy cada 30 minutos), cómo pagas (en el local) y el resumen. **Enviar pedido**.
-- **Tu pedido enviado:** número, estado (enviado → aceptado → en la cocina → listo → recogido), a qué hora está listo,
-  cuánto pagas en el local, dónde recoges y lo que pediste. Llamar al negocio. Se actualiza solo mientras espera.
+- **Tu pedido enviado:** número, estado (enviado → aceptado → en la cocina → listo → recogido, con la hora real de cada
+  paso), a qué hora está listo, cuánto pagas en el local, dónde recoges y lo que pediste. Llamar al negocio. Se
+  actualiza solo mientras está en curso.
+- **Cancelar pedido** (`/pedido/{número}/cancelar`): gratis mientras el negocio no lo acepta; eliges por qué (opcional).
+- **Volver a pedir:** al terminar o si no se pudo, pone los mismos platos con sus opciones en tu carrito.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -37,12 +40,15 @@ en sus bloques._
 | Tres pedidos esperando respuesta | No deja enviar otro hasta que contesten. |
 | Negocio Free | Una sola página: se ven 5 platos y se piden desde el Resumen, hasta 10 pedidos en línea al mes (lo fija To'Latino). Al llegar, la página muestra la lista y Llamar. |
 | El negocio no contesta en 10 minutos | El pedido queda **SIN RESPUESTA** y no se cobra nada. |
+| El negocio rechaza | «No pudieron tomar tu pedido · no se cobró nada». |
+| Ya lo aceptaron o está listo | Ya no se cancela desde la app: la pantalla de cancelar lo dice y ofrece volver al pedido. |
 | To'Latino pausó el Menú o los Pedidos en línea | Sin pestaña Menú, o se ve el menú sin poder pedir. |
 
 ## Preguntas frecuentes
 **¿Me cobran algo en la app?** No. Pagas en el local cuando recoges. El pago con tarjeta llega más adelante.
 
-**¿Puedo cancelar?** Por ahora llama al negocio. Cancelar desde la app llega con el siguiente bloque.
+**¿Puedo cancelar?** Sí, gratis, mientras el negocio no lo acepte («Cancelar pedido» en tu pedido). Después, llama al
+negocio.
 
 **¿Por qué no veo delivery?** Este bloque es pickup. El delivery llega con su bloque.
 
@@ -63,4 +69,5 @@ pay at the store, pickup address and items, with Call the business; it refreshes
 prices, options, stock, hours and the Free monthly cap on every order; a double tap creates only one order; with three
 orders waiting you must wait for a reply; if the business does not answer within 10 minutes the order shows NO REPLY and
 nothing is charged. Free businesses show 5 dishes and take up to 10 online orders a month, then show the list and Call.
-Card payment, delivery, cancelling and order help arrive in later blocks.
+You can cancel for free until the business accepts (Cancel order), and Order again puts the same items back in your
+cart. Card payment, delivery and order help arrive in later blocks.

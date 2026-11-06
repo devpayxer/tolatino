@@ -16,13 +16,14 @@ import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horar
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
+import { clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy" | "mod"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "cli" | "mod"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -64,9 +65,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
+  ped?: PedPanel; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -78,13 +80,14 @@ export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lan
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
     if (!desk) window.scrollTo({ top: 0 });
   }, [router, desk]); // eslint-disable-line react-hooks/exhaustive-deps
   const det = useCallback((id: string) => { const q = new URLSearchParams(sp.toString()); q.set("det", id); router.push(`${path}?${q}`, { scroll: !desk }); }, [router, path, sp, desk]);
+  const nav = useCallback((href: string) => router.push(href, { scroll: false }), [router]);
   const closeDet = useCallback(() => { setForms((f) => Object.fromEntries(Object.entries(f).filter(([k]) => !k.startsWith("det:")))); router.push(path, { scroll: false }); }, [router, path]);
   const run = useCallback((f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => {
     start(async () => {
@@ -104,7 +107,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lan
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -132,7 +135,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lan
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
   const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
-  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }] : []), ...(vende ? [{ k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
+  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [{ k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
@@ -184,6 +187,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lan
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("CADA DÍA", "EVERY DAY")}</span>
                   {navIt(sec === "hoy", "home", E2("Hoy", "Today"), () => go("hoy"))}
+                  {navIt(sec === "cli", "users", E2("Clientes", "Clients"), () => go("cli"))}
                 </div>
               ) : null}
               {vende ? (
@@ -241,7 +245,8 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 /* ─────────────────────────── Secciones ─────────────────────────── */
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
-  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : { blocks: vendesBloques(c), ed: null };
+  if (c.ruta.sec === "cli") return { blocks: clientesBloques(c), ed: null };
+  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
   const head: Bloque[] = [
@@ -257,6 +262,7 @@ function detalle(c: Ctx): Sec | null {
   const id = c.ruta.det ?? "";
   if (id.startsWith("stf:")) return equipoDetalle(c, id.slice(4));
   if (/^(item|mcat|mgrp):/.test(id)) return menuDetalle(c, id);
+  if (id.startsWith("ped:")) return pedidoDetalle(c);
   return null;
 }
 
@@ -330,7 +336,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
   return out;
 }
 
-/* Hoy (DASH-HOY). Pedidos, citas, mensajes y reseñas llegan en la Fase 2: hasta entonces las cifras reales son cero. */
+/* Hoy (DASH-HOY): pedidos de Comida (2c). Citas, mensajes y reseñas llegan con sus bloques. */
 function hoy(c: Ctx): (Bloque | null)[] {
   const { d, E2, es } = c, out: (Bloque | null)[] = [...avisosAdmin(c, "hoy")];
   if (d.st.closedToday) out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Cerraste por hoy: tu página dice «Cerrado hoy» y no recibes pedidos ni citas. Mañana abres normal.", "You closed for today: your page says “Closed today” and you get no orders or bookings. Tomorrow you open as usual."), cta: E2("Abrir", "Open"), onCta: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) });
@@ -339,19 +345,8 @@ function hoy(c: Ctx): (Bloque | null)[] {
   void y;
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
   out.push(...avisosPrueba(c, "hoy"));
-  out.push({ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
-    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(d.esperan.length) },
-    { k: E2("HOY EN TU AGENDA", "ON TODAY’S AGENDA"), v: "0" },
-    { k: E2("VENDIDO HOY", "SOLD TODAY"), v: "$0" },
-    { k: E2("VISTAS HOY", "VIEWS TODAY"), v: String(d.kpis.viewsToday) },
-  ] });
-  if (!d.pro) out.push({ type: "note", tone: "warn", icon: "star", t: E2(`Free: ${d.usadosMes} de ${d.tope} pedidos o citas en línea este mes. Al llegar a ${d.tope}, te contactan por teléfono.`, `Free: ${d.usadosMes} of ${d.tope} online orders or bookings this month. After ${d.tope}, clients call you.`) });
-  // Pedidos de Comida que esperan respuesta (aceptar o rechazar: bloque 2c). Si nadie contesta a tiempo, se liberan solos.
-  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: d.esperan.map((o) => ({
-    icon: "bag", t: `${E2("Pedido", "Order")} #${o.numero} · ${o.quien}`, m: o.total, tag: E2(`ANTES DE LAS ${o.responde}`, `BY ${o.responde}`), tone: "action",
-    s: `${o.count} ${E2(o.count === 1 ? "artículo" : "artículos", o.count === 1 ? "item" : "items")} · Pickup · ${o.programado ? E2(`para las ${o.programado}`, `for ${o.programado}`) : E2("lo antes posible", "as soon as possible")} · ${E2("pagan en el local", "pay at the store")}`,
-  })) });
-  if (!d.esperan.length) out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
+  // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
+  out.push(...hoyPedidos(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday
     ? { l: E2("Abrir de nuevo", "Reopen"), icon: "clock", onClick: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) }

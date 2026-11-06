@@ -37,6 +37,9 @@ export type Bloque =
   | { type: "hours"; items: Dia[]; todayL: string; openK: string; closeK: string; copyL: string; free?: boolean }
   | { type: "empty"; icon: string; t: string; s: string; cta?: string; onCta?: Fn }
   | { type: "acts"; pt?: string; items: Accion[] }
+  /* Línea de tiempo del Panel v2 (isTimeline): HISTORIAL de un pedido, una cita o la prueba. now = el punto actual (Action),
+     future = lo que falta (hueco). */
+  | { type: "timeline"; k?: string; items: { t: string; s?: string; now?: boolean; future?: boolean }[] }
   /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
      barra de selección en lote (SelectionBar 2af) y «Así se ve en tu menú» (MenuItemRow 2i). */
   | { type: "utabs"; wrap?: boolean; items: { l: string; icon: string; n?: string; warn?: boolean; on: boolean; onClick: Fn }[] }
@@ -53,6 +56,22 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
+    case "timeline": return (
+      <div style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 2 }}>
+        {b.k ? <span style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</span> : null}
+        {b.items.map((x, i) => (
+          <div key={i} style={{ display: "grid", gridTemplateColumns: "16px minmax(0,1fr)", gap: 10 }}>
+            <span style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ width: 10, height: 10, borderRadius: 99, background: x.now ? "var(--tl-action)" : x.future ? "transparent" : "var(--tl-ink)", marginTop: 4, flex: "none", boxSizing: "border-box", border: x.future ? "2px solid rgba(11,14,18,.25)" : "none" }} />
+              <span style={{ flex: 1, width: 2, background: i === b.items.length - 1 ? "transparent" : "rgba(11,14,18,.12)", margin: "3px 0" }} />
+            </span>
+            <span style={{ paddingBottom: 12, minWidth: 0 }}>
+              <span style={{ display: "block", font: "700 13px/1.35 Manrope,sans-serif", color: x.future ? "rgba(11,14,18,.45)" : "var(--tl-ink)" }}>{x.t}</span>
+              {x.s ? <span style={{ display: "block", marginTop: 2, font: `600 9.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.45)" }}>{x.s}</span> : null}
+            </span>
+          </div>
+        ))}
+      </div>);
     case "head": return (
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, paddingTop: 2 }}>
         {b.onBack ? <span role="button" aria-label="Atrás" onClick={b.onBack} style={{ width: 36, height: 36, borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none", marginTop: 2 }}><Icon name="chevronLeft" size={17} strokeWidth={2} /></span> : null}

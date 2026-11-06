@@ -5,6 +5,8 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, type ComponentType } from "react";
 import type { PedidoVista } from "@/lib/pedir";
+import { guardarCarrito } from "../../n/[id]/MenuCliente";
+import { lineasDelPedido } from "./acciones";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +18,7 @@ const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
 export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
-  const pendiente = p.status === "pending" && !p.sinRespuesta;
+  const pendiente = (p.status === "pending" && !p.sinRespuesta) || p.status === "confirmed"; // en curso: se actualiza sola
   useEffect(() => { window.scrollTo(0, 0); }, []);
   useEffect(() => {
     if (!pendiente) return;
@@ -28,7 +30,9 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
   const st = Math.max(0, ETAPAS.indexOf(p.stage ?? "sent")), last = nombres.length - 1;
   const fin = p.status === "done" || st >= last;
   const cerrado = p.sinRespuesta || ["declined", "expired", "cancelled"].includes(p.status);
-  const steps = nombres.map((label, i) => ({ label, time: i === 0 ? p.enviado : i === last ? p.listo : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
+  // La hora real de cada etapa (línea de tiempo); la última muestra a qué hora está listo mientras no llega.
+  const T = p.tiempos, horaDe = [T.sent ?? p.enviado, T.accepted ?? "", T.accepted ?? "", T.ready ?? "", T.picked_up ?? ""];
+  const steps = nombres.map((label, i) => ({ label, time: i <= st || fin ? horaDe[i]! : i === last ? p.programado ?? p.listo : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
   const H = [
     [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
     [E2("Pedido aceptado", "Order accepted"), E2("La cocina ya lo tiene.", "The kitchen has it.")],
@@ -39,11 +43,13 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
   const V = cerrado
     ? { eyebrow: p.sinRespuesta || p.status === "expired" ? E2("SIN RESPUESTA", "NO REPLY") : p.status === "declined" ? E2("NO PUDO", "COULD NOT") : E2("CANCELADO", "CANCELLED"),
         title: p.sinRespuesta || p.status === "expired" ? E2("No contestaron a tiempo", "They did not reply in time") : p.status === "declined" ? E2("No pudieron tomar tu pedido", "They could not take your order") : E2("Pedido cancelado", "Order cancelled"),
-        sub: p.sinRespuesta || p.status === "expired" ? E2(`${p.negocio.nombre} no aceptó tu pedido a tiempo. No se cobró nada.`, `${p.negocio.nombre} did not accept your order in time. Nothing was charged.`) : E2("No se cobró nada.", "Nothing was charged."),
+        cxAt: p.tiempos.cancelled ?? "",
+        sub: p.sinRespuesta || p.status === "expired" ? E2(`${p.negocio.nombre} no aceptó tu pedido a tiempo. No se cobró nada.`, `${p.negocio.nombre} did not accept your order in time. Nothing was charged.`) : p.status === "declined" ? E2(`${p.negocio.nombre} no pudo aceptarlo. No se cobró nada.`, `${p.negocio.nombre} could not accept it. Nothing was charged.`) : E2("No se cobró nada.", "Nothing was charged."),
         hero: "bg-ink/5", ic: "close", fg: "var(--tl-ink)" }
     : { eyebrow: st === 0 ? E2("GRACIAS POR TU PEDIDO", "THANKS FOR YOUR ORDER") : fin ? E2("LISTO", "DONE") : E2("EN CURSO", "IN PROGRESS"), title: H[st]![0], sub: H[st]![1],
-        hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)" };
-  const etaK = cerrado ? "" : fin ? E2("RECOGIDO", "PICKED UP") : E2("LISTO A LAS", "READY AT");
+        hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)", cxAt: "" };
+  const etaK = cerrado ? (p.status === "cancelled" ? E2("CANCELADO A LAS", "CANCELLED AT") : "") : fin ? E2("RECOGIDO", "PICKED UP") : E2("LISTO A LAS", "READY AT");
+  const eta = cerrado ? V.cxAt : fin ? p.tiempos.picked_up ?? p.listo : p.programado ?? p.listo;
   const money = cerrado ? E2("SIN COBRO", "NOT CHARGED") : E2(`PAGAS ${p.total} EN EL LOCAL AL RECOGER`, `PAY ${p.total} AT THE STORE AT PICKUP`);
   const volver = () => router.push(`/n/${p.negocio.id}`);
   const llamar = p.negocio.telefono ? () => { location.href = `tel:${p.negocio.telefono}`; } : null;
@@ -59,7 +65,7 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
         </div>
       </div>
       <div className="mt-[18px] flex flex-wrap items-end justify-between gap-3 border-t border-ink/[.07] pt-4">
-        {etaK ? <div><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{etaK}</div><div className="mt-1.5 font-display text-[26px] font-extrabold leading-none tracking-[-0.045em]">{p.programado ?? p.listo}</div></div> : <div />}
+        {etaK && eta ? <div><div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{etaK}</div><div className="mt-1.5 font-display text-[26px] font-extrabold leading-none tracking-[-0.045em]">{eta}</div></div> : <div />}
         <span className={`rounded-lg px-[9px] py-1.5 font-mono text-[9.5px] font-extrabold tracking-[0.08em] ${cerrado ? "bg-signal/[.16] text-open-text" : "bg-pro/[.16] text-pro-ink"}`}>{money}</span>
       </div>
     </div>
@@ -98,9 +104,26 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
       </div>
     </div>
   );
-  const botones = llamar && (
-    <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{E2("Llamar al negocio", "Call the business")}</Button></div>
+  // Volver a pedir: las mismas líneas al carrito de ese negocio (las que ya no existen se caen al abrir el menú).
+  const otraVez = async () => {
+    const ls = await lineasDelPedido(p.numero);
+    if (ls.length) guardarCarrito(p.negocio.id, ls.map(({ id, ch, k, q, nt }) => ({ id, ch, k, q, nt })));
+    router.push(`/n/${p.negocio.id}?tab=menu`);
+  };
+  const puedeCancelar = p.status === "pending" && !p.sinRespuesta;
+  const botones = (
+    <div className="flex flex-col gap-2.5">
+      {llamar && <div className="flex"><Button variant="secondary" icon="phone" block onClick={llamar}>{E2("Llamar al negocio", "Call the business")}</Button></div>}
+      {(fin || cerrado) && <div className="flex"><Button variant="secondary" icon="bag" block onClick={otraVez}>{E2("Volver a pedir", "Order again")}</Button></div>}
+      {puedeCancelar && (
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => router.push(`/pedido/${p.numero}/cancelar`)} className="text-[13px] font-bold text-danger">{E2("Cancelar pedido", "Cancel order")}</button>
+          <span className="text-[12px] font-medium text-ink/55">{E2("Puedes cancelar sin costo hasta que el negocio lo acepte.", "Cancel for free until the business accepts it.")}</span>
+        </div>
+      )}
+    </div>
   );
+
 
   return (
     <div data-pantalla="APP-NEG-PEDIDO" className="min-h-dvh bg-paper pb-10 lg:px-[30px] lg:pb-[60px] lg:pt-[22px]">

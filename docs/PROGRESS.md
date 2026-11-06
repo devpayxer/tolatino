@@ -303,7 +303,7 @@ _Actualizado: 5 nov 2026._
   Ayuda: `docs/ayuda/admin-analitica.md`.
   **Fila 1 del PLAN completa** (salvo lo anotado en LAUNCH-CHECKLIST).
 - **Fase 2 · Comida (modelo) · bloques:** 2a menú (datos, panel, admin) ✓ · 2b pestaña Menú en la ficha + carrito + pedido
-  con pago en el local ✓ · 2c pedidos en el panel y seguimiento · 2d pago con tarjeta (Stripe Connect, checkout propio) ·
+  con pago en el local ✓ · 2c pedidos en el panel y seguimiento ✓ · 2d pago con tarjeta (Stripe Connect, checkout propio) ·
   2e reservaciones · 2f entrega y Repartidor · 2g reseñas, novedades, Jobs · 2h Mi cuenta completa · 2i admin
   (Transacciones, Soporte, devoluciones, disputas, Planes, Contenido, Notificaciones) y SMS.
 - **Fase 2 · bloque 2a Menú ✓ (6 nov, espera OK del fundador):** migración 0022 (`item_sections`, `items`,
@@ -331,6 +331,15 @@ _Actualizado: 5 nov 2026._
   `pegadoBajoEncabezado`, `transaccionEnFila`. Probado con Playwright (teléfono y escritorio): +, opciones obligatorias,
   precio con opciones, otra igual, carrito, pagar, pedido #, totales servidor = pantalla, inventario del día, plato
   agotado entre carrito y pago, pausa, sin sesión, Free (5 platos, techo lleno), panel Hoy. Ayuda `docs/ayuda/pedir-comida.md`.
+- **Fase 2 · bloque 2c Pedidos en el panel ✓ (6 nov, decisión AA: revisión al final):** `lib/pedidos.ts` (vencer al
+  leer → SIN RESPUESTA e inventario de vuelta, sin tareas programadas; aceptar / rechazar / listo / entregado con candado
+  y línea de tiempo; cancelar del cliente; volver a pedir con grupo e índice de cada opción). Panel: Hoy (cifras reales,
+  Aceptar / Rechazar, agenda), detalle `?det=ped:N` con HISTORIAL (bloque `timeline` portado a @tolatino/ui), Clientes
+  (`/clientes`, filtros con cuenta, búsqueda, cursor), Lo que vendes › Pedidos en línea (`/vendes/pedidos`: preparación,
+  programados, aceptar al instante, efectivo al recoger, encender / apagar). Cliente: etapas con su hora, cancelar
+  (`/pedido/N/cancelar`), volver a pedir. Acciones `acciones-pedidos.ts` (ord / cat) con auditoría. Probado con
+  Playwright (31 comprobaciones): aceptar → cocina → listo → entregado, historial, cancelar con motivo, rechazar,
+  vencer, inventario devuelto en los tres, Clientes, ajustes y auditoría. Ayuda `docs/ayuda/panel-pedidos.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

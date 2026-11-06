@@ -4,6 +4,7 @@ import { db } from "./db";
 import type { Lang } from "./idioma";
 import { AGOTADO_SQL, QUEDAN_SQL, type Av } from "./menu";
 import { ITEMS_FREE, TOPE_FREE } from "./plan";
+import { vencer } from "./pedidos";
 
 /* El menú que ve el cliente (pestaña Menú de la ficha, Resumen · menú y checkout) y las reglas del pedido de Comida
    con pago en el local (Fase 2 · bloque 2b). El servidor decide todo: qué se ve, qué se puede pedir, a qué precio,
@@ -197,6 +198,7 @@ export async function menuPublico(negocio: string, lang: Lang): Promise<MenuPubl
   const es = lang === "es";
   const b = await base(db(), negocio);
   if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) return null;
+  await vencer({ negocio }); // lo que nadie contestó a tiempo devuelve su inventario antes de mostrar el menú
   const [R, tope, F] = await Promise.all([rangosHoy(db(), negocio, b.dow), topeFree(db(), negocio, b.mes), filas(db(), negocio, b.tz)]);
   const est = calcEstado(b, R, tope.usados, tope.cap, es);
   const m = armar(b, F, est, es);
@@ -225,6 +227,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
   const cuando = typeof p.cuando === "string" ? p.cuando : "asap";
   if (cuando !== "asap" && !/^\d{2}:\d{2}$/.test(cuando)) return no("Elige cuándo lo recoges.", "Pick when you pick it up.");
   const notaCliente = typeof p.nota === "string" ? p.nota.trim().slice(0, 200) : "";
+  await vencer({ negocio: p.negocio });
 
   const c = await db().connect();
   try {
@@ -252,7 +255,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     const m = armar(b, F, { ...est, later: false, now: refMin }, true);
     const filasPorId = new Map(F.i.map((i) => [i.id, i]));
     const cuenta = new Map<string, number>();
-    const L: { it: FilaItem; name: Bi; q: number; unit: number; tax: number; ops: { g: Bi; o: Bi; cents: number }[]; nota: string }[] = [];
+    const L: { it: FilaItem; name: Bi; q: number; unit: number; tax: number; ops: { g: Bi; o: Bi; cents: number; gid: string; ix: number }[]; nota: string }[] = [];
     let extra = 0;
     for (const l of lineas) {
       const id = String(l?.item ?? "");
@@ -263,7 +266,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
       if (!(q >= 1 && q <= 20)) { await c.query("rollback"); return no(`Revisa la cantidad de «${nom}».`, `Check the quantity of “${fila.name.en || nom}”.`); }
       if (it.ago || it.nosell || it.chOff || it.hrsOff) { await c.query("rollback"); return no(`«${nom}» no está disponible ${programado != null ? "a esa hora" : "ahora"}. Quítalo de tu pedido.`, `“${fila.name.en || nom}” is not available ${programado != null ? "at that time" : "now"}. Remove it from your order.`, { menu: true }); }
       const ch = l.ch && typeof l.ch === "object" ? l.ch : {};
-      const ops: { g: Bi; o: Bi; cents: number }[] = [];
+      const ops: { g: Bi; o: Bi; cents: number; gid: string; ix: number }[] = [];
       for (const gk of Object.keys(ch)) if (!it.grp.includes(gk)) { await c.query("rollback"); return no("El menú cambió. Revisa tu pedido.", "The menu changed. Check your order.", { menu: true }); }
       for (const gk of it.grp) {
         const g = m.grps[gk]!, sel = Array.isArray(ch[gk]) ? [...new Set(ch[gk]!.map(Number))] : [];
@@ -275,7 +278,7 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
           if (!Number.isInteger(ix) || !o || (claves && claves[n] !== o.k)) { await c.query("rollback"); return no("El menú cambió. Revisa tu pedido.", "The menu changed. Check your order.", { menu: true }); }
           if (o.off) { await c.query("rollback"); return no(`«${o.k}» se agotó. Cambia la opción de «${nom}».`, `“${o.k}” sold out. Change the option for “${fila.name.en || nom}”.`, { menu: true }); }
           const oF = gF.options[ix]!;
-          ops.push({ g: gF.name, o: { es: oF.es, en: oF.en || oF.es }, cents: o.cents });
+          ops.push({ g: gF.name, o: { es: oF.es, en: oF.en || oF.es }, cents: o.cents, gid: gk, ix });
         }
       }
       const total = (cuenta.get(id) ?? 0) + q;
@@ -337,22 +340,24 @@ export type PedidoVista = {
   numero: string; negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; lat: number | null; lng: number | null };
   status: string; stage: string | null; sinRespuesta: boolean; enviado: string; listo: string; programado: string | null; respondeHasta: string;
   lineas: { q: number; name: string; sum: string; price: string; img: string | null }[]; nota: string | null; pickupNote: string;
-  sub: string; tax: string; total: string; taxL: string; count: number;
+  sub: string; tax: string; total: string; taxL: string; count: number; subC: number; taxC: number;
+  tiempos: Record<string, string>; canceladoPor: string | null;
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
   const es = lang === "es";
+  await vencer({ userId, numero });
   const r = await db().query<{
     id: string; number: string; business_id: string; name: string; address: string | null; phone: string | null; lat: number | null; lng: number | null;
     status: string; stage: string | null; vencido: boolean; enviado: string; listo: string; programado: string | null; responde: string; customer_note: string | null;
-    subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null;
+    subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null; cancelled_by: string | null;
   }>(
     `select o.id::text, o.number, o.business_id, b.name, b.address, b.phone, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
             o.status, o.stage, (o.status = 'pending' and o.respond_by <= now()) as vencido,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviado, to_char(o.ready_at at time zone c.timezone, 'HH24:MI') as listo,
             to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as programado, to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as responde,
-            o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note
+            o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note, o.cancelled_by
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
       where o.number = $1 and o.user_id = $2 and o.kind = 'order'`, [numero, userId]);
   const o = r.rows[0];
@@ -361,6 +366,12 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     `select l.qty as q, l.name, l.options, l.instructions, l.line_total_cents as total, (select i.photos[1] from items i where i.id = l.item_id) as img, l.tax_pct::float as tax
        from operation_lines l where l.operation_id = $1 order by l.id`, [o.id]);
   const taxes = [...new Set(ls.rows.filter((l) => l.tax > 0).map((l) => l.tax))];
+  // A qué hora pasó cada etapa (línea de tiempo del pedido).
+  const ev = await db().query<{ kind: string; at: string }>(
+    `select e.kind, to_char(e.at at time zone c.timezone, 'HH24:MI') as at from operation_events e join operations o on o.id = e.operation_id join cities c on c.id = o.city_id
+      where e.operation_id = $1 order by e.at, e.id`, [o.id]);
+  const tiempos: Record<string, string> = {};
+  for (const e of ev.rows) tiempos[e.kind] = hora(hm2m(e.at));
   return {
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, direccion: o.address, telefono: o.phone, lat: o.lat, lng: o.lng },
     status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: hora(hm2m(o.enviado)), listo: hora(hm2m(o.listo)), programado: o.programado ? hora(hm2m(o.programado)) : null,
@@ -371,6 +382,7 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     })),
     nota: o.customer_note, pickupNote: tx(o.pickup_note, es), sub: money(o.subtotal_cents), tax: money(o.tax_cents), total: money(o.total_cents),
     taxL: taxes.length === 1 ? (es ? `Impuestos (${taxes[0]}%)` : `Taxes (${taxes[0]}%)`) : es ? "Impuestos" : "Taxes", count: ls.rows.reduce((a, l) => a + l.q, 0),
+    subC: o.subtotal_cents, taxC: o.tax_cents, tiempos, canceladoPor: o.cancelled_by,
   };
 }
 
@@ -378,21 +390,6 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
 export async function topeFreeDe(negocio: string) {
   const r = await db().query<{ mes: string }>(`select to_char(now() at time zone c.timezone, 'YYYY-MM') as mes from businesses b join cities c on c.id = b.city_id where b.id = $1`, [negocio]);
   return topeFree(db(), negocio, r.rows[0]?.mes ?? "");
-}
-
-/* Panel › Hoy · Esperan tu respuesta: los pedidos que el negocio todavía puede aceptar (aceptar y rechazar: bloque 2c). */
-export type Esperando = { numero: string; quien: string; count: number; total: string; responde: string; programado: string | null };
-export async function esperanRespuesta(negocio: string): Promise<Esperando[]> {
-  const r = await db().query<{ number: string; first_name: string | null; last_name: string | null; n: number; total_cents: number; responde: string; programado: string | null }>(
-    `select o.number, u.first_name, u.last_name, (select coalesce(sum(qty), 0)::int from operation_lines l where l.operation_id = o.id) as n, o.total_cents,
-            to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as responde, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as programado
-       from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id
-      where o.business_id = $1 and o.status = 'pending' and o.respond_by > now()
-      order by o.respond_by limit 20`, [negocio]);
-  return r.rows.map((x) => ({
-    numero: x.number, quien: [x.first_name, x.last_name ? `${x.last_name[0]}.` : ""].filter(Boolean).join(" "), count: x.n, total: money(x.total_cents),
-    responde: hora(hm2m(x.responde)), programado: x.programado ? hora(hm2m(x.programado)) : null,
-  }));
 }
 
 /* Pedidos en línea de un negocio este mes (todos los planes). */
