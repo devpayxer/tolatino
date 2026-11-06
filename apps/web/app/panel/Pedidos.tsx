@@ -4,7 +4,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pedidosLista } from "@/lib/pedidos";
 import { menuAjustes } from "./acciones-menu";
-import { pedidoPaso, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
+import { pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 
@@ -15,15 +15,16 @@ export type PedPanel = {
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const TG = (E2: Ctx["E2"]): Record<string, [string, string] | undefined> => ({
-  ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], done: [E2("LISTO", "DONE"), "neutral"],
+  ok: [E2("ACEPTADO", "ACCEPTED"), "signal"], ready: [E2("LISTO PARA RECOGER", "READY"), "signal"], out: [E2("EN CAMINO", "ON THE WAY"), "action"], done: [E2("LISTO", "DONE"), "neutral"],
   no: [E2("NO SE PUDO", "DECLINED"), "danger"], exp: [E2("SIN RESPUESTA", "NO REPLY"), "danger"], cx: [E2("CANCELADO", "CANCELLED"), "neutral"],
 });
 
 /* Responder o mover un pedido; el aviso dice lo que ve el cliente. */
-function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "entregado") {
+function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "encamino" | "entregado") {
   const { E2 } = c, n = x.who.split(" ")[0];
   const t = { aceptar: E2(`${n} ya lo ve en su pedido.`, `${n} now sees it in their order.`), rechazar: E2(`${n} ya ve que no se pudo.`, `${n} now sees it could not be done.`),
-    listo: E2(`${n} ya ve que está listo para recoger.`, `${n} now sees it is ready for pickup.`), entregado: E2("Anotado · Entregado.", "Noted · Delivered.") }[p];
+    listo: E2(`${n} ya ve que está listo para recoger.`, `${n} now sees it is ready for pickup.`), encamino: E2(`${n} ya ve que va en camino.`, `${n} now sees it is on the way.`),
+    entregado: E2("Anotado · Entregado.", "Noted · Delivered.") }[p];
   c.run(() => pedidoPaso(c.d.id, x.numero, p), t);
 }
 
@@ -31,7 +32,7 @@ function paso(c: Ctx, x: FilaPed, p: "aceptar" | "rechazar" | "listo" | "entrega
 export function reqRow(c: Ctx, x: FilaPed, conActs = true): Fila {
   const { E2, es } = c, tg = TG(E2)[x.st];
   return {
-    icon: "bag", t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: `${x.who} · ${es ? x.s.es : x.s.en}`, r: money(x.amt),
+    icon: x.modo === "Delivery" ? "truck" : "bag", t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: `${x.who} · ${es ? x.s.es : x.s.en}`, r: money(x.amt),
     tag: tg ? tg[0] : null, tone: tg ? tg[1] : "neutral", chev: !conActs, onClick: () => c.det(`ped:${x.numero}`),
     acts: conActs && x.st === "pend" ? [{ l: E2("Aceptar", "Accept"), v: "primary", icon: "check", onClick: () => paso(c, x, "aceptar") }, { l: E2("Rechazar", "Decline"), v: "secondary", icon: null, onClick: () => paso(c, x, "rechazar") }] : undefined,
     bd: x.st === "pend" ? "1.5px solid var(--tl-ink)" : undefined,
@@ -64,21 +65,43 @@ export function pedidoDetalle(c: Ctx): Sec {
   if (!x) return { blocks: [{ type: "head", t: E2("Pedido no encontrado", "Order not found"), onBack: c.closeDet }, { type: "empty", icon: "bag", t: E2("Ese pedido no existe", "That order does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("PEDIDO", "ORDER")} · ${x.who.toUpperCase()}`, t: `${E2("Pedido", "Order")} #${x.numero} · ${x.modo}`, s: es ? x.s.es : x.s.en, onBack: c.closeDet },
-    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.who }, { k: E2("PROMETIDO", "PROMISED"), v: x.listo }, { k: E2("PAGO", "PAYMENT"), v: E2("En el local", "At the store") }] },
+    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.who }, { k: E2("PROMETIDO", "PROMISED"), v: x.entrega?.llega ?? x.listo }, { k: E2("PAGO", "PAYMENT"), v: x.entrega ? E2("Efectivo al entregar", "Cash on delivery") : E2("En el local", "At the store") }] },
   ];
+  // Delivery: a dónde, cómo se entrega y qué hacer al llegar (Checkout · cómo entregar), y el teléfono del cliente.
+  const ENT = x.entrega;
+  if (ENT?.to) {
+    const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
+    out.push({ type: "rows", k: E2("ENTREGA", "DELIVER TO"), items: [
+      { icon: "home", t: `${ENT.to.street}${ENT.to.apt ? `, ${ENT.to.apt}` : ""}`, s: `${ENT.to.zip}${ENT.to.mi != null ? ` · ${ENT.to.mi} mi` : ""}`, chev: false, compact: true,
+        acts: [{ l: E2("Cómo llegar", "Directions"), v: "secondary", icon: "pin", onClick: () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${ENT.to!.street}, ${ENT.to!.zip}`)}`, "_blank", "noopener") },
+          ...(x.telCliente ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.telCliente}`; } }] : [])] },
+      ...(ENT.drop ? [{ icon: ENT.drop.drop === "puerta" ? "home" : "users", t: ENT.drop.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to me"),
+        s: [ENT.drop.at.map((k) => (c.es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), ENT.drop.note ? `“${ENT.drop.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),
+    ] });
+  }
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   out.push({ type: "rows", k: E2("DETALLE", "DETAIL"), items: [
     ...x.lineas.map((l): Fila => ({ icon: "check", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`,
       s: [l.opts.map((o) => (es ? o.es : o.en || o.es)).join(" · "), l.nota ? `“${l.nota}”` : ""].filter(Boolean).join(" · ") || undefined, r: money(l.cents), compact: true, chev: false })),
-    { icon: "wallet", t: E2("Total", "Total"), s: `${E2("platos", "items")} ${money(x.sub)} · ${E2("impuestos", "taxes")} ${money(x.tax)}`, r: money(x.amt), compact: true, chev: false },
+    { icon: "wallet", t: E2("Total", "Total"), s: [`${E2("platos", "items")} ${money(x.sub)}`, x.entrega ? `${E2("envío", "delivery")} ${money(x.envio)}` : "", x.propina ? `${E2("propina", "tip")} ${money(x.propina)}` : "", `${E2("impuestos", "taxes")} ${money(x.tax)}`].filter(Boolean).join(" · "), r: money(x.amt), compact: true, chev: false },
   ] });
   if (x.tl.length) out.push({ type: "timeline", k: E2("HISTORIAL", "HISTORY"), items: x.tl.map((t, i) => ({ t: es ? t.t.es : t.t.en, s: t.at, now: i === x.tl.length - 1 }))
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), future: true } as never] : []) });
   const row = reqRow(c, x);
   if (row.acts?.length) out.push({ type: "acts", pt: "4px", items: row.acts.map((a) => ({ ...a, off: c.pending })) });
-  if (x.st === "pend") out.push({ type: "note", tone: "info", t: E2(`Pagan en el local al recoger. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay at the store at pickup. If you do not reply by ${x.responde}, it cancels on its own.`) });
-  if (x.st === "ok") out.push({ type: "acts", items: [{ l: E2("Listo para recoger", "Ready for pickup"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, x, "listo") }] });
-  if (x.st === "ready") out.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, x, "entregado") }] });
+  if (x.st === "pend") out.push({ type: "note", tone: "info", t: ENT ? E2(`Pagan en efectivo al recibir. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay cash on delivery. If you do not reply by ${x.responde}, it cancels on its own.`)
+    : E2(`Pagan en el local al recoger. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay at the store at pickup. If you do not reply by ${x.responde}, it cancels on its own.`) });
+  // Panel v2 · detBlocks: pickup → Listo para recoger → Entregado; delivery → Salió en camino → Entregado.
+  if (x.st === "ok") out.push({ type: "acts", items: [ENT ? { l: E2("Salió en camino", "Out for delivery"), v: "primary", icon: "truck", off: c.pending, onClick: () => paso(c, x, "encamino") }
+    : { l: E2("Listo para recoger", "Ready for pickup"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, x, "listo") }] });
+  if (x.st === "ready" || x.st === "out") out.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: c.pending, onClick: () => paso(c, x, "entregado") }] });
+  // Con una app externa: el enlace de seguimiento que ve el cliente.
+  if (ENT?.ext && (x.st === "ok" || x.st === "out")) {
+    const key = `seg:${x.numero}`, val = (c.ui[key] as string | undefined) ?? ENT.seguimiento ?? "";
+    out.push({ type: "field", k: E2("ENLACE DE SEGUIMIENTO", "TRACKING LINK"), val, ph: "https://", max: 300, onChange: (v) => c.setUi({ [key]: v }),
+      help: ENT.seguimiento ? E2("El cliente ya lo ve en su pedido.", "The client already sees it in their order.") : E2("Pega el enlace de la app externa: el cliente lo ve en su pedido.", "Paste the external app's link: the client sees it in their order.") },
+      { type: "acts", items: [{ l: E2("Guardar enlace", "Save link"), v: "secondary", icon: "check", off: c.pending || !val.trim() || val === ENT.seguimiento, onClick: () => c.run(() => pedidoSeguimiento(c.d.id, x.numero, val), E2("Enlace guardado: el cliente ya lo ve.", "Link saved: the client sees it now.")) }] });
+  }
   return { blocks: out, ed: null };
 }
 

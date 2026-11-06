@@ -231,11 +231,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
   HelpRequest y su cola): con Soporte (2i).
 - [ ] **Avisos** al cliente y al negocio (SMS / push: pedido nuevo, aceptado, listo): con las notificaciones. Hoy la
   página del pedido se actualiza sola cada 20 s y el panel al abrirlo.
-- [ ] **Nota de cómo se recoge** (pickup_note): se edita en Entrega (DASH-ENTREGA, bloque 2f). Hoy viene de la semilla.
+- [x] **Nota de cómo se recoge** (pickup_note): se edita en Entrega (DASH-ENTREGA): hecho en el 2f.
 - [ ] **Devolver dinero y Pedir reseña** en un pedido entregado: con tarjeta (2d) y reseñas (2g).
 - [ ] **Pago con tarjeta** (retener al enviar, cobrar al aceptar), Wallet y cupones: 2d / Fase de Planes. Hoy solo pago en
   el local y no hay cupones.
-- [ ] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): 2f. Hoy solo Pickup (Comida Free: solo pickup).
+- [x] **Delivery** (zona, envío, mínimo, propina, cómo te lo entregamos): hecho en el 2f, con efectivo al entregar.
 - [ ] **Hoja «Entra para pedir» (AuthSheet 2m):** el componente del sistema solo trae textos en español y no muestra
   errores; mientras, «Ir a pagar» sin cuenta usa la pantalla Entra (bilingüe) y vuelve al pago con el pedido igual.
 - [ ] **Accesibilidad del sistema de diseño:** `Button` es un `div` sin `role="button"` ni teclado (lo cazó la prueba del
@@ -259,3 +259,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Plan Pro:** Reservaciones es de Pro; el botón «Ver Pro» del candado espera la Fase de Planes.
 - [ ] **Fotos de Pexels** (semilla) no cargan en el entorno de pruebas sin salida a internet: la tarjeta de la solicitud
   muestra el fondo gris. En el sandbox real sí cargan.
+
+## Entrega y delivery (bloque 2f, 6 nov 2026)
+- [ ] **App To'Latino Repartidor** (`/repartidor`): sin pantallas en el diseño (pregunta 6 en `docs/REVISION.md`). Con
+  ella llegan: foto al dejarlo en la puerta (prueba de entrega), espera de 5 min si no abren, mapa en vivo del
+  repartidor, «Tus repartidores» (invitar con código), Despacho y Cuadre de efectivo en el panel. Mientras, el negocio
+  marca «Salió en camino» y «Entregado» en su panel, y el pago no promete la foto.
+- [ ] **Enlace de seguimiento por SMS** al cliente (app externa) y avisos «en camino» / «entregado»: con las notificaciones.
+- [ ] **App externa conectada de verdad** (DoorDash Drive / Uber Direct por API): hoy el negocio pide el repartidor en la
+  app externa y pega el enlace. Conectarla sería un servicio externo nuevo: decisión del fundador.
+- [ ] **Delivery con tarjeta** (envío y propina cobrados en la app): con el 2d. Hoy solo efectivo al recibir.
+- [ ] **Calles del Censo (TIGER) en el sandbox:** se cargan con `.github/workflows/direcciones.yml`; en el entorno local
+  de pruebas se usan calles sintéticas. Producción las carga en la fase 9.

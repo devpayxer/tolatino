@@ -34,7 +34,8 @@ function ventana(av: Av | null, dow: number, now: number, es: boolean): { off: b
 
 export type PItem = {
   id: string; sec: string; name: string; desc: string; cents: number; tax: number; img: string | null; tags: string[]; grp: string[];
-  ago: boolean; left: number | null; maxQ: number; extra: number; nosell: boolean; chOff: boolean; hrsOff: boolean; hrsL: string | null; hasta: number | null;
+  ago: boolean; left: number | null; maxQ: number; extra: number; nosell: boolean; hrsOff: boolean; hrsL: string | null; hasta: number | null;
+  pick: boolean; dlv: boolean; // se pide para pickup / para delivery (Panel · Menú › Se piden)
 };
 export type PGrp = { id: string; name: string; req: boolean; max: number; o: { l: string; k: string; cents: number; off: boolean }[] };
 export type PSec = { id: string; name: string; note: string; items: string[] };
@@ -42,10 +43,16 @@ export type PSlot = { v: string; l: string };
 export type PEstado = {
   canOrd: boolean; later: boolean; closed: boolean; closedT: string; closedS: string; readyMin: number; now: number; openAt: number | null;
   sched: boolean; slots: PSlot[]; free: boolean; freeLeft: number | null; low: number; dia: string;
+  // Delivery (Panel · Entrega): las formas de entrega de ahora, en el orden del diseño (delivery primero), y sus reglas.
+  modes: ("delivery" | "pickup")[]; slotsD: PSlot[];
+  dlv: { zone: number; fee: number; free: number; min: number; travel: number; tip: boolean; ext: string | null; hasta: number | null; d1: number; d2: number } | null;
 };
+export type DirEntrega = { id: string; label: string; street: string; apt: string | null; zip: string; mi: number | null; dentro: boolean; drop: DropPref | null };
+export type DropPref = { drop: "mano" | "puerta"; at: string[]; note: string };
 export type MenuPublico = {
   negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; pickupNote: string; lat: number | null; lng: number | null; pro: boolean };
   secs: PSec[]; items: Record<string, PItem>; grps: Record<string, PGrp>; pop: string[]; estado: PEstado; desde: number; vacio: boolean;
+  dir: DirEntrega | null; // la dirección predeterminada de la persona y si este negocio llega
 };
 
 type Base = {
@@ -53,6 +60,8 @@ type Base = {
   tz: string; dow: number; hm: string; hoy: string; mes: string; open: boolean; cerrado: boolean; off: Record<string, { reason?: string }>; mods: string[];
   last_min: number; pause_until: string | null; busy_min: number; low_alert: number;
   pickup: boolean; pay_cash_pickup: boolean; pay_card: boolean; prep_min: number; scheduled_orders: boolean; auto_accept: boolean; pickup_note: Bi | null;
+  delivery: boolean; pay_cash_delivery: boolean; ask_tip: boolean; zone_mi: number; fee_cents: number; free_over_cents: number; min_order_cents: number;
+  travel_min: number; last_delivery_min: number; who: string; external_app: string | null;
 };
 
 async function base(c: Q, negocio: string) {
@@ -67,7 +76,10 @@ async function base(c: Q, negocio: string) {
             coalesce(ms.busy_min, 0) as busy_min, coalesce(ms.low_alert, 3) as low_alert,
             coalesce(ds.pickup, true) as pickup, coalesce(ds.pay_cash_pickup, true) as pay_cash_pickup, coalesce(ds.pay_card, false) as pay_card,
             coalesce(ds.prep_min, 20) as prep_min, coalesce(ds.scheduled_orders, true) as scheduled_orders, coalesce(ds.auto_accept, false) as auto_accept,
-            ds.pickup_note
+            ds.pickup_note, coalesce(ds.delivery, false) as delivery, coalesce(ds.pay_cash_delivery, false) as pay_cash_delivery, coalesce(ds.ask_tip, true) as ask_tip,
+            coalesce(ds.zone_mi, 3) as zone_mi, coalesce(ds.fee_cents, 300) as fee_cents, coalesce(ds.free_over_cents, 0) as free_over_cents,
+            coalesce(ds.min_order_cents, 0) as min_order_cents, coalesce(ds.travel_min, 15) as travel_min, coalesce(ds.last_delivery_min, 0) as last_delivery_min,
+            coalesce(ds.who, 'team') as who, ds.external_app
        from businesses b join business_stats_cache s on s.business_id = b.id join cities ci on ci.id = b.city_id
        left join menu_settings ms on ms.business_id = b.id left join delivery_settings ds on ds.business_id = b.id
       where b.id = $1 and b.status = 'active'`,
@@ -95,12 +107,18 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
   const free = !pro, freeLeft = pro ? null : Math.max(0, cap - usados), planOk = pro || (freeLeft ?? 0) > 0;
   const actual = b.open ? R.find(([a, z]) => a <= now && now < z) : undefined;
   const sig = !b.open && !b.cerrado ? R.find(([a]) => a > now) : undefined;
-  // Pedidos en línea: el módulo encendido por el negocio, no pausado por To'Latino y con una forma de pagar el pickup.
-  const ordOff = !b.mods.includes("pedidos") || !!b.off.pedidos || !(b.pickup && (b.pay_cash_pickup || b.pay_card));
+  // Pedidos en línea: el módulo encendido por el negocio, no pausado por To'Latino y al menos una forma de entrega con
+  // su pago: pickup (efectivo en la caja o tarjeta) o delivery (efectivo al entregar con su equipo, o tarjeta), sin pausa.
+  const pickOk = b.pickup && (b.pay_cash_pickup || b.pay_card);
+  const dlvOk = b.delivery && !b.off.delivery && ((b.pay_cash_delivery && b.who !== "external") || b.pay_card);
+  const ordOff = !b.mods.includes("pedidos") || !!b.off.pedidos || (!pickOk && !dlvOk);
   const paused = !!b.pause_until;
   const later = planOk && !ordOff && b.scheduled_orders && !!sig;
   const shut = !b.open && !later;
   const lastAt = actual && b.last_min ? actual[1] - b.last_min : null;
+  // El último delivery (Entrega): con el último pedido, o 30 / 60 min antes de cerrar.
+  const dlvTo = actual ? actual[1] - Math.max(b.last_min, b.last_delivery_min) : null;
+  const dlvAhora = dlvOk && !(dlvTo != null && now >= dlvTo);
   const tarde = lastAt != null && now >= lastAt;
   const canOrd = planOk && !shut && !paused && !ordOff && !tarde;
   const readyMin = b.prep_min + b.busy_min;
@@ -122,7 +140,13 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
     }
   }
   const dia = new Date(`${b.hoy}T12:00:00`).toLocaleDateString(es ? "es-US" : "en-US", { weekday: "long", day: "numeric", month: "short" });
-  return { canOrd: canOrd && (!later || slots.length > 0), later, closed: !!closedT, closedT, closedS, readyMin, now, openAt: sig?.[0] ?? null, sched: b.scheduled_orders, slots, free, freeLeft, low: b.low_alert, dia };
+  // Delivery programado: hasta 10 min antes del último delivery del rango.
+  const slotsD = slots.filter((x) => { const m = hm2m(x.v), r = R.find(([a, z]) => a <= m && m < z); return r ? m <= r[1] - Math.max(b.last_min, b.last_delivery_min) - 10 : false; });
+  const modes = [...(dlvOk && (dlvAhora || (later && slotsD.length > 0)) ? ["delivery" as const] : []), ...(pickOk ? ["pickup" as const] : [])];
+  const dlv = dlvOk ? { zone: b.zone_mi, fee: b.fee_cents, free: b.free_over_cents, min: b.min_order_cents, travel: b.travel_min, tip: b.ask_tip, ext: b.who === "external" ? b.external_app : null,
+    hasta: dlvTo, d1: readyMin + b.travel_min, d2: readyMin + 2 * b.travel_min } : null;
+  return { canOrd: canOrd && (!later || slots.length > 0) && modes.length > 0, later, closed: !!closedT, closedT, closedS, readyMin, now, openAt: sig?.[0] ?? null, sched: b.scheduled_orders, slots,
+    free, freeLeft, low: b.low_alert, dia, modes, slotsD, dlv };
 }
 
 async function topeFree(c: Q, negocio: string, mes: string) {
@@ -176,7 +200,7 @@ function armar(b: Base, F: Awaited<ReturnType<typeof filas>>, est: PEstado, es: 
     items[i.id] = {
       id: i.id, sec: i.sec, name: tx(i.name, es), desc: tx(i.desc, es), cents: i.cents, tax: i.tax, img: i.photos[0] ?? null, tags: i.tags, grp,
       ago: i.agotado || (i.stk !== "none" && i.quedan <= 0) || reqAgotado, left: i.stk !== "none" ? Math.max(0, i.quedan) : null, maxQ: i.maxQ, extra: i.extra,
-      nosell: !i.sell, chOff: !i.ch.includes("pick"), hrsOff: !!own?.off, hrsL: i.avail === "own" ? own?.l ?? null : null, hasta: own?.hasta ?? null,
+      nosell: !i.sell, hrsOff: !!own?.off, hrsL: i.avail === "own" ? own?.l ?? null : null, hasta: own?.hasta ?? null, pick: i.ch.includes("pick"), dlv: i.ch.includes("dlv"),
     };
     sec.items.push(i.id);
   }
@@ -194,7 +218,7 @@ function armar(b: Base, F: Awaited<ReturnType<typeof filas>>, est: PEstado, es: 
 }
 
 /* Menú para la ficha y el checkout. null = no es Comida, no está activo, el negocio no encendió el Menú o To'Latino lo pausó. */
-export async function menuPublico(negocio: string, lang: Lang): Promise<MenuPublico | null> {
+export async function menuPublico(negocio: string, lang: Lang, userId?: string | null): Promise<MenuPublico | null> {
   const es = lang === "es";
   const b = await base(db(), negocio);
   if (!b || b.cat !== "NEG-FOOD" || !b.mods.includes("menu") || b.off.menu) return null;
@@ -204,14 +228,29 @@ export async function menuPublico(negocio: string, lang: Lang): Promise<MenuPubl
   const m = armar(b, F, est, es);
   return {
     negocio: { id: b.id, nombre: b.name, direccion: b.address, telefono: b.phone, pickupNote: tx(b.pickup_note, es), lat: b.lat, lng: b.lng, pro: b.plan === "pro" },
-    ...m, estado: est,
+    ...m, estado: est, dir: userId && est.dlv ? await dirEntrega(db(), userId, b.id, est.dlv.zone, null) : null,
   };
+}
+
+/* La dirección de entrega (la predeterminada o la que se pide) y si queda dentro de la zona del negocio (en línea recta). */
+async function dirEntrega(c: Q, userId: string, negocio: string, zona: number, id: string | null): Promise<DirEntrega | null> {
+  const r = await c.query<{ id: string; label: string; street: string; apt: string | null; zip: string; mi: number | null; drop_pref: DropPref | null }>(
+    `select a.id::text, a.label, a.street, a.apt, a.zip, a.drop_pref,
+            case when a.geo is null or b.geo is null then null else round((st_distance(a.geo, b.geo) / 1609.344)::numeric, 1)::float end as mi
+       from user_addresses a, businesses b
+      where a.user_id = $1 and a.removed_at is null and b.id = $2 and ($3::uuid is null or a.id = $3::uuid)
+      order by ($3::uuid is not null and a.id = $3::uuid) desc, a.is_default desc, a.created_at limit 1`, [userId, negocio, id]);
+  const a = r.rows[0];
+  return a ? { id: a.id, label: a.label, street: a.street, apt: a.apt, zip: a.zip, mi: a.mi, dentro: a.mi != null && a.mi <= zona, drop: a.drop_pref } : null;
 }
 
 /* ── Enviar el pedido ── */
 
 export type LineaIn = { item: string; ch: Record<string, number[]>; k?: Record<string, string[]>; q: number; nota?: string };
-export type PedidoIn = { negocio: string; lineas: LineaIn[]; cuando: string; nota?: string; clave: string };
+export type PedidoIn = {
+  negocio: string; lineas: LineaIn[]; cuando: string; nota?: string; clave: string;
+  modo?: "pickup" | "delivery"; direccion?: string; propina?: { k: string; monto?: number }; entrega?: DropPref & { guardar?: boolean };
+};
 export type PedidoOut = { ok: true; numero: string } | { ok: false; msg: Bi; entrar?: true; perfil?: true; menu?: true };
 
 const ID = /^\d{1,18}$/;
@@ -244,11 +283,13 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
     // Una conexión en transacción: las consultas van una tras otra (nunca en paralelo sobre el mismo cliente).
     const R = await rangosHoy(c, b.id, b.dow), tope = await topeFree(c, b.id, b.mes), F = await filas(c, b.id, b.tz, true);
     const est = calcEstado(b, R, tope.usados, tope.cap, true);
+    const modo = p.modo === "delivery" ? "delivery" : "pickup";
+    if (est.canOrd && !est.modes.includes(modo)) { await c.query("rollback"); return modo === "delivery" ? no(`${b.name} no hace delivery ahora. Pide pickup.`, `${b.name} is not delivering now. Order pickup.`, { menu: true }) : no(`${b.name} no tiene pickup ahora.`, `${b.name} has no pickup now.`, { menu: true }); }
     if (!est.canOrd) { await c.query("rollback"); return no(est.closedT ? `${est.closedT}.` : "Este negocio no toma más pedidos en línea este mes. Llama para pedir.", est.closedT ? "Online ordering is not available right now." : "This business takes no more online orders this month. Call to order."); }
     let refMin = est.now, programado: number | null = null;
     if (cuando === "asap") { if (est.later) { await c.query("rollback"); return no("Elige la hora: el negocio todavía no abre.", "Pick a time: the business is not open yet."); } }
     else {
-      const s = est.slots.find((x) => x.v === cuando);
+      const s = (modo === "delivery" ? est.slotsD : est.slots).find((x) => x.v === cuando);
       if (!s) { await c.query("rollback"); return no("Esa hora ya no está disponible. Elige otra.", "That time is no longer available. Pick another."); }
       programado = hm2m(cuando); refMin = programado;
     }
@@ -264,7 +305,8 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
       const nom = fila.name.es;
       const q = Math.floor(+l.q);
       if (!(q >= 1 && q <= 20)) { await c.query("rollback"); return no(`Revisa la cantidad de «${nom}».`, `Check the quantity of “${fila.name.en || nom}”.`); }
-      if (it.ago || it.nosell || it.chOff || it.hrsOff) { await c.query("rollback"); return no(`«${nom}» no está disponible ${programado != null ? "a esa hora" : "ahora"}. Quítalo de tu pedido.`, `“${fila.name.en || nom}” is not available ${programado != null ? "at that time" : "now"}. Remove it from your order.`, { menu: true }); }
+      if (modo === "pickup" ? !it.pick : !it.dlv) { await c.query("rollback"); return no(`«${nom}» es solo ${modo === "pickup" ? "delivery" : "pickup"}: cambia a ${modo === "pickup" ? "Delivery" : "Pickup"} o quítalo.`, `“${fila.name.en || nom}” is ${modo === "pickup" ? "delivery" : "pickup"} only: switch to ${modo === "pickup" ? "Delivery" : "Pickup"} or remove it.`, { menu: true }); }
+      if (it.ago || it.nosell || it.hrsOff) { await c.query("rollback"); return no(`«${nom}» no está disponible ${programado != null ? "a esa hora" : "ahora"}. Quítalo de tu pedido.`, `“${fila.name.en || nom}” is not available ${programado != null ? "at that time" : "now"}. Remove it from your order.`, { menu: true }); }
       const ch = l.ch && typeof l.ch === "object" ? l.ch : {};
       const ops: { g: Bi; o: Bi; cents: number; gid: string; ix: number }[] = [];
       for (const gk of Object.keys(ch)) if (!it.grp.includes(gk)) { await c.query("rollback"); return no("El menú cambió. Revisa tu pedido.", "The menu changed. Check your order.", { menu: true }); }
@@ -293,20 +335,45 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
 
     const sub = L.reduce((a, x) => a + x.unit * x.q, 0);
     const tax = Math.round(L.reduce((a, x) => a + (x.unit * x.q * x.tax) / 100, 0));
-    const total = sub + tax;
-    const listoMin = programado ?? est.now + est.readyMin + extra;
+    // Delivery: la dirección de la persona dentro de la zona, el mínimo, el envío (gratis desde) y la propina.
+    let envio = 0, propina = 0, dir: DirEntrega | null = null;
+    const D = est.dlv;
+    if (modo === "delivery") {
+      if (!D) { await c.query("rollback"); return no(`${b.name} no hace delivery ahora. Pide pickup.`, `${b.name} is not delivering now. Order pickup.`, { menu: true }); }
+      dir = await dirEntrega(c, userId, b.id, D.zone, typeof p.direccion === "string" && UUID.test(p.direccion) ? p.direccion : null);
+      if (!dir) { await c.query("rollback"); return no("Agrega la dirección a donde te lo llevan.", "Add the address to deliver to."); }
+      if (dir.mi == null) { await c.query("rollback"); return no("No encontramos tu dirección en el mapa. Revisa la calle y el número en Mis direcciones, o pide pickup.", "We couldn't find your address on the map. Check the street and number in My addresses, or order pickup."); }
+      if (!dir.dentro) { await c.query("rollback"); return no(`Tu dirección queda a ${dir.mi} mi y ${b.name} lleva hasta ${D.zone} mi. Pide pickup.`, `Your address is ${dir.mi} mi away and ${b.name} delivers up to ${D.zone} mi. Order pickup.`); }
+      if (D.min && sub < D.min) { await c.query("rollback"); return no(`Delivery desde ${money(D.min)}: te faltan ${money(D.min - sub)}.`, `Delivery from ${money(D.min)}: you need ${money(D.min - sub)} more.`, { menu: true }); }
+      envio = D.free && sub >= D.free ? 0 : D.fee;
+      if (D.tip && p.propina && typeof p.propina === "object") {
+        const k = String(p.propina.k);
+        propina = k === "otro" ? Math.max(0, Math.min(10000, Math.round(Number(p.propina.monto) || 0))) : ["p15", "p18", "p20"].includes(k) ? Math.round((sub * Number(k.slice(1))) / 100) : 0;
+      }
+    }
+    const total = sub + tax + envio + propina;
+    const drop: DropPref | null = modo === "delivery" && p.entrega && typeof p.entrega === "object" ? {
+      drop: p.entrega.drop === "puerta" ? "puerta" : "mano", at: Array.isArray(p.entrega.at) ? p.entrega.at.filter((x) => ["timbre", "noTimbre", "llamar", "texto"].includes(x)).slice(0, 4) : [],
+      note: String(p.entrega.note ?? "").trim().slice(0, 200) } : null;
+    const listoMin = programado != null ? programado - (modo === "delivery" && D ? D.travel : 0) : est.now + est.readyMin + extra;
     const auto = b.auto_accept && b.open && !b.pause_until && programado == null;
     const num = (await c.query<{ n: string }>(`select nextval('operations_order_seq')::text as n`)).rows[0]!.n;
     const op = await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, customer_note, subtotal_cents, tax_cents, total_cents,
-                               pay_mode, respond_by, confirmed_at, answered_at, free_quota_month, client_key, is_test, details)
-       values ($1, 'order', $2, $3, $4, $5, $6, 'pickup',
+                               pay_mode, respond_by, confirmed_at, answered_at, free_quota_month, client_key, is_test, details, delivery_cents, tip_cents)
+       values ($1, 'order', $2, $3, $4, $5, $6, $19,
                case when $7::int is null then null else ($8::date + make_interval(mins => $7::int)) at time zone $9 end,
-               ($8::date + make_interval(mins => $10::int)) at time zone $9, nullif($11, ''), $12, $13, $14, 'local',
-               now() + interval '10 minutes', case when $5 = 'confirmed' then now() end, case when $5 = 'confirmed' then now() end, $15, $16, $17, $18::jsonb)
+               ($8::date + make_interval(mins => $10::int)) at time zone $9, nullif($11, ''), $12, $13, $14, $20,
+               now() + interval '10 minutes', case when $5 = 'confirmed' then now() end, case when $5 = 'confirmed' then now() end, $15, $16, $17, $18::jsonb, $21, $22)
        returning id::text`,
       [num, b.city, b.id, userId, auto ? "confirmed" : "pending", auto ? "accepted" : "sent", programado, b.hoy, b.tz, listoMin, notaCliente, sub, tax, total,
-        b.plan === "pro" ? null : b.mes, p.clave, entorno !== "produccion", JSON.stringify({ pickupNote: b.pickup_note ?? null, address: b.address })],
+        b.plan === "pro" ? null : b.mes, p.clave, entorno !== "produccion",
+        JSON.stringify(modo === "delivery" && dir && D ? {
+          // Lo que necesitan el negocio y su repartidor, guardado como era al pedir.
+          to: { label: dir.label, street: dir.street, apt: dir.apt, zip: dir.zip, mi: dir.mi, addressId: dir.id }, drop, ext: D.ext,
+          eta: { d1: (programado ?? est.now + extra) + (programado != null ? 0 : D.d1), d2: (programado ?? est.now + extra) + (programado != null ? 10 : D.d2) },
+        } : { pickupNote: b.pickup_note ?? null, address: b.address }),
+        modo, modo === "delivery" ? "entrega" : "local", envio, propina],
     );
     const opId = op.rows[0]!.id;
     for (const x of L) {
@@ -323,6 +390,8 @@ export async function crearPedido(userId: string, p: PedidoIn, entorno: string):
         `update items set stock_left = greatest(0, $2::int - $3::int), stock_day = case when stock_mode = 'day' then (now() at time zone $4 - interval '6 hours')::date else stock_day end, updated_at = now()
           where id = $1::bigint`, [id, f.quedan, q, b.tz]);
     }
+    // «Guardar para Casa»: cómo se entrega queda en esa dirección para la próxima vez.
+    if (dir && drop && p.entrega?.guardar) await c.query(`update user_addresses set drop_pref = $2::jsonb, updated_at = now() where id = $1 and user_id = $3`, [dir.id, JSON.stringify(drop), userId]);
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [opId, userId]);
     if (auto) await c.query(`insert into operation_events (operation_id, kind, actor, note) values ($1, 'accepted', 'system', $2::jsonb)`, [opId, JSON.stringify({ es: "Aceptado al instante", en: "Accepted instantly" })]);
     await c.query("commit");
@@ -342,6 +411,9 @@ export type PedidoVista = {
   lineas: { q: number; name: string; sum: string; price: string; img: string | null }[]; nota: string | null; pickupNote: string;
   sub: string; tax: string; total: string; taxL: string; count: number; subC: number; taxC: number;
   tiempos: Record<string, string>; canceladoPor: string | null;
+  // Delivery: a dónde, cómo, cuánto el envío y la propina, cuándo llega y el enlace de la app externa.
+  delivery: boolean; envio: string | null; propina: string | null;
+  entrega: { to: { label: string; street: string; apt: string | null; zip: string } | null; drop: DropPref | null; ext: string | null; seguimiento: string | null; llega: string | null } | null;
 };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 export async function pedidoDe(userId: string, numero: string, lang: Lang): Promise<PedidoVista | null> {
@@ -352,12 +424,14 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     id: string; number: string; business_id: string; name: string; address: string | null; phone: string | null; lat: number | null; lng: number | null;
     status: string; stage: string | null; vencido: boolean; enviado: string; listo: string; programado: string | null; responde: string; customer_note: string | null;
     subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null; cancelled_by: string | null;
+    mode: string | null; delivery_cents: number; tip_cents: number; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
   }>(
     `select o.id::text, o.number, o.business_id, b.name, b.address, b.phone, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
             o.status, o.stage, (o.status = 'pending' and o.respond_by <= now()) as vencido,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviado, to_char(o.ready_at at time zone c.timezone, 'HH24:MI') as listo,
             to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as programado, to_char(o.respond_by at time zone c.timezone, 'HH24:MI') as responde,
-            o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note, o.cancelled_by
+            o.customer_note, o.subtotal_cents, o.tax_cents, o.total_cents, o.details->'pickupNote' as pickup_note, o.cancelled_by,
+            o.mode, o.delivery_cents, o.tip_cents, o.details as det
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
       where o.number = $1 and o.user_id = $2 and o.kind = 'order'`, [numero, userId]);
   const o = r.rows[0];
@@ -383,6 +457,9 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     nota: o.customer_note, pickupNote: tx(o.pickup_note, es), sub: money(o.subtotal_cents), tax: money(o.tax_cents), total: money(o.total_cents),
     taxL: taxes.length === 1 ? (es ? `Impuestos (${taxes[0]}%)` : `Taxes (${taxes[0]}%)`) : es ? "Impuestos" : "Taxes", count: ls.rows.reduce((a, l) => a + l.q, 0),
     subC: o.subtotal_cents, taxC: o.tax_cents, tiempos, canceladoPor: o.cancelled_by,
+    delivery: o.mode === "delivery", envio: o.mode === "delivery" ? money(o.delivery_cents) : null, propina: o.tip_cents ? money(o.tip_cents) : null,
+    entrega: o.mode === "delivery" ? { to: o.det?.to ?? null, drop: o.det?.drop ?? null, ext: o.det?.ext === "doordash" ? "DoorDash" : o.det?.ext === "uber_eats" ? "Uber Eats" : o.det?.ext ? (es ? "una app externa" : "an external app") : null,
+      seguimiento: o.det?.tracking ?? null, llega: o.det?.eta ? `${hora(o.det.eta.d1)}–${hora(o.det.eta.d2)}` : null } : null,
   };
 }
 

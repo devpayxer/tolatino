@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Finalizar pedido · To'Latino" };
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const [{ id }, lang, u] = await Promise.all([params, idioma(), yo()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent(`/n/${id}/pagar`)}`);
-  const m = await menuPublico(id, lang);
+  const m = await menuPublico(id, lang, u.id);
   if (!m || m.vacio) notFound();
   return <Pagar m={m} es={lang === "es"} />;
 }

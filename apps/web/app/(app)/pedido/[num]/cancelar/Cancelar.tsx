@@ -26,8 +26,10 @@ export function Cancelar({ p, es }: { p: PedidoVista; es: boolean }) {
   const box = libre ? null : {
     t: ["cancelled", "declined", "expired"].includes(p.status) || p.sinRespuesta ? E2("Este pedido ya está cancelado.", "This order is already cancelled.")
       : p.status === "done" ? E2("Este pedido ya se entregó.", "This order was already delivered.")
+        : p.stage === "on_the_way" ? E2("Tu pedido ya va en camino.", "Your order is on the way.")
         : p.stage === "ready" ? E2("Tu pedido ya está listo.", "Your order is ready.") : E2("El negocio ya lo aceptó.", "The business already accepted it."),
-    s: p.status === "done" ? "" : p.stage === "ready" ? E2("Pasa a recogerlo con tu número de pedido.", "Pick it up with your order number.")
+    s: p.status === "done" ? "" : p.stage === "on_the_way" ? E2(`Si necesitas algo, llama a ${p.negocio.nombre}.`, `If you need anything, call ${p.negocio.nombre}.`)
+      : p.stage === "ready" ? E2("Pasa a recogerlo con tu número de pedido.", "Pick it up with your order number.")
       : p.status === "confirmed" ? E2(`La cocina ya empezó. Si necesitas cambiar algo, llama a ${p.negocio.nombre}.`, `The kitchen already started. If you need to change something, call ${p.negocio.nombre}.`) : "",
   };
   const si = async () => {

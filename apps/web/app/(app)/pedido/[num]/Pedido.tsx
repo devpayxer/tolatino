@@ -14,6 +14,8 @@ const { Icon, Button, OrderTracker } = UI as unknown as Record<N, ComponentType<
 const K = "font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]";
 const caja = "rounded-[18px] border border-line bg-white";
 const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
+// Delivery (prototipo ordVals · dl): enviado → preparando → en camino → entregado.
+const ETAPAS_D = ["sent", "preparing", "on_the_way", "delivered"];
 
 export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -26,14 +28,24 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
     return () => clearInterval(t);
   }, [pendiente, router]);
 
-  const nombres = es ? ["Pedido enviado", "Aceptado", "En la cocina", "Listo para recoger", "Recogido"] : ["Order sent", "Accepted", "In the kitchen", "Ready for pickup", "Picked up"];
-  const st = Math.max(0, ETAPAS.indexOf(p.stage ?? "sent")), last = nombres.length - 1;
+  const dl = p.delivery, ENT = p.entrega;
+  const nombres = dl ? (es ? ["Pedido enviado", "Preparando", "En camino", "Entregado"] : ["Order sent", "Preparing", "On the way", "Delivered"])
+    : es ? ["Pedido enviado", "Aceptado", "En la cocina", "Listo para recoger", "Recogido"] : ["Order sent", "Accepted", "In the kitchen", "Ready for pickup", "Picked up"];
+  const stage = dl && (p.stage === "accepted" || p.stage === "ready") ? "preparing" : p.stage ?? "sent";
+  const st = Math.max(0, (dl ? ETAPAS_D : ETAPAS).indexOf(stage)), last = nombres.length - 1;
   const fin = p.status === "done" || st >= last;
   const cerrado = p.sinRespuesta || ["declined", "expired", "cancelled"].includes(p.status);
   // La hora real de cada etapa (línea de tiempo); la última muestra a qué hora está listo mientras no llega.
-  const T = p.tiempos, horaDe = [T.sent ?? p.enviado, T.accepted ?? "", T.accepted ?? "", T.ready ?? "", T.picked_up ?? ""];
-  const steps = nombres.map((label, i) => ({ label, time: i <= st || fin ? horaDe[i]! : i === last ? p.programado ?? p.listo : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
-  const H = [
+  const T = p.tiempos, horaDe = dl ? [T.sent ?? p.enviado, T.accepted ?? "", T.on_the_way ?? "", T.delivered ?? ""] : [T.sent ?? p.enviado, T.accepted ?? "", T.accepted ?? "", T.ready ?? "", T.picked_up ?? ""];
+  const steps = nombres.map((label, i) => ({ label, time: i <= st || fin ? horaDe[i]! : i === last ? (dl ? ENT?.llega ?? "" : p.programado ?? p.listo) : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
+  const HD = [
+    [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
+    [E2("Preparando tu pedido", "Preparing your order"), E2(`${p.negocio.nombre} lo aceptó. Sale hacia tu casa a las ${p.listo}.`, `${p.negocio.nombre} accepted it. Leaves for your place at ${p.listo}.`)],
+    [E2("En camino", "On the way"), ENT?.ext ? E2(`Lo lleva un repartidor de ${ENT.ext}.${ENT.seguimiento ? " Síguelo con el enlace." : ""}`, `A ${ENT.ext} driver has it.${ENT.seguimiento ? " Follow it with the link." : ""}`)
+      : ENT?.drop?.drop === "puerta" ? E2("Te lo dejan en tu puerta.", "It will be left at your door.") : E2("Te lo entregan en la mano.", "It will be handed to you.")],
+    [E2("Entregado", "Delivered"), E2("Buen provecho.", "Enjoy your meal.")],
+  ] as const;
+  const H = dl ? HD : [
     [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
     [E2("Pedido aceptado", "Order accepted"), E2("La cocina ya lo tiene.", "The kitchen has it.")],
     [E2("En la cocina", "In the kitchen"), E2(`Estará listo a las ${p.listo}.`, `It will be ready at ${p.listo}.`)],
@@ -48,9 +60,9 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
         hero: "bg-ink/5", ic: "close", fg: "var(--tl-ink)" }
     : { eyebrow: st === 0 ? E2("GRACIAS POR TU PEDIDO", "THANKS FOR YOUR ORDER") : fin ? E2("LISTO", "DONE") : E2("EN CURSO", "IN PROGRESS"), title: H[st]![0], sub: H[st]![1],
         hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)", cxAt: "" };
-  const etaK = cerrado ? (p.status === "cancelled" ? E2("CANCELADO A LAS", "CANCELLED AT") : "") : fin ? E2("RECOGIDO", "PICKED UP") : E2("LISTO A LAS", "READY AT");
-  const eta = cerrado ? V.cxAt : fin ? p.tiempos.picked_up ?? p.listo : p.programado ?? p.listo;
-  const money = cerrado ? E2("SIN COBRO", "NOT CHARGED") : E2(`PAGAS ${p.total} EN EL LOCAL AL RECOGER`, `PAY ${p.total} AT THE STORE AT PICKUP`);
+  const etaK = cerrado ? (p.status === "cancelled" ? E2("CANCELADO A LAS", "CANCELLED AT") : "") : fin ? (dl ? E2("ENTREGADO", "DELIVERED") : E2("RECOGIDO", "PICKED UP")) : dl ? E2("LLEGA", "ARRIVES") : E2("LISTO A LAS", "READY AT");
+  const eta = cerrado ? V.cxAt : fin ? (dl ? p.tiempos.delivered : p.tiempos.picked_up) ?? p.listo : dl ? ENT?.llega ?? p.listo : p.programado ?? p.listo;
+  const money = cerrado ? E2("SIN COBRO", "NOT CHARGED") : dl ? E2(`PAGAS ${p.total} EN EFECTIVO AL RECIBIR`, `PAY ${p.total} IN CASH ON DELIVERY`) : E2(`PAGAS ${p.total} EN EL LOCAL AL RECOGER`, `PAY ${p.total} AT THE STORE AT PICKUP`);
   const volver = () => router.push(`/n/${p.negocio.id}`);
   const llamar = p.negocio.telefono ? () => { location.href = `tel:${p.negocio.telefono}`; } : null;
 
@@ -70,7 +82,15 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
       </div>
     </div>
   );
-  const donde = (
+  const donde = dl ? (
+    <div className={`${caja} px-4 py-3.5`}>
+      <div className={K}>{E2("ENTREGA", "DELIVER TO")}</div>
+      <div className="mt-2 text-[13.5px] font-bold">{ENT?.to ? `${ENT.to.street}${ENT.to.apt ? `, ${ENT.to.apt}` : ""}` : "—"}</div>
+      {ENT?.drop && <div className="mt-1 text-[12px] font-medium leading-[1.45] text-ink/60">{ENT.drop.drop === "puerta" ? E2("Dejar en la puerta", "Leave at door") : E2("En la mano", "Hand it to me")}{ENT.drop.note ? ` · “${ENT.drop.note}”` : ""}</div>}
+      {p.nota && <div className="mt-1 text-pretty text-[12px] font-medium leading-[1.45] text-ink/50">“{p.nota}”</div>}
+      {ENT?.seguimiento && !cerrado && !fin && <div className="mt-3 flex"><Button variant="secondary" size="md" icon="truck" onClick={() => window.open(ENT.seguimiento!, "_blank", "noopener,noreferrer")}>{E2(`Seguir en ${ENT.ext ?? "la app"}`, `Track on ${ENT.ext ?? "the app"}`)}</Button></div>}
+    </div>
+  ) : (
     <div className={`${caja} px-4 py-3.5`}>
       <div className={K}>{E2("RECOGES EN", "PICK UP AT")}</div>
       <div className="mt-2 text-[13.5px] font-bold">{p.negocio.direccion ?? p.negocio.nombre}</div>
@@ -98,6 +118,8 @@ export function Pedido({ p, es }: { p: PedidoVista; es: boolean }) {
       </div>
       <div className="mt-1.5 flex flex-col gap-[9px] border-t border-line pt-3 text-[12.5px] font-medium text-ink/60">
         <div className="flex justify-between"><span>Subtotal</span><span className="font-mono text-ink">{p.sub}</span></div>
+        {p.envio && <div className="flex justify-between"><span>{E2("Envío", "Delivery")}</span><span className="font-mono text-ink">{p.envio === "$0.00" ? E2("Gratis", "Free") : p.envio}</span></div>}
+        {p.propina && <div className="flex justify-between"><span>{E2("Propina", "Tip")}</span><span className="font-mono text-ink">{p.propina}</span></div>}
         <div className="flex justify-between"><span>{p.taxL}</span><span className="font-mono text-ink">{p.tax}</span></div>
         <div className="h-px bg-line" />
         <div className="flex items-baseline justify-between"><span className="text-[13.5px] font-bold text-ink">Total</span><span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.02em] text-ink">{p.total}</span></div>

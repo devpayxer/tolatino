@@ -48,14 +48,16 @@ export async function vencer(f: { negocio?: string; userId?: string; numero?: st
 }
 
 /* ── Lo que ve el panel ── */
-export type Est = "pend" | "ok" | "ready" | "done" | "no" | "exp" | "cx";
+export type Est = "pend" | "ok" | "ready" | "out" | "done" | "no" | "exp" | "cx";
+/* Aceptado y aún no entregado: en cocina, listo para recoger o en camino. Todo filtro de «en curso» pasa por aquí. */
+export const enCurso = (s: Est) => s === "ok" || s === "ready" || s === "out";
 export type Fila = { numero: string; who: string; modo: string; count: number; amt: number; st: Est; s: Bi; programado: string | null; responde: string | null };
 type FilaDb = {
   number: string; first_name: string | null; last_name: string | null; mode: string | null; n: number; total_cents: number; status: string; stage: string | null;
   sent: string; mins: number; listo: string; programado: string | null; responde: string; hecho: string | null; cancelado: string | null; cancelled_by: string | null;
 };
 const estado = (x: { status: string; stage: string | null }): Est =>
-  x.status === "pending" ? "pend" : x.status === "confirmed" ? (x.stage === "ready" ? "ready" : "ok") : x.status === "done" ? "done"
+  x.status === "pending" ? "pend" : x.status === "confirmed" ? (x.stage === "ready" ? "ready" : x.stage === "on_the_way" ? "out" : "ok") : x.status === "done" ? "done"
     : x.status === "declined" ? "no" : x.status === "expired" ? "exp" : "cx";
 const quien = (a: string | null, b: string | null) => [a, b ? `${b[0]}.` : ""].filter(Boolean).join(" ") || "—";
 function sub(x: FilaDb, st: Est): Bi {
@@ -64,7 +66,8 @@ function sub(x: FilaDb, st: Est): Bi {
   const prog = x.programado ? { es: ` · para las ${hora(hm2m(x.programado))}`, en: ` · for ${hora(hm2m(x.programado))}` } : { es: "", en: "" };
   switch (st) {
     case "pend": return { es: `${art.es}${prog.es} · ${hace.es}`, en: `${art.en}${prog.en} · ${hace.en}` };
-    case "ok": return { es: `En cocina · listo ${hora(hm2m(x.listo))}`, en: `Cooking · ready ${hora(hm2m(x.listo))}` };
+    case "ok": return x.mode === "delivery" ? { es: `En cocina · sale ${hora(hm2m(x.listo))}`, en: `Cooking · leaves ${hora(hm2m(x.listo))}` } : { es: `En cocina · listo ${hora(hm2m(x.listo))}`, en: `Cooking · ready ${hora(hm2m(x.listo))}` };
+    case "out": return { es: `En camino · ${art.es}`, en: `On the way · ${art.en}` };
     case "ready": return { es: `Listo para recoger · ${art.es}`, en: `Ready for pickup · ${art.en}` };
     case "done": return { es: `Entregado ${x.hecho ? hora(hm2m(x.hecho)) : ""}`.trim(), en: `Delivered ${x.hecho ? hora(hm2m(x.hecho)) : ""}`.trim() };
     case "no": return { es: `No se pudo · ${art.es}`, en: `Declined · ${art.en}` };
@@ -83,7 +86,7 @@ const fila = (x: FilaDb): Fila => {
     programado: x.programado ? hora(hm2m(x.programado)) : null, responde: st === "pend" ? hora(hm2m(x.responde)) : null };
 };
 
-/* Panel › Hoy: los que esperan respuesta, la agenda de hoy (aceptados y listos) y lo vendido hoy. */
+/* Panel › Hoy: los que esperan respuesta, la agenda de hoy (aceptados, listos y en camino) y lo vendido hoy. */
 export async function pedidosHoy(negocio: string) {
   await vencer({ negocio });
   const r = await db().query<FilaDb & { hoy: boolean }>(
@@ -94,8 +97,8 @@ export async function pedidosHoy(negocio: string) {
       order by o.sent_at desc limit 200`, [negocio]);
   const filas = r.rows.map((x) => ({ ...fila(x), hoy: x.hoy }));
   const pend = filas.filter((x) => x.st === "pend").sort((a, b) => (a.responde ?? "").localeCompare(b.responde ?? ""));
-  const agenda = filas.filter((x) => x.st === "ok" || x.st === "ready");
-  const vendido = filas.filter((x) => x.hoy && (x.st === "ok" || x.st === "ready" || x.st === "done")).reduce((a, x) => a + x.amt, 0);
+  const agenda = filas.filter((x) => enCurso(x.st));
+  const vendido = filas.filter((x) => x.hoy && (enCurso(x.st) || x.st === "done")).reduce((a, x) => a + x.amt, 0);
   return { pend, agenda, vendido };
 }
 
@@ -129,15 +132,21 @@ export async function pedidosLista(negocio: string, f: FiltroPed, q: string, ant
 }
 
 /* Panel › detalle de un pedido: cliente, prometido, pago, nota, platos, total e historial. */
+export type EntregaPed = {
+  to: { label: string; street: string; apt: string | null; zip: string; mi: number | null } | null; drop: { drop: string; at: string[]; note: string } | null;
+  ext: string | null; seguimiento: string | null; llega: string | null;
+};
 export type DetallePed = Fila & {
   lineas: { q: number; name: Bi; opts: Bi[]; nota: string | null; cents: number }[]; nota: string | null; listo: string; sub: number; tax: number;
+  envio: number; propina: number; entrega: EntregaPed | null; telCliente: string | null;
   tl: { t: Bi; at: string }[];
 };
 export async function pedidoNegocio(negocio: string, numero: string): Promise<DetallePed | null> {
   if (!/^\d{1,12}$/.test(numero)) return null;
   await vencer({ negocio, numero });
-  const r = await db().query<FilaDb & { id: string; customer_note: string | null; subtotal_cents: number; tax_cents: number }>(
-    `select ${COLS}, o.id::text, o.customer_note, o.subtotal_cents, o.tax_cents
+  const r = await db().query<FilaDb & { id: string; customer_note: string | null; subtotal_cents: number; tax_cents: number; delivery_cents: number; tip_cents: number;
+    details: { to?: EntregaPed["to"]; drop?: EntregaPed["drop"]; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } }; phone: string }>(
+    `select ${COLS}, o.id::text, o.customer_note, o.subtotal_cents, o.tax_cents, o.delivery_cents, o.tip_cents, o.details, u.phone
        from operations o join users u on u.id = o.user_id join cities c on c.id = o.city_id
       where o.business_id = $1 and o.number = $2 and o.kind = 'order'`, [negocio, numero]);
   const o = r.rows[0];
@@ -156,33 +165,41 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
     accepted: (q) => (q ? { es: `Aceptado por ${q}`, en: `Accepted by ${q}` } : { es: "Aceptado al instante", en: "Accepted instantly" }),
     declined: (q) => ({ es: `Rechazado${q ? ` por ${q}` : ""}`, en: `Declined${q ? ` by ${q}` : ""}` }),
     ready: (q) => ({ es: `Listo para recoger${q ? ` · ${q}` : ""}`, en: `Ready for pickup${q ? ` · ${q}` : ""}` }),
+    on_the_way: (q) => ({ es: `Salió en camino${q ? ` · ${q}` : ""}`, en: `Out for delivery${q ? ` · ${q}` : ""}` }),
+    delivered: (q) => ({ es: `Entregado · cobrado en efectivo${q ? ` · ${q}` : ""}`, en: `Delivered · paid in cash${q ? ` · ${q}` : ""}` }),
+    tracking: (q) => ({ es: `Enlace de seguimiento${q ? ` · ${q}` : ""}`, en: `Tracking link${q ? ` · ${q}` : ""}` }),
     picked_up: (q) => ({ es: `Entregado · pagó en el local${q ? ` · ${q}` : ""}`, en: `Delivered · paid at the store${q ? ` · ${q}` : ""}` }),
     expired: () => ({ es: "Nadie contestó en 10 minutos", en: "No reply in 10 minutes" }),
     cancelled: () => ({ es: "Lo canceló el cliente", en: "Cancelled by the client" }),
   };
   return {
-    ...fila(o), nota: o.customer_note, listo: hora(hm2m(o.programado ?? o.listo)), sub: o.subtotal_cents, tax: o.tax_cents,
+    ...fila(o), nota: o.customer_note, listo: hora(hm2m(o.programado ?? o.listo)), sub: o.subtotal_cents, tax: o.tax_cents, envio: o.delivery_cents, propina: o.tip_cents,
+    // El teléfono del cliente solo en delivery (para avisar al llegar).
+    telCliente: o.mode === "delivery" ? o.phone : null,
+    entrega: o.mode === "delivery" ? { to: o.details?.to ?? null, drop: o.details?.drop ?? null, ext: o.details?.ext ?? null, seguimiento: o.details?.tracking ?? null,
+      llega: o.details?.eta ? `${hora(o.details.eta.d1)}–${hora(o.details.eta.d2)}` : null } : null,
     lineas: ls.rows.map((l) => ({ q: l.q, name: l.name, opts: (Array.isArray(l.options) ? l.options : []).map((x) => x.o), nota: l.instructions, cents: l.total })),
     tl: ev.rows.map((e) => ({ t: (T[e.kind] ?? (() => e.note ?? { es: e.kind, en: e.kind }))(e.quien), at: hora(hm2m(e.at)) })),
   };
 }
 
 /* ── Lo que cambia el estado ── */
-export type Paso = "aceptar" | "rechazar" | "listo" | "entregado";
-const DESDE: Record<Paso, { status: string[]; stage?: (string | null)[] }> = {
+export type Paso = "aceptar" | "rechazar" | "listo" | "encamino" | "entregado";
+const DESDE: Record<Paso, { status: string[]; stage?: (string | null)[]; mode?: string }> = {
   aceptar: { status: ["pending"] }, rechazar: { status: ["pending"] },
-  listo: { status: ["confirmed"], stage: ["accepted", "preparing"] }, entregado: { status: ["confirmed"] },
+  listo: { status: ["confirmed"], stage: ["accepted", "preparing"], mode: "pickup" }, encamino: { status: ["confirmed"], stage: ["accepted", "preparing", "ready"], mode: "delivery" },
+  entregado: { status: ["confirmed"] },
 };
 export type ResPaso = { ok: true } | { ok: false; msg: Bi };
 export async function cambiarPaso(negocio: string, numero: string, paso: Paso, actorId: string): Promise<ResPaso> {
   if (!/^\d{1,12}$/.test(numero) || !DESDE[paso]) return { ok: false, msg: { es: "Ese pedido no existe.", en: "That order does not exist." } };
   await vencer({ negocio, numero });
   return tx(async (c) => {
-    const o = (await c.query<{ id: string; status: string; stage: string | null; vivo: boolean }>(
-      `select id::text, status, stage, (status <> 'pending' or respond_by > now()) as vivo from operations where business_id = $1 and number = $2 and kind = 'order' for update`, [negocio, numero])).rows[0];
+    const o = (await c.query<{ id: string; status: string; stage: string | null; vivo: boolean; mode: string }>(
+      `select id::text, status, stage, (status <> 'pending' or respond_by > now()) as vivo, coalesce(mode, 'pickup') as mode from operations where business_id = $1 and number = $2 and kind = 'order' for update`, [negocio, numero])).rows[0];
     if (!o) return { ok: false, msg: { es: "Ese pedido no existe.", en: "That order does not exist." } };
     const d = DESDE[paso];
-    if (!d.status.includes(o.status) || (d.stage && !d.stage.includes(o.stage)) || !o.vivo) {
+    if (!d.status.includes(o.status) || (d.stage && !d.stage.includes(o.stage)) || (d.mode && d.mode !== o.mode) || !o.vivo) {
       const ya = o.status === "cancelled" ? { es: "El cliente ya lo canceló.", en: "The client already cancelled it." }
         : o.status === "expired" ? { es: "Pasaron los 10 minutos: el pedido se liberó.", en: "The 10 minutes passed: the order was released." }
           : { es: "Este pedido ya cambió. Actualiza la pantalla.", en: "This order already changed. Refresh the screen." };
@@ -192,12 +209,29 @@ export async function cambiarPaso(negocio: string, numero: string, paso: Paso, a
       aceptar: `status = 'confirmed', stage = 'preparing', answered_at = now(), confirmed_at = now()`,
       rechazar: `status = 'declined', answered_at = now()`,
       listo: `stage = 'ready'`,
-      entregado: `status = 'done', stage = 'picked_up', done_at = now()`,
+      encamino: `stage = 'on_the_way'`,
+      entregado: o.mode === "delivery" ? `status = 'done', stage = 'delivered', done_at = now()` : `status = 'done', stage = 'picked_up', done_at = now()`,
     }[paso];
     await c.query(`update operations set ${set}, updated_at = now() where id = $1`, [o.id]);
     if (paso === "rechazar") await devolver(c, o.id);
-    const kind = { aceptar: "accepted", rechazar: "declined", listo: "ready", entregado: "picked_up" }[paso];
+    const kind = { aceptar: "accepted", rechazar: "declined", listo: "ready", encamino: "on_the_way", entregado: o.mode === "delivery" ? "delivered" : "picked_up" }[paso];
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, $2, 'member', $3)`, [o.id, kind, actorId]);
+    return { ok: true } as const;
+  });
+}
+
+/* Con una app externa (DoorDash, Uber Eats…): el enlace de seguimiento que pega el negocio; el cliente lo ve en su pedido. */
+export async function guardarSeguimiento(negocio: string, numero: string, url: string, actorId: string): Promise<ResPaso> {
+  const u = String(url ?? "").trim().slice(0, 300);
+  let ok = false;
+  try { const x = new URL(u); ok = x.protocol === "https:" && !!x.hostname; } catch { ok = false; }
+  if (!ok) return { ok: false, msg: { es: "Pega el enlace completo (empieza con https://).", en: "Paste the full link (starts with https://)." } };
+  return tx(async (c) => {
+    const o = (await c.query<{ id: string }>(
+      `select id::text from operations where business_id = $1 and number = $2 and kind = 'order' and mode = 'delivery' and status = 'confirmed' for update`, [negocio, numero])).rows[0];
+    if (!o) return { ok: false, msg: { es: "Este pedido ya cambió. Actualiza la pantalla.", en: "This order already changed. Refresh the screen." } };
+    await c.query(`update operations set details = details || jsonb_build_object('tracking', $2::text), updated_at = now() where id = $1`, [o.id, u]);
+    await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'tracking', 'member', $2)`, [o.id, actorId]);
     return { ok: true } as const;
   });
 }

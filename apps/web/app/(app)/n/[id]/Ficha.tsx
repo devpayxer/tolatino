@@ -394,9 +394,14 @@ export function Ficha({ f, t, menu, rsv, sesion, es, tabInicial, rsvInicial }: {
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
                   <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
                   <div className="mt-2.5 text-pretty text-[13px] font-medium leading-[1.6] text-ink/60">
-                    {f.pro || freeOn ? (es ? "Pide aquí y pasa a recoger. Pagas en el local." : "Order here and pick it up. You pay at the store.") : (es ? "Llama para pedir o pasa por el local. Pago en el local." : "Call to order or stop by. Pay in store.")}
+                    {f.pro || freeOn ? (mn.est.modes.includes("delivery") ? (es ? "Pide aquí: te lo llevan o pasas a recoger. Pagas en efectivo." : "Order here: delivered or picked up. You pay cash.") : es ? "Pide aquí y pasa a recoger. Pagas en el local." : "Order here and pick it up. You pay at the store.") : (es ? "Llama para pedir o pasa por el local. Pago en el local." : "Call to order or stop by. Pay in store.")}
                   </div>
-                  {(f.pro || freeOn) && mn.canOrd && <div className="mt-3.5 flex flex-wrap gap-1.5"><Chip variant="feature">Pickup</Chip><Chip variant="feature">{mn.etaL}</Chip></div>}
+                  {(f.pro || freeOn) && mn.canOrd && (
+                    // Panel v2 · svc: «Pickup 25 min» y «Delivery $3».
+                    <div className="mt-3.5 flex flex-wrap gap-1.5">
+                      {mn.est.modes.includes("pickup") && <Chip variant="slot">{`Pickup ${mn.est.readyMin} min`}</Chip>}
+                      {mn.est.dlv && mn.est.modes.includes("delivery") && <Chip variant="filter">{`Delivery ${mn.est.dlv.fee ? `$${(mn.est.dlv.fee / 100).toFixed(0)}` : es ? "gratis" : "free"}`}</Chip>}
+                    </div>)}
                   <div className="mt-[18px] flex">
                     {f.pro || freeOn ? <Button icon="bag" block onClick={() => (f.pro ? setTab("menu") : document.querySelector('[data-screen-label="Resumen desktop · menú"]')?.scrollIntoView({ behavior: "smooth", block: "center" }))}>{es ? "Pedir" : "Order"}</Button>
                       : f.telefono ? <Button icon="phone" block onClick={llamar}>{t.call}</Button> : null}
@@ -413,7 +418,7 @@ export function Ficha({ f, t, menu, rsv, sesion, es, tabInicial, rsvInicial }: {
           <div className="min-w-0 flex-1">
             <div className="font-display text-[18px] font-extrabold leading-none tracking-[-0.02em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
             <div className="mt-1.5 truncate font-mono text-[9.5px] font-semibold tracking-[0.08em] text-ink/50">
-              {f.pro ? mn.etaCaps : freeOn ? (es ? "PICKUP · PAGAS EN EL LOCAL" : "PICKUP · PAY AT THE STORE") : (es ? "PAGO EN EL LOCAL" : "PAY IN STORE")}
+              {f.pro ? mn.etaCaps : freeOn ? (mn.est.modes.includes("delivery") ? (es ? "DELIVERY O PICKUP · PAGAS EN EFECTIVO" : "DELIVERY OR PICKUP · PAY CASH") : es ? "PICKUP · PAGAS EN EL LOCAL" : "PICKUP · PAY AT THE STORE") : (es ? "PAGO EN EL LOCAL" : "PAY IN STORE")}
             </div>
           </div>
           {f.pro || freeOn ? (

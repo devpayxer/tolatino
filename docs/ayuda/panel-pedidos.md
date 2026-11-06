@@ -2,12 +2,17 @@
 
 _Pantallas: `/panel/{negocio}/hoy` (Hoy), `/panel/{negocio}/clientes` (Clientes), `?det=ped:{número}` (detalle de un
 pedido) y `/panel/{negocio}/vendes/pedidos` (Lo que vendes › Pedidos en línea). Teléfono y escritorio. Versión: Fase 2 ·
-bloque 2c (6 nov 2026). Comida y Bebidas, pickup con pago en el local._
+bloque 2c (6 nov 2026), con el delivery del 2f. Comida y Bebidas: pickup con pago en el local y delivery con efectivo al
+entregar._
 
 ## Qué hace
 - **Hoy:** cuatro cifras (esperan tu respuesta — en negro cuando hay alguno —, hoy en tu agenda, vendido hoy, vistas
   hoy), el aviso del plan Free (cuántos pedidos van del mes), **Esperan tu respuesta** con **Aceptar** y **Rechazar** en
-  cada pedido y **Hoy en tu agenda** con los aceptados y los listos.
+  cada pedido y **Hoy en tu agenda** con los aceptados, los listos y los que van en camino.
+- **Detalle de un delivery:** **Entrega** con la dirección, el código postal y la distancia, **Cómo llegar** y **Llamar**
+  al cliente; cómo lo quiere (en la mano o en la puerta, timbre, nota); el total con envío y propina; y lo que sigue:
+  Aceptar → **Salió en camino** → **Entregado** (cobrado en efectivo). Con una app externa, el campo **Enlace de
+  seguimiento** (https://…): al guardarlo, el cliente ve «Seguir en DoorDash».
 - **Detalle del pedido:** cliente, a qué hora se prometió, cómo paga (en el local), la nota del cliente, cada plato con
   sus opciones y las instrucciones para la cocina, el total, el **historial** (llegó por To’Latino, aceptado por Rosa,
   listo, entregado…) y lo que sigue: Aceptar / Rechazar → **Listo para recoger** → **Entregado**.
@@ -26,6 +31,9 @@ bloque 2c (6 nov 2026). Comida y Bebidas, pickup con pago en el local._
 | El cliente cancela antes de que aceptes | Sale como CANCELADO («Lo canceló el cliente»); el inventario vuelve. Después de aceptar ya no puede cancelar desde la app: te llama. |
 | Listo para recoger | El cliente ve «Listo para recoger · pasa con tu número de pedido». |
 | Entregado | El pedido termina («Entregado · pagó en el local») y cuenta en «Vendido hoy». |
+| Delivery · Salió en camino | El cliente ve «En camino»; el pedido sigue en «Hoy en tu agenda» como EN CAMINO hasta que marcas Entregado. |
+| Delivery · Entregado | Termina como entregado y cobrado en efectivo; cuenta en «Vendido hoy». |
+| Enlace de seguimiento que no empieza con https:// | No se guarda: «Pega el enlace completo (empieza con https://)». |
 | Aceptar al instante encendido | Los pedidos entran aceptados mientras estés abierto y sin pausa; igual llegan a Hoy para prepararlos. Los programados siempre los aceptas tú. |
 | Efectivo al recoger apagado | No se puede guardar: hoy es la única forma de pago (la tarjeta llega con los cobros). |
 | Pedidos en línea apagado o pausado por To’Latino | La página y el menú se ven, pero nadie pide en la app; el motivo sale arriba. |
@@ -53,3 +61,7 @@ filters, search by name or number and "See more". Online orders lets you turn or
 scheduled orders, instant accept and how they pay (cash at pickup; card once payouts are connected), with a preview of
 what the client sees. If you do not reply within 10 minutes the order shows NO REPLY and its stock returns; declined and
 client-cancelled orders also return stock. Every step is recorded in the order history and the audit log.
+**Delivery:** today's agenda also keeps orders that are on the way. A delivery's detail shows the address with ZIP and
+distance, Directions and Call, how the client wants it (hand it to me or leave at door, bell, note), the total with
+delivery fee and tip, and the steps Accept → Out for delivery → Delivered (paid in cash). With an external app, paste
+the tracking link (https://…) and the client sees "Track on DoorDash".

@@ -31,7 +31,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
   const [fav, menu, rsv] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
-    f.cat === "NEG-FOOD" ? menuPublico(f.id, lang) : Promise.resolve(null),
+    f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.

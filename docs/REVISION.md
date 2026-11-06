@@ -89,3 +89,31 @@ Terraza (3 de 2, 3 de 4), almuerzo 12:00–3:30 y cena 5:30–8:30._
     con motivo → la pestaña desaparece de la página y Pedro ve el motivo.
 13. Escritorio: la pestaña en dos columnas con el riel **Tu mesa**, la solicitud con la cuenta regresiva a la derecha y el
     estado con los detalles a la derecha.
+
+## Fase 2 · 2f Direcciones, Entrega y delivery
+_Pedro enciende el delivery y Marisol pide a domicilio. En el sandbox las calles salen del Censo (TIGER) de los condados
+de las 5 ciudades._
+1. Marisol › Mi cuenta › **Mis direcciones** (vacía): **Agregar dirección** → escribe una calle real de Hazleton con su
+   número y código postal, ponle «Casa» → **Guardar**. Debe quedar como predeterminada y decir si está dentro del área.
+2. Agrega otra («Trabajo») fuera de la ciudad, márcala y desmárcala como predeterminada; **Borrar** una.
+3. Pedro › Panel › **Entrega** (en el teléfono desde **Más**): enciende Delivery, zona 3 mi, envío $3, gratis desde $40,
+   mínimo $15, Mi equipo → **Guardar**. Mira «Así lo ve el cliente». Prueba apagar Delivery y Pickup a la vez (no deja).
+4. Pedro › Lo que vendes › **Pedidos en línea**: enciende **Efectivo al entregar** y **Pedir propina en delivery**.
+5. Marisol › Sabor Dominicano › **Menú**: arriba **Delivery / Pickup**; «Llega entre…»; la Limonada dice SOLO PICKUP.
+   Agrega Tostones: el carrito dice «Mínimo $15.00 · faltan $10.00» y la fila Envío. Agrega más: la barra «Te faltan $X
+   para envío gratis» baja; pasando $40 el envío sale gratis.
+6. **Ir a pagar**: ENTREGA con Casa (Cambiar te lleva a Mis direcciones y vuelve), cuándo llega, **Cómo te lo
+   entregamos** (en la mano / en la puerta), Al llegar, instrucciones, **Guardar para Casa**, **Propina** 15/18/20 %/Otro y
+   el resumen con Envío y Propina. **Enviar pedido**.
+7. Tu pedido: enviado → preparando → en camino → entregado, LLEGA entre…, «PAGAS $X EN EFECTIVO AL RECIBIR», ENTREGA.
+8. Pedro › Hoy › el pedido · Delivery: dirección con **Cómo llegar** y **Llamar**, cómo lo quiere, total con envío y
+   propina. **Aceptar** → **Salió en camino** (sigue en «Hoy en tu agenda» como EN CAMINO; Marisol ve «En camino») →
+   **Entregado**.
+9. Pedro › Entrega › Quién entrega: **App externa** (DoorDash). En un pedido aceptado sale **Enlace de seguimiento**:
+   pega un enlace https:// → Marisol ve **Seguir en DoorDash**.
+10. Condiciones: dirección predeterminada fuera de la zona → «No llega a tu dirección · pide pickup» (con Pickup sí se
+    puede); Marisol sin direcciones → «Agregar dirección» en el pago; después del último delivery, solo Pickup.
+11. Super Admin (Ana) › Negocios › Sabor Dominicano › **Lo que vende**: Delivery con **Pausar** y motivo → la página solo
+    ofrece Pickup y Pedro ve el motivo en Entrega.
+12. Escritorio: el menú con el riel «Pickup N min · Delivery $X», el pago en dos columnas y el panel con el detalle.
+_Quitado a propósito: el pago no promete la foto al dejarlo ni la espera de 5 min (lo hace la app Repartidor, pregunta 6)._

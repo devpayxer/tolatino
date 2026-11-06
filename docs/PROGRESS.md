@@ -350,7 +350,18 @@ _Actualizado: 5 nov 2026._
   `rvar` y `evbuy`). Super Admin: módulo con cuentas y Pausar. Solo Pro. Guardianes nuevos: `clienteMismoOrigen`,
   `fechaEnCrudo`, `operacionesConTipo` (cazó que el vencer de pedidos cerraba reservaciones y que el tope de 3 pedidos
   pendientes contaba mesas). Probado con Playwright: cliente 29, panel 18, admin 3 comprobaciones; 2b y 2c otra vez en
-  verde. Ayuda `docs/ayuda/reservar-mesa.md` y `panel-reservaciones.md`. **Sigue: 2f Entrega / Repartidor.**
+  verde. Ayuda `docs/ayuda/reservar-mesa.md` y `panel-reservaciones.md`.
+- **Fase 2 · bloque 2f Direcciones, Entrega y delivery ✓ (6 nov, decisión AA):** geocodificador propio con las calles
+  del Censo (TIGER ADDRFEAT → `geo_streets`, `dir_ubicar(calle, cp)`, migración 0025, `infra/direcciones/generar.sh`,
+  `.github/workflows/direcciones.yml`); Mis direcciones (`/cuenta/direcciones`, editor, predeterminada, ?volver=);
+  Panel › Entrega (DASH-ENTREGA) y pausa de delivery en el Super Admin; delivery en el menú (Delivery / Pickup, SOLO
+  PICKUP, mínimo, envío, envío gratis), pago (dirección, cómo entregar, al llegar, guardar para la dirección — migración
+  0026 `drop_pref` —, propina), seguimiento (enviado → preparando → en camino → entregado, Seguir en la app externa) y
+  panel (dirección, Cómo llegar, Llamar, Salió en camino, Entregado, enlace de seguimiento). El servidor vuelve a medir
+  zona, mínimo, envío y propina (probado cambiando la dirección en la petición). Guardián nuevo `pedidoEnCurso` (el
+  delivery en camino desaparecía de Hoy). Probado con Playwright: delivery 21 comprobaciones + 2 del servidor fuera de zona;
+  2b, 2c, 2e, direcciones y Entrega otra vez en verde. Ayuda `mis-direcciones.md`, `panel-entrega.md`,
+  `pedir-comida.md`, `panel-pedidos.md`. Repartidor sin diseño (pregunta 6). **Sigue: 2g reseñas, novedades, Jobs.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

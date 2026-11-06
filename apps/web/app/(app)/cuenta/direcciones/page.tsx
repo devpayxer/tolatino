@@ -10,10 +10,12 @@ export const metadata: Metadata = { title: "Direcciones · To'Latino" };
 export const dynamic = "force-dynamic";
 
 /* USR-DIRECCIONES (Mi cuenta › Direcciones): las direcciones de entrega de la persona. */
-export default async function Page() {
-  const u = await yo();
+export default async function Page({ searchParams }: { searchParams: Promise<{ volver?: string }> }) {
+  const [u, sp] = await Promise.all([yo(), searchParams]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/cuenta/direcciones")}`);
   const es = (await idioma()) === "es";
   const [dirs, zona, me] = await Promise.all([misDirecciones(u.id), zonaDe(u.id), yoMarco(u, es)]);
-  return <Direcciones es={es} yo={me} dirs={dirs} zona={zona} />;
+  // ?volver= regresa a donde estaba (p. ej. el pago): solo rutas propias.
+  const volver = typeof sp.volver === "string" && /^\/[a-z0-9/_-]*$/i.test(sp.volver) ? sp.volver : null;
+  return <Direcciones es={es} yo={me} dirs={dirs} zona={zona} volver={volver} />;
 }

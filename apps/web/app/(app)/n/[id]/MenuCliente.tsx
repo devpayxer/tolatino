@@ -34,6 +34,36 @@ export function guardarCarrito(negocio: string, lines: Linea[]) {
     localStorage.setItem(CLAVE, JSON.stringify(o));
   } catch { /* sin almacenamiento: el carrito vive solo en esta pantalla */ }
 }
+/* Delivery o Pickup: lo último que eligió la persona en ese negocio (en este teléfono). */
+const CLAVE_MODO = "tl-modo-v1";
+export type Modo = "delivery" | "pickup";
+export function modoGuardado(negocio: string): Modo | null {
+  try { const v = JSON.parse(localStorage.getItem(CLAVE_MODO) || "{}")[negocio]; return v === "delivery" || v === "pickup" ? v : null; } catch { return null; }
+}
+export function guardarModo(negocio: string, modo: Modo) {
+  try { const o = JSON.parse(localStorage.getItem(CLAVE_MODO) || "{}"); o[negocio] = modo; localStorage.setItem(CLAVE_MODO, JSON.stringify(o)); } catch { /* sin almacenamiento */ }
+}
+/* El modo que vale: el guardado si el negocio lo tiene ahora; si no, el primero que ofrece (delivery primero). */
+export const modoDe = (m: MenuPublico, guardado: Modo | null): Modo => (guardado && m.estado.modes.includes(guardado) ? guardado : m.estado.modes[0] ?? "pickup");
+/* Envío, mínimo, zona y platos de un solo modo (menuVals: fee, blk, blkS, freeNote): para el carrito, la tarjeta y el pago. */
+export function entrega(m: MenuPublico, lines: Linea[], modo: Modo, es: boolean) {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const C = calc(m, lines), D = m.estado.dlv, dl = modo === "delivery" && !!D;
+  const fee = dl && C.sub > 0 ? (D!.free && C.sub >= D!.free ? 0 : D!.fee) : 0;
+  const bad = lines.map((l) => m.items[l.id]).find((it) => it && (dl ? !it.dlv : !it.pick));
+  const minMiss = dl && D!.min && C.sub > 0 && C.sub < D!.min ? D!.min - C.sub : 0;
+  const fuera = dl && m.dir && m.dir.mi != null && !m.dir.dentro;
+  const blk = !lines.length ? "" : fuera ? E2(`Tu dirección queda a ${m.dir!.mi} mi y ${m.negocio.nombre} lleva hasta ${D!.zone} mi. Pide pickup.`, `Your address is ${m.dir!.mi} mi away and ${m.negocio.nombre} delivers up to ${D!.zone} mi. Order pickup.`)
+    : bad ? E2(`«${bad.name}» es solo ${dl ? "pickup" : "delivery"}: cambia a ${dl ? "Pickup" : "Delivery"} o quítalo.`, `“${bad.name}” is ${dl ? "pickup" : "delivery"} only: switch to ${dl ? "Pickup" : "Delivery"} or remove it.`)
+    : minMiss ? E2(`Delivery desde ${money(D!.min)}: agrega ${money(minMiss)} más.`, `Delivery from ${money(D!.min)}: add ${money(minMiss)} more.`) : "";
+  const blkS = !blk ? "" : fuera ? E2("No llega a tu dirección", "Does not reach your address") : bad ? E2("Revisa tu pedido", "Check your order") : `${E2("Mínimo ", "Minimum ")}${money(D!.min)}${E2(" · faltan ", " · add ")}${money(minMiss)}`;
+  const hasFree = !!blk || (dl && C.sub > 0 && !!D!.free);
+  const freeNote = blk || (D?.free && C.sub >= D.free ? E2(`Envío gratis: tu pedido pasa de ${money(D.free)}.`, `Free delivery: your order is over ${money(D.free)}.`) : D?.free ? E2(`Te faltan ${money(Math.max(0, D.free - C.sub))} para envío gratis.`, `${money(Math.max(0, D.free - C.sub))} more for free delivery.`) : "");
+  const freePct = blk ? (minMiss ? `${Math.round((C.sub / D!.min) * 100)}%` : "0%") : D?.free ? `${Math.min(100, Math.round((C.sub / D.free) * 100))}%` : "0%";
+  const freeFg = blk ? (minMiss ? "var(--tl-pro-ink)" : "var(--tl-danger)") : D?.free && C.sub >= D.free ? "var(--tl-open-text)" : "rgba(11,14,18,.7)";
+  return { dl, fee, total: C.total + fee, blk, blkS, hasFree, freeNote, freePct, freeFg };
+}
+
 /* Las líneas que ya no encajan con el menú de hoy (plato quitado, opción cambiada) se caen al cargar. */
 export function limpiar(m: MenuPublico, lines: Linea[]) {
   return lines.filter((l) => {
@@ -81,9 +111,10 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
   const [cartOpen, setCartOpen] = useState(false);
   const [noAsk, setNoAsk] = useState(false);
   const [cat, setCat] = useState<string | null>(null);
+  const [modoG, setModoG] = useState<Modo | null>(null);
   const tt = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), to = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  useEffect(() => { if (m) { setCartS(limpiar(m, carritoGuardado(biz))); setListo(true); } }, [m, biz]);
+  useEffect(() => { if (m) { setCartS(limpiar(m, carritoGuardado(biz))); setModoG(modoGuardado(biz)); setListo(true); } }, [m, biz]);
   const setCart = useCallback((c: Linea[]) => { setCartS(c); guardarCarrito(biz, c); }, [biz]);
   const flash = useCallback((msg: string, undo: Linea[] | null = null) => {
     setToast({ msg, undo }); clearTimeout(tt.current); tt.current = setTimeout(() => setToast(null), undo ? 4000 : 1800);
@@ -91,7 +122,9 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
 
   if (!m) return null;
   const est = m.estado, canOrd = est.canOrd;
-  const offOf = (it: PItem) => it.chOff || it.ago || it.nosell || it.hrsOff;
+  const modo = modoDe(m, modoG), dl = modo === "delivery";
+  // Un plato que es solo pickup no se pide en delivery (y al revés): sale atenuado con su etiqueta.
+  const offOf = (it: PItem) => (dl ? !it.dlv : !it.pick) || it.ago || it.nosell || it.hrsOff;
   const { unit } = calc(m, []);
   const miss = (it: PItem, c: Record<string, number[]>) => it.grp.filter((gk) => m.grps[gk]!.req && !(c[gk] || []).length);
   const sumTxt = (it: PItem, c: Record<string, number[]>) => it.grp.flatMap((gk) => (c[gk] || []).map((i) => m.grps[gk]!.o[i]?.l ?? "")).join(" · ");
@@ -130,6 +163,7 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     const c = cart.map((l) => ({ ...l })); c[LL[0]![1]]!.q -= 1; setCart(c); expand(id, desk);
   };
   const tagsOf = (it: PItem) => [
+    est.modes.length > 1 && it.pick !== it.dlv && !it.ago ? { label: it.pick ? E2("SOLO PICKUP", "PICKUP ONLY") : E2("SOLO DELIVERY", "DELIVERY ONLY"), tone: "neutral" } : null,
     it.ago ? { label: E2("AGOTADO HOY", "SOLD OUT TODAY"), tone: "danger" } : null,
     it.nosell && !it.ago ? { label: E2("SOLO EN EL LOCAL", "IN STORE ONLY"), tone: "neutral" } : null,
     it.left != null && !it.ago && !it.nosell && it.left > 0 && it.left <= (est.low || 3) ? { label: E2(`QUEDAN ${it.left}`, `ONLY ${it.left} LEFT`), tone: "danger" } : null,
@@ -214,9 +248,12 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
     };
   }).filter(Boolean) as { i: number; name: string; img: string | null; q: number; price: string; sum: string; onEdit: (d?: boolean) => void; onInc: () => void; onDec: () => void }[];
   const items = (n: number) => `${n} ${es ? (n === 1 ? "artículo" : "artículos") : n === 1 ? "item" : "items"}`;
-  const listoA = est.now + est.readyMin + C.extra;
-  const etaL = est.later && est.openAt != null ? E2(`Abre a las ${hora(est.openAt)}`, `Opens at ${hora(est.openAt)}`) : E2(`Listo a las ${hora(listoA)}`, `Ready at ${hora(listoA)}`);
-  const etaCaps = est.later && est.openAt != null ? E2(`ABRE A LAS ${hora(est.openAt)} · PROGRAMA TU PEDIDO`, `OPENS AT ${hora(est.openAt)} · SCHEDULE YOUR ORDER`) : E2(`LISTO A LAS ${hora(listoA)}`, `READY AT ${hora(listoA)}`);
+  const listoA = est.now + est.readyMin + C.extra, D = est.dlv;
+  const llega = dl && D ? [est.now + D.d1 + C.extra, est.now + D.d2 + C.extra] : null;
+  const etaL = est.later && est.openAt != null ? E2(`Abre a las ${hora(est.openAt)}`, `Opens at ${hora(est.openAt)}`)
+    : llega ? E2(`Llega entre ${hora(llega[0]!)} y ${hora(llega[1]!)}`, `Arrives ${hora(llega[0]!)}–${hora(llega[1]!)}`) : E2(`Listo a las ${hora(listoA)}`, `Ready at ${hora(listoA)}`);
+  const etaCaps = est.later && est.openAt != null ? E2(`ABRE A LAS ${hora(est.openAt)} · PROGRAMA TU PEDIDO`, `OPENS AT ${hora(est.openAt)} · SCHEDULE YOUR ORDER`) : etaL.toUpperCase();
+  const ENT = entrega(m, cart, modo, es);
 
   /* Preguntas «otra igual o con cambios» y «cuál quitas» */
   const A = ask && m.items[ask.id] ? ask : null;
@@ -242,19 +279,21 @@ export function useMenu(m: MenuPublico | null, es: boolean, opts: { onPay: () =>
 
   return {
     m, es, E2, est, canOrd, listo, cart, pop, cats, chips, sh, lines, has: lines.length > 0, empty: !lines.length, count: C.count,
-    countL: items(C.count), countCaps: items(C.count).toUpperCase(), sub: money(C.sub), tax: money(C.tax), total: money(C.total), totalC: C.total,
+    countL: items(C.count), countCaps: items(C.count).toUpperCase(), sub: money(C.sub), tax: money(C.tax), total: money(ENT.total), totalC: ENT.total,
+    modo, dl, fee: ENT.fee ? money(ENT.fee) : E2("Gratis", "Free"), ENT,
+    modes: est.modes.map((k) => ({ k, l: k === "delivery" ? "Delivery" : "Pickup", icon: k === "delivery" ? "truck" : "bag", on: k === modo, onClick: () => { setModoG(k); guardarModo(biz, k); } })),
     taxL: C.taxPct != null ? E2(`Impuestos (${C.taxPct}%)`, `Taxes (${C.taxPct}%)`) : E2("Impuestos", "Taxes"), etaCaps, etaL, listoA,
-    cta: lines.length ? `${E2("Ir a pagar · ", "Go to checkout · ")}${money(C.total)}` : E2("Agrega platos para pedir", "Add dishes to order"),
-    onPay: () => { if (!lines.length) return; setCartOpen(false); setVista(""); opts.onPay(); },
+    cta: lines.length ? (ENT.blk ? ENT.blkS : `${E2("Ir a pagar · ", "Go to checkout · ")}${money(ENT.total)}`) : E2("Agrega platos para pedir", "Add dishes to order"),
+    onPay: () => { if (!lines.length) return; if (ENT.blk) { flash(ENT.blk); return; } setCartOpen(false); setVista(""); opts.onPay(); },
     cartOpen, openCart: () => { setCartOpen(true); setVista(""); }, closeCart: () => setCartOpen(false),
     toast, onUndo: () => { if (toast?.undo) setCart(toast.undo); setToast(null); },
     ask: askV, closeAsk: () => setAsk(null), noAsk, toggleNoAsk: () => setNoAsk(!noAsk),
     tiles: (m.pop.length ? m.pop : m.secs.flatMap((s) => s.items)).filter((id) => !offOf(m.items[id]!)).slice(0, 4).map((id) => card(m.items[id]!)),
     lbl: {
-      order: E2("Tu pedido", "Your order"), sub: "Subtotal", total: "Total", pop: E2("Populares", "Popular"), req: E2("OBLIGATORIO", "REQUIRED"), ready: E2("LISTO", "DONE"),
+      order: E2("Tu pedido", "Your order"), sub: "Subtotal", total: "Total", fee: E2("Envío", "Delivery"), pop: E2("Populares", "Popular"), req: E2("OBLIGATORIO", "REQUIRED"), ready: E2("LISTO", "DONE"),
       kitchen: E2("Instrucciones para la cocina", "Kitchen instructions"), kitchenPh: E2("Ej.: sin cebolla, la salsa aparte", "E.g. no onion, sauce on the side"),
       undo: E2("Deshacer", "Undo"), empty: E2("Tu pedido está vacío", "Your order is empty"), emptySub: E2("Agrega platos del menú.", "Add dishes from the menu."),
-      payNote: E2("Pagas en el local al recoger: no se cobra nada en la app.", "You pay at the store when you pick up: nothing is charged in the app."),
+      payNote: dl ? E2("Pagas en efectivo al recibir: no se cobra nada en la app.", "You pay cash on delivery: nothing is charged in the app.") : E2("Pagas en el local al recoger: no se cobra nada en la app.", "You pay at the store when you pick up: nothing is charged in the app."),
       edit: E2("Editar", "Edit"), customT: E2("Otra, con cambios", "Another, with changes"), customS: E2("Empieza con lo de la última y cambia lo que quieras.", "Starts from your last one; change what you want."),
       noAsk: E2("Repetir la última sin preguntar en este pedido", "Repeat the last one without asking in this order"), done: E2("Listo", "Done"), close: E2("Cerrar", "Close"),
     },
@@ -265,14 +304,22 @@ export type Mn = NonNullable<ReturnType<typeof useMenu>>;
 /* ── Piezas ── */
 const k10 = "font-mono text-[10px] font-semibold tracking-[0.06em] text-ink/55";
 
+export function Modos({ modes }: { modes: { k: string; l: string; icon: string; on: boolean; onClick: () => void }[] }) {
+  return (
+    <div role="tablist" className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
+      {modes.map((x) => (
+        <button key={x.k} type="button" role="tab" aria-selected={x.on} onClick={x.onClick}
+          className={`flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] text-[12.5px] font-bold ${x.on ? "bg-white text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]" : "bg-transparent text-ink/50"}`}>
+          <Icon name={x.icon} size={15} />{x.l}
+        </button>
+      ))}
+    </div>
+  );
+}
 function Modo({ mn, card }: { mn: Mn; card?: boolean }) {
   return (
     <div className={card ? "rounded-[17px] border border-line bg-white p-3.5" : ""}>
-      <div className="flex gap-1.5 rounded-[14px] bg-ink/5 p-1">
-        <div className="flex h-[38px] flex-1 items-center justify-center gap-[7px] rounded-[11px] bg-white text-[12.5px] font-bold text-ink shadow-[0_1px_4px_rgba(11,14,18,.1)]">
-          <Icon name="bag" size={15} />Pickup
-        </div>
-      </div>
+      <Modos modes={mn.modes} />
       <div className={`mt-[9px] flex items-center gap-[7px] ${k10}`}><Icon name="clock" size={13} color="var(--tl-open)" />{mn.etaCaps}</div>
     </div>
   );
@@ -343,6 +390,7 @@ export function PedidoTarjeta({ mn }: { mn: Mn }) {
               <div key={l.i} className="grid"><CartLine name={l.name} summary={l.sum} price={l.price} qty={l.q} image={l.img} first={k === 0} editLabel={mn.lbl.edit} onEdit={() => l.onEdit(true)} onDec={l.onDec} onInc={l.onInc} /></div>
             ))}
           </div>
+          <EnvioGratis e={mn.ENT} plano />
           <Totales mn={mn} plano />
         </>
       )}
@@ -352,11 +400,21 @@ export function PedidoTarjeta({ mn }: { mn: Mn }) {
   );
 }
 
+export function EnvioGratis({ e, plano }: { e: { hasFree: boolean; freeNote: string; freePct: string; freeFg: string }; plano?: boolean }) {
+  if (!e.hasFree) return null;
+  return (
+    <div className={plano ? "" : "rounded-[17px] border border-line bg-white px-3.5 py-[13px]"}>
+      <div role={e.freeFg.includes("danger") ? "alert" : undefined} className="text-[12px] font-semibold" style={{ color: e.freeFg }}>{e.freeNote}</div>
+      <div className="mt-2 h-1 overflow-hidden rounded-full bg-ink/[.08]"><div className="h-full bg-open" style={{ width: e.freePct }} /></div>
+    </div>
+  );
+}
 function Totales({ mn, plano }: { mn: Mn; plano?: boolean }) {
   const fila = (a: string, b: string) => <div className="flex justify-between"><span>{a}</span><span className="font-mono text-ink">{b}</span></div>;
   return (
     <div className={`flex flex-col gap-[9px] text-[12.5px] font-medium text-ink/60 ${plano ? "border-t border-line pt-3" : "rounded-[17px] border border-line bg-white p-[15px]"}`}>
       {fila(mn.lbl.sub, mn.sub)}
+      {mn.dl && fila(mn.lbl.fee, mn.fee)}
       {fila(mn.taxL, mn.tax)}
       {!plano && <div className="h-px bg-line" />}
       <div className="flex items-baseline justify-between"><span className="text-[13.5px] font-bold text-ink">{mn.lbl.total}</span><span className="font-display text-[20px] font-extrabold leading-none tracking-[-0.02em] text-ink">{mn.total}</span></div>
@@ -585,6 +643,7 @@ function Carrito({ mn, nombre }: { mn: Mn; nombre: string }) {
               <div className="rounded-[17px] border border-line bg-white px-3.5">
                 {mn.lines.map((l, k) => <div key={l.i} className="grid"><CartLine name={l.name} summary={l.sum} price={l.price} qty={l.q} image={l.img} first={k === 0} editLabel={mn.lbl.edit} onEdit={() => l.onEdit(false)} onDec={l.onDec} onInc={l.onInc} /></div>)}
               </div>
+              <EnvioGratis e={mn.ENT} />
               <Totales mn={mn} />
               <div className="flex items-start gap-[9px] px-1 py-0.5 text-[12px] font-medium leading-[1.5] text-ink/60">
                 <span className="grid flex-none pt-px"><Icon name="info" size={15} color="rgba(11,14,18,.45)" /></span><span className="text-pretty">{mn.lbl.payNote}</span>

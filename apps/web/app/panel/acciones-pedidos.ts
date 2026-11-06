@@ -2,7 +2,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
-import { cambiarPaso, type Paso } from "@/lib/pedidos";
+import { cambiarPaso, guardarSeguimiento, type Paso } from "@/lib/pedidos";
 import type { Res } from "./acciones";
 
 /* Pedidos desde el panel (Panel v2 · Hoy, Clientes y Lo que vendes › Pedidos en línea). Responder y mover un pedido
@@ -10,9 +10,9 @@ import type { Res } from "./acciones";
    línea de tiempo del pedido y en la auditoría. */
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
 const SIN_ACCESO = no("No tienes acceso a esta parte del panel.", "You don’t have access to this part of the dashboard.");
-const PASOS = new Set<Paso>(["aceptar", "rechazar", "listo", "entregado"]);
-const ACCION: Record<Paso, string> = { aceptar: "pedido.aceptar", rechazar: "pedido.rechazar", listo: "pedido.listo", entregado: "pedido.entregado" };
-const PASO_L: Record<Paso, string> = { aceptar: "Aceptado", rechazar: "Rechazado", listo: "Listo para recoger", entregado: "Entregado" };
+const PASOS = new Set<Paso>(["aceptar", "rechazar", "listo", "encamino", "entregado"]);
+const ACCION: Record<Paso, string> = { aceptar: "pedido.aceptar", rechazar: "pedido.rechazar", listo: "pedido.listo", encamino: "pedido.en_camino", entregado: "pedido.entregado" };
+const PASO_L: Record<Paso, string> = { aceptar: "Aceptado", rechazar: "Rechazado", listo: "Listo para recoger", encamino: "Salió en camino", entregado: "Entregado" };
 
 async function entrar(id: unknown, parte: string): Promise<Acceso | null> {
   if (!(await mismoOrigen())) return null;
@@ -32,6 +32,16 @@ export async function pedidoPaso(id: string, numero: string, paso: Paso): Promis
   const r = await cambiarPaso(a.negocio.id, String(numero ?? ""), paso, a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, ACCION[paso], { pedido: `#${numero}` }, { pedido: `#${numero}`, paso: PASO_L[paso] });
+  return { ok: true };
+}
+
+/* Delivery con una app externa: el enlace de seguimiento del pedido (el cliente lo ve en su pedido). */
+export async function pedidoSeguimiento(id: string, numero: string, url: string): Promise<Res> {
+  const a = await entrar(id, "ord");
+  if (!a) return SIN_ACCESO;
+  const r = await guardarSeguimiento(a.negocio.id, String(numero ?? ""), String(url ?? ""), a.yo.id);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "pedido.seguimiento", { pedido: `#${numero}` }, { pedido: `#${numero}`, enlace: String(url).slice(0, 300) });
   return { ok: true };
 }
 
