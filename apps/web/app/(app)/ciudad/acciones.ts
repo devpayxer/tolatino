@@ -27,6 +27,7 @@ export async function elegirUbicacion(p: { c: string; z: string; r: number; g?: 
 }
 
 /* «Usar mi ubicación»: a qué ciudad y barrio corresponde el punto. No se guarda nada aquí. */
+// solo lectura
 export async function dondeEstoy(lat: number, lng: number) {
   if (!ok(lat) || !ok(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
   const cs = await ciudades(), p: LL = [lat, lng];
@@ -40,6 +41,7 @@ export async function dondeEstoy(lat: number, lng: number) {
 }
 
 /* Lo que entra con un punto y un radio (para el mapa del selector mientras se elige). */
+// solo lectura
 export async function medirBorrador(p: { c: string; z: string; r: number; g?: [number, number] | null }) {
   const cs = await ciudades();
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
@@ -49,6 +51,7 @@ export async function medirBorrador(p: { c: string; z: string; r: number; g?: [n
 }
 
 /* Búsqueda de lugar del selector (dirección, barrio, ciudad o código postal). Solo lectura. */
+// solo lectura
 export async function lugares(q: string) {
   return buscarLugar(String(q ?? "").slice(0, 60));
 }
@@ -106,6 +109,7 @@ export async function esperarCiudad(ciudad: string): Promise<{ ok: true; on: boo
 }
 
 /* Todo lo que el selector necesita al abrirse (una sola llamada). */
+// solo lectura
 export async function abrirSelector() {
   const me = await yo();
   const [cs, dev] = await Promise.all([ciudades(), dispositivo(false)]);

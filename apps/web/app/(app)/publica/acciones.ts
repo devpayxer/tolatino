@@ -12,6 +12,7 @@ import { evento } from "@/lib/eventos";
 const PASOS = new Set(["A1", "B1", "C1", "D1", "E1", "F1", "H1"]);
 const MAX = 64 * 1024;
 
+// solo lectura
 export async function leerBorrador() {
   const me = await yo();
   if (!me) return null;
@@ -47,6 +48,7 @@ export async function empezarDeNuevo() {
 const N = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
 /* ¿Ya hay un negocio con ese nombre en la ciudad? (B1: «Ya hay un … en To'Latino. ¿Es tuyo?») */
+// solo lectura
 export async function negocioIgual(nombre: string) {
   const n = N(String(nombre ?? "").slice(0, 60));
   if (n.length < 3) return null;
@@ -59,6 +61,7 @@ export async function negocioIgual(nombre: string) {
 }
 
 /* E1 · rento espacio: los negocios de la ciudad donde podría estar (por nombre; de su categoría primero). */
+// solo lectura
 export async function anfitriones(q: string, cat: string | null) {
   const me = await yo(), loc = await ubicacion(me);
   const t = N(String(q ?? "").slice(0, 40));
@@ -178,6 +181,7 @@ export async function publicar(dIn: Borrador): Promise<RespPublicar> {
 
 const diasPrueba = (d: Pick<Borrador, "promo" | "promoOk">) => (d.promoOk && PROMO[d.promo] ? PROMO[d.promo]! : 30);
 /* Código de promotor (F1): lo valida el servidor. */
+// solo lectura
 export async function probarPromo(codigo: string) {
   const k = String(codigo ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
   return PROMO[k] ? { ok: true as const, dias: PROMO[k]! } : { ok: false as const };

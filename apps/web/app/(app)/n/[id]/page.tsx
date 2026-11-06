@@ -7,6 +7,7 @@ import { guardados } from "@/lib/categoria";
 import { contexto, evento } from "@/lib/eventos";
 import { ficha, registrarVista } from "@/lib/ficha";
 import { menuPublico } from "@/lib/pedir";
+import { rsvPublica } from "@/lib/reservas";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { ubicacion } from "@/lib/ubicacion";
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return f ? { title: `${f.nombre} · To'Latino`, description: f.subsLinea } : { title: "To'Latino" };
 }
 
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; p?: string; d?: string; h?: string; editar?: string }> }) {
   const [{ id }, lang, u, sp] = await Promise.all([params, idioma(), yo(), searchParams]);
   const loc = await ubicacion(u);
   const f = await ficha(id, lang, loc);
@@ -28,12 +29,21 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu] = await Promise.all([guardados(u?.id ?? null, [f.id]), f.cat === "NEG-FOOD" ? menuPublico(f.id, lang) : Promise.resolve(null)]);
+  const [fav, menu, rsv] = await Promise.all([
+    guardados(u?.id ?? null, [f.id]),
+    f.cat === "NEG-FOOD" ? menuPublico(f.id, lang) : Promise.resolve(null),
+    f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
+  ]);
+  // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
+  const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
+  const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
   const t = T[lang].ficha;
   return (
     <Ficha
       f={{ ...f, guardado: fav.has(f.id) }}
       menu={menu}
+      rsv={rsv}
+      rsvInicial={rsvInicial}
       sesion={!!u}
       es={lang === "es"}
       tabInicial={sp.tab}

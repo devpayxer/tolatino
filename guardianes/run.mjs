@@ -133,6 +133,24 @@ const guardianes = {
     }
   },
 
+  /* 3f-bis. Las acciones del lado del cliente (app/(app)/…/acciones*.ts) revisan que la llamada venga de nuestra página
+     (mismoOrigen) antes de escribir (6 nov, 2e: enviarPedido, retenerMesa y enviarMesa no lo hacían). Una acción que
+     solo lee lleva «// solo lectura» justo encima. */
+  clienteMismoOrigen() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/\(app\)\/(.*\/)?acciones[^/]*\.ts$/.test(f)) continue;
+      const t = readFileSync(f, "utf8"), partes = t.split(/\nexport async function /);
+      for (let i = 1; i < partes.length; i++) {
+        const p = partes[i], nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, p.indexOf("\n}") + 1 || 1500);
+        if (/\/\/ solo lectura\s*$/.test(partes[i - 1])) continue;
+        // Vale también un ayudante del archivo que lo revisa primero (p. ej. entrar() en recuperar).
+        const ayudantes = [...t.matchAll(/\nasync function (\w+)\([^)]*\)[^{]*\{\n\s*if \(!\(await mismoOrigen\(\)\)\)/g)].map((m) => m[1]);
+        if (ayudantes.some((h) => new RegExp(`await ${h}\\(`).test(cuerpo))) continue;
+        if (!/await mismoOrigen\(\)/.test(cuerpo)) falla("clienteMismoOrigen", f, 0, `«${nombre}» escribe sin revisar mismoOrigen() (o marcarla «// solo lectura»)`);
+      }
+    }
+  },
+
   /* 3g. Un archivo «use server» solo exporta funciones async (5 nov, 1k: una lista exportada desde acciones rompe Next).
      Las constantes compartidas van a lib/. */
   servidorSoloFunciones() {

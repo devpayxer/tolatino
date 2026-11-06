@@ -1,6 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
+import { foto } from "./directorio";
 import type { Lang } from "./idioma";
 
 /* Reservación de mesa (Fase 2 · bloque 2e; prototipo neg-rsv.js TLRsv y rsvVals / rsvDetVals / rsvStVals; Panel v2
@@ -158,7 +159,8 @@ export type RsvPublica = {
 /* La pestaña Reservaciones: null = no es un restaurante con Reservaciones encendido, o To'Latino las pausó. */
 export async function rsvPublica(negocio: string, userId: string | null): Promise<RsvPublica | null> {
   const x = await contexto(db(), negocio);
-  if (!x || !x.mods.includes("rsv") || x.off.rsv || !areasOn(x.s).length) return null;
+  // Reservaciones es de Pro (Free: solo el módulo principal y pedidos o citas, decisión del 3 nov).
+  if (!x || x.plan !== "pro" || !x.mods.includes("rsv") || x.off.rsv || !areasOn(x.s).length) return null;
   await vencerMesas({ negocio });
   let mia: RsvPublica["mia"] = null;
   if (userId) {
@@ -211,12 +213,12 @@ export async function rsvRetener(userId: string, negocio: string, i: number, h: 
   return tx(async (c) => {
     await c.query(`select pg_advisory_xact_lock(hashtext('mesa:' || $1))`, [negocio]);
     const x = await contexto(c, negocio);
-    if (!x || !x.mods.includes("rsv") || x.off.rsv) return no("Este restaurante no toma reservaciones en línea.", "This restaurant does not take online reservations.");
+    if (!x || x.plan !== "pro" || !x.mods.includes("rsv") || x.off.rsv) return no("Este restaurante no toma reservaciones en línea.", "This restaurant does not take online reservations.");
     const pp = Math.floor(p), hh = Math.floor(h), ii = Math.floor(i);
     if (!(pp >= 1 && pp <= 40) || !(hh >= 0 && hh < 1440 && hh % 30 === 0) || !(ii >= 0)) return no("Elige otra vez la hora.", "Pick the time again.");
     let op: string | null = null;
     if (editar) {
-      op = (await c.query<{ id: string }>(`select id::text from operations where number = $1 and business_id = $2 and user_id = $3 and kind = 'table' and status in ('pending', 'confirmed')`, [editar, x.id, userId])).rows[0]?.id ?? null;
+      op = (await c.query<{ id: string }>(`select id::text from operations where number = $1 and business_id = $2 and user_id = $3 and kind = 'table' and status = 'pending'`, [editar, x.id, userId])).rows[0]?.id ?? null;
       if (!op) return no("Esa reservación ya no se puede cambiar.", "That reservation can no longer be changed.");
     }
     await c.query(`delete from reservation_holds where user_id = $1 and business_id = $2`, [userId, x.id]); // una retención a la vez por persona y restaurante
@@ -229,6 +231,31 @@ export async function rsvRetener(userId: string, negocio: string, i: number, h: 
        returning id::text, expires_at::text as vence`, [x.id, userId, d.ymd, hh, x.tz, pp, ar, op]);
     return { ok: true, hold: r.rows[0]!.id, area: ar, vence: r.rows[0]!.vence };
   });
+}
+
+/* La solicitud en curso (APP-NEG-RESERVA): lo retenido y cuánto le queda. Solo quien la retuvo. */
+export type RsvHold = {
+  id: string; negocio: { id: string; nombre: string; foto: string | null }; ymd: string; dia: number; h: number; p: number; area: string; segundos: number;
+  editar: string | null; auto: boolean; reply: number; hold: number; cxH: number; dur: number; quien: string; telefono: string;
+};
+export async function rsvHold(userId: string, holdId: string): Promise<RsvHold | null> {
+  if (!/^[0-9a-f-]{36}$/.test(String(holdId))) return null;
+  const h = (await db().query<{ business_id: string; name: string; url: string | null; ymd: string; hoy: string; hm: string; party: number; area: string; seg: number; editar: string | null;
+    first_name: string | null; last_name: string | null; phone: string }>(
+    `select h.business_id, b.name, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as url,
+            (h.starts_at at time zone ci.timezone)::date::text as ymd, (now() at time zone ci.timezone)::date::text as hoy, to_char(h.starts_at at time zone ci.timezone, 'HH24:MI') as hm,
+            h.party_size as party, h.area, greatest(0, floor(extract(epoch from h.expires_at - now())))::int as seg,
+            (select o.number from operations o where o.id = h.edit_of and o.status = 'pending') as editar, u.first_name, u.last_name, u.phone
+       from reservation_holds h join businesses b on b.id = h.business_id join cities ci on ci.id = b.city_id join users u on u.id = h.user_id
+      where h.id = $1 and h.user_id = $2`, [holdId, userId])).rows[0];
+  if (!h) return null;
+  const x = await contexto(db(), h.business_id);
+  if (!x) return null;
+  return {
+    id: holdId, negocio: { id: h.business_id, nombre: h.name, foto: h.url ? foto(h.url, 200) : null }, ymd: h.ymd, dia: Math.round((Date.parse(h.ymd) - Date.parse(h.hoy)) / 864e5),
+    h: hm2m(h.hm), p: h.party, area: h.area, segundos: h.seg, editar: h.editar, auto: x.s.auto, reply: x.s.reply, hold: x.s.hold, cxH: x.s.cxH, dur: x.s.dur,
+    quien: [h.first_name, h.last_name].filter(Boolean).join(" "), telefono: h.phone,
+  };
 }
 
 export type DetallesIn = { occ?: string; needs?: string[]; note?: string; other?: boolean; otherName?: string; sms?: boolean };

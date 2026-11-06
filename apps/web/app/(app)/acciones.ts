@@ -1,11 +1,12 @@
 "use server";
 import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { ipCliente, yo } from "@/lib/cuenta";
+import { ipCliente, mismoOrigen, yo } from "@/lib/cuenta";
 import { ubicacion } from "@/lib/ubicacion";
 import { evento } from "@/lib/eventos";
 
 export async function cambiarIdioma(lang: "es" | "en") {
+  if (!(await mismoOrigen())) return;
   (await cookies()).set("tl_lang", lang === "en" ? "en" : "es", { path: "/", maxAge: 365 * 86400, sameSite: "lax" });
 }
 
@@ -16,6 +17,7 @@ export type Respuesta = { ok: true; on?: boolean } | { ok: false; entrar?: true 
 
 /* Guardar / quitar un negocio de Guardados. Sin sesión: la pantalla manda a entrar y vuelve. */
 export async function guardarNegocio(id: string): Promise<Respuesta> {
+  if (!(await mismoOrigen())) return { ok: false };
   if (typeof id !== "string" || !ID_NEG.test(id) || id.length > 80) return { ok: false };
   const u = await yo();
   if (!u) return { ok: false, entrar: true };
@@ -33,6 +35,7 @@ export async function guardarNegocio(id: string): Promise<Respuesta> {
 /* Toque de contacto (llamar, cómo llegar): alimenta las estadísticas del negocio en su panel. */
 const TOQUES = new Set(["call", "whatsapp", "directions", "share", "calendar", "copy"]);
 export async function registrarToque(id: string, kind: string, origen: string): Promise<void> {
+  if (!(await mismoOrigen())) return;
   if (typeof id !== "string" || !ID_NEG.test(id) || !TOQUES.has(kind)) return;
   const [u, ip] = await Promise.all([yo(), ipCliente()]);
   // Cuenta para las cifras del panel: una vez cada 10 min por persona (o red) y negocio; máx. 60 por red y hora;
@@ -52,6 +55,7 @@ export async function registrarToque(id: string, kind: string, origen: string): 
 
 /* «Avísame cuando haya»: guarda la búsqueda; cuando llegue un negocio que encaje, se avisa (Fase 2, notificaciones). */
 export async function avisame(ciudad: string, cat: string, sub: string, filtros: string[]): Promise<Respuesta> {
+  if (!(await mismoOrigen())) return { ok: false };
   const u = await yo();
   if (!u) return { ok: false, entrar: true };
   if (!/^[a-z]{3}$/.test(ciudad) || !/^NEG-[A-Z]+$/.test(cat)) return { ok: false };
@@ -73,6 +77,7 @@ export async function avisame(ciudad: string, cat: string, sub: string, filtros:
 const MOTIVOS = new Set(["no_es", "inapropiado", "datos", "spam", "otro"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export async function reportarFoto(mediaId: string, motivo: string, nota: string): Promise<Respuesta> {
+  if (!(await mismoOrigen())) return { ok: false };
   if (typeof mediaId !== "string" || !UUID.test(mediaId) || !MOTIVOS.has(motivo)) return { ok: false };
   const u = await yo();
   if (!u) return { ok: false, entrar: true };
@@ -94,6 +99,7 @@ export async function reportarFoto(mediaId: string, motivo: string, nota: string
 
 /* «Avísame cuando haya» desde Buscar: guarda la búsqueda tal como se escribió (y la categoría, si había). */
 export async function avisameBusqueda(q: string, catSlug: string | null): Promise<Respuesta> {
+  if (!(await mismoOrigen())) return { ok: false };
   const u = await yo();
   if (!u) return { ok: false, entrar: true };
   const texto = typeof q === "string" ? q.replace(/\s+/g, " ").trim().slice(0, 120) : "";
