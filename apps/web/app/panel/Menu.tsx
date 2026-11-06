@@ -47,6 +47,16 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   const { E2, d } = c, M = c.menu;
   const items = M?.items ?? [], nOn = items.filter((i) => i.sell).length, nAgo = items.filter((i) => i.ago).length, nAll = items.length;
   const tiene = nAll > 0, permitido = d.cat === "NEG-FOOD";
+  // Jobs (Pro, cualquier categoría): vacantes con pago real por hora.
+  const J = c.jobs?.lista, nV = J ? J.filas.filter((j) => j.st === "live").length : 0, nP = J ? J.filas.reduce((n, j) => n + j.pend, 0) : 0;
+  const jobs: Fila = { icon: "brief", t: "Jobs", s: !d.pro ? E2("Vacantes con pago real por hora · con Pro", "Openings with real hourly pay · with Pro") : nV ? E2(`${nV} ${nV === 1 ? "vacante abierta" : "vacantes abiertas"}${nP ? ` · ${nP} por responder` : ""}`, `${nV} ${nV === 1 ? "opening" : "openings"} live${nP ? ` · ${nP} to answer` : ""}`) : E2("Sin vacantes abiertas", "No openings live"),
+    ...(J?.pausa ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
+    lock: !d.pro, tag: !d.pro ? "PRO" : nP ? E2("POR RESPONDER", "TO ANSWER") : nV && J?.on && !J.pausa ? E2("EN TU PÁGINA", "LIVE") : null, tone: !d.pro ? "pro" : nP ? "action" : "signal", chev: true, onClick: () => c.go("mod", "jobs") };
+  if (!permitido) return [
+    { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [jobs] },
+    { type: "note", tone: "info", t: E2("Los demás módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s other modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
+  ];
   return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo. Tú decides qué se pide en línea y qué es solo catálogo.", "Each module shows on your page only when it has something. You decide what is ordered online and what is catalog only.") },
     { type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
@@ -54,15 +64,15 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
       { k: E2("SE PIDEN EN LÍNEA", "ORDERED ONLINE"), v: String(nOn) }, { k: E2("SOLO CATÁLOGO", "CATALOG ONLY"), v: String(nAll - nOn) },
       { k: E2("AGOTADOS HOY", "SOLD OUT TODAY"), v: String(nAgo), fg: nAgo ? "var(--tl-danger)" : undefined },
     ] },
-    permitido ? { type: "rows", k: tiene ? (MENU_EN_FICHA ? E2("CON CONTENIDO · SALEN EN TU PÁGINA", "WITH CONTENT · SHOWING") : E2("CON CONTENIDO", "WITH CONTENT")) : E2("ACTIVADOS, SIN CONTENIDO", "ON, NO CONTENT YET"), items: [{
+    { type: "rows", k: tiene ? (MENU_EN_FICHA ? E2("CON CONTENIDO · SALEN EN TU PÁGINA", "WITH CONTENT · SHOWING") : E2("CON CONTENIDO", "WITH CONTENT")) : E2("ACTIVADOS, SIN CONTENIDO", "ON, NO CONTENT YET"), items: [{
       icon: "restaurant", t: E2("Menú", "Menu"), s: tiene ? E2(`${nAll} platos · ${nOn} en línea`, `${nAll} items · ${nOn} online`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
       tag: MENU_EN_FICHA && tiene && d.mods.includes("menu") && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "menu") },
       // Pedidos en línea (pedLine): cómo te piden por la app.
       { icon: "bag", t: E2("Pedidos en línea", "Online orders"), s: pedLine(c), tag: c.ped?.aj?.on && !c.ped.aj.admOff && c.ped.aj.cashP ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "pedidos") },
       // Reservaciones (Pro): mesas, turnos y reglas.
-      ...(c.rsv?.aj ? [{ icon: "calendar", t: E2("Reservaciones", "Reservations"), s: rsvLine(c), lock: !c.rsv.aj.pro, tag: c.rsv.aj.pro && c.rsv.aj.on && !c.rsv.aj.admOff ? E2("ENCENDIDO", "ON") : !c.rsv.aj.pro ? "PRO" : null, tone: c.rsv.aj.pro ? "signal" : "pro", chev: true, onClick: () => c.go("mod", "reservaciones") }] : [])] }
-      : { type: "note", tone: "info", t: E2("Los módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
+      ...(c.rsv?.aj ? [{ icon: "calendar", t: E2("Reservaciones", "Reservations"), s: rsvLine(c), lock: !c.rsv.aj.pro, tag: c.rsv.aj.pro && c.rsv.aj.on && !c.rsv.aj.admOff ? E2("ENCENDIDO", "ON") : !c.rsv.aj.pro ? "PRO" : null, tone: c.rsv.aj.pro ? "signal" : "pro", chev: true, onClick: () => c.go("mod", "reservaciones") }] : []),
+      jobs] },
   ];
 }
 

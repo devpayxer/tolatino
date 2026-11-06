@@ -35,6 +35,7 @@ Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latin
 | Mantener / Ocultar / Ocultar y sancionar (advertencia, silencio 7 días, bloquear publicación 30 días, suspender 14 días) | Reportes de contenido (reseñas, 24 h) | colas · aprobar | Mantener: la reseña se queda; si el negocio pidió revisarla, el cliente ve «Revisada». Ocultar: sale de la página y de las ★; el autor ve OCULTA y el motivo en «Tu reseña» |
 | Ocultar / Restaurar una reseña | 360 › Contenido | neg · retirar | Igual que Ocultar en Reportes de contenido; Restaurar la devuelve a la página y a las ★ |
 | Ocultar / Mostrar una novedad · Pausar / Reanudar Novedades | 360 › Contenido | neg · retirar | La novedad sale de su página; panel: «OCULTA POR TO’LATINO» con el motivo. En pausa: sin pestaña y sin precios de oferta; el dueño ve el motivo |
+| Ocultar / Mostrar una vacante · Pausar / Reanudar Jobs | 360 › Contenido | neg · retirar | La vacante sale de su página y nadie nuevo aplica (las solicitudes se quedan); panel: «OCULTA POR TO’LATINO» con el motivo. En pausa: sin pestaña Jobs; el dueño ve el motivo |
 
 Toda acción pide motivo (salvo las aprobaciones, que guardan uno fijo) y queda en la auditoría: quién, qué, antes →
 después, motivo y cuándo. Nada se borra.

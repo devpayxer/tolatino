@@ -48,6 +48,15 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
    - La tarjeta de seguir dice «Ve las publicaciones solo para seguidores» en vez de «recibe ofertas y cupones».
    - En el detalle, la tercera cifra es **COMENTARIOS** en vez de **PEDIDOS** (no medimos aún cuántos pedidos salen de una novedad).
    - En la oferta, el **precio normal es el del menú** y no se escribe (el diseño dejaba escribirlo): así el «antes» nunca es inventado.
+10. **Jobs: lo que cambié del diseño para no prometer lo que no existe todavía** (dime si lo dejo así):
+   - Sin **avisos por SMS** («Te avisamos por SMS», «Cada respuesta le llega por SMS»): la persona ve cada respuesta en
+     su solicitud, que se actualiza sola. Los SMS llegan con el proveedor y las notificaciones.
+   - Sin **«Avísame de nuevas vacantes»** ni el aviso a vecinos al publicar (con las notificaciones), ni **«Traducir con
+     El Compa»** en el editor (con El Compa): el inglés se escribe a mano o sale en español.
+   - La propuesta de entrevista dice «En el local de {negocio}» (el diseño decía «15 minutos · pregunta por el
+     encargado», que nadie escribió). Las horas que se ofrecen son las horas en punto en que el negocio está abierto.
+   - «Solicitudes respondidas · suelen esperar 2–3 días» → «esperan tu respuesta» (no medimos aún cuánto tardan).
+   - **Lo que vendes** ahora sale para todas las categorías (antes solo Comida), porque Jobs sirve a cualquier negocio Pro.
 5. **«Avísame si se libera»** (lista de espera de una hora sin mesa) y **«Otros restaurantes con mesa»** en la pantalla
    de «no pudo»: necesitan los avisos por SMS para ser de verdad. Se hacen con las notificaciones.
 
@@ -169,3 +178,18 @@ flan y la terraza._
 5. Ana › Negocios › Sabor › **Contenido**: **Ocultar la novedad** con motivo (sale de la página; Pedro ve OCULTA POR
    TO'LATINO) y **Pausar Novedades** (la pestaña se va y la oferta deja de cobrarse; Pedro ve el motivo).
 6. Escritorio: la pestaña, y el panel con el editor a la derecha y «Así se ve».
+
+## Fase 2 · 2g-3 Jobs
+_Sabor Dominicano trae 2 vacantes del prototipo (ayudante de cocina $15–17/hora, chofer de delivery $13/hora + propinas) con
+4 solicitudes de vecinos de ejemplo; El Fogón trae una (mesero) que sale en «parecidas»._
+1. Marisol › Sabor Dominicano › pestaña **Jobs**: guarda una (corazón), abre **Ayudante de cocina** → **Aplicar**: elige
+   experiencia y días (los del puesto salen marcados), confirma los requisitos y **Enviar solicitud** → ves «Solicitud
+   enviada» con su número J-….
+2. Pedro › Panel › **Hoy**: «Solicitudes de empleo nuevas» → abre la de Marisol (ella ve **VISTA**). **Invitar a
+   entrevista**: elige un día que abres y una hora → Marisol ve la propuesta y **Confirma**; tú ves «Entrevista confirmada».
+3. Pedro › Lo que vendes › **Jobs** › **Publicar**: prueba poner «SSN» en la descripción (no deja) o pago de $6 (no deja);
+   publica una con $12 → sale en la pestaña. **Pausar** (desaparece), **Ya la cubrí**, **Quitar**.
+4. Marisol › su solicitud › **Retirar solicitud** → puede volver a aplicar.
+5. Ana › Negocios › Sabor › **Contenido** › VACANTES: **Ocultar la vacante** con motivo (Pedro ve OCULTA POR TO'LATINO) y
+   **Pausar Jobs** (la pestaña se va; Pedro ve el motivo).
+6. Escritorio: la vacante con la columna de la derecha (Aplicar, guardar, compartir) y el panel con la solicitud a la derecha.

@@ -21,6 +21,7 @@ import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./
 import { entregaBloques } from "./Entrega";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
+import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
@@ -71,10 +72,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -113,7 +114,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov }: 
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -140,7 +141,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov }: 
       <Icon name={icon} size={side ? 15 : 16} color={on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)"} />
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
-  const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
+  const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
   // Entrega (Panel v2 · hasDlv): con Pedidos en línea encendido y permiso de Entrega.
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
   const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
@@ -257,7 +258,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
   if (c.ruta.sec === "dlv") return entregaBloques(c);
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
-  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : { blocks: vendesBloques(c), ed: null };
+  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : c.ruta.sub === "pedidos" ? pedidosModBloques(c) : c.ruta.sub === "reservaciones" ? reservasModBloques(c) : c.ruta.sub === "jobs" ? jobsBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
   const head: Bloque[] = [
@@ -277,6 +278,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("rsv:")) return rsvDetalle(c);
   if (id.startsWith("rev:")) return resenaDetalle(c);
   if (id.startsWith("nov:")) return novDetalle(c);
+  if (id.startsWith("vac:") || id.startsWith("vap:")) return jobsDetalle(c);
   return null;
 }
 
@@ -364,6 +366,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
   out.push(...hoyPedidos(c));
   out.push(...hoyResenas(c));
+  out.push(...hoyJobs(c));
   out.push({ type: "group", k: E2("ACCIONES RÁPIDAS", "QUICK ACTIONS") });
   out.push({ type: "acts", items: [d.st.closedToday
     ? { l: E2("Abrir de nuevo", "Reopen"), icon: "clock", onClick: () => c.run(() => cerrarPorHoy(d.id, false), E2("Abierto otra vez.", "Open again.")) }
@@ -548,7 +551,7 @@ function licencias(c: Ctx): Sec {
    sus bloques. «También»: ver mi página como cliente. */
 function masBloques(c: Ctx): Bloque[] {
   const { E2, d } = c;
-  const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
+  const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
   return [
     { type: "head", t: E2("Más", "More") },

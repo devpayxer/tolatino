@@ -381,7 +381,17 @@ _Actualizado: 5 nov 2026._
   quitar; editor con fotos, botón, oferta, audiencia, vencimiento y programación; responder comentarios); bloque `nprev`.
   Super Admin: ocultar / mostrar y pausar Novedades (360 › Contenido). PostCard accesible (botones con rol y teclado, parche
   en `scripts/portar-sistema.mjs`). Probado con Playwright: 22 comprobaciones (incluye que el pedido cobra la oferta y que en pausa vuelve el precio del menú); 2b, 2c, 2e, 2f y 2g-1 otra vez en verde.
-  Ayuda `novedades.md`. **Sigue: 2g-3 Jobs.**
+  Ayuda `novedades.md`.
+- **Fase 2 · bloque 2g-3 Jobs ✓ (6 nov):** migración 0029 (`job_postings` con pago por hora ≥ $7.25, días, horario, idiomas,
+  requisitos y beneficios; `job_applications` J-3101… con enviada / vista / le van a llamar / entrevista / no seleccionado /
+  retirada; `job_saves`; `vacante_en_vivo()`). Sin CV ni papeles: el editor y el servidor rechazan esas palabras. Cliente:
+  pestaña Jobs, vacante (`/n/{id}/empleo/{job}`), aplicar y tu solicitud (`/solicitud/J-…`, confirmar entrevista, retirar,
+  parecidas). Panel: Lo que vendes › Jobs (ahora para todas las categorías), vacante con filtro de solicitudes, solicitud
+  (abrir = vista; llamar, le voy a llamar, entrevista en un día y hora en que abres, no seleccionado), editor, pausar /
+  publicar / ya la cubrí / duplicar / quitar, y «Solicitudes de empleo nuevas» en Hoy. Super Admin: ocultar / mostrar
+  vacante y pausar Jobs (360 › Contenido). Semilla 0009 (Sabor y El Fogón). Guardianes nuevos `promesaSms` y
+  `botonEnColumna`. Probado con Playwright: 36 comprobaciones; 2b, 2c, 2e, 2f, 2g-1 y 2g-2 otra vez en verde. Ayuda
+  `jobs.md`. **Sigue: 2h Mi cuenta.**
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

@@ -168,6 +168,13 @@ export async function negocio360(s: Staff, id: string) {
               (select count(*)::int from post_votes v where v.post_id = p.id and v.v = 1) as up, (select count(*)::int from post_votes v where v.post_id = p.id and v.v = -1) as dn,
               floor(extract(epoch from now() - p.publish_at) / 3600)::int as h
          from business_posts p where p.business_id = $1 order by (p.status = 'removed'), p.id desc limit 20`, [b.id])).rows,
+    // Contenido · vacantes (hasta 20: primero las abiertas), con sus solicitudes.
+    vacantes: (await db().query<{ id: string; title: string; pay: number; payTo: number | null; st: string; hidden_reason: string | null; apps: number; h: number }>(
+      `select j.id::text, j.title->>'es' as title, j.pay_from_cents as pay, j.pay_to_cents as "payTo", j.hidden_reason,
+              case when j.hidden_at is not null then 'adm' else j.status end as st,
+              (select count(*)::int from job_applications a where a.job_id = j.id) as apps,
+              floor(extract(epoch from now() - coalesce(j.published_at, j.created_at)) / 3600)::int as h
+         from job_postings j where j.business_id = $1 order by (j.status = 'removed'), (j.status = 'live') desc, j.id desc limit 20`, [b.id])).rows,
     resenasN: (await db().query<{ n: number; rep: number }>(`select count(*)::int as n, count(*) filter (where reply is not null)::int as rep from reviews where business_id = $1 and status <> 'removed'`, [b.id])).rows[0]!,
   };
 }

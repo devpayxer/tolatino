@@ -12,12 +12,15 @@ import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from
 import type { ResPanel } from "../../ResenasPanel";
 import { itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
 import type { NovData } from "../../NovedadesPanel";
+import { horarioVac, solicitudesNuevas, vacantePanel, vacantesPanel, verSolicitud } from "@/lib/jobs";
+import { db } from "@/lib/db";
+import type { JobsData } from "../../JobsPanel";
 import { Panel, type Ruta } from "../../Panel";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18}))$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string }> }) {
@@ -31,7 +34,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
-  else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones")) ruta = { sec: "mod", sub: r[1], det: null };
+  else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
   const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "mas" ? undefined : "page");
@@ -83,5 +86,22 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     det: nid && /^\d+$/.test(nid) ? await novedadPanel(d.id, nid) : undefined,
     items: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await itemsNovedad(d.id) : undefined,
   };
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} />;
+  // Jobs (Lo que vendes › Jobs, la vacante, la solicitud y el editor; «Solicitudes nuevas» en Hoy). Piden acceso a
+  // «Lo que vendes»: las solicitudes traen nombre y teléfono. Abrir una solicitud nueva la marca «vista».
+  const cat = acc.partes.includes("all") || acc.partes.includes("cat");
+  const vd = cat && d.pro && /^va[cp]:/.test(ruta.det ?? "") ? ruta.det! : null;
+  let jobId: string | null = vd?.startsWith("vac:") ? vd.slice(4).replace(/^(edit|dup):/, "") : null, appId: string | null = null;
+  if (vd?.startsWith("vap:")) {
+    appId = vd.slice(4);
+    await verSolicitud(d.id, appId);
+    jobId = (await db().query<{ j: string }>(`select job_id::text as j from job_applications where id = $1::bigint and business_id = $2`, [appId, d.id])).rows[0]?.j ?? null;
+  }
+  const jobs: JobsData = {
+    lista: ruta.sec === "mod" && (ruta.sub === null || ruta.sub === "jobs") && cat ? await vacantesPanel(d.id) : undefined,
+    det: jobId && /^\d+$/.test(jobId) ? await vacantePanel(d.id, jobId) : undefined, app: appId,
+    hor: vd && /^vac:(new|edit:|dup:)/.test(vd) ? await horarioVac(d.id) : undefined,
+    hoy: ruta.sec === "hoy" && cat && d.pro ? await solicitudesNuevas(d.id) : undefined,
+  };
+  if (ruta.det && /^va[cp]:/.test(ruta.det) && !cat) ruta.det = null;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} />;
 }

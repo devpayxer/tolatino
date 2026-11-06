@@ -292,9 +292,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Novedades (bloque 2g-2, 6 nov 2026)
 - [ ] **«Hoy en el barrio»** en la portada (lo de las últimas 24 h de la ciudad, StoryCard) y su chip en la publicación.
 - [ ] **Cupón para seguidores** (código, compra mínima, usos): con los cupones en el pago (2d / Planes).
-- [ ] **Evento y vacante** como tipo y como botón: con Eventos y Jobs (2g-3). **«Escribir»**: con Mensajes.
+- [ ] **Evento y vacante** como tipo y como botón: con Eventos (y Jobs, ya hecho: falta el botón «Ver vacante» en una novedad). **«Escribir»**: con Mensajes.
 - [ ] **«Repetir»** (todos los días, lun · mié · vie…) y **«Avisar a tus seguidores»**: con las notificaciones.
 - [ ] **PEDIDOS** que salen de una novedad (hoy el detalle muestra comentarios en su lugar).
 - [ ] **Reportar una novedad o un comentario** desde la página (la cola «Reportes de contenido» ya acepta novedades y
   comentarios; falta el botón en la tarjeta, que el diseño no trae).
 - [ ] **Elegir fotos de tu galería** en el editor (hoy se suben nuevas).
+
+## Jobs (bloque 2g-3, 6 nov 2026)
+- [ ] **Avisos por SMS** de cada respuesta a la persona y de cada solicitud nueva al negocio: con el proveedor de SMS y las
+  notificaciones. Hoy se ven en la solicitud y en Hoy.
+- [ ] **«Avísame de nuevas vacantes»** (vecinos) y el aviso al publicar: con las notificaciones.
+- [ ] **«Traducir con El Compa»** en el editor: con El Compa.
+- [ ] **Mis solicitudes** en Mi cuenta (lista de las J-… de la persona y las vacantes guardadas): con 2h Mi cuenta.
+- [ ] **Reportar una vacante** desde la página (la cola «Reportes de contenido» aún no acepta vacantes; el diseño no trae
+  el botón).
+- [ ] **Vacantes en Buscar y en la portada de la ciudad** («Empleos en Hazleton»): el diseño las ubica en la pestaña del
+  negocio; decidir si van en Buscar.

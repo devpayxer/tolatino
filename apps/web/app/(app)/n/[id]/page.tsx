@@ -10,6 +10,7 @@ import { menuPublico } from "@/lib/pedir";
 import { rsvPublica } from "@/lib/reservas";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
+import { vacantesFicha } from "@/lib/jobs";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { ubicacion } from "@/lib/ubicacion";
@@ -31,12 +32,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     resumenResenas(f.id, u?.id ?? null),
     f.pro ? novedadesFicha(f.id, u?.id ?? null) : Promise.resolve(null),
+    f.pro ? vacantesFicha(f.id, u?.id ?? null) : Promise.resolve([]),
   ]);
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
@@ -49,6 +51,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       rsv={rsv}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}
+      jobs={jobs}
       rsvInicial={rsvInicial}
       sesion={!!u}
       es={lang === "es"}

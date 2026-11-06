@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
-import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -159,6 +159,17 @@ export function N360({ n, tab }: { n: Negocio360; tab: string }) {
         {P.retirar && n.plan === "pro" ? (n.modsOff.nov
           ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Novedades?", hacer: (m) => moduloPausar(n.id, "nov", false, m) })}>{`Novedades en pausa: ${n.modsOff.nov.reason}`}</A.AdminNote>
           : <A.AdminNote tone="info" icon="news" cta="Pausar Novedades" onCta={() => setConf({ titulo: "Pausar Novedades", sub: "La pestaña deja de salir en la ficha hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de clientes", "Precios engañosos", "Spam"], hacer: (m) => moduloPausar(n.id, "nov", true, m) })}>Novedades activas en su página.</A.AdminNote>) : null}
+        <A.AdminList label={`VACANTES · ${n.vacantes.length}`} rows={n.vacantes.map((j) => ({
+          icon: "brief", title: j.title, sub: `$${(j.pay / 100).toFixed(2).replace(/\.00$/, "")}${j.payTo && j.payTo > j.pay ? `–${(j.payTo / 100).toFixed(2).replace(/\.00$/, "")}` : ""}/hora · ${j.apps} ${j.apps === 1 ? "solicitud" : "solicitudes"} · hace ${j.h < 24 ? `${Math.max(0, j.h)} h` : `${Math.floor(j.h / 24)} d`}${j.st === "adm" && j.hidden_reason ? ` · Oculta: ${j.hidden_reason}` : ""}`,
+          tag: j.st === "adm" ? "OCULTA" : j.st === "removed" ? "QUITADA POR EL DUEÑO" : j.st === "paused" ? "PAUSADA" : j.st === "filled" ? "CUBIERTA" : j.st === "draft" ? "BORRADOR" : undefined, tone: j.st === "adm" ? "danger" : "neutral",
+          actions: P.retirar && j.st !== "removed" ? [j.st === "adm"
+            ? { label: "Mostrar la vacante", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${j.title}»?`, plantillas: ["No rompe las reglas", "El reporte no trae evidencia"], hacer: (m) => vacanteOcultar(n.id, j.id, false, m) }) }
+            : { label: "Ocultar la vacante", variant: "danger", onClick: () => setConf({ titulo: `Ocultar «${j.title}»`, sub: "Sale de su página y nadie nuevo aplica. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Pide papeles, SSN o pago para aplicar", "Pago por debajo del mínimo", "Vacante falsa o engañosa", "Discriminatoria"], hacer: (m) => vacanteOcultar(n.id, j.id, true, m) }) }] : undefined,
+        }))} />
+        {!n.vacantes.length ? <A.AdminNote tone="info" icon="brief">Sin vacantes.</A.AdminNote> : null}
+        {P.retirar && n.plan === "pro" ? (n.modsOff.jobs
+          ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Jobs?", hacer: (m) => moduloPausar(n.id, "jobs", false, m) })}>{`Jobs en pausa: ${n.modsOff.jobs.reason}`}</A.AdminNote>
+          : <A.AdminNote tone="info" icon="brief" cta="Pausar Jobs" onCta={() => setConf({ titulo: "Pausar Jobs", sub: "La pestaña Jobs deja de salir en la ficha y nadie aplica hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de vecinos", "Pide papeles o pago para aplicar", "Vacantes falsas"], hacer: (m) => moduloPausar(n.id, "jobs", true, m) })}>Jobs activo en su página.</A.AdminNote>) : null}
       </>);
   } else if (tab === "confianza") {
     const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };
