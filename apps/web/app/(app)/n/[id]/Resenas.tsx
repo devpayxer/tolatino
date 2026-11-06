@@ -27,7 +27,7 @@ export function revWhen(d: number, es: boolean) {
 }
 const SRC: Record<Tarjeta["src"], [string, string, string]> = {
   dl: ["VERIFICADA · DELIVERY", "VERIFIED · DELIVERY", "signal"], pk: ["VERIFICADA · PICKUP", "VERIFIED · PICKUP", "signal"],
-  rsv: ["VERIFICADA · RESERVÓ", "VERIFIED · BOOKED", "signal"], vis: ["VISITANTE", "VISITOR", "neutral"],
+  rsv: ["VERIFICADA · RESERVÓ", "VERIFIED · BOOKED", "signal"], cita: ["VERIFICADA · CON CITA", "VERIFIED · BOOKED", "signal"], vis: ["VISITANTE", "VISITOR", "neutral"],
 };
 
 /* Lo que dice la tarjeta de los datos (revCard · Comida): cómo llegó, a tiempo / N min tarde, cuánto esperó, precio. */

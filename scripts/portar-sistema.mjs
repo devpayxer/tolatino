@@ -171,6 +171,14 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche OptionGroup: el origen cambió, revisar");
   }
 
+  // Tag: un tono que no existe (p. ej. «warn») dejaba la etiqueta sin colores y rompía la pantalla (6 nov, 3c: «LLEGA 10 MIN
+  // TARDE» en Hoy). Con un tono desconocido usa el neutro.
+  if (rel.endsWith("core/Tag.js")) {
+    const antes = t;
+    t = t.replace("  const [bg, fg] = T[tone];", "  const [bg, fg] = T[tone] || T.neutral;");
+    if (t === antes) throw new Error("parche Tag: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

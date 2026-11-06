@@ -18,7 +18,7 @@ function Tag({
   children,
   style
 }) {
-  const [bg, fg] = T[tone];
+  const [bg, fg] = T[tone] || T.neutral;
   return /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'inline-block',

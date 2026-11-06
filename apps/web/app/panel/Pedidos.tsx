@@ -9,6 +9,7 @@ import { repAsignar } from "./acciones-repartidores";
 import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
+import { hoyCitas } from "./Citas";
 
 export type PedPanel = {
   hoy?: Awaited<ReturnType<typeof pedidosHoy>>; lista?: Awaited<ReturnType<typeof pedidosLista>>; f?: FiltroPed; q?: string;
@@ -47,10 +48,10 @@ export function reqRow(c: Ctx, x: FilaPed, conActs = true): Fila {
 /* Hoy: cifras, los que esperan respuesta y la agenda de hoy. */
 export function hoyPedidos(c: Ctx): (Bloque | null)[] {
   // Pedidos y reservaciones de mesa juntos: lo que espera respuesta primero (Panel v2 · DASH-HOY).
-  const { E2, d } = c, H = c.ped?.hoy, M = hoyMesas(c), pend = [...(H?.pend ?? []).map((x) => reqRow(c, x)), ...M.pend], agenda = [...(H?.agenda ?? []).map((x) => reqRow(c, x, false)), ...M.agenda];
+  const { E2, d } = c, H = c.ped?.hoy, M = hoyMesas(c), CI = hoyCitas(c), pend = [...(H?.pend ?? []).map((x) => reqRow(c, x)), ...M.pend, ...CI.pend], agenda = [...(H?.agenda ?? []).map((x) => reqRow(c, x, false)), ...M.agenda, ...CI.agenda];
   const cols2 = c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)";
   const out: (Bloque | null)[] = [{ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
-    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(pend.length), bg: pend.length ? "var(--tl-ink)" : undefined, fg: pend.length ? "var(--tl-white)" : undefined, bd: pend.length ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: pend.length ? E2("responde en menos de 10 min", "reply within 10 min") : undefined },
+    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(pend.length), bg: pend.length ? "var(--tl-ink)" : undefined, fg: pend.length ? "var(--tl-white)" : undefined, bd: pend.length ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: pend.length ? (c.ped ? E2("responde en menos de 10 min", "reply within 10 min") : E2("responde antes de que venza", "reply before it expires")) : undefined },
     { k: E2("HOY EN TU AGENDA", "ON TODAY’S AGENDA"), v: String(agenda.length) },
     { k: E2("VENDIDO HOY", "SOLD TODAY"), v: `$${((H?.vendido ?? 0) / 100).toFixed(0)}` },
     { k: E2("VISTAS HOY", "VIEWS TODAY"), v: String(d.kpis.viewsToday) },

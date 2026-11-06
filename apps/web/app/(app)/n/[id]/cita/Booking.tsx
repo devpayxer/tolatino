@@ -32,8 +32,9 @@ const radio = (on: boolean) => (on ? "border-[1.5px] border-ink" : "border borde
 const anillo = (on: boolean) => (on ? "border-[6px] border-ink" : "border-[1.5px] border-ink/25");
 
 type Pago = { modo: ModoTarjeta; pk: string | null; tarjetas: Tarjeta[] } | null;
-export function Booking({ cp, svcId, inicial, es, pago, yo }: {
+export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   cp: CitasPublica; svcId: string; inicial: { opts: Record<string, number>; adds: string[]; con: string }; es: boolean; pago: Pago; yo: { nombre: string; tel: string | null } | null;
+  cambiar?: { numero: string; st: "pend" | "ok"; dep: number; i: number; m: number } | null; // «Cambiar» desde Tu cita: el depósito pasa a la nueva hora
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
@@ -70,7 +71,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
   const q = useMemo(() => ({ svc: s.id, opts: inicial.opts, adds: inicial.adds, con, i }), [s.id, inicial.opts, inicial.adds, con, i]);
   useEffect(() => {
     let vivo = true; setCargando(true);
-    void horasDeCita(cp.negocio.id, q).then((x) => {
+    void horasDeCita(cp.negocio.id, q, cambiar?.numero).then((x) => {
       if (!vivo) return;
       // Como el prototipo (start: i = próxima hora libre): la primera vez abre en el primer día con horas libres.
       if (!abierto.current) { abierto.current = true; const d = x?.dias.find((z) => !z.off); if (x && d && d.i !== q.i && !x.grupos.some((g) => g.sl.some((z) => z.free))) { setI(d.i); return; } }
@@ -147,11 +148,11 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
   const optD = ol.reduce((n, x) => n + x.o.p, 0), optG = ol.map((x) => `${nm(x.g.t)}: ${nm(x.o.n).toLowerCase()}`).join(" · ");
   const lineas = [{ label: nm(s.name), sub: optG || undefined, value: dinero(baseCents + optD) }, ...al.map((a) => ({ label: nm(a.name), value: dinero(own ? a.hacen.find((z) => z.id === own)?.cents ?? a.cents : a.cents) }))];
   const rest = P.cents - dep;
-  const necesitaTarjeta = dep > 0;
+  const carry = cambiar ? Math.min(cambiar.dep, dep) : 0, necesitaTarjeta = dep > 0 && !cambiar;
   const pay = {
     screenLabel: "Booking · pago", priceLabel: E2("PRECIO", "PRICE"), lines: lineas, totalLabel: E2("Total del servicio", "Service total"), total: dinero(P.cents), howLabel: E2("CÓMO SE PAGA", "HOW YOU PAY"),
     bar: dep > 0 ? { a: dep, b: Math.max(rest, 1) } : null,
-    rows: [dep ? { label: auto ? E2("Hoy, al confirmar", "Today, on confirmation") : E2("Hoy, al enviar", "Today, when you send"), sub: E2("Depósito. Se descuenta del total.", "Deposit. Taken off the total."), value: dinero(dep), dot: "var(--tl-ink)", color: "var(--tl-ink)" }
+    rows: [carry ? { label: E2("Ya pagado", "Already paid"), sub: E2(`Depósito de tu cita actual. Pasa a la nueva cuando ${who1} confirme; no se cobra otra vez.`, `Deposit from your current booking. It moves to the new one once ${who1} confirms; you are not charged again.`), value: dinero(carry), dot: "var(--tl-open)", color: "var(--tl-open-text)" } : dep ? { label: auto ? E2("Hoy, al confirmar", "Today, on confirmation") : E2("Hoy, al enviar", "Today, when you send"), sub: E2("Depósito. Se descuenta del total.", "Deposit. Taken off the total."), value: dinero(dep), dot: "var(--tl-ink)", color: "var(--tl-ink)" }
       : { label: E2("Hoy", "Today"), sub: E2("No pide depósito. No se cobra nada ahora.", "No deposit. Nothing is charged now."), value: "$0", dot: "rgba(11,14,18,.18)", color: "rgba(11,14,18,.45)" },
       { label: `${hSel != null ? cap(diaLargo(cp.hoy, i, es)) : E2("El día de tu cita", "On the day")}, ${restW}`, sub: silla && quien ? E2(`Efectivo o tarjeta, a ${quien.corto}. No al local.`, `Cash or card, to ${quien.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card."), value: dinero(rest), dot: dep ? "rgba(11,14,18,.18)" : "var(--tl-ink)", color: "var(--tl-ink)" }],
     card: necesitaTarjeta ? { screenLabel: "Booking · método de pago", kind: yo && tarjeta ? "brand" : "none", brand: tarjeta ? marcaB(tarjeta.marca) : "", label: yo && tarjeta ? tarjetaL(tarjeta) : E2("Tu tarjeta", "Your card"),
@@ -159,7 +160,11 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
       change: yo && tarjeta ? E2("Cambiar", "Change") : E2("Elegir", "Choose"), onClick: () => (yo ? setHoja(true) : entrar()) } : null,
   };
   const devuelve = `${E2("Te devolvemos ", "We refund ")}${dinero(dep)}`, GR = "var(--tl-open-text)";
-  const salidas = dep > 0 ? {
+  const salidas = carry ? {
+    screenLabel: "Booking · tu depósito", title: `${E2("Tu depósito de ", "Your deposit of ")}${dinero(carry)}`.toUpperCase(),
+    rows: [[E2(`${who1} confirma la nueva hora`, `${who1} confirms the new time`), E2("El depósito pasa a la nueva", "The deposit moves over"), "var(--tl-open-text)"], [E2("No la confirma o no contesta", "Not confirmed or no reply"), E2("Sigues con tu cita actual", "You keep your current booking"), "var(--tl-action)"]]
+      .map(([label, value, color], k) => ({ label, value, color, top: k ? "1px solid rgba(11,14,18,.07)" : "none" })), foot: "",
+  } : dep > 0 && !cambiar ? {
     screenLabel: "Booking · tu depósito", title: `${E2("Tu depósito de ", "Your deposit of ")}${dinero(dep)}`.toUpperCase(),
     rows: [...(auto ? [] : [[E2(`${who1} no puede a esa hora`, `${who1} cannot make that time`), E2("Te propone otra", "Proposes another"), "var(--tl-action)"],
       [E2("No te sirve la otra hora, o no tiene otra", "The new time does not work, or there is none"), devuelve, GR], [E2(`No contesta en ${cp.pol.exp} h`, `No reply in ${cp.pol.exp} h`), devuelve, GR]]),
@@ -173,24 +178,24 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
     .filter(Boolean) as [string, string][];
   const listo = hSel != null && whoOk && (!necesitaTarjeta || !!tarjeta);
   const falta = hSel == null ? E2("Elige día y hora", "Choose day and time") : !whoOk ? (para === "kid" && nombre.trim().length > 1 ? E2("Elige la edad", "Choose the age") : E2("Falta el nombre", "Name missing")) : necesitaTarjeta && !tarjeta ? E2("Elige la tarjeta para el depósito", "Choose the card for the deposit") : "";
-  const enviarL = auto ? E2("Confirmar cita", "Confirm booking") : E2("Enviar solicitud", "Send request");
-  const payK = dep ? E2("HOY PAGAS", "TODAY YOU PAY") : "TOTAL", payV = dep ? dinero(dep) : dinero(P.cents);
-  const payNote = dep ? `${E2("RESTO ", "REST ")}${dinero(rest)} · ${restW}`.toUpperCase() : `${E2("NO SE COBRA NADA AHORA · PAGAS ", "NOTHING CHARGED NOW · PAY ")}${restW}`.toUpperCase();
+  const enviarL = cambiar ? (auto || cambiar.st === "pend" ? E2("Cambiar a esta hora", "Move to this time") : E2("Pedir el cambio", "Request the change")) : auto ? E2("Confirmar cita", "Confirm booking") : E2("Enviar solicitud", "Send request");
+  const payK = dep ? E2("HOY PAGAS", "TODAY YOU PAY") : "TOTAL", payV = dep ? dinero(dep - carry) : dinero(P.cents);
+  const payNote = cambiar && carry ? `${E2("NADA NUEVO HOY · RESTO ", "NOTHING NEW TODAY · REST ")}${dinero(rest)} · ${restW}`.toUpperCase() : dep ? `${E2("RESTO ", "REST ")}${dinero(rest)} · ${restW}`.toUpperCase() : `${E2("NO SE COBRA NADA AHORA · PAGAS ", "NOTHING CHARGED NOW · PAY ")}${restW}`.toUpperCase();
 
   function entrar() { router.push(`/entrar?volver=${encodeURIComponent(location.pathname + location.search)}`); }
-  const volver = () => router.push(`/n/${cp.negocio.id}?tab=svc`);
+  const volver = () => router.push(cambiar ? `/cita/${cambiar.numero}` : `/n/${cp.negocio.id}?tab=svc`);
   const enviar = async () => {
     if (!listo || ocupado || hSel == null) return;
     if (!yo) return entrar();
     setOcupado(true); setError(null);
     const r = await pedirCita(cp.negocio.id, {
-      svc: s.id, opts: inicial.opts, adds: inicial.adds, con, i, m: hSel, para, nombre, edad: edad ?? undefined, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id),
+      svc: s.id, opts: inicial.opts, adds: inicial.adds, con, i, m: hSel, para, nombre, edad: edad ?? undefined, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), cambiar: cambiar?.numero ?? null,
     }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
-    if (r.ok) { router.push(`/cita/${r.numero}`); return; }
+    if (r.ok) { router.push(`/cita/${r.numero}${"cambio" in r && r.cambio ? "?cambio=1" : ""}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = crypto.randomUUID(); }
-    if ("hora" in r && r.hora) { setH(null); setPaso(0); void horasDeCita(cp.negocio.id, q).then(setHoras); }
+    if ("hora" in r && r.hora) { setH(null); setPaso(0); void horasDeCita(cp.negocio.id, q, cambiar?.numero).then(setHoras); }
   };
   const okPaso = paso === 0 ? hSel != null : paso === 1 ? whoOk : listo;
   const sigue = () => { if (!okPaso) return; if (paso === 2) return void enviar(); setPaso(paso + 1); window.scrollTo({ top: 0 }); };
@@ -330,7 +335,13 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
       <div data-screen-label="APP-NEG-BOOKING · móvil" className="pb-[150px] lg:hidden">
         <div className="sticky top-[57px] z-20 grid lg:top-0"><StepHeader title={T[paso]} step={paso + 1} total={3} backLabel={E2("Volver", "Back")} onBack={paso > 0 ? () => { setPaso(paso - 1); window.scrollTo({ top: 0 }); } : volver} /></div>
         <div className="flex flex-col gap-3 px-4 pt-4">
-          {paso === 0 && <>{tarjetaSvc}{bloqueHora}</>}
+          {paso === 0 && <>{cambiar && (
+            <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-[13px]">
+              <span className="grid flex-none pt-px"><Icon name="edit" size={16} color="var(--tl-pro-ink)" /></span>
+              <div className="min-w-0 flex-1"><div className="text-[13px] font-bold leading-[1.4] text-pro-ink">{cambiar.st === "pend" ? E2("Cambiando tu solicitud", "Changing your request") : E2(`Cambiando tu cita de ${diaS(cp.hoy, cambiar.i, es).toLowerCase()} · ${horaL(cambiar.m)}`, `Changing your booking for ${diaS(cp.hoy, cambiar.i, es)} · ${horaL(cambiar.m)}`)}</div>
+                <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-pro-ink">{cambiar.st === "pend" ? E2(`Elige la nueva hora. ${who1} todavía no ha respondido.`, `Pick the new time. ${who1} hasn't replied yet.`) : E2(`Tu hora actual sigue tuya hasta que ${who1} confirme la nueva.`, `Your current time stays yours until ${who1} confirms the new one.`)}</div></div>
+            </div>
+          )}{tarjetaSvc}{bloqueHora}</>}
           {paso === 1 && bloqueDet}
           {paso === 2 && <>{resumen}{rechazo}<PaymentSummary {...pay} />{salidas && <DepositOutcomes {...salidas} />}{politicas}</>}
           {errorBox}
@@ -350,7 +361,13 @@ export function Booking({ cp, svcId, inicial, es, pago, yo }: {
         <div className="mt-3.5"><h1 className="m-0 font-display text-[32px] font-extrabold leading-[1.05] tracking-[-0.045em]">Booking</h1><div className="mt-[9px] font-mono text-[11px] font-semibold tracking-[0.06em] text-ink/50">{`${cp.negocio.nombre} · ${nm(s.name)}`.toUpperCase()}</div></div>
         <div className="mt-6 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12 gap-y-8">
           <div className="flex min-w-0 flex-col gap-[26px]">
-            <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Servicio", "Service")}</div>{tarjetaSvc}</div>
+            <div>{cambiar && (<div className="mb-4">
+            <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-[13px]">
+              <span className="grid flex-none pt-px"><Icon name="edit" size={16} color="var(--tl-pro-ink)" /></span>
+              <div className="min-w-0 flex-1"><div className="text-[13px] font-bold leading-[1.4] text-pro-ink">{cambiar.st === "pend" ? E2("Cambiando tu solicitud", "Changing your request") : E2(`Cambiando tu cita de ${diaS(cp.hoy, cambiar.i, es).toLowerCase()} · ${horaL(cambiar.m)}`, `Changing your booking for ${diaS(cp.hoy, cambiar.i, es)} · ${horaL(cambiar.m)}`)}</div>
+                <div className="mt-[3px] text-pretty text-[12px] font-medium leading-[1.5] text-pro-ink">{cambiar.st === "pend" ? E2(`Elige la nueva hora. ${who1} todavía no ha respondido.`, `Pick the new time. ${who1} hasn't replied yet.`) : E2(`Tu hora actual sigue tuya hasta que ${who1} confirme la nueva.`, `Your current time stays yours until ${who1} confirms the new one.`)}</div></div>
+            </div>
+          </div>)}<div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Servicio", "Service")}</div>{tarjetaSvc}</div>
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Día y hora", "Day and time")}</div>{bloqueHora}</div>
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Detalles", "Details")}</div>{bloqueDet}</div>
             <div><div className="mb-3 font-display text-[20px] font-extrabold leading-[1.1] tracking-[-0.03em]">{E2("Antes de enviar", "Before you send")}</div><div className="flex flex-col gap-3">{salidas && <DepositOutcomes {...salidas} />}{politicas}</div></div>

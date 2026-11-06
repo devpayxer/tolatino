@@ -18,6 +18,7 @@ import { equipoBloques, equipoDetalle } from "./Equipo";
 import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
 import { hoyAyudas, clientesBloques, hoyPedidos, pedidoDetalle, pedidosModBloques, type PedPanel } from "./Pedidos";
 import { clientesMesas, reservasModBloques, rsvDetalle, type RsvPanel } from "./Reservas";
+import { citaDetalle, clientesCitas, type CitasData } from "./Citas";
 import { entregaBloques } from "./Entrega";
 import { cobrosBloques } from "./Cobros";
 import { planBloques, type PlanPanel } from "./Plan";
@@ -81,10 +82,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -123,7 +124,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -289,7 +290,7 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
   if (c.ruta.sec === "msg") return mensajesBloques(c);
-  if (c.ruta.sec === "cli") return { blocks: c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
+  if (c.ruta.sec === "cli") return { blocks: c.citas?.lista ? clientesCitas(c) : c.rsv?.lista ? clientesMesas(c) : clientesBloques(c), ed: null };
   if (c.ruta.sec === "dlv") return entregaBloques(c);
   if (c.ruta.sec === "pay") {
     const E2 = c.E2, tabs: Bloque = { type: "tabs", items: [{ l: E2("Tu plan", "Your plan"), on: c.ruta.sub === "plan", onClick: () => c.go("pay", "plan") }, { l: E2("Cobros con tarjeta", "Card payouts"), on: c.ruta.sub !== "plan", onClick: () => c.go("pay") }] };
@@ -319,6 +320,7 @@ function detalle(c: Ctx): Sec | null {
   if (/^(item|mcat|mgrp):/.test(id)) return menuDetalle(c, id);
   if (id.startsWith("ped:")) return pedidoDetalle(c);
   if (id.startsWith("rsv:")) return rsvDetalle(c);
+  if (id.startsWith("cita:")) return citaDetalle(c);
   if (id.startsWith("rev:")) return resenaDetalle(c);
   if (id.startsWith("msg:")) return mensajeDetalle(c);
   if (id.startsWith("svc:")) return servicioDetalle(c, id.slice(4));

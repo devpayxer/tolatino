@@ -18,10 +18,10 @@ import { TOPE_FREE } from "./plan";
      entonces una silla rentada no pide depósito.
    - Comisión de To'Latino: 8 % de lo que pasa por la tarjeta (fee_rules 'cita'); el depósito liberado no paga nada. */
 type Bi = { es: string; en: string };
-type Q = PoolClient | ReturnType<typeof db>;
-const hm2m = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
+export type Q = PoolClient | ReturnType<typeof db>;
+export const hm2m = (hm: string) => { const [h = 0, m = 0] = hm.split(":").map(Number); return h * 60 + m; };
 export const horaL = (m: number) => { m = ((Math.round(m) % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
-const fecha = (hoy: string, i: number) => { const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0, 10); };
+export const fecha = (hoy: string, i: number) => { const d = new Date(`${hoy}T12:00:00Z`); d.setUTCDate(d.getUTCDate() + i); return d.toISOString().slice(0, 10); };
 const dowDe = (ymd: string) => new Date(`${ymd}T12:00:00Z`).getUTCDay();
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const ID = /^\d{1,18}$/;
@@ -47,15 +47,15 @@ export type CitasPublica = {
   pol: Politica; can: boolean; off: "pausa" | "tope" | "apagado" | null; mia: MiaCita | null; hoy: string;
 };
 
-type Ctx = {
+export type Ctx = {
   id: string; name: string; tz: string; city: string; plan: string; address: string | null; phone: string | null; foto: string | null; mods: string[];
   off: Record<string, { reason?: string }>; hoy: string; now: number; model: CitasPublica["model"]; mes: string;
   horas: Record<number, [number, number][]>; especiales: { desde: string; hasta: string; closed: boolean; ranges: [number, number][] }[];
   cerradoHasta: string | null; cerradoHoy: boolean; pol: Politica; cuenta: string | null; barberia: boolean;
 };
-type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null };
+export type Persona = PersonaPub & { recibe: boolean; mismo: boolean; wk: ([number, number] | null)[] | null };
 
-async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
+export async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
   const b = (await c.query<{
     id: string; name: string; tz: string; city: string; plan: string; address: string | null; phone: string | null; foto: string | null; mods: string[]; off: Record<string, { reason?: string }> | null;
     hoy: string; hm: string; mes: string; model: CitasPublica["model"] | null; cerrado_hasta: string | null; cerrado_hoy: boolean; pol: Record<string, unknown> | null; acct: string | null; subs: string[];
@@ -85,7 +85,7 @@ async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
   };
 }
 
-async function gente(c: Q, x: Ctx): Promise<Persona[]> {
+export async function gente(c: Q, x: Ctx): Promise<Persona[]> {
   const r = await c.query<{ id: string; nombre: string; kind: Persona["kind"]; silla: number | null; foto: string | null; auto: boolean; resp: number | null; dep: number | null; recibe: boolean; mismo: boolean; wk: Persona["wk"] }>(
     `select m.id::text, m.display_name as nombre, m.kind, m.chair_seat as silla, m.photo_url as foto, m.chair_auto as auto, m.chair_response_min as resp, m.chair_deposit_cents as dep,
             m.takes_bookings as recibe, m.same_as_business_hours as mismo, m.weekly_schedule as wk
@@ -186,12 +186,21 @@ export function calcular(s: ServicioPub, extras: ServicioPub[], e: Eleccion, per
 
 /* ── Disponibilidad ── */
 type Ocupa = { m: string; ymd: string; s: number; e: number };
-async function ocupadas(c: Q, x: Ctx, sinOp?: string | null): Promise<Ocupa[]> {
+export async function ocupadas(c: Q, x: Ctx, sinOp?: string | null): Promise<Ocupa[]> {
+  // Lo que ocupa la agenda: pendientes y confirmadas en su hora; con «otra hora» del negocio, la hora propuesta (la pedida
+  // quedó libre); con un cambio pedido por el cliente, su hora actual y la que pide.
   const r = await c.query<{ m: string; ymd: string; hm: string; d: number; b: number }>(
-    `select o.member_id::text as m, (o.scheduled_at at time zone $2)::date::text as ymd, to_char(o.scheduled_at at time zone $2, 'HH24:MI') as hm, coalesce(o.duration_min, 30) as d, o.buffer_min as b
-       from operations o where o.business_id = $1 and o.kind = 'appointment' and o.member_id is not null and o.status in ('pending', 'change_proposed', 'confirmed')
+    `select o.member_id::text as m, (t.at at time zone $2)::date::text as ymd, to_char(t.at at time zone $2, 'HH24:MI') as hm, coalesce(o.duration_min, 30) as d, o.buffer_min as b
+       from operations o
+       cross join lateral (
+         select o.scheduled_at as at where o.status in ('pending', 'confirmed')
+         union all
+         select ((p.proposed->>'ymd')::date + make_interval(mins => (p.proposed->>'m')::int)) at time zone $2 from change_proposals p
+          where p.operation_id = o.id and p.status = 'open' and p.proposed ? 'm'
+       ) t
+      where o.business_id = $1 and o.kind = 'appointment' and o.member_id is not null and o.status in ('pending', 'change_proposed', 'confirmed')
         and coalesce(o.status_detail, '') not in ('done', 'noshow')
-        and o.scheduled_at >= ($3::date at time zone $2) and o.scheduled_at < (($3::date + ${DIAS + 1}) at time zone $2) and ($4::bigint is null or o.id <> $4::bigint)`,
+        and t.at >= ($3::date at time zone $2) and t.at < (($3::date + ${DIAS + 1}) at time zone $2) and ($4::bigint is null or o.id <> $4::bigint)`,
     [x.id, x.tz, x.hoy, sinOp ?? null]);
   return r.rows.map((o) => { const s = hm2m(o.hm); return { m: o.m, ymd: o.ymd, s, e: s + o.d + o.b }; });
 }
@@ -206,7 +215,7 @@ function rangos(x: Ctx, p: Persona, i: number): [number, number][] {
   return x.horas[dow] ?? [];
 }
 export type Hueco = { m: number; l: string; free: boolean; who?: string };
-function huecos(x: Ctx, cand: Persona[], i: number, dur: number, buf: number, occ: Ocupa[]): Hueco[] {
+export function huecos(x: Ctx, cand: Persona[], i: number, dur: number, buf: number, occ: Ocupa[]): Hueco[] {
   const ymd = fecha(x.hoy, i), step = dur >= 180 ? 60 : 30, desde = i === 0 ? x.now + 30 : -1;
   const porM = new Map<number, Hueco>();
   // Carga del día de cada uno: «Cualquiera» toma a quien tiene menos.
@@ -231,7 +240,7 @@ export type HorasCita = {
   sig: { i: number; m: number } | null; dur: number; cents: number | null;
 };
 type Pedido = Eleccion & { con: string; i: number };
-async function preparar(c: Q, negocio: string, q: Pedido, sinOp?: string | null) {
+export async function preparar(c: Q, negocio: string, q: Pedido, sinOp?: string | null) {
   const x = await contexto(c, negocio);
   if (!x) return null;
   const G = await gente(c, x);
@@ -247,8 +256,11 @@ async function preparar(c: Q, negocio: string, q: Pedido, sinOp?: string | null)
   const buf = (await c.query<{ b: number }>(`select buffer_min as b from items where id = $1::bigint`, [s.id])).rows[0]?.b ?? 0;
   return { x, G, s, extras, cand, elegido, calc, buf, occ: await ocupadas(c, x, sinOp) };
 }
-export async function horasCita(negocio: string, q: Pedido): Promise<HorasCita | null> {
-  const c = db(), P = await preparar(c, negocio, q);
+export async function idCita(userId: string, numero: string) {
+  return (await db().query<{ id: string }>(`select id::text from operations where number = $1 and user_id = $2 and kind = 'appointment'`, [numero, userId])).rows[0]?.id ?? null;
+}
+export async function horasCita(negocio: string, q: Pedido, sinOp?: string | null): Promise<HorasCita | null> {
+  const c = db(), P = await preparar(c, negocio, q, sinOp);
   if (!P || !P.calc || !P.cand.length) return null;
   const { x, cand, calc, buf, occ } = P;
   const i = Math.max(0, Math.min(DIAS - 1, Math.floor(q.i) || 0));
@@ -279,9 +291,9 @@ export async function proximas(negocio: string, dur = 40): Promise<Record<string
 
 /* ── Enviar la solicitud (o la cita, si confirma al instante) ── */
 export type CitaIn = Pedido & {
-  m: number; para: "me" | "other" | "kid"; nombre?: string; edad?: string; nota?: string; sms?: boolean; pm?: string | null; clave: string; fotos?: string[];
+  m: number; para: "me" | "other" | "kid"; nombre?: string; edad?: string; nota?: string; sms?: boolean; pm?: string | null; clave: string; fotos?: string[]; cambiar?: string | null;
 };
-type ResCita = { ok: true; numero: string; st: "pend" | "ok" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; entrar?: true };
+type ResCita = { ok: true; numero: string; st: "pend" | "ok"; cambio?: "pend" } | { ok: false; msg: Bi; tarjeta?: true; hora?: true; entrar?: true };
 const no = (es: string, en: string, x: { tarjeta?: true; hora?: true } = {}): ResCita => ({ ok: false, msg: { es, en }, ...x });
 const EDADES = ["1–3", "4–7", "8–12"];
 
@@ -309,7 +321,12 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     if (ya) { await c.query("rollback"); return { ok: true, numero: ya.number, st: ya.status === "confirmed" ? "ok" : "pend" }; }
     // Un candado por negocio: la hora se revisa y se toma sin que otra solicitud se cruce.
     await c.query(`select pg_advisory_xact_lock(hashtext('cita:' || $1))`, [negocio]);
-    const P = await preparar(c, negocio, { svc: f.svc, opts, adds, con: f.con, i });
+    // Cambiar una cita propia (pendiente o confirmada): mismo servicio y misma persona; su hora actual no cuenta como ocupada.
+    const cam = typeof f.cambiar === "string" && /^C-\d{1,10}$/.test(f.cambiar) ? (await c.query<{ id: string; number: string; status: string; mid: string; svc: string; start: string; detail: string | null }>(
+      `select id::text, number, status, member_id::text as mid, details->>'svcId' as svc, scheduled_at::text as start, status_detail as detail from operations
+        where number = $1 and user_id = $2 and kind = 'appointment' and business_id = $3 for update`, [f.cambiar, userId, negocio])).rows[0] ?? null : null;
+    if (f.cambiar && (!cam || !["pending", "confirmed"].includes(cam.status) || cam.detail || cam.svc !== f.svc)) { await c.query("rollback"); return no("Esa cita ya no se puede cambiar desde aquí.", "That booking can no longer be changed here."); }
+    const P = await preparar(c, negocio, { svc: f.svc, opts, adds, con: cam ? cam.mid : f.con, i }, cam?.id ?? null);
     if (!P) { await c.query("rollback"); return no("Ese servicio ya no está disponible.", "That service is no longer available."); }
     const off = await puede(c, P.x);
     if (off) { await c.query("rollback"); return off === "tope" ? no(`${P.x.name} no recibe más citas en línea este mes. Llama para pedir tu hora.`, `${P.x.name} takes no more online bookings this month. Call for a time.`) : no(`${P.x.name} no toma citas en línea por ahora: llama o pasa por el local.`, `${P.x.name} is not taking online bookings right now: call or stop by.`); }
@@ -320,6 +337,24 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     const quien = P.G.find((p) => p.id === h.who)!;
     // Con «Cualquiera» el precio es el de quien queda (con empleados es el mismo del local).
     const calc = calcular(P.s, P.extras, { svc: f.svc, opts, adds }, quien.id)!;
+    if (cam) {
+      const ymd0 = fecha(P.x.hoy, i), at = `(($2::date + make_interval(mins => $3::int)) at time zone $4)`;
+      if (cam.status === "pending" || quien.auto) {
+        await c.query(`update operations set scheduled_at = ${at}, late_notice_at = null, details = details - 'rec24' - 'rec2', updated_at = now(),
+                              respond_by = case when status = 'pending' then least(now() + make_interval(hours => $5::int), ${at}) else respond_by end where id = $1::bigint`,
+          [cam.id, ymd0, m, P.x.tz, P.x.pol.exp]);
+        await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, 'changed', 'user', $2, $3::jsonb)`, [cam.id, userId, JSON.stringify({ es: `Cambió a ${horaL(m)}`, en: `Moved to ${horaL(m)}` })]);
+        await c.query("commit");
+        return { ok: true, numero: cam.number, st: cam.status === "pending" ? "pend" : "ok" };
+      }
+      if ((await c.query(`select 1 from change_proposals where operation_id = $1::bigint and side = 'customer' and status = 'open'`, [cam.id])).rowCount) { await c.query("rollback"); return no("Ya pediste un cambio: espera la respuesta.", "You already asked for a change: wait for the reply."); }
+      await c.query(`insert into change_proposals (operation_id, kind, proposed, created_by, side, respond_by)
+                     values ($1::bigint, 'time', $2::jsonb, $3, 'customer', least(now() + make_interval(hours => $4::int), $5::timestamptz, (($6::date + make_interval(mins => $7::int)) at time zone $8)))`,
+        [cam.id, JSON.stringify({ ymd: ymd0, m, member: cam.mid }), userId, P.x.pol.exp, cam.start, ymd0, m, P.x.tz]);
+      await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1::bigint, 'change_requested', 'user', $2)`, [cam.id, userId]);
+      await c.query("commit");
+      return { ok: true, numero: cam.number, st: "ok", cambio: "pend" };
+    }
     const pend = (await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and kind = 'appointment' and status = 'pending'`, [userId])).rows[0]?.n ?? 0;
     if (pend >= 3) { await c.query("rollback"); return no("Tienes 3 solicitudes de cita esperando respuesta. Espera a que te contesten.", "You have 3 booking requests waiting for a reply. Wait for an answer."); }
     const dep = Math.min(quien.dep, calc.cents), auto = quien.auto, ymd = fecha(P.x.hoy, i);
@@ -338,7 +373,7 @@ export async function enviarCita(userId: string, negocio: string, f: CitaIn, ent
     }
     const det = {
       svc: P.s.name, svcId: P.s.id, opts: calc.ol, adds: calc.al.map((a) => ({ id: a.id, name: a.name, cents: a.cents })), para, nombre: para === "me" ? null : nombre, edad: para === "kid" ? edad : null,
-      sms: f.sms !== false, cualquiera: f.con === "any", base: calc.base,
+      sms: f.sms !== false, cualquiera: f.con === "any", base: calc.base, sel: opts,
     };
     const op = (await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, member_id, status, scheduled_at, duration_min, buffer_min, customer_note, details,
@@ -415,29 +450,38 @@ export type CitaVista = {
   svc: Bi; opts: { g: Bi; o: Bi; p: number }[]; adds: { name: Bi; cents: number }[]; ymd: string; i: number; m: number; dur: number; total: number; dep: number;
   para: "me" | "other" | "kid"; nombre: string | null; edad: string | null; nota: string | null; fotos: string[]; auto: boolean; resp: number; exp: number;
   enviada: number; contestada: number | null; tarjeta: string | null; pago: string | null; cxPor: string | null;
+  svcId: string | null; optIdx: string; addIds: string[]; mid: string | null; late: number | null; perdio: boolean; cxRazon: string | null; mins: number;
+  alt: { ymd: string; i: number; m: number; hasta: string } | null; chg: { ymd: string; i: number; m: number } | null; resena: boolean; cxh: number; tol: number;
 };
 export async function citaVista(userId: string, numero: string): Promise<CitaVista | null> {
   if (!/^C-\d{1,10}$/.test(numero)) return null;
   const r = (await db().query<{
     numero: string; status: string; biz: string; nombre: string; direccion: string | null; telefono: string | null; foto: string | null; model: CitasPublica["model"]; subs: string[];
-    con: string | null; silla: number | null; cfoto: string | null; det: Record<string, unknown>; ymd: string; hm: string; hoy: string; dur: number; total: number; dep: number; nota: string | null;
-    enviada: string; contestada: string | null; brand: string | null; l4: string | null; pago: string | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
+    con: string | null; silla: number | null; cfoto: string | null; det: Record<string, unknown>; mid: string | null; razon: string | null; mins: number; resena: boolean;
+    alt: { ymd: string; m: number } | null; alt_hasta: string | null; chg: { ymd: string; m: number } | null; ymd: string; hm: string; hoy: string; dur: number; total: number; dep: number; nota: string | null;
+    enviada: string; contestada: string | null; cxh: number; tol: number; brand: string | null; l4: string | null; pago: string | null; auto: boolean; resp: number; exp: number; cx: string | null; fotos: string[];
   }>(
     `select o.number as numero, o.status, b.id as biz, b.name as nombre, b.address as direccion, b.phone as telefono, b.logo_url as foto, b.svc_model as model, b.subcategory_ids as subs,
-            m.display_name as con, case when b.svc_model = 'chair' then m.chair_seat end as silla, m.photo_url as cfoto, o.details as det,
+            m.display_name as con, case when b.svc_model = 'chair' then m.chair_seat end as silla, m.photo_url as cfoto, o.details as det, o.member_id::text as mid, o.cancel_reason as razon,
+            floor(extract(epoch from o.scheduled_at - now()) / 60)::int as mins,
+            exists (select 1 from reviews r where r.user_id = o.user_id and r.business_id = o.business_id and r.status <> 'removed') as resena,
+            (select p.proposed from change_proposals p where p.operation_id = o.id and p.side = 'business' and p.status = 'open' order by p.id desc limit 1) as alt,
+            (select to_char(p.respond_by at time zone c.timezone, 'FMHH12:MI AM') from change_proposals p where p.operation_id = o.id and p.side = 'business' and p.status = 'open' order by p.id desc limit 1) as alt_hasta,
+            (select p.proposed from change_proposals p where p.operation_id = o.id and p.side = 'customer' and p.status = 'open' order by p.id desc limit 1) as chg,
             (o.scheduled_at at time zone c.timezone)::date::text as ymd, to_char(o.scheduled_at at time zone c.timezone, 'HH24:MI') as hm, (now() at time zone c.timezone)::date::text as hoy,
             coalesce(o.duration_min, 30) as dur, o.total_cents as total, o.deposit_cents as dep, o.customer_note as nota,
             to_char(o.sent_at at time zone c.timezone, 'HH24:MI') as enviada, to_char(o.answered_at at time zone c.timezone, 'HH24:MI') as contestada,
             p.card_brand as brand, p.card_last4 as l4, p.status as pago,
             coalesce(case when b.svc_model = 'chair' then m.chair_auto end, bp.auto_approve, false) as auto,
-            coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, bp.response_min, 30) as resp, coalesce(bp.expires_h, 2) as exp, o.cancelled_by as cx,
+            coalesce(case when b.svc_model = 'chair' then m.chair_response_min end, bp.response_min, 30) as resp, coalesce(bp.expires_h, 2) as exp, o.cancelled_by as cx, coalesce(bp.cancel_free_h, 2) as cxh, coalesce(bp.tolerance_min, 15) as tol,
             array(select x.url from media x where x.owner_kind = 'appointment' and x.owner_id = o.id::text and x.status = 'visible' order by x.sort) as fotos
        from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id left join business_members m on m.id = o.member_id
        left join booking_policies bp on bp.business_id = o.business_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
       where o.number = $1 and o.user_id = $2 and o.kind = 'appointment'`, [numero, userId])).rows[0];
   if (!r) return null;
   const ST: Record<string, CitaVista["st"]> = { pending: "pend", change_proposed: "alt", confirmed: "ok", declined: "no", expired: "exp", cancelled: "cx", done: "done" };
-  const d = r.det as { svc?: Bi; opts?: CitaVista["opts"]; adds?: { name: Bi; cents: number }[]; para?: CitaVista["para"]; nombre?: string | null; edad?: string | null };
+  const d = r.det as { svc?: Bi; svcId?: string; sel?: Record<string, number>; opts?: CitaVista["opts"]; adds?: { id?: string; name: Bi; cents: number }[]; para?: CitaVista["para"]; nombre?: string | null; edad?: string | null; late?: number; perdio?: boolean };
+  const idx = (ymd: string) => Math.round((Date.parse(ymd) - Date.parse(r.hoy)) / 864e5);
   const BR: Record<string, string> = { visa: "Visa", mastercard: "Mastercard", mc: "Mastercard", amex: "Amex", discover: "Discover", disc: "Discover" };
   const barberia = (r.subs ?? []).includes("NEG-BELL-01");
   return {
@@ -446,5 +490,8 @@ export async function citaVista(userId: string, numero: string): Promise<CitaVis
     svc: d.svc ?? { es: "", en: "" }, opts: d.opts ?? [], adds: d.adds ?? [], ymd: r.ymd, i: Math.round((Date.parse(r.ymd) - Date.parse(r.hoy)) / 864e5), m: hm2m(r.hm), dur: r.dur,
     total: r.total, dep: r.dep, para: d.para ?? "me", nombre: d.nombre ?? null, edad: d.edad ?? null, nota: r.nota, fotos: r.fotos ?? [], auto: r.auto, resp: r.resp, exp: r.exp,
     enviada: hm2m(r.enviada), contestada: r.contestada ? hm2m(r.contestada) : null, tarjeta: r.brand && r.l4 ? `${BR[r.brand] ?? r.brand} ·· ${r.l4}` : null, pago: r.pago, cxPor: r.cx,
+    svcId: d.svcId ?? null, optIdx: Object.entries(d.sel ?? {}).map(([g, k]) => `${g}-${k}`).join(","), addIds: (d.adds ?? []).map((a) => a.id).filter((x): x is string => !!x), mid: r.mid,
+    late: d.late ?? null, perdio: !!d.perdio, cxRazon: r.razon, mins: r.mins, resena: r.resena, cxh: r.cxh, tol: r.tol,
+    alt: r.alt ? { ymd: r.alt.ymd, i: idx(r.alt.ymd), m: r.alt.m, hasta: r.alt_hasta ?? "" } : null, chg: r.chg ? { ymd: r.chg.ymd, i: idx(r.chg.ymd), m: r.chg.m } : null,
   };
 }

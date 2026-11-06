@@ -20,7 +20,7 @@ _Actualizado: 5 nov 2026._
   `claude/*` viejas siguen existiendo pero no se usan.
 
 ## Estado
-- **Fase 3 en curso:** 3a (servicios y reglas de citas) y 3b (ficha › Servicios, hoja del servicio, Booking de 3 pasos con depósito retenido, motor de disponibilidad real con candado, Tu cita; migración 0044, semilla 0011, `lib/citas.ts`) hechos. Sigue 3c: estado de la cita (cambiar, cancelar, voy tarde, vencer a las 2 h con depósito liberado, recordatorios 24 h/2 h, avisar hora libre) + Panel › Citas (`docs/diseno/plan/fase3-citas.md`).
+- **Fase 3 en curso:** 3a (servicios y reglas de citas) 3b (ficha › Servicios, hoja, Booking con depósito, motor de disponibilidad) y 3c (Tu cita completa: otra hora, cambiar, cancelar con devolución, voy tarde, vencer, recordatorios, hora libre, calificar; Panel › Hoy/detalle/Clientes de citas; Mi cuenta; `lib/citas-flujo.ts`, `lib/citas-panel.ts`, migración 0045) hechos. Sigue 3d: staff con silla propia (página de la silla, su agenda y precios, su cuenta de cobro para el depósito, reseñas «Con {pro}»).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

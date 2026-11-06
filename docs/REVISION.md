@@ -395,3 +395,11 @@ _Decidido por mí (reversible): depósitos $0/5/10/20/50; con sillas rentadas ca
 _Decidido por mí (reversible): el depósito se **retiene** al enviar y se cobra al confirmar (al instante si confirma solo); si no se confirma se libera sin esperar un reembolso. Las sillas rentadas no piden depósito en línea hasta tener su propia cuenta de cobro (3d): así nunca va el dinero del barbero a la cuenta del local. «Por barbero › Booking» muestra los servicios de esa persona con sus precios (la página propia de cada silla llega en 3d). El Booking abre en el primer día con horas libres. Los textos que en el diseño decían «por SMS» dicen «en Avisos» hasta que haya proveedor de SMS._
 _Accesibilidad: día, hora, persona, opciones, extras y los Chip del sistema ahora son radios/casillas/botones con teclado (parche en scripts/portar-sistema.mjs); sirve también a la reserva de mesa._
 
+## Fase 3 · 3c Estado de la cita + Panel › Citas
+1. Marisol pide un Fade con Luis (depósito $10). En el panel de **Luis** › Hoy aparece con **Confirmar / Otra hora / No puedo**. Toca **Otra hora**.
+2. Marisol abre la cita: «Te propone otra hora» → **Aceptar esta hora** (se cobra el depósito). Luego **Cambiar hora** → otra hora → **Pedir el cambio**; Luis lo acepta desde el detalle.
+3. Marisol **cancela** con tiempo: «Te devolvemos los $10». Prueba también **Voy tarde** (sale «LLEGA 10 MIN TARDE» en Hoy) y, con una cita de hoy, **Llegó · en atención → Terminada · cobrar** y las estrellas para calificar.
+4. Panel › **Clientes** (filtros) y Mi cuenta › **Citas y reservas**.
+_Decidido por mí (reversible): las solicitudes vencen a las 2 h o al llegar la hora (lo que pase antes); «otra hora» da 2 h al cliente; un cambio pedido por el cliente vence si el negocio no contesta en 2 h y la cita sigue igual; el teléfono del cliente se ve en el panel solo con la cita confirmada; «No llegó» solo después de la hora de la cita; el recordatorio sale 24 h y 2 h antes por Avisos. Las reseñas de una cita salen «VERIFICADA · CON CITA»._
+_Arreglado de paso: la etiqueta del sistema con un tono desconocido rompía la pantalla; ahora usa el neutro (parche en portar-sistema)._
+

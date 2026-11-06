@@ -4,7 +4,8 @@
    y Llamar · Mensaje. Se actualiza solo mientras espera respuesta. Compuesto con el sistema de diseño. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useEffect, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { citaAccion } from "./acciones";
 import type { CitaVista } from "@/lib/citas";
 
 type N = "Icon" | "Button" | "OrderTracker";
@@ -19,10 +20,21 @@ const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep",
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgroundSize: "cover", backgroundPosition: "center" } : {});
 
-export function Estado({ c, yo, es }: { c: CitaVista; yo: string; es: boolean }) {
+export function Estado({ c, yo, es, cambio }: { c: CitaVista; yo: string; es: boolean; cambio?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
+  const [hoja, setHoja] = useState<"cx" | "late" | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const aviso = (t: string) => { setFlash(t); setTimeout(() => setFlash(null), 3200); };
+  const hacer = async (que: "cancelar" | "aceptar" | "nogracias" | "tarde", ok: string, extra?: number) => {
+    if (ocupado) return; setOcupado(true); setError(null);
+    const r = await citaAccion(c.numero, que, extra).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
+    setOcupado(false); setHoja(null);
+    if (r.ok) { aviso(ok); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
+  };
   // Mientras espera respuesta, se mira cada 15 s (la respuesta también llega a Avisos).
   useEffect(() => { if (c.st !== "pend" && c.st !== "alt") return; const t = setInterval(() => router.refresh(), 15000); return () => clearInterval(t); }, [c.st, router]);
   const d = new Date(`${c.ymd}T12:00:00Z`);
@@ -39,7 +51,9 @@ export function Estado({ c, yo, es }: { c: CitaVista; yo: string; es: boolean })
     alt: ["calendar", "bg-action/10", "var(--tl-action)", E2("Te propone otra hora", "A new time was proposed"), E2(`${who1} no puede a las ${horaL(c.m)}. ${c.dep ? `Si no te sirve, te devolvemos los ${dinero(c.dep)}.` : "Decide abajo."}`, `${who1} cannot do ${horaL(c.m)}. ${c.dep ? `If it does not work for you, we refund the ${dinero(c.dep)}.` : "Decide below."}`), E2("TE PROPONEN UN CAMBIO", "THEY PROPOSE A CHANGE"), "bg-action/10", "var(--tl-action)"],
     no: ["close", "bg-danger/10", "var(--tl-danger)", E2("No pudo tomarla", "Could not take it"), `${E2(`${who1} no tiene otra hora que ofrecerte. `, `${who1} has no other time to offer. `)}${dev}`, E2("NO PUDO", "COULD NOT"), "bg-danger/10", "var(--tl-danger)"],
     exp: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("Sin respuesta", "No reply"), `${E2(`${who1} no contestó en ${c.exp} horas. `, `${who1} did not reply in ${c.exp} hours. `)}${dev}`, E2("VENCIDA", "EXPIRED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
-    cx: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("Cita cancelada", "Booking cancelled"), c.cxPor === "user" ? `${E2("Cancelaste a tiempo. ", "Cancelled in time. ")}${dev}` : dev, E2("CANCELADA", "CANCELLED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
+    cx: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", c.cxRazon === "alt_no" ? E2("No aceptaste la otra hora", "You declined the new time") : c.cxRazon === "alt_vencida" ? E2("Venció la otra hora", "The new time expired") : E2("Cita cancelada", "Booking cancelled"),
+      c.perdio ? E2(`Cancelaste con menos de ${c.cxh} h: el depósito de ${dinero(c.dep)} se queda con ${who1}.`, `Cancelled less than ${c.cxh} h before: the ${dinero(c.dep)} deposit stays with ${who1}.`)
+        : c.cxRazon === "alt_no" || c.cxRazon === "alt_vencida" ? `${E2("No hay cita. ", "No booking. ")}${dev}` : c.cxPor === "user" ? `${E2("Cancelaste a tiempo. ", "Cancelled in time. ")}${dev}` : dev, E2("CANCELADA", "CANCELLED"), "bg-ink/[.06]", "rgba(11,14,18,.6)"],
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("Cita terminada", "Appointment done"), `${cap(diaL)}${E2(" con ", " with ")}${withL}.${c.dep ? E2(` El depósito de ${dinero(c.dep)} se descontó del total.`, ` The ${dinero(c.dep)} deposit came off the total.`) : ""}`, E2("TERMINADA", "DONE"), "bg-signal/20", "var(--tl-open-text)"],
   };
   const [ic, icBg, icFg, t, line, pill, pillBg, pillFg] = H[c.st];
@@ -58,11 +72,32 @@ export function Estado({ c, yo, es }: { c: CitaVista; yo: string; es: boolean })
   if (c.dep) {
     if (pend || alt) plata.push(["card", E2("Depósito cobrado", "Deposit charged"), dinero(c.dep), "var(--tl-pro-ink)", `${tarjeta}${E2(" · se devuelve si no se confirma", " · refunded if not confirmed")}`]);
     else if (ok || done) plata.push(["check", E2("Depósito pagado", "Deposit paid"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · se descuenta del total", " · taken off the total")}`]);
+    else if (c.perdio || c.pago === "captured") plata.push(["warning", `${E2("Se queda con ", "Kept by ")}${who1}`, dinero(c.dep), "var(--tl-danger)", E2("Cancelación tardía", "Late cancellation")]);
     else plata.push(["check", E2("Depósito devuelto", "Deposit refunded"), dinero(c.dep), "var(--tl-open-text)", `${tarjeta}${E2(" · 1 a 5 días hábiles", " · 1 to 5 business days")}`]);
   }
   if (!dead) plata.push(["store", `${cap(diaL)}, ${restW}`, dinero(c.dep ? rest : c.total), "var(--tl-ink)", silla && c.con ? E2(`Efectivo o tarjeta, a ${c.con.corto}. No al local.`, `Cash or card, to ${c.con.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card.")]);
   const foto = silla && c.con?.foto ? c.con.foto : c.negocio.foto;
   const llamar = () => { if (c.negocio.telefono) location.href = `tel:${c.negocio.telefono}`; };
+  const DLs = (i: number, ymd: string) => { const z = new Date(`${ymd}T12:00:00Z`); return i === 0 ? E2("hoy", "today") : i === 1 ? E2("mañana", "tomorrow") : `${(DS[es ? "es" : "en"][z.getUTCDay()] ?? "").toLowerCase()} ${z.getUTCDate()}`; };
+  const otra = `/n/${c.negocio.id}/cita?${new URLSearchParams({ s: c.svcId ?? "", ...(c.optIdx ? { o: c.optIdx } : {}), ...(c.addIds.length ? { a: c.addIds.join(",") } : {}), con: c.mid ?? "any" })}`;
+  const aTiempo = c.mins >= c.cxh * 60, lateOk = ok && !c.late && c.mins <= 120 && c.mins > -15;
+  // «Al calendario»: un .ics con la hora de la cita (hora local del negocio).
+  const ics = () => {
+    const p = (n: number) => String(n).padStart(2, "0"), ymd = c.ymd.replace(/-/g, ""), f = (m: number) => `${ymd}T${p(Math.floor(m / 60))}${p(m % 60)}00`;
+    const txt = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//To'Latino//Citas//ES", "BEGIN:VEVENT", `UID:${c.numero}@tolatino`, `DTSTART:${f(c.m)}`, `DTEND:${f(c.m + c.dur)}`,
+      `SUMMARY:${nm(c.svc)} · ${c.negocio.nombre}`, `LOCATION:${(c.negocio.direccion ?? "").replace(/[,;]/g, " ")}`, `DESCRIPTION:${E2("Cita", "Booking")} ${c.numero} · ${withL}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `${c.numero}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  };
+  const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.negocio.direccion ?? c.negocio.nombre)}`, "_blank", "noopener");
+  const acts: [string, string, () => void][] = ok ? [["calendar", E2("Al calendario", "Add to calendar"), ics], ["pin", E2("Cómo llegar", "Directions"), llegar],
+      ["clock", E2("Voy tarde", "Running late"), () => (lateOk ? setHoja("late") : aviso(c.late ? E2(`Ya avisaste: llegas ${c.late} min tarde`, `Already sent: ${c.late} min late`) : E2("Disponible 2 h antes de tu cita", "Available 2 h before your booking")))],
+      ["edit", E2("Cambiar hora", "Change time"), () => (c.chg ? aviso(E2("Ya pediste un cambio: espera la respuesta", "You already asked for a change: wait for the reply")) : router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`))]]
+    : done ? [["calendar", E2("Volver a reservar", "Book again"), () => router.push(otra)]]
+      : pend ? [["edit", E2("Cambiar", "Change"), () => router.push(`/n/${c.negocio.id}/cita?cambiar=${c.numero}`)], ["close", E2("Cancelar solicitud", "Cancel request"), () => setHoja("cx")]] : [];
+  const cxT = pend ? E2("¿Cancelar la solicitud?", "Cancel the request?") : E2("¿Cancelar tu cita?", "Cancel your booking?");
+  const cxS = pend ? `${E2("Es gratis. ", "It is free. ")}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
+    : aTiempo ? `${E2(`Faltan más de ${c.cxh} h: es gratis. `, `More than ${c.cxh} h to go: it is free. `)}${c.dep ? E2(`Te devolvemos los ${dinero(c.dep)} del depósito.`, `We refund your ${dinero(c.dep)} deposit.`) : ""}`
+      : `${E2(`Faltan menos de ${c.cxh} h. `, `Less than ${c.cxh} h to go. `)}${c.dep ? E2(`El depósito de ${dinero(c.dep)} se queda con ${who1}.`, `The ${dinero(c.dep)} deposit stays with ${who1}.`) : E2(`No hay cargo, pero avísale a ${who1}.`, `No charge, but let ${who1} know.`)}`;
 
   return (
     <div data-screen-label="APP-NEG-CITA · móvil" className="min-h-[100dvh] bg-paper pb-10">
@@ -72,12 +107,44 @@ export function Estado({ c, yo, es }: { c: CitaVista; yo: string; es: boolean })
           <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("CITA ", "BOOKING ")}#${c.numero} · ${c.negocio.nombre}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
+        {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
+        {error && <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div>}
+        {cambio && c.chg && !flash && <div className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{E2(`Listo: le pediste el cambio a ${who1}`, `Done: you asked ${who1} for the change`)}</span></div>}
         <div data-screen-label="Cita · estado" className="rounded-[20px] border border-ink/[.07] bg-white px-[18px] pb-5 pt-6 text-center">
           <div className={`mx-auto grid h-[60px] w-[60px] place-items-center rounded-[20px] ${icBg}`}><Icon name={ic} size={26} color={icFg} strokeWidth={2.2} /></div>
           <h1 className="m-0 mt-4 font-display text-[24px] font-extrabold leading-[1.12] tracking-[-0.04em]">{t}</h1>
           <p className="m-0 mt-[9px] text-pretty text-[13px] leading-[1.55] text-ink/[.62]">{line}</p>
           <div className={`mt-[13px] inline-flex items-center gap-2 rounded-[10px] px-3 py-[7px] font-mono text-[9.5px] font-bold tracking-[0.12em] ${pillBg}`} style={{ color: pillFg }}><span className="h-[7px] w-[7px] rounded-full" style={{ background: pillFg }} />{pill}</div>
         </div>
+        {ok && c.late && <div className="flex items-start gap-2.5 rounded-2xl bg-pro/[.12] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="clock" size={16} color="var(--tl-pro-ink)" /></span><span className="text-[12.5px] font-semibold leading-[1.5] text-pro-ink">{E2(`Le avisaste a ${who1} que llegas ${c.late} min tarde. Tolerancia: ${c.tol} min.`, `You told ${who1} you are ${c.late} min late. Grace period: ${c.tol} min.`)}</span></div>}
+        {c.chg && (ok || pend) && <div className="flex items-start gap-2.5 rounded-2xl bg-action/[.07] px-3.5 py-3"><span className="grid flex-none pt-px"><Icon name="calendar" size={16} color="var(--tl-action)" /></span><span className="text-pretty text-[12.5px] font-semibold leading-[1.5] text-ink/75">{E2(`Pediste cambiarla a ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. Esta hora sigue tuya hasta que ${who1} confirme la nueva.`, `You asked to move it to ${DLs(c.chg.i, c.chg.ymd)} · ${horaL(c.chg.m)}. This time stays yours until ${who1} confirms the new one.`)}</span></div>}
+        {alt && c.alt && (
+          <div data-screen-label="Cita · otra hora propuesta" className="rounded-[20px] border-[1.5px] border-ink bg-white p-4">
+            <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TE PROPONE", "PROPOSED TIME")}</div>
+            <div className="mt-2 font-display text-[20px] font-extrabold leading-[1.15] tracking-[-0.03em]">{`${cap(DLs(c.alt.i, c.alt.ymd))} · ${horaL(c.alt.m)}`}</div>
+            <div className="mt-1.5 text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2(`En lugar de ${diaS.toLowerCase()} a las ${horaL(c.m)}.${c.alt.hasta ? ` Responde antes de las ${c.alt.hasta}.` : ""}`, `Instead of ${diaS} at ${horaL(c.m)}.${c.alt.hasta ? ` Reply by ${c.alt.hasta}.` : ""}`)}</div>
+            <div className="mt-3.5 flex flex-col gap-2">
+              <div className="grid"><Button variant="primary" icon="check" disabled={ocupado} onClick={() => hacer("aceptar", E2("Listo: tu cita quedó confirmada", "Done: your booking is confirmed"))}>{E2("Aceptar esta hora", "Accept this time")}</Button></div>
+              <div className="grid"><Button variant="secondary" disabled={ocupado} onClick={() => router.push(otra)}>{E2("Buscar otra", "Find another")}</Button></div>
+              <div className="grid"><Button variant="ghost" disabled={ocupado} onClick={() => hacer("nogracias", E2("Listo: no hay cita", "Done: no booking"))}>{E2("No, gracias", "No, thanks")}</Button></div>
+            </div>
+          </div>
+        )}
+        {done && (
+          <div data-screen-label="Cita · calificar" className="rounded-[20px] border border-ink/[.07] bg-white p-4 text-center">
+            {c.resena ? (
+              <button type="button" onClick={() => router.push(`/n/${c.negocio.id}/resena/tuya`)} className="flex w-full items-center justify-center gap-2 text-[13px] font-bold"><Icon name="check" size={15} color="var(--tl-open)" />{E2("Tu reseña está publicada", "Your review is posted")}<span className="text-action">{E2("Ver", "See")}</span></button>
+            ) : (
+              <>
+                <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU CITA", "YOUR APPOINTMENT")}</div>
+                <div className="mt-1.5 font-display text-[18px] font-extrabold tracking-[-0.03em]">{E2("¿Cómo te quedó?", "How did it turn out?")}</div>
+                <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{E2(`Toca las estrellas. Sale como reseña verificada en la página de ${c.negocio.nombre}.`, `Tap the stars. It posts as a verified review on ${c.negocio.nombre}'s page.`)}</div>
+                <div className="mt-3 flex justify-center gap-1.5">{[1, 2, 3, 4, 5].map((n) => <button key={n} type="button" aria-label={E2(`${n} estrellas`, `${n} stars`)} onClick={() => router.push(`/n/${c.negocio.id}/resena?pedido=${c.numero}&e=${n}`)} className="grid h-10 w-10 place-items-center rounded-xl bg-paper"><Icon name="star" size={20} color="var(--tl-pro)" /></button>)}</div>
+              </>
+            )}
+          </div>
+        )}
+        {dead && c.cxRazon !== "chg" && <div className="flex"><Button variant="primary" icon="calendar" block onClick={() => router.push(otra)}>{E2("Buscar otra hora", "Find another time")}</Button></div>}
         <div className="grid"><OrderTracker steps={steps} /></div>
         <div className="overflow-hidden rounded-[18px] border border-ink/[.07] bg-white">
           <div className="flex items-center gap-3 border-b border-ink/[.07] px-[15px] py-3.5">
@@ -103,11 +170,37 @@ export function Estado({ c, yo, es }: { c: CitaVista; yo: string; es: boolean })
             ))}
           </div>
         </div>
+        {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on]) => <div key={l} className="grid"><Button variant="secondary" size="md" icon={icon} onClick={on}>{l}</Button></div>)}</div>}
         <div className="flex gap-2">
           {c.negocio.telefono && <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="phone" onClick={llamar}>{E2("Llamar", "Call")}</Button></div>}
           <div className="grid min-w-0 flex-1"><Button variant="secondary" size="md" icon="bubble" onClick={() => router.push(`/cuenta/mensajes/${c.negocio.id}?op=${encodeURIComponent(c.numero)}`)}>{E2("Mensaje", "Message")}</Button></div>
         </div>
+        {ok && <div className="py-1 text-center"><button type="button" onClick={() => setHoja("cx")} className="text-[12.5px] font-bold text-danger">{E2("Cancelar cita", "Cancel booking")}</button></div>}
       </div>
+      {hoja && (
+        <div className="fixed inset-0 z-[60]">
+          <div onClick={() => setHoja(null)} className="absolute inset-0 bg-ink/50" />
+          <div role="dialog" aria-modal="true" aria-label={hoja === "cx" ? cxT : E2("¿Cuánto tarde llegas?", "How late are you?")} data-screen-label={hoja === "cx" ? "Cita · cancelar" : "Cita · voy tarde"}
+            className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-white px-5 pb-7 pt-6 lg:inset-auto lg:left-1/2 lg:top-1/2 lg:w-[440px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
+            {hoja === "cx" ? (
+              <>
+                <div className="font-display text-[20px] font-extrabold tracking-[-0.03em]">{cxT}</div>
+                <p className="m-0 mt-2 text-pretty text-[13px] leading-[1.55] text-ink/65">{cxS}</p>
+                <div className="mt-5 flex flex-col gap-2">
+                  <div className="grid"><Button variant="danger" disabled={ocupado} onClick={() => hacer("cancelar", E2("Listo: cancelada", "Done: cancelled"))}>{E2("Sí, cancelar", "Yes, cancel")}</Button></div>
+                  <div className="grid"><Button variant="secondary" onClick={() => setHoja(null)}>{E2("No, mantenerla", "No, keep it")}</Button></div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="font-display text-[20px] font-extrabold tracking-[-0.03em]">{E2("¿Cuánto tarde llegas?", "How late are you?")}</div>
+                <p className="m-0 mt-2 text-[13px] leading-[1.55] text-ink/65">{E2(`Le avisamos a ${who1}. Tolerancia: ${c.tol} min.`, `We let ${who1} know. Grace period: ${c.tol} min.`)}</p>
+                <div className="mt-5 grid grid-cols-3 gap-2">{[5, 10, 15].map((n) => <div key={n} className="grid"><Button variant="secondary" disabled={ocupado} onClick={() => hacer("tarde", E2(`Le avisamos a ${who1}: llegas ${n} min tarde`, `${who1} knows you are ${n} min late`), n)}>{`${n} min`}</Button></div>)}</div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

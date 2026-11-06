@@ -5,6 +5,7 @@ import { menuPanel } from "@/lib/menu";
 import { ajustesPedidos, pedidoNegocio, pedidosHoy, pedidosLista, type FiltroPed } from "@/lib/pedidos";
 import type { PedPanel } from "../../Pedidos";
 import { mesaDetalle, mesasPanel, mesasPendientes, rsvAjustes, type FiltroMesa } from "@/lib/reservas";
+import { citaPanel, citasLista, citasVivas, type FiltroCita } from "@/lib/citas-panel";
 import { pedidosPendientes } from "@/lib/pedidos";
 import { ayudaPanel, ayudasNegocio } from "@/lib/ayuda";
 import type { RsvPanel } from "../../Reservas";
@@ -26,7 +27,7 @@ import { serviciosPanel } from "@/lib/servicios";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm)$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|cita:C-\d{1,10})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -138,5 +139,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Servicios y citas (Fase 3): Lo que vendes de un negocio de citas (servicios, reglas, sillas) y el editor.
   const conCitas = d.mods.some((m) => m === "svc" || m === "citas") || d.cat === "NEG-BELL";
   const svc = conCitas && (ruta.sec === "mod" || ruta.det?.startsWith("svc:") || ruta.det === "svm") && (acc.partes.includes("all") || acc.partes.includes("cat")) ? await serviciosPanel(d.id) : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} />;
+  // Citas (Belleza): las vivas para Hoy, Clientes › Citas y el detalle. Responder pide «Hoy y pedidos».
+  if (ruta.det?.startsWith("cita:") && !(conCitas && ord)) ruta.det = null;
+  const fC = (["all", "pend", "cur", "done", "no"].includes(sp.f ?? "") ? sp.f : "all") as FiltroCita;
+  const citas = conCitas && ord ? {
+    vivas: ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
+    lista: ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
+    det: ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
+  } : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} />;
 }

@@ -1,7 +1,8 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { ENTORNO } from "@/lib/entorno";
-import { alertaDe, alertaHora, avisarCitaNueva, enviarCita, horasCita, proximas, type CitaIn } from "@/lib/citas";
+import { alertaDe, alertaHora, avisarCitaNueva, enviarCita, horasCita, idCita, proximas, type CitaIn } from "@/lib/citas";
+import { avisarCambioPedido } from "@/lib/citas-flujo";
 
 /* Pedir hora desde la ficha (pestaña Servicios → hoja → Booking). Ver las horas no pide cuenta; enviar sí. El servidor
    recalcula precio, duración, depósito y si la hora sigue libre: el cliente solo muestra. */
@@ -16,9 +17,12 @@ const limpio = (q: { svc?: unknown; opts?: unknown; adds?: unknown; con?: unknow
 });
 
 // solo lectura
-export async function horasDeCita(negocio: string, q: { svc: string; opts: Record<string, number>; adds: string[]; con: string; i: number }) {
+export async function horasDeCita(negocio: string, q: { svc: string; opts: Record<string, number>; adds: string[]; con: string; i: number }, cambiar?: string | null) {
   if (typeof negocio !== "string" || !ID.test(negocio)) return null;
-  return horasCita(negocio, limpio(q));
+  // Al cambiar una cita propia, su hora actual no cuenta como ocupada (solo si es de quien pregunta).
+  let sin: string | null = null;
+  if (typeof cambiar === "string" && /^C-\d{1,10}$/.test(cambiar)) { const u = await yo(); if (u) sin = await idCita(u.id, cambiar); }
+  return horasCita(negocio, limpio(q), sin);
 }
 
 // solo lectura
@@ -27,13 +31,14 @@ export async function proximasHoras(negocio: string, dur?: number) {
   return proximas(negocio, Math.max(10, Math.min(480, Math.floor(Number(dur)) || 40)));
 }
 
-export async function pedirCita(negocio: string, f: CitaIn): Promise<{ ok: true; numero: string; st: "pend" | "ok" } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; hora?: true }> {
+export async function pedirCita(negocio: string, f: CitaIn): Promise<{ ok: true; numero: string; st: "pend" | "ok"; cambio?: "pend" } | { ok: false; msg: Bi; entrar?: true; tarjeta?: true; hora?: true }> {
   if (!(await mismoOrigen())) return { ok: false, msg: NO_ORIGEN };
   const u = await yo();
   if (!u?.first_name) return { ok: false, entrar: true, msg: { es: "Entra para pedir tu cita.", en: "Sign in to book." } };
   if (typeof negocio !== "string" || !ID.test(negocio) || !f || typeof f !== "object") return { ok: false, msg: { es: "Ese negocio no existe.", en: "That business does not exist." } };
-  const r = await enviarCita(u.id, negocio, { ...f, ...limpio(f) }, ENTORNO);
-  if (r.ok) await avisarCitaNueva(r.numero, u.first_name).catch(() => undefined);
+  const r = await enviarCita(u.id, negocio, { ...f, ...limpio(f), cambiar: typeof f.cambiar === "string" && /^C-\d{1,10}$/.test(f.cambiar) ? f.cambiar : null }, ENTORNO);
+  if (r.ok && r.cambio) await avisarCambioPedido(r.numero).catch(() => undefined);
+  else if (r.ok && !f.cambiar) await avisarCitaNueva(r.numero, u.first_name).catch(() => undefined);
   return r;
 }
 

@@ -40,17 +40,17 @@ export function Escribir({ d, es, nombre, estrellas }: { d: ParaEscribir; es: bo
   const opSrc = m ? m.src : d.op?.src ?? "vis", isOrd = src === "op" && (opSrc === "dl" || opSrc === "pk"), dl = src === "op" && opSrc === "dl";
   const len = text.trim().length, pii = PII.test(text);
   const miss = !stars ? E2("TU CALIFICACIÓN", "YOUR RATING") : len < 20 ? E2("ESCRIBIR AL MENOS 20 LETRAS", "WRITE AT LEAST 20 CHARACTERS") : pii ? E2("QUITAR TELÉFONOS O CORREOS", "REMOVE PHONES OR EMAILS") : "";
-  const numeroOp = m?.numero ?? d.op?.numero ?? null, mesa = (m ? m.src === "rsv" : d.op?.kind === "table");
+  const numeroOp = m?.numero ?? d.op?.numero ?? null, mesa = (m ? m.src === "rsv" : d.op?.kind === "table"), cita = (m ? m.src === "cita" : d.op?.kind === "appointment");
   const title = editar ? E2("Editar reseña", "Edit review") : E2("Escribir reseña", "Write a review");
-  const meta = `${b.name}${src === "op" && numeroOp ? (mesa ? ` · ${numeroOp}` : E2(` · PEDIDO #${numeroOp}`, ` · ORDER #${numeroOp}`)) : ""}`.toUpperCase();
+  const meta = `${b.name}${src === "op" && numeroOp ? (mesa || cita ? ` · ${numeroOp}` : E2(` · PEDIDO #${numeroOp}`, ` · ORDER #${numeroOp}`)) : ""}`.toUpperCase();
   const volver = () => router.push(editar ? `/n/${b.id}/resena/tuya` : `/n/${b.id}${b.pro ? "?tab=rev" : ""}`);
 
   // ¿Sobre qué visita? La verificada solo si el servidor encontró un pedido o una mesa terminada.
   const srcs: { k: "op" | "vis"; t: string; s: string; tag: string; tone: string }[] = [];
   if (m ? m.src !== "vis" : d.op) {
     const lin = (d.op?.lineas ?? []).slice(0, 2).join(", ");
-    srcs.push({ k: "op", t: mesa ? E2(`Reservación ${numeroOp} · mesa`, `Booking ${numeroOp} · table`) : E2(`Pedido #${numeroOp} · ${dl ? "delivery" : "pickup"}`, `Order #${numeroOp} · ${dl ? "delivery" : "pickup"}`),
-      s: lin || (mesa ? E2("Fuiste con tu reservación", "You went with your booking") : ""), tag: E2("VERIFICADA", "VERIFIED"), tone: "signal" });
+    srcs.push({ k: "op", t: cita ? E2(`Cita ${numeroOp}`, `Booking ${numeroOp}`) : mesa ? E2(`Reservación ${numeroOp} · mesa`, `Booking ${numeroOp} · table`) : E2(`Pedido #${numeroOp} · ${dl ? "delivery" : "pickup"}`, `Order #${numeroOp} · ${dl ? "delivery" : "pickup"}`),
+      s: lin || (cita ? E2("Fuiste con tu cita", "You went with your booking") : mesa ? E2("Fuiste con tu reservación", "You went with your booking") : ""), tag: E2("VERIFICADA", "VERIFIED"), tone: "signal" });
   }
   if (!m || m.src === "vis") srcs.push({ k: "vis", t: E2("Fui sin pedir por To'Latino", "I went without ordering on To'Latino"), s: E2("En el local, por teléfono o hace tiempo", "In person, by phone or a while ago"), tag: E2("VISITANTE", "VISITOR"), tone: "neutral" });
 
