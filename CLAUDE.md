@@ -75,6 +75,9 @@ accesibilidad, velocidad, build) → `pruebas` avanza → el sandbox se actualiz
 avanza → producción se actualiza; vuelta atrás automática si suben los errores.
 **Desde el 6 nov (decisión AA):** en el sandbox los bloques se encadenan sin esperar OK; lo que el fundador debe mirar
 se anota en `docs/REVISION.md` y se revisa al final, paso a paso. Producción sigue pidiendo su OK.
+**Desde el 6 nov (decisión AB):** no se para hasta terminar todo. Una decisión pendiente no detiene el trabajo: se elige lo
+más seguro y reversible, se construye y se anota en `docs/REVISION.md`; lo de terceros (Stripe, SMS, correo) se deja listo y
+probado contra simuladores. Sin resúmenes a mitad de camino: una línea de avance y al siguiente bloque.
 
 ## Ramas
 `main` = trabajo v2 y rama por defecto · `pruebas` = sandbox (mismo contenido que
