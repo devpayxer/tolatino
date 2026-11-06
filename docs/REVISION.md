@@ -11,6 +11,14 @@ Marca cada punto: ✅ bien · ✏️ cambiar (con lo que quieras) · ❓ duda.
 1. **Alergias en el menú del cliente.** El panel las guarda por plato (picante, vegetariano, sin gluten…); el prototipo
    del cliente no las muestra. ¿Salen en la hoja del plato, como etiquetas, o no salen?
 2. **Pantalla para aceptar una invitación al equipo** (`/e/{código}`): no existe en el diseño.
+3. **Stripe para el bloque 2d (pago con tarjeta).** El código del 2d no se puede probar de verdad sin una cuenta de Stripe
+   en modo prueba, y el servidor del sandbox hoy no tiene un camino seguro para recibir una clave de terceros (sin SSH y
+   sin secretos en el repo). Propuesta (automática, la clave nunca pasa por el chat ni por Claude):
+   - Tú, una vez, desde el teléfono: crear la cuenta de Stripe (modo prueba) y pegar la clave secreta de prueba en
+     GitHub › Settings › Secrets › Actions como `STRIPE_SECRET_KEY_PRUEBAS`.
+   - Claude: el servidor publica su llave pública; una acción de GitHub cifra la clave con esa llave y la deja en el
+     repo; solo el servidor la puede abrir y la pone en su configuración. Lo mismo servirá para SMS (Telnyx) y correo.
+   - Mientras tanto se sigue con los bloques que no cobran (2e reservaciones, 2f entrega, 2g reseñas…).
 
 ## Fase 2 · 2a Menú (panel)
 1. Panel de Pedro › **Lo que vendes** › Menú: Platos, Categorías, Opciones, Inventario, Horarios.
