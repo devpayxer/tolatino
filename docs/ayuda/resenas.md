@@ -87,3 +87,26 @@ charged and extra work with your OK come from the booking and cannot be edited. 
 booked person came, cleaned up, took care of your home, care. Auto asks: fixed the first time, asked your OK before extra
 work, showed the old part, car returned clean, care. With 1–2 stars, a review does not refund or request a return visit:
 use Visit/Appointment help.
+
+## Reseñas de doctores y profesionales (Fase 4 · 4m)
+- **Verificada** si la cita (Doctores) o la consulta (Profesionales) se hizo por To'Latino y terminó.
+- **El dato de la cita** sale de To'Latino y no se edita. Doctores: el servicio, si **aceptaron tu seguro** (Aceptado / No
+  lo aceptaron / Sin seguro), lo que pagaste y con quién. **Nunca** se guarda ni se publica el nombre de tu plan, el número
+  de tu tarjeta ni el motivo de la consulta. Profesionales: el **total por escrito** que aceptaste («· lo que dijo») o «No
+  contrataste». Nunca se publica de qué trata tu caso.
+- **Las preguntas:** Doctores — ¿te entendieron en tu idioma? (el médico habló español / con intérprete / no), ¿esperaste lo
+  que dijeron?, ¿te explicaron?, ¿cobraron lo que dijeron?, trato; si fuiste sin cita por To'Latino, también ¿aceptaron tu
+  seguro? Profesionales — ¿cobró el total que dijo?, ¿hizo lo que dijo que podía?, ¿te explicó?, ¿en tu idioma?, ¿cumplió la
+  fecha?, trato.
+- **Datos privados:** si el texto trae diagnósticos, medicinas, dosis («500 mg»), un A-number o un número de caso de USCIS,
+  la reseña **no se publica** hasta que los quites («Quita datos de salud o de tu caso»). Lo decide el servidor.
+- **Con 1 o 2 estrellas:** la reseña no devuelve dinero ni corrige un cobro ni cambia tu trámite; para eso está **Ayuda con
+  la cita / con el trámite** (el negocio responde en 24 h).
+- En la ficha: «Lo que importa en Salud» / «Lo que importa en un trámite» (6 barras, % que contestó que sí en el último año).
+
+### Doctor and professional reviews (EN)
+Verified when the appointment or consultation was booked through To'Latino and finished. From the booking (not editable):
+for doctors, whether your insurance was accepted and what you paid — never your plan name, card number or the reason for
+the visit; for professionals, the written total you accepted or "You did not hire". Reviews with diagnoses, medicines,
+doses, an A-number or a USCIS case number are not published until you remove them. With 1–2 stars, use Appointment/Case
+help. Business pages show "What matters in health / in a case" (6 bars, % who answered yes in the last year).

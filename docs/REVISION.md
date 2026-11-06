@@ -725,3 +725,12 @@ del equipo que reciba citas (como en Doctores). La nota rechaza A-number y núme
 _Decidido por mí (reversible, Preguntas #1): nada de Pro se cobra en la app; la app guarda el total y la aceptación (el acuerdo),
 y se paga a la oficina. Para fijo/% el flujo es el mismo (la oficina manda el total después de la consulta)._
 
+
+## Fase 4 · 4m-1 Reseñas de Doctores y Profesionales
+1. Como Marisol, con una cita de Salud terminada: /n/centro-medico-quisqueya/resena → ver «TU CITA · DATO DE LA CITA» (seguro
+   Aceptado, pagaste, con quién; sin plan ni número), las preguntas de Salud y el texto de ejemplo. Escribir «metformina 500 mg»
+   → el botón dice «Quitar datos de salud o de tu caso».
+2. Con un trámite terminado: /n/bufete-almonte/resena → «TOTAL POR ESCRITO $740 · lo que dijo» y las preguntas del trámite.
+3. En la ficha (pestaña Reseñas): las marcas «Aceptaron su seguro», «El médico habló español», «Hizo lo que dijo que podía».
+_Decidido por mí (reversible): el filtro de datos privados vale para todas las reseñas (no solo Salud y Pro); la reseña nunca
+guarda el nombre del plan del seguro, solo si tenía y si lo aceptaron. Las 6 barras salen con 5 reseñas o más (como las demás)._
