@@ -103,7 +103,7 @@ export async function negocio360(s: Staff, id: string) {
        left join business_stats_cache s on s.business_id = b.id left join users u on u.id = b.owner_user_id
       where b.id = $1 and (cardinality($2::text[]) = 0 or b.city_id = any($2::text[]))`, [id, s.cities])).rows[0];
   if (!b) return null;
-  const [fotos, horas, equipo, notas, historial, casos, sello, cifras, lic] = await Promise.all([
+  const [fotos, horas, equipo, notas, historial, casos, sello, cifras, lic, menu, mods] = await Promise.all([
     db().query<{ id: string; url: string; status: string; removed_reason: string | null; removed_note: string | null; sort: number }>(
       `select id, url, status, removed_reason, removed_note, sort from media where owner_kind = 'business' and owner_id = $1
          and (status = 'visible' or removed_reason = 'admin') order by status = 'visible' desc, sort, created_at`, [id]),
@@ -124,6 +124,11 @@ export async function negocio360(s: Staff, id: string) {
       `select (select coalesce(sum(n),0)::int from business_views_daily where business_id = $1 and day > current_date - 30) as v30,
               (select count(*)::int from contact_taps where business_id = $1 and at > now() - interval '30 days') as c30`, [id]),
     licenciasDe(id),
+    // Menú (Comida): los platos con su estado, para ocultar uno con motivo (el dueño lo ve en su panel).
+    db().query<{ id: string; name: string; sec: string | null; cents: number; hidden: boolean; reason: string | null }>(
+      `select i.id::text, i.name->>'es' as name, s.name->>'es' as sec, i.price_cents as cents, i.status = 'hidden' as hidden, i.hidden_reason as reason
+         from items i left join item_sections s on s.id = i.section_id where i.business_id = $1 and i.module = 'menu' and i.removed_at is null order by s.sort, i.sort, i.id`, [id]),
+    db().query<{ off: Record<string, { reason: string; at: string }> }>(`select modules_off as off from businesses where id = $1`, [id]),
   ]);
   const tr = prueba(b.trial_until, b.trial_days);
   const dias = aPanel(horas.rows), visibles = fotos.rows.filter((x) => x.status === "visible").length;
@@ -137,6 +142,7 @@ export async function negocio360(s: Staff, id: string) {
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
     casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
+    menu: menu.rows, modsOff: mods.rows[0]?.off ?? {},
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },
   };
 }

@@ -213,3 +213,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte.
 - [ ] **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): con las páginas legales (Fase 9).
 
+## Menú (bloque 2a, 6 nov 2026)
+- [ ] **Pestaña Menú en la ficha, carrito y pedido:** bloque 2b. Hasta entonces «Lo que vendes» no dice «EN TU PÁGINA».
+- [ ] **«Lo que vendes» con los demás módulos** (Servicios, Tienda, Renta, Citas, Reservaciones, Pedidos en línea,
+  Staff, Eventos, Novedades, Jobs) y «Tu herramienta» de la categoría: con sus fases. Hoy solo Menú (Comida).
+- [ ] **Traducir con El Compa** (plato, categoría, grupo): Fase 7.
+- [ ] **«Últimos 30 días» del plato** (pedidos, vendido, puesto) y Populares por lo más pedido: con los pedidos (2b/2c).
+- [ ] **Aviso por SMS de «quedan pocos»:** la preferencia se guarda; el SMS llega con las notificaciones.
+- [ ] **«Listo en N min»** usa 25 min de preparación hasta que exista Entrega (2f).
+- [ ] **Fotos de ejemplo del sandbox** vienen de Pexels (como el prototipo); las de los negocios reales son propias.
+

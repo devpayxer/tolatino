@@ -15,12 +15,14 @@ import { estado } from "@/lib/tarjeta";
 import { aboutGuardar, cerrarPorHoy, fotoQuitar, fotosAgregar, fotosOrden, horarioGuardar, licenciaAgregar, licenciaNumero, licenciaQuitar, logoPoner, noHago, selloCancelar, selloPedir, type Res } from "./acciones";
 import { LIC_LEGAL, NO_HAGO } from "@/lib/no-hago";
 import { equipoBloques, equipoDetalle } from "./Equipo";
+import { menuBloques, menuDetalle, vendesBloques } from "./Menu";
+import type { MenuPanel } from "@/lib/menu";
 
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "mod"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -61,10 +63,10 @@ export type Ctx = {
   go: (sec: Ruta["sec"], sub?: string | null) => void; det: (id: string) => void; closeDet: () => void; ruta: Ruta;
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
-  pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean;
+  pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -76,7 +78,7 @@ export function Panel({ d, lang, ruta, modoPruebas }: { d: DatosPanel; lang: "es
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -102,7 +104,7 @@ export function Panel({ d, lang, ruta, modoPruebas }: { d: DatosPanel; lang: "es
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -129,7 +131,8 @@ export function Panel({ d, lang, ruta, modoPruebas }: { d: DatosPanel; lang: "es
       <Icon name={icon} size={side ? 15 : 16} color={on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)"} />
       <span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : side ? 600 : 700} ${side ? 12.5 : 13}px Manrope,sans-serif`, color: on ? "var(--tl-ink)" : side ? "rgba(11,14,18,.7)" : "rgba(11,14,18,.66)" }}>{l}</span>
     </span>);
-  const mnav = d.sells ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }, { k: "hoy", l: E2("Hoy", "Today"), icon: "home" }] : [];
+  const vende = d.cat === "NEG-FOOD" && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat"));
+  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }] : []), ...(vende ? [{ k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : [])];
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
@@ -183,6 +186,12 @@ export function Panel({ d, lang, ruta, modoPruebas }: { d: DatosPanel; lang: "es
                   {navIt(sec === "hoy", "home", E2("Hoy", "Today"), () => go("hoy"))}
                 </div>
               ) : null}
+              {vende ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  {navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod"))}
+                </div>
+              ) : null}
             </div>
           </aside>
         ) : null}
@@ -232,6 +241,7 @@ function Cerrar({ onClick }: { onClick: () => void }): ReactNode {
 /* ─────────────────────────── Secciones ─────────────────────────── */
 function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "hoy") return { blocks: hoy(c), ed: null };
+  if (c.ruta.sec === "mod") return c.ruta.sub === "menu" && c.menu ? menuBloques(c) : { blocks: vendesBloques(c), ed: null };
   if (!c.ruta.sub) return { blocks: pagina(c), ed: null };
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
   const head: Bloque[] = [
@@ -246,6 +256,7 @@ function secciones(c: Ctx): Sec {
 function detalle(c: Ctx): Sec | null {
   const id = c.ruta.det ?? "";
   if (id.startsWith("stf:")) return equipoDetalle(c, id.slice(4));
+  if (/^(item|mcat|mgrp):/.test(id)) return menuDetalle(c, id);
   return null;
 }
 

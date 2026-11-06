@@ -7,7 +7,7 @@ import * as DS from "../ds/index";
 import type { ComponentType } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Chip, Tag, SelectBox } = DS as unknown as Record<"Icon" | "Button" | "Chip" | "Tag" | "SelectBox", ComponentType<any>>;
+const { Icon, Button, Chip, Tag, SelectBox, QtyStepper, SelectionBar, MenuItemRow, OptionGroup } = DS as unknown as Record<"Icon" | "Button" | "Chip" | "Tag" | "SelectBox" | "QtyStepper" | "SelectionBar" | "MenuItemRow" | "OptionGroup", ComponentType<any>>;
 const MONO = "'JetBrains Mono',monospace";
 type Fn = () => void;
 const K: CSSProperties = { font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" };
@@ -17,6 +17,7 @@ export type Fila = {
   t: string; s?: string; m?: string; mFg?: string; tFg?: string; img?: string; imgIni?: string; imgW?: string; icon?: string; ibg?: string; ifg?: string;
   tag?: string | null; tone?: string; r?: string; chev?: boolean; onClick?: Fn; compact?: boolean; bg?: string; bd?: string; dim?: boolean;
   acts?: Accion[]; lock?: boolean; tgOn?: boolean; onTg?: Fn; sel?: { on: boolean; onClick: Fn }; key?: string;
+  qv?: number; onQm?: Fn; onQp?: Fn;
 };
 export type Dia = { d: string; today?: boolean; h: string; hFg?: string; on: boolean; open?: boolean; onOpen?: Fn; onTg?: Fn; aL?: string; bL?: string; aM?: Fn; aP?: Fn; bM?: Fn; bP?: Fn; a2L?: string; b2L?: string; a2M?: Fn; a2P?: Fn; b2M?: Fn; b2P?: Fn; twoL?: string; onTwo?: Fn; onCopy?: Fn };
 export type Bloque =
@@ -36,6 +37,13 @@ export type Bloque =
   | { type: "hours"; items: Dia[]; todayL: string; openK: string; closeK: string; copyL: string; free?: boolean }
   | { type: "empty"; icon: string; t: string; s: string; cta?: string; onCta?: Fn }
   | { type: "acts"; pt?: string; items: Accion[] }
+  /* Plantilla del Panel v2 (isUtabs, isSearch, isBulk, isMprev): pestañas con ícono y cuenta, buscador con enlace,
+     barra de selección en lote (SelectionBar 2af) y «Así se ve en tu menú» (MenuItemRow 2i). */
+  | { type: "utabs"; wrap?: boolean; items: { l: string; icon: string; n?: string; warn?: boolean; on: boolean; onClick: Fn }[] }
+  | { type: "search"; val: string; ph: string; onChange: (v: string) => void; onClear?: Fn; link?: string; onLink?: Fn; linkOn?: boolean }
+  | { type: "bulk"; t: string; allL?: string; onAll?: Fn; onClose: Fn; acts: { l: string; icon: string; on?: boolean; off?: boolean; onClick: Fn }[]; subK?: string; sub?: { l: string; danger?: boolean; onClick: Fn }[]; top?: string }
+  | { type: "gprev"; k: string; title: string; meta: string; req: boolean; reqL: string; multi: boolean; options: { label: string; price: string; disabled?: boolean }[] }
+  | { type: "mprev"; k: string; name: string; desc?: string; price: string; tags?: { label: string; tone: string }[]; image?: string; off?: boolean }
   | { type: "rvsum"; icon: string; t: string; s?: string; tag?: string; tone?: string; progT: string; progR: string; pct: string; barC: string; stats: { k: string; v: string; s?: string; fg?: string }[]; tools: { l: string; icon: string; onClick?: Fn }[] };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
@@ -124,6 +132,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
                 </span>
                 {x.tag ? <Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag> : null}
                 {x.r ? <span style={{ font: "800 15px/1 Sora,sans-serif", flex: "none", textAlign: "right" }}>{x.r}</span> : null}
+                {x.qv !== undefined ? <span onClick={para} style={{ flex: "none" }}><QtyStepper value={x.qv} size="sm" onDec={x.onQm} onInc={x.onQp} /></span> : null}
                 {tg ? <span role="switch" aria-checked={!!x.tgOn} onClick={(e) => { para(e); x.onTg?.(); }} style={toque(!!x.tgOn)}><span style={bolita(!!x.tgOn)} /></span> : null}
                 {chev ? <Icon name="chevronRight" size={15} color="rgba(11,14,18,.35)" /> : null}
                 {x.lock ? <Chip variant="pro">PRO</Chip> : null}
@@ -247,6 +256,39 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center" }}><Icon name={x.icon} size={18} /></span>
               <span style={{ font: "700 11px/1.25 Manrope,sans-serif", color: "var(--tl-ink)" }}>{x.l}</span>
             </span>))}
+        </div>
+      </div>);
+    case "utabs": return (
+      <div className="d2hs" style={{ display: "flex", flexWrap: b.wrap ? "wrap" : "nowrap", columnGap: b.wrap ? 20 : 22, overflowX: "auto", borderBottom: "1px solid rgba(11,14,18,.08)" }}>
+        {b.items.map((x, i) => { const fg = x.on ? "var(--tl-ink)" : "rgba(11,14,18,.5)", nbg = x.warn ? "var(--tl-danger)" : x.on ? "var(--tl-ink)" : "rgba(11,14,18,.08)"; return (
+          <span key={i} role="tab" aria-selected={x.on} onClick={x.onClick} style={{ flex: "none", display: "flex", alignItems: "center", gap: 7, height: 42, marginBottom: -1, borderBottom: `2.5px solid ${x.on ? "var(--tl-ink)" : "transparent"}`, color: fg, font: `800 12px ${MONO}`, letterSpacing: ".06em", textTransform: "uppercase", cursor: "pointer", whiteSpace: "nowrap", boxSizing: "border-box" }}>
+            <Icon name={x.icon} size={15} color={fg} />{x.l}
+            {x.n && x.n !== "0" ? <span style={{ minWidth: 18, height: 18, padding: "0 5px", borderRadius: 999, background: nbg, color: x.warn || x.on ? "var(--tl-white)" : "rgba(11,14,18,.6)", display: "grid", placeItems: "center", font: `800 10px ${MONO}`, letterSpacing: 0, boxSizing: "border-box" }}>{x.n}</span> : null}
+          </span>); })}
+      </div>);
+    case "search": return (
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ flex: 1, minWidth: 0, height: 46, padding: "0 14px", borderRadius: 14, border: "1.5px solid rgba(11,14,18,.14)", background: "var(--tl-white)", display: "flex", alignItems: "center", gap: 9, boxSizing: "border-box" }}>
+          <Icon name="search" size={17} color="rgba(11,14,18,.45)" />
+          <input value={b.val} onChange={(e) => b.onChange(e.target.value)} placeholder={b.ph} aria-label={b.ph} style={{ flex: 1, minWidth: 0, border: "none", outline: "none", background: "transparent", font: "600 14.5px Manrope,sans-serif", color: "var(--tl-ink)" }} />
+          {b.val ? <span role="button" aria-label="Borrar" onClick={b.onClear} style={{ width: 24, height: 24, borderRadius: 8, background: "rgba(11,14,18,.06)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}><Icon name="close" size={12} strokeWidth={2.2} /></span> : null}
+        </span>
+        {b.link ? <span role="button" onClick={b.onLink} style={{ flex: "none", height: 46, padding: "0 14px", borderRadius: 14, background: b.linkOn ? "var(--tl-ink)" : "var(--tl-white)", color: b.linkOn ? "var(--tl-white)" : "var(--tl-ink)", border: "1px solid rgba(11,14,18,.1)", boxSizing: "border-box", display: "flex", alignItems: "center", font: "700 13px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{b.link}</span> : null}
+      </div>);
+    case "bulk": return <SelectionBar title={b.t} allLabel={b.allL} onAll={b.onAll} onClose={b.onClose} top={b.top ?? "12px"}
+      actions={b.acts.map((a) => ({ label: a.l, icon: a.icon, on: !!a.on, disabled: !!a.off, onClick: a.onClick }))} subLabel={b.subK} sub={(b.sub ?? []).map((a) => ({ label: a.l, danger: !!a.danger, onClick: a.onClick }))} />;
+    case "gprev": return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <span style={K}>{b.k}</span>
+        <div style={{ padding: "0 14px 14px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
+          <OptionGroup title={b.title} meta={b.meta} required={b.req} reqLabel={b.reqL} options={b.options} multi={b.multi} />
+        </div>
+      </div>);
+    case "mprev": return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <span style={K}>{b.k}</span>
+        <div style={{ padding: "0 14px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", overflow: "hidden" }}>
+          <MenuItemRow name={b.name} desc={b.desc ?? ""} price={b.price} tags={b.tags ?? []} image={b.image ?? ""} off={!!b.off} />
         </div>
       </div>);
     case "acts": return (

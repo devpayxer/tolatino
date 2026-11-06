@@ -189,3 +189,32 @@ export async function licencia(id: string, licId: string, accion: "valid" | "not
     return null;
   }, accion === "valid" ? "Licencia verificada." : "Listo. Quedó en la auditoría.");
 }
+
+/* Menú (Comida): ocultar o volver a mostrar un plato (neg:retirar). El dueño ve el motivo en su panel; el cliente
+   deja de verlo en el menú. */
+export async function platoOcultar(id: string, itemId: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(itemId))) return no("Ese plato no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const it = (await c.query<{ name: string; status: string }>(`select name->>'es' as name, status from items where id = $1::bigint and business_id = $2 and removed_at is null for update`, [itemId, b.id])).rows[0];
+    if (!it) return "Ese plato ya no está en el menú.";
+    if ((it.status === "hidden") === ocultar) return ocultar ? "Ya está oculto." : "Ya se ve en el menú.";
+    await c.query(`update items set status = $3, hidden_reason = $4, hidden_by = $5, updated_at = now() where id = $1::bigint and business_id = $2`, [itemId, b.id, ocultar ? "hidden" : "live", ocultar ? m : null, ocultar ? s.id : null]);
+    await auditar(c, { actor: s.id, action: ocultar ? "menu.plato.ocultar" : "menu.plato.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { plato: it.name, estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
+    return null;
+  }, ocultar ? "Plato oculto. El dueño ve el motivo en su panel." : "El plato se ve otra vez.");
+}
+
+/* Pausar o reanudar un módulo (Menú, Pedidos en línea) con motivo (neg:retirar). */
+export async function moduloPausar(id: string, modulo: "menu" | "pedidos", pausar: boolean, motivo: string): Promise<ResAdm> {
+  if (!["menu", "pedidos"].includes(modulo)) return no("Ese módulo no existe.");
+  const nombre = modulo === "menu" ? "Menú" : "Pedidos en línea";
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
+    if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";
+    await c.query(pausar ? `update businesses set modules_off = modules_off || jsonb_build_object($2::text, jsonb_build_object('reason', $3::text, 'at', now(), 'by', $4::text)), updated_at = now() where id = $1`
+      : `update businesses set modules_off = modules_off - $2::text, updated_at = now() where id = $1`, pausar ? [b.id, modulo, m, s.id] : [b.id, modulo]);
+    await auditar(c, { actor: s.id, action: pausar ? "negocio.modulo.pausar" : "negocio.modulo.reanudar", targetKind: "business", targetId: b.id, city: b.city_id, before: { modulo: nombre, estado: pausar ? "activo" : "pausado" }, after: { estado: pausar ? "pausado" : "activo" }, reason: m });
+    return null;
+  }, pausar ? `${nombre} pausado. El dueño ve el motivo en su panel.` : `${nombre} reanudado.`);
+}
+

@@ -301,7 +301,21 @@ _Actualizado: 5 nov 2026._
   Guardián nuevo `eventosEnLista`. Probado con Playwright: el vecino deja ver_categoria → ver_ficha → buscar →
   registrarse con su dispositivo; un robot no suma; CSV de 449 negocios con su auditoría; sin errores de consola.
   Ayuda: `docs/ayuda/admin-analitica.md`.
-  **Fila 1 del PLAN completa** (salvo lo anotado en LAUNCH-CHECKLIST). Sigue: Fase 2 (con el OK del fundador).
+  **Fila 1 del PLAN completa** (salvo lo anotado en LAUNCH-CHECKLIST).
+- **Fase 2 · Comida (modelo) · bloques:** 2a menú (datos, panel, admin) ✓ · 2b pestaña Menú en la ficha + carrito + pedido
+  con pago en el local · 2c pedidos en el panel y seguimiento · 2d pago con tarjeta (Stripe Connect, checkout propio) ·
+  2e reservaciones · 2f entrega y Repartidor · 2g reseñas, novedades, Jobs · 2h Mi cuenta completa · 2i admin
+  (Transacciones, Soporte, devoluciones, disputas, Planes, Contenido, Notificaciones) y SMS.
+- **Fase 2 · bloque 2a Menú ✓ (6 nov, espera OK del fundador):** migración 0022 (`item_sections`, `items`,
+  `option_groups`, `menu_settings`, `businesses.modules_off`; dinero en centavos; nada se borra), `lib/menu.ts` (agotado
+  hoy / hasta el viernes y la cuenta del día se calculan al leer: sin tareas programadas). Panel `/panel/{id}/vendes`
+  (Lo que vendes) y `/vendes/menu` con Platos, Categorías, Opciones, Inventario y Horarios y los editores de plato,
+  categoría y grupo, portados del Panel v2 (bloques nuevos en @tolatino/ui: utabs, search, bulk = SelectionBar, mprev =
+  MenuItemRow, gprev = OptionGroup, contador QtyStepper en filas). Acciones `acciones-menu.ts` con acceso «cat» y
+  auditoría. Super Admin 360° › Lo que vende (Comida): ocultar plato y pausar Menú / Pedidos en línea con motivo; el
+  dueño lo ve en su panel. Semilla del sandbox `0004_menu.sql` (la carta de Sabor Dominicano del prototipo, con
+  `scripts/semilla/extraer-menu.cjs`). Probado con Playwright: precio, agotar y activar, − / +, categoría y plato nuevos,
+  opción agotada, +$1 en lote, pausa, sin acceso; admin oculta y pausa → el dueño lo ve. Ayuda `docs/ayuda/panel-menu.md`.
 - **Cómo arrancar la Fase 0 (plan original; sesión nueva, `/model opus`, `/effort high`):**
   1. Leer `CLAUDE.md`, este archivo y `docs/PLAN.md` §3, §5 y la fila «Fase 0» de §6.
   2. Primer bloque: monorepo (pnpm + Turborepo, Next.js, `packages/ui`), rama

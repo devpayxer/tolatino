@@ -1,13 +1,14 @@
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
+import { menuPanel } from "@/lib/menu";
 import { accesoPanel, datosPanel } from "@/lib/panel";
 import { Panel, type Ruta } from "../../Panel";
 
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic"]);
-const DET = /^(stf:(new|[0-9a-f-]{36}))$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18}))$/;
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string }> }) {
   const [{ id, r = [] }, sp, lang, u] = await Promise.all([params, searchParams, idioma(), yo()]);
@@ -16,9 +17,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (r.length === 0) ruta = { sec: "pag", sub: null, det: null };
   else if (r.length === 1 && r[0] === "hoy") ruta = { sec: "hoy", sub: null, det: null };
   else if (r.length === 2 && r[0] === "pagina" && SUBS.has(r[1]!)) ruta = { sec: "pag", sub: r[1]!, det: null };
+  else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
+  else if (r.length === 2 && r[0] === "vendes" && r[1] === "menu") ruta = { sec: "mod", sub: "menu", det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" ? "ord" : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" ? "ord" : ruta.sec === "mod" ? "cat" : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -31,5 +34,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   const d = await datosPanel(acc, lang);
   if (!d) notFound();
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} />;
+  // Lo que vendes · Menú (Comida): el menú del negocio, calculado en el servidor.
+  const menu = ruta.sec === "mod" && d.cat === "NEG-FOOD" ? await menuPanel(d.id) : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} />;
 }
