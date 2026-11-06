@@ -76,7 +76,13 @@ function tienda(c: Ctx, S: HerrTienda, head: Bloque): (Bloque | null)[] {
   out.push(
     { type: "step", t: E2("Cambios con el recibo", "Returns with receipt"), s: E2("0 = no acepta cambios. Sale en tu página.", "0 = no returns. Shows on your page."), v: S.dev ? E2(`${S.dev} días`, `${S.dev} days`) : E2("No", "No"),
       onM: () => save({ dev: Math.max(0, S.dev - 7) }), onP: () => save({ dev: Math.min(90, S.dev + 7) }) },
-    { type: "rows", k: E2("PAGO", "PAYMENT"), items: [{ icon: "dollar", t: E2("Aceptas efectivo", "You take cash"), s: E2("La tarjeta siempre se acepta. El envío se cambia en Entrega.", "Cards are always accepted. Delivery is set in Delivery."), tgOn: S.cash, onTg: () => save({ cash: !S.cash }) }] });
+    { type: "rows", k: E2("PAGO", "PAYMENT"), items: [{ icon: "dollar", t: E2("Aceptas efectivo", "You take cash"), s: E2("La tarjeta siempre se acepta.", "Cards are always accepted."), tgOn: S.cash, onTg: () => save({ cash: !S.cash }) }] },
+    // Envío por correo (MD DeliverySettings «solo Tienda»): se paga con tarjeta; sin tarjeta, solo se recoge en la tienda.
+    { type: "rows", k: E2("ENVÍO POR CORREO", "SHIPPING BY MAIL"), items: [{ icon: "truck", t: E2("Envías por correo", "You ship by mail"), s: E2("El cliente lo paga con tarjeta al apartar. Sin tarjeta, lo recoge en la tienda.", "The customer pays it by card when holding. Without a card, they pick it up in store."), tgOn: S.ship, onTg: () => save({ ship: !S.ship }) }] });
+  if (S.ship) out.push(
+    { type: "step", t: E2("Costo del envío", "Shipping fee"), s: E2("Lo que paga el cliente por el correo.", "What the customer pays for shipping."), v: S.shipFee ? usd(S.shipFee) : E2("Gratis", "Free"), onM: () => save({ shipFee: Math.max(0, S.shipFee - 100) }), onP: () => save({ shipFee: Math.min(20000, S.shipFee + 100) }) },
+    { type: "step", t: E2("Envío gratis desde", "Free shipping over"), s: E2("0 = nunca es gratis.", "0 = never free."), v: S.shipFree ? usd(S.shipFree) : E2("Nunca", "Never"), onM: () => save({ shipFree: Math.max(0, S.shipFree - 500) }), onP: () => save({ shipFree: Math.min(500000, S.shipFree + 500) }) },
+    { type: "chips", k: E2("LLEGA EN", "ARRIVES IN"), items: (["1-2", "3-5", "5-7"] as const).map((d) => ({ l: E2(`${d.replace("-", "–")} días`, `${d.replace("-", "–")} days`), v: S.shipDays === d ? "selected" : "filter", onClick: () => save({ shipDays: d }) })) });
   for (const it of S.inv) {
     out.push({ type: "group", k: nm(it.name).toUpperCase() });
     for (const t of it.tallas) out.push({ type: "step", t: `${nm(it.label)} ${t.label}`, s: t.stock ? E2("Se puede apartar", "Can be held") : E2("Agotada · no se aparta", "Sold out · cannot be held"), v: String(t.stock),

@@ -7,7 +7,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { MenuPanel, MGrp, MItem, MSec, Av } from "@/lib/menu";
 import { subirFoto } from "@/lib/subir-foto";
 import { ITEMS_FREE, TOPE_FREE } from "@/lib/plan";
-import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn } from "./acciones-menu";
+import { categoriaGuardar, categoriaMover, categoriaQuitar, categoriaVisible, grupoDuplicar, grupoGuardar, grupoOpcion, grupoQuitar, menuAjustes, platoAgotar, platoCuenta, platoDuplicar, platoGuardar, platoMover, platosLote, type PlatoIn, type ShopIn } from "./acciones-menu";
 import { pedLine } from "./Pedidos";
 import { rsvLine } from "./Reservas";
 import { vendesCitas } from "./Servicios";
@@ -62,7 +62,11 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   // Mercados y Tiendas (4n): Productos y Tu herramienta.
   if (!permitido && c.ret) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
-    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [filaHerramientaRetail(c)!, jobs] },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [
+      { icon: "bag", t: E2("Productos", "Products"), s: tiene ? E2(`${nAll} productos · ${nOn} se piden o apartan${nAgo ? ` · ${nAgo} agotados` : ""}`, `${nAll} products · ${nOn} ordered or held${nAgo ? ` · ${nAgo} sold out` : ""}`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
+        ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
+        tag: tiene && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "productos") },
+      filaHerramientaRetail(c)!, jobs] },
   ];
   if (!permitido) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
@@ -92,14 +96,16 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
 export function menuBloques(c: Ctx): Sec {
   const { E2, ui } = c, M = N(c), v = ui.mv || "items";
   const nAgo = M.items.filter((i) => i.ago).length, nOff = M.groups.reduce((a, g) => a + g.options.filter((o) => !o.on).length, 0);
-  const act = { items: { l: E2("Agregar plato", "Add item"), icon: "plus", onClick: () => { c.setUi({ mNewCat: null, mMore: false }); c.det("item:new"); } },
-    cats: { l: E2("Nueva categoría", "New category"), icon: "plus", onClick: () => c.det("mcat:new") }, grps: { l: E2("Nuevo grupo", "New group"), icon: "plus", onClick: () => c.det("mgrp:new") } }[v as "items"] ?? undefined;
-  const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: E2("Menú", "Menu"), onBack: () => c.go("mod"), act }];
+  const shop = M.mod === "shop";
+  const act = { items: { l: shop ? E2("Agregar producto", "Add product") : E2("Agregar plato", "Add item"), icon: "plus", onClick: () => { c.setUi({ mNewCat: null, mMore: false }); c.det("item:new"); } },
+    cats: { l: shop ? E2("Nueva sección", "New section") : E2("Nueva categoría", "New category"), icon: "plus", onClick: () => c.det("mcat:new") }, grps: { l: E2("Nuevo grupo", "New group"), icon: "plus", onClick: () => c.det("mgrp:new") } }[v as "items"] ?? undefined;
+  const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: shop ? E2("Productos", "Products") : E2("Menú", "Menu"), onBack: () => c.go("mod"), act,
+    s: shop ? E2("Lo que pones aquí sale en la pestaña Productos de tu página: precio, cómo se vende, tallas y lo que solo se vende en la tienda.", "What you add here shows in the Products tab of your page: price, how it is sold, sizes and in-store-only items.") : undefined }];
   const nH = M.items.filter((i) => i.hidden).length;
   if (M.off.menu || M.off.pedidos) out.push({ type: "note", tone: "danger", icon: "warning", t: M.off.menu ? E2(`To’Latino pausó tu Menú: la pestaña no sale en tu página. Motivo: ${M.off.menu}`, `To’Latino paused your Menu: the tab does not show on your page. Reason: ${M.off.menu}`) : E2(`To’Latino pausó tus pedidos en línea: tu menú se ve, pero no se puede pedir. Motivo: ${M.off.pedidos}`, `To’Latino paused your online orders: your menu shows but cannot be ordered. Reason: ${M.off.pedidos}`) });
   if (nH) out.push({ type: "note", tone: "danger", icon: "ban", t: nH === 1 ? E2("1 plato lo ocultó To’Latino: no sale en tu menú.", "1 item was hidden by To’Latino: it is not on your menu.") : E2(`${nH} platos los ocultó To’Latino: no salen en tu menú.`, `${nH} items were hidden by To’Latino: they are not on your menu.`) });
   if (M.cfg.pause) out.push({ type: "note", tone: "ink", icon: "clock", t: E2(`Pedidos en línea en pausa hasta ${horaLocal(c, M.cfg.pause)}. Tu menú se sigue viendo.`, `Online orders paused until ${horaLocal(c, M.cfg.pause)}. Your menu still shows.`), cta: E2("Reanudar", "Resume"), onCta: () => c.run(() => menuAjustes(c.d.id, { pause: null }), E2("Recibes pedidos otra vez.", "Taking orders again.")) });
-  const V: [string, string, number, string][] = [["items", E2("Platos", "Items"), M.items.length, "restaurant"], ["cats", E2("Categorías", "Categories"), M.sections.length, "grid"], ["grps", E2("Opciones", "Options"), M.groups.length, "filter"], ["inv", E2("Inventario", "Stock"), nAgo + nOff, "bag"], ["hrs", E2("Horarios", "Hours"), 0, "clock"]];
+  const V: [string, string, number, string][] = [["items", shop ? E2("Productos", "Products") : E2("Platos", "Items"), M.items.length, shop ? "bag" : "restaurant"], ["cats", shop ? E2("Secciones", "Sections") : E2("Categorías", "Categories"), M.sections.length, "grid"], ["grps", E2("Opciones", "Options"), M.groups.length, "filter"], ["inv", E2("Inventario", "Stock"), nAgo + nOff, "bag"], ["hrs", E2("Horarios", "Hours"), 0, "clock"]];
   out.push({ type: "utabs", wrap: c.desk, items: V.map(([k, l, n, icon]) => ({ l, icon, n: k === "hrs" ? undefined : String(n), warn: k === "inv" && n > 0, on: v === k, onClick: () => c.setUi({ mv: k, msel: null, mAsk: null, mBulk: null, mq: "", mInvAdd: false, mOrd: false, mOrdC: null }) })) });
   const body = v === "cats" ? catsV(c, M) : v === "grps" ? grpsV(c, M) : v === "inv" ? invV(c, M) : v === "hrs" ? hrsV(c, M) : itemsV(c, M);
   return { blocks: [...out, ...body], ed: null };
@@ -118,9 +124,11 @@ function mRow(c: Ctx, M: MenuPanel, i: MItem): Fila {
   const meta = [i.ago ? agoL(c, i.agoU).toUpperCase() : null, offO ? (offO > 1 ? E2(`${offO} OPCIONES AGOTADAS`, `${offO} OPTIONS OUT`) : E2("1 OPCIÓN AGOTADA", "1 OPTION OUT")) : null,
     i.stk === "day" && !i.ago && !isLow ? E2(`QUEDAN ${i.left} DE ${i.par}`, `${i.left} OF ${i.par} LEFT`) : null, i.stk === "qty" && !i.ago && !isLow ? E2(`${i.left} EN STOCK`, `${i.left} IN STOCK`) : null,
     i.avail === "own" ? avL(c, "own", true, i.av) || null : null, i.sell && i.ch.length === 1 ? (i.ch[0] === "pick" ? E2("SOLO PICKUP", "PICKUP ONLY") : E2("SOLO DELIVERY", "DELIVERY ONLY")) : null,
-    i.maxQ ? E2(`MÁX. ${i.maxQ} POR PEDIDO`, `MAX ${i.maxQ} PER ORDER`) : null].filter(Boolean).join(" · ");
+    i.maxQ ? E2(`MÁX. ${i.maxQ} POR PEDIDO`, `MAX ${i.maxQ} PER ORDER`) : null,
+    i.shop ? skL(c, i.shop.k).toUpperCase() : null, i.shop?.tallas.length ? i.shop.tallas.map((t) => `${t.label} ${t.stock}`).join(" ") : null,
+    i.shop?.edad ? E2("21+ · SOLO EN LA TIENDA", "21+ · IN STORE ONLY") : i.shop?.tienda ? E2("SOLO EN LA TIENDA", "IN STORE ONLY") : null, i.shop?.ebt ? "EBT" : null].filter(Boolean).join(" · ");
   const tag = i.hidden ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : i.ago ? E2("AGOTADO", "SOLD OUT") : !i.sell ? E2("SOLO CATÁLOGO", "CATALOG ONLY") : isLow ? E2(`QUEDAN ${i.left}`, `${i.left} LEFT`) : null;
-  const o: Fila = { key: i.id, ...img(i), imgW: "56px", t: i.name.es, s: i.desc.es || E2("Sin descripción", "No description"), m: meta || undefined, mFg: i.ago ? "var(--tl-danger)" : undefined, r: fp(i.cents), tag, tone: i.hidden || i.ago ? "danger" : isLow ? "ink" : "neutral", dim: (i.ago || i.hidden) && !sel };
+  const o: Fila = { key: i.id, ...img(i), imgW: "56px", t: i.name.es, s: i.desc.es || E2("Sin descripción", "No description"), m: meta || undefined, mFg: i.ago ? "var(--tl-danger)" : undefined, r: `${fp(i.cents)}${i.shop?.k === "peso" ? "/lb" : ""}`, tag, tone: i.hidden || i.ago ? "danger" : isLow ? "ink" : "neutral", dim: (i.ago || i.hidden) && !sel };
   if (sel) { const tgl = () => c.setUi({ msel: on ? sel.filter((x) => x !== i.id) : [...sel, i.id] }); return { ...o, sel: { on, onClick: tgl }, onClick: tgl, chev: false, ...(on ? { bd: "1.5px solid var(--tl-ink)" } : {}) }; }
   const ask = ui.mAsk === i.id;
   return { ...o, tgOn: !i.ago, onTg: () => (i.ago ? c.run(() => platoAgotar(c.d.id, i.id, false, "hoy"), E2(`«${i.name.es}» se puede pedir otra vez.`, `“${i.name.es}” can be ordered again.`)) : c.setUi({ mAsk: ask ? null : i.id })),
@@ -277,20 +285,27 @@ export function menuDetalle(c: Ctx, id: string): Sec | null {
   return null;
 }
 
-type FPlato = Omit<PlatoIn, "av"> & { av: Av | null };
+type FPlato = Omit<PlatoIn, "av" | "shop"> & { av: Av | null; shop: ShopIn | null };
+/* Cómo se vende un producto de mercado (peso · unid · plato) o de tienda (unid · talla · plan · serv). */
+const SK: Record<string, [string, string, string]> = { peso: ["Por libra · se pesa delante", "Per pound · weighed in front", "scale"], unid: ["Por unidad", "Each", "bag"], plato: ["Listo para llevar", "Ready to go", "restaurant"],
+  talla: ["Con tallas", "With sizes", "tag"], plan: ["Con plan de pagos", "With payment plan", "calendar"], serv: ["Servicio en la tienda", "In-store service", "store"] };
+const skL = (c: Ctx, k: string) => (c.es ? SK[k]?.[0] : SK[k]?.[1]) ?? k;
 function platoDet(c: Ctx, iid: string): Sec {
   const { E2, ui, es } = c, M = N(c), isNew = iid === "new", it0 = M.items.find((y) => y.id === iid);
   const back = () => c.closeDet(), head = (o: Partial<Extract<Bloque, { type: "head" }>>): Bloque => ({ type: "head", t: "", onBack: back, ...o });
   if (!it0 && !isNew) return { blocks: [head({ t: E2("Ya no está en tu menú", "No longer on your menu") })], ed: null };
   const sec0 = ui.mNewCat || M.sections[0]?.id || "";
-  const base: FPlato = it0 ? { name: it0.name.es, en: it0.name.en, desc: it0.desc.es, descEn: it0.desc.en, price: String(it0.cents / 100), sec: it0.sec ?? sec0, tax: it0.tax, photos: it0.photos, sell: it0.sell, ch: it0.ch, ago: it0.ago, agoU: it0.agoU, stk: it0.stk, left: it0.left, par: it0.par, maxQ: it0.maxQ, tags: it0.tags, extra: it0.extra, feat: it0.feat, avail: it0.avail, av: it0.av, grp: it0.grp }
-    : { name: "", en: "", desc: "", descEn: "", price: "", sec: sec0, tax: 6, photos: [], sell: true, ch: ["dlv", "pick"], ago: false, agoU: "hoy", stk: "none", left: 10, par: 10, maxQ: 0, tags: [], extra: 0, feat: false, avail: "cat", av: null, grp: [] };
+  const shop = M.mod === "shop", merc = c.d.cat === "NEG-MERC";
+  const sh0: ShopIn | null = !shop ? null : it0?.shop ? { k: it0.shop.k, ebt: it0.shop.ebt, edad: it0.shop.edad, tienda: it0.shop.tienda, label: it0.shop.label?.es ?? "Talla", tallas: it0.shop.tallas.map((t) => t.label) }
+    : { k: merc ? "unid" : "unid", ebt: merc, edad: 0, tienda: false, label: "Talla", tallas: [] };
+  const base: FPlato = it0 ? { name: it0.name.es, en: it0.name.en, desc: it0.desc.es, descEn: it0.desc.en, price: String(it0.cents / 100), sec: it0.sec ?? sec0, tax: it0.tax, photos: it0.photos, sell: it0.sell, ch: it0.ch, ago: it0.ago, agoU: it0.agoU, stk: it0.stk, left: it0.left, par: it0.par, maxQ: it0.maxQ, tags: it0.tags, extra: it0.extra, feat: it0.feat, avail: it0.avail, av: it0.av, grp: it0.grp, shop: sh0 }
+    : { name: "", en: "", desc: "", descEn: "", price: "", sec: sec0, tax: shop ? 0 : 6, photos: [], sell: true, ch: ["dlv", "pick"], ago: false, agoU: "hoy", stk: "none", left: 10, par: 10, maxQ: 0, tags: [], extra: 0, feat: false, avail: "cat", av: null, grp: [], shop: sh0 };
   const F = c.form<FPlato>(`det:mi:${iid}`, base), d = F.d, setF = F.set, pr = parseFloat(d.price) || 0, sec = M.sections.find((s) => s.id === d.sec) ?? null;
   const more = !isNew || ui.mMore === true, out: (Bloque | null)[] = [];
   if (it0?.hidden) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino ocultó este plato: no sale en tu menú. Motivo: ${it0.hiddenReason ?? ""}`, `To’Latino hid this item: it is not on your menu. Reason: ${it0.hiddenReason ?? ""}`) });
-  out.push(head({ eye: E2("MENÚ", "MENU") + (sec ? ` · ${sec.name.es.toUpperCase()}` : ""), t: isNew ? E2("Nuevo plato", "New item") : it0!.name.es, s: isNew ? E2("Con nombre, precio y categoría ya se puede pedir. Lo demás, cuando puedas.", "Name, price and category are enough to sell. The rest whenever you can.") : undefined }));
+  out.push(head({ eye: (shop ? E2("PRODUCTOS", "PRODUCTS") : E2("MENÚ", "MENU")) + (sec ? ` · ${sec.name.es.toUpperCase()}` : ""), t: isNew ? (shop ? E2("Nuevo producto", "New product") : E2("Nuevo plato", "New item")) : it0!.name.es, s: isNew ? E2("Con nombre, precio y categoría ya se puede pedir. Lo demás, cuando puedas.", "Name, price and category are enough to sell. The rest whenever you can.") : undefined }));
   const ptags = [...(d.ago ? [{ label: E2("AGOTADO HOY", "SOLD OUT TODAY"), tone: "danger" }] : []), ...(d.feat ? [{ label: "POPULAR", tone: "action" }] : []), ...d.tags.slice(0, 2).map((t) => { const T = MTAGS.find((z) => z[0] === t) ?? [t, t, t]; return { label: (es ? T[1] : T[2]).toUpperCase(), tone: "neutral" }; })];
-  out.push({ type: "mprev", k: E2("ASÍ SE VE EN TU MENÚ", "HOW IT LOOKS ON YOUR MENU"), name: (es ? d.name : d.en || d.name) || E2("Nombre del plato", "Item name"), desc: (es ? d.desc : d.descEn || d.desc) || "", price: fp(Math.round(pr * 100)), tags: ptags, image: d.photos[0] ?? "", off: d.ago });
+  out.push({ type: "mprev", k: E2("ASÍ SE VE EN TU MENÚ", "HOW IT LOOKS ON YOUR MENU"), name: (es ? d.name : d.en || d.name) || E2("Nombre del plato", "Item name"), desc: (es ? d.desc : d.descEn || d.desc) || "", price: `${fp(Math.round(pr * 100))}${d.shop?.k === "peso" ? "/lb" : ""}`, tags: ptags, image: d.photos[0] ?? "", off: d.ago });
   const sp: number | null = ui.mph && ui.mph.id === iid ? ui.mph.i : null;
   out.push({ type: "photos", k: E2("FOTOS · LA PRIMERA ES LA PRINCIPAL", "PHOTOS · THE FIRST IS THE MAIN ONE"), count: `${d.photos.length}/5`, cols: 3, items: d.photos.map((p, i) => ({ key: p, bg: `url("${p}")`, tag: i === 0 ? E2("PRINCIPAL", "MAIN") : undefined, on: sp === i, onClick: () => c.setUi({ mph: sp === i ? null : { id: iid, i } }) })),
     addL: E2("Subir foto", "Upload photo"), onAdd: d.photos.length < 5 ? () => c.pickFiles(false, async (fs) => { const r = await subirFoto(fs[0]!); if (r.ok && r.url) setF({ photos: [...F.d.photos, r.url].slice(0, 5) }); else c.toast(r.mensaje ? r.mensaje[es ? "es" : "en"] : E2("No se pudo subir la foto.", "Couldn’t upload the photo.")); }) : undefined,
@@ -307,7 +322,24 @@ function platoDet(c: Ctx, iid: string): Sec {
   out.push({ type: "group", k: E2("CATEGORÍA Y PRECIO", "CATEGORY AND PRICE"), link: E2("Nueva categoría", "New category"), onLink: () => c.det("mcat:new") },
     { type: "chips", items: M.sections.map((s) => ({ l: s.name.es, v: d.sec === s.id ? "selected" : "filter", onClick: () => setF({ sec: s.id }) })) },
     fld(E2("PRECIO", "PRICE"), "price", { max: 8, pre: "$", num: true, ph: "0.00", help: pr && hi > lo ? E2(`Con sus opciones obligatorias va de ${fp(Math.round(lo * 100))} a ${fp(Math.round(hi * 100))}.`, `With its required options it goes from ${fp(Math.round(lo * 100))} to ${fp(Math.round(hi * 100))}.`) : undefined }),
-    { type: "chips", k: E2("IMPUESTO", "TAX"), items: ([[6, E2("6 % · comida preparada", "6% · prepared food")], [0, E2("Exento", "Exempt")]] as [number, string][]).map(([v, l]) => ({ l, v: d.tax === v ? "selected" : "filter", onClick: () => setF({ tax: v }) })) });
+    { type: "chips", k: E2("IMPUESTO", "TAX"), items: (shop ? [[0, merc ? E2("Exento · comida para la casa", "Exempt · groceries") : E2("Exento · ropa y calzado", "Exempt · clothing")], [6, merc ? E2("6 % · comida lista o no comida", "6% · ready food or non-food") : E2("6 %", "6%")]]
+      : [[6, E2("6 % · comida preparada", "6% · prepared food")], [0, E2("Exento", "Exempt")]] as [number, string][]).map(([v, l]) => ({ l: l as string, v: d.tax === v ? "selected" : "filter", onClick: () => setF({ tax: v as number }) })) });
+  // Mercados y Tiendas: cómo se vende, tallas, EBT, 21+ y solo en la tienda (lo revisa el servidor).
+  if (shop && d.shop) {
+    const S0 = d.shop, setS = (p: Partial<ShopIn>) => setF({ shop: { ...S0, ...p } });
+    out.push({ type: "group", k: E2("CÓMO SE VENDE", "HOW IT IS SOLD") },
+      { type: "chips", items: (merc ? ["peso", "unid", "plato"] : ["unid", "talla", "plan", "serv"]).map((k) => ({ l: skL(c, k), v: S0.k === k ? "selected" : "filter", onClick: () => setS({ k, ...(k === "plato" ? { ebt: false } : {}) }) })) });
+    if (S0.k === "peso") out.push({ type: "note", tone: "info", icon: "scale", t: E2("El precio es por libra. Se pesa delante del cliente, con foto de la balanza, y se cobra el peso real.", "The price is per pound. It is weighed in front of the customer, with a photo of the scale, and the real weight is charged.") });
+    if (S0.k === "talla") out.push(
+      { type: "chips", k: E2("SE DICE", "CALLED"), items: [["Talla", E2("Talla", "Size")], ["Número", E2("Número (calzado)", "Number (shoes)")]].map(([v, l]) => ({ l: l!, v: S0.label === v ? "selected" : "filter", onClick: () => setS({ label: v! }) })) },
+      { type: "field", k: E2("TALLAS · SEPARADAS POR COMA", "SIZES · COMMA SEPARATED"), val: S0.tallas.join(", "), max: 120, ph: "S, M, L, XL, 2X", help: E2("Las nuevas entran en 0: cuántas quedan lo pones en Tu herramienta. Una talla en 0 no se aparta.", "New sizes start at 0: set how many are left in Your tool. A size at 0 cannot be held."),
+        onChange: (v) => setS({ tallas: v.split(",").map((x) => x.trim().toUpperCase().slice(0, 8)).filter(Boolean).slice(0, 20) }) });
+    const filas: Fila[] = [];
+    if (merc && (S0.k === "peso" || S0.k === "unid")) filas.push({ icon: "card", t: "EBT / SNAP", s: E2("Solo comida que no está caliente. No alcohol, tabaco ni limpieza.", "Only food that is not hot. No alcohol, tobacco or cleaning items."), tgOn: S0.ebt && !S0.edad, onTg: () => setS({ ebt: !S0.ebt }) });
+    filas.push({ icon: "shield", t: E2("Es de 21+ (licor, tabaco, vape)", "21+ (liquor, tobacco, vape)"), s: E2("Sale con su precio, pero solo se compra en la tienda con ID. No se pide ni se aparta en la app.", "Shows with its price, but is only bought in store with ID. Not ordered or held in the app."), tgOn: S0.edad === 21, onTg: () => setS({ edad: S0.edad ? 0 : 21, ...(S0.edad ? {} : { ebt: false, tienda: true }) }) });
+    if (!S0.edad && S0.k !== "serv") filas.push({ icon: "store", t: E2("Solo en la tienda", "In store only"), s: E2("Sale en tu página con su precio, pero no se pide ni se aparta.", "Shows on your page with its price, but is not ordered or held."), tgOn: S0.tienda, onTg: () => setS({ tienda: !S0.tienda }) });
+    out.push({ type: "rows", items: filas });
+  }
   if (!more) out.push({ type: "rows", items: [{ icon: "more", t: E2("Más ajustes", "More settings"), s: E2("En inglés, opciones, inventario, delivery o pickup y alergias. Puedes hacerlo después.", "English, options, stock, delivery or pickup and allergens. You can do it later."), onClick: () => c.setUi({ mMore: true }) }] });
   if (more) {
     const free = M.groups.filter((g) => !d.grp.includes(g.id));
@@ -336,14 +368,14 @@ function platoDet(c: Ctx, iid: string): Sec {
       { type: "step", t: E2("Tiempo extra de cocina", "Extra kitchen time"), s: E2("Se suma a tu tiempo de preparación cuando lo piden.", "Added to your prep time when ordered."), v: d.extra ? `+${d.extra} min` : E2("Ninguno", "None"), onM: () => setF({ extra: Math.max(0, d.extra - 5) }), onP: () => setF({ extra: Math.min(60, d.extra + 5) }) },
       { type: "rows", items: [{ icon: "star", t: E2("Fijar en Populares", "Pin to Popular"), s: E2("Sale arriba en tu menú. Si no, Populares se arma con lo más pedido.", "Shows at the top of your menu. Otherwise Popular uses your best sellers."), tgOn: d.feat, onTg: () => setF({ feat: !d.feat }) }] });
   }
-  const miss = [d.name.trim().length < 2 ? E2("nombre", "name") : null, pr > 0 ? null : E2("precio", "price"), d.sec ? null : E2("categoría", "category"), d.sell && !d.ch.length ? E2("delivery o pickup", "delivery or pickup") : null, d.avail === "own" && d.av && !d.av.d.length ? E2("días de su horario", "days for its hours") : null].filter(Boolean), valid = !miss.length;
+  const miss = [d.shop?.k === "talla" && !d.shop.tallas.length ? E2("tallas", "sizes") : null, d.name.trim().length < 2 ? E2("nombre", "name") : null, pr > 0 ? null : E2("precio", "price"), d.sec ? null : E2("categoría", "category"), d.sell && !d.ch.length ? E2("delivery o pickup", "delivery or pickup") : null, d.avail === "own" && d.av && !d.av.d.length ? E2("días de su horario", "days for its hours") : null].filter(Boolean), valid = !miss.length;
   if (miss.length && F.dirty) out.push({ type: "note", tone: "warn", t: E2(`Para guardar falta: ${miss.join(" · ")}.`, `To save, add: ${miss.join(" · ")}.`) });
   const askDel = !isNew && ui.mDel === iid;
   if (askDel) out.push({ type: "note", tone: "danger", icon: "trash", t: E2(`¿Quitar «${it0!.name.es}» del menú? Los pedidos ya hechos lo conservan. Si solo se acabó, mejor márcalo agotado.`, `Remove “${it0!.name.es}” from the menu? Past orders keep it. If it just ran out, mark it sold out instead.`) });
   const extra = isNew ? [] : askDel ? [{ l: E2("Sí, quitar", "Yes, remove"), v: "danger", icon: "trash", onClick: () => { c.setUi({ mDel: null }); c.run(() => platosLote(c.d.id, [iid], "del"), E2("Quitado del menú. Los pedidos ya hechos lo conservan.", "Removed from the menu. Past orders keep it."), back); } }, { l: E2("Cancelar", "Cancel"), v: "soft", onClick: () => c.setUi({ mDel: null }) }]
     : [{ l: E2("Duplicar", "Duplicate"), onClick: () => c.run(() => platoDuplicar(c.d.id, iid), E2("Copia creada. Cámbiale el nombre y lo que haga falta.", "Copy created. Rename it and change what you need."), (r) => r.id && c.det(`item:${r.id}`)) }, { l: E2("Quitar", "Remove"), icon: "trash", onClick: () => c.setUi({ mDel: iid }) }];
   return { blocks: out, tail: extra.length ? [{ type: "acts", items: extra }] : [],
-    ed: { F, l: isNew ? E2("Agregar al menú", "Add to menu") : E2("Guardar", "Save"), valid, always: isNew, apply: (x: FPlato) => platoGuardar(c.d.id, iid, { ...x, av: x.av }), onDone: back } };
+    ed: { F, l: isNew ? (shop ? E2("Agregar producto", "Add product") : E2("Agregar al menú", "Add to menu")) : E2("Guardar", "Save"), valid, always: isNew, apply: (x: FPlato) => platoGuardar(c.d.id, iid, { ...x, av: x.av }), onDone: back } };
 }
 
 function catDet(c: Ctx, key: string): Sec {

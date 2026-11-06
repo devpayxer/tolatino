@@ -86,7 +86,7 @@ export async function mercAgotado(negocio: string, item: string, agotado: boolea
 }
 
 /* ── Tiendas · «Tallas y apartados» ── */
-export type TiendaIn = { hold?: number; lay?: boolean; down?: number; pagos?: number; cada?: number; cargo?: number; dev?: number; cash?: boolean };
+export type TiendaIn = { hold?: number; lay?: boolean; down?: number; pagos?: number; cada?: number; cargo?: number; dev?: number; cash?: boolean; ship?: boolean; shipFee?: number; shipFree?: number; shipDays?: string };
 export async function tiendaGuardar(negocio: string, p: TiendaIn): Promise<Res> {
   return hacer(negocio, "NEG-TIENDA", async (c, a) => {
     const h0 = (await herramientaRetail(a.negocio.id, c)) as HerrTienda | null;
@@ -100,7 +100,13 @@ export async function tiendaGuardar(negocio: string, p: TiendaIn): Promise<Res> 
     if (p?.cargo !== undefined) { const n = Math.round(Number(p.cargo)); if (!(n >= 0 && n <= 10)) return no("El cargo por no terminar va de 0 % a 10 %.", "The cancellation fee goes from 0% to 10%."); h.cargo = n; after.cargo_si_no_termina = `${n} %`; }
     if (p?.dev !== undefined) { const n = Math.round(Number(p.dev)); if (!(n >= 0 && n <= 90)) return no("Los cambios van de 0 a 90 días.", "Returns go from 0 to 90 days."); h.dev = n; after.cambios_con_recibo = n ? `${n} días` : "no acepta"; }
     if (p?.cash !== undefined) { h.cash = !!p.cash; after.efectivo = SI(h.cash); }
+    if (p?.ship !== undefined) { h.ship = !!p.ship; after.envio_por_correo = SI(h.ship); }
+    if (p?.shipFee !== undefined) { const n = Math.round(Number(p.shipFee)); if (!(n >= 0 && n <= 20000 && n % 100 === 0)) return no("El envío va de $0 a $200, de dólar en dólar.", "Shipping goes from $0 to $200, a dollar at a time."); h.shipFee = n; after.costo_del_envio = n ? usd(n) : "gratis"; }
+    if (p?.shipFree !== undefined) { const n = Math.round(Number(p.shipFree)); if (!(n >= 0 && n <= 500000 && n % 500 === 0)) return no("«Gratis desde» va de $0 a $5,000.", "“Free over” goes from $0 to $5,000."); h.shipFree = n; after.envio_gratis_desde = n ? usd(n) : "nunca"; }
+    if (p?.shipDays !== undefined) { if (!["1-2", "3-5", "5-7"].includes(String(p.shipDays))) return no("Llega en 1–2, 3–5 o 5–7 días.", "Arrives in 1–2, 3–5 or 5–7 days."); h.shipDays = p.shipDays as HerrTienda["shipDays"]; after.llega_en = `${h.shipDays} días`; }
     if (!Object.keys(after).length) return no("Nada que guardar.", "Nothing to save.");
+    await c.query(`insert into delivery_settings (business_id, pickup, delivery, ship, ship_fee_cents, ship_free_over_cents, ship_days) values ($1, true, false, $2, $3, $4, $5)
+                   on conflict (business_id) do update set ship = $2, ship_fee_cents = $3, ship_free_over_cents = $4, ship_days = $5, updated_at = now()`, [a.negocio.id, h.ship, h.shipFee, h.shipFree, h.shipDays]);
     await c.query(`insert into retail_settings (business_id, hold_hours, layaway, lay_down_pct, lay_payments, lay_every_days, lay_cancel_pct, returns_days, cash, updated_by) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                    on conflict (business_id) do update set hold_hours = $2, layaway = $3, lay_down_pct = $4, lay_payments = $5, lay_every_days = $6, lay_cancel_pct = $7, returns_days = $8, cash = $9, updated_by = $10, updated_at = now()`,
       [a.negocio.id, h.hold, h.lay, h.down, h.pagos, h.cada, h.cargo, h.dev, h.cash, a.yo.id]);

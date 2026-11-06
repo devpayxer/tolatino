@@ -767,3 +767,11 @@ pagado en la caja las hace el negocio · número M-6101… · servicios de Tiend
    cargo), subir una talla.
 3. Super Admin › Negocios › La Cosecha › Lo que vende: productos con «Por libra», ocultar con motivo.
 _Huecos del diseño compuestos (REVISION): «Pedidos por franja», «Si algo no hay» y los números del layaway en Tu herramienta._
+
+## Fase 4 · 4n-2/4n-3 Productos de Mercados y Tiendas y envío por correo
+1. Como Héctor: Lo que vendes › Productos › «Agregar producto»: «Chuleta de cerdo» $3.49, Carnicería, «Por libra · se pesa
+   delante» → sale con /lb y EBT. Otro con «Es de 21+»: queda solo en la tienda.
+2. Como Yaritza: «Agregar producto» › «Con tallas» › «S, M, L» → en Tu herramienta salen en 0 para subirlas.
+3. Yaritza › Tu herramienta › «Envío por correo»: costo, gratis desde, llega en.
+_Decidido por mí (reversible): el envío por correo de las tiendas se pone en Tu herramienta (no en Entrega, que hoy es de los
+pedidos de comida con repartidores). El camión propio de la tienda llega con 4q._

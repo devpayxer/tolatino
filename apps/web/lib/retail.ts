@@ -35,7 +35,8 @@ export async function herramientaRetail(negocio: string, c: Q = db()): Promise<H
     if (!it) { it = { id: x.iid, name: x.name, label: x.label ?? { es: "Talla", en: "Size" }, tallas: [] }; inv.push(it); }
     it.tallas.push({ id: x.id, label: x.v, stock: x.stock });
   }
-  return { rubro: "tienda", hold: ((r?.hold_hours ?? 48) as 24 | 48 | 72), lay: r ? r.layaway : fv.has("layaway"), down: r?.lay_down_pct ?? 20, pagos: r?.lay_payments ?? 4, cada: ((r?.lay_every_days ?? 14) as 7 | 14 | 30),
+  const sd = (await c.query<{ ship: boolean; ship_fee_cents: number; ship_free_over_cents: number; ship_days: "1-2" | "3-5" | "5-7" }>(`select ship, ship_fee_cents, ship_free_over_cents, ship_days from delivery_settings where business_id = $1`, [negocio])).rows[0];
+  return { ship: sd?.ship ?? false, shipFee: sd?.ship_fee_cents ?? 0, shipFree: sd?.ship_free_over_cents ?? 0, shipDays: sd?.ship_days ?? "3-5", rubro: "tienda", hold: ((r?.hold_hours ?? 48) as 24 | 48 | 72), lay: r ? r.layaway : fv.has("layaway"), down: r?.lay_down_pct ?? 20, pagos: r?.lay_payments ?? 4, cada: ((r?.lay_every_days ?? 14) as 7 | 14 | 30),
     cargo: r?.lay_cancel_pct ?? 10, dev: r?.returns_days ?? 0, cash: r ? r.cash : fv.has("efectivo"), inv, cambiado: !!r } satisfies HerrTienda;
 }
 

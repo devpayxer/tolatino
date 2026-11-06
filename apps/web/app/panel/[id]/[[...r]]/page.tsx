@@ -52,7 +52,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
   else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
   else if (r.length === 2 && r[0] === "cobros" && r[1] === "plan") ruta = { sec: "pay", sub: "plan", det: null };
-  else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta")) ruta = { sec: "mod", sub: r[1], det: null };
+  else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta" || r[1] === "productos")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
   const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "mas" ? undefined : "page");
@@ -71,7 +71,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan».
   if (ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD") ruta.sub = "plan";
   // Lo que vendes · Menú (Comida): el menú del negocio, calculado en el servidor.
-  const menu = ruta.sec === "mod" && d.cat === "NEG-FOOD" ? await menuPanel(d.id) : undefined;
+  const menu = ruta.sec === "mod" && d.cat === "NEG-FOOD" ? await menuPanel(d.id) : ruta.sec === "mod" && (d.cat === "NEG-MERC" || d.cat === "NEG-TIENDA") ? await menuPanel(d.id, "shop") : undefined;
   // Pedidos (Comida): lo que pide cada sección, y el detalle solo con acceso a «Hoy y pedidos».
   const food = d.cat === "NEG-FOOD", ord = acc.partes.includes("all") || acc.partes.includes("ord");
   if ((ruta.det?.startsWith("ped:") || ruta.det?.startsWith("rsv:")) && !(food && ord)) ruta.det = null;

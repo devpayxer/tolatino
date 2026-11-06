@@ -7,6 +7,7 @@ import { db, tx } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import type { PoolClient } from "pg";
 import type { Res } from "./acciones";
+import { recalcularFiltrosRetail } from "@/lib/retail";
 
 type Bi = { es: string; en: string };
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -36,12 +37,20 @@ async function hacer(id: string, fn: (c: PoolClient, a: Acceso) => Promise<Res |
   const r = await tx((c) => fn(c, a));
   return r ?? { ok: true };
 }
+/* Mercados y Tiendas venden «productos» (module shop) con el mismo constructor; Comida, «platos» (menu). */
+async function moduloDe(c: PoolClient, negocio: string): Promise<"menu" | "shop"> {
+  const k = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [negocio])).rows[0]?.cat;
+  return k === "NEG-MERC" || k === "NEG-TIENDA" ? "shop" : "menu";
+}
+const SK_MERC = ["peso", "unid", "plato"], SK_TIENDA = ["unid", "talla", "plan", "serv"];
+export type ShopIn = { k: string; ebt: boolean; edad: number; tienda: boolean; label: string; tallas: string[] };
 const hoyLocal = `(now() at time zone (select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1) - interval '6 hours')::date`;
 
 /* ── Plato: crear o guardar ── */
 export type PlatoIn = {
   name: string; en: string; desc: string; descEn: string; price: string; sec: string; tax: number; photos: string[]; sell: boolean; ch: string[];
   ago: boolean; agoU: string; stk: string; left: number; par: number; maxQ: number; tags: string[]; extra: number; feat: boolean; avail: string; av: unknown; grp: string[];
+  shop?: ShopIn | null;
 };
 export async function platoGuardar(negocio: string, itemId: string, p: PlatoIn): Promise<Res & { id?: string }> {
   if (!(await entrar(negocio))) return SIN_ACCESO;
@@ -63,8 +72,21 @@ export async function platoGuardar(negocio: string, itemId: string, p: PlatoIn):
   const tags = [...new Set((Array.isArray(p?.tags) ? p.tags : []).filter((t) => TAGS.has(t)))];
   const tax = Number(p?.tax) === 0 ? 0 : 6, agoU = ["hoy", "vie", "manual"].includes(p?.agoU) ? p.agoU : "hoy";
   return hacer(negocio, async (c, a) => {
-    const b = a.negocio.id;
-    if (!(await c.query(`select 1 from item_sections where id = $1::bigint and business_id = $2 and removed_at is null`, [p.sec, b])).rowCount) return no("Esa categoría ya no existe.", "That category no longer exists.");
+    const b = a.negocio.id, mod = await moduloDe(c, b);
+    if (!(await c.query(`select 1 from item_sections where id = $1::bigint and business_id = $2 and module = $3 and removed_at is null`, [p.sec, b, mod])).rowCount) return no("Esa categoría ya no existe.", "That category no longer exists.");
+    // Productos de mercado o tienda: cómo se vende, EBT (solo comida que no está caliente), 21+ (siempre solo en la tienda), tallas.
+    let sh: { k: string; ebt: boolean; edad: number; tienda: boolean; label: Bi | null; tallas: string[] } | null = null;
+    if (mod === "shop") {
+      const merc = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [b])).rows[0]?.cat === "NEG-MERC";
+      const k = String(p?.shop?.k ?? ""), edad = Number(p?.shop?.edad) === 21 ? 21 : 0;
+      if (!(merc ? SK_MERC : SK_TIENDA).includes(k)) return no("Elige cómo se vende.", "Pick how it is sold.");
+      const tallas = k === "talla" ? [...new Set((Array.isArray(p?.shop?.tallas) ? p.shop.tallas : []).map((x) => txt(x, 8).toUpperCase()).filter((x) => x.length >= 1))] : [];
+      if (k === "talla" && !tallas.length) return no("Escribe las tallas (ej. S, M, L).", "Write the sizes (e.g. S, M, L).");
+      if (tallas.length > 20) return no("Hasta 20 tallas.", "Up to 20 sizes.");
+      const lab = txt(p?.shop?.label, 12);
+      sh = { k, ebt: merc && (k === "peso" || k === "unid") && edad === 0 && !!p?.shop?.ebt, edad, tienda: edad === 21 || k === "serv" || !!p?.shop?.tienda,
+        label: k === "talla" ? { es: lab || "Talla", en: lab === "Número" ? "Size" : lab || "Size" } : null, tallas };
+    }
     const grp = [...new Set((Array.isArray(p?.grp) ? p.grp : []).filter((x) => ID.test(String(x))))];
     const okG = (await c.query<{ id: string }>(`select id::text from option_groups where business_id = $1 and removed_at is null and id = any($2::bigint[])`, [b, grp])).rows.map((x) => x.id);
     const grupos = grp.filter((x) => okG.includes(x));
@@ -78,22 +100,36 @@ export async function platoGuardar(negocio: string, itemId: string, p: PlatoIn):
         `select url from media where url = any($1::text[]) and status = 'visible' and ((owner_kind = 'business' and owner_id = $2) or (owner_kind = 'user' and owner_id = $3))`, [nuevas, b, a.yo.id])).rows.map((x) => x.url);
       if (nuevas.some((u) => !mias.includes(u))) return no("Vuelve a subir la foto.", "Upload the photo again.");
     }
-    const vals = [b, p.sec, JSON.stringify({ es: name, en }), JSON.stringify({ es: desc, en: descEn }), cents, tax, fot, sell, ch, !!p?.ago, agoU, stk, left, par, maxQ, tags, extra, !!p?.feat, avail, av ? JSON.stringify(av) : null, grupos];
+    // Lo que no se pide en la app (21+, servicio, solo en la tienda) no se puede pedir en línea.
+    const vende = sh?.tienda ? false : sell;
+    const vals = [b, p.sec, JSON.stringify({ es: name, en }), JSON.stringify({ es: desc, en: descEn }), cents, tax, fot, vende, ch, !!p?.ago, agoU, stk, left, par, maxQ, tags, extra, !!p?.feat, avail, av ? JSON.stringify(av) : null, grupos,
+      mod, sh?.k === "peso" ? "lb" : "u", sh?.k ?? null, sh?.ebt ?? false, sh?.edad ?? 0, sh?.tienda ?? false, sh?.label ? JSON.stringify(sh.label) : null];
     let id = itemId;
     if (nuevo) {
       id = (await c.query<{ id: string }>(
-        `insert into items (business_id, section_id, name, descr, price_cents, tax_pct, photos, sell, channels, sold_out, sold_out_until, stock_mode, stock_left, stock_par, max_qty, tags, extra_min, featured, avail, av, group_ids, sold_out_at, stock_day, sort)
-         values ($1, $2::bigint, $3::jsonb, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21::bigint[], case when $10 then now() end, ${hoyLocal},
+        `insert into items (business_id, section_id, name, descr, price_cents, tax_pct, photos, sell, channels, sold_out, sold_out_until, stock_mode, stock_left, stock_par, max_qty, tags, extra_min, featured, avail, av, group_ids,
+                            module, unit, shop_kind, ebt, age_min, in_store_only, size_label, sold_out_at, stock_day, sort)
+         values ($1, $2::bigint, $3::jsonb, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20::jsonb, $21::bigint[], $22, $23, $24, $25, $26, $27, $28::jsonb, case when $10 then now() end, ${hoyLocal},
                  (select coalesce(max(sort), 0) + 1 from items where business_id = $1 and section_id = $2::bigint)) returning id::text`, vals)).rows[0]!.id;
     } else {
       await c.query(
         `update items set section_id = $2::bigint, name = $3::jsonb, descr = $4::jsonb, price_cents = $5, tax_pct = $6, photos = $7, sell = $8, channels = $9,
                 sold_out = $10, sold_out_until = $11, sold_out_at = case when $10 and not sold_out then now() when not $10 then null else sold_out_at end,
                 stock_mode = $12, stock_left = $13, stock_par = $14, stock_day = ${hoyLocal}, max_qty = $15, tags = $16, extra_min = $17, featured = $18, avail = $19, av = $20::jsonb,
-                group_ids = $21::bigint[], updated_at = now()
-          where id = $22::bigint and business_id = $1`, [...vals, itemId]);
+                group_ids = $21::bigint[], unit = $23, shop_kind = $24, ebt = $25, age_min = $26, in_store_only = $27, size_label = $28::jsonb, updated_at = now()
+          where id = $29::bigint and business_id = $1 and module = $22`, [...vals, itemId]);
     }
-    await auditar(c, a, nuevo ? "menu.plato.agregar" : "menu.plato.editar", prev ? { plato: prev.name.es, precio: prev.price_cents } : null, { plato: name, precio: cents });
+    // Tallas: las nuevas entran en 0 (se suben en Tu herramienta); las que se quitan quedan con removed_at.
+    if (sh) {
+      const cur = (await c.query<{ id: string; label: string }>(`select id::text, label from item_variants where item_id = $1::bigint and removed_at is null`, [id])).rows;
+      for (const v of cur) if (!sh.tallas.includes(v.label)) await c.query(`update item_variants set removed_at = now(), updated_by = $2 where id = $1::bigint`, [v.id, a.yo.id]);
+      for (const [i2, l] of sh.tallas.entries()) {
+        if (cur.some((v) => v.label === l)) await c.query(`update item_variants set sort = $3 where item_id = $1::bigint and label = $2 and removed_at is null`, [id, l, i2]);
+        else await c.query(`insert into item_variants (item_id, business_id, label, sort, stock_left, updated_by) values ($1::bigint, $2, $3, $4, 0, $5)`, [id, b, l, i2, a.yo.id]);
+      }
+    }
+    await auditar(c, a, nuevo ? (mod === "shop" ? "producto.agregar" : "menu.plato.agregar") : (mod === "shop" ? "producto.editar" : "menu.plato.editar"), prev ? { plato: prev.name.es, precio: prev.price_cents } : null, { plato: name, precio: cents });
+    if (mod === "shop") await recalcularFiltrosRetail(c, b);
     return { ok: true, id } as Res & { id: string };
   });
 }
@@ -202,10 +238,11 @@ export async function categoriaGuardar(negocio: string, secId: string, p: { name
   if (avail === "own" && !av) return no("Elige al menos un día.", "Pick at least one day.");
   return hacer(negocio, async (c, a) => {
     const b = a.negocio.id;
-    if ((await c.query(`select 1 from item_sections where business_id = $1 and module = 'menu' and removed_at is null and lower(name->>'es') = lower($2) and id::text <> $3`, [b, name, secId])).rowCount)
+    const mod = await moduloDe(c, b);
+    if ((await c.query(`select 1 from item_sections where business_id = $1 and module = $4 and removed_at is null and lower(name->>'es') = lower($2) and id::text <> $3`, [b, name, secId, mod])).rowCount)
       return no("Ya tienes una categoría con ese nombre.", "You already have a category with that name.");
     let id = secId;
-    if (nuevo) id = (await c.query<{ id: string }>(`insert into item_sections (business_id, name, avail, av, visible, sort) values ($1, $2::jsonb, $3, $4::jsonb, $5, (select coalesce(max(sort), 0) + 1 from item_sections where business_id = $1)) returning id::text`,
+    if (nuevo) id = (await c.query<{ id: string }>(`insert into item_sections (business_id, name, avail, av, visible, sort, module) values ($1, $2::jsonb, $3, $4::jsonb, $5, (select coalesce(max(sort), 0) + 1 from item_sections where business_id = $1), '${mod}') returning id::text`,
       [b, JSON.stringify({ es: name, en }), avail, av ? JSON.stringify(av) : null, p?.visible !== false])).rows[0]!.id;
     else if (!(await c.query(`update item_sections set name = $3::jsonb, avail = $4, av = $5::jsonb, visible = $6, updated_at = now() where id = $2::bigint and business_id = $1 and removed_at is null`,
       [b, secId, JSON.stringify({ es: name, en }), avail, av ? JSON.stringify(av) : null, p?.visible !== false])).rowCount) return no("Esa categoría ya no existe.", "That category no longer exists.");
@@ -224,7 +261,7 @@ export async function categoriaVisible(negocio: string, secId: string, visible: 
 export async function categoriaMover(negocio: string, secId: string, dir: number): Promise<Res> {
   if (!ID.test(secId)) return no("Esa categoría no existe.", "That category doesn’t exist.");
   return hacer(negocio, async (c, a) => {
-    const L = (await c.query<{ id: string }>(`select id::text from item_sections where business_id = $1 and module = 'menu' and removed_at is null order by sort, id for update`, [a.negocio.id])).rows.map((x) => x.id);
+    const L = (await c.query<{ id: string }>(`select id::text from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, id for update`, [a.negocio.id, await moduloDe(c, a.negocio.id)])).rows.map((x) => x.id);
     const i = L.indexOf(secId), j = i + (dir < 0 ? -1 : 1);
     if (i < 0 || j < 0 || j >= L.length) return null;
     [L[i], L[j]] = [L[j]!, L[i]!];

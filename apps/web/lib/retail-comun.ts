@@ -9,6 +9,8 @@ export type HerrMerc = {
 export type TallaHerr = { id: string; label: string; stock: number };
 export type HerrTienda = {
   rubro: "tienda"; hold: 24 | 48 | 72; lay: boolean; down: number; pagos: number; cada: 7 | 14 | 30; cargo: number; dev: number; cash: boolean;
+  // Envío por correo de la tienda (delivery_settings.ship*).
+  ship: boolean; shipFee: number; shipFree: number; shipDays: "1-2" | "3-5" | "5-7";
   inv: { id: string; name: Bi; label: Bi; tallas: TallaHerr[] }[]; cambiado: boolean;
 };
 export type HerrRetail = HerrMerc | HerrTienda;
@@ -23,5 +25,5 @@ export function resumenRetail(h: HerrRetail, es: boolean): string {
       .filter(Boolean).join(" · ") + (a ? E2(` · ${a} agotados hoy`, ` · ${a} sold out today`) : "");
   }
   const z = h.inv.reduce((n, it) => n + it.tallas.filter((t) => t.stock === 0).length, 0);
-  return `${E2("Aparta ", "Holds ")}${h.hold} h${h.lay ? " · layaway" : ""}${h.dev ? `${E2(" · cambios ", " · returns ")}${h.dev}${E2(" días", " days")}` : E2(" · sin cambios", " · no returns")}${h.cash ? E2(" · efectivo", " · cash") : ""}${z ? E2(` · ${z} tallas agotadas`, ` · ${z} sizes out`) : ""}`;
+  return `${E2("Aparta ", "Holds ")}${h.hold} h${h.lay ? " · layaway" : ""}${h.dev ? `${E2(" · cambios ", " · returns ")}${h.dev}${E2(" días", " days")}` : E2(" · sin cambios", " · no returns")}${h.cash ? E2(" · efectivo", " · cash") : ""}${h.ship ? E2(` · envío ${h.shipFee ? usd(h.shipFee) : "gratis"}`, ` · shipping ${h.shipFee ? usd(h.shipFee) : "free"}`) : ""}${z ? E2(` · ${z} tallas agotadas`, ` · ${z} sizes out`) : ""}`;
 }
