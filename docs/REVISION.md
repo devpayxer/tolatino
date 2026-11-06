@@ -622,3 +622,18 @@ ven en su cita cuando reservan; un listado propio en el Super Admin queda para A
 en cita, tiempo de respuesta a emergencias), en LAUNCH-CHECKLIST. «Devolver» desde Transacciones sigue para pedidos y
 depósitos de citas; en planes y rentas se devuelve desde la ayuda de la cita o la cola de daños._
 
+## Fase 4 · Doctores + Profesionales: plan y decisiones tomadas por defecto
+Plan en `docs/diseno/plan/fase4-salud-pro.md` (bloques 4h–4m). Decidido por mí (lo más seguro y reversible; detalle en §7
+del plan):
+1. **Profesionales no cobra en la app** (abogados, impuestos, notarios, reparación de crédito, envíos, fianzas, seguros tienen
+   reglas propias que no hemos validado con un abogado): la app guarda la consulta, «El total, por escrito» y la aceptación;
+   se paga en la oficina y To'Latino no cobra comisión. Queda un interruptor por tipo, apagado.
+2. **Datos de salud al mínimo:** solo el motivo (chip), la nota cifrada y borrada a los 30 días, del seguro solo los 4
+   últimos números, avisos sin nombre de la clínica ni del servicio, nada en analítica ni en El Compa. Revisión legal (HIPAA)
+   en LAUNCH-CHECKLIST.
+3. **Salud no pide tarjeta ni cobra «no vino»** (Medicaid no lo permite).
+4. **Devoluciones de lo pagado en la clínica u oficina:** las hace el negocio; el cliente confirma «Me lo devolvieron» y
+   To'Latino media.
+5. **Nota de Profesionales:** opcional, con aviso de no escribir números de caso ni documentos; cifrada y borrada a los 30
+   días; sin subir documentos.
+
