@@ -519,8 +519,8 @@ _Revisada en 4ig (7 nov). Cada marca dice con qué se comprobó; lo que no se pu
 - [x] Migraciones 0091–0095 (+ 0096 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI. _(CI corrida 154,
       7930e2e: «Migraciones en una base real (dos veces, la segunda no cambia nada)» y «La semilla … se puede volver a aplicar» en verde, 7 nov.)_
       **Local ✓:** 0096 creada (cola «Vivienda justa», plantillas, casos que faltaban); en una base PostGIS nueva 0001–0096 y después 0091–0096
-      dos veces más, sin error, más la semilla dos veces; en el sandbox local `migrar.sh` al día (96). **Sin marcar:** la CI corre el mismo paso
-      (`migrar.sh` dos veces) pero este bloque no se subió, así que no lo vi correr. Ojo: correr a mano 0092/0094/0095 sobre datos de bloques
+      dos veces más, sin error, más la semilla dos veces; en el sandbox local `migrar.sh` al día (96). **CI ✓:** la CI corrió el mismo paso
+      (`migrar.sh` dos veces) en la corrida 154 y salió verde. Ojo: correr a mano 0092/0094/0095 sobre datos de bloques
       posteriores falla (estrechan checks que se ampliaron después); `migrar.sh` nunca lo hace (anotado en REVISION).
 - [x] Semillas 0027 (Iglesias), 0028 (Bienes Raíces) y 0029 (Autos) solo en pruebas (guardián `semilla`), con dueños de prueba (Padre Luis, Yesenia, Juan).
       Guardián `semilla` limpio; dueños comprobados en SQL (Padre Luis 3 lugares de Iglesias, Yesenia 5 de Bienes Raíces, Juan Autos El Cibao).
