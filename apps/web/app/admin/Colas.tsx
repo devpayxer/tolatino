@@ -9,7 +9,7 @@ import { useEffect, useState, useTransition, type ComponentType, type ReactNode 
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, type ResAdm, verNinoCaso } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -95,7 +95,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -159,7 +159,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     }
     if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
       const l = k.licencia, est = ({ valid: ["Verificada", "var(--tl-open-text)"], expired: ["Vencida", "var(--tl-danger)"], not_found: ["No aparece", "var(--tl-danger)"], revoked: ["No aparece", "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? ["Por verificar", "var(--tl-pro-ink)"];
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }] });
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }, ...(l.status === "valid" && l.next ? [{ k: "PRÓXIMA REVISIÓN", v: new Date(`${l.next}T12:00:00Z`).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), fg: l.next < new Date().toISOString().slice(0, 10) ? "var(--tl-danger)" : "var(--tl-pro-ink)" }] : [])] });
       cuerpoB.push({ type: "note", tone: "info", t: "Verifícala en el registro oficial del estado. Lo que decidas se ve en la ficha «Licencia» del negocio.", cta: "Abrir registro", onCta: () => window.open(l.url, "_blank", "noopener") });
       acts = [
         { l: "Verificada", v: "action", icon: "verified", onClick: () => run(() => decidirLicencia(k.id, "valid", ""), () => ir({ caso: null })) },
@@ -270,6 +270,33 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Revisado, sin cambios", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; si marca 3 «No vino» más en 30 días, se abre otro.", cta: "Cerrar el caso",
           plantillas: ["De verdad no fueron: tiene sus mensajes.", "Hablamos con el negocio y lo corrigió."], hacer: (m) => decidirNoche(k.id, false, m) }) },
       ];
+    }
+    if (k.queue === "vivienda" && "vivienda" in k && k.vivienda) {
+      // 4ig · Vivienda justa: la propiedad que se declara para mayores de 62, o los textos que no se guardaron por una frase de la lista.
+      const v = k.vivienda, usd = (c: number) => `$${(c / 100).toLocaleString("en-US")}`;
+      const fecha = (t: string) => new Date(t).toLocaleString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+      if (v.tipo === "mayores" && v.propiedad) {
+        const p = v.propiedad, EST: Record<string, string> = { available: "Disponible", pending: "Apartada", rented: "Rentada", sold: "Vendida", hidden: "Oculta" };
+        cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "PROPIEDAD", v: p.name }, { k: "TIPO", v: "Vivienda para mayores de 62" }, { k: "RENTA AL MES", v: p.rent != null ? usd(p.rent) : "—" },
+          { k: "ESTADO", v: p.oculta ? "Oculta" : EST[p.st] ?? p.st }, { k: "ZONA", v: p.zip ? `Código postal ${p.zip}` : "—" }, { k: "DECLARACIÓN", v: p.senior === "review" ? "Por revisar" : p.senior === "ok" ? "Confirmada" : "No confirmada", fg: "var(--tl-pro-ink)" }] });
+        cuerpoB.push({ type: "note", tone: "info", t: "La ley de vivienda justa deja preferir a mayores de 62 solo si la vivienda cumple la excepción para mayores. Revisa la declaración con el dueño y el registro público; si no está en orden, no se confirma y la propiedad queda oculta con el motivo." });
+        if (k.puedeDecidir) acts = [
+          { l: "Confirmar mayores", v: "action", icon: "check", onClick: () => setConf({ titulo: `Confirmar vivienda para mayores · «${p.name}»`, sub: "Sale como vivienda para mayores de 62. El dueño recibe el aviso.", cta: "Confirmar",
+            plantillas: ["La declaración de vivienda para mayores está en orden.", "Es un edificio de vivienda para mayores registrado."], hacer: (m) => decidirVivienda(k.id, "confirmar", m) }) },
+          { l: "No se confirma", v: "danger", icon: "close", onClick: () => setConf({ titulo: `No se confirma · «${p.name}»`, sub: "La propiedad queda oculta con el motivo hasta que el dueño la corrija o la cambie de tipo. Recibe el aviso.", peligro: true,
+            plantillas: ["No hay declaración de vivienda para mayores.", "El edificio no cumple la excepción para mayores."], hacer: (m) => decidirVivienda(k.id, "rechazar", m) }) },
+        ];
+      } else if (v.tipo === "frases") {
+        cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "FRENADAS EN 30 DÍAS", v: String(v.total), fg: "var(--tl-pro-ink)" }, { k: "SE PUBLICÓ", v: "Nada" }, { k: "ADVERTENCIAS VIGENTES", v: String(v.advertencias) }] });
+        cuerpoB.push({ type: "rows", k: v.total > v.frenadas.length ? `LAS ÚLTIMAS ${v.frenadas.length}` : "CADA TEXTO FRENADO", items: v.frenadas.map((x) => ({ icon: "warning", t: `«${x.frase}»${x.propiedad ? ` · ${x.propiedad}` : ""}`, s: `${x.quien} · ${fecha(x.at)} · no se guardó` })) });
+        cuerpoB.push({ type: "note", tone: "info", t: "Nada de esto se publicó: el panel le dijo qué frase quitar. Si es un error de buena fe, ciérralo como revisado; si insiste en preferir o excluir a alguien por quién vive, deja una advertencia." });
+        if (k.puedeDecidir) acts = [
+          { l: "Advertir al negocio", v: "danger", icon: "warning", onClick: () => setConf({ titulo: "¿Qué le dices al negocio?", sub: "Queda una advertencia en el negocio y recibe el aviso con tu motivo.", cta: "Advertir", peligro: true,
+            plantillas: ["Intentó varias veces preferir o excluir a personas por quién vive.", "Los anuncios no pueden decir a quién se renta por familia, origen o religión."], hacer: (m) => decidirVivienda(k.id, "advertir", m) }) },
+          { l: "Revisado, sin acción", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; una frenada nueva abre otro.", cta: "Cerrar el caso",
+            plantillas: ["Error de buena fe: lo corrigió y guardó sin la frase.", "La frase no buscaba excluir a nadie."], hacer: (m) => decidirVivienda(k.id, "revisado", m) }) },
+        ];
+      }
     }
     if (k.queue === "grupo" && "grupos" in k && k.grupos) {
       // 4eg · Los grupos cancelados en 90 días (cada uno con su motivo y a cuántos se les devolvió todo). Pausar quita las inscripciones

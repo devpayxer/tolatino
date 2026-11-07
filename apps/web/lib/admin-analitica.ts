@@ -256,3 +256,72 @@ export async function inscripcionesAnalitica(s: Staff, dias: number) {
   return { me: me.rows[0]!, gr: gr.rows[0]!, mat: mat.rows[0]!, esp: esp.rows[0]!, baja: baja.rows[0]!, rev: rev.rows[0]!, ayuda: ay.rows, lic: lic.rows[0]! };
 }
 
+
+/* Analítica › Iglesias · Bienes Raíces · Autos (4ig · fase4-iglesias-inmuebles-autos.md §4ig): solo cifras por ciudad, en una consulta por
+   cosa (sin N+1). Nunca personas por religión (ni la denominación ni quién va a qué iglesia) ni datos de crédito (no existen en la base). */
+export const CATS_4I = ["NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
+export async function feInmAutos(s: Staff, dias: number) {
+  const [vis, dias2, vivos, rev, ay, est, lic, fe, vj] = await Promise.all([
+    // Visitas y pruebas de manejo pedidas en el período. A tiempo = confirmada: el servidor solo deja confirmar antes del plazo (4 h hábiles,
+    // nunca después de la hora − 1 h; al confirmar, respond_by se limpia) y el barrido vence las demás, así que confirmed_at ya es «a tiempo».
+    db().query<{ rub: string; n: number; items: number; atiempo: number; vencidas: number; noshow: number; pasaron: number }>(
+      `select o.details->>'rubro' as rub, count(*)::int as n, count(distinct o.details->>'item_id')::int as items,
+              count(*) filter (where o.confirmed_at is not null)::int as atiempo,
+              count(*) filter (where o.status = 'expired')::int as vencidas,
+              count(*) filter (where o.status = 'done' and o.status_detail = 'noshow')::int as noshow,
+              count(*) filter (where o.status = 'done' and o.status_detail is distinct from 'noshow')::int as pasaron
+         from operations o where o.kind = 'visit' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")} group by 1`, [s.cities, dias]),
+    // Días desde que se publicó hasta que se rentó o se vendió (las que cambiaron de estado en el período).
+    db().query<{ que: string; n: number; dias: number | null }>(
+      `select pl.status as que, count(*)::int as n, round(avg(extract(epoch from pl.status_at - pl.created_at) / 86400)::numeric, 1)::float as dias
+         from property_listings pl where pl.status in ('rented', 'sold') and pl.status_at > now() - make_interval(days => $2) and ${scope("pl.city_id")} group by 1
+       union all
+       select 'carro', count(*)::int, round(avg(extract(epoch from v.status_at - v.created_at) / 86400)::numeric, 1)::float
+         from vehicle_listings v where v.status = 'sold' and v.status_at > now() - make_interval(days => $2) and ${scope("v.city_id")}`, [s.cities, dias]),
+    // Propiedades y carros a la vista hoy, por ciudad.
+    db().query<{ ciudad: string; props: number; carros: number }>(
+      `select ci.name as ciudad, coalesce(p.n, 0)::int as props, coalesce(v.n, 0)::int as carros
+         from cities ci
+         left join (select pl.city_id, count(*) as n from property_listings pl join items i on i.id = pl.item_id join businesses b on b.id = pl.business_id
+                     where pl.status in ('available', 'pending') and i.status = 'live' and i.removed_at is null and b.status = 'active' group by 1) p on p.city_id = ci.id
+         left join (select v.city_id, count(*) as n from vehicle_listings v join items i on i.id = v.item_id join businesses b on b.id = v.business_id
+                     where v.status in ('lot', 'pending') and i.status = 'live' and i.removed_at is null and b.status = 'active' group by 1) v on v.city_id = ci.id
+        where ${scope("ci.id")} and (ci.status = 'on' or p.n > 0 or v.n > 0) order by ci.name`, [s.cities]),
+    // «El total fue el que vi»: Para mudarte (Bienes Raíces) y En la puerta (Autos), de las reseñas de visitas del período.
+    db().query<{ mn: number; mok: number; pn: number; pok: number }>(
+      `select count(*) filter (where r.answers ? 'mudarOk')::int as mn, count(*) filter (where (r.answers->>'mudarOk')::int = 1)::int as mok,
+              count(*) filter (where r.answers ? 'puertaOk')::int as pn, count(*) filter (where (r.answers->>'puertaOk')::int = 1)::int as pok
+         from reviews r join operations o on o.id = r.operation_id where o.kind = 'visit' and r.status <> 'removed' and r.created_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    // Ayudas de visitas (y de fechas de Iglesias) por motivo.
+    db().query<{ rub: string; reason: string; n: number }>(
+      `select case when o.kind = 'visit' then o.details->>'rubro' else 'fe' end as rub, h.reason, count(*)::int as n
+         from help_requests h join operations o on o.id = h.operation_id join businesses b on b.id = h.business_id
+        where (o.kind = 'visit' or (o.kind = 'enrollment' and b.category_id = 'NEG-FE')) and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
+    // Anuncios (o «Pedir fecha») pausados por una posible estafa: en el período y en pausa hoy.
+    db().query<{ periodo: number; hoy: number; sancion: number }>(
+      `select count(*) filter (where h.paused_at > now() - make_interval(days => $2))::int as periodo,
+              count(*) filter (where h.paused_at is not null and h.unpaused_at is null)::int as hoy,
+              (select count(*)::int from queue_items q where q.queue = 'estafa' and q.decision = 'sancion' and q.decided_at > now() - make_interval(days => $2) and ${scope("q.city_id")}) as sancion
+         from help_requests h where h.paused_at is not null and ${scope("h.city_id")}`, [s.cities, dias]),
+    // Licencias de las tres: vigentes, por vencer (14 días), vencidas y en revisión, por categoría.
+    db().query<{ cat: string; vigentes: number; porvencer: number; vencidas: number; revision: number }>(
+      `select k.category_id as cat,
+              count(*) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
+              count(*) filter (where l.status = 'valid' and l.next_review between current_date and current_date + 14)::int as porvencer,
+              count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas,
+              count(*) filter (where l.status = 'review')::int as revision
+         from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
+        where k.category_id = any($2::text[]) and b.status = 'active' and ${scope("b.city_id")} group by 1`, [s.cities, CATS_4I]),
+    // Iglesias: fechas, catecismo y consejería pedidos por la app y cuántos se respondieron en 48 h. Sin denominación ni quién.
+    db().query<{ n: number; en48: number; vencidas: number }>(
+      `select count(*)::int as n, count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= interval '48 hours')::int as en48,
+              count(*) filter (where o.status = 'expired')::int as vencidas
+         from operations o join businesses b on b.id = o.business_id where o.kind = 'enrollment' and b.category_id = 'NEG-FE' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    // Vivienda justa: textos frenados en el período y declaraciones de mayores por revisar.
+    db().query<{ frenadas: number; mayores: number }>(
+      `select (select count(*)::int from audit_entries a where a.action = 'inm.vivienda_justa.frenada' and a.at > now() - make_interval(days => $2) and ${scope("a.city_id")}) as frenadas,
+              (select count(*)::int from property_listings pl join items i on i.id = pl.item_id where pl.senior_62 and pl.senior_status = 'review' and i.removed_at is null and ${scope("pl.city_id")}) as mayores`, [s.cities, dias]),
+  ]);
+  const V = (r: string) => vis.rows.find((x) => x.rub === r) ?? { rub: r, n: 0, items: 0, atiempo: 0, vencidas: 0, noshow: 0, pasaron: 0 };
+  return { inm: V("inm"), dealer: V("dealer"), dias: dias2.rows, vivos: vivos.rows, rev: rev.rows[0]!, ayuda: ay.rows, estafa: est.rows[0]!, lic: lic.rows, fe: fe.rows[0]!, vj: vj.rows[0]! };
+}

@@ -196,7 +196,7 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
     if (q.business_id) await recalcularFiltrosSP(c, q.business_id); // «El médico habla español» sale de las licencias verificadas del equipo
     await cerrar(c, q, s, accion, m);
     const L: Record<string, string> = { valid: "verificada", expired: "vencida", not_found: "no se pudo verificar" };
-    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.titulo, estado: "por verificar" }, after: { licencia: l.titulo, estado: L[accion] }, reason: m });
+    await auditar(c, { actor: s.id, action: accion === "valid" ? "licencia.verificar" : accion === "expired" ? "licencia.vencida" : "licencia.no_aparece", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { licencia: l.titulo, estado: l.status === "valid" ? "verificada, revisión por vencer" : L[l.status] ?? "por verificar" }, after: { licencia: l.titulo, estado: L[accion] }, reason: m });
     return "ok";
   });
   if (r !== "ok") return no(r);
@@ -596,4 +596,42 @@ export async function pausaEstafa(id: string, pausar: boolean, texto: string): P
   if (r !== "ok") return no(r);
   listo();
   return { ok: true, mensaje: pausar ? "En pausa mientras decides." : "Se ve otra vez; el caso sigue abierto." };
+}
+
+/* 4ig · «Vivienda justa». Una propiedad para mayores: «Confirmar» la deja como está; «No se confirma» la oculta con el motivo (la misma decisión
+   que Negocios 360°, lib/vivienda-cola.ts). Textos frenados: «Revisado, sin acción» cierra el caso; «Advertir» deja una advertencia al negocio
+   (sanctions) y le avisa. En los cuatro, el caso se cierra con el motivo y queda en la auditoría; el negocio recibe el aviso salvo en «revisado». */
+export async function decidirVivienda(id: string, accion: "confirmar" | "rechazar" | "revisado" | "advertir", texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  if (!["confirmar", "rechazar", "revisado", "advertir"].includes(accion)) return no("Elige qué decides.");
+  const m = motivoOk(texto) || (accion === "confirmar" ? "La declaración de vivienda para mayores está en orden" : "");
+  if (m.length < 4) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "vivienda" || !q.business_id) return "Ese caso no es de esta cola.";
+    const esProp = q.subject_kind === "listing";
+    if (esProp !== (accion === "confirmar" || accion === "rechazar")) return "Esa decisión no es de este caso.";
+    let nombre = "";
+    if (esProp) {
+      const V = await (await import("@/lib/vivienda-cola")).revisarMayores(c, q.business_id, q.subject_id, accion === "confirmar", m, s.id);
+      if (!V.ok) return V.error;
+      nombre = V.nombre;
+      await auditar(c, { actor: s.id, action: accion === "confirmar" ? "inm.mayores.confirmar" : "inm.mayores.rechazar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { propiedad: V.nombre, mayores: "por revisar" }, after: { mayores: accion === "confirmar" ? "confirmada" : "no confirmada" }, reason: m });
+    } else {
+      if (accion === "advertir") await c.query(`insert into sanctions (target_kind, target_id, city_id, kind, reason, by_staff) values ('business', $1, $2, 'adv', $3, $4)`, [q.business_id, q.city_id, `Vivienda justa: ${m}`.slice(0, 500), s.id]);
+      await cerrar(c, q, s, accion, m);
+      await auditar(c, { actor: s.id, action: accion === "advertir" ? "vivienda.advertir" : "vivienda.revisado", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { caso: "abierto" }, after: { caso: accion === "advertir" ? "advertencia al negocio" : "revisado, sin acción" }, reason: m });
+    }
+    return `ok|${q.business_id}|${nombre}`;
+  });
+  if (!r.startsWith("ok|")) return no(r);
+  const [, biz, nombre] = r.split("|");
+  const mm = m.endsWith(".") ? m : `${m}.`, A = await import("@/lib/avisos"), href = `/panel/${encodeURIComponent(biz!)}/vendes`;
+  if (accion === "confirmar" || accion === "rechazar") await A.avisarNegocio(biz!, accion === "confirmar" ? "biz_mayores_ok" : "biz_mayores_no", { item: `«${nombre}»`, motivo: mm }, { href }).catch(() => undefined);
+  if (accion === "advertir") await A.avisarNegocio(biz!, "biz_vivienda_aviso", { motivo: mm }, { href }).catch(() => undefined);
+  listo();
+  return { ok: true, mensaje: accion === "confirmar" ? "Confirmada: sale como vivienda para mayores. El dueño recibe el aviso." : accion === "rechazar" ? "No confirmada: la propiedad queda oculta con el motivo. El dueño recibe el aviso."
+    : accion === "advertir" ? "Advertencia al negocio. Recibe el aviso." : "Caso cerrado como revisado." };
 }

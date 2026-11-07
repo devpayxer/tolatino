@@ -330,18 +330,20 @@ export async function propiedadOcultar(id: string, itemId: string, ocultar: bool
    el motivo (el dueño la corrige o la cambia de tipo); confirmar la deja como está. */
 export async function mayoresRevisar(id: string, itemId: string, confirma: boolean, motivo: string): Promise<ResAdm> {
   if (!/^\d{1,18}$/.test(String(itemId))) return no("Esa propiedad no existe.");
-  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
-    const x = (await c.query<{ name: string; st: string }>(
-      `select i.name->>'es' as name, pl.senior_status as st from property_listings pl join items i on i.id = pl.item_id where pl.item_id = $1::bigint and pl.business_id = $2 and pl.senior_62 for update of pl`, [itemId, b.id])).rows[0];
-    if (!x) return "Esa propiedad no declara vivienda para mayores.";
-    await c.query(`update property_listings set senior_status = $2, updated_at = now() where item_id = $1::bigint`, [itemId, confirma ? "ok" : "rejected"]);
-    if (!confirma) await c.query(`update items set status = 'hidden', hidden_reason = $3, hidden_by = $4, updated_at = now() where id = $1::bigint and business_id = $2`, [itemId, b.id, `Vivienda para mayores no confirmada: ${m}`, s.id]);
-    const I = await import("@/lib/inmuebles");
-    await I.horasVisita(c, b.id, itemId);
-    await I.recalcularFiltrosInm(c, b.id);
-    await auditar(c, { actor: s.id, action: confirma ? "inm.mayores.confirmar" : "inm.mayores.rechazar", targetKind: "business", targetId: b.id, city: b.city_id, before: { propiedad: x.name, mayores: x.st }, after: { mayores: confirma ? "confirmada" : "no confirmada" }, reason: m });
+  let nombre = "", mot = "";
+  const r = await hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    // 4ig · La misma decisión que Colas › Vivienda justa (lib/vivienda-cola.ts): cierra el caso de esa propiedad si estaba abierto.
+    const x = (await c.query<{ st: string }>(`select senior_status as st from property_listings where item_id = $1::bigint and business_id = $2`, [itemId, b.id])).rows[0];
+    const V = await (await import("@/lib/vivienda-cola")).revisarMayores(c, b.id, itemId, confirma, m, s.id);
+    if (!V.ok) return V.error;
+    nombre = V.nombre; mot = m;
+    await auditar(c, { actor: s.id, action: confirma ? "inm.mayores.confirmar" : "inm.mayores.rechazar", targetKind: "business", targetId: b.id, city: b.city_id, before: { propiedad: V.nombre, mayores: x?.st ?? "—" }, after: { mayores: confirma ? "confirmada" : "no confirmada" }, reason: m });
     return null;
-  }, confirma ? "Confirmada: sale como vivienda para mayores." : "No confirmada: la propiedad queda oculta con el motivo.");
+  }, confirma ? "Confirmada: sale como vivienda para mayores. El dueño recibe el aviso." : "No confirmada: la propiedad queda oculta con el motivo. El dueño recibe el aviso.");
+  if (r.ok && nombre) {
+    await (await import("@/lib/avisos")).avisarNegocio(String(id), confirma ? "biz_mayores_ok" : "biz_mayores_no", { item: `«${nombre}»`, motivo: mot.endsWith(".") ? mot : `${mot}.` }, { href: `/panel/${encodeURIComponent(String(id))}/vendes` }).catch(() => undefined);
+  }
+  return r;
 }
 
 /* Venta de Autos (4ic): ocultar o volver a mostrar un vehículo con motivo (neg:retirar). Sale de su página y de Buscar al instante (la

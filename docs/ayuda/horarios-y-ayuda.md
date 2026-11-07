@@ -2,7 +2,8 @@
 
 _Pantallas: Panel › Lo que vendes › Servicios y › Tu herramienta («Horarios y ayuda» para parroquias, iglesias, grupos, sacramentos,
 consejería y oración; «La ayuda de hoy» para despensas y ayuda comunitaria; «Precios y repatriación» para funerarias); Panel › Tu página ›
-Tus licencias; Super Admin › Negocios 360°. Versión: Fase 4 · bloque 4ia (7 nov 2026)._
+Tus licencias; Super Admin › Negocios 360°. Versión: Fase 4 · bloques 4ia–4ig (7 nov 2026). Las fechas, el catecismo y la consejería que
+piden por la app se responden en Lo que vendes › Fechas e inscripciones (`panel-visitas`); las licencias, en `licencias-inmuebles-y-autos`._
 
 ## Qué hace · What it does
 **ES.** Lo que más preguntan en Iglesias: **¿hay servicio en español y me ayudan si lo necesito?** La iglesia dice **a qué hora es la misa

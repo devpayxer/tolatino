@@ -1414,3 +1414,58 @@ Reseñas y Ayuda de Iglesias, Bienes Raíces y Autos. Qué mirar (teléfono y es
 **Capturas:** `h4if-ayuda-ver-m`, `h4if-estado-revision-m`, `h4if-panel-visita-d`, `h4if-admin-estafa-d`, `h4if-resena-visita-m`,
 `h4if-ficha-lo-que-importa-m`, `h4if-ayuda-dealer-d`, `h4if-panel-hoy-d`, `h4if-panel-ayuda-d`, `h4if-me-lo-devolvieron-d`,
 `h4if-resena-iglesia-d`, `h4if-iglesia-resenas-d`, `h4if-ayuda-iglesia-m`.
+
+### 4ig · Super Admin, avisos, analítica y documentación · Iglesias + Bienes Raíces + Venta de Autos completos · Fase 4 cerrada (7 nov)
+**Qué mirar, paso a paso, todo el grupo en el sandbox** (capturas `g4ig-*.png`; teléfono 390 y escritorio 1360):
+1. **Iglesias (Padre Luis, 5705550422):** Lo que vendes › Horarios y ayuda (toca una misa; la última no se apaga), Despensa › «Se acabó por
+   hoy», Funeraria › precios y repatriación. Sin sesión: `/n/parroquia-santa-maria` (próxima misa, «no hay que inscribirse», donativo «si no
+   puedes, no se cobra»), `/c/iglesias`. Como cliente (5705550122): «Pedir fecha» del bautizo y «Inscribirme» al catecismo; Padre Luis
+   confirma en Fechas e inscripciones.
+2. **Bienes Raíces (Yesenia, 5705550433):** Propiedades › Agregar (prueba «no niños»: no se guarda), Tu herramienta (apaga «Sin seguro
+   social» y mira que `/c/bienes-raices` con ese filtro ya no la lista; préndelo otra vez). Como cliente: «Pedir visita», `/vis/D-…`, y
+   Yesenia confirma, propone otra hora o marca «Pasó» / «No vino». Un cuarto: la dirección llega solo al confirmar.
+3. **Autos (Juan, 5705550444):** Inventario (VIN, EN LA PUERTA, cargo ≤ $477), Tu herramienta (apaga «Financias con ITIN»: la ficha dice
+   «CON ITIN No» y la tarjeta de Buscar deja de decir «Financian con ITIN»). Como cliente: «Prueba de manejo» (en casa si la ofrece).
+4. **Ayuda y reseñas:** después de una visita, «Ayuda con la visita» › «Me cobraron por ver la propiedad»: va directo a To'Latino y la
+   propiedad se pausa; la reseña con «Lo que importa».
+5. **Super Admin (5705550199):** Colas › **Vivienda justa** (el texto frenado de Yesenia: «Advertir al negocio» o «Revisado, sin acción»;
+   una propiedad «para mayores de 62»: «Confirmar mayores» / «No se confirma»; las dos avisan al negocio), **Posible estafa**, **Plantones**,
+   **Licencias** (una licencia verificada vuelve 14 días antes de su revisión y con prioridad si ya pasó; dice «revisión por vencer» o
+   «revisión vencida desde…»), Ayuda con pedidos y citas. Transacciones › **Visitas**. **Notificaciones** (busca «Aviso de vivienda justa»,
+   «Vivienda para mayores confirmada», «Pausamos un anuncio», «Te proponen otra hora»). **Analítica › Iglesias · Bienes Raíces · Autos**.
+   Negocios 360° de cada uno: «Tu herramienta» en solo lectura, Pausar Servicios (Iglesias) y Ocultar una propiedad o un carro.
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Cola «Vivienda justa»** (no existía en el diseño; compuesta con las piezas de Colas): un caso por negocio junta los textos frenados de 30
+  días (se muestran los últimos 12, el total arriba); una frenada nueva después de decidir abre otro. Decisiones: «Revisado, sin acción» o
+  «Advertir al negocio» (advertencia en `sanctions` + aviso `biz_vivienda_aviso`). La declaración de mayores abre un caso por propiedad al
+  guardarla; «Confirmar» / «No se confirma» desde la cola o desde Negocios 360° hacen lo mismo y avisan (`biz_mayores_ok` / `biz_mayores_no`).
+  El caso muestra la **zona** (código postal), no la calle.
+- **Licencias por vencer y vencidas:** «vencida» es que pasó su fecha de revisión (no hay fecha de vencimiento del estado en la base). El
+  barrido la devuelve a la cola; **el sello no se quita solo**: cambia cuando una persona mira el registro. Solo para las licencias de estas
+  tres categorías (extenderlo a todas es una línea; anotado en LAUNCH-CHECKLIST).
+- **Analítica:** «confirmadas a tiempo» = confirmadas, porque el servidor no deja confirmar después del plazo (al confirmar se limpia
+  `respond_by`; mi primera versión comparaba con `respond_by` y daba 0 %: lo cazó la prueba contra SQL). «Días hasta rentar o vender» cuenta
+  desde que se publicó la propiedad o el carro. Las ciudades salen si están encendidas o tienen algo a la vista. Nunca por religión ni crédito.
+- **Configuración** (tope del cargo del dealer, 4 h, 24 h, 48 h, 14 días, lista de frases): constantes o Catálogo hasta la Fase 5.
+- **Triángulo** probado en las tres (`adm4ig`): el toque de Tu herramienta cambia la ficha, la tarjeta de la categoría y Buscar en el
+  momento; el Super Admin lo ve en Negocios 360° y puede pausar Servicios (Iglesias) u ocultar una propiedad o un carro.
+
+**Preguntas #1–#22 del plan (§6), anotadas:** se aplicó el default más seguro de cada una tal como está escrito en el plan y en las notas
+de 4ia–4if de arriba. En una línea: #1 nada se cobra en Iglesias (donativo es texto; diezmo en línea no se construye) · #2 número «D-8101…»
+(no «P-», que es de los pre-estimados) · #3 4 h hábiles y nunca después de la hora − 1 h; Iglesias 48 h · #4 misas y cultos no se reservan
+· #5 cuota de solicitud entra en «Para mudarte», depósito ≤ 2 meses · #6 Free recibe hasta 10 solicitudes al mes · #7 funeraria por contacto
+· #8 «no afecta tu crédito» solo con `soft_pull` · #9 el pago de ejemplo lo calcula el servidor · #10 búsqueda por anuncio queda como hueco
+(LAUNCH-CHECKLIST) · #11 VIN validado por su dígito, sin historiales de pago · #12 cotización de flota en Mensajes · #13 verificada = fecha o
+catecismo por la app; funeraria con «reseñas de vecinos» · #14 taller del dealer = visita de $0 · #15 dirección del cuarto al confirmar,
+sin preferencias de quién vive · #16 sellos sin verificar hasta revisarlos · #17 To'Latino no guarda el contrato de compre aquí pague aquí ·
+#18 «No es consejo legal» y 988; orientación migratoria solo con sello del DOJ · #19 tienda y botánica por contacto · #20 subasta y
+mayorista solo directorio · #21 casas abiertas y ventas de fin de mes son Eventos (Fase 6) · #22 los errores del prototipo no se copiaron.
+Si prefieres otra cosa en alguna, se cambia.
+
+**Para saber:** volver a correr a mano 0092, 0094 o 0095 sobre una base que ya tiene datos de bloques posteriores falla (esas migraciones
+estrechan un check que las siguientes ampliaron); no pasa en la vida real porque `migrar.sh` aplica cada una una sola vez por su huella. En
+una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error.
+
+**Capturas:** `g4ig-vivienda-frase-d`, `g4ig-vivienda-mayores-d`, `g4ig-licencia-d`, `g4ig-notif-d`, `g4ig-analitica-d`,
+`g4ig-triangulo-autos-d`, `g4ig-vivienda-m`, `g4ig-analitica-m`.

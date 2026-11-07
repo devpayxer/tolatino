@@ -28,6 +28,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
+    lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -49,7 +50,12 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select h.reason from help_requests h where q.queue in ('sop', 'cuidado', 'salir', 'estafa') and h.id::text = q.subject_id) as sopr,
             (select d.amount_cents from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpamt,
             (select d.reason from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpreason,
-            (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue
+            (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue,
+            (select l.status from licenses l where q.queue = 'lic' and l.id::text = q.subject_id) as lst,
+            (select l.next_review::text from licenses l where q.queue = 'lic' and l.id::text = q.subject_id) as lnext,
+            (select count(*)::int from audit_entries a where q.queue = 'vivienda' and q.subject_kind = 'business' and a.action = 'inm.vivienda_justa.frenada' and a.target_id = q.subject_id and a.at > now() - interval '30 days') as vjn,
+            (select a.after->>'frase' from audit_entries a where q.queue = 'vivienda' and q.subject_kind = 'business' and a.action = 'inm.vivienda_justa.frenada' and a.target_id = q.subject_id order by a.at desc limit 1) as vjf,
+            (select i.name->>'es' from items i where q.queue = 'vivienda' and q.subject_kind = 'listing' and i.id::text = q.subject_id) as vji
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -70,7 +76,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     const b = x.bname ?? "";
     const t = x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
-      : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
+      : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · ${licEstado(x.lst, x.lnext)}` }
+      : x.queue === "vivienda" && x.subject_kind === "listing" ? { title: `Vivienda para mayores · ${b}`, sub: `Declaración de 62 o más por revisar · «${x.vji ?? "Propiedad"}»` }
+      : x.queue === "vivienda" ? { title: `Vivienda justa · ${b}`, sub: `${x.vjn} texto${x.vjn === 1 ? "" : "s"} frenado${x.vjn === 1 ? "" : "s"} en 30 días${x.vjf ? ` · «${x.vjf}»` : ""} · nada se publicó` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
       : x.queue === "cuidado" ? { title: `Cuidado de niños · ${b}`, sub: "No cuidaron bien a su niño · directo a To'Latino" }
@@ -95,6 +103,12 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   });
   const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
   return { casos, conteo, vencidos, total: todos.length };
+}
+/* 4ig · Licencias: por verificar (nueva o cambiada) o, si ya estaba verificada, su revisión por vencer (14 días) o vencida (el barrido las abre). */
+export function licEstado(st: string | null, next: string | null, hoy = new Date().toISOString().slice(0, 10)) {
+  if (st !== "valid" || !next) return "por verificar";
+  const d = new Date(`${next}T12:00:00Z`).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "UTC" });
+  return next < hoy ? `revisión vencida desde el ${d}` : `revisión por vencer · ${d}`;
 }
 /* 4if · Lo que dice la persona en una «Posible estafa» (para la lista; el detalle usa motivoAyuda). */
 const ESTAFA_L: Record<string, string> = { ver: "Le cobraron por ver la propiedad", mudar: "Le pidieron más para mudarse de lo publicado", cobro: "Le pidieron dinero por la ayuda" };
@@ -149,9 +163,9 @@ export async function caso(s: Staff, id: string) {
     return { ...base, negocio, reclamo: cl ? { ...cl, quien_tel: telefonoBonito(cl.quien_tel) } : null };
   }
   if (q.queue === "lic") {
-    const l = (await db().query<{ id: string; status: string; title: string; can: string; number: string | null; label: string; checked: string | null; url: string; site: string }>(
+    const l = (await db().query<{ id: string; status: string; title: string; can: string; number: string | null; label: string; checked: string | null; url: string; site: string; next: string | null }>(
       `select l.id::text, l.status, coalesce(nullif(l.title, '{}'::jsonb), k.title)->>'es' as title, k.can->>'es' as can, l.number, k.number_label as label,
-              l.checked_at as checked, k.registry_url as url, k.registry_site as site
+              l.checked_at as checked, k.registry_url as url, k.registry_site as site, l.next_review::text as next
          from licenses l join license_kinds k on k.key = l.kind where l.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, licencia: l ?? null };
   }
@@ -172,6 +186,12 @@ export async function caso(s: Staff, id: string) {
     const tot = (await db().query<{ n: number }>(`select count(*)::int as n from operations where business_id = $1 and kind = 'visit' and status = 'done' and done_at > now() - interval '30 days'`, [q.business_id])).rows[0]?.n ?? 0;
     const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'svc', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
     return { ...base, negocio, plantones: { L, tot, pausado: off } };
+  }
+  if (q.queue === "vivienda" && q.business_id) {
+    // 4ig · Vivienda justa: las frases frenadas de 30 días (qué frase, en qué propiedad, cuándo, quién del negocio) o la propiedad que se
+    // declara vivienda para mayores. Nunca quién vive ni datos de quien pidió una visita.
+    const v = await (await import("./vivienda-cola")).datosCasoVivienda(db(), q.subject_kind, q.subject_id, q.business_id);
+    return { ...base, negocio, vivienda: v };
   }
   if (q.queue === "grupo") {
     // 4eg · Los grupos que el lugar canceló en 90 días: cuál, cuándo, el motivo y a cuántos se les devolvió todo. Nunca datos de inscritos.

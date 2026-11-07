@@ -515,23 +515,54 @@ simulada igual que la barra del prototipo (ok · rechaza → no · nada → «Pa
 N+1; categoría solo de `filter_values`. Capturas teléfono + escritorio de cada pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre del grupo (todo marcado antes de decir «Iglesias + Bienes Raíces + Venta de Autos completos» y «Fase 4 completa»)
+_Revisada en 4ig (7 nov). Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
 - [ ] Migraciones 0091–0095 (+ 0096 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
-- [ ] Semillas 0027 (Iglesias), 0028 (Bienes Raíces) y 0029 (Autos) solo en pruebas (guardián `semilla`), con dueños de prueba (Padre Luis, Yesenia, Juan).
-- [ ] Editor de servicios de Iglesias (gratis · donativo · total), de propiedades (con «Para mudarte» del servidor) y de carros (con «En la puerta» del servidor).
-- [ ] Las tres «Tu herramienta» guardan cada toque, reflejan en ficha, tarjeta y Buscar, y el Super Admin las ve (triángulo).
-- [ ] Ningún `payment`, retención ni tarjeta en todo el grupo (guardián `sinDineroEnVisitas` probado al revés); donativo nunca cobrado.
-- [ ] Visitas y pruebas de punta a punta (pide, confirma, otra hora, no se puede, vence, se rentó o vendió, pasó, no vino, cancelar) y «Pedir fecha» y catecismo en
-      Iglesias; Free con tope 10.
-- [ ] Vivienda justa: filtros y textos probados al revés, pie de igualdad y nota de animales de servicio en toda propiedad; dirección de cuartos solo al confirmar.
-- [ ] Precio en la puerta exacto en cada carro, cargo ≤ tope, pago al mes siempre con tasa, meses y enganche; «estimada» en toda cuota.
-- [ ] Ningún dato de crédito, SSN, ITIN, ingresos ni licencia de conducir en esquema, código, avisos o logs; notas con números tapadas (guardianes al revés).
-- [ ] Licencias de las tres en Tu página y en Super Admin › Licencias; ningún sello sin licencia `valid`.
-- [ ] Reseñas verificadas con preguntas y «Lo que importa» por categoría; ayudas con motivos, fotos privadas, «Posible estafa» directo a To'Latino con pausa del anuncio.
-- [ ] Super Admin: Transacciones › Visitas, Colas (posible estafa, vivienda justa, plantones, ayudas), Licencias, Notificaciones, Configuración, Analítica.
-- [ ] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va; consejería, oración y recuperación neutros.
-- [ ] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4ig), con vivienda justa, estafas y «qué no pedimos nunca».
+      **Local ✓:** 0096 creada (cola «Vivienda justa», plantillas, casos que faltaban); en una base PostGIS nueva 0001–0096 y después 0091–0096
+      dos veces más, sin error, más la semilla dos veces; en el sandbox local `migrar.sh` al día (96). **Sin marcar:** la CI corre el mismo paso
+      (`migrar.sh` dos veces) pero este bloque no se subió, así que no lo vi correr. Ojo: correr a mano 0092/0094/0095 sobre datos de bloques
+      posteriores falla (estrechan checks que se ampliaron después); `migrar.sh` nunca lo hace (anotado en REVISION).
+- [x] Semillas 0027 (Iglesias), 0028 (Bienes Raíces) y 0029 (Autos) solo en pruebas (guardián `semilla`), con dueños de prueba (Padre Luis, Yesenia, Juan).
+      Guardián `semilla` limpio; dueños comprobados en SQL (Padre Luis 3 lugares de Iglesias, Yesenia 5 de Bienes Raíces, Juan Autos El Cibao).
+- [x] Editor de servicios de Iglesias (gratis · donativo · total), de propiedades (con «Para mudarte» del servidor) y de carros (con «En la puerta» del servidor).
+      `fe4ia`, `inm4ib`, `autos4ic` en verde (7 nov, después de 4ig).
+- [x] Las tres «Tu herramienta» guardan cada toque, reflejan en ficha, tarjeta y Buscar, y el Super Admin las ve (triángulo).
+      `adm4ig` §7: «Se acabó por hoy» (Iglesias), «Sin seguro social · aceptas ITIN» (Bienes Raíces) y «Financias con ITIN» (Autos) cambian la
+      ficha, `/c/…` con su filtro y Buscar; Negocios 360° lo ve y pausa Servicios u oculta una propiedad o un carro (y lo deshace).
+- [x] Ningún `payment`, retención ni tarjeta en todo el grupo (guardián `sinDineroEnVisitas` probado al revés); donativo nunca cobrado.
+      Prueba al revés repetida en 4ig (un `insert into payments` en `visitas-inm-comun.ts` → falla); SQL: 0 pagos en operaciones de las tres y 0
+      ítems de Iglesias con depósito; `adm4ig` comprueba una visita nueva con $0 y `pay_mode` none.
+- [x] Visitas y pruebas de punta a punta (pide, confirma, otra hora, no se puede, vence, se rentó o vendió, pasó, no vino, cancelar) y «Pedir fecha» y catecismo en
+      Iglesias; Free con tope 10. `vis4ie` (pide, confirma, otra hora, vence con reloj movido, se rentó, pasó, no vino, cancelar, catecismo, «Pedir
+      fecha») y `adm4ig` §7d–7e («No se puede» con su aviso; Free frenado al llegar al tope, que es 10 en `platform_config`).
+- [x] Vivienda justa: filtros y textos probados al revés, pie de igualdad y nota de animales de servicio en toda propiedad; dirección de cuartos solo al confirmar.
+      Guardianes `viviendaJusta` y `direccionAlConfirmar` (que en 4ig cazó una lectura de la calle en el caso nuevo de la cola: ahora muestra la
+      zona); `inm4ib`, `fic4id`, `vis4ie` y `adm4ig` §1–2.
+- [x] Precio en la puerta exacto en cada carro, cargo ≤ tope, pago al mes siempre con tasa, meses y enganche; «estimada» en toda cuota.
+      `autos4ic` (tabla a mano, $999 + $95 × 78 = $8,409, tope $477) y guardianes `totalEnLaPuerta`, `cuotaEstimada`, `vinValido`.
+- [x] Ningún dato de crédito, SSN, ITIN, ingresos ni licencia de conducir en esquema, código, avisos o logs; notas con números tapadas (guardianes al revés).
+      Guardianes `sinDatosDeCredito` y `notaSinNumeros` (probados al revés en 4ib/4ie); 4ig suma `analiticaSinCreencias` (al revés: falla).
+- [x] Licencias de las tres en Tu página y en Super Admin › Licencias; ningún sello sin licencia `valid`.
+      `inm4ib`/`autos4ic` (Tus licencias), `adm4ig` §3 (por vencer y vencida vuelven a la cola; «Verificada» mueve la revisión); guardián
+      `licenciaNoSeFinge`.
+- [x] Reseñas verificadas con preguntas y «Lo que importa» por categoría; ayudas con motivos, fotos privadas, «Posible estafa» directo a To'Latino con pausa del anuncio.
+      `ayu4if` en verde; `adm4ig` §4 comprueba en SQL que cada ayuda de las tres está en su cola.
+- [x] Super Admin: Transacciones › Visitas, Colas (posible estafa, vivienda justa, plantones, ayudas), Licencias, Notificaciones, Configuración, Analítica.
+      `vis4ie` (Transacciones › Visitas), `ayu4if` (Posible estafa), `adm4ig` (Vivienda justa, Plantones, Licencias, Notificaciones, Analítica
+      con cifras contra SQL). **Configuración** no existe hasta la Fase 5: sus valores quedan anotados en LAUNCH-CHECKLIST.
+- [x] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va; consejería, oración y recuperación neutros.
+      `adm4ig` §5 (SQL: ninguna plantilla del grupo sin español o inglés; la pantalla las lista); guardián nuevo `avisoConPlantilla` (al revés:
+      falla con una clave inventada); `avisoFeNeutro`. El SMS real sale con el proveedor de producción (LAUNCH-CHECKLIST 4ie).
+- [x] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4ig), con vivienda justa, estafas y «qué no pedimos nunca».
+      Nuevas: `iglesias-horarios-y-ayuda`, `rentar-o-comprar`, `comprar-un-carro`, `privacidad-de-tus-datos-en-visitas`, `licencias-inmuebles-y-autos`;
+      al día: `horarios-y-ayuda`, `propiedades-y-visitas`, `inventario-del-lote`, `panel-visitas`, `vivienda-justa`, `licencia`, `admin-analitica`
+      (los nombres «-negocio» del plan son estos archivos que ya existían; no se duplicaron). `resena-y-ayuda-con-tu-visita` es de 4if.
 - [ ] Guardianes nuevos de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Educación, Niños, Deporte y
-      el Booking de Auto y Hogar sin regresión.
-- [ ] Preguntas #1–#22 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencias y registros, Fair Housing y PHRA, depósitos, tope del
+      el Booking de Auto y Hogar sin regresión. **Hecho:** los guardianes de §3 están (4ia–4if, probados al revés en su bloque) y 4ig suma
+      `colaConVista`, `avisoConPlantilla`, `analiticaSinCreencias` (los tres al revés: fallan), más `pestanasAnalitica` y `sinDineroEnVisitas`
+      repetidos al revés; `tsc` y `next build` limpios; regresiones `ins4e`, `ayu4f`, `adm4eg`, `vi4b` en verde. **Sin marcar:** la CI de GitHub no
+      corre pruebas de punta a punta ni la matriz de 9 dispositivos (`.github/workflows/ci.yml` corre tipos, build, guardianes, Stripe, SES,
+      imagen, migraciones y semilla); las del grupo corren en local en teléfono 390 y escritorio 1360. Anotado en LAUNCH-CHECKLIST.
+- [x] Preguntas #1–#22 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencias y registros, Fair Housing y PHRA, depósitos, tope del
       cargo del dealer, Buyers Guide, Regulation Z, Funeral Rule, donaciones en línea, recalls, búsqueda por anuncio).
-- [ ] `docs/PROGRESS.md` al día (Fase 4 cerrada) y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.
+      REVISION «4ig» con las 22 en una línea cada una; LAUNCH-CHECKLIST tenía todo salvo la búsqueda por anuncio, que se agregó en 4ig.
+- [x] `docs/PROGRESS.md` al día (Fase 4 cerrada) y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.

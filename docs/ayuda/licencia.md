@@ -30,8 +30,10 @@ tu caso no lo garantiza nadie.
 
 **¿Por qué dice «no puede»?** Porque la ley lo limita (p. ej. un notario en EE. UU. no es abogado). Lo decimos claro.
 
-**¿Cada cuánto se revisa?** Cada 3 meses (el aviso automático para volver a revisarla llega con los trabajos
-programados; ver LAUNCH-CHECKLIST).
+**¿Cada cuánto se revisa?** Cada 3 meses. En Iglesias, Bienes Raíces y Venta de Autos (corredores, avaluadores, NMLS,
+dealers, vendedores, venta a plazos, funerarias, representante del DOJ, 501(c)(3)) el barrido la devuelve sola a la cola
+«Licencias» 14 días antes de su fecha de revisión (y con prioridad si ya pasó); en las demás categorías ese aviso sigue
+pendiente (ver LAUNCH-CHECKLIST).
 
 ---
 

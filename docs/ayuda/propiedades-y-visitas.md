@@ -2,8 +2,8 @@
 
 _Pantallas: Panel › Lo que vendes › Propiedades (la lista y cada propiedad) y › Tu herramienta («Propiedades y visitas» para rentas,
 «Casas en venta» para agentes y vendedores, «Préstamos y requisitos» para hipotecas, «Cuartos y lo que incluye» para cuartos); Panel › Tu
-página › Tus licencias; Super Admin › Negocios 360° › Lo que vende y Catálogo › Vivienda justa. Versión: Fase 4 · bloque 4ib (7 nov 2026).
-La solicitud de visita del cliente («Pedir visita») llega en el bloque 4ie; aquí el negocio deja todo listo._
+página › Tus licencias; Super Admin › Negocios 360° › Lo que vende y Catálogo › Vivienda justa. Versión: Fase 4 · bloques 4ib–4ig (7 nov 2026).
+Las solicitudes de visita se responden en Panel › Visitas (ver `panel-visitas`); la vivienda justa completa está en `vivienda-justa`._
 
 ## Qué hace · What it does
 **ES.** Lo que más preguntan en Bienes Raíces: **¿cuánto necesito para mudarme y me la rentan sin seguro social?** Cada propiedad dice su

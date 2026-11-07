@@ -1,6 +1,6 @@
 # Super Admin · Analítica · Super Admin · Analytics
 
-_Pantalla: ADM-ANALIT (`/admin/analitica`), teléfono y escritorio. Versión: Fase 1 · bloque 1n (6 nov 2026). Para el
+_Pantalla: ADM-ANALIT (`/admin/analitica`), teléfono y escritorio. Versión: Fase 1 · bloque 1n (6 nov 2026); pestañas por grupo hasta la Fase 4 · bloque 4ig (7 nov 2026). Para el
 equipo de To'Latino (y El Compa como copiloto del equipo)._
 
 ## Qué hace
@@ -23,6 +23,14 @@ o 90 días, solo de tus ciudades.
   abrieron**, **ocupación de los grupos**, matrículas (cobrado, retenido, devuelto y lo que **se quedó con el lugar**), gente en **lista
   de espera** y días en promedio, **bajas de membresía** pedidas y confirmadas en 72 h, % «cobraron el total» y «certificado prometido»
   en las reseñas, **ayudas por cada 100 inscripciones** y **guarderías con licencia DHS vigente**. Nunca datos de un niño ni de un inscrito.
+- **Iglesias · Bienes Raíces · Autos (4ig):** solicitudes de visita (y **cuántas por propiedad**), pruebas de manejo y citas (y **cuántas
+  por carro**), **% confirmadas a tiempo** (antes de que venciera su plazo de 4 horas hábiles; el servidor no deja confirmar después),
+  % vencidas sin respuesta, **plantones** («No vino»), **días hasta rentar**, **hasta vender una casa** y **hasta vender un carro**,
+  **propiedades y carros a la vista hoy por ciudad**, **% «el total fue el que vi»** en las reseñas («Para mudarte» y «En la puerta»),
+  **ayudas por cada 100 visitas**, **anuncios pausados por posible estafa** (en el período, en pausa hoy y sancionados), **textos frenados**
+  por la lista de vivienda justa, declaraciones de **mayores de 62 por revisar**, en Iglesias las **fechas y catecismo pedidos** y **%
+  respondidas en 48 h**, y **licencias** de las tres (vigentes, por vencer en 14 días, vencidas y en revisión). Debajo, los motivos de ayuda.
+  **Nunca personas por religión** (ni la denominación ni quién va a qué iglesia) **ni datos de crédito** (la app no los pide ni los guarda).
 - **Búsquedas sin oferta:** lo que buscaron y no había (pidieron aviso), con enlace a Catálogo.
 - **Exportar:** Negocios, Historial y Búsquedas sin oferta en CSV (abre en Excel o Sheets). Permiso analit · exportar;
   cada descarga queda en la auditoría.
@@ -45,6 +53,15 @@ con su hora en el historial del local (Negocios 360° › Esta noche) y a los qu
 **¿«Mesas no respetadas» es lo mismo que la cola?** Es el total del período. La cola «Mesas no respetadas» se abre sola
 cuando un mismo local llega a 3 en 30 noches.
 
+**¿Por qué Iglesias no se separa por denominación?** Porque Analítica cuenta lo que pasa en la app, no lo que cree la gente. Ninguna
+cifra dice cuántas personas van a una iglesia católica, evangélica o de otra fe (guardián `analiticaSinCreencias`).
+
+**¿«Confirmadas a tiempo» de dónde sale?** De las visitas y pruebas que el negocio confirmó: el servidor solo deja confirmar antes de que
+venza el plazo (4 horas hábiles, nunca después de la hora − 1 h); las que vencieron se cuentan aparte.
+
+**¿Una licencia «vencida» pierde el sello sola?** No: «vencida» aquí es que pasó su fecha de revisión. Vuelve a Colas › Licencias con
+prioridad y una persona la mira en el registro oficial; el sello cambia cuando decide.
+
 **¿Dónde están vendido, comisión, operaciones, rangos y comunidad?** Llegan con los pedidos, las citas y Comunidad.
 
 ---
@@ -63,4 +80,9 @@ without a reply, tables not honored (the venue cancelled a confirmed table or th
 table or list spot was not honored), deposits (charged, held, refunded and kept by the venue), % of the guest list that
 got in, times the cover went up after it was posted that same night (from the append-only «Tonight» history), % of
 reviews saying «the line was as posted», «charged more cover» help requests per 100 nights and expired liquor licenses
-(PLCB), plus the night's help reasons.
+(PLCB), plus the night's help reasons. **Churches · Real estate · Cars (4ig):** viewing requests (and per property), test drives and
+appointments (and per car), % confirmed on time (before the 4 business-hour deadline expired), % expired, no-shows, days to rent, to sell a
+house and to sell a car, properties and cars live today by city, % of reviews saying «the total was what I saw», help requests per 100
+visits, listings paused for a possible scam, texts blocked by the fair housing list, 62-and-over declarations to review, church dates and
+catechism requested and % answered within 48 h, and licenses of the three (valid, due within 14 days, past review, in review). Never people
+by religion and never credit data.

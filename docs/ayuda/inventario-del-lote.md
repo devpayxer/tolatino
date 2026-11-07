@@ -1,8 +1,8 @@
 # Inventario del lote · Inventario (Venta de Autos) · Lot inventory · Inventory (Car Dealers)
 
 _Pantallas: Panel › Lo que vendes › Inventario (la lista y cada vehículo) y › Tu herramienta («Inventario del lote»); Panel › Tu página › Tus
-licencias; Super Admin › Negocios 360° › Lo que vende y Catálogo › Cargo del dealer. Versión: Fase 4 · bloque 4ic (7 nov 2026). La ficha del
-cliente llega en 4id y la prueba de manejo («Pedir prueba de manejo», gratis) en 4ie; aquí el negocio deja todo listo._
+licencias; Super Admin › Negocios 360° › Lo que vende y Catálogo › Cargo del dealer. Versión: Fase 4 · bloques 4ic–4ig (7 nov 2026). Las
+pruebas de manejo se responden en Panel › Pruebas de manejo (ver `panel-visitas`); las licencias, en `licencias-inmuebles-y-autos`._
 
 ## Qué hace · What it does
 **ES.** Lo que más preguntan en Venta de Autos: **¿cuánto pago en total y el carro está limpio?** Cada vehículo dice su **VIN** (revisado por

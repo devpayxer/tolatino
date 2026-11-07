@@ -183,6 +183,7 @@ export async function guardarPropiedad(c: PoolClient, negocio: string, itemId: s
   if (fr) {
     await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, after, reason) values ('user', $1, 'inm.vivienda_justa.frenada', 'business', $2, $3, $4::jsonb, $5)`,
       [actor, negocio, b.city, JSON.stringify({ propiedad: name.es, frase: fr.frase }), "Frase de la lista de vivienda justa"]);
+    await (await import("./vivienda-cola")).abrirCasoFrenada(c, negocio, b.city); // 4ig · Colas › Vivienda justa
     return err(`No puede ir «${fr.frase}»: la ley de vivienda justa no deja preferir ni excluir a nadie por quién vive. Quítalo y guarda otra vez.`,
       `“${fr.frase}” cannot be used: fair housing law does not allow preferring or excluding anyone by who lives there. Remove it and save again.`);
   }
@@ -224,6 +225,8 @@ export async function guardarPropiedad(c: PoolClient, negocio: string, itemId: s
                      where pl.business_id = b.id and not pl.addr_public and i.removed_at is null
                        and ((pl.geom is not null and st_dwithin(pl.geom, b.geo, 60))
                          or (pl.addr_line is not null and lower(b.address) like lower(pl.addr_line) || '%')))`, [negocio]);
+  // 4ig · La declaración de vivienda para mayores por revisar abre su caso en Colas › Vivienda justa.
+  if (seniorSt === "review") await (await import("./vivienda-cola")).abrirCasoMayores(c, negocio, b.city, id!);
   await horasVisita(c, negocio, id);
   return { ok: true, id };
 }

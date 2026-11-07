@@ -47,3 +47,18 @@ export function tarjetaLey(lic: LicFila[], cant: string | null, lang: Lang) {
   if (lic.length) return { titulo: L(lic[0]!.title), texto: lic.map((x) => L(x.can)).join(" "), cant, enlace: true };
   return cant ? { titulo: cant, texto: "", cant: null, enlace: false } : null;
 }
+
+/* 4ig · Licencias de Iglesias, Bienes Raíces y Venta de Autos (corredores, avaluadores, NMLS, dealers, vendedores, venta a plazos,
+   funerarias, representante del DOJ, 501(c)(3)): la verificada cuya revisión vence en 14 días o ya venció vuelve a la cola «Licencias» para
+   mirarla otra vez en el registro oficial (vencida = prioridad alta). Nadie la marca vencida sin mirar: el sello sigue a la licencia `valid`
+   hasta que una persona decide. Un caso abierto por licencia (queue_items_abierto_idx); verificarla otra vez mueve la revisión 3 meses. */
+export const CATS_LIC_4I = ["NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"] as const;
+export async function barrerLicencias() {
+  const r = await db().query(
+    `insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
+     select 'lic', 'license', l.id::text, l.business_id, l.city_id, case when l.next_review < current_date then 'alta' else 'normal' end
+       from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
+      where k.category_id = any($1::text[]) and l.status = 'valid' and l.next_review is not null and l.next_review <= current_date + 14 and b.status = 'active'
+     on conflict do nothing`, [CATS_LIC_4I]);
+  return { abiertas: r.rowCount ?? 0 };
+}

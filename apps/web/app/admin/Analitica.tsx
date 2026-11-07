@@ -23,6 +23,7 @@ export type DatosAnalitica = {
   ft?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").fiestasTransporte>>;
   no?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").noche>>;
   en?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").inscripcionesAnalitica>>;
+  ia?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").feInmAutos>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -31,7 +32,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -190,6 +191,47 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         ])]} />
         {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Educación, Niños y Deporte`} items={ayuda.map((x) => ({ label: `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con una inscripción en el período.</A.AdminNote>}
+      </>);
+  } else if (d.tab === "ia" && d.ia) {
+    // Iglesias · Bienes Raíces · Autos (4ig): solo cifras por ciudad; nunca personas por religión ni datos de crédito.
+    const { inm, dealer, dias: dd, vivos, rev, ayuda, estafa, lic, fe, vj } = d.ia, mx = Math.max(1, ...ayuda.map((x) => x.n));
+    const visitas = inm.n + dealer.n, nAyV = ayuda.filter((x) => x.rub !== "fe").reduce((a, x) => a + x.n, 0), nAyF = ayuda.filter((x) => x.rub === "fe").reduce((a, x) => a + x.n, 0);
+    const por = (a: number, b: number) => (b ? (Math.round((10 * a) / b) / 10).toString() : "—");
+    const DIAS = (k: string) => dd.find((x) => x.que === k), RUB: Record<string, string> = { inm: "Bienes Raíces", dealer: "Autos", fe: "Iglesias" };
+    const LC = (k: string) => lic.find((x) => x.cat === k) ?? { vigentes: 0, porvencer: 0, vencidas: 0, revision: 0 }, li = ["NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"].map(LC);
+    const tot = (f: "vigentes" | "porvencer" | "vencidas" | "revision") => li.reduce((a, x) => a + x[f], 0);
+    const dTxt = (k: string) => { const x = DIAS(k); return x && x.n ? `${x.dias ?? "—"} días` : "—"; };
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "VISITAS Y PRUEBAS DE MANEJO" }, kpis([
+          { k: "SOLICITUDES DE VISITA", v: String(inm.n), s: `${por(inm.n, inm.items)} por propiedad · ${inm.items} propiedades` },
+          { k: "PRUEBAS DE MANEJO Y CITAS", v: String(dealer.n), s: `${por(dealer.n, dealer.items)} por carro · ${dealer.items} carros` },
+          { k: "CONFIRMADAS A TIEMPO", v: pct(inm.atiempo + dealer.atiempo, visitas), s: `${inm.atiempo + dealer.atiempo} de ${visitas} · antes de que venciera su plazo`, dark: true },
+          { k: "VENCIDAS SIN RESPUESTA", v: pct(inm.vencidas + dealer.vencidas, visitas), s: `${inm.vencidas + dealer.vencidas} solicitudes` },
+          { k: "PLANTONES («NO VINO»)", v: String(inm.noshow + dealer.noshow), s: `de ${inm.pasaron + dealer.pasaron + inm.noshow + dealer.noshow} visitas y pruebas que ya pasaron` },
+        ]), { type: "group", k: "RENTAR, VENDER Y LO QUE SE VE" }, kpis([
+          { k: "DÍAS HASTA RENTAR", v: dTxt("rented"), s: `${DIAS("rented")?.n ?? 0} rentada${DIAS("rented")?.n === 1 ? "" : "s"} en el período` },
+          { k: "DÍAS HASTA VENDER UNA CASA", v: dTxt("sold"), s: `${DIAS("sold")?.n ?? 0} vendida${DIAS("sold")?.n === 1 ? "" : "s"} en el período` },
+          { k: "DÍAS HASTA VENDER UN CARRO", v: dTxt("carro"), s: `${DIAS("carro")?.n ?? 0} vendido${DIAS("carro")?.n === 1 ? "" : "s"} en el período` },
+          { k: "«EL TOTAL FUE EL QUE VI»", v: pct(rev.mok + rev.pok, rev.mn + rev.pn), s: `Para mudarte ${pct(rev.mok, rev.mn)} · En la puerta ${pct(rev.pok, rev.pn)} · ${rev.mn + rev.pn} reseñas`, dark: true },
+        ]), { type: "rows", k: "A LA VISTA HOY POR CIUDAD", items: vivos.map((x) => ({ icon: "pin", t: x.ciudad, s: `${x.props} propiedad${x.props === 1 ? "" : "es"} · ${x.carros} carro${x.carros === 1 ? "" : "s"}` })) },
+        { type: "group", k: "AYUDA, ESTAFAS Y VIVIENDA JUSTA" }, kpis([
+          { k: "AYUDAS POR CADA 100 VISITAS", v: visitas ? (Math.round((1000 * nAyV) / visitas) / 10).toString() : "—", s: `${nAyV} ayudas · ${visitas} visitas y pruebas` },
+          { k: "ANUNCIOS PAUSADOS POR ESTAFA", v: String(estafa.periodo), s: `${estafa.hoy} en pausa hoy · ${estafa.sancion} sancionados` },
+          { k: "TEXTOS FRENADOS", v: String(vj.frenadas), s: "por la lista de vivienda justa · nada se publicó" },
+          { k: "MAYORES DE 62 POR REVISAR", v: String(vj.mayores), s: "declaraciones en Colas › Vivienda justa" },
+        ]), { type: "group", k: "IGLESIAS" }, kpis([
+          { k: "FECHAS Y CATECISMO PEDIDOS", v: String(fe.n), s: `${fe.vencidas} vencidas sin respuesta` },
+          { k: "RESPONDIDAS EN 48 H", v: pct(fe.en48, fe.n), s: `${fe.en48} solicitudes` },
+          { k: "AYUDAS CON UNA FECHA", v: String(nAyF), s: "nada se cobra en la app" },
+        ]), { type: "group", k: "LICENCIAS" }, kpis([
+          { k: "LICENCIAS VIGENTES", v: String(tot("vigentes")), s: `Iglesias ${li[0]!.vigentes} · Bienes Raíces ${li[1]!.vigentes} · Autos ${li[2]!.vigentes}`, dark: true },
+          { k: "POR VENCER EN 14 DÍAS", v: String(tot("porvencer")), s: "vuelven a Colas › Licencias" },
+          { k: "VENCIDAS", v: String(tot("vencidas")), s: "vuelven a Colas › Licencias con prioridad" },
+          { k: "EN REVISIÓN", v: String(tot("revision")), s: "nuevas o cambiadas" },
+        ])]} />
+        {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Iglesias, Bienes Raíces y Autos`} items={ayuda.map((x) => ({ label: `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+          : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con una visita o una fecha en el período.</A.AdminNote>}
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;

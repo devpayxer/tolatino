@@ -1676,6 +1676,52 @@ const guardianes = {
       falla("avisoAyudaPorTipo", K, 0, "al resolver una ayuda, solo la de un pedido de comida usa avisarAyuda; las demás avisan con avisarAyudaCita");
   },
 
+  /* 4ig. Una cola nueva sin su vista caía en la rama por defecto de Colas («Recomendado por un vecino»): la tarjeta y el caso decían otra
+     cosa. Toda cola de lib/colas.ts tiene su título en la lista (lib/admin-colas.ts `x.queue === "k"`) y su detalle en app/admin/Colas.tsx
+     (`k.queue === "k"`). */
+  colaConVista() {
+    const f = "apps/web/lib/colas.ts", L = "apps/web/lib/admin-colas.ts", U = "apps/web/app/admin/Colas.tsx";
+    if (!existsSync(f) || !existsSync(L) || !existsSync(U)) return;
+    const m = /export type Cola = ([^;]+);/.exec(readFileSync(f, "utf8"));
+    if (!m) return falla("colaConVista", f, 0, "no encuentro el tipo Cola");
+    const tl = readFileSync(L, "utf8"), tu = readFileSync(U, "utf8");
+    for (const k of [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])) {
+      if (!tl.includes(`x.queue === "${k}"`)) falla("colaConVista", L, 0, `la cola «${k}» no tiene su título en la lista (sale como otra cola)`);
+      if (!tu.includes(`k.queue === "${k}"`)) falla("colaConVista", U, 0, `la cola «${k}» no tiene su detalle en Colas`);
+    }
+  },
+
+  /* 4ig. Un aviso con una clave que no está en notif_templates no sale (avisar() no encuentra la plantilla y calla). Toda clave escrita a
+     mano en avisar / avisarNegocio / avisar… existe en una migración, con su texto en español e inglés. */
+  avisoConPlantilla() {
+    const dir = "packages/db/migrations", tpl = new Map();
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
+      const t = readFileSync(`${dir}/${x}`, "utf8");
+      if (!/notif_templates/.test(t)) continue;
+      for (const m of t.matchAll(/\(\s*'([a-z0-9_]+)',\s*'(?:crit|tx|mod|biz|mkt)',[^\n]*'\{[^\n]*/g)) tpl.set(m[1], m[0]);
+    }
+    for (const [k, l] of tpl) if (!/"es"\s*:/.test(l) || !/"en"\s*:/.test(l)) falla("avisoConPlantilla", dir, 0, `la plantilla «${k}» no trae español e inglés en la misma línea`);
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        for (const m of l.matchAll(/\bavisar\w*\([^()]*?,\s*"([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, i + 1, `el aviso «${m[1]}» no existe en notif_templates`);
+      });
+    }
+  },
+
+  /* 4ig. Analítica muestra cifras, nunca personas por lo que creen ni datos de crédito: lib/admin-analitica.ts y la pantalla no leen la
+     denominación (subcategorías de Iglesias) ni nada de crédito, seguro social, ingresos o fecha de nacimiento. */
+  analiticaSinCreencias() {
+    for (const f of ["apps/web/lib/admin-analitica.ts", "apps/web/app/admin/Analitica.tsx"]) {
+      if (!existsSync(f)) continue;
+      const t = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+      t.split("\n").forEach((l, i) => {
+        const m = /subcategory_ids|cat[oó]lic|cristian|evang[eé]l|bautist|pentecost|jud[ií]|musulm|budist|religi|denominac|credit|cr[eé]dito|\bssn\b|seguro social|income|ingresos|birth|nacimiento/i.exec(l);
+        if (m) falla("analiticaSinCreencias", f, i + 1, `Analítica no lee «${m[0]}»: nunca personas por religión ni datos de crédito`);
+      });
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
