@@ -3,7 +3,7 @@
    (= APP-COM-BIENVENIDA) — patrón aprobado 2au (To'Latino Onboarding vecino.dc.html, variante 1a «Pasos»). Textos 1:1 del diseño.
    Los pasos 3–5 los hace quien va a Mi cuenta o a la Comunidad; quien venía de un pedido o una cita termina en el 2 («solo el
    nombre» del prototipo) y los hace cuando entre a la Comunidad. El paso 5 pide aceptar las reglas y declarar «Tengo 18 años o
-   más» (nunca una fecha de nacimiento); quien declara ser menor no entra a la Comunidad. Las 100 monedas las acredita 5g. */
+   más» (nunca una fecha de nacimiento); quien declara ser menor no entra a la Comunidad. Las 100 monedas de bienvenida las acredita el libro de monedas (5g) en el paso 5. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -58,7 +58,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
   const [mayor, setMayor] = useState(false);
   const [sigo, setSigo] = useState<string[]>([]);
   const [confMenor, setConfMenor] = useState(false);
-  const [fin, setFin] = useState<{ numero: number; fundador: boolean } | null>(null);
+  const [fin, setFin] = useState<{ numero: number; fundador: boolean; monedas: number } | null>(null);
   const [tel, setTel] = useState(inicial.telefono?.replace(/^\+1/, "") ?? "");
   const [enviado, setEnviado] = useState(false);
   const [codigo, setCodigo] = useState("");
@@ -125,7 +125,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
     setOcupado(false);
     if (!r?.ok) return bi(r ?? {});
     if ("menor" in r && r.menor) return setPaso(7);
-    setFin({ numero: ("numero" in r && r.numero) || d?.numero || 1, fundador: ("fundador" in r && !!r.fundador) || !!d?.fundador });
+    setFin({ numero: ("numero" in r && r.numero) || d?.numero || 1, fundador: ("fundador" in r && !!r.fundador) || !!d?.fundador, monedas: ("monedas" in r && r.monedas) || 0 });
     setPaso(6);
   }
   const tg = (L: string[], k: string) => (L.includes(k) ? L.filter((x) => x !== k) : [...L, k]);
@@ -423,7 +423,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
                 {`${fin?.fundador ? E2("FUNDADORES · #", "FOUNDERS · #") : E2("N.º ", "NO. ")}${(fin?.numero ?? 1).toLocaleString("en-US")}${E2(" · RECLUTA", " · RECRUIT")}`}
               </span>
               <h1 className="font-display text-[28px] font-extrabold leading-[1.12] tracking-[-0.04em]">{E2(`Bienvenida a ${d?.ciudad?.name ?? "To'Latino"}, ${d?.nombre || "vecino"}.`, `Welcome to ${d?.ciudad?.name ?? "To'Latino"}, ${d?.nombre || "neighbor"}.`)}</h1>
-              <p className="text-[14px] font-medium leading-normal text-text-2">{E2("Empiezas como Recluta. Tus 100 monedas de bienvenida llegan cuando abran los cupones del barrio.", "You start as Recruit. Your 100 welcome coins arrive when neighborhood coupons open.")}</p>
+              <p className="text-[14px] font-medium leading-normal text-text-2">{fin?.monedas ? E2(`Empiezas como Recluta y con ${fin.monedas} monedas para los cupones de los negocios del barrio. Se ganan, nunca se compran: sin valor en dinero.`, `You start as Recruit with ${fin.monedas} coins for neighborhood business coupons. Earned, never bought: no cash value.`) : E2("Empiezas como Recluta.", "You start as Recruit.")}</p>
             </div>
             <div className="mt-[22px] flex flex-col gap-2">
               <Clave>{E2("PARA EMPEZAR", "TO START")}</Clave>

@@ -2,7 +2,8 @@
 /* USR-HOME · Mi cuenta (diseño «To'Latino Mi cuenta» · homeV): avisos de la cuenta, tu tarjeta de vecino, completa tu
    cuenta, tu semana (pedidos en curso, reservaciones y entrevistas de los próximos 7 días), pendiente de ti, accesos y
    tu cuenta (teléfono), tu apoyo al barrio este mes y, en escritorio, la tarjeta de invitar. Las celdas de la tarjeta de
-   vecino son lo que ya existe (reseñas, guardados, sigues); rango, monedas y Wallet llegan con sus fases. */
+   vecino (prototipo homeV): RANGO · MONEDAS (5g; sin valor en dinero) · RESEÑAS (el Wallet llega con su fase); sin Comunidad todavía,
+   «Únete» lleva a la bienvenida. */
 import { useRouter } from "next/navigation";
 import type { Resumen } from "@/lib/mi-cuenta";
 import { tagMesa } from "./citas/Citas";
@@ -12,9 +13,9 @@ import { tagPed } from "./pedidos/Pedidos";
 
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 
-export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sanciones, borrar }: {
+export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sanciones, borrar, com }: {
   es: boolean; yo: Yo; r: Resumen; dirs: number; ciudad: string | null; nick: string | null; nombre: string; negocio: { id: string; name: string } | null;
-  sanciones: { kind: string; reason: string; hasta: string | null }[]; borrar: string | null;
+  sanciones: { kind: string; reason: string; hasta: string | null }[]; borrar: string | null; com: { rango: number; nombre: { es: string; en: string }; monedas: number } | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
@@ -26,8 +27,9 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   // 5d · Cada sanción lleva a «Avisos de moderación», donde se ve su efecto y se apela (14 días).
   for (const x of sanciones) B.push({ type: "note", tone: "danger", ic: "warning", s: x.kind === "adv" ? E2(`To’Latino te mandó una advertencia: ${x.reason}.`, `To’Latino sent you a warning: ${x.reason}.`) : E2(`No puedes publicar hasta el ${dia(x.hasta!)}: ${x.reason}.`, `You can’t post until ${dia(x.hasta!)}: ${x.reason}.`), a: E2("Ver y apelar", "View and appeal"), onA: () => ir("/cuenta/moderacion") });
   B.push({ type: "hero", name: nombre, nick: nick ?? undefined, photo: c.foto ?? undefined, ini: yo.ini, city: `${city}, PA`.toUpperCase(), badge: yo.badge, onMe: () => ir("/cuenta/perfil"),
-    cells: [{ label: E2("RESEÑAS", "REVIEWS"), value: String(c.resenas), color: "var(--tl-white)", onClick: () => ir("/cuenta/resenas") }, { label: E2("GUARDADOS", "SAVED"), value: String(c.guardados), color: "var(--tl-pro)", onClick: () => ir("/cuenta/guardados") },
-      { label: E2("SIGUES", "FOLLOWING"), value: String(c.sigues), color: "var(--tl-signal)", onClick: () => ir("/cuenta/guardados?f=sigues") }] });
+    cells: [{ label: E2("RANGO", "RANK"), value: com ? `${com.rango} · ${es ? com.nombre.es : com.nombre.en}` : E2("Únete", "Join"), color: "var(--tl-white)", onClick: () => ir(com ? "/comunidad/rango" : "/comunidad") },
+      { label: E2("MONEDAS", "COINS"), value: com ? com.monedas.toLocaleString("en-US") : "0", color: "var(--tl-pro)", onClick: () => ir(com ? "/comunidad/monedas" : "/comunidad") },
+      { label: E2("RESEÑAS", "REVIEWS"), value: String(c.resenas), color: "var(--tl-signal)", onClick: () => ir("/cuenta/resenas") }] });
   // Completa tu cuenta (lo que ya se puede completar).
   const cp: [string, boolean, string | null][] = [[E2("Teléfono verificado", "Phone verified"), true, null], [E2("Tu nombre", "Your name"), !!nombre, "/cuenta/perfil"], [E2("Tu foto", "Your photo"), !!c.foto, "/cuenta/perfil"], [E2("Correo para tus recibos", "Email for receipts"), !!c.email, "/cuenta/perfil"]];
   const hechos = cp.filter((x) => x[1]).length;

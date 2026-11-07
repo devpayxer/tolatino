@@ -147,8 +147,11 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     `select count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now()))::int as vivas,
             count(*) filter (where p.status = 'live' and p.hidden_at is null and p.publish_at > now())::int as prog
        from business_posts p where p.business_id = $1`, [id])).rows[0]!;
+  // Cupones por monedas (5g): cuántos en la Comunidad y por aprobar, para «Tu página › Cupones por monedas».
+  const cu = (await db().query<{ vivos: number; pend: number }>(
+    `select count(*) filter (where status = 'live')::int as vivos, count(*) filter (where status = 'pending')::int as pend from coupons where business_id = $1`, [id])).rows[0]!;
   return {
-    resenas: rs, novedades: nv,
+    resenas: rs, novedades: nv, cupones: cu,
     id, name: b.name, cat: b.cat, city: b.city, ciudad: b.ciudad, kind: acc.kind, partes: acc.partes, pro, verified: b.verified,
     trial: tr && tr.on ? tr : null, trialUsed: b.sub_used, onb, sells, mods: b.mods, op: b.op, itemsW, items,
     st: { open: st.open, text: st.text, closedToday: b.closed_today },

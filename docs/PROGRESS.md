@@ -53,7 +53,19 @@ tarjeta), primera recomendación con 3 votos (+50), apelación levantada; pantal
 previa, Puntos y tope, Tabla del Barrio con excluir y «Cerrar el mes») y Usuarios 360° › Comunidad › Puntos (ajustar ± con tope por rol,
 Coronel); barrido `tablaCongelar`, `tablaCerrar` (día 3), `referidos`. Guardianes `topeDiario` (nuevo) + `libroSoloInsercion`,
 `saldoDerivado`, `votoUnico`, `oficialNoEsPersona` ampliados (28/28 al revés); e2e `com5f` 60 ✓. Ayuda: comunidad-puntos-rangos-y-tabla.md,
-admin-gamificacion.md. Sigue **5g** (monedas y cupones de negocios + panel; migración 0103).
+admin-gamificacion.md. **5g hecho (7 nov)** — Monedas y cupones de negocios: migración 0103 (`coin_rules`, `coin_entries` solo
+inserción con `reverses_id` e idempotente, `community_profiles.coins` derivado con check ≥ 0, `mon_bienvenida` / `mon_premios_mes` /
+`mon_gastar` (perfil `for update`) / `mon_devolver` / `mon_ajustar`; `coupons` (costo 80–1,000 lo fija To'Latino, cupo del mes, días,
+pending · live · paused · ended con `paused_by`) y `coupon_redemptions` (TL-CQ-xxxx único sin 0/O/1/I, issued → used una vez o → expired
+con las monedas de vuelta) con `cup_canjear` / `cup_validar` / `cup_vencer`; el cierre de la Tabla acredita el premio y cuenta los canjes;
+la bienvenida ya hecha y el mes ya cerrado se acreditaron), semilla `0034_monedas_cupones.sql` (los 5 COUPONS y +100 a cada vecino de
+prueba con el libro). `lib/monedas.ts`, `lib/cupones.ts`, `lib/monedas-comun.ts`; APP-GAM-MONEDAS (`/comunidad/monedas`), monedas en Mi
+perfil, Tu rango y la tarjeta de vecino de Mi cuenta; panel › Tu página › **Cupones por monedas** (`CuponesPanel.tsx`,
+`acciones-cupones.ts`: crear, editar, pausar, terminar, **Validar un código**); Super Admin › Gamification › **Monedas** y **Cupones**,
+Usuarios 360° › Comunidad › Monedas (ajuste ±); avisos `gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*` (sin SMS); barrido
+`vencerCupones`. Guardianes `monedasSinDinero` y `cuponUnaVez` (nuevos) + `libroSoloInsercion`, `saldoDerivado` ampliados (42/42 al
+revés); e2e `com5g` 73 ✓ (carrera de la última unidad, doble canje, código usado dos veces, vencer con el reloj movido). Ayuda:
+monedas-y-cupones.md, panel-cupones-por-monedas.md, admin-gamificacion.md al día. Sigue **5h** («Ver traducción» propia; migración 0104).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

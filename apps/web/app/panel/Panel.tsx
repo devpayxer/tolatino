@@ -56,6 +56,7 @@ import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
 import type { SvcPanel } from "@/lib/servicios";
 import { novBloques, novDetalle, type NovData } from "./NovedadesPanel";
+import { cupBloques, cupDetalle, type CupData } from "./CuponesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
 
@@ -71,6 +72,7 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "fotos", icon: "image", l: ["Fotos y portada", "Photos and cover"], s: ["Portada, logo y galería.", "Cover, logo and gallery."] },
   { k: "about", icon: "quote", l: ["Quiénes somos", "About us"], s: ["Tus palabras y lo que hay en tu negocio.", "Your words and what your place offers."] },
   { k: "nov", icon: "news", l: ["Novedades", "Updates"], s: ["Ofertas, avisos y encuestas en tu página.", "Deals, notices and polls on your page."] },
+  { k: "cup", icon: "ticket", l: ["Cupones por monedas", "Coupons for coins"], s: ["Lo que das por las monedas de los vecinos; valida su código.", "What you give for neighbors’ coins; validate their code."] },
   { k: "resenas", icon: "star", l: ["Reseñas", "Reviews"], s: ["Lo que dicen tus clientes; respóndeles.", "What clients say; reply to them."] },
   { k: "equipo", icon: "users", l: ["Equipo", "Team"], s: ["Las personas que salen en tu página.", "The people who show on your page."] },
   { k: "ver", icon: "shield", l: ["Verificación y sello", "Verification and badge"], s: ["Teléfono, correo y el sello Verificado.", "Phone, email and the Verified badge."] },
@@ -108,10 +110,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -152,7 +154,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -352,10 +354,10 @@ function secciones(c: Ctx): Sec {
   const p = PARTS.find((x) => x.k === c.ruta.sub) ?? PARTS[0]!, E2 = c.E2;
   const head: Bloque[] = [
     { type: "head", eye: E2("TU PÁGINA", "YOUR PAGE"), t: E2(...p.l), s: E2(...p.s), onBack: () => c.go("pag"),
-      act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : p.k === "nov" && c.d.pro ? { l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.det("nov:new") } : undefined },
+      act: p.k === "equipo" ? { l: E2("Invitar", "Invite"), icon: "plus", onClick: () => c.det("stf:new") } : p.k === "nov" && c.d.pro ? { l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.det("nov:new") } : p.k === "cup" && c.d.pro ? { l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det("cup:new") } : undefined },
     { type: "tabs", items: partesDe(c.d).map((z) => ({ l: E2(...z.l), on: z.k === p.k, onClick: () => c.go("pag", z.k) })) },
   ];
-  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : { blocks: equipoBloques(c), ed: null };
+  const r = p.k === "hor" ? horario(c) : p.k === "fotos" ? { blocks: fotos(c), ed: null } : p.k === "about" ? about(c) : p.k === "ver" ? { blocks: verificacion(c), ed: null } : p.k === "lic" ? licencias(c) : p.k === "resenas" ? resenasBloques(c) : p.k === "nov" ? novBloques(c) : p.k === "cup" ? cupBloques(c) : { blocks: equipoBloques(c), ed: null };
   return { blocks: [...head, ...r.blocks], ed: r.ed };
 }
 
@@ -386,6 +388,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("of:") && c.ofi) return oficioDetalle(c, id.slice(3));
   if (id === "svm") return modeloDetalle(c);
   if (id.startsWith("nov:")) return novDetalle(c);
+  if (id.startsWith("cup:")) return cupDetalle(c);
   if (id.startsWith("vac:") || id.startsWith("vap:")) return jobsDetalle(c);
   return null;
 }
@@ -419,6 +422,7 @@ function resumen(c: Ctx, k: string) {
   if (k === "about") { const a = d.about?.es ?? ""; return a ? (a.length > 56 ? `${a.slice(0, 56)}…` : a) : E2("Sin escribir", "Not written"); }
   if (k === "ver") return selloL(c).t;
   if (k === "nov") { const n = d.novedades; return !d.pro ? E2("Con Pro", "With Pro") : n.vivas ? E2(`${n.vivas} en vivo${n.prog ? ` · ${n.prog} programadas` : ""}`, `${n.vivas} live${n.prog ? ` · ${n.prog} scheduled` : ""}`) : n.prog ? E2(`${n.prog} programadas`, `${n.prog} scheduled`) : E2("Sin publicar", "Nothing posted"); }
+  if (k === "cup") { const n = d.cupones; return !d.pro ? E2("Con Pro", "With Pro") : n.vivos || n.pend ? E2(`${n.vivos} en la Comunidad${n.pend ? ` · ${n.pend} por aprobar` : ""}`, `${n.vivos} live${n.pend ? ` · ${n.pend} pending` : ""}`) : E2("Sin cupones", "No coupons"); }
   if (k === "resenas") { const r = d.resenas; return r.n ? `★ ${r.avg?.toFixed(1)} · ${r.n}${d.pro && r.norep ? E2(` · ${r.norep} sin responder`, ` · ${r.norep} unanswered`) : ""}` : E2("Aún sin reseñas", "No reviews yet"); }
   if (k === "lic") { const f = d.lic?.filas ?? [], ok = f.filter((x) => x.status === "valid").length, rev = f.filter((x) => x.status === "review").length; return f.length ? `${ok} ${ok === 1 ? E2("licencia verificada", "verified license") : E2("licencias verificadas", "verified licenses")}${rev ? E2(` · ${rev} en revisión`, ` · ${rev} in review`) : ""}` : E2("Sin licencias", "No licenses"); }
   const ok = d.equipo.filter((p) => p.st === "ok").length, inv = d.equipo.filter((p) => p.st === "inv").length;

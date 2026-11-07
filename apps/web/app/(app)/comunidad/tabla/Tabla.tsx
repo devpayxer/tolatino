@@ -38,7 +38,8 @@ export function TablaBarrio({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciu
     : d.excluido ? { t: E2("No sales en la tabla de este mes", "You are off this month's board"), s: E2("Te avisamos el motivo. Tus puntos y tu rango siguen igual.", "We told you why. Your points and rank stay the same.") }
       : { t: E2("Aún no estás en la tabla", "Not on the board yet"), s: E2("Aporta y entras: los puntos llegan cuando otros votan lo que publicas.", "Contribute and you are in: points come when others vote on your posts.") };
   const notas = [
-    E2("Los 3 primeros del mes reciben la insignia «Top del mes». Las monedas del premio llegan con Mis monedas.", "The top 3 each month get the «Top of the month» badge. The prize coins arrive with My coins."),
+    d.premio > 0 ? E2(`Los 3 primeros del mes reciben la insignia «Top del mes» y ${d.premio} monedas para los cupones del barrio (sin valor en dinero).`, `The top 3 each month get the «Top of the month» badge and ${d.premio} coins for neighborhood coupons (no cash value).`)
+      : E2("Los 3 primeros del mes reciben la insignia «Top del mes».", "The top 3 each month get the «Top of the month» badge."),
     E2("El mes se congela el último día a medianoche; en 3 días se cierra con los 3 primeros. Quien hizo trampa no sale.", "The month freezes on the last day at midnight; it closes within 3 days with the top 3. Cheaters are left out."),
     E2("Cada ciudad tiene su tabla. Aquí nada se compra: el orden lo ponen los votos de los vecinos.", "Each city has its own board. Nothing here is bought: neighbors’ votes set the order."),
   ];

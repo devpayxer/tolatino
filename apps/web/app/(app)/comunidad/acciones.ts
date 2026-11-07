@@ -11,6 +11,8 @@ import { ubicacion } from "@/lib/ubicacion";
 import { reportar } from "@/lib/moderacion";
 import { destacarRecomendacion } from "@/lib/puntos";
 import { tabla } from "@/lib/tabla";
+import { canjear, cuponesCiudad, misCanjes } from "@/lib/cupones";
+import { movimientos } from "@/lib/monedas";
 
 type Bi = { es: string; en: string };
 const NO_ORIGEN: Bi = { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." };
@@ -171,3 +173,14 @@ export async function tablaMas(mes: string, tab: string, cursor: string) {
   return t ? { filas: t.filas, mas: t.mas } : null;
 }
 export async function comDestacar(id: string) { const q = await quien(); return q.e ?? destacarRecomendacion(q.u.id, texto(id, 20)); }
+
+/* 5g · Monedas y cupones: canjear (todo lo decide la base: cupo del mes, uno por persona, saldo; gasta y crea el código en la misma
+   transacción) y las páginas siguientes (cursor) de los cupones de la ciudad que se ve, mis cupones y los movimientos. */
+export async function monCanjear(id: string) { const q = await quien(); return q.e ?? canjear(q.u.id, texto(id, 20)); }
+export async function monCupones(cursor: string) {
+  const q = await quien(); if (q.e) return null;
+  const loc = await ubicacion(q.u);
+  return cuponesCiudad(q.u.id, loc.c.id, texto(cursor, 40));
+}
+export async function monMisCupones(cursor: string) { const q = await quien(); return q.e ? null : misCanjes(q.u.id, texto(cursor, 20)); }
+export async function monMovimientos(cursor: string) { const q = await quien(); return q.e ? null : movimientos(q.u.id, texto(cursor, 20)); }

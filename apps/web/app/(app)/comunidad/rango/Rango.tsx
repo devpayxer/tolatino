@@ -3,7 +3,7 @@
    puntos; «Para {siguiente}» con lo que pide, los puntos que faltan y la condición (x / n), y el atajo que ayuda; la línea fija de los
    puntos; LO QUE YA PUEDES HACER; LA ESCALERA DEL BARRIO (los 10, el tuyo con «TÚ», 9 «POR INVITACIÓN», 10 «3 PLAZAS»; lo de El Patio dice
    «Cuando abra El Patio»); CÓMO SE GANAN LOS PUNTOS con sus reglas (en escritorio, en la columna derecha); TUS PUNTOS (los últimos
-   movimientos, también lo que se restó); INSIGNIAS. Todo del servidor. «Mis monedas» llega con 5g. */
+   movimientos, también lo que se restó); INSIGNIAS. Todo del servidor. «Mis monedas» (5g) lleva a APP-GAM-MONEDAS. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import type { ComponentType } from "react";
@@ -122,7 +122,10 @@ export function Rango({ es, yo, d }: { es: boolean; yo: YoCom; d: MiRango }) {
           </div>
         )}
 
-        <div style={{ display: "flex" }}><Button variant="secondary" size="md" block icon="hash" onClick={() => router.push("/comunidad/tabla")}>{E2("Tabla del Barrio", "Leaderboard")}</Button></div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="secondary" size="md" block icon="hash" onClick={() => router.push("/comunidad/tabla")}>{E2("Tabla del Barrio", "Leaderboard")}</Button>
+          <Button variant="secondary" size="md" block icon="ticket" onClick={() => router.push("/comunidad/monedas")}>{E2("Mis monedas", "My coins")}</Button>
+        </div>
       </div>
     </Marco>
   );

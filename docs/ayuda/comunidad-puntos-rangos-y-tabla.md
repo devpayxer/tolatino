@@ -63,6 +63,7 @@ Fase 5 · bloque 5f (7 nov 2026). Solo con cuenta, salvo la tarjeta de reseña._
 | Borras lo tuyo | Se restan sus puntos. Si tocas «Deshacer» en 10 segundos, vuelven. |
 | Quien preguntó cambia la respuesta que le sirvió | Los +10 pasan a la nueva respuesta (a la anterior se le restan). |
 | Tu reseña verificada se oculta o la quitas | Se restan sus +15; la tarjeta deja de decir «+15 PUNTOS». |
+| Quedas entre los 3 primeros del mes | Al cerrar el mes: la insignia «Top del mes» y las monedas del premio (200 de fábrica; sin valor en dinero), una sola vez. Ver «Monedas y cupones». |
 | Te excluyen de la Tabla | No sales este mes ni recibes premio; te llega el aviso con el motivo. Tus puntos y tu rango no cambian. |
 | El equipo ajusta tus puntos | Te llega el aviso con la cantidad y el motivo; sale en Tus puntos como «Ajuste del equipo». |
 

@@ -1742,3 +1742,49 @@ de la Tabla son la «sep» y «ago» del prototipo; el anterior ya está cerrado
 
 **Capturas:** `c5f-rango-m`, `c5f-rango-d`, `c5f-tabla-m`, `c5f-tabla-d`, `c5f-resena-m`, `c5f-perfil-insignias-m`, `c5f-invitar-m`,
 `c5f-u360-puntos-d`, `c5f-admin-tabla-d`, `c5f-admin-cerrar-d`, `c5f-admin-renombrar-d`, `c5f-admin-rangos-d`.
+
+### 5g · Comunidad: monedas y cupones de negocios (+ panel del negocio) (7 nov)
+Míralo en el sandbox (semilla: los 5 cupones del prototipo ya aprobados — Café Quisqueya 80, Panadería La Espiga 120, Empanadas Doña Tere
+150, Barbería El Primo 250, Llantera El Cibao 300 —; cada vecino de prueba con sus 100 de bienvenida; los 3 primeros del mes anterior con
+sus 200 del premio). Teléfono y escritorio.
+1. **Monedas** (`/comunidad/monedas`; desde «Mis monedas» en Tu rango, «Monedas» en la navegación de escritorio, Mi perfil o la celda
+   MONEDAS de Mi cuenta): saldo con **«SIN VALOR EN DINERO»**, cómo se ganan, los cupones de la ciudad (Canjear · Te faltan N · Ver mi código
+   · Agotado este mes), la hoja que confirma y el código **TL-CQ-xxxx** con «Muéstralo en el local» y su vencimiento; Tus cupones y Movimientos.
+2. **Bienvenida:** quien termina la bienvenida ve «Empiezas como Recluta y con 100 monedas…» y le llega «Te llegaron monedas».
+3. **Panel › Tu página › Cupones por monedas** (Rosa, Barbería El Primo): «Validar un código» arriba, Crear (qué das, condiciones, cuántos
+   al mes, días; **sin costo**), Por aprobar · En la Comunidad · Pausado · Terminado, Pausar / Reanudar / Terminar, últimos códigos usados.
+   Un negocio Free ve el candado.
+4. **Super Admin › Gamification › Monedas** (EN CIRCULACIÓN · EMITIDAS ESTE MES · CANJEADAS · VALOR «Sin valor en dinero», reglas, últimos
+   movimientos) y **› Cupones** (aprobar con costo, rechazar, cambiar costo, pausar con motivo, activar, últimos canjes); **Usuarios 360° ›
+   Comunidad › Monedas** (ajustar ± con motivo).
+
+**Decidí (se cambia si prefieres otra cosa):**
+- **Monedas sin valor en dinero** (§6 #3): no se compran, no se venden, no se transfieren, no se cambian por dinero ni por saldo y **no
+  vencen**. Se ganan solo con la **bienvenida (+100)** y el **premio del mes (+200 a los 3 primeros)** (§6 #6). El prototipo listaba también
+  «+5 por cada 10 puntos», «+10 por volver a El Patio» y «+200 por ganar un torneo»: lo de El Patio queda para después de la apertura (G) y el
+  «+5 por cada 10 puntos» **no** se construyó (mezcla los dos libros y premia estar activo); si lo quieres, es una regla más en `coin_rules`.
+- **Un cupón es un descuento que el negocio decide dar**; To'Latino no le paga ni le cobra. «Liquidar» al cerrar el mes = **reporte de
+  canjes** de la ciudad (§6 #4). El prototipo del admin decía «se le liquida al negocio el lunes»: no se copió (sería dinero).
+- **Cupones solo Pro** (§6 #5), máximo **5 activos o por aprobar** por negocio. El negocio elige cuántos al mes (1–500) y los días de
+  validez (7 · 15 · 30 · 60 · 90; 30 de fábrica); **el costo lo fija To'Latino** (80–1,000). Aprobado, la oferta (título y condiciones) no
+  cambia: para otra, se termina y se crea otro. Cambiar el costo cuenta para los canjes nuevos.
+- **Uno por persona:** mientras su código esté vivo o usado. Si el código vence sin usarse, las monedas vuelven y puede volver a canjearlo.
+- **Cupo del mes:** cuenta los códigos del mes local de la ciudad que no vencieron; un código vencido libera su lugar.
+- **Pausar o terminar** (negocio o equipo): sale de la Comunidad al instante; **los códigos ya canjeados siguen valiendo** hasta que vencen
+  (como decía el prototipo). Lo que pausa el equipo solo lo reactiva el equipo; el negocio recibe el aviso con el motivo.
+- **Código:** TL-CQ- + 4 signos sin 0/O/1/I (32 signos, bytes aleatorios de la base); si alguna vez choca, crece a 5 y 6. Solo el negocio
+  del cupón lo encuentra («No encontramos ese código en tus cupones» para otro negocio, sin decir de quién es). El panel **no muestra los
+  códigos emitidos**, solo los usados: así nadie del negocio puede «usar» el código de un vecino sin que lo muestre.
+- **Validar:** se escribe (no hay escáner en ningún lado del panel todavía; al LAUNCH-CHECKLIST). Puede validar quien tiene «Tu página» u
+  «Hoy y pedidos» (el campo vive en Tu página; en Hoy, al LAUNCH-CHECKLIST).
+- **Un negocio no canjea sus propios cupones** (dueño o equipo).
+- **Mi cuenta:** la tarjeta de vecino pasa a **RANGO · MONEDAS · RESEÑAS** como el prototipo (RANGO · MONEDAS · WALLET); el Wallet llega con
+  su fase; Guardados y Sigues siguen en los accesos y en Guardados.
+- **Ajuste de monedas por rol:** Admin hasta 1,000 de una vez; los demás roles que editan Usuarios, 500 (prototipo `coinAdj`: 500).
+- **Lo prometido antes de 5g se cumplió:** la migración acreditó la bienvenida de quien ya la había hecho y el premio de los meses ya
+  cerrados (una sola vez).
+- **e2e:** para «mover el reloj» de un código la prueba apaga un momento el trigger de los canjes (en la app lo emitido no cambia).
+
+**Capturas:** `c5g-bienvenida-m`, `c5g-monedas-m`, `c5g-canje-m`, `c5g-codigo-m`, `c5g-carrera-perdio-m`, `c5g-monedas-d`, `c5g-cuenta-m`,
+`c5g-panel-crear-m`, `c5g-panel-cupones-m`, `c5g-panel-validar-m`, `c5g-panel-cupones-d`, `c5g-panel-free-m`, `c5g-admin-cupones-d`,
+`c5g-admin-aprobar-d`, `c5g-admin-monedas-d`, `c5g-admin-u360-monedas-d`.

@@ -162,6 +162,7 @@ function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; marge
   const router = useRouter();
   const filas: [string, string, string, () => void][] = [
     ["shield", es ? rango(v.rango).es : rango(v.rango).en, E2(`${v.puntos.toLocaleString("en-US")} PUNTOS · TU RANGO Y LA TABLA`, `${v.puntos.toLocaleString("en-US")} POINTS · YOUR RANK AND THE BOARD`), () => router.push("/comunidad/rango")],
+    ["ticket", E2(`${(v.monedas ?? 0).toLocaleString("en-US")} monedas`, `${(v.monedas ?? 0).toLocaleString("en-US")} coins`), E2("CUPONES DEL BARRIO · SIN VALOR EN DINERO", "NEIGHBORHOOD COUPONS · NO CASH VALUE"), () => router.push("/comunidad/monedas")],
     ["edit", E2("Editar mi perfil", "Edit my profile"), E2("PRESENTACIÓN, CÓMO TE DICEN Y DESDE CUÁNDO", "INTRO, NICKNAME AND SINCE WHEN"), () => ui.setHoja({ title: E2("Mi perfil", "My profile"), sub: E2("Lo ven los vecinos con cuenta. Sin teléfonos, correos ni direcciones.", "Neighbors with an account see it. No phones, emails or addresses."), extra: <Editar es={es} v={v} ui={ui} /> })],
     ["users", E2("Siguiendo y seguidores", "Following and followers"), v.cuentas ? `${v.cuentas.siguiendo} ${E2("SIGUIENDO", "FOLLOWING")} · ${v.cuentas.seguidores} ${E2("SEGUIDORES", "FOLLOWERS")}` : "", () => router.push("/cuenta/vecinos?l=siguiendo")],
     ["ban", E2("Bloqueados y silenciados", "Blocked and muted"), E2("CON DESHACER", "WITH UNDO"), () => router.push("/cuenta/vecinos?l=bloqueados")],

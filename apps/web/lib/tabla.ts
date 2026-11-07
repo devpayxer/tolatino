@@ -3,6 +3,7 @@ import { auditar } from "./admin";
 import { avisarMuchos } from "./avisos";
 import { corto, ini } from "./comunidad";
 import { db, tx } from "./db";
+import { avisarMonedas } from "./monedas";
 import { nombreMes, type FilaTabla, type Tabla } from "./puntos-comun";
 
 /* La Tabla del Barrio (APP-GAM-TABLA; fase5-comunidad.md §4 5f y §6 #10, #12). Es derivada del libro de puntos (monthly_boards, la escribe
@@ -10,13 +11,14 @@ import { nombreMes, type FilaTabla, type Tabla } from "./puntos-comun";
    cuenta oficial no es una persona y nunca está. 20 por página con cursor (valor, persona, posición): sin offset.
    - El mes se congela solo al terminar (el último día a medianoche de la ciudad: lo nuevo ya cae en el mes siguiente) y queda 72 h para
      excluir; el barrido lo cierra el día 3 si nadie lo cerró. cerrarMes(): posiciones, excluidos sin premio, los 3 primeros con la
-     insignia del mes (el premio en monedas lo acredita el libro de monedas, 5g) y las plazas de General del Barrio, el aviso a los 3 y el
-     reporte de canjes (todavía 0: los cupones llegan en 5g). No se deshace. */
+     insignia del mes, el premio en monedas (lo acredita la base con el libro de monedas al cerrar: mon_premios_mes, 5g) y las plazas de
+     General del Barrio, el aviso a los 3 y el reporte de canjes de cupones del mes en la ciudad (lo cuenta la base al cerrar). No se deshace. */
 type Mes = "actual" | "anterior";
 type Pestana = "general" | "rec" | "resp";
 const COL: Record<Pestana, string> = { general: "points", rec: "recs", resp: "answers" };
 export const POR_PAGINA_TABLA = 20;
-export const PREMIO_MONEDAS = 200;
+/* El premio del mes en monedas: la regla «premio_mes» de coin_rules (Super Admin › Gamification › Monedas; 0 si está apagada). */
+export const premioMonedas = async () => (await db().query<{ n: number }>(`select mon_regla('premio_mes') as n`)).rows[0]!.n;
 
 /* Los dos meses de una ciudad (primer día, en su hora local) y si el anterior está congelado o cerrado. */
 export async function mesesDe(ciudad: string) {
@@ -39,7 +41,7 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
     v.push(Number(a), b); pos0 = Number(c);
     w.push(`(mb.${col} < $4 or (mb.${col} = $4 and mb.user_id > $5::uuid))`);
   }
-  const [L, Y, C, Gn] = await Promise.all([
+  const [L, Y, C, Gn, premio] = await Promise.all([
     db().query<{ id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; zona: { es: string; en: string } | null; v: number; oculto: boolean }>(
       `select mb.user_id::text as id, u.first_name, u.last_name, u.photo_url, coalesce(cp.rank_level, 1) as rango, z.name as zona, mb.${col} as v,
               exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block' and ((ub.user_id = $3::uuid and ub.target_user_id = mb.user_id) or (ub.user_id = mb.user_id and ub.target_user_id = $3::uuid))) as oculto
@@ -54,6 +56,7 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
     db().query<{ frozen: boolean; closed: boolean }>(`select true as frozen, closed_at is not null as closed from board_closures where city_id = $1 and month = $2::date`, [ciudad, m]),
     db().query<{ n: string | null; l: string | null }>(
       `select u.first_name as n, u.last_name as l from monthly_boards mb join users u on u.id = mb.user_id where mb.city_id = $1 and mb.month = $2::date and mb.position = 1`, [ciudad, m]),
+    premioMonedas(),
   ]);
   // Posición verdadera de cada fila (los bloqueados no salen, pero cuentan para el lugar de los demás).
   const filasT = L.rows.slice(0, POR_PAGINA_TABLA);
@@ -74,7 +77,7 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
       congelada: mes === "anterior", cerrada: mes === "anterior" && cerrada, ganador: mes === "anterior" && cerrada && g ? corto(g.n, g.l) : null,
       cierraEl: mes === "anterior" && !cerrada ? `${M.actual.slice(0, 8)}03` : null, reinicia: siguiente.toISOString().slice(0, 10),
     },
-    filas, mas, yo: y && !y.excluido && y.v > 0 ? { pos: y.pos, v: y.v } : null, excluido: !!y?.excluido, premio: PREMIO_MONEDAS,
+    filas, mas, yo: y && !y.excluido && y.v > 0 ? { pos: y.pos, v: y.v } : null, excluido: !!y?.excluido, premio,
   };
 }
 
@@ -107,8 +110,8 @@ export async function cerrarPendientes(): Promise<number> {
 export async function cerrarMes(ciudad: string, mes: string, staffId: string | null, motivo: string): Promise<{ ok: true; top: { id: string; pos: number; general: boolean }[] } | { ok: false; mensaje: string }> {
   if (!/^\d{4}-\d\d-01$/.test(mes)) return { ok: false, mensaje: "Ese mes no existe." };
   const r = await tx(async (c) => {
-    const top = (await c.query<{ id: string; pos: number; general: boolean }>(`select persona::text as id, puesto as pos, es_general as general from tabla_cerrar($1, $2::date, $3::uuid, $4)`,
-      [ciudad, mes, staffId, PREMIO_MONEDAS])).rows;
+    const top = (await c.query<{ id: string; pos: number; general: boolean }>(`select persona::text as id, puesto as pos, es_general as general from tabla_cerrar($1, $2::date, $3::uuid, mon_regla('premio_mes'))`,
+      [ciudad, mes, staffId])).rows;
     if (staffId) await auditar(c, { actor: staffId, action: "gam.tabla.cerrar", targetKind: "monthly_board", targetId: `${ciudad}:${mes}`, city: ciudad, before: { estado: "abierta" },
       after: { estado: "cerrada", top: top.map((x) => x.pos) }, reason: motivo });
     return top;
@@ -119,6 +122,9 @@ export async function cerrarMes(ciudad: string, mes: string, staffId: string | n
       es: { pos: x.pos, mes: nombreMes(mes, true), general: x.general ? " Eres General del Barrio hasta el próximo cierre." : "" },
       en: { pos: x.pos, mes: nombreMes(mes, false), general: x.general ? " You are Neighborhood General until the next close." : "" } },
       { href: "/comunidad/tabla?m=anterior", ref: ["gam_top3", `${ciudad}:${mes}:${x.id}`] });
+    // 5g · el premio en monedas que la base acreditó al cerrar (una vez por persona y mes).
+    const p = (await db().query<{ n: number }>(`select coalesce(sum(delta), 0)::int as n from coin_entries where user_id = $1 and reason_key = 'premio_mes' and ref_kind = 'tabla' and ref_id = $2`, [x.id, `${ciudad}:${mes}`])).rows[0]!.n;
+    await avisarMonedas(x.id, p, { es: `Premio de la Tabla del Barrio · #${x.pos}`, en: `Neighborhood Table prize · #${x.pos}` }, `premio:${ciudad}:${mes}:${x.id}`);
   }
   return { ok: true, top: r };
 }

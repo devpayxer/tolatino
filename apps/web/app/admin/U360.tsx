@@ -9,8 +9,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Usuario360 } from "@/lib/admin-usuarios";
 import type { Comunidad360 } from "@/lib/admin-vecinos";
-import type { Puntos360 } from "@/lib/admin-gam";
-import { usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
+import type { Monedas360, Puntos360 } from "@/lib/admin-gam";
+import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
   cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar,
@@ -34,7 +34,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, com, pts, topeAjuste = 500 }: { u: Usuario360; tab: string; com?: Comunidad360 | null; pts?: Puntos360 | null; topeAjuste?: number }) {
+export function U360({ u, tab, com, pts, mon, topeAjuste = 500, topeMonedas = 500 }: { u: Usuario360; tab: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -179,6 +179,20 @@ export function U360({ u, tab, com, pts, topeAjuste = 500 }: { u: Usuario360; ta
             pts.log.length ? { type: "rows", items: pts.log.map((x) => ({ key: x.id, icon: "star", ibg: x.delta < 0 ? "rgba(192,57,43,.1)" : undefined, ifg: x.delta < 0 ? BAD : undefined,
               t: x.motive === "ajuste" ? `Ajuste del equipo: ${x.reason ?? ""}` : `${x.motive === "reverso" ? "Se restó · " : x.motive === "restaurado" ? "Volvió · " : ""}${x.label?.es ?? x.rule}${x.reason === "oculto" ? " (oculto por las reglas)" : x.reason === "borrado" ? " (borrado)" : ""}`,
               s: `${x.quien ? `Equipo · ${x.quien} · ` : ""}${fecha(x.at)}`, r: x.delta > 0 ? `+${x.delta}` : `−${-x.delta}` })) } : { type: "empty", icon: "star", t: "Sin movimientos", s: "Todavía no ha sumado puntos." },
+          ]} />
+        </>}
+        {mon && <>
+          <PanelBloques bloques={[{ type: "group", k: "MONEDAS · SIN VALOR EN DINERO" },
+            { type: "kv", cols: desk ? 3 : 2, items: [{ k: "SALDO", v: `${mon.saldo.toLocaleString("en-US")} monedas` }, { k: "CÓDIGOS VIVOS", v: String(mon.codigos) }, { k: "VALOR", v: "Sin valor en dinero · no se compran ni se cambian" }] },
+            ...(P.editar && !intocable && !borrada ? [{ type: "acts" as const, items: [
+              { l: "Ajustar monedas", v: "secondary", icon: "ticket", onClick: () => setConf({ titulo: `Monedas · ${corto}`, sub: `Ahora: ${mon.saldo.toLocaleString("en-US")}. Tu rol ajusta hasta ${topeMonedas.toLocaleString("en-US")} de una vez; nunca por debajo de 0. La persona ve el ajuste y el motivo. Queda en la auditoría.`,
+                elegir: { label: "TIPO", items: [{ k: "c", l: "Sumar" }, { k: "d", l: "Restar" }] }, valor: { k: "CANTIDAD", ini: "", max: 4 }, cta: "Aplicar",
+                plantillas: ["Error del sistema", "Devolver un canje que el negocio no respetó", "Monedas por una cuenta duplicada"], hacer: (m, e, v) => usrAjustarMonedas(u.id, e, v, m) }) },
+            ] }] : []),
+            { type: "group", k: "MONEDAS · MOVIMIENTOS" },
+            mon.log.length ? { type: "rows", items: mon.log.map((x) => ({ key: x.id, icon: "ticket", ibg: x.delta < 0 ? "rgba(192,57,43,.1)" : undefined, ifg: x.delta < 0 ? BAD : undefined,
+              t: x.motivo === "ajuste" ? `Ajuste del equipo: ${x.reason ?? ""}` : ({ welcome: "Bienvenida", premio_mes: "Premio de la Tabla del Barrio", canje: "Canjeó un cupón", devolucion: "Código vencido: monedas devueltas" } as Record<string, string>)[x.motivo] ?? "Monedas",
+              s: `${x.quien ? `Equipo · ${x.quien} · ` : ""}${fecha(x.at)}`, r: x.delta > 0 ? `+${x.delta}` : `−${-x.delta}` })) } : { type: "empty", icon: "ticket", t: "Sin movimientos", s: "Todavía no tiene monedas." },
           ]} />
         </>}
         {lista("SEGUIDORES", com.listas.seg, "Nadie la sigue todavía.")}

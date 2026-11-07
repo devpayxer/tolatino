@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
 import { insignias } from "./puntos";
+import { acreditar, avisarMonedas, saldo } from "./monedas";
 import { MAX_APODO, revisarPerfil, revisarTexto } from "./comunidad-filtro";
 import type { Pub } from "./comunidad-comun";
 import { COLS, ISO, JOINS, UUID, armar, corto, enComunidad, ini, no, sinBloqueo, sinBloqueos, type Fila, type Res } from "./comunidad";
@@ -42,6 +43,7 @@ export type Vecino = {
   desde: number | null; fundador: number | null; bio: string | null; cuentas: { seguidores: number; siguiendo: number; publicaciones: number } | null; ocultar: boolean;
   yoSigo: boolean; meSigue: boolean; silenciado: boolean; puedeEscribir: boolean; pubs: Pub[]; mas: string | null;
   insignias: { k: string; t: Bi; s: Bi }[]; puntos: number; // 5f
+  monedas: number | null; // 5g · solo en mi propio perfil (las monedas de otra persona no se muestran)
 };
 type FilaVec = {
   id: string; first_name: string | null; last_name: string | null; nick: string | null; photo_url: string | null; rango: number; bio: string | null; since_year: number | null;
@@ -62,14 +64,14 @@ export async function perfilVecino(viewer: string, id: string, cursor: string | 
       where u.id = $2 and ${VISIBLE("u", "$1")}`, [viewer, quien])).rows[0];
   if (!r) return null;
   const n = corto(r.first_name, r.last_name), [num, escribio, ins, pts] = await Promise.all([numeroVecino(r.id), yo ? false : meEscribio(viewer, r.id), insignias(r.id),
-    db().query<{ p: number }>(`select coalesce((select points_total from community_profiles where user_id = $1), 0) as p`, [r.id])]);
+    db().query<{ p: number; m: number }>(`select coalesce((select points_total from community_profiles where user_id = $1), 0) as p, coalesce((select coins from community_profiles where user_id = $1), 0) as m`, [r.id])]);
   const { pubs, mas } = r.silenciado && !yo ? { pubs: [], mas: null } : await publicacionesDe(viewer, r.id, cursor);
   return {
     id: r.id, yo, nombre: n, apodo: r.nick, ini: ini(n), foto: r.photo_url, rango: r.rango, zona: r.zona, ciudad: r.ciudad, desde: r.since_year,
     fundador: num?.founder ? num.n : null, bio: r.bio, ocultar: r.hide_counts,
     cuentas: r.hide_counts && !yo ? null : { seguidores: r.seg, siguiendo: r.sig, publicaciones: r.pubs },
     yoSigo: r.yo_sigo, meSigue: r.me_sigue, silenciado: r.silenciado, puedeEscribir: !yo && (r.me_sigue || escribio), pubs, mas,
-    insignias: ins, puntos: pts.rows[0]!.p,
+    insignias: ins, puntos: pts.rows[0]!.p, monedas: yo ? pts.rows[0]!.m : null,
   };
 }
 
@@ -223,7 +225,7 @@ export type PasoBienvenida =
   | { paso: 3; zona: string | null; ciudad?: string | null; fuera?: string | null }
   | { paso: 4; cats: string[]; com: string[] }
   | { paso: 5; reglas: boolean; adulto: boolean | null; seguir: string[] };
-export async function bienvenida(userId: string, p: PasoBienvenida): Promise<Res<{ menor?: boolean; numero?: number; fundador?: boolean }>> {
+export async function bienvenida(userId: string, p: PasoBienvenida): Promise<Res<{ menor?: boolean; numero?: number; fundador?: boolean; monedas?: number }>> {
   if (p.paso === 3) {
     const fuera = String(p.fuera ?? "").replace(/\s+/g, " ").trim().slice(0, 40);
     if (fuera && revisarTexto(fuera)) return no("Escribe solo el nombre de tu ciudad.", "Write only your city's name.");
@@ -261,13 +263,16 @@ export async function bienvenida(userId: string, p: PasoBienvenida): Promise<Res
     const adulto = antes?.adult === false ? false : p.adulto;
     await c.query(`update community_profiles set rules_version = 1, rules_ok_at = now(), adult = $2, adult_ok_at = case when adult is distinct from $2 or adult_ok_at is null then now() else adult_ok_at end,
                           welcome_at = coalesce(welcome_at, now()) where user_id = $1`, [userId, adulto]);
-    // HOOK 5g (monedas): la bienvenida acredita +100 monedas una vez (coin_entries 'welcome', ref = la persona) a quien tiene welcome_at y adult.
-    return { menor: !adulto };
+    // 5g · la bienvenida acredita las monedas de bienvenida (+100) una sola vez, con el libro (mon_bienvenida: idempotente por persona),
+    // a quien hizo la bienvenida y declaró tener 18 años o más. Quien declaró ser menor no recibe nada.
+    const monedas = adulto ? await acreditar(c, userId, "welcome") : 0;
+    return { menor: !adulto, monedas };
   });
   if (r.menor) return { ok: true, menor: true };
+  await avisarMonedas(userId, r.monedas, { es: "Bienvenida al barrio", en: "Welcome to the neighborhood" }, `welcome:${userId}`);
   for (const t of [...new Set(p.seguir ?? [])].filter((x) => UUID.test(x)).slice(0, 10)) await seguir(userId, t);
   const n = await numeroVecino(userId);
-  return { ok: true, menor: false, numero: n?.n ?? 1, fundador: !!n?.founder };
+  return { ok: true, menor: false, numero: n?.n ?? 1, fundador: !!n?.founder, monedas: await saldo(userId) };
 }
 
 /* Lo que la bienvenida necesita mostrar: la ciudad (o las abiertas si no tiene), sus zonas, lo ya elegido y si ya la hizo. */

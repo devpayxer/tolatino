@@ -109,6 +109,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
                   ["/comunidad/hoy", "news", E2("Hoy en el barrio", "Today nearby"), code === "APP-COM-HOY", 0],
                   ["/comunidad/tabla", "hash", E2("Tabla del Barrio", "Leaderboard"), code === "APP-GAM-TABLA", 0],
                   ["/comunidad/rango", "star", E2("Tu rango", "Your rank"), code === "APP-GAM-RANGO", 0],
+                  ["/comunidad/monedas", "ticket", E2("Monedas", "Coins"), code === "APP-GAM-MONEDAS", 0],
                   ["/comunidad/mensajes", "chat", E2("Mensajes", "Messages"), code === "APP-COM-MENSAJES" || code === "APP-COM-CHAT", yo.sinLeer],
                   ["/comunidad/v/yo", "shield", E2("Mi perfil", "My profile"), code === "APP-COM-VECINO · yo", 0]] as [string, string, string, boolean, number][]).map(([h, ic, l, on, n]) => (
                   <div key={h} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(h)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>

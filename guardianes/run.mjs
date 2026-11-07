@@ -1910,7 +1910,7 @@ const guardianes = {
      la base. Ninguna línea de la app los asigna ni enciende la marca tl.derivados; la base rechaza el cambio a mano (y com_thread_recs
      solo lo escribe com_recs_recalcular). */
   saldoDerivado() {
-    const COLS = /\b(up_n|down_n|score|hot|comments_n|replies_n|poll_counts|votes_n|recs_n|top_comment_id|followers_n|following_n|posts_n|answers_best_n|points_total|points_today|points_day|points_month|points_month_key|rank_level|rank_floor)\s*=(?!=)/;
+    const COLS = /\b(up_n|down_n|score|hot|comments_n|replies_n|poll_counts|votes_n|recs_n|top_comment_id|followers_n|following_n|posts_n|answers_best_n|points_total|points_today|points_day|points_month|points_month_key|rank_level|rank_floor|coins)\s*=(?!=)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
@@ -1922,6 +1922,11 @@ const guardianes = {
         if (/\b(insert into|update|delete from) (monthly_boards|board_closures)\b/i.test(q) && !(x === "apps/web/lib/tabla.ts" && /^`insert into board_closures \(city_id, month\)/.test(q))) falla("saldoDerivado", x, 0, "la Tabla del Barrio es derivada: solo la escriben el libro y tabla_excluir / tabla_cerrar");
         if (/\bpts_rango\(/.test(q) && x !== "apps/web/lib/puntos.ts") falla("saldoDerivado", x, 0, "el rango solo lo recalcula recalcularRango() (lib/puntos.ts)");
         if (/\bpts_piso\(/.test(q) && x !== "apps/web/app/admin/acciones-gam.ts") falla("saldoDerivado", x, 0, "el piso del rango solo lo cambia un Admin (acciones-gam.ts)");
+        // 5g: el saldo de monedas solo se mueve con el libro: la bienvenida (lib/monedas.ts), el ajuste del equipo (acciones-gam.ts) y los
+        // cupones (lib/cupones.ts → cup_*). Gastar y devolver viven dentro de cup_canjear / cup_vencer_uno: la app no los llama.
+        if (/\bmon_bienvenida\(/.test(q) && x !== "apps/web/lib/monedas.ts") falla("saldoDerivado", x, 0, "la bienvenida en monedas solo la acredita acreditar() (lib/monedas.ts)");
+        if (/\bmon_ajustar\(/.test(q) && x !== "apps/web/app/admin/acciones-gam.ts") falla("saldoDerivado", x, 0, "el ajuste de monedas solo lo hace el equipo (acciones-gam.ts)");
+        if (/\bmon_(gastar|devolver|asentar|premios_mes)\(/.test(q)) falla("saldoDerivado", x, 0, "gastar, devolver y el premio del mes viven en la base (cup_canjear, cup_vencer_uno, cierre de la Tabla): la app no los llama");
       }
       if (/tl\.derivados|com_derivados_(on|entrar)\(/.test(t)) falla("saldoDerivado", x, 0, "la app no enciende la marca de derivados: los contadores son de la base");
     }
@@ -1938,6 +1943,14 @@ const guardianes = {
     const R = ultimaFn("pts_rango"), D = ultimaFn("points_entries_despues");
     if (R && !/update community_profiles set rank_floor = fl, rank_level = nivel where user_id = uid/.test(R)) falla("saldoDerivado", "packages/db/migrations", 0, "pts_rango debe ser quien escribe rank_level");
     if (D && !/points_total = points_total \+ new\.delta/.test(D)) falla("saldoDerivado", "packages/db/migrations", 0, "points_total sale de sumar los asientos del libro");
+    // 5g · el saldo de monedas (community_profiles.coins) es derivado: lo escribe solo el libro, nunca queda negativo y gastar bloquea el perfil.
+    const CA = ultimaFn("community_profiles_antes"), CD = ultimaFn("coin_entries_despues"), MG = ultimaFn("mon_gastar"), M5 = "packages/db/migrations/0103_monedas_cupones.sql";
+    if (existsSync(M5)) {
+      if (!CA.includes("raise exception 'las monedas son derivadas") || !/new\.coins is distinct from old\.coins/.test(CA)) falla("saldoDerivado", M5, 0, "community_profiles_antes debe rechazar las monedas escritas a mano");
+      if (!/update community_profiles set coins = coins \+ new\.delta where user_id = new\.user_id/.test(CD)) falla("saldoDerivado", M5, 0, "el saldo de monedas sale de sumar los asientos del libro (coin_entries_despues)");
+      if (!/add constraint community_profiles_monedas check \(coins >= 0\)/.test(readFileSync(M5, "utf8"))) falla("saldoDerivado", M5, 0, "el saldo de monedas nunca es negativo (check coins >= 0)");
+      if (!/pg_advisory_xact_lock\(hashtextextended\('mon:' \|\| uid::text, 0\)\);\s*select coins into saldo from community_profiles where user_id = uid for update;\s*if coalesce\(saldo, 0\) < n then raise exception/.test(MG)) falla("saldoDerivado", M5, 0, "mon_gastar: candado por persona, el perfil «for update» y el saldo revisado antes de gastar");
+    }
     for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y >= "0102")) {
       const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/create or replace function pts_rango\([\s\S]*?\$\$[\s\S]*?\$\$/g, "");
       if (/\brank_level\s*=\s*(?!.*least\(rank_level)/.test(t.replace(/--.*$/gm, "").replace(/rank_level\s*=\s*r\.level|cp\.rank_level\s*=/g, ""))) falla("saldoDerivado", `packages/db/migrations/${x}`, 0, "rank_level solo lo escribe pts_rango");
@@ -2202,8 +2215,12 @@ const guardianes = {
         if (/\b(update|delete from) (mod_flags|com_edits)\b|\bdelete from (appeals|mod_terms)\b/.test(q)) falla(G, x, 0, `un libro de solo inserción se cambia o se borra: «${q.slice(0, 60)}»`);
         // 5f: el libro de puntos no se cambia, no se borra y la app ni siquiera inserta: solo sus funciones (pts_*).
         if (/\b(insert into|update|delete from) points_entries\b/.test(q)) falla(G, x, 0, "points_entries solo lo escriben las funciones pts_* de la base (solo inserción)");
+        // 5g: el libro de monedas y los canjes: la app no los inserta, no los cambia y no los borra (solo mon_* y cup_* en la base); un cupón no se borra.
+        if (/\b(insert into|update|delete from) (coin_entries|coupon_redemptions)\b/.test(q)) falla(G, x, 0, "coin_entries y coupon_redemptions solo los escriben las funciones mon_* / cup_* de la base");
+        if (/\bdelete from coupons\b/.test(q)) falla(G, x, 0, "un cupón no se borra: se termina (estado)");
       }
       if (/tl\.puntos|pts_entrar\(/.test(t)) falla(G, x, 0, "la app no enciende la marca del libro de puntos");
+      if (/tl\.(monedas|cupones)|(mon|cup)_entrar\(/.test(t)) falla(G, x, 0, "la app no enciende la marca del libro de monedas ni la de los canjes");
     }
     // 5f · points_entries: trigger de solo inserción, y antes de insertar exige la marca de sus funciones.
     const M2 = "packages/db/migrations/0102_puntos_rangos_tabla.sql";
@@ -2213,6 +2230,17 @@ const guardianes = {
       if (!/if coalesce\(current_setting\('tl\.puntos', true\), ''\) <> 'si' then raise exception 'el libro de puntos solo lo escriben sus funciones/.test(ultimaFn("points_entries_antes"))) falla(G, M2, 0, "points_entries: solo sus funciones insertan (marca tl.puntos)");
       if (!/create unique index if not exists points_entries_unico on points_entries \(user_id, rule_key, ref_kind, ref_id\) where reverses_id is null/.test(m2) || !/points_entries_reverso on points_entries \(reverses_id\) where reverses_id is not null/.test(m2)) falla(G, M2, 0, "points_entries: idempotente por (persona, regla, referencia) y cada asiento se revierte una vez");
       if (!/if tg_op = 'DELETE' then raise exception 'un cierre de la Tabla no se borra'/.test(m2) || !/if tg_op = 'UPDATE' and old\.closed_at is not null then raise exception 'un mes cerrado no cambia'/.test(m2)) falla(G, M2, 0, "board_closures: un cierre no se borra y un mes cerrado no cambia");
+    }
+    // 5g · coin_entries: trigger de solo inserción, solo sus funciones insertan (marca tl.monedas), idempotente y cada canje se devuelve una vez.
+    const M3 = "packages/db/migrations/0103_monedas_cupones.sql";
+    if (existsSync(M3)) {
+      const m3 = readFileSync(M3, "utf8");
+      if (!/create trigger coin_entries_no_cambia before update or delete on coin_entries for each row execute function coin_entries_inmutable\(\)/.test(m3) || !/raise exception 'coin_entries es solo de inserción'/.test(m3)) falla(G, M3, 0, "coin_entries sin el trigger de solo inserción");
+      if (!/if coalesce\(current_setting\('tl\.monedas', true\), ''\) <> 'si' then raise exception 'el libro de monedas solo lo escriben sus funciones/.test(ultimaFn("coin_entries_antes"))) falla(G, M3, 0, "coin_entries: solo sus funciones insertan (marca tl.monedas)");
+      if (!/create unique index if not exists coin_entries_unico on coin_entries \(user_id, reason_key, ref_kind, ref_id\) where reverses_id is null/.test(m3) || !/coin_entries_reverso on coin_entries \(reverses_id\) where reverses_id is not null/.test(m3)) falla(G, M3, 0, "coin_entries: idempotente por (persona, motivo, referencia) y cada canje se devuelve una vez");
+      const cg = ultimaFn("coupon_redemptions_guardia");
+      if (!/if tg_op = 'DELETE' then raise exception 'un canje no se borra'/.test(cg) || !/if coalesce\(current_setting\('tl\.cupones', true\), ''\) <> 'si' then raise exception/.test(cg)) falla(G, M3, 0, "coupon_redemptions: no se borra y solo cup_* la escriben (marca tl.cupones)");
+      if (!/create trigger coupon_redemptions_guardia before insert or update or delete on coupon_redemptions/.test(m3)) falla(G, M3, 0, "coupon_redemptions sin su trigger de guardia");
     }
   },
 
@@ -2350,6 +2378,75 @@ const guardianes = {
       }
     }
     if (existsSync(P) && !/sp\.tab === "vec" && u \? "vec"/.test(sinComent(P))) falla(G, P, 0, "la pestaña Vecinos no existe sin sesión");
+  },
+
+  /* 5g. Las monedas no son dinero (§3, §6 #3): no se compran, no se venden, no se transfieren entre personas, no se cambian por dinero ni
+     por saldo y no vencen. En el código de las monedas y los cupones no hay pagos, pasarela, Stripe, monedero, centavos, precio, compra
+     de monedas, transferencias ni retiros; el libro no tiene columnas de dinero ni motivos de compra o transferencia; los dos libros
+     (puntos y monedas) no se mezclan; y la pantalla del vecino y el Super Admin dicen «Sin valor en dinero». */
+  monedasSinDinero() {
+    const G = "monedasSinDinero", M = "packages/db/migrations/0103_monedas_cupones.sql";
+    if (!existsSync(M)) return;
+    const ARCH = ["apps/web/lib/monedas.ts", "apps/web/lib/monedas-comun.ts", "apps/web/lib/cupones.ts", "apps/web/app/panel/acciones-cupones.ts", "apps/web/app/panel/CuponesPanel.tsx",
+      "apps/web/app/(app)/comunidad/monedas/Monedas.tsx", "apps/web/app/(app)/comunidad/monedas/page.tsx"];
+    const DINERO = /\b(payments?|pasarela|stripe|wallet\w*|monedero|\w*_cents|cents|precio|price|pagar|pago|cobro|comprar monedas|buy coins|compra de monedas|transferir|transfer\w*|cash ?out|retirar|retiro|withdraw\w*|venta de monedas|sell coins)\b/i;
+    for (const f of ARCH) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta el archivo de monedas o cupones"); continue; }
+      sinComent(f).split("\n").forEach((l, i) => { const m = DINERO.exec(l); if (m) falla(G, f, i + 1, `«${m[0]}» junto a las monedas: no tienen valor en dinero (ni pagos, ni compra, ni transferencia, ni retiro)`); });
+      if (/points_entries|pts_sumar|pts_ajustar/.test(sinComent(f))) falla(G, f, 0, "puntos y monedas son dos libros que nunca se mezclan");
+    }
+    const sql = readFileSync(M, "utf8").replace(/--.*$/gm, "");
+    { const m = DINERO.exec(sql); if (m) falla(G, M, 0, `«${m[0]}» en la migración de monedas: las monedas no tienen valor en dinero`); }
+    const tabla = /create table if not exists coin_entries \(([\s\S]*?)\n\);/.exec(sql)?.[1] ?? "";
+    if (!tabla) falla(G, M, 0, "falta el libro coin_entries");
+    if (/amount|money|cents|payment|wallet|to_user|from_user|recipient|destino/i.test(tabla)) falla(G, M, 0, "el libro de monedas no tiene columnas de dinero ni de otra persona (no se transfieren)");
+    if (!/reason_key\s+text not null check \(reason_key in \('welcome', 'premio_mes', 'canje', 'devolucion', 'ajuste'\)\)/.test(tabla)) falla(G, M, 0, "los motivos del libro son solo bienvenida, premio del mes, canje, devolución y ajuste (sin compra, venta ni transferencia)");
+    if (/create or replace function mon_(transferir|enviar|regalar|comprar|vender|cambiar|retirar)/i.test(sql)) falla(G, M, 0, "no hay funciones para transferir, comprar, vender o retirar monedas");
+    if (/references (payments|wallet_entries)/.test(sql)) falla(G, M, 0, "monedas y cupones no se enlazan con pagos ni con el monedero");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/coin_entries/.test(t) && /\b(payments|wallet_entries)\b/.test(t) && !/^apps\/web\/(app\/admin|lib\/admin)/.test(x)) falla(G, x, 0, "un mismo archivo toca monedas y dinero: las monedas no se cambian por dinero ni por saldo");
+      if (/comprar monedas|buy coins|monedas en venta|coins for sale/i.test(t)) falla(G, x, 0, "las monedas nunca se compran");
+    }
+    // La pantalla del vecino y el Super Admin lo dicen siempre.
+    const C = "apps/web/lib/monedas-comun.ts", V = "apps/web/app/(app)/comunidad/monedas/Monedas.tsx", A = "apps/web/app/admin/Gamificacion.tsx";
+    if (existsSync(C) && !/export const SIN_VALOR: Bi = \{ es: "Sin valor en dinero", en: "No cash value" \}/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "SIN_VALOR dice «Sin valor en dinero» / «No cash value»");
+    if (existsSync(V) && !/\{t\(SIN_VALOR\)\.toUpperCase\(\)\}/.test(sinComent(V))) falla(G, V, 0, "la pantalla de monedas muestra «Sin valor en dinero» junto al saldo");
+    if (existsSync(A) && !/v: SIN_VALOR\.es, s: "no se compran ni se cambian"/.test(sinComent(A))) falla(G, A, 0, "el Super Admin › Monedas muestra VALOR «Sin valor en dinero»");
+  },
+
+  /* 5g. Un código se usa una sola vez y la última unidad no se vende dos veces: cup_canjear bloquea el cupón antes de contar el cupo del
+     mes, revisa «uno por persona» y gasta antes de crear el código (misma transacción); un índice único impide dos códigos vivos de la
+     misma persona y cupón; cup_validar bloquea el código y solo pasa de emitido a usado una vez; el trigger no deja que un código usado o
+     vencido cambie; solo lib/cupones.ts llama a cup_*; el costo en monedas solo lo escribe el equipo (acciones-gam.ts), nunca el negocio. */
+  cuponUnaVez() {
+    const G = "cuponUnaVez", M = "packages/db/migrations/0103_monedas_cupones.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8"), K = ultimaFn("cup_canjear"), V = ultimaFn("cup_validar"), U = ultimaFn("cup_vencer_uno"), GR = ultimaFn("coupon_redemptions_guardia");
+    const iL = K.search(/where c\.id = cid for update of c;/), iC = K.search(/select count\(\*\) into usados from coupon_redemptions/), iS = K.search(/if usados >= cp\.monthly_stock then raise exception/),
+      iU = K.search(/r\.status in \('issued', 'used'\)\) then raise exception 'cupon ya canjeado'/), iG = K.search(/e := mon_gastar\(uid, cp\.cost_coins/), iI = K.search(/insert into coupon_redemptions/);
+    if (iL < 0 || iC < 0 || iL > iC) falla(G, M, 0, "cup_canjear debe bloquear el cupón («for update») antes de contar el cupo del mes");
+    if (iS < 0 || iS < iC) falla(G, M, 0, "cup_canjear: con el cupo del mes lleno no se canjea");
+    if (iU < 0 || iU > iG) falla(G, M, 0, "cup_canjear: uno por persona (vivo o usado) antes de gastar");
+    if (iG < 0 || iI < 0 || iG > iI) falla(G, M, 0, "cup_canjear: gastar las monedas antes de crear el código, en la misma transacción");
+    if (!/create unique index if not exists coupon_redemptions_uno on coupon_redemptions \(coupon_id, user_id\) where status in \('issued', 'used'\)/.test(m)) falla(G, M, 0, "falta el índice único: una persona no tiene dos códigos vivos del mismo cupón");
+    if (!/code\s+text not null unique check \(code ~ '\^TL-CQ-\[2-9A-HJ-NP-Z\]\{4,6\}\$'\)/.test(m)) falla(G, M, 0, "el código TL-CQ-xxxx es único y sin 0/O/1/I");
+    if (!/select \* into r from coupon_redemptions where code = upper\(btrim\(cod\)\) for update;/.test(V) || !/if r\.id is null or r\.business_id <> negocio then/.test(V)) falla(G, M, 0, "cup_validar: el código bloqueado y solo del negocio del cupón");
+    const iUs = V.search(/if r\.status = 'used' then/), iUp = V.search(/update coupon_redemptions set status = 'used'[^;]*where id = r\.id and status = 'issued'/);
+    if (iUs < 0 || iUp < 0 || iUs > iUp) falla(G, M, 0, "cup_validar: un código usado no se usa otra vez (y solo pasa de emitido a usado)");
+    if (!/if old\.status <> 'issued' then raise exception 'un código usado o vencido no cambia'/.test(GR)) falla(G, M, 0, "el trigger no deja que un código usado o vencido cambie");
+    if (!/if r\.id is null or r\.status <> 'issued' or r\.expires_at > now\(\) then return 0; end if;/.test(U) || !/n := mon_devolver\(r\.coin_entry_id, 'vencido'\);/.test(U)) falla(G, M, 0, "cup_vencer_uno: solo un código emitido y vencido, y las monedas vuelven");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const q of t.match(/`[^`]*`/g) ?? []) {
+        if (/\bcup_(canjear|validar|vencer)\(/.test(q) && x !== "apps/web/lib/cupones.ts") falla(G, x, 0, "canjear, validar y vencer cupones pasan solo por lib/cupones.ts");
+        if ((/\bupdate coupons\b[\s\S]*\bcost_coins\s*=/.test(q) || /\binsert into coupons\b[^)]*cost_coins/.test(q)) && x !== "apps/web/app/admin/acciones-gam.ts") falla(G, x, 0, "el costo en monedas de un cupón lo fija solo To'Latino (acciones-gam.ts)");
+      }
+    }
+    const P = "apps/web/app/panel/acciones-cupones.ts";
+    if (existsSync(P) && /\b(costo|cost|cost_coins)\b/.test(sinComent(P).replace(/"[^"\n]*"/g, ""))) falla(G, P, 0, "el panel del negocio no recibe ni escribe el costo en monedas");
   },
 
   idioma() {

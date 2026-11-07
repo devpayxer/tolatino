@@ -6,7 +6,8 @@ _Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/gu
 navegación a la izquierda). Versión: Fase 2 · bloque 2h (6 nov 2026). Pide haber entrado._
 
 ## Qué hace
-- **Resumen:** tu tarjeta de vecino (nombre, número de vecino, reseñas, guardados y negocios que sigues), «Completa tu
+- **Resumen:** tu tarjeta de vecino (nombre, número de vecino, **RANGO**, **MONEDAS** — sin valor en dinero, llevan a Monedas — y
+  **RESEÑAS**; sin la bienvenida de la Comunidad, el rango dice «Únete»), «Completa tu
   cuenta» (teléfono, nombre, foto, correo), **Tu semana** (pedidos en curso, reservaciones y entrevistas de los próximos 7
   días, en orden), **Pendiente de ti** (otra hora propuesta, entrevista por confirmar, reservación sin respuesta, reseñas
   por escribir), accesos, **Tu apoyo al barrio** este mes (lo que dejaste en negocios latinos, pedidos, reservas, reseñas)
