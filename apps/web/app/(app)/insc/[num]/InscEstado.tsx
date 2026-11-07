@@ -117,6 +117,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
           {x.negocio.telefono && vivo && <Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${x.negocio.telefono}`; }}>{E2("Llamar", "Call")}</Button>}
           {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{memb && x.estado === "confirmed" ? E2("Cancelar mi membresía", "Cancel my membership") : E2("Cancelar la inscripción", "Cancel the enrollment")}</Button>}
           {x.estado === "done" && !x.resena && <Button icon="star" onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}`)}>{E2("Calificar", "Rate")}</Button>}
+          {(x.estado === "done" || (x.estado === "confirmed" && (x.detalle === "started" || x.detalle === "cancel_req")) || (x.estado === "cancelled" && (!!x.motivoNeg || x.mat > 0))) && <Button variant="secondary" icon="help" onClick={() => router.push(`/insc/${x.numero}/ayuda`)}>{E2("Ayuda con la inscripción", "Enrollment help")}</Button>}
           {!vivo && x.estado !== "confirmed" && <Button variant="secondary" icon="calendar" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Ver otros grupos", "See other groups")}</Button>}
         </div>
         <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{x.rubro === "edu" ? nm(LINEA_EDU) : E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.")}</div>

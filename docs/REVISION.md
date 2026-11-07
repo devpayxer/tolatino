@@ -1159,3 +1159,14 @@ Confirmar / Otro grupo / No hay cupo y Lo que vendes › Inscripciones (grupos, 
 - La oferta de la lista de espera la da el lugar (botón); si vence, se ofrece sola a la siguiente persona.
 - La baja de una membresía la confirma el lugar o queda sola a las 72 h; To'Latino no cobra penalidades.
 
+### 4ef · Reseñas y Ayuda de inscripciones (7 nov)
+**Qué mirar (teléfono):** en una inscripción en curso, «Ayuda con la inscripción»: los motivos de cada rubro y, en Niños, «No cuidaron bien
+a mi niño» con el aviso de 911 y ChildLine. En el panel de la escuela, la ayuda en Hoy y en el detalle («Proponer otra cosa» devuelve
+exacto de la matrícula). La reseña de un curso terminado («Lo que importa en un curso» en la ficha) y la de una guardería (sin fotos).
+**Decidido por seguridad (AB):**
+- «No cuidaron bien a mi niño» va hoy a la cola de Soporte con prioridad alta (como «Me sentí inseguro»); la cola propia «Cuidado de niños»
+  llega con 4eg. El número de ChildLine (1-800-932-0313) sigue en LAUNCH-CHECKLIST para verificarlo.
+- Una membresía o la semana de la guardería se puede reseñar a las 4 semanas de estar activa (§6 #13).
+- La reseña de Niños se rechaza si trae el nombre de pila del niño que esa persona inscribió en ese lugar (comparado en el servidor con el
+  dato cifrado); no se detectan otros nombres.
+

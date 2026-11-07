@@ -8,6 +8,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { fechaCorta, usdI, VOC, type Bi } from "@/lib/inscripciones-comun";
 import type { FilaInsc, InscDetalle, InscPanel } from "@/lib/inscripciones";
 import { inscCancelarGrupo, inscCancelarNeg, inscConfirmarBaja, inscCuota, inscMarcar, inscMarcarGrupo, inscOfrecer, inscResponder } from "./acciones-insc";
+import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -137,6 +138,8 @@ export function inscDetalleBloques(c: Ctx): Sec {
     t: `${E2("Pago", "Payment")} ${p.n} · ${usdI(p.cents)}`, s: fechaCorta(p.due, es),
     ...(x.plan!.pagadas.includes(p.n) ? { tag: E2("PAGADO", "PAID"), tone: "signal" } : { acts: [{ l: E2("Marcar pagado", "Mark paid"), v: "secondary", off: c.pending, onClick: () => c.run(() => inscCuota(c.d.id, x.numero, p.n), E2("Marcado: pagó en tu lugar.", "Marked: paid at your place.")) }] }) })) });
   if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: E2(`Cancelaste: «${x.motivoNeg}».`, `You cancelled: “${x.motivoNeg}”.`) });
+  // 4ef: la ayuda con la inscripción (responder en 24 h: aceptar, proponer otra cosa o no aceptar).
+  out.push(...ayudaCita(c, x.numero, x.cliente));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.historial.map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: e.note ? nm(c, e.note) : verbo(e.kind, es),
     s: new Date(e.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) })) });
   return { blocks: out, ed: null };

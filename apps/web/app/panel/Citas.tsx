@@ -221,8 +221,8 @@ export function citaDetalle(c: Ctx): Sec {
 export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
   const { E2, es, d } = c, a = c.citas?.ayuda;
   if (!a) return [];
-  const rub = c.citas?.det?.prof ? "pro" : c.citas?.det?.sal ? "salud" : numero.startsWith("M-") ? "merc" : numero.startsWith("A-") ? "tienda" : numero.startsWith("F-") ? "fiesta" : numero.startsWith("V-") ? "trans" : numero.startsWith("N-") ? "noche" : null;
-  const sobre = numero.startsWith("M-") ? ["AYUDA CON EL PEDIDO · ", "ORDER HELP · "] : numero.startsWith("A-") ? ["AYUDA CON LA COMPRA · ", "PURCHASE HELP · "] : numero.startsWith("N-") ? ["AYUDA CON LA NOCHE · ", "NIGHT HELP · "] : numero.startsWith("F-") ? ["AYUDA CON LA FIESTA · ", "PARTY HELP · "] : numero.startsWith("V-") ? ["AYUDA CON EL VIAJE · ", "TRIP HELP · "] : ["AYUDA CON LA CITA · ", "BOOKING HELP · "];
+  const rub = c.citas?.det?.prof ? "pro" : c.citas?.det?.sal ? "salud" : numero.startsWith("M-") ? "merc" : numero.startsWith("A-") ? "tienda" : numero.startsWith("F-") ? "fiesta" : numero.startsWith("V-") ? "trans" : numero.startsWith("N-") ? "noche" : numero.startsWith("I-") ? (d.cat === "NEG-EDU" ? "edu" : d.cat === "NEG-NINOS" ? "ninos" : "dep") : null;
+  const sobre = numero.startsWith("M-") ? ["AYUDA CON EL PEDIDO · ", "ORDER HELP · "] : numero.startsWith("A-") ? ["AYUDA CON LA COMPRA · ", "PURCHASE HELP · "] : numero.startsWith("N-") ? ["AYUDA CON LA NOCHE · ", "NIGHT HELP · "] : numero.startsWith("I-") ? ["AYUDA CON LA INSCRIPCIÓN · ", "ENROLLMENT HELP · "] : numero.startsWith("F-") ? ["AYUDA CON LA FIESTA · ", "PARTY HELP · "] : numero.startsWith("V-") ? ["AYUDA CON EL VIAJE · ", "TRIP HELP · "] : ["AYUDA CON LA CITA · ", "BOOKING HELP · "];
   const m = motivoAyuda(a.reason, rub), q = quiereAyuda(a.wants), txt = (c.ui.acT as string | undefined) ?? "", dec = (c.ui.acD as string | undefined) ?? "", monto = (c.ui.acM as string | undefined) ?? "";
   const out: (Bloque | null)[] = [{ type: "group", k: `${E2(sobre[0]!, sobre[1]!)}${a.number}` },
     { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.amount ? [{ k: E2("CUÁNTO", "HOW MUCH"), v: money(a.amount) }] : []), { k: E2("LO QUE CUENTA", "WHAT THEY SAY"), v: a.body }] }];
@@ -263,7 +263,7 @@ export function hoyPlanes(c: Ctx): Bloque[] {
 export function hoyAyudasCitas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.citas?.ayudas ?? [];
   if (!L.length) return [];
-  const tipo = (n: string) => (n.startsWith("M-") ? ["merc", E2("Pedido", "Order")] : n.startsWith("A-") ? ["apt", E2("Apartado", "Hold")] : n.startsWith("F-") ? ["fiesta", E2("Fiesta", "Party")] : n.startsWith("V-") ? ["viaje", E2("Viaje", "Trip")] : ["cita", E2("Cita", "Booking")]);
+  const tipo = (n: string) => (n.startsWith("M-") ? ["merc", E2("Pedido", "Order")] : n.startsWith("A-") ? ["apt", E2("Apartado", "Hold")] : n.startsWith("F-") ? ["fiesta", E2("Fiesta", "Party")] : n.startsWith("V-") ? ["viaje", E2("Viaje", "Trip")] : n.startsWith("N-") ? ["noche", E2("Noche", "Night")] : n.startsWith("I-") ? ["insc", E2("Inscripción", "Enrollment")] : ["cita", E2("Cita", "Booking")]);
   return [{ type: "rows", k: E2("AYUDA QUE ESPERA TU RESPUESTA · 24 H", "HELP AWAITING YOUR REPLY · 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${tipo(a.num)[1]} #${a.num}`,
     s: motivoAyuda(a.reason, a.rub)[es ? 0 : 1], tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.nav(`/panel/${d.id}/hoy?det=${tipo(a.num)[0]}:${a.num}`) })) }];
 }
