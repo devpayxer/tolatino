@@ -13,7 +13,7 @@ import { oficiosPublico } from "@/lib/oficios-publico";
 import { saludPublico } from "@/lib/salud-publico";
 import { proPublico } from "@/lib/pro-publico";
 import { tiendaPublica } from "@/lib/rentas";
-import { tiendaMia, tiendaVenta } from "@/lib/apartados";
+import { horasApartado, tiendaMia, tiendaVenta } from "@/lib/apartados";
 import { mercPublico } from "@/lib/merc-publico";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
@@ -48,7 +48,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.pro ? vacantesFicha(f.id, u?.id ?? null) : Promise.resolve([]),
     f.cat === "NEG-BELL" ? citasPublica(f.id, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? oficiosPublico(f.id, u?.id ?? null) : Promise.resolve(null),
-    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id), tiendaMia(u?.id ?? null, f.id)]).then(([L, V, mia]) => ({ L, V, mia })) : Promise.resolve(null),
+    // Tiendas (4q): lo mismo que la Tienda de Auto y Hogar, con tallas y las horas que guarda la tienda (24/48/72).
+    f.cat === "NEG-AUTO" || f.cat === "NEG-HOGAR" || f.cat === "NEG-TIENDA" ? Promise.all([tiendaPublica(f.id), tiendaVenta(f.id), tiendaMia(u?.id ?? null, f.id), horasApartado(f.id)]).then(([L, V, mia, horas]) => ({ L, V, mia, horas })) : Promise.resolve(null),
     // Doctores (4i): servicios con el precio según tu seguro, quién atiende y «Tu seguro».
     f.cat === "NEG-SALUD" ? saludPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Profesionales (4k): el total (honorario + gobierno), la licencia y lo que no puede.

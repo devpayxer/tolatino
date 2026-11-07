@@ -171,8 +171,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // que ya no siguen) y se renuevan las retenciones que pasan de 7 días.
   if (oficio && ord && ruta.sec === "hoy") await repararEstimados(d.id).catch(() => undefined);
   const fC = (["all", "pend", "cur", "done", "no"].includes(sp.f ?? "") ? sp.f : "all") as FiltroCita;
-  const citas = conCitas && ord ? {
-    vivas: ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
+  // Tiendas (4q): el apartado con tallas usa el mismo motor y los mismos bloques que la Tienda de Auto y Hogar.
+  const aptOk = oficio || d.cat === "NEG-TIENDA";
+  const citas = (conCitas || d.cat === "NEG-TIENDA") && ord ? {
+    vivas: conCitas && ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
     // 4e: pre-estimados y presupuestos que esperan su rango (Hoy) y su detalle.
     sol: oficio && ruta.sec === "hoy" ? await solicitudesPanel(d.id) : undefined,
     solDet: oficio && /^sol:[PQ]-/.test(ruta.det ?? "") ? await solicitudPanel(d.id, ruta.det!.slice(4)) : undefined,
@@ -182,14 +184,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 4f-2: las rentas de herramienta (apartadas, fuera, devueltas con algo pendiente) y el detalle de una.
     rentas: oficio && ruta.sec === "hoy" ? await rentasNegocio(d.id) : undefined,
     // 4f-3: apartados de la Tienda (por confirmar, guardados, recogidos hoy) y el detalle de uno.
-    apartados: oficio && ruta.sec === "hoy" ? await apartadosNegocio(d.id) : undefined,
-    aptDet: oficio && ruta.det?.startsWith("apt:") ? await apartadoPanel(d.id, ruta.det.slice(4)) : undefined,
+    apartados: aptOk && ruta.sec === "hoy" ? await apartadosNegocio(d.id) : undefined,
+    aptDet: aptOk && ruta.det?.startsWith("apt:") ? await apartadoPanel(d.id, ruta.det.slice(4)) : undefined,
     rentaDet: oficio && ruta.det?.startsWith("renta:") ? await rentaPanel(d.id, ruta.det.slice(6)) : undefined,
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
-    lista: ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
-    det: ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
-    ayuda: ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
-    ayudas: ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
+    lista: conCitas && ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
+    det: conCitas && ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
+    ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
+    ayudas: conCitas && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} />;
 }

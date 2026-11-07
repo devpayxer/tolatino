@@ -6,9 +6,9 @@ import { db, tx } from "./db";
    APP-NEG-TIENDA-APARTADO / -ESTADO). Mismo motor para las tiendas de Auto y Hogar y, después, para Tiendas.
    - Apartar no cobra nada: pagas en la caja lo mismo que ves. «El precio que ves es el que pagas en la caja.»
    - Eliges cuándo pasas (hoy, mañana o pasado, a una hora en que abre). Las unidades se reservan al enviarlo.
-   - La tienda confirma que lo tiene (te lo guardan hasta tu hora + 48 h), dice que falta algo (lo quitas y sigue, o
+   - La tienda confirma que lo tiene (te lo guardan hasta tu hora + las horas de la tienda: 24/48/72; Auto y Hogar, 48), dice que falta algo (lo quitas y sigue, o
      cancelas) o que no lo tiene. Si no responde antes de tu hora (con al menos 30 min), vence sin cobrar nada.
-   - El negocio marca «Lo recogió». Si no pasas en las 48 h, vuelve al estante. Lo que no se lleva vuelve a la tienda. */
+   - El negocio marca «Lo recogió». Si no pasas a tiempo, vuelve al estante. Lo que no se lleva vuelve a la tienda. */
 type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
@@ -23,18 +23,28 @@ const horaL = (m: number) => { const h = Math.floor(m / 60) % 24, mm = m % 60; r
 export const MAX_LINEAS = 10, MAX_QTY = 3;
 
 /* ── Lo que se vende en la tienda (ficha › Tienda) ── */
-export type ArticuloVenta = { id: string; n: Bi; d: Bi; precio: number; foto: string | null; quedan: number; cond: "n" | "u" | null; size: string | null };
+export type TallaVenta = { id: string; label: string; quedan: number };
+export type ArticuloVenta = { id: string; n: Bi; d: Bi; precio: number; foto: string | null; quedan: number; cond: "n" | "u" | null; size: string | null;
+  // Tiendas (4q): cómo se vende, sección y tallas con lo que queda («Talla» / «Número»).
+  k: string | null; sec: string | null; tallas: TallaVenta[]; label: Bi | null };
 export async function tiendaVenta(negocio: string): Promise<ArticuloVenta[]> {
   return (await db().query<ArticuloVenta & { a: { cond?: string; size?: string } }>(
-    `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.photos[1] as foto, case when i.stock_mode = 'qty' then greatest(i.stock_left, 0) else 99 end as quedan, i.attrs as a
+    `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.photos[1] as foto, i.attrs as a, i.shop_kind as k, i.section_id::text as sec, i.size_label as label,
+            coalesce((select jsonb_agg(jsonb_build_object('id', v.id::text, 'label', v.label, 'quedan', v.stock_left) order by v.sort, v.id) from item_variants v where v.item_id = i.id and v.removed_at is null), '[]'::jsonb) as tallas,
+            case when exists (select 1 from item_variants v where v.item_id = i.id and v.removed_at is null) then (select coalesce(sum(v.stock_left), 0)::int from item_variants v where v.item_id = i.id and v.removed_at is null)
+                 when i.stock_mode = 'qty' then greatest(i.stock_left, 0) else 99 end as quedan
        from items i join businesses b on b.id = i.business_id
-      where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.sell and i.status = 'live' and b.status = 'active' and 'shop' = any(b.modules_on) and not (b.modules_off ? 'shop')
+      where i.business_id = $1 and i.module = 'shop' and i.removed_at is null and i.sell and not i.in_store_only and i.age_min = 0 and i.status = 'live' and b.status = 'active' and 'shop' = any(b.modules_on) and not (b.modules_off ? 'shop')
       order by i.sort, i.id limit 120`, [negocio])).rows.map(({ a, ...x }) => ({ ...x, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" }, cond: a?.cond === "n" || a?.cond === "u" ? a.cond : null, size: typeof a?.size === "string" ? a.size : null }));
 }
 
 /* ── Cuándo pasas: hoy, mañana y pasado; horas en que abre (desde una hora después de abrir; hoy, desde dentro de una hora) ── */
 export type DiaApartar = { f: string; k: "hoy" | "man" | "pas"; horas: number[] };
-export type OpcionesApartar = { negocio: { id: string; nombre: string; dir: string; foto: string | null }; dias: DiaApartar[]; arts: ArticuloVenta[] };
+export type OpcionesApartar = { negocio: { id: string; nombre: string; dir: string; foto: string | null }; dias: DiaApartar[]; arts: ArticuloVenta[]; horas: number };
+/* Las horas que la tienda guarda un apartado (Tu herramienta de Tiendas: 24, 48 o 72); Auto y Hogar, 48. */
+export async function horasApartado(negocio: string): Promise<number> {
+  return Number((await db().query<{ h: number }>(`select coalesce((select r.hold_hours from retail_settings r join businesses b on b.id = r.business_id where r.business_id = $1 and b.category_id = 'NEG-TIENDA'), 48)::int as h`, [negocio])).rows[0]!.h);
+}
 async function diasDe(negocio: string, city: string): Promise<DiaApartar[]> {
   const now = (await db().query<{ h: string; m: number }>(`select (now() at time zone timezone)::date::text as h, extract(hour from now() at time zone timezone)::int * 60 + extract(minute from now() at time zone timezone)::int as m from cities where id = $1`, [city])).rows[0]!;
   const H = (await db().query<{ weekday: number; open: boolean; ranges: [string, string][] }>(`select weekday, open, ranges from business_hours where business_id = $1 and module = ''`, [negocio])).rows;
@@ -53,15 +63,15 @@ export async function opcionesApartar(negocio: string): Promise<OpcionesApartar 
   if (!b) return null;
   const arts = await tiendaVenta(negocio);
   if (!arts.length) return null;
-  return { negocio: { id: negocio, nombre: b.nombre, dir: b.dir, foto: b.foto }, dias: await diasDe(negocio, b.city), arts };
+  return { negocio: { id: negocio, nombre: b.nombre, dir: b.dir, foto: b.foto }, dias: await diasDe(negocio, b.city), arts, horas: await horasApartado(negocio) };
 }
 
 /* ── Apartar ── */
-export type ApartarIn = { negocio: string; lineas: { item: string; qty: number }[]; dia: string; hora: number; nota?: string; sms?: boolean; clave: string };
+export type ApartarIn = { negocio: string; lineas: { item: string; qty: number; v?: string | null }[]; dia: string; hora: number; nota?: string; sms?: boolean; clave: string };
 export async function apartar(userId: string, f: ApartarIn, entorno: string): Promise<Res<{ numero: string }>> {
   if (!UUID.test(String(f?.clave)) || typeof f.negocio !== "string" || !YMD.test(String(f?.dia)) || !Number.isInteger(f?.hora) || !Array.isArray(f?.lineas)) return no("Revisa tu apartado y vuelve a intentarlo.", "Check your hold and try again.");
-  const L = f.lineas.filter((l) => ID.test(String(l?.item)) && Number.isInteger(l?.qty) && l.qty >= 1 && l.qty <= MAX_QTY);
-  if (!L.length || L.length !== f.lineas.length || L.length > MAX_LINEAS || new Set(L.map((l) => l.item)).size !== L.length) return no("Revisa los artículos de tu apartado.", "Check the items in your hold.");
+  const L = f.lineas.filter((l) => ID.test(String(l?.item)) && Number.isInteger(l?.qty) && l.qty >= 1 && l.qty <= MAX_QTY && (l.v == null || ID.test(String(l.v))));
+  if (!L.length || L.length !== f.lineas.length || L.length > MAX_LINEAS || new Set(L.map((l) => `${l.item}:${l.v ?? ""}`)).size !== L.length) return no("Revisa los artículos de tu apartado.", "Check the items in your hold.");
   const nota = String(f.nota ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
   if (/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(nota)) return no("Por seguridad, sin teléfonos en la nota.", "For safety, no phone numbers in the note.");
   const o = await opcionesApartar(f.negocio);
@@ -77,21 +87,35 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
     // Los artículos bloqueados en orden: dos personas a la vez por las últimas unidades → una se las lleva.
     const I = (await c.query<{ id: string; n: Bi; p: number; tax: number; mode: string; left: number }>(
       `select id::text, name as n, price_cents as p, tax_pct::float as tax, stock_mode as mode, stock_left as left from items
-        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and status = 'live' order by id for update`, [f.negocio, L.map((l) => l.item)])).rows;
-    if (I.length !== L.length) return no("Algo de tu apartado ya no está en la tienda. Revísalo.", "Something in your hold is no longer in the store. Check it.");
-    for (const l of L) { const it = I.find((x) => x.id === l.item)!; if (it.mode === "qty" && it.left < l.qty) return no(it.left ? `De «${it.n.es}» quedan ${it.left}.` : `«${it.n.es}» se agotó.`, it.left ? `Only ${it.left} of “${it.n.en || it.n.es}” left.` : `“${it.n.en || it.n.es}” sold out.`); }
+        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by id for update`, [f.negocio, [...new Set(L.map((l) => l.item))]])).rows;
+    if (I.length !== new Set(L.map((l) => l.item)).size) return no("Algo de tu apartado ya no está en la tienda. Revísalo.", "Something in your hold is no longer in the store. Check it.");
+    // Tallas: si el artículo tiene tallas, la talla es obligatoria y se reserva (una talla en 0 no se aparta).
+    const V = (await c.query<{ id: string; item: string; label: string; left: number }>(
+      `select id::text, item_id::text as item, label, stock_left as left from item_variants where item_id = any($1::bigint[]) and removed_at is null order by id for update`, [I.map((x) => x.id)])).rows;
+    for (const l of L) {
+      const it = I.find((x) => x.id === l.item)!, vs = V.filter((v) => v.item === l.item);
+      if (vs.length) {
+        const v = vs.find((z) => z.id === String(l.v ?? ""));
+        if (!v) return no(`Elige la talla de «${it.n.es}».`, `Choose the size of “${it.n.en || it.n.es}”.`);
+        if (v.left < l.qty) return no(v.left ? `De «${it.n.es}» talla ${v.label} quedan ${v.left}.` : `«${it.n.es}» está agotado en talla ${v.label}.`, v.left ? `Only ${v.left} of “${it.n.en || it.n.es}” size ${v.label} left.` : `“${it.n.en || it.n.es}” is sold out in size ${v.label}.`);
+      } else if (l.v != null) return no("Ese artículo no tiene tallas.", "That item has no sizes.");
+      else if (it.mode === "qty" && it.left < l.qty) return no(it.left ? `De «${it.n.es}» quedan ${it.left}.` : `«${it.n.es}» se agotó.`, it.left ? `Only ${it.left} of “${it.n.en || it.n.es}” left.` : `“${it.n.en || it.n.es}” sold out.`);
+    }
+    const holdH = o.horas;
     const b = (await c.query<{ city: string; tz: string }>(`select b.city_id as city, ci.timezone as tz from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [f.negocio])).rows[0]!;
     const tot = L.reduce((s, l) => s + (I.find((x) => x.id === l.item)?.p ?? 0) * l.qty, 0);
     const numero = `A-${(await c.query<{ n: string }>(`select nextval('hold_seq')::text as n`)).rows[0]!.n}`;
-    const det = { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda" };
+    const det = { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda", hold_hours: holdH };
     const op = (await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, customer_note, details, subtotal_cents, total_cents, pay_mode, client_key, is_test)
-       values ($1, 'hold', $2, $3, $4, 'pending', 'sent', 'pickup', $5::timestamptz, $5::timestamptz + interval '48 hours', greatest(now() + interval '30 minutes', $5::timestamptz - interval '30 minutes'), nullif($6, ''), $7::jsonb, $8, $8, 'local', $9::uuid, $10) returning id::text`,
-      [numero, b.city, f.negocio, userId, (await c.query<{ t: string }>(`select (($1::date + make_interval(mins => $2::int)) at time zone $3)::text as t`, [f.dia, f.hora, b.tz])).rows[0]!.t, nota, JSON.stringify(det), tot, f.clave, entorno !== "produccion"])).rows[0]!.id;
+       values ($1, 'hold', $2, $3, $4, 'pending', 'sent', 'pickup', $5::timestamptz, $5::timestamptz + make_interval(hours => $11::int), greatest(now() + interval '30 minutes', $5::timestamptz - interval '30 minutes'), nullif($6, ''), $7::jsonb, $8, $8, 'local', $9::uuid, $10) returning id::text`,
+      [numero, b.city, f.negocio, userId, (await c.query<{ t: string }>(`select (($1::date + make_interval(mins => $2::int)) at time zone $3)::text as t`, [f.dia, f.hora, b.tz])).rows[0]!.t, nota, JSON.stringify(det), tot, f.clave, entorno !== "produccion", holdH])).rows[0]!.id;
     for (const l of L) {
       const it = I.find((x) => x.id === l.item)!;
-      await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) values ($1::bigint, $2::bigint, $3::jsonb, $4, $5, $6, $7)`, [op, l.item, JSON.stringify(it.n), l.qty, it.p, it.p * l.qty, it.tax]);
-      if (it.mode === "qty") await c.query(`update items set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [l.item, l.qty]);
+      const v = V.find((z) => z.id === String(l.v ?? ""));
+      await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, variant_id, variant_label) values ($1::bigint, $2::bigint, $3::jsonb, $4, $5, $6, $7, $8::bigint, $9)`, [op, l.item, JSON.stringify(it.n), l.qty, it.p, it.p * l.qty, it.tax, v?.id ?? null, v?.label ?? null]);
+      if (v) await c.query(`update item_variants set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [v.id, l.qty]);
+      else if (it.mode === "qty") await c.query(`update items set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [l.item, l.qty]);
     }
     await ev(c, op, "sent", "user", userId, { es: "Mandó el apartado", en: "Sent the hold" });
     aviso = { cliente: (await c.query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "Un cliente", n: L.reduce((s, l) => s + l.qty, 0) };
@@ -106,17 +130,21 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
 
 /* ── Lectura ── */
 type St = "pending" | "change_proposed" | "confirmed" | "declined" | "expired" | "cancelled" | "done";
-export type LineaApartado = { id: string; item: string | null; n: Bi; qty: number; precio: number; total: number; st: "ok" | "out" | "removed"; foto: string | null };
+export type LineaApartado = { id: string; item: string | null; n: Bi; qty: number; precio: number; total: number; st: "ok" | "out" | "removed"; foto: string | null; talla: string | null;
+  otra: { prop: string; label: string } | null; alt: { id: string; label: string; quedan: number }[] };
 export type ApartadoVista = { numero: string; st: St; detalle: string | null; biz: string; bname: string; dir: string; tel: string | null; foto: string | null; cliente: string; tot: number; lineas: LineaApartado[];
-  dia: string; hora: number; sms: boolean; hasta: string; responde: string; nota: string | null; enviado: string; guardado: string | null; recogido: string | null; cxBy: string | null };
+  dia: string; hora: number; sms: boolean; hasta: string; responde: string; nota: string | null; enviado: string; guardado: string | null; recogido: string | null; cxBy: string | null; horas: number };
 async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
   const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
     `select o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
             coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
-            o.details->>'dia' as dia, (o.details->>'hora')::int as hora, coalesce((o.details->>'sms')::boolean, true) as sms, o.ready_at as hasta, o.respond_by as responde, o.customer_note as nota, o.sent_at as enviado, o.confirmed_at as guardado, o.done_at as recogido, o.cancelled_by as "cxBy"
+            o.details->>'dia' as dia, (o.details->>'hora')::int as hora, coalesce((o.details->>'sms')::boolean, true) as sms, o.ready_at as hasta, o.respond_by as responde, o.customer_note as nota, o.sent_at as enviado, o.confirmed_at as guardado, o.done_at as recogido, o.cancelled_by as "cxBy", coalesce((o.details->>'hold_hours')::int, 48) as horas
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind = 'hold' and ${where}`, args)).rows[0];
   if (!x) return null;
-  x.lineas = (await db().query<LineaApartado>(`select l.id::text, l.item_id::text as item, l.name as n, l.qty, l.unit_price_cents as precio, l.line_total_cents as total, l.status as st, i.photos[1] as foto
+  x.lineas = (await db().query<LineaApartado>(`select l.id::text, l.item_id::text as item, l.name as n, l.qty, l.unit_price_cents as precio, l.line_total_cents as total, l.status as st, i.photos[1] as foto, l.variant_label as talla,
+      (select jsonb_build_object('prop', cp.id::text, 'label', cp.proposed->>'label') from change_proposals cp where cp.line_id = l.id and cp.kind = 'items' and cp.status = 'open' order by cp.id desc limit 1) as otra,
+      case when l.variant_id is null then '[]'::jsonb else coalesce((select jsonb_agg(jsonb_build_object('id', v.id::text, 'label', v.label, 'quedan', v.stock_left) order by v.sort, v.id) from item_variants v
+        where v.item_id = l.item_id and v.id <> l.variant_id and v.removed_at is null and v.stock_left >= l.qty), '[]'::jsonb) end as alt
     from operation_lines l left join items i on i.id = l.item_id where l.operation_id = $1::bigint order by l.id`, [x.op])).rows;
   return x;
 }
@@ -158,12 +186,14 @@ async function ev(c: PoolClient | ReturnType<typeof db>, op: string, kind: strin
 }
 /* Lo que no se lleva vuelve al estante (líneas que siguen apartadas). */
 async function devolverStock(c: PoolClient, op: string) {
-  await c.query(`update items i set stock_left = i.stock_left + l.qty, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and l.status = 'ok' and i.stock_mode = 'qty'`, [op]);
+  await c.query(`update items i set stock_left = i.stock_left + l.qty, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and l.status = 'ok' and l.variant_id is null and i.stock_mode = 'qty'`, [op]);
+  await c.query(`update item_variants v set stock_left = least(9999, v.stock_left + l.qty), updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.variant_id = v.id and l.status = 'ok'`, [op]);
 }
+const cerrarPropuestas = (c: PoolClient, op: string, st: "declined" | "expired") => c.query(`update change_proposals set status = $2, answered_at = now() where operation_id = $1::bigint and status = 'open'`, [op, st]);
 const recalcular = (c: PoolClient, op: string) => c.query(`update operations set total_cents = (select coalesce(sum(line_total_cents), 0) from operation_lines where operation_id = $1::bigint and status = 'ok'), subtotal_cents = (select coalesce(sum(line_total_cents), 0) from operation_lines where operation_id = $1::bigint and status = 'ok'), updated_at = now() where id = $1::bigint`, [op]);
 const hastaL = (iso: string, tz: string) => new Date(iso).toLocaleString("es-US", { timeZone: tz, weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export type QueClienteApt = { que: "cancelar" } | { que: "quitar" };
+export type QueClienteApt = { que: "cancelar" } | { que: "quitar" } | { que: "otraTalla" };
 export async function apartadoCliente(userId: string, numero: string, a: QueClienteApt): Promise<Res> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.user_id = $2", [numero, userId]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
@@ -173,6 +203,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       const u = await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'user', updated_at = now() where id = $1::bigint and status in ('pending', 'change_proposed', 'confirmed')`, [x.op]);
       if (!u.rowCount) return false;
       await devolverStock(c, x.op);
+      await cerrarPropuestas(c, x.op, "declined");
       await ev(c, x.op, "cancelled", "user", userId, { es: "Canceló el apartado", en: "Cancelled the hold" });
       return true;
     });
@@ -185,6 +216,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
       const u = await c.query(`update operations set status = 'confirmed', confirmed_at = coalesce(confirmed_at, now()), answered_at = coalesce(answered_at, now()), stage = 'accepted', updated_at = now() where id = $1::bigint and status = 'change_proposed'`, [x.op]);
       if (!u.rowCount) return false;
       await c.query(`update operation_lines set status = 'removed' where operation_id = $1::bigint and status = 'out'`, [x.op]);
+      await cerrarPropuestas(c, x.op, "declined");
       await recalcular(c, x.op);
       await ev(c, x.op, "accepted", "user", userId, { es: "Quitó lo que faltaba y siguió con lo demás", en: "Removed the missing item and kept the rest" });
       return true;
@@ -193,10 +225,34 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
     await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "quitó lo que faltaba · guárdale lo demás" }, href);
     return { ok: true };
   }
+  if (a?.que === "otraTalla") {
+    // «Sí, la otra talla»: la línea pasa a la talla ofrecida (mismo precio) si todavía queda; lo demás sigue guardado.
+    const r = await tx(async (c): Promise<Res> => {
+      const o = (await c.query(`select 1 from operations where id = $1::bigint and status = 'change_proposed' for update`, [x.op])).rowCount;
+      if (!o) return no("Eso ya se decidió.", "That was already decided.");
+      const P = (await c.query<{ id: string; line: string; v: string; label: string }>(
+        `select cp.id::text, cp.line_id::text as line, cp.proposed->>'variant' as v, cp.proposed->>'label' as label from change_proposals cp where cp.operation_id = $1::bigint and cp.kind = 'items' and cp.status = 'open' order by cp.id for update`, [x.op])).rows;
+      if (!P.length) return no("No te ofrecieron otra talla.", "No other size was offered.");
+      for (const p of P) {
+        const q = (await c.query<{ qty: number }>(`select qty from operation_lines where id = $1::bigint`, [p.line])).rows[0]!.qty;
+        const v = await c.query(`update item_variants set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint and stock_left >= $2 and removed_at is null`, [p.v, q]);
+        if (!v.rowCount) return no(`La talla ${p.label} ya se acabó. Quítalo o cancela.`, `Size ${p.label} just sold out. Remove it or cancel.`);
+        await c.query(`update operation_lines set status = 'ok', variant_id = $2::bigint, variant_label = $3 where id = $1::bigint`, [p.line, p.v, p.label]);
+        await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1::bigint`, [p.id]);
+      }
+      await c.query(`update operation_lines set status = 'removed' where operation_id = $1::bigint and status = 'out'`, [x.op]);
+      await recalcular(c, x.op);
+      await c.query(`update operations set status = 'confirmed', confirmed_at = coalesce(confirmed_at, now()), answered_at = coalesce(answered_at, now()), stage = 'accepted', updated_at = now() where id = $1::bigint`, [x.op]);
+      await ev(c, x.op, "accepted", "user", userId, { es: `Aceptó la otra talla (${P.map((p) => p.label).join(", ")})`, en: `Accepted the other size (${P.map((p) => p.label).join(", ")})` });
+      return { ok: true };
+    });
+    if (r.ok) await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "aceptó la otra talla · guárdasela" }, href);
+    return r;
+  }
   return no("Eso no se puede.", "That cannot be done.");
 }
 
-export type QueNegocioApt = { que: "tengo" | "no" | "recogio" } | { que: "falta"; linea: string };
+export type QueNegocioApt = { que: "tengo" | "no" | "recogio" } | { que: "falta"; linea: string } | { que: "talla"; linea: string; variante: string };
 export async function apartadoNegocio(negocio: string, numero: string, a: QueNegocioApt, actorId: string): Promise<Res> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.business_id = $2", [numero, negocio]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
@@ -214,7 +270,8 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       const u = await c.query(`update operations set status = 'declined', answered_at = now(), status_detail = 'sin_existencia', updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
       if (!u.rowCount) return false;
       // No lo tiene: la existencia de la app estaba mal. Lo apartado no vuelve al estante (no estaba) y queda en 0.
-      await c.query(`update items i set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and i.stock_mode = 'qty'`, [x.op]);
+      await c.query(`update items i set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and l.variant_id is null and i.stock_mode = 'qty'`, [x.op]);
+      await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.variant_id = v.id`, [x.op]);
       await ev(c, x.op, "declined", "business", actorId, { es: "La tienda no lo tiene", en: "The store does not have it" });
       return true;
     });
@@ -230,12 +287,35 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       const u = await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = now() + interval '24 hours', updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
       if (!u.rowCount) return false;
       await c.query(`update operation_lines set status = 'out' where id = $1::bigint and operation_id = $2::bigint`, [ln.id, x.op]);
-      await c.query(`update items set stock_left = 0, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [ln.item]);
+      if (ln.talla) await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.id = $1::bigint and l.variant_id = v.id`, [ln.id]);
+      else await c.query(`update items set stock_left = 0, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [ln.item]);
       await ev(c, x.op, "change_proposed", "business", actorId, { es: `Falta «${ln.n.es}»`, en: `Missing “${ln.n.en || ln.n.es}”` });
       return true;
     });
     if (!ok) return no("Este apartado ya se respondió.", "This hold was already answered.");
     await av.avisar(x.uid, "apt_falta", { negocio: x.bname, articulo: ln.n.es }, href);
+    return { ok: true };
+  }
+  if (a?.que === "talla") {
+    const ln = x.lineas.find((l) => l.id === String(a.linea) && l.st === "ok" && l.talla);
+    if (!ln || !ID.test(String(a.variante))) return no("Elige la talla que ofreces.", "Pick the size you offer.");
+    let otra = "";
+    const ok = await tx(async (c): Promise<Res> => {
+      const v = (await c.query<{ label: string; left: number }>(`select v.label, v.stock_left as left from item_variants v join operation_lines l on l.item_id = v.item_id where l.id = $1::bigint and v.id = $2::bigint and v.removed_at is null and v.id <> l.variant_id`, [ln.id, a.variante])).rows[0];
+      if (!v) return no("Esa talla no es de este artículo.", "That size is not for this item.");
+      if (v.left < ln.qty) return no(`De la talla ${v.label} no quedan suficientes.`, `Not enough left in size ${v.label}.`);
+      const u = await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = now() + interval '24 hours', updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
+      if (!u.rowCount) return no("Este apartado ya se respondió.", "This hold was already answered.");
+      // La talla pedida no estaba (queda en 0); la otra se reserva solo si el cliente dice que sí.
+      await c.query(`update operation_lines set status = 'out' where id = $1::bigint`, [ln.id]);
+      await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.id = $1::bigint and l.variant_id = v.id`, [ln.id]);
+      await c.query(`insert into change_proposals (operation_id, kind, proposed, side, respond_by, created_by, line_id) values ($1::bigint, 'items', $2::jsonb, 'customer', now() + interval '24 hours', $3, $4::bigint)`, [x.op, JSON.stringify({ variant: a.variante, label: v.label }), actorId, ln.id]);
+      await ev(c, x.op, "change_proposed", "business", actorId, { es: `Falta «${ln.n.es}» talla ${ln.talla}: ofrecen la ${v.label}`, en: `Missing “${ln.n.en || ln.n.es}” size ${ln.talla}: offering ${v.label}` });
+      otra = v.label;
+      return { ok: true };
+    });
+    if (!ok.ok) return ok;
+    await av.avisar(x.uid, "apt_talla", { negocio: x.bname, articulo: ln.n.es, talla: ln.talla ?? "", otra }, href);
     return { ok: true };
   }
   if (a?.que === "recogio") {
@@ -250,8 +330,8 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
 /* ── El barrido (idempotente): sin respuesta a tiempo y no pasó en 48 h → vence y vuelve al estante ── */
 export async function barrerApartados(f: { negocio?: string; userId?: string; numero?: string }): Promise<void> {
   const W = f.numero ? "o.number = $1" : f.negocio ? "o.business_id = $1" : f.userId ? "o.user_id = $1" : "true", A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
-  const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string; sms: boolean }>(
-    `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, o.user_id::text as uid, o.business_id as biz, b.name as bname, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente
+  const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string; sms: boolean; hh: number }>(
+    `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, coalesce((o.details->>'hold_hours')::int, 48) as hh, o.user_id::text as uid, o.business_id as biz, b.name as bname, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id
       where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now())) limit 50`, A)).rows;
   const av = await import("./avisos");
@@ -261,11 +341,12 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
       const u = await c.query(`update operations set status = 'expired', status_detail = $2, cancelled_at = now(), cancelled_by = 'system', updated_at = now() where id = $1::bigint and status = $3`, [x.op, det, x.st]);
       if (!u.rowCount) return false;
       await devolverStock(c, x.op);
-      await ev(c, x.op, "expired", "system", null, det === "no_paso" ? { es: "Pasaron las 48 horas: volvió al estante", en: "48 hours passed: back on the shelf" } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
+      await cerrarPropuestas(c, x.op, "expired");
+      await ev(c, x.op, "expired", "system", null, det === "no_paso" ? { es: `Pasaron las ${x.hh} horas: volvió al estante`, en: `${x.hh} hours passed: back on the shelf` } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
       return true;
     });
     if (!ok) continue;
-    const que = det === "no_paso" ? `Pasaron las 48 horas y tu apartado en ${x.bname} volvió al estante.` : det === "sin_respuesta" ? `${x.bname} no respondió a tiempo a tu apartado.` : `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`;
+    const que = det === "no_paso" ? `Pasaron las ${x.hh} horas y tu apartado en ${x.bname} volvió al estante.` : det === "sin_respuesta" ? `${x.bname} no respondió a tiempo a tu apartado.` : `Tu apartado en ${x.bname} se cerró sin decidir qué hacer con lo que faltaba.`;
     await av.avisar(x.uid, "apt_vence", { que }, { href: `/apartado/${x.numero}`, ref: ["apartado", x.numero], sinSms: !x.sms });
     if (det === "sin_respuesta") await av.avisarNegocio(x.biz, "biz_apartado", { cliente: x.cliente, que: "su apartado venció sin tu respuesta" }, { href: `/panel/${x.biz}/hoy?det=apt:${x.numero}`, ref: ["apartado", x.numero] });
   }

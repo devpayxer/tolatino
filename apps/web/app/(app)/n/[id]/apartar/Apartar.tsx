@@ -7,7 +7,7 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { OpcionesApartar } from "@/lib/apartados";
-import { guardarCarrito, leerCarrito, type Carrito } from "../Tienda";
+import { guardarCarrito, leerCarrito, lineaValida, llaveLinea, type Carrito } from "../Tienda";
 import { mandarApartado } from "./acciones";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary";
@@ -25,11 +25,13 @@ export function Apartar({ o, es, yo }: { o: OpcionesApartar; es: boolean; yo: bo
   const [i, setI] = useState(() => Math.max(0, o.dias.findIndex((d) => d.horas.length))), [h, setH] = useState<number | null>(null);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null);
   const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
-  useEffect(() => { setCarro(leerCarrito(o.negocio.id).filter((l) => o.arts.some((a) => a.id === l.item))); }, [o]);
+  useEffect(() => { setCarro(leerCarrito(o.negocio.id).filter((l) => lineaValida(o.arts, l))); }, [o]);
+  const H = String(o.horas);
   const volver = () => router.push(`/n/${o.negocio.id}?tab=shop`);
-  const L = (carro ?? []).map((l) => ({ ...l, a: o.arts.find((x) => x.id === l.item)! })).filter((l) => l.a);
+  const L = (carro ?? []).map((l) => { const a = o.arts.find((x) => x.id === l.item)!; return { ...l, a, k: llaveLinea(l), t: a?.tallas.find((z) => z.id === l.v) ?? null }; }).filter((l) => l.a);
   const tot = L.reduce((s, l) => s + l.a.precio * l.qty, 0), n = L.reduce((s, l) => s + l.qty, 0);
-  const quitar = (id: string) => { const c = (carro ?? []).filter((l) => l.item !== id); setCarro(c); guardarCarrito(o.negocio.id, c); };
+  const quitar = (k: string) => { const c = (carro ?? []).filter((l) => llaveLinea(l) !== k); setCarro(c); guardarCarrito(o.negocio.id, c); };
+  const talla = (l: (typeof L)[number]) => (l.t ? `${l.a.label ? nm(l.a.label) : E2("Talla", "Size")} ${l.t.label} · ` : "");
   const dia = o.dias[i] ?? null, dL = (k: string, f: string) => { const d = new Date(`${f}T12:00:00Z`); return k === "hoy" ? E2("Hoy", "Today") : k === "man" ? E2("Mañana", "Tomorrow") : `${(es ? DOW.es : DOW.en)[d.getUTCDay()]!.charAt(0)}${(es ? DOW.es : DOW.en)[d.getUTCDay()]!.slice(1).toLowerCase()} ${d.getUTCDate()}`; };
   const whenL = dia && h != null ? `${dL(dia.k, dia.f)} · ${hL(h)}` : "—";
   const miss = [!L.length ? E2("Tu apartado está vacío", "Your hold is empty") : null, h == null ? E2("Elige cuándo pasas", "Pick when you come") : null].filter(Boolean) as string[];
@@ -38,7 +40,7 @@ export function Apartar({ o, es, yo }: { o: OpcionesApartar; es: boolean; yo: bo
     if (!yo) return router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`);
     if (miss.length || ocupado || !dia || h == null) return;
     setOcupado(true); setError(null);
-    const r = await mandarApartado({ negocio: o.negocio.id, lineas: L.map((l) => ({ item: l.item, qty: l.qty })), dia: dia.f, hora: h, nota, sms, clave: clave.current }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
+    const r = await mandarApartado({ negocio: o.negocio.id, lineas: L.map((l) => ({ item: l.item, qty: l.qty, v: l.v ?? null })), dia: dia.f, hora: h, nota, sms, clave: clave.current }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
     if (r.ok) { guardarCarrito(o.negocio.id, []); router.push(`/apartado/${r.numero}`); } else setError(es ? r.msg.es : r.msg.en);
   };
@@ -57,10 +59,10 @@ export function Apartar({ o, es, yo }: { o: OpcionesApartar; es: boolean; yo: bo
     <div className={`flex flex-col gap-2.5 p-4 ${caja}`}>
       {carro && !L.length && <div className="text-[12.5px] font-medium text-ink/60">{E2("No tienes nada apartado en esta tienda.", "You have nothing on hold at this store.")}</div>}
       {L.map((l) => (
-        <div key={l.item} className="flex items-center gap-3">
+        <div key={l.k} className="flex items-center gap-3">
           <span className="h-12 w-12 flex-none rounded-xl bg-photo-bg" style={l.a.foto ? { backgroundImage: `url(${l.a.foto})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
-          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold leading-[1.3]">{nm(l.a.n)}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{`× ${l.qty} · ${dinero(l.a.precio * l.qty)}`}</span></span>
-          <button type="button" onClick={() => quitar(l.item)} className="flex-none text-[12px] font-bold text-danger">{E2("Quitar", "Remove")}</button>
+          <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold leading-[1.3]">{nm(l.a.n)}</span><span className="mt-0.5 block font-mono text-[9.5px] font-semibold tracking-[0.04em] text-ink/50">{`${talla(l)}× ${l.qty} · ${dinero(l.a.precio * l.qty)}`}</span></span>
+          <button type="button" onClick={() => quitar(l.k)} aria-label={`${E2("Quitar", "Remove")} ${nm(l.a.n)}`} className="flex-none text-[12px] font-bold text-danger">{E2("Quitar", "Remove")}</button>
         </div>))}
     </div>
   );
@@ -83,22 +85,22 @@ export function Apartar({ o, es, yo }: { o: OpcionesApartar; es: boolean; yo: bo
       <div><div className={K}>{E2("HORA EN QUE PASAS", "PICKUP TIME")}</div>
         {dia?.horas.length ? <div className="mt-[9px] grid"><TimeSlots slots={dia.horas.map((m) => ({ t: hL(m), taken: false }))} selected={h != null ? hL(h) : ""} onSelect={(t: string) => { const m = dia.horas.find((z) => hL(z) === t); if (m != null) setH(m); }} /></div>
           : <div className="mt-2 text-[12.5px] font-medium text-ink/60">{E2("Cerrado ese día.", "Closed that day.")}</div>}</div>
-      <div className="flex items-start gap-2 rounded-[12px] bg-paper px-3 py-2.5"><span className="grid flex-none pt-0.5"><Icon name="clock" size={14} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12px] font-semibold leading-[1.45] text-ink/70">{E2("Te lo guardan 48 horas desde esa hora.", "They keep it 48 hours from that time.")}</span></div>
+      <div className="flex items-start gap-2 rounded-[12px] bg-paper px-3 py-2.5"><span className="grid flex-none pt-0.5"><Icon name="clock" size={14} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12px] font-semibold leading-[1.45] text-ink/70">{E2(`Te lo guardan ${H} horas desde esa hora.`, `They keep it ${H} hours from that time.`)}</span></div>
     </div>
   );
-  const filas: [string, string][] = [[E2("ARTÍCULOS", "ITEMS"), String(n)], [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store")], [E2("CUÁNDO", "WHEN"), whenL], [E2("TE LO GUARDAN", "HELD UNTIL"), E2("48 horas", "48 hours")]];
+  const filas: [string, string][] = [[E2("ARTÍCULOS", "ITEMS"), String(n)], [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store")], [E2("CUÁNDO", "WHEN"), whenL], [E2("TE LO GUARDAN", "HELD UNTIL"), E2(`${H} horas`, `${H} hours`)]];
   const resumen = (
     <div className={`overflow-hidden ${caja}`}>
       <div className="border-b border-ink/[.07] px-[15px] py-3.5"><div className={K}>{E2("RESUMEN", "SUMMARY")}</div><div className="mt-[5px] font-display text-[15px] font-extrabold leading-[1.2] tracking-[-0.02em]">{E2("Tu apartado", "Your hold")}</div><div className="mt-1 font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{o.negocio.nombre.toUpperCase()}</div></div>
       <div className="px-[15px] py-0.5">{filas.map(([k, v2], z) => <div key={k} className={`flex justify-between gap-3.5 py-[11px] ${z ? "border-t border-ink/[.06]" : ""}`}><span className="flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{k}</span><span className="text-right text-[12.5px] font-bold leading-[1.45]">{v2}</span></div>)}</div>
     </div>
   );
-  const pay = { screenLabel: "Apartado · pago", priceLabel: E2("PRECIO", "PRICE"), lines: L.map((l) => ({ label: `${nm(l.a.n)} · × ${l.qty}`, value: dinero(l.a.precio * l.qty) })), totalLabel: E2("En la caja", "At the register"), total: dinero(tot), howLabel: E2("CÓMO SE PAGA", "HOW YOU PAY"), bar: null,
+  const pay = { screenLabel: "Apartado · pago", priceLabel: E2("PRECIO", "PRICE"), lines: L.map((l) => ({ label: `${nm(l.a.n)} · ${talla(l)}× ${l.qty}`, value: dinero(l.a.precio * l.qty) })), totalLabel: E2("En la caja", "At the register"), total: dinero(tot), howLabel: E2("CÓMO SE PAGA", "HOW YOU PAY"), bar: null,
     rows: [{ label: E2("Hoy", "Today"), sub: E2("Apartar no cobra nada.", "Holding costs nothing."), value: dinero(0), dot: "var(--tl-ink)", color: "var(--tl-ink)" }, { label: E2("En la caja", "At the register"), sub: E2("Lo mismo que ves aquí.", "The same as you see here."), value: dinero(tot), dot: "rgba(11,14,18,.18)", color: "var(--tl-ink)" }], card: null };
   const bueno = (
     <div className={`p-4 ${caja}`}>
       <div className={K}>{E2("BUENO SABER", "GOOD TO KNOW")}</div>
-      <div className="mt-3 flex flex-col gap-2.5">{[LINE, E2("Si no pasas en 48 horas, vuelve al estante y no se cobra nada.", "If you do not come within 48 hours, it goes back on the shelf and nothing is charged."), E2("La tienda confirma que lo tiene; si falta algo, tú decides si sigues con lo demás.", "The store confirms it has it; if something is missing, you decide whether to keep the rest.")].map((t, z) => <div key={z} className="flex items-start gap-2.5"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.2} /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{t}</span></div>)}</div>
+      <div className="mt-3 flex flex-col gap-2.5">{[LINE, E2(`Si no pasas en ${H} horas, vuelve al estante y no se cobra nada.`, `If you do not come within ${H} hours, it goes back on the shelf and nothing is charged.`), E2("La tienda confirma que lo tiene; si falta algo, tú decides si sigues con lo demás.", "The store confirms it has it; if something is missing, you decide whether to keep the rest.")].map((t, z) => <div key={z} className="flex items-start gap-2.5"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open)" strokeWidth={2.2} /></span><span className="text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/70">{t}</span></div>)}</div>
     </div>
   );
   const errorBox = error ? <div role="alert" className="rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{error}</div> : null;

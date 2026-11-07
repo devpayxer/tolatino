@@ -19,7 +19,7 @@ const MO = { es: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep",
 export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
-  const hacer = async (que: "cancelar" | "quitar", ok: string) => {
+  const hacer = async (que: "cancelar" | "quitar" | "otraTalla", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);
     const r = await apartadoAccion(x.numero, que).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false); setConfirmar(false);
@@ -27,15 +27,16 @@ export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
   };
   const fH = (iso: string) => { const d = new Date(iso), p = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", weekday: "short", year: "numeric", month: "numeric", day: "numeric" }).formatToParts(d), g = (t: string) => p.find((z) => z.type === t)?.value ?? "";
     const dd = new Date(Date.UTC(Number(g("year")), Number(g("month")) - 1, Number(g("day")), 12)); return es ? `${DIA.es[dd.getUTCDay()]} ${dd.getUTCDate()} de ${MO.es[dd.getUTCMonth()]} · ${hora(iso)}` : `${DIA.en[dd.getUTCDay()]}, ${MO.en[dd.getUTCMonth()]} ${dd.getUTCDate()} · ${hora(iso)}`; };
-  const falta = x.lineas.find((l) => l.st === "out");
+  const falta = x.lineas.find((l) => l.st === "out"), otra = falta?.otra ?? null, HH = x.horas;
   const LINE = E2("El precio que ves es el que pagas en la caja.", "The price you see is the price you pay at the register.");
   const vence = x.detalle === "sin_respuesta" ? [E2("No respondieron a tiempo", "They did not reply in time"), E2("No se cobró nada. Puedes apartarlo en otra tienda.", "Nothing was charged. You can hold it at another store.")]
     : x.detalle === "sin_decision" ? [E2("No decidiste a tiempo", "No decision in time"), E2("Lo que faltaba no estaba y el resto volvió al estante. No se cobró nada.", "The missing item was not there and the rest went back on the shelf. Nothing was charged.")]
-      : [E2("No pasaste en 48 h", "You did not come within 48 h"), E2("Volvió al estante. No se cobró nada.", "Back on the shelf. Nothing was charged.")];
+      : [E2(`No pasaste en ${HH} h`, `You did not come within ${HH} h`), E2("Volvió al estante. No se cobró nada.", "Back on the shelf. Nothing was charged.")];
   const H: Record<ApartadoVista["st"], [string, string, string, string, string, string]> = {
     pending: ["clock", "bg-action/10", "var(--tl-action)", E2("APARTADO ENVIADO", "HOLD SENT"), `${E2("Esperando a ", "Waiting for ")}${x.bname}`, E2("Confirman que lo tienen antes de tu hora. No se ha cobrado nada.", "They confirm stock before your time. Nothing has been charged.")],
     confirmed: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("TE LO GUARDAN", "HELD FOR YOU"), `${E2("Hasta el ", "Until ")}${fH(x.hasta)}`, `${E2("En la caja pagas ", "At the register you pay ")}${dinero(x.tot)}.`],
-    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("FALTA ALGO", "ITEM MISSING"), falta ? nm(falta.n) : "", E2("La tienda no lo tiene. Quítalo y sigue con lo demás, o cancela.", "The store does not have it. Remove it and keep the rest, or cancel.")],
+    change_proposed: otra && falta ? ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("FALTA UNA TALLA", "A SIZE IS OUT"), `${nm(falta.n)} · ${falta.talla ?? ""}`, E2(`No tienen la talla ${falta.talla ?? ""}. Te ofrecen la ${otra.label} al mismo precio. Tú decides.`, `They do not have size ${falta.talla ?? ""}. They offer ${otra.label} at the same price. You decide.`)]
+      : ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("FALTA ALGO", "ITEM MISSING"), falta ? nm(falta.n) : "", E2("La tienda no lo tiene. Quítalo y sigue con lo demás, o cancela.", "The store does not have it. Remove it and keep the rest, or cancel.")],
     declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO LO TIENEN", "NOT IN STOCK"), E2("Se agotó antes de apartarlo", "It sold out before your hold"), E2("No se cobró nada.", "Nothing was charged.")],
     expired: ["clock", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("VENCIÓ", "EXPIRED"), vence[0]!, vence[1]!],
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("RECOGIDO", "PICKED UP"), E2("Gracias por usar To'Latino", "Thanks for using To'Latino"), `${E2("Pagaste ", "You paid ")}${dinero(x.tot)}.`],
@@ -45,12 +46,13 @@ export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
   const pos = ({ pending: 0, change_proposed: 0, confirmed: 1, done: 2 } as Record<string, number>)[x.st];
   const steps = pos == null ? [] : [[E2("Enviado", "Sent"), hora(x.enviado)], [E2("Guardado", "Held"), hora(x.guardado)], [E2("Recogido", "Picked up"), hora(x.recogido)]].map(([label, time], i) => ({ label, time, state: i < pos || x.st === "done" ? "done" : i === pos ? "current" : "next" }));
   const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.dir || x.bname)}`, "_blank", "noopener");
-  const acts: [string, string, () => void, boolean?][] = x.st === "change_proposed" ? [["check", E2("Quitarlo y seguir", "Remove it and continue"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest")), true], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]
+  const acts: [string, string, () => void, boolean?][] = x.st === "change_proposed" && otra ? [["check", E2(`Sí, la talla ${otra.label}`, `Yes, size ${otra.label}`), () => void hacer("otraTalla", E2(`Listo: te guardan la talla ${otra.label}`, `Done: they hold size ${otra.label}`)), true], ["close", E2("Quitarlo", "Remove it"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest"))], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]
+    : x.st === "change_proposed" ? [["check", E2("Quitarlo y seguir", "Remove it and continue"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest")), true], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]
     : x.st === "pending" || x.st === "confirmed" ? [["pin", E2("Cómo llegar", "Directions"), llegar], ["close", E2("Cancelar", "Cancel"), () => setConfirmar(true)]]
       : x.st === "done" ? [] : [["search", E2("Volver a la tienda", "Back to the store"), () => router.push(`/n/${x.biz}?tab=shop`)]];
   const vivas = x.lineas.filter((l) => l.st !== "removed");
-  const rows: [string, string, boolean][] = [...vivas.map((l): [string, string, boolean] => [`${nm(l.n)}${l.qty > 1 ? ` × ${l.qty}` : ""}`.toUpperCase(), l.st === "out" ? E2("No había", "Out") : dinero(l.total), l.st === "out"]),
-    [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store"), false], ...(x.st === "pending" || x.st === "confirmed" || x.st === "change_proposed" ? [[E2("CUÁNDO PASAS", "WHEN YOU COME"), fH(new Date(new Date(x.hasta).getTime() - 48 * 3600000).toISOString()), false] as [string, string, boolean]] : []),
+  const rows: [string, string, boolean][] = [...vivas.map((l): [string, string, boolean] => [`${nm(l.n)}${l.talla ? ` · ${l.talla}` : ""}${l.qty > 1 ? ` × ${l.qty}` : ""}`.toUpperCase(), l.st === "out" ? (l.otra ? `${E2("Te ofrecen la ", "Offered: ")}${l.otra.label}` : E2("No había", "Out")) : dinero(l.total), l.st === "out"]),
+    [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store"), false], ...(x.st === "pending" || x.st === "confirmed" || x.st === "change_proposed" ? [[E2("CUÁNDO PASAS", "WHEN YOU COME"), fH(new Date(new Date(x.hasta).getTime() - HH * 3600000).toISOString()), false] as [string, string, boolean]] : []),
     ...(x.nota ? [[E2("TU NOTA", "YOUR NOTE"), `«${x.nota}»`, false] as [string, string, boolean]] : [])];
   return (
     <div data-screen-label="APP-NEG-TIENDA-ESTADO" className="min-h-[100dvh] bg-paper pb-10">

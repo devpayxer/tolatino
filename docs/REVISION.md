@@ -785,3 +785,14 @@ pedidos de comida con repartidores). El camión propio de la tienda llega con 4q
 _Decidido por mí (reversible): la pantalla del pedido es una sola página con 3 secciones (en el teléfono no son 3 pantallas);
 el sustituto por ahora tiene que ser por unidad (con precio del estante); si el peso real pasa lo retenido, el mercado corta
 menos (todavía no hay «pedir OK por $X más» → LAUNCH-CHECKLIST)._
+
+### 4q-1 · Tiendas: pestaña Productos, tallas y horas del apartado (7 nov)
+**Qué mirar (teléfono, sandbox):**
+1. Como Marisol (5705550122): `/n/boutique-yaritza` › **Productos** › Blusa de encaje › la hoja pide **Talla** (2X dice
+   «Agotada» y no se elige; XL «quedan 1»); elige M, 2 › Apartar; luego L, 1. La tarjeta dice «APARTADO: 3». Ver apartado ›
+   cada línea dice su talla; «Te lo guardan 48 horas» (cambia a 24/72 en Tu herramienta de Yaritza y se ve aquí).
+2. Como Yaritza (5705550299): Hoy › Apartados › el de Marisol › **Falta esa talla · ofrecer otra** › Blusa · M › Talla S.
+3. Marisol: «FALTA UNA TALLA · Te ofrecen la S al mismo precio» › **Sí, la talla S** (o Quitarlo / Cancelar).
+_Decidido por mí (reversible): la talla ofrecida no se aparta hasta que el cliente dice que sí (si en ese rato se acaba, se le
+dice y puede quitarla); la tienda solo ve para ofrecer las tallas con existencia suficiente; «EN LA CAJA» durante la propuesta
+muestra el total como si aceptara (mismo precio). El envío de la tienda (con tarjeta retenida) va en 4q-2._
