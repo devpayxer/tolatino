@@ -35,6 +35,23 @@ function hechos(c: Tarjeta, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
   // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
   const A = c.answers, F = c.facts;
+  // Mercados y Tiendas (4s): foto de cada peso, fresco, precio del estante / de la caja, sustituciones, talla, apartado, cambios.
+  if (["fresco", "estante", "sust", "pesaron", "peso", "caja", "tenian", "talla", "guardo", "cambio"].some((k) => k in A) || F.nArt != null) {
+    const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
+    if (F.fotoPeso != null) add(F.fotoPeso, "camera", F.fotoPeso ? E2("Foto de cada peso", "Photo of each weight") : E2("Faltó la foto de algún peso", "A weight photo was missing"));
+    if (A.pesaron != null) add(A.pesaron === 1, "check", A.pesaron === 1 ? E2("Pesaron delante", "Weighed in front") : E2("No pesaron delante", "Did not weigh in front"));
+    if (A.peso != null) add(A.peso === 1, "dollar", A.peso === 1 ? E2("Cobraron el peso real", "Charged the real weight") : E2("Cobraron más del peso", "Charged over the weight"));
+    if (A.estante != null) add(A.estante === 1, "dollar", A.estante === 1 ? E2("La caja cobró el precio del estante", "Register charged the shelf price") : E2("La caja no cobró el precio del estante", "Register did not charge the shelf price"));
+    if (A.caja != null) add(A.caja === 1, "dollar", A.caja === 1 ? E2("Precio de la caja = el publicado", "Register price = posted price") : E2("Cobraron más en la caja", "Charged more at the register"));
+    if (A.sust) add(A.sust === "ok" ? true : A.sust === "no" ? false : null, "bubble", { ok: E2("Llamaron antes de sustituir", "Called before swapping"), na: E2("No hizo falta sustituir", "No swaps needed"), no: E2("Cambiaron algo sin preguntar", "Swapped without asking") }[A.sust]);
+    if (A.fresco != null && A.fresco !== 0) add(A.fresco === 1, "check", A.fresco === 1 ? E2("Todo fresco", "All fresh") : E2("No estaba fresco", "Not fresh"));
+    if (A.tenian != null) add(A.tenian === 1, "bag", A.tenian === 1 ? E2("Lo tenían como decía", "Had it as listed") : E2("No lo tenían como decía", "Did not have it as listed"));
+    if (A.talla != null && A.talla !== 0) add(A.talla === 1, "check", A.talla === 1 ? E2("La talla correcta", "Right size") : E2("Talla equivocada", "Wrong size"));
+    if (A.guardo != null) add(A.guardo === 1, "clock", A.guardo === 1 ? E2("Guardaron el apartado", "Kept the hold") : E2("No guardaron el apartado", "Did not keep the hold"));
+    if (A.cambio && A.cambio !== "na") add(A.cambio === "ok", "check", A.cambio === "ok" ? E2("Cambios sin problema", "Exchanges, no problem") : E2("No aceptaron el cambio", "Refused the exchange"));
+    if (A.trato != null && A.trato !== 0) add(A.trato === 1, "bubble", A.trato === 1 ? E2("Con respeto", "With respect") : E2("Mal trato", "Treated badly"));
+    return f.slice(0, 6);
+  }
   // Doctores y Profesionales (4m): seguro aceptado, idioma, espera, explicación, cobro, lo que podía por ley, fecha, trato.
   if (["lengua", "explico", "cobro", "ley", "fecha", "seguro"].some((k) => k in A) || F.seg != null || F.hired != null) {
     const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
@@ -167,7 +184,15 @@ function aspectos(v: CtlResenas) {
   const z = r.aspSP;
   if (z) {
     const P = (k: string) => z.v[k] ?? null;
-    const L: [string, string, string, string, string][] = z.rub === "salud" ? [
+    const L: [string, string, string, string, string][] = z.rub === "merc" ? [
+      ["check", E2("PESARON DELANTE DE TI", "WEIGHED IN FRONT OF YOU"), "pesaron", "rgba(0,229,196,.16)", BIEN], ["dollar", E2("COBRARON EL PESO REAL", "CHARGED THE REAL WEIGHT"), "peso", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"],
+      ["check", E2("FRESCO", "FRESH"), "fresco", "rgba(0,229,196,.16)", BIEN], ["dollar", E2("PRECIO DEL ESTANTE = CAJA", "SHELF PRICE = REGISTER"), "estante", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"],
+      ["bubble", E2("SUSTITUCIONES CON TU OK", "SWAPS WITH YOUR OK"), "sust", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : z.rub === "tienda" ? [
+      ["dollar", E2("PRECIO DE LA CAJA = EL PUBLICADO", "REGISTER = POSTED PRICE"), "caja", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["bag", E2("LO TENÍAN COMO DECÍA", "HAD IT AS LISTED"), "tenian", "rgba(0,229,196,.16)", BIEN],
+      ["check", E2("LA TALLA O MEDIDA CORRECTA", "RIGHT SIZE"), "talla", "rgba(0,229,196,.16)", BIEN], ["clock", E2("GUARDARON EL APARTADO", "KEPT THE HOLD"), "guardo", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["check", E2("CAMBIOS Y DEVOLUCIONES", "EXCHANGES AND RETURNS"), "cambio", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : z.rub === "salud" ? [
       ["shield", E2("ACEPTARON TU SEGURO", "TOOK YOUR INSURANCE"), "seg", "rgba(0,229,196,.16)", BIEN], ["bubble", E2("TE ENTENDIERON EN TU IDIOMA", "UNDERSTOOD YOU IN YOUR LANGUAGE"), "lengua", "rgba(75,55,245,.1)", "var(--tl-action)"],
       ["clock", E2("ESPERASTE LO QUE DIJERON", "WAITED AS SAID"), "wait", "rgba(75,55,245,.1)", "var(--tl-action)"], ["check", E2("TE EXPLICARON", "EXPLAINED"), "explico", "rgba(0,229,196,.16)", BIEN],
       ["dollar", E2("COBRARON LO QUE DIJERON", "CHARGED WHAT THEY SAID"), "cobro", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
@@ -186,12 +211,14 @@ function aspectos(v: CtlResenas) {
     a.taste != null ? ["restaurant", E2("SABOR", "FLAVOR"), a.taste.toFixed(1), "rgba(11,14,18,.06)", "var(--tl-ink)"] : null,
   ].filter(Boolean) as [string, string, string, string, string][]).map(([ic, k, val, bg, fg]) => ({ ic, k, v: val, bg, fg }));
 }
-const aspNota = (v: CtlResenas) => v.r.aspSP ? (v.es
+const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "merc" || v.r.aspSP?.rub === "tienda" ? (v.es
+  ? `De ${v.r.aspSP.n} reseñas del último año (pedidos, apartados y compras calificadas). Es el % que contestó que sí; «pesaron» y «peso real» cuentan la foto de cada peso de los pedidos por To'Latino.`
+  : `From ${v.r.aspSP.n} reviews in the last year (rated orders, holds and purchases). It is the % who answered yes; “weighed” and “real weight” count the photo of each weight on To'Latino orders.`) : v.r.aspSP ? (v.es
   ? `De ${v.r.aspSP.n} reseñas del último año. Es el % que contestó que sí. Nunca se publica el motivo de la consulta ni de qué trata un caso.`
   : `From ${v.r.aspSP.n} reviews in the last year. It is the % who answered yes. The reason for a visit or what a case is about is never published.`) : v.es
   ? `De ${v.r.asp?.orders} pedidos calificados en To'Latino en los últimos 90 días. A tiempo = hasta 5 min después de la hora prometida.`
   : `From ${v.r.asp?.orders} rated To'Latino orders in the last 90 days. On time = up to 5 min after the promised time.`;
-const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
+const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "merc" ? (v.es ? "LO QUE IMPORTA EN UN MERCADO" : "WHAT MATTERS AT A MARKET") : v.r.aspSP?.rub === "tienda" ? (v.es ? "LO QUE IMPORTA EN UNA TIENDA" : "WHAT MATTERS AT A STORE") : v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
 function Pocas({ v }: { v: CtlResenas }) {
   const { r, es } = v;
   return r.n > 0 ? (

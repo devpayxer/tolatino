@@ -4,7 +4,7 @@
    Uso: node guardianes/run.mjs   (corre todos)   ·   node guardianes/run.mjs --solo secretos */
 import { execSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
@@ -434,9 +434,16 @@ const guardianes = {
     const m = /const compacto = [^\n]*\/\^\\\/\(([^)]*)\)\//.exec(readFileSync(shell, "utf8"));
     if (!m) { falla("barraFijaCompacta", shell, 1, "no encuentro la lista «compacto» de AppShell"); return; }
     const pref = m[1].split("|").map((x) => x.replace(/\\\//g, "/"));
+    // 4s: también la barra de un componente importado de otra carpeta (/mercado/{num}/ayuda usa la pantalla de /cita/…).
+    const conBarra = (f) => {
+      const t = readFileSync(f, "utf8");
+      if (/fixed inset-x-0 bottom-0/.test(t)) return true;
+      for (const m of t.matchAll(/from "(\.{1,2}\/[^"]+)"/g)) { const p = join(dirname(f), m[1]) + ".tsx"; if (existsSync(p) && /fixed inset-x-0 bottom-0/.test(readFileSync(p, "utf8"))) return true; }
+      return false;
+    };
     for (const f of codigo) {
       const r = /^apps\/web\/app\/\(app\)\/([^/]+)\/.*\.tsx$/.exec(f);
-      if (!r || !/fixed inset-x-0 bottom-0/.test(readFileSync(f, "utf8"))) continue;
+      if (!r || !conBarra(f)) continue;
       const seg = r[1];
       if (!pref.some((p) => p === seg || p === `${seg}/` || seg.startsWith(p))) falla("barraFijaCompacta", f, 1, `/${seg}/ tiene barra fija abajo pero no es «compacto» en AppShell: la barra de pestañas la tapa`);
     }

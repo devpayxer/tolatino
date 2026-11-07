@@ -218,12 +218,13 @@ export function citaDetalle(c: Ctx): Sec {
 
 /* Ayuda con la cita en el detalle (diseño TLCitaHelp: el negocio responde en 24 h; acepta, propone otra cosa o no puede).
    Lo que vuelve a la tarjeta sale del depósito pagado en la app; lo pagado en el local se arregla en el local. */
-function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
+export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
   const { E2, es, d } = c, a = c.citas?.ayuda;
   if (!a) return [];
-  const rub = c.citas?.det?.prof ? "pro" : c.citas?.det?.sal ? "salud" : null;
+  const rub = c.citas?.det?.prof ? "pro" : c.citas?.det?.sal ? "salud" : numero.startsWith("M-") ? "merc" : numero.startsWith("A-") ? "tienda" : null;
+  const sobre = numero.startsWith("M-") ? ["AYUDA CON EL PEDIDO · ", "ORDER HELP · "] : numero.startsWith("A-") ? ["AYUDA CON LA COMPRA · ", "PURCHASE HELP · "] : ["AYUDA CON LA CITA · ", "BOOKING HELP · "];
   const m = motivoAyuda(a.reason, rub), q = quiereAyuda(a.wants), txt = (c.ui.acT as string | undefined) ?? "", dec = (c.ui.acD as string | undefined) ?? "", monto = (c.ui.acM as string | undefined) ?? "";
-  const out: (Bloque | null)[] = [{ type: "group", k: `${E2("AYUDA CON LA CITA · ", "BOOKING HELP · ")}${a.number}` },
+  const out: (Bloque | null)[] = [{ type: "group", k: `${E2(sobre[0]!, sobre[1]!)}${a.number}` },
     { type: "kv", items: [{ k: E2("QUÉ PASÓ", "WHAT HAPPENED"), v: es ? m[0] : m[1] }, { k: E2("QUÉ QUIERE", "WANTS"), v: es ? q[0] : q[1] }, ...(a.amount ? [{ k: E2("CUÁNTO", "HOW MUCH"), v: money(a.amount) }] : []), { k: E2("LO QUE CUENTA", "WHAT THEY SAY"), v: a.body }] }];
   if (a.fotos.length) out.push({ type: "photos", k: E2("SUS FOTOS", "THEIR PHOTOS"), cols: 3, items: a.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
   if (a.status === "open") {
@@ -235,8 +236,8 @@ function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] {
     if (dec) {
       out.push({ type: "note", tone: "info", icon: "card", t: tarjeta });
       if (pideMonto) out.push({ type: "field", k: dec === "alt" ? E2("CUÁNTO LE PROPONES DEVOLVER · DÓLARES", "HOW MUCH YOU PROPOSE TO REFUND · DOLLARS") : E2("CUÁNTO LE DEVUELVES A SU TARJETA · DÓLARES", "HOW MUCH YOU REFUND TO THEIR CARD · DOLLARS"), val: monto, ph: a.amount ? (a.amount / 100).toFixed(2) : a.devolvible ? (a.devolvible / 100).toFixed(2) : "10", onChange: (v) => c.setUi({ acM: v.replace(/[^\d.]/g, "").slice(0, 7) }) });
-      out.push({ type: "field", area: true, rows: 3, max: 500, k: E2("TU RESPUESTA · LA VE EN SU CITA", "YOUR REPLY · SHOWN ON THEIR BOOKING"), val: txt, count: `${txt.length}/500`, ph: es ? ph[dec]![0] : ph[dec]![1], onChange: (v) => c.setUi({ acT: v.slice(0, 500) }) },
-        { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending || (dec === "alt" && !monto), onClick: () => c.run(() => citaAyudaResponder(d.id, numero, dec as "ok" | "alt" | "no", txt, pideMonto ? monto || (a.amount ? (a.amount / 100).toFixed(2) : null) : null, crypto.randomUUID()), E2(`Respuesta enviada. ${n} la ve en su cita.`, `Reply sent. ${n} sees it on their booking.`), () => c.setUi({ acT: "", acD: "", acM: "" })) }] });
+      out.push({ type: "field", area: true, rows: 3, max: 500, k: (numero.startsWith("M-") ? E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER") : numero.startsWith("A-") ? E2("TU RESPUESTA · LA VE EN SU APARTADO", "YOUR REPLY · SHOWN ON THEIR HOLD") : E2("TU RESPUESTA · LA VE EN SU CITA", "YOUR REPLY · SHOWN ON THEIR BOOKING")), val: txt, count: `${txt.length}/500`, ph: es ? ph[dec]![0] : ph[dec]![1], onChange: (v) => c.setUi({ acT: v.slice(0, 500) }) },
+        { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending || (dec === "alt" && !monto), onClick: () => c.run(() => citaAyudaResponder(d.id, numero, dec as "ok" | "alt" | "no", txt, pideMonto ? monto || (a.amount ? (a.amount / 100).toFixed(2) : null) : null, crypto.randomUUID()), E2(`Respuesta enviada. ${n} la ve en To'Latino.`, `Reply sent. ${n} sees it on To'Latino.`), () => c.setUi({ acT: "", acD: "", acM: "" })) }] });
     }
   } else {
     const D: Record<string, string> = { ok: E2("Aceptaste", "You accepted"), alt: E2(`Propusiste devolver ${money(a.offer ?? 0)}`, `You proposed a ${money(a.offer ?? 0)} refund`), no: E2("Dijiste que no puedes", "You said you can’t") };
@@ -262,8 +263,9 @@ export function hoyPlanes(c: Ctx): Bloque[] {
 export function hoyAyudasCitas(c: Ctx): Bloque[] {
   const { E2, es, d } = c, L = c.citas?.ayudas ?? [];
   if (!L.length) return [];
-  return [{ type: "rows", k: E2("AYUDA CON CITAS · RESPONDE EN 24 H", "BOOKING HELP · REPLY WITHIN 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${E2("Cita", "Booking")} #${a.num}`,
-    s: motivoAyuda(a.reason, a.rub)[es ? 0 : 1], tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.nav(`/panel/${d.id}/hoy?det=cita:${a.num}`) })) }];
+  const tipo = (n: string) => (n.startsWith("M-") ? ["merc", E2("Pedido", "Order")] : n.startsWith("A-") ? ["apt", E2("Apartado", "Hold")] : ["cita", E2("Cita", "Booking")]);
+  return [{ type: "rows", k: E2("AYUDA QUE ESPERA TU RESPUESTA · 24 H", "HELP AWAITING YOUR REPLY · 24 H"), items: L.map((a) => ({ icon: "help", t: `${a.quien} · ${tipo(a.num)[1]} #${a.num}`,
+    s: motivoAyuda(a.reason, a.rub)[es ? 0 : 1], tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.nav(`/panel/${d.id}/hoy?det=${tipo(a.num)[0]}:${a.num}`) })) }];
 }
 
 /* Clientes › Citas (Belleza): todas con filtros, buscar y ver más. */

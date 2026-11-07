@@ -71,7 +71,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
-      : x.queue === "sop" ? { title: `${x.sopk === "appointment" ? "Ayuda con una cita" : "Ayuda con un pedido"} · ${b}`, sub: "El cliente espera una respuesta" }
+      : x.queue === "sop" ? { title: `${x.sopk === "appointment" ? "Ayuda con una cita" : x.sopk === "hold" ? "Ayuda con una compra" : x.sopk === "market_order" ? "Ayuda con un pedido del mercado" : "Ayuda con un pedido"} · ${b}`, sub: "El cliente espera una respuesta" }
       : x.queue === "renta" ? { title: `Daño de renta · ${b}`, sub: "El cliente no está de acuerdo · el depósito sigue retenido" }
       : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
@@ -156,7 +156,7 @@ export async function caso(s: Staff, id: string) {
     // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
     // Citas (3e): también el monto que pide, la decisión del negocio, sus fotos y lo que se puede devolver a la tarjeta.
     const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string;
-      k: "order" | "appointment"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
+      k: "order" | "appointment" | "market_order" | "hold"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
       `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid,
               o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc, o.details->>'rubro' as rub,

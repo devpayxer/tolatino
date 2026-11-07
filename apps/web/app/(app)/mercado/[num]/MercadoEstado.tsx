@@ -91,6 +91,8 @@ export function MercadoEstado({ v, es }: { v: MercadoVista; es: boolean }) {
       {v.st === "confirmed" && D !== "preparando" && !v.aprobado && !v.local && !v.props.length && <Button block icon="check" disabled={ocupado} onClick={() => void hacer(() => mercAprobar(v.numero), E2("Listo.", "Done."))}>{`${E2("Está bien, cobrar ", "Looks good, charge ")}${money(Math.min(t.real, t.ret))}`}</Button>}
       {v.st === "pending" && <Button block variant="secondary" icon="close" disabled={ocupado} onClick={() => void hacer(() => mercCancelar(v.numero), E2("Cancelado. No se cobró nada.", "Cancelled. Nothing was charged."))}>{E2("Cancelar pedido", "Cancel order")}</Button>}
       {v.negocio.tel && <Button block variant="secondary" icon="phone" onClick={() => { location.href = `tel:${v.negocio.tel}`; }}>{E2("Llamar al mercado", "Call the market")}</Button>}
+      {v.st === "done" && <Button block icon="star" onClick={() => router.push(`/n/${v.negocio.id}/resena?pedido=${v.numero}`)}>{E2("¿Cómo te fue? · Reseña verificada", "How was it? · Verified review")}</Button>}
+      {v.st === "done" && <Button block variant="secondary" icon="help" onClick={() => router.push(`/mercado/${v.numero}/ayuda`)}>{E2("Ayuda con el pedido", "Order help")}</Button>}
       {!vivo && <Button block variant="secondary" icon="search" onClick={() => router.push(`/n/${v.negocio.id}`)}>{E2("Volver al mercado", "Back to the market")}</Button>}
     </div>);
   return (

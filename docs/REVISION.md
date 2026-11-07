@@ -819,3 +819,11 @@ _Decidido por mí (reversible): lo que va en plan se aparta solo y se recoge en 
 del acuerdo **sobre lo abonado** y se toma primero de lo pagado en la app (lo pagado en la tienda lo devuelve la tienda); la persona
 puede cancelar su plan cuando quiera con la misma regla; la tienda tiene 4 horas para confirmar; comisión `apt` (6 %) en cada
 pago cobrado en la app, ninguna en lo pagado en la tienda; ningún cobro automático (Preguntas #11)._
+
+### 4s-1/4s-2 · Reseñas y ayuda de Mercados y Tiendas (7 nov)
+**Qué mirar:** Marisol › un pedido del mercado terminado › «¿Cómo te fue?» (dato del pedido con la foto de cada peso; preguntas
+del mercado; con 2★ aparece «Ir a Ayuda con el pedido»). Ayuda con el pedido › «El peso no me cuadra» (foto obligatoria) → Héctor:
+Hoy › «Ayuda que espera tu respuesta» › Tiene razón $2 (vuelve a la tarjeta). Un apartado recogido › «Ayuda con la compra».
+La ficha muestra «Lo que importa en un mercado / en una tienda».
+_Decidido por mí: la ayuda de mercado y tienda usa el mismo motor y la misma pantalla que la ayuda con la cita (un solo flujo
+probado); el panel la muestra dentro del detalle del pedido o apartado._

@@ -173,7 +173,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const fC = (["all", "pend", "cur", "done", "no"].includes(sp.f ?? "") ? sp.f : "all") as FiltroCita;
   // Tiendas (4q): el apartado con tallas usa el mismo motor y los mismos bloques que la Tienda de Auto y Hogar.
   const aptOk = oficio || d.cat === "NEG-TIENDA";
-  const citas = (conCitas || d.cat === "NEG-TIENDA") && ord ? {
+  // Mercados y Tiendas (4s): la ayuda con el pedido / la compra usa el mismo motor y bloque que la ayuda con la cita.
+  const compra = d.cat === "NEG-MERC" || d.cat === "NEG-TIENDA";
+  const citas = (conCitas || compra) && ord ? {
     vivas: conCitas && ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
     // 4e: pre-estimados y presupuestos que esperan su rango (Hoy) y su detalle.
     sol: oficio && ruta.sec === "hoy" ? await solicitudesPanel(d.id) : undefined,
@@ -190,8 +192,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
     lista: conCitas && ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: conCitas && ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
-    ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
-    ayudas: conCitas && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
+    ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : compra && /^(merc|apt):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(merc|apt):/, "")) : undefined,
+    ayudas: (conCitas || compra) && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} />;
 }

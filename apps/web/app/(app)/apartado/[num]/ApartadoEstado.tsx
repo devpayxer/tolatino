@@ -121,6 +121,7 @@ export function ApartadoEstado({ x, es, pago = null }: { x: ApartadoVista; es: b
             <details className="border-t border-ink/[.06] px-[15px] py-3"><summary className="cursor-pointer text-[12.5px] font-bold text-action">{E2("El acuerdo que aceptaste", "The agreement you accepted")}</summary><p className="m-0 mt-2 text-pretty text-[12.5px] leading-[1.6] text-ink/70">{es ? P.terminos.es : P.terminos.en}</p><div className="mt-1.5 font-mono text-[9px] font-semibold text-ink/45">{`${E2("ACEPTADO", "ACCEPTED")} ${fD(P.aceptado)} · ${P.version.toUpperCase()}`}</div></details>
           </div>
         )}
+        {x.st === "done" && <div className="grid"><Button variant="secondary" icon="help" onClick={() => router.push(`/apartado/${x.numero}/ayuda`)}>{E2("Ayuda con la compra", "Purchase help")}</Button></div>}
         {x.st === "done" && (
           <div className="rounded-[18px] border border-ink/[.07] bg-white p-4 text-center">
             <div className="font-display text-[17px] font-extrabold tracking-[-0.03em]">{E2("¿Cómo te fue?", "How was it?")}</div>

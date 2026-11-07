@@ -14,15 +14,21 @@ const BASE: Record<string, L> = {
   // Profesionales
   ley: ["Ofreció algo que no podía hacer por ley", "Offered something they could not legally do"], nohizo: ["No hizo lo acordado", "Did not do what was agreed"],
   fecha: ["Perdió una fecha o un documento", "Missed a deadline or lost a document"], contesta: ["No le contesta", "Does not answer"],
+  // Mercados y Tiendas (4s)
+  peso: ["El peso no cuadra", "The weight does not add up"], falto: ["Faltó algo", "Something was missing"], fresco: ["No estaba fresco", "Not fresh"],
+  sust: ["Cambiaron algo sin preguntar", "Swapped something without asking"], caja: ["No cobraron el precio publicado", "Did not charge the posted price"],
+  apa: ["No guardaron el apartado", "Did not keep the hold"], talla: ["Talla o artículo equivocado", "Wrong size or item"], cambio: ["No aceptan el cambio", "Exchange refused"],
 };
 const POR_RUBRO: Record<string, Record<string, L>> = {
   salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },
   pro: { cobro: ["Cobró más del total por escrito", "Charged more than the written total"] },
+  merc: { tarde: ["Llegó tarde", "Arrived late"], caja: ["No cobraron el precio del estante", "Did not charge the shelf price"] },
+  tienda: { caja: ["Cobraron más en la caja", "Charged more at the register"], dano: ["Llegó dañado", "Arrived damaged"] },
 };
 export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;
 /* Lo que pide (corr/rev/avis/seg/fin, o como se guarda: reponer/devolver/avisar/seguro/terminar). */
 const QUIERE: Record<string, L> = {
-  corr: ["Que se lo arreglen sin cargo (otra cita)", "Fix it at no charge (a new booking)"], rev: ["Que le devuelvan", "A refund"], avis: ["Solo quiere avisar", "Just letting you know"],
+  corr: ["Que se lo arreglen o repongan sin cargo", "Fix or replace it at no charge"], rev: ["Que le devuelvan", "A refund"], avis: ["Solo quiere avisar", "Just letting you know"],
   seg: ["Que corrijan el cobro a su seguro", "Fix the charge to their insurance"], fin: ["Que terminen lo acordado, sin cobrar más", "Finish what was agreed, at no extra charge"],
 };
 const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin" };

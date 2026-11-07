@@ -3,6 +3,7 @@
    Hoy: los que esperan que aceptes (10 min) y los de hoy. El detalle: aceptar / no puedo; por cada línea por libra el PESO REAL
    y la FOTO DE LA BALANZA (obligatoria); «No hay» → quitarlo o proponer otro producto (el cliente acepta en 10 min); «Mandar al
    cliente» (el total real nunca pasa lo retenido); listo / en camino; lo recogió / entregado (se cobra lo real si no lo aprobó). */
+import { ayudaCita } from "./Citas";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaMerc, MercadoVista } from "@/lib/mercado";
 import { subirFoto } from "@/lib/subir-foto";
@@ -75,6 +76,7 @@ export function mercadoDetalle(c: Ctx): Sec {
   if (x.st === "confirmed" && D === "pesado") out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? E2("Va en camino", "On the way") : E2("Está listo", "It’s ready"), v: "primary", icon: x.modo === "delivery" ? "truck" : "bag", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "listo"), E2("Listo: el cliente lo sabe.", "Done: the client knows.")) }] });
   if (x.st === "confirmed" && (D === "listo" || D === "camino")) out.push({ type: "acts", items: [{ l: x.modo === "delivery" ? E2("Entregado", "Delivered") : E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => mercPaso(c.d.id, x.numero, "entregado"), x.local ? E2("Listo.", "Done.") : E2("Listo: se cobró lo real y se liberó el resto.", "Done: the real total was charged and the rest released.")) }] });
   if (t.cobrado) out.push({ type: "note", tone: "ok", icon: "check", t: E2(`Cobrado ${money(t.cobrado)}${t.liberado ? ` · liberado ${money(t.liberado)}` : ""}.`, `Charged ${money(t.cobrado)}${t.liberado ? ` · released ${money(t.liberado)}` : ""}.`) });
+  out.push(...ayudaCita(c, x.numero, E2("el cliente", "the client")));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.eventos.filter((e) => e.t.es).map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: nm(e.t), s: new Date(e.at).toLocaleTimeString(es ? "es-US" : "en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit" }), compact: true, chev: false })) });
   return { blocks: out, ed: null };
 }

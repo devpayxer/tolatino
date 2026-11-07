@@ -3,6 +3,7 @@
    Hoy: los que esperan que confirmes (arriba), los que tienes guardados y los recogidos de hoy. El detalle: lo que apartó,
    cuándo pasa y «Lo tengo · guárdalo», «Falta uno» (eliges cuál), «Falta esa talla» (ofreces la de al lado al mismo precio),
    «No lo tengo» y, guardado, «Lo recogió». Las horas que guardas salen de Tu herramienta (Tiendas: 24/48/72). */
+import { ayudaCita } from "./Citas";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { ApartadoFila } from "@/lib/apartados";
 import { apartadoAccionPanel } from "./acciones-apartados";
@@ -88,5 +89,6 @@ export function apartadoDetalle(c: Ctx): Sec {
     out.push({ type: "acts", items: [{ l: E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "recogio" }, E2("Listo: recogido.", "Done: picked up.")) }] });
   } else if (x.st === "change_proposed") { const o = x.lineas.find((l) => l.st === "out" && l.otra); out.push({ type: "note", tone: "info", icon: "clock", t: o ? E2(`${nombre} decide si quiere la talla ${o.otra!.label} (no la apartes todavía), la quita o cancela. Tiene 24 horas.`, `${nombre} decides whether to take size ${o.otra!.label} (do not set it aside yet), remove it or cancel. They have 24 hours.`) : E2(`${nombre} decide si quita lo que falta y sigue con lo demás, o cancela.`, `${nombre} decides whether to remove the missing item and keep the rest, or cancel.`) }); }
   else out.push({ type: "note", tone: "info", icon: "info", t: x.st === "done" ? E2(`Recogido · ${money(x.tot)} en la caja.`, `Picked up · ${money(x.tot)} at the register.`) : x.st === "expired" ? E2("Venció: las unidades volvieron al estante.", "Expired: the units went back on the shelf.") : x.st === "declined" ? E2("No lo tenías: esos artículos quedaron en 0 en tu Tienda.", "Not in stock: those items are now at 0 in your Shop.") : E2("Cancelado: las unidades volvieron al estante.", "Cancelled: the units went back on the shelf.") });
+  out.push(...ayudaCita(c, x.numero, nombre ?? x.cliente));
   return { blocks: out, ed: null };
 }

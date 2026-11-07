@@ -95,7 +95,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${"ayuda" in k && k.ayuda?.k === "appointment" ? "Ayuda con una cita" : "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${"ayuda" in k && k.ayuda?.k === "appointment" ? "Ayuda con una cita" : "ayuda" in k && k.ayuda?.k === "hold" ? "Ayuda con una compra" : "ayuda" in k && k.ayuda?.k === "market_order" ? "Ayuda con un pedido del mercado" : "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -182,13 +182,13 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Quitar foto", v: "danger", icon: "trash", off: unica, onClick: () => setConf({ titulo: "¿Por qué se quita?", plantillas: PLANT.foto, peligro: true, hacer: (m) => decidirMedios(k.id, "quitar", m) }) },
       ];
     }
-    if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "appointment") {
+    if (k.queue === "sop" && "ayuda" in k && k.ayuda && (k.ayuda.k === "appointment" || k.ayuda.k === "market_order" || k.ayuda.k === "hold")) {
       // Ayuda con una cita (3e): qué pasó, qué quiere y cuánto, su nota y fotos, la decisión del negocio y lo que se puede
       // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
       const h = k.ayuda;
       const DEC: Record<string, string> = { ok: "Aceptó", alt: `Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, no: "Dijo que no puede" };
       const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.rub)[0] },
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: h.k === "market_order" ? "PEDIDO" : h.k === "hold" ? "APARTADO" : "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0] },
         { k: "QUÉ QUIERE", v: `${quiereAyuda(h.wants)[0]}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (depósito)` : h.rub === "salud" || h.rub === "pro" ? "Nada: no se cobra en la app" : "Nada: pagó en el local" }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
       if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
