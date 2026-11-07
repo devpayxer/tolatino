@@ -5,6 +5,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { abrirGrupo, guardarEdu, quitarGrupo, recalcularFiltrosEdu, type EduIn, type GrupoIn } from "@/lib/edu";
+import { recalcularFiltrosNinos } from "@/lib/ninos";
 import { accesoPanel } from "@/lib/panel";
 import type { Res } from "./acciones";
 
@@ -21,7 +22,7 @@ export async function eduGuardar(negocio: string, p: EduIn): Promise<Res> {
     const r = await guardarEdu(c, a.negocio.id, p ?? {}, a.yo.id);
     if (!r.ok) return no(r.es, r.en);
     await auditar(c, a, "edu.herramienta", p ?? {});
-    await recalcularFiltrosEdu(c, a.negocio.id);
+    await recalcularFiltrosEdu(c, a.negocio.id); await recalcularFiltrosNinos(c, a.negocio.id);
     return { ok: true };
   });
 }
@@ -31,7 +32,7 @@ export async function eduAbrirGrupo(negocio: string, p: GrupoIn): Promise<Res> {
     const r = await abrirGrupo(c, a.negocio.id, p);
     if (!r.ok) return no(r.es, r.en);
     await auditar(c, a, "edu.grupo.abrir", { grupo: r.id, curso: p.item, empieza: p.inicio, cupos: p.libres, enLinea: !!p.url });
-    await recalcularFiltrosEdu(c, a.negocio.id);
+    await recalcularFiltrosEdu(c, a.negocio.id); await recalcularFiltrosNinos(c, a.negocio.id);
     return { ok: true };
   });
 }
@@ -41,7 +42,7 @@ export async function eduQuitarGrupo(negocio: string, grupo: string): Promise<Re
     const r = await quitarGrupo(c, a.negocio.id, String(grupo ?? ""));
     if (!r.ok) return no(r.es, r.en);
     await auditar(c, a, "edu.grupo.quitar", { grupo });
-    await recalcularFiltrosEdu(c, a.negocio.id);
+    await recalcularFiltrosEdu(c, a.negocio.id); await recalcularFiltrosNinos(c, a.negocio.id);
     return { ok: true };
   });
 }

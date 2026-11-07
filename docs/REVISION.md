@@ -1110,3 +1110,18 @@ la matrícula siempre es menos que el precio (lo impide también la base); el pl
 herramienta ofrece 3, 6 o 12); la tutoría de 1 a 1 tiene un cupo por sesión; «de tarde» desde las 2 PM y «de noche» desde las 5 PM salen de
 los grupos abiertos; quitar un grupo solo si nadie se inscribió en la app (con inscritos, se cancela con devolución en 4ee). El tipo de
 escuela (que decide pestaña, botón y reseñas) y forzarlo desde el Super Admin llegan con la ficha en 4ed.
+
+### 4eb · Niños: «Cupos y licencia», licencia del DHS y datos de los niños (7 nov)
+**Qué mirar (Altagracia, 5705550388 · Guardería Mis Angelitos):** Lo que vendes › **Cupos y licencia**: cupos libres por edad (2 años · 3 años
+· 4 y 5 años; agregar bebés o 6 a 12 años), precio por semana sin subsidio, CCIS, horario extendido, comidas, turno de noche, español y las
+edades que atiende; arriba, la **licencia del DHS** verificada. En Buscar › Niños la tarjeta dice «Quedan 3 cupos · 2 a 5 años» y «Acepta
+CCIS (subsidio) · $235 la semana sin subsidio». **Super Admin › Negocios › la guardería › Lo que vende › Licencias**: «Vencida» y «Retirar»
+(con motivo): la página deja de decir «con licencia» al instante y la tarjeta pasa a «Llama para pedir cupo»; «Verificar» lo devuelve.
+_Arreglado (clase):_ 5 lugares de Niños decían «con licencia» sin tener ninguna licencia (venía del prototipo). Ahora «con licencia» sale
+**solo** de una licencia del DHS verificada (la pone y la quita la base); Terapias Pasitos lo perdió porque no es una guardería.
+_Decidido por mí:_ guardería y cuidado en casa sin licencia vigente no reciben solicitudes por la app (solo contacto); niñera y nana, solo
+contacto siempre; los programas de Niños no llevan plan de pagos y un precio de $0 dice «Gratis si calificas»; de un niño solo se guardará
+nombre de pila, edad o grado, la escuela si lo recogen ahí y una nota corta, cifrados y borrados a los 30 días (la nota rechaza fechas de
+nacimiento y números de seguro social); las bandas de edad de la semilla solo dentro de las edades de cada lugar.
+_Ojo:_ las licencias de la semilla son de EJEMPLO (número «PRUEBA-…»); el registro y los textos del DHS se verifican antes de abrir
+(LAUNCH-CHECKLIST).

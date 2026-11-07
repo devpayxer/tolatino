@@ -192,7 +192,7 @@ export async function decidirLicencia(id: string, accion: "valid" | "expired" | 
               verified_at = case when $2 = 'valid' then now() else verified_at end, verified_by = case when $2 = 'valid' then $4 else verified_by end,
               next_review = case when $2 = 'valid' then (now() + interval '3 months')::date else next_review end
         where id = $1::bigint`, [q.subject_id, accion, m, s.id]);
-    await c.query(`select licencias_refrescar($1)`, [q.business_id]);
+    await c.query(`select licencias_refrescar($1)`, [q.business_id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, q.business_id ?? ""); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     if (q.business_id) await recalcularFiltrosSP(c, q.business_id); // «El médico habla español» sale de las licencias verificadas del equipo
     await cerrar(c, q, s, accion, m);
     const L: Record<string, string> = { valid: "verificada", expired: "vencida", not_found: "no se pudo verificar" };

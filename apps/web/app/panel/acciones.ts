@@ -232,7 +232,7 @@ export async function licenciaNumero(id: string, licId: string, numero: string):
     if (l.number === n) return null;
     // Un número nuevo se vuelve a revisar: sale «en revisión» hasta que el equipo lo confirme en el registro.
     await c.query(`update licenses set number = $2, status = 'review', updated_at = now() where id = $1::bigint`, [licId, n]);
-    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('lic', 'license', $1, $2, $3) on conflict do nothing`, [l.id, a.negocio.id, a.negocio.city_id]);
     return null;
@@ -253,7 +253,7 @@ export async function licenciaQuitar(id: string, licId: string): Promise<Res> {
     const u = await c.query(`update licenses set status = 'withdrawn', updated_at = now() where id = $1::bigint and business_id = $2 and status <> 'withdrawn'`, [licId, a.negocio.id]);
     if (!u.rowCount) return "no";
     await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'El dueño la quitó', decided_at = now() where queue = 'lic' and subject_id = $1 and status = 'open'`, [String(licId)]);
-    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id); // «El médico habla español» sale de las licencias verificadas del equipo
     return null;
   });

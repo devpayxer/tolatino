@@ -40,7 +40,7 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
   visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad", asiento: "Por asiento", priv: "Vehículo completo", caja: "Caja o envío", cover: "Entrada (sigue al cover)", lista: "Lista", mesa: "Mesa", vip: "VIP", evento: "Noche especial (espera a Eventos)", fecha: "Por fecha" };
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -152,6 +152,9 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.herramientaRetail ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-MERC" ? "scale" : "bag", title: n.herramientaRetail.titulo, sub: n.herramientaRetail.resumen }]} /> : null}
         {n.herramientaTrans ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "truck", title: n.herramientaTrans.titulo, sub: `${n.herramientaTrans.resumen} · tipo ${n.herramientaTrans.kind}${n.herramientaTrans.forzado ? " (forzado)" : ""}` }]} /> : null}
+        {n.herramientaNinos ? <A.AdminList label={`${n.herramientaNinos.cuidado ? "CUPOS Y LICENCIA" : "GRUPOS Y CUPOS"} · SOLO LECTURA`} rows={[
+          { icon: n.herramientaNinos.cuidado ? "users" : "calendar", title: n.herramientaNinos.kind, sub: `${n.herramientaNinos.resumen} · ${n.herramientaNinos.edad}${n.herramientaNinos.bandas ? ` · ${n.herramientaNinos.bandas}` : ""}` },
+          { icon: "law", title: n.herramientaNinos.lic, sub: n.herramientaNinos.recibe ? "Recibe solicitudes por la app" : "No recibe solicitudes por la app (solo contacto)", tag: n.herramientaNinos.recibe ? "RECIBE" : "SOLO CONTACTO", tone: n.herramientaNinos.recibe ? "signal" : "warn" }]} /> : null}
         {n.herramientaEdu ? <A.AdminList label="GRUPOS Y CUPOS · SOLO LECTURA" rows={[{ icon: "calendar", title: "Grupos y cupos", sub: `${n.herramientaEdu.resumen}${n.herramientaEdu.how ? ` · ${n.herramientaEdu.how}` : ""}` },
           ...n.herramientaEdu.cursos.map((x) => ({ icon: "star", title: `${x.t}${x.vende ? "" : " · oculto"}`, sub: x.s }))]} /> : null}
         {n.herramientaNoche ? <>
@@ -163,10 +166,13 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
         {n.herramientaFiesta ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "calendar", title: "Calendario y depósito", sub: n.herramientaFiesta.resumen }]} /> : null}
         {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
           ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
-        {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" || n.cat_id === "NEG-NOCHE" || n.cat_id === "NEG-EDU" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
+        {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" || n.cat_id === "NEG-NOCHE" || n.cat_id === "NEG-EDU" || n.cat_id === "NEG-NINOS" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
           const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
           return { icon: "law", title: `${l.title.es}${l.who ? ` · ${l.who}` : ""}`, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
-            actions: P.editar && l.status !== "valid" ? [
+            actions: P.editar && l.status === "valid" ? [
+              { label: "Vencida", variant: "secondary", onClick: () => setConf({ titulo: `Marcar vencida: ${l.title.es}`, sub: "El registro oficial dice que venció. Su página lo dice y, si es la licencia de una guardería, deja de recibir solicitudes por la app.", peligro: true, plantillas: ["El registro oficial dice que venció"], hacer: (m) => licencia(n.id, l.id, "expired", m) }) },
+              { label: "Retirar", variant: "danger", onClick: () => setConf({ titulo: `Retirar la licencia: ${l.title.es}`, sub: "Deja de salir «con licencia» en su página y en Buscar. El dueño ve el motivo.", peligro: true, plantillas: ["No aparece en el registro oficial", "El número no coincide con el negocio"], hacer: (m) => licencia(n.id, l.id, "revoked", m) }) },
+            ] : P.editar && l.status !== "valid" ? [
               { label: "Verificar", variant: "secondary", onClick: () => setConf({ titulo: `Verificar la licencia: ${l.title.es}`, sub: "Confirma que el número existe en el registro oficial del estado.", plantillas: ["Coincide con el registro oficial"], hacer: (m) => licencia(n.id, l.id, "valid", m) }) },
               ...(l.status === "review" ? [{ label: "No se pudo", variant: "secondary", onClick: () => setConf({ titulo: `No se pudo verificar: ${l.title.es}`, peligro: true, hacer: (m) => licencia(n.id, l.id, "not_found", m) }) }] : []),
             ] : undefined };

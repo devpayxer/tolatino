@@ -177,6 +177,12 @@ export async function negocio360(s: Staff, id: string) {
       return { resumen: C.resumenEdu(h, true), how: [h.how.presencial ? "presencial" : "", h.how.linea ? "en línea" : "", h.how.hibrido ? "híbrido" : "", h.how.esp ? "en español" : ""].filter(Boolean).join(" · "),
         cursos: h.cursos.map((x) => ({ id: x.id, t: x.name.es, vende: x.vende, s: [C.precioInsc(x.cents, x.k, true), x.k === "curso" ? `${x.sem ?? 0} semanas · ${x.hrs ?? 0} h` : "", x.mat ? `matrícula ${C.usdI(x.mat)}` : "", x.plan ? `${x.plan} pagos` : "", x.g1 ? "primera clase gratis" : "",
           x.cert ? `${x.oficial ? "certificado oficial" : "constancia"}: ${x.cert.es}` : "", `${x.grupos.filter((g) => g.estado === "open").length} grupos · ${x.grupos.reduce((a, g) => a + (g.estado === "open" ? g.libres : 0), 0)} cupos libres`].filter(Boolean).join(" · ") })) }; })() : null,
+    // Niños (4eb): «Cupos y licencia» en solo lectura (summary L307), el tipo, la licencia del DHS y si recibe por la app.
+    herramientaNinos: b.cat_id === "NEG-NINOS" ? await (async () => { const h = await (await import("./ninos")).herramientaNinos(id); if (!h) return null;
+      const C = await import("./ninos-comun"), I = await import("./inscripciones-comun");
+      return { kind: C.KINDS_NINOS.find((k) => k[0] === h.kind)?.[1] ?? h.kind, cuidado: h.cuidado, resumen: h.cuidado ? C.resumenNinos(h, true) : h.edu ? I.resumenEdu(h.edu, true) : "Solo contacto",
+        edad: C.edadTexto(h.edad, true), lic: C.licTexto(h.lic, true), recibe: h.recibe,
+        bandas: h.bandas.map((b) => `${b.label.es}: ${b.libres}`).join(" · ") }; })() : null,
     herramientaNoche: b.cat_id === "NEG-NOCHE" ? await (async () => { const h = await herramientaNoche(id); if (!h) return null;
       const H = await historialNoche(id, null, 12);
       return { resumen: resumenNoche(h, true), kind: h.kind, forzado: h.forzado, hist: H.map((p) => ({ t: postTexto(p.field, p.value, true), at: p.at, quien: p.quien })) }; })() : null,

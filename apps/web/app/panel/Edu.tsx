@@ -44,16 +44,18 @@ export function herramientaEduBloques(c: Ctx): Sec {
   return { blocks: out, ed: null };
 }
 
-function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduGuardar>[1], m?: string) => void): (Bloque | null)[] {
+/* Un curso con su precio, matrícula, plan, primera clase gratis y los cupos de sus grupos. Niños (nik, 4eb): «Inscripción · aparta el
+   cupo», sin plan de pagos (NIK, L460) y $0 = «Gratis si calificas». */
+export function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduGuardar>[1], m?: string) => void, nik = false): (Bloque | null)[] {
   const { E2, es } = c, out: (Bloque | null)[] = [{ type: "group", k: `${nm(c, x.name).toUpperCase()}${x.vende ? "" : E2(" · OCULTO", " · HIDDEN")}` }];
   const stp = x.k === "curso" ? 1000 : 500;
   out.push({ type: "step", t: E2("Precio", "Price"), s: x.k === "curso" ? E2(`El curso completo · ${x.sem ?? 0} semanas`, `Whole course · ${x.sem ?? 0} weeks`) : es ? FORMA[x.k].t.es : FORMA[x.k].t.en,
-    v: usdI(x.cents), onM: () => save({ item: x.id, precio: Math.max(x.k === "curso" ? x.mat + 100 : 100, x.cents - stp) }), onP: () => save({ item: x.id, precio: Math.min(5000000, x.cents + stp) }) });
+    v: x.cents || !nik ? usdI(x.cents) : E2("Gratis", "Free"), onM: () => save({ item: x.id, precio: Math.max(x.k === "curso" ? x.mat + 100 : nik ? 0 : 100, x.cents - stp) }), onP: () => save({ item: x.id, precio: Math.min(5000000, x.cents + stp) }) });
   if (x.k === "curso") {
-    out.push({ type: "step", t: E2("Matrícula · aparta el cupo", "Registration · holds the seat"),
+    out.push({ type: "step", t: nik ? E2("Inscripción · aparta el cupo", "Signup fee · holds the spot") : E2("Matrícula · aparta el cupo", "Registration · holds the seat"),
       s: x.mat ? E2(`Hoy se retienen ${usdI(x.mat)} · se descuenta del total; si el grupo no abre, se devuelve`, `${usdI(x.mat)} held today · comes off the total; refunded if the group does not open`) : E2("Sin matrícula: pagan el primer día", "No registration: they pay on day one"),
       v: usdI(x.mat), onM: () => save({ item: x.id, mat: Math.max(0, x.mat - 500) }), onP: () => save({ item: x.id, mat: Math.min(x.cents - 100, x.mat + 500) }) });
-    out.push({ type: "chips", k: E2("PLAN DE PAGOS", "PAYMENT PLAN"), help: planTexto(x.cents, x.mat, x.plan, es),
+    if (!nik) out.push({ type: "chips", k: E2("PLAN DE PAGOS", "PAYMENT PLAN"), help: planTexto(x.cents, x.mat, x.plan, es),
       items: PLANES.map((n) => ({ l: n ? String(n) : E2("Sin plan", "None"), v: x.plan === n ? "selected" : "filter", onClick: () => save({ item: x.id, plan: n }) })) });
   } else out.push({ type: "rows", items: [{ icon: "star", t: E2("Primera clase gratis", "First class free"), s: x.g1 ? E2("Sin tarjeta y sin compromiso.", "No card and no commitment.") : E2("Apagado", "Off"), tgOn: x.g1, compact: true, onTg: () => save({ item: x.id, g1: !x.g1 }) }] });
   const abiertos = x.grupos.filter((g) => g.estado === "open");
@@ -68,7 +70,7 @@ function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduGuardar>
 
 /* Detalle: abrir un grupo (grp:new:ITEM) o ver los grupos de un curso (grp:list:ITEM). */
 export function grupoEduDetalle(c: Ctx, id: string): Sec {
-  const { E2, es } = c, h = c.svc?.edu, [, modo, item] = id.split(":"), x = h?.cursos.find((z) => z.id === item);
+  const { E2, es } = c, h = c.svc?.edu ?? c.svc?.ninos?.edu, [, modo, item] = id.split(":"), x = h?.cursos.find((z) => z.id === item);
   if (!h || !x) return { blocks: [{ type: "head", t: E2("Curso no encontrado", "Course not found"), onBack: c.closeDet }, { type: "empty", icon: "calendar", t: E2("Ese curso ya no existe", "That course no longer exists"), s: E2("Puede que lo quitaste en Servicios.", "You may have removed it in Services.") }], ed: null };
   if (modo === "list") {
     const out: (Bloque | null)[] = [{ type: "head", eye: E2("GRUPOS", "GROUPS"), t: nm(c, x.name), s: E2("Los que están abiertos o en curso.", "Open or in progress."), onBack: c.closeDet }];

@@ -117,7 +117,7 @@ export async function equipoQuitar(id: string, mid: string): Promise<ResEq> {
     // Su licencia se va con la persona (nada se borra: queda retirada) y los filtros dejan de contarla.
     await c.query(`update licenses set status = 'withdrawn', updated_at = now() where member_id = $1 and status <> 'withdrawn'`, [m.id]);
     await c.query(`update queue_items set status = 'decided', decision = 'withdrawn', reason = 'La persona salió del equipo', decided_at = now() where queue = 'lic' and status = 'open' and subject_id in (select id::text from licenses where member_id = $1)`, [m.id]);
-    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]);
+    await c.query(`select licencias_refrescar($1)`, [a.negocio.id]); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); // Niños: la tarjeta sigue a la licencia del DHS (4eb)
     await recalcularFiltrosSP(c, a.negocio.id);
   });
   await auditar(a, "panel.equipo_quitar", m.id, null);

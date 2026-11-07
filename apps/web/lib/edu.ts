@@ -17,7 +17,7 @@ export async function herramientaEdu(negocio: string, c: Q = db()): Promise<Herr
   const s = (await c.query<{ p: boolean; l: boolean; h: boolean; esp: boolean; fv: string[]; hoy: string }>(
     `select ${HOY_SQL}::text as hoy, coalesce(s.how_presencial, true) as p, coalesce(s.how_linea, 'linea' = any(b.filter_values)) as l, coalesce(s.how_hibrido, 'hibrido' = any(b.filter_values)) as h,
             coalesce(s.esp, 'esp' = any(b.filter_values)) as esp, b.filter_values as fv
-       from businesses b join cities ci on ci.id = b.city_id left join insc_settings s on s.business_id = b.id where b.id = $1 and b.category_id = 'NEG-EDU'`, [negocio])).rows[0];
+       from businesses b join cities ci on ci.id = b.city_id left join insc_settings s on s.business_id = b.id where b.id = $1 and b.category_id in ('NEG-EDU', 'NEG-NINOS')`, [negocio])).rows[0];
   if (!s) return null;
   const I = (await c.query<{ id: string; name: Bi; k: KindInsc; cents: number; mat: number; a: Record<string, unknown>; vende: boolean }>(
     `select i.id::text, i.name, i.svc_kind as k, i.price_cents as cents, coalesce(i.deposit_cents, 0) as mat, coalesce(i.svc_attrs, '{}'::jsonb) as a, i.sell and i.status = 'live' as vende
@@ -44,17 +44,18 @@ const err = (es: string, en: string): R => ({ ok: false, es, en });
 const ID = /^\d{1,18}$/;
 
 export async function guardarEdu(c: PoolClient, negocio: string, p: EduIn, actor: string): Promise<R> {
-  const b = (await c.query<{ city: string }>(`select city_id as city from businesses where id = $1 and category_id = 'NEG-EDU' for update`, [negocio])).rows[0];
-  if (!b) return err("Esto es para Educación.", "This is for education businesses.");
+  // Educación y, fuera del cuidado, Niños (4eb) usan este mismo motor; Niños no tiene plan de pagos (NIK, L460).
+  const b = (await c.query<{ city: string; rub: "edu" | "ninos" }>(`select city_id as city, case category_id when 'NEG-NINOS' then 'ninos' else 'edu' end as rub from businesses where id = $1 and category_id in ('NEG-EDU', 'NEG-NINOS') for update`, [negocio])).rows[0];
+  if (!b) return err("Esto es para Educación y Niños.", "This is for education and kids businesses.");
   if (p.how) {
     const cur = (await herramientaEdu(negocio, c))!.how, h = { ...cur, ...Object.fromEntries(Object.entries(p.how).filter(([k, v]) => ["presencial", "linea", "hibrido", "esp"].includes(k) && typeof v === "boolean")) };
     if (!h.presencial && !h.linea && !h.hibrido) return err("Deja al menos una forma de dar clases.", "Keep at least one way to teach.");
-    await c.query(`insert into insc_settings (business_id, city_id, rubro, how_presencial, how_linea, how_hibrido, esp, updated_by) values ($1, $2, 'edu', $3, $4, $5, $6, $7)
+    await c.query(`insert into insc_settings (business_id, city_id, rubro, how_presencial, how_linea, how_hibrido, esp, updated_by) values ($1, $2, $8, $3, $4, $5, $6, $7)
                    on conflict (business_id) do update set how_presencial = $3, how_linea = $4, how_hibrido = $5, esp = $6, updated_by = $7, updated_at = now()`,
-      [negocio, b.city, h.presencial, h.linea, h.hibrido, h.esp, actor]);
+      [negocio, b.city, h.presencial, h.linea, h.hibrido, h.esp, actor, b.rub]);
     return { ok: true };
   }
-  await c.query(`insert into insc_settings (business_id, city_id, rubro, updated_by) values ($1, $2, 'edu', $3) on conflict (business_id) do nothing`, [negocio, b.city, actor]);
+  await c.query(`insert into insc_settings (business_id, city_id, rubro, updated_by) values ($1, $2, $4, $3) on conflict (business_id) do nothing`, [negocio, b.city, actor, b.rub]);
   if (p.grupo !== undefined) {
     if (!ID.test(String(p.grupo))) return err("Ese grupo no existe.", "That group does not exist.");
     const n = Math.round(Number(p.libres));
@@ -77,7 +78,9 @@ export async function guardarEdu(c: PoolClient, negocio: string, p: EduIn, actor
   if (!it) return err("Ese curso no existe.", "That course does not exist.");
   if (p.precio !== undefined) {
     const v = Math.round(Number(p.precio));
-    if (!(v >= 100 && v <= 5000000 && v % 100 === 0)) return err("El precio va en dólares enteros.", "The price goes in whole dollars.");
+    // Niños: $0 = «Gratis si calificas» (Head Start, evaluaciones); un curso siempre tiene precio (la matrícula es menos).
+    const min = b.rub === "ninos" && it.k !== "curso" ? 0 : 100;
+    if (!(v >= min && v <= 5000000 && v % 100 === 0)) return err("El precio va en dólares enteros.", "The price goes in whole dollars.");
     if (it.k === "curso" && v <= it.mat) return err("El precio tiene que ser más que la matrícula.", "The price must be more than the registration fee.");
     await c.query(`update items set price_cents = $2, updated_at = now() where id = $1`, [p.item, v]);
     return { ok: true };
@@ -92,6 +95,7 @@ export async function guardarEdu(c: PoolClient, negocio: string, p: EduIn, actor
   if (p.plan !== undefined) {
     const v = Math.round(Number(p.plan));
     if (it.k !== "curso") return err("El plan de pagos es solo de un curso.", "The payment plan is only for a course.");
+    if (b.rub === "ninos" && v) return err("Los programas de niños no llevan plan de pagos.", "Kids programs do not have a payment plan.");
     if (!(PLANES as readonly number[]).includes(v)) return err("El plan de pagos es de 3, 6 o 12 pagos.", "The payment plan is 3, 6 or 12 payments.");
     await c.query(`update items set svc_attrs = case when $2 = 0 then coalesce(svc_attrs, '{}'::jsonb) - 'plan_n' else coalesce(svc_attrs, '{}'::jsonb) || jsonb_build_object('plan_n', $2) end, updated_at = now() where id = $1`, [p.item, v]);
     return { ok: true };
@@ -110,7 +114,7 @@ export async function abrirGrupo(c: PoolClient, negocio: string, p: GrupoIn): Pr
   if (!ID.test(String(p?.item ?? ""))) return err("Ese curso no existe.", "That course does not exist.");
   const it = (await c.query<{ city: string; k: KindInsc; sem: number | null; hoy: string }>(
     `select b.city_id as city, i.svc_kind as k, (i.svc_attrs->>'sem')::int as sem, ${HOY_SQL}::text as hoy from items i join businesses b on b.id = i.business_id join cities ci on ci.id = b.city_id
-      where i.id = $1 and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora') and b.category_id = 'NEG-EDU'`, [p.item, negocio])).rows[0];
+      where i.id = $1 and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora') and b.category_id in ('NEG-EDU', 'NEG-NINOS')`, [p.item, negocio])).rows[0];
   if (!it) return err("Ese curso no existe.", "That course does not exist.");
   const ini = String(p.inicio ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ini) || ini < it.hoy) return err("Elige el día en que empieza (hoy o después).", "Pick the start day (today or later).");
