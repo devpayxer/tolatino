@@ -11,9 +11,9 @@ import { HoyCarrusel } from "../HoyCarrusel";
 import type { Historia } from "@/lib/hoy-comun";
 import type { Recomendado } from "@/lib/comunidad-portada";
 
-type N = "Chip" | "Icon" | "SectionHeader" | "IconButton" | "InfoCard" | "Button";
+type N = "Chip" | "Icon" | "SectionHeader" | "IconButton" | "InfoCard" | "Button" | "Tag";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Chip, Icon, SectionHeader, IconButton, InfoCard, Button } = UI as unknown as Record<N, ComponentType<any>>;
+const { Chip, Icon, SectionHeader, IconButton, InfoCard, Button, Tag } = UI as unknown as Record<N, ComponentType<any>>;
 
 type Textos = { cats: string; dest: string; nuevos: string; hoy: string; llamar: string; forBiz: string; publishTitle: string; publishBody: string; publishCta: string };
 
@@ -30,7 +30,7 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
           {recs.map((x, i) => (
             <button key={x.id} type="button" onClick={() => router.push(`/n/${x.id}`)} className="flex items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
               <span className="w-[22px] flex-none font-mono text-[13px] font-extrabold text-ink/30">{i + 1}</span>
-              <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold text-ink">{x.nombre}</span>
+              <span className="min-w-0 flex-1"><span className="flex items-center gap-1.5"><span className="block truncate text-[13.5px] font-bold text-ink">{x.nombre}</span>{x.destacada && <Tag tone="action">{E2("DESTACADA", "FEATURED")}</Tag>}</span>
                 <span className="mt-[3px] block font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{`${x.rating && x.resenas ? `★ ${x.rating.toFixed(1)} · ` : ""}${x.vecinos} ${x.vecinos === 1 ? E2("VECINO LO RECOMIENDA", "NEIGHBOR RECOMMENDS") : E2("VECINOS LO RECOMIENDAN", "NEIGHBORS RECOMMEND")}`}</span></span>
               <span className="grid text-ink/30"><Icon name="chevronRight" size={16} strokeWidth={2} /></span>
             </button>

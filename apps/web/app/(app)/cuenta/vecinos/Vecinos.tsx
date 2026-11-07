@@ -4,7 +4,7 @@
    de la lista (Dejar de seguir · Seguir también · Desbloquear / Quitar silencio, y volver a hacerlo: Deshacer). Por cursor. */
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { rango } from "@/lib/comunidad-comun";
+import { fijarRangos, rango } from "@/lib/comunidad-comun";
 import type { Persona, PersonaB } from "@/lib/vecinos";
 import { vecBloquear, vecDeshacer, vecSeguir, vecSilenciar } from "../../comunidad/acciones";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
@@ -14,7 +14,8 @@ type Item = (Persona | PersonaB) & { hecho?: boolean };
 type Bi = { es: string; en: string };
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
-export function Vecinos({ es, yo, l, d, menor, pagina }: { es: boolean; yo: Yo; l: L; d: { items: Item[]; mas: string | null } | null; menor: boolean; pagina: boolean }) {
+export function Vecinos({ es, yo, l, d, menor, pagina, rangos }: { es: boolean; yo: Yo; l: L; d: { items: Item[]; mas: string | null } | null; menor: boolean; pagina: boolean; rangos?: { es: string; en: string }[] }) {
+  fijarRangos(rangos); // 5f: los nombres vigentes de los rangos (el equipo los puede renombrar)
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
   const [items, setItems] = useState<Item[]>(d?.items ?? []);

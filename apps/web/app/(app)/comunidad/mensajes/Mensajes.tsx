@@ -16,7 +16,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Mensajes({ es, yo, ciudad, d }: { es: boolean; yo: YoCom; ciudad: string; d: { items: Conv[]; mas: string | null } }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [items, setItems] = useState(d.items), [mas, setMas] = useState(d.mas), [busy, setBusy] = useState(false);
   const verMas = async () => {
     if (!mas || busy) return; setBusy(true);

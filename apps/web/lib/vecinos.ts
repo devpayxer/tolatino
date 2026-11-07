@@ -2,6 +2,7 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
+import { insignias } from "./puntos";
 import { MAX_APODO, revisarPerfil, revisarTexto } from "./comunidad-filtro";
 import type { Pub } from "./comunidad-comun";
 import { COLS, ISO, JOINS, UUID, armar, corto, enComunidad, ini, no, sinBloqueo, sinBloqueos, type Fila, type Res } from "./comunidad";
@@ -40,6 +41,7 @@ export type Vecino = {
   id: string; yo: boolean; nombre: string; apodo: string | null; ini: string; foto: string | null; rango: number; zona: Bi | null; ciudad: string | null;
   desde: number | null; fundador: number | null; bio: string | null; cuentas: { seguidores: number; siguiendo: number; publicaciones: number } | null; ocultar: boolean;
   yoSigo: boolean; meSigue: boolean; silenciado: boolean; puedeEscribir: boolean; pubs: Pub[]; mas: string | null;
+  insignias: { k: string; t: Bi; s: Bi }[]; puntos: number; // 5f
 };
 type FilaVec = {
   id: string; first_name: string | null; last_name: string | null; nick: string | null; photo_url: string | null; rango: number; bio: string | null; since_year: number | null;
@@ -59,13 +61,15 @@ export async function perfilVecino(viewer: string, id: string, cursor: string | 
        from users u left join community_profiles cp on cp.user_id = u.id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id left join cities c on c.id = u.home_city_id
       where u.id = $2 and ${VISIBLE("u", "$1")}`, [viewer, quien])).rows[0];
   if (!r) return null;
-  const n = corto(r.first_name, r.last_name), [num, escribio] = await Promise.all([numeroVecino(r.id), yo ? false : meEscribio(viewer, r.id)]);
+  const n = corto(r.first_name, r.last_name), [num, escribio, ins, pts] = await Promise.all([numeroVecino(r.id), yo ? false : meEscribio(viewer, r.id), insignias(r.id),
+    db().query<{ p: number }>(`select coalesce((select points_total from community_profiles where user_id = $1), 0) as p`, [r.id])]);
   const { pubs, mas } = r.silenciado && !yo ? { pubs: [], mas: null } : await publicacionesDe(viewer, r.id, cursor);
   return {
     id: r.id, yo, nombre: n, apodo: r.nick, ini: ini(n), foto: r.photo_url, rango: r.rango, zona: r.zona, ciudad: r.ciudad, desde: r.since_year,
     fundador: num?.founder ? num.n : null, bio: r.bio, ocultar: r.hide_counts,
     cuentas: r.hide_counts && !yo ? null : { seguidores: r.seg, siguiendo: r.sig, publicaciones: r.pubs },
     yoSigo: r.yo_sigo, meSigue: r.me_sigue, silenciado: r.silenciado, puedeEscribir: !yo && (r.me_sigue || escribio), pubs, mas,
+    insignias: ins, puntos: pts.rows[0]!.p,
   };
 }
 

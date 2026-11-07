@@ -26,7 +26,7 @@ const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCom; ciudad: string; v: V | null; bloqueado: { id: string; nombre: string } | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const vec = useVecinoAcciones(es, ui);
   const [sigo, setSigo] = useState(v?.yoSigo ?? false), [pubs, setPubs] = useState<Pub[]>(v?.pubs ?? []), [mas, setMas] = useState(v?.mas ?? null), [busy, setBusy] = useState(false);
   useEffect(() => { setSigo(v?.yoSigo ?? false); setPubs(v?.pubs ?? []); setMas(v?.mas ?? null); }, [v]);
@@ -124,6 +124,18 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
           </div>
         )}
         {v.yo && <MisEnlaces es={es} v={v} ui={ui} margen={margen} />}
+        {v.insignias.length > 0 && (
+          <div data-screen-label="APP-COM-VECINO · insignias" style={{ ...CARD, borderRadius: 18, margin: margen, padding: 16 }}>
+            <div style={{ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{E2("INSIGNIAS", "BADGES")}</div>
+            <div style={{ marginTop: 10, display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
+              {v.insignias.map((b) => (
+                <div key={b.k} style={{ padding: "11px 12px", borderRadius: 13, background: "var(--tl-paper)", display: "flex", gap: 9, alignItems: "flex-start" }}>
+                  <span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="star" size={15} color="var(--tl-pro-ink)" /></span>
+                  <div style={{ minWidth: 0 }}><div style={{ font: "700 12.5px/1.3 Manrope,sans-serif" }}>{es ? b.t.es : b.t.en}</div><div style={{ marginTop: 3, font: "500 11px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{es ? b.s.es : b.s.en}</div></div>
+                </div>))}
+            </div>
+          </div>
+        )}
         <div data-screen-label="APP-COM-VECINO · publicaciones" style={{ background: "var(--tl-white)", overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
           <div style={{ padding: "14px 20px", borderBottom: LINE, font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{v.yo ? E2("LO QUE PUBLICASTE", "WHAT YOU POSTED") : E2("LO QUE PUBLICÓ", "WHAT THEY POSTED")}</div>
           {pubs.map((p) => (
@@ -149,10 +161,12 @@ function MisEnlaces({ es, v, ui, margen }: { es: boolean; v: V; ui: ComUi; marge
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const filas: [string, string, string, () => void][] = [
+    ["shield", es ? rango(v.rango).es : rango(v.rango).en, E2(`${v.puntos.toLocaleString("en-US")} PUNTOS · TU RANGO Y LA TABLA`, `${v.puntos.toLocaleString("en-US")} POINTS · YOUR RANK AND THE BOARD`), () => router.push("/comunidad/rango")],
     ["edit", E2("Editar mi perfil", "Edit my profile"), E2("PRESENTACIÓN, CÓMO TE DICEN Y DESDE CUÁNDO", "INTRO, NICKNAME AND SINCE WHEN"), () => ui.setHoja({ title: E2("Mi perfil", "My profile"), sub: E2("Lo ven los vecinos con cuenta. Sin teléfonos, correos ni direcciones.", "Neighbors with an account see it. No phones, emails or addresses."), extra: <Editar es={es} v={v} ui={ui} /> })],
     ["users", E2("Siguiendo y seguidores", "Following and followers"), v.cuentas ? `${v.cuentas.siguiendo} ${E2("SIGUIENDO", "FOLLOWING")} · ${v.cuentas.seguidores} ${E2("SEGUIDORES", "FOLLOWERS")}` : "", () => router.push("/cuenta/vecinos?l=siguiendo")],
     ["ban", E2("Bloqueados y silenciados", "Blocked and muted"), E2("CON DESHACER", "WITH UNDO"), () => router.push("/cuenta/vecinos?l=bloqueados")],
     ["chat", E2("Mensajes", "Messages"), E2("SOLO CON QUIEN TE SIGUE", "ONLY WITH PEOPLE WHO FOLLOW YOU"), () => router.push("/comunidad/mensajes")],
+    ["share", E2("Invita vecinos", "Invite neighbors"), E2("CUENTA PARA CAPITÁN · SIN DINERO", "COUNTS TOWARD CAPTAIN · NO MONEY"), () => router.push("/cuenta/invitar")],
   ];
   return (
     <div data-screen-label="APP-COM-VECINO · lo mío" style={{ ...CARD, borderRadius: 18, margin: margen, padding: "4px 16px" }}>

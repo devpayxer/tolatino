@@ -1685,3 +1685,60 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 **Capturas:** `c5e-hoy-publico-m`, `c5e-hoy-historia-3-m`, `c5e-hoy-vacio-m`, `c5e-hoy-publico-d`, `c5e-admin-hoy-d`, `c5e-admin-retirar-d`,
 `c5e-panel-retirada-d`, `c5e-admin-oficial-d`, `c5e-muro-oficial-m`, `c5e-muro-oficial-d`, `c5e-hoy-vecino-m`, `c5e-inicio-m`, `c5e-inicio-d`,
 `c5e-negocios-m`, `c5e-negocios-d`, `c5e-buscar-invitado-m`, `c5e-buscar-vecinos-m`, `c5e-buscar-vecinos-d`, `c5e-preguntale-m`.
+
+### 5f · Comunidad: puntos, rangos, insignias y Tabla del Barrio (+ reseñas, recomendaciones e invitar) (7 nov)
+Míralo en el sandbox (semilla: los 16 vecinos de Hazleton con sus puntos, rangos e insignias del prototipo; el mes en curso y el anterior
+de la Tabla son la «sep» y «ago» del prototipo; el anterior ya está cerrado). Teléfono y escritorio.
+1. **Tu rango** (`/comunidad/rango`, la pastilla «N · Rango» arriba): número, nombre, puntos («X DE 100 HOY»), «Para {siguiente}» con los
+   puntos y la condición (x / n), lo que ya puedes, la escalera (TÚ · POR INVITACIÓN · 3 PLAZAS; lo de El Patio dice «Cuando abra El Patio»),
+   cómo se ganan los puntos y sus reglas (en escritorio a la derecha), tus movimientos e insignias.
+2. **Puntos de verdad:** con dos cuentas en dos teléfonos, vota + lo de la otra → +2 (comentario +1, recomendación +3). Quita el voto → se
+   resta. Marca «Me sirvió» → +10. Una reseña verificada → +15 y la tarjeta dice «+15 PUNTOS» (desde Sargento también el rango:
+   «SARGENTO · 23 RESEÑAS»). La primera recomendación de un negocio que junta 3 votos → +50 una vez. Dos cuentas en el mismo teléfono: el
+   voto no suma. Con 100 puntos en el día ya no suma nada más ese día.
+3. **Subir de rango:** al cruzar 100 puntos con una publicación de 5 votos, «Subiste de rango · Ahora eres Vecino…» en la campana.
+4. **Ocultar y apelar:** el equipo oculta algo tuyo → se restan sus puntos (Tus puntos: «Se restó … (oculto por las reglas)»); apelas y otra
+   persona lo levanta → vuelve y los puntos también.
+5. **Tabla del Barrio** (tercera pestaña): mes en curso / anterior, General · Recomendaciones · Respuestas, «Vas #N con X puntos». En
+   escritorio, la columna derecha trae tu rango con su barra y la Tabla del mes (5 primeros).
+6. **Perfil:** insignias (Ramón: Fundador, Avisos de la ciudad, Mejor respuesta ×10, Top del mes). Tu perfil: «Tu rango y la Tabla» e
+   «Invita vecinos».
+7. **Invita vecinos** (Mi cuenta): tu código NOMBRE-N y tu enlace `/i/{código}`; quien entra por él y crea su cuenta sale como «SE UNIÓ».
+8. **Sargento Mayor:** en tu recomendación, ··· → «Destacar en Negocios» → sale 7 días en Negocios › Recomendados por vecinos con «DESTACADA»
+   (una al mes; el muro no cambia).
+9. **Super Admin › Gamification:** Rangos (cuántos hay en cada uno; «Cambiar nombre» ES/EN con vista previa → la Comunidad lo muestra al
+   instante), Puntos (tope 50 · 100 · 150 · 200 y cada regla con valor e interruptor), Tabla del Barrio (excluir con motivo → no sale y le
+   avisamos; «Cerrar el mes» con sus 4 pasos en el mes anterior congelado). **Usuarios 360° › Comunidad › Puntos y rango:** ajustar ± con
+   motivo (Admin hasta 5,000; otros hasta 500), «Cambiar rango» (Coronel o bajar por fraude, solo Admin) y los movimientos.
+
+**Decidí (regla AB; si prefieres otra cosa, se cambia):**
+- **General del Barrio = 3 plazas por ciudad**: al cerrar el mes las toman los 3 primeros de la Tabla **que ya son Comandante (8)**; el
+  **Coronel sigue siendo Coronel** (lo da el equipo para moderar y no compite por la plaza). La plaza dura hasta el siguiente cierre; quien la
+  deja vuelve a su rango. Así cuadra el prototipo (Altagracia ganó agosto y es Coronel; Ramón es General; Carmen quedó tercera y es Capitán).
+- **Premio del mes:** insignia «Top del mes» a los 3 primeros y **200 monedas** cada uno (la nota del prototipo; §6 #12 decía 300 · 200 · 100):
+  el cierre deja anotadas las monedas (`monthly_boards.prize_coins`) y las acredita el libro de monedas en 5g. Hasta entonces la pantalla no
+  promete monedas que no existen: dice que llegan con Mis monedas.
+- **Cerrar el mes:** solo un mes que ya terminó (el en curso se congela solo el último día a medianoche); el barrido lo cierra el día 3. El
+  prototipo dejaba «Cerrar ahora» el mes en curso: no, porque cortaría el mes de todos.
+- **Recomendaciones / Respuestas** de la Tabla: Recomendaciones = «Sumar mi voto» (+3), primera recomendación (+50) y votos en una
+  recomendación; Respuestas = «Me sirvió» (+10) y votos en comentarios (+1). General = todo.
+- **Condiciones de los rangos** (además de los puntos 0 · 100 · 300 · 800 · 1,500 · 2,300 · 3,500 · 5,000): Vecino = una publicación con 5 votos +;
+  Cabo = 5 comentarios con votos +; Sargento = 3 recomendaciones con votos; Sargento Mayor = 4 semanas seguidas con puntos; Teniente = 3
+  reseñas verificadas; Capitán = 3 invitados que participan (publican, comentan, piden o reservan); Comandante = sin sanciones en 180 días
+  y 200 votos + recibidos. Se sube en orden. El rango que ya tenía cada uno es su piso.
+- **Votos y dispositivo:** además de lo de 5b (dos votantes en un teléfono cuentan uno), **una cuenta que alguna vez entró en el teléfono del
+  autor no le da puntos** (sí ordena). «Me sirvió» igual.
+- **Lo que se quita y vuelve:** el inverso va al mes del punto original (si ese mes no está cerrado baja también en la Tabla; un mes cerrado
+  no cambia). Volver a votar después de quitar el voto suma otra vez (nunca más de una vez a la vez) y cuenta para el tope del día.
+- **Tope por rol del ajuste:** Admin 5,000; los demás roles que editan Usuarios, 500. Nunca deja los puntos en negativo; nadie ajusta los suyos.
+- **Destacar (Sargento Mayor):** solo recomendaciones propias, una por mes de la ciudad, 7 días; en Negocios sale siempre (aunque no esté
+  entre los 4 más votados) con «DESTACADA», en el puesto que le dan sus votos.
+- **Invitar:** el invitado cuenta si crea su cuenta por el enlace en los 7 días de creada, no comparte teléfono con quien invita y luego
+  participa. Sin premios ni dinero (§6 #22).
+- **Insignias de El Patio** (campeona, 100 partidas) no se muestran ni se siembran hasta que abra El Patio (G).
+- **«Monedas» y «Cupones»** en Gamification llegan con 5g; El Patio después de la apertura; «Rango del negocio» no se construye (§6 #23).
+- **e2e:** para probar «Cerrar el mes» desde la pantalla, la prueba reabre con SQL de prueba el mes anterior que la semilla dejó cerrado
+  (en la app un mes cerrado no se abre).
+
+**Capturas:** `c5f-rango-m`, `c5f-rango-d`, `c5f-tabla-m`, `c5f-tabla-d`, `c5f-resena-m`, `c5f-perfil-insignias-m`, `c5f-invitar-m`,
+`c5f-u360-puntos-d`, `c5f-admin-tabla-d`, `c5f-admin-cerrar-d`, `c5f-admin-renombrar-d`, `c5f-admin-rangos-d`.

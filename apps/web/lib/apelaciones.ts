@@ -185,13 +185,15 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
       const otra = (await c.query(`select 1 from sanctions where target_kind = 'user' and target_id = $1 and lifted_at is null and (ends_at is null or ends_at > now()) and kind in ('mute7', 'nopub', 'susp14', 'ban')`, [a.uid])).rowCount;
       if (!otra) await c.query(`update users set status = 'active', status_until = null, status_reason = null where id = $1 and status in ('muted', 'suspended', 'banned')`, [a.uid]);
     }
-    // HOOK 5f (puntos): levantar devuelve los puntos que se restaron al ocultar (asiento inverso del inverso).
+    // 5f · Puntos: al volver a verse, la base devuelve lo que se restó al ocultar (trigger → pts_restaurar_objetivo: asiento inverso del
+    // inverso); el rango se recalcula después de guardar (avisarDecision).
   }
   await c.query(`update appeals set status = $2, decided_by = $3, decided_at = now(), decision_reason = $4 where id = $1::bigint`, [a.id, accion, staffId, motivo]);
   return { err: null, a };
 }
 /* Después de guardar la decisión: el aviso a quien apeló, con el motivo. */
 export async function avisarDecision(a: { numero: string; k: Apelable; tid: string; uid: string }, accion: "upheld" | "lifted", motivo: string) {
+  if (accion === "lifted") await (await import("./puntos")).recalcularRango(a.uid).catch(() => undefined);
   const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [a.uid])).rows[0]?.lang === "en";
   const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;
   await avisar(a.uid, accion === "lifted" ? "apel_lifted" : "apel_upheld", { numero: a.numero, que, motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO(a.k, a.tid), ref: ["appeal", a.numero], sinSms: true }).catch(() => undefined);

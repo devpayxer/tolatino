@@ -195,6 +195,8 @@ export async function guardarPerfil(p: { first: string; last: string; nick?: str
     if (antes !== `${first} ${last}`)
       await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'name', $2, $3, 'user')`, [u.id, antes || null, `${first} ${last}`]);
   });
+  // 5f · La primera vez (cuenta nueva): si llegó por el enlace de un vecino (/i/{código}), queda como su invitado (cuenta para Capitán).
+  if (!u.first_name) await (await import("./invitar")).alCrearCuenta(u.id).catch(() => undefined);
 }
 
 export async function salir(): Promise<void> {

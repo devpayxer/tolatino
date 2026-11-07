@@ -26,7 +26,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
   es: boolean; yo: YoCom; ciudad: string; abierta: boolean; silenciado: { hasta: string | null; motivo: string | null } | null; k: Tipo; texto: string; editar: Editar | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const ed = editar && !("noEsta" in editar) ? editar : null;
   const [kind, setKind] = useState<Tipo>(ed?.kind ?? k);
   const [body, setBody] = useState(ed?.body ?? texto);

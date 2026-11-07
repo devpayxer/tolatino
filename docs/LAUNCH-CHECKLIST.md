@@ -273,8 +273,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
   de pruebas se usan calles sintéticas. Producción las carga en la fase 9.
 
 ## Reseñas (bloque 2g-1, 6 nov 2026)
-- [ ] **Rango y puntos** del vecino en la tarjeta («SARGENTO · 23 RESEÑAS», «+15 puntos») y la nota de rango en «Tu reseña»: con
-  la gamificación. Hoy: «N RESEÑAS». Pregunta 7 en `docs/REVISION.md`.
+- [x] **Rango y puntos** del vecino en la tarjeta («SARGENTO · 23 RESEÑAS», «+15 PUNTOS»): hecho en 5f (desde Sargento; +15 si la reseña
+  verificada sumó). Falta solo la nota de rango en «Tu reseña» del formulario de escribir (texto del diseño, sin dato nuevo).
 - [ ] **«Ver traducción» (D3)** en reseñas y respuestas: con el servicio de traducción.
 - [ ] **«Lo que más mencionan»** (temas): se calcula del texto; hoy no sale.
 - [ ] **Preguntas de cada categoría** en «Lo que importa» (belleza, autos, hogar, salud…): con la fase de cada categoría. Hoy:
@@ -629,7 +629,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov)
 - [ ] **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
       matriz de CI. (5e, 7 nov)
-- [ ] **5e · Puntos y Tabla sin la cuenta oficial:** hoy la cuenta oficial no tiene fila en users; cuando llegue el libro de puntos (5f), el
-      guardián `oficialNoEsPersona` exige que toda consulta de `points_entries` / `monthly_boards` filtre la cuenta oficial. (5e, 7 nov)
+- [x] **5e · Puntos y Tabla sin la cuenta oficial:** hecho en 5f: el libro y la Tabla piden una persona (`user_id not null references
+      users`), `pts_sumar` rechaza sin persona, lo oficial no da puntos y toda lectura va unida a `users` (guardián `oficialNoEsPersona`
+      ampliado, probado al revés; e2e `com5f`). (5f, 7 nov)
 - [ ] **5e · Foto propia de la cuenta oficial por ciudad** (`city_official_accounts.photo_media_id`): hoy sale el logo de To'Latino; falta
       dónde subirla en Contenido › Cuenta oficial si el fundador quiere una por ciudad. (5e, 7 nov)
+- [ ] **5f · Monedas del premio del mes:** `tabla_cerrar` deja 200 monedas anotadas a cada uno de los 3 primeros (`monthly_boards.prize_coins`);
+      las acredita el libro de monedas de 5g (también las de los cierres anteriores a 5g). (5f, 7 nov)
+- [ ] **5f · Reporte de canjes en «Cerrar el mes»** (paso 4): hoy dice 0 canjes porque los cupones llegan en 5g; conectar al libro de cupones. (5f, 7 nov)
+- [ ] **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
+      Tabla usa índices `(city_id, month, puntos desc, user_id)` y cursor; «mi lugar» cuenta los de delante (índice), y `pts_rango` mira la
+      escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov)
+- [ ] **5f · Notificación «Subiste de rango» en la app (push):** hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
+- [ ] **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov)
+- [ ] **5f · Condiciones de los rangos editables** (además del nombre): hoy el admin cambia nombres, valores de las reglas y el tope; los
+      puntos mínimos y las condiciones viven en `ranks.min_points` / `ranks.cond` y se cambian con migración. Si el fundador los quiere en
+      Gamification, se agregan con vista previa y auditoría. (5f, 7 nov)
+- [ ] **5f · Invitados que «participan» por pedidos:** cuenta cualquier operación no cancelada; revisar con el fundador si un pedido de $1
+      basta para Capitán (anillos de invitaciones). (5f, 7 nov)

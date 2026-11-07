@@ -1887,6 +1887,22 @@ const guardianes = {
     if (existsSync(H)) {
       const c = cuerpoFn(sinComent(H), "votar"), iP = c.search(/if \(t\.autor === userId\) return no\(/), iV = c.search(/com_votar\(/);
       if (iP < 0 || iV < 0 || iP > iV) falla("votoUnico", H, 0, "votar() debe rechazar lo propio antes de llamar a com_votar()");
+      // 5f: los puntos del voto salen después de com_votar (con el voto que quedó y el dispositivo del toque).
+      const iPts = c.search(/await puntosDelVoto\(c, \{ kind, id, voter: userId, device, mio \}\)/);
+      if (iPts < 0 || iPts < iV) falla("votoUnico", H, 0, "votar() debe asentar los puntos con puntosDelVoto() después de com_votar() (con el dispositivo del toque)");
+    }
+    // 5f · Sin puntos entre cuentas del mismo dispositivo: un voto callado (counted = false) o de una cuenta que comparte dispositivo con
+    // quien escribió no da puntos (y revierte lo que había dado); «Me sirvió» tampoco entre cuentas del mismo dispositivo.
+    const PU = "apps/web/lib/puntos.ts";
+    if (existsSync(PU)) {
+      const t = sinComent(PU), v = cuerpoFn(t, "puntosDelVoto"), ms = cuerpoFn(t, "puntosMejorRespuesta"), pr = cuerpoFn(t, "primeraRecomendacion");
+      const iG = v.search(/if \(o\.mio !== 1 \|\| !v\?\.counted \|\| \(await mismoDispositivo\(c, o\.voter, t\.autor, o\.device\)\)\) \{ await revertir\(c, t\.autor, ref, "voto"\); return null; \}/), iS = v.search(/await sumar\(/);
+      if (iG < 0 || iS < 0 || iG > iS) falla("votoUnico", PU, 0, "puntosDelVoto: solo un voto + que cuenta y de otro dispositivo da puntos (si no, revierte) antes de sumar()");
+      const iM = ms.search(/if \(await mismoDispositivo\(c, o\.asker, o\.autor, null\)\) return null;/), iMs = ms.search(/sumar\(/);
+      if (iM < 0 || iMs < 0 || iM > iMs) falla("votoUnico", PU, 0, "«Me sirvió» no da puntos entre cuentas del mismo dispositivo");
+      if (!/v\.counted and not pts_mismo_dispositivo\(v\.user_id, \$3::uuid, v\.device\)/.test(pr)) falla("votoUnico", PU, 0, "la primera recomendación cuenta solo votos que cuentan y de otro dispositivo");
+      const md = ultimaFn("pts_mismo_dispositivo");
+      if (!/from sessions s1 join sessions s2 on s2\.device = s1\.device where s1\.user_id = a and s2\.user_id = b/.test(md)) falla("votoUnico", "packages/db/migrations", 0, "pts_mismo_dispositivo debe cruzar las sesiones (dispositivos) de las dos cuentas");
     }
   },
 
@@ -1894,7 +1910,7 @@ const guardianes = {
      la base. Ninguna línea de la app los asigna ni enciende la marca tl.derivados; la base rechaza el cambio a mano (y com_thread_recs
      solo lo escribe com_recs_recalcular). */
   saldoDerivado() {
-    const COLS = /\b(up_n|down_n|score|hot|comments_n|replies_n|poll_counts|votes_n|recs_n|top_comment_id|followers_n|following_n|posts_n|answers_best_n)\s*=(?!=)/;
+    const COLS = /\b(up_n|down_n|score|hot|comments_n|replies_n|poll_counts|votes_n|recs_n|top_comment_id|followers_n|following_n|posts_n|answers_best_n|points_total|points_today|points_day|points_month|points_month_key|rank_level|rank_floor)\s*=(?!=)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
@@ -1902,17 +1918,47 @@ const guardianes = {
         const u = /\bupdate\s+(com_posts|com_comments|community_profiles|com_thread_recs)\b[\s\S]*?\bset\b([\s\S]*?)(\bwhere\b|$)/i.exec(q);
         if (u && COLS.test(u[2])) falla("saldoDerivado", x, 0, `«${COLS.exec(u[2])[1]}» de ${u[1]} es derivado: solo lo escribe la base (triggers)`);
         if (/\binsert into com_thread_recs\b/i.test(q)) falla("saldoDerivado", x, 0, "com_thread_recs es derivado: solo lo escribe com_recs_recalcular()");
+        // 5f: la Tabla del Barrio y el rango son derivados: la app solo llama a tabla_* y pts_* (excluir, cerrar, recalcular).
+        if (/\b(insert into|update|delete from) (monthly_boards|board_closures)\b/i.test(q) && !(x === "apps/web/lib/tabla.ts" && /^`insert into board_closures \(city_id, month\)/.test(q))) falla("saldoDerivado", x, 0, "la Tabla del Barrio es derivada: solo la escriben el libro y tabla_excluir / tabla_cerrar");
+        if (/\bpts_rango\(/.test(q) && x !== "apps/web/lib/puntos.ts") falla("saldoDerivado", x, 0, "el rango solo lo recalcula recalcularRango() (lib/puntos.ts)");
+        if (/\bpts_piso\(/.test(q) && x !== "apps/web/app/admin/acciones-gam.ts") falla("saldoDerivado", x, 0, "el piso del rango solo lo cambia un Admin (acciones-gam.ts)");
       }
       if (/tl\.derivados|com_derivados_(on|entrar)\(/.test(t)) falla("saldoDerivado", x, 0, "la app no enciende la marca de derivados: los contadores son de la base");
     }
     const guardas = [["com_posts_antes", "los contadores de una publicación son derivados"], ["com_comments_antes", "los contadores de un comentario son derivados"],
-      ["community_profiles_antes", "los contadores del perfil son derivados"], ["com_thread_recs_guardia", "com_thread_recs es derivado"]];
+      ["community_profiles_antes", "los contadores del perfil son derivados"], ["com_thread_recs_guardia", "com_thread_recs es derivado"],
+      ["community_profiles_antes", "los puntos y el rango son derivados"], ["monthly_boards_guardia", "la Tabla del Barrio es derivada"]];
     for (const [fn, msg] of guardas) {
       const b = ultimaFn(fn);
       if (!b || !b.includes(`raise exception '${msg}`) || !/com_derivados_ok\(\)/.test(b)) falla("saldoDerivado", "packages/db/migrations", 0, `${fn} debe rechazar el cambio a mano («${msg}»)`);
     }
     const c = ultimaFn("com_posts_antes");
     if (c && !/new\.hot := com_hot\(new\.score, new\.publish_at\)/.test(c)) falla("saldoDerivado", "packages/db/migrations", 0, "hot debe recalcularse en la base con cada cambio de score");
+    // 5f · rank_level lo escribe solo pts_rango (y la semilla de pruebas); los puntos del perfil, solo el libro (points_entries_despues).
+    const R = ultimaFn("pts_rango"), D = ultimaFn("points_entries_despues");
+    if (R && !/update community_profiles set rank_floor = fl, rank_level = nivel where user_id = uid/.test(R)) falla("saldoDerivado", "packages/db/migrations", 0, "pts_rango debe ser quien escribe rank_level");
+    if (D && !/points_total = points_total \+ new\.delta/.test(D)) falla("saldoDerivado", "packages/db/migrations", 0, "points_total sale de sumar los asientos del libro");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y >= "0102")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/create or replace function pts_rango\([\s\S]*?\$\$[\s\S]*?\$\$/g, "");
+      if (/\brank_level\s*=\s*(?!.*least\(rank_level)/.test(t.replace(/--.*$/gm, "").replace(/rank_level\s*=\s*r\.level|cp\.rank_level\s*=/g, ""))) falla("saldoDerivado", `packages/db/migrations/${x}`, 0, "rank_level solo lo escribe pts_rango");
+    }
+  },
+
+  /* 5f. Tope del día: nadie gana más de pts_tope() (100 de fábrica) puntos «regla» en un día local de su ciudad. Lo impone la base antes de
+     insertar (101 en un día → se rechaza) y pts_sumar guarda solo lo que cabe (lo que pasa del tope no se guarda); el tope vive en
+     platform_config y la app no cuenta puntos por su cuenta. */
+  topeDiario() {
+    const G = "topeDiario", A = ultimaFn("points_entries_antes"), S = ultimaFn("pts_sumar"), T = ultimaFn("pts_tope");
+    if (!A || !S) return falla(G, "packages/db/migrations", 0, "falta el libro de puntos (points_entries_antes / pts_sumar)");
+    if (!/if new\.motive = 'regla' then[\s\S]*?select coalesce\(sum\(delta\), 0\) into hoy from points_entries where user_id = new\.user_id and local_day = new\.local_day and motive = 'regla' and delta > 0;[\s\S]*?if hoy \+ new\.delta > pts_tope\(\) then raise exception 'tope diario/.test(A)) falla(G, "packages/db/migrations", 0, "points_entries_antes debe rechazar lo que pasa del tope del día");
+    if (!/d := least\(r\.points, pts_tope\(\) - hoy\);\s*if d <= 0 then return 0; end if;/.test(S)) falla(G, "packages/db/migrations", 0, "pts_sumar debe guardar solo lo que cabe en el tope del día");
+    if (!/dia := \(now\(\) at time zone tz\)::date;/.test(S)) falla(G, "packages/db/migrations", 0, "el día del tope es el día local de la ciudad de la persona");
+    if (!/pg_advisory_xact_lock\(hashtextextended\('pts:' \|\| uid::text, 0\)\)/.test(S)) falla(G, "packages/db/migrations", 0, "pts_sumar sin candado por persona (dos a la vez se pasarían del tope)");
+    if (!/key = 'pts_tope_dia'/.test(T)) falla(G, "packages/db/migrations", 0, "el tope vive en platform_config (pts_tope_dia)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      if (/points_today\s*[+-]|pts_tope_dia'\s*,\s*'\d/.test(sinComent(x))) falla(G, x, 0, "la app no cuenta los puntos del día por su cuenta (lo hace la base)");
+    }
   },
 
   /* 5b. Con un bloqueo de por medio no se toca ni se avisa: comentar, votar, «Me sirvió», la encuesta y guardar pasan antes por tocable() o
@@ -2151,7 +2197,22 @@ const guardianes = {
     if (!/create trigger com_edits_no_cambia before update or delete on com_edits/.test(readFileSync("packages/db/migrations/0097_comunidad_base.sql", "utf8"))) falla(G, "packages/db/migrations/0097_comunidad_base.sql", 0, "com_edits sin el trigger de solo inserción");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
-      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (mod_flags|com_edits)\b|\bdelete from (appeals|mod_terms)\b/.test(q)) falla(G, x, 0, `un libro de solo inserción se cambia o se borra: «${q.slice(0, 60)}»`);
+      const t = sinComent(x);
+      for (const q of t.match(/`[^`]*`/g) ?? []) {
+        if (/\b(update|delete from) (mod_flags|com_edits)\b|\bdelete from (appeals|mod_terms)\b/.test(q)) falla(G, x, 0, `un libro de solo inserción se cambia o se borra: «${q.slice(0, 60)}»`);
+        // 5f: el libro de puntos no se cambia, no se borra y la app ni siquiera inserta: solo sus funciones (pts_*).
+        if (/\b(insert into|update|delete from) points_entries\b/.test(q)) falla(G, x, 0, "points_entries solo lo escriben las funciones pts_* de la base (solo inserción)");
+      }
+      if (/tl\.puntos|pts_entrar\(/.test(t)) falla(G, x, 0, "la app no enciende la marca del libro de puntos");
+    }
+    // 5f · points_entries: trigger de solo inserción, y antes de insertar exige la marca de sus funciones.
+    const M2 = "packages/db/migrations/0102_puntos_rangos_tabla.sql";
+    if (existsSync(M2)) {
+      const m2 = readFileSync(M2, "utf8");
+      if (!/create trigger points_entries_no_cambia before update or delete on points_entries for each row execute function points_entries_inmutable\(\)/.test(m2) || !/raise exception 'points_entries es solo de inserción'/.test(m2)) falla(G, M2, 0, "points_entries sin el trigger de solo inserción");
+      if (!/if coalesce\(current_setting\('tl\.puntos', true\), ''\) <> 'si' then raise exception 'el libro de puntos solo lo escriben sus funciones/.test(ultimaFn("points_entries_antes"))) falla(G, M2, 0, "points_entries: solo sus funciones insertan (marca tl.puntos)");
+      if (!/create unique index if not exists points_entries_unico on points_entries \(user_id, rule_key, ref_kind, ref_id\) where reverses_id is null/.test(m2) || !/points_entries_reverso on points_entries \(reverses_id\) where reverses_id is not null/.test(m2)) falla(G, M2, 0, "points_entries: idempotente por (persona, regla, referencia) y cada asiento se revierte una vez");
+      if (!/if tg_op = 'DELETE' then raise exception 'un cierre de la Tabla no se borra'/.test(m2) || !/if tg_op = 'UPDATE' and old\.closed_at is not null then raise exception 'un mes cerrado no cambia'/.test(m2)) falla(G, M2, 0, "board_closures: un cierre no se borra y un mes cerrado no cambia");
     }
   },
 
@@ -2215,7 +2276,22 @@ const guardianes = {
       const u = sinComent(x);
       if (x === O && /\binsert into users\b/i.test(u)) falla(G, x, 0, "la cuenta oficial nunca crea una fila en users");
       if (x !== O && /insert into com_posts[\s\S]{0,400}'official'/.test(u)) falla(G, x, 0, "solo lib/oficial.ts escribe como la cuenta oficial");
-      for (const q of u.match(/`[^`]*`/g) ?? []) if (/\b(points_entries|monthly_boards)\b/.test(q) && !/author_kind|author_user_id is not null|user_id is not null/.test(q)) falla(G, x, 0, "lo que reparte puntos o arma la Tabla debe dejar fuera a la cuenta oficial (author_kind)");
+      // 5f: lo que lee el libro de puntos o arma la Tabla va siempre unido a users (la cuenta oficial no tiene fila en users: nunca sale).
+      for (const q of u.match(/`[^`]*`/g) ?? []) if (/\bfrom (points_entries|monthly_boards)\b/.test(q) && !/\bjoin users\b/.test(q) && !/^`select 1 from points_entries where rule_key = 'primera_rec'/.test(q)) falla(G, x, 0, "lo que lee el libro de puntos o arma la Tabla debe ir unido a users (la cuenta oficial nunca sale)");
+    }
+    // 5f · La cuenta oficial nunca gana puntos: el libro y la Tabla piden una persona (users); pts_sumar rechaza sin persona; el voto a lo
+    // oficial (sin autor) no llega a sumar.
+    const M2 = "packages/db/migrations/0102_puntos_rangos_tabla.sql", PU = "apps/web/lib/puntos.ts";
+    if (existsSync(M2)) {
+      const m2 = readFileSync(M2, "utf8");
+      if (!/create table if not exists points_entries \(\s*id[^\n]*\n\s*user_id\s+uuid not null references users \(id\)/.test(m2)) falla(G, M2, 0, "points_entries.user_id debe ser una persona (not null, users)");
+      if (!/create table if not exists monthly_boards \([\s\S]*?user_id\s+uuid not null references users \(id\)/.test(m2)) falla(G, M2, 0, "monthly_boards.user_id debe ser una persona (not null, users)");
+      if (!/if uid is null then raise exception 'los puntos son de una persona/.test(ultimaFn("pts_sumar"))) falla(G, M2, 0, "pts_sumar debe rechazar sumar sin persona (la cuenta oficial)");
+    }
+    if (existsSync(PU)) {
+      const v = cuerpoFn(sinComent(PU), "puntosDelVoto"), iA = v.search(/if \(!t\?\.autor\) return null;/), iS = v.search(/sumar\(/);
+      if (iA < 0 || iS < 0 || iA > iS) falla(G, PU, 0, "puntosDelVoto: lo de la cuenta oficial (sin autor) no da puntos a nadie");
+      if (/staff_id/.test(sinComent(PU))) falla(G, PU, 0, "los puntos nunca van a quien escribió como la cuenta oficial (staff_id)");
     }
     if (existsSync(C)) {
       const a = cuerpoFn(sinComent(C), "armar");

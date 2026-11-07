@@ -62,11 +62,13 @@ export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
   answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
   help: number; helpOn: boolean; reported: boolean; pro?: string | null; // la cita fue con esa persona (3d)
+  rango?: { n: number; es: string; en: string } | null; pts?: number; // 5f: rango (desde Sargento) y los puntos que sumó
 };
 
 export const MIN_TEXTO = 20, MAX_TEXTO = 1000, MAX_FOTOS = 6, EDITAR_H = 48, PAGINA = 6;
 // Teléfonos y correos: la reseña no se publica con ellos (mismo patrón que el prototipo).
 import { PII, PRIVADO } from "./resenas-filtro";
+import { puntosResena, recalcularRango } from "./puntos";
 export { PII, PRIVADO };
 const VERIFICADA_DIAS = 30;
 
@@ -83,16 +85,21 @@ const TARJETA_SQL = `
   coalesce($2::uuid is not null and exists (select 1 from review_helpful h where h.review_id = r.id and h.user_id = $2::uuid), false) as help_on,
   coalesce($2::uuid is not null and exists (select 1 from content_reports c where c.target_kind = 'review' and c.target_id = r.id::text and c.reporter_user_id = $2::uuid), false) as reported,
   (select coalesce(jsonb_agg(i.name order by array_position(r.rec, i.id::text)), '[]') from items i where i.business_id = r.business_id and i.id::text = any(r.rec) and i.removed_at is null) as rec_names,
-  (select split_part(m.display_name, ' ', 1) from operations o join business_members m on m.id = o.member_id where o.id = r.operation_id and o.kind = 'appointment') as con_pro`;
+  (select split_part(m.display_name, ' ', 1) from operations o join business_members m on m.id = o.member_id where o.id = r.operation_id and o.kind = 'appointment') as con_pro,
+  (select jsonb_build_object('n', cp.rank_level, 'es', rk.name->>'es', 'en', rk.name->>'en') from community_profiles cp join ranks rk on rk.level = cp.rank_level where cp.user_id = r.user_id) as rango,
+  (select coalesce(sum(e.delta), 0)::int from points_entries e join users pu on pu.id = e.user_id where e.target_kind = 'review' and e.target_id = r.id::text and e.rule_key = 'resena_verificada') as pts`;
 type FilaT = {
   id: string; mine: boolean; first_name: string | null; last_name: string | null; src: Src; stars: number; answers: Respuestas; facts: Hechos; body: string;
   rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[]; con_pro: string | null;
+  rango: { n: number; es: string; en: string } | null; pts: number;
 };
 const tarjeta = (x: FilaT): Tarjeta => {
   const name = nombreCorto(x.first_name, x.last_name);
   return {
     id: x.id, name, ini: iniciales(name), mine: x.mine, cnt: x.cnt, d: x.d, editada: x.editada, src: x.src, stars: x.stars, answers: x.answers ?? {}, facts: x.facts ?? {},
     body: x.body, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0 } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
+    // 5f · El rango se ve desde Sargento (4); «+15 puntos» si la reseña verificada sumó (y sigue sumando) al rango de quien la escribió.
+    rango: x.rango && x.rango.n >= 4 ? x.rango : null, pts: x.pts > 0 ? x.pts : 0,
   };
 };
 const NEG_SQL = `(select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro from businesses b left join business_stats_cache s on s.business_id = b.id where b.id = $1 and b.status = 'active') b`;
@@ -525,6 +532,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   if (fotos.length > MAX_FOTOS) return no(`Hasta ${MAX_FOTOS} fotos.`, `Up to ${MAX_FOTOS} photos.`);
   const rec0 = Array.isArray(p.rec) ? [...new Set(p.rec.filter((x): x is string => typeof x === "string" && /^\d{1,18}$/.test(x)))].slice(0, 12) : [];
   const lang = p.lang === "en" ? "en" : "es";
+  let puntos = 0;
   const res = await tx(async (c) => {
     const b = (await c.query<{ id: string; city_id: string; cat: string }>(`select id, city_id, category_id as cat from businesses where id = $1 and status = 'active' for share`, [p.negocio])).rows[0];
     if (!b) return no("Ese negocio no existe.", "That business does not exist.");
@@ -564,6 +572,8 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
         [b.id, b.city_id, userId, op?.id ?? null, src, stars, body, lang, answers, facts, rec]);
       if (!r.rows[0]) return no("Ya tienes una reseña de este negocio.", "You already have a review for this business.");
       id = r.rows[0].id;
+      // 5f · Reseña verificada nueva: +15 puntos a tu rango (lib/puntos.ts; una vez por reseña, con el tope del día).
+      if (src !== "vis") puntos = await puntosResena(c, userId, id);
     }
     // Fotos: las nuevas pasan de la persona a la reseña; las que quitó se marcan quitadas (nada se borra).
     if (fotos.length) {
@@ -578,6 +588,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   }).catch((e: { fotoAjena?: boolean }) => (e?.fotoAjena ? no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.") : Promise.reject(e)));
   // 5d · rev5: reseñas sin transacción en ráfaga → caso en «Reportes de usuario» (también lo revisa el barrido).
   if (res.ok) await (await import("./moderacion")).rafagaResenas(userId).catch(() => undefined);
+  if (res.ok && puntos > 0) await recalcularRango(userId).catch(() => undefined);
   return res;
 }
 

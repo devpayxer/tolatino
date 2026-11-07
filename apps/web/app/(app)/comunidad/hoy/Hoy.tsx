@@ -72,7 +72,7 @@ function Cuerpo({ es, ciudad, cat, d, nuevos, ancho }: { es: boolean; ciudad: st
 
 /* Dentro de la Comunidad (con cuenta y bienvenida hecha): el marco del módulo, la pestaña activa y el riel con tu rango y las reglas. */
 export function HoyVecino({ es, yo, ciudad, cat, d, nuevos }: { es: boolean; yo: YoCom; ciudad: string; cat: string; d: PaginaHoy; nuevos: Tarjeta[] }) {
-  const ui = useComUi(), w = useAncho();
+  const ui = useComUi(yo), w = useAncho();
   return (
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-HOY" titulo={es ? "Hoy en el barrio" : "Today nearby"} sub={es ? "LO QUE TRAEN HOY LOS NEGOCIOS · SE BORRA A LAS 24 H" : "WHAT BUSINESSES HAVE TODAY · GONE IN 24 H"}>
       <Cuerpo es={es} ciudad={ciudad} cat={cat} d={d} nuevos={nuevos} ancho={w} />

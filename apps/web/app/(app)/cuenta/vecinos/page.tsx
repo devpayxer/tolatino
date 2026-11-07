@@ -5,6 +5,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { bloqueadosYSilenciados, seguidores, siguiendo } from "@/lib/vecinos";
 import { yoMarco } from "../yo";
+import { nombresRangos } from "@/lib/puntos";
 import { Vecinos } from "./Vecinos";
 
 export const metadata: Metadata = { title: "Vecinos · To'Latino", robots: { index: false, follow: false } };
@@ -20,5 +21,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ l
   if (!e.ok) return <Vecinos es={es} yo={me} l={l} d={null} menor={e.menor} pagina={false} />;
   const c = sp.c ? String(sp.c).slice(0, 80) : null;
   const d = l === "bloqueados" ? await bloqueadosYSilenciados(u.id, c, es) : await (l === "seguidores" ? seguidores : siguiendo)(u.id, c, es);
-  return <Vecinos es={es} yo={me} l={l} d={d} menor={false} pagina={!!c} />;
+  return <Vecinos es={es} yo={me} l={l} d={d} menor={false} pagina={!!c} rangos={await nombresRangos()} />;
 }

@@ -9,7 +9,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState, type ComponentType } from "react";
 import { DESHACER_S } from "@/lib/comunidad-filtro";
 import type { Filtros, Pub } from "@/lib/comunidad-comun";
-import { comBorrar, comDeshacer, comEncuesta, comGuardar, comPagina, comReportar, comVotar } from "./acciones";
+import { comBorrar, comDeshacer, comDestacar, comEncuesta, comGuardar, comPagina, comReportar, comVotar } from "./acciones";
 import { YA_NO_LO_VES, abrirReporte } from "./Reportar";
 import { Avatar, LINE, MONO, Marco, useComUi, type ComUi, type YoCom } from "./Marco";
 import { Tarjeta } from "./Tarjeta";
@@ -63,6 +63,9 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
     const editable = !!p.editarHasta && new Date(p.editarHasta).getTime() > Date.now();
     ui.setHoja({ title: p.mia ? E2("Tu publicación", "Your post") : E2("Publicación", "Post"), rows: p.mia ? [
       { t: E2("Editar", "Edit"), s: editable ? E2("Puedes editarla en los primeros 30 minutos.", "You can edit it in the first 30 minutes.") : E2("Ya pasaron 30 minutos: puedes borrarla y publicar otra.", "30 minutes have passed: you can delete it and post again."), ic: "edit", off: !editable, on: () => { ui.setHoja(null); router.push(`/comunidad/nuevo?editar=${p.id}`); } },
+      // 5f · Sargento Mayor: destacar 1 recomendación al mes (7 días en Negocios › Recomendados por vecinos; nunca cambia el muro).
+      ...(p.kind === "recomendacion" ? [{ t: E2("Destacar en Negocios", "Feature in Businesses"), s: E2("Desde Sargento Mayor, una al mes: sale 7 días en «Recomendados por vecinos». El muro no cambia.", "From Sergeant Major, one a month: it shows 7 days in «Recommended by neighbors». The feed does not change."), ic: "star",
+        on: async () => { ui.setHoja(null); const r = await correr(() => comDestacar(p.id)); if (!r) return; if (r.ok) ui.setAviso({ t: E2("Destacada 7 días en Negocios.", "Featured for 7 days in Businesses.") }); else fallo(r); } }] : []),
       { t: E2("Borrar", "Delete"), s: E2("Tendrás 10 segundos para deshacerlo.", "You will have 10 seconds to undo it."), ic: "trash", peligro: true, on: () => ui.setHoja({ title: E2("¿Borrar esta publicación?", "Delete this post?"), sub: E2("Deja de verse en la Comunidad. Puedes deshacerlo en los siguientes 10 segundos.", "It stops showing in the Community. You can undo it in the next 10 seconds."), yes: E2("Borrar", "Delete"), peligro: true, onYes: () => void borrar(p) }) },
     ] : [
       { t: p.guardada ? E2("Quitar de guardados", "Remove from saved") : E2("Guardar", "Save"), ic: "heart", on: () => { ui.setHoja(null); void guardar(p); } },
@@ -78,7 +81,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
 export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { es: boolean; yo: YoCom; ciudad: string; abierta: boolean; filtros: Filtros; inicial: { pubs: Pub[]; mas: string | null }; hoy?: Historia[] }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ruta = usePathname();
-  const ui = useComUi();
+  const ui = useComUi(yo);
   const [pubs, setPubs] = useState(inicial.pubs), [mas, setMas] = useState(inicial.mas), [cargando, setCargando] = useState(false);
   useEffect(() => { setPubs(inicial.pubs); setMas(inicial.mas); }, [inicial]);
   const poner = (id: string, f: (p: Pub) => Pub | null) => setPubs((L) => L.flatMap((p) => { if (p.id !== id) return [p]; const n = f(p); return n ? [n] : []; }));

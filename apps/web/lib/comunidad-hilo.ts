@@ -6,6 +6,7 @@ import { revisarComentario } from "./comunidad-filtro";
 import { porcentajes, type Pub } from "./comunidad-comun";
 import { ID, ISO, autores, corto, encuesta, esSuNegocio, no, quien, sinBloqueos, type Res } from "./comunidad";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir } from "./moderacion";
+import { puntosDelVoto, puntosMejorRespuesta, recalcularRango } from "./puntos";
 
 /* Comunidad · el hilo (APP-COM-POST; fase5-comunidad.md §4 5b): comentar, responder, recomendar un negocio en el comentario,
    votos ± en publicaciones y comentarios, «Me sirvió» (mejor respuesta), encuestas, guardar y el barrido que cierra encuestas.
@@ -269,10 +270,12 @@ export async function votar(userId: string, kind: "post" | "comment", id: string
     }
     const mio = (await c.query<{ v: number }>(`select com_votar($1, $2::bigint, $3, $4::smallint, $5) as v`, [kind, id, userId, v, device])).rows[0]!.v;
     const s = (await c.query<{ score: number; up: number }>(`select score, up_n as up from ${kind === "post" ? "com_posts" : "com_comments"} where id = $1::bigint`, [id])).rows[0]!;
-    // HOOK 5f (puntos): aquí se asienta el +/− de quien recibe el voto, solo si el voto cuenta (com_votes.counted) y una vez por voto.
-    return { ok: true as const, score: s.score, up: s.up, miVoto: mio, autor: t.autor, body: t.body };
+    // 5f · Puntos de quien recibe el voto (lib/puntos.ts): solo si es + y cuenta, y nunca entre cuentas del mismo dispositivo.
+    const subir = await puntosDelVoto(c, { kind, id, voter: userId, device, mio });
+    return { ok: true as const, score: s.score, up: s.up, miVoto: mio, autor: t.autor, body: t.body, subir };
   });
   if (!r.ok) return r;
+  if (r.subir) await recalcularRango(r.subir).catch(() => undefined);
   // Llegó a 10 votos a favor: un aviso, una vez (si baja y vuelve a 10, no se repite).
   if (r.miVoto === 1 && r.up === UMBRAL_VOTOS && r.autor) {
     const ref = `${kind}:${id}`;
@@ -300,10 +303,12 @@ export async function meSirvio(userId: string, postId: string, commentId: string
     const antes = (await c.query<{ b: string | null }>(`select best_comment_id::text as b from com_posts where id = $1::bigint`, [p.id])).rows[0]!.b;
     if (antes === cm.id) return { ok: true as const, mejor: cm.id, nuevo: false, autor: cm.autor, body: p.body };
     await c.query(`update com_posts set best_comment_id = $2::bigint where id = $1::bigint`, [p.id, cm.id]);
-    // HOOK 5f (puntos): +10 a quien respondió (PTS «mejor respuesta»); al cambiarla, el asiento inverso a la anterior.
-    return { ok: true as const, mejor: cm.id, nuevo: true, autor: cm.autor, body: p.body };
+    // 5f · +10 a quien respondió («Me sirvió»); al cambiarla, el asiento inverso a la anterior (lib/puntos.ts).
+    const subir = await puntosMejorRespuesta(c, { post: p.id, asker: userId, antes, ahora: cm.id, autor: cm.autor });
+    return { ok: true as const, mejor: cm.id, nuevo: true, autor: cm.autor, body: p.body, subir };
   });
   if (!r.ok) return r;
+  if ("subir" in r && r.subir) await recalcularRango(r.subir).catch(() => undefined);
   if (r.nuevo) {
     const ya = (await db().query(`select 1 from notifications where user_id = $1 and tpl = 'com_best' and ref_kind = 'com_comment' and ref_id = $2`, [r.autor, r.mejor])).rowCount;
     if (!ya) {

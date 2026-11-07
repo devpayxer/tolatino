@@ -24,7 +24,7 @@ const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: string; c: Conversacion | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const vec = useVecinoAcciones(es, ui);
   const [msjs, setMsjs] = useState<MsjV[]>(c?.msjs ?? []), [mas, setMas] = useState(c?.mas ?? null);
   const [t, setT] = useState(""), [err, setErr] = useState<string | null>(null), [busy, setBusy] = useState(false);

@@ -39,7 +39,21 @@ en el muro, Inicio y Negocios; Negocios › «Recomendados por vecinos»; Buscar
 ficha) dicen «En Hoy en el barrio · quedan N h»; Super Admin › Contenido › **Hoy en el barrio** (Retirar / Devolver con motivo y aviso al
 negocio) y **Cuenta oficial** (escribir, programar, fijar). Guardianes `oficialNoEsPersona`, `hoySoloEnVivo`, `buscarVecinosConSesion`
 (+ `comunidadSinTelefonos` ampliado; 23/23 al revés); e2e `com5e` 62 ✓. Ayuda: hoy-en-el-barrio.md, admin-cuenta-oficial.md,
-admin-contenido.md, buscar.md. Sigue **5f** (puntos, rangos, insignias y Tabla del Barrio; migración 0102).
+admin-contenido.md, buscar.md. **5f hecho (7 nov)** — Puntos, rangos, insignias y Tabla del Barrio: migración 0102 (`points_rules`,
+`points_entries` de solo inserción con tope del día en la base e idempotente por persona + regla + referencia, `ranks` renombrables con
+puntos mínimos y condición, `badges` / `user_badges`, `monthly_boards` / `board_closures` derivadas, `referral_codes` / `referrals`,
+`com_posts.featured_*`; funciones `pts_sumar`, `pts_revertir(_objetivo)`, `pts_restaurar_objetivo`, `pts_ajustar`, `pts_rango` (único que
+escribe el rango; el rango solo sube con `rank_floor`), `pts_piso`, `tabla_excluir`, `tabla_cerrar`; triggers de ocultar/borrar/volver
+en publicaciones, comentarios y reseñas; plantillas `gam_*` sin SMS); semilla de pruebas `0033_puntos.sql` (U.pts, U.rk, U.bdg y TABLA
+sep/ago del prototipo, el mes anterior cerrado → Ramón General del Barrio); `lib/puntos.ts`, `lib/tabla.ts`, `lib/invitar.ts`,
+`lib/admin-gam.ts`; ganchos en votar, «Sumar mi voto», «Me sirvió», reseña verificada (+15 y «SARGENTO · N RESEÑAS · +15 PUNTOS» en la
+tarjeta), primera recomendación con 3 votos (+50), apelación levantada; pantallas `/comunidad/rango` (APP-GAM-RANGO) y `/comunidad/tabla`
+(APP-GAM-TABLA, tercera pestaña), insignias en el perfil, columna de escritorio con tu rango y la Tabla, «Destacar en Negocios»
+(Sargento Mayor) con «DESTACADA», Invita vecinos con código NOMBRE-N y `/i/{código}`; Super Admin › **Gamification** (Rangos con vista
+previa, Puntos y tope, Tabla del Barrio con excluir y «Cerrar el mes») y Usuarios 360° › Comunidad › Puntos (ajustar ± con tope por rol,
+Coronel); barrido `tablaCongelar`, `tablaCerrar` (día 3), `referidos`. Guardianes `topeDiario` (nuevo) + `libroSoloInsercion`,
+`saldoDerivado`, `votoUnico`, `oficialNoEsPersona` ampliados (28/28 al revés); e2e `com5f` 60 ✓. Ayuda: comunidad-puntos-rangos-y-tabla.md,
+admin-gamificacion.md. Sigue **5g** (monedas y cupones de negocios + panel; migración 0103).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

@@ -9,6 +9,8 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Usuario360 } from "@/lib/admin-usuarios";
 import type { Comunidad360 } from "@/lib/admin-vecinos";
+import type { Puntos360 } from "@/lib/admin-gam";
+import { usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
   cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar,
@@ -32,7 +34,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, com }: { u: Usuario360; tab: string; com?: Comunidad360 | null }) {
+export function U360({ u, tab, com, pts, topeAjuste = 500 }: { u: Usuario360; tab: string; com?: Comunidad360 | null; pts?: Puntos360 | null; topeAjuste?: number }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -159,6 +161,26 @@ export function U360({ u, tab, com }: { u: Usuario360; tab: string; com?: Comuni
         ]} />
         {com.ocultas ? <A.AdminNote tone="warn" icon="warning" cta="Ver" onCta={() => router.push(`/admin/contenido?tab=pub`)}>{`${com.ocultas} de sus publicaciones o comentarios están ocultos por las reglas.`}</A.AdminNote> : null}
         {com.red ? <A.AdminNote tone="bad" icon="warning">{`${com.red} ${com.red === 1 ? "seguidor entró" : "seguidores entraron"} desde el mismo dispositivo que esta cuenta: posible red de cuentas. El caso de red de cuentas se abre desde Reportes de usuario cuando exista esa cola (5d).`}</A.AdminNote> : null}
+        {pts && <>
+          <PanelBloques bloques={[{ type: "group", k: "PUNTOS Y RANGO" },
+            { type: "kv", cols: desk ? 3 : 2, items: [
+              { k: "RANGO ACTUAL", v: `${pts.n} · ${pts.name.es}` }, { k: "PUNTOS", v: `${pts.total.toLocaleString("en-US")} · ${pts.mes} este mes · ${pts.hoy} hoy` },
+              pts.sig && pts.req ? { k: `PARA SUBIR A ${pts.sig.es.toUpperCase()}`, v: pts.req.es } : { k: "SIGUIENTE", v: "Ya está en el rango más alto" },
+              { k: "REGLA", v: `Máximo ${pts.tope} puntos al día` }, { k: "PISO DEL RANGO", v: `${pts.piso} · el rango no baja solo` }] },
+            ...(P.editar && !intocable && !borrada ? [{ type: "acts" as const, items: [
+              { l: "Ajustar puntos", v: "secondary", icon: "star", onClick: () => setConf({ titulo: `Puntos · ${corto}`, sub: `Ahora: ${pts.total.toLocaleString("en-US")}. Tu rol ajusta hasta ${topeAjuste.toLocaleString("en-US")} de una vez. La persona ve el ajuste y el motivo. Queda en la auditoría.`,
+                elegir: { label: "TIPO", items: [{ k: "c", l: "Sumar" }, { k: "d", l: "Restar" }] }, valor: { k: "CANTIDAD", ini: "", max: 4 }, cta: "Aplicar",
+                plantillas: ["Puntos de un voto de cuentas del mismo dispositivo", "Error del sistema", "Devolver lo que se restó por error"], hacer: (m, e, v) => usrAjustarPuntos(u.id, e, v, m) }) },
+              ...(P.admin ? [{ l: "Cambiar rango", v: "secondary", icon: "shield", onClick: () => setConf({ titulo: `Rango · ${corto}`, sub: "Coronel (9) lo da el equipo a quien modera con buen criterio. Bajarlo solo por fraude. General del Barrio sale del cierre de la Tabla. La persona ve el motivo.",
+                elegir: { label: "RANGO", items: [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => ({ k: String(n), l: String(n) })) }, cta: "Cambiar", peligro: true,
+                plantillas: ["Invitación a moderar su ciudad (Coronel)", "Fraude: votos desde cuentas del mismo dispositivo"], hacer: (m, e) => usrPisoRango(u.id, e, m) }) }] : []),
+            ] }] : []),
+            { type: "group", k: "PUNTOS · MOVIMIENTOS" },
+            pts.log.length ? { type: "rows", items: pts.log.map((x) => ({ key: x.id, icon: "star", ibg: x.delta < 0 ? "rgba(192,57,43,.1)" : undefined, ifg: x.delta < 0 ? BAD : undefined,
+              t: x.motive === "ajuste" ? `Ajuste del equipo: ${x.reason ?? ""}` : `${x.motive === "reverso" ? "Se restó · " : x.motive === "restaurado" ? "Volvió · " : ""}${x.label?.es ?? x.rule}${x.reason === "oculto" ? " (oculto por las reglas)" : x.reason === "borrado" ? " (borrado)" : ""}`,
+              s: `${x.quien ? `Equipo · ${x.quien} · ` : ""}${fecha(x.at)}`, r: x.delta > 0 ? `+${x.delta}` : `−${-x.delta}` })) } : { type: "empty", icon: "star", t: "Sin movimientos", s: "Todavía no ha sumado puntos." },
+          ]} />
+        </>}
         {lista("SEGUIDORES", com.listas.seg, "Nadie la sigue todavía.")}
         {lista("SIGUIENDO", com.listas.sig, "No sigue a nadie.")}
         {lista("BLOQUEADOS", com.listas.blk, "No ha bloqueado a nadie.")}

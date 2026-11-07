@@ -139,7 +139,9 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
   return {
     summary: S, padding: o.padding, bodySize: o.bodySize,
     border: c.mine ? "1.5px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.08)", initials: c.ini, name: c.name, mine: c.mine ? E2("TU RESEÑA", "YOUR REVIEW") : undefined,
-    who: `${c.cnt} ${c.cnt === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}`,
+    // 5f · «SARGENTO · 23 RESEÑAS» (el rango se ve desde Sargento) y «+15 PUNTOS» si la reseña verificada sumó al rango.
+    who: [c.rango ? (o.es ? c.rango.es : c.rango.en).toUpperCase() : null, `${c.cnt} ${c.cnt === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}`,
+      c.pts ? E2(`+${c.pts} PUNTOS`, `+${c.pts} POINTS`) : null].filter(Boolean).join(" · "),
     starsOn: "★★★★★".slice(0, c.stars), starsOff: "★★★★★".slice(c.stars), when: revWhen(c.d, o.es) + (c.editada ? E2(" · EDITADA", " · EDITED") : ""),
     source: { label: o.es ? src[0] : src[1], tone: src[2] }, facts: hechos(c, o.es), body: c.body,
     photos: c.fotos.map((u, i) => ({ image: `url(${u})`, onClick: o.onPhoto ? () => o.onPhoto!(i) : undefined })),

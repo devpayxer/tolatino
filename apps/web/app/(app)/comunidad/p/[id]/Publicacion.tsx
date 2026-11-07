@@ -21,7 +21,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisis = false }: { es: boolean; yo: YoCom; ciudad: string; d: P | null; h: H | null; orden: OrdenHilo; nueva: boolean; editada: boolean; crisis?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
   const [pub, setPub] = useState<Pub | null>(d?.pub ?? null);
   const [borrada, setBorrada] = useState(false);
   useEffect(() => { setPub(d?.pub ?? null); }, [d]);

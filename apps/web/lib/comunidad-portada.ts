@@ -10,21 +10,24 @@ type Bi = { es: string; en: string };
 /* «Recomendados por vecinos»: los negocios activos de la ciudad que más recomiendan los vecinos (en publicaciones y en comentarios de los
    últimos 180 días), por los votos que esas recomendaciones juntaron y luego por cuántos vecinos distintos. Para quien mira con cuenta, sin
    lo de quien bloqueó o silenció (de ida y vuelta); sin cuenta, `viewer` es null y no hay bloqueos. Sale solo el negocio y cuántos. */
-export type Recomendado = { id: string; nombre: string; vecinos: number; votos: number; rating: number | null; resenas: number };
+export type Recomendado = { id: string; nombre: string; vecinos: number; votos: number; rating: number | null; resenas: number; destacada: boolean };
 export async function recomendadosPorVecinos(ciudad: string, viewer: string | null, n = 5): Promise<Recomendado[]> {
   const r = await db().query<Recomendado>(
     `with r as (
-       select p.business_id as b, p.author_user_id as u, greatest(p.up_n, 0) as up from com_posts p
+       select p.business_id as b, p.author_user_id as u, greatest(p.up_n, 0) as up, coalesce(p.featured_until > now(), false) as dest from com_posts p
         where p.city_id = $1 and p.kind = 'recomendacion' and p.status = 'visible' and p.publish_at <= now() and p.publish_at > now() - interval '180 days'
           and p.author_kind = 'user' and ${sinBloqueos("p.author_user_id", "$2::uuid")}
        union all
-       select c.business_id, c.author_user_id, greatest(c.up_n, 0) from com_comments c join com_posts p on p.id = c.post_id and p.status = 'visible'
+       select c.business_id, c.author_user_id, greatest(c.up_n, 0), false from com_comments c join com_posts p on p.id = c.post_id and p.status = 'visible'
         where c.city_id = $1 and c.business_id is not null and c.status = 'visible' and c.created_at > now() - interval '180 days'
           and ${sinBloqueos("c.author_user_id", "$2::uuid")})
-     select r.b as id, b.name as nombre, count(distinct r.u)::int as vecinos, sum(r.up)::int as votos, bs.rating_avg::float8 as rating, coalesce(bs.review_count, 0)::int as resenas
-       from r join businesses b on b.id = r.b and b.status = 'active' and b.city_id = $1 left join business_stats_cache bs on bs.business_id = b.id
-      group by r.b, b.name, bs.rating_avg, bs.review_count
-      order by votos desc, vecinos desc, b.name limit $3`, [ciudad, viewer, Math.max(1, Math.min(10, n))]);
+     select id, nombre, vecinos, votos, rating, resenas, destacada from (
+       select r.b as id, b.name as nombre, count(distinct r.u)::int as vecinos, sum(r.up)::int as votos, bs.rating_avg::float8 as rating, coalesce(bs.review_count, 0)::int as resenas,
+              bool_or(r.dest) as destacada, row_number() over (order by sum(r.up) desc, count(distinct r.u) desc, b.name) as rn
+         from r join businesses b on b.id = r.b and b.status = 'active' and b.city_id = $1 left join business_stats_cache bs on bs.business_id = b.id
+        group by r.b, b.name, bs.rating_avg, bs.review_count) t
+      where rn <= $3 or destacada order by rn limit $3 + 3`, [ciudad, viewer, Math.max(1, Math.min(10, n))]);
+  // 5f · Una recomendación destacada (Sargento Mayor, 7 días) siempre sale, con «DESTACADA»; el orden sigue siendo el de los votos.
   return r.rows;
 }
 

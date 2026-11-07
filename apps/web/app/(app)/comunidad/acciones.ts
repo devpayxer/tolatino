@@ -9,6 +9,8 @@ import { borrarComentario, comentar, guardar, hilo, meSirvio, respuestas, votar,
 import type { Filtros } from "@/lib/comunidad-comun";
 import { ubicacion } from "@/lib/ubicacion";
 import { reportar } from "@/lib/moderacion";
+import { destacarRecomendacion } from "@/lib/puntos";
+import { tabla } from "@/lib/tabla";
 
 type Bi = { es: string; en: string };
 const NO_ORIGEN: Bi = { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." };
@@ -160,3 +162,12 @@ export async function comReportar(que: string, id: string, motivo: string, nota:
   const k = que === "comment" ? "comment" : que === "user" ? "user" : "post";
   return reportar(q.u.id, k, k === "user" ? uid(id) : texto(id, 20), texto(motivo, 20), texto(nota, 400), await dispositivo(false));
 }
+
+/* 5f · La Tabla del Barrio: la página siguiente (cursor) de la ciudad que se está viendo. «Destacar» una recomendación propia (Sargento Mayor). */
+export async function tablaMas(mes: string, tab: string, cursor: string) {
+  const q = await quien(); if (q.e) return null;
+  const loc = await ubicacion(q.u);
+  const t = await tabla(q.u.id, loc.c.id, mes === "anterior" ? "anterior" : "actual", tab === "rec" ? "rec" : tab === "resp" ? "resp" : "general", texto(cursor, 80));
+  return t ? { filas: t.filas, mas: t.mas } : null;
+}
+export async function comDestacar(id: string) { const q = await quien(); return q.e ?? destacarRecomendacion(q.u.id, texto(id, 20)); }

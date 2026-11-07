@@ -1,13 +1,18 @@
 /* Comunidad · lo que comparten la pantalla y el servidor (sin base): rangos, tipos, cuánto hace y la forma de una publicación. */
 type Bi = { es: string; en: string };
 
-/* Los 10 rangos (com-data.js RANKS). Los puntos y quién sube llegan en 5f; aquí solo el nombre. */
+/* Los 10 rangos (com-data.js RANKS). Los nombres los puede cambiar el equipo (Super Admin › Gamification › Rangos, tabla ranks): el
+   servidor manda los vigentes (YoCom.rangos) y fijarRangos() los pone antes de pintar, igual en el servidor y en el navegador. */
 export const RANGOS: Bi[] = [
   { es: "Recluta", en: "Recruit" }, { es: "Vecino", en: "Neighbor" }, { es: "Cabo", en: "Corporal" }, { es: "Sargento", en: "Sergeant" },
   { es: "Sargento Mayor", en: "Sergeant Major" }, { es: "Teniente", en: "Lieutenant" }, { es: "Capitán", en: "Captain" }, { es: "Comandante", en: "Commander" },
   { es: "Coronel", en: "Colonel" }, { es: "General del Barrio", en: "Neighborhood General" },
 ];
 export const rango = (n: number) => RANGOS[Math.min(10, Math.max(1, n)) - 1]!;
+export function fijarRangos(L: Bi[] | null | undefined) {
+  if (!L || L.length !== 10) return;
+  L.forEach((x, i) => { if (x?.es && (RANGOS[i]!.es !== x.es || RANGOS[i]!.en !== x.en)) RANGOS[i] = { es: x.es, en: x.en || x.es }; });
+}
 
 export const TIPO: Record<"pregunta" | "recomendacion" | "encuesta" | "publicacion", { es: string; en: string; ic: string; s: Bi }> = {
   pregunta: { es: "Pregunta", en: "Question", ic: "help", s: { es: "Te responden los vecinos", en: "Neighbors answer" } },
