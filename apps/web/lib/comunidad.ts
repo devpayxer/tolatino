@@ -1,0 +1,373 @@
+import "server-only";
+import type { PoolClient } from "pg";
+import { db, tx } from "./db";
+import { centroSQL, type Punto } from "./punto";
+import { EDITAR_MIN, DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
+import { type Autor, type Filtros, type Pub } from "./comunidad-comun";
+
+/* Comunidad · el muro, publicar y la publicación (APP-COM-FEED, APP-COM-NUEVO, APP-COM-POST; fase5-comunidad.md §4 5a).
+   Todo pide sesión (comunidadSoloConCuenta): cada función recibe la persona que mira (viewer) y nada de vecinos sale sin ella.
+   - muro(): UNA consulta indexada por página (20, cursor por (hot, id) o (publish_at, id), sin offset: feedConCursor), los votos y
+     guardados propios en otra, y los perfiles de los autores de una caché de 60 s. Fijada de la ciudad arriba en «Todo».
+   - Bloqueos: toda lista para una persona pasa por sinBloqueos() (bloqueo de ida y vuelta, silenciados por quien mira; bloqueoMutuo).
+   - Ubicación: la publicación lleva el centro del barrio del autor (lo pone la base); la distancia se mide contra eso y se redondea.
+   - Escribir: comunidad-filtro.ts (único lugar de las reglas) + lo que necesita la base (sanción, límites, negocio activo y no propio,
+     rango para encuestas, fotos propias). Editar 30 min (la versión anterior queda en com_edits); borrar = estado, con Deshacer. */
+type Bi = { es: string; en: string };
+export type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; campo?: Falla["campo"] };
+const no = (es: string, en: string, campo?: Falla["campo"]): { ok: false; msg: Bi; campo?: Falla["campo"] } => ({ ok: false, msg: { es, en }, campo });
+const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+const ID = /^\d{1,18}$/;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const POR_PAGINA = 20;
+const LIMITE_DIA = 10;
+
+/* Lo que alguien no debe ver: quien lo bloqueó o a quien bloqueó (de ida y vuelta) y a quien silenció. `autor` es la columna del
+   autor y `viewer` el parámetro de quien mira. Toda función de lib/comunidad*.ts que lista para una persona lo usa (guardián). */
+export const sinBloqueos = (autor: string, viewer: string) =>
+  `not exists (select 1 from user_blocks ub where ub.removed_at is null and ((ub.user_id = ${viewer} and ub.target_user_id = ${autor})
+     or (ub.kind = 'block' and ub.user_id = ${autor} and ub.target_user_id = ${viewer})))`;
+
+/* ── Perfiles de autores: 60 s en memoria (nombre corto, foto, rango). ── */
+const cache = new Map<string, { at: number; a: Autor & { ciudad: string | null } }>();
+const ini = (n: string) => n.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+const corto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
+async function autores(ids: string[]) {
+  const ahora = Date.now(), faltan = [...new Set(ids)].filter((id) => !(cache.get(id) && ahora - cache.get(id)!.at < 60_000));
+  if (faltan.length) {
+    const r = await db().query<{ id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; ciudad: string | null }>(
+      `select u.id::text, u.first_name, u.last_name, u.photo_url, coalesce(cp.rank_level, 1) as rango, u.home_city_id as ciudad
+         from users u left join community_profiles cp on cp.user_id = u.id where u.id = any($1::uuid[])`, [faltan]);
+    for (const x of r.rows) { const n = corto(x.first_name, x.last_name); cache.set(x.id, { at: ahora, a: { id: x.id, nombre: n, ini: ini(n), foto: x.photo_url, rango: x.rango, oficial: false, ciudad: x.ciudad } }); }
+  }
+  return (id: string) => cache.get(id)?.a ?? { id, nombre: "Vecino", ini: "V", foto: null, rango: 1, oficial: false, ciudad: null };
+}
+
+/* Columnas de una publicación para la pantalla (una fila; negocio, barrio, invitado y fotos en la misma consulta). */
+const COLS = (centro: string | null) => `
+  p.id::text as id, p.kind, p.topic, p.body, p.author_kind, p.author_user_id::text as autor, p.city_id, p.status, p.hidden_reason,
+  ${ISO("p.publish_at")} as at, p.edited_at is not null as editada, ${ISO("p.created_at + interval '" + EDITAR_MIN + " minutes'")} as editar_hasta,
+  p.created_at > now() - interval '${EDITAR_MIN} minutes' as editable,
+  coalesce(p.pinned_until > now(), false) as fijada, p.health_notice as salud, p.solved_at is not null as resuelta, p.comments_locked_at is not null as cerrados,
+  p.looking_for as para, p.poll_options as opts, p.poll_counts as conteo, ${ISO("p.poll_ends_at")} as cierra, coalesce(p.poll_ends_at <= now(), false) as cerrada,
+  p.up_n as up, p.down_n as dn, p.score, p.comments_n as cms, p.hot::text as hot_t, ${ISO("p.publish_at")} || '|' || p.id as cur_new, p.hot::text || '|' || p.id as cur_top,
+  z.name as zona, case when gc.id is not null then gc.name || ', ' || gc.state end as invitado, oc.name || ', ' || oc.state as ciudad_nombre, oa.name as oficial,
+  ${centro ? `round((st_distance(p.geom, ${centro}) / 1609.34)::numeric, 1)::float8` : "null::float8"} as mi,
+  b.id as biz_id, b.name as biz_name, coalesce(bs.verified, false) as biz_ver, bs.rating_avg::float8 as biz_rating, bs.review_count as biz_reviews, sc.name as biz_sub,
+  coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as biz_foto,
+  (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible') as fotos`;
+const JOINS = `
+  left join zones z on z.city_id = p.city_id and z.id = p.zone_id
+  left join cities gc on gc.id = p.guest_from_city_id
+  join cities oc on oc.id = p.city_id
+  left join city_official_accounts oa on p.author_kind = 'official' and oa.city_id = p.city_id
+  left join businesses b on b.id = p.business_id
+  left join business_stats_cache bs on bs.business_id = b.id
+  left join subcategorias_vivas sc on sc.id = b.subcategory_ids[1]`;
+type Fila = {
+  id: string; kind: Pub["kind"]; topic: string | null; body: string; author_kind: string; autor: string | null; city_id: string; status: Pub["estado"]; hidden_reason: string | null;
+  at: string; editada: boolean; editar_hasta: string; editable: boolean; fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean;
+  para: string[]; opts: string[] | null; conteo: number[]; cierra: string | null; cerrada: boolean; up: number; dn: number; score: number; cms: number;
+  hot_t: string; cur_new: string; cur_top: string; zona: Bi | null; invitado: string | null; ciudad_nombre: string; oficial: Bi | null; mi: number | null;
+  biz_id: string | null; biz_name: string | null; biz_ver: boolean; biz_rating: number | null; biz_reviews: number | null; biz_sub: Bi | null; biz_foto: string | null; fotos: string[];
+};
+
+/* Votos, guardados y voto de encuesta de quien mira, para una página entera (una consulta). */
+async function propios(ids: string[], viewer: string) {
+  if (!ids.length) return new Map<string, { v: number; s: boolean; o: number | null }>();
+  const r = await db().query<{ id: string; v: number | null; s: boolean; o: number | null }>(
+    `select x.id::text, v.v, s.post_id is not null as s, pv.opt as o
+       from unnest($1::bigint[]) as x(id)
+       left join com_votes v on v.target_kind = 'post' and v.target_id = x.id and v.user_id = $2
+       left join com_saves s on s.post_id = x.id and s.user_id = $2
+       left join com_poll_votes pv on pv.post_id = x.id and pv.user_id = $2`, [ids, viewer]);
+  return new Map(r.rows.map((x) => [x.id, { v: x.v ?? 0, s: x.s, o: x.o }]));
+}
+
+async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
+  const [mio, A] = await Promise.all([propios(filas.map((f) => f.id), viewer), autores(filas.map((f) => f.autor).filter((x): x is string => !!x))]);
+  return filas.map((f) => {
+    const p = mio.get(f.id) ?? { v: 0, s: false, o: null }, oficial = f.author_kind === "official";
+    const a: Autor = oficial ? { id: null, nombre: f.oficial?.es ?? "To'Latino", ini: "TL", foto: null, rango: 0, oficial: true } : (({ ciudad: _c, ...x }) => (void _c, x))(A(f.autor!));
+    const lugar: Bi = oficial ? { es: f.ciudad_nombre, en: f.ciudad_nombre } : f.invitado ? { es: `Invitado · de ${f.invitado}`, en: `Visitor · from ${f.invitado}` } : f.zona ?? { es: f.ciudad_nombre, en: f.ciudad_nombre };
+    const total = (f.conteo ?? []).reduce((s, n) => s + n, 0), mia = !!f.autor && f.autor === viewer;
+    const meta = (l: "es" | "en") => [f.biz_sub ? f.biz_sub[l].toUpperCase() : null, f.biz_rating && f.biz_reviews ? `★ ${f.biz_rating.toFixed(1)} (${f.biz_reviews})` : null].filter(Boolean).join(" · ");
+    return {
+      id: f.id, kind: f.kind, topic: f.topic, body: f.body, at: f.at, editada: f.editada, mia, editarHasta: mia && f.editable && f.status === "visible" ? f.editar_hasta : null,
+      fijada: f.fijada, salud: f.salud, resuelta: f.resuelta, cerrados: f.cerrados, estado: f.status, motivo: mia ? f.hidden_reason : null,
+      autor: a, lugar, invitado: !!f.invitado, mi: f.mi,
+      negocio: f.biz_id ? { id: f.biz_id, nombre: f.biz_name!, meta: { es: meta("es"), en: meta("en") }, foto: f.biz_foto, verificado: f.biz_ver, para: f.para ?? [] } : null,
+      fotos: f.fotos ?? [],
+      encuesta: f.opts ? { opts: f.opts.map((l, i) => ({ l, n: f.conteo[i] ?? 0 })), mio: p.o, total, cierra: f.cierra!, cerrada: f.cerrada } : null,
+      up: f.up, dn: f.dn, score: f.score, miVoto: p.v, guardada: p.s, comentarios: f.cms,
+    };
+  });
+}
+
+/* Perfil de la Comunidad de quien mira (se crea al entrar por primera vez). */
+export async function miPerfil(userId: string) {
+  await db().query(`insert into community_profiles (user_id) values ($1) on conflict (user_id) do nothing`, [userId]);
+  const r = (await db().query<{ rango: number; first_name: string | null; last_name: string | null; photo_url: string | null; ciudad: string | null; estado: string; hasta: string | null; motivo: string | null }>(
+    `select cp.rank_level as rango, u.first_name, u.last_name, u.photo_url, u.home_city_id as ciudad, cuenta_estado(u.status, u.status_until) as estado,
+            ${ISO("u.status_until")} as hasta, u.status_reason as motivo
+       from users u join community_profiles cp on cp.user_id = u.id where u.id = $1`, [userId])).rows[0]!;
+  const n = corto(r.first_name, r.last_name);
+  return { rango: r.rango, nombre: n, primer: (r.first_name ?? "").trim() || n, ini: ini(n), foto: r.photo_url, ciudad: r.ciudad, silenciado: r.estado === "muted" ? { hasta: r.hasta, motivo: r.motivo } : null };
+}
+export type MiPerfil = Awaited<ReturnType<typeof miPerfil>>;
+
+/* El muro de una ciudad para una persona. `cursor` = el que devolvió la página anterior. */
+export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filtros, cursor: string | null) {
+  const v: unknown[] = [viewer], w: string[] = ["p.status = 'visible'", "p.publish_at <= now()", sinBloqueos("p.author_user_id", "$1"),
+    "not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)"];
+  const centro = f.dist ? centroSQL(punto) : null;
+  if (f.tab === "sig") w.push("p.author_user_id in (select f.target_id::uuid from follows f where f.follower_user_id = $1 and f.target_kind = 'user')");
+  else { v.push(ciudad); w.push(`p.city_id = $${v.length}`); }
+  if (f.kind) { v.push(f.kind); w.push(`p.kind = $${v.length}`); }
+  if (centro) { v.push(f.dist * 1609.34); w.push(`st_dwithin(p.geom, ${centro}, $${v.length})`); }
+  const fijadaArriba = f.tab === "todo" && !f.kind;
+  if (fijadaArriba) w.push("not coalesce(p.pinned_until > now(), false)");
+  const top = f.orden === "top";
+  if (cursor && /^(-?\d+(\.\d+)?(e[+-]?\d+)?|\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)\|\d{1,18}$/.test(cursor)) {
+    const [a, b] = cursor.split("|");
+    v.push(a, b);
+    w.push(top ? `(p.hot, p.id) < ($${v.length - 1}::float8, $${v.length}::bigint)` : `(p.publish_at, p.id) < ($${v.length - 1}::timestamptz, $${v.length}::bigint)`);
+  }
+  const orden = top ? "p.hot desc, p.id desc" : "p.publish_at desc, p.id desc";
+  const [L, F] = await Promise.all([
+    db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS} where ${w.join(" and ")} order by ${orden} limit ${POR_PAGINA + 1}`, v),
+    fijadaArriba && !cursor
+      ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
+           where p.city_id = $2 and p.pinned_until > now() and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}
+             and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)
+           order by p.pinned_until desc, p.id desc limit 1`, [viewer, ciudad])
+      : Promise.resolve({ rows: [] as Fila[] }),
+  ]);
+  const filas = L.rows.slice(0, POR_PAGINA), mas = L.rows.length > POR_PAGINA ? (top ? filas.at(-1)!.cur_top : filas.at(-1)!.cur_new) : null;
+  const pubs = await armar([...F.rows, ...filas], viewer);
+  return { pubs, mas };
+}
+export type Muro = Awaited<ReturnType<typeof muro>>;
+
+/* Una publicación (APP-COM-POST). El autor también ve la suya oculta (con el motivo). Comentarios: las raíces por votos (el hilo
+   completo, responder y votar llegan en 5b). */
+export async function publicacion(id: string, viewer: string) {
+  if (!ID.test(id)) return null;
+  const r = (await db().query<Fila>(
+    `select ${COLS(null)} from com_posts p ${JOINS}
+      where p.id = $2::bigint and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}
+        and (p.status = 'visible' or (p.status = 'hidden' and p.author_user_id = $1))
+        and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)`, [viewer, id])).rows[0];
+  if (!r) return null;
+  const [pub] = await armar([r], viewer);
+  const cm = await db().query<{ id: string; autor: string; body: string; at: string; up: number; dn: number; score: number; replies: number; biz: string | null; biz_name: string | null; mejor: boolean }>(
+    `select c.id::text, c.author_user_id::text as autor, c.body, ${ISO("c.created_at")} as at, c.up_n as up, c.down_n as dn, c.score, c.replies_n as replies,
+            c.business_id as biz, b.name as biz_name, c.id = p.best_comment_id as mejor
+       from com_comments c join com_posts p on p.id = c.post_id left join businesses b on b.id = c.business_id
+      where c.post_id = $2::bigint and c.parent_id is null and c.status = 'visible' and ${sinBloqueos("c.author_user_id", "$1")}
+        and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'comment' and h.target_id = c.id)
+      order by (c.id = p.best_comment_id) desc, c.score desc, c.id limit ${POR_PAGINA}`, [viewer, id]);
+  const A = await autores(cm.rows.map((c) => c.autor));
+  const comentarios = cm.rows.map((c) => { const a = A(c.autor); return { id: c.id, autor: { nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango }, body: c.body, at: c.at, up: c.up, dn: c.dn, score: c.score, respuestas: c.replies, negocio: c.biz ? { id: c.biz, nombre: c.biz_name! } : null, mejor: c.mejor }; });
+  return { pub: pub!, comentarios };
+}
+export type Publicacion = NonNullable<Awaited<ReturnType<typeof publicacion>>>;
+
+/* Negocios de la ciudad para recomendar (buscador de Publicar). */
+export async function negociosParaRecomendar(ciudad: string, q: string) {
+  const palabras = q.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().match(/[a-z0-9]+/g)?.slice(0, 5) ?? [];
+  if (!palabras.length) return [];
+  const r = await db().query<{ id: string; name: string; sub: Bi | null; subs: Bi[]; foto: string | null; ver: boolean }>(
+    `select b.id, b.name, sc.name as sub, coalesce((select array_agg(s.name order by s.sort) from subcategorias_vivas s where s.id = any(b.subcategory_ids)), '{}') as subs,
+            coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as foto,
+            coalesce(bs.verified, false) as ver
+       from businesses b left join business_stats_cache bs on bs.business_id = b.id left join subcategorias_vivas sc on sc.id = b.subcategory_ids[1]
+      where b.city_id = $1 and b.status = 'active' and b.search_doc @@ to_tsquery('simple', $2)
+      order by ts_rank(b.search_doc, to_tsquery('simple', $2)) desc, b.name limit 8`, [ciudad, palabras.map((p) => `${p}:*`).join(" & ")]);
+  return r.rows.map((x) => ({ id: x.id, nombre: x.name, meta: x.sub ?? { es: "", en: "" }, subs: x.subs.slice(0, 4), foto: x.foto, verificado: x.ver }));
+}
+export type NegocioRec = Awaited<ReturnType<typeof negociosParaRecomendar>>[number];
+
+/* ── Escribir ── */
+type Quien = { estado: string; hasta: string | null; motivo: string | null; nueva: boolean; lang: string; rango: number; ciudadOn: boolean };
+async function quien(c: PoolClient, userId: string, ciudad: string): Promise<Quien | null> {
+  return (await c.query<Quien>(
+    `select cuenta_estado(u.status, u.status_until) as estado, ${ISO("u.status_until")} as hasta, u.status_reason as motivo, u.created_at > now() - interval '24 hours' as nueva,
+            coalesce(u.lang, 'es') as lang, coalesce(cp.rank_level, 1) as rango, coalesce((select status = 'on' from cities where id = $2), false) as "ciudadOn"
+       from users u left join community_profiles cp on cp.user_id = u.id where u.id = $1`, [userId, ciudad])).rows[0] ?? null;
+}
+const fechaHasta = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" }) : "";
+
+/* Un negocio que la persona maneja (dueña o en su equipo): no se lo recomienda a sí misma (guardián noTePromuevas). */
+async function esSuNegocio(c: PoolClient, userId: string, negocio: string) {
+  return (await c.query(
+    `select 1 from businesses b where b.id = $2 and (b.owner_user_id = $1 or exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $1 and m.status = 'active'))`,
+    [userId, negocio])).rowCount! > 0;
+}
+
+/* Fotos que la persona subió (y no se usan en otra cosa) pasan a la publicación; las que quitó al editar quedan retiradas. */
+async function ponerFotos(c: PoolClient, userId: string, post: string, fotos: string[]) {
+  const ids = fotos.filter((x) => UUID.test(x)).slice(0, MAX_FOTOS);
+  if (ids.length !== fotos.length) return false;
+  if (ids.length) {
+    const r = await c.query(
+      `update media set owner_kind = 'com_post', owner_id = $1, sort = array_position($3::uuid[], id) - 1
+        where id = any($3::uuid[]) and status = 'visible' and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'com_post' and owner_id = $1))`, [post, userId, ids]);
+    if (r.rowCount !== ids.length) return false;
+  }
+  await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'com_post' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [post, ids]);
+  return true;
+}
+
+export type Entrada = Borrador;
+export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string }>> {
+  const f = revisarPublicacion(p);
+  if (f) return { ok: false, msg: f.msg, campo: f.campo };
+  return tx(async (c) => {
+    const u = await quien(c, userId, ciudad);
+    if (!u) return no("Entra para publicar.", "Sign in to post.");
+    if (!u.ciudadOn) return no("La Comunidad de esta ciudad abre cuando abra la ciudad.", "This city's Community opens when the city opens.");
+    if (u.estado === "muted") return no(`No puedes publicar hasta el ${fechaHasta(u.hasta, true)}${u.motivo ? `: ${u.motivo}` : "."}`, `You can't post until ${fechaHasta(u.hasta, false)}${u.motivo ? `: ${u.motivo}` : "."}`);
+    if (u.estado !== "active") return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
+    // Límite: 10 publicaciones en 24 h (la mitad si la cuenta es de hoy). Las borradas cuentan.
+    const tope = u.nueva ? LIMITE_DIA / 2 : LIMITE_DIA;
+    const n = (await c.query<{ n: number }>(`select count(*)::int as n from com_posts where author_user_id = $1 and created_at > now() - interval '24 hours'`, [userId])).rows[0]!.n;
+    if (n >= tope) return no(`Llegaste a ${tope} publicaciones en 24 horas. Vuelve mañana.`, `You reached ${tope} posts in 24 hours. Come back tomorrow.`);
+    if (p.kind === "encuesta" && u.rango < RANGO_ENCUESTA) return no("Las encuestas se abren en Cabo.", "Polls open at Corporal.", "tipo");
+    let negocio: string | null = null;
+    if (p.kind === "recomendacion") {
+      const b = (await c.query<{ id: string }>(`select id from businesses where id = $1 and city_id = $2 and status = 'active'`, [String(p.business), ciudad])).rows[0];
+      if (!b) return no("Ese negocio no está activo en esta ciudad.", "That business is not active in this city.", "negocio");
+      if (await esSuNegocio(c, userId, b.id)) return no("No puedes recomendar tu propio negocio. Tu negocio publica en sus Novedades.", "You can't recommend your own business. Your business posts in its Updates.", "negocio");
+      negocio = b.id;
+    }
+    const body = p.body.trim(), opts = p.kind === "encuesta" ? (p.opts ?? []).map((x) => x.trim()).filter(Boolean) : null;
+    const topic = p.kind === "pregunta" ? p.topic || "otro" : p.topic || null;
+    const para = p.kind === "recomendacion" ? (p.para ?? []).map((x) => x.trim()).filter(Boolean) : [];
+    const r = (await c.query<{ id: string }>(
+      `insert into com_posts (city_id, author_kind, author_user_id, kind, topic, body, lang, business_id, looking_for, poll_options, poll_ends_at, health_notice)
+       values ($1, 'user', $2, $3, $4, $5, $6, $7, $8, $9, case when $10::int is null then null else now() + make_interval(days => $10::int) end, $11)
+       returning id::text`,
+      [ciudad, userId, p.kind, topic, body, u.lang === "en" ? "en" : "es", negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body)])).rows[0]!;
+    if (p.kind !== "encuesta" && !(await ponerFotos(c, userId, r.id, p.fotos ?? []))) throw new FotosAjenas();
+    return { ok: true as const, id: r.id };
+  }).catch((e) => {
+    if (e instanceof FotosAjenas) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "fotos");
+    if (String(e?.constraint ?? "").endsWith("_datos")) return no("No publiques teléfonos ni datos de nadie.", "Don't post phone numbers or anyone's details.", "texto");
+    throw e;
+  });
+}
+class FotosAjenas extends Error {}
+
+/* Editar: solo quien la escribió, en los primeros 30 minutos; el tipo, el negocio y las opciones no cambian. */
+export async function editar(userId: string, id: string, p: Pick<Entrada, "body" | "topic" | "para" | "fotos">): Promise<Res<{ id: string }>> {
+  if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
+  return tx(async (c) => {
+    const x = (await c.query<{ kind: Entrada["kind"]; body: string; business_id: string | null; poll_options: string[] | null; topic: string | null; a_tiempo: boolean; city_id: string }>(
+      `select kind, body, business_id, poll_options, topic, created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, city_id
+         from com_posts where id = $1::bigint and author_user_id = $2 and status = 'visible' for update`, [id, userId])).rows[0];
+    if (!x) return no("Esa publicación ya no está.", "That post is gone.");
+    if (!x.a_tiempo) return no(`Ya no se puede editar: pasaron ${EDITAR_MIN} minutos. Puedes borrarla y publicar otra.`, `It can no longer be edited: ${EDITAR_MIN} minutes have passed. You can delete it and post again.`);
+    const u = await quien(c, userId, x.city_id);
+    if (!u || u.estado !== "active") return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
+    const f = revisarPublicacion({ kind: x.kind, body: p.body, topic: p.topic, business: x.business_id, para: p.para, opts: x.poll_options ?? undefined, dias: 1, fotos: x.kind === "encuesta" ? [] : p.fotos, noEsMio: true });
+    if (f) return { ok: false as const, msg: f.msg, campo: f.campo };
+    const body = p.body.trim();
+    if (body !== x.body) await c.query(`insert into com_edits (target_kind, target_id, old_body) values ('post', $1::bigint, $2)`, [id, x.body]);
+    await c.query(`update com_posts set body = $2, topic = $3, looking_for = $4, edited_at = now(), health_notice = $5 where id = $1::bigint`,
+      [id, body, x.kind === "pregunta" ? p.topic || x.topic || "otro" : p.topic || x.topic, x.kind === "recomendacion" ? (p.para ?? []).map((s) => s.trim()).filter(Boolean) : [], pareceEmergencia(body)]);
+    if (x.kind !== "encuesta" && !(await ponerFotos(c, userId, id, p.fotos ?? []))) throw new FotosAjenas();
+    return { ok: true as const, id };
+  }).catch((e) => {
+    if (e instanceof FotosAjenas) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "fotos");
+    if (String(e?.constraint ?? "").endsWith("_datos")) return no("No publiques teléfonos ni datos de nadie.", "Don't post phone numbers or anyone's details.", "texto");
+    throw e;
+  });
+}
+
+/* Borrar = estado «deleted» (nada se borra). Deshacer en los 10 s siguientes (el servidor da un margen de 5 s por la red). */
+export async function borrar(userId: string, id: string): Promise<Res> {
+  if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
+  const r = await db().query(`update com_posts set status = 'deleted', deleted_at = now() where id = $1::bigint and author_user_id = $2 and status = 'visible'`, [id, userId]);
+  return r.rowCount ? { ok: true } : no("Esa publicación ya no está.", "That post is gone.");
+}
+export async function deshacerBorrar(userId: string, id: string): Promise<Res> {
+  if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
+  const r = await db().query(
+    `update com_posts set status = 'visible', deleted_at = null where id = $1::bigint and author_user_id = $2 and status = 'deleted' and deleted_at > now() - interval '${DESHACER_S + 5} seconds'`, [id, userId]);
+  return r.rowCount ? { ok: true } : no("Ya no se puede deshacer.", "It can no longer be undone.");
+}
+
+/* Lo que se puede tocar en una publicación ajena: visible, de la ciudad, sin bloqueos entre los dos. */
+async function tocable(c: PoolClient, viewer: string, id: string) {
+  return (await c.query<{ autor: string | null; kind: string; opts: number; abierta: boolean }>(
+    `select p.author_user_id::text as autor, p.kind, coalesce(cardinality(p.poll_options), 0) as opts, coalesce(p.poll_ends_at > now(), false) as abierta
+       from com_posts p where p.id = $2::bigint and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}`, [viewer, id])).rows[0] ?? null;
+}
+
+/* Voto + / −: uno por persona; el mismo toque lo quita; lo propio no se vota. Contadores y orden los recalcula la base. */
+export async function votar(userId: string, id: string, v: 1 | -1, device: string | null): Promise<Res<{ score: number; miVoto: number }>> {
+  if (!ID.test(id) || (v !== 1 && v !== -1)) return no("Esa publicación ya no está.", "That post is gone.");
+  return tx(async (c) => {
+    const p = await tocable(c, userId, id);
+    if (!p) return no("Esa publicación ya no está.", "That post is gone.");
+    if (p.autor === userId) return no("Lo tuyo lo votan los demás.", "Others vote on your posts.");
+    const ya = (await c.query<{ v: number }>(`select v from com_votes where target_kind = 'post' and target_id = $1::bigint and user_id = $2 for update`, [id, userId])).rows[0];
+    let mio: number = v;
+    if (ya?.v === v) { await c.query(`delete from com_votes where target_kind = 'post' and target_id = $1::bigint and user_id = $2`, [id, userId]); mio = 0; }
+    else await c.query(`insert into com_votes (target_kind, target_id, user_id, v, device) values ('post', $1::bigint, $2, $3, $4)
+                        on conflict (target_kind, target_id, user_id) do update set v = excluded.v, updated_at = now()`, [id, userId, v, device && UUID.test(device) ? device : null]);
+    const s = (await c.query<{ score: number }>(`select score from com_posts where id = $1::bigint`, [id])).rows[0]!;
+    return { ok: true as const, score: s.score, miVoto: mio };
+  });
+}
+
+/* Encuesta: un voto, no se cambia; abierta hasta su cierre. */
+export async function votarEncuesta(userId: string, id: string, opt: number): Promise<Res> {
+  if (!ID.test(id) || !Number.isInteger(opt) || opt < 0 || opt > 3) return no("Esa encuesta ya no está.", "That poll is gone.");
+  return tx(async (c) => {
+    const p = await tocable(c, userId, id);
+    if (!p || p.kind !== "encuesta" || opt >= p.opts) return no("Esa encuesta ya no está.", "That poll is gone.");
+    if (!p.abierta) return no("Esta encuesta ya cerró.", "This poll is closed.");
+    const r = await c.query(`insert into com_poll_votes (post_id, user_id, opt) values ($1::bigint, $2, $3) on conflict do nothing`, [id, userId, opt]);
+    return r.rowCount ? { ok: true as const } : no("Ya votaste: tu voto no se cambia.", "You already voted: your vote is final.");
+  });
+}
+
+/* Guardar / quitar de guardados (USR-FAVORITOS › publicaciones). */
+export async function guardar(userId: string, id: string): Promise<Res<{ guardada: boolean }>> {
+  if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
+  return tx(async (c) => {
+    if (!(await tocable(c, userId, id))) return no("Esa publicación ya no está.", "That post is gone.");
+    const d = await c.query(`delete from com_saves where post_id = $1::bigint and user_id = $2`, [id, userId]);
+    if (d.rowCount) return { ok: true as const, guardada: false };
+    await c.query(`insert into com_saves (post_id, user_id) values ($1::bigint, $2) on conflict do nothing`, [id, userId]);
+    return { ok: true as const, guardada: true };
+  });
+}
+
+/* Para editar: la publicación propia tal como está (solo en los 30 minutos). */
+export async function paraEditar(userId: string, id: string) {
+  if (!ID.test(id)) return null;
+  const r = (await db().query<{ kind: Entrada["kind"]; body: string; topic: string | null; para: string[]; a_tiempo: boolean; biz: string | null; biz_name: string | null; opts: string[] | null }>(
+    `select p.kind, p.body, p.topic, p.looking_for as para, p.created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, p.business_id as biz, b.name as biz_name, p.poll_options as opts
+       from com_posts p left join businesses b on b.id = p.business_id where p.id = $1::bigint and p.author_user_id = $2 and p.status = 'visible'`, [id, userId])).rows[0];
+  if (!r) return null;
+  const fotos = (await db().query<{ id: string; url: string }>(`select id::text, url from media where owner_kind = 'com_post' and owner_id = $1 and status = 'visible' order by sort, created_at`, [id])).rows;
+  return { ...r, fotos };
+}
+
+/* Para el muro de registro (sin cuenta): solo cifras y qué tipo de cosa pasó; ni nombres ni textos de vecinos. */
+export async function resumenInvitado(ciudad: string) {
+  const [n, act] = await Promise.all([
+    db().query<{ vecinos: number; preguntas: number; negocios: number }>(
+      `select (select count(*)::int from users u where u.home_city_id = $1 and u.phone_verified_at is not null and cuenta_estado(u.status, u.status_until) in ('active', 'muted')) as vecinos,
+              (select count(*)::int from com_posts p where p.city_id = $1 and p.kind = 'pregunta' and p.status = 'visible' and p.publish_at > now() - interval '7 days') as preguntas,
+              (select count(distinct p.business_id)::int from com_posts p where p.city_id = $1 and p.kind = 'recomendacion' and p.status = 'visible') as negocios`, [ciudad]),
+    db().query<{ kind: Pub["kind"]; at: string }>(
+      `select p.kind, ${ISO("p.publish_at")} as at from com_posts p where p.city_id = $1 and p.status = 'visible' and p.publish_at <= now() order by p.publish_at desc, p.id desc limit 3`, [ciudad]),
+  ]);
+  return { ...n.rows[0]!, actividad: act.rows };
+}
+export type ResumenInvitado = Awaited<ReturnType<typeof resumenInvitado>>;
+

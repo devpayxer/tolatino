@@ -7,5 +7,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const s = await requerir("cont", "ver");
   const f = leerFiltrosCont(await searchParams);
   const r = await listaContenido(s, f);
-  return <Contenido d={r} f={f} porPagina={POR_PAGINA_CONT} puede={s.puede("neg", "retirar")} />;
+  return <Contenido d={r} f={f} porPagina={POR_PAGINA_CONT} puede={s.puede("neg", "retirar")} puedeCom={s.puede("cont", "retirar")} editaCom={s.puede("cont", "editar")} />;
 }

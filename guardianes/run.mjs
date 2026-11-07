@@ -15,6 +15,10 @@ const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
 
+/* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
+const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
+
 const guardianes = {
   /* 1. Ningún secreto en el repo (regla Q y U). */
   secretos() {
@@ -185,6 +189,15 @@ const guardianes = {
     if (!/LINE911[^;]*llama al 911/.test(readFileSync(L, "utf8"))) falla("emergencia911", L, 1, "LINE911 debe decir «…sal de la casa y llama al 911.»");
     if (existsSync(F) && !/linea911\.es/.test(readFileSync(F, "utf8"))) falla("emergencia911", F, 1, "el formulario de emergencia debe mostrar la línea del 911");
     if (existsSync(S) && !/em && <div role="note"[^\n]*linea911/.test(readFileSync(S, "utf8"))) falla("emergencia911", S, 1, "el estado de la emergencia debe mostrar la línea del 911");
+    // 5a · Comunidad: «Una emergencia no se pregunta aquí: llama al 911.» al escribir (si parece emergencia) y el aviso de Salud en la publicación.
+    const CF = "apps/web/lib/comunidad-filtro.ts", CT = "apps/web/app/(app)/comunidad/Tarjeta.tsx", CN = "apps/web/app/(app)/comunidad/nuevo/Nuevo.tsx", CM = "packages/db/migrations/0097_comunidad_base.sql";
+    if (existsSync(CF)) {
+      const f = readFileSync(CF, "utf8");
+      if (!/LINEA911: Bi = \{ es: "[^"]*llama al 911\."/.test(f) || !/EMERGENCIA911: Bi = \{ es: "Una emergencia no se pregunta aquí: llama al 911\."/.test(f)) falla("emergencia911", CF, 1, "LINEA911 y EMERGENCIA911 deben decir «…llama al 911.»");
+      if (existsSync(CT) && !/p\.salud && \([\s\S]{0,800}LINEA911\.es/.test(readFileSync(CT, "utf8"))) falla("emergencia911", CT, 1, "una publicación de Salud debe mostrar la línea del 911");
+      if (existsSync(CN) && !/emergencia && <div role="note"[^\n]*EMERGENCIA911\.es/.test(readFileSync(CN, "utf8"))) falla("emergencia911", CN, 1, "Publicar debe mostrar la línea del 911 si el texto parece una emergencia");
+      if (existsSync(CM) && !/new\.health_notice := [^;]*new\.topic = 'salud'/.test(readFileSync(CM, "utf8"))) falla("emergencia911", CM, 1, "el tema Salud debe encender el aviso del 911 en la base");
+    }
   },
 
   /* 4e. to_char con nombres de día o mes (Dy, Day, Mon, Month) los escribe en inglés aunque la pantalla esté en español
@@ -1720,6 +1733,110 @@ const guardianes = {
         if (m) falla("analiticaSinCreencias", f, i + 1, `Analítica no lee «${m[0]}»: nunca personas por religión ni datos de crédito`);
       });
     }
+  },
+
+  /* ── Fase 5 · Comunidad (5a) ── Utilidades: archivos de la Comunidad y su texto sin comentarios. */
+  /* 5a. Teléfonos, correos y números privados nunca se guardan en lo que escribe un vecino: el filtro (lib/comunidad-filtro.ts) los
+     revisa con PII y TEL, publicar/editar lo corren antes de escribir, y la base lo impone con com_sin_datos() en publicaciones,
+     comentarios y bio (un insert directo también falla). Nadie fuera de lib/comunidad*.ts inserta publicaciones ni comentarios. */
+  comunidadSinTelefonos() {
+    const F = "apps/web/lib/comunidad-filtro.ts", L = "apps/web/lib/comunidad.ts", M = "packages/db/migrations/0097_comunidad_base.sql";
+    if (!existsSync(F) || !existsSync(L) || !existsSync(M)) return;
+    const f = sinComent(F), l = sinComent(L), m = readFileSync(M, "utf8");
+    if (!/TEL\.test\(t\)/.test(f) || !/PII\.test\(t\)/.test(f) || !/const TEL = \/\(\\d\[\\s\(\)\.-\]\*\)\{10\}/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarTexto debe probar TEL (10 dígitos) y PII antes de dejar pasar un texto");
+    if (!/export function revisarPublicacion[\s\S]*?revisarTexto\(t\)/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarPublicacion no pasa el texto por revisarTexto");
+    for (const fn of ["publicar", "editar"]) {
+      const c = cuerpoFn(l, fn);
+      const iF = c.search(/revisarPublicacion\(/), iW = c.search(/insert into com_posts|update com_posts set body/);
+      if (iF < 0 || iW < 0 || iF > iW) falla("comunidadSinTelefonos", L, 0, `«${fn}» escribe sin pasar antes por revisarPublicacion()`);
+    }
+    if (!/t ~ '\(\\d\[\\s\(\)\.-\]\*\)\{10\}'/.test(m)) falla("comunidadSinTelefonos", M, 0, "com_sin_datos() no frena teléfonos de 10 dígitos");
+    for (const [tabla, col] of [["com_posts", "body"], ["com_comments", "body"], ["community_profiles", "bio"]])
+      if (!new RegExp(`alter table ${tabla} add constraint \\w+ check \\(com_sin_datos\\(${col}\\)`).test(m)) falla("comunidadSinTelefonos", M, 0, `${tabla}.${col} sin la restricción com_sin_datos()`);
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || /^apps\/web\/lib\/comunidad[^/]*\.ts$/.test(x)) continue;
+      readFileSync(x, "utf8").split("\n").forEach((t, i) => { if (/insert into com_(posts|comments)\b/i.test(t)) falla("comunidadSinTelefonos", x, i + 1, "solo lib/comunidad*.ts escribe publicaciones y comentarios (con el filtro)"); });
+    }
+  },
+
+  /* 5a. La ubicación de una publicación es el centro del barrio (o de la ciudad): la pone la base al insertar y nadie la cambia; ninguna
+     consulta de la Comunidad devuelve el punto (solo la distancia redondeada) ni lee dónde está la persona (viewing_center, GPS). */
+  ubicacionDeBarrio() {
+    const M = "packages/db/migrations/0097_comunidad_base.sql";
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/new\.geom := coalesce\(\(select z\.center from zones z[^;]*\), c\.center\)/.test(m)) falla("ubicacionDeBarrio", M, 0, "com_posts_antes debe poner geom = centro del barrio o de la ciudad");
+      if (!/raise exception 'la ubicación de una publicación la pone la base/.test(m)) falla("ubicacionDeBarrio", M, 0, "com_posts_antes debe impedir cambiar geom a mano");
+    }
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib\/comunidad[^/]*\.ts|app\/\(app\)\/comunidad\/.*\.tsx?|app\/admin\/acciones-comunidad\.ts)$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((t, i) => {
+        const sinCalc = t.replace(/st_(distance|dwithin)\(p\.geom,/g, "");
+        if (/\bgeom\b|viewing_center|\bst_[xy]\(|users?\.geo\b|\bgps\b/i.test(sinCalc)) falla("ubicacionDeBarrio", x, i + 1, "la Comunidad no devuelve puntos ni lee la ubicación de la persona: solo st_distance/st_dwithin redondeados contra el barrio");
+      });
+    }
+  },
+
+  /* 5a. Bloquear es mutuo e invisible: toda función de lib/comunidad*.ts que lee publicaciones o comentarios para alguien (recibe
+     `viewer`) pasa por sinBloqueos(); sinBloqueos cubre las dos direcciones y los silenciados. */
+  bloqueoMutuo() {
+    for (const x of codigo) {
+      if (!/^apps\/web\/lib\/comunidad[^/]*\.ts$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/export const sinBloqueos/.test(t) && !/ub\.user_id = \$\{viewer\} and ub\.target_user_id = \$\{autor\}[\s\S]{0,120}ub\.kind = 'block' and ub\.user_id = \$\{autor\} and ub\.target_user_id = \$\{viewer\}/.test(t))
+        falla("bloqueoMutuo", x, 0, "sinBloqueos debe excluir en los dos sentidos (lo que yo bloqueé o silencié y quien me bloqueó)");
+      for (const m of t.matchAll(/\n(?:export )?async function (\w+)\(([^)]*)\)/g)) {
+        if (!/\bviewer\b/.test(m[2])) continue;
+        const c = cuerpoFn(t, m[1]), filtroW = /w: string\[\] = \[[^\]]*sinBloqueos\(/.test(c);
+        // Cada consulta que lee publicaciones o comentarios lleva sinBloqueos (o las condiciones `w` que lo traen).
+        for (const q of c.match(/`[^`]*`/g) ?? []) if (/from com_(posts|comments)\b/.test(q) && !/sinBloqueos\(/.test(q) && !(filtroW && /\$\{w\.join\(/.test(q)))
+          falla("bloqueoMutuo", x, 0, `«${m[1]}» lista contenido para una persona sin sinBloqueos()`);
+      }
+    }
+  },
+
+  /* 5a. El muro pagina por cursor (hot, id) o (publish_at, id), sin offset, con los índices parciales que sirven a esa consulta. */
+  feedConCursor() {
+    const L = "apps/web/lib/comunidad.ts", M = "packages/db/migrations/0097_comunidad_base.sql";
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib\/comunidad[^/]*\.ts|app\/\(app\)\/comunidad\/.*\.tsx?)$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((t, i) => { if (/\boffset\b/i.test(t)) falla("feedConCursor", x, i + 1, "la Comunidad no pagina con offset: usa el cursor"); });
+    }
+    if (!existsSync(L)) return;
+    const c = cuerpoFn(sinComent(L), "muro");
+    if (!/\(p\.hot, p\.id\) < \(/.test(c) || !/\(p\.publish_at, p\.id\) < \(/.test(c) || !/limit \$\{POR_PAGINA \+ 1\}/.test(c)) falla("feedConCursor", L, 0, "muro() debe seguir con cursor (hot, id) / (publish_at, id) y pedir una de más");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/on com_posts \(city_id, hot desc, id desc\) where status = 'visible'/.test(m) || !/on com_posts \(city_id, publish_at desc, id desc\) where status = 'visible'/.test(m)) falla("feedConCursor", M, 0, "faltan los índices del muro (city_id, hot|publish_at desc, id desc)");
+    }
+  },
+
+  /* 5a. La Comunidad pide cuenta (salvo Hoy en el barrio, 5e): cada pantalla de /comunidad entra por conCuenta() (que manda a /entrar) o,
+     el muro, muestra el muro de registro antes de leer nada de vecinos; las acciones piden sesión; el muro de registro no lee textos ni nombres. */
+  comunidadSoloConCuenta() {
+    const S = "apps/web/app/(app)/comunidad/sesion.ts", L = "apps/web/lib/comunidad.ts";
+    if (existsSync(S) && !/if \(!u\?\.first_name\) redirect\(`\/entrar\?volver=/.test(readFileSync(S, "utf8"))) falla("comunidadSoloConCuenta", S, 0, "conCuenta() debe mandar a /entrar sin sesión");
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/\(app\)\/comunidad\/(.*\/)?page\.tsx$/.test(x)) continue;
+      const t = sinComent(x), iDatos = t.search(/await (muro|publicacion|paraEditar)\(/), iCuenta = t.search(/await conCuenta\(/), iInv = t.search(/if \(!u\) \{[\s\S]*?return <Invitado/);
+      if (iDatos >= 0 && (iCuenta < 0 || iCuenta > iDatos)) falla("comunidadSoloConCuenta", x, 0, "lee contenido de vecinos antes de pedir la cuenta (conCuenta)");
+      if (iCuenta < 0 && iInv < 0) falla("comunidadSoloConCuenta", x, 0, "pantalla de la Comunidad sin conCuenta() ni muro de registro");
+      if (/Invitado/.test(t) && iInv > iCuenta && iCuenta >= 0) falla("comunidadSoloConCuenta", x, 0, "el muro de registro va antes de conCuenta()");
+    }
+    const A = "apps/web/app/(app)/comunidad/acciones.ts";
+    if (existsSync(A)) for (const p of readFileSync(A, "utf8").split(/\nexport async function /).slice(1)) if (!/await quien\(\)/.test(p.slice(0, 400))) falla("comunidadSoloConCuenta", A, 0, `«${p.slice(0, p.indexOf("("))}» no pide sesión (quien())`);
+    if (existsSync(L)) { const c = cuerpoFn(sinComent(L), "resumenInvitado"); if (/p\.body|first_name|last_name|author_user_id|photo_url/.test(c)) falla("comunidadSoloConCuenta", L, 0, "resumenInvitado no puede leer textos ni nombres de vecinos"); }
+  },
+
+  /* 5a. Nadie se recomienda a sí mismo: publicar revisa, antes de guardar una recomendación, que el autor no sea dueño ni del equipo del
+     negocio («Tu negocio publica en sus Novedades»). */
+  noTePromuevas() {
+    const L = "apps/web/lib/comunidad.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L), c = cuerpoFn(t, "publicar"), s = cuerpoFn(t, "esSuNegocio");
+    const iS = c.search(/\n\s*if \(await esSuNegocio\(c, userId, b\.id\)\) return no\(/), iW = c.search(/insert into com_posts/);
+    if (iS < 0 || iW < 0 || iS > iW) falla("noTePromuevas", L, 0, "publicar guarda una recomendación sin revisar esSuNegocio() antes");
+    if (!/owner_user_id = \$1/.test(s) || !/business_members m where m\.business_id = b\.id and m\.user_id = \$1 and m\.status = 'active'/.test(s)) falla("noTePromuevas", L, 0, "esSuNegocio debe mirar al dueño y al equipo activo del negocio");
   },
 
   idioma() {

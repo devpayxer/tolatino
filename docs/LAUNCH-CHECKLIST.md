@@ -561,3 +561,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
       del sandbox, migraciones dos veces y la semilla dos veces; **no** corre las pruebas de punta a punta con Playwright ni en 9 dispositivos. Las
       pruebas del grupo (`fe4ia`, `inm4ib`, `autos4ic`, `fic4id`, `vis4ie`, `ayu4if`, `adm4ig`) corren en local en teléfono 390 y escritorio
       1360. Falta la matriz de 9 dispositivos en la CI. (4ig, 7 nov)
+
+- [ ] **5a · Comunidad, abogado (§3):** Sección 230 y Términos de la Comunidad versionados con las reglas del barrio; protocolo de material de
+      abuso infantil (NCMEC, preservación); acoso (18 Pa.C.S. § 2709); difamación en recomendaciones; avisos de operativos de inmigración. (5a, 7 nov)
+- [ ] **5a · Dirección de una persona → cola `rep`** (hoy se rechaza al escribir); placas de carro; listas `spam`, `hate`, `migra`, `estafa`,
+      `autolesion` y la moderación de imágenes (modelo propio) llegan en 5d. Hoy las fotos de la Comunidad pasan por el mismo `/api/medios` (sin EXIF
+      ni GPS) sin revisión automática. (5a, 7 nov)
+- [ ] **5a · Límites de la Comunidad en Configuración:** 10 publicaciones en 24 h (5 la primera día) son constantes de `lib/comunidad.ts`;
+      pasan a `config_keys` con «día local» en 5i. (5a, 7 nov)
+- [ ] **5a · Velocidad con 1 M publicaciones** (`scripts/carga/comunidad-1m.mjs`, p95 ≤ 50 ms del muro): no se corrió; en la base del sandbox el
+      plan usa `com_posts_hot_idx` sin ordenar aparte (comprobado con `EXPLAIN`). (5a, 7 nov)
+- [ ] **5a · Foto de portada del muro de registro:** el prototipo usa una foto de Pexels; va sin foto hasta que el fundador elija una propia. (5a, 7 nov)
+- [ ] **5a · Admin › Contenido pagina con `offset`** (venía de 2i); pasa a cursor con el resto de Contenido en 5i. (5a, 7 nov)

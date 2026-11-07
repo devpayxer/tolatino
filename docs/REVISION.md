@@ -1469,3 +1469,49 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 
 **Capturas:** `g4ig-vivienda-frase-d`, `g4ig-vivienda-mayores-d`, `g4ig-licencia-d`, `g4ig-notif-d`, `g4ig-analitica-d`,
 `g4ig-triangulo-autos-d`, `g4ig-vivienda-m`, `g4ig-analitica-m`.
+
+### 5a · Comunidad: el muro, publicar y la publicación (7 nov)
+**Qué mirar, paso a paso, en el sandbox** (capturas `c5a-*.png`; teléfono 390 y escritorio 1360):
+1. **Sin cuenta:** `/comunidad` → muro de registro (qué es, cifras reales de Hazleton y qué tipo de cosa se publicó hace poco, sin nombres
+   ni textos) y «Entrar con mi teléfono». Abrir `/comunidad/nuevo` o una publicación lleva a Entrar.
+2. **Como vecina (5705550299):** el muro con «PREGUNTA DE LA SEMANA · FIJADA» de To'Latino Hazleton arriba; los chips (Todo · Siguiendo ·
+   Preguntas · Recomendaciones · Encuestas · Publicaciones) y el filtro (5 · 10 · 30 mi; Más votados · Recientes); «Ver más» al final.
+3. **Publicar:** prueba una pregunta con un teléfono (sale el motivo en la misma caja) y con «123 N Wyoming St» (rechazada: dirección exacta);
+   luego una de **Salud** (sale con la línea del 911); una recomendación (busca «espiga», «No es mi negocio…», «¿para qué?»); una encuesta
+   (en el sandbox la vecina de prueba no es Cabo: la prueba le pone rango 3 y se lo devuelve). En escritorio, la vista previa a la derecha.
+4. **La dueña (Yesenia, 5705550433)** intenta recomendar «Rentas Hazleton Latino» → «No puedes recomendar tu propio negocio».
+5. **Tu publicación:** ··· → Editar (solo 30 min), Borrar → «Publicación borrada · Deshacer» (10 s).
+6. **Super Admin (5705550199) › Contenido › Publicaciones:** Ocultar (con motivo; la autora la sigue viendo con el motivo y recibe el aviso),
+   Restaurar, Fijar (7 días, una a la vez) y Bloquear comentarios.
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Dirección exacta → se rechaza al escribir** (el plan §3 decía «se publica y se marca para revisión»; rechazar es lo más seguro y
+  reversible). Número + calle («123 N Wyoming St», «Calle Alter 512») no pasa; «en la Wyoming St» o «la 22 y la Diamond» sí. La cola llega en 5d.
+- **Diagnósticos y medicinas sí se pueden escribir** en la Comunidad (preguntar por un pediatra es el uso); de `PRIVADO` solo se usan los
+  números (A-number, caso de USCIS). SSN/ITIN, tarjetas, correos y teléfonos no pasan, y la base también los frena (`com_sin_datos`).
+- **Chip «Todo»** en vez de «Para ti» del prototipo: el muro no está personalizado y «Para ti» prometería algo que no hace. Se agregó
+  «Publicaciones» (el prototipo lo tiene; el plan no lo listaba).
+- **Tipos = 4** (pregunta · recomendación · encuesta · publicación; §6 #2). **Tema** opcional en preguntas (el prototipo dice «opcional»;
+  sin tema queda «Otro»). Encuesta: **2–4** opciones (el prototipo dejaba 5), 1 · 3 · 7 días.
+- **Rango:** `community_profiles.rank_level` existe desde 0097 (vale 1; la semilla pone el de los vecinos de prueba) para que la pastilla
+  «6 · Teniente» y «encuestas desde Cabo» funcionen ya; lo escribe `recalcularRango` en 5f.
+- **Límites** (§6 #21): 10 publicaciones en 24 h corridas (5 si la cuenta es de hoy); las borradas cuentan. Pasan a Configuración en 5i
+  (y a «día local» de la ciudad).
+- **Votar ±, la encuesta y guardar ya funcionan** en el muro (contadores y orden derivados en la base, exactos con votos a la vez). Lo de
+  votos del mismo dispositivo y los puntos llegan en 5b/5f; el dispositivo ya se guarda en cada voto.
+- **Comentarios:** la publicación los muestra por votos, de solo lectura; comentar, responder y «Me sirvió» llegan con el hilo (5b).
+- **Muro de registro sin la foto de portada** del prototipo (era de Pexels): fondo tinta hasta que elijas una foto propia. Sin cuenta no
+  se ve ningún texto ni nombre de vecino (el prototipo mostraba textos borrosos, que igual llegaban al navegador). «Hoy en el barrio» (abierto
+  a todos) se suma ahí en 5e.
+- **Cuenta oficial de las 5 ciudades** creada en la migración (es configuración real, también en producción), no en la semilla. No es una
+  persona: no tiene fila en `users`.
+- **Seguir** («Siguiendo») usa la tabla `follows` que ya existía; seguir a vecinos (botón) llega en 5c. Bloquear y silenciar también (5c),
+  pero `user_blocks` ya existe y el muro y la publicación ya los excluyen en los dos sentidos.
+- **Desktop:** navegación 240 (tu tarjeta, Conversación, Publicar) + muro 720 + contexto 320 (tu rango y las reglas con la línea fija).
+  Hoy en el barrio, Tabla del Barrio y Mensajes no se enlazan hasta que existan (5c–5f).
+- **Semilla 0032:** 15 vecinos de prueba (+1 570 555 7001…7015, `is_test`) + la cuenta oficial = los 16 de `TLCom.U`; 14 publicaciones, 26
+  comentarios y **245 «votantes de prueba»** (+1 570 555 9001…9245, sin teléfono verificado, `is_test`) para que votos y encuestas cuadren
+  con el prototipo (la encuesta del festival suma 245). Zonas del prototipo sin barrio en la base: East End → Centro, Diamond Ave → North End.
+
+**Capturas:** `c5a-invitado-m`, `c5a-invitado-d`, `c5a-muro-m`, `c5a-muro-d`, `c5a-telefono-m`, `c5a-pregunta-m`, `c5a-nuevo-d`,
+`c5a-recomendacion-d`, `c5a-propio-m`, `c5a-deshacer-m`, `c5a-filtros-m`, `c5a-admin-d`, `c5a-post-d`.
