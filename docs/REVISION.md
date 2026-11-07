@@ -1389,3 +1389,28 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
 **Capturas:** `v4ie-dia-m`, `v4ie-revisa-m`, `v4ie-pend-m`, `v4ie-panel-hoy-m`, `v4ie-otra-m`, `v4ie-rentada-m`, `v4ie-conf-cuarto-m`,
 `v4ie-prueba-casa-m`, `v4ie-prueba-revisa-m`, `v4ie-dealer-pend-m`, `v4ie-dealer-conf-m`, `v4ie-paso-m`, `v4ie-catecismo-m`, `v4ie-fe-panel-m`,
 `v4ie-pedir-fecha-m`, `v4ie-pedir-d`, `v4ie-conf-d`, `v4ie-panel-visitas-d`, `v4ie-admin-tx-d`.
+
+### 4if
+Reseñas y Ayuda de Iglesias, Bienes Raíces y Autos. Qué mirar (teléfono y escritorio):
+- **Tu visita** (`/vis/D-…`): el botón «Ayuda con la visita» / «Ayuda con el dealer» sale cuando pasó o, confirmada, cuando ya llegó la hora
+  (lo de «me cobraron por ver» pasa en la puerta). Decidí permitirla también si el negocio marcó «No vino» (la persona puede decir «No llegaron»).
+- **«Me cobraron por ver» / «Pidieron más para mudarme» / «Me pidieron dinero por la ayuda»:** directo a «Posible estafa» y **pausa automática**
+  de la propiedad, el carro o «Pedir fecha» (decidí pausar sin esperar a una persona: es reversible y protege al siguiente; las visitas ya
+  confirmadas de otros NO se cancelan — si prefieres cancelarlas sin culpa al pausar, se cambia). SLA de la cola: 8 h.
+- **Dinero:** nada vuelve a una tarjeta. Si el negocio acepta devolver, lo hace fuera de la app y la persona toca «Me lo devolvieron» (o «No me
+  lo devolvieron» → To'Latino). La sanción es una advertencia (`sanctions`, negocio) y el anuncio fuera con el motivo; se vuelve a mostrar
+  desde Negocios 360°. Decidí no suspender negocios desde esta cola (eso es de Negocios 360°).
+- **«Lo que importa»:** el plan pedía rótulos del prototipo que no salen de ninguna pregunta («EL PRECIO NO CAMBIÓ», «TE EXPLICAN CADA PASO»,
+  «ARREGLAN A TIEMPO», «EXPLICAN EL FINANCIAMIENTO»): **no los puse** (serían falsos); cada rótulo sale de una pregunta que de verdad se hizo
+  (p. ej. «VER FUE GRATIS», «EL TOTAL EN LA PUERTA FUE EL QUE DIJERON», «CON RESPETO»). Línea: «De N visitas y citas…» (Bienes Raíces), «De N
+  pruebas y citas…» (Autos), «De N fechas y catecismos…» (Iglesias).
+- **Iglesias:** decidí que la reseña **no lleve fotos** (no hay forma de saber si sale una persona; el servidor las rechaza). Funerarias y
+  tiendas religiosas: «Reseñas de vecinos» y sin el filtro «Verificadas». Avisos a la persona neutros (`fe_help_*`).
+- **Fotos de la ayuda** de las tres: privadas (recibos y contratos con nombres y direcciones).
+- **Hechos de la reseña:** «Se rentó antes de la visita» solo sale si el anuncio cambió de estado antes de la hora y aun así la visita pasó;
+  «No llegaron» solo si el negocio lo aceptó en la Ayuda o To'Latino lo resolvió.
+- Hueco del diseño (regla AB): el caso «Posible estafa» del Super Admin se compuso con las piezas de Colas (kv, notas, fotos, ReasonConfirm).
+
+**Capturas:** `h4if-ayuda-ver-m`, `h4if-estado-revision-m`, `h4if-panel-visita-d`, `h4if-admin-estafa-d`, `h4if-resena-visita-m`,
+`h4if-ficha-lo-que-importa-m`, `h4if-ayuda-dealer-d`, `h4if-panel-hoy-d`, `h4if-panel-ayuda-d`, `h4if-me-lo-devolvieron-d`,
+`h4if-resena-iglesia-d`, `h4if-iglesia-resenas-d`, `h4if-ayuda-iglesia-m`.

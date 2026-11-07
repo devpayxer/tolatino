@@ -29,3 +29,18 @@ export async function cabezaAyudaReserva(userId: string, numero: string): Promis
   const que = { es: `${o.svc?.es ?? (numero.startsWith("F-") ? "Fiesta" : numero.startsWith("N-") ? "Noche" : numero.startsWith("I-") ? "Inscripción" : "Viaje")} · ${o.dia}`, en: `${o.svc?.en || o.svc?.es || (numero.startsWith("F-") ? "Party" : numero.startsWith("N-") ? "Night" : numero.startsWith("I-") ? "Enrollment" : "Trip")} · ${o.dia}` };
   return { numero: o.numero, negocio: { nombre: o.nombre, telefono: o.tel, foto: o.foto }, con: null, model: "biz" as CabezaAyuda["model"], svc: que, dep: o.app, pro: null, total: o.app || o.total };
 }
+
+/* 4if · La cabeza de la ayuda con una visita, una prueba de manejo o una cita de Bienes Raíces o Autos (D-…): el negocio, lo pedido y el día, y
+   LA COPIA del total que la persona vio al pedir («Para mudarte» o «En la puerta»): la ayuda compara con esa copia. Nada se cobró en la app. */
+export async function cabezaAyudaVisita(userId: string, numero: string): Promise<CabezaAyuda | null> {
+  if (!/^D-\d{1,10}$/.test(numero)) return null;
+  const o = (await db().query<{ numero: string; nombre: string; tel: string | null; foto: string | null; item: { es: string; en: string } | null; que: string; dia: string; mud: number | null; otd: number | null; precio: number | null }>(
+    `select o.number as numero, b.name as nombre, b.phone as tel, b.logo_url as foto, o.details->'item' as item, o.details->>'what' as que,
+            to_char((o.details->>'dia')::date, 'DD/MM') as dia, (o.details->>'move_in_cents')::int as mud, (o.details#>>'{puerta,otd}')::int as otd, (o.details->>'price_cents')::int as precio
+       from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.user_id = $2 and o.kind = 'visit'`, [numero, userId])).rows[0];
+  if (!o) return null;
+  const que = { es: `${o.item?.es ?? "Visita"} · ${o.dia}`, en: `${o.item?.en || o.item?.es || "Visit"} · ${o.dia}` };
+  const copia = o.mud != null ? { k: { es: "Para mudarte, lo que viste", en: "To move in, what you saw" }, cents: o.mud } : o.otd != null ? { k: { es: "En la puerta, lo que viste", en: "Out the door, what you saw" }, cents: o.otd }
+    : o.precio != null ? { k: { es: "Precio que viste", en: "Price you saw" }, cents: o.precio } : null;
+  return { numero: o.numero, negocio: { nombre: o.nombre, telefono: o.tel, foto: o.foto }, con: null, model: "biz" as CabezaAyuda["model"], svc: que, dep: 0, pro: null, total: 0, copia, que: o.que };
+}

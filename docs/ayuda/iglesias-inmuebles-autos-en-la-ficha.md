@@ -47,6 +47,15 @@ with its breakdown, mileage, title and history (car dealers).
   negocio); el botón de abajo sigue siendo llamar o escribir.
 - To'Latino **nunca pide** seguro social, ITIN, ingresos, estados de cuenta ni licencia de conducir: los papeles se llevan en persona.
 
+## Reseñas y ayuda · Reviews and help (4if)
+- **Lo que importa:** en Bienes Raíces, Autos e Iglesias sale de las reseñas verificadas de visitas, pruebas, citas y fechas por To'Latino del
+  último año («De N visitas y citas por To'Latino en los últimos 12 meses.»). Las funerarias y las tiendas religiosas muestran «Reseñas de
+  vecinos», sin conteo de verificadas. Las reseñas de iglesias no llevan fotos.
+- **Ayuda:** ver `resena-y-ayuda-con-tu-visita`. Si una propiedad, un carro o «Pedir fecha» no se ve, puede estar en pausa mientras To'Latino
+  revisa una posible estafa.
+- **EN.** «What matters» comes from verified visits, test drives, bookings and dates in the last year; funeral homes and religious stores show
+  neighbor reviews only; church reviews have no photos. A listing may be paused while To'Latino reviews a possible scam.
+
 ## FAQ
 - **¿Cuánto necesito para mudarme?** Lo que dice «Para mudarte» en la propiedad: renta + depósito (+ solicitud si la hay). Nada fuera de lo
   publicado. · *What "To move in" says on the property: rent + deposit (+ application fee if any). Nothing beyond what is posted.*

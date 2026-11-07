@@ -11,6 +11,7 @@ import { ANIMALES_SERVICIO, EHO, mudarteTexto, usd } from "@/lib/inmuebles-comun
 import { QUE, cuandoVis, type Bi, type TradeIn } from "@/lib/visitas-inm-comun";
 import type { FilaVis, VisDetalle, VisPanel } from "@/lib/visitas-inm";
 import { visCancelarNeg, visMarcar, visResponder } from "./acciones-vis";
+import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -132,6 +133,8 @@ export function visDetalleBloques(c: Ctx): Sec {
     }
   }
   if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: E2(`Cancelaste: «${x.motivoNeg}».`, `You cancelled: “${x.motivoNeg}”.`) });
+  // 4if: la ayuda con la visita o la prueba (responder en 24 h; si aceptas devolver, lo devuelves fuera de la app y la persona lo confirma).
+  out.push(...ayudaCita(c, x.numero, x.cliente));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.historial.map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: e.note ? nm(c, e.note) : verbo(e.kind, es),
     s: new Date(e.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) })) });
   return { blocks: out, ed: null };

@@ -28,6 +28,10 @@ const BASE: Record<string, L> = {
   cert: ["No le dieron el certificado prometido", "Did not get the promised certificate"], horario: ["No cumplieron el horario", "Schedule not kept"],
   ensena: ["No enseñan lo prometido", "Not teaching what was promised"], lic: ["No tenían licencia", "No license"], cuidado: ["No cuidaron bien a su niño", "Did not take good care of their child"],
   salir: ["No lo dejan cancelar", "Will not let them cancel"], equipo: ["El equipo o la cancha no sirven", "Equipment or field not usable"],
+  // Iglesias, Bienes Raíces y Autos (4if)
+  idioma: ["No había servicio en español", "No service in Spanish"], ver: ["Le cobraron por ver la propiedad", "Charged to view the property"],
+  mudar: ["Le pidieron más para mudarse de lo publicado", "Asked for more to move in than posted"], fotos: ["No era como en las fotos", "Not like the photos"],
+  precio: ["El precio en la puerta fue más", "The out-the-door price was higher"], titulo: ["No le enseñaron el título", "Did not show the title"],
 };
 const POR_RUBRO: Record<string, Record<string, L>> = {
   salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },
@@ -38,6 +42,9 @@ const POR_RUBRO: Record<string, Record<string, L>> = {
   noche: { inseguro: ["Se sintió inseguro", "Felt unsafe"], trato: ["Mal trato en la puerta", "Treated badly at the door"], dep: ["No le descontaron el depósito", "Deposit not taken off the bill"] },
   edu: { cobro: ["Cobraron más del total", "Charged more than the total"] }, ninos: { cobro: ["Cobraron más de lo que dijeron", "Charged more than stated"] },
   dep: { cobro: ["La cuota no fue la que vio", "The fee was not what they saw"] },
+  fe: { cobro: ["Le pidieron dinero por la ayuda", "Asked for money for the help"], horario: ["Cambiaron la hora sin avisar", "Changed the time without notice"], trato: ["Lo trataron mal", "Treated badly"] },
+  inm: { nollego: ["No llegaron a la visita", "Did not show up for the visit"] },
+  dealer: { nollego: ["El carro no estaba el día de la prueba", "The car was not there for the test drive"], fotos: ["El carro no era como en las fotos", "The car was not like the photos"] },
   trans: { cobro: ["Cobró más del precio cerrado", "Charged more than the fixed price"], tarde: ["Salió o llegó muy tarde", "Left or arrived very late"], nollego: ["No pasó a recogerlo", "Did not pick them up"] },
 };
 export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;
@@ -48,6 +55,8 @@ const QUIERE: Record<string, L> = {
   desc: ["Un descuento, a acordar con el negocio", "A discount, agreed with the business"],
   grupo: ["Terminar en otro grupo sin pagar otra vez", "Finish in another group without paying again"], arreglar: ["Que lo arreglen", "Have it fixed"],
   baja: ["Cancelar la membresía", "Cancel the membership"],
+  // 4if
+  llamar: ["Que lo llamen", "A call back"], otra: ["Otra visita, con hora confirmada", "Another visit, at a confirmed time"], antes: ["Que lo arreglen antes de firmar", "Fix it before signing"],
 };
-const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin", descuento: "desc", otro_grupo: "grupo", arreglar: "arreglar", cancelar_membresia: "baja" };
+const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin", descuento: "desc", otro_grupo: "grupo", arreglar: "arreglar", cancelar_membresia: "baja", llamar: "llamar", otra_visita: "otra", arreglar_antes: "antes" };
 export const quiereAyuda = (k: string): L => QUIERE[W2Q[k] ?? k] ?? QUIERE.avis!;

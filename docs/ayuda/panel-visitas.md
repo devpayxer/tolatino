@@ -30,9 +30,24 @@ _Pantallas: Panel › Hoy (Esperan tu respuesta · Visitas de hoy) · Lo que ven
 - **Consejería y capellanía (Iglesias):** la nota de la persona va cifrada; solo la ves en el detalle y cada vista queda registrada.
 - **Plan Free:** recibes hasta 10 solicitudes al mes; después, tu página dice que te llamen.
 
+## Ayuda con una visita, una prueba o una fecha · Help requests (4if)
+**ES.** Si alguien pide ayuda con una visita, una prueba de manejo o una fecha de la iglesia, te llega el aviso y sale en Hoy, en «Ayuda que
+espera tu respuesta». Abre el detalle: ves qué pasó, qué quiere, sus fotos y lo que vio al pedir (la copia del total). Respondes en 24 horas:
+**Tiene razón**, **Proponer otra cosa** o **No puedo**. Nada se cobró en To'Latino: si aceptas devolver, lo devuelves tú directamente y la
+persona confirma «Me lo devolvieron». Si no respondes, o la persona dice que no se lo devolviste, To'Latino lo revisa en 48 horas.
+- **«Me cobraron por ver», «Pidieron más para mudarme» y, en Iglesias, «Me pidieron dinero por la ayuda»** no esperan tu respuesta: van
+  directo a To'Latino («Posible estafa») y la propiedad, el carro o «Pedir fecha» quedan en pausa mientras se revisa. Ves el motivo en tu
+  panel y no lo puedes volver a encender; To'Latino decide: «Sin acción» lo vuelve a mostrar; «Sancionar» lo deja fuera y te deja una
+  advertencia.
+
+**EN.** Help requests on visits, test drives or church dates show in Today («Help awaiting your reply»); reply within 24 hours. Nothing was
+charged on To'Latino: if you agree to refund, refund directly and the customer confirms. Charging to view, asking for more to move in or
+asking money for church help go straight to To'Latino and the listing (or «Ask for a date») is paused until To'Latino decides.
+
 ## FAQ
 - **¿Puedo cobrar por la visita o por apartar un carro en la app?** No. Ver y probar es gratis; el dinero se habla en persona y por escrito.
 - **¿Puedo cambiar mis horas?** Sí: las nuevas salen para las nuevas solicitudes; las que ya pidieron siguen.
 
 **EN FAQ.** You cannot charge for viewing or for holding a car in the app. Changing your hours only affects new requests. 3 no-shows in 30 days
 open a To'Latino review.
+- **¿Puedo responder una ayuda de «Posible estafa»?** No: la decide To'Latino. Si tienes pruebas, mándalas por Mensaje a Soporte.

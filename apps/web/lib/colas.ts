@@ -1,6 +1,6 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
    cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
-export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones";
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones" | "estafa";
 export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
@@ -21,15 +21,20 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   grupo: { es: "Grupos que no abrieron", en: "Groups that did not open", icon: "users", sla: 72, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["El lugar canceló 3 grupos en 90 días. A cada inscrito se le devolvió todo; mira si promete cursos que no da. Pausar quita las inscripciones de su página hasta que lo reanudes.", "The place cancelled 3 groups in 90 days. Everyone enrolled got everything back; check whether it promises courses it does not run. Pausing removes enrollments from its page until you resume it."] },
   // 4ie · Bienes Raíces y Venta de Autos: un negocio que marca 3 «No vino» en 30 días (que no lo use para frenar reseñas).
   plantones: { es: "Plantones", en: "No-shows", icon: "clock", sla: 72, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["El negocio marcó «No vino» en 3 visitas o pruebas de manejo en 30 días. «No vino» no abre la reseña: mira si de verdad no fueron o si lo usa para que no lo califiquen. Nunca hay multa para el cliente. Pausar quita las visitas de su página hasta que lo reanudes.", "The business marked «No-show» on 3 visits or test drives in 30 days. A no-show does not open a review: check whether they really did not come or it is being used to avoid ratings. Customers are never fined. Pausing removes visits from its page until you resume it."] },
+  // 4if · Iglesias, Bienes Raíces y Autos: «Me cobraron por ver», «Pidieron más para mudarme» y «Me pidieron dinero por la ayuda» van
+  // directo a To'Latino con prioridad; el anuncio (o «Pedir fecha» de la iglesia) queda en pausa mientras se revisa.
+  estafa: { es: "Posible estafa", en: "Possible scam", icon: "warning", sla: 8, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["Alguien dice que le cobraron por ver, que le pidieron más para mudarse de lo publicado o dinero por la ayuda de una iglesia. En To'Latino nada de eso se cobra. El anuncio está en pausa mientras decides: «Sancionar» lo deja en pausa y deja una advertencia al negocio; «Sin acción» lo vuelve a mostrar. Nunca se devuelve dinero desde aquí: no pasó por la app.", "Someone says they were charged to view, asked for more to move in than posted, or asked for money for a church's help. None of that is charged on To'Latino. The listing is paused while you decide: «Sanction» keeps it paused and warns the business; «No action» shows it again. Money is never refunded from here: it did not go through the app."] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
 /* Título de una ayuda según la operación (Colas y su caso). */
-export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", order: "Ayuda con un pedido" };
-export const ORDEN_COLAS: Cola[] = ["cuidado", "disputa", "sop", "salir", "grupo", "plantones", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
-/* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg). */
-export const COLA_AYUDA_SQL = `(select case h.reason when 'cuidado' then 'cuidado' when 'salir' then 'salir' else 'sop' end from help_requests h where h.id::text = $1)`;
+export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", visit: "Ayuda con una visita", order: "Ayuda con un pedido" };
+export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "salir", "grupo", "plantones", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
+/* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg); «Me cobraron por
+   ver», «Pidieron más para mudarme» y, en Iglesias, «Me pidieron dinero por la ayuda» van a «Posible estafa» (4if). */
+export const COLA_AYUDA_SQL = `(select case when h.reason in ('ver', 'mudar') or (h.reason = 'cobro' and b.category_id = 'NEG-FE') then 'estafa' when h.reason = 'cuidado' then 'cuidado' when h.reason = 'salir' then 'salir' else 'sop' end
+  from help_requests h join businesses b on b.id = h.business_id where h.id::text = $1)`;
 /* Las colas que muestran una ayuda (help_request). */
-export const COLAS_AYUDA: Cola[] = ["sop", "cuidado", "salir"];
+export const COLAS_AYUDA: Cola[] = ["sop", "cuidado", "salir", "estafa"];
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

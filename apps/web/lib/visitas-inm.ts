@@ -559,6 +559,8 @@ export type VisVista = {
   copia: CopiaVis & { papers: Bi | null; ssnReq: boolean | null }; zona: string; direccion: string | null; enCasa: boolean; licencia: boolean; trade: TradeIn | null; nota: string | null;
   negocio: { id: string; nombre: string; foto: string | null; telefono: string | null }; cancelo: string | null; motivoNeg: string | null; enviada: string; vence: string | null; resena: boolean;
   pasos: { k: string; t: Bi; hecho: boolean }[];
+  // 4if · Ayuda: se pide cuando pasó (o, confirmada, ya llegó la hora) y hasta 7 días después; una por visita.
+  ayuda: { puede: boolean; hay: boolean };
 };
 function copiaDe(det: Record<string, any>): VisVista["copia"] {
   return { rent: det.rent_cents ?? null, dep: det.deposit_cents ?? 0, appFee: det.app_fee_cents ?? 0, fees: det.fees ?? [], moveIn: det.move_in_cents ?? null, price: det.price_cents ?? null,
@@ -566,9 +568,11 @@ function copiaDe(det: Record<string, any>): VisVista["copia"] {
     miles: det.miles ?? null, year: det.year ?? null, svcCents: det.svc_cents ?? null, papers: det.papers ?? null, ssnReq: det.ssn_req ?? null };
 }
 async function vista(o: Op, cliente: boolean): Promise<VisVista> {
-  const x = (await db().query<{ foto: string | null; phone: string | null; vence: string | null; cxr: string | null; mn: string | null; nota: string | null; resena: boolean }>(
+  const x = (await db().query<{ foto: string | null; phone: string | null; vence: string | null; cxr: string | null; mn: string | null; nota: string | null; resena: boolean; ay: boolean; puedeAy: boolean }>(
     `select (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as foto, b.phone,
-            o.respond_by::text as vence, o.cancel_reason as cxr, o.details->>'motivoNeg' as mn, o.customer_note as nota, exists (select 1 from reviews r where r.operation_id = o.id) as resena
+            o.respond_by::text as vence, o.cancel_reason as cxr, o.details->>'motivoNeg' as mn, o.customer_note as nota, exists (select 1 from reviews r where r.operation_id = o.id) as resena,
+            exists (select 1 from help_requests h where h.operation_id = o.id) as ay,
+            (o.status = 'done' or (o.status = 'confirmed' and o.scheduled_at <= now() + interval '15 minutes')) and coalesce(o.done_at, o.updated_at) > now() - interval '7 days' as "puedeAy"
        from operations o join businesses b on b.id = o.business_id where o.id = $1::bigint`, [o.id])).rows[0]!;
   const conf = o.status === "confirmed" || (o.status === "done" && o.detail !== "noshow");
   // La dirección exacta de una propiedad: SOLO confirmada o pasada (§3, §6 #15). Antes, la zona.
@@ -578,6 +582,7 @@ async function vista(o: Op, cliente: boolean): Promise<VisVista> {
     alt: o.status === "change_proposed" && o.det.alt ? (o.det.alt as { dia: string; min: number }) : null, copia: copiaDe(o.det), zona: `${o.det.ciudad ?? ""}${o.det.zip ? ` · ${o.det.zip}` : ""}`,
     direccion, enCasa: !!o.det.at_home, licencia: !!o.det.has_license, trade: (o.det.trade_in as TradeIn) ?? null, nota: x.nota,
     negocio: { id: o.biz, nombre: o.negocio, foto: x.foto, telefono: x.phone }, cancelo: x.cxr, motivoNeg: x.mn, enviada: o.sent, vence: x.vence, resena: x.resena,
+    ayuda: { puede: cliente && x.puedeAy && !x.ay, hay: cliente && x.ay },
     pasos: [{ k: "enviada", t: { es: "Enviada", en: "Sent" }, hecho: true }, { k: "confirmada", t: { es: "Confirmada", en: "Confirmed" }, hecho: conf },
       { k: "paso", t: QUE[queDe(o)].paso, hecho: o.status === "done" && o.detail !== "noshow" }],
   };

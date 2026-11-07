@@ -33,7 +33,13 @@ export type Respuestas = { taste?: -1 | 0 | 1; hot?: -1 | 0 | 1; val?: -1 | 0 | 
   // Educación, Niños y Deporte (4ef · TLEduRev Q L16–18): cobraron el total que dijeron; Edu: certificado, maestros, horario, aprendiste;
   // Niños: licencia a la vista, cuidaron bien, horario, te contaban; Deporte: te dejaron salir, entrenadores, horario, limpio y equipo.
   totalOk?: 0 | 1; certOk?: 0 | 1; explican?: -1 | 0 | 1; horarioOk?: 0 | 1; aprendio?: -1 | 0 | 1; licVista?: 0 | 1; cuidaron?: -1 | 0 | 1; contaban?: 0 | 1;
-  salirOk?: 0 | 1; entrenan?: -1 | 0 | 1; limpioEq?: 0 | 1 };
+  salirOk?: 0 | 1; entrenan?: -1 | 0 | 1; limpioEq?: 0 | 1;
+  // Iglesias, Bienes Raíces y Autos (4if · TLEduRev Q L19–21): Iglesias: la ayuda fue gratis, servicio en español, te ayudaron, empezó a la
+  // hora (sí · casi · muy tarde), te sentiste bienvenido; Bienes Raíces: lo de mudarte era lo que viste, ver fue gratis, como en las fotos
+  // (fotosOk), llegaron a la hora (llegaron: sí · un poco tarde · no llegaron), te dijeron claro lo que piden; Autos: el precio en la puerta fue
+  // el que viste, te enseñaron el título y el historial, el carro como en las fotos (fotosOk), te atendieron a la hora, sin presión. Las tres: trato.
+  gratis?: -1 | 1; espanol?: 0 | 1; ayudaron?: 0 | 1; empezo?: "a" | "b" | "c"; bienvenido?: -1 | 1;
+  mudarOk?: -1 | 1; verGratis?: 0 | 1; claro?: -1 | 1; puertaOk?: -1 | 1; tituloOk?: 0 | 1; aTiempo?: "a" | "b" | "c"; sinPresion?: -1 | 1 };
 /* El dato del pedido o de la visita (no se edita). Visita de Hogar/Auto: win = minutos tarde sobre la franja (0 = en la
    franja), ok / cob = aprobado y cobrado, xtra = hubo algo extra con su OK. */
 export type Hechos = { promised?: string; done?: string; late?: number; win?: number; ok?: number; cob?: number; xtra?: boolean;
@@ -47,7 +53,11 @@ export type Hechos = { promised?: string; done?: string; late?: number; win?: nu
   // Noche (4nd): cuántos fueron (dato de la reserva).
   pax?: number;
   // Inscripción (4ef): si la escuela entregó el certificado.
-  certDado?: boolean };
+  certDado?: boolean;
+  // Visita o prueba de manejo (4if): qué fue (visita · prueba · cita…), el total que vio al pedir (tot: «Para mudarte» o «En la puerta», la
+  // copia), «Se rentó antes de la visita» / «Se vendió antes de la prueba» (el anuncio se retiró antes de la hora y aun así pasó) y «No
+  // llegaron» (el negocio aceptó en la Ayuda que no llegó). Del servidor, no se editan.
+  que?: string; seRento?: "rentada" | "vendida"; noLlegaron?: boolean };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
   answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
@@ -121,7 +131,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
        from businesses b left join business_stats_cache s on s.business_id = b.id left join delivery_settings d on d.business_id = b.id
       where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   if (!b) return null;
-  const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : b.cat === "NEG-MERC" ? "merc" : b.cat === "NEG-TIENDA" ? "tienda" : b.cat === "NEG-FIESTA" ? "fiesta" : b.cat === "NEG-TRANS" ? "trans" : b.cat === "NEG-NOCHE" ? "noche" : b.cat === "NEG-EDU" ? "edu" : b.cat === "NEG-NINOS" ? "ninos" : b.cat === "NEG-DEPORTE" ? "dep" : null;
+  const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : b.cat === "NEG-MERC" ? "merc" : b.cat === "NEG-TIENDA" ? "tienda" : b.cat === "NEG-FIESTA" ? "fiesta" : b.cat === "NEG-TRANS" ? "trans" : b.cat === "NEG-NOCHE" ? "noche" : b.cat === "NEG-EDU" ? "edu" : b.cat === "NEG-NINOS" ? "ninos" : b.cat === "NEG-DEPORTE" ? "dep" : b.cat === "NEG-FE" ? "fe" : b.cat === "NEG-INMUEBLE" ? "inm" : b.cat === "NEG-DEALER" ? "dealer" : null;
   const [cifras, asp, top, mia, dest, op, aspSP] = await Promise.all([
     db().query<{ n: number; avg: number | null; s5: number; s4: number; s3: number; s2: number; s1: number; ver: number }>(
       `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where stars = 5)::int as s5, count(*) filter (where stars = 4)::int as s4,
@@ -153,7 +163,26 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     // Lo que importa en una fiesta / en un viaje (4z): fecha respetada sale del dato de la reserva (facts.dia = fiesta hecha).
     // Lo que importa de noche (4nd): solo de noches con lista o mesa por To'Latino (src cita), 90 días.
     // Lo que importa en Educación, Niños y Deporte (4ef): de inscripciones por To'Latino (src cita) del último año.
-    sp === "edu" || sp === "ninos" || sp === "dep" ? db().query<Record<string, number | null>>(
+    // Lo que importa en Iglesias, Bienes Raíces y Autos (4if): solo de visitas, pruebas, citas y fechas por To'Latino (src cita) del último año.
+    sp === "fe" || sp === "inm" || sp === "dealer" ? db().query<Record<string, number | null>>(
+      `select count(*)::int as n,
+              ${PCT("gratis", "(answers->>'gratis')::int = 1", "answers ? 'gratis'")},
+              ${PCT("espanol", "(answers->>'espanol')::int = 1", "answers ? 'espanol'")},
+              ${PCT("ayudaron", "(answers->>'ayudaron')::int = 1", "answers ? 'ayudaron'")},
+              ${PCT("empezo", "answers->>'empezo' = 'a'", "answers ? 'empezo'")},
+              ${PCT("bienvenido", "(answers->>'bienvenido')::int = 1", "answers ? 'bienvenido'")},
+              ${PCT("mudarOk", "(answers->>'mudarOk')::int = 1", "answers ? 'mudarOk'")},
+              ${PCT("verGratis", "(answers->>'verGratis')::int = 1", "answers ? 'verGratis'")},
+              ${PCT("fotosOk", "(answers->>'fotosOk')::int = 1", "answers ? 'fotosOk'")},
+              ${PCT("llegaron", "answers->>'llegaron' = 'a'", "answers ? 'llegaron'")},
+              ${PCT("claro", "(answers->>'claro')::int = 1", "answers ? 'claro'")},
+              ${PCT("puertaOk", "(answers->>'puertaOk')::int = 1", "answers ? 'puertaOk'")},
+              ${PCT("tituloOk", "(answers->>'tituloOk')::int = 1", "answers ? 'tituloOk'")},
+              ${PCT("aTiempo", "answers->>'aTiempo' = 'a'", "answers ? 'aTiempo'")},
+              ${PCT("sinPresion", "(answers->>'sinPresion')::int = 1", "answers ? 'sinPresion'")},
+              ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
+         from reviews where business_id = $1 and status = 'visible' and src = 'cita' and created_at > now() - interval '365 days'${fm}`, [negocio])
+    : sp === "edu" || sp === "ninos" || sp === "dep" ? db().query<Record<string, number | null>>(
       `select count(*)::int as n,
               ${PCT("totalOk", "(answers->>'totalOk')::int = 1", "answers ? 'totalOk'")},
               ${PCT("horarioOk", "(answers->>'horarioOk')::int = 1", "answers ? 'horarioOk'")},
@@ -225,7 +254,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, dlv: b.dlv, verL: null as { ok: string | null; no: string } | null },
     n, avg: c.avg, ver: c.ver, bars: [[5, pct(c.s5)], [4, pct(c.s4)], [3, pct(c.s3)], [2, pct(c.s2)], [1, pct(c.s1)]] as [number, number][],
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
-    aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
+    aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep" | "fe" | "inm" | "dealer", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
     top: top.rows.map((x) => ({ id: x.id, name: x.name, ph: x.ph, n: x.n })),
     mine: fm ? null : mine, tengo, destacadas, miembro: fm ? miembro! : null,
     // «TU PEDIDO DE HOY · ¿Cómo estuvo?»: solo si terminó hoy y aún no tiene reseña.
@@ -295,7 +324,7 @@ export async function paraEscribir(negocio: string, userId: string, numero: stri
   const op = mia ? null : await opParaResena(db(), negocio, userId, numero);
   // El dato del pedido que se va a guardar (se muestra antes de publicar; no se edita).
   const rubro: Rubro = rubroRes(b.cat);
-  const hechos = op?.kind === "order" ? await hechosDe(db(), op.id) : op?.kind === "market_order" || op?.kind === "hold" ? await hechosCompra(db(), op.id) : (op?.kind === "appointment" || op?.kind === "party" || op?.kind === "trip" || op?.kind === "night" || op?.kind === "enrollment") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(db(), op.id, rubro) : mia ? mia.facts ?? {} : {};
+  const hechos = op?.kind === "order" ? await hechosDe(db(), op.id) : op?.kind === "market_order" || op?.kind === "hold" ? await hechosCompra(db(), op.id) : (op?.kind === "appointment" || op?.kind === "party" || op?.kind === "trip" || op?.kind === "night" || op?.kind === "enrollment" || op?.kind === "visit") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(db(), op.id, rubro) : mia ? mia.facts ?? {} : {};
   // La visita de Hogar/Auto: el servicio, quién fue y el carro (se muestra en «Tu visita · dato de la visita»).
   const cita = op?.kind === "appointment" && rubro ? (await db().query<{ svc: string | null; svcEn: string | null; quien: string | null; veh: string | null }>(
     `select o.details#>>'{svc,es}' as svc, o.details#>>'{svc,en}' as "svcEn", m.display_name as quien, o.details#>>'{veh,t}' as veh
@@ -338,8 +367,8 @@ async function hechosDe(c: PoolClient | Pool, opId: string): Promise<Hechos> {
 
 /* El dato de una visita de Hogar o de una cita de Auto (no se edita): llegó en la franja (Hogar: «Llegué» contra el final
    de la franja de 2 h), lo aprobado del estimado contra lo cobrado, y si hubo algo extra con su OK. */
-type Rubro = "hogar" | "auto" | "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep" | null;
-const rubroRes = (cat: string): Rubro => (cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-AUTO" ? "auto" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : cat === "NEG-MERC" ? "merc" : cat === "NEG-TIENDA" ? "tienda" : cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : null);
+type Rubro = "hogar" | "auto" | "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep" | "fe" | "inm" | "dealer" | null;
+const rubroRes = (cat: string): Rubro => (cat === "NEG-FE" ? "fe" : cat === "NEG-INMUEBLE" ? "inm" : cat === "NEG-DEALER" ? "dealer" : cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-AUTO" ? "auto" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : cat === "NEG-MERC" ? "merc" : cat === "NEG-TIENDA" ? "tienda" : cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : null);
 /* El dato del pedido del mercado o del apartado (no se edita): artículos, si cada peso tiene su foto de la balanza, lo cobrado. */
 async function hechosCompra(c: PoolClient | Pool, opId: string): Promise<Hechos> {
   const o = (await c.query<{ kind: string; n: number; pesado: boolean; fotos: boolean; cob: number | null; tot: number; num: string }>(
@@ -354,6 +383,22 @@ async function hechosCompra(c: PoolClient | Pool, opId: string): Promise<Hechos>
   return { nArt: o.n, apartado: o.num, cob: o.cob ?? o.tot };
 }
 async function hechosCita(c: PoolClient | Pool, opId: string, rubro: Exclude<Rubro, null | "merc" | "tienda">): Promise<Hechos> {
+  if (rubro === "inm" || rubro === "dealer") {
+    // La visita o la prueba: el día, qué fue y la COPIA del total que vio al pedir (nada se cobró en la app). «Se rentó / se vendió antes»: el
+    // anuncio cambió de estado antes de la hora de la visita. «No llegaron»: el negocio lo aceptó en la Ayuda (o To'Latino lo resolvió así).
+    const z = (await c.query<{ dia: string | null; que: string | null; tot: number | null; gone: string | null; nollego: boolean }>(
+      `select o.details->>'dia' as dia, o.details->>'what' as que, coalesce((o.details->>'move_in_cents')::int, (o.details#>>'{puerta,otd}')::int, (o.details->>'price_cents')::int) as tot,
+              coalesce((select case pl.status when 'rented' then 'rentada' when 'sold' then 'vendida' end from property_listings pl where pl.item_id::text = o.details->>'item_id' and pl.status in ('rented', 'sold') and pl.status_at <= o.scheduled_at),
+                       (select 'vendida' from vehicle_listings v where v.item_id::text = o.details->>'item_id' and v.status = 'sold' and v.status_at <= o.scheduled_at)) as gone,
+              exists (select 1 from help_requests h where h.operation_id = o.id and h.reason = 'nollego' and ((h.decision = 'ok' and h.status in ('answered', 'resolved')) or (h.closed_by = 'admin' and h.status = 'resolved'))) as nollego
+         from operations o where o.id = $1::bigint and o.kind = 'visit'`, [opId])).rows[0];
+    return z ? { ...(z.dia ? { dia: z.dia } : {}), ...(z.que ? { que: z.que } : {}), ...(z.tot != null ? { tot: z.tot } : {}), ...(z.gone ? { seRento: z.gone as "rentada" | "vendida" } : {}), ...(z.nollego ? { noLlegaron: true } : {}) } : {};
+  }
+  if (rubro === "fe") {
+    // La fecha o el catecismo por la app: el día. Nada se cobra en NEG-FE (no hay «lo que pagaste»).
+    const z = (await c.query<{ dia: string | null }>(`select coalesce(o.details->>'wanted_on', o.details->>'starts_on', (o.confirmed_at at time zone ci.timezone)::date::text) as dia from operations o join cities ci on ci.id = o.city_id where o.id = $1::bigint`, [opId])).rows[0];
+    return z?.dia ? { dia: z.dia } : {};
+  }
   if (rubro === "edu" || rubro === "ninos" || rubro === "dep") {
     // La inscripción: cuándo empezó, lo pagado en la app (la matrícula neta) y si la escuela entregó el certificado.
     const z = (await c.query<{ dia: string | null; tot: number; cert: boolean }>(`select coalesce(o.details->>'starts_on', (o.confirmed_at at time zone ci.timezone)::date::text) as dia, coalesce((select sum(p.amount_cents - p.refunded_cents) from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded')), 0)::int as tot, coalesce((o.details->>'cert_given')::boolean, false) as cert from operations o join cities ci on ci.id = o.city_id where o.id = $1::bigint`, [opId])).rows[0];
@@ -417,6 +462,16 @@ function limpiarRespuestas(a: unknown, ord: boolean, rubro: Rubro = null, cita =
     delete r.taste; delete r.hot; delete r.val; delete r.wait;
     return r;
   }
+  if (rubro === "fe" || rubro === "inm" || rubro === "dealer") {
+    const put = <K extends keyof Respuestas>(k: K, v: Respuestas[K] | undefined) => { if (v !== undefined) r[k] = v; };
+    const abc = (v: unknown) => (v === "a" || v === "b" || v === "c" ? v : undefined);
+    put("trato", OK3(x.trato));
+    if (rubro === "fe") { put("gratis", OKM(x.gratis)); put("espanol", OK2(x.espanol)); put("ayudaron", OK2(x.ayudaron)); put("empezo", abc(x.empezo)); put("bienvenido", OKM(x.bienvenido)); }
+    if (rubro === "inm") { put("mudarOk", OKM(x.mudarOk)); put("verGratis", OK2(x.verGratis)); put("fotosOk", OK2(x.fotosOk)); put("llegaron", abc(x.llegaron)); put("claro", OKM(x.claro)); }
+    if (rubro === "dealer") { put("puertaOk", OKM(x.puertaOk)); put("tituloOk", OK2(x.tituloOk)); put("fotosOk", OK2(x.fotosOk)); put("aTiempo", abc(x.aTiempo)); put("sinPresion", OKM(x.sinPresion)); }
+    delete r.taste; delete r.hot; delete r.val; delete r.wait;
+    return r;
+  }
   if (rubro === "noche") {
     const put = <K extends keyof Respuestas>(k: K, v: Respuestas[K] | undefined) => { if (v !== undefined) r[k] = v; };
     put("coverOk", OK2(x.coverOk)); put("filaOk", x.filaOk === "a" || x.filaOk === "b" || x.filaOk === "c" ? x.filaOk : undefined);
@@ -476,6 +531,8 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
     const rubro: Rubro = rubroRes(b.cat);
     // 4ef · Niños: la reseña no lleva fotos (nunca la cara de un niño) ni el nombre de pila de tu niño.
     if (rubro === "ninos" && fotos.length) return no("Las reseñas de lugares de niños no llevan fotos.", "Reviews of kids places do not include photos.");
+    // 4if · Iglesias: la reseña no lleva fotos (nunca la cara de una persona en un lugar de culto, en una despensa o en un funeral).
+    if (rubro === "fe" && fotos.length) return no("Las reseñas de iglesias no llevan fotos: nadie sale en una foto sin saberlo.", "Church reviews do not include photos: no one appears in a photo without knowing.");
     if (rubro === "ninos") {
       const { leerNino } = await import("./ninos-privado");
       const ops = (await c.query<{ id: string }>(`select id::text from operations where business_id = $1 and user_id = $2 and kind = 'enrollment' and details->>'for' = 'hijo' order by id desc limit 10`, [b.id, userId])).rows;
@@ -499,7 +556,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
       const op = p.visitante ? null : await opParaResena(c, b.id, userId, typeof p.numero === "string" && /^[A-Z0-9-]{1,20}$/i.test(p.numero) ? p.numero : null);
       if (!p.visitante && p.numero && !op) return no("Ese pedido no se puede reseñar (no es tuyo, no terminó o ya tiene reseña).", "That order cannot be reviewed (not yours, not finished or already reviewed).");
       const src: Src = op?.src ?? "vis", ord = src === "dl" || src === "pk";
-      const facts = op && op.kind === "order" ? await hechosDe(c, op.id) : op && (op.kind === "market_order" || op.kind === "hold") ? await hechosCompra(c, op.id) : op && (op.kind === "appointment" || op.kind === "party" || op.kind === "trip" || op.kind === "night" || op.kind === "enrollment") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(c, op.id, rubro) : {};
+      const facts = op && op.kind === "order" ? await hechosDe(c, op.id) : op && (op.kind === "market_order" || op.kind === "hold") ? await hechosCompra(c, op.id) : op && (op.kind === "appointment" || op.kind === "party" || op.kind === "trip" || op.kind === "night" || op.kind === "enrollment" || op.kind === "visit") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(c, op.id, rubro) : {};
       const answers = limpiarRespuestas(p.answers, ord, rubro, src === "cita");
       const r = await c.query<{ id: string }>(
         `insert into reviews (business_id, city_id, user_id, operation_id, src, stars, body, lang, answers, facts, rec)

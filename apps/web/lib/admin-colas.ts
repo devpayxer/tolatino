@@ -45,8 +45,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open') as chn,
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz,
             (select o.number from disputes d join operations o on o.id = d.operation_id where q.queue = 'disputa' and d.id::text = q.subject_id) as dpnum,
-            (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue in ('sop', 'cuidado', 'salir') and h.id::text = q.subject_id) as sopk,
-            (select h.reason from help_requests h where q.queue in ('sop', 'cuidado', 'salir') and h.id::text = q.subject_id) as sopr,
+            (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue in ('sop', 'cuidado', 'salir', 'estafa') and h.id::text = q.subject_id) as sopk,
+            (select h.reason from help_requests h where q.queue in ('sop', 'cuidado', 'salir', 'estafa') and h.id::text = q.subject_id) as sopr,
             (select d.amount_cents from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpamt,
             (select d.reason from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpreason,
             (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue
@@ -58,7 +58,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
        left join sensitive_changes sc on q.subject_kind = 'sensitive_change' and sc.id = q.subject_id
        left join users su on sc.target_kind = 'user' and su.id::text = sc.target_id
       where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
-      order by (q.queue = 'cuidado') desc, (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
+      order by (q.queue = 'cuidado') desc, (q.queue = 'estafa') desc, (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
       limit 200`,
     [colas, s.cities]);
   const conteo: Record<string, number> = {};
@@ -76,6 +76,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "cuidado" ? { title: `Cuidado de niños · ${b}`, sub: "No cuidaron bien a su niño · directo a To'Latino" }
       : x.queue === "salir" ? { title: `No le dejan cancelar · ${b}`, sub: "Membresía con la baja pedida en la app" }
       : x.queue === "grupo" ? { title: `Grupos que no abrieron · ${b}`, sub: "3 o más grupos cancelados en 90 días" }
+      : x.queue === "estafa" ? { title: `Posible estafa · ${b}`, sub: `${ESTAFA_L[x.sopr ?? ""] ?? "Le pidieron dinero"} · el anuncio está en pausa` }
       : x.queue === "plantones" ? { title: `Plantones · ${b}`, sub: "3 o más «No vino» en 30 días · mira cada una" }
       : x.queue === "sop" ? { title: `${AYUDA_DE[x.sopk ?? "order"] ?? "Ayuda con un pedido"} · ${b}`, sub: x.sopr === "inseguro" ? "Se sintió inseguro · va directo a To'Latino" : "El cliente espera una respuesta" }
       : x.queue === "mesa" ? { title: `Mesas no respetadas · ${b}`, sub: `${UMBRAL_NOCHE} o más en 30 noches · mira cada una` }
@@ -95,6 +96,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
   return { casos, conteo, vencidos, total: todos.length };
 }
+/* 4if · Lo que dice la persona en una «Posible estafa» (para la lista; el detalle usa motivoAyuda). */
+const ESTAFA_L: Record<string, string> = { ver: "Le cobraron por ver la propiedad", mudar: "Le pidieron más para mudarse de lo publicado", cobro: "Le pidieron dinero por la ayuda" };
 export const CAMBIO_L: Record<string, string> = { deleteUser: "Borrar cuenta", mergeUser: "Fusionar cuentas" };
 export const MOTIVO_FOTO: Record<string, string> = { no_es: "No es de este negocio", inapropiado: "Contenido inapropiado", datos: "Muestra datos personales", spam: "Es publicidad o spam", otro: "Otro motivo" };
 
@@ -179,18 +182,27 @@ export async function caso(s: Staff, id: string) {
     const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'svc', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
     return { ...base, negocio, grupos: { L, pausado: off } };
   }
-  if (q.queue === "sop" || q.queue === "cuidado" || q.queue === "salir") {
+  if (q.queue === "sop" || q.queue === "cuidado" || q.queue === "salir" || q.queue === "estafa") {
     // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
     // Citas (3e): también el monto que pide, la decisión del negocio, sus fotos y lo que se puede devolver a la tarjeta.
     const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string;
-      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night" | "enrollment"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
+      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night" | "enrollment" | "visit"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
       `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid,
-              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'enrollment' then o.details->>'rubro' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub,
+              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, coalesce(o.details->'svc'->>'es', o.details#>>'{item,es}') as svc, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'enrollment' then o.details->>'rubro' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub,
               array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos,
               coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];
-    return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar") };
+    // 4if · «Posible estafa»: qué está en pausa (la propiedad o el carro, o «Pedir fecha» de la iglesia), desde cuándo, lo que vio la persona al
+    // pedir (la copia del total) y cuántas otras ayudas directas tiene el negocio en 90 días. Nunca hay dinero que devolver: no pasó por la app.
+    const pausa = q.queue === "estafa" ? (await db().query<{ kind: string | null; ref: string | null; at: string | null; fin: string | null; item: string | null; vivo: boolean | null; copia: Record<string, unknown> | null; otras: number }>(
+      `select h.paused_kind as kind, h.paused_ref as ref, h.paused_at::text as at, h.unpaused_at::text as fin,
+              case when h.paused_kind = 'item' then (select i.name->>'es' from items i where i.id::text = h.paused_ref) else 'Pedir fecha e inscripciones' end as item,
+              case when h.paused_kind = 'item' then (select i.status = 'live' from items i where i.id::text = h.paused_ref) when h.paused_kind = 'svc' then not coalesce((select b.modules_off ? 'svc' from businesses b where b.id = h.business_id), false) end as vivo,
+              case when o.kind = 'visit' then jsonb_strip_nulls(jsonb_build_object('rent', o.details->'rent_cents', 'dep', o.details->'deposit_cents', 'moveIn', o.details->'move_in_cents', 'price', o.details->'price_cents', 'otd', o.details#>'{puerta,otd}', 'item', o.details#>'{item,es}', 'que', o.details->'what')) end as copia,
+              (select count(*)::int from help_requests x where x.business_id = h.business_id and x.id <> h.id and x.reason in ('ver', 'mudar', 'cobro') and x.created_at > now() - interval '90 days') as otras
+         from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [q.subject_id])).rows[0] ?? null : null;
+    return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar"), pausa };
   }
   if (q.queue === "renta") {
     // Daño de una renta (4f-2): la herramienta, la foto, el monto, la nota del negocio, el depósito y el cliente.

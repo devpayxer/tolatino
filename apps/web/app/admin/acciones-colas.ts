@@ -348,8 +348,10 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
   }).then(async (r) => {
     if (r.ok && r.caso) {
       const n = (await import("@/lib/db")).db; const o = (await n().query<{ num: string; k: string }>(`select o.number as num, o.kind as k from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [r.caso])).rows[0];
-      if (o?.k === "appointment") await (await import("@/lib/ayuda-cita")).avisarAyudaCita(o.num, "help_done");
-      else if (o) await (await import("@/lib/ayuda")).avisarAyuda(o.num, "help_done");
+      // Solo la ayuda de un pedido de comida usa avisarAyuda (enlace a /pedido/…); las demás (citas, mercado, apartados, fiestas, viajes,
+      // noche, inscripciones y visitas) usan avisarAyudaCita, que enlaza a su propia pantalla (guardián avisoAyudaPorTipo).
+      if (o?.k === "order") await (await import("@/lib/ayuda")).avisarAyuda(o.num, "help_done");
+      else if (o) await (await import("@/lib/ayuda-cita")).avisarAyudaCita(o.num, "help_done");
     }
     return r.ok ? { ok: true as const, mensaje: r.mensaje } : r;
   });
@@ -534,3 +536,64 @@ export async function verNinoCaso(id: string, texto: string): Promise<ResAdm> {
   return { ok: true, mensaje: `${n.nombre} · ${n.edad != null ? `${n.edad} años` : n.grado ?? "—"}${n.escuela ? ` · escuela: ${n.escuela}` : ""}${n.nota ? ` · nota: «${n.nota}»` : ""}` };
 }
 
+
+/* 4if · «Posible estafa» (Iglesias, Bienes Raíces, Autos). Sancionar: lo pausado se queda fuera con el motivo de To'Latino y queda una
+   advertencia al negocio. Sin acción: lo pausado vuelve a verse. En los dos, la solicitud se resuelve con tu mensaje (lo ve la persona) y al
+   negocio le llega el aviso. AQUÍ NUNCA SE DEVUELVE DINERO: no pasó por la app (guardián sinDineroEnAyuda). */
+export async function decidirEstafa(id: string, accion: "sancion" | "sin_accion", texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(texto);
+  if (m.length < 8) return no("Escribe lo que encontraste (lo ve la persona y el negocio).");
+  if (accion !== "sancion" && accion !== "sin_accion") return no("Elige qué decides.");
+  const E = await import("@/lib/ayuda-estafa");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "estafa") return "Ese caso no es de esta cola.";
+    const h = (await c.query<{ id: string; number: string; status: string }>(`select id::text, number, status from help_requests where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!h || h.status === "resolved") return "Esta solicitud ya se resolvió.";
+    const item = accion === "sancion" ? await E.sancionarPorAyuda(c, h.id, s.id, m) : await E.reanudarPausa(c, h.id, s.id, m);
+    await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, closed_by = 'admin', updated_at = now() where id = $1::bigint`, [h.id, m, s.id]);
+    await cerrar(c, q, s, accion === "sancion" ? "sancion" : "sin_accion", m);
+    await auditar(c, { actor: s.id, action: accion === "sancion" ? "estafa.sancionar" : "estafa.sin_accion", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: h.number, caso: "abierto" }, after: { caso: accion === "sancion" ? "sanción: advertencia y anuncio retirado" : "sin acción", anuncio: item ?? "—" }, reason: m });
+    return `ok|${h.number}|${q.business_id ?? ""}|${item ?? ""}`;
+  });
+  if (!r.startsWith("ok|")) return no(r);
+  const [, hnum, biz, item] = r.split("|");
+  const { db } = await import("@/lib/db");
+  const o = (await db().query<{ num: string }>(`select o.number as num from help_requests h join operations o on o.id = h.operation_id where h.number = $1`, [hnum])).rows[0];
+  if (o) await (await import("@/lib/ayuda-cita")).avisarAyudaCita(o.num, "help_done");
+  if (biz) {
+    const { avisarNegocio } = await import("@/lib/avisos");
+    if (accion === "sancion") await avisarNegocio(biz, "biz_help_sancion", { num: hnum!, motivo: m.endsWith(".") ? m : `${m}.`, item: item ? `«${item}»` : "" }, { ref: ["help", hnum!] });
+    else if (item) await avisarNegocio(biz, "biz_help_reanuda", { num: hnum!, motivo: m, item: `«${item}»` }, { ref: ["help", hnum!] });
+  }
+  listo();
+  return { ok: true, mensaje: accion === "sancion" ? "Sancionado: el anuncio queda fuera y el negocio tiene una advertencia. La persona ve tu respuesta." : item ? "Sin acción: el anuncio se ve otra vez. La persona ve tu respuesta." : "Sin acción. La persona ve tu respuesta." };
+}
+
+/* 4if · Pausar o reanudar lo señalado mientras decides (con motivo; queda en la auditoría). */
+export async function pausaEstafa(id: string, pausar: boolean, texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(texto);
+  if (m.length < 4) return no("Escribe el motivo.");
+  const E = await import("@/lib/ayuda-estafa");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if (q.queue !== "estafa") return "Ese caso no es de esta cola.";
+    const h = (await c.query<{ id: string; number: string; business_id: string; city_id: string; user_id: string; on: boolean }>(
+      `select id::text, number, business_id, city_id, user_id::text, paused_at is not null and unpaused_at is null as on from help_requests where id = $1::bigint for update`, [q.subject_id])).rows[0];
+    if (!h) return "Esa solicitud ya no existe.";
+    if (h.on === pausar) return pausar ? "Ya está en pausa." : "No está en pausa.";
+    const item = pausar ? await E.pausarPorAyuda(c, h, { kind: "staff", id: s.id }) : await E.reanudarPausa(c, h.id, s.id, m);
+    if (item == null) return pausar ? "No hay nada que pausar (ya no se ve en su página)." : "No se pudo reanudar: otra revisión abierta o el equipo lo ocultó por otra razón.";
+    await auditar(c, { actor: s.id, action: pausar ? "estafa.pausar" : "estafa.reanudar", targetKind: "case", targetId: q.id, city: q.city_id, before: { anuncio: pausar ? "visible" : "en pausa" }, after: { anuncio: pausar ? "en pausa" : "visible", solicitud: h.number }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: pausar ? "En pausa mientras decides." : "Se ve otra vez; el caso sigue abierto." };
+}

@@ -577,6 +577,15 @@ const guardianes = {
     if (existsSync(A) && !/sp( \|\| rub === "ninos")? \? await subirFotoPrivada\(file\)/.test(readFileSync(A, "utf8"))) falla("fotoAyudaPrivada", A, 1, "en Salud y Pro la foto de la ayuda se sube privada (subirFotoPrivada)");
     const L = "apps/web/lib/ayuda-cita.ts";
     if (existsSync(L) && !/\$4::boolean = false or private/.test(readFileSync(L, "utf8"))) falla("fotoAyudaPrivada", L, 1, "el servidor tiene que rechazar una foto pública en una ayuda de Salud o Pro");
+    // 4if · Iglesias, Bienes Raíces y Autos: el recibo o el contrato llevan nombres y direcciones → privadas en el servidor y en la pantalla.
+    if (existsSync(L)) {
+      const pr = readFileSync(L, "utf8").split("\n").find((l) => /export const PRIVADA = \(r: RubroAyuda\) =>/.test(l)) ?? "";
+      for (const r of ["fe", "inm", "dealer"]) if (!pr.includes(`r === "${r}"`)) falla("fotoAyudaPrivada", L, 0, `las fotos de una ayuda de ${r} tienen que ser privadas (PRIVADA)`);
+    }
+    if (existsSync(A)) {
+      const t = readFileSync(A, "utf8");
+      if (!/const sd = rub === "fe" \|\| rub === "inm" \|\| rub === "dealer";/.test(t) || !/const x = sd \? await subirFotoPrivada\(file\)/.test(t)) falla("fotoAyudaPrivada", A, 0, "en Iglesias, Bienes Raíces y Autos la foto de la ayuda se sube privada (subirFotoPrivada)");
+    }
   },
 
   /* 4n-2. El constructor del Menú también arma los Productos de Mercados y Tiendas (module 'shop'). Antes tenía
@@ -765,7 +774,14 @@ const guardianes = {
   colaAyudaRuteada() {
     for (const f of codigo) {
       if (!/^apps\/web\/lib\/[^/]+\.ts$/.test(f) || f.endsWith("/colas.ts")) continue;
-      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/'(sop|cuidado|salir)',\s*'help_request'/.test(l)) falla("colaAyudaRuteada", f, i + 1, "la cola de una ayuda sale de su motivo (COLA_AYUDA_SQL), no se escribe a mano"); });
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/'(sop|cuidado|salir|estafa)',\s*'help_request'/.test(l)) falla("colaAyudaRuteada", f, i + 1, "la cola de una ayuda sale de su motivo (COLA_AYUDA_SQL), no se escribe a mano"); });
+    }
+    // 4if · «Me cobraron por ver», «Pidieron más para mudarme» y «Me pidieron dinero por la ayuda» (Iglesias) van a «Posible estafa».
+    const C = "apps/web/lib/colas.ts";
+    if (existsSync(C)) {
+      const t = readFileSync(C, "utf8"), sql = t.split("\n").find((l) => /export const COLA_AYUDA_SQL/.test(l)) ?? "";
+      if (!/when h\.reason in \('ver', 'mudar'\) or \(h\.reason = 'cobro' and b\.category_id = 'NEG-FE'\) then 'estafa'/.test(sql)) falla("colaAyudaRuteada", C, 0, "COLA_AYUDA_SQL tiene que mandar ver, mudar y el cobro de Iglesias a la cola «Posible estafa»");
+      if (!/export const COLAS_AYUDA: Cola\[\] = \[[^\]]*"estafa"/.test(t)) falla("colaAyudaRuteada", C, 0, "«Posible estafa» muestra una ayuda: tiene que estar en COLAS_AYUDA");
     }
   },
 
@@ -1613,6 +1629,51 @@ const guardianes = {
       if (!/kf === "consejo" \|\| kf === "oracion"/.test(t) || !/const NEUTRO_FE = \/consejer\|counsel\|capell\|chaplain\|oraci\[oó\]n\|prayer\|recuperaci\|recovery/.test(t)) falla(G, I, 0, "consejería, capellanía, oración y recuperación cuentan como neutras (por el lugar o por el servicio)");
       if (!/guardarNotaFe\(c, op, nota\)/.test(t)) falla(G, I, 0, "la nota de consejería va cifrada (guardarNotaFe), nunca en operations");
     }
+  },
+
+  /* 4if · En Iglesias, Bienes Raíces y Autos NADA se cobra en la app, así que ninguna ayuda de esas tres puede terminar en una devolución
+     por la app («Que me devuelvan» lo hace el negocio fuera de la app y la persona confirma «Me lo devolvieron»; si no, To'Latino decide una
+     sanción, nunca un reembolso). Toda búsqueda del pago de una ayuda (depositoDe) pasa por SIN_DINERO; lib/ayuda-estafa.ts y las decisiones
+     de «Posible estafa» no tocan cobros ni la pasarela. */
+  sinDineroEnAyuda() {
+    const G = "sinDineroEnAyuda", A = "apps/web/lib/ayuda-cita.ts", E = "apps/web/lib/ayuda-estafa.ts", K = "apps/web/app/admin/acciones-colas.ts";
+    if (existsSync(A)) {
+      const t = readFileSync(A, "utf8");
+      const sd = t.split("\n").find((l) => /export const SIN_DINERO = new Set<RubroAyuda>\(/.test(l)) ?? "";
+      for (const r of ["fe", "inm", "dealer"]) if (!sd.includes(`"${r}"`)) falla(G, A, 0, `SIN_DINERO tiene que incluir ${r}`);
+      t.split("\n").forEach((l, i) => { if (/await depositoDe\(/.test(l) && !/SIN_DINERO\.has\(/.test(l)) falla(G, A, i + 1, "buscar el pago de una ayuda pasa por SIN_DINERO (Iglesias, Bienes Raíces y Autos no tienen nada que devolver por la app)"); });
+      if (!/if \(sinDinero\) \{[\s\S]{0,400}?outside_refund = 'pending'/.test(t)) falla(G, A, 0, "aceptar una propuesta sin dinero en la app deja «Me lo devolvieron» pendiente, nunca un reembolso");
+    }
+    if (existsSync(E) && /from "\.\/(cobros|pasarela|stripe)"|import\("\.\/(cobros|pasarela|stripe)"\)|devolverPago|insert into payments/.test(readFileSync(E, "utf8"))) falla(G, E, 0, "la pausa por posible estafa no toca cobros ni la pasarela");
+    if (existsSync(K)) {
+      const t = readFileSync(K, "utf8"), i = t.indexOf("export async function decidirEstafa"), j = t.indexOf("export async function", i + 10);
+      const cuerpo = i < 0 ? "" : t.slice(i, j < 0 ? undefined : j), cuerpo2 = t.slice(t.indexOf("export async function pausaEstafa"));
+      if (i < 0) falla(G, K, 0, "falta decidirEstafa");
+      if (/devolverPago|cobros|pasarela|refunded_cents/.test(cuerpo) || /devolverPago|cobros|pasarela|refunded_cents/.test(cuerpo2.slice(0, 2500))) falla(G, K, 0, "«Posible estafa» nunca devuelve dinero: no pasó por la app");
+    }
+  },
+
+  /* 4if · Iglesias: la reseña no lleva fotos (nadie sale en una foto sin saberlo en un lugar de culto, una despensa o un funeral): el servidor
+     la rechaza y la pantalla no ofrece subirlas. Y a la persona, los avisos de una ayuda de Iglesias son neutros (puede ser consejería). */
+  feSinFotoPublica() {
+    const G = "feSinFotoPublica", r = "apps/web/lib/resenas.ts", esc = "apps/web/app/(app)/n/[id]/resena/Escribir.tsx", a = "apps/web/lib/ayuda-cita.ts", dir = "packages/db/migrations";
+    if (existsSync(r) && !/if \(rubro === "fe" && fotos\.length\) return no\(/.test(readFileSync(r, "utf8"))) falla(G, r, 0, "una reseña de Iglesias no puede guardar fotos");
+    if (existsSync(esc) && !/rub === "fe" \? null : rub === "ninos" \? null : fotosB/.test(readFileSync(esc, "utf8"))) falla(G, esc, 0, "la reseña de Iglesias no ofrece subir fotos");
+    if (existsSync(a) && !/h\.cat === "NEG-FE" && \(tpl === "help_reply" \|\| tpl === "help_done"\)\) \{ await avisar\(h\.uid, tpl === "help_reply" \? "fe_help_reply" : "fe_help_done"/.test(readFileSync(a, "utf8"))) falla(G, a, 0, "a la persona, la ayuda de Iglesias le avisa con fe_help_* (neutros)");
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql"))) readFileSync(`${dir}/${x}`, "utf8").split("\n").forEach((l, i) => {
+      if (/\('(fe_help_\w+|help_directo)'/.test(l) && /\{(negocio|servicio|svc|motivo|nota|item)\}/.test(l)) falla(G, `${dir}/${x}`, i + 1, "un aviso de ayuda de Iglesias (o el directo a To'Latino) es neutro: sin {negocio} ni {servicio}");
+    });
+  },
+
+  /* 4if · El aviso de «To'Latino resolvió tu solicitud» enlaza a la pantalla de SU operación: solo la ayuda de un pedido de comida usa
+     avisarAyuda (/pedido/…); todas las demás (citas, mercado, apartados, fiestas, viajes, noche, inscripciones y visitas) avisarAyudaCita.
+     Se cazó: fiestas, viajes, noche e inscripciones resueltas por To'Latino llevaban a /pedido/{num}. */
+  avisoAyudaPorTipo() {
+    const K = "apps/web/app/admin/acciones-colas.ts";
+    if (!existsSync(K)) return;
+    const t = readFileSync(K, "utf8");
+    if (/o\?\.k === "appointment"\) await \(await import\("@\/lib\/ayuda-cita"\)\)/.test(t) || !/if \(o\?\.k === "order"\) await \(await import\("@\/lib\/ayuda"\)\)\.avisarAyuda\(o\.num, "help_done"\);\s*else if \(o\) await \(await import\("@\/lib\/ayuda-cita"\)\)\.avisarAyudaCita\(o\.num, "help_done"\)/.test(t))
+      falla("avisoAyudaPorTipo", K, 0, "al resolver una ayuda, solo la de un pedido de comida usa avisarAyuda; las demás avisan con avisarAyudaCita");
   },
 
   idioma() {
