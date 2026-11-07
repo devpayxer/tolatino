@@ -1,6 +1,7 @@
 import "server-only";
 import { FOTO_AYUDA_SQL } from "./ayuda-cita";
 const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
+export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
@@ -42,8 +43,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select cr.reason from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.by_business desc, cr.created_at limit 1) as rpreason,
             (select count(*)::int from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open') as rpn,
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'rep' and cr.target_kind = 'review' and cr.target_id = q.subject_id and cr.status = 'open'), false) as rpbiz,
-            (select cr.reason from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open' order by cr.created_at limit 1) as chreason,
-            (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open') as chn,
+            (select cr.reason from content_reports cr where q.queue = 'chat' and cr.target_kind = (case q.subject_kind when 'dm_thread' then 'dm' else 'chat' end) and cr.target_id = q.subject_id and cr.status = 'open' order by cr.created_at limit 1) as chreason,
+            (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = (case q.subject_kind when 'dm_thread' then 'dm' else 'chat' end) and cr.target_id = q.subject_id and cr.status = 'open') as chn,
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz,
             (select o.number from disputes d join operations o on o.id = d.operation_id where q.queue = 'disputa' and d.id::text = q.subject_id) as dpnum,
             (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue in ('sop', 'cuidado', 'salir', 'estafa') and h.id::text = q.subject_id) as sopk,
@@ -91,13 +92,14 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "noid" ? { title: `Sin identificación · ${b}`, sub: `${UMBRAL_NOCHE} o más mesas con depósito en 30 noches` }
       : x.queue === "renta" ? { title: `Daño de renta · ${b}`, sub: "El cliente no está de acuerdo · el depósito sigue retenido" }
       : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
+      : x.queue === "chat" && x.subject_kind === "dm_thread" ? { title: "Mensajes entre vecinos", sub: `${x.chreason ? MOTIVO_DM[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""} · Comunidad` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
       id: x.id, queue: x.queue, ...t, priority: x.priority,
-      who: x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
+      who: x.subject_kind === "dm_thread" ? { name: "Comunidad", initials: "C" } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e,
     };
   });
@@ -239,6 +241,11 @@ export async function caso(s: Staff, id: string) {
               o.number as num, o.user_id::text as uid, nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), '') as cliente, d.response_text as resp, d.simulated as sim
          from disputes d left join operations o on o.id = d.operation_id left join users u on u.id = o.user_id where d.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, disputa: d ? { ...d, motivo: MOTIVO[d.reason]?.es ?? "Otro motivo del banco" } : null, evidencia: d ? await evidenciaDe(d.id) : null, puedeDinero: s.puede("tx", "aprobar") };
+  }
+  if (q.queue === "chat" && q.subject_kind === "dm_thread") {
+    // 5c · Mensajes entre vecinos: solo con el caso y un reporte abiertos (lib/admin-dm.ts; guardián dmSoloConReporte).
+    const dm = q.status === "open" ? await (await import("./admin-dm")).dmReportado(q.subject_id) : null;
+    return { ...base, negocio: null, dm };
   }
   if (q.queue === "chat") {
     // La conversación reportada: solo se lee con el caso abierto (si ya se decidió, no se muestra el hilo).

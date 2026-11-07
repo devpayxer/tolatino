@@ -25,7 +25,7 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada }: { e
   const [borrada, setBorrada] = useState(false);
   useEffect(() => { setPub(d?.pub ?? null); }, [d]);
   useEffect(() => { if (editada) ui.setAviso({ t: E2("Cambios guardados.", "Changes saved.") }); }, [editada]); // eslint-disable-line react-hooks/exhaustive-deps
-  const acc = useAccionesPub(es, ui, (_id, f) => setPub((p) => (p ? f(p) : p)), () => setBorrada(true), (p) => { setBorrada(false); setPub(p); });
+  const acc = useAccionesPub(es, ui, (_id, f) => setPub((p) => (p ? f(p) : p)), () => setBorrada(true), (p) => { setBorrada(false); setPub(p); }, () => router.push("/comunidad"));
   const R = reglas(yo.ciudad);
   if (!d || !pub || !h || borrada) {
     return (
@@ -44,7 +44,7 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada }: { e
         {!a.oficial && (
           <div data-screen-label="Publicación · autor" style={{ borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 }}>
             <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".18em", color: "rgba(11,14,18,.42)" }}>{E2("QUIEN PUBLICA", "POSTED BY")}</div>
-            <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center" }}><Avatar foto={a.foto} ini={a.ini} size={38} />
+            <div role="link" onClick={() => a.id && router.push(`/comunidad/v/${a.id}`)} style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center", cursor: "pointer" }}><Avatar foto={a.foto} ini={a.ini} size={38} />
               <div style={{ minWidth: 0 }}><div style={{ font: "700 13.5px Manrope,sans-serif" }}>{a.nombre}</div><div style={{ marginTop: 3, font: `600 9px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.5)" }}>{`${(es ? rango(a.rango).es : rango(a.rango).en).toUpperCase()} · ${(es ? pub.lugar.es : pub.lugar.en).toUpperCase()}`}</div></div></div>
           </div>
         )}
@@ -59,7 +59,7 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada }: { e
           </div>
         )}
         <div style={{ background: "var(--tl-white)", overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
-          <Tarjeta p={pub} es={es} full onMenu={() => acc.menu(pub)} onVote={(v) => void acc.votar(pub, v)} onPoll={(i) => void acc.encuesta(pub, i)} onSave={() => void acc.guardar(pub)} onShare={() => void acc.compartir(pub)} onBiz={(id) => router.push(`/n/${id}`)} />
+          <Tarjeta p={pub} es={es} full onMenu={() => acc.menu(pub)} onAuthor={a.id && !a.oficial ? () => router.push(`/comunidad/v/${a.id}`) : undefined} onVote={(v) => void acc.votar(pub, v)} onPoll={(i) => void acc.encuesta(pub, i)} onSave={() => void acc.guardar(pub)} onShare={() => void acc.compartir(pub)} onBiz={(id) => router.push(`/n/${id}`)} />
         </div>
         {pub.estado === "visible" && <Hilo es={es} yo={yo} pub={pub} h0={h} orden={orden} ui={ui} D={D} />}
       </div>

@@ -16,6 +16,11 @@ _Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y es
     ciudad con el historial y «Cambiar ciudad».
   - **Confianza:** su estado, cada sanción (vigente, terminó o levantada, con su motivo y quién) y las fotos que reportó.
   - **Privacidad:** exportar sus datos (archivo JSON, para un pedido de privacidad).
+  - **Comunidad (5c):** rango, publicaciones y comentarios, votos recibidos, mejores respuestas; seguidores, siguiendo, a quién
+    bloqueó y silenció (listas de 50, con «MISMO DISPOSITIVO» en rojo); cuántas conversaciones privadas tiene (**nunca su
+    contenido**: solo se lee con un reporte abierto en Colas › Mensajes reportados); su declaración de 18 años o más (sí/no y
+    cuándo; nunca una fecha de nacimiento) y su bienvenida. Aviso de **posible red**: seguidores que entraron desde el mismo
+    dispositivo que esta cuenta (el caso de red de cuentas se abre desde Reportes de usuario cuando llegue esa cola, 5d).
   - Abajo, el historial: quién del equipo hizo qué, antes → después y el motivo.
 
 ## Acciones y lo que ve la persona

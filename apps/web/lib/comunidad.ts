@@ -27,6 +27,22 @@ const LIMITE_DIA = 10;
 export const sinBloqueos = (autor: string, viewer: string) =>
   `not exists (select 1 from user_blocks ub where ub.removed_at is null and ((ub.user_id = ${viewer} and ub.target_user_id = ${autor})
      or (ub.kind = 'block' and ub.user_id = ${autor} and ub.target_user_id = ${viewer})))`;
+/* Solo bloqueos, de ida y vuelta (sin silencios): para las superficies de personas (perfil, listas de seguidores, mensajes, avisos,
+   sugerencias). Silenciar solo esconde lo que la otra persona publica y comenta; bloquear la borra de todo, en los dos sentidos. */
+export const sinBloqueo = (persona: string, viewer: string) =>
+  `not exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block' and ((ub.user_id = ${viewer} and ub.target_user_id = ${persona})
+     or (ub.user_id = ${persona} and ub.target_user_id = ${viewer})))`;
+
+/* ¿La persona ya entró a la Comunidad? Bienvenida hecha, reglas aceptadas y declaró tener 18 años o más (nunca una fecha de
+   nacimiento). Quien declaró ser menor no usa la Comunidad. */
+export type Entrada18 = { ok: boolean; menor: boolean; falta: boolean };
+export async function enComunidad(userId: string, c: Pick<PoolClient, "query"> = db()): Promise<Entrada18> {
+  const r = (await c.query<{ adult: boolean | null; welcome: boolean; rules: boolean }>(
+    `select cp.adult, cp.welcome_at is not null as welcome, cp.rules_ok_at is not null as rules from community_profiles cp where cp.user_id = $1`, [userId])).rows[0];
+  if (r?.adult === false) return { ok: false, menor: true, falta: false };
+  const ok = !!r && r.adult === true && r.welcome && r.rules;
+  return { ok, menor: false, falta: !ok };
+}
 
 /* ── Perfiles de autores: 60 s en memoria (nombre corto, foto, rango). ── */
 const cache = new Map<string, { at: number; a: Autor & { ciudad: string | null } }>();
@@ -44,7 +60,7 @@ export async function autores(ids: string[]) {
 }
 
 /* Columnas de una publicación para la pantalla (una fila; negocio, barrio, invitado y fotos en la misma consulta). */
-const COLS = (centro: string | null) => `
+export const COLS = (centro: string | null) => `
   p.id::text as id, p.kind, p.topic, p.body, p.author_kind, p.author_user_id::text as autor, p.city_id, p.status, p.hidden_reason,
   ${ISO("p.publish_at")} as at, p.edited_at is not null as editada, ${ISO("p.created_at + interval '" + EDITAR_MIN + " minutes'")} as editar_hasta,
   p.created_at > now() - interval '${EDITAR_MIN} minutes' as editable,
@@ -56,7 +72,7 @@ const COLS = (centro: string | null) => `
   b.id as biz_id, b.name as biz_name, coalesce(bs.verified, false) as biz_ver, bs.rating_avg::float8 as biz_rating, bs.review_count as biz_reviews, sc.name as biz_sub,
   coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as biz_foto,
   (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible') as fotos`;
-const JOINS = `
+export const JOINS = `
   left join zones z on z.city_id = p.city_id and z.id = p.zone_id
   left join cities gc on gc.id = p.guest_from_city_id
   join cities oc on oc.id = p.city_id
@@ -64,7 +80,7 @@ const JOINS = `
   left join businesses b on b.id = p.business_id
   left join business_stats_cache bs on bs.business_id = b.id
   left join subcategorias_vivas sc on sc.id = b.subcategory_ids[1]`;
-type Fila = {
+export type Fila = {
   id: string; kind: Pub["kind"]; topic: string | null; body: string; author_kind: string; autor: string | null; city_id: string; status: Pub["estado"]; hidden_reason: string | null;
   at: string; editada: boolean; editar_hasta: string; editable: boolean; fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean;
   para: string[]; opts: string[] | null; conteo: number[]; cierra: string | null; cerrada: boolean; up: number; dn: number; score: number; cms: number;
@@ -91,7 +107,7 @@ export function encuesta(opts: string[], conteo: number[], mio: number | null, c
   return { opts: opts.map((l, i) => ({ l, n: n[i]!, pc: pc[i]! })), mio, total: ver ? n.reduce((a, x) => a + x, 0) : 0, cierra, cerrada, ver };
 }
 
-async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
+export async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
   const [mio, A] = await Promise.all([propios(filas.map((f) => f.id), viewer), autores(filas.map((f) => f.autor).filter((x): x is string => !!x))]);
   return filas.map((f) => {
     const p = mio.get(f.id) ?? { v: 0, s: false, o: null }, oficial = f.author_kind === "official";

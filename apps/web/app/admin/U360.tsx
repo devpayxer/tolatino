@@ -1,12 +1,14 @@
 "use client";
 /* ADM-USR · 360° (Super Admin.dc.html usrDetail): la persona como cuenta, lo que hizo y lo que hizo el equipo.
-   Pestañas de la Fase 1: Resumen, Seguridad, Confianza, Privacidad (Actividad, Dinero y Comunidad llegan con sus
-   módulos). Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
+   Pestañas: Resumen, Seguridad, Confianza, Privacidad y (5c) Comunidad › Seguidores y siguiendo (bloqueó · silenció · «posible
+   red» por dispositivo; los mensajes privados nunca se leen aquí: solo con un reporte, en Colas). Actividad y Dinero llegan con sus
+   módulos. Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Usuario360 } from "@/lib/admin-usuarios";
+import type { Comunidad360 } from "@/lib/admin-vecinos";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
   cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar,
@@ -30,7 +32,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab }: { u: Usuario360; tab: string }) {
+export function U360({ u, tab, com }: { u: Usuario360; tab: string; com?: Comunidad360 | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -68,7 +70,7 @@ export function U360({ u, tab }: { u: Usuario360; tab: string }) {
     {`Pedido de borrado en Cambios sensibles (#${pedido.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
 
   const alertas = u.compartidos.length + (u.phone_ok ? 0 : 1);
-  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"]] as [string, string, number?][])
+  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"]] as [string, string, number?][])
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
@@ -135,6 +137,34 @@ export function U360({ u, tab }: { u: Usuario360; tab: string }) {
         <PanelBloques bloques={[{ type: "group", k: `REPORTES QUE HIZO · ${u.reportes.length}` }]} />
         {u.reportes.length ? <PanelBloques bloques={[{ type: "rows", items: u.reportes.map((r) => ({ icon: "image", t: `Foto de ${r.negocio} · ${REP[r.reason] ?? r.reason}`, s: fecha(r.at), tag: r.status === "open" ? "ABIERTO" : "RESUELTO", tone: r.status === "open" ? "action" : "neutral", chev: true, onClick: () => router.push(`/admin/negocios/${r.bid}`) })) }]} />
           : <A.AdminNote tone="info" icon="bubble">Ninguno.</A.AdminNote>}
+      </>);
+  } else if (tab === "comunidad" && com) {
+    const lista = (k: string, L: Comunidad360["listas"]["seg"], vacio: string) => <>
+      <PanelBloques bloques={[{ type: "group", k: `${k} · ${L.length}` }]} />
+      {L.length ? <A.AdminList rows={L.map((x) => ({ icon: "users", title: x.nombre, sub: `${x.rango} · ${x.ciudad ?? "Sin ciudad"} · ${fecha(x.at)}`, tag: x.mismo ? "MISMO DISPOSITIVO" : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}?tab=comunidad`) }))} />
+        : <A.AdminNote tone="info" icon="users">{vacio}</A.AdminNote>}
+    </>;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[
+          { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+            { k: "RANGO", v: String(com.rango) }, { k: "PUBLICACIONES", v: String(com.publicaciones), s: `${com.comentarios} comentarios` },
+            { k: "VOTOS RECIBIDOS", v: `+${com.votos.up}`, s: `−${com.votos.dn}` }, { k: "MEJORES RESPUESTAS", v: String(com.mejores) }] },
+          { type: "kv", cols: desk ? 3 : 2, items: [
+            { k: "SEGUIDORES", v: String(com.seguidores) }, { k: "SIGUIENDO", v: String(com.siguiendo) }, { k: "BLOQUEÓ", v: String(com.bloqueo) }, { k: "SILENCIÓ", v: String(com.silencio) },
+            { k: "CONVERSACIONES PRIVADAS", v: `${com.conversaciones} · el equipo no las lee salvo reporte` }, { k: "CUENTAS", v: com.ocultaCuentas ? "Ocultas al público" : "Visibles" },
+            { k: "18 AÑOS O MÁS", v: com.declaracion ? `${com.declaracion.adulto ? "Declaró que sí" : "Declaró que no: no entra a la Comunidad"} · ${fecha(com.declaracion.at)}` : "Sin declarar", fg: com.declaracion?.adulto === false ? WARN : undefined },
+            { k: "BIENVENIDA", v: com.bienvenida ? fecha(com.bienvenida) : "No la ha hecho" },
+          ] },
+        ]} />
+        {com.ocultas ? <A.AdminNote tone="warn" icon="warning" cta="Ver" onCta={() => router.push(`/admin/contenido?tab=pub`)}>{`${com.ocultas} de sus publicaciones o comentarios están ocultos por las reglas.`}</A.AdminNote> : null}
+        {com.red ? <A.AdminNote tone="bad" icon="warning">{`${com.red} ${com.red === 1 ? "seguidor entró" : "seguidores entraron"} desde el mismo dispositivo que esta cuenta: posible red de cuentas. El caso de red de cuentas se abre desde Reportes de usuario cuando exista esa cola (5d).`}</A.AdminNote> : null}
+        {lista("SEGUIDORES", com.listas.seg, "Nadie la sigue todavía.")}
+        {lista("SIGUIENDO", com.listas.sig, "No sigue a nadie.")}
+        {lista("BLOQUEADOS", com.listas.blk, "No ha bloqueado a nadie.")}
+        {com.listas.blk.length ? <A.AdminNote tone="info" icon="lock">El bloqueo es mutuo e invisible para la persona bloqueada.</A.AdminNote> : null}
+        {lista("SILENCIADOS", com.listas.mut, "No ha silenciado a nadie.")}
+        <A.AdminNote tone="info" icon="info">Seguir o tener seguidores no da puntos ni rango. Los mensajes privados solo se leen con un reporte abierto, en Colas › Mensajes reportados.</A.AdminNote>
       </>);
   } else if (tab === "privacidad") {
     cuerpo = (

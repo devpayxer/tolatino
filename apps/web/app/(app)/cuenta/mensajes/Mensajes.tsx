@@ -1,6 +1,6 @@
 "use client";
 /* USR-MENSAJES (diseño «To'Latino Mi cuenta» · msgsV): nota de privacidad, una fila por negocio (NUEVO si hay algo sin
-   leer, el contexto y el último mensaje) y el acceso a los mensajes con vecinos (llega con Comunidad). */
+   leer, el contexto y el último mensaje) y el acceso a los mensajes con vecinos (Comunidad › Mensajes, 5c). */
 import { useRouter } from "next/navigation";
 import type { Hilo } from "@/lib/mensajes";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
@@ -30,7 +30,7 @@ export function Mensajes({ d, es, yo, pagina }: { d: { hilos: Hilo[]; mas: strin
       on: () => router.push(`/cuenta/mensajes/${t.negocio}`),
     })) } : { type: "empty", ic: "chat", t: pagina ? E2("No hay más", "No more") : E2("Sin mensajes", "No messages"), s: E2("Cuando le escribas a un negocio, la conversación sale aquí.", "When you write to a business, the conversation shows here."), cta: pagina ? E2("Volver al principio", "Back to the top") : E2("Buscar negocios", "Find businesses"), onCta: () => router.push(pagina ? "/cuenta/mensajes" : "/negocios") },
     d.mas ? { type: "more", l: E2("Ver más antiguas", "See older"), on: () => router.push(`/cuenta/mensajes?antes=${encodeURIComponent(d.mas!)}`) } : null,
-    { type: "rows", rows: [{ key: "vec", ic: "users", t: E2("Mensajes con vecinos", "Messages with neighbors"), s: E2("EN LA COMUNIDAD · LLEGA PRONTO", "IN THE COMMUNITY · COMING SOON") }] },
+    { type: "rows", rows: [{ key: "vec", ic: "users", t: E2("Mensajes con vecinos", "Messages with neighbors"), s: E2("EN LA COMUNIDAD · SOLO CON QUIEN TE SIGUE", "IN THE COMMUNITY · ONLY WITH PEOPLE WHO FOLLOW YOU"), chev: true, on: () => router.push("/comunidad/mensajes") }] },
   ].filter(Boolean) as Bloque[];
   return <Marco es={es} code="USR-MENSAJES" t={E2("Mensajes", "Messages")} s={nuevos ? `${nuevos} ${E2(nuevos === 1 ? "NUEVO" : "NUEVOS", "NEW")}` : E2("CON LOS NEGOCIOS", "WITH BUSINESSES")} blocks={B} yo={yo} ui={ui} />;
 }

@@ -584,3 +584,19 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **5b · Resultado de encuestas muy grandes:** `avisarMuchos` escribe de 1,000 en 1,000 en una consulta; medir con una encuesta de 100 mil
       votos antes de abrir. (5b, 7 nov)
 - [ ] **5b · Punta a punta en 9 dispositivos:** `com5b` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz de CI. (5b, 7 nov)
+- [ ] **5c · Reportar a una persona** desde su perfil (hueco #4) y **«Abrir caso de red de cuentas»** desde Usuarios 360° › Comunidad: van
+      con la cola `repUsr` de 5d. (5c, 7 nov)
+- [ ] **5c · Monedas de bienvenida (+100):** el gancho está marcado «HOOK 5g» en `bienvenida()`; las acredita 5g a quien tiene
+      `welcome_at` y `adult`. (5c, 7 nov)
+- [ ] **5c · Avisos viejos sin autor:** los avisos de la Comunidad anteriores a 0099 no tienen `actor_user_id` y un bloqueo no los esconde;
+      en el sandbox son de prueba. En producción no existen (la Comunidad abre con 5c en adelante). (5c, 7 nov)
+- [ ] **5c · Mensajes en tiempo real:** la conversación abierta pregunta cada 5 s; con mucho uso, medir y pasar a un canal propio
+      (SSE) antes de abrir. (5c, 7 nov)
+- [ ] **5c · «10 conversaciones nuevas al día»** cuenta 24 h corridas (como los otros límites de la Comunidad); el día local de la ciudad
+      llega con la Configuración de 5i (§6 #21, la mitad las primeras 24 h de la cuenta también). (5c, 7 nov)
+- [ ] **5c · Velocidad** de Mensajes y listas de seguidores con 1 M de vecinos (índices `dm_threads_a/b_idx`, `follows_seguidos_idx`): no
+      se corrió la base de carga. (5c, 7 nov)
+- [ ] **5c · Punta a punta en 9 dispositivos:** `com5c` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la
+      matriz de CI. (5c, 7 nov)
+- [ ] **5c · Revisión de seguridad con abogado:** 18+ por declaración (COPPA si algún día se abre a 13–17), retención de mensajes
+      privados y lectura solo con reporte (Términos y Privacidad lo deben decir). (5c, 7 nov)

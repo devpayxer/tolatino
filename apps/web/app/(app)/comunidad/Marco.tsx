@@ -2,8 +2,8 @@
 /* Comunidad · el marco del módulo (prototipo «To'Latino Comunidad», plantilla isMod): en el teléfono, encabezado del módulo
    (título, ciudad y la pastilla del rango «6 · Teniente», MEM 91) o encabezado de detalle con volver; en escritorio, navegación
    240 + contenido 720 + contexto 320 (tu rango y las reglas del barrio con la línea fija). La hoja de abajo (filtros, menú,
-   confirmar) y el aviso con «Deshacer» viven aquí. Colores = tokens. Lo que todavía no existe (Hoy en el barrio, Tabla, Mensajes)
-   no se enlaza: llega en su bloque. */
+   confirmar) y el aviso con «Deshacer» viven aquí. Colores = tokens. 5c: Mensajes (con los sin leer) y Mi perfil en el encabezado
+   del teléfono y en la navegación. Lo que todavía no existe (Hoy en el barrio, Tabla) no se enlaza: llega en su bloque. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
@@ -23,7 +23,7 @@ export function useAncho() {
   return w;
 }
 
-export type YoCom = { nombre: string; primer: string; ini: string; foto: string | null; rango: number; ciudad: string; invitado: string | null };
+export type YoCom = { nombre: string; primer: string; ini: string; foto: string | null; rango: number; ciudad: string; invitado: string | null; sinLeer: number };
 export type FilaHoja = { t: string; s?: string; ic?: string; ring?: boolean; on: Fn; peligro?: boolean; off?: boolean; sep?: boolean };
 export type Hoja = { title: string; sub?: string; rows?: FilaHoja[]; yes?: string; onYes?: Fn; peligro?: boolean; listo?: string; extra?: ReactNode } | null;
 export type Aviso = { t: string; a?: string; onA?: Fn; ms?: number } | null;
@@ -66,7 +66,11 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
         <div data-screen-label="Comunidad · encabezado del módulo" style={{ background: "var(--tl-white)" }}>
           <div style={{ padding: "16px 20px 12px", display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ flex: 1, minWidth: 0 }}><h1 style={{ margin: 0, font: "800 26px/1.05 Sora,sans-serif", letterSpacing: "-.04em" }}>{titulo}</h1><div style={{ marginTop: 6, font: `600 10px ${MONO}`, letterSpacing: ".08em", color: "rgba(11,14,18,.5)" }}>{sub}</div></div>
-            <span data-screen-label="Comunidad · tu rango" style={{ height: 40, boxSizing: "border-box", padding: "0 12px 0 6px", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "inline-flex", alignItems: "center", gap: 8, flex: "none" }}>
+            <span role="link" aria-label={E2(yo.sinLeer ? `Mensajes, ${yo.sinLeer} sin leer` : "Mensajes", yo.sinLeer ? `Messages, ${yo.sinLeer} unread` : "Messages")} onClick={() => router.push("/comunidad/mensajes")} style={{ position: "relative", width: 40, height: 40, boxSizing: "border-box", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer", flex: "none" }}>
+              <Icon name="chat" size={18} />
+              {yo.sinLeer > 0 && <span aria-hidden style={{ position: "absolute", top: 7, right: 7, width: 8, height: 8, borderRadius: 99, background: "var(--tl-action)" }} />}
+            </span>
+            <span role="link" aria-label={E2("Mi perfil", "My profile")} onClick={() => router.push("/comunidad/v/yo")} data-screen-label="Comunidad · tu rango" style={{ height: 40, boxSizing: "border-box", padding: "0 12px 0 6px", borderRadius: 13, border: "1px solid rgba(11,14,18,.1)", display: "inline-flex", alignItems: "center", gap: 8, flex: "none", cursor: "pointer" }}>
               <span style={{ width: 26, height: 26, borderRadius: 9, background: "rgba(75,55,245,.1)", display: "grid", placeItems: "center", font: "800 12.5px/1 Sora,sans-serif", color: "var(--tl-action)" }}>{yo.rango}</span>
               <span style={{ font: "700 12.5px Manrope,sans-serif", whiteSpace: "nowrap" }}>{es ? rk.es : rk.en}</span>
             </span>
@@ -77,15 +81,18 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
         {nav && (
           <div data-screen-label="Comunidad · navegación" style={{ alignSelf: "stretch", background: "var(--tl-white)", borderRight: "1px solid rgba(11,14,18,.08)", padding: "22px 14px 30px", minHeight: 760 }}>
             <div style={{ position: "sticky", top: 140, display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ display: "flex", gap: 10, alignItems: "center", padding: 10, borderRadius: 14, background: "var(--tl-paper)" }}>
+              <div role="link" aria-label={E2("Mi perfil", "My profile")} onClick={() => router.push("/comunidad/v/yo")} style={{ display: "flex", gap: 10, alignItems: "center", padding: 10, borderRadius: 14, background: "var(--tl-paper)", cursor: "pointer" }}>
                 <Avatar foto={yo.foto} ini={yo.ini} size={38} />
                 <div style={{ flex: 1, minWidth: 0 }}><div style={{ font: "700 13.5px/1.2 Manrope,sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{yo.nombre}</div>
                   <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 5, font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "var(--tl-action)" }}><Icon name="shield" size={12} color="var(--tl-action)" />{`${yo.rango} · ${(es ? rk.es : rk.en).toUpperCase()}`}</div></div>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {[["/comunidad", "users", E2("Conversación", "Conversation"), code !== "APP-COM-NUEVO"]].map(([h, ic, l, on]) => (
-                  <div key={String(h)} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(String(h))} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>
-                    <span style={{ display: "grid" }}><Icon name={String(ic)} size={18} color={on ? "var(--tl-action)" : "var(--tl-ink)"} /></span><span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : 600} 13px Manrope,sans-serif` }}>{String(l)}</span>
+                {([["/comunidad", "users", E2("Conversación", "Conversation"), code === "APP-COM-FEED" || code === "APP-COM-POST", 0],
+                  ["/comunidad/mensajes", "chat", E2("Mensajes", "Messages"), code === "APP-COM-MENSAJES" || code === "APP-COM-CHAT", yo.sinLeer],
+                  ["/comunidad/v/yo", "shield", E2("Mi perfil", "My profile"), code === "APP-COM-VECINO · yo", 0]] as [string, string, string, boolean, number][]).map(([h, ic, l, on, n]) => (
+                  <div key={h} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(h)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>
+                    <span style={{ display: "grid" }}><Icon name={ic} size={18} color={on ? "var(--tl-action)" : "var(--tl-ink)"} /></span><span style={{ flex: 1, minWidth: 0, font: `${on ? 800 : 600} 13px Manrope,sans-serif` }}>{l}</span>
+                    {n > 0 && <span style={{ minWidth: 20, height: 20, padding: "0 6px", boxSizing: "border-box", borderRadius: 99, background: "var(--tl-action)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: `700 10px ${MONO}` }}>{n > 99 ? "99+" : n}</span>}
                   </div>))}
               </div>
               {code !== "APP-COM-NUEVO" && <div style={{ display: "flex" }}><Button variant="primary" size="md" icon="plus" block onClick={() => router.push("/comunidad/nuevo")}>{E2("Publicar", "Post")}</Button></div>}

@@ -28,6 +28,14 @@ Versión: Fase 2 · bloque 2p (6 nov 2026)._
 | Avisos | Al negocio le llega un aviso con el primer mensaje sin leer (no uno por cada mensaje). A ti, cuando el negocio contesta. |
 | To'Latino oculta un mensaje | En la conversación sale «Mensaje oculto por To'Latino» y a quien lo escribió le llega el motivo. |
 
+## Mensajes entre vecinos y reportes (5c)
+- **Mi cuenta › Mensajes** lleva a **Comunidad › Mensajes** («Mensajes con vecinos · solo con quien te sigue»). Reglas y casos en
+  `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
+- **Colas › Mensajes reportados** también recibe las conversaciones entre vecinos («Mensajes entre vecinos · Comunidad»): se leen
+  solo con el caso y un reporte abiertos; «Ocultar» un mensaje avisa a quien lo escribió («Ocultamos tu mensaje», con el motivo).
+- **Reportar otra vez:** si ya habías reportado una conversación y el caso se cerró, el nuevo reporte la vuelve a abrir (antes
+  daba error).
+
 ## Preguntas frecuentes
 **¿El negocio ve mi teléfono?** No. Solo tu nombre y lo que escribes.
 **¿To'Latino lee mis mensajes?** No, salvo que tú o el negocio reporten la conversación.

@@ -27,6 +27,10 @@ cuenta; lo de los vecinos no sale en buscadores._
   - Ves a quién le sale («Lo ven tus vecinos de Hazleton · sale con tu nombre y tu barrio, nunca tu dirección») y las reglas.
     En escritorio, la vista previa a la derecha.
 - **Tu publicación:** el menú (···) deja **Editar** en los primeros **30 minutos** y **Borrar** (con **Deshacer** 10 segundos).
+- **5c · De otra persona:** el menú (···) también deja **ver su perfil**, **silenciarla** o **bloquearla** (con Deshacer); tocar su
+  nombre abre su perfil. Arriba, **Mensajes** (con un punto si hay algo sin leer) y la pastilla de tu rango abren tus mensajes y tu
+  perfil. Para entrar a la Comunidad hace falta la bienvenida con «Tengo 18 años o más». Detalle:
+  `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
 - **Comentarios:** en la publicación está el hilo: comentar, responder con «@Nombre», recomendar un negocio en el comentario,
   votar comentarios, «Me sirvió» y las encuestas. Todo en `comunidad-comentar-votar-y-encuestas.md` (bloque 5b).
 

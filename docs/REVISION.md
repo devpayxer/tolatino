@@ -1561,3 +1561,46 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 
 **Capturas:** `c5b-comentar-m`, `c5b-responder-d`, `c5b-respuestas-m`, `c5b-sumar-m`, `c5b-recomendados-d`, `c5b-mesirvio-m`, `c5b-hilo-d`,
 `c5b-hilo-m`, `c5b-encuesta-d`, `c5b-encuesta-cerrada-m`, `c5b-admin-d`.
+
+
+### 5c · Comunidad: vecinos — perfil, seguir, silenciar, bloquear, bienvenida y Mensajes vecino ↔ vecino (7 nov)
+**Qué mirar, paso a paso, en el sandbox** (capturas `c5c-*.png`; teléfono 390 y escritorio 1360):
+1. **Bienvenida (teléfono, una cuenta nueva desde Mi cuenta):** después de tu nombre siguen **Tu zona** (chips de zonas de tu ciudad),
+   **Lo que te gusta** (17 categorías y 5 de Comunidad, sin El Patio) y **El barrio** (6 reglas, «Empiezas como Recluta…», vecinos para
+   seguir, y las casillas **«Acepto las reglas del barrio»** y **«Tengo 18 años o más»**: sin las dos el botón no se enciende). Al final:
+   «Fundadores · #n · Recluta» y el saludo. Prueba «Tengo menos de 18 años»: sale el aviso sobrio y la Comunidad ya no abre.
+2. **Perfil de un vecino:** desde el nombre en una publicación. Seguir → Siguiendo (aviso al otro); «Mensaje» solo si te sigue. ⌄ →
+   Silenciar / Bloquear. **Mi perfil** (la pastilla del rango): «Editar mi perfil» (presentación, cómo te dicen, desde qué año, ocultar
+   mis cuentas); prueba un teléfono en la presentación (se rechaza).
+3. **Mensajes:** con dos cuentas que se siguen, escríbanse; prueba un teléfono (se rechaza con el motivo). Con una que no te sigue: no hay
+   caja y dice por qué. El punto de «Mensajes» arriba marca lo sin leer.
+4. **Bloquear (lo más importante):** A bloquea a B. Con B: el muro, el hilo, el perfil («No encontramos a este vecino», igual que si no
+   existiera), los mensajes, los avisos y Mi cuenta › Siguiendo ya no muestran nada de A; B no recibe ningún aviso. Con A: lo mismo de B,
+   y en el perfil de B «Bloqueaste a … · Desbloquear». Mi cuenta › Vecinos › Bloqueados y silenciados › **Desbloquear** devuelve todo
+   (también quién seguía a quién y la conversación).
+5. **Silenciar:** solo deja de verlo quien silencia; el otro no se entera.
+6. **Super Admin:** reporta una conversación (⌄ › Reportar conversación) y ábrela en **Colas › Mensajes reportados** («Mensajes entre
+   vecinos»): se lee solo con el reporte abierto; «Ocultar» un mensaje con motivo; «Todo bien» cierra y ya no se puede leer. **Usuarios ›
+   360° › Comunidad**: seguidores, siguiendo, bloqueó, silenció (con «MISMO DISPOSITIVO»), cuántas conversaciones (nunca su contenido),
+   la declaración de 18+.
+
+**Decidí (regla AB; si prefieres otra cosa, se cambia):**
+- **Contestar sin seguir:** «mensaje nuevo solo a quien te sigue» + **se puede contestar a quien ya te escribió** en esa conversación
+  (si no, quien escribe primero nunca recibiría respuesta). Lo impone también la base.
+- **Silenciar** también calla los avisos de esa persona (sus mensajes llegan, sin aviso). Bloquear esconde **también los avisos que ya
+  habían llegado** de esa persona (`notifications.actor_user_id`); los avisos viejos (antes de 5c) no tienen autor y siguen visibles.
+- **Deshacer un bloqueo** devuelve los seguimientos que ese bloqueo quitó y reabre la conversación (para que «Deshacer» sea de verdad).
+- **Quien declara ser menor** no lo cambia desde la app (lo revisa Soporte). Sin fecha de nacimiento, como §6 #14.
+- **Las listas de seguidores de otros** no se muestran (solo las cuentas, ocultables); las tuyas, en Mi cuenta › Vecinos.
+- **Pasos 3–5 de 2au** los hace quien viene de Mi cuenta o de la Comunidad; quien se registra desde un pedido o una cita termina en el 2
+  («solo el nombre» del prototipo) y los hace al entrar a la Comunidad.
+- **«Usar mi ubicación»** del paso 3 y los interruptores de avisos del paso 5 del prototipo no se pusieron (la ubicación ya se pide en el
+  mapa y los avisos están en Mi cuenta › Avisos). **Compartir un negocio** en el chat (prototipo) tampoco: §6 #16 dice solo texto.
+- **Las 100 monedas** no se acreditan hasta 5g; la bienvenida lo dice así («llegan cuando abran los cupones del barrio»).
+- **Reportar a una persona** desde su perfil (hueco #4) y **«Abrir caso de red de cuentas»** van con la cola `repUsr` en **5d**; el 360°
+  ya muestra el aviso de posible red.
+- Un **segundo reporte** de la misma conversación (cliente ↔ negocio o vecinos) ahora la vuelve a abrir; antes daba error.
+
+**Capturas:** `c5c-bienvenida-3-m`, `c5c-bienvenida-4-m`, `c5c-bienvenida-5-m`, `c5c-bienvenida-fin-m`, `c5c-menor-m`, `c5c-vecino-m`,
+`c5c-vecino-d`, `c5c-mensajes-m`, `c5c-chat-m`, `c5c-chat-d`, `c5c-bloquear-d`, `c5c-bloqueado-m`, `c5c-reportar-m`, `c5c-cuenta-vecinos-d`,
+`c5c-cuenta-vecinos-m`, `c5c-admin-dm-d`, `c5c-admin-u360-d`.

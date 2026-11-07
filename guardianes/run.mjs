@@ -1745,7 +1745,8 @@ const guardianes = {
     const F = "apps/web/lib/comunidad-filtro.ts", L = "apps/web/lib/comunidad.ts", M = "packages/db/migrations/0097_comunidad_base.sql";
     if (!existsSync(F) || !existsSync(L) || !existsSync(M)) return;
     const f = sinComent(F), l = sinComent(L), m = readFileSync(M, "utf8");
-    if (!/TEL\.test\(t\)/.test(f) || !/PII\.test\(t\)/.test(f) || !/const TEL = \/\(\\d\[\\s\(\)\.-\]\*\)\{10\}/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarTexto debe probar TEL (10 dígitos) y PII antes de dejar pasar un texto");
+    const rt = cuerpoFn(f, "revisarTexto"); // 5c: revisarMensaje también usa TEL; la regla vive en revisarTexto.
+    if (!/TEL\.test\(t\)/.test(rt) || !/PII\.test\(t\)/.test(rt) || !/const TEL = \/\(\\d\[\\s\(\)\.-\]\*\)\{10\}/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarTexto debe probar TEL (10 dígitos) y PII antes de dejar pasar un texto");
     if (!/export function revisarPublicacion[\s\S]*?revisarTexto\(t\)/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarPublicacion no pasa el texto por revisarTexto");
     for (const fn of ["publicar", "editar"]) {
       const c = cuerpoFn(l, fn);
@@ -1932,6 +1933,144 @@ const guardianes = {
     for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
       const t = readFileSync(`${dir}/${x}`, "utf8");
       for (const m of t.matchAll(/\(\s*'((?:com|gam|dm)_[a-z0-9_]+)',\s*'[a-z]+',\s*(?:null|'[a-z]+'),\s*(true|false)\s*,/g)) if (m[2] !== "false") falla("avisoComunidadSinSms", `${dir}/${x}`, 0, `la plantilla «${m[1]}» de la Comunidad no puede ir por SMS`);
+    }
+  },
+
+  /* ── Fase 5 · Comunidad (5c) ── */
+  /* 5c. Bloquear es mutuo e invisible en TODAS las superficies, en los dos sentidos: el fragmento de personas (sinBloqueo) cubre las dos
+     direcciones; el perfil, las listas, las sugerencias y los mensajes lo usan; la bandeja esconde los avisos de alguien con un
+     bloqueo y todo aviso de la Comunidad dice quién lo provocó (actor); la base cierra la conversación, deja de seguir y rechaza
+     seguir o escribir con un bloqueo de por medio. */
+  bloqueoTodasLasSuperficies() {
+    const G = "bloqueoTodasLasSuperficies", C = "apps/web/lib/comunidad.ts", V = "apps/web/lib/vecinos.ts", MV = "apps/web/lib/mensajes-vecinos.ts", AV = "apps/web/lib/avisos.ts", M = "packages/db/migrations/0099_vecinos_mensajes.sql";
+    if (!existsSync(V) || !existsSync(MV)) return;
+    const c = sinComent(C), v = sinComent(V), mv = sinComent(MV), av = sinComent(AV), m = readFileSync(M, "utf8");
+    // El fragmento de personas: de ida y vuelta, solo bloqueos vivos.
+    if (!/export const sinBloqueo = \(persona: string, viewer: string\) =>[\s\S]{0,200}ub\.kind = 'block' and \(\(ub\.user_id = \$\{viewer\} and ub\.target_user_id = \$\{persona\}\)\s*or \(ub\.user_id = \$\{persona\} and ub\.target_user_id = \$\{viewer\}\)\)/.test(c))
+      falla(G, C, 0, "sinBloqueo debe excluir a la persona en los dos sentidos (yo la bloqueé · me bloqueó)");
+    // Perfil, listas y sugerencias: toda persona pasa por VISIBLE (que lleva sinBloqueo).
+    if (!/const VISIBLE = [\s\S]{0,400}\$\{sinBloqueo\(`\$\{u\}\.id`, viewer\)\}/.test(v)) falla(G, V, 0, "VISIBLE (persona que se puede ver) debe llevar sinBloqueo");
+    for (const fn of ["perfilVecino", "siguiendo", "seguidores", "sugeridos", "personaVisible"]) if (!/\$\{VISIBLE\("u", "\$1"\)\}/.test(cuerpoFn(v, fn))) falla(G, V, 0, `«${fn}» devuelve personas sin VISIBLE() (bloqueos)`);
+    if (!/sinBloqueos\("p\.author_user_id", "\$1"\)/.test(cuerpoFn(v, "publicacionesDe"))) falla(G, V, 0, "publicacionesDe (lo que publicó en su perfil) sin sinBloqueos");
+    // Mensajes: la lista excluye a quien tiene un bloqueo; abrir, leer y escribir pasan antes por otraPersona() (que lleva sinBloqueo).
+    if (!/\$\{sinBloqueo\("u\.id", "\$1"\)\}/.test(cuerpoFn(mv, "otraPersona"))) falla(G, MV, 0, "otraPersona() debe filtrar con sinBloqueo");
+    if (!/t\.closed_at is null and \$\{sinBloqueo\(`t\.\$\{otro\}_user_id`, "\$1"\)\}/.test(cuerpoFn(mv, "misConversaciones"))) falla(G, MV, 0, "misConversaciones muestra conversaciones cerradas o con un bloqueo");
+    for (const [fn, w] of [["conversacion", /dm_messages|MSJS\(/], ["nuevos", /MSJS\(/], ["enviar", /insert into dm_messages/]]) {
+      const b = cuerpoFn(mv, fn), iO = b.search(/await otraPersona\(/), iW = b.search(w);
+      if (iO < 0 || iW < 0 || iO > iW) falla(G, MV, 0, `«${fn}» lee o escribe mensajes sin pasar antes por otraPersona() (bloqueos)`);
+    }
+    // Avisos: la bandeja esconde los de alguien con un bloqueo (los dos sentidos) y todo aviso de la Comunidad dice quién lo provocó.
+    if (!/const SIN_BLOQUEO_AVISO = `\(n\.actor_user_id is null or not exists \(select 1 from user_blocks ub where ub\.removed_at is null and ub\.kind = 'block'\s*and \(\(ub\.user_id = n\.user_id and ub\.target_user_id = n\.actor_user_id\) or \(ub\.user_id = n\.actor_user_id and ub\.target_user_id = n\.user_id\)\)\)\)`/.test(av))
+      falla(G, AV, 0, "SIN_BLOQUEO_AVISO debe esconder los avisos de alguien con un bloqueo, en los dos sentidos");
+    for (const fn of ["misAvisos", "noLeidos"]) if (!/\$\{SIN_BLOQUEO_AVISO\}/.test(cuerpoFn(av, fn))) falla(G, AV, 0, `«${fn}» muestra avisos sin SIN_BLOQUEO_AVISO`);
+    for (const f of [V, MV, "apps/web/lib/comunidad-hilo.ts"]) {
+      const t = sinComent(f);
+      for (const x of t.matchAll(/\bavisar(?:Muchos)?\(([^;]*?)\);/g)) if (!/actor:/.test(x[1]) && !/com_votes_10/.test(x[1])) falla(G, f, 0, `un aviso de la Comunidad sin actor (la bandeja no podría esconderlo con un bloqueo): «${x[1].slice(0, 60)}»`);
+    }
+    // La base: seguir y escribir con un bloqueo se rechaza; bloquear deja de seguir en los dos sentidos y cierra la conversación.
+    if (!/create or replace function follows_antes\(\)[\s\S]*?if com_bloqueados\(new\.follower_user_id, new\.target_id::uuid\) then raise exception/.test(m)) falla(G, M, 0, "follows_antes debe rechazar seguir con un bloqueo de por medio");
+    if (!/create or replace function dm_messages_antes\(\)[\s\S]*?if com_bloqueados\(new\.sender_user_id, otro\) then raise exception/.test(m)) falla(G, M, 0, "dm_messages_antes debe rechazar un mensaje con un bloqueo de por medio");
+    if (!/delete from follows where follower_user_id = new\.user_id[\s\S]{0,300}delete from follows where follower_user_id = new\.target_user_id[\s\S]{0,300}update dm_threads set closed_at = now\(\)/.test(m)) falla(G, M, 0, "user_blocks_despues: bloquear debe dejar de seguir en los dos sentidos y cerrar la conversación");
+    if (!/select exists \(select 1 from user_blocks b where b\.kind = 'block' and b\.removed_at is null\s*and \(\(b\.user_id = x and b\.target_user_id = y\) or \(b\.user_id = y and b\.target_user_id = x\)\)\)/.test(m)) falla(G, M, 0, "com_bloqueados debe mirar los dos sentidos");
+  },
+
+  /* 5c. Toda función de la Comunidad que lee para una persona (recibe `viewer`) usa el fragmento compartido de bloqueos (sinBloqueos,
+     sinBloqueo o VISIBLE) o pasa por una que lo usa (otraPersona, personaVisible). Las excepciones se nombran con su razón. */
+  consultaConBloqueos() {
+    const EXENTAS = {
+      armar: "arma filas que ya pasaron por sinBloqueos", bloqueadosYSilenciados: "lista lo que la persona misma bloqueó o silenció (con Deshacer)",
+      bloqueoMio: "solo responde a quien bloqueó (nunca a la persona bloqueada)", reportarConversacion: "se puede reportar la conversación propia aunque ya hayas bloqueado a la otra persona",
+    };
+    for (const x of codigo) {
+      if (!/^apps\/web\/lib\/(comunidad[^/]*|vecinos|mensajes-vecinos)\.ts$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const mm of t.matchAll(/\nexport async function (\w+)\(([^)]*)\)/g)) {
+        if (!/\bviewer\b/.test(mm[2]) || EXENTAS[mm[1]]) continue;
+        const b = cuerpoFn(t, mm[1]);
+        if (!/db\(\)|tx\(|c\.query/.test(b)) continue;
+        if (!/sinBloqueos?\(|VISIBLE\(|await otraPersona\(|personaVisible\(|await (postPara|tocable|comentarioTocable)\(/.test(b)) falla("consultaConBloqueos", x, 0, `«${mm[1]}» lee para una persona sin el fragmento de bloqueos (sinBloqueos / sinBloqueo / VISIBLE)`);
+      }
+    }
+  },
+
+  /* 5c. Los mensajes entre vecinos no los lee el equipo salvo con un reporte abierto (regla de `chat`): fuera de lib/mensajes-vecinos.ts
+     (la persona, en sus conversaciones) y lib/admin-dm.ts, ninguna línea toca dm_messages; en admin-dm.ts cada consulta lleva
+     CON_REPORTE, que exige el caso abierto de la cola y un reporte abierto de esa conversación. */
+  dmSoloConReporte() {
+    const A = "apps/web/lib/admin-dm.ts", MV = "apps/web/lib/mensajes-vecinos.ts";
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === A || x === MV) continue;
+      sinComent(x).split("\n").forEach((t, i) => { if (/\bdm_messages\b/.test(t)) falla("dmSoloConReporte", x, i + 1, "solo lib/admin-dm.ts (con reporte abierto) y lib/mensajes-vecinos.ts tocan dm_messages"); });
+    }
+    if (!existsSync(A)) return;
+    const a = sinComent(A);
+    if (!/const CON_REPORTE = \(t: string\) => `exists \(select 1 from queue_items q where q\.queue = 'chat' and q\.subject_kind = 'dm_thread' and q\.subject_id = \$\{t\}::text and q\.status = 'open'\)\s*and exists \(select 1 from content_reports cr where cr\.target_kind = 'dm' and cr\.target_id = \$\{t\}::text and cr\.status = 'open'\)`/.test(a))
+      falla("dmSoloConReporte", A, 0, "CON_REPORTE debe exigir el caso abierto (chat · dm_thread) y un reporte abierto ('dm')");
+    for (const q of a.match(/`[^`]*`/g) ?? []) if ((/\b(from|update) dm_messages\b/.test(q) || /\blast_text\b/.test(q)) && !/\$\{CON_REPORTE\(/.test(q)) falla("dmSoloConReporte", A, 0, `una consulta de mensajes sin CON_REPORTE: «${q.slice(0, 70)}»`);
+    const C = sinComent("apps/web/lib/admin-colas.ts");
+    if (!/q\.status === "open" \? await \(await import\("\.\/admin-dm"\)\)\.dmReportado\(q\.subject_id\) : null/.test(C)) falla("dmSoloConReporte", "apps/web/lib/admin-colas.ts", 0, "el caso de mensajes entre vecinos solo se lee con el caso abierto");
+  },
+
+  /* 5c. Mensajes y perfil sin teléfonos ni datos: enviar() pasa el texto por revisarMensaje (que usa revisarTexto) antes de guardar;
+     editarPerfil por revisarPerfil; la base lo impone con com_sin_datos(body) en dm_messages; solo lib/mensajes-vecinos.ts inserta mensajes. */
+  mensajesSinTelefonos() {
+    const F = "apps/web/lib/comunidad-filtro.ts", MV = "apps/web/lib/mensajes-vecinos.ts", V = "apps/web/lib/vecinos.ts", M = "packages/db/migrations/0099_vecinos_mensajes.sql";
+    if (!existsSync(MV)) return;
+    const f = sinComent(F);
+    if (!/export function revisarMensaje[\s\S]*?const f = revisarTexto\(t\);/.test(f)) falla("mensajesSinTelefonos", F, 0, "revisarMensaje debe pasar el texto por revisarTexto (teléfonos, correos, números privados, direcciones)");
+    if (!/export function revisarPerfil[\s\S]*?revisarTexto\(bio\)[\s\S]*?revisarTexto\(apodo\)/.test(f)) falla("mensajesSinTelefonos", F, 0, "revisarPerfil debe revisar la presentación y el apodo");
+    const e = cuerpoFn(sinComent(MV), "enviar"), iF = e.search(/revisarMensaje\(/), iW = e.search(/insert into dm_messages/);
+    if (iF < 0 || iW < 0 || iF > iW) falla("mensajesSinTelefonos", MV, 0, "enviar() guarda un mensaje sin pasar antes por revisarMensaje()");
+    const p = cuerpoFn(sinComent(V), "editarPerfil"), iP = p.search(/revisarPerfil\(/), iU = p.search(/update community_profiles set bio/);
+    if (iP < 0 || iU < 0 || iP > iU) falla("mensajesSinTelefonos", V, 0, "editarPerfil guarda la presentación sin pasar antes por revisarPerfil()");
+    if (!/alter table dm_messages add constraint dm_messages_body_datos check \(com_sin_datos\(body\)\)/.test(readFileSync(M, "utf8"))) falla("mensajesSinTelefonos", M, 0, "dm_messages.body sin la restricción com_sin_datos()");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === MV) continue;
+      readFileSync(x, "utf8").split("\n").forEach((t, i) => { if (/insert into dm_(messages|threads)\b/i.test(t)) falla("mensajesSinTelefonos", x, i + 1, "solo lib/mensajes-vecinos.ts escribe mensajes (con el filtro y los límites)"); });
+    }
+  },
+
+  /* 5c. Mensaje nuevo solo a quien te sigue (o a quien ya te escribió) y 10 conversaciones nuevas al día: enviar() lo revisa antes de
+     crear la conversación y la base lo impone (dm_messages_antes). Los no leídos y el último texto son derivados (solo triggers y
+     dm_leido). */
+  mensajeSoloAQuienTeSigue() {
+    const MV = "apps/web/lib/mensajes-vecinos.ts", M = "packages/db/migrations/0099_vecinos_mensajes.sql";
+    if (!existsSync(MV)) return;
+    const e = cuerpoFn(sinComent(MV), "enviar"), m = readFileSync(M, "utf8");
+    const iS = e.search(/if \(!o\.me_sigue && !t\?\.me_escribio\) return/), iL = e.search(/if \(hoy >= NUEVAS_DIA\) return/), iT = e.search(/insert into dm_threads/);
+    if (iS < 0 || iT < 0 || iS > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin revisar antes que la otra persona te sigue");
+    if (iL < 0 || iT < 0 || iL > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin el límite de conversaciones nuevas al día");
+    if (!/export const NUEVAS_DIA = 10/.test(sinComent(MV))) falla("mensajeSoloAQuienTeSigue", MV, 0, "el límite es 10 conversaciones nuevas al día (§4 5c)");
+    if (!/if not exists \(select 1 from follows f where f\.follower_user_id = otro and f\.target_kind = 'user' and f\.target_id = new\.sender_user_id::text\)\s*and not exists \(select 1 from dm_messages m where m\.thread_id = new\.thread_id and m\.sender_user_id = otro\) then\s*raise exception 'solo le escribes a quien te sigue'/.test(m))
+      falla("mensajeSoloAQuienTeSigue", M, 0, "dm_messages_antes debe rechazar el mensaje a quien no te sigue (ni te escribió)");
+    if (!/raise exception 'los contadores de una conversación son derivados'/.test(m)) falla("mensajeSoloAQuienTeSigue", M, 0, "dm_threads_antes debe rechazar el cambio a mano de los derivados");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\bupdate dm_threads\b[\s\S]*?\bset\b[\s\S]*?\b(a_unread|b_unread|last_text|last_at|last_from)\s*=/.test(q)) falla("mensajeSoloAQuienTeSigue", x, 0, "los no leídos y el último texto de una conversación son derivados (dm_leido y triggers)");
+    }
+  },
+
+  /* 5c. 18 años o más es una declaración (sí/no + cuándo), nunca una fecha de nacimiento: ninguna migración ni pantalla guarda o pide
+     una fecha de nacimiento; la bienvenida exige la declaración explícita y quien declara ser menor no entra (enComunidad). */
+  sinFechaDeNacimiento() {
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+      // Columnas (nombre seguido de un tipo), no textos de catálogo («Fiestas de cumpleaños»).
+      t.split("\n").forEach((l, i) => { if (/\b(birth_?date|birthday|dob|date_of_birth|fecha_nac\w*|nacimiento|edad|age)\s+(date|timestamptz?|smallint|integer|int|text)\b/i.test(l) && !/^\s*--/.test(l)) falla("sinFechaDeNacimiento", `packages/db/migrations/${x}`, i + 1, "no se guarda fecha de nacimiento ni edad: 18+ es una declaración"); });
+    }
+    const V = "apps/web/lib/vecinos.ts", C = "apps/web/lib/comunidad.ts";
+    if (!existsSync(V)) return;
+    if (!/if \(p\.adulto !== true && p\.adulto !== false\) return no\(/.test(sinComent(V))) falla("sinFechaDeNacimiento", V, 0, "la bienvenida debe exigir la declaración explícita de 18 años o más");
+    if (!/if \(r\?\.adult === false\) return \{ ok: false, menor: true/.test(sinComent(C)) || !/const ok = !!r && r\.adult === true && r\.welcome && r\.rules;/.test(sinComent(C))) falla("sinFechaDeNacimiento", C, 0, "enComunidad: solo entra quien declaró 18+ y aceptó las reglas");
+    for (const x of codigo) if (/^apps\/web\/(app\/(entrar|\(app\)\/comunidad)\/|lib\/(vecinos|comunidad[^/]*)\.ts)/.test(x) && /type="date"|autoComplete="bday|\bbirth_?date\b|\bdob\b|fecha_nac/i.test(sinComent(x))) falla("sinFechaDeNacimiento", x, 0, "la bienvenida no pide fecha de nacimiento");
+  },
+
+  /* 5c (clase cazada en la prueba): content_reports tiene una llave única (destino, quien reporta); todo insert lo dice con on conflict
+     (no hacer nada en una reseña; volver a abrir en una conversación que sigue en el tiempo), o el segundo reporte revienta. */
+  reporteConLlave() {
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\binsert into content_reports\b/i.test(q) && !/on conflict \(target_kind, target_id, reporter_user_id\)/.test(q)) falla("reporteConLlave", x, 0, "insert into content_reports sin on conflict (target_kind, target_id, reporter_user_id): el segundo reporte de la misma persona revienta");
     }
   },
 

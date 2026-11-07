@@ -241,7 +241,7 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
   if (!r.ok || !("avisos" in r)) return r;
   // Después de guardar (los avisos nunca rompen el comentario).
   const yo = (await autores([userId]))(userId), texto = (e.body.trim() || "").slice(0, 80) || "—";
-  for (const a of r.avisos) await avisar(a.id, a.tpl, { nombre: yo.nombre, texto }, { href: `/comunidad/p/${r.post}#c${r.id}`, ref: ["com_comment", r.id] });
+  for (const a of r.avisos) await avisar(a.id, a.tpl, { nombre: yo.nombre, texto }, { href: `/comunidad/p/${r.post}#c${r.id}`, ref: ["com_comment", r.id], actor: userId });
   return { ok: true, id: r.id };
 }
 
@@ -301,7 +301,7 @@ export async function meSirvio(userId: string, postId: string, commentId: string
     const ya = (await db().query(`select 1 from notifications where user_id = $1 and tpl = 'com_best' and ref_kind = 'com_comment' and ref_id = $2`, [r.autor, r.mejor])).rowCount;
     if (!ya) {
       const yo = (await autores([userId]))(userId);
-      await avisar(r.autor, "com_best", { nombre: yo.nombre, texto: r.body.slice(0, 60) }, { href: `/comunidad/p/${postId}#c${r.mejor}`, ref: ["com_comment", r.mejor] });
+      await avisar(r.autor, "com_best", { nombre: yo.nombre, texto: r.body.slice(0, 60) }, { href: `/comunidad/p/${postId}#c${r.mejor}`, ref: ["com_comment", r.mejor], actor: userId });
     }
   }
   return { ok: true, mejor: r.mejor };
@@ -354,7 +354,7 @@ export async function barrerEncuestas() {
     // Quienes votaron (sin quien tenga un bloqueo con quien la publicó: el aviso trae su texto).
     const quienes = (await db().query<{ u: string }>(`select v.user_id::text as u from com_poll_votes v where v.post_id = $1::bigint and ${sinBloqueos("$2::uuid", "v.user_id")}`, [p.id, p.autor])).rows.map((x) => x.u);
     const texto = p.body.slice(0, 60);
-    await avisarMuchos([...(p.autor ? [p.autor] : []), ...quienes], "com_poll_closed", { es: { texto, resultado: res(true) }, en: { texto, resultado: res(false) } }, { href: `/comunidad/p/${p.id}`, ref: ["com_post", p.id] });
+    await avisarMuchos([...(p.autor ? [p.autor] : []), ...quienes], "com_poll_closed", { es: { texto, resultado: res(true) }, en: { texto, resultado: res(false) } }, { href: `/comunidad/p/${p.id}`, ref: ["com_post", p.id], actor: p.autor });
   }
   return { cerradas: L.length };
 }

@@ -14,6 +14,7 @@ import { hace, rango, type Pub } from "@/lib/comunidad-comun";
 import type { Cm, Hilo as H, NegocioCm, OrdenHilo, Rec } from "@/lib/comunidad-hilo";
 import { MONO, type ComUi, type YoCom } from "../../Marco";
 import { comBorrarCm, comComentar, comHilo, comMeSirvio, comNegocios, comRespuestas, comVotarCm } from "../../acciones";
+import { useVecinoAcciones } from "../../vecinoAcciones";
 
 type N = "Icon" | "Button" | "TopAnswer" | "CommentCard" | "ReplyThread" | "AlsoRecommended";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,11 +125,13 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
       </div>) });
   };
 
-  /* Menú de un comentario: borrar el propio; cambiar la que le sirvió (quien preguntó). */
+  /* Menú de un comentario: borrar el propio; cambiar la que le sirvió (quien preguntó); (5c) ver el perfil, silenciar o bloquear a quien lo escribió. */
+  const vec = useVecinoAcciones(es, ui);
   const menu = (c: Cm, raiz: boolean) => {
-    const rows = [];
+    const rows: { t: string; s?: string; ic?: string; peligro?: boolean; sep?: boolean; on: () => void }[] = [];
     if (c.mia) rows.push({ t: E2("Borrar comentario", "Delete comment"), s: E2("Deja de verse en el hilo.", "It stops showing in the thread."), ic: "trash", peligro: true, on: () => ui.setHoja({ title: E2("¿Borrar este comentario?", "Delete this comment?"), sub: E2("Si tiene respuestas, queda «Comentario eliminado».", "If it has replies, it shows as «Comment deleted»."), yes: E2("Borrar", "Delete"), peligro: true, onYes: () => void borrarCm(c) }) });
     if (raiz && h.puedeMarcar && h.resuelta && !c.mejor && !c.mia && c.estado === "visible") rows.push({ t: E2("Esta me sirvió más", "This one helped me more"), s: E2("Pasa a ser la respuesta que te sirvió.", "It becomes the answer that helped you."), ic: "check", on: () => { ui.setHoja(null); void sirvio(c); } });
+    if (!c.mia && c.autor.id) rows.push(...vec.filas(c.autor.id, c.autor.nombre, () => router.refresh()));
     if (rows.length) ui.setHoja({ title: c.mia ? E2("Tu comentario", "Your comment") : E2(`Comentario de ${c.autor.nombre}`, `Comment by ${c.autor.nombre}`), rows });
   };
   const borrarCm = async (c: Cm) => { const r = await correr(() => comBorrarCm(c.id)); if (!r) return; if (!r.ok) return fallo(r); ui.setAviso({ t: E2("Comentario borrado.", "Comment deleted.") }); router.refresh(); };
@@ -148,7 +151,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
   const acciones = (c: Cm) => ({
     vote: voto(c), replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(c, null),
     solve: h.puedeMarcar && !h.resuelta && !c.mia && c.estado === "visible" ? { label: E2("Me sirvió", "Helped me"), onClick: () => void sirvio(c) } : null,
-    onMenu: c.mia || (h.puedeMarcar && h.resuelta && !c.mejor) ? () => menu(c, true) : undefined,
+    onMenu: c.estado === "visible" || c.mia ? () => menu(c, true) : undefined,
   });
   const respuesta = (root: Cm, r: Cm, kids?: Cm[], cont?: boolean): Record<string, unknown> => {
     const m = /^(@\S+)\s*([\s\S]*)$/.exec(r.body);
@@ -156,7 +159,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
       key: r.id, ...quien(r), time: hace(r.at, es), hasText: !!r.body.trim() || !!r.replyTo, at: m ? m[1] : r.replyTo ? `@${primero(r.replyTo.nombre)}` : "", text: m ? m[2] : r.body,
       business: r.negocio ? { name: r.negocio.nombre, meta: es ? r.negocio.meta.es : r.negocio.meta.en, verified: r.negocio.verificado, image: r.negocio.foto ?? undefined, onClick: () => router.push(`/n/${r.negocio!.id}`) } : null,
       vote: { score: String(r.up), onUp: () => void votar(r, 1), upColor: r.miVoto === 1 ? "var(--tl-action)" : undefined, scoreColor: r.miVoto === 1 ? "var(--tl-action)" : undefined },
-      replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(root, r), onMenu: r.mia ? () => menu(r, false) : undefined,
+      replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(root, r), onMenu: () => menu(r, false),
       line: !!kids?.length, cont: !!cont, kids: (kids ?? []).map((k, j) => respuesta(root, k, undefined, j < (kids?.length ?? 0) - 1)),
     };
   };

@@ -408,6 +408,13 @@ export async function chatOcultarMensaje(id: string, mensaje: string, motivo: st
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
     if (q.queue !== "chat") return "Ese caso no es de esta cola.";
+    if (q.subject_kind === "dm_thread") {
+      // 5c · Mensaje entre vecinos: solo con el caso y un reporte abiertos (lib/admin-dm.ts).
+      const d = await (await import("@/lib/admin-dm")).ocultarDm(c, q.subject_id, mensaje, m, s.id);
+      if (!d) return "Ese mensaje no está en esta conversación o ya está oculto.";
+      await auditar(c, { actor: s.id, action: "mensaje.vecino.ocultar", targetKind: "dm_message", targetId: d.id, city: q.city_id, before: { mensaje: "visible" }, after: { mensaje: "oculto" }, reason: m });
+      return { id: d.id, autor: d.autor, de: "vecino" };
+    }
     const x = (await c.query<{ id: string; autor: string | null; de: string }>(
       `update chat_messages set hidden_at = now(), hidden_reason = $3, hidden_by = $4 where id = $1::bigint and thread_id = $2::bigint and hidden_at is null
        returning id::text, sender_user_id::text as autor, sender as de`, [String(mensaje ?? "0").replace(/\D/g, "") || "0", q.subject_id, m, s.id])).rows[0];
@@ -416,7 +423,10 @@ export async function chatOcultarMensaje(id: string, mensaje: string, motivo: st
     return x;
   });
   if (typeof r === "string") return no(r);
-  if (r.autor && (r.de === "user" || r.de === "business")) {
+  if (r.autor && r.de === "vecino") {
+    const { avisar } = await import("@/lib/avisos");
+    await avisar(r.autor, "dm_hide", { motivo: m }, { href: "/comunidad/mensajes" }).catch(() => undefined);
+  } else if (r.autor && (r.de === "user" || r.de === "business")) {
     const { avisar } = await import("@/lib/avisos");
     await avisar(r.autor, "mod_hide", { tipo: "mensaje", motivo: m }, { href: r.de === "user" ? "/cuenta/mensajes" : undefined }).catch(() => undefined);
   }
@@ -432,9 +442,9 @@ export async function decidirChat(id: string, accion: "mantener" | "resuelto", m
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
     if (q.queue !== "chat") return "Ese caso no es de esta cola.";
-    await c.query(`update content_reports set status = $2, decided_by = $3, decided_at = now() where target_kind = 'chat' and target_id = $1 and status = 'open'`, [q.subject_id, accion === "resuelto" ? "actioned" : "dismissed", s.id]);
+    await c.query(`update content_reports set status = $2, decided_by = $3, decided_at = now() where target_kind = $4 and target_id = $1 and status = 'open'`, [q.subject_id, accion === "resuelto" ? "actioned" : "dismissed", s.id, q.subject_kind === "dm_thread" ? "dm" : "chat"]);
     await cerrar(c, q, s, accion, m);
-    await auditar(c, { actor: s.id, action: accion === "resuelto" ? "chat.resuelto" : "chat.mantener", targetKind: "chat_thread", targetId: q.subject_id, city: q.city_id, before: { conversacion: "reportada" }, after: { conversacion: accion === "resuelto" ? "resuelta" : "todo bien" }, reason: m });
+    await auditar(c, { actor: s.id, action: accion === "resuelto" ? "chat.resuelto" : "chat.mantener", targetKind: q.subject_kind === "dm_thread" ? "dm_thread" : "chat_thread", targetId: q.subject_id, city: q.city_id, before: { conversacion: "reportada" }, after: { conversacion: accion === "resuelto" ? "resuelta" : "todo bien" }, reason: m });
     return "ok";
   });
   if (r !== "ok") return no(r);

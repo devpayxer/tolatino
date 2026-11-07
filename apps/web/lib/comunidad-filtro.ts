@@ -93,3 +93,24 @@ export function revisarComentario(c: { body: string; business?: string | null })
   if (t.length > MAX_COMENTARIO) return falla("texto", `Máximo ${MAX_COMENTARIO} letras.`, `${MAX_COMENTARIO} characters at most.`);
   return t ? revisarTexto(t) : null;
 }
+
+/* 5c · Un mensaje a un vecino: solo texto (1–1000), con las mismas reglas que lo que se publica (sin teléfonos, correos ni números
+   privados; sin direcciones exactas). El teléfono también se rechaza en la base (dm_messages_body_datos). */
+export const MAX_MENSAJE = 1000;
+export function revisarMensaje(texto: string): Falla | null {
+  const t = String(texto ?? "").trim();
+  if (!t) return falla("texto", "Escribe tu mensaje.", "Type your message.");
+  if (t.length > MAX_MENSAJE) return falla("texto", `Máximo ${MAX_MENSAJE} letras.`, `${MAX_MENSAJE} characters at most.`);
+  const f = revisarTexto(t);
+  if (f && TEL.test(t)) return falla("texto", "Por seguridad, sin teléfonos en los mensajes.", "For your safety, no phone numbers in messages.");
+  return f;
+}
+
+/* 5c · Lo que la persona escribe de sí en su perfil: bio (≤ 160) y cómo le dicen (≤ 20). Mismas reglas. */
+export const MAX_BIO = 160, MAX_APODO = 20;
+export function revisarPerfil(p: { bio?: string | null; apodo?: string | null }): Falla | null {
+  const bio = String(p.bio ?? "").trim(), apodo = String(p.apodo ?? "").trim();
+  if (bio.length > MAX_BIO) return falla("texto", `Tu presentación, máximo ${MAX_BIO} letras.`, `Your intro, ${MAX_BIO} characters at most.`);
+  if (apodo.length > MAX_APODO) return falla("texto", `Cómo te dicen, máximo ${MAX_APODO} letras.`, `What people call you, ${MAX_APODO} characters at most.`);
+  return (bio ? revisarTexto(bio) : null) ?? (apodo ? revisarTexto(apodo) : null) ?? (/\d{3,}|@|https?:|www\./i.test(apodo) ? falla("texto", "Cómo te dicen: sin números, correos ni enlaces.", "What people call you: no numbers, emails or links.") : null);
+}

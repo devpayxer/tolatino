@@ -11,7 +11,10 @@ Una sola cuenta de To'Latino con tu número de teléfono de EE. UU. Sin contrase
 2. Escribe el código de 6 números y toca **Verificar**. Puedes tocar **Cambiar** si escribiste mal el número,
    o **Reenviar** para que te llegue otro.
 3. Si eres nuevo: escribe tu **nombre** y **apellido** (el apodo es opcional) y toca **Continuar**.
-4. Tu sesión queda abierta en ese teléfono. Para salir: **Mi cuenta → Cerrar sesión**.
+4. **5c (7 nov):** si vienes de Mi cuenta o de la Comunidad, siguen tres pasos más (**Tu zona · Lo que te gusta · El barrio**,
+   con las reglas y «Tengo 18 años o más»). Si vienes de un pedido o una cita, terminas aquí y sigues con lo tuyo; esos pasos los
+   haces al entrar a la Comunidad. Detalle: `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
+5. Tu sesión queda abierta en ese teléfono. Para salir: **Mi cuenta → Cerrar sesión**.
 
 ## Qué pasa en cada caso
 | Caso | Qué ve la persona | Qué hacer |

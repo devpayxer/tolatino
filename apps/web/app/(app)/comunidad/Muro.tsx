@@ -2,7 +2,8 @@
 /* APP-COM-FEED · pestaña Conversación (versión simple, MEM 91): avatar + «¿Qué pasa en tu cuadra?» + «+»; una fila de chips
    (Todo · Siguiendo · Preguntas · Recomendaciones · Encuestas · Publicaciones) y el botón de filtro → hoja «Qué ves primero»
    (distancia 5 · 10 · 30 mi y orden Más votados · Recientes); la fijada de la ciudad arriba; 20 por página con cursor («Ver más»).
-   Menú de cada publicación: lo tuyo se edita (30 min) o se borra con Deshacer (10 s); lo de otros se guarda o se comparte. */
+   Menú de cada publicación: lo tuyo se edita (30 min) o se borra con Deshacer (10 s); lo de otros se guarda o se comparte, y (5c) desde
+   ahí se ve el perfil de quien publicó, se le silencia o se le bloquea (con Deshacer). Tocar el nombre abre su perfil. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
@@ -11,6 +12,7 @@ import type { Filtros, Pub } from "@/lib/comunidad-comun";
 import { comBorrar, comDeshacer, comEncuesta, comGuardar, comPagina, comVotar } from "./acciones";
 import { Avatar, LINE, MONO, Marco, useComUi, type ComUi, type YoCom } from "./Marco";
 import { Tarjeta } from "./Tarjeta";
+import { useVecinoAcciones } from "./vecinoAcciones";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,8 +21,9 @@ type Bi = { es: string; en: string };
 type R = { ok: boolean; msg?: Bi; entrar?: true };
 
 /* Acciones de una publicación (las usan el muro y la publicación): votar, encuesta, guardar, compartir, menú, borrar con Deshacer. */
-export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void) {
+export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void, alQuitarAutor?: (autor: string) => void) {
   const router = useRouter();
+  const vec = useVecinoAcciones(es, ui);
   const E2 = (a: string, b: string) => (es ? a : b);
   const [busy, setBusy] = useState(false);
   const fallo = (r: R) => { if (r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`); return; } if (r.msg) ui.setAviso({ t: es ? r.msg.es : r.msg.en }); };
@@ -61,6 +64,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
     ] : [
       { t: p.guardada ? E2("Quitar de guardados", "Remove from saved") : E2("Guardar", "Save"), ic: "heart", on: () => { ui.setHoja(null); void guardar(p); } },
       { t: E2("Compartir", "Share"), s: E2("Copia el enlace. Solo lo abren vecinos con cuenta.", "Copies the link. Only neighbors with an account can open it."), ic: "share", on: () => { ui.setHoja(null); void compartir(p); } },
+      ...(p.autor.id && !p.autor.oficial ? vec.filas(p.autor.id, p.autor.nombre, () => alQuitarAutor?.(p.autor.id!)) : []),
     ] });
   };
   return { votar, encuesta, guardar, compartir, menu };
@@ -76,7 +80,8 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial }: { es: boolea
   // Lo borrado vuelve a su lugar con «Deshacer».
   const quitados = useRef(new Map<string, number>());
   const acc = useAccionesPub(es, ui, poner, (p) => { quitados.current.set(p.id, pubs.findIndex((x) => x.id === p.id)); },
-    (p) => setPubs((L) => { const i = quitados.current.get(p.id) ?? 0; return L.some((x) => x.id === p.id) ? L : [...L.slice(0, i), p, ...L.slice(i)]; }));
+    (p) => setPubs((L) => { const i = quitados.current.get(p.id) ?? 0; return L.some((x) => x.id === p.id) ? L : [...L.slice(0, i), p, ...L.slice(i)]; }),
+    (autor) => setPubs((L) => L.filter((x) => x.autor.id !== autor)));
   const ir = (f: Partial<Filtros>) => {
     const n = { ...filtros, ...f }, q = new URLSearchParams();
     if (n.tab === "sig") q.set("t", "sig"); if (n.kind) q.set("k", n.kind); if (n.dist) q.set("d", String(n.dist)); if (n.orden === "new") q.set("o", "new");
@@ -125,7 +130,7 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial }: { es: boolea
           </div>
         )}
         {pubs.map((p) => (
-          <Tarjeta key={p.id} p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
+          <Tarjeta key={p.id} p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onAuthor={p.autor.id && !p.autor.oficial ? () => router.push(`/comunidad/v/${p.autor.id}`) : undefined} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
             onSave={() => void acc.guardar(p)} onShare={() => void acc.compartir(p)} onBiz={(id) => router.push(`/n/${id}`)} />
         ))}
         {!pubs.length && (

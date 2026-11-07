@@ -1,18 +1,22 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import { miPerfil } from "@/lib/comunidad";
+import { enComunidad, miPerfil } from "@/lib/comunidad";
 import { yo } from "@/lib/cuenta";
+import { sinLeerVecinos } from "@/lib/mensajes-vecinos";
 import { idioma } from "@/lib/idioma";
 import { ciudades, ubicacion } from "@/lib/ubicacion";
 import type { YoCom } from "./Marco";
 
-/* Toda pantalla de vecinos de la Comunidad pide sesión (guardián comunidadSoloConCuenta): sin cuenta, a /entrar y de vuelta aquí. */
+/* Toda pantalla de vecinos de la Comunidad pide sesión (guardián comunidadSoloConCuenta): sin cuenta, a /entrar y de vuelta aquí.
+   5c: y que la persona haya hecho la bienvenida (reglas + «Tengo 18 años o más»); si no, a los pasos 3–5 de /entrar. Quien declaró
+   ser menor ve allí el aviso de 18 años y no entra. */
 export async function conCuenta(volver: string) {
   const [u, lang] = await Promise.all([yo(), idioma()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent(volver)}`);
-  const [loc, p, cs] = await Promise.all([ubicacion(u), miPerfil(u.id), ciudades()]);
+  if (!(await enComunidad(u.id)).ok) redirect(`/entrar?bienvenida=1&volver=${encodeURIComponent(volver)}`);
+  const [loc, p, cs, sinLeer] = await Promise.all([ubicacion(u), miPerfil(u.id), ciudades(), sinLeerVecinos(u.id)]);
   // «Invitado · de {ciudad}»: vive en otra ciudad que la que está viendo.
   const hc = p.ciudad && p.ciudad !== loc.c.id ? cs.find((c) => c.id === p.ciudad) ?? null : null;
-  const me: YoCom = { nombre: p.nombre, primer: p.primer, ini: p.ini, foto: p.foto, rango: p.rango, ciudad: loc.c.name, invitado: hc ? `${hc.name}, ${hc.state}` : null };
+  const me: YoCom = { nombre: p.nombre, primer: p.primer, ini: p.ini, foto: p.foto, rango: p.rango, ciudad: loc.c.name, invitado: hc ? `${hc.name}, ${hc.state}` : null, sinLeer };
   return { u, es: lang === "es", loc, ciudad: `${loc.c.name}, ${loc.c.state}`, me, perfil: p };
 }

@@ -366,6 +366,27 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         ];
       }
     }
+    if (k.queue === "chat" && "dm" in k) {
+      // 5c · Mensajes entre vecinos: se leen solo con el caso y un reporte abiertos (lib/admin-dm.ts). Ocultar avisa a quien lo escribió.
+      const d = k.dm, MD: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
+      const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      if (!d) cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: "Este caso ya no tiene un reporte abierto: la conversación no se puede leer." });
+      else {
+        cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "VECINOS", v: `${d.a.nombre} · ${d.b.nombre}` }, { k: "REPORTES", v: `${d.reportes.length}${d.reportes[0] ? ` · hace ${hace(d.reportes[0].at)}` : ""}` }, { k: "ESTADO", v: d.cerrada ? "Cerrada por un bloqueo" : "Abierta" }] });
+        d.reportes.forEach((x) => cuerpoB.push({ type: "note", tone: "warn", t: `Lo reportó ${x.quien ?? "un vecino"} · ${MD[x.reason] ?? "Otra cosa"}${x.note ? ` · «${x.note}»` : ""}` }));
+        cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: "Ves esta conversación porque hay un reporte abierto. Al cerrar el caso deja de verse aquí." });
+        cuerpoB.push({ type: "group", k: `CONVERSACIÓN · ${d.msjs.length} MENSAJES` });
+        extra = <A.AdminList rows={d.msjs.map((m) => ({
+          icon: "users", title: m.oculto ? `${m.t}` : m.t, sub: `${m.quien} · hace ${hace(m.at)}`, tag: m.oculto ? "OCULTO" : undefined, tone: m.oculto ? "danger" : undefined,
+          actions: k.puedeDecidir && !m.oculto ? [{ label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: "¿Por qué se oculta este mensaje?", sub: "Quien lo escribió ve el motivo. La conversación sigue.", plantillas: PLANT.hide, peligro: true, hacer: (x) => chatOcultarMensaje(k.id, m.id, x) }) }] : undefined,
+        }))} />;
+      }
+      acts = [
+        { l: "Todo bien", v: "action", icon: "check", onClick: () => setConf({ titulo: "¿Por qué está bien?", plantillas: PLANT.keep, hacer: (x) => decidirChat(k.id, "mantener", x) }) },
+        { l: "Resuelto", v: "ghost", icon: "shield", onClick: () => setConf({ titulo: "¿Qué se hizo?", plantillas: ["Se ocultaron los mensajes que no cumplían las reglas.", "Se sancionó a la cuenta desde Usuarios.", "La persona ya bloqueó a quien le escribía."], hacer: (x) => decidirChat(k.id, "resuelto", x) }) },
+        ...(d ? [{ l: `Ver a ${d.a.nombre.split(" ")[0]}`, v: "ghost", icon: "users", onClick: () => router.push(`/admin/usuarios/${d.a.id}?tab=comunidad`) }, { l: `Ver a ${d.b.nombre.split(" ")[0]}`, v: "ghost", icon: "users", onClick: () => router.push(`/admin/usuarios/${d.b.id}?tab=comunidad`) }] : []),
+      ];
+    }
     if (k.queue === "chat" && "chat" in k) {
       // Mensajes reportados (2p): el hilo se lee solo con el caso abierto. Ocultar un mensaje avisa a quien lo escribió.
       const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };

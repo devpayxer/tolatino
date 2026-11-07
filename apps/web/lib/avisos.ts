@@ -18,7 +18,7 @@ async function smsTelnyx(to: string, texto: string): Promise<"enviado" | "fallo"
   } catch { return "fallo"; }
 }
 
-export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean } = {}) {
+export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean; actor?: string | null } = {}) {
   try {
     const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean }>(
       `select t.grp, t.pref, t.sms, t.title, t.body, u.lang, u.phone, u.notif_prefs as prefs, u.home_city_id as city, coalesce(c.timezone, 'America/New_York') as tz,
@@ -29,8 +29,8 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
     const apagado = r.pref ? r.prefs?.[r.pref] === false : false, quiet = r.grp !== "crit" && tpl !== "biz_req" && r.silencio && r.prefs?.quiet !== false;
     const st = !r.sms ? "no" : apagado || o.sinSms ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
     const id = (await db().query<{ id: string }>(
-      `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) returning id::text`,
-      [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null])).rows[0]!.id;
+      `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) returning id::text`,
+      [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null, o.actor ?? null])).rows[0]!.id;
     if (st === "pendiente") {
       const res = await smsTelnyx(r.phone, `To'Latino: ${body}`);
       await db().query(`update notifications set sms_status = $2, sms_at = now() where id = $1::bigint`, [id, res]);
@@ -40,7 +40,7 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
 
 /* El mismo aviso a muchas personas en una sola escritura (p. ej. el resultado de una encuesta a quienes votaron). Solo plantillas
    sin SMS (las que llevan SMS van una por una con avisar()). Las variables pueden cambiar con el idioma de cada persona. */
-export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string] } = {}) {
+export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string]; actor?: string | null } = {}) {
   const L = [...new Set(ids)].filter(Boolean);
   if (!L.length) return;
   try {
@@ -49,10 +49,10 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
     if (t.sms) { for (const id of L) await avisar(id, tpl, v.es, o); return; }
     for (let i = 0; i < L.length; i += 1000) {
       await db().query(
-        `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to)
-         select u.id, u.home_city_id, $2, case when u.lang = 'en' then $4 else $3 end, case when u.lang = 'en' then $6 else $5 end, $7, $8, $9, 'no', null
+        `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id)
+         select u.id, u.home_city_id, $2, case when u.lang = 'en' then $4 else $3 end, case when u.lang = 'en' then $6 else $5 end, $7, $8, $9, 'no', null, $10::uuid
            from users u where u.id = any($1::uuid[])`,
-        [L.slice(i, i + 1000), tpl, t.title.es, t.title.en, llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null]);
+        [L.slice(i, i + 1000), tpl, t.title.es, t.title.en, llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, o.actor ?? null]);
     }
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }
@@ -82,16 +82,21 @@ export async function avisarMesa(numero: string, tpl: "rsv_ok" | "rsv_alt" | "rs
   if (o) await avisar(o.uid, tpl, { negocio: o.negocio, dia: o.dia, hora: o.hora, alt: a }, { href: `/reserva/${numero}`, ref: ["table", numero] });
 }
 
+/* 5c · Bloquear es mutuo e invisible también en la bandeja: un aviso que provocó alguien con quien hay un bloqueo (en cualquier
+   sentido) deja de verse y de contar, aunque haya llegado antes del bloqueo (guardián bloqueoMutuo). */
+const SIN_BLOQUEO_AVISO = `(n.actor_user_id is null or not exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block'
+  and ((ub.user_id = n.user_id and ub.target_user_id = n.actor_user_id) or (ub.user_id = n.actor_user_id and ub.target_user_id = n.user_id))))`;
 /* La bandeja (APP-NOTIF): los avisos de la persona, los nuevos primero sin leer, con cursor. */
 export async function misAvisos(userId: string, antes: string | null) {
   const cur = antes && /^\d{1,18}$/.test(antes) ? antes : null;
   const L = (await db().query<{ id: string; tpl: string; title: string; body: string; href: string | null; at: string; leido: boolean }>(
     `select id::text, tpl, title, body, href, to_char(created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, read_at is not null as leido
-       from notifications where user_id = $1 and ($2::bigint is null or id < $2::bigint) order by id desc limit 31`, [userId, cur])).rows;
+       from notifications n where n.user_id = $1 and ($2::bigint is null or n.id < $2::bigint) and ${SIN_BLOQUEO_AVISO}
+      order by n.id desc limit 31`, [userId, cur])).rows;
   return { filas: L.slice(0, 30), sig: L.length > 30 ? L[29]!.id : null };
 }
 export async function noLeidos(userId: string) {
-  return (await db().query<{ n: number }>(`select count(*)::int as n from notifications where user_id = $1 and read_at is null`, [userId])).rows[0]?.n ?? 0;
+  return (await db().query<{ n: number }>(`select count(*)::int as n from notifications n where n.user_id = $1 and n.read_at is null and ${SIN_BLOQUEO_AVISO}`, [userId])).rows[0]?.n ?? 0;
 }
 export async function marcarLeidos(userId: string) {
   await db().query(`update notifications set read_at = now() where user_id = $1 and read_at is null`, [userId]);

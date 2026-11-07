@@ -257,7 +257,9 @@ export async function reportarChat(userId: string, threadId: string, lado: "user
   const ya = (await db().query(`select 1 from content_reports where target_kind = 'chat' and target_id = $1 and reporter_user_id = $2 and status = 'open'`, [t.id, userId])).rowCount;
   if (ya) return { ok: true };
   await tx(async (c) => {
-    await c.query(`insert into content_reports (target_kind, target_id, business_id, city_id, reporter_user_id, by_business, reason, note) values ('chat', $1, $2, $3, $4, $5, $6, $7)`,
+    // 5c: si ya la había reportado y el caso se cerró, el reporte se vuelve a abrir (antes fallaba con la llave única).
+    await c.query(`insert into content_reports (target_kind, target_id, business_id, city_id, reporter_user_id, by_business, reason, note) values ('chat', $1, $2, $3, $4, $5, $6, $7)
+                   on conflict (target_kind, target_id, reporter_user_id) do update set status = 'open', reason = excluded.reason, note = excluded.note, decided_by = null, decided_at = null, created_at = now()`,
       [t.id, t.biz, t.city, userId, lado === "business", motivo, String(nota ?? "").trim().slice(0, 300) || null]);
     // Abre el caso en la cola «Mensajes reportados» (uno abierto por conversación).
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id) values ('chat', 'chat_thread', $1, $2, $3)
