@@ -171,6 +171,12 @@ export async function negocio360(s: Staff, id: string) {
     herramientaRetail: rubroRetail(b.cat_id) ? await (async () => { const h = await herramientaRetail(id); return h ? { titulo: h.rubro === "merc" ? "Balanza y pedidos" : "Tallas y apartados", resumen: resumenRetail(h, true) } : null; })() : null,
     herramientaTrans: b.cat_id === "NEG-TRANS" ? await (async () => { const h = await herramientaTrans(id); return h ? { titulo: tituloTrans(h.kind, true), resumen: resumenTrans(h, true), kind: h.kind, forzado: h.forzado } : null; })() : null,
     // Noche (4na · MEM 164 «Super Admin ve "Esta noche" siempre»): el resumen, el tipo y lo que publicó (historial).
+    // Educación (4ea): «Grupos y cupos» siempre en solo lectura (summary L306) y cada curso con sus grupos.
+    herramientaEdu: b.cat_id === "NEG-EDU" ? await (async () => { const h = await (await import("./edu")).herramientaEdu(id); if (!h) return null;
+      const C = await import("./inscripciones-comun");
+      return { resumen: C.resumenEdu(h, true), how: [h.how.presencial ? "presencial" : "", h.how.linea ? "en línea" : "", h.how.hibrido ? "híbrido" : "", h.how.esp ? "en español" : ""].filter(Boolean).join(" · "),
+        cursos: h.cursos.map((x) => ({ id: x.id, t: x.name.es, vende: x.vende, s: [C.precioInsc(x.cents, x.k, true), x.k === "curso" ? `${x.sem ?? 0} semanas · ${x.hrs ?? 0} h` : "", x.mat ? `matrícula ${C.usdI(x.mat)}` : "", x.plan ? `${x.plan} pagos` : "", x.g1 ? "primera clase gratis" : "",
+          x.cert ? `${x.oficial ? "certificado oficial" : "constancia"}: ${x.cert.es}` : "", `${x.grupos.filter((g) => g.estado === "open").length} grupos · ${x.grupos.reduce((a, g) => a + (g.estado === "open" ? g.libres : 0), 0)} cupos libres`].filter(Boolean).join(" · ") })) }; })() : null,
     herramientaNoche: b.cat_id === "NEG-NOCHE" ? await (async () => { const h = await herramientaNoche(id); if (!h) return null;
       const H = await historialNoche(id, null, 12);
       return { resumen: resumenNoche(h, true), kind: h.kind, forzado: h.forzado, hist: H.map((p) => ({ t: postTexto(p.field, p.value, true), at: p.at, quien: p.quien })) }; })() : null,

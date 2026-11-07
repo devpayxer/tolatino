@@ -1096,3 +1096,17 @@ el lugar. De los niños solo se guarda nombre de pila, edad o grado, la escuela 
 DHS vigente puede publicarse pero no recibe solicitudes por la app. Las membresías no se cobran por la app; «Cancelar mi membresía» deja
 constancia con fecha. «No cuidaron bien a mi niño» va directo a To'Latino con el 911 y ChildLine (número a verificar). El número de
 inscripción es **I-4101** (`E-` ya es de las emergencias de Hogar).
+
+### 4ea · Educación: cursos y «Grupos y cupos» (7 nov)
+**Qué mirar (Miriam, 5705550377 · Inglés Para Todos):** Lo que vendes › **Grupos y cupos**: grupos abiertos, cupos libres y clases gratis;
+cómo das las clases (presencial, en línea, híbrido, español); por curso el precio, la **matrícula que aparta el cupo**, el **plan de pagos**
+(«3 pagos de $62 sin intereses»), primera clase gratis y los **cupos de cada grupo** (0 = lleno; no deja dejar el curso sin ningún grupo con
+cupo). **Abrir un grupo** (día en que empieza, días de clase, hora, cupos, nombre y enlace si es en línea) y **Ver grupos** (quitar uno sin
+inscritos). Servicios › Agregar: curso completo con semanas, horas, matrícula, certificado (oficial o constancia), incluye y va aparte. En
+Buscar, la tarjeta dice «$80 al mes · primera clase gratis» y «Próximo grupo: 13 nov». Super Admin › Negocios › Inglés Para Todos › Lo que
+vende: «Grupos y cupos · solo lectura».
+_Decidido por mí:_ la herramienta cuenta **cupos libres** y el servidor guarda el total sumando los ya inscritos (nunca baja de lo ocupado);
+la matrícula siempre es menos que el precio (lo impide también la base); el plan de 4 pagos que traía un curso del prototipo pasa a 3 (la
+herramienta ofrece 3, 6 o 12); la tutoría de 1 a 1 tiene un cupo por sesión; «de tarde» desde las 2 PM y «de noche» desde las 5 PM salen de
+los grupos abiertos; quitar un grupo solo si nadie se inscribió en la app (con inscritos, se cancela con devolución en 4ee). El tipo de
+escuela (que decide pestaña, botón y reseñas) y forzarlo desde el Super Admin llegan con la ficha en 4ed.

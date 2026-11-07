@@ -40,6 +40,7 @@ import { herramientaSPBloques } from "./SaludPro";
 import { herramientaFiestaBloques } from "./Fiestas";
 import { herramientaTransBloques } from "./Transporte";
 import { filaAhoraBloque, herramientaNocheBloques } from "./Noche";
+import { grupoEduDetalle, herramientaEduBloques } from "./Edu";
 import { hoyNoche, nocheDetalle, type NocPanel } from "./NocheReservas";
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
@@ -322,6 +323,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.fiesta) return herramientaFiestaBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.trans) return herramientaTransBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.noche) return herramientaNocheBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.edu) return herramientaEduBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ret) return herramientaRetailBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "productos" && c.menu?.mod === "shop") return menuBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);
@@ -351,6 +353,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("merc:")) return mercadoDetalle(c);
   if (id.startsWith("fiesta:")) return fiestaDetalle(c);
   if (id.startsWith("noche:")) return nocheDetalle(c);
+  if (id.startsWith("grp:")) return grupoEduDetalle(c, id);
   if (id.startsWith("viaje:")) return viajeDetalle(c);
   if (id.startsWith("salida:")) return salidaDetalle(c, id.slice(7));
   if (id.startsWith("rev:")) return resenaDetalle(c);
