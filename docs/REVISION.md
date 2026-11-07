@@ -1037,3 +1037,11 @@ _Decidido por mí (se puede cambiar):_ «esta noche» cambia a las **6 AM** (cua
 cuántas mesas hay de cada tipo no viene en el prototipo: la semilla pone 4 mesas, 2 VIP y 6 de billar; agregué «quién toca» y el
 código de vestimenta como campos de texto (huecos del diseño); la Barra del demo (cubeta, mojito, hookah, botella) no se siembra
 porque la app no vende tragos.
+
+### 4nb · La página de un local de Noche (7 nov)
+**Qué mirar (sin entrar):** Buscar › Noche › La Terraza: el Resumen trae la tarjeta negra de esta noche («$10 · $15 después de las
+11 PM», 21+, quién toca, código) y la de **la fila** con su hora real (dice «Ahora · lo puso el local…» solo si es de la última hora).
+Pestaña **Esta noche** (o «Mañana viernes» si hoy cierra): Entrada, Lista, Mesa y VIP con mínimo, personas y depósito; toca la mesa
+para ver la hoja. DJ Rafy: «Por contrato», «Para tu fecha» y **Pedir fecha**, sin horario ni dirección.
+_Decidido por mí:_ hasta que llegue 4nc, la hoja de lista y mesa ofrece **llamar al local**; el texto del depósito ya dice «se retiene
+hoy y se cobra cuando confirmen» (corrección del prototipo, Preguntas #1).

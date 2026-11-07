@@ -18,6 +18,8 @@ import { reglaPlan } from "@/lib/layaway";
 import { mercPublico } from "@/lib/merc-publico";
 import { fiestaPublico } from "@/lib/fiestas-publico";
 import { transPublico } from "@/lib/trans-publico";
+import { nochePublica } from "@/lib/noche-publico";
+import { coverTexto, filaCorta, filaCuando, hNoche, LINEA_NOCHE } from "@/lib/noche-comun";
 import { diaFiesta } from "@/lib/fiestas-comun";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
@@ -43,7 +45,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -64,6 +66,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-FIESTA" ? fiestaPublico(f.id, u?.id ?? null) : Promise.resolve(null),
     // Transporte (4x): precio cerrado, la próxima salida con asientos y la licencia.
     f.cat === "NEG-TRANS" ? transPublico(f.id) : Promise.resolve(null),
+    // Noche (4nb): el cover de esta noche, la fila con su hora, la lista y las mesas.
+    f.cat === "NEG-NOCHE" ? nochePublica(f.id) : Promise.resolve(null),
   ]);
   // FAQ de Fiestas (neg-fiesta-kind.js faq): la de la fecha y la del depósito salen del calendario y del panel; si el negocio
   // escribió la misma pregunta en Tu página, gana la suya.
@@ -92,6 +96,21 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
     f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
   }
+  // FAQ de Noche (neg-noche-kind.js faq L22–47): el cover, la identificación, la lista, la fila, «¿y si me cobran más?» y el mínimo;
+  // sale de «Esta noche» y de los servicios. Si el negocio escribió la misma pregunta en Tu página, gana la suya.
+  if (noche && f.pro && !noche.porFecha) {
+    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), e = noche.noche, lista = noche.servicios.find((s) => s.k === "lista");
+    const auto = [
+      { q: E2("¿Cuánto es el cover?", "How much is the cover?"), a: e ? `${coverTexto(e, es)}. ${LINEA_NOCHE[es ? "es" : "en"]}` : E2("Aún no lo publica en To’Latino: pregúntalo en la puerta.", "Not posted on To’Latino yet: ask at the door.") },
+      { q: E2("¿Qué identificación piden?", "What ID do they ask for?"), a: E2(`Licencia, pasaporte o ID del estado vigente. Edad: ${e?.edad ?? 21}+. Sin identificación no entras, aunque estés en la lista.`, `A valid license, passport or state ID. Age: ${e?.edad ?? 21}+. No ID, no entry, even if you are on the list.`) },
+      ...(lista && lista.until != null ? [{ q: E2("¿Hasta qué hora vale la lista?", "Until what time is the list valid?"), a: E2(`Hasta las ${hNoche(lista.until)}. Anotarte no cobra nada; después de esa hora pagas el cover normal.`, `Until ${hNoche(lista.until)}. Joining costs nothing; after that time you pay the regular cover.`) }] : []),
+      ...(noche.fila ? [{ q: E2("¿Cómo está la fila?", "How is the line?"), a: `${filaCorta(noche.fila, es)}. ${filaCuando(noche.fila, es)}` }] : []),
+      { q: E2("¿Y si en la puerta me cobran más?", "What if the door charges more?"), a: E2("Si te cobran más de lo publicado aquí, pide ayuda en To’Latino: miramos el cover que el local publicó esa noche y el local te devuelve la diferencia.", "If they charge more than posted here, ask for help on To’Latino: we check the cover the venue posted that night and the venue refunds the difference.") },
+      ...(noche.mesas ? [{ q: E2("¿El mínimo de mesa es un cargo extra?", "Is the table minimum an extra fee?"), a: E2("No. El mínimo es lo que se consume en la noche; si dejaste depósito, se descuenta de tu cuenta.", "No. The minimum is what you spend during the night; any deposit comes off your bill.") }] : []),
+    ];
+    const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+    f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
+  }
   // Al volver de «Entra» la pestaña conserva personas, día y hora; «Cambiar» trae la solicitud a editar.
   const num = (x?: string) => (x && /^\d{1,4}$/.test(x) ? Number(x) : undefined);
   const rsvInicial = { p: num(sp.p), i: num(sp.d), h: num(sp.h), editar: sp.editar && /^R-\d{1,10}$/.test(sp.editar) ? sp.editar : undefined };
@@ -108,6 +127,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       merc={merc}
       fiesta={fiesta}
       trans={trans}
+      noche={noche}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}

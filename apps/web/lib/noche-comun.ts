@@ -85,3 +85,28 @@ export function postTexto(field: string, v: unknown, es: boolean): string {
 }
 export const KINDS_LOCAL: [KindNoche, string][] = [["club", "Discoteca"], ["salsa", "Salsa y bachata"], ["urbano", "Urbano"], ["banda", "Banda y cantina"], ["bar", "Bar"], ["sport", "Bar deportivo"],
   ["karaoke", "Karaoke"], ["billar", "Billar"], ["cerve", "Cervecería"], ["lounge", "Lounge"], ["show", "Espectáculos"], ["dj", "DJ (por fecha)"], ["promo", "Promotor (por fecha)"], ["salon", "Salón (por fecha)"]];
+
+/* ── Ficha de Noche (4nb · neg-noche.js line L77–78, neg-noche-listing.js priceFor L108–113) ── */
+export const LINEA_NOCHE: Bi = { es: "El cover que ves es el que pagas en la puerta.", en: "The cover you see is the one you pay at the door." };
+export function precioNoche(s: { k: string; cents: number; until: number | null; pax: number | null; hr: boolean }, es: boolean): { l: string; s: string } {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  if (s.k === "lista") return { l: s.cents ? usdN(s.cents) : E2("Gratis", "Free"), s: s.until != null ? E2(`CON LA LISTA HASTA LAS ${hNoche(s.until)}`, `ON THE LIST UNTIL ${hNoche(s.until)}`) : "" };
+  if (s.k === "cover") return { l: s.cents ? usdN(s.cents) : E2("Sin cover", "No cover"), s: s.cents ? E2("EN LA PUERTA", "AT THE DOOR") : "" };
+  if (s.k === "mesa") return { l: s.hr ? `${usdN(s.cents)}${E2("/hora", "/hr")}` : s.cents ? `${E2("Mínimo ", "Minimum ")}${usdN(s.cents)}` : E2("Sin mínimo", "No minimum"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} PEOPLE`) : "" };
+  if (s.k === "vip") return { l: s.cents ? `${E2("Mínimo ", "Minimum ")}${usdN(s.cents)}` : E2("Sin mínimo", "No minimum"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} PEOPLE`) : "" };
+  if (s.k === "fecha") return { l: s.cents ? `${E2("Desde ", "From ")}${usdN(s.cents)}` : E2("Por cotización", "By quote"), s: s.pax ? E2(`HASTA ${s.pax} PERSONAS`, `UP TO ${s.pax} GUESTS`) : E2("POR FECHA", "PER DATE") };
+  return { l: usdN(s.cents), s: E2("BOLETO", "TICKET") };
+}
+/* «$10 · $15 después de las 11 PM» / «Sin cover». */
+export const coverTexto = (e: EstaNoche, es: boolean) => (e.cover ? `${usdN(e.cover)}${e.after ? (es ? ` · ${usdN(e.after.cents)} después de las ${hNoche(e.after.min)}` : ` · ${usdN(e.after.cents)} after ${hNoche(e.after.min)}`) : ""}` : es ? "Sin cover" : "No cover");
+/* La fila en la ficha: «~15 min» / «Sin fila», cuándo la puso (solo «Ahora» si es viva) y la etiqueta del riel. */
+export const filaCorta = (f: FilaNoche, es: boolean) => (f.min ? `~${f.min} min` : es ? "Sin fila" : "No line");
+export function filaCuando(f: FilaNoche, es: boolean): string {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  if (f.viva) return E2(`Ahora · lo puso el local a las ${hNoche(f.hora)}.`, `Now · posted by the venue at ${hNoche(f.hora)}.`);
+  const c = f.hoy ? E2(`Hoy a las ${hNoche(f.hora)}`, `Today at ${hNoche(f.hora)}`) : f.anoche ? E2(`Anoche a las ${hNoche(f.hora)}`, `Last night at ${hNoche(f.hora)}`)
+    : E2(`El ${dia3Noche(f.dow, true)} a las ${hNoche(f.hora)}`, `On ${dia3Noche(f.dow, false)} at ${hNoche(f.hora)}`);
+  return `${c}${E2(". En vivo desde que abren.", ". Live from opening.")}`;
+}
+export const filaEtiqueta = (f: FilaNoche, es: boolean) => (f.viva ? (es ? "FILA AHORA" : "LINE NOW") : f.hoy ? (es ? "FILA HOY" : "LINE TODAY") : f.anoche ? (es ? "FILA ANOCHE" : "LINE LAST NIGHT")
+  : es ? `FILA EL ${dia3Noche(f.dow, true).toUpperCase()}` : `LINE ON ${dia3Noche(f.dow, false).toUpperCase()}`);
