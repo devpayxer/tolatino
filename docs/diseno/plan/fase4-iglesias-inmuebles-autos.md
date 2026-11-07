@@ -516,7 +516,8 @@ N+1; categoría solo de `filter_values`. Capturas teléfono + escritorio de cada
 
 ## 8. Lista de cierre del grupo (todo marcado antes de decir «Iglesias + Bienes Raíces + Venta de Autos completos» y «Fase 4 completa»)
 _Revisada en 4ig (7 nov). Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
-- [ ] Migraciones 0091–0095 (+ 0096 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
+- [x] Migraciones 0091–0095 (+ 0096 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI. _(CI corrida 154,
+      7930e2e: «Migraciones en una base real (dos veces, la segunda no cambia nada)» y «La semilla … se puede volver a aplicar» en verde, 7 nov.)_
       **Local ✓:** 0096 creada (cola «Vivienda justa», plantillas, casos que faltaban); en una base PostGIS nueva 0001–0096 y después 0091–0096
       dos veces más, sin error, más la semilla dos veces; en el sandbox local `migrar.sh` al día (96). **Sin marcar:** la CI corre el mismo paso
       (`migrar.sh` dos veces) pero este bloque no se subió, así que no lo vi correr. Ojo: correr a mano 0092/0094/0095 sobre datos de bloques
