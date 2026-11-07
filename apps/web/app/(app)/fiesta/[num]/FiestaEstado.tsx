@@ -111,6 +111,8 @@ export function FiestaEstado({ x, es }: { x: FiestaVista; es: boolean }) {
         <div className="flex flex-col gap-2.5">
           {x.negocio.telefono && vivo && <Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${x.negocio.telefono}`; }}>{E2("Llamar", "Call")}</Button>}
           {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{vis ? E2("Cancelar la visita", "Cancel the tour") : E2("Cancelar la fecha", "Cancel the date")}</Button>}
+          {x.status === "done" && !vis && <Button icon="star" onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}`)}>{E2("Calificar", "Rate")}</Button>}
+          {x.status === "done" && !vis && <Button variant="secondary" icon="help" onClick={() => router.push(`/fiesta/${x.numero}/ayuda`)}>{E2("Ayuda con la fiesta", "Party help")}</Button>}
           {x.status === "done" && !vis && <Button variant="secondary" icon="party" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Otra fiesta", "Another party")}</Button>}
         </div>
       </div>

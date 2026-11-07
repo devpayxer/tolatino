@@ -18,18 +18,24 @@ const BASE: Record<string, L> = {
   peso: ["El peso no cuadra", "The weight does not add up"], falto: ["Faltó algo", "Something was missing"], fresco: ["No estaba fresco", "Not fresh"],
   sust: ["Cambiaron algo sin preguntar", "Swapped something without asking"], caja: ["No cobraron el precio publicado", "Did not charge the posted price"],
   apa: ["No guardaron el apartado", "Did not keep the hold"], talla: ["Talla o artículo equivocado", "Wrong size or item"], cambio: ["No aceptan el cambio", "Exchange refused"],
+  // Fiestas y Transporte (4z)
+  nollego: ["No llegaron", "They did not show up"], nocomo: ["No quedó como lo acordado", "Not as agreed"], inseguro: ["Manejo inseguro", "Unsafe driving"],
+  equipaje: ["Perdió o dañó su equipaje o caja", "Lost or damaged their luggage or box"],
 };
 const POR_RUBRO: Record<string, Record<string, L>> = {
   salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },
   pro: { cobro: ["Cobró más del total por escrito", "Charged more than the written total"] },
   merc: { tarde: ["Llegó tarde", "Arrived late"], caja: ["No cobraron el precio del estante", "Did not charge the shelf price"] },
   tienda: { caja: ["Cobraron más en la caja", "Charged more at the register"], dano: ["Llegó dañado", "Arrived damaged"] },
+  fiesta: { tarde: ["Llegaron tarde", "Arrived late"], falto: ["Faltó algo del paquete", "Something in the package was missing"], cobro: ["Cobraron más del paquete", "Charged more than the package"], dano: ["Dañaron algo o no recogieron", "Damaged something or did not pick up"] },
+  trans: { cobro: ["Cobró más del precio cerrado", "Charged more than the fixed price"], tarde: ["Salió o llegó muy tarde", "Left or arrived very late"], nollego: ["No pasó a recogerlo", "Did not pick them up"] },
 };
 export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;
 /* Lo que pide (corr/rev/avis/seg/fin, o como se guarda: reponer/devolver/avisar/seguro/terminar). */
 const QUIERE: Record<string, L> = {
   corr: ["Que se lo arreglen o repongan sin cargo", "Fix or replace it at no charge"], rev: ["Que le devuelvan", "A refund"], avis: ["Solo quiere avisar", "Just letting you know"],
   seg: ["Que corrijan el cobro a su seguro", "Fix the charge to their insurance"], fin: ["Que terminen lo acordado, sin cobrar más", "Finish what was agreed, at no extra charge"],
+  desc: ["Un descuento, a acordar con el negocio", "A discount, agreed with the business"],
 };
-const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin" };
+const W2Q: Record<string, string> = { reponer: "corr", devolver: "rev", avisar: "avis", seguro: "seg", terminar: "fin", descuento: "desc" };
 export const quiereAyuda = (k: string): L => QUIERE[W2Q[k] ?? k] ?? QUIERE.avis!;

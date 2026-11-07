@@ -8,6 +8,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
 import { viajeAbordo, viajeCancelarSalida, viajeChofer, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
+import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -139,6 +140,7 @@ export function viajeDetalle(c: Ctx): Sec {
   if (x.st === "confirmed" && (x.k === "priv" || x.k === "cotiza")) out.push({ type: "acts", items: [x.detalle === "camino"
     ? { l: E2("Llegó", "Arrived"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajePasoPriv(c.d.id, x.numero, "llego"), E2("Listo: le pedimos su reseña.", "Done: we asked for their review.")) }
     : { l: E2("Salió", "It left"), v: "primary", icon: "truck", off: c.pending, onClick: () => c.run(() => viajePasoPriv(c.d.id, x.numero, "salio"), E2("Listo: el cliente sabe que va en camino.", "Done: the client knows it is on the way.")) }] });
+  out.push(...ayudaCita(c, x.numero, x.who));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.eventos.map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: e.note ? nm(e.note) : verbo(e.kind, es), s: new Date(e.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }), compact: true, chev: false })) });
   return { blocks: out, ed: null };
 }

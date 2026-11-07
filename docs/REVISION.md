@@ -995,3 +995,16 @@ marcas en la tarjeta y «LO QUE IMPORTA EN UNA FIESTA». Van Express: «TU VIAJE
 «¿Cobró el precio cerrado?», salió / llegó a la hora, manejo seguro, equipaje; «LO QUE IMPORTA EN UN VIAJE» (últimos 90 días).
 _Decidido por mí:_ «¿Respetaron la fecha?» solo se pregunta a quien no reservó por To'Latino (con reserva sale del dato). El botón
 «Ir a Ayuda con la fiesta / el viaje» aparece con 4z-2.
+
+### 4z-2 · Ayuda con la fiesta y con el viaje (7 nov)
+**Qué mirar (Marisol):** «Tu fiesta» terminada › **Ayuda con la fiesta**: 7 motivos (no llegaron, llegaron tarde, no quedó como lo
+acordado, faltó algo del paquete, cobraron más del paquete, dañaron algo o no recogieron, otra cosa); foto obligatoria donde
+toca; ¿qué quieres? «Que me devuelvan» · «Un descuento» · «Solo quiero avisar». **Panel (Rosa):** el detalle de la fiesta trae
+«AYUDA CON LA FIESTA» para responder (tiene razón · proponer otra cosa con monto · no puedo); al aceptar se devuelve del depósito
+cobrado en la app. «Tu viaje» › **Ayuda con el viaje**: cobró más del precio cerrado, salió o llegó muy tarde, no pasó a
+recogerme, **manejo inseguro** (va directo a To'Latino con prioridad alta, sin esperar al negocio), perdió o dañó mi equipaje.
+_Arreglado de paso (clase):_ en el teléfono la barra de la app tapaba la barra propia de /fiesta, /viaje y /solicitud (guardián
+detalleSinBarra); la ayuda de mercado y apartado decía «CITA #M-…» y ahora dice PEDIDO / APARTADO / FIESTA / VIAJE.
+_Decidido por mí:_ un reporte de seguridad («Manejo inseguro») no se frena por el límite de 5 solicitudes al día.
+_Pendiente de prueba:_ la prueba vieja de ayuda de Hogar/Auto (ayu4g) no encontró datos que cumplan su condición en la base local
+(datos de prueba gastados); la de Salud/Pro (ayu4m) pasó con el motor cambiado.

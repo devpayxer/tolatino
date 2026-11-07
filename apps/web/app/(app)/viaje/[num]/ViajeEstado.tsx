@@ -140,6 +140,8 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
           {vivo && (x.from || x.negocio.direccion) && x.k === "asiento" && <Button variant="secondary" icon="pin" onClick={llegar}>{E2("Cómo llegar a la salida", "Directions to the departure")}</Button>}
           {x.negocio.telefono && vivo && <Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${x.negocio.telefono}`; }}>{E2("Llamar", "Call")}</Button>}
           {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{E2("Cancelar el viaje", "Cancel the trip")}</Button>}
+          {x.status === "done" && <Button icon="star" onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}`)}>{E2("Calificar", "Rate")}</Button>}
+          {(x.status === "done" || (x.status === "cancelled" && x.motivoNeg)) && <Button variant="secondary" icon="help" onClick={() => router.push(`/viaje/${x.numero}/ayuda`)}>{E2("Ayuda con el viaje", "Trip help")}</Button>}
           {["declined", "expired", "cancelled"].includes(x.status) && <Button variant="secondary" icon="calendar" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Reservar otra salida", "Book another departure")}</Button>}
         </div>
       </div>

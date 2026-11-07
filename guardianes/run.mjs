@@ -696,6 +696,20 @@ const guardianes = {
     }
   },
 
+  /* 4z-2. /fiesta/… y /viaje/… pintaban la barra inferior de la app encima de su propia barra (no se podía tocar «Enviar»).
+     Toda pantalla de detalle /X/[num] de la app va en la lista «compacto» de AppShell (sin barra inferior en el teléfono). */
+  detalleSinBarra() {
+    const A = "apps/web/app/(app)/AppShell.tsx";
+    if (!existsSync(A)) return;
+    const m = /const compacto = [^\n]*\/\^\\\/\(([^)]*)\)/.exec(readFileSync(A, "utf8"));
+    if (!m) return falla("detalleSinBarra", A, 0, "no encuentro la lista «compacto»");
+    const lista = m[1];
+    for (const d of readdirSync("apps/web/app/(app)")) {
+      if (!existsSync(`apps/web/app/(app)/${d}/[num]`)) continue;
+      if (!lista.includes(`${d}\\/`)) falla("detalleSinBarra", A, 0, `/${d}/[num] no está en «compacto»: la barra inferior tapa su pantalla en el teléfono`);
+    }
+  },
+
   /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
      donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
      «fiesta:{negocio}:{día}». */
