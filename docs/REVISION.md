@@ -827,3 +827,13 @@ Hoy › «Ayuda que espera tu respuesta» › Tiene razón $2 (vuelve a la tarje
 La ficha muestra «Lo que importa en un mercado / en una tienda».
 _Decidido por mí: la ayuda de mercado y tienda usa el mismo motor y la misma pantalla que la ayuda con la cita (un solo flujo
 probado); el panel la muestra dentro del detalle del pedido o apartado._
+
+### Fiestas + Transporte · decisiones del plan (7 nov)
+Plan: `docs/diseno/plan/fase4-fiestas-transporte.md` (bloques 4t–4z, migraciones 0070–0074). Decidí por mí, todo reversible (§6 del plan,
+24 puntos). Lo más importante para mirar:
+- **Depósito de la fiesta:** se **retiene** al pedir y se **cobra** cuando el negocio confirma (el prototipo decía «se cobra al enviar»).
+- **El resto de la fiesta** se paga al negocio fuera de la app; la comisión es solo del depósito. Fechas en la app hasta 180 días.
+- **Transporte** se reserva en la app solo con la licencia de su tipo verificada (PUC, USDOT/MC, envíos con OTI); sin ella, por teléfono.
+- **Cancelar un viaje tarde** (menos de 24 h) cobra la mitad. «No llegaron» va directo a To'Latino. Si el negocio no sale, todos reciben
+  la devolución completa.
+- Escolar y grúas: solo contacto en esta fase. Renta de vehículos: el motor de rentas (21+ y licencia revisada antes de entregar).
