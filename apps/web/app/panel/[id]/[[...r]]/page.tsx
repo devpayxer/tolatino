@@ -35,7 +35,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -153,6 +153,18 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det?.startsWith("of:") && !ofi) ruta.det = null;
   // Mercados y Tiendas (4n): Tu herramienta (Balanza y pedidos / Tallas y apartados).
   const ret = rubroRetail(d.cat) && ruta.sec === "mod" && catOk ? (await herramientaRetail(d.id)) ?? undefined : undefined;
+  // Mercados (4p): los pedidos de hoy, el detalle (pesar, no hay, mandar) y los productos para proponer un sustituto.
+  const mercOk = d.cat === "NEG-MERC" && (acc.partes.includes("all") || acc.partes.includes("ord"));
+  if (ruta.det?.startsWith("merc:") && !mercOk) ruta.det = null;
+  const mped = mercOk ? await (async () => {
+    const M = await import("@/lib/mercado");
+    if (ruta.sec === "hoy") await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
+    return {
+      hoy: ruta.sec === "hoy" ? await M.mercadoHoy(d.id) : undefined,
+      det: ruta.det?.startsWith("merc:") ? await M.vistaMercado(ruta.det.slice(5), { negocio: d.id }) : undefined,
+      prods: ruta.det?.startsWith("merc:") ? (await M.opcionesMercado(d.id, null))?.prods.filter((p) => p.puede).map((p) => ({ id: p.id, name: p.name, cents: p.cents, k: p.k })) : undefined,
+    };
+  })() : undefined;
   // Citas (Belleza): las vivas para Hoy, Clientes › Citas y el detalle. Responder pide «Hoy y pedidos».
   if (ruta.det?.startsWith("cita:") && !(conCitas && ord)) ruta.det = null;
   // Auto y Hogar (4d): al mirar Hoy se reintenta lo que quedó a medias (cobros de una liquidación, retenciones de citas
@@ -179,5 +191,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ayuda: ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : undefined,
     ayudas: ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} />;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} />;
 }

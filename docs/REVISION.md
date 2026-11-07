@@ -775,3 +775,13 @@ _Huecos del diseño compuestos (REVISION): «Pedidos por franja», «Si algo no 
 3. Yaritza › Tu herramienta › «Envío por correo»: costo, gratis desde, llega en.
 _Decidido por mí (reversible): el envío por correo de las tiendas se pone en Tu herramienta (no en Entrega, que hoy es de los
 pedidos de comida con repartidores). El camión propio de la tienda llega con 4q._
+
+## Fase 4 · 4o/4p Ficha y pedido del mercado
+1. Como Marisol: /n/supermercado-la-cosecha › Productos › Pierna de cerdo 3 lb «En trozos», Bistec 2 lb, Arroz, Aguacate →
+   «Ver pedido» › pickup, hora, tarjeta → «Enviar pedido» (se retienen $36.57).
+2. Como Héctor (5705550288): Hoy › Pedidos del mercado › Aceptar › pesar con foto (Pierna 2.82 lb, Bistec 2.18 lb) › «No hay
+   Aguacate» › proponer Habichuelas › Mandar al cliente (después de que Marisol conteste).
+3. Marisol: «No, quítalo» → «Está bien, cobrar $31.25» (se liberan $5.32). Héctor: Está listo → Lo recogió.
+_Decidido por mí (reversible): la pantalla del pedido es una sola página con 3 secciones (en el teléfono no son 3 pantallas);
+el sustituto por ahora tiene que ser por unidad (con precio del estante); si el peso real pasa lo retenido, el mercado corta
+menos (todavía no hay «pedir OK por $X más» → LAUNCH-CHECKLIST)._

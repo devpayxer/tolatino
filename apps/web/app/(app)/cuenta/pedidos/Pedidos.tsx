@@ -34,7 +34,7 @@ export function Pedidos({ d, f, es, yo, pagina }: { d: MisPedidos; f: FiltroPed;
         key: o.num, ph: o.foto, ini: o.bname.slice(0, 1), t: o.bname, tag: tagPed(o.st, o.mode, es),
         s: `#${o.num} · ${o.mode === "delivery" ? "DELIVERY" : "PICKUP"} · ${diaCorto(o.at, o.tz, es)}`.toUpperCase(),
         x: items.length ? `${items.slice(0, 2).join(", ")}${items.length > 2 ? E2(` y ${items.length - 2} más`, ` and ${items.length - 2} more`) : ""}` : "",
-        v: money(o.total), vs: cx ? E2("NO SE COBRÓ", "NOT CHARGED") : vivo ? E2("PAGAS AL RECIBIR", "PAY WHEN YOU GET IT") : undefined, chev: true, on: () => router.push(`/pedido/${o.num}`),
+        v: money(o.total), vs: cx ? E2("NO SE COBRÓ", "NOT CHARGED") : vivo ? (o.merc ? E2("ESTIMADO · SE COBRA LO QUE PESE", "ESTIMATE · YOU PAY WHAT IT WEIGHS") : E2("PAGAS AL RECIBIR", "PAY WHEN YOU GET IT")) : undefined, chev: true, on: () => router.push(o.merc ? `/mercado/${o.num}` : `/pedido/${o.num}`),
         acts: o.st === "hecho" ? [[E2("Volver a pedir", "Order again"), "secondary", () => router.push(`/n/${o.biz}?tab=menu`)], ...(!o.rev ? [[E2("Escribir reseña", "Write review"), "primary", () => router.push(`/n/${o.biz}/resena?pedido=${o.num}`)] as [string, string, () => void]] : [])] : undefined,
       };
     }) });

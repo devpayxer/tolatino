@@ -66,7 +66,7 @@ type Base = {
   travel_min: number; last_delivery_min: number; who: string; external_app: string | null;
 };
 
-async function base(c: Q, negocio: string) {
+export async function base(c: Q, negocio: string) {
   const r = await c.query<Base>(
     `select b.id, b.name, b.category_id as cat, s.plan, b.address, b.phone, st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng, b.city_id as city,
             ci.timezone as tz, extract(dow from now() at time zone ci.timezone)::int as dow, to_char(now() at time zone ci.timezone, 'HH24:MI') as hm,
@@ -151,7 +151,7 @@ function calcEstado(b: Base, R: [number, number][], usados: number, cap: number,
     free, freeLeft, low: b.low_alert, dia, modes, slotsD, dlv, auto: b.auto_accept && b.open && !b.pause_until };
 }
 
-async function topeFree(c: Q, negocio: string, mes: string) {
+export async function topeFree(c: Q, negocio: string, mes: string) {
   const r = await c.query<{ cap: number; usados: number }>(
     `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $3) as cap,
             (select count(*)::int from operations where business_id = $1 and kind <> 'table' and free_quota_month = $2) as usados`, [negocio, mes, TOPE_FREE]);
@@ -236,7 +236,7 @@ export async function menuPublico(negocio: string, lang: Lang, userId?: string |
 }
 
 /* La dirección de entrega (la predeterminada o la que se pide) y si queda dentro de la zona del negocio (en línea recta). */
-async function dirEntrega(c: Q, userId: string, negocio: string, zona: number, id: string | null): Promise<DirEntrega | null> {
+export async function dirEntrega(c: Q, userId: string, negocio: string, zona: number, id: string | null): Promise<DirEntrega | null> {
   const r = await c.query<{ id: string; label: string; street: string; apt: string | null; zip: string; mi: number | null; drop_pref: DropPref | null }>(
     `select a.id::text, a.label, a.street, a.apt, a.zip, a.drop_pref,
             case when a.geo is null or b.geo is null then null else round((st_distance(a.geo, b.geo) / 1609.344)::numeric, 1)::float end as mi

@@ -462,3 +462,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] Fotos privadas de ayuda: confirmar en el servidor real que Garage borra el objeto (el sandbox lo prueba contra el Garage local).
 - [ ] Configuración (Fase 5): hacer editables los plazos de Doctores y Profesionales (2 h «no aceptamos su seguro», 24 h
       cancelar, 30 d total por escrito, 24/48 h ayuda, 30 d notas, 90 d fotos de ayuda).
+
+## Fase 4 · 4p (pedido del mercado)
+- [ ] «Pedir OK por $X más» cuando el peso real pasa lo retenido (hoy el mercado tiene que cortar menos).
+- [ ] Sustituto que se vende por libra (hoy solo por unidad).
+- [ ] Envío del mercado con repartidor propio en /repartidor (hoy «Va en camino» / «Entregado» los marca el mercado).
+- [ ] Recordatorio a los 10 min si el cliente no toca «Está bien, cobrar» (hoy se cobra lo real al recoger o entregar).
+- [ ] Pruebas viejas que borran datos compartidos del sandbox (pagos2d borra todas las cuentas de cobro y tarjetas): aislarlas.

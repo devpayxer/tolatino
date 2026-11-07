@@ -601,4 +601,10 @@ begin
   insert into items (business_id, module, section_id, name, descr, price_cents, unit, tax_pct, photos, shop_kind, ebt, age_min, in_store_only, size_label, group_ids, price_from, sort)
     values (b, 'shop', s, '{"es":"Placa de reconocimiento","en":"Recognition plaque"}'::jsonb, '{"es":"Madera y metal.","en":"Wood and metal."}'::jsonb, 3500, 'u', 6, array['https://images.pexels.com/photos/34491716/pexels-photo-34491716.jpeg?auto=compress&cs=tinysrgb&h=600'], 'unid', false, 0, false, null, '{}', false, 1) returning id into i;
 end $$;
+insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+  select 'supermercado-la-cosecha', 'acct_sim_supermercado-la-cosecha', 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = 'supermercado-la-cosecha' and is_demo) on conflict (business_id) do nothing;
+update delivery_settings set pay_card = true where business_id = 'supermercado-la-cosecha' and exists (select 1 from businesses where id = 'supermercado-la-cosecha' and is_demo);
+insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+  select 'boutique-yaritza', 'acct_sim_boutique-yaritza', 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo) on conflict (business_id) do nothing;
+update delivery_settings set pay_card = true where business_id = 'boutique-yaritza' and exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo);
 commit;

@@ -58,5 +58,9 @@ for (const [id, secs] of Object.entries(w.TLTienda.SVC)) {
     L.push(`  insert into retail_settings (business_id, cash, hold_hours, returns_days, layaway, lay_down_pct, lay_payments, lay_cancel_pct) select b, 'efectivo' = any(filter_values), 48, ${Math.min(90, Number(o.dev) || 0)}, ${pl ? "true" : "false"}, ${pl ? Math.max(10, Math.min(50, pl[0])) : 20}, ${pl ? Math.max(2, Math.min(6, pl[1])) : 4}, ${Math.min(10, Number(o.planFee) || 10)} from businesses where id = b on conflict (business_id) do nothing;`);
   });
 }
+// Cobro con tarjeta simulado (sandbox) para los dos negocios con dueño de prueba: retener y cobrar el peso real (4p).
+for (const id of Object.keys(DUENO)) out.push(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+  select ${q(id)}, ${q("acct_sim_" + id)}, 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = ${q(id)} and is_demo) on conflict (business_id) do nothing;`,
+  `update delivery_settings set pay_card = true where business_id = ${q(id)} and exists (select 1 from businesses where id = ${q(id)} and is_demo);`);
 out.push("commit;");
 process.stdout.write(out.join("\n") + "\n");

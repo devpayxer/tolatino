@@ -13,7 +13,7 @@ const FOTO = `(select m.url from media m where m.owner_kind = 'business' and m.o
 /* ── Pedidos ── */
 export type FiltroPed = "todo" | "curso" | "hechos" | "cx";
 export type EstPed = "curso" | "camino" | "hecho" | "cx" | "no" | "exp";
-export type MiPedido = { num: string; biz: string; bname: string; foto: string | null; mode: "pickup" | "delivery"; st: EstPed; total: number; at: string; tz: string; mes: string; items: string[]; nItems: number; rev: boolean };
+export type MiPedido = { num: string; biz: string; bname: string; foto: string | null; mode: "pickup" | "delivery"; st: EstPed; total: number; at: string; tz: string; mes: string; items: string[]; nItems: number; rev: boolean; merc: boolean };
 const EST_PED = `case when o.status in ('pending', 'confirmed') and coalesce(o.stage, '') not in ('delivered', 'picked_up') then (case when o.stage = 'on_the_way' then 'camino' else 'curso' end)
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'hecho' when o.status = 'declined' then 'no' when o.status = 'expired' then 'exp' else 'cx' end`;
 const F_PED: Record<FiltroPed, string> = {
@@ -28,13 +28,13 @@ export async function misPedidos(userId: string, f: FiltroPed, antes: string | n
               ${ISO("o.sent_at")} as at, c.timezone as tz, to_char(o.sent_at at time zone c.timezone, 'YYYY-MM') as mes,
               coalesce((select array_agg(case when l.qty > 1 then l.qty || ' × ' else '' end || coalesce(l.name->>$4, l.name->>'es') order by l.id) from operation_lines l where l.operation_id = o.id), '{}') as items,
               (select coalesce(sum(l.qty), 0)::int from operation_lines l where l.operation_id = o.id) as "nItems",
-              exists (select 1 from reviews r where r.business_id = o.business_id and r.user_id = o.user_id and r.status <> 'removed') as rev, o.id::text as k
+              exists (select 1 from reviews r where r.business_id = o.business_id and r.user_id = o.user_id and r.status <> 'removed') as rev, o.id::text as k, o.kind = 'market_order' as merc
          from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
-        where o.user_id = $1 and o.kind = 'order' and ${F_PED[f]} and ($2::bigint is null or o.id < $2::bigint)
+        where o.user_id = $1 and o.kind in ('order', 'market_order') and ${F_PED[f]} and ($2::bigint is null or o.id < $2::bigint)
         order by o.id desc limit $3`, [userId, cur, 31, lang]),
     db().query<{ todo: number; curso: number; hechos: number; cx: number }>(
       `select count(*)::int as todo, count(*) filter (where ${F_PED.curso})::int as curso, count(*) filter (where ${F_PED.hechos})::int as hechos, count(*) filter (where ${F_PED.cx})::int as cx
-         from operations o where o.user_id = $1 and o.kind = 'order'`, [userId]),
+         from operations o where o.user_id = $1 and o.kind in ('order', 'market_order')`, [userId]),
   ]);
   const rows = L.rows as (MiPedido & { k: string })[], mas = rows.length > 30;
   return { filas: rows.slice(0, 30).map(({ k: _k, ...x }) => x), sig: mas ? rows[29]!.k : null, n: n.rows[0]! };
@@ -77,9 +77,9 @@ export async function resumen(userId: string) {
   const [ag, pend, mes, cnt] = await Promise.all([
     // Tu semana: pedidos en curso, reservaciones de los próximos 7 días y entrevistas.
     q.query<Agenda>(
-      `(select 'ped' as kind, ${ISO("o.sent_at")} as at, c.timezone as tz, 0 as dia, b.name as t, o.business_id as biz, ${EST_PED} as st, '/pedido/' || o.number as href, 0 as extra
+      `(select 'ped' as kind, ${ISO("o.sent_at")} as at, c.timezone as tz, 0 as dia, b.name as t, o.business_id as biz, ${EST_PED} as st, case when o.kind = 'market_order' then '/mercado/' else '/pedido/' end || o.number as href, 0 as extra
           from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
-         where o.user_id = $1 and o.kind = 'order' and o.status in ('pending', 'confirmed') and coalesce(o.stage, '') not in ('delivered', 'picked_up') order by o.id desc limit 3)
+         where o.user_id = $1 and o.kind in ('order', 'market_order') and o.status in ('pending', 'confirmed') and coalesce(o.stage, '') not in ('delivered', 'picked_up') order by o.id desc limit 3)
        union all
        (select 'mesa', ${ISO("o.scheduled_at")}, c.timezone, ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, o.business_id, ${EST_MESA},
                '/reserva/' || o.number, o.party_size
