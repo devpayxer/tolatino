@@ -49,3 +49,11 @@ En cada pasajero: Abordó / No llegó. Los asientos vendidos fuera de la app se 
 - **¿Y si el negocio no sale?** Te devolvemos todo y ves el motivo.
 - **¿Cuántos asientos puedo reservar?** Hasta 14 por reserva.
 - **¿Dónde veo mis viajes?** Mi cuenta › Citas y reservas.
+
+## Rentar un vehículo · Renting a vehicle
+**ES.** En un negocio que renta camionetas o remolques: ficha › **Rentar** › el vehículo › **Apartar**. Hoy no se cobra nada; te lo
+guardan 48 horas. **Lleva tu licencia vigente: tienes que tener 21 años o más.** Al recogerlo, el negocio revisa tu licencia y
+anota las millas; se cobra la renta y se retiene el depósito. Cada día incluye las millas que dice el vehículo (por ejemplo, 150);
+la milla de más se descuenta del depósito y te enseñan la foto del odómetro antes. Si lo devuelves tarde, se cobra un día más.
+**EN.** Bring a valid license (21+). At pickup the business checks it and writes down the miles; rent is charged and the deposit
+held. Extra miles over the daily allowance come out of the deposit, with the odometer photo shown to you first.

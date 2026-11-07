@@ -200,11 +200,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     em: oficio && ruta.sec === "hoy" ? await emergenciasPanel(d.id) : undefined,
     planes: oficio && ruta.sec === "hoy" ? await planesNegocio(d.id) : undefined,
     // 4f-2: las rentas de herramienta (apartadas, fuera, devueltas con algo pendiente) y el detalle de una.
-    rentas: oficio && ruta.sec === "hoy" ? await rentasNegocio(d.id) : undefined,
+    rentas: (oficio || d.cat === "NEG-TRANS") && ruta.sec === "hoy" ? await rentasNegocio(d.id) : undefined,
     // 4f-3: apartados de la Tienda (por confirmar, guardados, recogidos hoy) y el detalle de uno.
     apartados: aptOk && ruta.sec === "hoy" ? await apartadosNegocio(d.id) : undefined,
     aptDet: aptOk && ruta.det?.startsWith("apt:") ? await apartadoPanel(d.id, ruta.det.slice(4)) : undefined,
-    rentaDet: oficio && ruta.det?.startsWith("renta:") ? await rentaPanel(d.id, ruta.det.slice(6)) : undefined,
+    rentaDet: (oficio || d.cat === "NEG-TRANS") && ruta.det?.startsWith("renta:") ? await rentaPanel(d.id, ruta.det.slice(6)) : undefined,
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
     lista: conCitas && ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: conCitas && ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,

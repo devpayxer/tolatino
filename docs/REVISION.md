@@ -976,3 +976,13 @@ y reintenta los cobros que quedaron a medias. **Qué mirar:** nada que tocar; en
 tarea, la hora y el error en la base (`system_jobs`), y lo veremos en el Super Admin.
 _Decidido por mí:_ corre con la misma imagen de la app (nada nuevo que pagar ni bajar), con un token que deploy.sh crea en el
 servidor; desde fuera no se puede llamar (nginx). En producción se enciende igual en la fase 9 (anotado en LAUNCH-CHECKLIST).
+
+### 4y-4 · Renta de vehículos (7 nov)
+**Qué mirar:** Buscar › Transporte › **Renta de Camionetas Hazleton** › pestaña **Rentar**: Camioneta de 15 pasajeros, de carga y
+el remolque, con su precio por día y depósito. Apartar → el formulario avisa «licencia y 21+» y «150 millas por día; la milla de
+más $0.35». **Panel (Daniel 5705550355):** el apartado › «Revisé la licencia y la edad (21+)» + millas al salir (sin eso, «La
+recogió» no se puede tocar) → al volver, millas al volver: dice cuántas recorrió, cuántas incluía y las de más con su precio, y
+«Descontar las millas de más» abre el daño con el monto puesto (con la foto del odómetro, el cliente la ve antes).
+_Decidido por mí (reversible):_ las millas de más van por el mismo camino del daño (foto, el cliente acepta o To'Latino decide);
+el remolque no cuenta millas; los servicios «precio cerrado con fotos» que traía este negocio del prototipo quedaron retirados
+(no aplican a una renta). Dueño de prueba nuevo: Daniel (5705550355).

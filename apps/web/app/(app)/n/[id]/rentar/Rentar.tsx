@@ -47,6 +47,11 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
     E2(`La devuelves ${back ? fL(back) : "el último día"} y se libera el depósito. Si llega tarde, se cobra un día más; si llega dañada, te enseñan el daño con foto antes de descontar.`, `Return it on ${back ? fL(back) : "the last day"} and the deposit is released. If late, one more day is charged; if damaged, they show you with a photo before deducting.`)];
   const sinDep = a.dep === 0;
   if (sinDep) how[1] = E2(`Al recogerla se cobran ${dinero(cost)} de renta. No pide depósito.`, `At pickup ${dinero(cost)} rent is charged. No deposit.`);
+  // 4y-4 · Vehículo: licencia y 21+ en persona; millas incluidas y la de más (se descuenta del depósito con foto del odómetro).
+  if (a.veh) {
+    how.push(E2("Lleva tu licencia vigente: tienes que tener 21 años o más. Te la revisan al entregarla.", "Bring your valid license: you must be 21 or older. They check it at pickup."));
+    if (a.veh.mpd) how.push(E2(`Incluye ${a.veh.mpd} millas por día. La milla de más cuesta ${dinero(a.veh.mi ?? 0)} y se descuenta del depósito: te enseñan la foto del odómetro antes.`, `Includes ${a.veh.mpd} miles per day. Each extra mile costs ${dinero(a.veh.mi ?? 0)}, deducted from the deposit: they show you the odometer photo first.`));
+  }
   const barra = (
     <div className="flex flex-col gap-2">
       {miss.length > 0 && <div className="text-[12px] font-semibold leading-[1.45] text-ink/60"><span className="font-mono text-[9.5px] font-bold tracking-[0.12em] text-ink/45">{E2("TE FALTA · ", "STILL NEEDED · ")}</span>{miss.join(" · ")}</div>}

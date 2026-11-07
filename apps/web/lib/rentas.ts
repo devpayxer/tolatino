@@ -15,7 +15,10 @@ import { pasarela } from "./pagos/pasarela";
    - Un daño: el negocio lo enseña con foto y monto (hasta lo que queda del depósito). El cliente acepta (se descuenta) o no
      (lo decide To'Latino; sin respuesta en 72 h, también). El depósito sigue retenido mientras tanto (se renueva).
    - El barrido (al abrir la renta o el panel): vencen los apartados de más de 48 h (vuelve la unidad), se avisa una vez cuando
-     se pasa del día de devolver, se renuevan los depósitos de más de 6 días y 20 horas, y los daños sin respuesta suben. */
+     se pasa del día de devolver, se renuevan los depósitos de más de 6 días y 20 horas, y los daños sin respuesta suben.
+   - 4y-4 · Vehículos (Transporte): antes de «La recogió», el negocio confirma que revisó la licencia y la edad (21+) y anota las
+     millas al salir; al volver anota las millas (nunca menos). Las millas de más (sobre las incluidas por día) se descuentan del
+     depósito por el camino del daño, con la foto del odómetro: el cliente la ve antes. */
 type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; tarjeta?: boolean };
 const no = (es: string, en: string, x: { tarjeta?: boolean } = {}): { ok: false; msg: Bi; tarjeta?: boolean } => ({ ok: false, msg: { es, en }, ...x });
@@ -39,10 +42,12 @@ async function cuentaDe(c: PoolClient | ReturnType<typeof db>, negocio: string):
 const ahoraDe = async (city: string) => (await db().query<{ h: string; m: number }>(`select (now() at time zone timezone)::date::text as h, extract(hour from now() at time zone timezone)::int * 60 + extract(minute from now() at time zone timezone)::int as m from cities where id = $1`, [city])).rows[0]!;
 
 /* ── La tienda en la ficha (por ahora, lo que se renta; lo que se vende llega con el apartado de Tiendas) ── */
-export type ArticuloRenta = { id: string; n: Bi; d: Bi; precio: number; dep: number; foto: string | null; quedan: number };
+export type ArticuloRenta = { id: string; n: Bi; d: Bi; precio: number; dep: number; foto: string | null; quedan: number;
+  veh: { mpd: number | null; mi: number | null } | null }; // 4y-4: vehículo (licencia y 21+, millas incluidas por día y la milla de más)
 export async function tiendaPublica(negocio: string): Promise<ArticuloRenta[]> {
   return (await db().query<ArticuloRenta>(
-    `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.deposit_cents as dep, i.photos[1] as foto, greatest(i.stock_left, 0) as quedan
+    `select i.id::text, i.name as n, i.descr as d, i.price_cents as precio, i.deposit_cents as dep, i.photos[1] as foto, greatest(i.stock_left, 0) as quedan,
+            case when b.category_id = 'NEG-TRANS' then jsonb_build_object('mpd', (i.svc_attrs->>'mpd')::int, 'mi', (i.svc_attrs->>'mi')::int) end as veh
        from items i join businesses b on b.id = i.business_id
       where i.business_id = $1 and i.module = 'renta' and i.removed_at is null and i.sell and i.status = 'live' and b.status = 'active' and 'renta' = any(b.modules_on) and not (b.modules_off ? 'renta')
       order by i.sort, i.id limit 60`, [negocio])).rows.map((x) => ({ ...x, d: { es: x.d?.es ?? "", en: x.d?.en ?? "" } }));
@@ -124,13 +129,16 @@ export async function apartarRenta(userId: string, f: RentaIn, entorno: string):
 /* ── Lectura ── */
 type Fila = { rid: string; op: string; numero: string; biz: string; uid: string; city: string; st: "held" | "out" | "back" | "cancelled" | "expired"; n: Bi; p: number; dep: number; dias: number; week: boolean; rent: number;
   pick: string; due: string; exp: string; pm: string; cardFailed: boolean; lateD: number; lateC: number; dmgC: number | null; dmgNota: string | null; dmgFoto: string | null; dmgSt: string | null; dmgAt: string | null;
-  outAt: string | null; backAt: string | null; at: string; cxBy: string | null; foto: string | null; itemId: string; bname: string; dir: string; tel: string | null; close: string | null; cliente: string; tz: string };
+  outAt: string | null; backAt: string | null; at: string; cxBy: string | null; foto: string | null; itemId: string; bname: string; dir: string; tel: string | null; close: string | null; cliente: string; tz: string;
+  // 4y-4: vehículo (Transporte): millas incluidas por día, precio de la milla de más, licencia revisada y odómetro.
+  vehiculo: boolean; mpd: number | null; mi: number | null; lic: boolean; odoOut: number | null; odoIn: number | null };
 const SEL = `select r.id::text as rid, r.operation_id::text as op, o.number as numero, r.business_id as biz, r.user_id::text as uid, r.city_id as city, r.status as st, r.item_name as n, r.price_cents as p, r.deposit_cents as dep,
     r.days as dias, r.week, r.rent_cents as rent, r.pick_on::text as pick, r.due_on::text as due, r.expires_at as exp, r.payment_method as pm, r.card_failed as "cardFailed", r.late_days as "lateD", r.late_cents as "lateC",
     r.damage_cents as "dmgC", r.damage_note as "dmgNota", m.url as "dmgFoto", r.damage_status as "dmgSt", r.damage_asked_at as "dmgAt", r.out_at as "outAt", r.back_at as "backAt", r.created_at as at, r.cancelled_by as "cxBy",
     i.photos[1] as foto, r.item_id::text as "itemId", b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, ci.timezone as tz,
     (select h.ranges->-1->>1 from business_hours h where h.business_id = r.business_id and h.module = '' and h.weekday = extract(dow from r.due_on)::int and h.open) as close,
-    coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente
+    coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente,
+    b.category_id = 'NEG-TRANS' as vehiculo, (i.svc_attrs->>'mpd')::int as mpd, (i.svc_attrs->>'mi')::int as mi, r.license_checked_at is not null as lic, r.odometer_out as "odoOut", r.odometer_in as "odoIn"
   from rentals r join operations o on o.id = r.operation_id join items i on i.id = r.item_id join businesses b on b.id = r.business_id join cities ci on ci.id = r.city_id join users u on u.id = r.user_id
   left join media m on m.id = r.damage_photo and m.status = 'visible'`;
 
@@ -282,7 +290,8 @@ export async function rentaCliente(userId: string, numero: string, que: QueClien
 }
 
 /* ── Lo que hace el negocio ── */
-export type QueNegocio = { que: "recogio" | "devolvio" | "cancelar" } | { que: "dano"; cents: number; foto: string; nota: string };
+export type QueNegocio = { que: "recogio"; lic?: boolean; odo?: number } | { que: "devolvio"; odo?: number } | { que: "cancelar" } | { que: "dano"; cents: number; foto: string; nota: string; odo?: number };
+const odoOk = (v: unknown) => { const n = Math.round(Number(v)); return Number.isFinite(n) && n >= 0 && n <= 2_000_000 ? n : null; };
 export async function rentaNegocio(negocio: string, numero: string, a: QueNegocio, actorId: string): Promise<Res<{ aviso?: Bi }>> {
   if (!NUM.test(String(numero))) return no("Esa renta no existe.", "That rental does not exist.");
   const x = (await db().query<Fila>(`${SEL} where o.number = $1 and r.business_id = $2`, [numero, negocio])).rows[0];
@@ -303,6 +312,10 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
   }
   if (a.que === "recogio") {
     if (x.st !== "held") return no("Ya no está apartada.", "It is no longer on hold.");
+    // Vehículo: la licencia y la edad se revisan en persona; las millas al salir quedan anotadas (antes de cobrar nada).
+    const odoOut = x.vehiculo && x.mpd ? odoOk(a.odo) : null;
+    if (x.vehiculo && a.lic !== true) return no("Antes de entregarla, revisa la licencia y que tenga 21 años o más.", "Before handing it over, check the license and that they are 21 or older.");
+    if (x.vehiculo && x.mpd && odoOut == null) return no("Anota las millas del odómetro al salir.", "Write down the odometer miles at pickup.");
     const destino = await cuentaDe(db(), negocio);
     if (!destino) return no("Tu cuenta de cobro no está lista: no se puede cobrar en la app.", "Your payout account is not ready: the app cannot charge.");
     const n = await intentos(x.op), cliente = await pasarela.cliente(x.uid).catch(() => null);
@@ -319,7 +332,9 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
     const r = await pasarela.cobrarFuera({ centavos: x.rent, comision: fee, destino, pm: x.pm, cliente, idem: `renta-${x.rid}-renta-a${n}`, meta: { rental: numero, business_id: negocio } });
     if (!r.ok) { if (dep?.ok) await pasarela.liberar(dep.pi); return fallo(r.mensaje); }
     const ok = await tx(async (c) => {
-      const u = await c.query(`update rentals set status = 'out', out_at = now(), card_failed = false, updated_at = now() where id = $1::bigint and status = 'held'`, [x.rid]);
+      const u = await c.query(`update rentals set status = 'out', out_at = now(), card_failed = false, updated_at = now(),
+                               license_checked_by = case when $2 then $3::uuid else license_checked_by end, license_checked_at = case when $2 then now() else license_checked_at end, odometer_out = coalesce($4::int, odometer_out)
+                               where id = $1::bigint and status = 'held'`, [x.rid, x.vehiculo, actorId, odoOut]);
       if (!u.rowCount) return false;
       await c.query(`insert into payments (operation_id, user_id, business_id, city_id, kind, seq, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, status, card_brand, card_last4, captured_at, simulated, payment_method)
                      values ($1::bigint, $2, $3, $4, 'rental', $5, 'card', $6, $7, $7, $8, 'captured', $9, $10, now(), $11, $12) on conflict (stripe_payment_intent) do nothing`,
@@ -337,6 +352,8 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
   }
   if (a.que === "devolvio" || a.que === "dano") {
     if (x.st !== "out") return no("Todavía no la tiene o ya volvió.", "They do not have it yet or it is already back.");
+    const odoIn = x.vehiculo && x.odoOut != null ? odoOk(a.odo) : null;
+    if (x.vehiculo && x.odoOut != null && (odoIn == null || odoIn < x.odoOut)) return no(`Anota las millas al volver (desde ${x.odoOut.toLocaleString("en-US")}).`, `Write down the miles at return (from ${x.odoOut.toLocaleString("en-US")}).`);
     const now = await ahoraDe(x.city), tarde = Math.max(0, diasEntre(x.due, now.h)), lateC = Math.min(tarde * x.p, x.dep);
     let dano: { cents: number; foto: string; nota: string } | null = null;
     if (a.que === "dano") {
@@ -349,8 +366,8 @@ export async function rentaNegocio(negocio: string, numero: string, a: QueNegoci
       dano = { cents, foto: a.foto, nota };
     }
     const ok = await tx(async (c) => {
-      const u = await c.query(`update rentals set status = 'back', back_at = now(), late_days = $2, late_cents = $3, damage_cents = $4, damage_photo = $5::uuid, damage_note = $6, damage_status = $7, damage_asked_at = case when $7::text is null then null else now() end, updated_at = now()
-                               where id = $1::bigint and status = 'out'`, [x.rid, tarde, lateC, dano?.cents ?? null, dano?.foto ?? null, dano?.nota ?? null, dano ? "asked" : null]);
+      const u = await c.query(`update rentals set status = 'back', back_at = now(), late_days = $2, late_cents = $3, damage_cents = $4, damage_photo = $5::uuid, damage_note = $6, damage_status = $7, damage_asked_at = case when $7::text is null then null else now() end, odometer_in = coalesce($8::int, odometer_in), updated_at = now()
+                               where id = $1::bigint and status = 'out'`, [x.rid, tarde, lateC, dano?.cents ?? null, dano?.foto ?? null, dano?.nota ?? null, dano ? "asked" : null, odoIn]);
       if (!u.rowCount) return false;
       await c.query(`update items set stock_left = stock_left + 1, updated_at = now() where id = $1::bigint and stock_mode = 'qty'`, [x.itemId]);
       await c.query(`update operations set status = 'done', done_at = now(), updated_at = now() where id = $1::bigint`, [x.op]);

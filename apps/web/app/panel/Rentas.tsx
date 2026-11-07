@@ -53,18 +53,35 @@ export function rentaDetalle(c: Ctx): Sec {
     if (x.cardFailed) out.push({ type: "note", tone: "warn", icon: "card", t: E2(`La tarjeta de ${nombre} no pasó al recoger. Ya le pedimos cambiarla; te avisamos cuando lo haga. No la entregues hasta que pase.`, `${nombre}'s card did not go through at pickup. We asked them to change it and will let you know. Do not hand it over until it goes through.`) });
     out.push({ type: "note", tone: "info", icon: "info", t: x.dep ? E2(`Al tocar «La recogió» se cobran ${money(x.rent)} de renta y se retiene el depósito de ${money(x.dep)} en su tarjeta. Si el banco no deja, no se cobra nada.`, `Tapping “Picked up” charges ${money(x.rent)} rent and holds the ${money(x.dep)} deposit on their card. If the bank declines, nothing is charged.`)
       : E2(`Al tocar «La recogió» se cobran ${money(x.rent)} de renta en su tarjeta.`, `Tapping “Picked up” charges ${money(x.rent)} rent on their card.`) });
+    // 4y-4 · Vehículo: la licencia y la edad (21+) se revisan en persona y se anotan las millas al salir.
+    const lic = !!c.ui.rnL, odoS = String(c.ui.rnO ?? ""), faltaV = x.vehiculo && (!lic || (!!x.mpd && !/^\d{1,7}$/.test(odoS)));
+    if (x.vehiculo) {
+      out.push({ type: "rows", k: E2("ANTES DE ENTREGARLA", "BEFORE HANDING IT OVER"), items: [{ icon: "verified", t: E2("Revisé la licencia y la edad (21+)", "I checked the license and age (21+)"), s: E2("La licencia vigente y a nombre de quien la maneja.", "A valid license in the driver's name."), tgOn: lic, onTg: () => c.setUi({ rnL: !lic }) }] });
+      if (x.mpd) out.push({ type: "field", k: E2("MILLAS AL SALIR (ODÓMETRO)", "MILES AT PICKUP (ODOMETER)"), val: odoS, im: "numeric", max: 7, ph: "48210", onChange: (v) => c.setUi({ rnO: v.replace(/\D/g, "").slice(0, 7) }) });
+    }
     out.push({ type: "acts", items: [
-      { l: E2("La recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "recogio" }, E2(`Listo: ${nombre} la tiene. Renta cobrada.`, `Done: ${nombre} has it. Rent charged.`)) },
+      { l: E2("La recogió", "Picked up"), v: "primary", icon: "check", off: c.pending || faltaV, onClick: () => acc({ que: "recogio", lic, odo: x.mpd ? Number(odoS) : undefined }, E2(`Listo: ${nombre} la tiene. Renta cobrada.`, `Done: ${nombre} has it. Rent charged.`), () => c.setUi({ rnL: false, rnO: "" })) },
       { l: E2("Cancelar el apartado", "Cancel the hold"), v: "secondary", icon: "close", off: c.pending, onClick: () => acc({ que: "cancelar" }, E2("Apartado cancelado: volvió a la tienda.", "Hold cancelled: back on the shelf.")) }] });
   } else if (x.st === "out") {
     const ui = c.ui, dano = !!ui.rnD, max = Math.max(0, x.dep - Math.min(x.tardeHoy * x.p, x.dep));
-    const dc = Math.min(max, Math.max(500, Number(ui.rnC ?? Math.min(2500, max)))), nota = String(ui.rnN ?? ""), f = ui.rnF as { id: string; url: string } | null | undefined;
+    const dc = Math.min(max, Math.max(100, Number(ui.rnC ?? Math.min(2500, max)))), nota = String(ui.rnN ?? ""), f = ui.rnF as { id: string; url: string } | null | undefined;
     const lateC = Math.min(x.tardeHoy * x.p, x.dep);
+    // 4y-4 · Vehículo: millas al volver → recorridas, incluidas (por día) y las de más (se descuentan con foto del odómetro).
+    const odoS = String(ui.rnI ?? ""), odoN = /^\d{1,7}$/.test(odoS) ? Number(odoS) : null, conOdo = x.vehiculo && x.odoOut != null;
+    const odoOk = !conOdo || (odoN != null && odoN >= x.odoOut!), recorrio = conOdo && odoN != null ? odoN - x.odoOut! : 0, incl = (x.mpd ?? 0) * x.dias, deMas = Math.max(0, recorrio - incl), deMasC = deMas * (x.mi ?? 0);
+    if (conOdo) {
+      out.push({ type: "field", k: E2("MILLAS AL VOLVER (ODÓMETRO)", "MILES AT RETURN (ODOMETER)"), val: odoS, im: "numeric", max: 7, ph: String(x.odoOut), help: E2(`Salió con ${x.odoOut!.toLocaleString("en-US")}.`, `Left with ${x.odoOut!.toLocaleString("en-US")}.`), onChange: (v) => c.setUi({ rnI: v.replace(/\D/g, "").slice(0, 7) }) });
+      if (odoN != null && odoOk) out.push({ type: "note", tone: deMas ? "warn" : "ok", icon: "car", t: deMas
+        ? E2(`Recorrió ${recorrio.toLocaleString("en-US")} mi; incluidas ${incl.toLocaleString("en-US")}. Millas de más: ${deMas.toLocaleString("en-US")} × ${money(x.mi ?? 0)} = ${money(deMasC)}. Descuéntalas del depósito con la foto del odómetro: ${nombre} la ve antes.`, `Drove ${recorrio.toLocaleString("en-US")} mi; ${incl.toLocaleString("en-US")} included. Extra miles: ${deMas.toLocaleString("en-US")} × ${money(x.mi ?? 0)} = ${money(deMasC)}. Deduct them from the deposit with the odometer photo: ${nombre} sees it first.`)
+        : E2(`Recorrió ${recorrio.toLocaleString("en-US")} mi de ${incl.toLocaleString("en-US")} incluidas: no hay millas de más.`, `Drove ${recorrio.toLocaleString("en-US")} of ${incl.toLocaleString("en-US")} included miles: no extra miles.`) });
+      if (odoN != null && !odoOk) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Las millas al volver no pueden ser menos que al salir (${x.odoOut!.toLocaleString("en-US")}).`, `Return miles cannot be less than at pickup (${x.odoOut!.toLocaleString("en-US")}).`) });
+    }
     out.push({ type: "note", tone: x.tardeHoy ? "warn" : "info", icon: x.tardeHoy ? "clock" : "info", t: x.tardeHoy ? E2(`Llegó ${x.tardeHoy} ${x.tardeHoy === 1 ? "día" : "días"} tarde: al tocar «La devolvió» se descuentan ${money(lateC)} del depósito${x.dep > lateC ? ` y se libera el resto (${money(x.dep - lateC)})` : ""}.`, `${x.tardeHoy} ${x.tardeHoy === 1 ? "day" : "days"} late: tapping “Returned” takes ${money(lateC)} from the deposit${x.dep > lateC ? ` and releases the rest (${money(x.dep - lateC)})` : ""}.`)
       : x.dep ? E2(`Al tocar «La devolvió» se libera el depósito de ${money(x.dep)}.`, `Tapping “Returned” releases the ${money(x.dep)} deposit.`) : E2("Sin depósito: al devolverla se cierra la renta.", "No deposit: returning it closes the rental.") });
     if (!dano) out.push({ type: "acts", items: [
-      { l: E2("La devolvió", "Returned"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "devolvio" }, E2("Listo: devuelta.", "Done: returned.")) },
-      ...(x.dep && max >= 100 ? [{ l: E2("La devolvió con un daño", "Returned with damage"), v: "secondary" as const, icon: "warning", off: c.pending, onClick: () => c.setUi({ rnD: true }) }] : [])] });
+      { l: E2("La devolvió", "Returned"), v: deMasC ? "secondary" : "primary", icon: "check", off: c.pending || (conOdo && (odoN == null || !odoOk)), onClick: () => acc({ que: "devolvio", odo: odoN ?? undefined }, E2("Listo: devuelta.", "Done: returned."), () => c.setUi({ rnI: "" })) },
+      ...(x.dep && max >= 100 && deMasC >= 100 ? [{ l: E2("Descontar las millas de más", "Deduct the extra miles"), v: "primary" as const, icon: "car", off: c.pending || !odoOk, onClick: () => c.setUi({ rnD: true, rnC: Math.min(max, deMasC), rnN: E2(`Millas de más: ${deMas} mi × ${money(x.mi ?? 0)}`, `Extra miles: ${deMas} mi × ${money(x.mi ?? 0)}`) }) }] : []),
+      ...(x.dep && max >= 100 ? [{ l: E2("La devolvió con un daño", "Returned with damage"), v: "secondary" as const, icon: "warning", off: c.pending || (conOdo && (odoN == null || !odoOk)), onClick: () => c.setUi({ rnD: true }) }] : [])] });
     else {
       out.push({ type: "group", k: E2("EL DAÑO · EL CLIENTE LO VE ANTES DE DESCONTAR", "THE DAMAGE · THE CLIENT SEES IT BEFORE ANYTHING IS DEDUCTED") });
       out.push({ type: "photos", k: E2("FOTO · OBLIGATORIA", "PHOTO · REQUIRED"), count: `${f ? 1 : 0}/1`, cols: 3, items: f ? [{ key: f.url, bg: `url("${f.url}")`, onClick: () => c.setUi({ rnF: null }) }] : [],
@@ -73,7 +90,7 @@ export function rentaDetalle(c: Ctx): Sec {
       out.push({ type: "field", area: true, rows: 2, max: 300, k: E2("QUÉ SE DAÑÓ", "WHAT WAS DAMAGED"), val: nota, count: `${nota.length}/300`, ph: E2("Ej.: la manguera llegó cortada", "E.g. the hose came back cut"), onChange: (v) => c.setUi({ rnN: v.slice(0, 300) }) });
       out.push({ type: "note", tone: "info", icon: "shield", t: E2(`${nombre} ve la foto y el monto y decide. Si no está de acuerdo (o no responde en 72 horas), lo revisa To'Latino. El depósito sigue retenido mientras tanto.`, `${nombre} sees the photo and amount and decides. If they disagree (or do not answer in 72 hours), To'Latino reviews it. The deposit stays held meanwhile.`) });
       out.push({ type: "acts", items: [
-        { l: E2("Mandar el daño", "Send the damage"), v: "primary", icon: "check", off: c.pending || !f || nota.trim().length < 4, onClick: () => acc({ que: "dano", cents: dc, foto: f!.id, nota }, E2(`${nombre} ya ve el daño.`, `${nombre} can see the damage.`), () => c.setUi({ rnD: false, rnF: null, rnN: "", rnC: null })) },
+        { l: E2("Mandar el daño", "Send the damage"), v: "primary", icon: "check", off: c.pending || !f || nota.trim().length < 4, onClick: () => acc({ que: "dano", cents: dc, foto: f!.id, nota, odo: odoN ?? undefined }, E2(`${nombre} ya ve el daño.`, `${nombre} can see the damage.`), () => c.setUi({ rnD: false, rnF: null, rnN: "", rnC: null })) },
         { l: E2("Volver", "Back"), v: "secondary", icon: "close", off: c.pending, onClick: () => c.setUi({ rnD: false }) }] });
     }
   } else if (x.st === "back") {
