@@ -1008,3 +1008,10 @@ detalleSinBarra); la ayuda de mercado y apartado decía «CITA #M-…» y ahora 
 _Decidido por mí:_ un reporte de seguridad («Manejo inseguro») no se frena por el límite de 5 solicitudes al día.
 _Pendiente de prueba:_ la prueba vieja de ayuda de Hogar/Auto (ayu4g) no encontró datos que cumplan su condición en la base local
 (datos de prueba gastados); la de Salud/Pro (ayu4m) pasó con el motor cambiado.
+
+### 4z-3 · Analítica de Fiestas y Transporte (7 nov)
+**Qué mirar (Admin):** Analítica › **Fiestas y Transporte**: solicitudes de fecha, confirmadas en 24 h, vencidas, fechas canceladas
+por el negocio, depósitos (cobrado · retenido · devuelto · se quedó); viajes, salidas a la hora (≤ 15 min con la hora real de
+«Salió»), ocupación de asientos, cancelaciones tardías, salidas canceladas, «cobró más» por cada 100 viajes y los motivos de ayuda.
+_Arreglado de paso:_ la pestaña se veía pero el servidor no la tenía en su lista y mostraba el Resumen (guardián pestanasAnalitica).
+Ayuda nueva para El Compa: ayuda-con-la-fiesta-y-el-viaje y panel-fiestas-y-transporte-negocio.

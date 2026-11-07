@@ -710,6 +710,17 @@ const guardianes = {
     }
   },
 
+  /* 4z-3. La pestaña «Fiestas y Transporte» de Analítica se veía pero el servidor no la tenía en su lista (TABS) y mostraba el
+     Resumen. Cada pestaña de la pantalla está en la lista del servidor. */
+  pestanasAnalitica() {
+    const ui = "apps/web/app/admin/Analitica.tsx", pg = "apps/web/app/admin/analitica/page.tsx";
+    if (!existsSync(ui) || !existsSync(pg)) return;
+    const m = /type: "tabs", items: \(\[([\s\S]*?)\] as const\)/.exec(readFileSync(ui, "utf8")), t = /const TABS = new Set\(\[([^\]]*)\]\)/.exec(readFileSync(pg, "utf8"));
+    if (!m || !t) return falla("pestanasAnalitica", ui, 0, "no encuentro las pestañas o la lista TABS");
+    const srv = new Set([...t[1].matchAll(/"(\w+)"/g)].map((x) => x[1]));
+    for (const k of [...m[1].matchAll(/\["(\w+)", "/g)].map((x) => x[1])) if (!srv.has(k)) falla("pestanasAnalitica", pg, 0, `la pestaña «${k}» se ve en la pantalla pero el servidor no la tiene en TABS`);
+  },
+
   /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
      donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
      «fiesta:{negocio}:{día}». */

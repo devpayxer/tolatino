@@ -126,3 +126,42 @@ export async function mercadosTiendas(s: Staff, dias: number) {
   ]);
   return { merc: merc.rows[0]!, tienda: tienda.rows[0]!, rev: rev.rows[0]!, ayuda: ayuda.rows };
 }
+
+/* 4z-3 · Fiestas y Transporte (solo cifras). Fiestas: % confirmadas en 24 h, vencidas, fechas canceladas por el negocio y los
+   depósitos (retenidos / cobrados / devueltos / se quedaron). Transporte: % de salidas a la hora (departed_at − run_at ≤ 15 min),
+   ocupación de asientos, cancelaciones tardías (la mitad), salidas canceladas y ayudas «cobró más» por cada 100 viajes. */
+export async function fiestasTransporte(s: Staff, dias: number) {
+  const [fi, dep, vi, sal, ayuda] = await Promise.all([
+    db().query<{ n: number; conf24: number; vencidas: number; cxNeg: number; hechas: number }>(
+      `select count(*)::int as n,
+              count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= interval '24 hours')::int as conf24,
+              count(*) filter (where o.status = 'expired')::int as vencidas,
+              count(*) filter (where o.status = 'cancelled' and o.cancelled_by = 'business')::int as "cxNeg",
+              count(*) filter (where o.status = 'done')::int as hechas
+         from operations o where o.kind = 'party' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ ret: number; cob: number; dev: number; quedo: number }>(
+      `select coalesce(sum(p.amount_cents) filter (where p.status = 'held'), 0)::int as ret,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded')), 0)::int as cob,
+              coalesce(sum(p.refunded_cents), 0)::int as dev,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded') and coalesce((o.details->>'perdio')::boolean, false)), 0)::int as quedo
+         from payments p join operations o on o.id = p.operation_id where o.kind = 'party' and p.kind = 'deposit' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ n: number; hechos: number; mitad: number; cxSalida: number; cobroMas: number }>(
+      `select count(*)::int as n, count(*) filter (where o.status = 'done')::int as hechos,
+              count(*) filter (where coalesce((o.details->>'cobroMitad')::int, 0) > 0)::int as mitad,
+              count(*) filter (where o.cancel_reason = 'salida')::int as "cxSalida",
+              (select count(*)::int from help_requests h join operations o2 on o2.id = h.operation_id where o2.kind = 'trip' and h.reason = 'cobro' and h.created_at > now() - make_interval(days => $2) and ${scope("o2.city_id")}) as "cobroMas"
+         from operations o where o.kind = 'trip' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ salidas: number; aTiempo: number; conPas: number; canceladas: number; asientos: number; ocupados: number }>(
+      `select count(*) filter (where r.departed_at is not null)::int as salidas,
+              count(*) filter (where r.departed_at is not null and r.departed_at - r.run_at <= interval '15 minutes')::int as "aTiempo",
+              count(*) filter (where r.seats_booked + r.seats_outside > 0)::int as "conPas",
+              count(*) filter (where r.status = 'cancelled' and r.cancel_reason is not null)::int as canceladas,
+              coalesce(sum(r.seats_total) filter (where r.status in ('departed', 'arrived')), 0)::int as asientos,
+              coalesce(sum(r.seats_booked + r.seats_outside) filter (where r.status in ('departed', 'arrived')), 0)::int as ocupados
+         from trip_runs r where r.run_at > now() - make_interval(days => $2) and r.run_at < now() and ${scope("r.city_id")}`, [s.cities, dias]),
+    db().query<{ rub: string; reason: string; n: number }>(
+      `select case when o.kind = 'party' then 'fiesta' else 'trans' end as rub, h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
+        where o.kind in ('party', 'trip') and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
+  ]);
+  return { fi: fi.rows[0]!, dep: dep.rows[0]!, vi: vi.rows[0]!, sal: sal.rows[0]!, ayuda: ayuda.rows };
+}
