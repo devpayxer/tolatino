@@ -44,5 +44,5 @@ _Pantallas: la ficha › **Servicios** (hoja del servicio, **Tu vehículo**, **T
 Save your vehicle (make, model, year, mileage, type) or your home (one of your addresses, type, owner or renter, rooms,
 year, heating, water heater, access) and each listing tells you right away whether the shop works on your vehicle or the
 business reaches your home. Book in three steps: your car or home, day and time (shops) or a 2-hour arrival window (home
-services), then review and send. It is a request the business confirms; a deposit, if any, is charged on sending and
-refunded if they do not confirm. Renters must confirm the landlord's permission.
+services), then review and send. It is a request the business confirms; a deposit, if any, is held when you send, charged
+once they confirm and released if they do not. Renters must confirm the landlord's permission.

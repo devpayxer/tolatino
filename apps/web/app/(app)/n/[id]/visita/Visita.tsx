@@ -190,7 +190,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
     bar: dep > 0 && rest > 0 ? { a: dep, b: rest } : null,
     rows: como.map(([label, sub], k) => ({ label, sub, value: k === 0 ? dinero(dep) : k === 2 && !desdeK ? dinero(rest) : "—", dot: k === 0 && dep ? "var(--tl-ink)" : "rgba(11,14,18,.18)", color: "var(--tl-ink)" })),
     card: necesitaTarjeta ? { screenLabel: "Booking · método de pago", kind: yo && tarjeta ? "brand" : "none", brand: tarjeta ? marcaB(tarjeta.marca) : "", label: yo && tarjeta ? tarjetaL(tarjeta) : E2("Tu tarjeta", "Your card"),
-      sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : op.pol.auto ? E2("EL DEPÓSITO SE COBRA AL CONFIRMAR", "DEPOSIT CHARGED ON CONFIRMATION") : E2("EL DEPÓSITO SE COBRA AL ENVIAR", "DEPOSIT CHARGED WHEN YOU SEND"),
+      sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : op.pol.auto ? E2("EL DEPÓSITO SE COBRA AL CONFIRMAR", "DEPOSIT CHARGED ON CONFIRMATION") : E2("EL DEPÓSITO SE RETIENE AL ENVIAR", "DEPOSIT HELD WHEN YOU SEND"),
       change: yo && tarjeta ? E2("Cambiar", "Change") : E2("Elegir", "Choose"), onClick: () => (yo ? setHoja(true) : entrar()) } : null,
   };
   const dev = `${E2("Te devolvemos ", "We refund ")}${dinero(dep)}`, GR = "var(--tl-open-text)";
@@ -261,7 +261,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
       <HojaCasa v={v} />
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
-          nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${op.pol.auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE COBRA AL ENVIAR", "CHARGED WHEN YOU SEND")}`}
+          nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${op.pol.auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}
           onClose={() => setHoja(false)}
           onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((L) => [nueva, ...L]); setTarjeta(t); setHoja(false); if (declinada && t.pm !== declinada) setError(null); }} />
       )}

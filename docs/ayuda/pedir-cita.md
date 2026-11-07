@@ -21,7 +21,7 @@ bloque 3b (6 nov 2026)._
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
-| Pide depósito | Se cobra al enviar en tu tarjeta (se retiene) y se descuenta del total. Si no confirman o no contestan en 2 h, se libera. |
+| Pide depósito | Se retiene en tu tarjeta al enviar, se cobra cuando confirman y se descuenta del total. Si no confirman o no contestan en 2 h, se libera. |
 | Confirma al instante | La cita queda confirmada y el depósito se cobra en ese momento. |
 | Tu banco rechaza la tarjeta | No hay cita ni cobro: «Tu tarjeta fue rechazada». Usa otra. |
 | Otra persona tomó esa hora mientras elegías | «Esa hora ya no está libre. Elige otra.» y vuelves a Día y hora. |
@@ -42,5 +42,5 @@ bloque 3b (6 nov 2026)._
 sheet asks for options, optional extras and **With whom?**. **Day and time** shows 14 days of real openings in that
 person's schedule (existing bookings plus clean-up time); today from 30 minutes out. **Details**: for you, someone else or
 a child; a note (no phone numbers), up to 3 reference photos and a reminder in Alerts. **Review and send** shows the price,
-how you pay (deposit today, the rest on the day) and what happens to your deposit. Deposits are charged when you send and
-released if the booking is not confirmed within 2 h. If someone takes the time first, you are asked to pick another.
+how you pay (deposit today, the rest on the day) and what happens to your deposit. Deposits are held on your card when you send, charged
+once confirmed and released if the booking is not confirmed within 2 h. If someone takes the time first, you are asked to pick another.

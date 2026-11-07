@@ -5,6 +5,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { foto } from "@/lib/directorio";
+import { diaFiesta } from "@/lib/fiestas-comun";
 import { categoriaPorSlug, cifras, filtros, mosaicos, ORDENES, resultados, type Orden } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
 import { ubicacion } from "@/lib/ubicacion";
@@ -38,6 +39,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const fs = await filtros(c.id, lang);
   const validos = new Set(fs.map((f) => f.key));
   const reglas = mosaicos(P);
+  // 4u · Fiestas: «Tu fecha» de la cuenta entra como el primer chip de «¿Está libre tu fecha?» (solo los libres ese día).
+  const tuFecha = c.id === "NEG-FIESTA" && u ? (await db().query<{ day: string }>(
+    `select p.day::text as day from user_event_plans p join cities ci on ci.id = p.city_id where p.user_id = $1 and p.day >= (now() at time zone ci.timezone)::date`, [u.id])).rows[0]?.day ?? null : null;
+  if (tuFecha) reglas.set("tufecha", { dia: tuFecha });
   const sub = typeof sp.sub === "string" && reglas.has(sp.sub) ? sp.sub : null;
   const elegidos = [...new Set(String(sp.f ?? "").split(",").filter((k) => validos.has(k)))];
   const orden: Orden = (ORDENES as readonly string[]).includes(sp.orden ?? "") ? (sp.orden as Orden) : "rel";
@@ -58,6 +63,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const tile = (x: { key: string; label: { es: string; en: string }; photo: string | null; flag: string | null }) => ({ key: x.key, label: L(x.label), photo: foto(x.photo, 200), flag: x.flag && /^[a-z]{2}$/.test(x.flag) ? x.flag : null });
   const nombreSub = (k: string | null) => {
     if (!k) return null;
+    if (k === "tufecha" && tuFecha) return L({ es: `Tu fecha · ${diaFiesta(tuFecha, true)}`, en: `Your date · ${diaFiesta(tuFecha, false)}` });
     for (const r of P.rows) for (const x of [...r.items, ...r.more]) if (x.key === k) return L(x.label);
     for (const g of P.chapters) for (const x of g.items) if (x.key === k) return L(x.label);
     return k;
@@ -78,7 +84,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     banda: P.band && P.band.sub_key ? { titulo: L(P.band.title), sub: L(P.band.sub), cta: L(P.band.cta), key: P.band.sub_key } : null,
     filas: P.rows.map((r, i) => ({
       key: r.key, titulo: L(r.title), tipo: r.kind,
-      items: [...(i === 0 && r.all_first ? [{ key: "", label: t.all, photo: foto(r.all_photo, 200), flag: null }] : []), ...r.items.map(tile)],
+      items: [...(i === 0 && r.all_first ? [{ key: "", label: t.all, photo: foto(r.all_photo, 200), flag: null }] : []),
+        ...(r.key === "fecha" && tuFecha ? [{ key: "tufecha", label: L({ es: `Tu fecha · ${diaFiesta(tuFecha, true)}`, en: `Your date · ${diaFiesta(tuFecha, false)}` }), photo: null, flag: null }] : []), ...r.items.map(tile)],
       mas: r.more.map(tile), masLabel: r.more.length ? `${r.more_label ? L(r.more_label) : t.seeAllN} · ${r.more.length}` : null,
     })),
     antojo: L(P.craving),

@@ -156,7 +156,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
       : { label: E2("Hoy", "Today"), sub: E2("No pide depósito. No se cobra nada ahora.", "No deposit. Nothing is charged now."), value: "$0", dot: "rgba(11,14,18,.18)", color: "rgba(11,14,18,.45)" },
       { label: `${hSel != null ? cap(diaLargo(cp.hoy, i, es)) : E2("El día de tu cita", "On the day")}, ${restW}`, sub: silla && quien ? E2(`Efectivo o tarjeta, a ${quien.corto}. No al local.`, `Cash or card, to ${quien.corto}. Not to the shop.`) : E2("Efectivo o tarjeta.", "Cash or card."), value: dinero(rest), dot: dep ? "rgba(11,14,18,.18)" : "var(--tl-ink)", color: "var(--tl-ink)" }],
     card: necesitaTarjeta ? { screenLabel: "Booking · método de pago", kind: yo && tarjeta ? "brand" : "none", brand: tarjeta ? marcaB(tarjeta.marca) : "", label: yo && tarjeta ? tarjetaL(tarjeta) : E2("Tu tarjeta", "Your card"),
-      sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : auto ? E2("EL DEPÓSITO SE COBRA AL CONFIRMAR", "DEPOSIT CHARGED ON CONFIRMATION") : E2("EL DEPÓSITO SE COBRA AL ENVIAR", "DEPOSIT CHARGED WHEN YOU SEND"),
+      sub: !yo ? E2("ENTRA PARA ELEGIRLA", "SIGN IN TO CHOOSE IT") : declinada && tarjeta?.pm === declinada ? E2("TU BANCO LA RECHAZÓ · CAMBIA DE TARJETA", "YOUR BANK DECLINED IT · CHANGE CARD") : auto ? E2("EL DEPÓSITO SE COBRA AL CONFIRMAR", "DEPOSIT CHARGED ON CONFIRMATION") : E2("EL DEPÓSITO SE RETIENE AL ENVIAR", "DEPOSIT HELD WHEN YOU SEND"),
       change: yo && tarjeta ? E2("Cambiar", "Change") : E2("Elegir", "Choose"), onClick: () => (yo ? setHoja(true) : entrar()) } : null,
   };
   const devuelve = `${E2("Te devolvemos ", "We refund ")}${dinero(dep)}`, GR = "var(--tl-open-text)";
@@ -389,7 +389,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
 
       {hoja && pago && (
         <MetodoPago es={es} tarjetas={tarjetas} sel={tarjeta?.pm ?? null} declinada={declinada} modo={pago.modo} pk={pago.pk}
-          nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE COBRA AL ENVIAR", "CHARGED WHEN YOU SEND")}`}
+          nota={`${E2("PARA TU DEPÓSITO DE ", "FOR YOUR ")}${dinero(dep)}${E2("", " DEPOSIT")} · ${auto ? E2("SE COBRA AL CONFIRMAR", "CHARGED ON CONFIRMATION") : E2("SE RETIENE AL ENVIAR · SE COBRA AL CONFIRMAR", "HELD WHEN YOU SEND · CHARGED ON CONFIRMATION")}`}
           onClose={() => setHoja(false)}
           onUsar={(t, nueva) => { if (nueva && !tarjetas.some((x) => x.pm === nueva.pm)) setTarjetas((L) => [nueva, ...L]); setTarjeta(t); setHoja(false); if (declinada && t.pm !== declinada) setError(null); }} />
       )}

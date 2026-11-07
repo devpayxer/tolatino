@@ -844,3 +844,21 @@ sábado para marcarlo ocupado y vuelve a tocarlo. En Servicios › Agregar: «C�
 lo que incluye; Por unidad con la unidad). En Buscar › Fiestas, el filtro «Libre este sábado».
 _Decidido por mí: el calendario del panel (hueco del diseño) se compuso con chips de fin de semana y un campo para otra fecha; los
 filtros de fecha del prototipo («Libre el 3 oct», «(26 sep)») ahora salen del calendario real y cambian a medianoche._
+
+### 4u · La página de Fiestas y «Tu fecha» (7 nov)
+**Qué mirar (teléfono, sin entrar):** Buscar › Fiestas › **Salón Imperial**. Arriba: «¿ESTÁ LIBRE TU FECHA?» y la línea «La fecha no es
+tuya hasta que te la confirmen.». Toca **Agregar** › elige Quinceañera, un sábado, 150 invitados › **Ver quién está libre**: la tarjeta
+dice «Libre el … · caben tus 150» u «Ocupada el … · libre …». Cambia a 300+ → «Caben hasta 250 · tú esperas 300». Pestaña Servicios:
+cada servicio dice si tu fecha está libre; toca el paquete → INCLUYE y **Pedir la fecha** (o **Ver otra fecha** si está ocupada).
+**Con cuenta (Marisol):** tu fecha sale en cualquier negocio de Fiestas, y en Buscar › Fiestas el primer chip es «Tu fecha · …» (solo
+los libres ese día). Escritorio: la columna con TU FECHA · DEPÓSITO · INVITADOS.
+_Decidido por mí (reversible):_
+- «Otra fecha» usa el selector de fecha del teléfono (el diseño solo trae chips de fechas fijas).
+- Qué celebras y dónde son opcionales (migración 0072); basta el día.
+- Sin cuenta, tu fecha se queda en el teléfono y pasa sola a la cuenta al entrar.
+- Quité la pregunta «¿Y si llueve?» del prototipo (prometía algo que la app no controla) y puse «¿Y si cancelo?» con la regla del
+  negocio.
+- **Corregí el texto del depósito en Belleza, Hogar y Auto:** decía «se cobra al enviar», pero el dinero solo se **retiene** al enviar y
+  se cobra cuando confirman. Ahora lo dice así en la página, la hoja, el Booking, el panel y la ayuda; un guardián (`depositoRetenido`)
+  no deja que vuelva.
+- «Pedir la fecha» lleva al Booking de Fiestas, que es el bloque siguiente (4v).

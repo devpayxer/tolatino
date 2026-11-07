@@ -229,7 +229,7 @@ export function OfHoja({ v }: { v: Of }) {
     router.push(`/n/${op.negocio.id}/visita?${p.toString()}`);
   };
   const lbl = { req: E2("OBLIGATORIO", "REQUIRED"), ready: E2("LISTO", "DONE") };
-  const depT = dep ? E2(`Depósito de ${dinero(dep)}: se cobra al enviar y se descuenta del total. Si ${op.negocio.nombre} no confirma, te lo devolvemos.`, `${dinero(dep)} deposit: charged when you send and taken off the total. If ${op.negocio.nombre} does not confirm, we refund it.`) : "";
+  const depT = dep ? E2(`Depósito de ${dinero(dep)}: se retiene al enviar, se cobra cuando confirman y se descuenta del total. Si ${op.negocio.nombre} no confirma, se libera completo.`, `${dinero(dep)} deposit: held when you send, charged once confirmed and taken off the total. If ${op.negocio.nombre} does not confirm, it is fully released.`) : "";
   const cuerpo = (
     <>
       <div className="relative h-[200px] flex-none bg-photo-bg" style={fondo(s.foto ?? op.negocio.foto)}>

@@ -8,7 +8,9 @@ import type { Lang } from "./idioma";
    activos en filter_options), el orden y la página. La configuración sale de categories.page (+ page_admin). */
 
 type Bi = { es: string; en: string };
-export type Regla = { subs?: string[]; tag?: string; attr?: string; value?: string; cap_gte?: number };
+export type Regla = { subs?: string[]; tag?: string; attr?: string; value?: string; cap_gte?: number;
+  // 4u · «Tu fecha» de Fiestas: solo negocios con ese día libre (no marcado y sin llenar sus eventos del día con reservas).
+  dia?: string };
 export type Mosaico = { key: string; label: Bi; match: Regla | null; photo: string | null; flag: string | null };
 export type Pagina = {
   title: Bi; hero: string | null; search_ph: Bi; craving: Bi; stats_tag: string; stats_label: Bi; map_label: Bi;
@@ -78,6 +80,12 @@ export function condiciones(p: Pick<Pedido, "sub" | "filtros">, params: unknown[
     if (s.tag) w.push(`b.filter_values @> array[${add(s.tag)}]::text[]`);
     if (s.attr && s.value != null) w.push(`(jsonb_typeof(b.category_attrs->${add(s.attr)}) = 'array' and b.category_attrs->$${params.length} ? ${add(String(s.value))})`);
     if (s.cap_gte != null) w.push(`(b.category_attrs->>'cap' is null or (b.category_attrs->>'cap')::numeric >= ${add(s.cap_gte)})`);
+    if (s.dia && /^\d{4}-\d{2}-\d{2}$/.test(s.dia)) {
+      const d = add(s.dia);
+      w.push(`not exists (select 1 from party_days pd where pd.business_id = b.id and pd.day = ${d}::date and pd.removed_at is null
+                and (pd.source = 'manual' or (select count(*) from party_days q where q.business_id = b.id and q.day = ${d}::date and q.source = 'booking' and q.removed_at is null)
+                     >= coalesce((select events_per_day from fiesta_settings fs where fs.business_id = b.id), 1)))`);
+    }
   }
   for (const f of p.filtros) {
     if (f === "open") w.push(`negocio_abierto(b.id, t.t)`);

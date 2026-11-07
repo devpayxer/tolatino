@@ -149,7 +149,7 @@ tienda · invit · chispa` (`kind` L10–20); Transporte `van · air · caja · 
   `alimentos` (licencia de alimentos de la ciudad o del estado: taquiza, pastel), `pa_puc_limo` (limosina y party bus), `seguro_general`.
 - `fee_rules.kind` + `'fiesta'` (sembrada en 800 bp = `cita`, adm-data L133; Preguntas #20).
 
-**0072 `fiestas_reservas` (4v)** (0071 = filtros de fecha de Fiestas, 4t; desde aquí todo corre uno) — `operations` `kind 'party'` con `details`: `event check in (EVT)`, `guests`, `where {kind, address_id |
+**0073 `fiestas_reservas` (4v)** (0071 = filtros de fecha de Fiestas, 4t; 0072 = «Tu fecha» sin tipo de evento, 4u; desde aquí todo corre dos) — `operations` `kind 'party'` con `details`: `event check in (EVT)`, `guests`, `where {kind, address_id |
 venue_business_id}`, `mi` (distancia calculada), `svc_k`, `qty` (servidor), `h`, `visit bool`, `agreement_version`; `scheduled_at` = día y hora
 de inicio; `deposit_cents` = mín(depósito, total) (`depFor` L24). Secuencia **`party_seq start 5101`** (número **F-5101**, `FIESTA #`;
 Preguntas #24). `written_totals`: se generaliza a `F-` (fee = total del paquete o lo escrito, `credit_cents` = depósito cobrado, `gov_cents` 0,
@@ -157,7 +157,7 @@ Preguntas #24). `written_totals`: se generaliza a `F-` (fee = total del paquete 
 NEG-FIESTA (el check 1–48 ya lo admite). `party_days` recibe la fila `booking` al confirmar (en la misma transacción). `operation_events`:
 `party_sent`, `party_ok`, `party_alt`, `party_no`, `party_exp`, `party_cx`, `party_biz_cx`, `party_done`, `agreement_sent`, `agreement_ok`.
 
-**0072 `transporte_servicios` (4w)**
+**0074 `transporte_servicios` (4w)**
 - `items.svc_kind` + `'asiento', 'priv', 'caja', 'pase'` (`cotiza` ya existe). `svc_attrs` (rubro `trans`): `sal smallint[]` (horas de salida,
   0–23; `DEP0` L130), `from {es,en}` (sale de), `to {es,en}` (destino; Washington Heights), `dur_min`, `pax smallint 1–56` (asientos o personas),
   `child_cents` (precio de niño), `bags smallint` (incluidas), `inc [{es,en}]` (peajes, maletas, espera, recogida, seguro, rastreo), `zone
@@ -183,7 +183,7 @@ NEG-FIESTA (el check 1–48 ya lo admite). `party_days` recibe la fila `booking`
   semanas» / «Precio cerrado con fotos de tu casa».
 - `fee_rules.kind` + `'viaje'` (sembrada en 800 bp; Preguntas #20).
 
-**0073 `transporte_reservas` (4y)** — `operations` `kind 'trip'` con `details`: `k`, `adults`, `kids`, `child_seats`, `bags`, `bags_extra`,
+**0075 `transporte_reservas` (4y)** — `operations` `kind 'trip'` con `details`: `k`, `adults`, `kids`, `child_seats`, `bags`, `bags_extra`,
 `boxes`, `pickup_address_id`, `drop {text, geo}` (priv por zona), `week_of` (pase), `quote bool`; secuencia **`trip_seq start 9101`**
 (**V-9101**, `VIAJE #`). **`run_seats`**: `operation_id`, `run_id`, `seats smallint`, `status check in ('held','boarded','noshow','cancelled',
 'refunded')`, `unique (operation_id, run_id)` (un pase = 10 filas). `op_private` guarda el **destinatario** del envío (nombre, teléfono,
@@ -193,7 +193,7 @@ envío; `media.owner_kind 'request'` (fotos de la mudanza). `written_totals` ace
 `operation_events`: `trip_sent`, `trip_ok`, `trip_alt`, `trip_no`, `trip_exp`, `trip_cx`, `trip_cx_fee`, `run_late`, `run_cancelled`,
 `run_departed`, `run_arrived`, `boarded`, `noshow`, `box_picked`, `box_departed`, `box_delivered`, `quote_sent`, `quote_ok`.
 
-**0074 `ayuda_fiestas_transporte` (4z)** — `help_requests.reason` amplía Fiestas (`neg-fiesta-rev.js RSN` L44: `nollego`, `tarde`, `nocomo`
+**0076 `ayuda_fiestas_transporte` (4z)** — `help_requests.reason` amplía Fiestas (`neg-fiesta-rev.js RSN` L44: `nollego`, `tarde`, `nocomo`
 (foto), `falto` (foto), `cobro` (foto), `dano` (foto; ya existe con etiqueta de Auto → `POR_RUBRO.fiesta`), `otro`) y Transporte (`RSN` L41:
 `cobro` (foto), `tarde`, `nollego`, `seguro` (escala directo, Preguntas #5), `equipaje` (foto), `otro`); `wants` + `descuento` (Fiestas «Un
 descuento») y reusa `devolver` · `reponer` · `avisar`. `reviews.answers` / `facts` con lo de 4z. Plantillas de aviso de 4v–4y que no entraron
@@ -331,7 +331,7 @@ Colas › «Fechas canceladas por el negocio» (3 en 90 días → sello en revis
 liberación exacta; cancelación a 31 y a 29 días; otra hora aceptada y rechazada; vence a las 24 h; carrera de confirmación (dos miembros a la vez).
 
 ### 4w · Transporte: servicios, «Salidas y asientos», licencias y filtros (panel + admin + datos) — Sonnet/medium; migración y licencias Opus
-**Datos:** migración 0072. La semilla 0020 suma `TLTrans.B` (17: 10 Pro, 7 Free), `TLTransL.SVC` (`k`, `sal`, `pax`, `child`, `inc` →
+**Datos:** migración 0074. La semilla 0021 suma `TLTrans.B` (17: 10 Pro, 7 Free), `TLTransL.SVC` (`k`, `sal`, `pax`, `child`, `inc` →
 `items`), `ABOUT`, `ST` (persona del negocio), `RV`, `STATS`, `DEP0`, los demos del panel (Envíos Quisqueya Cargo, Mudanzas El Primo, Traslados
 Abuela, dash2-cat L79–81) y `demo-trans` (L1004) con sus viajes, envíos y cotizaciones; licencias de ejemplo en `review` y `valid`.
 **Panel (Lo que vendes):**
@@ -558,7 +558,7 @@ seguridad (regla 5) de 4t, 4v, 4w, 4y y 4z antes de cerrar (dinero, licencias, d
 asientos libres en una consulta indexada, sin N+1. Capturas teléfono + escritorio de cada pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre del grupo (todo marcado antes de decir «Fiestas + Transporte completos»)
-- [ ] Migraciones 0070–0074 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
+- [ ] Migraciones 0070–0076 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
 - [ ] Semilla 0020 solo en pruebas (guardián `semilla`); demos `demo-fiesta` y `demo-trans` y los del panel (dash2-cat L79–81) con solicitudes, salidas, envíos,
       cotizaciones, reseñas y ayudas.
 - [ ] Editor de servicios de Fiestas y Transporte con todos sus tipos (paquete, hora, unidad, visita, cotiza; asiento, vehículo completo, caja,
