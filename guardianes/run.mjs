@@ -744,6 +744,51 @@ const guardianes = {
     }
   },
 
+  /* 4ia. «La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.» Iglesias no cobra nada en la app: ningún
+     depósito (trigger en la base + limpiarFe lo rechaza + el guardado lo pone en 0), «gratis» es $0, el donativo y el total son > 0 y el
+     total solo en funerarias; la línea fija y «si no puedes, no se cobra» están verbatim; ningún texto de Iglesias dice que se cobra; la
+     semilla no siembra un depósito; y una misa o un culto nunca se queda sin horario. */
+  ayudaGratisIglesia() {
+    const G = "ayudaGratisIglesia", dir = "packages/db/migrations";
+    if (!readdirSync(dir).some((x) => /create trigger items_fe_sin_deposito[\s\S]*category_id = 'NEG-FE'|category_id = 'NEG-FE'[\s\S]*create trigger items_fe_sin_deposito/.test(readFileSync(`${dir}/${x}`, "utf8"))))
+      falla(G, dir, 0, "falta el trigger items_fe_sin_deposito: ningún ítem de NEG-FE lleva depósito");
+    const sv = "apps/web/lib/servicios.ts";
+    if (existsSync(sv)) {
+      const s = readFileSync(sv, "utf8"), f = /export function limpiarFe[\s\S]*?\n}\n/.exec(s)?.[0] ?? "";
+      if (!f) falla(G, sv, 0, "falta limpiarFe (el servidor valida los servicios de Iglesias)");
+      else {
+        if (!/if \(Number\(x\.dep\) > 0\) return \{ ok: false/.test(f)) falla(G, sv, 0, "limpiarFe tiene que rechazar cualquier depósito");
+        if (!/forma === "gratis"\) \{ if \(cents\) return \{ ok: false/.test(f)) falla(G, sv, 0, "«gratis» tiene que ser $0");
+        if (!/forma === "don"\) \{ if \(!cents\) return \{ ok: false/.test(f)) falla(G, sv, 0, "el donativo sugerido tiene que tener monto (si no, es gratis)");
+        if (!/forma === "tot"\) \{\s*if \(!funeraria\) return \{ ok: false/.test(f)) falla(G, sv, 0, "el precio total es solo de las funerarias");
+        if (/deposit_cents|a\.dep\s*=/.test(f)) falla(G, sv, 0, "limpiarFe no pone depósito");
+      }
+    }
+    const ac = "apps/web/app/panel/acciones-servicios.ts";
+    if (existsSync(ac) && !/if \(rub === "fe"\) await c\.query\(`update items set deposit_cents = 0/.test(readFileSync(ac, "utf8"))) falla(G, ac, 0, "al guardar un servicio de Iglesias el depósito queda en 0");
+    const co = "apps/web/lib/fe-comun.ts";
+    if (existsSync(co)) {
+      const s = readFileSync(co, "utf8");
+      if (!s.includes("La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.")) falla(G, co, 0, "la línea fija de Iglesias (§1c) va verbatim");
+      if (!/DONATIVO: Bi = \{ es: "Donativo sugerido · si no puedes, no se cobra\."/.test(s)) falla(G, co, 0, "el donativo siempre dice «si no puedes, no se cobra»");
+    }
+    // Ningún texto de Iglesias dice que se cobra: «cobra», «charge» solo negados.
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib\/fe(-comun)?\.ts|app\/panel\/(Fe\.tsx|acciones-fe\.ts))$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\/?\*)/.test(l)) return;
+        for (const m of l.matchAll(/"[^"\n]*(cobr|charg)[^"\n]*"/gi)) if (!/(no|nunca|nada)( se| lo)? cobr|no cobran|not charge|never charged|no charge|nothing is charged/i.test(m[0])) falla(G, f, i + 1, `texto de Iglesias que habla de cobrar sin negarlo: ${m[0].slice(0, 80)}`);
+      });
+    }
+    const fe = "apps/web/lib/fe.ts";
+    if (existsSync(fe) && !/if \(pideUnHorario\(h\.kind\) && !quedan\(/.test(readFileSync(fe, "utf8"))) falla(G, fe, 0, "una misa o un culto no se queda sin horario (al menos uno)");
+    const sem = "infra/pruebas/semilla/0027_fe.sql";
+    if (existsSync(sem)) readFileSync(sem, "utf8").split("\n").forEach((l, i) => {
+      if (/insert into items/.test(l) && !/::jsonb, 0, '\{[^']*\}'::text\[\], \d+\) returning id into it;$/.test(l)) falla(G, sem, i + 1, "la semilla de Iglesias no siembra depósitos");
+      if (/"dep":/.test(l)) falla(G, sem, i + 1, "la semilla de Iglesias no siembra depósitos");
+    });
+  },
+
   licenciaNoSeFinge() {
     const dir = "packages/db/migrations";
     const ult = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort().filter((x) => /function licencias_refrescar/.test(readFileSync(`${dir}/${x}`, "utf8"))).pop();

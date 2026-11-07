@@ -194,7 +194,7 @@ export async function selloCancelar(id: string): Promise<Res> {
 export async function licenciaAgregar(id: string, kind: string, miembro?: string | null, numero?: string | null): Promise<Res> {
   const a = await entrar(id, "cat");
   if (!a) return SIN_ACCESO;
-  if (typeof kind !== "string" || !/^[a-z]{2,12}$/.test(kind)) return no("Esa licencia no existe.", "That license doesn’t exist.");
+  if (typeof kind !== "string" || !/^[a-z][a-z0-9_]{1,23}$/.test(kind)) return no("Esa licencia no existe.", "That license doesn’t exist.");
   // 4h-3: la licencia de una persona del equipo (Doctores y Profesionales) lleva su número desde el principio.
   const mid = miembro == null ? null : String(miembro), num = typeof numero === "string" ? numero.trim().slice(0, 40) : "";
   if (mid !== null && !/^[0-9a-f-]{36}$/.test(mid)) return no("Esa persona ya no está en tu equipo.", "That person is no longer on your team.");

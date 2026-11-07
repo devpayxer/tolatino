@@ -184,6 +184,11 @@ export async function negocio360(s: Staff, id: string) {
         edad: C.edadTexto(h.edad, true), lic: C.licTexto(h.lic, true), recibe: h.recibe,
         bandas: h.bandas.map((b) => `${b.label.es}: ${b.libres}`).join(" · ") }; })() : null,
     // Deporte (4ec): «Membresías y contrato» o «Liga e inscripciones» en solo lectura (summary L308).
+    // Iglesias (4ia): «Horarios y ayuda», «La ayuda de hoy» o «Precios y repatriación» en solo lectura (summary L315–317).
+    herramientaFe: b.cat_id === "NEG-FE" ? await (async () => { const h = await (await import("./fe")).herramientaFe(id); if (!h) return null;
+      const C = await import("./fe-comun");
+      return { titulo: h.kind === "tienda" ? "Por contacto" : C.tituloFe(h, true), resumen: C.resumenFe(h, true), kind: h.kind, forzado: h.forzado,
+        horarios: h.horarios.map((x) => `${x.label.es} · ${C.cortoFe(x.dow, x.min, true)} · ${C.LANG_FE[x.lang].es}`), linea: C.lineaFe(h.kind, h.subs).es }; })() : null,
     herramientaDep: b.cat_id === "NEG-DEPORTE" ? await (async () => { const h = await (await import("./deporte")).herramientaDeporte(id); if (!h) return null;
       const C = await import("./deporte-comun");
       return { titulo: h.memb || h.liga ? C.tituloDep(h, true) : "Por contacto", resumen: h.memb || h.liga ? C.resumenDep(h, true) : "Visita, club, tiro o nutrición: la gente llama o escribe", kind: h.kind,

@@ -1188,3 +1188,32 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
 - Bienes Raíces: la cuota de solicitud va dentro del «total para mudarte»; el depósito tiene tope de 2 meses de renta (ley de PA, a verificar).
 - Buscar por recámaras, año o millas: se construyen los datos e índices; la pantalla queda como hueco para tu OK.
 
+### 4ia · Iglesias: «Horarios y ayuda», servicios, funerarias y licencias (7 nov)
+**Qué mirar** (sandbox, entra con 5705550422 = Padre Luis, Parroquia Santa María; capturas `f4ia-*.png`):
+1. Lo que vendes › **Horarios y ayuda** (teléfono y escritorio): toca «Dom 8 AM» y mira que la tarjeta del buscador diga «Misa en español:
+   domingo 8 AM, domingo 12 PM y sábado 6 PM». Intenta apagar la última misa: dice «Deja al menos una misa.» y no la quita.
+2. **Otros horarios › Agregar**: día, hora, nombre («Jóvenes»), qué es e idioma. La tarjeta suma «· Jóvenes: viernes 7 PM».
+3. «También en inglés», las 6 ayudas gratis (salen en Buscar) y «Catecismo · inscripciones abiertas» (la tarjeta dice abiertas o cerradas).
+4. Despensa Manos Unidas › **La ayuda de hoy**: «Se acabó por hoy» (la tarjeta lo dice solo ese día; a la medianoche de la ciudad se apaga
+   solo), sin papeles, ropa y cada cuánto puede venir una familia.
+5. Funeraria La Paz › **Precios y repatriación**: −/+ $100 cambia el precio del servicio, plan de pagos (solo texto), días de la
+   repatriación, 24 horas.
+6. Servicios › Agregar: «Gratis», «Donativo sugerido» (con «si no puedes, no se cobra»), «Precio total por escrito» (solo funerarias) y
+   «Curso con grupos» (catecismo, con «Abrir un grupo»). No hay campo de depósito; la base tampoco lo deja.
+7. Super Admin › Negocios 360 › Lo que vende: la herramienta en solo lectura con su resumen, los horarios, la línea fija y la forma de cada
+   servicio («Donativo sugerido $50», «Curso · 60 semanas · Donativo sugerido $60»).
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Nada se cobra en la app en Iglesias**: el donativo es texto; el catecismo es «curso con grupos» con donativo sugerido o gratis, y la
+  matrícula de $20 del prototipo va como «La matrícula de $20 se paga en la parroquia.» en lo que va aparte.
+- **«Las 24 horas» de la funeraria** solo cambia la tarjeta y el filtro «24 horas»; **no** reescribe el horario de Tu página (el prototipo
+  ponía 0–24 todos los días). Si prefieres que también cambie el horario, se cambia.
+- **Grupos, sacramentos, consejería y oración** usan los atajos del culto con el título «TUS HORARIOS DE LA SEMANA» (el prototipo decía
+  «TUS CULTOS» para todos) y pueden quedarse sin horario; misa y culto, nunca.
+- **Tiendas de artículos religiosos y botánicas** van por contacto: sin herramienta (§6 #19).
+- **«Otro horario»** (pantalla compuesta con piezas del sistema: chips de día, paso de hora, campos, chips de qué es e idioma) para la hora
+  libre que el plan pedía fuera de los atajos.
+- **Tarjeta**: los horarios en orden de la semana desde el domingo (el ejemplo del plan); en la tarjeta de abajo, catecismo (si tiene el
+  curso) → «Transporte gratis los domingos» → «Español e inglés»; si nada aplica, se conserva lo que traía del prototipo.
+- **Módulo «Citas»** no sale en Lo que vendes de Iglesias («Pedir fecha» llega con 4ie).
+- **Sellos** (funeraria de PA, representante acreditado del DOJ, 501(c)(3)): textos y registros sin verificar → `LAUNCH-CHECKLIST` (§6 #16).

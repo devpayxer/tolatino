@@ -33,10 +33,41 @@ export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boole
   // escuela), el plan de pagos sin intereses (0, 3, 6 o 12), primera clase gratis (nunca en un curso) y si pide el nivel.
   sem?: number; horas?: number; cert?: Bi; certBy?: Bi; oficial?: boolean; plan_n?: number; g1?: boolean; lvl?: boolean;
   // Deporte (4ec): la temporada de la liga, por equipo o por jugador; la cancha por hora se cobra por la cancha, no por persona.
-  team?: boolean; per_field?: boolean };
+  team?: boolean; per_field?: boolean;
+  // Iglesias (4ia · neg-fe-listing.js): gratis · donativo sugerido · precio total (funeraria); cuándo y cuánto dura («Con cita · 1 hora»).
+  fe?: "gratis" | "don" | "tot"; dur?: Bi };
 /* Fiestas usa el mismo editor de servicios con sus formas de cobrar. */
-export type RubroSvc = RubroSP | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep";
-export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : rubroSP(cat));
+export type RubroSvc = RubroSP | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep" | "fe";
+export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : cat === "NEG-FE" ? "fe" : rubroSP(cat));
+/* Iglesias (4ia · fase4-iglesias-inmuebles-autos.md §2 y §3): la forma es gratis (precio 0: misas, cultos, grupos, despensa, oración,
+   consejería) · donativo sugerido (> 0; «si no puedes, no se cobra») · precio total por escrito (> 0; solo funerarias) · curso con
+   grupos (catecismo: semanas; gratis o con donativo; sin matrícula). Iglesias NUNCA cobra en la app: sin depósito siempre (la base lo
+   impide con items_fe_sin_deposito y aquí se rechaza). El servidor valida; lo que no cuadra no se guarda. */
+export function limpiarFe(forma0: unknown, cents: number, a0: unknown, funeraria: boolean): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+  const forma = String(forma0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
+  if (!["gratis", "don", "tot", "curso"].includes(forma)) return { ok: false, es: "Elige cómo se da.", en: "Pick how it is offered." };
+  if (Number(x.dep) > 0) return { ok: false, es: "Las iglesias no cobran depósito en la app: el donativo siempre es sugerido.", en: "Churches do not take deposits in the app: donations are always suggested." };
+  const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const bi = (v: unknown, m: number): Bi | null => { const es = t((v as Bi)?.es, m); return es.length >= 2 ? { es, en: t((v as Bi)?.en, m) || es } : null; };
+  const lista = (v: unknown, max: number, m: number) => (Array.isArray(v) ? v : []).slice(0, max).map((z) => bi(z, m)).filter((z): z is Bi => !!z);
+  if (!Number.isFinite(cents) || cents < 0 || cents % 100 || cents > 5000000) return { ok: false, es: "El precio va en dólares enteros.", en: "The price goes in whole dollars." };
+  const inc = lista(x.inc, 8, 60), no = lista(x.no, 6, 120), dur = bi(x.dur, 40);
+  if (inc.length) a.inc = inc;
+  if (no.length) a.no = no;
+  if (dur) a.dur = dur;
+  if (forma === "gratis") { if (cents) return { ok: false, es: "Si es gratis, el precio es $0.", en: "If it is free, the price is $0." }; a.fe = "gratis"; return { ok: true, k: "clase", a, cents: 0 }; }
+  if (forma === "don") { if (!cents) return { ok: false, es: "Pon el donativo sugerido o márcalo gratis.", en: "Set the suggested donation or mark it free." }; a.fe = "don"; return { ok: true, k: "clase", a, cents }; }
+  if (forma === "tot") {
+    if (!funeraria) return { ok: false, es: "El precio total es de las funerarias. Aquí es gratis o con donativo sugerido.", en: "Total price is for funeral homes. Here it is free or a suggested donation." };
+    if (cents < 50000 || cents > 3000000) return { ok: false, es: "El precio total va de $500 a $30,000.", en: "The total price goes from $500 to $30,000." };
+    a.fe = "tot"; return { ok: true, k: "fijo", a, cents };
+  }
+  // Curso (catecismo, preparación de sacramentos): semanas; el grupo con fecha y cupo se abre aparte. Sin matrícula.
+  const sem = Math.round(Number(x.sem));
+  if (!(sem >= 1 && sem <= 104)) return { ok: false, es: "¿Cuántas semanas dura?", en: "How many weeks does it last?" };
+  a.sem = sem; a.fe = cents ? "don" : "gratis";
+  return { ok: true, k: "curso", a, cents };
+}
 /* Inscripciones (4ea · fase4-edu-ninos-deporte.md §2): curso (semanas, horas, matrícula ≤ precio, certificado, incluye / va aparte, plan
    0·3·6·12 solo en curso) · mes · semana · clase · hora (primera clase gratis: nunca en un curso). La matrícula va en
    items.deposit_cents (la copia a.dep). El servidor valida; lo que no cuadra no se guarda. */
@@ -218,6 +249,8 @@ export type SvcPanel = {
   edu: import("./inscripciones-comun").HerrEdu | null; // «Grupos y cupos» (4ea)
   ninos: import("./ninos-comun").HerrNinos | null; // «Cupos y licencia» o «Grupos y cupos» de Niños (4eb)
   dep: import("./deporte-comun").HerrDep | null; // «Membresías y contrato» o «Liga e inscripciones» (4ec)
+  fe: import("./fe-comun").HerrFe | null; // «Horarios y ayuda» · «La ayuda de hoy» · «Precios y repatriación» (4ia)
+  feEdu: import("./inscripciones-comun").HerrEdu | null; // los grupos del catecismo (4ia)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -245,7 +278,8 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
     rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, trans: x.cat === "NEG-TRANS" ? await (await import("./transporte")).herramientaTrans(negocio) : null,
     noche: x.cat === "NEG-NOCHE" ? await (await import("./noche")).herramientaNoche(negocio) : null, edu: x.cat === "NEG-EDU" ? await (await import("./edu")).herramientaEdu(negocio) : null,
     ninos: x.cat === "NEG-NINOS" ? await (await import("./ninos")).herramientaNinos(negocio) : null,
-    dep: x.cat === "NEG-DEPORTE" ? await (await import("./deporte")).herramientaDeporte(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    dep: x.cat === "NEG-DEPORTE" ? await (await import("./deporte")).herramientaDeporte(negocio) : null,
+    fe: x.cat === "NEG-FE" ? await (await import("./fe")).herramientaFe(negocio) : null, feEdu: x.cat === "NEG-FE" ? await (await import("./edu")).herramientaEdu(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

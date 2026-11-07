@@ -1,5 +1,5 @@
 "use server";
-import { limpiarFiesta, limpiarInsc, limpiarNoche, limpiarSP, limpiarTrans, rubroSvc, type AttrsSP } from "@/lib/servicios";
+import { limpiarFe, limpiarFiesta, limpiarInsc, limpiarNoche, limpiarSP, limpiarTrans, rubroSvc, type AttrsSP } from "@/lib/servicios";
 import { recalcularFiltrosNoche } from "@/lib/noche";
 import { recalcularFiltrosEdu } from "@/lib/edu";
 import { recalcularFiltrosFiesta } from "@/lib/fiestas";
@@ -28,7 +28,7 @@ async function hacer(id: string, fn: (c: PoolClient, a: Acceso) => Promise<Res |
   const r = await tx(async (c) => {
     const x = await fn(c, a);
     // Doctores y Profesionales: sus filtros salen de los servicios (sin cita, consulta gratis, por video…).
-    if (!x || x.ok) { await recalcularFiltrosSP(c, a.negocio.id); await recalcularFiltrosFiesta(c, a.negocio.id); await recalcularFiltrosTrans(c, a.negocio.id); await recalcularFiltrosNoche(c, a.negocio.id); await recalcularFiltrosEdu(c, a.negocio.id); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); await (await import("@/lib/deporte")).recalcularFiltrosDeporte(c, a.negocio.id); }
+    if (!x || x.ok) { await recalcularFiltrosSP(c, a.negocio.id); await recalcularFiltrosFiesta(c, a.negocio.id); await recalcularFiltrosTrans(c, a.negocio.id); await recalcularFiltrosNoche(c, a.negocio.id); await recalcularFiltrosEdu(c, a.negocio.id); await (await import("@/lib/ninos")).recalcularFiltrosNinos(c, a.negocio.id); await (await import("@/lib/deporte")).recalcularFiltrosDeporte(c, a.negocio.id); await (await import("@/lib/fe")).recalcularFiltrosFe(c, a.negocio.id); }
     return x;
   });
   return r ?? { ok: true };
@@ -53,7 +53,10 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     const cat = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [a.negocio.id])).rows[0]?.cat ?? "", rub = extra ? null : rubroSvc(cat);
     let k: string | null = null, attrs: AttrsSP | null = null, cents2 = cents;
     if (rub) {
-      const v = rub === "fiesta" ? limpiarFiesta(p?.k, cents, p?.a) : rub === "trans" ? limpiarTrans(p?.k, cents, p?.a) : rub === "noche" ? limpiarNoche(p?.k, cents, p?.a) : rub === "edu" || rub === "ninos" || rub === "dep" ? limpiarInsc(p?.k, cents, p?.a, rub) : limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
+      // Iglesias (4ia): el precio total es solo de las funerarias (el tipo sale de las subcategorías, como la herramienta) y llega a
+      // $30,000, por encima del tope general; limpiarFe revisa el número sin redondearlo al tope.
+      const fun = rub === "fe" ? (await (await import("@/lib/fe")).herramientaFe(a.negocio.id, c))?.kind === "fun" : false;
+      const v = rub === "fe" ? limpiarFe(p?.k, Math.round(Number(p?.price) * 100), p?.a, fun) : rub === "fiesta" ? limpiarFiesta(p?.k, cents, p?.a) : rub === "trans" ? limpiarTrans(p?.k, cents, p?.a) : rub === "noche" ? limpiarNoche(p?.k, cents, p?.a) : rub === "edu" || rub === "ninos" || rub === "dep" ? limpiarInsc(p?.k, cents, p?.a, rub) : limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
       if (!v.ok) return no(v.es, v.en);
       k = v.k; attrs = v.a; cents2 = v.cents;
       // Noche: la entrada sigue al cover de «Esta noche» (no tiene precio propio).
@@ -89,6 +92,8 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     }
     // Noche: el depósito de la mesa o del VIP (lo que se retiene al pedirla en 4nc). Lo demás, sin depósito.
     if (rub === "noche" || rub === "edu" || rub === "ninos" || rub === "dep") await c.query(`update items set deposit_cents = $3 where id = $2 and business_id = $1`, [a.negocio.id, id, attrs?.dep ?? 0]);
+    // Iglesias (4ia): nunca un depósito (§3); el donativo es sugerido y se da en persona.
+    if (rub === "fe") await c.query(`update items set deposit_cents = 0 where id = $2 and business_id = $1 and deposit_cents <> 0`, [a.negocio.id, id]);
     // Quién lo hace (y su precio, con sillas rentadas). Solo gente activa de este negocio.
     const gente = (await c.query<{ id: string }>(`select id::text from business_members where business_id = $1 and status = 'active'`, [a.negocio.id])).rows.map((x) => x.id);
     const hacen = Object.entries(p?.hacen ?? {}).filter(([k, v]) => UUID.test(k) && gente.includes(k) && v !== undefined);

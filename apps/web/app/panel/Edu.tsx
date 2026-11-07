@@ -70,7 +70,7 @@ export function cursoBloques(c: Ctx, x: CursoH, save: (p: Parameters<typeof eduG
 
 /* Detalle: abrir un grupo (grp:new:ITEM) o ver los grupos de un curso (grp:list:ITEM). */
 export function grupoEduDetalle(c: Ctx, id: string): Sec {
-  const { E2, es } = c, h = c.svc?.edu ?? c.svc?.ninos?.edu ?? c.svc?.dep?.edu, [, modo, item] = id.split(":"), x = h?.cursos.find((z) => z.id === item);
+  const { E2, es } = c, h = c.svc?.edu ?? c.svc?.ninos?.edu ?? c.svc?.dep?.edu ?? c.svc?.feEdu, [, modo, item] = id.split(":"), x = h?.cursos.find((z) => z.id === item);
   if (!h || !x) return { blocks: [{ type: "head", t: E2("Curso no encontrado", "Course not found"), onBack: c.closeDet }, { type: "empty", icon: "calendar", t: E2("Ese curso ya no existe", "That course no longer exists"), s: E2("Puede que lo quitaste en Servicios.", "You may have removed it in Services.") }], ed: null };
   if (modo === "list") {
     const out: (Bloque | null)[] = [{ type: "head", eye: E2("GRUPOS", "GROUPS"), t: nm(c, x.name), s: E2("Los que están abiertos o en curso.", "Open or in progress."), onBack: c.closeDet }];

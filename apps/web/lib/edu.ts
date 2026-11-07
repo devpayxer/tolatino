@@ -17,7 +17,7 @@ export async function herramientaEdu(negocio: string, c: Q = db()): Promise<Herr
   const s = (await c.query<{ p: boolean; l: boolean; h: boolean; esp: boolean; fv: string[]; hoy: string }>(
     `select ${HOY_SQL}::text as hoy, coalesce(s.how_presencial, true) as p, coalesce(s.how_linea, 'linea' = any(b.filter_values)) as l, coalesce(s.how_hibrido, 'hibrido' = any(b.filter_values)) as h,
             coalesce(s.esp, 'esp' = any(b.filter_values)) as esp, b.filter_values as fv
-       from businesses b join cities ci on ci.id = b.city_id left join insc_settings s on s.business_id = b.id where b.id = $1 and b.category_id in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE')`, [negocio])).rows[0];
+       from businesses b join cities ci on ci.id = b.city_id left join insc_settings s on s.business_id = b.id where b.id = $1 and b.category_id in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE', 'NEG-FE')`, [negocio])).rows[0];
   if (!s) return null;
   const I = (await c.query<{ id: string; name: Bi; k: KindInsc; cents: number; mat: number; a: Record<string, unknown>; vende: boolean }>(
     `select i.id::text, i.name, i.svc_kind as k, i.price_cents as cents, coalesce(i.deposit_cents, 0) as mat, coalesce(i.svc_attrs, '{}'::jsonb) as a, i.sell and i.status = 'live' as vende
@@ -114,7 +114,7 @@ export async function abrirGrupo(c: PoolClient, negocio: string, p: GrupoIn): Pr
   if (!ID.test(String(p?.item ?? ""))) return err("Ese curso no existe.", "That course does not exist.");
   const it = (await c.query<{ city: string; k: KindInsc; sem: number | null; hoy: string }>(
     `select b.city_id as city, i.svc_kind as k, (i.svc_attrs->>'sem')::int as sem, ${HOY_SQL}::text as hoy from items i join businesses b on b.id = i.business_id join cities ci on ci.id = b.city_id
-      where i.id = $1 and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora') and b.category_id in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE')`, [p.item, negocio])).rows[0];
+      where i.id = $1 and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora') and b.category_id in ('NEG-EDU', 'NEG-NINOS', 'NEG-DEPORTE', 'NEG-FE')`, [p.item, negocio])).rows[0];
   if (!it) return err("Ese curso no existe.", "That course does not exist.");
   const ini = String(p.inicio ?? "");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(ini) || ini < it.hoy) return err("Elige el día en que empieza (hoy o después).", "Pick the start day (today or later).");

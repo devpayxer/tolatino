@@ -39,8 +39,12 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
 const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
   visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad", asiento: "Por asiento", priv: "Vehículo completo", caja: "Caja o envío", cover: "Entrada (sigue al cover)", lista: "Lista", mesa: "Mesa", vip: "VIP", evento: "Noche especial (espera a Eventos)", fecha: "Por fecha" };
+/* Iglesias (4ia): la forma de cada servicio (nunca un cobro en la app): gratis · donativo sugerido · precio total · curso. */
+const usdN = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
+const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> }) => i.a?.fe === "tot" ? `Precio total por escrito ${usdN(i.cents)}`
+  : `${i.k === "curso" ? `Curso · ${Number(i.a?.sem ?? 0)} semanas · ` : ""}${i.cents ? `Donativo sugerido ${usdN(i.cents)}` : "Gratis"}`;
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -152,6 +156,8 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.herramientaRetail ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-MERC" ? "scale" : "bag", title: n.herramientaRetail.titulo, sub: n.herramientaRetail.resumen }]} /> : null}
         {n.herramientaTrans ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "truck", title: n.herramientaTrans.titulo, sub: `${n.herramientaTrans.resumen} · tipo ${n.herramientaTrans.kind}${n.herramientaTrans.forzado ? " (forzado)" : ""}` }]} /> : null}
+        {n.herramientaFe ? <A.AdminList label={`${n.herramientaFe.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "bell", title: n.herramientaFe.titulo, sub: `${n.herramientaFe.resumen} · tipo ${n.herramientaFe.kind}${n.herramientaFe.forzado ? " (forzado)" : ""}` },
+          ...n.herramientaFe.horarios.map((t) => ({ icon: "calendar", title: t, sub: "Horario de la semana" })), { icon: "lock", title: "Línea fija", sub: n.herramientaFe.linea }]} /> : null}
         {n.herramientaDep ? <A.AdminList label={`${n.herramientaDep.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "star", title: n.herramientaDep.titulo, sub: `${n.herramientaDep.resumen} · tipo ${n.herramientaDep.kind}` },
           ...(n.herramientaDep.contrato ? [{ icon: "law", title: "¿Hay contrato?", sub: n.herramientaDep.contrato }] : [])]} /> : null}
         {n.herramientaNinos ? <A.AdminList label={`${n.herramientaNinos.cuidado ? "CUPOS Y LICENCIA" : "GRUPOS Y CUPOS"} · SOLO LECTURA`} rows={[
@@ -181,7 +187,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
         })} /> : <A.AdminNote tone="info" icon="law">No declaró licencias.</A.AdminNote>) : null}
         {of && h ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: ic, title: `Mano de obra $${h.rate / 100}/h`, sub: n.cat_id === "NEG-AUTO" ? `Garantía ${h.warrM ?? "—"} meses · ${(h.warrMi ?? 0).toLocaleString("en-US")} mi · listo el mismo día si lo dejan antes de las ${h.cut ? `${h.cut % 12 || 12} ${h.cut < 12 ? "AM" : "PM"}` : "—"}` : `Hasta ${h.zone ?? "—"} mi · ${h.h24 ? "emergencias 24 h" : "sin emergencias"}` }]} /> : null}
         {n.servicios.length ? <A.AdminList label={`SERVICIOS · ${n.servicios.length} · COMO LOS DEJÓ EL DUEÑO${ocS ? ` · ${ocS} OCULTOS` : ""}`} rows={n.servicios.map((i) => ({
-          icon: i.extra ? "plus" : ic, title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? "Sin categoría"} · ${of && i.k ? `${KIND_L[i.k] ?? i.k} · ` : ""}$${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}${!i.own ? " · apagado por el dueño" : ""}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",
+          icon: i.extra ? "plus" : ic, title: i.name, sub: `${i.extra ? "Extra" : i.sec ?? "Sin categoría"} · ${n.cat_id === "NEG-FE" && !i.extra ? feL(i) : `${of && i.k ? `${KIND_L[i.k] ?? i.k} · ` : ""}$${(i.cents / 100).toFixed(2)}${i.dur ? ` · ${i.dur} min` : ""}`}${!i.own ? " · apagado por el dueño" : ""}${i.hidden ? ` · Oculto: ${i.reason ?? ""}` : ""}`, tag: i.hidden ? "OCULTO" : undefined, tone: "danger",
           actions: P.retirar ? [i.hidden ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${i.name}»?`, hacer: (m) => platoOcultar(n.id, i.id, false, m) }) }
             : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${i.name}»`, sub: "Deja de salir en su página y no se puede reservar. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => platoOcultar(n.id, i.id, true, m) }) }] : undefined,
         }))} /> : <A.AdminNote tone="info" icon="scissors">Todavía no tiene servicios.</A.AdminNote>}

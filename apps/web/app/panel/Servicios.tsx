@@ -17,13 +17,15 @@ import { filaHerramientaEdu } from "./Edu";
 import { filaInscripciones } from "./Inscripciones";
 import { filaHerramientaNinos } from "./Ninos";
 import { filaHerramientaDeporte } from "./Deporte";
+import { filaHerramientaFe } from "./Fe";
+import { DONATIVO, FE_DE_ITEM, LINEA_FE, LINEA_FUN } from "@/lib/fe-comun";
 import { hNoche } from "@/lib/noche-comun";
 
 const fp = (cents: number) => { const p = (Number(cents) || 0) / 100; return "$" + (p % 1 ? p.toFixed(2) : String(p)); };
 const durL = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const minPositivo = (L: number[]) => { const P = L.filter((v) => v > 0); return P.length ? Math.min(...P) : 0; };
 const first = (n: string) => n.split(" ")[0] ?? n;
-const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
+const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, fe: null, feEdu: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
 const MODEL = (c: Ctx): Record<SvcPanel["model"], [string, string]> => ({
   chair: [c.E2("Rentan silla", "Rent chairs"), c.E2("Cada barbero pone su precio y su agenda. Tú cobras la renta.", "Each barber sets their price and schedule. You collect rent.")],
   comm: [c.E2("A comisión", "On commission"), c.E2("Un precio para todos; a cada uno le toca su porcentaje.", "One price for everyone; each gets their percentage.")],
@@ -34,15 +36,17 @@ const resL = (c: Ctx, m: number) => (m >= 60 ? c.E2(`${m / 60} h`, `${m / 60} h`
 /* Las filas de Lo que vendes para un negocio de citas. */
 export function vendesCitas(c: Ctx): Fila[] {
   const { E2 } = c, X = S(c), svc = X.servicios.filter((s) => !s.extra), ex = X.servicios.filter((s) => s.extra), vis = svc.filter((s) => !s.oculto && !s.adm).length;
-  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c);
+  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c) ?? filaHerramientaFe(c);
   // Noche (4na): la lista y las mesas llegan en 4nc (no son «citas»): aquí solo Servicios y «Esta noche».
   const noche = X.rubro === "noche";
+  // Iglesias (4ia): no hay citas con depósito; «Pedir fecha» y el catecismo llegan con las inscripciones (4ie).
+  const sinCitas = noche || X.rubro === "fe";
   return [
     { icon: "scissors", t: E2("Servicios", "Services"), s: svc.length ? E2(`${svc.length} servicios · ${vis} en tu página${ex.length ? ` · ${ex.length} extras` : ""}`, `${svc.length} services · ${vis} on your page${ex.length ? ` · ${ex.length} extras` : ""}`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(X.off.svc != null ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}), tag: vis && X.off.svc == null ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "servicios") },
     ...(herr ? [herr] : []),
     ...((() => { const f = filaInscripciones(c); return f ? [f] : []; })()),
-    ...(noche ? [] : [{ icon: "calendar", t: E2("Citas", "Bookings"), s: citasLine(c), ...(X.off.citas != null ? { m: E2("PAUSADAS POR TO’LATINO", "PAUSED BY TO’LATINO"), mFg: "var(--tl-danger)" } : {}),
+    ...(sinCitas ? [] : [{ icon: "calendar", t: E2("Citas", "Bookings"), s: citasLine(c), ...(X.off.citas != null ? { m: E2("PAUSADAS POR TO’LATINO", "PAUSED BY TO’LATINO"), mFg: "var(--tl-danger)" } : {}),
       tag: X.on && X.off.citas == null ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "citas") } as Fila]),
     ...(X.model === "chair" && !noche ? [{ icon: "users", t: E2("Sillas y agenda", "Chairs and schedule"), s: E2(`${X.gente.length} sillas · cada una decide si confirma al instante y su depósito`, `${X.gente.length} chairs · each decides instant approval and deposit`), chev: true, onClick: () => c.go("mod", "sillas") } as Fila] : []),
   ];
@@ -87,6 +91,7 @@ export function serviciosBloques(c: Ctx): Sec {
 function fila(c: Ctx, X: SvcPanel, s: Servicio, j: number, n: number): Fila {
   const { E2 } = c, chair = X.model === "chair", cs = s.hacen.map((h) => h.cents ?? s.cents), lo = cs.length ? Math.min(...cs) : s.cents, hi = cs.length ? Math.max(...cs) : s.cents;
   if (X.rubro === "noche" && s.k && !s.extra) return filaNoche(c, s, j, n);
+  if (X.rubro === "fe" && s.k && !s.extra) return filaFe(c, s, j, n);
   const precio = s.k === "pct" ? `${s.cents / 100} %` : s.k === "free" ? E2("Gratis con seguro", "Free with insurance") : s.k === "cotiza" ? E2("Se cotiza", "Quoted") : s.k === "cons" && !s.cents ? E2("Gratis", "Free")
     : s.k === "fijo" && s.a?.gov ? `${fp(s.cents + s.a.gov)}${E2(" total", " total")}` : s.k === "hora" ? `${fp(s.cents)}/h` : s.extra ? `+${fp(s.cents)}` : chair && cs.length && lo !== hi ? `${fp(lo)}–${fp(hi)}` : `${s.desde ? E2("desde ", "from ") : ""}${fp(chair && cs.length ? lo : s.cents)}`;
   return {
@@ -115,6 +120,17 @@ function filaNoche(c: Ctx, s: Servicio, j: number, n: number): Fila {
     acts: [...(j > 0 ? [{ l: E2("Subir", "Up"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, -1)) }] : []), ...(j < n - 1 ? [{ l: E2("Bajar", "Down"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, 1)) }] : [])] };
 }
 
+/* Iglesias (4ia): la fila dice la forma (gratis · donativo sugerido · total por escrito · curso) y cuándo; nunca un cobro en la app. */
+function filaFe(c: Ctx, s: Servicio, j: number, n: number): Fila {
+  const { E2 } = c, f = FE_DE_ITEM(s.k, s.a?.fe), a = s.a ?? {};
+  const r = f === "tot" ? E2(`Total ${fp(s.cents)}`, `Total ${fp(s.cents)}`) : s.cents ? E2(`Donativo ${fp(s.cents)}`, `Donation ${fp(s.cents)}`) : E2("Gratis", "Free");
+  const m = [f === "curso" ? E2(`CURSO · ${a.sem ?? 0} SEMANAS`, `COURSE · ${a.sem ?? 0} WEEKS`) : f === "tot" ? E2("PRECIO TOTAL POR ESCRITO", "WRITTEN TOTAL PRICE") : f === "don" ? E2("DONATIVO SUGERIDO · SI NO PUEDEN, NO SE COBRA", "SUGGESTED DONATION · IF THEY CANNOT, NO CHARGE") : E2("GRATIS · LLEGAN A LA HORA", "FREE · THEY COME AT THE TIME"),
+    a.dur ? (c.es ? a.dur.es : a.dur.en || a.dur.es).toUpperCase() : ""].filter(Boolean).join(" · ");
+  return { key: s.id, img: s.foto ? `url("${s.foto}")` : undefined, imgIni: s.foto ? undefined : s.name.es.slice(0, 1), imgW: "52px", t: s.name.es, s: s.desc.es || undefined, m, r,
+    tag: s.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : s.oculto ? E2("OCULTO", "HIDDEN") : null, tone: s.adm != null ? "danger" : "neutral", dim: s.oculto || s.adm != null, onClick: () => c.det(`svc:${s.id}`),
+    acts: [...(j > 0 ? [{ l: E2("Subir", "Up"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, -1)) }] : []), ...(j < n - 1 ? [{ l: E2("Bajar", "Down"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, 1)) }] : [])] };
+}
+
 /* ── Servicio: el editor (svcDet) ── */
 type FSvc = { k: string; esc: boolean; gov: string; cred: boolean; rem: boolean; hrs: string; mes: boolean; unit: string; no: string; noEn: string;
   // Fiestas (4t): horas del paquete, invitados, montaje, lo que incluye (una por línea), unidad, invitados por unidad, mínimo.
@@ -125,6 +141,8 @@ type FSvc = { k: string; esc: boolean; gov: string; cred: boolean; rem: boolean;
   nuntil: number; npax: number; ntables: number; nhr: boolean; ndep: string; ndows: number[];
   // Educación (4ea): semanas y horas del curso, matrícula, plan, certificado (oficial o constancia), primera clase gratis y lo que va aparte.
   esem: number; ehrs: string; edep: string; eplan: number; ecert: string; ecertBy: string; eof: boolean; eg1: boolean; eno: string; elvl: boolean; eteam: boolean;
+  // Iglesias (4ia): cuándo y cuánto dura («Con cita · 1 hora»); la forma (gratis · donativo · total · curso) va en k.
+  fdur: string;
   name: string; en: string; desc: string; descEn: string; sec: string; newSec: string; price: string; desde: boolean; dur: number; buf: number; foto: string | null; visible: boolean; hacen: Record<string, string | null>; opts: { t: string; tEn: string; o: { n: string; nEn: string; p: number; m: number }[] }[] };
 export function servicioDetalle(c: Ctx, id: string): Sec {
   const { E2, ui } = c, X = S(c), chair = X.model === "chair", isNew = id === "new" || id === "new:extra", s0 = X.servicios.find((x) => x.id === id);
@@ -135,11 +153,12 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
   const sec0 = s0?.sec ?? (ex ? secEx?.id ?? "" : X.secciones.find((s) => !/^extras$/i.test(s.name.es))?.id ?? "");
   const rub = X.rubro, sp0 = { k: s0?.k ?? (rub === "salud" ? "cons" : rub === "pro" ? "cons" : rub === "fiesta" ? "pack" : rub === "trans" ? "asiento" : rub === "noche" ? "mesa" : rub === "edu" ? "curso" : rub === "ninos" ? "semana" : rub === "dep" ? "mes" : ""),
     esem: s0?.a?.sem ?? 8, ehrs: s0?.a?.horas ? String(s0.a.horas) : "", edep: s0?.a?.dep ? String(s0.a.dep / 100) : "", eplan: s0?.a?.plan_n ?? 0, ecert: s0?.a?.cert?.es ?? "", ecertBy: s0?.a?.certBy?.es ?? "", eof: !!s0?.a?.oficial,
-    eg1: !!s0?.a?.g1, eteam: s0?.a?.team ?? true, eno: (s0?.a?.no ?? []).map((z) => z.es).join("\n"), elvl: !!s0?.a?.lvl,
+    eg1: !!s0?.a?.g1, eteam: s0?.a?.team ?? true, fdur: s0?.a?.dur?.es ?? "", eno: (s0?.a?.no ?? []).map((z) => z.es).join("\n"), elvl: !!s0?.a?.lvl,
     nuntil: s0?.a?.until ?? 660, npax: s0?.a?.pax ?? 6, ntables: s0?.a?.tables ?? 1, nhr: !!s0?.a?.hr, ndep: s0?.a?.dep ? String(s0.a.dep / 100) : "", ndows: s0?.a?.dows ?? [],
     tsal: s0?.a?.sal ?? [], tfrom: s0?.a?.from?.es ?? "", tto: s0?.a?.to?.es ?? "", tdmin: s0?.a?.dmin ?? 120, tpax: s0?.a?.pax ?? (s0?.k === "priv" ? 4 : 14), tchild: s0?.a?.child ? String(s0.a.child / 100) : "", twait: s0?.a?.wait ?? 0,
     fh: s0?.a?.h ?? 4, fcap: s0?.a?.cap ? String(s0.a.cap) : "", fmont: !!s0?.a?.mont, finc: (s0?.a?.inc ?? []).map((z) => z.es).join("\n"), fu: s0?.a?.u?.es ?? "", fper: s0?.a?.per ? String(s0.a.per) : "", fmin: s0?.a?.min ?? 1, esc: !!s0?.a?.esc, gov: s0?.a?.gov ? String(s0.a.gov / 100) : "", cred: !!s0?.a?.cred, rem: !!s0?.a?.rem, hrs: s0?.a?.hrs ?? "", mes: !!s0?.a?.mes,
     unit: s0?.a?.unit ?? "caso", no: s0?.a?.no?.[0]?.es ?? "", noEn: s0?.a?.no?.[0]?.en ?? "" };
+  if (rub === "fe") sp0.k = s0 ? FE_DE_ITEM(s0.k, s0.a?.fe) : "gratis";
   const base: FSvc = s0 ? { ...sp0, price: s0.k === "pct" ? String(s0.cents / 100) : String(s0.cents / 100), name: s0.name.es, en: s0.name.en, desc: s0.desc.es, descEn: s0.desc.en, sec: s0.sec ?? "", newSec: "", desde: s0.desde, dur: s0.dur, buf: s0.buf, foto: s0.foto, visible: !s0.oculto,
       hacen: Object.fromEntries(X.gente.map((p) => { const h = s0.hacen.find((z) => z.id === p.id); return [p.id, h ? (h.cents == null ? "" : String(h.cents / 100)) : null]; })),
       opts: s0.opts.map((g) => ({ t: g.t.es, tEn: g.t.en, o: g.o.map((o) => ({ n: o.n.es, nEn: o.n.en, p: o.p / 100, m: o.m })) })) }
@@ -147,7 +166,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
   const F = c.form<FSvc>(`det:svc:${id}`, base), d = F.d, setF = F.set, out: (Bloque | null)[] = [];
   if (s0?.adm != null) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino ocultó este servicio: no sale en tu página. Motivo: ${s0.adm}`, `To’Latino hid this service: it is not on your page. Reason: ${s0.adm}`) });
   const secName = X.secciones.find((s) => s.id === d.sec)?.name.es ?? d.newSec;
-  out.push({ type: "head", eye: `${ex ? "EXTRA" : E2("SERVICIO", "SERVICE")}${secName && !ex ? ` · ${secName.toUpperCase()}` : ""}`, t: isNew ? (ex ? E2("Nuevo extra", "New extra") : E2("Nuevo servicio", "New service")) : s0!.name.es, s: isNew ? (rub === "noche" ? E2("Con nombre y qué es ya sale en tu página.", "A name and what it is are enough to show on your page.") : E2("Con nombre, precio y duración ya se puede reservar.", "Name, price and length are enough to book.")) : undefined, onBack: back });
+  out.push({ type: "head", eye: `${ex ? "EXTRA" : E2("SERVICIO", "SERVICE")}${secName && !ex ? ` · ${secName.toUpperCase()}` : ""}`, t: isNew ? (ex ? E2("Nuevo extra", "New extra") : E2("Nuevo servicio", "New service")) : s0!.name.es, s: isNew ? (rub === "fe" ? E2("Con nombre y cómo se da ya sale en tu página.", "A name and how it is offered are enough to show on your page.") : rub === "noche" ? E2("Con nombre y qué es ya sale en tu página.", "A name and what it is are enough to show on your page.") : E2("Con nombre, precio y duración ya se puede reservar.", "Name, price and length are enough to book.")) : undefined, onBack: back });
   out.push({ type: "photos", k: E2("FOTO · LA VE EL CLIENTE EN SERVICIOS Y AL RESERVAR", "PHOTO · CLIENTS SEE IT IN SERVICES AND WHEN BOOKING"), count: `${d.foto ? 1 : 0}/1`, cols: 3, items: d.foto ? [{ key: d.foto, bg: `url("${d.foto}")`, onClick: () => setF({ foto: null }) }] : [],
     addL: E2("Subir foto", "Upload photo"), onAdd: d.foto ? undefined : () => c.pickFiles(false, async (fs) => { const r = await subirFoto(fs[0]!); if (r.ok && r.url) setF({ foto: r.url }); else c.toast(r.mensaje ? r.mensaje[c.es ? "es" : "en"] : E2("No se pudo subir la foto.", "Couldn’t upload the photo.")); }) });
   const gal = c.d.fotos.map((x) => x.url);
@@ -166,9 +185,9 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (nueva) out.push({ type: "field", k: E2("NUEVA CATEGORÍA", "NEW CATEGORY"), val: d.newSec, max: 30, ph: E2("Ej. Tintes, Para niños", "e.g. Color, For kids"), onChange: (v) => setF({ newSec: v.slice(0, 30) }) });
   }
   const DUR = ex ? [5, 10, 15, 20] : [15, 20, 30, 40, 45, 60, 90];
-  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") out.push({ type: "group", k: E2("TIEMPO", "TIME") }, { type: "chips", k: E2("DURA", "TAKES"), items: [...DUR.map((n) => ({ l: `${n} min`, v: d.dur === n ? "selected" : "filter", onClick: () => setF({ dur: n }) })), { l: E2("Otro", "Other"), v: DUR.includes(d.dur) ? "filter" : "selected", onClick: () => setF({ dur: DUR.includes(d.dur) ? Math.min(480, d.dur + 5) : d.dur }) }] });
-  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && !DUR.includes(d.dur)) out.push({ type: "step", t: E2("Minutos", "Minutes"), s: durL(d.dur), v: `${d.dur} min`, onM: () => setF({ dur: Math.max(5, d.dur - 5) }), onP: () => setF({ dur: Math.min(480, d.dur + 5) }) });
-  if (!ex && rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") out.push({ type: "chips", k: E2("TIEMPO ENTRE CITAS", "TIME BETWEEN BOOKINGS"), help: d.buf ? E2(`LA AGENDA DEJA ${d.buf} MIN LIBRES DESPUÉS DE CADA CITA`, `THE SCHEDULE KEEPS ${d.buf} MIN FREE AFTER EACH BOOKING`) : rub === "fiesta" ? E2("PARA MONTAR Y RECOGER · EL CLIENTE NO LO VE", "TO SET UP AND CLEAN UP · CLIENTS DO NOT SEE IT") : rub === "salud" ? E2("PARA PREPARAR EL CONSULTORIO · EL PACIENTE NO LO VE", "TO PREPARE THE ROOM · PATIENTS DO NOT SEE IT") : rub === "pro" ? E2("ENTRE UNA CONSULTA Y OTRA · EL CLIENTE NO LO VE", "BETWEEN CONSULTATIONS · CLIENTS DO NOT SEE IT") : E2("PARA LIMPIAR LA SILLA · EL CLIENTE NO LO VE", "TO CLEAN THE CHAIR · CLIENTS DO NOT SEE IT"),
+  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && rub !== "fe") out.push({ type: "group", k: E2("TIEMPO", "TIME") }, { type: "chips", k: E2("DURA", "TAKES"), items: [...DUR.map((n) => ({ l: `${n} min`, v: d.dur === n ? "selected" : "filter", onClick: () => setF({ dur: n }) })), { l: E2("Otro", "Other"), v: DUR.includes(d.dur) ? "filter" : "selected", onClick: () => setF({ dur: DUR.includes(d.dur) ? Math.min(480, d.dur + 5) : d.dur }) }] });
+  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && rub !== "fe" && !DUR.includes(d.dur)) out.push({ type: "step", t: E2("Minutos", "Minutes"), s: durL(d.dur), v: `${d.dur} min`, onM: () => setF({ dur: Math.max(5, d.dur - 5) }), onP: () => setF({ dur: Math.min(480, d.dur + 5) }) });
+  if (!ex && rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && rub !== "fe") out.push({ type: "chips", k: E2("TIEMPO ENTRE CITAS", "TIME BETWEEN BOOKINGS"), help: d.buf ? E2(`LA AGENDA DEJA ${d.buf} MIN LIBRES DESPUÉS DE CADA CITA`, `THE SCHEDULE KEEPS ${d.buf} MIN FREE AFTER EACH BOOKING`) : rub === "fiesta" ? E2("PARA MONTAR Y RECOGER · EL CLIENTE NO LO VE", "TO SET UP AND CLEAN UP · CLIENTS DO NOT SEE IT") : rub === "salud" ? E2("PARA PREPARAR EL CONSULTORIO · EL PACIENTE NO LO VE", "TO PREPARE THE ROOM · PATIENTS DO NOT SEE IT") : rub === "pro" ? E2("ENTRE UNA CONSULTA Y OTRA · EL CLIENTE NO LO VE", "BETWEEN CONSULTATIONS · CLIENTS DO NOT SEE IT") : E2("PARA LIMPIAR LA SILLA · EL CLIENTE NO LO VE", "TO CLEAN THE CHAIR · CLIENTS DO NOT SEE IT"),
     items: ([[0, E2("Nada", "None")], [5, "5 min"], [10, "10 min"], [15, "15 min"]] as [number, string][]).map(([n, l]) => ({ l, v: d.buf === n ? "selected" : "filter", onClick: () => setF({ buf: n }) })) });
   out.push({ type: "group", k: E2("PRECIO", "PRICE") });
   const num = (v: string) => v.replace(/[^0-9.]/g, "").slice(0, 7);
@@ -281,11 +300,28 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
       out.push({ type: "chips", items: [[false, E2("En la oficina", "In the office")], [true, E2("También por video o teléfono", "Also by video or phone")]].map(([v, l]) => ({ l: l as string, v: d.rem === v ? "selected" : "filter", onClick: () => setF({ rem: v as boolean }) })) });
     }
   }
+  if (rub === "fe" && !ex) {
+    // Iglesias (neg-fe-listing.js fe; §4ia): gratis · donativo sugerido · precio total (solo funerarias) · curso con grupos (catecismo).
+    const KF: [string, string, string][] = [["gratis", E2("Gratis", "Free"), E2("MISAS, CULTOS, GRUPOS, DESPENSA, ORACIÓN Y CONSEJERÍA · LLEGAN A LA HORA", "MASSES, SERVICES, GROUPS, PANTRY, PRAYER AND COUNSELING · THEY COME AT THE TIME")],
+      ["don", E2("Donativo sugerido", "Suggested donation"), E2("SACRAMENTOS Y CELEBRACIONES · SI NO PUEDEN, NO SE COBRA", "SACRAMENTS AND CELEBRATIONS · IF THEY CANNOT, THERE IS NO CHARGE")],
+      ...(X.fe?.kind === "fun" ? [["tot", E2("Precio total por escrito", "Written total price"), E2("EL TOTAL ANTES DE FIRMAR · NADA SE AGREGA DESPUÉS", "THE TOTAL BEFORE SIGNING · NOTHING IS ADDED LATER")] as [string, string, string]] : []),
+      ["curso", E2("Curso con grupos", "Course with groups"), E2("CATECISMO O PREPARACIÓN · CON FECHA DE INICIO Y CUPO · SIN MATRÍCULA EN LA APP", "CATECHISM OR PREPARATION · WITH START DATE AND SPOTS · NO FEE IN THE APP")]];
+    out.push({ type: "chips", k: E2("CÓMO SE DA", "HOW IT IS OFFERED"), help: KF.find((x) => x[0] === d.k)?.[2], items: KF.map(([k, l]) => ({ l, v: d.k === k ? "selected" : "filter", onClick: () => setF({ k, price: k === "gratis" ? "" : d.price }) })) });
+    if (d.k === "curso") out.push({ type: "step", t: E2("Semanas", "Weeks"), s: E2("Cuánto dura, por ejemplo 40 semanas.", "How long it lasts, for example 40 weeks."), v: String(d.esem), onM: () => setF({ esem: Math.max(1, d.esem - 1) }), onP: () => setF({ esem: Math.min(104, d.esem + 1) }) });
+    out.push({ type: "field", k: E2("CUÁNDO Y CUÁNTO DURA · OPCIONAL", "WHEN AND HOW LONG · OPTIONAL"), val: d.fdur, max: 40, count: `${d.fdur.length}/40`, ph: E2("Ej. Con cita · 1 hora", "e.g. By appointment · 1 hour"), onChange: (v) => setF({ fdur: v.slice(0, 40) }) });
+    out.push({ type: "field", k: E2("LO QUE INCLUYE · UNO POR LÍNEA · OPCIONAL", "WHAT IS INCLUDED · ONE PER LINE · OPTIONAL"), val: d.finc, area: true, rows: 3, max: 360, ph: E2("Velorio 4 horas\nTraslado", "4-hour wake\nTransport"), onChange: (v) => setF({ finc: v.slice(0, 360) }) });
+    out.push({ type: "field", k: E2("LO QUE VA APARTE · UNO POR LÍNEA · OPCIONAL", "WHAT IS EXTRA · ONE PER LINE · OPTIONAL"), val: d.eno, area: true, rows: 2, max: 360, ph: E2("El terreno del cementerio va aparte.", "The cemetery plot is extra."), onChange: (v) => setF({ eno: v.slice(0, 360) }) });
+    if (d.k === "curso" && s0?.k === "curso") out.push({ type: "acts", items: [{ l: E2("Abrir un grupo", "Open a group"), icon: "calendar", onClick: () => c.det(`grp:new:${s0.id}`) }, { l: E2("Ver los grupos", "See the groups"), v: "ghost", onClick: () => c.det(`grp:list:${s0.id}`) }] });
+    out.push({ type: "note", tone: "ink", icon: "lock", t: d.k === "tot" ? (c.es ? LINEA_FUN.es : LINEA_FUN.en) : d.k === "don" || (d.k === "curso" && (parseFloat(d.price) || 0) > 0) ? (c.es ? DONATIVO.es : DONATIVO.en) : (c.es ? LINEA_FE.es : LINEA_FE.en) });
+  }
   if (chair && !ex) {
     out.push({ type: "note", tone: "info", icon: "info", t: E2("Cada silla pone su precio. Déjalo vacío si esa silla no lo hace.", "Each chair sets its price. Leave it empty if that chair does not do it.") });
     for (const p of X.gente) out.push({ type: "field", k: `${E2("SILLA", "CHAIR")} ${p.silla ?? "—"} · ${first(p.nombre).toUpperCase()}${p.kind === "owner" ? E2(" · TÚ", " · YOU") : ""}`, val: d.hacen[p.id] ?? "", pre: "$", im: "decimal", ph: E2("No lo hace", "Doesn’t do it"), max: 7, onChange: (v) => setF({ hacen: { ...d.hacen, [p.id]: num(v) || null } }) });
   } else {
-    if ((rub === "edu" || rub === "ninos" || rub === "dep") && !ex) out.push({ type: "field", k: d.k === "curso" ? (rub !== "edu" ? E2("PRECIO DE LA TEMPORADA", "SEASON PRICE") : E2("PRECIO DEL CURSO COMPLETO", "FULL COURSE PRICE")) : d.k === "semana" ? E2("PRECIO POR SEMANA", "PRICE PER WEEK") : d.k === "mes" ? E2("PRECIO AL MES", "PRICE PER MONTH") : d.k === "clase" ? E2("PRECIO POR CLASE", "PRICE PER CLASS") : E2("PRECIO POR HORA", "PRICE PER HOUR"),
+    if (rub === "fe" && !ex) { if (d.k !== "gratis") out.push({ type: "field", k: d.k === "tot" ? E2("PRECIO TOTAL POR ESCRITO", "WRITTEN TOTAL PRICE") : d.k === "curso" ? E2("DONATIVO SUGERIDO · 0 = GRATIS", "SUGGESTED DONATION · 0 = FREE") : E2("DONATIVO SUGERIDO", "SUGGESTED DONATION"),
+      val: d.price, pre: "$", im: "numeric", max: 5, ph: "0", help: d.k === "tot" ? E2("De $500 a $30,000. Lo que va aparte se dice.", "From $500 to $30,000. Anything extra is stated.") : E2("Si no pueden, no se cobra: tu página lo dice. Nada se cobra en la app.", "If they cannot, there is no charge: your page says so. Nothing is charged in the app."),
+      onChange: (v) => setF({ price: v.replace(/\D/g, "").slice(0, 5) }) }); }
+    else if ((rub === "edu" || rub === "ninos" || rub === "dep") && !ex) out.push({ type: "field", k: d.k === "curso" ? (rub !== "edu" ? E2("PRECIO DE LA TEMPORADA", "SEASON PRICE") : E2("PRECIO DEL CURSO COMPLETO", "FULL COURSE PRICE")) : d.k === "semana" ? E2("PRECIO POR SEMANA", "PRICE PER WEEK") : d.k === "mes" ? E2("PRECIO AL MES", "PRICE PER MONTH") : d.k === "clase" ? E2("PRECIO POR CLASE", "PRICE PER CLASS") : E2("PRECIO POR HORA", "PRICE PER HOUR"),
       val: d.price, pre: "$", im: "numeric", max: 6, ph: "0", help: d.k === "curso" ? E2("El total: libros y examen incluidos o dichos aparte.", "The total: books and exam included or listed separately.") : undefined, onChange: (v) => setF({ price: v.replace(/\D/g, "").slice(0, 6) }) });
     else if (rub === "noche" && !ex) { if (d.k !== "cover") out.push({ type: "field", k: d.k === "lista" ? E2("PRECIO DE LA LISTA POR PERSONA · 0 = GRATIS", "LIST PRICE PER PERSON · 0 = FREE") : d.k === "mesa" && d.nhr ? E2("PRECIO POR HORA", "PRICE PER HOUR")
       : d.k === "mesa" || d.k === "vip" ? E2("MÍNIMO DE CONSUMO · 0 = SIN MÍNIMO", "MINIMUM SPEND · 0 = NO MINIMUM") : d.k === "evento" ? E2("PRECIO DEL BOLETO", "TICKET PRICE") : E2("DESDE · 0 = SE COTIZA", "FROM · 0 = QUOTED"), val: d.price, pre: "$", im: "numeric", max: 5, ph: "0",
@@ -296,7 +332,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (!ex && X.gente.length > 1) out.push({ type: "chips", k: E2("QUIÉN LO HACE", "WHO DOES IT"), help: X.model === "comm" ? E2("A CADA UNO LE TOCA SU PORCENTAJE", "EACH GETS THEIR PERCENTAGE") : undefined,
       items: X.gente.map((p) => { const on = d.hacen[p.id] != null; return { l: `${first(p.nombre)}${p.kind === "owner" ? E2(" · tú", " · you") : ""}`, v: on ? "selected" : "filter", onClick: () => setF({ hacen: { ...d.hacen, [p.id]: on ? null : "" } }) }; }) });
   }
-  if (!ex && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") {
+  if (!ex && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && rub !== "fe") {
     const G = d.opts, setG = (g: FSvc["opts"]) => setF({ opts: g }), upG = (gi: number, o: Partial<FSvc["opts"][number]>) => setG(G.map((x, j) => (j === gi ? { ...x, ...o } : x)));
     const upO = (gi: number, oi: number, o: Partial<FSvc["opts"][number]["o"][number]>) => upG(gi, { o: G[gi]!.o.map((x, j) => (j === oi ? { ...x, ...o } : x)) }), sg = (n: number) => (n > 0 ? "+" : n < 0 ? "−" : "");
     out.push({ type: "group", k: E2("OPCIONES · EL CLIENTE ELIGE UNA", "OPTIONS · THE CLIENT PICKS ONE"), link: G.length < 3 ? E2("Agregar grupo", "Add group") : undefined, onLink: () => setG([...G, { t: "", tEn: "", o: [{ n: "", nEn: "", p: 0, m: 0 }, { n: "", nEn: "", p: 0, m: 0 }] }]) });
@@ -317,7 +353,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
   if ((rub === "salud" || rub === "pro") && !ex) out.push({ type: "field", k: rub === "salud" ? E2("IMPORTANTE · OPCIONAL", "IMPORTANT · OPTIONAL") : E2("LO QUE NO INCLUYE · OPCIONAL", "WHAT IS NOT INCLUDED · OPTIONAL"), val: d.no, max: 90, area: true, rows: 2, count: `${d.no.length}/90`,
     ph: rub === "salud" ? E2("Ej.: Dolor de pecho, falta de aire o sangrado fuerte: llama al 911.", "E.g. Chest pain, shortness of breath or heavy bleeding: call 911.") : E2("Ej.: No incluye la representación en corte.", "E.g. Does not include court representation."), onChange: (v) => setF({ no: v.slice(0, 90) }) });
   out.push({ type: "group", k: E2("EN TU PÁGINA", "ON YOUR PAGE") }, { type: "rows", items: [{ icon: "search", t: E2("Se ve en tu página", "Shows on your page"), s: d.visible ? E2("Sale en Servicios y se puede reservar.", "Shows in Services and can be booked.") : E2("Apagado: no sale ni se reserva. Queda guardado.", "Off: not shown or booked. It stays saved."), tgOn: d.visible, onTg: () => setF({ visible: !d.visible }) }] });
-  const pr = parseFloat(d.price) || 0, algunPrecio = rub === "noche" && !ex ? (d.k !== "evento" || pr > 0) : rub && !ex ? (["free", "cotiza", "walk"].includes(d.k) || (d.k === "cons") || (rub === "ninos" && d.k !== "curso" && d.price !== "") || pr > 0) : chair && !ex ? Object.values(d.hacen).some((v) => (parseFloat(v ?? "") || 0) > 0) : pr > 0 || ex;
+  const pr = parseFloat(d.price) || 0, algunPrecio = rub === "noche" && !ex ? (d.k !== "evento" || pr > 0) : rub === "fe" && !ex ? (d.k === "gratis" || d.k === "curso" || pr > 0) : rub && !ex ? (["free", "cotiza", "walk"].includes(d.k) || (d.k === "cons") || (rub === "ninos" && d.k !== "curso" && d.price !== "") || pr > 0) : chair && !ex ? Object.values(d.hacen).some((v) => (parseFloat(v ?? "") || 0) > 0) : pr > 0 || ex;
   const miss = [d.name.trim().length < 2 ? E2("nombre", "name") : null, algunPrecio ? null : E2("precio", "price"), ex || d.sec || d.newSec.trim() ? null : E2("categoría", "category")].filter(Boolean);
   if (miss.length && F.dirty) out.push({ type: "note", tone: "warn", t: E2(`Para guardar falta: ${miss.join(" · ")}.`, `To save, add: ${miss.join(" · ")}.`) });
   const askDel = !isNew && ui.svDel === id;
@@ -331,6 +367,8 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     opts: x.opts,
     ...(rub === "fiesta" && !ex ? { k: x.k, a: { h: x.fh, cap: parseInt(x.fcap) || undefined, mont: x.fmont, min: x.fmin, per: parseInt(x.fper) || undefined, u: x.fu.trim() ? { es: x.fu.trim(), en: x.fu.trim() } : undefined,
       inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
+      : rub === "fe" && !ex ? { k: x.k, a: { sem: x.k === "curso" ? x.esem : undefined, dur: x.fdur.trim() ? { es: x.fdur.trim(), en: x.fdur.trim() } : undefined,
+        inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 8).map((z) => ({ es: z, en: z })), no: x.eno.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
       : (rub === "edu" || rub === "ninos" || rub === "dep") && !ex ? { k: x.k, a: { team: rub === "dep" ? x.eteam : undefined, sem: x.esem, horas: parseInt(x.ehrs) || undefined, dep: Math.round((parseFloat(x.edep) || 0) * 100), plan_n: x.eplan, g1: x.eg1, lvl: x.elvl,
         cert: x.ecert.trim() ? { es: x.ecert.trim(), en: x.ecert.trim() } : undefined, certBy: x.ecertBy.trim() ? { es: x.ecertBy.trim(), en: x.ecertBy.trim() } : undefined, oficial: x.eof,
         inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 8).map((z) => ({ es: z, en: z })), no: x.eno.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
