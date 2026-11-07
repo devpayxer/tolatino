@@ -652,6 +652,21 @@ const guardianes = {
     }
   },
 
+  /* 4y. El panel decía «ESPERAN TU RESPUESTA 0 · Nada pendiente» con un viaje esperando: cada categoría con su propio bloque
+     «… QUE ESPERAN TU RESPUESTA» (fiestas, viajes…) debe sumar en la cifra de Hoy (Pedidos.tsx, const otros). */
+  esperanCuentan() {
+    const ped = "apps/web/app/panel/Pedidos.tsx";
+    if (!existsSync(ped)) return;
+    const otros = readFileSync(ped, "utf8").split("\n").find((l) => /const otros =/.test(l)) ?? "";
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/panel\/[^/]+\.tsx$/.test(f) || f === ped) continue;
+      const t = readFileSync(f, "utf8");
+      if (!/QUE ESPERAN TU RESPUESTA/.test(t)) continue;
+      const keys = [...new Set([...t.matchAll(/c\.(\w+)\?\.hoy/g)].map((m) => m[1]))];
+      for (const k of keys) if (!otros.includes(`c.${k}?.hoy`)) falla("esperanCuentan", f, 0, `lo que espera en «c.${k}?.hoy» no suma en «ESPERAN TU RESPUESTA» de Hoy (Pedidos.tsx, const otros)`);
+    }
+  },
+
   /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
      donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
      «fiesta:{negocio}:{día}». */

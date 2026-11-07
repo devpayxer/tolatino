@@ -88,8 +88,10 @@ export function ViHoja({ v }: { v: Vi }) {
   const P = precioTrans(s, es), meta = metaTrans(s, es), cot = s.k === "cotiza";
   const pago = cot ? E2("Mandas fotos y te dan el precio cerrado. No se cobra nada hasta que lo aceptes.", "Send photos and get a fixed price. Nothing is charged until you accept it.")
     : E2("Se retiene en tu tarjeta al reservar y se cobra cuando confirman. Si no sale o no confirman, se libera completo.", "Held on your card when you book and charged once they confirm. If it does not run or they do not confirm, it is fully released.");
-  const go = () => { if (!tp.booking) return v.llamar(); v.router.push(`/n/${tp.negocio.id}/viaje?s=${s.id}`); };
-  const cta = !tp.booking ? E2("Llama para reservar", "Call to book") : s.k === "caja" ? E2("Enviar una caja", "Send a box") : cot ? E2("Pedir precio cerrado", "Get a fixed price") : E2("Reservar", "Book");
+  // La caja (con destinatario) y el precio cerrado con fotos llegan en 4y-2: mientras, se llama al negocio.
+  const enApp = tp.booking && (s.k === "asiento" || s.k === "priv");
+  const go = () => { if (!enApp) return v.llamar(); v.router.push(`/n/${tp.negocio.id}/viaje?s=${s.id}`); };
+  const cta = !tp.booking ? E2("Llama para reservar", "Call to book") : s.k === "caja" ? E2("Llama para enviar", "Call to send") : cot ? E2("Llama para tu precio", "Call for your price") : E2("Reservar", "Book");
   const ruta = [s.from ? nm(s.from) : "", s.to ? nm(s.to) : ""].filter(Boolean).join(" → ");
   return (
     <div data-screen-label="Servicio · Transporte" className="fixed inset-0 z-[60]">
@@ -116,7 +118,7 @@ export function ViHoja({ v }: { v: Vi }) {
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
           <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("PRECIO CERRADO", "FIXED PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
-          <div className="flex min-w-0 flex-1"><Button block icon={!tp.booking ? "phone" : s.k === "caja" ? "bag" : "calendar"} onClick={go}>{cta}</Button></div>
+          <div className="flex min-w-0 flex-1"><Button block icon={!enApp ? "phone" : "calendar"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
     </div>

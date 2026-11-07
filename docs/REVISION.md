@@ -913,3 +913,19 @@ _Decidido por mí (reversible):_
 - Del prototipo quité las promesas que la app no controla («te avisan por SMS si sale tarde», «la primera hora de espera no se
   cobra»). La FAQ dice solo lo que el negocio guardó.
 - «Reservar» lleva al Booking de Transporte, que es el bloque siguiente (4y).
+
+### 4y-1 · Reservar un viaje (7 nov)
+**Qué mirar (teléfono, Marisol 5705550122):** Buscar › Transporte › Van Express › Hazleton → Washington Heights › **Reservar**:
+2 adultos → día y salida («Quedan 14 asientos») → Revisa y envía (precio cerrado, «Cancelas a menos de 24 h · Se cobra la mitad»).
+«Tu viaje» queda PENDIENTE con lo retenido. **Panel (Wilson 5705550322) › Hoy:** «Viajes que esperan tu respuesta» → Confirmar
+(se cobra) · Otra salida (las 6 con cupo más cercanas) · No hay cupo. «Salidas con pasajeros» → la salida: Va tarde (10–60 min),
+Salió, Llegó, Cancelar la salida con motivo (devuelve todo a todos); en cada pasajero Abordó / No llegó. Van completa: recogida en
+tu dirección, Salió · Llegó.
+_Decidido por mí (reversible):_
+- El cliente tiene hasta 24 h para responder a «otra salida»; el negocio 2 h si es para hoy, 24 h si es otro día.
+- Cancelar con menos de 24 h cobra la mitad (redondeo a favor del cliente en el centavo).
+- Abordó / No llegó no cambian el cobro.
+- «Hoy» del panel muestra las salidas con pasajeros de hoy y mañana; las de más adelante se ven en Salidas y asientos.
+- La caja con destinatario y la mudanza con fotos dicen «Llama para enviar» / «Llama para tu precio» hasta el bloque 4y-2.
+- La cifra «ESPERAN TU RESPUESTA» de Hoy ahora suma fiestas, viajes y pedidos del mercado (antes decía 0 con un viaje
+  esperando); guardián esperanCuentan.

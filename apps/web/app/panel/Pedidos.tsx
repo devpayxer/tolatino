@@ -50,8 +50,12 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
   // Pedidos y reservaciones de mesa juntos: lo que espera respuesta primero (Panel v2 · DASH-HOY).
   const { E2, d } = c, H = c.ped?.hoy, M = hoyMesas(c), CI = hoyCitas(c), pend = [...(H?.pend ?? []).map((x) => reqRow(c, x)), ...M.pend, ...CI.pend], agenda = [...(H?.agenda ?? []).map((x) => reqRow(c, x, false)), ...M.agenda, ...CI.agenda];
   const cols2 = c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)";
+  // Lo que espera respuesta en los bloques propios de cada categoría (fiestas, viajes, mercado) también cuenta aquí:
+  // la cifra de arriba es TODO lo que espera al negocio, y «Nada pendiente» solo sale si de verdad no hay nada.
+  const otros = (c.fies?.hoy ?? []).filter((x) => x.st === "pending").length + (c.via?.hoy?.esperan ?? []).filter((x) => x.st === "pending").length + (c.mped?.hoy ?? []).filter((x) => x.st === "pending").length;
+  const nPend = pend.length + otros;
   const out: (Bloque | null)[] = [{ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
-    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(pend.length), bg: pend.length ? "var(--tl-ink)" : undefined, fg: pend.length ? "var(--tl-white)" : undefined, bd: pend.length ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: pend.length ? (c.ped ? E2("responde en menos de 10 min", "reply within 10 min") : E2("responde antes de que venza", "reply before it expires")) : undefined },
+    { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(nPend), bg: nPend ? "var(--tl-ink)" : undefined, fg: nPend ? "var(--tl-white)" : undefined, bd: nPend ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: nPend ? (c.ped || c.mped ? E2("responde en menos de 10 min", "reply within 10 min") : E2("responde antes de que venza", "reply before it expires")) : undefined },
     { k: E2("HOY EN TU AGENDA", "ON TODAY’S AGENDA"), v: String(agenda.length) },
     { k: E2("VENDIDO HOY", "SOLD TODAY"), v: `$${((H?.vendido ?? 0) / 100).toFixed(0)}` },
     { k: E2("VISTAS HOY", "VIEWS TODAY"), v: String(d.kpis.viewsToday) },
@@ -59,8 +63,8 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
   if (!d.pro) out.push({ type: "note", tone: "warn", icon: "star", t: d.usadosMes >= d.tope
     ? E2(`Free: llegaste a ${d.tope} de ${d.tope} pedidos o citas en línea este mes. Hasta el día 1, los vecinos te llaman o te escriben. Con Pro no hay límite.`, `Free: you reached ${d.tope} of ${d.tope} online orders or bookings this month. Until the 1st, neighbors call or message you. Pro has no limit.`)
     : E2(`Free: ${d.usadosMes} de ${d.tope} pedidos o citas en línea este mes. Al llegar a ${d.tope}, te contactan por teléfono.`, `Free: ${d.usadosMes} of ${d.tope} online orders or bookings this month. After ${d.tope}, clients call you.`) });
-  out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), cols: cols2, items: pend });
-  if (!pend.length) out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
+  if (pend.length || !otros) out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), cols: cols2, items: pend });
+  if (!nPend) out.push({ type: "empty", icon: "check", t: E2("Nada pendiente", "Nothing pending"), s: E2("Te avisamos al instante cuando llegue algo.", "We alert you the moment something arrives.") });
   if (agenda.length) out.push({ type: "rows", k: E2("HOY EN TU AGENDA", "TODAY’S AGENDA"), link: E2("Ver Clientes", "See Clients"), onLink: () => c.go("cli"), cols: cols2, items: agenda });
   return out;
 }
