@@ -1024,3 +1024,16 @@ Escrito en `docs/diseno/plan/fase4-noche.md` (bloques 4na–4ne, migraciones 008
   corte para cancelar gratis es a las 6 PM de esa noche; si la llegada es antes de las 8 PM, el corte pasa a 2 horas antes de la llegada.
 - To'Latino nunca cobra cover, tragos, botellas ni el mínimo: eso se paga en el local. La app no pide fecha de nacimiento ni guarda
   fotos de identificación: el 21+ lo revisa la puerta.
+
+### 4na · Noche: «Esta noche», servicios, historial y filtros (7 nov)
+**Qué mirar (Héctor, La Terraza, 5705550366):** Panel › Lo que vendes › **Esta noche**: cover −/+ $5 (si hoy cierras dice «Cover del
+viernes»), «después de las 11 PM / 12 AM» (solo si sube), las próximas noches si son distintas, 18+ / 21+, lista (9 PM a 1 AM, tope
+opcional), **la fila ahora** (dura 60 min; después la tarjeta dice la hora real), música, quién toca y vestimenta. Cada toque sale al
+momento en la tarjeta del buscador (Buscar › Noche) y en los filtros. **Hoy** trae «CÓMO ESTÁ LA FILA AHORA» para la puerta.
+Servicios › Agregar: Entrada · Lista · Mesa · VIP · Noche especial · Por fecha (mesa con personas, cuántas hay, mínimo y depósito).
+**Super Admin:** Negocios › La Terraza › Lo que vende: «Esta noche» en solo lectura, lo que publicó (historial) y el tipo del local.
+_Decidido por mí (se puede cambiar):_ «esta noche» cambia a las **6 AM** (cuando cierra la noche anterior), no a las 12 PM; la fila
+«ahora» vale 60 min; los pasos de la fila son los del prototipo (sin fila · 10 · 20 · 30 o más), y la semilla redondea «15 min» a 20;
+cuántas mesas hay de cada tipo no viene en el prototipo: la semilla pone 4 mesas, 2 VIP y 6 de billar; agregué «quién toca» y el
+código de vestimenta como campos de texto (huecos del diseño); la Barra del demo (cubeta, mojito, hookah, botella) no se siembra
+porque la app no vende tragos.

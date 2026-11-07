@@ -276,6 +276,21 @@ async function avisarOculto(tabla: "reviews" | "post_comments", fila: string, ti
 }
 
 /* Pausar o reanudar un módulo (Menú, Pedidos en línea, Reservaciones) con motivo (neg:retirar). */
+/* Noche (4na): forzar el tipo del local (decide la pestaña, el botón y las reseñas por tipo) o volver al que sale de sus
+   subcategorías. Con motivo y auditoría; el dueño ve «To’Latino ajustó el tipo de tu negocio». */
+export async function tipoNoche(id: string, kind: string | null, motivo: string): Promise<ResAdm> {
+  const K = ["club", "salsa", "urbano", "banda", "bar", "sport", "karaoke", "billar", "cerve", "lounge", "show", "dj", "promo", "salon"];
+  if (kind != null && !K.includes(kind)) return no("Ese tipo no existe.");
+  return hacer(id, "editar", motivo, async (c, s, b, m) => {
+    const cat = (await c.query<{ cat: string; ov: string | null }>(`select b.category_id as cat, n.kind_override as ov from businesses b left join noche_settings n on n.business_id = b.id where b.id = $1`, [b.id])).rows[0];
+    if (cat?.cat !== "NEG-NOCHE") return "Esto es para Vida Nocturna.";
+    await c.query(`insert into noche_settings (business_id, city_id) values ($1, $2) on conflict (business_id) do nothing`, [b.id, b.city_id]);
+    await c.query(`update noche_settings set kind_override = $2, updated_at = now() where business_id = $1`, [b.id, kind]);
+    await auditar(c, { actor: s.id, action: "negocio.noche.tipo", targetKind: "business", targetId: b.id, city: b.city_id, before: { tipo: cat.ov ?? "por subcategoría" }, after: { tipo: kind ?? "por subcategoría" }, reason: m });
+    await (await import("@/lib/noche")).recalcularFiltrosNoche(c, b.id);
+    return null;
+  }, kind ? "Tipo ajustado. El dueño lo ve en su panel." : "Vuelve al tipo de sus subcategorías.");
+}
 export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs" | "svc" | "citas", pausar: boolean, motivo: string): Promise<ResAdm> {
   if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs", "svc", "citas"].includes(modulo)) return no("Ese módulo no existe.");
   const nombre = modulo === "svc" ? "Servicios" : modulo === "citas" ? "Citas" : modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";

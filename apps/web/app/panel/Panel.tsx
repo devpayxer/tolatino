@@ -39,6 +39,7 @@ import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques }
 import { herramientaSPBloques } from "./SaludPro";
 import { herramientaFiestaBloques } from "./Fiestas";
 import { herramientaTransBloques } from "./Transporte";
+import { filaAhoraBloque, herramientaNocheBloques } from "./Noche";
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
@@ -319,6 +320,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.sp) return herramientaSPBloques(c, licencias);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.fiesta) return herramientaFiestaBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.trans) return herramientaTransBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.noche) return herramientaNocheBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ret) return herramientaRetailBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "productos" && c.menu?.mod === "shop") return menuBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);
@@ -441,6 +443,8 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push({ type: "head", eye: `${E2("HOY", "TODAY")} · ${fecha} · ${hora}`, t: `${d.hoy.saludo}, ${d.owner ?? d.name}` });
   out.push(...avisosPrueba(c, "hoy"));
   // Pedidos (Comida): cifras, los que esperan respuesta y la agenda de hoy (Panel v2 · DASH-HOY).
+  // Noche (4na): la fila de esta noche se cambia desde Hoy (la puerta), sin entrar a Lo que vendes.
+  if (c.svc?.noche && !c.svc.noche.porFecha) out.push(filaAhoraBloque(c, c.svc.noche, true));
   out.push(...hoyEmergencias(c));
   out.push(...hoyPedidos(c));
   out.push(...hoyMensajes(c));

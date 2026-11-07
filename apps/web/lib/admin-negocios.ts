@@ -8,6 +8,8 @@ import { herramientaFiesta } from "./fiestas";
 import { resumenFiesta } from "./fiestas-comun";
 import { herramientaTrans } from "./transporte";
 import { resumenTrans, tituloTrans } from "./transporte-comun";
+import { herramientaNoche, historialNoche } from "./noche";
+import { postTexto, resumenNoche } from "./noche-comun";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
@@ -168,6 +170,10 @@ export async function negocio360(s: Staff, id: string) {
     // Mercados y Tiendas (4n): Tu herramienta en solo lectura.
     herramientaRetail: rubroRetail(b.cat_id) ? await (async () => { const h = await herramientaRetail(id); return h ? { titulo: h.rubro === "merc" ? "Balanza y pedidos" : "Tallas y apartados", resumen: resumenRetail(h, true) } : null; })() : null,
     herramientaTrans: b.cat_id === "NEG-TRANS" ? await (async () => { const h = await herramientaTrans(id); return h ? { titulo: tituloTrans(h.kind, true), resumen: resumenTrans(h, true), kind: h.kind, forzado: h.forzado } : null; })() : null,
+    // Noche (4na · MEM 164 «Super Admin ve "Esta noche" siempre»): el resumen, el tipo y lo que publicó (historial).
+    herramientaNoche: b.cat_id === "NEG-NOCHE" ? await (async () => { const h = await herramientaNoche(id); if (!h) return null;
+      const H = await historialNoche(id, null, 12);
+      return { resumen: resumenNoche(h, true), kind: h.kind, forzado: h.forzado, hist: H.map((p) => ({ t: postTexto(p.field, p.value, true), at: p.at, quien: p.quien })) }; })() : null,
     herramientaFiesta: b.cat_id === "NEG-FIESTA" ? await (async () => { const h = await herramientaFiesta(id); return h ? { resumen: resumenFiesta(h, true) } : null; })() : null,
     herramientaSP: b.cat_id === "NEG-SALUD" || b.cat_id === "NEG-PRO" ? await (async () => { const h = await herramientaSP(id, b.cat_id === "NEG-SALUD" ? "salud" : "pro"); return h ? { resumen: resumenSP(h, true, { ok: lic.filter((l) => l.status === "valid").length, rev: lic.filter((l) => l.status === "review").length }), gov: h.rubro === "pro" ? h.gov : [], acepta: h.rubro === "salud" && h.ins.length ? aceptaTexto(h, true) : null } : null; })() : null,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,

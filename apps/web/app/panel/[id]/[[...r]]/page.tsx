@@ -148,7 +148,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const conCitas = d.mods.some((m) => m === "svc" || m === "citas") || d.cat === "NEG-BELL";
   // Auto y Hogar (Fase 4): sus servicios con forma de cobrar y Tu herramienta, en vez de los de Belleza.
   const oficio = !!rubroDe(d.cat), catOk = acc.partes.includes("all") || acc.partes.includes("cat");
-  const svc = conCitas && !oficio && (ruta.sec === "mod" || ruta.det?.startsWith("svc:") || ruta.det === "svm") && catOk ? await serviciosPanel(d.id) : undefined;
+  // Noche (4na): en Hoy también, para cambiar la fila de esta noche (la puerta: basta «Hoy y pedidos»).
+  const nocheHoy = d.cat === "NEG-NOCHE" && ruta.sec === "hoy" && (catOk || acc.partes.includes("ord"));
+  const svc = conCitas && !oficio && (((ruta.sec === "mod" || ruta.det?.startsWith("svc:") || ruta.det === "svm") && catOk) || nocheHoy) ? await serviciosPanel(d.id) : undefined;
   const ofi = oficio && (ruta.sec === "mod" || ruta.det?.startsWith("of:")) && catOk ? (await oficiosPanel(d.id, d.cat)) ?? undefined : undefined;
   if (ruta.det?.startsWith("of:") && !ofi) ruta.det = null;
   // Mercados y Tiendas (4n): Tu herramienta (Balanza y pedidos / Tallas y apartados).

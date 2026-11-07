@@ -24,10 +24,51 @@ export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boole
   h?: number; inc?: Bi[]; cap?: number; mont?: boolean; u?: Bi; per?: number; min?: number;
   // Transporte (4w · neg-trans-listing.js): horas de salida (0–23), de dónde sale y a dónde va, cuánto dura, asientos o personas,
   // precio de niño y espera incluida (min).
-  sal?: number[]; from?: Bi; to?: Bi; dmin?: number; pax?: number; child?: number; wait?: number };
+  sal?: number[]; from?: Bi; to?: Bi; dmin?: number; pax?: number; child?: number; wait?: number;
+  // Noche (4na · neg-noche-listing.js): lista hasta (min desde las 12 PM), cuántas mesas de ese tipo hay, por hora (billar),
+  // noches en que vale (0 = domingo; vacío = todas las que abre) y el depósito de la mesa (también en items.deposit_cents).
+  until?: number; tables?: number; hr?: boolean; dows?: number[]; dep?: number };
 /* Fiestas usa el mismo editor de servicios con sus formas de cobrar. */
-export type RubroSvc = RubroSP | "fiesta" | "trans";
-export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : rubroSP(cat));
+export type RubroSvc = RubroSP | "fiesta" | "trans" | "noche";
+export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : rubroSP(cat));
+/* Noche (4na · neg-noche-listing.js k; fase4-noche.md §2): la entrada (sigue al cover de «Esta noche», se paga en la puerta), la
+   lista (hasta qué hora y su precio por persona; $0 = gratis; anotarse nunca cobra), la mesa (personas, cuántas hay, mínimo de
+   consumo, depósito ≤ mínimo, o por hora), el VIP (lo mismo + lo que incluye), la noche especial (boleto: se vende en Eventos, no
+   sale hasta que abra) y por fecha (DJ, promotor, salón: «desde»). La app no vende tragos, botellas ni hookah: aquí no hay
+   forma de cobrar un trago (guardián alcoholNoSeVende). El servidor valida; un precio que no cuadra no se guarda. */
+export const KINDS_NOCHE = ["cover", "lista", "mesa", "vip", "evento", "fecha"];
+export function limpiarNoche(k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+  const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
+  if (!KINDS_NOCHE.includes(k)) return { ok: false, es: "Elige qué es.", en: "Pick what it is." };
+  const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const n = (v: unknown, lo: number, hi: number) => { const z = Math.round(Number(v)); return Number.isFinite(z) && z >= lo && z <= hi ? z : null; };
+  if (cents < 0 || cents % 100) return { ok: false, es: "El precio va en dólares enteros.", en: "The price goes in whole dollars." };
+  const dows = [...new Set((Array.isArray(x.dows) ? x.dows : []).map(Number).filter((d) => Number.isInteger(d) && d >= 0 && d <= 6))].sort((p, q) => p - q);
+  if (dows.length && dows.length < 7 && k !== "fecha") a.dows = dows;
+  const inc = (Array.isArray(x.inc) ? x.inc : []).slice(0, 6).map((z) => ({ es: t((z as Bi)?.es, 60), en: t((z as Bi)?.en, 60) })).filter((z) => z.es.length >= 2);
+  if (inc.length && (k === "vip" || k === "mesa" || k === "fecha" || k === "evento")) a.inc = inc.map((z) => ({ es: z.es, en: z.en || z.es }));
+  if (k === "cover") return { ok: true, k, a: {}, cents: 0 }; // el precio lo pone «Esta noche» (el servidor lo copia)
+  if (k === "lista") {
+    const u = n(x.until, 540, 780); if (u == null || u % 60) return { ok: false, es: "Marca hasta qué hora vale la lista.", en: "Pick until what time the list is valid." };
+    if (cents > 5000) return { ok: false, es: "El precio de la lista va hasta $50 por persona.", en: "The list price goes up to $50 per person." };
+    a.until = u; return { ok: true, k, a, cents };
+  }
+  if (k === "mesa" || k === "vip") {
+    const pax = n(x.pax, 1, 50); if (!pax) return { ok: false, es: "¿Para cuántas personas es?", en: "How many people is it for?" };
+    a.pax = pax;
+    a.tables = n(x.tables, 1, 50) ?? 1;
+    if (k === "mesa" && x.hr === true) { if (cents <= 0) return { ok: false, es: "Ponle el precio por hora.", en: "Set the hourly price." }; a.hr = true; }
+    const dep = n(x.dep, 0, 50000);
+    if (dep == null || dep % 100) return { ok: false, es: "El depósito va en dólares enteros, hasta $500.", en: "The deposit goes in whole dollars, up to $500." };
+    if (dep && !a.hr && cents > 0 && dep > cents) return { ok: false, es: "El depósito no puede ser más que el mínimo: se descuenta de la cuenta.", en: "The deposit can't be more than the minimum: it comes off the bill." };
+    if (dep) a.dep = dep;
+    if (k === "vip" && cents <= 0 && !dep) return { ok: false, es: "Ponle el mínimo o el depósito del VIP.", en: "Set the VIP minimum or deposit." };
+    return { ok: true, k, a, cents };
+  }
+  if (k === "evento" && cents <= 0) return { ok: false, es: "Ponle el precio del boleto.", en: "Set the ticket price." };
+  if (k === "fecha") { const pax = n(x.pax, 1, 2000); if (pax) a.pax = pax; }
+  return { ok: true, k, a, cents };
+}
 /* Transporte (4w · neg-trans-listing.js k): por asiento con salidas fijas, vehículo completo, caja o envío, precio cerrado con
    fotos. El servidor valida: un asiento sin salidas o sin asientos no se guarda. */
 export const KINDS_TRANS = ["asiento", "priv", "caja", "cotiza"];
@@ -130,6 +171,7 @@ export type SvcPanel = {
   sp: HerrSP | null; // Tu herramienta de Doctores y Profesionales (4h-2)
   fiesta: import("./fiestas-comun").HerrFiesta | null; // Tu herramienta de Fiestas (4t)
   trans: import("./transporte-comun").HerrTrans | null; // Tu herramienta de Transporte (4w)
+  noche: import("./noche-comun").HerrNoche | null; // «Esta noche» (4na)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -154,7 +196,8 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   ]);
   const x = b.rows[0]!, off = x.off ?? {}, rub = rubroSP(x.cat);
   return {
-    rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, trans: x.cat === "NEG-TRANS" ? await (await import("./transporte")).herramientaTrans(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, trans: x.cat === "NEG-TRANS" ? await (await import("./transporte")).herramientaTrans(negocio) : null,
+    noche: x.cat === "NEG-NOCHE" ? await (await import("./noche")).herramientaNoche(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

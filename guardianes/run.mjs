@@ -860,6 +860,54 @@ const guardianes = {
       falla("correo", i, 0, "el modo pruebas del correo debe depender de ENTORNO !== \"produccion\" (nunca en producción)");
   },
 
+  /* 4na. El cover que vio el cliente tiene que poder probarse («el cover que publicó esa noche a esa hora»): cada cambio de «Esta
+     noche» deja su fila en night_posts en la misma transacción, y night_posts no se edita ni se borra. Nadie más escribe el cover,
+     la edad, la lista, la fila, la música o la vestimenta de noche_settings que lib/noche.ts (guardarNoche). */
+  coverConHistoria() {
+    const L = "apps/web/lib/noche.ts", M = "packages/db/migrations/0081_noche_servicios.sql";
+    if (!existsSync(L)) return;
+    const t = readFileSync(L, "utf8"), i = t.indexOf("export async function guardarNoche"), g = t.slice(i, t.indexOf("\n}\n", i));
+    if (i < 0 || !/insert into night_posts/.test(g)) falla("coverConHistoria", L, 0, "guardarNoche no deja su fila en night_posts");
+    if (existsSync(M) && !/before update or delete on night_posts/.test(readFileSync(M, "utf8"))) falla("coverConHistoria", M, 0, "night_posts debe ser solo inserción (trigger)");
+    for (const f of codigo) {
+      if (!/^apps\/web\//.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, n) => {
+        if (/(update|delete from)\s+night_posts/i.test(l)) falla("coverConHistoria", f, n + 1, "night_posts es solo inserción");
+        if (f !== L && /update noche_settings set/i.test(l) && /(cover|after_|min_age|list_|line_|music|dress)/.test(l)) falla("coverConHistoria", f, n + 1, "«Esta noche» solo se cambia con guardarNoche (deja su historia en night_posts)");
+      });
+    }
+  },
+
+  /* 4na. «Fila ahora» solo si el local la puso hace 60 minutos o menos (Preguntas #4); después sale con su hora. El prototipo decía
+     «HACE 4 MIN» fijo: ningún texto de «ahora» fuera de filaTexto (lib/noche-comun.ts), y «viva» sale de FILA_VIVA_MIN. */
+  filaNoFalsa() {
+    const C = "apps/web/lib/noche-comun.ts", L = "apps/web/lib/noche.ts";
+    if (!existsSync(C)) return;
+    const t = readFileSync(C, "utf8");
+    if (!/export const FILA_VIVA_MIN = 60;/.test(t)) falla("filaNoFalsa", C, 0, "la fila «ahora» vale 60 minutos (FILA_VIVA_MIN = 60)");
+    if (!/if \(f\.viva\) return f\.min \? E2\(`Fila ahora/.test(t)) falla("filaNoFalsa", C, 0, "«Fila ahora» solo dentro de if (f.viva)");
+    if (existsSync(L) && !/s\.line_at > now\(\) - make_interval\(mins => \$\{FILA_VIVA_MIN\}\)/.test(readFileSync(L, "utf8"))) falla("filaNoFalsa", L, 0, "«viva» se calcula en el servidor con FILA_VIVA_MIN");
+    for (const f of codigo) {
+      if (!/^apps\/web\//.test(f) || f === C) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, n) => { if (/Fila ahora|Line now|HACE \d+ MIN/.test(l)) falla("filaNoFalsa", f, n + 1, "la fila «ahora» solo la dice filaTexto (con su hora real)"); });
+    }
+  },
+
+  /* 4na. La app no vende tragos, botellas ni hookah, ni cobra el cover (Mercados 0064, fase4-noche §3): Noche solo tiene estas
+     formas de servicio, y el alta no le ofrece Menú, Tienda ni Pedidos. */
+  alcoholNoSeVende() {
+    const S = "apps/web/lib/servicios.ts", O = "apps/web/lib/onb/datos.ts";
+    if (existsSync(S)) {
+      const m = /export const KINDS_NOCHE = \[([^\]]*)\]/.exec(readFileSync(S, "utf8"));
+      const k = m ? [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1]).sort().join(",") : "";
+      if (k !== "cover,evento,fecha,lista,mesa,vip") falla("alcoholNoSeVende", S, 0, `Noche vende solo entrada, lista, mesa, VIP, noche especial y por fecha (hay: ${k || "nada"})`);
+    }
+    if (existsSync(O)) {
+      const m = /'NEG-NOCHE': \[([^\]]*)\]/.exec(readFileSync(O, "utf8"));
+      if (m && /'(menu|shop|pedidos)'/.test(m[1])) falla("alcoholNoSeVende", O, 0, "el alta de Noche no ofrece Menú, Tienda ni Pedidos (la app no vende tragos)");
+    }
+  },
+
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
   idioma() {
     for (const f of codigo) {

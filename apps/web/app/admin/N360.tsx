@@ -9,7 +9,8 @@ import { useState, useTransition, type ComponentType, type ReactNode } from "rea
 import type { Dinero } from "@/lib/admin-dinero";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
-import { cambiarEstado, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { KINDS_LOCAL } from "@/lib/noche-comun";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -23,7 +24,7 @@ const SELLO_NO = ["La dirección no coincide con la página", "No pudimos confir
 const VERBO: Record<string, string> = {
   "resena.ocultar": "ocultó una reseña de", "resena.mostrar": "volvió a mostrar una reseña de", "novedad.ocultar": "ocultó una novedad de", "novedad.mostrar": "volvió a mostrar una novedad de",
   "vacante.ocultar": "ocultó una vacante de", "vacante.mostrar": "volvió a mostrar una vacante de", "comentario.ocultar": "ocultó un comentario en", "comentario.mostrar": "volvió a mostrar un comentario en",
-  "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de",
+  "negocio.modulo.pausar": "pausó un módulo de", "negocio.modulo.reanudar": "reanudó un módulo de", "negocio.noche.tipo": "ajustó el tipo de local de",
   "negocio.ocultar": "ocultó", "negocio.suspender": "suspendió", "negocio.cerrar": "cerró", "negocio.restaurar": "restauró", "negocio.cierre_temporal": "cerró temporalmente",
   "negocio.reabrir": "reabrió", "negocio.dueno.cambiar": "cambió el dueño de", "negocio.pagos.pausar": "pausó los pagos al banco de", "plan.cortesia": "dio Pro de cortesía a", "plan.quitar_cortesia": "quitó la cortesía a", "plan.extender_prueba": "extendió la prueba de", "plan.reintentar_cobro": "reintentó el cobro de Pro de", "plan.anular": "anuló la suscripción de",  "negocio.pagos.reanudar": "reanudó los pagos al banco de", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
   "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.foto.quitar": "quitó una foto de",
@@ -37,9 +38,9 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
 const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
-  visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad", asiento: "Por asiento", priv: "Vehículo completo", caja: "Caja o envío" };
+  visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad", asiento: "Por asiento", priv: "Vehículo completo", caja: "Caja o envío", cover: "Entrada (sigue al cover)", lista: "Lista", mesa: "Mesa", vip: "VIP", evento: "Noche especial (espera a Eventos)", fecha: "Por fecha" };
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -139,7 +140,8 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
     // Servicios y citas (Fase 3 · 3a; Auto y Hogar 4a): pausar Servicios o Citas y ocultar un servicio, siempre con motivo.
     // Auto y Hogar: además, cómo cobra cada servicio y Tu herramienta en solo lectura.
     const of = n.cat_id !== "NEG-BELL", h = n.herramienta, ic = n.cat_id === "NEG-AUTO" ? "wrench" : n.cat_id === "NEG-HOGAR" ? "home" : "scissors";
-    const MODB: ["svc" | "citas", string, string][] = [["svc", "Servicios", "La pestaña Servicios de su página"], ["citas", "Citas", "Que se pueda pedir cita en línea (si se pausa, su página dice «llama o pasa por el local»)"]];
+    const MODB: ["svc" | "citas" | "rsv", string, string][] = n.cat_id === "NEG-NOCHE" ? [["svc", "Servicios", "Entrada, lista, mesas, VIP y por fecha en su página"], ["rsv", "Mesas y lista", "Que se pueda anotar en la lista o pedir mesa en línea (si se pausa, su página dice «llama o pasa por el local»)"]]
+      : [["svc", "Servicios", "La pestaña Servicios de su página"], ["citas", "Citas", "Que se pueda pedir cita en línea (si se pausa, su página dice «llama o pasa por el local»)"]];
     const PLS = ["Servicios que no corresponden a su categoría", "Precios o fotos engañosos", "Lo pidió el dueño", "Reportes de clientes"];
     const ocS = n.servicios.filter((i) => i.hidden).length;
     cuerpo = (
@@ -150,10 +152,16 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.herramientaRetail ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-MERC" ? "scale" : "bag", title: n.herramientaRetail.titulo, sub: n.herramientaRetail.resumen }]} /> : null}
         {n.herramientaTrans ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "truck", title: n.herramientaTrans.titulo, sub: `${n.herramientaTrans.resumen} · tipo ${n.herramientaTrans.kind}${n.herramientaTrans.forzado ? " (forzado)" : ""}` }]} /> : null}
+        {n.herramientaNoche ? <>
+          <A.AdminList label="ESTA NOCHE · SOLO LECTURA" rows={[{ icon: "drink", title: "Esta noche", sub: `${n.herramientaNoche.resumen} · tipo ${KINDS_LOCAL.find((k) => k[0] === n.herramientaNoche!.kind)?.[1] ?? n.herramientaNoche.kind}${n.herramientaNoche.forzado ? " (ajustado por To’Latino)" : " (por subcategoría)"}` },
+            ...n.herramientaNoche.hist.map((p) => ({ icon: "clock", title: p.t, sub: `${new Date(p.at).toLocaleString("es-US", { weekday: "short", hour: "numeric", minute: "2-digit" })} · ${p.quien ?? "—"}` }))]} />
+          {P.editar ? <PanelBloques bloques={[{ type: "chips", k: "TIPO DEL LOCAL · DECIDE LA PESTAÑA, EL BOTÓN Y LAS RESEÑAS", items: [{ l: "Por subcategoría", v: n.herramientaNoche.forzado ? "filter" : "selected", onClick: () => setConf({ titulo: "¿Por qué vuelve al tipo de sus subcategorías?", hacer: (m) => tipoNoche(n.id, null, m) }) },
+            ...KINDS_LOCAL.map(([k, l]) => ({ l, v: n.herramientaNoche!.forzado && n.herramientaNoche!.kind === k ? "selected" : "filter", onClick: () => setConf({ titulo: `Cambiar el tipo a «${l}»`, sub: "El dueño ve «To’Latino ajustó el tipo de tu negocio». Queda en el historial.", hacer: (m) => tipoNoche(n.id, k, m) }) }))] }]} /> : null}
+        </> : null}
         {n.herramientaFiesta ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "calendar", title: "Calendario y depósito", sub: n.herramientaFiesta.resumen }]} /> : null}
         {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
           ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
-        {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
+        {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" || n.cat_id === "NEG-NOCHE" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {
           const [sub, tag, tone] = LIC_ST[l.status] ?? LIC_ST.review!;
           return { icon: "law", title: `${l.title.es}${l.who ? ` · ${l.who}` : ""}`, sub: `${sub}${l.number ? ` · ${l.label} ${l.number}` : " · sin número"}`, tag, tone,
             actions: P.editar && l.status !== "valid" ? [
