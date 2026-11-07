@@ -26,7 +26,10 @@ export type Respuestas = { taste?: -1 | 0 | 1; hot?: -1 | 0 | 1; val?: -1 | 0 | 
   // respetaron la fecha y cobraron lo del paquete. Transporte (TLTransRev): cobró el precio cerrado, salió y llegó a la hora,
   // manejo seguro, equipaje o carga bien. Las dos: trato.
   llegaron?: "a" | "b" | "c"; fotosOk?: -1 | 0 | 1; limpio?: 0 | 1; fechaOk?: 0 | 1; paquete?: 0 | 1;
-  cerrado?: 0 | 1; salio?: "a" | "b" | "c"; llego?: "a" | "b" | "c"; manejo?: 0 | 1; carga?: -1 | 0 | 1 };
+  cerrado?: 0 | 1; salio?: "a" | "b" | "c"; llego?: "a" | "b" | "c"; manejo?: 0 | 1; carga?: -1 | 0 | 1;
+  // Noche (4nd · TLNocheRev): cobraron el cover publicado, la fila fue la que decía (sí · un poco más · mucho más), reglas
+  // claras, te sentiste seguro, la música fue la anunciada; trato en la puerta = trato.
+  coverOk?: 0 | 1; filaOk?: "a" | "b" | "c"; reglas?: 0 | 1; segura?: 0 | 1; musica?: 0 | 1 };
 /* El dato del pedido o de la visita (no se edita). Visita de Hogar/Auto: win = minutos tarde sobre la franja (0 = en la
    franja), ok / cob = aprobado y cobrado, xtra = hubo algo extra con su OK. */
 export type Hechos = { promised?: string; done?: string; late?: number; win?: number; ok?: number; cob?: number; xtra?: boolean;
@@ -36,7 +39,9 @@ export type Hechos = { promised?: string; done?: string; late?: number; win?: nu
   // Mercado: cuántos artículos, si hubo algo por peso y si cada peso tiene su foto, y lo cobrado; Tienda: artículos y pagado.
   nArt?: number; pesado?: boolean; fotoPeso?: boolean; apartado?: string;
   // Fiesta / viaje (4z): el día de la reserva y lo pagado (precio del paquete o precio cerrado). Del servidor, no se editan.
-  dia?: string };
+  dia?: string;
+  // Noche (4nd): cuántos fueron (dato de la reserva).
+  pax?: number };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
   answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
@@ -78,19 +83,20 @@ const NEG_SQL = `(select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro f
 
 /* La operación terminada que hace verificada una reseña: pedido entregado/recogido o mesa terminada (no «no llegaron»),
    de esa persona en ese negocio, de los últimos 30 días y sin reseña. Con número, esa; sin número, la más reciente. */
-export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment" | "hold" | "market_order" | "party" | "trip"; src: Src; hoy: boolean; lineas: string[] };
+export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment" | "hold" | "market_order" | "party" | "trip" | "night"; src: Src; hoy: boolean; lineas: string[] };
 export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negocio: string, userId: string, numero?: string | null): Promise<OpResena | null> {
-  const r = await c.query<{ id: string; number: string; kind: "order" | "table" | "appointment" | "hold" | "market_order" | "party" | "trip"; mode: string | null; hoy: boolean; lineas: string[] }>(
+  const r = await c.query<{ id: string; number: string; kind: OpResena["kind"]; mode: string | null; hoy: boolean; lineas: string[] }>(
     `select o.id::text, o.number, o.kind, o.mode, (o.done_at at time zone ci.timezone)::date = (now() at time zone ci.timezone)::date as hoy,
             (select coalesce(array_agg(l.name->>'es' order by l.id), '{}') from operation_lines l where l.operation_id = o.id) as lineas
        from operations o join cities ci on ci.id = o.city_id
-      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment', 'hold', 'market_order', 'party', 'trip') and o.status = 'done' and coalesce(o.status_detail, '') <> 'noshow'
+      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment', 'hold', 'market_order', 'party', 'trip', 'night') and o.status = 'done' and coalesce(o.status_detail, '') <> 'noshow'
+        and (o.kind <> 'night' or o.status_detail = 'entro')
         and o.done_at > now() - interval '${VERIFICADA_DIAS} days' and ($3::text is null or o.number = $3)
         and not exists (select 1 from reviews r where r.operation_id = o.id and r.status <> 'removed')
       order by o.done_at desc limit 1`, [negocio, userId, numero ?? null]);
   const o = r.rows[0];
   if (!o) return null;
-  return { id: o.id, numero: o.number, kind: o.kind, src: o.kind === "table" ? "rsv" : o.kind === "appointment" || o.kind === "party" || o.kind === "trip" ? "cita" : o.mode === "delivery" ? "dl" : "pk", hoy: o.hoy, lineas: o.lineas };
+  return { id: o.id, numero: o.number, kind: o.kind, src: o.kind === "table" ? "rsv" : o.kind === "appointment" || o.kind === "party" || o.kind === "trip" || o.kind === "night" ? "cita" : o.mode === "delivery" ? "dl" : "pk", hoy: o.hoy, lineas: o.lineas };
 }
 
 /* Lo que va en la ficha: cifras, barras, verificadas, lo que importa (Comida, de pedidos calificados en 90 días), los más
@@ -98,7 +104,7 @@ export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negoci
 /* miembro: la página de una silla (3d) muestra solo las reseñas de citas con esa persona. */
 const DE_MIEMBRO = (miembro?: string | null) => (miembro && /^[0-9a-f-]{36}$/.test(miembro) ? ` and operation_id in (select o.id from operations o where o.kind = 'appointment' and o.member_id = '${miembro}'::uuid)` : "");
 const PCT = (k: string, si: string, base: string) =>
-  `round(100.0 * count(*) filter (where ${si}) / nullif(count(*) filter (where ${base}), 0))::int as ${k}`;
+  `round(100.0 * count(*) filter (where ${si}) / nullif(count(*) filter (where ${base}), 0))::int as "${k}"`;
 export async function resumenResenas(negocio: string, userId: string | null, miembro?: string | null) {
   const fm = DE_MIEMBRO(miembro);
   const b = (await db().query<{ id: string; name: string; pro: boolean; food: boolean; dlv: boolean; cat: string }>(
@@ -106,7 +112,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
        from businesses b left join business_stats_cache s on s.business_id = b.id left join delivery_settings d on d.business_id = b.id
       where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   if (!b) return null;
-  const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : b.cat === "NEG-MERC" ? "merc" : b.cat === "NEG-TIENDA" ? "tienda" : b.cat === "NEG-FIESTA" ? "fiesta" : b.cat === "NEG-TRANS" ? "trans" : null;
+  const sp = b.cat === "NEG-SALUD" ? "salud" : b.cat === "NEG-PRO" ? "pro" : b.cat === "NEG-MERC" ? "merc" : b.cat === "NEG-TIENDA" ? "tienda" : b.cat === "NEG-FIESTA" ? "fiesta" : b.cat === "NEG-TRANS" ? "trans" : b.cat === "NEG-NOCHE" ? "noche" : null;
   const [cifras, asp, top, mia, dest, op, aspSP] = await Promise.all([
     db().query<{ n: number; avg: number | null; s5: number; s4: number; s3: number; s2: number; s1: number; ver: number }>(
       `select count(*)::int as n, round(avg(stars)::numeric, 1)::float as avg, count(*) filter (where stars = 5)::int as s5, count(*) filter (where stars = 4)::int as s4,
@@ -136,7 +142,17 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     // Lo que importa en Salud / en un trámite: % de «sí» entre quienes contestaron, del último año.
     // Lo que importa en un mercado / en una tienda (4s): % de «sí» entre quienes contestaron, del último año.
     // Lo que importa en una fiesta / en un viaje (4z): fecha respetada sale del dato de la reserva (facts.dia = fiesta hecha).
-    sp === "fiesta" || sp === "trans" ? db().query<Record<string, number | null>>(
+    // Lo que importa de noche (4nd): solo de noches con lista o mesa por To'Latino (src cita), 90 días.
+    sp === "noche" ? db().query<Record<string, number | null>>(
+      `select count(*)::int as n,
+              ${PCT("coverOk", "(answers->>'coverOk')::int = 1", "answers ? 'coverOk'")},
+              ${PCT("filaOk", "answers->>'filaOk' = 'a'", "answers ? 'filaOk'")},
+              ${PCT("reglas", "(answers->>'reglas')::int = 1", "answers ? 'reglas'")},
+              ${PCT("segura", "(answers->>'segura')::int = 1", "answers ? 'segura'")},
+              ${PCT("musica", "(answers->>'musica')::int = 1", "answers ? 'musica'")},
+              ${PCT("trato", "(answers->>'trato')::int = 1", "answers ? 'trato'")}
+         from reviews where business_id = $1 and status = 'visible' and src = 'cita' and created_at > now() - interval '90 days'${fm}`, [negocio])
+    : sp === "fiesta" || sp === "trans" ? db().query<Record<string, number | null>>(
       `select count(*)::int as n,
               ${PCT("fechaOk", "facts ? 'dia' or (answers->>'fechaOk')::int = 1", "facts ? 'dia' or answers ? 'fechaOk'")},
               ${PCT("llegaron", "answers->>'llegaron' = 'a'", "answers ? 'llegaron'")},
@@ -183,7 +199,7 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
     negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, dlv: b.dlv },
     n, avg: c.avg, ver: c.ver, bars: [[5, pct(c.s5)], [4, pct(c.s4)], [3, pct(c.s3)], [2, pct(c.s2)], [1, pct(c.s1)]] as [number, number][],
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
-    aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
+    aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
     top: top.rows.map((x) => ({ id: x.id, name: x.name, ph: x.ph, n: x.n })),
     mine: fm ? null : mine, tengo, destacadas, miembro: fm ? miembro! : null,
     // «TU PEDIDO DE HOY · ¿Cómo estuvo?»: solo si terminó hoy y aún no tiene reseña.
@@ -253,7 +269,7 @@ export async function paraEscribir(negocio: string, userId: string, numero: stri
   const op = mia ? null : await opParaResena(db(), negocio, userId, numero);
   // El dato del pedido que se va a guardar (se muestra antes de publicar; no se edita).
   const rubro: Rubro = rubroRes(b.cat);
-  const hechos = op?.kind === "order" ? await hechosDe(db(), op.id) : op?.kind === "market_order" || op?.kind === "hold" ? await hechosCompra(db(), op.id) : (op?.kind === "appointment" || op?.kind === "party" || op?.kind === "trip") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(db(), op.id, rubro) : mia ? mia.facts ?? {} : {};
+  const hechos = op?.kind === "order" ? await hechosDe(db(), op.id) : op?.kind === "market_order" || op?.kind === "hold" ? await hechosCompra(db(), op.id) : (op?.kind === "appointment" || op?.kind === "party" || op?.kind === "trip" || op?.kind === "night") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(db(), op.id, rubro) : mia ? mia.facts ?? {} : {};
   // La visita de Hogar/Auto: el servicio, quién fue y el carro (se muestra en «Tu visita · dato de la visita»).
   const cita = op?.kind === "appointment" && rubro ? (await db().query<{ svc: string | null; svcEn: string | null; quien: string | null; veh: string | null }>(
     `select o.details#>>'{svc,es}' as svc, o.details#>>'{svc,en}' as "svcEn", m.display_name as quien, o.details#>>'{veh,t}' as veh
@@ -296,8 +312,8 @@ async function hechosDe(c: PoolClient | Pool, opId: string): Promise<Hechos> {
 
 /* El dato de una visita de Hogar o de una cita de Auto (no se edita): llegó en la franja (Hogar: «Llegué» contra el final
    de la franja de 2 h), lo aprobado del estimado contra lo cobrado, y si hubo algo extra con su OK. */
-type Rubro = "hogar" | "auto" | "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | null;
-const rubroRes = (cat: string): Rubro => (cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-AUTO" ? "auto" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : cat === "NEG-MERC" ? "merc" : cat === "NEG-TIENDA" ? "tienda" : cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : null);
+type Rubro = "hogar" | "auto" | "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | null;
+const rubroRes = (cat: string): Rubro => (cat === "NEG-HOGAR" ? "hogar" : cat === "NEG-AUTO" ? "auto" : cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : cat === "NEG-MERC" ? "merc" : cat === "NEG-TIENDA" ? "tienda" : cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : null);
 /* El dato del pedido del mercado o del apartado (no se edita): artículos, si cada peso tiene su foto de la balanza, lo cobrado. */
 async function hechosCompra(c: PoolClient | Pool, opId: string): Promise<Hechos> {
   const o = (await c.query<{ kind: string; n: number; pesado: boolean; fotos: boolean; cob: number | null; tot: number; num: string }>(
@@ -312,6 +328,11 @@ async function hechosCompra(c: PoolClient | Pool, opId: string): Promise<Hechos>
   return { nArt: o.n, apartado: o.num, cob: o.cob ?? o.tot };
 }
 async function hechosCita(c: PoolClient | Pool, opId: string, rubro: Exclude<Rubro, null | "merc" | "tienda">): Promise<Hechos> {
+  if (rubro === "noche") {
+    // La noche, cuántos fueron y lo que se pagó en la app (el depósito cobrado; la lista, $0).
+    const z = (await c.query<{ dia: string; tot: number; pax: number }>(`select o.night_date::text as dia, coalesce((select sum(p.amount_cents - p.refunded_cents) from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded')), 0)::int as tot, o.party_size as pax from operations o where o.id = $1::bigint`, [opId])).rows[0];
+    return z ? { dia: z.dia, tot: z.tot, pax: z.pax } : {};
+  }
   if (rubro === "fiesta" || rubro === "trans") {
     // El día y lo pagado: el precio del paquete (fiesta) o el precio cerrado cobrado (viaje). Si terminó, la fecha se respetó.
     const z = (await c.query<{ dia: string; tot: number }>(`select (o.scheduled_at at time zone ci.timezone)::date::text as dia, o.total_cents as tot from operations o join cities ci on ci.id = o.city_id where o.id = $1::bigint`, [opId])).rows[0];
@@ -354,6 +375,13 @@ function limpiarRespuestas(a: unknown, ord: boolean, rubro: Rubro = null, cita =
     put("trato", OK3(x.trato));
     if (rubro === "merc") { put("fresco", OK3(x.fresco)); put("estante", OK2(x.estante)); put("sust", tri(x.sust)); if (!ord) { put("pesaron", OK2(x.pesaron)); put("peso", OK2(x.peso)); } }
     else { put("caja", OK2(x.caja)); put("tenian", OK2(x.tenian)); put("talla", OK3(x.talla)); put("guardo", OK2(x.guardo)); put("cambio", tri(x.cambio)); }
+    return r;
+  }
+  if (rubro === "noche") {
+    const put = <K extends keyof Respuestas>(k: K, v: Respuestas[K] | undefined) => { if (v !== undefined) r[k] = v; };
+    put("coverOk", OK2(x.coverOk)); put("filaOk", x.filaOk === "a" || x.filaOk === "b" || x.filaOk === "c" ? x.filaOk : undefined);
+    put("reglas", OK2(x.reglas)); put("segura", OK2(x.segura)); put("musica", OK2(x.musica)); put("trato", OK3(x.trato));
+    delete r.taste; delete r.hot; delete r.val; delete r.wait;
     return r;
   }
   if (rubro === "fiesta" || rubro === "trans") {
@@ -421,7 +449,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
       const op = p.visitante ? null : await opParaResena(c, b.id, userId, typeof p.numero === "string" && /^[A-Z0-9-]{1,20}$/i.test(p.numero) ? p.numero : null);
       if (!p.visitante && p.numero && !op) return no("Ese pedido no se puede reseñar (no es tuyo, no terminó o ya tiene reseña).", "That order cannot be reviewed (not yours, not finished or already reviewed).");
       const src: Src = op?.src ?? "vis", ord = src === "dl" || src === "pk";
-      const facts = op && op.kind === "order" ? await hechosDe(c, op.id) : op && (op.kind === "market_order" || op.kind === "hold") ? await hechosCompra(c, op.id) : op && (op.kind === "appointment" || op.kind === "party" || op.kind === "trip") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(c, op.id, rubro) : {};
+      const facts = op && op.kind === "order" ? await hechosDe(c, op.id) : op && (op.kind === "market_order" || op.kind === "hold") ? await hechosCompra(c, op.id) : op && (op.kind === "appointment" || op.kind === "party" || op.kind === "trip" || op.kind === "night") && rubro && rubro !== "merc" && rubro !== "tienda" ? await hechosCita(c, op.id, rubro) : {};
       const answers = limpiarRespuestas(p.answers, ord, rubro, src === "cita");
       const r = await c.query<{ id: string }>(
         `insert into reviews (business_id, city_id, user_id, operation_id, src, stars, body, lang, answers, facts, rec)

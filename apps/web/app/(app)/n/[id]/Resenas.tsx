@@ -35,6 +35,17 @@ function hechos(c: Tarjeta, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
   // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
   const A = c.answers, F = c.facts;
+  // Noche (4nd · L87–91): cover el publicado / cobraron más, fila como decía / más larga, reglas, seguro, música, trato en la puerta.
+  if (["coverOk", "filaOk", "reglas", "segura", "musica"].some((k) => k in A) || F.pax != null) {
+    const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
+    if (A.coverOk != null) add(A.coverOk === 1, "dollar", A.coverOk === 1 ? E2("Cover el publicado", "Posted cover") : E2("Cobraron más cover", "Charged more cover"));
+    if (A.filaOk) add(A.filaOk === "a" ? true : A.filaOk === "c" ? false : null, "clock", { a: E2("Fila como decía", "Line as posted"), b: E2("Fila un poco más larga", "Line a bit longer"), c: E2("Fila más larga", "Line much longer") }[A.filaOk]);
+    if (A.segura === 0) add(false, "shield", E2("No se sintió seguro", "Did not feel safe"));
+    if (A.reglas != null) add(A.reglas === 1, "check", A.reglas === 1 ? E2("Reglas claras", "Clear rules") : E2("Reglas poco claras", "Unclear rules"));
+    if (A.musica != null) add(A.musica === 1, "drink", A.musica === 1 ? E2("Música como anunciaron", "Music as announced") : E2("Otra música", "Different music"));
+    if (A.trato != null && A.trato !== 0) add(A.trato === 1, "bubble", A.trato === 1 ? E2("Buen trato en la puerta", "Treated well at the door") : E2("Mal trato en la puerta", "Treated badly at the door"));
+    return f.slice(0, 6);
+  }
   // Fiestas y Transporte (4z): la fecha respetada (del dato), a la hora, lo del paquete / el precio cerrado, fotos, limpieza,
   // salida y llegada, manejo, equipaje, trato.
   if (["llegaron", "fotosOk", "limpio", "fechaOk", "paquete", "cerrado", "salio", "llego", "manejo", "carga"].some((k) => k in A) || F.dia != null) {
@@ -203,7 +214,11 @@ function aspectos(v: CtlResenas) {
   const z = r.aspSP;
   if (z) {
     const P = (k: string) => z.v[k] ?? null;
-    const L: [string, string, string, string, string][] = z.rub === "fiesta" ? [
+    const L: [string, string, string, string, string][] = z.rub === "noche" ? [
+      ["dollar", E2("COBRARON EL COVER PUBLICADO", "CHARGED THE POSTED COVER"), "coverOk", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["clock", E2("LA FILA FUE LA QUE DECÍA", "LINE WAS AS POSTED"), "filaOk", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["check", E2("REGLAS CLARAS", "CLEAR RULES"), "reglas", "rgba(0,229,196,.16)", BIEN], ["shield", E2("TE SENTISTE SEGURO", "FELT SAFE"), "segura", "rgba(0,229,196,.16)", BIEN],
+      ["drink", E2("MÚSICA COMO ANUNCIARON", "MUSIC AS ANNOUNCED"), "musica", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO EN LA PUERTA", "TREATMENT AT THE DOOR"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : z.rub === "fiesta" ? [
       ["calendar", E2("RESPETARON LA FECHA", "KEPT THE DATE"), "fechaOk", "rgba(0,229,196,.16)", BIEN], ["clock", E2("LLEGARON A LA HORA", "ARRIVED ON TIME"), "llegaron", "rgba(75,55,245,.1)", "var(--tl-action)"],
       ["dollar", E2("COBRARON LO DEL PAQUETE", "CHARGED THE PACKAGE PRICE"), "paquete", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["image", E2("QUEDÓ COMO EN LAS FOTOS", "LOOKED LIKE THE PHOTOS"), "fotosOk", "rgba(0,229,196,.16)", BIEN],
       ["check", E2("RECOGIERON Y LIMPIARON", "PICKED UP AND CLEANED"), "limpio", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
@@ -238,7 +253,9 @@ function aspectos(v: CtlResenas) {
     a.taste != null ? ["restaurant", E2("SABOR", "FLAVOR"), a.taste.toFixed(1), "rgba(11,14,18,.06)", "var(--tl-ink)"] : null,
   ].filter(Boolean) as [string, string, string, string, string][]).map(([ic, k, val, bg, fg]) => ({ ic, k, v: val, bg, fg }));
 }
-const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "fiesta" ? (v.es
+const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "noche" ? (v.es
+  ? `De ${v.r.aspSP.n} noches con lista o mesa por To'Latino en los últimos 90 días.`
+  : `From ${v.r.aspSP.n} nights with a To'Latino list or table in the last 90 days.`) : v.r.aspSP?.rub === "fiesta" ? (v.es
   ? `De ${v.r.aspSP.n} reseñas del último año. «Respetaron la fecha» sale de las fiestas reservadas en To'Latino; lo demás es el % que contestó que sí.`
   : `From ${v.r.aspSP.n} reviews in the last year. “Kept the date” comes from parties booked on To'Latino; the rest is the % who answered yes.`) : v.r.aspSP?.rub === "trans" ? (v.es
   ? `De ${v.r.aspSP.n} reseñas de viajes y envíos de los últimos 90 días. Es el % que contestó que sí.`
@@ -249,7 +266,7 @@ const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "fiesta" ? (v.es
   : `From ${v.r.aspSP.n} reviews in the last year. It is the % who answered yes. The reason for a visit or what a case is about is never published.`) : v.es
   ? `De ${v.r.asp?.orders} pedidos calificados en To'Latino en los últimos 90 días. A tiempo = hasta 5 min después de la hora prometida.`
   : `From ${v.r.asp?.orders} rated To'Latino orders in the last 90 days. On time = up to 5 min after the promised time.`;
-const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "fiesta" ? (v.es ? "LO QUE IMPORTA EN UNA FIESTA" : "WHAT MATTERS AT A PARTY") : v.r.aspSP?.rub === "trans" ? (v.es ? "LO QUE IMPORTA EN UN VIAJE" : "WHAT MATTERS ON A TRIP") : v.r.aspSP?.rub === "merc" ? (v.es ? "LO QUE IMPORTA EN UN MERCADO" : "WHAT MATTERS AT A MARKET") : v.r.aspSP?.rub === "tienda" ? (v.es ? "LO QUE IMPORTA EN UNA TIENDA" : "WHAT MATTERS AT A STORE") : v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
+const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "noche" ? (v.es ? "LO QUE IMPORTA DE NOCHE" : "WHAT MATTERS AT NIGHT") : v.r.aspSP?.rub === "fiesta" ? (v.es ? "LO QUE IMPORTA EN UNA FIESTA" : "WHAT MATTERS AT A PARTY") : v.r.aspSP?.rub === "trans" ? (v.es ? "LO QUE IMPORTA EN UN VIAJE" : "WHAT MATTERS ON A TRIP") : v.r.aspSP?.rub === "merc" ? (v.es ? "LO QUE IMPORTA EN UN MERCADO" : "WHAT MATTERS AT A MARKET") : v.r.aspSP?.rub === "tienda" ? (v.es ? "LO QUE IMPORTA EN UNA TIENDA" : "WHAT MATTERS AT A STORE") : v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
 function Pocas({ v }: { v: CtlResenas }) {
   const { r, es } = v;
   return r.n > 0 ? (

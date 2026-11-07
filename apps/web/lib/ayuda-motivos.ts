@@ -21,6 +21,9 @@ const BASE: Record<string, L> = {
   // Fiestas y Transporte (4z)
   nollego: ["No llegaron", "They did not show up"], nocomo: ["No quedó como lo acordado", "Not as agreed"], inseguro: ["Manejo inseguro", "Unsafe driving"],
   equipaje: ["Perdió o dañó su equipaje o caja", "Lost or damaged their luggage or box"],
+  // Noche (4nd)
+  cover: ["Cobraron más cover", "Charged more cover"], lista: ["No respetaron la lista", "List not honored"], mesa: ["No respetaron la mesa", "Table not honored"],
+  minimo: ["Cobraron el mínimo aparte", "Charged the minimum as an extra fee"],
 };
 const POR_RUBRO: Record<string, Record<string, L>> = {
   salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },
@@ -28,6 +31,7 @@ const POR_RUBRO: Record<string, Record<string, L>> = {
   merc: { tarde: ["Llegó tarde", "Arrived late"], caja: ["No cobraron el precio del estante", "Did not charge the shelf price"] },
   tienda: { caja: ["Cobraron más en la caja", "Charged more at the register"], dano: ["Llegó dañado", "Arrived damaged"] },
   fiesta: { tarde: ["Llegaron tarde", "Arrived late"], falto: ["Faltó algo del paquete", "Something in the package was missing"], cobro: ["Cobraron más del paquete", "Charged more than the package"], dano: ["Dañaron algo o no recogieron", "Damaged something or did not pick up"] },
+  noche: { inseguro: ["Se sintió inseguro", "Felt unsafe"], trato: ["Mal trato en la puerta", "Treated badly at the door"], dep: ["No le descontaron el depósito", "Deposit not taken off the bill"] },
   trans: { cobro: ["Cobró más del precio cerrado", "Charged more than the fixed price"], tarde: ["Salió o llegó muy tarde", "Left or arrived very late"], nollego: ["No pasó a recogerlo", "Did not pick them up"] },
 };
 export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;

@@ -460,7 +460,7 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
   if (!o) return null;
   const alt = o.status === "change_proposed" ? (await db().query<{ m: number }>(`select (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and status = 'open' order by id desc limit 1`, [o.id])).rows[0] ?? null : null;
   const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
-  const resena = (await db().query(`select 1 from reviews where operation_id = $1::bigint limit 1`, [o.id]).catch(() => ({ rowCount: 0 }))).rowCount! > 0;
+  const resena = (await db().query(`select 1 from reviews where operation_id = $1::bigint and status <> 'removed' limit 1`, [o.id]).catch(() => ({ rowCount: 0 }))).rowCount! > 0;
   const d = o.det;
   return {
     numero: o.num, status: o.status, detalle: o.detail, k: d.k as NocheVista["k"], negocio: { id: o.biz, nombre: o.nombre, telefono: o.phone, direccion: o.address, foto: o.foto },

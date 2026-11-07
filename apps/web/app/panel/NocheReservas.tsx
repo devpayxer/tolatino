@@ -9,6 +9,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { hNoche, nocheCorta, usdN } from "@/lib/noche-comun";
 import type { FilaNoche, NochePanelV, nocheHoy } from "@/lib/noche-reservas";
 import { nocheCancelarNeg, nocheMarcar, nocheResponder } from "./acciones-noche";
+import { ayudaCita } from "./Citas";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -104,6 +105,7 @@ export function nocheDetalle(c: Ctx): Sec {
     }
   }
   if (x.motivoNeg) out.push({ type: "note", tone: "ink", icon: "close", t: E2(`Cancelaste: «${x.motivoNeg}».`, `You cancelled: “${x.motivoNeg}”.`) });
+  out.push(...ayudaCita(c, x.numero, x.who));
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.linea.map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: e.note ? nm(e.note) : verbo(e.kind, es),
     s: new Date(e.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) })) });
   return { blocks: out, ed: null };

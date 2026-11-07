@@ -1056,3 +1056,14 @@ _Decidido por mí:_ la otra hora se acepta en 30 min (la noche no espera 24 h); 
 depósito (Preguntas #7); el código no se muestra hasta que la mesa está confirmada y nunca va en un SMS; «No llegaron» se puede marcar
 desde que vence la mesa guardada; la carrera por la última mesa la gana el primero que entra al candado.
 _Pendiente (4ne):_ Super Admin › Transacciones › Noche y las colas «Mesas no respetadas» y «Sin identificación».
+
+### 4nd · Reseña y ayuda con la noche (7 nov)
+**Qué mirar (Marisol):** «Tu noche» de una lista con entrada › **Calificar**: dato de la reserva (noche, personas, pagado en la app),
+6 preguntas de noche; con 2 estrellas aparece «Ir a Ayuda con la noche». La página de La Terraza › Reseñas: **«Lo que importa de
+noche»**. «Tu noche» › **Ayuda con la noche**: 8 motivos; «Cobraron más cover» y «No me descontaron el depósito» piden foto del recibo;
+«Me sentí inseguro» va directo a To'Latino. **Panel (Héctor):** el detalle de la noche trae «AYUDA CON LA NOCHE» (tiene razón · proponer
+otra cosa con monto · no puedo); si el cliente acepta, el depósito vuelve a su tarjeta.
+_Arreglado de paso (clase):_ «Lo que importa» de Fiestas no mostraba «Respetaron la fecha» ni «Quedó como en las fotos» (Postgres
+devolvía los nombres en minúsculas); ahora sí, con su guardián.
+_Decidido por mí:_ «Me sentí inseguro» reusa la misma vía directa que «Manejo inseguro»; «No me descontaron el depósito» pide la foto del
+recibo; una mesa cancelada por el local también puede pedir ayuda.

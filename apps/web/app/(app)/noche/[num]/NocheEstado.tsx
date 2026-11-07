@@ -111,6 +111,8 @@ export function NocheEstado({ x, es }: { x: NocheVista; es: boolean }) {
           {vivo && x.negocio.direccion && <Button variant="secondary" icon="pin" onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button>}
           {x.negocio.telefono && vivo && <Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${x.negocio.telefono}`; }}>{E2("Llamar", "Call")}</Button>}
           {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{lista ? E2("Salir de la lista", "Leave the list") : E2("Cancelar la reserva", "Cancel the booking")}</Button>}
+          {x.status === "done" && x.detalle === "entro" && !x.resena && <Button icon="star" onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}`)}>{E2("Calificar", "Rate")}</Button>}
+          {(x.status === "done" || (x.status === "cancelled" && !!x.motivoNeg)) && <Button variant="secondary" icon="help" onClick={() => router.push(`/noche/${x.numero}/ayuda`)}>{E2("Ayuda con la noche", "Night help")}</Button>}
           {!vivo && <Button variant="secondary" icon="drink" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Otra noche", "Another night")}</Button>}
         </div>
         <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{`${linea} ${E2("Si alguien corre peligro, llama al 911.", "If someone is in danger, call 911.")}`}</div>
