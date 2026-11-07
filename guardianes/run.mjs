@@ -1699,7 +1699,9 @@ const guardianes = {
     if (!existsSync(f) || !existsSync(L) || !existsSync(U)) return;
     const m = /export type Cola = ([^;]+);/.exec(readFileSync(f, "utf8"));
     if (!m) return falla("colaConVista", f, 0, "no encuentro el tipo Cola");
-    const tl = readFileSync(L, "utf8"), tu = readFileSync(U, "utf8");
+    // 5d: los casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel, fotos) se pintan en ColasComunidad.tsx.
+    const CC = "apps/web/app/admin/ColasComunidad.tsx";
+    const tl = readFileSync(L, "utf8"), tu = readFileSync(U, "utf8") + (existsSync(CC) ? readFileSync(CC, "utf8") : "");
     for (const k of [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])) {
       if (!tl.includes(`x.queue === "${k}"`)) falla("colaConVista", L, 0, `la cola «${k}» no tiene su título en la lista (sale como otra cola)`);
       if (!tu.includes(`k.queue === "${k}"`)) falla("colaConVista", U, 0, `la cola «${k}» no tiene su detalle en Colas`);
@@ -1719,9 +1721,13 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
-        for (const m of l.matchAll(/\bavisar\w*\([^()]*?,\s*"([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, i + 1, `el aviso «${m[1]}» no existe en notif_templates`);
+        // 5d: avisarOculto / avisarSancion / avisarDecision eligen su plantilla adentro (su segundo argumento es lo oculto, no una plantilla).
+        for (const m of l.matchAll(/\bavisar(?!Oculto|Sancion|Decision)\w*\([^()]*?,\s*"([a-z]+_[a-z0-9_]+)"/g)) if (!tpl.has(m[1])) falla("avisoConPlantilla", f, i + 1, `el aviso «${m[1]}» no existe en notif_templates`);
       });
     }
+    // 5d: lib/apelaciones.ts elige la plantilla adentro (const tpl = …): toda clave de moderación escrita ahí existe.
+    const AP = "apps/web/lib/apelaciones.ts";
+    if (existsSync(AP)) for (const l of sinComent(AP).split("\n").filter((x) => /const tpl = |avisar\(/.test(x))) for (const m of l.matchAll(/"([a-z]+_[a-z0-9_]+)"/g)) if (!/^(com_post|com_comment|dm_message)$/.test(m[1]) && !tpl.has(m[1])) falla("avisoConPlantilla", AP, 0, `el aviso «${m[1]}» no existe en notif_templates`);
   },
 
   /* 4ig. Analítica muestra cifras, nunca personas por lo que creen ni datos de crédito: lib/admin-analitica.ts y la pantalla no leen la
@@ -2006,7 +2012,10 @@ const guardianes = {
     const a = sinComent(A);
     if (!/const CON_REPORTE = \(t: string\) => `exists \(select 1 from queue_items q where q\.queue = 'chat' and q\.subject_kind = 'dm_thread' and q\.subject_id = \$\{t\}::text and q\.status = 'open'\)\s*and exists \(select 1 from content_reports cr where cr\.target_kind = 'dm' and cr\.target_id = \$\{t\}::text and cr\.status = 'open'\)`/.test(a))
       falla("dmSoloConReporte", A, 0, "CON_REPORTE debe exigir el caso abierto (chat · dm_thread) y un reporte abierto ('dm')");
-    for (const q of a.match(/`[^`]*`/g) ?? []) if ((/\b(from|update) dm_messages\b/.test(q) || /\blast_text\b/.test(q)) && !/\$\{CON_REPORTE\(/.test(q)) falla("dmSoloConReporte", A, 0, `una consulta de mensajes sin CON_REPORTE: «${q.slice(0, 70)}»`);
+    // 5d: la otra llave es CON_APELACION (solo ESE mensaje y solo con su apelación abierta), para decidir y levantar la apelación.
+    if (/CON_APELACION/.test(a) && !/const CON_APELACION = \(m: string\) => `exists \(select 1 from appeals ap where ap\.target_kind = 'dm_message' and ap\.target_id = \$\{m\}::text and ap\.status = 'open'\)`/.test(a))
+      falla("dmSoloConReporte", A, 0, "CON_APELACION debe exigir una apelación abierta de ese mismo mensaje");
+    for (const q of a.match(/`[^`]*`/g) ?? []) if ((/\b(from|update) dm_messages\b/.test(q) || /\blast_text\b/.test(q)) && !/\$\{CON_REPORTE\(/.test(q) && !/\$\{CON_APELACION\("m\.id"\)\}/.test(q)) falla("dmSoloConReporte", A, 0, `una consulta de mensajes sin CON_REPORTE ni CON_APELACION: «${q.slice(0, 70)}»`);
     const C = sinComent("apps/web/lib/admin-colas.ts");
     if (!/q\.status === "open" \? await \(await import\("\.\/admin-dm"\)\)\.dmReportado\(q\.subject_id\) : null/.test(C)) falla("dmSoloConReporte", "apps/web/lib/admin-colas.ts", 0, "el caso de mensajes entre vecinos solo se lee con el caso abierto");
   },
@@ -2037,10 +2046,11 @@ const guardianes = {
     const MV = "apps/web/lib/mensajes-vecinos.ts", M = "packages/db/migrations/0099_vecinos_mensajes.sql";
     if (!existsSync(MV)) return;
     const e = cuerpoFn(sinComent(MV), "enviar"), m = readFileSync(M, "utf8");
-    const iS = e.search(/if \(!o\.me_sigue && !t\?\.me_escribio\) return/), iL = e.search(/if \(hoy >= NUEVAS_DIA\) return/), iT = e.search(/insert into dm_threads/);
+    // 5d: el límite de conversaciones nuevas vive en lib/moderacion.ts limiteDia (Configuración; de fábrica 10).
+    const iS = e.search(/if \(!o\.me_sigue && !t\?\.me_escribio\) return/), iL = e.search(/const lim = await limiteDia\(c, viewer, "conversaciones"\);\s*if \(!lim\.ok\) return lim;/), iT = e.search(/insert into dm_threads/);
     if (iS < 0 || iT < 0 || iS > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin revisar antes que la otra persona te sigue");
     if (iL < 0 || iT < 0 || iL > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin el límite de conversaciones nuevas al día");
-    if (!/export const NUEVAS_DIA = 10/.test(sinComent(MV))) falla("mensajeSoloAQuienTeSigue", MV, 0, "el límite es 10 conversaciones nuevas al día (§4 5c)");
+    if (!/conversaciones: \{ key: "com_lim_conversaciones", def: 10,/.test(readFileSync("apps/web/lib/moderacion-comun.ts", "utf8"))) falla("mensajeSoloAQuienTeSigue", "apps/web/lib/moderacion-comun.ts", 0, "el límite de fábrica es 10 conversaciones nuevas al día (§4 5c)");
     if (!/if not exists \(select 1 from follows f where f\.follower_user_id = otro and f\.target_kind = 'user' and f\.target_id = new\.sender_user_id::text\)\s*and not exists \(select 1 from dm_messages m where m\.thread_id = new\.thread_id and m\.sender_user_id = otro\) then\s*raise exception 'solo le escribes a quien te sigue'/.test(m))
       falla("mensajeSoloAQuienTeSigue", M, 0, "dm_messages_antes debe rechazar el mensaje a quien no te sigue (ni te escribió)");
     if (!/raise exception 'los contadores de una conversación son derivados'/.test(m)) falla("mensajeSoloAQuienTeSigue", M, 0, "dm_threads_antes debe rechazar el cambio a mano de los derivados");
@@ -2071,6 +2081,113 @@ const guardianes = {
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\binsert into content_reports\b/i.test(q) && !/on conflict \(target_kind, target_id, reporter_user_id\)/.test(q)) falla("reporteConLlave", x, 0, "insert into content_reports sin on conflict (target_kind, target_id, reporter_user_id): el segundo reporte de la misma persona revienta");
+    }
+  },
+
+  /* 5d. Toda acción que oculta algo de la Comunidad o sanciona a una persona avisa con el motivo y lleva a «Apelar»: la función que
+     oculta (publicación, comentario, mensaje entre vecinos, foto de la Comunidad) o inserta una sanción a una persona llama en su cuerpo a
+     avisarOculto() / avisarSancion(); si es un ayudante que corre dentro de una transacción (autoOcultar, ocultarDm, aplicarSancion), lo
+     hace cada función que lo llama. Los avisos llevan el motivo y la ruta de la apelación; la pantalla de apelar existe. */
+  ocultarAvisaYApela() {
+    const G = "ocultarAvisaYApela", AP = "apps/web/lib/apelaciones.ts";
+    if (!existsSync(AP)) return;
+    const HELPERS = ["autoOcultar", "ocultarDm", "aplicarSancion"];
+    const OCULTA = [/update (com_posts|com_comments|\$\{tabla\}) set status = ('hidden'|\$2)/, /update dm_messages m set hidden_at = now\(\)/, /insert into sanctions \([^)]*\) values \('user'/];
+    const FOTO = /update media set status = 'removed', removed_reason = 'admin'/;
+    const AVISA = /\bavisar(Oculto|Sancion)\(/;
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const mm of t.matchAll(/\n(?:export )?async function (\w+)\(/g)) {
+        const b = cuerpoFn(t, mm[1]);
+        const oculta = OCULTA.some((re) => re.test(b)) || (FOTO.test(b) && /["']com_post["']/.test(b));
+        if (oculta && !HELPERS.includes(mm[1]) && !AVISA.test(b)) falla(G, x, 0, `«${mm[1]}» oculta o sanciona sin avisar con el motivo y la apelación (avisarOculto / avisarSancion)`);
+        for (const h of HELPERS) if (mm[1] !== h && new RegExp(`\\b${h}\\(`).test(b) && !AVISA.test(b)) falla(G, x, 0, `«${mm[1]}» llama a ${h}() y no avisa después con avisarOculto / avisarSancion`);
+      }
+      // Una sola forma de sancionar a una persona (con su referencia y el aviso).
+      if (x !== AP && /insert into sanctions \([^)]*\) values \('user'/.test(t)) falla(G, x, 0, "una sanción a una persona se aplica solo con aplicarSancion() (lib/apelaciones.ts)");
+    }
+    const a = sinComent(AP);
+    if (!/export const RUTA_AVISO = \(k: Apelable, id: string\) => `\/cuenta\/moderacion\?k=\$\{k\}&id=/.test(a)) falla(G, AP, 0, "RUTA_AVISO debe llevar a la pantalla de apelar (/cuenta/moderacion?k=…&id=…)");
+    for (const fn of ["avisarOculto", "avisarSancion"]) { const b = cuerpoFn(a, fn); if (!/motivo/.test(b) || !/href: RUTA_AVISO\(/.test(b)) falla(G, AP, 0, `${fn} debe avisar con el motivo y la ruta de la apelación`); }
+    if (!existsSync("apps/web/app/(app)/cuenta/moderacion/page.tsx") || !/apelar\(/.test(sinComent("apps/web/app/(app)/cuenta/moderacion/acciones.ts"))) falla(G, "apps/web/app/(app)/cuenta/moderacion", 0, "falta la pantalla de apelar (Mi cuenta › Avisos de moderación)");
+  },
+
+  /* 5d. La apelación la decide otra persona: la base pone quién ocultó o sancionó (sanctioned_by, de la fuente) y rechaza que esa persona
+     o quien apela la decida (trigger y check); decidirApelacion lo dice antes de tocar nada; solo lib/apelaciones.ts escribe appeals y
+     nunca escribe sanctioned_by a mano. */
+  apelacionOtraPersona() {
+    const G = "apelacionOtraPersona", M = "packages/db/migrations/0100_moderacion_apelaciones.sql", AP = "apps/web/lib/apelaciones.ts";
+    if (!existsSync(M) || !existsSync(AP)) return;
+    const m = readFileSync(M, "utf8");
+    if (!/if old\.sanctioned_by is not null and new\.decided_by = old\.sanctioned_by then raise exception/.test(m)) falla(G, M, 0, "appeals_antes debe rechazar que decida quien sancionó");
+    if (!/if new\.decided_by = old\.user_id then raise exception/.test(m)) falla(G, M, 0, "appeals_antes debe rechazar que decida quien apela");
+    if (!/new\.sanctioned_by := x\.por;/.test(m)) falla(G, M, 0, "appeals_antes debe poner sanctioned_by desde la fuente (no la app)");
+    if (!/check \(decided_by is null or sanctioned_by is null or decided_by <> sanctioned_by\)/.test(m)) falla(G, M, 0, "appeals sin el check decided_by <> sanctioned_by");
+    const b = cuerpoFn(sinComent(AP), "decidirApelacion"), iC = b.search(/if \(a\.por === staffId\) return \{ err:/), iU = b.search(/update appeals set status/);
+    if (iC < 0 || iU < 0 || iC > iU) falla(G, AP, 0, "decidirApelacion debe rechazar a quien sancionó antes de decidir");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        if (/\b(insert into|update|delete from) appeals\b/.test(q) && x !== AP) falla(G, x, 0, "solo lib/apelaciones.ts escribe apelaciones");
+        if (/\binsert into appeals\b/.test(q) && /sanctioned_by|decided_by/.test(q)) falla(G, x, 0, "una apelación nueva no trae sanctioned_by ni decided_by (los pone la base)");
+      }
+    }
+  },
+
+  /* 5d. Libros de solo inserción: mod_flags (lo que marcó cada regla) y com_edits no se cambian ni se borran (trigger); una apelación no se
+     borra y, decidida, no cambia; un término no se borra (se apaga). Y ningún código lo intenta. */
+  libroSoloInsercion() {
+    const G = "libroSoloInsercion", M = "packages/db/migrations/0100_moderacion_apelaciones.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger mod_flags_no_cambia before update or delete on mod_flags for each row execute function mod_flags_inmutable\(\)/.test(m) || !/raise exception 'mod_flags es solo de inserción'/.test(m)) falla(G, M, 0, "mod_flags sin el trigger de solo inserción");
+    if (!/if tg_op = 'DELETE' then raise exception 'una apelación no se borra'/.test(m) || !/if old\.status <> 'open' then raise exception 'una apelación decidida no cambia'/.test(m)) falla(G, M, 0, "appeals: no se borra y, decidida, no cambia");
+    if (!/create trigger mod_terms_no_borra before delete on mod_terms/.test(m)) falla(G, M, 0, "mod_terms: un término no se borra");
+    if (!/create trigger com_edits_no_cambia before update or delete on com_edits/.test(readFileSync("packages/db/migrations/0097_comunidad_base.sql", "utf8"))) falla(G, "packages/db/migrations/0097_comunidad_base.sql", 0, "com_edits sin el trigger de solo inserción");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (mod_flags|com_edits)\b|\bdelete from (appeals|mod_terms)\b/.test(q)) falla(G, x, 0, `un libro de solo inserción se cambia o se borra: «${q.slice(0, 60)}»`);
+    }
+  },
+
+  /* 5d. Los límites del día los pone el servidor: publicar, comentar, votar, empezar una conversación y reportar piden limiteDia() antes de
+     escribir; limiteDia cuenta el día local de la ciudad, con la mitad el primer día de la cuenta y con candado por persona (dos a la vez
+     no se pasan); los cinco topes existen en platform_config. Ningún conteo propio de «24 horas» queda en esas funciones. */
+  limitesEnServidor() {
+    const G = "limitesEnServidor", MO = "apps/web/lib/moderacion.ts", M = "packages/db/migrations/0100_moderacion_apelaciones.sql";
+    if (!existsSync(MO)) return;
+    const CASOS = [["apps/web/lib/comunidad.ts", "publicar", "publicaciones", /insert into com_posts/], ["apps/web/lib/comunidad-hilo.ts", "comentar", "comentarios", /insert into com_comments/],
+      ["apps/web/lib/comunidad-hilo.ts", "votar", "votos", /select com_votar\(/], ["apps/web/lib/mensajes-vecinos.ts", "enviar", "conversaciones", /insert into dm_threads/],
+      ["apps/web/lib/mensajes-vecinos.ts", "reportarConversacion", "reportes", /insert into content_reports/], [MO, "reportar", "reportes", /insert into content_reports/]];
+    for (const [f, fn, que, w] of CASOS) {
+      const b = cuerpoFn(sinComent(f), fn), iL = b.search(new RegExp(`await limiteDia\\(c, \\w+, "${que}"\\)`)), iW = b.search(w);
+      if (iL < 0 || iW < 0 || iL > iW) falla(G, f, 0, `«${fn}» escribe sin pedir antes limiteDia(…, "${que}")`);
+      if (/created_at > now\(\) - interval '24 hours'/.test(b) && fn !== "votar") falla(G, f, 0, `«${fn}» cuenta su propio límite de 24 horas (usa limiteDia: día local)`);
+    }
+    const l = cuerpoFn(sinComent(MO), "limiteDia");
+    if (!/pg_advisory_xact_lock\(hashtextextended\(\$1, 0\)\)`, \[`lim:\$\{que\}:\$\{userId\}`\]/.test(l)) falla(G, MO, 0, "limiteDia sin candado por persona y tipo");
+    if (!/date_trunc\('day', now\(\) at time zone z\.tz\) at time zone z\.tz/.test(l)) falla(G, MO, 0, "limiteDia debe contar el día local de la ciudad");
+    if (!/u\.nueva \? Math\.max\(1, Math\.floor\(u\.tope \/ 2\)\)/.test(l)) falla(G, MO, 0, "limiteDia: la mitad el primer día de la cuenta (§6 #21)");
+    const m = readFileSync(M, "utf8");
+    for (const k of ["com_lim_publicaciones", "com_lim_comentarios", "com_lim_votos", "com_lim_conversaciones", "com_lim_reportes"]) if (!m.includes(`('${k}', '`)) falla(G, M, 0, `falta el límite ${k} en platform_config`);
+  },
+
+  /* 5d (clase: reportes en manada para esconder a alguien). Auto-ocultar cuenta PERSONAS: las cuentas que comparten algún dispositivo (sus
+     sesiones o el del reporte) cuentan como una, las cuentas nuevas (edad_h) no cuentan, y el dispositivo del reporte sale de la cookie del
+     servidor (nunca del cliente). Nada se oculta solo por otra vía. */
+  reportesSinManada() {
+    const G = "reportesSinManada", MO = "apps/web/lib/moderacion.ts", AC = "apps/web/app/(app)/comunidad/acciones.ts";
+    if (!existsSync(MO)) return;
+    const b = cuerpoFn(sinComent(MO), "autoOcultar");
+    if (!/array\(select distinct s\.device::text from sessions s where s\.user_id = cr\.reporter_user_id and s\.device is not null\) as devs/.test(b)) falla(G, MO, 0, "autoOcultar debe mirar los dispositivos de cada cuenta que reporta (sesiones)");
+    if (!/u\.created_at <= now\(\) - make_interval\(hours => \$3\) as vieja/.test(b) || !/\.filter\(\(x\) => x\.vieja\)/.test(b)) falla(G, MO, 0, "autoOcultar no debe contar cuentas nuevas (edad_h)");
+    if (!/padre\[raiz\(i\)\] = raiz\(j\)/.test(b) || !/const peso = \[\.\.\.grupos\.values\(\)\]\.reduce/.test(b) || !/if \(peso < umbral\) return null;/.test(b)) falla(G, MO, 0, "autoOcultar debe unir las cuentas que comparten dispositivo y contar grupos, no reportes");
+    const ac = cuerpoFn(sinComent(AC), "comReportar");
+    if (!/await dispositivo\(false\)\);/.test(ac)) falla(G, AC, 0, "el dispositivo del reporte sale de la cookie del servidor (dispositivo()), nunca del cliente");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === MO) continue;
+      if (/\bset\b[^`;]*hidden_by = 'auto'/.test(sinComent(x))) falla(G, x, 0, "solo autoOcultar (lib/moderacion.ts) oculta «auto»");
     }
   },
 

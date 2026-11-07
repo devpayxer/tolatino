@@ -1604,3 +1604,48 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 **Capturas:** `c5c-bienvenida-3-m`, `c5c-bienvenida-4-m`, `c5c-bienvenida-5-m`, `c5c-bienvenida-fin-m`, `c5c-menor-m`, `c5c-vecino-m`,
 `c5c-vecino-d`, `c5c-mensajes-m`, `c5c-chat-m`, `c5c-chat-d`, `c5c-bloquear-d`, `c5c-bloqueado-m`, `c5c-reportar-m`, `c5c-cuenta-vecinos-d`,
 `c5c-cuenta-vecinos-m`, `c5c-admin-dm-d`, `c5c-admin-u360-d`.
+
+### 5d · Comunidad: reportar, auto-moderación, antiabuso, sanciones y apelaciones (7 nov)
+**Qué mirar, paso a paso, en el sandbox** (capturas `c5d-*.png`; teléfono 390 y escritorio 1360):
+1. **Reportar (teléfono):** en una publicación, ··· › Reportar → motivo → «¿Algo más que debamos saber?» → **«Ya no lo ves. Lo revisamos en
+   48 h.»**. La publicación desaparece solo para ti; otra cuenta la sigue viendo. Igual en un comentario (⌄ › Reportar comentario), en el
+   perfil de un vecino (⌄ › Reportar a …: además lo silencia para ti) y en una conversación.
+2. **Auto-ocultar:** con 5 cuentas en **un mismo teléfono** no pasa nada; con 5 personas en teléfonos distintos (cuentas de más de 72 h) se
+   oculta «por revisión» y la autora recibe el aviso con **Apelar**.
+3. **Apelar (la autora):** el aviso → Mi cuenta › Avisos de moderación → 20–500 letras → «Recibimos tu apelación. Te respondemos en 72 h.».
+4. **Segunda revisión:** con el Admin que la ocultó, la apelación sale con candado y sin botones; con **otro** Admin (5705550188), Levantar →
+   la publicación vuelve y llega «Revisamos tu apelación».
+5. **Super Admin › Confianza y seguridad** (Resumen, Catálogo con el efecto en la Comunidad, Sancionados, Apelaciones, Fraude, Privacidad) y
+   **Contenido › Auto-moderación** (reglas, valores, listas, límites). Apaga «Fotos: desnudez»: dice qué pasa con las fotos.
+6. **Sanción:** Colas › Reportes de usuario › Sancionar «Silencio 7 días» → la persona lee el muro; Publicar dice hasta cuándo y por qué
+   (con «Ver y apelar»); comentar también se rechaza con el motivo.
+
+**Decidí (regla AB; si prefieres otra cosa, se cambia):**
+- **Modelo de fotos propio con NudeNet 3.4.2** (ONNX, MIT según su paquete; licencia de los pesos a confirmar con abogado — LAUNCH-CHECKLIST),
+  **encendido de fábrica** porque los pesos sí se bajan (vienen en el paquete de PyPI). Solo mide desnudez. Si el servicio no responde
+  (3 s, corta 30 s), la foto **no se publica**: queda «en revisión» en Medios marcados y su autor ve «1 foto espera revisión». Solo las
+  fotos de la Comunidad pasan por el modelo.
+- **«Teléfonos» no se apaga** (la base lo impide): sale con su interruptor fijo y la explicación.
+- **«Direcciones de personas» (pii):** número + calle se sigue **rechazando** al escribir (decisión de 5a); la regla encendida además marca
+  placas (ABC-1234) y «vive en …» para revisión humana.
+- **La regla de listas (`hate`) gobierna odio, estafa e inmigración; autolesión siempre** (seguridad): marca con prioridad y quien escribe
+  ve la línea del **988**. En **mensajes entre vecinos** no se marca nada (el equipo no los lee sin reporte); solo se muestra el 988.
+- **Auto-ocultar** cuenta **personas**: las cuentas que comparten algún dispositivo (sesiones o el del reporte) son una; cuentas de menos de
+  **72 h** no cuentan; un Coronel vale 3 (§6 #9). Queda «oculta por revisión» con aviso y Apelar; «Se queda» la devuelve.
+- **Apelar 14 días** (§6 #18; el prototipo decía 7), **una sola vez**, final. Si nadie ocultó a mano (auto), la decide cualquiera del equipo.
+- **nopub ≠ mute7 en la Comunidad:** silencio = no publica, no comenta ni escribe; «bloquear publicación» = solo no publica.
+- **Límites en el día local** de la ciudad (antes 24 h corridas) con la mitad el primer día; nuevo **20 reportes al día**. El texto quedó uno
+  para todos: «Llegaste a N … hoy. Vuelve mañana.» (antes «Ya empezaste 10 conversaciones hoy. Sigue mañana.»).
+- **Reportar una conversación** usa el mismo flujo de 3 pasos (con sus motivos de 5c). A una **persona** se la puede volver a reportar si el
+  caso anterior se cerró (como una conversación); una publicación o un comentario, una vez.
+- **Ráfagas y redes se vuelven a armar** después de cada marca (solo cuenta lo nuevo): un caso ya decidido no se reabre cada minuto.
+- **Quienes reportan** reciben «Revisamos tu reporte» (prototipo); de una persona sancionada no se les dice nada.
+- **Toda sanción a una persona** ahora pasa por `aplicarSancion` y avisa con el motivo y Apelar (también la de Usuarios 360° y la de una reseña).
+- **Apelar una suspensión o un baneo** se pide por Soporte (la persona no puede entrar); pantalla propia a LAUNCH-CHECKLIST.
+- **Accesibilidad:** el menú ··· de `PostCard` y ⌄ de los comentarios (`Thread`) ahora son botones con nombre («Opciones»).
+- La pestaña «Reglas del sello» del prototipo no se repitió en Confianza: vive en Colas › Sello.
+
+**Capturas:** `c5d-reportar-motivo-m`, `c5d-reportar-detalle-m`, `c5d-reportar-recibido-m`, `c5d-oculta-autora-m`, `c5d-colas-rep-d`,
+`c5d-apelar-m`, `c5d-apelacion-m`, `c5d-apel-mismo-d`, `c5d-apel-d`, `c5d-moderacion-lista-m`, `c5d-988-m`, `c5d-auto-d`, `c5d-limite-m`,
+`c5d-fraude-d`, `c5d-reportar-persona-m`, `c5d-colas-repusr-d`, `c5d-silenciado-m`, `c5d-foto-revision-m`, `c5d-medios-d`,
+`c5d-auto-img-off-d`, `c5d-reportar-d`, `c5d-confianza-d`, `c5d-confianza-m`.

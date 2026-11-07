@@ -106,7 +106,8 @@ function CommentActions({
   replyLabel = 'Responder',
   onReply,
   solve,
-  onMenu
+  onMenu,
+  menuLabel = 'Opciones'
 }) {
   return /*#__PURE__*/React.createElement("div", {
     style: {
@@ -191,6 +192,10 @@ function CommentActions({
     }
   }), onMenu ? /*#__PURE__*/React.createElement("span", {
     onClick: onMenu,
+    role: 'button',
+    tabIndex: 0,
+    'aria-label': menuLabel,
+    onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onMenu(e); } },
     style: {
       width: 30,
       height: 30,
@@ -435,6 +440,10 @@ const ReplyBody = ({
   }
 }), r.onMenu ? /*#__PURE__*/React.createElement("span", {
   onClick: r.onMenu,
+  role: 'button',
+  tabIndex: 0,
+  'aria-label': r.menuLabel || 'Opciones',
+  onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); r.onMenu(e); } },
   style: {
     display: 'grid',
     cursor: 'pointer',

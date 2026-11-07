@@ -22,9 +22,25 @@ services:
       MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
       MEDIOS_SECRET: ${MEDIOS_SECRET:-}
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
+      # 5d · Moderación de imágenes propia (regla `img`): solo por la red interna; si no responde, las fotos esperan revisión.
+      MODERACION_IMG_URL: http://moderacion-img:8790
     depends_on:
       db:
         condition: service_healthy
+
+  # 5d · Moderación de imágenes propia (services/moderacion-img: NudeNet 3.4.2, MIT, ONNX en CPU). Sin puertos hacia afuera: solo
+  # la app le habla por la red del compose. La app no la espera para arrancar: si está caída, las fotos nuevas de la Comunidad
+  # quedan en «revisión manual» (cola Medios marcados), nunca publicadas sin revisar. Memoria acotada (cx33, 8 GB; §6 #24).
+  #     Perfil propio (como el mapa): deploy.sh lo construye y lo enciende APARTE, así una falla al construir esta imagen nunca
+  #     frena el despliegue de la app.
+  moderacion-img:
+    build:
+      context: ../../services/moderacion-img
+    image: tolatino/moderacion-img:pruebas
+    profiles: ["moderacion"]
+    restart: unless-stopped
+    mem_limit: 768m
+    cpus: 1.0
 
   # Barrido central (0078): cada minuto llama a la app por la red interna para vencer, liberar y avisar aunque nadie abra una
   # página. Usa la misma imagen de la app (nada nuevo que bajar) y el token del entorno (lo crea deploy.sh).

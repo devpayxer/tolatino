@@ -4,6 +4,7 @@ import { db, tx } from "./db";
 import { centroSQL, type Punto } from "./punto";
 import { EDITAR_MIN, DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
 import { porcentajes, type Autor, type Filtros, type Pub } from "./comunidad-comun";
+import { efectoSancion, limiteDia, noPuede, revisarAlEscribir, revisarFotosCom } from "./moderacion";
 
 /* Comunidad · el muro, publicar y la publicación (APP-COM-FEED, APP-COM-NUEVO, APP-COM-POST; fase5-comunidad.md §4 5a).
    Todo pide sesión (comunidadSoloConCuenta): cada función recibe la persona que mira (viewer) y nada de vecinos sale sin ella.
@@ -20,7 +21,6 @@ export const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-D
 export const ID = /^\d{1,18}$/;
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const POR_PAGINA = 20;
-const LIMITE_DIA = 10;
 
 /* Lo que alguien no debe ver: quien lo bloqueó o a quien bloqueó (de ida y vuelta) y a quien silenció. `autor` es la columna del
    autor y `viewer` el parámetro de quien mira. Toda función de lib/comunidad*.ts que lista para una persona lo usa (guardián). */
@@ -71,7 +71,8 @@ export const COLS = (centro: string | null) => `
   ${centro ? `round((st_distance(p.geom, ${centro}) / 1609.34)::numeric, 1)::float8` : "null::float8"} as mi,
   b.id as biz_id, b.name as biz_name, coalesce(bs.verified, false) as biz_ver, bs.rating_avg::float8 as biz_rating, bs.review_count as biz_reviews, sc.name as biz_sub,
   coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as biz_foto,
-  (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible') as fotos`;
+  (select coalesce(array_agg(m.url order by m.sort, m.created_at), '{}') from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'visible') as fotos,
+  (select count(*)::int from media m where m.owner_kind = 'com_post' and m.owner_id = p.id::text and m.status = 'review') as revision`;
 export const JOINS = `
   left join zones z on z.city_id = p.city_id and z.id = p.zone_id
   left join cities gc on gc.id = p.guest_from_city_id
@@ -85,7 +86,7 @@ export type Fila = {
   at: string; editada: boolean; editar_hasta: string; editable: boolean; fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean;
   para: string[]; opts: string[] | null; conteo: number[]; cierra: string | null; cerrada: boolean; up: number; dn: number; score: number; cms: number;
   hot_t: string; cur_new: string; cur_top: string; zona: Bi | null; invitado: string | null; ciudad_nombre: string; oficial: Bi | null; mi: number | null;
-  biz_id: string | null; biz_name: string | null; biz_ver: boolean; biz_rating: number | null; biz_reviews: number | null; biz_sub: Bi | null; biz_foto: string | null; fotos: string[];
+  biz_id: string | null; biz_name: string | null; biz_ver: boolean; biz_rating: number | null; biz_reviews: number | null; biz_sub: Bi | null; biz_foto: string | null; fotos: string[]; revision: number;
 };
 
 /* Votos, guardados y voto de encuesta de quien mira, para una página entera (una consulta). */
@@ -120,7 +121,7 @@ export async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
       fijada: f.fijada, salud: f.salud, resuelta: f.resuelta, cerrados: f.cerrados, estado: f.status, motivo: mia ? f.hidden_reason : null,
       autor: a, lugar, invitado: !!f.invitado, mi: f.mi,
       negocio: f.biz_id ? { id: f.biz_id, nombre: f.biz_name!, meta: { es: meta("es"), en: meta("en") }, foto: f.biz_foto, verificado: f.biz_ver, para: f.para ?? [] } : null,
-      fotos: f.fotos ?? [],
+      fotos: f.fotos ?? [], revision: mia ? f.revision ?? 0 : 0,
       encuesta: f.opts ? encuesta(f.opts, f.conteo, p.o, f.cierra!, f.cerrada) : null,
       up: f.up, dn: f.dn, score: f.score, miVoto: p.v, guardada: p.s, comentarios: f.cms,
     };
@@ -220,33 +221,35 @@ export async function esSuNegocio(c: PoolClient, userId: string, negocio: string
 }
 
 /* Fotos que la persona subió (y no se usan en otra cosa) pasan a la publicación; las que quitó al editar quedan retiradas. */
+/* 5d · Una foto nueva entra «en revisión» (no se ve) y revisarFotosCom() la pasa por el modelo propio después de guardar; si el
+   modelo la marca o no responde, se queda en revisión para una persona (regla img; nunca se publica una foto sin revisar). */
 async function ponerFotos(c: PoolClient, userId: string, post: string, fotos: string[]) {
   const ids = fotos.filter((x) => UUID.test(x)).slice(0, MAX_FOTOS);
   if (ids.length !== fotos.length) return false;
   if (ids.length) {
     const r = await c.query(
-      `update media set owner_kind = 'com_post', owner_id = $1, sort = array_position($3::uuid[], id) - 1
-        where id = any($3::uuid[]) and status = 'visible' and ((owner_kind = 'user' and uploaded_by = $2) or (owner_kind = 'com_post' and owner_id = $1))`, [post, userId, ids]);
+      `update media set sort = array_position($3::uuid[], id) - 1, status = case when owner_kind = 'user' then 'review' else status end, owner_kind = 'com_post', owner_id = $1
+        where id = any($3::uuid[]) and ((owner_kind = 'user' and uploaded_by = $2 and status = 'visible') or (owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review')))`, [post, userId, ids]);
     if (r.rowCount !== ids.length) return false;
   }
-  await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'com_post' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [post, ids]);
+  await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review') and not (id = any($2::uuid[]))`, [post, ids]);
   return true;
 }
 
 export type Entrada = Borrador;
-export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string }>> {
+export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   const f = revisarPublicacion(p);
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
-  return tx(async (c) => {
+  const r = await tx(async (c) => {
     const u = await quien(c, userId, ciudad);
     if (!u) return no("Entra para publicar.", "Sign in to post.");
     if (!u.ciudadOn) return no("La Comunidad de esta ciudad abre cuando abra la ciudad.", "This city's Community opens when the city opens.");
-    if (u.estado === "muted") return no(`No puedes publicar hasta el ${fechaHasta(u.hasta, true)}${u.motivo ? `: ${u.motivo}` : "."}`, `You can't post until ${fechaHasta(u.hasta, false)}${u.motivo ? `: ${u.motivo}` : "."}`);
-    if (u.estado !== "active") return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
-    // Límite: 10 publicaciones en 24 h (la mitad si la cuenta es de hoy). Las borradas cuentan.
-    const tope = u.nueva ? LIMITE_DIA / 2 : LIMITE_DIA;
-    const n = (await c.query<{ n: number }>(`select count(*)::int as n from com_posts where author_user_id = $1 and created_at > now() - interval '24 hours'`, [userId])).rows[0]!.n;
-    if (n >= tope) return no(`Llegaste a ${tope} publicaciones en 24 horas. Vuelve mañana.`, `You reached ${tope} posts in 24 hours. Come back tomorrow.`);
+    // 5d · La sanción viva decide (silencio o «bloquear publicación»: hasta cuándo y por qué).
+    const e = await efectoSancion(c, userId);
+    if (!e.publicar) return noPuede(e, { es: "publicar", en: "post" });
+    // Límite del día (día local; la mitad el primer día de la cuenta). Las borradas cuentan.
+    const lim = await limiteDia(c, userId, "publicaciones");
+    if (!lim.ok) return lim;
     if (p.kind === "encuesta" && u.rango < RANGO_ENCUESTA) return no("Las encuestas se abren en Cabo.", "Polls open at Corporal.", "tipo");
     let negocio: string | null = null;
     if (p.kind === "recomendacion") {
@@ -264,26 +267,33 @@ export async function publicar(userId: string, ciudad: string, p: Entrada): Prom
        returning id::text`,
       [ciudad, userId, p.kind, topic, body, u.lang === "en" ? "en" : "es", negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body)])).rows[0]!;
     if (p.kind !== "encuesta" && !(await ponerFotos(c, userId, r.id, p.fotos ?? []))) throw new FotosAjenas();
-    return { ok: true as const, id: r.id };
+    // 5d · Las reglas que marcan (nunca ocultan solas): listas, parecidos repetidos, dónde vive alguien; autolesión → línea del 988.
+    const rv = await revisarAlEscribir(c, { kind: "com_post", id: r.id, autor: userId, ciudad, texto: [body, ...para, ...(opts ?? [])].join(" \n") });
+    return { ok: true as const, id: r.id, crisis: rv.crisis };
   }).catch((e) => {
     if (e instanceof FotosAjenas) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "fotos");
     if (String(e?.constraint ?? "").endsWith("_datos")) return no("No publiques teléfonos ni datos de nadie.", "Don't post phone numbers or anyone's details.", "texto");
     throw e;
   });
+  if (!r.ok) return r;
+  const { revision } = await revisarFotosCom(r.id);
+  return { ok: true, id: r.id, crisis: r.crisis, revision };
 }
 class FotosAjenas extends Error {}
 
 /* Editar: solo quien la escribió, en los primeros 30 minutos; el tipo, el negocio y las opciones no cambian. */
-export async function editar(userId: string, id: string, p: Pick<Entrada, "body" | "topic" | "para" | "fotos">): Promise<Res<{ id: string }>> {
+export async function editar(userId: string, id: string, p: Pick<Entrada, "body" | "topic" | "para" | "fotos">): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
-  return tx(async (c) => {
+  const r = await tx(async (c) => {
     const x = (await c.query<{ kind: Entrada["kind"]; body: string; business_id: string | null; poll_options: string[] | null; topic: string | null; a_tiempo: boolean; city_id: string }>(
       `select kind, body, business_id, poll_options, topic, created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, city_id
          from com_posts where id = $1::bigint and author_user_id = $2 and status = 'visible' for update`, [id, userId])).rows[0];
     if (!x) return no("Esa publicación ya no está.", "That post is gone.");
     if (!x.a_tiempo) return no(`Ya no se puede editar: pasaron ${EDITAR_MIN} minutos. Puedes borrarla y publicar otra.`, `It can no longer be edited: ${EDITAR_MIN} minutes have passed. You can delete it and post again.`);
     const u = await quien(c, userId, x.city_id);
-    if (!u || u.estado !== "active") return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
+    if (!u) return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
+    const ef = await efectoSancion(c, userId);
+    if (!ef.publicar) return noPuede(ef, { es: "publicar", en: "post" });
     const f = revisarPublicacion({ kind: x.kind, body: p.body, topic: p.topic, business: x.business_id, para: p.para, opts: x.poll_options ?? undefined, dias: 1, fotos: x.kind === "encuesta" ? [] : p.fotos, noEsMio: true });
     if (f) return { ok: false as const, msg: f.msg, campo: f.campo };
     const body = p.body.trim();
@@ -291,12 +301,16 @@ export async function editar(userId: string, id: string, p: Pick<Entrada, "body"
     await c.query(`update com_posts set body = $2, topic = $3, looking_for = $4, edited_at = now(), health_notice = $5 where id = $1::bigint`,
       [id, body, x.kind === "pregunta" ? p.topic || x.topic || "otro" : p.topic || x.topic, x.kind === "recomendacion" ? (p.para ?? []).map((s) => s.trim()).filter(Boolean) : [], pareceEmergencia(body)]);
     if (x.kind !== "encuesta" && !(await ponerFotos(c, userId, id, p.fotos ?? []))) throw new FotosAjenas();
-    return { ok: true as const, id };
+    const rv = body !== x.body ? await revisarAlEscribir(c, { kind: "com_post", id, autor: userId, ciudad: x.city_id, texto: body }) : { crisis: false };
+    return { ok: true as const, id, crisis: rv.crisis };
   }).catch((e) => {
     if (e instanceof FotosAjenas) return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.", "fotos");
     if (String(e?.constraint ?? "").endsWith("_datos")) return no("No publiques teléfonos ni datos de nadie.", "Don't post phone numbers or anyone's details.", "texto");
     throw e;
   });
+  if (!r.ok) return r;
+  const { revision } = await revisarFotosCom(id);
+  return { ok: true, id, crisis: r.crisis, revision };
 }
 
 /* Borrar = estado «deleted» (nada se borra). Deshacer en los 10 s siguientes (el servidor da un margen de 5 s por la red). */
@@ -319,7 +333,7 @@ export async function paraEditar(userId: string, id: string) {
     `select p.kind, p.body, p.topic, p.looking_for as para, p.created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, p.business_id as biz, b.name as biz_name, p.poll_options as opts
        from com_posts p left join businesses b on b.id = p.business_id where p.id = $1::bigint and p.author_user_id = $2 and p.status = 'visible'`, [id, userId])).rows[0];
   if (!r) return null;
-  const fotos = (await db().query<{ id: string; url: string }>(`select id::text, url from media where owner_kind = 'com_post' and owner_id = $1 and status = 'visible' order by sort, created_at`, [id])).rows;
+  const fotos = (await db().query<{ id: string; url: string }>(`select id::text, url from media where owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review') order by sort, created_at`, [id])).rows;
   return { ...r, fotos };
 }
 

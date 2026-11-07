@@ -36,7 +36,7 @@ export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, o
       initials={a.foto ? undefined : <span style={{ color: a.oficial ? "var(--tl-white)" : "var(--tl-ink)" }}>{a.ini}</span>} onAuthor={onAuthor}
       name={p.mia ? `${a.nombre}${E2(" · tú", " · you")}` : a.nombre} rank={rk} time={hace(p.at, es)} place={lugar} placeColor={p.invitado ? "var(--tl-pro-ink)" : undefined}
       solved={p.kind === "pregunta" && p.resuelta ? E2("Resuelta", "Solved") : undefined} edited={p.editada && !p.resuelta ? E2("Editada", "Edited") : undefined}
-      onMenu={onMenu} body={p.body} bodyFont={full ? "500 16px/1.55" : "500 15px/1.5"} onOpen={onOpen}
+      onMenu={onMenu} menuLabel={E2("Opciones", "Options")} body={p.body} bodyFont={full ? "500 16px/1.55" : "500 15px/1.5"} onOpen={onOpen}
       vote={{ score: p.score, voted: p.miVoto !== 0, onUp: () => onVote(1), onDown: () => onVote(-1), upColor: p.miVoto === 1 ? "var(--tl-action)" : undefined, downColor: p.miVoto === -1 ? "var(--tl-danger)" : undefined,
         scoreColor: p.miVoto ? "var(--tl-action)" : "var(--tl-ink)", labels: { up: E2("Votar a favor", "Upvote"), down: E2("Votar en contra", "Downvote"), comments: E2("Comentarios", "Comments"), save: E2("Guardar", "Save"), share: E2("Compartir", "Share") } }}
       comments={p.comentarios ? String(p.comentarios) : E2("Comentar", "Comment")} onComments={onOpen}
@@ -44,6 +44,13 @@ export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, o
       {p.estado === "hidden" && (
         <div role="note" style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "rgba(192,57,43,.06)", font: "600 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-danger)" }}>
           {E2("Ocultamos tu publicación; solo tú la ves.", "We hid your post; only you can see it.")}{p.motivo ? ` ${E2("Motivo", "Reason")}: ${p.motivo}` : ""}
+          {p.mia && <a href={`/cuenta/moderacion?k=com_post&id=${p.id}`} style={{ marginLeft: 6, font: "800 12.5px Manrope,sans-serif", color: "var(--tl-action)", textDecoration: "none" }}>{E2("Apelar", "Appeal")}</a>}
+        </div>
+      )}
+      {p.revision > 0 && (
+        <div role="note" data-screen-label="Publicación · fotos en revisión" style={{ marginTop: 12, padding: "10px 12px", borderRadius: 12, background: "rgba(11,14,18,.05)", font: "600 12.5px/1.45 Manrope,sans-serif", color: "rgba(11,14,18,.7)" }}>
+          {p.revision === 1 ? E2("1 foto espera revisión antes de verse. Solo tú ves este aviso.", "1 photo is waiting for review before it shows. Only you see this notice.")
+            : E2(`${p.revision} fotos esperan revisión antes de verse. Solo tú ves este aviso.`, `${p.revision} photos are waiting for review before they show. Only you see this notice.`)}
         </div>
       )}
       {p.fotos.length > 0 && (

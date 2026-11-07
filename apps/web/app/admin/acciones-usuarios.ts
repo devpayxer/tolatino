@@ -9,6 +9,7 @@ import { auditar, staff, type Accion, type Staff } from "@/lib/admin";
 import { dispositivo } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { ORDEN_SANCIONES, SANCIONES, type Sancion } from "@/lib/sanciones";
+import { aplicarSancion, avisarSancion } from "@/lib/apelaciones";
 import type { ResAdm } from "./acciones-colas";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
@@ -63,17 +64,19 @@ export async function sancionar(id: string, kind: Sancion, motivo: string): Prom
   if (!ORDEN_SANCIONES.includes(kind)) return no("Elige la sanción.");
   const k = SANCIONES[kind];
   if (k.admin) { const s = await staff(); if (s?.role !== "admin") return no("Solo un Admin banea una cuenta."); }
-  return hacer(id, ["retirar"], motivo, async (c, s, u, m) => {
+  let hecha: { sid: string; m: string } | null = null;
+  const r = await hacer(id, ["retirar"], motivo, async (c, s, u, m) => {
     if (u.id === s.id) return "No puedes sancionar tu propia cuenta.";
     if (u.staff) return "Es del equipo de To’Latino: quítale el rol en Sistema › Equipo antes.";
     if (u.estado === "banned") return "La cuenta ya está baneada.";
-    const fin = k.dias ? `now() + interval '${k.dias} days'` : "null";
-    await c.query(`insert into sanctions (target_kind, target_id, city_id, kind, reason, by_staff, ends_at) values ('user', $1, $2, $3, $4, $5, ${fin})`, [u.id, u.city_id, kind, m, s.id]);
-    if (kind !== "adv") await c.query(`update users set status = $2, status_until = ${fin}, status_reason = $3 where id = $1`, [u.id, k.estado, m]);
-    if (kind === "susp14" || kind === "ban") await cerrarTodas(c, u.id);
+    // 5d · Una sola forma de sancionar (lib/apelaciones.ts aplicarSancion: sanción, estado de la cuenta, sesiones) y el aviso con «Apelar».
+    hecha = { sid: await aplicarSancion(c, { userId: u.id, ciudad: u.city_id, kind, motivo: m, staffId: s.id }), m };
     await auditar(c, { actor: s.id, action: "usuario.sancionar", targetKind: "user", targetId: u.id, city: u.city_id, before: { estado: EST[u.estado] ?? u.estado }, after: { sancion: k.es }, reason: m });
     return null;
-  }, kind === "susp14" || kind === "ban" ? "Sanción aplicada. Sus sesiones se cerraron; ve el motivo al intentar entrar." : "Sanción aplicada. La ve con su motivo en su cuenta.");
+  }, kind === "susp14" || kind === "ban" ? "Sanción aplicada. Sus sesiones se cerraron; ve el motivo al intentar entrar." : "Sanción aplicada. La ve con su motivo en su cuenta y puede apelar.");
+  const h = hecha as { sid: string; m: string } | null;
+  if (r.ok && h) await avisarSancion(id, h.sid, kind, h.m);
+  return r;
 }
 
 /* Levantar: termina las sanciones vigentes y la cuenta vuelve a activa. */

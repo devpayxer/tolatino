@@ -45,6 +45,17 @@ export async function ocultarDm(c: PoolClient, threadId: string, mensaje: string
       returning m.id::text, m.sender_user_id::text as autor`, [threadId, String(mensaje ?? "0").replace(/\D/g, "") || "0", motivo, staffId])).rows[0] ?? null;
 }
 
+/* 5d · Apelación de un mensaje oculto: el equipo ve SOLO ese mensaje y solo mientras la apelación está abierta (CON_APELACION, la
+   otra llave de dmSoloConReporte); levantarla lo vuelve a mostrar. Nunca el resto de la conversación. */
+const CON_APELACION = (m: string) => `exists (select 1 from appeals ap where ap.target_kind = 'dm_message' and ap.target_id = ${m}::text and ap.status = 'open')`;
+export async function dmApelado(mensaje: string): Promise<string | null> {
+  if (!/^\d{1,18}$/.test(mensaje)) return null;
+  return (await db().query<{ t: string }>(`select m.body as t from dm_messages m where m.id = $1::bigint and ${CON_APELACION("m.id")}`, [mensaje])).rows[0]?.t ?? null;
+}
+export async function restaurarDmApelado(c: PoolClient, mensaje: string) {
+  await c.query(`update dm_messages m set hidden_at = null, hidden_reason = null, hidden_by = null where m.id = $1::bigint and m.hidden_at is not null and ${CON_APELACION("m.id")}`, [mensaje]);
+}
+
 /* Para Usuarios 360° › Comunidad: cuántas conversaciones tiene la persona (nunca su contenido). */
 export async function cuantasConversaciones(userId: string) {
   return (await db().query<{ n: number }>(`select count(*)::int as n from dm_threads where (a_user_id = $1 or b_user_id = $1) and last_at is not null`, [userId])).rows[0]?.n ?? 0;

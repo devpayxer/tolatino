@@ -63,4 +63,8 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
 | 33 | Base de datos de análisis separada | réplica de lectura: los reportes nunca frenan la app (regla R) | Propio (Postgres réplica). |
 
 ## Por agregar conforme avancemos
-_(vacío — aquí se anotan herramientas nuevas con fecha y decisión)_
+- **7 nov 2026 · #28 Moderación de fotos (5d):** servicio propio `services/moderacion-img` (Python + onnxruntime en CPU, solo en la red
+  interna del compose) con el detector **NudeNet 3.4.2** (`320n.onnx`, viene dentro del paquete de PyPI). **Licencia: MIT** según el paquete
+  de PyPI (metadatos y clasificador). **A revisar con abogado antes de producción:** el detector se entrenó con YOLOv8 y Ultralytics dice
+  que los pesos entrenados con su código quedan bajo AGPL-3.0 (LAUNCH-CHECKLIST). Solo mide **desnudez**; violencia y texto promocional
+  no tienen modelo todavía (los revisa una persona). Costo: $0 (cabe en el cx33; límite de 768 MB en el compose). Sin proveedor pago.

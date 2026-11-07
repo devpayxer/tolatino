@@ -81,7 +81,8 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
     const r = await (ed ? comEditar(ed.id, { body, topic: topic || null, para: para ? [para] : [], fotos: fotos.map((f) => f.id) }) : comPublicar(borrador))
       .catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not do it. Check your connection." } }));
     setBusy(false);
-    if (r.ok && "id" in r) { router.push(ed ? `/comunidad/p/${r.id}?editada=1` : `/comunidad/p/${r.id}?nueva=1`); return; }
+    // 5d · «crisis» = el texto habla de hacerse daño: la publicación abre con la línea del 988.
+    if (r.ok && "id" in r) { const x = "crisis" in r && r.crisis ? "&ayuda=988" : ""; router.push(ed ? `/comunidad/p/${r.id}?editada=1${x}` : `/comunidad/p/${r.id}?nueva=1${x}`); return; }
     if ("entrar" in r && r.entrar) { router.push(`/entrar?volver=${encodeURIComponent("/comunidad/nuevo")}`); return; }
     if (!r.ok) setErr(r.msg);
   };
@@ -108,7 +109,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-NUEVO" titulo={ed ? E2("Editar publicación", "Edit post") : E2("Nueva publicación", "New post")} sub={`${ciudad.toUpperCase()} · ${E2("MI CIUDAD", "MY CITY")}`} back={ed ? `/comunidad/p/${ed.id}` : "/comunidad"}
       aside={<>{preview}<Reglas es={es} R={R} /></>}>
       <div data-screen-label="APP-COM-NUEVO · publicar" style={{ padding: D ? 0 : "14px 16px", display: "flex", flexDirection: "column", gap: 12, maxWidth: 720 }}>
-        {silenciado && <div role="alert" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(192,57,43,.08)", font: "600 13px/1.5 Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2(`No puedes publicar hasta el ${silenciado.hasta ? new Date(silenciado.hasta).toLocaleDateString("es-US", { day: "numeric", month: "long" }) : "aviso"}`, `You can't post until ${silenciado.hasta ? new Date(silenciado.hasta).toLocaleDateString("en-US", { month: "long", day: "numeric" }) : "further notice"}`)}{silenciado.motivo ? `: ${silenciado.motivo}` : "."} {E2("Puedes seguir leyendo.", "You can keep reading.")}</div>}
+        {silenciado && <div role="alert" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(192,57,43,.08)", font: "600 13px/1.5 Manrope,sans-serif", color: "var(--tl-danger)" }}>{E2(`No puedes publicar hasta el ${silenciado.hasta ? new Date(silenciado.hasta).toLocaleDateString("es-US", { day: "numeric", month: "long" }) : "aviso"}`, `You can't post until ${silenciado.hasta ? new Date(silenciado.hasta).toLocaleDateString("en-US", { month: "long", day: "numeric" }) : "further notice"}`)}{silenciado.motivo ? `: ${silenciado.motivo}` : "."} {E2("Puedes seguir leyendo.", "You can keep reading.")} <a href="/cuenta/moderacion" style={{ font: "800 13px Manrope,sans-serif", color: "var(--tl-action)", textDecoration: "none" }}>{E2("Ver y apelar", "View and appeal")}</a></div>}
         {!abierta && <div role="note" style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", font: "600 13px/1.5 Manrope,sans-serif", color: "var(--tl-action-ink)" }}>{E2("La Comunidad de esta ciudad abre cuando abra la ciudad.", "This city's Community opens when the city opens.")}</div>}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8 }}>
           {(["pregunta", "recomendacion", "encuesta", "publicacion"] as Tipo[]).map((x) => {

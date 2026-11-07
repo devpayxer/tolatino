@@ -23,7 +23,8 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   const c = r.cnt, city = ciudad ?? "Hazleton";
   const B: Bloque[] = [];
   if (borrar) B.push({ type: "note", tone: "danger", ic: "warning", t: E2(`Tu cuenta se borra el ${dia(borrar)}`, `Your account will be deleted on ${dia(borrar)}`), s: E2("Si cambias de idea, cancélalo antes de esa fecha en Ajustes.", "If you change your mind, cancel before then in Settings."), a: E2("Ver", "View"), onA: () => ir("/cuenta/ajustes/borrar") });
-  for (const x of sanciones) B.push({ type: "note", tone: "danger", ic: "warning", s: x.kind === "adv" ? E2(`To’Latino te mandó una advertencia: ${x.reason}.`, `To’Latino sent you a warning: ${x.reason}.`) : E2(`No puedes publicar hasta el ${dia(x.hasta!)}: ${x.reason}.`, `You can’t post until ${dia(x.hasta!)}: ${x.reason}.`) });
+  // 5d · Cada sanción lleva a «Avisos de moderación», donde se ve su efecto y se apela (14 días).
+  for (const x of sanciones) B.push({ type: "note", tone: "danger", ic: "warning", s: x.kind === "adv" ? E2(`To’Latino te mandó una advertencia: ${x.reason}.`, `To’Latino sent you a warning: ${x.reason}.`) : E2(`No puedes publicar hasta el ${dia(x.hasta!)}: ${x.reason}.`, `You can’t post until ${dia(x.hasta!)}: ${x.reason}.`), a: E2("Ver y apelar", "View and appeal"), onA: () => ir("/cuenta/moderacion") });
   B.push({ type: "hero", name: nombre, nick: nick ?? undefined, photo: c.foto ?? undefined, ini: yo.ini, city: `${city}, PA`.toUpperCase(), badge: yo.badge, onMe: () => ir("/cuenta/perfil"),
     cells: [{ label: E2("RESEÑAS", "REVIEWS"), value: String(c.resenas), color: "var(--tl-white)", onClick: () => ir("/cuenta/resenas") }, { label: E2("GUARDADOS", "SAVED"), value: String(c.guardados), color: "var(--tl-pro)", onClick: () => ir("/cuenta/guardados") },
       { label: E2("SIGUES", "FOLLOWING"), value: String(c.sigues), color: "var(--tl-signal)", onClick: () => ir("/cuenta/guardados?f=sigues") }] });

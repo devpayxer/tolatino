@@ -6,6 +6,7 @@
 import { revalidatePath } from "next/cache";
 import { auditar, staff } from "@/lib/admin";
 import { avisar } from "@/lib/avisos";
+import { avisarOculto } from "@/lib/apelaciones";
 import { tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 
@@ -44,8 +45,10 @@ export async function pubOcultar(id: string, ocultar: boolean, motivo: string): 
       before: { publicacion: `${TIPO[p.kind] ?? "publicación"}: ${p.body.slice(0, 80)}`, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible" }, reason: m });
     return null;
   }, ocultar ? "Publicación oculta. El autor ve el motivo." : "La publicación se ve otra vez.");
+  // 5d · Ocultar avisa con el motivo y lleva a «Apelar» (guardián ocultarAvisaYApela); restaurar avisa que se ve otra vez.
   if (h.r.ok && h.p?.autor) {
-    await avisar(h.p.autor, ocultar ? "com_hide" : "com_restore", { motivo: String(h.m).slice(0, 140) }, { href: `/comunidad/p/${id}`, ref: ["com_post", id], sinSms: true }).catch(() => undefined);
+    if (ocultar) await avisarOculto(h.p.autor, "com_post", id, String(h.m));
+    else await avisar(h.p.autor, "com_restore", { motivo: String(h.m).slice(0, 140) }, { href: `/comunidad/p/${id}`, ref: ["com_post", id], sinSms: true }).catch(() => undefined);
   }
   return h.r;
 }
@@ -95,6 +98,7 @@ export async function cmComOcultar(id: string, ocultar: boolean, motivo: string)
   });
   if (e.err || !e.x) return no(e.err ?? "Ese comentario ya no está.");
   revalidatePath("/admin/contenido");
-  await avisar(e.x.autor, ocultar ? "com_cm_hide" : "com_cm_restore", { motivo: m.slice(0, 140) }, { href: `/comunidad/p/${e.x.post}`, ref: ["com_comment", id], sinSms: true }).catch(() => undefined);
+  if (ocultar) await avisarOculto(e.x.autor, "com_comment", id, m);
+  else await avisar(e.x.autor, "com_cm_restore", { motivo: m.slice(0, 140) }, { href: `/comunidad/p/${e.x.post}`, ref: ["com_comment", id], sinSms: true }).catch(() => undefined);
   return { ok: true, mensaje: ocultar ? "Comentario oculto. El autor ve el motivo." : "El comentario se ve otra vez." };
 }

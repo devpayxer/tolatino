@@ -9,7 +9,8 @@ import { useEffect, useState, type ComponentType } from "react";
 import { MAX_APODO, MAX_BIO } from "@/lib/comunidad-filtro";
 import { rango, type Pub } from "@/lib/comunidad-comun";
 import type { Vecino as V } from "@/lib/vecinos";
-import { vecPerfil, vecPublicaciones, vecSeguir } from "../../acciones";
+import { vecPerfil, vecPublicaciones, vecSeguir, comReportar } from "../../acciones";
+import { abrirReporte } from "../../Reportar";
 import { LINE, MONO, Marco, useAncho, useComUi, type ComUi, type YoCom } from "../../Marco";
 import { useAccionesPub } from "../../Muro";
 import { Tarjeta } from "../../Tarjeta";
@@ -65,6 +66,9 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
       ? { t: E2(`Quitar el silencio a ${primero(v.nombre)}`, `Unmute ${primero(v.nombre)}`), s: E2("Vuelves a ver lo que publica.", "You see their posts again."), ic: "bell", on: () => { ui.setHoja(null); void vec.deshacer(v.id, "mute")(); } }
       : { t: E2(`Silenciar a ${primero(v.nombre)}`, `Mute ${primero(v.nombre)}`), s: E2("No verás lo que publica. No se entera.", "You won't see their posts. They won't know."), ic: "bell", on: () => { ui.setHoja(null); void vec.silenciar(v.id, v.nombre, () => router.refresh()); } },
     { t: E2(`Bloquear a ${primero(v.nombre)}`, `Block ${primero(v.nombre)}`), s: E2("No te ve ni te puede escribir.", "They can't see you or message you."), ic: "ban", peligro: true, on: () => vec.bloquear(v.id, v.nombre, () => router.refresh()) },
+    // 5d · Reportar a una persona (hueco #4): la silencia para quien reporta y abre un caso en «Reportes de usuario».
+    { t: E2(`Reportar a ${primero(v.nombre)}`, `Report ${primero(v.nombre)}`), s: E2("Dejas de ver lo que publica. Lo revisamos en 48 h.", "You stop seeing their posts. We review it within 48 h."), ic: "warning", peligro: true, sep: true,
+      on: () => abrirReporte(ui, es, { enviar: (m, n) => comReportar("user", v.id, m, n), despues: { es: "Ya no ves lo que publica. Lo revisamos en 48 h.", en: "You won't see their posts anymore. We review it within 48 h." }, alHecho: () => router.refresh() }) },
   ] });
   const meta = [v.zona ? (es ? v.zona.es : v.zona.en) : null, v.ciudad, v.desde && v.ciudad ? E2(`EN ${v.ciudad.split(",")[0]!.toUpperCase()} DESDE ${v.desde}`, `IN ${v.ciudad.split(",")[0]!.toUpperCase()} SINCE ${v.desde}`) : null].filter(Boolean).join(" · ").toUpperCase();
   const stats = v.cuentas ? [[v.cuentas.publicaciones, E2("PUBLICACIONES", "POSTS")], [v.cuentas.seguidores, E2("SEGUIDORES", "FOLLOWERS")], [v.cuentas.siguiendo, E2("SIGUIENDO", "FOLLOWING")]] as [number, string][] : null;

@@ -5,6 +5,7 @@ export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", sp
 import type { Staff } from "./admin";
 import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
+import { APELABLE, MOTIVO_REP, REGLA_L, type Apelable } from "./moderacion-comun";
 import { db } from "./db";
 import { MOTIVO, evidenciaDe } from "./disputas";
 import { telefonoBonito } from "./panel";
@@ -30,6 +31,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
     lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
+    ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -56,7 +58,15 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select l.next_review::text from licenses l where q.queue = 'lic' and l.id::text = q.subject_id) as lnext,
             (select count(*)::int from audit_entries a where q.queue = 'vivienda' and q.subject_kind = 'business' and a.action = 'inm.vivienda_justa.frenada' and a.target_id = q.subject_id and a.at > now() - interval '30 days') as vjn,
             (select a.after->>'frase' from audit_entries a where q.queue = 'vivienda' and q.subject_kind = 'business' and a.action = 'inm.vivienda_justa.frenada' and a.target_id = q.subject_id order by a.at desc limit 1) as vjf,
-            (select i.name->>'es' from items i where q.queue = 'vivienda' and q.subject_kind = 'listing' and i.id::text = q.subject_id) as vji
+            (select i.name->>'es' from items i where q.queue = 'vivienda' and q.subject_kind = 'listing' and i.id::text = q.subject_id) as vji,
+            case when q.subject_kind = 'com_post' then (select left(p.body, 90) from com_posts p where p.id::text = q.subject_id)
+                 when q.subject_kind = 'com_comment' then (select left(c.body, 90) from com_comments c where c.id::text = q.subject_id) end as ctext,
+            (select count(*)::int from content_reports cr where q.subject_kind in ('com_post', 'com_comment', 'user') and cr.target_kind = q.subject_kind and cr.target_id = q.subject_id and cr.status = 'open') as cn,
+            (select cr.reason from content_reports cr where q.subject_kind in ('com_post', 'com_comment', 'user') and cr.target_kind = q.subject_kind and cr.target_id = q.subject_id and cr.status = 'open' order by cr.priority desc, cr.created_at limit 1) as creason,
+            (select f.rule_key || '|' || f.detail from mod_flags f where f.queue_item_id = q.id order by f.id desc limit 1) as cflag,
+            (select coalesce(nullif(trim(coalesce(x.first_name, '') || ' ' || coalesce(x.last_name, '')), ''), 'Vecino') from users x where q.subject_kind = 'user' and x.id::text = q.subject_id) as uname,
+            (select a.number || '|' || a.target_kind from appeals a where q.subject_kind = 'appeal' and a.id::text = q.subject_id) as apel,
+            (select m.owner_kind from media m where q.queue = 'medios' and m.id::text = q.subject_id) as mkind
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -94,17 +104,29 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
       : x.queue === "chat" && x.subject_kind === "dm_thread" ? { title: "Mensajes entre vecinos", sub: `${x.chreason ? MOTIVO_DM[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""} · Comunidad` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
+      // 5d · Comunidad: publicación o comentario reportado o marcado por una regla; una persona (repUsr); una apelación; una foto.
+      : x.queue === "rep" && (x.subject_kind === "com_post" || x.subject_kind === "com_comment") ? { title: `${x.subject_kind === "com_post" ? "Publicación" : "Comentario"} de la Comunidad · «${(x.ctext ?? "").slice(0, 60)}»`, sub: subCom(x.cn, x.creason, x.cflag) }
+      : x.queue === "repUsr" ? { title: `Vecino reportado · ${x.uname ?? "Vecino"}`, sub: subCom(x.cn, x.creason, x.cflag) }
+      : x.queue === "apel" ? { title: `Apelación ${(x.apel ?? "").split("|")[0]} · ${APELABLE[(x.apel ?? "|sanction").split("|")[1] as Apelable]?.es ?? "contenido"}`, sub: "Segunda revisión · la decide otra persona" }
+      : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
       : { title: x.rname ?? "", sub: `Recomendado por un vecino${x.rcat ? ` · ${x.rcat}` : ""}` };
     return {
       id: x.id, queue: x.queue, ...t, priority: x.priority,
-      who: x.subject_kind === "dm_thread" ? { name: "Comunidad", initials: "C" } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
+      who: x.subject_kind === "dm_thread" || x.subject_kind === "com_post" || x.subject_kind === "com_comment" || x.subject_kind === "appeal" || (x.queue === "medios" && x.mkind === "com_post") ? { name: "Comunidad", initials: "C" }
+        : x.subject_kind === "user" ? { name: x.uname ?? "Vecino", initials: (x.uname ?? "V").slice(0, 1) } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
       assignee: x.assignee, mine: x.assigned_to === s.id, esp: e,
     };
   });
   const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
   return { casos, conteo, vencidos, total: todos.length };
+}
+/* 5d · Lo que dice un caso de la Comunidad en la lista: el motivo principal y cuántos reportes, o la regla que lo marcó. */
+function subCom(n: number, reason: string | null, flag: string | null) {
+  const [r, ...d] = (flag ?? "").split("|");
+  const rep = n ? `${MOTIVO_REP[reason ?? "otro"] ?? "Otro motivo"}${n > 1 ? ` · ${n} reportes` : ""}` : "";
+  return [rep, flag ? `Regla: ${REGLA_L[r!] ?? r} · ${d.join("|").slice(0, 80)}` : ""].filter(Boolean).join(" · ") || "Reporte";
 }
 /* 4ig · Licencias: por verificar (nueva o cambiada) o, si ya estaba verificada, su revisión por vencer (14 días) o vencida (el barrido las abre). */
 export function licEstado(st: string | null, next: string | null, hoy = new Date().toISOString().slice(0, 10)) {
@@ -170,6 +192,21 @@ export async function caso(s: Staff, id: string) {
               l.checked_at as checked, k.registry_url as url, k.registry_site as site, l.next_review::text as next
          from licenses l join license_kinds k on k.key = l.kind where l.id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, licencia: l ?? null };
+  }
+  // 5d · Comunidad: la foto que el modelo marcó o no pudo revisar (no se ve hasta decidir), la publicación o el comentario reportado o
+  // marcado, la persona reportada y la apelación (lo apelado solo con la apelación abierta; un mensaje de vecino, solo ese mensaje).
+  if (q.queue === "medios" && !q.business_id) {
+    const f = (await db().query<{ url: string; status: string; post: string | null }>(`select m.url, m.status, case when m.owner_kind = 'com_post' then m.owner_id end as post from media m where m.id::text = $1`, [q.subject_id])).rows[0];
+    const marcas = (await db().query<{ regla: string; detalle: string; at: string }>(`select rule_key as regla, detail as detalle, created_at as at from mod_flags where target_kind = 'media' and target_id = $1 order by id desc limit 5`, [q.subject_id])).rows;
+    return { ...base, negocio: null, fotoCom: f ? { ...f, marcas } : null };
+  }
+  if (q.queue === "rep" && (q.subject_kind === "com_post" || q.subject_kind === "com_comment")) {
+    return { ...base, negocio: null, com: await (await import("./admin-confianza")).casoComunidad(q.subject_kind, q.subject_id) };
+  }
+  if (q.queue === "repUsr") return { ...base, negocio: null, persona: await (await import("./admin-confianza")).casoPersona(q.subject_id), banea: s.role === "admin" };
+  if (q.queue === "apel") {
+    const ap = q.status === "open" ? await (await import("./apelaciones")).apelacionDeCaso(q.subject_id) : null;
+    return { ...base, negocio: null, apel: ap ? { ...ap, mia: ap.por === s.id } : null };
   }
   if (q.queue === "medios") {
     const m = (await db().query<{ url: string; status: string; visibles: number }>(

@@ -13,19 +13,20 @@ import { Avatar, MONO, Marco, Reglas, useAncho, useComUi, type YoCom } from "../
 import { useAccionesPub } from "../../Muro";
 import { Tarjeta } from "../../Tarjeta";
 import { Hilo } from "./Hilo";
+import { Linea988 } from "../../Linea988";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
-export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada }: { es: boolean; yo: YoCom; ciudad: string; d: P | null; h: H | null; orden: OrdenHilo; nueva: boolean; editada: boolean }) {
+export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisis = false }: { es: boolean; yo: YoCom; ciudad: string; d: P | null; h: H | null; orden: OrdenHilo; nueva: boolean; editada: boolean; crisis?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useComUi(), D = useAncho() >= 1024;
   const [pub, setPub] = useState<Pub | null>(d?.pub ?? null);
   const [borrada, setBorrada] = useState(false);
   useEffect(() => { setPub(d?.pub ?? null); }, [d]);
   useEffect(() => { if (editada) ui.setAviso({ t: E2("Cambios guardados.", "Changes saved.") }); }, [editada]); // eslint-disable-line react-hooks/exhaustive-deps
-  const acc = useAccionesPub(es, ui, (_id, f) => setPub((p) => (p ? f(p) : p)), () => setBorrada(true), (p) => { setBorrada(false); setPub(p); }, () => router.push("/comunidad"));
+  const acc = useAccionesPub(es, ui, (_id, f) => setPub((p) => (p ? f(p) : p)), () => setBorrada(true), (p) => { setBorrada(false); setPub(p); }, () => router.push("/comunidad"), () => router.push("/comunidad"));
   const R = reglas(yo.ciudad);
   if (!d || !pub || !h || borrada) {
     return (
@@ -51,6 +52,7 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada }: { e
         <Reglas es={es} R={R} />
       </>}>
       <div style={{ maxWidth: 720, display: "flex", flexDirection: "column", gap: D ? 14 : 0 }}>
+        {crisis && <Linea988 es={es} margen={D ? "0" : "12px 16px 0"} />}
         {nueva && (
           <div data-screen-label="Publicación · publicada" role="status" style={{ margin: D ? 0 : "12px 16px 0", padding: "13px 14px", borderRadius: 14, background: "rgba(0,229,196,.12)", display: "flex", gap: 10, alignItems: "flex-start" }}>
             <span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="check" size={16} strokeWidth={2.4} color="var(--tl-open-text)" /></span>

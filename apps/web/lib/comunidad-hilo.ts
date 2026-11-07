@@ -4,7 +4,8 @@ import { avisar, avisarMuchos } from "./avisos";
 import { db, tx } from "./db";
 import { revisarComentario } from "./comunidad-filtro";
 import { porcentajes, type Pub } from "./comunidad-comun";
-import { ID, ISO, autores, corto, encuesta, esSuNegocio, fechaHasta, no, quien, sinBloqueos, type Res } from "./comunidad";
+import { ID, ISO, autores, corto, encuesta, esSuNegocio, no, quien, sinBloqueos, type Res } from "./comunidad";
+import { efectoSancion, limiteDia, noPuede, revisarAlEscribir } from "./moderacion";
 
 /* Comunidad · el hilo (APP-COM-POST; fase5-comunidad.md §4 5b): comentar, responder, recomendar un negocio en el comentario,
    votos ± en publicaciones y comentarios, «Me sirvió» (mejor respuesta), encuestas, guardar y el barrido que cierra encuestas.
@@ -19,7 +20,6 @@ import { ID, ISO, autores, corto, encuesta, esSuNegocio, fechaHasta, no, quien, 
 type Bi = { es: string; en: string };
 export type OrdenHilo = "top" | "new";
 export const POR_PAGINA_HILO = 20, POR_PAGINA_RESP = 50, DESTACAR_DESDE = 5, UMBRAL_VOTOS = 10;
-const LIMITE_DIA_CM = 100;
 
 export type AutorCm = { id: string; nombre: string; ini: string; foto: string | null; rango: number };
 export type NegocioCm = { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean };
@@ -192,7 +192,7 @@ async function aQuienAvisar(c: PoolClient, yo: string, p: PostH, parentAutor: st
 }
 
 /* Comentar o responder (un nivel: la respuesta va bajo la raíz; si contestas a una respuesta, «@Nombre» y reply_to). */
-export async function comentar(userId: string, postId: string, e: EntradaCm): Promise<Res<{ id: string }>> {
+export async function comentar(userId: string, postId: string, e: EntradaCm): Promise<Res<{ id: string; crisis: boolean }>> {
   const f = revisarComentario({ body: e.body, business: e.business });
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
   if (!ID.test(postId) || (e.parent && !ID.test(e.parent)) || (e.replyTo && !ID.test(e.replyTo))) return no("Esa publicación ya no está.", "That post is gone.");
@@ -202,12 +202,11 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
     if (p.cerrados) return no("Los comentarios de esta publicación están cerrados.", "Comments on this post are closed.");
     const u = await quien(c, userId, p.city_id);
     if (!u) return no("Entra para comentar.", "Sign in to comment.");
-    if (u.estado === "muted") return no(`No puedes comentar hasta el ${fechaHasta(u.hasta, true)}${u.motivo ? `: ${u.motivo}` : "."}`, `You can't comment until ${fechaHasta(u.hasta, false)}${u.motivo ? `: ${u.motivo}` : "."}`);
-    if (u.estado !== "active") return no("Tu cuenta no puede comentar ahora.", "Your account can't comment right now.");
-    // Límite: 100 comentarios en 24 h (la mitad si la cuenta es de hoy). Los borrados cuentan.
-    const tope = u.nueva ? LIMITE_DIA_CM / 2 : LIMITE_DIA_CM;
-    const n = (await c.query<{ n: number }>(`select count(*)::int as n from com_comments where author_user_id = $1 and created_at > now() - interval '24 hours'`, [userId])).rows[0]!.n;
-    if (n >= tope) return no(`Llegaste a ${tope} comentarios en 24 horas. Vuelve mañana.`, `You reached ${tope} comments in 24 hours. Come back tomorrow.`);
+    // 5d · La sanción viva decide (silencio: no comenta; «bloquear publicación»: sí comenta) y el límite del día (los borrados cuentan).
+    const ef = await efectoSancion(c, userId);
+    if (!ef.comentar) return noPuede(ef, { es: "comentar", en: "comment" });
+    const lim = await limiteDia(c, userId, "comentarios");
+    if (!lim.ok) return lim;
     let parentAutor: string | null = null, replyAutor: string | null = null, replyTo: string | null = null;
     if (e.parent) {
       const pa = await comentarioTocable(c, userId, e.parent);
@@ -233,7 +232,8 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
     const avisos = await aQuienAvisar(c, userId, p, parentAutor, replyAutor, body);
     const menciones = avisos.filter((a) => a.tpl === "com_mention").map((a) => a.id);
     if (menciones.length) await c.query(`insert into com_mentions (comment_id, user_id) select $1::bigint, x from unnest($2::uuid[]) x on conflict do nothing`, [id, menciones]);
-    return { ok: true as const, id, avisos, post: p.id };
+    const rv = body ? await revisarAlEscribir(c, { kind: "com_comment", id, autor: userId, ciudad: p.city_id, texto: body }) : { crisis: false };
+    return { ok: true as const, id, avisos, post: p.id, crisis: rv.crisis };
   }).catch((err) => {
     if (String(err?.constraint ?? "").endsWith("_datos")) return no("No publiques teléfonos ni datos de nadie.", "Don't post phone numbers or anyone's details.", "texto");
     throw err;
@@ -242,7 +242,7 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
   // Después de guardar (los avisos nunca rompen el comentario).
   const yo = (await autores([userId]))(userId), texto = (e.body.trim() || "").slice(0, 80) || "—";
   for (const a of r.avisos) await avisar(a.id, a.tpl, { nombre: yo.nombre, texto }, { href: `/comunidad/p/${r.post}#c${r.id}`, ref: ["com_comment", r.id], actor: userId });
-  return { ok: true, id: r.id };
+  return { ok: true, id: r.id, crisis: r.crisis };
 }
 
 /* Borrar un comentario propio = estado «deleted» (nada se borra; si tiene respuestas queda «Comentario eliminado»). */
@@ -260,6 +260,13 @@ export async function votar(userId: string, kind: "post" | "comment", id: string
     const t = kind === "post" ? await tocable(c, userId, id) : await comentarioTocable(c, userId, id);
     if (!t) return kind === "post" ? no("Esa publicación ya no está.", "That post is gone.") : no("Ese comentario ya no está.", "That comment is gone.");
     if (t.autor === userId) return no("Lo tuyo lo votan los demás.", "Others vote on your posts.");
+    // 5d · Sanción y límite del día: solo un voto nuevo cuenta para el límite (quitar o cambiar el tuyo siempre se puede).
+    const ef = await efectoSancion(c, userId);
+    if (!ef.votar) return noPuede(ef, { es: "votar", en: "vote" });
+    if (!(await c.query(`select 1 from com_votes where target_kind = $1 and target_id = $2::bigint and user_id = $3`, [kind, id, userId])).rowCount) {
+      const lim = await limiteDia(c, userId, "votos");
+      if (!lim.ok) return lim;
+    }
     const mio = (await c.query<{ v: number }>(`select com_votar($1, $2::bigint, $3, $4::smallint, $5) as v`, [kind, id, userId, v, device])).rows[0]!.v;
     const s = (await c.query<{ score: number; up: number }>(`select score, up_n as up from ${kind === "post" ? "com_posts" : "com_comments"} where id = $1::bigint`, [id])).rows[0]!;
     // HOOK 5f (puntos): aquí se asienta el +/− de quien recibe el voto, solo si el voto cuenta (com_votes.counted) y una vez por voto.

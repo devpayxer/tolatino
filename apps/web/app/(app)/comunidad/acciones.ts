@@ -8,6 +8,7 @@ import { conversacion, enviar, misConversaciones, nuevos, reportarConversacion }
 import { borrarComentario, comentar, guardar, hilo, meSirvio, respuestas, votar, votarEncuesta } from "@/lib/comunidad-hilo";
 import type { Filtros } from "@/lib/comunidad-comun";
 import { ubicacion } from "@/lib/ubicacion";
+import { reportar } from "@/lib/moderacion";
 
 type Bi = { es: string; en: string };
 const NO_ORIGEN: Bi = { es: "No se pudo. Recarga la página.", en: "Could not do it. Reload the page." };
@@ -148,5 +149,14 @@ export async function dmLista(cursor: string) {
 export async function dmReportar(otro: string, motivo: string, nota: string) {
   const q = await quien();
   if (q.e) return q.e;
-  return reportarConversacion(q.u.id, uid(otro), texto(motivo, 20), texto(nota, 400));
+  return reportarConversacion(q.u.id, uid(otro), texto(motivo, 20), texto(nota, 400), await dispositivo(false));
+}
+
+/* ── 5d · Reportar una publicación, un comentario o a una persona (motivo de REP + detalle opcional; el dispositivo sale de la cookie
+   del servidor, nunca del cliente: auto-ocultar cuenta personas y dispositivos distintos). ── */
+export async function comReportar(que: string, id: string, motivo: string, nota: string) {
+  const q = await quien();
+  if (q.e) return q.e;
+  const k = que === "comment" ? "comment" : que === "user" ? "user" : "post";
+  return reportar(q.u.id, k, k === "user" ? uid(id) : texto(id, 20), texto(motivo, 20), texto(nota, 400), await dispositivo(false));
 }

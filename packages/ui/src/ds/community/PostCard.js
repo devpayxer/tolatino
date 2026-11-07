@@ -261,6 +261,7 @@ function PostCard({
   tag,
   tags = [],
   onMenu,
+  menuLabel = 'Opciones',
   chip,
   body,
   translate,
@@ -447,6 +448,7 @@ function PostCard({
     }
   }, time) : null, onMenu ? /*#__PURE__*/React.createElement("span", {
     onClick: onMenu,
+    ...btn(onMenu, menuLabel),
     style: {
       width: 32,
       height: 32,

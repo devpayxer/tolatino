@@ -32,7 +32,7 @@ export type Pub = {
   fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean; estado: "visible" | "hidden" | "deleted"; motivo: string | null;
   autor: Autor; lugar: Bi; invitado: boolean; mi: number | null;
   negocio: { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean; para: string[] } | null;
-  fotos: string[];
+  fotos: string[]; revision: number;
   encuesta: { opts: { l: string; n: number; pc: number }[]; mio: number | null; total: number; cierra: string; cerrada: boolean; ver: boolean } | null;
   up: number; dn: number; score: number; miVoto: number; guardada: boolean; comentarios: number;
 };

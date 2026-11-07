@@ -364,6 +364,7 @@ export async function decidirRep(id: string, accion: "mantener" | "ocultar", mot
   if (!m) return no("Escribe el motivo.");
   const sk = accion === "ocultar" && sancion ? (SANC_CONTENIDO as readonly string[]).includes(sancion) ? sancion as typeof SANC_CONTENIDO[number] : null : null;
   if (sancion && !sk) return no("Esa sanción no existe.");
+  let sid: string | null = null, autor: string | null = null;
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
@@ -376,13 +377,12 @@ export async function decidirRep(id: string, accion: "mantener" | "ocultar", mot
       await c.query(`select reviews_stats($1)`, [rv.business_id]);
       if (sk) {
         const { SANCIONES } = await import("@/lib/sanciones");
-        const k = SANCIONES[sk], fin = k.dias ? `now() + interval '${k.dias} days'` : "null";
         const yaStaff = (await c.query(`select 1 from staff_members where user_id = $1 and status = 'active'`, [rv.user_id])).rowCount;
         if (yaStaff) return "El autor es del equipo de To’Latino: sanciónalo desde Sistema › Equipo.";
-        await c.query(`insert into sanctions (target_kind, target_id, city_id, kind, reason, by_staff, ends_at) values ('user', $1, $2, $3, $4, $5, ${fin})`, [rv.user_id, rv.city_id, sk, m, s.id]);
-        if (sk !== "adv") await c.query(`update users set status = $2, status_until = ${fin}, status_reason = $3 where id = $1 and status not in ('banned', 'deleted', 'merged')`, [rv.user_id, k.estado, m]);
-        if (sk === "susp14") await c.query(`update sessions set signed_out_at = now() where user_id = $1 and signed_out_at is null`, [rv.user_id]);
-        await auditar(c, { actor: s.id, action: "usuario.sancionar", targetKind: "user", targetId: rv.user_id, city: rv.city_id, before: null, after: { sancion: k.es, por: "reseña" }, reason: m });
+        // 5d · La sanción con su referencia (la reseña); el aviso con «Apelar» sale después de guardar.
+        sid = await (await import("@/lib/apelaciones")).aplicarSancion(c, { userId: rv.user_id, ciudad: rv.city_id, kind: sk, motivo: m, staffId: s.id, ref: ["review", rv.id] });
+        autor = rv.user_id;
+        await auditar(c, { actor: s.id, action: "usuario.sancionar", targetKind: "user", targetId: rv.user_id, city: rv.city_id, before: null, after: { sancion: SANCIONES[sk].es, por: "reseña" }, reason: m });
       }
     } else if (rv.estado === "disp") {
       await c.query(`update reviews set review_state = 'kept', review_state_at = now() where id = $1::bigint`, [rv.id]);
@@ -394,6 +394,7 @@ export async function decidirRep(id: string, accion: "mantener" | "ocultar", mot
   });
   if (r !== "ok") return no(r);
   listo();
+  if (sid && autor && sk) await (await import("@/lib/apelaciones")).avisarSancion(autor, sid, sk, m);
   return { ok: true, mensaje: accion === "ocultar" ? (sk ? "Oculta y sanción aplicada. El autor ve el motivo." : "Oculta. El autor ve el motivo.") : "Se queda. Quedó en la auditoría." };
 }
 
@@ -424,8 +425,9 @@ export async function chatOcultarMensaje(id: string, mensaje: string, motivo: st
   });
   if (typeof r === "string") return no(r);
   if (r.autor && r.de === "vecino") {
-    const { avisar } = await import("@/lib/avisos");
-    await avisar(r.autor, "dm_hide", { motivo: m }, { href: "/comunidad/mensajes" }).catch(() => undefined);
+    // 5d · Mensaje entre vecinos oculto: aviso con el motivo y «Apelar» (guardián ocultarAvisaYApela).
+    const { avisarOculto } = await import("@/lib/apelaciones");
+    await avisarOculto(r.autor, "dm_message", r.id, m);
   } else if (r.autor && (r.de === "user" || r.de === "business")) {
     const { avisar } = await import("@/lib/avisos");
     await avisar(r.autor, "mod_hide", { tipo: "mensaje", motivo: m }, { href: r.de === "user" ? "/cuenta/mensajes" : undefined }).catch(() => undefined);

@@ -525,7 +525,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   if (fotos.length > MAX_FOTOS) return no(`Hasta ${MAX_FOTOS} fotos.`, `Up to ${MAX_FOTOS} photos.`);
   const rec0 = Array.isArray(p.rec) ? [...new Set(p.rec.filter((x): x is string => typeof x === "string" && /^\d{1,18}$/.test(x)))].slice(0, 12) : [];
   const lang = p.lang === "en" ? "en" : "es";
-  return tx(async (c) => {
+  const res = await tx(async (c) => {
     const b = (await c.query<{ id: string; city_id: string; cat: string }>(`select id, city_id, category_id as cat from businesses where id = $1 and status = 'active' for share`, [p.negocio])).rows[0];
     if (!b) return no("Ese negocio no existe.", "That business does not exist.");
     const rubro: Rubro = rubroRes(b.cat);
@@ -576,6 +576,9 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
     await c.query(`select reviews_stats($1)`, [b.id]);
     return { ok: true, id } as const;
   }).catch((e: { fotoAjena?: boolean }) => (e?.fotoAjena ? no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again.") : Promise.reject(e)));
+  // 5d · rev5: reseñas sin transacción en ráfaga → caso en «Reportes de usuario» (también lo revisa el barrido).
+  if (res.ok) await (await import("./moderacion")).rafagaResenas(userId).catch(() => undefined);
+  return res;
 }
 
 /* Quitar la propia reseña (el «Borrar» de la pantalla): sale de la página; queda guardada como quitada por el autor. */

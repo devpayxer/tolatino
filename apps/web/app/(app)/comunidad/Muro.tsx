@@ -9,7 +9,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { DESHACER_S } from "@/lib/comunidad-filtro";
 import type { Filtros, Pub } from "@/lib/comunidad-comun";
-import { comBorrar, comDeshacer, comEncuesta, comGuardar, comPagina, comVotar } from "./acciones";
+import { comBorrar, comDeshacer, comEncuesta, comGuardar, comPagina, comReportar, comVotar } from "./acciones";
+import { YA_NO_LO_VES, abrirReporte } from "./Reportar";
 import { Avatar, LINE, MONO, Marco, useComUi, type ComUi, type YoCom } from "./Marco";
 import { Tarjeta } from "./Tarjeta";
 import { useVecinoAcciones } from "./vecinoAcciones";
@@ -21,7 +22,7 @@ type Bi = { es: string; en: string };
 type R = { ok: boolean; msg?: Bi; entrar?: true };
 
 /* Acciones de una publicación (las usan el muro y la publicación): votar, encuesta, guardar, compartir, menú, borrar con Deshacer. */
-export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void, alQuitarAutor?: (autor: string) => void) {
+export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void, alQuitarAutor?: (autor: string) => void, alReportar?: (p: Pub) => void) {
   const router = useRouter();
   const vec = useVecinoAcciones(es, ui);
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -65,6 +66,8 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
       { t: p.guardada ? E2("Quitar de guardados", "Remove from saved") : E2("Guardar", "Save"), ic: "heart", on: () => { ui.setHoja(null); void guardar(p); } },
       { t: E2("Compartir", "Share"), s: E2("Copia el enlace. Solo lo abren vecinos con cuenta.", "Copies the link. Only neighbors with an account can open it."), ic: "share", on: () => { ui.setHoja(null); void compartir(p); } },
       ...(p.autor.id && !p.autor.oficial ? vec.filas(p.autor.id, p.autor.nombre, () => alQuitarAutor?.(p.autor.id!)) : []),
+      ...(p.autor.oficial ? [] : [{ t: E2("Reportar", "Report"), s: E2("Ya no la verás. Lo revisamos en 48 h.", "You won't see it anymore. We review it within 48 h."), ic: "warning", peligro: true, sep: true,
+        on: () => abrirReporte(ui, es, { enviar: (m, n) => comReportar("post", p.id, m, n), despues: YA_NO_LO_VES, alEnviado: alReportar ? undefined : () => poner(p.id, () => null), alHecho: alReportar ? () => alReportar(p) : undefined }) }]),
     ] });
   };
   return { votar, encuesta, guardar, compartir, menu };

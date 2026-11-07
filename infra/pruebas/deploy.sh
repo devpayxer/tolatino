@@ -62,6 +62,13 @@ elif ! systemctl is-active --quiet tolatino-mapa; then
   systemd-run --unit tolatino-mapa --collect bash -c "bash '$REPO/infra/mapa/generar.sh' '$MAPA' && ${COMPOSE_MAPA[*]} up -d mapa" || true
 fi
 
+# 3f) Moderación de imágenes propia (5d): se construye y se enciende aparte (perfil «moderacion»). Si falla, la app sigue
+#     arriba y las fotos nuevas de la Comunidad esperan revisión manual; nunca se publican sin revisar.
+COMPOSE_MOD=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile moderacion)
+if ! systemctl is-active --quiet tolatino-moderacion; then
+  systemd-run --unit tolatino-moderacion --collect ${COMPOSE_MOD[*]} up -d --build moderacion-img || true
+fi
+
 # 3e) Direcciones propias: tramos de calle del Censo (TIGER) para ubicar direcciones de entrega. Aparte y sin esperar;
 #     el script mismo no hace nada si la carga tiene menos de 90 días.
 if ! systemctl is-active --quiet tolatino-direcciones; then

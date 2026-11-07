@@ -3,6 +3,7 @@ import { avisar } from "./avisos";
 import { db, tx } from "./db";
 import { revisarMensaje } from "./comunidad-filtro";
 import { ISO, UUID, autores, corto, enComunidad, ini, no, sinBloqueo, type Res } from "./comunidad";
+import { efectoSancion, esCrisis, limiteDia, noPuede } from "./moderacion";
 
 /* Comunidad · Mensajes vecino ↔ vecino (APP-COM-MENSAJES / APP-COM-CHAT; fase5-comunidad.md §4 5c y §6 #16). El patrón de
    lib/mensajes.ts (lista por cursor, «solo con un reporte abierto se lee», ocultar con motivo) en tablas propias (0099). Reglas:
@@ -13,7 +14,7 @@ import { ISO, UUID, autores, corto, enComunidad, ini, no, sinBloqueo, type Res }
    - Límites: 10 conversaciones nuevas al día (24 h) y 20 mensajes cada 10 minutos por persona.
    - Nada se borra: el equipo oculta un mensaje con motivo, y solo lo lee con un reporte abierto (lib/admin-dm.ts). */
 type Bi = { es: string; en: string };
-export const NUEVAS_DIA = 10, POR_PAGINA_DM = 30, MSJS_PAGINA = 50;
+export const POR_PAGINA_DM = 30, MSJS_PAGINA = 50;
 const NO_ESTA = () => no("No encontramos esta conversación.", "We could not find this conversation.");
 const ENTRA_COM = () => no("Antes de escribir, termina tu bienvenida a la Comunidad.", "Before writing, finish your Community welcome.");
 const SOLO_SIGUE: Bi = { es: "Solo le escribes a quien te sigue.", en: "You can only message people who follow you." };
@@ -101,7 +102,7 @@ export async function nuevos(viewer: string, otroId: string, desde: string): Pro
 }
 
 /* ── Escribir ── */
-export async function enviar(viewer: string, otroId: string, texto: unknown, ciudad: string): Promise<Res<{ id: string; msj: MsjV }>> {
+export async function enviar(viewer: string, otroId: string, texto: unknown, ciudad: string): Promise<Res<{ id: string; msj: MsjV; crisis: boolean }>> {
   const f = revisarMensaje(String(texto ?? ""));
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
   const body = String(texto ?? "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
@@ -109,7 +110,10 @@ export async function enviar(viewer: string, otroId: string, texto: unknown, ciu
     if (!(await enComunidad(viewer, c)).ok) return ENTRA_COM();
     const yo = (await c.query<{ estado: string; f: string | null; l: string | null; home: string | null }>(
       `select cuenta_estado(status, status_until) as estado, first_name as f, last_name as l, home_city_id as home from users where id = $1`, [viewer])).rows[0];
-    if (!yo || yo.estado !== "active") return no("Tu cuenta no puede escribir mensajes ahora.", "Your account can't send messages right now.");
+    if (!yo) return no("Tu cuenta no puede escribir mensajes ahora.", "Your account can't send messages right now.");
+    // 5d · La sanción viva decide (silencio: no escribe; «bloquear publicación»: sí).
+    const ef = await efectoSancion(c, viewer);
+    if (!ef.mensajes) return noPuede(ef, { es: "escribir mensajes", en: "send messages" });
     const o = await otraPersona(viewer, String(otroId ?? ""));
     if (!o) return NO_ESTA();
     if (!o.activa) return no("Esta cuenta no recibe mensajes ahora.", "This account is not taking messages now.");
@@ -123,13 +127,14 @@ export async function enviar(viewer: string, otroId: string, texto: unknown, ciu
     if (t?.closed) return NO_ESTA();
     if (!o.me_sigue && !t?.me_escribio) return { ok: false as const, msg: SOLO_SIGUE };
     if (!t) {
-      const hoy = (await c.query<{ n: number }>(`select count(*)::int as n from dm_threads where started_by = $1 and created_at > now() - interval '24 hours'`, [viewer])).rows[0]!.n;
-      if (hoy >= NUEVAS_DIA) return no(`Ya empezaste ${NUEVAS_DIA} conversaciones hoy. Sigue mañana.`, `You started ${NUEVAS_DIA} conversations today. Continue tomorrow.`);
+      // Conversaciones nuevas del día (lib/moderacion.ts limiteDia: día local, la mitad el primer día de la cuenta).
+      const lim = await limiteDia(c, viewer, "conversaciones");
+      if (!lim.ok) return lim;
       t = { ...(await c.query<{ id: string }>(`insert into dm_threads (a_user_id, b_user_id, city_id, started_by) values ($1, $2, $3, $4) returning id::text`, [a, b, yo.home ?? ciudad, viewer])).rows[0]!, closed: false, otro_unread: 0, me_escribio: false };
     }
     const m = (await c.query<MsjV>(`insert into dm_messages (thread_id, sender_user_id, body) values ($1::bigint, $2, $3)
                                     returning id::text, true as mio, body as t, false as oculto, ${ISO("created_at")} as at`, [t.id, viewer, body])).rows[0]!;
-    return { ok: true as const, id: t.id, msj: m, avisar: t.otro_unread === 0, otro: o.id, nombre: corto(yo.f, yo.l) };
+    return { ok: true as const, id: t.id, msj: m, avisar: t.otro_unread === 0, otro: o.id, nombre: corto(yo.f, yo.l), crisis: await esCrisis(c, body) };
   }).catch((e) => {
     const m = String(e?.message ?? "");
     if (String(e?.constraint ?? "").endsWith("_datos")) return no("Por seguridad, sin teléfonos ni datos en los mensajes.", "For your safety, no phone numbers or personal details in messages.");
@@ -143,7 +148,7 @@ export async function enviar(viewer: string, otroId: string, texto: unknown, ciu
     const silencio = (await db().query(`select 1 from user_blocks where user_id = $1 and target_user_id = $2 and removed_at is null`, [r.otro, viewer])).rowCount;
     if (!silencio) await avisar(r.otro, "dm_message", { nombre: r.nombre, texto: body.slice(0, 80) }, { href: `/comunidad/mensajes/${viewer}`, ref: ["dm_thread", r.id], actor: viewer });
   }
-  return { ok: true, id: r.id, msj: r.msj };
+  return { ok: true, id: r.id, msj: r.msj, crisis: r.crisis };
 }
 
 /* Reportar una conversación (una vez por persona mientras esté abierta). El equipo de To'Latino la puede leer solo así, en Colas ›
@@ -152,23 +157,38 @@ export const MOTIVOS_DM: Record<string, Bi> = {
   acoso: { es: "Acoso o amenazas", en: "Harassment or threats" }, spam: { es: "Spam o ventas", en: "Spam or sales" },
   priv: { es: "Pide o comparte datos privados", en: "Asks for or shares private details" }, otro: { es: "Otra cosa", en: "Something else" },
 };
-export async function reportarConversacion(viewer: string, otroId: string, motivo: string, nota: string): Promise<Res> {
+export async function reportarConversacion(viewer: string, otroId: string, motivo: string, nota: string, device: string | null = null): Promise<Res> {
   if (!MOTIVOS_DM[motivo]) return no("Elige un motivo.", "Pick a reason.");
   if (!UUID.test(String(otroId ?? ""))) return NO_ESTA();
   const t = (await db().query<{ id: string; city: string }>(
     `select t.id::text, t.city_id as city from dm_threads t where t.a_user_id = least($1::uuid, $2::uuid) and t.b_user_id = greatest($1::uuid, $2::uuid) and t.last_at is not null`, [viewer, otroId])).rows[0];
   if (!t) return NO_ESTA();
   const n = String(nota ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 300) || null;
-  await tx(async (c) => {
+  const r = await tx(async (c) => {
     const ya = (await c.query(`select 1 from content_reports where target_kind = 'dm' and target_id = $1 and reporter_user_id = $2 and status = 'open'`, [t.id, viewer])).rowCount;
-    if (ya) return;
+    if (ya) return null;
+    // 5d · Límite de reportes del día (lib/moderacion.ts).
+    const lim = await limiteDia(c, viewer, "reportes");
+    if (!lim.ok) return lim;
     // Una conversación sigue en el tiempo: si ya la habías reportado y el caso se cerró, el reporte se vuelve a abrir (uno por persona).
-    await c.query(`insert into content_reports (target_kind, target_id, city_id, reporter_user_id, by_business, reason, note, priority) values ('dm', $1, $2, $3, false, $4, $5, $6)
+    await c.query(`insert into content_reports (target_kind, target_id, city_id, reporter_user_id, by_business, reason, note, priority, device) values ('dm', $1, $2, $3, false, $4, $5, $6, $7::uuid)
                    on conflict (target_kind, target_id, reporter_user_id) do update set status = 'open', reason = excluded.reason, note = excluded.note, priority = excluded.priority,
-                     decided_by = null, decided_at = null, created_at = now()`,
-      [t.id, t.city, viewer, motivo, n, motivo === "acoso" ? 1 : 0]);
+                     decided_by = null, decided_at = null, created_at = now(), device = excluded.device`,
+      [t.id, t.city, viewer, motivo, n, motivo === "acoso" ? 1 : 0, device && UUID.test(device) ? device : null]);
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, city_id, priority) values ('chat', 'dm_thread', $1, $2, $3)
                    on conflict (queue, subject_kind, subject_id) where status = 'open' do nothing`, [t.id, t.city, motivo === "acoso" ? "alta" : "normal"]);
+    return null;
   });
-  return { ok: true };
+  return r ?? { ok: true };
+}
+
+/* 5d · Mis mensajes que To'Latino ocultó (Mi cuenta › Avisos de moderación, para apelar): solo los propios, con el motivo; 90 días. */
+export async function mensajesOcultosDe(userId: string, id: string | null) {
+  if (id !== null && !/^\d{1,18}$/.test(id)) return [];
+  return (await db().query<{ id: string; motivo: string | null; at: string; texto: string; href: string | null }>(
+    `select m.id::text, m.hidden_reason as motivo, m.hidden_at as at, left(m.body, 280) as texto,
+            '/comunidad/mensajes/' || (case when t.a_user_id = $1 then t.b_user_id else t.a_user_id end)::text as href
+       from dm_messages m join dm_threads t on t.id = m.thread_id
+      where m.sender_user_id = $1 and m.hidden_at is not null and m.hidden_at > now() - interval '90 days' and ($2::text is null or m.id::text = $2)
+      order by m.hidden_at desc limit 30`, [userId, id])).rows;
 }

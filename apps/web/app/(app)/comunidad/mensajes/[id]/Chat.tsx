@@ -13,6 +13,8 @@ import type { Conversacion, MsjV } from "@/lib/mensajes-vecinos";
 import { dmAnteriores, dmEnviar, dmNuevos, dmReportar } from "../../acciones";
 import { Avatar, LINE, MONO, Marco, useAncho, useComUi, type ComUi, type YoCom } from "../../Marco";
 import { useVecinoAcciones } from "../../vecinoAcciones";
+import { abrirReporte } from "../../Reportar";
+import { LINEA988 } from "@/lib/moderacion-comun";
 
 type N = "Icon" | "Button" | "IconButton";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,6 +66,7 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
     if (!r) return setErr(E2("No se pudo enviar. Revisa tu conexión.", "Could not send. Check your connection."));
     if (!r.ok) return setErr(r.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo enviar.", "Could not send."));
     if ("msj" in r) setMsjs((L) => [...L, r.msj]);
+    if ("crisis" in r && r.crisis) ui.setAviso({ t: es ? LINEA988.es : LINEA988.en, ms: 14000 });
     setT("");
   };
   const anteriores = async () => {
@@ -74,7 +77,8 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
   const menu = () => ui.setHoja({ title: o.nombre, rows: [
     { t: E2("Ver perfil", "See profile"), ic: "users", on: () => { ui.setHoja(null); router.push(`/comunidad/v/${o.id}`); } },
     { t: E2("Silenciar conversación", "Mute conversation"), s: E2("Te siguen llegando sus mensajes, sin aviso. No se entera.", "Their messages still arrive, without a notice. They won't know."), ic: "bell", on: () => { ui.setHoja(null); void vec.silenciar(o.id, o.nombre); } },
-    { t: E2("Reportar conversación", "Report conversation"), s: E2("Mandamos la conversación a revisión.", "We send the conversation for review."), ic: "warning", peligro: true, on: () => ui.setHoja({ title: E2("Reportar conversación", "Report conversation"), sub: E2("Solo con un reporte el equipo de To'Latino puede leerla.", "Only with a report can the To'Latino team read it."), extra: <Reportar es={es} otro={o.id} ui={ui} /> }) },
+    { t: E2("Reportar conversación", "Report conversation"), s: E2("Mandamos la conversación a revisión.", "We send the conversation for review."), ic: "warning", peligro: true, on: () => abrirReporte(ui, es, { motivos: MOTIVOS_CHAT, enviar: (m, n) => dmReportar(o.id, m, n),
+      despues: { es: "Lo revisamos en 48 h. Solo con tu reporte el equipo puede leer esta conversación. Si te sientes en peligro, bloquéala.", en: "We review it within 48 h. Only with your report can the team read this conversation. If you feel unsafe, block them." } }) },
     { t: E2(`Bloquear a ${primero(o.nombre)}`, `Block ${primero(o.nombre)}`), s: E2("No te ve ni te puede escribir.", "They can't see you or message you."), ic: "ban", peligro: true, on: () => vec.bloquear(o.id, o.nombre, () => router.push("/comunidad/mensajes"), () => router.push(`/comunidad/mensajes/${o.id}`)) },
   ] });
   return (
@@ -118,28 +122,5 @@ export function Chat({ es, yo, ciudad, c }: { es: boolean; yo: YoCom; ciudad: st
   );
 }
 
-/* Reportar la conversación: motivo → detalle (opcional) → «Lo revisamos en 48 h». */
-function Reportar({ es, otro, ui }: { es: boolean; otro: string; ui: ComUi }) {
-  const E2 = (a: string, b: string) => (es ? a : b);
-  const [m, setM] = useState<string | null>(null), [nota, setNota] = useState(""), [busy, setBusy] = useState(false), [err, setErr] = useState<string | null>(null);
-  const M: [string, Bi][] = [["acoso", { es: "Acoso o amenazas", en: "Harassment or threats" }], ["spam", { es: "Spam o ventas", en: "Spam or sales" }], ["priv", { es: "Pide o comparte datos privados", en: "Asks for or shares private details" }], ["otro", { es: "Otra cosa", en: "Something else" }]];
-  const enviar = async () => {
-    if (!m || busy) return; setBusy(true); setErr(null);
-    const r = await dmReportar(otro, m, nota).catch(() => null); setBusy(false);
-    if (!r || !r.ok) return setErr(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión.", "Could not do it. Check your connection."));
-    ui.setHoja(null); ui.setAviso({ t: E2("Lo revisamos en 48 h. Si te sientes en peligro, bloquéala.", "We review it within 48 h. If you feel unsafe, block them."), ms: 6000 });
-  };
-  return (
-    <div data-screen-label="Chat · reportar" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-      {M.map(([k, l], i) => (
-        <div key={k} role="radio" aria-checked={m === k} onClick={() => setM(k)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 2px", borderTop: i ? LINE : "none", cursor: "pointer" }}>
-          <span style={{ flex: 1, font: "700 14px Manrope,sans-serif" }}>{es ? l.es : l.en}</span>
-          <span aria-hidden style={{ width: 20, height: 20, boxSizing: "border-box", borderRadius: 99, border: m === k ? "6px solid var(--tl-action)" : "1.5px solid rgba(11,14,18,.25)" }} />
-        </div>))}
-      <textarea value={nota} onChange={(e) => setNota(e.target.value.slice(0, 300))} rows={3} aria-label={E2("Qué pasó (opcional)", "What happened (optional)")} placeholder={E2("Qué pasó (opcional)", "What happened (optional)")}
-        style={{ width: "100%", boxSizing: "border-box", padding: "10px 14px", borderRadius: 13, border: "1px solid rgba(11,14,18,.12)", outline: "none", font: "500 14px/1.45 Manrope,sans-serif", resize: "none" }} />
-      {err && <div role="alert" style={{ font: "600 13px Manrope,sans-serif", color: "var(--tl-danger)" }}>{err}</div>}
-      <div style={{ display: "flex" }}><Button variant="danger" block disabled={!m || busy} onClick={enviar}>{E2("Enviar reporte", "Send report")}</Button></div>
-    </div>
-  );
-}
+/* 5c · Motivos para reportar una conversación (5d: el mismo flujo de tres pasos que lo demás, ./Reportar.tsx). */
+const MOTIVOS_CHAT: [string, Bi][] = [["acoso", { es: "Acoso o amenazas", en: "Harassment or threats" }], ["spam", { es: "Spam o ventas", en: "Spam or sales" }], ["priv", { es: "Pide o comparte datos privados", en: "Asks for or shares private details" }], ["otro", { es: "Otra cosa", en: "Something else" }]];
