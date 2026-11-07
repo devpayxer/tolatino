@@ -15,13 +15,14 @@ import { filaHerramientaTrans } from "./Transporte";
 import { filaHerramientaNoche } from "./Noche";
 import { filaHerramientaEdu } from "./Edu";
 import { filaHerramientaNinos } from "./Ninos";
+import { filaHerramientaDeporte } from "./Deporte";
 import { hNoche } from "@/lib/noche-comun";
 
 const fp = (cents: number) => { const p = (Number(cents) || 0) / 100; return "$" + (p % 1 ? p.toFixed(2) : String(p)); };
 const durL = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const minPositivo = (L: number[]) => { const P = L.filter((v) => v > 0); return P.length ? Math.min(...P) : 0; };
 const first = (n: string) => n.split(" ")[0] ?? n;
-const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
+const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
 const MODEL = (c: Ctx): Record<SvcPanel["model"], [string, string]> => ({
   chair: [c.E2("Rentan silla", "Rent chairs"), c.E2("Cada barbero pone su precio y su agenda. Tú cobras la renta.", "Each barber sets their price and schedule. You collect rent.")],
   comm: [c.E2("A comisión", "On commission"), c.E2("Un precio para todos; a cada uno le toca su porcentaje.", "One price for everyone; each gets their percentage.")],
@@ -32,7 +33,7 @@ const resL = (c: Ctx, m: number) => (m >= 60 ? c.E2(`${m / 60} h`, `${m / 60} h`
 /* Las filas de Lo que vendes para un negocio de citas. */
 export function vendesCitas(c: Ctx): Fila[] {
   const { E2 } = c, X = S(c), svc = X.servicios.filter((s) => !s.extra), ex = X.servicios.filter((s) => s.extra), vis = svc.filter((s) => !s.oculto && !s.adm).length;
-  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c);
+  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c);
   // Noche (4na): la lista y las mesas llegan en 4nc (no son «citas»): aquí solo Servicios y «Esta noche».
   const noche = X.rubro === "noche";
   return [
@@ -121,7 +122,7 @@ type FSvc = { k: string; esc: boolean; gov: string; cred: boolean; rem: boolean;
   // Noche (4na): lista hasta, personas, cuántas mesas, por hora, depósito y noches en que vale.
   nuntil: number; npax: number; ntables: number; nhr: boolean; ndep: string; ndows: number[];
   // Educación (4ea): semanas y horas del curso, matrícula, plan, certificado (oficial o constancia), primera clase gratis y lo que va aparte.
-  esem: number; ehrs: string; edep: string; eplan: number; ecert: string; ecertBy: string; eof: boolean; eg1: boolean; eno: string; elvl: boolean;
+  esem: number; ehrs: string; edep: string; eplan: number; ecert: string; ecertBy: string; eof: boolean; eg1: boolean; eno: string; elvl: boolean; eteam: boolean;
   name: string; en: string; desc: string; descEn: string; sec: string; newSec: string; price: string; desde: boolean; dur: number; buf: number; foto: string | null; visible: boolean; hacen: Record<string, string | null>; opts: { t: string; tEn: string; o: { n: string; nEn: string; p: number; m: number }[] }[] };
 export function servicioDetalle(c: Ctx, id: string): Sec {
   const { E2, ui } = c, X = S(c), chair = X.model === "chair", isNew = id === "new" || id === "new:extra", s0 = X.servicios.find((x) => x.id === id);
@@ -130,9 +131,9 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
   const ex = s0 ? s0.extra : id === "new:extra";
   const secEx = X.secciones.find((s) => /^extras$/i.test(s.name.es));
   const sec0 = s0?.sec ?? (ex ? secEx?.id ?? "" : X.secciones.find((s) => !/^extras$/i.test(s.name.es))?.id ?? "");
-  const rub = X.rubro, sp0 = { k: s0?.k ?? (rub === "salud" ? "cons" : rub === "pro" ? "cons" : rub === "fiesta" ? "pack" : rub === "trans" ? "asiento" : rub === "noche" ? "mesa" : rub === "edu" ? "curso" : rub === "ninos" ? "semana" : ""),
+  const rub = X.rubro, sp0 = { k: s0?.k ?? (rub === "salud" ? "cons" : rub === "pro" ? "cons" : rub === "fiesta" ? "pack" : rub === "trans" ? "asiento" : rub === "noche" ? "mesa" : rub === "edu" ? "curso" : rub === "ninos" ? "semana" : rub === "dep" ? "mes" : ""),
     esem: s0?.a?.sem ?? 8, ehrs: s0?.a?.horas ? String(s0.a.horas) : "", edep: s0?.a?.dep ? String(s0.a.dep / 100) : "", eplan: s0?.a?.plan_n ?? 0, ecert: s0?.a?.cert?.es ?? "", ecertBy: s0?.a?.certBy?.es ?? "", eof: !!s0?.a?.oficial,
-    eg1: !!s0?.a?.g1, eno: (s0?.a?.no ?? []).map((z) => z.es).join("\n"), elvl: !!s0?.a?.lvl,
+    eg1: !!s0?.a?.g1, eteam: s0?.a?.team ?? true, eno: (s0?.a?.no ?? []).map((z) => z.es).join("\n"), elvl: !!s0?.a?.lvl,
     nuntil: s0?.a?.until ?? 660, npax: s0?.a?.pax ?? 6, ntables: s0?.a?.tables ?? 1, nhr: !!s0?.a?.hr, ndep: s0?.a?.dep ? String(s0.a.dep / 100) : "", ndows: s0?.a?.dows ?? [],
     tsal: s0?.a?.sal ?? [], tfrom: s0?.a?.from?.es ?? "", tto: s0?.a?.to?.es ?? "", tdmin: s0?.a?.dmin ?? 120, tpax: s0?.a?.pax ?? (s0?.k === "priv" ? 4 : 14), tchild: s0?.a?.child ? String(s0.a.child / 100) : "", twait: s0?.a?.wait ?? 0,
     fh: s0?.a?.h ?? 4, fcap: s0?.a?.cap ? String(s0.a.cap) : "", fmont: !!s0?.a?.mont, finc: (s0?.a?.inc ?? []).map((z) => z.es).join("\n"), fu: s0?.a?.u?.es ?? "", fper: s0?.a?.per ? String(s0.a.per) : "", fmin: s0?.a?.min ?? 1, esc: !!s0?.a?.esc, gov: s0?.a?.gov ? String(s0.a.gov / 100) : "", cred: !!s0?.a?.cred, rem: !!s0?.a?.rem, hrs: s0?.a?.hrs ?? "", mes: !!s0?.a?.mes,
@@ -163,9 +164,9 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (nueva) out.push({ type: "field", k: E2("NUEVA CATEGORÍA", "NEW CATEGORY"), val: d.newSec, max: 30, ph: E2("Ej. Tintes, Para niños", "e.g. Color, For kids"), onChange: (v) => setF({ newSec: v.slice(0, 30) }) });
   }
   const DUR = ex ? [5, 10, 15, 20] : [15, 20, 30, 40, 45, 60, 90];
-  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos") out.push({ type: "group", k: E2("TIEMPO", "TIME") }, { type: "chips", k: E2("DURA", "TAKES"), items: [...DUR.map((n) => ({ l: `${n} min`, v: d.dur === n ? "selected" : "filter", onClick: () => setF({ dur: n }) })), { l: E2("Otro", "Other"), v: DUR.includes(d.dur) ? "filter" : "selected", onClick: () => setF({ dur: DUR.includes(d.dur) ? Math.min(480, d.dur + 5) : d.dur }) }] });
-  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && !DUR.includes(d.dur)) out.push({ type: "step", t: E2("Minutos", "Minutes"), s: durL(d.dur), v: `${d.dur} min`, onM: () => setF({ dur: Math.max(5, d.dur - 5) }), onP: () => setF({ dur: Math.min(480, d.dur + 5) }) });
-  if (!ex && rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos") out.push({ type: "chips", k: E2("TIEMPO ENTRE CITAS", "TIME BETWEEN BOOKINGS"), help: d.buf ? E2(`LA AGENDA DEJA ${d.buf} MIN LIBRES DESPUÉS DE CADA CITA`, `THE SCHEDULE KEEPS ${d.buf} MIN FREE AFTER EACH BOOKING`) : rub === "fiesta" ? E2("PARA MONTAR Y RECOGER · EL CLIENTE NO LO VE", "TO SET UP AND CLEAN UP · CLIENTS DO NOT SEE IT") : rub === "salud" ? E2("PARA PREPARAR EL CONSULTORIO · EL PACIENTE NO LO VE", "TO PREPARE THE ROOM · PATIENTS DO NOT SEE IT") : rub === "pro" ? E2("ENTRE UNA CONSULTA Y OTRA · EL CLIENTE NO LO VE", "BETWEEN CONSULTATIONS · CLIENTS DO NOT SEE IT") : E2("PARA LIMPIAR LA SILLA · EL CLIENTE NO LO VE", "TO CLEAN THE CHAIR · CLIENTS DO NOT SEE IT"),
+  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") out.push({ type: "group", k: E2("TIEMPO", "TIME") }, { type: "chips", k: E2("DURA", "TAKES"), items: [...DUR.map((n) => ({ l: `${n} min`, v: d.dur === n ? "selected" : "filter", onClick: () => setF({ dur: n }) })), { l: E2("Otro", "Other"), v: DUR.includes(d.dur) ? "filter" : "selected", onClick: () => setF({ dur: DUR.includes(d.dur) ? Math.min(480, d.dur + 5) : d.dur }) }] });
+  if (rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep" && !DUR.includes(d.dur)) out.push({ type: "step", t: E2("Minutos", "Minutes"), s: durL(d.dur), v: `${d.dur} min`, onM: () => setF({ dur: Math.max(5, d.dur - 5) }), onP: () => setF({ dur: Math.min(480, d.dur + 5) }) });
+  if (!ex && rub !== "trans" && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") out.push({ type: "chips", k: E2("TIEMPO ENTRE CITAS", "TIME BETWEEN BOOKINGS"), help: d.buf ? E2(`LA AGENDA DEJA ${d.buf} MIN LIBRES DESPUÉS DE CADA CITA`, `THE SCHEDULE KEEPS ${d.buf} MIN FREE AFTER EACH BOOKING`) : rub === "fiesta" ? E2("PARA MONTAR Y RECOGER · EL CLIENTE NO LO VE", "TO SET UP AND CLEAN UP · CLIENTS DO NOT SEE IT") : rub === "salud" ? E2("PARA PREPARAR EL CONSULTORIO · EL PACIENTE NO LO VE", "TO PREPARE THE ROOM · PATIENTS DO NOT SEE IT") : rub === "pro" ? E2("ENTRE UNA CONSULTA Y OTRA · EL CLIENTE NO LO VE", "BETWEEN CONSULTATIONS · CLIENTS DO NOT SEE IT") : E2("PARA LIMPIAR LA SILLA · EL CLIENTE NO LO VE", "TO CLEAN THE CHAIR · CLIENTS DO NOT SEE IT"),
     items: ([[0, E2("Nada", "None")], [5, "5 min"], [10, "10 min"], [15, "15 min"]] as [number, string][]).map(([n, l]) => ({ l, v: d.buf === n ? "selected" : "filter", onClick: () => setF({ buf: n }) })) });
   out.push({ type: "group", k: E2("PRECIO", "PRICE") });
   const num = (v: string) => v.replace(/[^0-9.]/g, "").slice(0, 7);
@@ -232,10 +233,12 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (d.k !== "fecha" && d.k !== "cover") out.push({ type: "chips", k: E2("NOCHES EN QUE VALE", "NIGHTS IT IS VALID"), help: d.ndows.length ? undefined : E2("TODAS LAS QUE ABRES", "EVERY NIGHT YOU OPEN"),
       items: (c.es ? ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((l, i) => ({ l, v: d.ndows.includes(i) ? "selected" : "filter", onClick: () => setF({ ndows: d.ndows.includes(i) ? d.ndows.filter((z) => z !== i) : [...d.ndows, i].sort((p, q) => p - q) }) })) });
   }
-  if ((rub === "edu" || rub === "ninos") && !ex) {
-    const nik = rub === "ninos";
+  if ((rub === "edu" || rub === "ninos" || rub === "dep") && !ex) {
+    const nik = rub !== "edu"; // Niños y Deporte: sin plan de pagos ni certificado
     // Educación (neg-edu-listing.js k): curso completo (grupo con fecha, semanas, horas, matrícula, certificado) · por mes · por clase · por hora.
-    const KE: Record<string, [string, string]> = nik ? { semana: [E2("Por semana", "Per week"), E2("GUARDERÍA, AFTER SCHOOL O CAMPAMENTO · SE PAGA LA SEMANA EN EL LUGAR", "DAYCARE, AFTER SCHOOL OR CAMP · THE WEEK IS PAID AT THE PLACE")],
+    const KE: Record<string, [string, string]> = rub === "dep" ? { mes: [E2("Membresía al mes", "Monthly membership"), E2("SE PAGA EL MES EN EL LUGAR · TO'LATINO NO COBRA LA MEMBRESÍA", "THE MONTH IS PAID AT THE PLACE · TO'LATINO DOES NOT CHARGE THE MEMBERSHIP")],
+      clase: [E2("Pase o clase suelta", "Day pass or drop-in"), E2("SE PAGA EL DÍA QUE VAS", "PAID THE DAY YOU GO")], curso: [E2("Temporada de liga", "League season"), E2("CON FECHA DE INICIO · EL DEPÓSITO APARTA EL LUGAR", "WITH START DATE · THE DEPOSIT HOLDS THE SPOT")],
+      hora: [E2("Por hora", "Per hour"), E2("CANCHA O ENTRENADOR · SE PAGA EN EL LUGAR", "FIELD OR TRAINER · PAID AT THE PLACE")] } : nik ? { semana: [E2("Por semana", "Per week"), E2("GUARDERÍA, AFTER SCHOOL O CAMPAMENTO · SE PAGA LA SEMANA EN EL LUGAR", "DAYCARE, AFTER SCHOOL OR CAMP · THE WEEK IS PAID AT THE PLACE")],
       mes: [E2("Por mes", "Per month"), E2("CLASES CADA SEMANA · SE PAGA EL MES EN EL LUGAR", "WEEKLY CLASSES · THE MONTH IS PAID AT THE PLACE")], clase: [E2("Por clase o cita", "Per class or visit"), E2("SE PAGA EN EL LUGAR · $0 = GRATIS SI CALIFICAS", "PAID AT THE PLACE · $0 = FREE IF YOU QUALIFY")],
       curso: [E2("Temporada o sesión", "Season or session"), E2("CON FECHA DE INICIO Y SEMANAS · LA INSCRIPCIÓN APARTA EL CUPO", "WITH START DATE AND WEEKS · THE SIGNUP FEE HOLDS THE SPOT")] } : { curso: [E2("Curso completo", "Full course"), E2("CON FECHA DE INICIO, SEMANAS Y HORAS · LA MATRÍCULA APARTA EL CUPO", "WITH START DATE, WEEKS AND HOURS · THE REGISTRATION HOLDS THE SEAT")],
       mes: [E2("Por mes", "Per month"), E2("CLASES CADA SEMANA · SE PAGA EL MES EN LA ESCUELA", "WEEKLY CLASSES · THE MONTH IS PAID AT THE SCHOOL")], clase: [E2("Por clase", "Per class"), E2("CLASE SUELTA · SE PAGA EN LA CLASE", "DROP-IN CLASS · PAID AT CLASS")],
@@ -244,7 +247,8 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (d.k === "curso") {
       out.push({ type: "step", t: E2("Semanas", "Weeks"), s: E2("Cuánto dura el curso.", "How long the course lasts."), v: String(d.esem), onM: () => setF({ esem: Math.max(1, d.esem - 1) }), onP: () => setF({ esem: Math.min(104, d.esem + 1) }) });
       out.push({ type: "field", k: nik ? E2("HORAS EN TOTAL · OPCIONAL", "TOTAL HOURS · OPTIONAL") : E2("HORAS EN TOTAL", "TOTAL HOURS"), val: d.ehrs, im: "numeric", max: 4, ph: "72", help: E2(`Sale «${d.esem} semanas · ${d.ehrs || "—"} h».`, `Shows “${d.esem} weeks · ${d.ehrs || "—"} h”.`), onChange: (v) => setF({ ehrs: v.replace(/\D/g, "").slice(0, 4) }) });
-      out.push({ type: "field", k: nik ? E2("INSCRIPCIÓN · APARTA EL CUPO · OPCIONAL", "SIGNUP FEE · HOLDS THE SPOT · OPTIONAL") : E2("MATRÍCULA · APARTA EL CUPO · OPCIONAL", "REGISTRATION · HOLDS THE SEAT · OPTIONAL"), val: d.edep, pre: "$", im: "numeric", max: 5, ph: "0",
+      if (rub === "dep") out.push({ type: "chips", k: E2("LA CUOTA ES", "THE FEE IS"), items: [[true, E2("Por equipo", "Per team")], [false, E2("Por jugador", "Per player")]].map(([v, l]) => ({ l: l as string, v: d.eteam === v ? "selected" : "filter", onClick: () => setF({ eteam: v as boolean }) })) });
+      out.push({ type: "field", k: rub === "dep" ? E2("DEPÓSITO · APARTA EL LUGAR · OPCIONAL", "DEPOSIT · HOLDS THE SPOT · OPTIONAL") : nik ? E2("INSCRIPCIÓN · APARTA EL CUPO · OPCIONAL", "SIGNUP FEE · HOLDS THE SPOT · OPTIONAL") : E2("MATRÍCULA · APARTA EL CUPO · OPCIONAL", "REGISTRATION · HOLDS THE SEAT · OPTIONAL"), val: d.edep, pre: "$", im: "numeric", max: 5, ph: "0",
         help: E2("Se retiene al inscribirse y se cobra cuando confirmas; se descuenta del total. Si el grupo no abre, se devuelve completa.", "Held at signup and charged when you confirm; it comes off the total. If the group does not open, it is refunded in full."), onChange: (v) => setF({ edep: v.replace(/\D/g, "").slice(0, 5) }) });
       if (!nik) out.push({ type: "chips", k: E2("PLAN DE PAGOS · SIN INTERESES", "PAYMENT PLAN · INTEREST FREE"), items: [0, 3, 6, 12].map((n) => ({ l: n ? `${n} ${E2("pagos", "payments")}` : E2("Sin plan", "None"), v: d.eplan === n ? "selected" : "filter", onClick: () => setF({ eplan: n }) })) });
       if (!nik) out.push({ type: "field", k: E2("CERTIFICADO QUE TE LLEVAS · OPCIONAL", "CERTIFICATE YOU EARN · OPTIONAL"), val: d.ecert, max: 80, ph: E2("Ej. Certificado HHA de Pennsylvania", "e.g. Pennsylvania HHA certificate"), onChange: (v) => setF({ ecert: v.slice(0, 80) }) });
@@ -279,7 +283,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     out.push({ type: "note", tone: "info", icon: "info", t: E2("Cada silla pone su precio. Déjalo vacío si esa silla no lo hace.", "Each chair sets its price. Leave it empty if that chair does not do it.") });
     for (const p of X.gente) out.push({ type: "field", k: `${E2("SILLA", "CHAIR")} ${p.silla ?? "—"} · ${first(p.nombre).toUpperCase()}${p.kind === "owner" ? E2(" · TÚ", " · YOU") : ""}`, val: d.hacen[p.id] ?? "", pre: "$", im: "decimal", ph: E2("No lo hace", "Doesn’t do it"), max: 7, onChange: (v) => setF({ hacen: { ...d.hacen, [p.id]: num(v) || null } }) });
   } else {
-    if ((rub === "edu" || rub === "ninos") && !ex) out.push({ type: "field", k: d.k === "curso" ? (rub === "ninos" ? E2("PRECIO DE LA TEMPORADA", "SEASON PRICE") : E2("PRECIO DEL CURSO COMPLETO", "FULL COURSE PRICE")) : d.k === "semana" ? E2("PRECIO POR SEMANA", "PRICE PER WEEK") : d.k === "mes" ? E2("PRECIO AL MES", "PRICE PER MONTH") : d.k === "clase" ? E2("PRECIO POR CLASE", "PRICE PER CLASS") : E2("PRECIO POR HORA", "PRICE PER HOUR"),
+    if ((rub === "edu" || rub === "ninos" || rub === "dep") && !ex) out.push({ type: "field", k: d.k === "curso" ? (rub !== "edu" ? E2("PRECIO DE LA TEMPORADA", "SEASON PRICE") : E2("PRECIO DEL CURSO COMPLETO", "FULL COURSE PRICE")) : d.k === "semana" ? E2("PRECIO POR SEMANA", "PRICE PER WEEK") : d.k === "mes" ? E2("PRECIO AL MES", "PRICE PER MONTH") : d.k === "clase" ? E2("PRECIO POR CLASE", "PRICE PER CLASS") : E2("PRECIO POR HORA", "PRICE PER HOUR"),
       val: d.price, pre: "$", im: "numeric", max: 6, ph: "0", help: d.k === "curso" ? E2("El total: libros y examen incluidos o dichos aparte.", "The total: books and exam included or listed separately.") : undefined, onChange: (v) => setF({ price: v.replace(/\D/g, "").slice(0, 6) }) });
     else if (rub === "noche" && !ex) { if (d.k !== "cover") out.push({ type: "field", k: d.k === "lista" ? E2("PRECIO DE LA LISTA POR PERSONA · 0 = GRATIS", "LIST PRICE PER PERSON · 0 = FREE") : d.k === "mesa" && d.nhr ? E2("PRECIO POR HORA", "PRICE PER HOUR")
       : d.k === "mesa" || d.k === "vip" ? E2("MÍNIMO DE CONSUMO · 0 = SIN MÍNIMO", "MINIMUM SPEND · 0 = NO MINIMUM") : d.k === "evento" ? E2("PRECIO DEL BOLETO", "TICKET PRICE") : E2("DESDE · 0 = SE COTIZA", "FROM · 0 = QUOTED"), val: d.price, pre: "$", im: "numeric", max: 5, ph: "0",
@@ -290,7 +294,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (!ex && X.gente.length > 1) out.push({ type: "chips", k: E2("QUIÉN LO HACE", "WHO DOES IT"), help: X.model === "comm" ? E2("A CADA UNO LE TOCA SU PORCENTAJE", "EACH GETS THEIR PERCENTAGE") : undefined,
       items: X.gente.map((p) => { const on = d.hacen[p.id] != null; return { l: `${first(p.nombre)}${p.kind === "owner" ? E2(" · tú", " · you") : ""}`, v: on ? "selected" : "filter", onClick: () => setF({ hacen: { ...d.hacen, [p.id]: on ? null : "" } }) }; }) });
   }
-  if (!ex && rub !== "noche" && rub !== "edu" && rub !== "ninos") {
+  if (!ex && rub !== "noche" && rub !== "edu" && rub !== "ninos" && rub !== "dep") {
     const G = d.opts, setG = (g: FSvc["opts"]) => setF({ opts: g }), upG = (gi: number, o: Partial<FSvc["opts"][number]>) => setG(G.map((x, j) => (j === gi ? { ...x, ...o } : x)));
     const upO = (gi: number, oi: number, o: Partial<FSvc["opts"][number]["o"][number]>) => upG(gi, { o: G[gi]!.o.map((x, j) => (j === oi ? { ...x, ...o } : x)) }), sg = (n: number) => (n > 0 ? "+" : n < 0 ? "−" : "");
     out.push({ type: "group", k: E2("OPCIONES · EL CLIENTE ELIGE UNA", "OPTIONS · THE CLIENT PICKS ONE"), link: G.length < 3 ? E2("Agregar grupo", "Add group") : undefined, onLink: () => setG([...G, { t: "", tEn: "", o: [{ n: "", nEn: "", p: 0, m: 0 }, { n: "", nEn: "", p: 0, m: 0 }] }]) });
@@ -325,7 +329,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     opts: x.opts,
     ...(rub === "fiesta" && !ex ? { k: x.k, a: { h: x.fh, cap: parseInt(x.fcap) || undefined, mont: x.fmont, min: x.fmin, per: parseInt(x.fper) || undefined, u: x.fu.trim() ? { es: x.fu.trim(), en: x.fu.trim() } : undefined,
       inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
-      : (rub === "edu" || rub === "ninos") && !ex ? { k: x.k, a: { sem: x.esem, horas: parseInt(x.ehrs) || undefined, dep: Math.round((parseFloat(x.edep) || 0) * 100), plan_n: x.eplan, g1: x.eg1, lvl: x.elvl,
+      : (rub === "edu" || rub === "ninos" || rub === "dep") && !ex ? { k: x.k, a: { team: rub === "dep" ? x.eteam : undefined, sem: x.esem, horas: parseInt(x.ehrs) || undefined, dep: Math.round((parseFloat(x.edep) || 0) * 100), plan_n: x.eplan, g1: x.eg1, lvl: x.elvl,
         cert: x.ecert.trim() ? { es: x.ecert.trim(), en: x.ecert.trim() } : undefined, certBy: x.ecertBy.trim() ? { es: x.ecertBy.trim(), en: x.ecertBy.trim() } : undefined, oficial: x.eof,
         inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 8).map((z) => ({ es: z, en: z })), no: x.eno.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
       : rub === "noche" && !ex ? { k: x.k, a: { until: x.nuntil, pax: x.npax || undefined, tables: x.ntables, hr: x.nhr, dep: Math.round((parseFloat(x.ndep) || 0) * 100), dows: x.ndows,

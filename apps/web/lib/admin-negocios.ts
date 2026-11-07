@@ -183,6 +183,11 @@ export async function negocio360(s: Staff, id: string) {
       return { kind: C.KINDS_NINOS.find((k) => k[0] === h.kind)?.[1] ?? h.kind, cuidado: h.cuidado, resumen: h.cuidado ? C.resumenNinos(h, true) : h.edu ? I.resumenEdu(h.edu, true) : "Solo contacto",
         edad: C.edadTexto(h.edad, true), lic: C.licTexto(h.lic, true), recibe: h.recibe,
         bandas: h.bandas.map((b) => `${b.label.es}: ${b.libres}`).join(" · ") }; })() : null,
+    // Deporte (4ec): «Membresías y contrato» o «Liga e inscripciones» en solo lectura (summary L308).
+    herramientaDep: b.cat_id === "NEG-DEPORTE" ? await (async () => { const h = await (await import("./deporte")).herramientaDeporte(id); if (!h) return null;
+      const C = await import("./deporte-comun");
+      return { titulo: h.memb || h.liga ? C.tituloDep(h, true) : "Por contacto", resumen: h.memb || h.liga ? C.resumenDep(h, true) : "Visita, club, tiro o nutrición: la gente llama o escribe", kind: h.kind,
+        contrato: h.memb ? C.contratoTexto(h, true) : null }; })() : null,
     herramientaNoche: b.cat_id === "NEG-NOCHE" ? await (async () => { const h = await herramientaNoche(id); if (!h) return null;
       const H = await historialNoche(id, null, 12);
       return { resumen: resumenNoche(h, true), kind: h.kind, forzado: h.forzado, hist: H.map((p) => ({ t: postTexto(p.field, p.value, true), at: p.at, quien: p.quien })) }; })() : null,

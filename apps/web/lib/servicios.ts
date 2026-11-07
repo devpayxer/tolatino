@@ -31,14 +31,16 @@ export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boole
   until?: number; tables?: number; hr?: boolean; dows?: number[]; dep?: number;
   // Inscripciones (4ea · neg-edu-listing.js): semanas y horas del curso, el certificado y quién lo da (oficial o constancia de la
   // escuela), el plan de pagos sin intereses (0, 3, 6 o 12), primera clase gratis (nunca en un curso) y si pide el nivel.
-  sem?: number; horas?: number; cert?: Bi; certBy?: Bi; oficial?: boolean; plan_n?: number; g1?: boolean; lvl?: boolean };
+  sem?: number; horas?: number; cert?: Bi; certBy?: Bi; oficial?: boolean; plan_n?: number; g1?: boolean; lvl?: boolean;
+  // Deporte (4ec): la temporada de la liga, por equipo o por jugador; la cancha por hora se cobra por la cancha, no por persona.
+  team?: boolean; per_field?: boolean };
 /* Fiestas usa el mismo editor de servicios con sus formas de cobrar. */
-export type RubroSvc = RubroSP | "fiesta" | "trans" | "noche" | "edu" | "ninos";
-export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : rubroSP(cat));
+export type RubroSvc = RubroSP | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep";
+export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : cat === "NEG-NOCHE" ? "noche" : cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : rubroSP(cat));
 /* Inscripciones (4ea · fase4-edu-ninos-deporte.md §2): curso (semanas, horas, matrícula ≤ precio, certificado, incluye / va aparte, plan
    0·3·6·12 solo en curso) · mes · semana · clase · hora (primera clase gratis: nunca en un curso). La matrícula va en
    items.deposit_cents (la copia a.dep). El servidor valida; lo que no cuadra no se guarda. */
-export function limpiarInsc(k0: unknown, cents: number, a0: unknown, rub: "edu" | "ninos" = "edu"): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+export function limpiarInsc(k0: unknown, cents: number, a0: unknown, rub: "edu" | "ninos" | "dep" = "edu"): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
   const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
   if (!KINDS_INSC.includes(k as KindInsc)) return { ok: false, es: "Elige cómo lo cobras.", en: "Pick how you charge for it." };
   const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
@@ -54,13 +56,14 @@ export function limpiarInsc(k0: unknown, cents: number, a0: unknown, rub: "edu" 
   if (k === "curso") {
     const sem = n(x.sem, 1, 104), hrs = n(x.horas ?? x.hrs, 1, 2000);
     if (!sem) return { ok: false, es: "¿Cuántas semanas dura el curso?", en: "How many weeks is the course?" };
-    if (!hrs && rub !== "ninos") return { ok: false, es: "¿Cuántas horas son en total?", en: "How many hours in total?" };
+    if (!hrs && rub === "edu") return { ok: false, es: "¿Cuántas horas son en total?", en: "How many hours in total?" };
     a.sem = sem; if (hrs) a.horas = hrs;
     const dep = n(x.dep, 0, 5000000);
     if (dep == null || dep % 100) return { ok: false, es: "La matrícula va en dólares enteros.", en: "The registration fee goes in whole dollars." };
     if (dep >= cents) return { ok: false, es: "La matrícula aparta el cupo y se descuenta del total: tiene que ser menos que el precio.", en: "The registration fee holds the seat and comes off the total: it must be less than the price." };
     if (dep) a.dep = dep;
-    const plan = rub === "ninos" ? 0 : n(x.plan_n, 0, 12); // Niños no lleva plan de pagos (NIK, L460)
+    const plan = rub !== "edu" ? 0 : n(x.plan_n, 0, 12); // Niños y Deporte no llevan plan de pagos (NIK, L460)
+    if (rub === "dep") a.team = x.team === true; // la temporada: por equipo o por jugador (explícito; nunca adivinado por el nombre)
     if (plan == null || !(PLANES as readonly number[]).includes(plan)) return { ok: false, es: "El plan de pagos es de 3, 6 o 12 pagos.", en: "The payment plan is 3, 6 or 12 payments." };
     if (plan) a.plan_n = plan;
     const cert = bi(x.cert, 80);
@@ -68,6 +71,7 @@ export function limpiarInsc(k0: unknown, cents: number, a0: unknown, rub: "edu" 
     return { ok: true, k, a, cents };
   }
   if (x.g1 === true) a.g1 = true;
+  if (rub === "dep" && k === "hora" && x.per_field === true) a.per_field = true;
   return { ok: true, k, a, cents };
 }
 /* Noche (4na · neg-noche-listing.js k; fase4-noche.md §2): la entrada (sigue al cover de «Esta noche», se paga en la puerta), la
@@ -213,6 +217,7 @@ export type SvcPanel = {
   noche: import("./noche-comun").HerrNoche | null; // «Esta noche» (4na)
   edu: import("./inscripciones-comun").HerrEdu | null; // «Grupos y cupos» (4ea)
   ninos: import("./ninos-comun").HerrNinos | null; // «Cupos y licencia» o «Grupos y cupos» de Niños (4eb)
+  dep: import("./deporte-comun").HerrDep | null; // «Membresías y contrato» o «Liga e inscripciones» (4ec)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -239,7 +244,8 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   return {
     rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, trans: x.cat === "NEG-TRANS" ? await (await import("./transporte")).herramientaTrans(negocio) : null,
     noche: x.cat === "NEG-NOCHE" ? await (await import("./noche")).herramientaNoche(negocio) : null, edu: x.cat === "NEG-EDU" ? await (await import("./edu")).herramientaEdu(negocio) : null,
-    ninos: x.cat === "NEG-NINOS" ? await (await import("./ninos")).herramientaNinos(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    ninos: x.cat === "NEG-NINOS" ? await (await import("./ninos")).herramientaNinos(negocio) : null,
+    dep: x.cat === "NEG-DEPORTE" ? await (await import("./deporte")).herramientaDeporte(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

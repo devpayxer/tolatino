@@ -42,6 +42,7 @@ import { herramientaTransBloques } from "./Transporte";
 import { filaAhoraBloque, herramientaNocheBloques } from "./Noche";
 import { grupoEduDetalle, herramientaEduBloques } from "./Edu";
 import { herramientaNinosBloques } from "./Ninos";
+import { herramientaDeporteBloques } from "./Deporte";
 import { hoyNoche, nocheDetalle, type NocPanel } from "./NocheReservas";
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
@@ -326,6 +327,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.noche) return herramientaNocheBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.edu) return herramientaEduBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.ninos) return herramientaNinosBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.dep && (c.svc.dep.memb || c.svc.dep.liga)) return herramientaDeporteBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ret) return herramientaRetailBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "productos" && c.menu?.mod === "shop") return menuBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);

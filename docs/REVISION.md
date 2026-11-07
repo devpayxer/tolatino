@@ -1125,3 +1125,14 @@ nombre de pila, edad o grado, la escuela si lo recogen ahí y una nota corta, ci
 nacimiento y números de seguro social); las bandas de edad de la semilla solo dentro de las edades de cada lugar.
 _Ojo:_ las licencias de la semilla son de EJEMPLO (número «PRUEBA-…»); el registro y los textos del DHS se verifican antes de abrir
 (LAUNCH-CHECKLIST).
+
+### 4ec · Deporte: «Membresías y contrato» y «Liga e inscripciones» (7 nov)
+**Qué mirar (Anthony, 5705550411 · Power Gym):** Lo que vendes › **Membresías y contrato**: contrato (sin contrato · 6 · 12 meses), lo que
+cuesta cancelar antes (solo con contrato; con $0 también se dice), mensualidad, cuota de inscripción, pase de un día, primera visita gratis,
+guardería. En Buscar la tarjeta dice «Sin contrato · cancela cuando quieras» y «$25 al mes · sin cuota de inscripción». **Liga Latina de
+Fútbol** (en la prueba Anthony también la administra): **Liga e inscripciones** — cuota del equipo por temporada, depósito, inscripción
+hasta, equipos que faltan («Liga llena · lista de espera» en 0), cancha por hora y jugadores sueltos.
+_Decidido por mí:_ los precios que toca la herramienta son los del servicio (una sola fuente); «por equipo» o «por jugador» se dice en el
+servicio (el prototipo lo deducía del nombre); la fecha límite de la liga se elige entre las 3 semanas antes de que empiece la temporada;
+el dojo de la semilla trae un contrato de 3 meses, así que ese chip solo aparece cuando ya lo tiene; la herramienta solo existe para los
+lugares que venden por la app (membresía y liga): boliche, golf, clubes, pesca, tiro y nutrición van por contacto y conservan sus filtros.
