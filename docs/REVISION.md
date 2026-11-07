@@ -1015,3 +1015,12 @@ por el negocio, depósitos (cobrado · retenido · devuelto · se quedó); viaje
 «Salió»), ocupación de asientos, cancelaciones tardías, salidas canceladas, «cobró más» por cada 100 viajes y los motivos de ayuda.
 _Arreglado de paso:_ la pestaña se veía pero el servidor no la tenía en su lista y mostraba el Resumen (guardián pestanasAnalitica).
 Ayuda nueva para El Compa: ayuda-con-la-fiesta-y-el-viaje y panel-fiestas-y-transporte-negocio.
+
+### Plan del grupo Noche (7 nov)
+Escrito en `docs/diseno/plan/fase4-noche.md` (bloques 4na–4ne, migraciones 0081–0083). Lo que decidí y se puede cambiar:
+- **Comisión de Noche:** sembrada igual que los boletos ($1 + 5 %) sobre el depósito de la mesa, que es lo que cobra el prototipo a
+  esta categoría. Si prefieres otra, se cambia en Super Admin › Planes.
+- **Textos del prototipo corregidos:** el depósito de la mesa «se retiene al enviar y se cobra cuando confirman» (como Fiestas). El
+  corte para cancelar gratis es a las 6 PM de esa noche; si la llegada es antes de las 8 PM, el corte pasa a 2 horas antes de la llegada.
+- To'Latino nunca cobra cover, tragos, botellas ni el mínimo: eso se paga en el local. La app no pide fecha de nacimiento ni guarda
+  fotos de identificación: el 21+ lo revisa la puerta.
