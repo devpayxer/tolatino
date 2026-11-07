@@ -10,7 +10,7 @@ import type { Dinero } from "@/lib/admin-dinero";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -44,7 +44,7 @@ const usdN = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> }) => i.a?.fe === "tot" ? `Precio total por escrito ${usdN(i.cents)}`
   : `${i.k === "curso" ? `Curso · ${Number(i.a?.sem ?? 0)} semanas · ` : ""}${i.cents ? `Donativo sugerido ${usdN(i.cents)}` : "Gratis"}`;
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -158,6 +158,14 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
         {n.herramientaTrans ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "truck", title: n.herramientaTrans.titulo, sub: `${n.herramientaTrans.resumen} · tipo ${n.herramientaTrans.kind}${n.herramientaTrans.forzado ? " (forzado)" : ""}` }]} /> : null}
         {n.herramientaFe ? <A.AdminList label={`${n.herramientaFe.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "bell", title: n.herramientaFe.titulo, sub: `${n.herramientaFe.resumen} · tipo ${n.herramientaFe.kind}${n.herramientaFe.forzado ? " (forzado)" : ""}` },
           ...n.herramientaFe.horarios.map((t) => ({ icon: "calendar", title: t, sub: "Horario de la semana" })), { icon: "lock", title: "Línea fija", sub: n.herramientaFe.linea }]} /> : null}
+        {n.herramientaInm ? <A.AdminList label={`${n.herramientaInm.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "key", title: n.herramientaInm.titulo, sub: `${n.herramientaInm.resumen} · tipo ${n.herramientaInm.kind}${n.herramientaInm.forzado ? " (forzado)" : ""}` },
+          { icon: "lock", title: "Línea fija", sub: n.herramientaInm.linea },
+          ...n.herramientaInm.props.map((p) => ({ icon: "home", title: p.name, sub: `${p.sub}${p.senior ? ` · mayores de 62: ${p.senior === "review" ? "por revisar" : p.senior === "ok" ? "confirmada" : "no confirmada"}` : ""}${p.adm != null ? ` · Oculta: ${p.adm}` : ""}`,
+            tag: p.adm != null ? "OCULTA" : p.senior === "review" ? "REVISAR" : undefined, tone: p.adm != null ? "danger" : "warn",
+            actions: P.retirar ? [...(p.senior === "review" ? [{ label: "Confirmar mayores", variant: "secondary", onClick: () => setConf({ titulo: `Confirmar vivienda para mayores · «${p.name}»`, sub: "Revisaste la declaración bajo la excepción de la ley (62 o más).", plantillas: ["Declaración revisada"], hacer: (m) => mayoresRevisar(n.id, p.id, true, m) }) },
+              { label: "No se confirma", variant: "danger", onClick: () => setConf({ titulo: `No se confirma · «${p.name}»`, sub: "La propiedad queda oculta con el motivo hasta que el dueño la corrija.", peligro: true, plantillas: ["No hay declaración de vivienda para mayores"], hacer: (m) => mayoresRevisar(n.id, p.id, false, m) }) }] : []),
+              p.adm != null ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${p.name}»?`, hacer: (m) => propiedadOcultar(n.id, p.id, false, m) }) }
+              : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${p.name}»`, sub: "Deja de salir en su página y en Buscar. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Texto contra la vivienda justa", "Posible estafa: piden dinero antes de ver", "Fotos o datos que no son de la propiedad"], hacer: (m) => propiedadOcultar(n.id, p.id, true, m) }) }] : undefined }))]} /> : null}
         {n.herramientaDep ? <A.AdminList label={`${n.herramientaDep.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "star", title: n.herramientaDep.titulo, sub: `${n.herramientaDep.resumen} · tipo ${n.herramientaDep.kind}` },
           ...(n.herramientaDep.contrato ? [{ icon: "law", title: "¿Hay contrato?", sub: n.herramientaDep.contrato }] : [])]} /> : null}
         {n.herramientaNinos ? <A.AdminList label={`${n.herramientaNinos.cuidado ? "CUPOS Y LICENCIA" : "GRUPOS Y CUPOS"} · SOLO LECTURA`} rows={[

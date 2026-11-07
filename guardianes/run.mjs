@@ -1206,6 +1206,132 @@ const guardianes = {
   },
 
   /* 4. Toda cadena visible nace en español: prohibido `lang="en` en layouts. */
+  /* 4ib. Vivienda justa (Fair Housing Act y PHRA · fase4-iglesias-inmuebles-autos.md §3): ningún filtro ni campo de una clase protegida
+     (niños o familia, religión, raza, origen, sexo, discapacidad, edad); la lista de frases vive SOLO en lib/vivienda-justa.ts y el
+     servidor la pasa al guardar una propiedad; toda propiedad que se pinta lleva el pie de igualdad y la nota de animales de servicio. */
+  viviendaJusta() {
+    const G = "viviendaJusta", V = "apps/web/lib/vivienda-justa.ts", I = "apps/web/lib/inmuebles.ts", C = "apps/web/lib/inmuebles-comun.ts", dir = "packages/db/migrations";
+    const PROT = /\b(familias?|ni[nñ]os?|kids|children|famil(y|ies)|religi[oó]n|religion|cristian[oa]s?|cat[oó]lic[oa]s?|raza|race|color|sexo|sex|genero|g[eé]nero|gender|nacionalidad|national|origen|origin|inmigrantes?|immigrants?|hispan[oa]s?|latin[oa]s?|discapacidad|disability|disabled|parejas?|couples?|solter[oa]s?|singles?|adultos|adults|edad|age)\b/i;
+    if (!existsSync(V)) return falla(G, V, 0, "falta lib/vivienda-justa.ts (la lista de frases y revisarTexto)");
+    const v = readFileSync(V, "utf8");
+    if (!/export async function revisarTexto\(/.test(v)) falla(G, V, 0, "falta revisarTexto(es, en)");
+    if (!/\["no niños", "es"\]/.test(v) || !/\["no kids", "en"\]/.test(v)) falla(G, V, 0, "la lista de fábrica tiene que frenar «no niños» y «no kids»");
+    // La lista solo aquí: ninguna otra pieza de la app escribe esas frases (ni para mostrarlas ni para decidir).
+    const MARCA = ["no niños", "sin niños", "solo adultos", "no se aceptan niños", "no kids", "no children", "adults only", "solo cristianos", "para inmigrantes", "solo hispanos", "no section 8", "no se acepta section 8"];
+    for (const f of codigo) {
+      if (!/^apps\/web\//.test(f) || f === V) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { for (const m of MARCA) if (l.toLowerCase().includes(m)) falla(G, f, i + 1, `la frase «${m}» vive solo en lib/vivienda-justa.ts`); });
+    }
+    if (existsSync(I)) {
+      const s = readFileSync(I, "utf8"), der = /const DER = \[([^\]]*)\]/.exec(s)?.[1] ?? "";
+      if (!der) falla(G, I, 0, "falta la lista DER de filtros derivados de Bienes Raíces");
+      for (const k of der.matchAll(/"([^"]+)"/g)) if (PROT.test(k[1])) falla(G, I, 0, `filtro de una clase protegida: «${k[1]}» (los filtros son de la propiedad y de los papeles que se aceptan)`);
+      s.split("\n").forEach((l, i) => { for (const m of l.matchAll(/F\.add\("([^"]+)"\)/g)) if (PROT.test(m[1]) || !der.includes(`"${m[1]}"`)) falla(G, I, i + 1, `filtro «${m[1]}» fuera de la lista permitida o de una clase protegida`); });
+      const g = /export async function guardarPropiedad[\s\S]*?\n}\n/.exec(s)?.[0] ?? "";
+      if (!/await revisarTexto\(\[name\.es, desc\.es, papers\.es, lease\.es/.test(g)) falla(G, I, 0, "guardarPropiedad tiene que pasar nombre, descripción, lo que piden y contrato por revisarTexto");
+      if (!/if \(fr\) \{[\s\S]*?return err\(/.test(g)) falla(G, I, 0, "si una frase salta, la propiedad no se guarda (return err antes de escribir)");
+      if (g.indexOf("revisarTexto(") > g.indexOf("insert into items")) falla(G, I, 0, "revisarTexto corre ANTES de escribir la propiedad");
+    }
+    // Columnas de propiedades y de la herramienta: ninguna por quién vive.
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql") && y >= "0092")) {
+      const t = readFileSync(`${dir}/${x}`, "utf8");
+      for (const tb of ["property_listings", "inm_settings"]) {
+        const body = new RegExp(`create table if not exists ${tb} \\(([\\s\\S]*?)\\n\\);`).exec(t)?.[1] ?? "";
+        body.split("\n").forEach((l) => { const col = /^\s*([a-z_0-9]+)\s+(text|boolean|smallint|integer|bigint|numeric|date|jsonb|geography|timestamptz|uuid)/.exec(l)?.[1]; if (col && col.split("_").some((p) => PROT.test(p))) falla(G, `${dir}/${x}`, 0, `columna «${col}» de ${tb}: ningún campo por una clase protegida`); });
+      }
+    }
+    if (existsSync(C)) {
+      const s = readFileSync(C, "utf8");
+      if (!s.includes('export const EHO: Bi = { es: "Igualdad de oportunidad en la vivienda", en: "Equal Housing Opportunity" }')) falla(G, C, 0, "el pie «Igualdad de oportunidad en la vivienda» / «Equal Housing Opportunity» va verbatim");
+      if (!s.includes('export const ANIMALES_SERVICIO: Bi = { es: "Los animales de servicio y de apoyo no son mascotas: se aceptan siempre."')) falla(G, C, 0, "la nota de los animales de servicio va verbatim");
+      if (!s.includes('export const NO_PAGUES: Bi = { es: "Nunca pagues un depósito antes de ver la propiedad y firmar el contrato."')) falla(G, C, 0, "la línea contra estafas de renta va verbatim");
+      if (!s.includes("Lo que pagas para mudarte está completo aquí: nadie cobra por ver una propiedad.")) falla(G, C, 0, "la línea fija de Bienes Raíces (§1c) va verbatim");
+    }
+    // Quien pinta propiedades (el panel hoy; la ficha en 4id) pone el pie de igualdad y la nota de animales de servicio.
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx$/.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      if (!/from "@\/lib\/inmuebles-comun"/.test(s) || !/PropInm|mudarteTexto/.test(s)) continue;
+      // El pie (pie()) lleva las dos frases y va detrás de cada propiedad que se pinta («Así se ve», mprev).
+      const pie = /function pie\([\s\S]*?\n}\n/.exec(s)?.[0] ?? "";
+      if (!/bi\(EHO, es\)/.test(pie) || !/bi\(ANIMALES_SERVICIO, es\)/.test(pie)) falla(G, f, 0, "pinta propiedades sin el pie de igualdad de oportunidad y la nota de animales de servicio (function pie)");
+      if ((s.match(/type: "mprev"/g) ?? []).length > (s.match(/\.\.\.pie\(c, /g) ?? []).length) falla(G, f, 0, "cada propiedad que se pinta («Así se ve») va seguida de su pie (...pie(c, …))");
+    }
+  },
+
+  /* 4ib. La dirección exacta de una propiedad (addr_line, geom) solo la lee lib/inmuebles.ts (el panel del negocio) y, en 4ie, lib/visitas-inm*.ts
+     (al confirmar la visita). Ninguna consulta pública la ve; los cuartos y «solo la zona» muestran la zona (§3, §6 #15). */
+  direccionAlConfirmar() {
+    const G = "direccionAlConfirmar", OK = /^apps\/web\/lib\/(inmuebles|visitas-inm[a-z-]*)\.ts$/;
+    for (const f of codigo) {
+      if (!/^(apps|services)\//.test(f) || OK.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      s.split("\n").forEach((l, i) => { if (/\baddr_line\b/.test(l)) falla(G, f, i + 1, "addr_line de una propiedad solo se lee en lib/inmuebles.ts (y al confirmar la visita, lib/visitas-inm*.ts)"); });
+      if (/property_listings/.test(s) && /\b(pl|property_listings)\.geom\b|\bgeom\b[^\n]*from property_listings|st_[xy]\(\s*(pl\.)?geom/.test(s)) falla(G, f, 0, "la ubicación exacta (geom) de una propiedad no se lee fuera de lib/inmuebles.ts");
+      // Lo público no importa la librería del panel (trae la dirección): solo inmuebles-comun o, en 4id, inmuebles-publico.
+      if (/^apps\/web\/(lib\/([a-z-]*publico|ficha|categoria|buscar|mapa|directorio|ciudad)\.ts|app\/\(app\)\/)/.test(f) && /from "(\.\/|@\/lib\/)inmuebles"/.test(s)) falla(G, f, 0, "una pantalla o consulta pública importa lib/inmuebles.ts (la del panel, con la dirección exacta)");
+    }
+    const C = "packages/db/migrations/0092_inmuebles_propiedades.sql";
+    if (existsSync(C) && !/check \(kind not in \('cuarto', 'compartida'\) or not addr_public\)/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "los cuartos y la vivienda compartida nunca muestran la dirección exacta (check en la base)");
+    const I = "apps/web/lib/inmuebles.ts";
+    if (existsSync(I) && !/const zona = soloZona\(kind\) \|\| p\.soloZona === true/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "guardarPropiedad fuerza «solo la zona» en cuartos");
+  },
+
+  /* 4ib. Toda cuota de venta (y en 4ic el pago de ejemplo) dice «estimada» / «estimated»: nunca una promesa (Regulation Z, §3). */
+  cuotaEstimada() {
+    const G = "cuotaEstimada", C = "apps/web/lib/inmuebles-comun.ts";
+    if (existsSync(C)) {
+      const f = /export function cuotaTexto[\s\S]*?\n}\n/.exec(readFileSync(C, "utf8"))?.[0] ?? "";
+      if (!f.includes("`Cuota estimada ") || !f.includes("`Estimated payment ")) falla(G, C, 0, "cuotaTexto dice siempre «Cuota estimada» / «Estimated payment»");
+    }
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === "apps/web/lib/inmuebles.ts") continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\/?\*)/.test(l)) return;
+        if (/(usd|dinero|fp|money)\([^)]*\b(cuota|est_payment_cents|estPago)\b[^)]*\)/.test(l) && !/estimad|Estimated|cuotaTexto\(/.test(l)) falla(G, f, i + 1, "una cuota se muestra sin «estimada»: usa cuotaTexto() o dilo en la misma línea");
+      });
+    }
+  },
+
+  /* 4ib. Nada de datos de crédito ni de identidad en Bienes Raíces, Autos e Iglesias (§3): ninguna columna ni campo de seguro social,
+     número de ITIN, ingresos, fecha de nacimiento, puntaje de crédito, cuenta de banco ni número de licencia de una persona. */
+  sinDatosDeCredito() {
+    const G = "sinDatosDeCredito", dir = "packages/db/migrations", MAL = "ssn|itin_number|income|dob|credit_score|bank_[a-z_]+|license_number";
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql") && y >= "0091")) readFileSync(`${dir}/${x}`, "utf8").split("\n").forEach((l, i) => {
+      if (/^\s*--/.test(l)) return;
+      if (new RegExp(`^\\s*(${MAL})\\s+[a-z]`).test(l) || new RegExp(`add column (if not exists )?(${MAL})\\b`).test(l)) falla(G, `${dir}/${x}`, i + 1, "columna de datos de crédito o de identidad: nunca se guarda (los papeles se llevan en persona)");
+    });
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*|fe[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts))$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\/?\*)/.test(l)) return;
+        if (new RegExp(`(\\b(${MAL})\\??\\s*:|\\.(${MAL})\\b)`).test(l)) falla(G, f, i + 1, "campo de datos de crédito o de identidad: nunca se pide ni se guarda");
+      });
+    }
+  },
+
+  /* 4ib/4ie. Ver una propiedad es gratis: el código de Bienes Raíces (y las visitas de 4ie) no toca pasarela, pagos ni retenciones (§3). */
+  sinDineroEnVisitas() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts))$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\/?\*)/.test(l)) return;
+        if (/pasarela|from "[^"]*pagos|stripe|insert into payments|update payments|retener\(|cobrar\(|capturar\(/i.test(l)) falla("sinDineroEnVisitas", f, i + 1, "Bienes Raíces no mueve dinero en la app: ver es gratis (sin pasarela, pagos ni retenciones)");
+      });
+    }
+  },
+
+  /* 4ib. Una propiedad es un ítem 'svc' (renta | venta) pero NO es un servicio: no sale en Servicios, no se reserva como cita (con su
+     depósito) ni se edita por el editor de servicios. Solo por Propiedades (lib/inmuebles.ts). */
+  propiedadNoEsServicio() {
+    const G = "propiedadNoEsServicio", K = "coalesce(i.svc_kind, '') not in ('renta', 'venta')", K2 = "coalesce(svc_kind, '') not in ('renta', 'venta')";
+    const chk = (f, re, msg) => { if (existsSync(f) && !re.test(readFileSync(f, "utf8"))) falla(G, f, 0, msg); };
+    chk("apps/web/lib/citas.ts", new RegExp(`i\\.sell and i\\.status <> 'hidden' and ${K.replace(/[()]/g, "\\$&")}`), "los servicios que se reservan (citas) dejan fuera las propiedades");
+    chk("apps/web/lib/servicios.ts", new RegExp(`i\\.removed_at is null and ${K.replace(/[()]/g, "\\$&")}`), "la lista de Servicios del panel deja fuera las propiedades");
+    const a = "apps/web/app/panel/acciones-servicios.ts";
+    if (existsSync(a)) { const n = readFileSync(a, "utf8").split(K2).length - 1; if (n < 3) falla(G, a, 0, "guardar, mostrar u ocultar y quitar un servicio no tocan una propiedad (3 consultas con el filtro)"); }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

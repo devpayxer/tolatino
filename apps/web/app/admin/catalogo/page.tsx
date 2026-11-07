@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
 import { requerir } from "@/lib/admin";
-import { categoriaAdmin, categoriasAdmin, filtrosAdmin, historial, modulosAdmin, segurosAdmin, SIN_POR_PAGINA, sinOferta, sinonimos } from "@/lib/admin-catalogo";
+import { categoriaAdmin, categoriasAdmin, filtrosAdmin, frasesViviendaJusta, historial, modulosAdmin, segurosAdmin, SIN_POR_PAGINA, sinOferta, sinonimos } from "@/lib/admin-catalogo";
 import { TOPE_FREE } from "@/lib/plan";
 import { Catalogo, type DatosCatalogo } from "../Catalogo";
 
-/* ADM-CAT · Catálogo. ?tab= cats | syn | nosup | filt | mod | seg · ?c= detalle de una categoría · ?f= sus filtros. */
-const TABS = new Set(["cats", "syn", "nosup", "filt", "mod", "seg"]);
+/* ADM-CAT · Catálogo. ?tab= cats | syn | nosup | filt | mod | seg | vj · ?c= detalle de una categoría · ?f= sus filtros. */
+const TABS = new Set(["cats", "syn", "nosup", "filt", "mod", "seg", "vj"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("cat", "ver");
   const sp = await searchParams;
@@ -30,6 +30,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   }
   if (tab === "nosup") d.nosup = await sinOferta(s);
   if (tab === "mod") { d.mods = await modulosAdmin(); d.topeFree = TOPE_FREE; }
+  // Vivienda justa (4ib): la lista la ve quien ve el Catálogo; solo un Admin la cambia.
+  if (tab === "vj") d.vj = { ...(await frasesViviendaJusta()), admin: s.role === "admin" };
   if (tab === "seg") { const [seg, h] = await Promise.all([segurosAdmin(), historial(["insurer"], null)]); d.seg = { filas: seg, historial: h }; }
   return <Catalogo d={d} />;
 }

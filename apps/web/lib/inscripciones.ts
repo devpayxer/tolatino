@@ -496,7 +496,7 @@ export async function cancelarGrupo(negocio: string, grupo: string, motivo: stri
     // 4eg · «Grupos que no abrieron»: 3 o más en 90 días abren un caso para To'Latino (uno abierto por lugar).
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
                    select 'grupo', 'business', b.id, b.id, b.city_id, 'normal' from businesses b
-                    where b.id = $1 and (select count(*) from class_groups g where g.business_id = b.id and g.status = 'cancelled' and g.updated_at > now() - interval '90 days') >= 3
+                    where b.id = $1 and (select count(*) from class_groups g where g.business_id = b.id and g.purpose = 'insc' and g.status = 'cancelled' and g.updated_at > now() - interval '90 days') >= 3
                    on conflict do nothing`, [negocio]);
     return { ok: true };
   });
@@ -628,7 +628,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
         and (o.details->>'starts_on') is not null and (o.details->>'starts_on')::date <= (now() at time zone c.timezone)::date${y} returning o.id::text`, a)).rows;
   for (const e of E) await db().query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'insc_start', 'system')`, [e.id]);
   n += E.length;
-  if (!w.length) await db().query(`update class_groups g set status = 'started', updated_at = now() from cities c where c.id = g.city_id and g.status = 'open' and g.starts_on <= (now() at time zone c.timezone)::date`);
+  if (!w.length) await db().query(`update class_groups g set status = 'started', updated_at = now() from cities c where c.id = g.city_id and g.purpose = 'insc' and g.status = 'open' and g.starts_on <= (now() at time zone c.timezone)::date`);
   // 3. Mañana empiezas: un recordatorio, una sola vez.
   const R = (await db().query<{ id: string; num: string }>(
     `select o.id::text, o.number as num from operations o join cities c on c.id = o.city_id where o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail is null
@@ -644,7 +644,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
         and coalesce((o.details->>'ends_on')::date + 7, (o.details->>'starts_on')::date + 1) <= (now() at time zone c.timezone)::date${y} returning o.id::text, o.number as num`, a)).rows;
   for (const t of T) { await db().query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'insc_done', 'system')`, [t.id]); await avisarCliente(t.num, "insc_done"); }
   n += T.length;
-  if (!w.length) await db().query(`update class_groups g set status = 'finished', updated_at = now() from cities c where c.id = g.city_id and g.status = 'started' and coalesce(g.ends_on + 7, g.starts_on + 1) <= (now() at time zone c.timezone)::date`);
+  if (!w.length) await db().query(`update class_groups g set status = 'finished', updated_at = now() from cities c where c.id = g.city_id and g.purpose = 'insc' and g.status = 'started' and coalesce(g.ends_on + 7, g.starts_on + 1) <= (now() at time zone c.timezone)::date`);
   // 5. La baja pedida de una membresía: a las 72 h queda cancelada sola, con su constancia.
   const B = (await db().query<{ num: string; biz: string }>(`select o.number as num, o.business_id as biz from operations o where o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail = 'cancel_req' and (o.details->>'cancel_req_at')::timestamptz < now() - interval '72 hours'${y} limit 200`, a)).rows;
   for (const b of B) { const r = await confirmarBaja(b.biz, b.num, null); if (r.ok) n++; }

@@ -1217,3 +1217,44 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
   curso) → «Transporte gratis los domingos» → «Español e inglés»; si nada aplica, se conserva lo que traía del prototipo.
 - **Módulo «Citas»** no sale en Lo que vendes de Iglesias («Pedir fecha» llega con 4ie).
 - **Sellos** (funeraria de PA, representante acreditado del DOJ, 501(c)(3)): textos y registros sin verificar → `LAUNCH-CHECKLIST` (§6 #16).
+
+### 4ib · Bienes Raíces: «Propiedades y visitas», propiedades, préstamos, licencias y vivienda justa (7 nov)
+**Qué mirar** (sandbox, entra con 5705550433 = Yesenia Batista, Rentas Hazleton Latino; capturas `i4ib-*.png`, teléfono y escritorio):
+1. Lo que vendes › **Propiedades**: la lista con su estado (Disponible · Apartada · Rentada · Vendida · Oculta) y los filtros por estado. Toca
+   **Agregar**: pon renta $1,000, depósito $2,500 → «El depósito no puede pasar de 2 meses de renta.». Con depósito $1,000 y solicitud $50, guarda
+   y vuelve a abrirla: «Para mudarte: $1,000 + depósito $1,000 + solicitud $50 = $2,050» lo calculó el servidor.
+2. Escribe «no niños» (o «no kids», «ideal para pareja», «no section 8») en la descripción: no se guarda y dice qué frase quitar.
+3. Elige **Cuarto**: «Mostrar solo la zona» queda con candado (la dirección llega al confirmar la visita) y la dirección no puede ir en el nombre.
+4. **Horas de visita**: día + hora + «Agregar hora» y personas por hora (1 a 10); al guardar se abren 14 días adelante.
+5. **Tu herramienta › Propiedades y visitas**: Disponible / Rentada, Renta al mes y Depósito (−/+ $25; el depósito no pasa de 2 meses), horas
+   de visita (toca para apagar; deja al menos una), «Sin seguro social · aceptas ITIN» y «Aceptas mascotas» para todas. Mira la tarjeta del
+   buscador: «5 propiedades disponibles» / «Para mudarte: primer mes + depósito, sin cargos extra».
+6. Realty Bilingüe › **Casas en venta**: Precio −/+ $1,000 y «Cuota estimada $1,259 al mes con 10 % de enganche» (la calcula el servidor).
+   Hipotecas ITIN › **Préstamos y requisitos**: enganche mínimo, días para precalificar y «Precalificas sin afectar el crédito». Cuartos Doña
+   Mary › **Cuartos y lo que incluye**: libre desde, luz, agua e internet, amueblado.
+7. Locales del Centro (Free): la sexta propiedad a la vista no se guarda («Con Free se ven 5 propiedades…»).
+8. Tu página › **Tus licencias**: corredor o vendedor de PA, NMLS, avaluador, inspector (el sello sale solo verificada).
+9. Super Admin › Negocios 360 › Lo que vende: la herramienta en solo lectura («5 disponibles · sin seguro social»), cada propiedad con sus
+   montos, **Ocultar** con motivo y, en Vivienda Accesible, **Confirmar mayores** / **No se confirma**. Catálogo › **Vivienda justa**: la lista,
+   «Agregar frase» (es: frase) y apagar una agregada (solo Admin; las de fábrica dicen SIEMPRE).
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Depósito ≤ 2 meses de renta** (§6 #5; ley de PA del primer año, a verificar). La **cuota de solicitud** existe (de $0 a $100) y entra en «Para
+  mudarte»; la regla dice «Nada fuera de lo publicado» en vez de «Sin cuota de solicitud». Un solo «otro pago obligatorio» (ej. último mes, hasta
+  un mes de renta) también entra.
+- **Frase de vivienda justa**: no se guarda nada y la frase queda en la auditoría (`inm.vivienda_justa.frenada`); la cola «Vivienda justa» llega en
+  4ig. La lista de fábrica (no se apaga) vive en `lib/vivienda-justa.ts`; la de Catálogo la amplía. Bloquea también «solo mujeres» en un cuarto
+  dentro de la casa del dueño (la excepción de compañeros no se lleva a filtros, §6 #15).
+- **Cuota estimada**: tasa de referencia 6.75 %, 30 años, más 2.5 % anual del precio por impuestos y seguro (a revisar en LAUNCH-CHECKLIST); el
+  enganche lo elige el dueño por casa (3.5, 5, 10, 15 o 20 %). Sale en terrenos y locales sin cuota.
+- **Lo que piden** no acepta números de 9 dígitos (SSN o ITIN) ni cuentas; la ficha solo dice qué papeles.
+- **Free = 5 propiedades a la vista** (rentadas, vendidas y ocultas no cuentan), en el servidor.
+- **Una propiedad no cambia de renta a venta**: se agrega otra. La herramienta **no** obliga a dejar una propiedad disponible (el prototipo sí):
+  si todo se rentó, se dice la verdad.
+- **«Sin seguro social» y «Aceptas mascotas»** de la herramienta cambian todas las propiedades de vivienda; cada propiedad se ajusta en su editor.
+- **Las propiedades no salen en Servicios ni se reservan como cita** (la visita de $0 llega en 4ie); el módulo Citas no sale en Bienes Raíces.
+- **Fotos**: hasta 8 por propiedad con el subidor de medios de siempre (sin cola de revisión nueva); sin personas ni papeles.
+- **Mayores de 62**: el tipo «Vivienda para mayores» pide la declaración y nace «por revisar»; el Super Admin la confirma o la oculta con motivo.
+- **Dirección**: se ubica con los tramos del Censo (sin terceros); si no se encuentra, la propiedad se guarda y el panel lo avisa.
+- **Licencia NMLS** de Bienes Raíces es `nmls_inm` (la clave `nmls` ya era de Profesionales).
+- **Búsqueda por propiedad** (recámaras, precio; §6 #10): los datos y los índices ya están; la pantalla queda como hueco para componer con OK.

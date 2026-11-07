@@ -6,7 +6,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { filtroActivo, filtrosTodos, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado } from "./acciones-catalogo";
+import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -25,6 +25,7 @@ export type DatosCatalogo = {
   mods?: { key: string; es: string; cats: string[] }[];
   seg?: { filas: { key: string; kind: "pub" | "priv"; es: string; en: string; hidden: boolean; planes: number; consultorios: number; personas: number }[]; historial: Hist };
   topeFree?: number;
+  vj?: { filas: { id: string; phrase: string; lang: "es" | "en"; active: boolean; base: boolean; quien: string | null }[]; frenadas: number; historial: Hist; admin: boolean };
 };
 const TX: Record<string, string> = { order: "Pedido", booking: "Cita / solicitud", ticket: "Boletos", none: "Sin transacción" };
 /* Lo que ve Free y lo que ve Pro (diseño, Módulos y Free/Pro). */
@@ -111,7 +112,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
       </div>);
   }
 
-  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"]] as [string, string, string?][])
+  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"], ["vj", "Vivienda justa"]] as [string, string, string?][])
     .map(([k, l, n]) => ({ l, n, on: d.tab === k, onClick: () => router.push(k === "cats" ? path : `${path}?tab=${k}`, { scroll: false }) })) };
   let cuerpo: ReactNode = null;
   if (d.tab === "cats" && d.cats) {
@@ -176,6 +177,21 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
           { type: "note", tone: "ink", t: "Un seguro nuevo entra con una migración del catálogo (datos reales, revisados), no desde aquí." },
           { type: "group", k: "HISTORIAL RECIENTE" }]} />
         {historial(d.seg.historial)}
+      </>);
+  } else if (d.tab === "vj" && d.vj) {
+    // Catálogo › Vivienda justa (4ib · §3): frases que frenan un anuncio de Bienes Raíces. Las de fábrica no se apagan; solo un Admin cambia.
+    const v = d.vj, fila = (x: NonNullable<DatosCatalogo["vj"]>["filas"][number]) => ({ key: x.id, icon: "law", t: x.phrase, s: `${x.lang === "es" ? "Español" : "Inglés"} · ${x.base ? "De fábrica · no se apaga" : x.quien ? `Agregada por ${x.quien}` : "De la lista inicial"}${x.active ? "" : " · apagada"}`,
+      dim: !x.active, tag: x.base ? "SIEMPRE" : x.active ? null : "APAGADA", tone: x.base ? "ink" : "danger",
+      tgOn: x.base ? undefined : x.active, onTg: x.base ? undefined : !v.admin ? () => setToast("Solo un Admin cambia esta lista.") : x.active ? () => setConf({ titulo: `Apagar «${x.phrase}»`, sub: "Deja de frenar anuncios desde ya. Queda en la auditoría.", peligro: true, plantillas: ["La revisó el abogado: no es discriminatoria"], hacer: (m) => fraseActiva(x.id, false, m) })
+        : () => setConf({ titulo: `¿Por qué vuelve «${x.phrase}»?`, hacer: (m) => fraseActiva(x.id, true, m) }) });
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[{ type: "note", tone: "ink", icon: "law", t: `Un anuncio de Bienes Raíces con una de estas frases no se guarda y el dueño ve cuál quitar (Fair Housing Act y ley de PA). Frenados en 30 días: ${v.frenadas}. La lista está por revisar con un abogado.` },
+          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: "Agregar frase", v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: "Nueva frase", sub: "Escribe: idioma: frase (ej.: es: solo parejas · en: couples only).", cta: "Agregar", hacer: (m) => fraseAgregar(m) }) }] } as Bloque] : []),
+          { type: "rows", k: "ESPAÑOL", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "es").map(fila) },
+          { type: "rows", k: "INGLÉS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "en").map(fila) },
+          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        {historial(v.historial)}
       </>);
   } else if (d.tab === "mod" && d.mods) {
     cuerpo = (

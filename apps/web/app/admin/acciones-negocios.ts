@@ -307,3 +307,39 @@ export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "del
   }, pausar ? `${nombre} pausado. El dueño ve el motivo en su panel.` : `${nombre} reanudado.`);
 }
 
+
+/* Bienes Raíces (4ib): ocultar o volver a mostrar una propiedad con motivo (neg:retirar). Sale de su página y de Buscar al instante (la
+   tarjeta y los filtros se recalculan en la misma transacción); el dueño ve el motivo en su panel y no la puede volver a encender. */
+export async function propiedadOcultar(id: string, itemId: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(itemId))) return no("Esa propiedad no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const it = (await c.query<{ name: string; status: string }>(
+      `select i.name->>'es' as name, i.status from items i join property_listings pl on pl.item_id = i.id where i.id = $1::bigint and i.business_id = $2 and i.removed_at is null for update of i`, [itemId, b.id])).rows[0];
+    if (!it) return "Esa propiedad ya no está.";
+    if ((it.status === "hidden") === ocultar) return ocultar ? "Ya está oculta." : "Ya se ve.";
+    await c.query(`update items set status = $3, hidden_reason = $4, hidden_by = $5, updated_at = now() where id = $1::bigint and business_id = $2`, [itemId, b.id, ocultar ? "hidden" : "live", ocultar ? m : null, ocultar ? s.id : null]);
+    const I = await import("@/lib/inmuebles");
+    await I.horasVisita(c, b.id, itemId);
+    await I.recalcularFiltrosInm(c, b.id);
+    await auditar(c, { actor: s.id, action: ocultar ? "inm.propiedad.ocultar" : "inm.propiedad.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { propiedad: it.name, estado: ocultar ? "visible" : "oculta" }, after: { estado: ocultar ? "oculta" : "visible" }, reason: m });
+    return null;
+  }, ocultar ? "Propiedad oculta. El dueño ve el motivo en su panel." : "La propiedad se ve otra vez.");
+}
+
+/* Bienes Raíces (4ib · §3): la declaración de vivienda para mayores de 62 la revisa el equipo. «No se confirma» oculta la propiedad con
+   el motivo (el dueño la corrige o la cambia de tipo); confirmar la deja como está. */
+export async function mayoresRevisar(id: string, itemId: string, confirma: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(itemId))) return no("Esa propiedad no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const x = (await c.query<{ name: string; st: string }>(
+      `select i.name->>'es' as name, pl.senior_status as st from property_listings pl join items i on i.id = pl.item_id where pl.item_id = $1::bigint and pl.business_id = $2 and pl.senior_62 for update of pl`, [itemId, b.id])).rows[0];
+    if (!x) return "Esa propiedad no declara vivienda para mayores.";
+    await c.query(`update property_listings set senior_status = $2, updated_at = now() where item_id = $1::bigint`, [itemId, confirma ? "ok" : "rejected"]);
+    if (!confirma) await c.query(`update items set status = 'hidden', hidden_reason = $3, hidden_by = $4, updated_at = now() where id = $1::bigint and business_id = $2`, [itemId, b.id, `Vivienda para mayores no confirmada: ${m}`, s.id]);
+    const I = await import("@/lib/inmuebles");
+    await I.horasVisita(c, b.id, itemId);
+    await I.recalcularFiltrosInm(c, b.id);
+    await auditar(c, { actor: s.id, action: confirma ? "inm.mayores.confirmar" : "inm.mayores.rechazar", targetKind: "business", targetId: b.id, city: b.city_id, before: { propiedad: x.name, mayores: x.st }, after: { mayores: confirma ? "confirmada" : "no confirmada" }, reason: m });
+    return null;
+  }, confirma ? "Confirmada: sale como vivienda para mayores." : "No confirmada: la propiedad queda oculta con el motivo.");
+}

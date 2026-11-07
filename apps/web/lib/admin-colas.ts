@@ -164,7 +164,7 @@ export async function caso(s: Staff, id: string) {
     const L = (await db().query<{ id: string; svc: string; label: string; inicio: string; motivo: string | null; at: string; n: number }>(
       `select g.id::text, i.name->>'es' as svc, g.label->>'es' as label, g.starts_on::text as inicio, g.cancel_reason as motivo, g.updated_at::text as at,
               (select count(*)::int from operations o where o.business_id = g.business_id and o.kind = 'enrollment' and o.cancel_reason = 'grupo' and (o.details->>'group_id' = g.id::text or o.details->>'alt_group_id' = g.id::text)) as n
-         from class_groups g join items i on i.id = g.item_id where g.business_id = $1 and g.status = 'cancelled' and g.updated_at > now() - interval '90 days' order by g.updated_at desc limit 30`, [q.business_id])).rows;
+         from class_groups g join items i on i.id = g.item_id where g.business_id = $1 and g.purpose = 'insc' and g.status = 'cancelled' and g.updated_at > now() - interval '90 days' order by g.updated_at desc limit 30`, [q.business_id])).rows;
     const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'svc', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
     return { ...base, negocio, grupos: { L, pausado: off } };
   }

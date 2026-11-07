@@ -251,6 +251,7 @@ export type SvcPanel = {
   dep: import("./deporte-comun").HerrDep | null; // «Membresías y contrato» o «Liga e inscripciones» (4ec)
   fe: import("./fe-comun").HerrFe | null; // «Horarios y ayuda» · «La ayuda de hoy» · «Precios y repatriación» (4ia)
   feEdu: import("./inscripciones-comun").HerrEdu | null; // los grupos del catecismo (4ia)
+  inm: import("./inmuebles-comun").HerrInm | null; // «Propiedades y visitas» y sus variantes (4ib)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -262,7 +263,7 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
     db().query<Omit<Servicio, "hacen">>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur, i.buffer_min as buf,
               i.price_from as desde, i.svc_opts as opts, i.svc_kind as k, coalesce(i.svc_attrs, '{}'::jsonb) as a, i.is_extra as extra, i.photos[1] as foto, not i.sell as oculto, case when i.status = 'hidden' then coalesce(i.hidden_reason, '') end as adm, i.sort
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null order by i.is_extra, i.sort, i.id`, [negocio]),
+         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and coalesce(i.svc_kind, '') not in ('renta', 'venta') order by i.is_extra, i.sort, i.id`, [negocio]),
     db().query<{ item: string; member: string; cents: number | null }>(
       `select s.item_id::text as item, s.member_id::text as member, s.price_cents as cents from staff_services s join items i on i.id = s.item_id where i.business_id = $1`, [negocio]),
     db().query<Persona>(
@@ -279,7 +280,9 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
     noche: x.cat === "NEG-NOCHE" ? await (await import("./noche")).herramientaNoche(negocio) : null, edu: x.cat === "NEG-EDU" ? await (await import("./edu")).herramientaEdu(negocio) : null,
     ninos: x.cat === "NEG-NINOS" ? await (await import("./ninos")).herramientaNinos(negocio) : null,
     dep: x.cat === "NEG-DEPORTE" ? await (await import("./deporte")).herramientaDeporte(negocio) : null,
-    fe: x.cat === "NEG-FE" ? await (await import("./fe")).herramientaFe(negocio) : null, feEdu: x.cat === "NEG-FE" ? await (await import("./edu")).herramientaEdu(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    fe: x.cat === "NEG-FE" ? await (await import("./fe")).herramientaFe(negocio) : null, feEdu: x.cat === "NEG-FE" ? await (await import("./edu")).herramientaEdu(negocio) : null,
+    // Bienes Raíces (4ib): las propiedades viven en property_listings (no salen en Servicios) y «Tu herramienta».
+    inm: x.cat === "NEG-INMUEBLE" ? await (await import("./inmuebles")).herramientaInm(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

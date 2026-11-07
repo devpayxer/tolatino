@@ -224,7 +224,7 @@ export async function inscripcionesAnalitica(s: Staff, dias: number) {
               count(*) filter (where g.status in ('open', 'started'))::int as vivos,
               coalesce(sum(g.seats_booked + g.seats_outside) filter (where g.status in ('open', 'started')), 0)::int as ocupados,
               coalesce(sum(g.seats_total) filter (where g.status in ('open', 'started')), 0)::int as cupos
-         from class_groups g where ${scope("g.city_id")}`, [s.cities, dias]),
+         from class_groups g where g.purpose = 'insc' and ${scope("g.city_id")}`, [s.cities, dias]),
     db().query<{ ret: number; cob: number; dev: number; quedo: number }>(
       `select coalesce(sum(p.amount_cents) filter (where p.status = 'held'), 0)::int as ret,
               coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded')), 0)::int as cob,

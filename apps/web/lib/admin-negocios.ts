@@ -163,7 +163,7 @@ export async function negocio360(s: Staff, id: string) {
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
     casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
-    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc'), productos: menu.rows.filter((x) => x.module === 'shop'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
+    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc' && x.k !== 'renta' && x.k !== 'venta'), productos: menu.rows.filter((x) => x.module === 'shop'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     // Tu herramienta (Auto y Hogar, 4a): solo lectura en el Super Admin.
     herramienta: (await db().query<{ rate: number; warrM: number | null; warrMi: number | null; cut: number | null; h24: boolean; zone: number | null }>(`select t.labor_rate_cents as rate, t.warranty_months as "warrM", t.warranty_miles as "warrMi", t.same_day_cutoff_h as cut, t.h24, b.service_radius_mi as zone from trade_settings t join businesses b on b.id = t.business_id where t.business_id = $1`, [id])).rows[0] ?? null,
     // Tu herramienta de Doctores y Profesionales (4h-2): el mismo resumen que ve el dueño, en solo lectura.
@@ -189,6 +189,15 @@ export async function negocio360(s: Staff, id: string) {
       const C = await import("./fe-comun");
       return { titulo: h.kind === "tienda" ? "Por contacto" : C.tituloFe(h, true), resumen: C.resumenFe(h, true), kind: h.kind, forzado: h.forzado,
         horarios: h.horarios.map((x) => `${x.label.es} · ${C.cortoFe(x.dow, x.min, true)} · ${C.LANG_FE[x.lang].es}`), linea: C.lineaFe(h.kind, h.subs).es }; })() : null,
+    // Bienes Raíces (4ib): «Propiedades y visitas» y sus variantes en solo lectura (summary L319), cada propiedad con su estado y sus montos
+    // (calculados por el servidor), la línea fija y la declaración de mayores por revisar. La dirección exacta no sale aquí.
+    herramientaInm: b.cat_id === "NEG-INMUEBLE" ? await (async () => { const h = await (await import("./inmuebles")).herramientaInm(id); if (!h) return null;
+      const C = await import("./inmuebles-comun");
+      return { titulo: C.sinPropiedades(h.kind) ? "Por servicios" : C.tituloInm(h, true), resumen: C.resumenAdminInm(h), kind: h.kind, forzado: h.forzado, linea: C.lineaInm(h.kind, h.subs).es,
+        props: h.props.map((p) => ({ id: p.id, name: p.name.es, adm: p.adm, senior: p.senior ? p.seniorSt : null,
+          sub: [C.PROP[p.kind].es, p.rent != null ? `${C.usd(p.rent)}${C.porL(p.kind, true)}` : p.price != null ? C.usd(p.price) : "", p.moveIn != null ? `Para mudarte ${C.usd(p.moveIn)}` : "",
+            p.cuota != null ? C.cuotaTexto(p.cuota, p.downPct, true) : "", C.ESTADO[p.status][0], p.deal === "renta" ? (p.ssnReq ? "piden seguro social" : "sin seguro social") : "",
+            p.addrPublic ? "dirección en su página" : "solo la zona", `${p.horas} horas de visita`].filter(Boolean).join(" · ") })) }; })() : null,
     herramientaDep: b.cat_id === "NEG-DEPORTE" ? await (async () => { const h = await (await import("./deporte")).herramientaDeporte(id); if (!h) return null;
       const C = await import("./deporte-comun");
       return { titulo: h.memb || h.liga ? C.tituloDep(h, true) : "Por contacto", resumen: h.memb || h.liga ? C.resumenDep(h, true) : "Visita, club, tiro o nutrición: la gente llama o escribe", kind: h.kind,

@@ -137,3 +137,45 @@ export async function seguroVisible(key: string, mostrar: boolean, motivo: strin
   }, mostrar ? "Sale otra vez en Tu herramienta y en las fichas." : "Oculto: ya no sale en Tu herramienta ni en las fichas.");
 }
 
+
+/* Catálogo › Vivienda justa (4ib · §3): solo un Admin agrega o apaga frases (cada cambio con su motivo en la auditoría; nada se borra). La
+   frase nueva frena los anuncios desde el próximo guardado. Las de fábrica no se apagan (lib/vivienda-justa.ts). */
+const SOLO_ADMIN = "Solo un Admin cambia la lista de vivienda justa.";
+async function soloAdmin(s: Staff, fn: (c: PoolClient, s: Staff) => Promise<string | null>, ok: string): Promise<ResAdm> {
+  const r = await tx((c) => fn(c, s));
+  if (r) return no(r);
+  revalidatePath("/admin/catalogo");
+  return { ok: true, mensaje: ok };
+}
+export async function fraseAgregar(texto: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin") return no(SOLO_ADMIN);
+  const t = limpio(texto, 80), m = /^(es|en)\s*[:·-]\s*(.+)$/i.exec(t);
+  if (!m) return no("Usa el formato idioma: frase (ej.: es: solo parejas).");
+  const lang = m[1]!.toLowerCase(), frase = m[2]!.toLowerCase().replace(/[^\p{L}\p{N} ]+/gu, " ").replace(/\s+/g, " ").trim();
+  if (frase.length < 3 || frase.length > 60 || frase.split(" ").length < 2) return no("La frase va de 2 palabras en adelante y hasta 60 letras.");
+  return soloAdmin(s, async (c, s) => {
+    const r = await c.query(`insert into fair_housing_phrases (phrase, lang, created_by, updated_by) values ($1, $2, $3, $3) on conflict do nothing`, [frase, lang, s.id]);
+    if (!r.rowCount) return "Esa frase ya está en la lista.";
+    await auditar(c, { actor: s.id, action: "catalogo.vivienda_justa.agregar", targetKind: "fair_housing", targetId: `${lang}:${frase}`, before: { frase: "—" }, after: { frase, idioma: lang }, reason: "Agregada desde Catálogo" });
+    return null;
+  }, "Agregada: los anuncios con esa frase ya no se guardan.");
+}
+export async function fraseActiva(id: string, encender: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin") return no(SOLO_ADMIN);
+  if (typeof id !== "string" || !/^\d{1,18}$/.test(id)) return no("Esa frase no existe.");
+  const m = limpio(motivo, 300);
+  if (m.length < 3) return no("Escribe el motivo.");
+  const { esBase } = await import("@/lib/vivienda-justa");
+  return soloAdmin(s, async (c, s) => {
+    const x = (await c.query<{ phrase: string; lang: string; active: boolean }>(`select phrase, lang, active from fair_housing_phrases where id = $1::bigint for update`, [id])).rows[0];
+    if (!x) return "Esa frase no existe.";
+    if (!encender && esBase(x.phrase)) return "Es de la lista de fábrica: no se apaga.";
+    if (x.active === encender) return encender ? "Ya está encendida." : "Ya está apagada.";
+    await c.query(`update fair_housing_phrases set active = $2, updated_by = $3, updated_at = now() where id = $1::bigint`, [id, encender, s.id]);
+    await auditar(c, { actor: s.id, action: encender ? "catalogo.vivienda_justa.encender" : "catalogo.vivienda_justa.apagar", targetKind: "fair_housing", targetId: `${x.lang}:${x.phrase}`,
+      before: { frase: x.phrase, estado: encender ? "apagada" : "encendida" }, after: { estado: encender ? "encendida" : "apagada" }, reason: m });
+    return null;
+  }, encender ? "Encendida." : "Apagada: ya no frena anuncios.");
+}

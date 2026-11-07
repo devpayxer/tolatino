@@ -112,3 +112,13 @@ export async function segurosAdmin() {
        from insurers i where i.state = 'PA' order by i.kind desc, i.sort, i.key`)).rows;
 }
 
+
+/* Catálogo › Vivienda justa (4ib · §3): las frases que no pueden ir en un anuncio de Bienes Raíces. Las de fábrica (lib/vivienda-justa.ts)
+   no se apagan; las demás las agrega o apaga un Admin con auditoría. Nada se borra. */
+export async function frasesViviendaJusta() {
+  const { esBase } = await import("./vivienda-justa");
+  const L = (await db().query<{ id: string; phrase: string; lang: "es" | "en"; active: boolean; quien: string | null }>(
+    `select f.id::text, f.phrase, f.lang, f.active, ${NOMBRE("u")} as quien from fair_housing_phrases f left join users u on u.id = f.created_by order by f.lang desc, f.phrase`)).rows;
+  const frenadas = (await db().query<{ n: number }>(`select count(*)::int as n from audit_entries where action = 'inm.vivienda_justa.frenada' and at > now() - interval '30 days'`)).rows[0]?.n ?? 0;
+  return { filas: L.map((x) => ({ ...x, base: esBase(x.phrase) })), frenadas, historial: await historial(["fair_housing"], null) };
+}

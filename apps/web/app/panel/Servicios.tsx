@@ -18,6 +18,7 @@ import { filaInscripciones } from "./Inscripciones";
 import { filaHerramientaNinos } from "./Ninos";
 import { filaHerramientaDeporte } from "./Deporte";
 import { filaHerramientaFe } from "./Fe";
+import { filaHerramientaInm, filaPropiedades } from "./Inmuebles";
 import { DONATIVO, FE_DE_ITEM, LINEA_FE, LINEA_FUN } from "@/lib/fe-comun";
 import { hNoche } from "@/lib/noche-comun";
 
@@ -25,7 +26,7 @@ const fp = (cents: number) => { const p = (Number(cents) || 0) / 100; return "$"
 const durL = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}` : `${m} min`);
 const minPositivo = (L: number[]) => { const P = L.filter((v) => v > 0); return P.length ? Math.min(...P) : 0; };
 const first = (n: string) => n.split(" ")[0] ?? n;
-const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, fe: null, feEdu: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
+const S = (c: Ctx): SvcPanel => c.svc ?? { rubro: null, sp: null, fiesta: null, trans: null, noche: null, edu: null, ninos: null, dep: null, fe: null, feEdu: null, inm: null, model: "emp", rent: null, comm: null, secciones: [], servicios: [], gente: [], pol: { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 }, on: false, off: { svc: null, citas: null } };
 const MODEL = (c: Ctx): Record<SvcPanel["model"], [string, string]> => ({
   chair: [c.E2("Rentan silla", "Rent chairs"), c.E2("Cada barbero pone su precio y su agenda. Tú cobras la renta.", "Each barber sets their price and schedule. You collect rent.")],
   comm: [c.E2("A comisión", "On commission"), c.E2("Un precio para todos; a cada uno le toca su porcentaje.", "One price for everyone; each gets their percentage.")],
@@ -36,12 +37,15 @@ const resL = (c: Ctx, m: number) => (m >= 60 ? c.E2(`${m / 60} h`, `${m / 60} h`
 /* Las filas de Lo que vendes para un negocio de citas. */
 export function vendesCitas(c: Ctx): Fila[] {
   const { E2 } = c, X = S(c), svc = X.servicios.filter((s) => !s.extra), ex = X.servicios.filter((s) => s.extra), vis = svc.filter((s) => !s.oculto && !s.adm).length;
-  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c) ?? filaHerramientaFe(c);
+  const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c) ?? filaHerramientaFe(c) ?? filaHerramientaInm(c);
   // Noche (4na): la lista y las mesas llegan en 4nc (no son «citas»): aquí solo Servicios y «Esta noche».
   const noche = X.rubro === "noche";
   // Iglesias (4ia): no hay citas con depósito; «Pedir fecha» y el catecismo llegan con las inscripciones (4ie).
-  const sinCitas = noche || X.rubro === "fe";
+  // Bienes Raíces (4ib): sin citas con depósito; «Pedir visita» llega con 4ie (ver es gratis).
+  const sinCitas = noche || X.rubro === "fe" || !!X.inm;
+  const prop = filaPropiedades(c);
   return [
+    ...(prop ? [prop] : []),
     { icon: "scissors", t: E2("Servicios", "Services"), s: svc.length ? E2(`${svc.length} servicios · ${vis} en tu página${ex.length ? ` · ${ex.length} extras` : ""}`, `${svc.length} services · ${vis} on your page${ex.length ? ` · ${ex.length} extras` : ""}`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(X.off.svc != null ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}), tag: vis && X.off.svc == null ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "servicios") },
     ...(herr ? [herr] : []),
