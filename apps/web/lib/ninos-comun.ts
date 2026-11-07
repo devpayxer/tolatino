@@ -14,6 +14,8 @@ export const KS_NINOS: [string, KindNinos][] = [["Guardería", "guard"], ["Prees
 export const KINDS_NINOS: [KindNinos, string][] = [["guard", "Guardería"], ["casa", "Cuidado en casa"], ["ninera", "Niñera o nana"], ["after", "Después de la escuela"], ["camp", "Campamento"], ["clase", "Clases y deporte"],
   ["terapia", "Terapias"], ["juego", "Lugar de juegos"], ["fiesta", "Fiestas infantiles"], ["familia", "Familia y recién nacido"], ["svc", "Servicios para niños"]];
 export const kindNinosDe = (subs: string[], override?: string | null): KindNinos => (override && KINDS_NINOS.some((k) => k[0] === override) ? (override as KindNinos) : KS_NINOS.find((x) => subs.includes(x[0]))?.[1] ?? "clase");
+/* Los grados que se pueden poner en vez de la edad (lib/ninos-privado.ts los valida en el servidor). */
+export const GRADOS = ["Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
 export const esCuidado = (k: KindNinos) => k === "guard" || k === "casa";
 /* Las bandas de edad de la semilla (dash2-cat.js AGES L131). Cada lugar define las suyas dentro de su licencia (§6 #11). */
 export const BANDAS_GUARD: { min: number; max: number; label: Bi }[] = [{ min: 2, max: 2, label: { es: "2 años", en: "Age 2" } }, { min: 3, max: 3, label: { es: "3 años", en: "Age 3" } }, { min: 4, max: 5, label: { es: "4 y 5 años", en: "Ages 4 and 5" } }];

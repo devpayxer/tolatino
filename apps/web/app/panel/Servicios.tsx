@@ -14,6 +14,7 @@ import { filaHerramientaFiesta } from "./Fiestas";
 import { filaHerramientaTrans } from "./Transporte";
 import { filaHerramientaNoche } from "./Noche";
 import { filaHerramientaEdu } from "./Edu";
+import { filaInscripciones } from "./Inscripciones";
 import { filaHerramientaNinos } from "./Ninos";
 import { filaHerramientaDeporte } from "./Deporte";
 import { hNoche } from "@/lib/noche-comun";
@@ -40,6 +41,7 @@ export function vendesCitas(c: Ctx): Fila[] {
     { icon: "scissors", t: E2("Servicios", "Services"), s: svc.length ? E2(`${svc.length} servicios · ${vis} en tu página${ex.length ? ` · ${ex.length} extras` : ""}`, `${svc.length} services · ${vis} on your page${ex.length ? ` · ${ex.length} extras` : ""}`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
       ...(X.off.svc != null ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}), tag: vis && X.off.svc == null ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "servicios") },
     ...(herr ? [herr] : []),
+    ...((() => { const f = filaInscripciones(c); return f ? [f] : []; })()),
     ...(noche ? [] : [{ icon: "calendar", t: E2("Citas", "Bookings"), s: citasLine(c), ...(X.off.citas != null ? { m: E2("PAUSADAS POR TO’LATINO", "PAUSED BY TO’LATINO"), mFg: "var(--tl-danger)" } : {}),
       tag: X.on && X.off.citas == null ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "citas") } as Fila]),
     ...(X.model === "chair" && !noche ? [{ icon: "users", t: E2("Sillas y agenda", "Chairs and schedule"), s: E2(`${X.gente.length} sillas · cada una decide si confirma al instante y su depósito`, `${X.gente.length} chairs · each decides instant approval and deposit`), chev: true, onClick: () => c.go("mod", "sillas") } as Fila] : []),

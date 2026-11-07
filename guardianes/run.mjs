@@ -672,6 +672,44 @@ const guardianes = {
     }
   },
 
+  /* 4ee · Dinero de las inscripciones (fase4-edu-ninos-deporte.md §3). En la app solo pasa la matrícula de un curso; se cobra solo al
+     confirmar; ningún cobro fuera de sesión; el cupo nunca se pasa; lo enviado es una copia que la herramienta no cambia. */
+  soloMatriculaEnLaApp() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/inscripciones[^/]*\.ts$/.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      t.split("\n").forEach((l, i) => { if (/pasarela\.cobrar|off_session|fueraDeSesion|cobrarGuardada/.test(l)) falla("soloMatriculaEnLaApp", f, i + 1, "una inscripción nunca se cobra fuera de sesión: solo la matrícula retenida al enviar y cobrada al confirmar"); });
+      if (f.endsWith("/inscripciones.ts") && !/const mat = s\.k === "curso" && s\.mat > 0 && x\.cuenta \? s\.mat : 0;/.test(t)) falla("soloMatriculaEnLaApp", f, 0, "lo que se retiene en la app tiene que salir solo de la matrícula de un curso");
+    }
+  },
+  matriculaInscripcion() {
+    const f = "apps/web/lib/inscripciones.ts";
+    if (!existsSync(f)) return;
+    const L = readFileSync(f, "utf8").split("\n");
+    L.forEach((l, i) => {
+      if (!/cobrarOperacion\(/.test(l) || /^import /.test(l)) return;
+      if (!L.slice(Math.max(0, i - 8), i).some((x) => /status = 'confirmed'/.test(x))) falla("matriculaInscripcion", f, i + 1, "la matrícula solo se cobra en el mismo paso que deja la inscripción confirmada");
+    });
+    if (!/async function devolverMat[\s\S]{0,400}o\.amount - \(o\.refunded \?\? 0\)/.test(L.join("\n"))) falla("matriculaInscripcion", f, 0, "la devolución de la matrícula tiene que ser exacta (todo lo cobrado menos lo ya devuelto)");
+  },
+  gruposSinSobreventa() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/inscripciones[^/]*\.ts$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/seats_booked = seats_booked \+/.test(l) && !/seats_total - seats_outside - seats_booked >= /.test(l)) falla("gruposSinSobreventa", f, i + 1, "sumar un cupo al grupo sin comprobar en la misma consulta que queda uno libre");
+        if (/openings = openings - /.test(l) && !/openings >= 1/.test(l)) falla("gruposSinSobreventa", f, i + 1, "restar un cupo de la banda sin comprobar que queda uno");
+      });
+    }
+  },
+  copiaDelPrecio() {
+    const f = "apps/web/lib/inscripciones.ts";
+    if (!existsSync(f)) return;
+    const t = readFileSync(f, "utf8");
+    for (const k of ["price_cents: s.cents", "mat_cents:", "contract_m:", "cancel_fee_cents:", "cert: s.cert", "starts_on: g?.inicio"]) if (!t.includes(k)) falla("copiaDelPrecio", f, 0, `la inscripción no copia «${k}» al enviar`);
+    const v = /async function vista\([\s\S]*?\n}\n/.exec(t)?.[0] ?? "";
+    if (/from items|svc_attrs|insc_settings/.test(v)) falla("copiaDelPrecio", f, 0, "la vista de una inscripción lee la herramienta o el servicio de hoy en vez de lo copiado al enviar");
+  },
+
   licenciaNoSeFinge() {
     const dir = "packages/db/migrations";
     const ult = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort().filter((x) => /function licencias_refrescar/.test(readFileSync(`${dir}/${x}`, "utf8"))).pop();

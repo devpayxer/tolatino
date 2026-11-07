@@ -1146,3 +1146,16 @@ app) y las categorías `/c/educacion`, `/c/ninos`, `/c/deporte` (las cifras «De
 **Decidido por seguridad (AB):** hasta 4ee la hoja ofrece llamar o escribir (no hay botón de inscribirse que no funcione); el horario del
 riel sale de los grupos reales y, sin grupos, dice «Pregúntalo» en vez de inventar «Mañana».
 
+### 4ee · Inscribirse (7 nov)
+**Qué mirar (teléfono):** en `/n/ingles-para-todos` › Preparación para ciudadanía › «Inscribirme»: los 3 pasos, «HOY PAGAS $55», tu
+matrícula en cada caso y el plan por escrito; luego `/insc/I-…`. En el panel de Miriam: Hoy › «Inscripciones que esperan», el detalle con
+Confirmar / Otro grupo / No hay cupo y Lo que vendes › Inscripciones (grupos, lista de espera). En la guardería (Altagracia), una inscripción
+«para mi hijo»: el nombre solo en su panel. En Power Gym: «Cancelar mi membresía» → baja pedida → el gimnasio la confirma.
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- Con plan **Free** no hay inscripción en la app (la página ya decía «Aquí no te inscribes por la app»); el techo Free no aplica aquí.
+- El lugar responde en `reply_h` (24 h) y nunca después de 12 h antes de que empiece el grupo; «otro grupo» da 48 h a la persona.
+- «Para mí»: una inscripción viva por grupo; «para hijo u otra persona»: hasta 4 en el mismo grupo (una por niño).
+- La guardería elige la banda por la edad del niño y el servidor no deja inscribir a un niño en una banda que no es la suya.
+- La oferta de la lista de espera la da el lugar (botón); si vence, se ofrece sola a la siguiente persona.
+- La baja de una membresía la confirma el lugar o queda sola a las 72 h; To'Latino no cobra penalidades.
+

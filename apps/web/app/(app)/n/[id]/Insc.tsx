@@ -3,8 +3,9 @@
    L72–78, TD L81), la hoja L90–95; neg-ninos-kind.js post y tabL L104; neg-deporte-kind.js post, conL L30 y tabL L151). Líneas fijas
    (nunca se suavizan): Educación «El precio del curso es el total…», Niños «Toda guardería muestra su licencia del estado…», Deporte
    «La cuota es la que ves…». La tarjeta de arriba responde la pregunta de cada tipo. Inscribirse en la app llega con 4ee: hasta
-   entonces la hoja ofrece llamar o escribir. Nunca sale aquí el enlace de una clase en línea ni dato de un inscrito. */
+   entonces la hoja ofrecía llamar o escribir; desde 4ee, con un negocio Pro, la hoja lleva a inscribirse (/n/{id}/inscribirme). Nunca sale aquí el enlace de una clase en línea ni dato de un inscrito. */
 import * as UI from "@tolatino/ui";
+import { useRouter } from "next/navigation";
 import { useState, type ComponentType, type MouseEvent } from "react";
 import { contratoTexto, LINEA_DEP, usdD } from "@/lib/deporte-comun";
 import { fechaCorta, horaInsc, LINEA_EDU, planTexto, usdI, type Bi } from "@/lib/inscripciones-comun";
@@ -188,7 +189,10 @@ export function InHoja({ v }: { v: In }) {
     : s.k === "curso" ? E2("Se paga en el lugar el primer día.", "Paid at the place on day one.")
     : s.g1 ? E2("La primera clase es gratis, sin tarjeta y sin compromiso: pagas solo si te quedas.", "The first class is free, no card and no commitment: you pay only if you stay.")
     : s.k === "semana" ? E2("Pagas la semana en el lugar.", "You pay the week at the place.") : s.k === "mes" ? E2("Pagas el mes en el lugar. To’Latino no cobra la mensualidad.", "You pay the month at the place. To’Latino does not charge the monthly fee.") : E2("Se paga en el lugar.", "Paid at the place.");
-  const go = () => { v.cerrar(); v.cta.go(); };
+  const router = useRouter();
+  // 4ee: con un negocio Pro (booking) la hoja lleva a inscribirse; si no, a llamar o escribir.
+  const go = () => { v.cerrar(); if (ip.booking) router.push(`/n/${ip.negocio.id}/inscribirme?svc=${s.id}`); else v.cta.go(); };
+  const ctaL = ip.booking ? (s.grupos.length && !s.grupos.some((g) => g.libres > 0) ? E2("Lista de espera", "Waitlist") : v.btn === "Ver" || v.btn === "See" ? E2("Inscribirme", "Sign up") : v.btn) : v.cta.l;
   return (
     <div data-screen-label="Servicio · inscripción" className="fixed inset-0 z-[60]">
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
@@ -233,7 +237,7 @@ export function InHoja({ v }: { v: In }) {
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
           <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.03em]">{it.price}</div></div>
-          <div className="flex min-w-0 flex-1"><Button block icon={v.cta.icon} onClick={go}>{v.cta.l}</Button></div>
+          <div className="flex min-w-0 flex-1"><Button block icon={ip.booking ? "calendar" : v.cta.icon} onClick={go}>{ctaL}</Button></div>
         </div>
       </div>
     </div>

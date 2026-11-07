@@ -49,7 +49,7 @@ const EST_MESA = `case when o.status = 'pending' then 'pend' when o.status = 'ch
   when o.status = 'done' then (case when o.status_detail = 'noshow' then 'nos' else 'done' end) when o.status = 'declined' then 'no' when o.status = 'expired' then 'exp' else 'cx' end`;
 const UP_MESA = `(o.status in ('pending', 'change_proposed', 'confirmed') and (o.scheduled_at at time zone c.timezone)::date >= (now() at time zone c.timezone)::date)`;
 export async function misReservas(userId: string, f: "up" | "past", antes: string | null) {
-  await Promise.all([vencerMesas({ userId }), vencerCitas({ userId }), import("./fiestas-reservas").then((F) => F.barrerFiestas({ userId })), import("./viajes").then((V) => V.barrerViajes({ userId })), import("./noche-reservas").then((N) => N.vencerNoche({ userId }))]);
+  await Promise.all([vencerMesas({ userId }), vencerCitas({ userId }), import("./fiestas-reservas").then((F) => F.barrerFiestas({ userId })), import("./viajes").then((V) => V.barrerViajes({ userId })), import("./noche-reservas").then((N) => N.vencerNoche({ userId })), import("./inscripciones").then((I) => I.vencerInsc({ userId }))]);
   const cur = antes && /^\d{1,18}$/.test(antes) ? antes : null;
   const [L, n] = await Promise.all([
     db().query<MiReserva & { k: string }>(
@@ -193,17 +193,18 @@ export async function misSolicitudes(userId: string) {
 }
 export type MisSolicitudes = Awaited<ReturnType<typeof misSolicitudes>>;
 
-/* Mi cuenta › Citas y reservas (4g-3): tus planes, rentas y apartados (abiertos en «Próximas», cerrados en «Pasadas»).
+/* Mi cuenta › Citas y reservas (4g-3): tus planes, rentas y apartados, y tus inscripciones (4ee) (abiertos en «Próximas», cerrados en «Pasadas»).
    Cada uno abre su página; los barridos corren al abrirla. */
-export type MiOtro = { kind: "plan" | "rental" | "hold"; num: string; biz: string; bname: string; foto: string | null; st: string; abierto: boolean; svc: { es: string; en: string } | null; tot: number; at: string };
+export type MiOtro = { kind: "plan" | "rental" | "hold" | "enrollment"; num: string; biz: string; bname: string; foto: string | null; st: string; abierto: boolean; svc: { es: string; en: string } | null; tot: number; at: string };
 export async function misPlanesRentas(userId: string): Promise<MiOtro[]> {
   return (await db().query<MiOtro>(
     `select o.kind, o.number as num, o.business_id as biz, b.name as bname, ${FOTO} as foto,
-            coalesce((select r.status from rentals r where r.operation_id = o.id), (select s.status from plan_subscriptions s where s.operation_id = o.id), o.status) as st,
+            coalesce((select r.status from rentals r where r.operation_id = o.id), (select s.status from plan_subscriptions s where s.operation_id = o.id),
+                     case when o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail in ('started', 'cancel_req') then 'insc_' || o.status_detail when o.kind = 'enrollment' then 'insc_' || o.status end, o.status) as st,
             case o.kind when 'rental' then exists (select 1 from rentals r where r.operation_id = o.id and r.status in ('held', 'out'))
                         when 'plan' then exists (select 1 from plan_subscriptions s where s.operation_id = o.id and s.status <> 'cancelled')
                         else o.status in ('pending', 'change_proposed', 'confirmed') end as abierto,
             coalesce(o.details->'svc', o.details->'art') as svc, o.total_cents as tot, ${ISO("o.sent_at")} as at
-       from operations o join businesses b on b.id = o.business_id where o.user_id = $1 and o.kind in ('plan', 'rental', 'hold') order by o.id desc limit 30`, [userId])).rows;
+       from operations o join businesses b on b.id = o.business_id where o.user_id = $1 and o.kind in ('plan', 'rental', 'hold', 'enrollment') order by o.id desc limit 30`, [userId])).rows;
 }
 

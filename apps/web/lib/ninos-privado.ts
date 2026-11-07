@@ -12,7 +12,8 @@ import { db } from "./db";
    - Quién lo ve: el papá o la mamá que inscribió y el panel de ese negocio. Nunca en avisos, búsqueda, analítica ni El Compa.
    - Se borra a los 30 días de que la inscripción termina, se cancela o vence (barrido: purgarNinos). */
 export type DatosNino = { nombre: string; edad: number | null; grado: string | null; escuela: string | null; nota: string | null };
-export const GRADOS = ["Pre-K", "K", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+export { GRADOS } from "./ninos-comun";
+import { GRADOS } from "./ninos-comun";
 type R<T> = { ok: true; v: T } | { ok: false; es: string; en: string };
 const no = <T>(es: string, en: string): R<T> => ({ ok: false, es, en });
 const limpio = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, n) : "");

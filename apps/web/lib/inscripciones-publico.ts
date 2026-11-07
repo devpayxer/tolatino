@@ -9,7 +9,7 @@ import { rubroInsc, type Bi, type KindInsc, type RubroInsc } from "./inscripcion
 /* La ficha de Educación, Niños y Deporte (4ed · fase4-edu-ninos-deporte.md §4ed · neg-edu-listing.js priceFor L60–65, metaOf L94–99,
    listingAdd; neg-ninos-kind.js post y tabL L104; neg-deporte-kind.js post, conL L30 y tabL L151). Todo sale de los servicios, sus grupos
    y Tu herramienta; el servidor decide. NUNCA sale aquí: el enlace de una clase en línea (solo a inscritos confirmados, §6 #21), quién
-   está inscrito ni dato alguno de un niño. Inscribirse en la app llega con 4ee (booking): hasta entonces, la hoja ofrece llamar. */
+   está inscrito ni dato alguno de un niño. Inscribirse en la app (4ee, booking) solo con un negocio Pro. */
 export type GrupoPub = { id: string; label: Bi; inicio: string; fin: string | null; libres: number; min: number | null; dows: number[] };
 export type CursoPub = { id: string; sec: string | null; name: Bi; desc: Bi; k: KindInsc; cents: number; mat: number; plan: number; g1: boolean; sem: number | null; horas: number | null;
   cert: Bi | null; certBy: Bi | null; oficial: boolean; inc: Bi[]; no: Bi[]; team: boolean; porCancha: boolean; foto: string | null; grupos: GrupoPub[] };
@@ -20,7 +20,7 @@ export type InscPublica = {
   ninos: { cuidado: boolean; edad: [number, number] | null; lic: LicNinos; libres: number; semana: number | null; ccis: boolean; comidas: boolean; ext: boolean; noche: boolean;
     transporte: boolean; medicaid: boolean; espera: number | null; recibe: boolean; casa: boolean } | null;
   dep: { memb: boolean; liga: boolean; contrato: number; salir: number; inscripcion: number; guarderia: boolean; hasta: string | null; sueltos: boolean } | null;
-  booking: boolean; // inscribirse en la app (4ee)
+  booking: boolean; // inscribirse en la app (4ee): solo Pro
 };
 // Tipos de Educación (neg-edu-kind.js KS L10–16) que cambian la pregunta de arriba.
 const KS_EDU: [string, string][] = [["Tutoría de matemáticas", "tutor"], ["Tutoría de lectura y escritura", "tutor"], ["Ayuda con tareas", "tutor"], ["Oratoria", "coach"], ["Coaching personal y de carrera", "coach"],
@@ -28,11 +28,11 @@ const KS_EDU: [string, string][] = [["Tutoría de matemáticas", "tutor"], ["Tut
 
 export async function inscPublica(negocio: string): Promise<InscPublica | null> {
   const b = (await db().query<{ id: string; name: string; phone: string | null; foto: string | null; off: Record<string, unknown> | null; fv: string[]; cat: string; mods: string[]; subs: string[]; hoy: string;
-    p: boolean | null; l: boolean | null; h: boolean | null; esp: boolean | null }>(
+    p: boolean | null; l: boolean | null; h: boolean | null; esp: boolean | null; plan: string }>(
     `select b.id, b.name, b.phone, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1) as foto,
             b.modules_off as off, b.filter_values as fv, b.category_id as cat, b.modules_on as mods, (now() at time zone ci.timezone)::date::text as hoy,
             coalesce((select array_agg(sc.name->>'es') from subcategorias_vivas sc where sc.id = any(b.subcategory_ids)), '{}') as subs,
-            s.how_presencial as p, s.how_linea as l, s.how_hibrido as h, s.esp
+            s.how_presencial as p, s.how_linea as l, s.how_hibrido as h, s.esp, coalesce((select st.plan from business_stats_cache st where st.business_id = b.id), 'free') as plan
        from businesses b join cities ci on ci.id = b.city_id left join insc_settings s on s.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   const rubro = b ? rubroInsc(b.cat) : null;
   if (!b || !rubro) return null;
@@ -68,6 +68,6 @@ export async function inscPublica(negocio: string): Promise<InscPublica | null> 
   return {
     negocio: { id: b.id, nombre: b.name, telefono: b.phone, foto: b.foto }, rubro, tipo, secciones: S.rows.filter((x) => usados.has(x.id)), cursos, tags: fv, hoy: b.hoy,
     how: { presencial: b.p ?? (fv.includes("presencial") || !fv.includes("linea")), linea: b.l ?? fv.includes("linea"), hibrido: b.h ?? fv.includes("hibrido"), esp: b.esp ?? fv.includes("esp") },
-    ninos, dep, booking: false,
+    ninos, dep, booking: b.plan === "pro" && !(b.off ?? {}).svc,
   };
 }
