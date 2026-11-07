@@ -7,12 +7,12 @@
    fotos, recogida y destino; «Mandar el precio cerrado» con monto y qué incluye, vale 48 h; confirmada: Salió · Llegó). */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
-import { viajeAbordo, viajeCancelarSalida, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
+import { viajeAbordo, viajeCancelarSalida, viajeChofer, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 type Bi = { es: string; en: string };
-export type ViajesP = { hoy?: { esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[] }; det?: ViajePanelV | null };
+export type ViajesP = { hoy?: { esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[]; choferes: { id: string; nombre: string }[] }; det?: ViajePanelV | null };
 const money = (c: number) => { const d = c / 100; return `$${d % 1 ? d.toFixed(2) : Math.round(d).toLocaleString("en-US")}`; };
 const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
 const HORAS = Array.from({ length: 18 }, (_, i) => (i + 5) * 60); // = HORAS_PRIV (lib/viajes)
@@ -55,6 +55,10 @@ export function salidaDetalle(c: Ctx, run: string): Sec {
     { type: "rows", k: E2("PASAJEROS", "PASSENGERS"), items: r.pasajeros.map((x): Fila => ({ key: x.numero, icon: "users", t: `${x.who} · ${pax(x, E2)}`, s: `${x.numero}${x.childSeat ? E2(" · asiento de niño", " · child seat") : ""}${x.bagsExtra ? E2(` · ${x.bagsExtra} maleta extra`, ` · ${x.bagsExtra} extra bag`) : ""}`,
       tag: x.abordo === "boarded" ? E2("ABORDÓ", "BOARDED") : x.abordo === "noshow" ? E2("NO LLEGÓ", "NO-SHOW") : undefined, tone: x.abordo === "boarded" ? "signal" : x.abordo === "noshow" ? "danger" : "ink", chev: true, onClick: () => c.det(`viaje:${x.numero}`) })) },
   ];
+  const CH = c.via?.hoy?.choferes ?? [];
+  out.push(CH.length ? { type: "chips", k: E2("CHOFER", "DRIVER"), help: E2("VE LA LISTA DE PASAJEROS EN SU APP", "SEES THE PASSENGER LIST IN THEIR APP"),
+      items: [...CH.map((d) => ({ l: d.nombre, v: r.chofer === d.id ? "selected" : "filter", onClick: () => c.run(() => viajeChofer(c.d.id, run, r.chofer === d.id ? null : d.id), r.chofer === d.id ? E2("Quitaste el chofer.", "Driver removed.") : E2(`Listo: ${d.nombre} lleva esta salida.`, `Done: ${d.nombre} drives this departure.`)) }))] }
+    : { type: "note", tone: "info", icon: "users", t: E2("Para que tu chofer vea los pasajeros en su teléfono, invítalo en Entrega › Tus repartidores.", "So your driver sees passengers on their phone, invite them in Delivery › Your drivers.") });
   if (r.st === "scheduled") {
     out.push({ type: "acts", items: [
       { l: E2("Salió", "It left"), v: "primary", icon: "truck", off: c.pending, onClick: () => c.run(() => viajeSalida(c.d.id, run, "salio"), E2("Listo: los pasajeros saben que va en camino.", "Done: passengers know it is on the way.")) },

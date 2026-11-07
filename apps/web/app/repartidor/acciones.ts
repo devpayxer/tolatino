@@ -1,5 +1,6 @@
 "use server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
+import { choferAbordo, choferPaso } from "@/lib/chofer";
 import { aceptarInvitacion, enLinea, pasoRepartidor, problemaRepartidor, salirEquipo, type PasoRep } from "@/lib/repartidor";
 
 /* App To'Latino Repartidor: cada acción la hace el repartidor con su cuenta, sobre lo que el negocio le asignó. */
@@ -44,4 +45,17 @@ export async function repSalir(id: string): Promise<R> {
   const u = await quien();
   if (!u) return NO;
   return salirEquipo(u.id, String(id ?? ""));
+}
+
+/* 4y-3b · El chofer: sus salidas (Abordó / No llegó, Va tarde, Salió, Llegó). El servidor revisa que la salida sea suya. */
+export async function choferPasoAccion(run: string, paso: "tarde" | "salio" | "llego", min?: number): Promise<R> {
+  const u = await quien();
+  if (!u) return NO;
+  if (!["tarde", "salio", "llego"].includes(paso)) return { ok: false, msg: { es: "Ese paso no existe.", en: "That step does not exist." } };
+  return choferPaso(u.id, String(run ?? ""), paso, min == null ? undefined : Number(min));
+}
+export async function choferAbordoAccion(run: string, numero: string, si: boolean): Promise<R> {
+  const u = await quien();
+  if (!u) return NO;
+  return choferAbordo(u.id, String(run ?? ""), String(numero ?? ""), si === true);
 }

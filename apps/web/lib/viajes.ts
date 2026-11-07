@@ -467,6 +467,7 @@ export async function pasoViaje(negocio: string, numero: string, paso: "salio" |
 
 /* ── El barrido: vence lo pendiente, la otra salida sin respuesta. Idempotente. ── */
 export async function barrerViajes(f: { negocio?: string; userId?: string; numero?: string } = {}) {
+  await avisarSinSalir(f.negocio);
   const w: string[] = [], a: unknown[] = [];
   if (f.negocio) { a.push(f.negocio); w.push(`o.business_id = $${a.length}`); }
   if (f.userId) { a.push(f.userId); w.push(`o.user_id = $${a.length}::uuid`); }
@@ -490,6 +491,24 @@ export async function barrerViajes(f: { negocio?: string; userId?: string; numer
     if (!hecho) continue;
     await liberarOperacion(v.id);
     if (v.st === "pending") await avisarCliente(v.num, "viaje_exp");
+  }
+}
+
+/* Salidas con pasajeros que a los 15 min de su hora (o de la hora nueva si «va tarde») no marcaron «Salió»: un aviso a cada
+   pasajero y uno al negocio, UNA vez (late_alert_at se marca en la misma sentencia que las elige: dos barridos a la vez no
+   avisan dos veces). */
+async function avisarSinSalir(negocio?: string) {
+  const R = (await db().query<{ run: string; nums: string[] }>(
+    `update trip_runs r set late_alert_at = now(), updated_at = now()
+      where r.id in (select r2.id from trip_runs r2 where r2.status = 'scheduled' and r2.late_alert_at is null and coalesce(r2.late_until, r2.run_at) < now() - interval '15 minutes'
+                       and r2.run_at > now() - interval '6 hours' and ($1::text is null or r2.business_id = $1)
+                       and exists (select 1 from run_seats s join operations o on o.id = s.operation_id where s.run_id = r2.id and s.status in ('held', 'boarded') and o.status = 'confirmed')
+                     order by r2.run_at limit 50 for update skip locked)
+      returning r.id::text as run, (select array_agg(o.number order by o.id) from run_seats s join operations o on o.id = s.operation_id where s.run_id = r.id and s.status in ('held', 'boarded') and o.status = 'confirmed') as nums`,
+    [negocio ?? null])).rows;
+  for (const x of R) {
+    for (const n of x.nums ?? []) await avisarCliente(n, "viaje_retraso").catch(() => undefined);
+    if (x.nums?.[0]) await avisarNeg(x.nums[0], "biz_salida_sin_salir").catch(() => undefined);
   }
 }
 
@@ -527,8 +546,8 @@ export async function viajeVista(userId: string, numero: string): Promise<ViajeV
 
 /* ── El panel: Hoy › Salidas y los que esperan respuesta ── */
 export type FilaViaje = { numero: string; st: string; who: string; svc: Bi; k: string; ymd: string; m: number; adults: number; kids: number; childSeat: boolean; bagsExtra: number; tot: number; resp: number | null; detalle: string | null; run: string | null; abordo: string | null };
-export type SalidaPanel = { run: string; svc: Bi; ymd: string; m: number; total: number; fuera: number; booked: number; st: string; tarde: number | null; pasajeros: FilaViaje[] };
-export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[] }> {
+export type SalidaPanel = { run: string; svc: Bi; ymd: string; m: number; total: number; fuera: number; booked: number; st: string; tarde: number | null; chofer: string | null; pasajeros: FilaViaje[] };
+export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]; salidas: SalidaPanel[]; privados: FilaViaje[]; choferes: { id: string; nombre: string }[] }> {
   await barrerViajes({ negocio });
   const L = (await db().query<FilaViaje>(
     `select o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as who, o.details->'svc' as svc, o.details->>'k' as k,
@@ -542,11 +561,12 @@ export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]
   const runs = [...new Set(L.filter((x) => x.st === "confirmed" && x.run).map((x) => x.run!))];
   const R = runs.length ? (await db().query<Omit<SalidaPanel, "pasajeros">>(
     `select r.id::text as run, i.name as svc, (r.run_at at time zone c.timezone)::date::text as ymd, (extract(hour from r.run_at at time zone c.timezone) * 60 + extract(minute from r.run_at at time zone c.timezone))::int as m,
-            r.seats_total as total, r.seats_outside as fuera, r.seats_booked as booked, r.status as st,
+            r.seats_total as total, r.seats_outside as fuera, r.seats_booked as booked, r.status as st, r.driver_id::text as chofer,
             case when r.late_until is null then null else (extract(hour from r.late_until at time zone c.timezone) * 60 + extract(minute from r.late_until at time zone c.timezone))::int end as tarde
        from trip_runs r join items i on i.id = r.item_id join cities c on c.id = r.city_id where r.id = any($1::bigint[]) order by r.run_at`, [runs])).rows : [];
   return { esperan: L.filter((x) => x.st === "pending" || x.st === "change_proposed"), salidas: R.map((r) => ({ ...r, pasajeros: L.filter((x) => x.st === "confirmed" && x.run === r.run) })),
-    privados: L.filter((x) => x.st === "confirmed" && !x.run) };
+    privados: L.filter((x) => x.st === "confirmed" && !x.run),
+    choferes: R.length ? (await db().query<{ id: string; nombre: string }>(`select id::text, display_name as nombre from delivery_drivers where business_id = $1 and status = 'active' order by display_name`, [negocio])).rows : [] };
 }
 export type ViajePanelV = FilaViaje & { pickup: string | null; nota: string | null; pay: string | null; alt: { ymd: string; m: number } | null; otras: { run: string; ymd: string; m: number; quedan: number }[]; eventos: { at: number; kind: string; note: Bi | null }[];
   boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null };

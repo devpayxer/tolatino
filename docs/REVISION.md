@@ -954,3 +954,16 @@ el rastreo de la caja y la versión del precio cerrado. El destinatario de la ca
 en viajes y fiestas (antes el botón salía pero el servidor decía «Ese pedido no existe»); guardián devolverCoincide.
 _Decidido por mí:_ las colas «Salidas canceladas» y «Retenciones que fallaron», la app del chofer y la renta de vehículos van en
 4y-3b.
+
+### 4y-3b · El chofer y el aviso «tu salida todavía no sale» (7 nov)
+**Qué mirar:** Panel de Van Express (Wilson) › Hoy › una salida con pasajeros › **CHOFER**: elige a uno de tus repartidores
+(Entrega › Tus repartidores; en el sandbox, Héctor). Al chofer le llega el aviso. **Héctor (5705550288) en /repartidor:** «TUS
+SALIDAS» → la salida con sus pasajeros (nombre, cuántos, asiento de niño; sin pagos ni teléfonos) → Abordó / No llegó, Va tarde,
+Salió, Llegó; el cliente lo ve en «Tu viaje». Si a los 15 min de la hora una salida con pasajeros no marcó «Salió», a cada
+pasajero le llega «Tu salida todavía no sale» y al negocio «Una salida no ha salido», una sola vez.
+_Decidido por mí (reversible):_
+- El chofer es un repartidor del equipo (misma invitación con código); no hay un rol nuevo. Al quitarlo del equipo, sus salidas que
+  no salieron quedan sin chofer.
+- El chofer no ve cobros, tarjetas ni teléfonos de los pasajeros.
+- El aviso automático corre con el barrido (hoy, cuando alguien abre el panel o un viaje); el barrido central que lo corre cada
+  minuto está anotado en LAUNCH-CHECKLIST y es el bloque siguiente.

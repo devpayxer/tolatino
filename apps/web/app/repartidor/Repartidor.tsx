@@ -3,17 +3,20 @@
    sistema y la barra inferior, anotado en REVISION). Botones grandes, un paso a la vez. Sin señal: el paso se guarda en el
    teléfono y se envía solo cuando vuelve la señal (el servidor ignora un paso repetido). */
 import * as UI from "@tolatino/ui";
+import type { SalidaC } from "@/lib/chofer";
 import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition, type ComponentType } from "react";
 import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
-import { repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
+import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
 type Tab = "inicio" | "pedidos" | "ganancias" | "perfil";
 type Gan = { dia: string; entregas: number; propinas: number; efectivo: number };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
+const hora = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).padStart(2, "0")} ${m < 720 ? "AM" : "PM"}`;
+const hoyNY = () => new Date().toLocaleDateString("en-CA", { timeZone: "America/New_York" });
 const VEH: [string, string, string][] = [["pie", "A pie", "On foot"], ["bici", "Bici", "Bike"], ["moto", "Moto", "Motorbike"], ["auto", "Auto", "Car"], ["camioneta", "Camioneta", "Van"]];
 const MOT: [string, string, string][] = [["noresponde", "El cliente no responde", "Customer not answering"], ["direccion", "La dirección está mal", "Wrong address"], ["demora", "El negocio se está tardando", "The business is running late"],
   ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
@@ -23,8 +26,8 @@ const COLA = "tl-rep-cola-v1";
 const leerCola = (): Cola => { try { return JSON.parse(localStorage.getItem(COLA) ?? "[]") as Cola; } catch { return []; } };
 const guardarCola = (c: Cola) => { try { localStorage.setItem(COLA, JSON.stringify(c)); } catch { /* sin almacenamiento */ } };
 
-export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias }: {
-  es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[];
+export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s }: {
+  es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), [pend, start] = useTransition();
@@ -79,7 +82,29 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     bd: x.status === "confirmed" ? "1.5px solid var(--tl-ink)" : undefined });
 
   const det = p ? entregas.find((x) => x.numero === p) ?? null : null;
-  if (!eq && !det) {
+  const sal = s ? salidas.find((x) => x.run === s) ?? null : null;
+  const nmB = (b: { es: string; en: string } | null) => (b ? (es ? b.es : b.en || b.es) : "");
+  const filaS = (x: SalidaC): Fila => { const n = x.pasajeros.reduce((a, q) => a + q.adultos + q.ninos, 0), sub = x.pasajeros.filter((q) => q.abordo === "boarded").reduce((a, q) => a + q.adultos + q.ninos, 0);
+    return { key: x.run, icon: "truck", t: `${hora(x.m)} · ${nmB(x.svc)}`, s: `${x.negocio} · ${n} ${n === 1 ? E2("pasajero", "passenger") : E2("pasajeros", "passengers")}${sub ? E2(` · ${sub} abordaron`, ` · ${sub} boarded`) : ""}`,
+      tag: x.st === "departed" ? E2("EN CAMINO", "ON THE WAY") : x.tarde != null ? E2(`TARDE · ${hora(x.tarde)}`, `LATE · ${hora(x.tarde)}`) : x.dia === hoyNY() ? E2("HOY", "TODAY") : E2("MAÑANA", "TOMORROW"),
+      tone: x.st === "departed" ? "signal" : x.tarde != null ? "action" : "neutral", chev: true, onClick: () => ir(`?s=${x.run}`) }; };
+  if (sal) {
+    // Chofer · la salida: pasajeros con Abordó / No llegó; Va tarde · Salió · Llegó (los mismos pasos del panel).
+    const x = sal;
+    B.push({ type: "head", eye: `${x.negocio.toUpperCase()} · ${E2("SALIDA", "DEPARTURE")}`, t: `${hora(x.m)} · ${nmB(x.svc)}`, s: [nmB(x.from), nmB(x.to)].filter(Boolean).join(" → "), onBack: () => ir("") });
+    if (x.tarde != null) B.push({ type: "note", tone: "warn", icon: "clock", t: E2(`Sale a las ${hora(x.tarde)}: los pasajeros ya lo saben.`, `Leaves at ${hora(x.tarde)}: passengers already know.`) });
+    B.push(x.pasajeros.length ? { type: "rows", k: E2("PASAJEROS", "PASSENGERS"), items: x.pasajeros.map((q): Fila => ({ key: q.numero, icon: "users",
+      t: `${q.quien} · ${q.adultos + q.ninos}`, s: `${q.numero}${q.ninos ? E2(` · ${q.ninos} niño${q.ninos > 1 ? "s" : ""}`, ` · ${q.ninos} child${q.ninos > 1 ? "ren" : ""}`) : ""}${q.nino ? E2(" · asiento de niño", " · child seat") : ""}${q.maletas ? E2(` · ${q.maletas} maleta extra`, ` · ${q.maletas} extra bag`) : ""}`,
+      tag: q.abordo === "boarded" ? E2("ABORDÓ", "BOARDED") : q.abordo === "noshow" ? E2("NO LLEGÓ", "NO-SHOW") : undefined, tone: q.abordo === "boarded" ? "signal" : "danger", chev: false,
+      acts: x.st === "scheduled" ? [{ l: E2("Abordó", "Boarded"), v: q.abordo === "boarded" ? "primary" : "secondary", icon: "check", onClick: () => run(() => choferAbordoAccion(x.run, q.numero, true), E2("Abordó.", "Boarded.")) },
+        { l: E2("No llegó", "No-show"), v: "secondary", icon: null, onClick: () => run(() => choferAbordoAccion(x.run, q.numero, false), E2("No llegó.", "No-show.")) }] : undefined })) }
+      : { type: "empty", icon: "users", t: E2("Sin pasajeros de la app", "No app passengers"), s: E2("Los vendidos en la oficina no salen aquí.", "Office sales do not show here.") });
+    if (x.st === "scheduled") {
+      B.push({ type: "acts", items: [{ l: E2("Salió", "It left"), v: "primary", icon: "truck", off: pend, onClick: () => run(() => choferPasoAccion(x.run, "salio"), E2("Listo: los pasajeros saben que va en camino.", "Done: passengers know it is on the way.")) }] });
+      B.push({ type: "chips", k: E2("¿VA TARDE?", "RUNNING LATE?"), help: E2("A CADA PASAJERO LE LLEGA LA HORA NUEVA", "EVERY PASSENGER GETS THE NEW TIME"), items: [10, 15, 20, 30, 45, 60].map((m) => ({ l: `${m} min`, v: "filter", onClick: () => run(() => choferPasoAccion(x.run, "tarde", m), E2("Avisamos la hora nueva.", "We sent the new time.")) })) });
+    }
+    if (x.st === "departed") B.push({ type: "acts", items: [{ l: E2("Llegó", "Arrived"), v: "primary", icon: "check", off: pend, onClick: () => run(() => choferPasoAccion(x.run, "llego"), E2("Listo: viaje terminado.", "Done: trip finished."), () => ir("")) }] });
+  } else if (!eq && !det) {
     // DLV-ONB: entrar al equipo con el código del negocio.
     B.push({ type: "head", eye: "TO'LATINO REPARTIDOR", t: E2(`Hola, ${nombre}`, `Hi, ${nombre}`), s: E2("Para repartir, entra al equipo del negocio con el código que te dio. Usa este mismo teléfono.", "To deliver, join the business team with the code they gave you. Use this same phone.") });
     B.push({ type: "field", k: E2("CÓDIGO DEL NEGOCIO · 6 LETRAS Y NÚMEROS", "BUSINESS CODE · 6 LETTERS AND NUMBERS"), val: cod, onChange: (v: string) => setCod(v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)) });
@@ -140,7 +165,9 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       { k: E2("PROPINAS", "TIPS"), v: money(hoy.propinas) },
       { k: E2("EFECTIVO", "CASH"), v: money(hoy.efectivo), s: E2("se entrega al negocio", "goes to the business") },
     ] });
-    B.push(activas.length ? { type: "rows", k: E2(`AHORA · ${activas.length}`, `NOW · ${activas.length}`), items: activas.map(fila) }
+    // 4y-3b · Chofer de Transporte: sus salidas de hoy y mañana arriba.
+    if (salidas.length) B.push({ type: "rows", k: `${E2("TUS SALIDAS", "YOUR DEPARTURES")} · ${salidas.length}`, items: salidas.map(filaS) });
+    if (activas.length || !salidas.length) B.push(activas.length ? { type: "rows", k: E2(`AHORA · ${activas.length}`, `NOW · ${activas.length}`), items: activas.map(fila) }
       : { type: "empty", icon: "truck", t: E2("Sin entregas ahora", "No deliveries now"), s: E2("Cuando el negocio te asigne una, sale aquí y te llega un mensaje.", "When the business assigns one, it shows here and you get a message.") });
   } else if (t === "pedidos") {
     B.push({ type: "head", t: E2("Pedidos", "Orders"), s: E2("Tus entregas activas y las de hoy.", "Your active deliveries and today's.") });

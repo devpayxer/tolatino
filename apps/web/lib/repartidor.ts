@@ -56,6 +56,8 @@ export async function quitarRepartidor(negocio: string, id: string, motivo: stri
     if (!d) return no("Ese repartidor ya no está.", "That driver is no longer there.");
     // Lo que tenía asignado y no entregó vuelve a «sin repartidor» para que el negocio lo asigne a otro.
     await c.query(`update operations set driver_id = null where driver_id = $1::bigint and kind = 'order' and status = 'confirmed'`, [id]);
+    // 4y-3b: y las salidas de Transporte que todavía no salieron (el negocio pone otro chofer).
+    await c.query(`update trip_runs set driver_id = null, updated_at = now() where driver_id = $1::bigint and status = 'scheduled'`, [id]);
     return { ok: true } as const;
   });
 }
