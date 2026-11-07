@@ -19,6 +19,9 @@ import { mercPublico } from "@/lib/merc-publico";
 import { fiestaPublico } from "@/lib/fiestas-publico";
 import { transPublico } from "@/lib/trans-publico";
 import { nochePublica } from "@/lib/noche-publico";
+import { inscPublica } from "@/lib/inscripciones-publico";
+import { contratoTexto } from "@/lib/deporte-comun";
+import { edadTexto } from "@/lib/ninos-comun";
 import { coverTexto, filaCorta, filaCuando, hNoche, LINEA_NOCHE } from "@/lib/noche-comun";
 import { diaFiesta } from "@/lib/fiestas-comun";
 import { resumenResenas } from "@/lib/resenas";
@@ -45,7 +48,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -68,7 +71,33 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-TRANS" ? transPublico(f.id) : Promise.resolve(null),
     // Noche (4nb): el cover de esta noche, la fila con su hora, la lista y las mesas.
     f.cat === "NEG-NOCHE" ? nochePublica(f.id) : Promise.resolve(null),
+    // Educación, Niños y Deporte (4ed): cursos, programas o membresías con sus grupos, la licencia del DHS y el contrato.
+    f.cat === "NEG-EDU" || f.cat === "NEG-NINOS" || f.cat === "NEG-DEPORTE" ? inscPublica(f.id) : Promise.resolve(null),
   ]);
+  // FAQ de Educación, Niños y Deporte (neg-edu-kind faq, neg-ninos-kind faq L26–39, neg-deporte-kind faq L35–54): salen de los servicios
+  // y de Tu herramienta; si el negocio escribió la misma pregunta en Tu página, gana la suya.
+  if (insc && f.pro) {
+    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), ni = insc.ninos, dp = insc.dep;
+    const auto = insc.rubro === "edu" ? [
+      { q: E2("¿El precio incluye todo?", "Does the price include everything?"), a: E2("El precio del curso es el total: libros y examen incluidos o dichos aparte, antes de inscribirte.", "The course price is the total: books and exam included or listed separately, before you enroll.") },
+      ...(insc.cursos.some((x) => x.k === "curso" && x.mat) ? [{ q: E2("¿Para qué es la matrícula?", "What is the registration fee for?"), a: E2("Aparta tu cupo y se descuenta del total. Si el grupo no abre, se devuelve completa.", "It holds your seat and comes off the total. If the group does not open, it is refunded in full.") }] : []),
+      ...(insc.how.linea ? [{ q: E2("¿Hay clases en línea?", "Are there online classes?"), a: E2("Sí. El enlace les llega solo a los inscritos.", "Yes. Only enrolled students get the link.") }] : []),
+      { q: E2("¿Me piden papeles o estatus?", "Do they ask for papers or status?"), a: E2("To’Latino no pide estatus ni seguro social para inscribirte.", "To’Latino does not ask for status or a social security number to enroll.") },
+    ] : insc.rubro === "ninos" && ni ? [
+      ...(ni.cuidado ? [{ q: E2("¿Tienen licencia del estado?", "Are you state licensed?"), a: ni.lic.estado === "valid" ? E2("Sí, de Pennsylvania (DHS). To’Latino la verificó y está a la vista en la página.", "Yes, from Pennsylvania (DHS). To’Latino verified it and it is shown on the page.") : E2("No hay una licencia del estado verificada en To’Latino: pregúntala antes de inscribir a tu niño.", "There is no verified state license on To’Latino: ask about it before enrolling your child.") },
+        { q: E2("¿Aceptan el subsidio CCIS?", "Do you accept CCIS?"), a: ni.ccis ? E2("Sí. El estado paga una parte y te dicen lo que te toca antes de empezar.", "Yes. The state pays part and they tell you your share before you start.") : E2("No; pagas el precio de la semana.", "No; you pay the weekly price.") }] : []),
+      { q: E2("¿Qué edades atienden?", "What ages do you serve?"), a: edadTexto(ni.edad, es) },
+      { q: E2("¿Quién puede recoger al niño?", "Who can pick up my child?"), a: E2("Solo las personas autorizadas, siempre con identificación. La lista se entrega en persona.", "Only authorized people, always with ID. The list is handed in person.") },
+      { q: E2("¿Qué datos de mi niño guarda To’Latino?", "What data about my child does To’Latino keep?"), a: E2("Solo su nombre de pila, la edad o el grado y una nota, cifrados; se borran a los 30 días. Nunca la fecha de nacimiento, fotos ni datos médicos.", "Only first name, age or grade and a note, encrypted; deleted after 30 days. Never birth date, photos or medical data.") },
+    ] : dp ? [
+      ...(dp.memb ? [{ q: E2("¿Hay contrato?", "Is there a contract?"), a: contratoTexto({ contrato: dp.contrato, salir: dp.salir }, es) + "." }, { q: E2("¿Hay cuota de inscripción?", "Is there a signup fee?"), a: dp.inscripcion ? E2(`Sí: $${dp.inscripcion / 100}, una sola vez.`, `Yes: $${dp.inscripcion / 100}, once.`) : E2("No.", "No.") }] : []),
+      ...(dp.liga ? [{ q: E2("¿La cuota es por partido?", "Is the fee per game?"), a: E2("No: es de toda la temporada. Si la liga no abre, el depósito se devuelve completo.", "No: it covers the whole season. If the league does not open, the deposit is refunded in full.") },
+        { q: E2("¿Aceptan jugadores sin equipo?", "Do you take players without a team?"), a: dp.sueltos ? E2("Sí: te inscribes solo y te ponen en un equipo.", "Yes: sign up alone and they place you on a team.") : E2("Solo equipos completos.", "Full teams only.") }] : []),
+      { q: E2("¿Me pueden cobrar algo después?", "Can they charge me later?"), a: E2("No. Solo se cobra lo que ves aquí; nada que aparezca después en la tarjeta.", "No. Only what you see here; nothing showing up later on your card.") },
+    ] : [];
+    const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+    f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
+  }
   // FAQ de Fiestas (neg-fiesta-kind.js faq): la de la fecha y la del depósito salen del calendario y del panel; si el negocio
   // escribió la misma pregunta en Tu página, gana la suya.
   if (fiesta && f.pro) {
@@ -128,6 +157,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       fiesta={fiesta}
       trans={trans}
       noche={noche}
+      insc={insc}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}

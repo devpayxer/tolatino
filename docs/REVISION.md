@@ -1136,3 +1136,13 @@ _Decidido por mí:_ los precios que toca la herramienta son los del servicio (un
 servicio (el prototipo lo deducía del nombre); la fecha límite de la liga se elige entre las 3 semanas antes de que empiece la temporada;
 el dojo de la semilla trae un contrato de 3 meses, así que ese chip solo aparece cuando ya lo tiene; la herramienta solo existe para los
 lugares que venden por la app (membresía y liga): boliche, golf, clubes, pesca, tiro y nutrición van por contacto y conservan sus filtros.
+
+### 4ed · Fichas de Educación, Niños y Deporte (7 nov)
+**Qué mirar (teléfono y computadora):** `/n/ingles-para-todos` (Educación: «¿QUÉ TE LLEVAS AL FINAL?», próximo grupo con cupos, pestaña
+«Cursos», hoja con la matrícula y lo que va aparte), `/n/guarderia-mis-angelitos` (Niños: «¿TIENE LICENCIA? Sí: licencia del estado de PA
+(DHS)», «Quedan N cupos · 2 a 5 años · acepta CCIS»), `/n/power-gym-hzl` (Deporte: «Sin contrato: cancelas cuando quieras», cuota e
+inscripción), `/n/liga-latina-futbol` (la cuota es de toda la temporada, por equipo), `/n/taller-las-manos` (Free: sin inscribirse por la
+app) y las categorías `/c/educacion`, `/c/ninos`, `/c/deporte` (las cifras «De noche», «Con licencia», «Sin contrato»).
+**Decidido por seguridad (AB):** hasta 4ee la hoja ofrece llamar o escribir (no hay botón de inscribirse que no funcione); el horario del
+riel sale de los grupos reales y, sin grupos, dice «Pregúntalo» en vez de inventar «Mañana».
+
