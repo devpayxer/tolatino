@@ -6,6 +6,7 @@
    la auditoría); Confirmar (cobra la matrícula) · Otro grupo · No hay cupo; el plan por escrito con «Marcar pagada»; Cancelar con motivo. */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { fechaCorta, usdI, VOC, type Bi } from "@/lib/inscripciones-comun";
+import { FRANJAS, diaVis } from "@/lib/visitas-inm-comun";
 import type { FilaInsc, InscDetalle, InscPanel } from "@/lib/inscripciones";
 import { inscCancelarGrupo, inscCancelarNeg, inscConfirmarBaja, inscCuota, inscMarcar, inscMarcarGrupo, inscOfrecer, inscResponder } from "./acciones-insc";
 import { ayudaCita } from "./Citas";
@@ -42,14 +43,17 @@ export function hoyInsc(c: Ctx): Bloque[] {
 /* La fila de Lo que vendes. */
 export function filaInscripciones(c: Ctx): Fila | null {
   const { E2 } = c, X = c.svc;
-  if (!X || !(X.edu || X.ninos || X.dep)) return null;
+  if (!X || !(X.edu || X.ninos || X.dep || X.rubro === "fe")) return null;
+  // 4ie · Iglesias: «Pedir fecha», catecismo y consejería por el mismo motor, con su vocabulario («Tu lugar», «Fecha»). Nada se cobra.
+  if (X.rubro === "fe") return { icon: "calendar", t: E2("Fechas e inscripciones", "Dates and sign-ups"), s: E2("Las fechas que piden (bautizos, bodas, consejería), el catecismo con sus grupos y lo confirmado. Nada se cobra.", "Requested dates (baptisms, weddings, counseling), catechism groups and what is confirmed. Nothing is charged."), chev: true, onClick: () => c.go("mod", "inscripciones") };
   return { icon: "users", t: E2("Inscripciones", "Enrollments"), s: E2("Las que esperan, los grupos con sus inscritos, la lista de espera y las membresías activas.", "Pending ones, groups with their students, the waitlist and active memberships."), chev: true, onClick: () => c.go("mod", "inscripciones") };
 }
 
 export function inscripcionesBloques(c: Ctx): Sec {
   const { E2, ui } = c, P = c.ins?.panel;
-  const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: E2("Inscripciones", "Enrollments"), onBack: () => c.go("mod"),
-    s: E2("Confirmas cada inscripción. La matrícula se cobra al confirmar; si un grupo no abre, se devuelve todo a todos.", "You confirm each enrollment. The fee is charged when you confirm; if a group does not open, everyone gets everything back.") }];
+  const fe = c.svc?.rubro === "fe";
+  const out: (Bloque | null)[] = [{ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: fe ? E2("Fechas e inscripciones", "Dates and sign-ups") : E2("Inscripciones", "Enrollments"), onBack: () => c.go("mod"),
+    s: fe ? E2("Confirmas cada fecha o lugar en 48 horas, propones otra fecha o dices que no hay. Nada se cobra en la app: el donativo siempre es sugerido.", "You confirm each date or spot within 48 hours, propose another date or say there is none. Nothing is charged in the app: donations are always suggested.") : E2("Confirmas cada inscripción. La matrícula se cobra al confirmar; si un grupo no abre, se devuelve todo a todos.", "You confirm each enrollment. The fee is charged when you confirm; if a group does not open, everyone gets everything back.") }];
   if (!P) return { blocks: out, ed: null };
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("ESPERAN", "PENDING"), v: String(P.esperan.length) }, { k: E2("ACTIVAS", "ACTIVE"), v: String(P.activas.length) }, { k: E2("EN ESPERA", "WAITLIST"), v: String(P.espera.length) }] });
   if (P.esperan.length) out.push({ type: "rows", k: E2("ESPERAN TU RESPUESTA", "AWAITING YOUR REPLY"), items: P.esperan.map((x) => fila(c, x)) });
@@ -89,21 +93,21 @@ export function inscripcionesBloques(c: Ctx): Sec {
 export function inscDetalleBloques(c: Ctx): Sec {
   const { E2, es, ui } = c, x = c.ins?.det;
   if (!x) return { blocks: [{ type: "head", t: E2("Inscripción no encontrada", "Enrollment not found"), onBack: c.closeDet }, { type: "empty", icon: "calendar", t: E2("Esa inscripción no existe", "That enrollment does not exist"), s: E2("Puede ser de otro negocio.", "It may belong to another business.") }], ed: null };
-  const V = VOC[x.rubro], matL = nm(c, V.mat);
+  const V = VOC[x.rubro], matL = nm(c, V.mat), fe = x.rubro === "fe";
   const stL = ({ pending: E2("ESPERA TU RESPUESTA", "AWAITING YOUR REPLY"), change_proposed: E2("PROPUSISTE OTRO GRUPO", "YOU PROPOSED ANOTHER GROUP"), confirmed: x.detalle === "cancel_req" ? E2("PIDE LA BAJA", "WANTS TO CANCEL") : x.detalle === "started" ? E2("EN CURSO", "IN PROGRESS") : E2("CONFIRMADA", "CONFIRMED"),
     declined: E2("NO HABÍA CUPO", "NO OPENING"), expired: E2("VENCIÓ", "EXPIRED"), cancelled: E2("CANCELADA", "CANCELLED"), done: E2("TERMINADA", "FINISHED") } as Record<string, string>)[x.estado] ?? x.estado.toUpperCase();
   const pay = x.pago === "held" ? E2("retenida", "held") : x.pago === "captured" ? E2("cobrada", "charged") : x.pago === "released" ? E2("liberada", "released") : x.pago === "refunded" ? E2("devuelta", "refunded") : "—";
   const out: (Bloque | null)[] = [
-    { type: "head", eye: `${E2("INSCRIPCIÓN", "ENROLLMENT")} · ${stL}`, t: x.numero, s: `${x.cliente} · ${nm(c, x.svc)}`, onBack: c.closeDet },
+    { type: "head", eye: `${fe ? E2("TU LUGAR", "SPOT") : E2("INSCRIPCIÓN", "ENROLLMENT")} · ${stL}`, t: x.numero, s: `${x.cliente} · ${nm(c, x.svc)}`, onBack: c.closeDet },
     x.estado === "pending" && x.vence ? { type: "note", tone: "info", icon: "clock", t: (E2(`Responde antes de ${new Date(x.vence).toLocaleString("es-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" })}. ${x.mat ? "Si no, vence y se libera la matrícula." : "Si no, vence."}`, `Reply before ${new Date(x.vence).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" })}. ${x.mat ? "Otherwise it expires and the fee is released." : "Otherwise it expires."}`)).replace(/\.\./g, ".") } : null,
     { type: "kv", items: [
-      { k: E2("INSCRIPCIÓN", "ENROLLMENT"), v: nm(c, x.svc) }, ...(x.grupo ? [{ k: E2("GRUPO", "GROUP"), v: `${nm(c, x.grupo)}${x.inicio ? ` · ${E2("empieza", "starts")} ${fechaCorta(x.inicio, es)}` : ""}` }] : []),
+      { k: fe ? E2("SERVICIO", "SERVICE") : E2("INSCRIPCIÓN", "ENROLLMENT"), v: nm(c, x.svc) }, ...(x.grupo ? [{ k: x.fecha ? E2("FECHA QUE PIDE", "REQUESTED DATE") : E2("GRUPO", "GROUP"), v: x.fecha ? nm(c, x.grupo) : `${nm(c, x.grupo)}${x.inicio ? ` · ${E2("empieza", "starts")} ${fechaCorta(x.inicio, es)}` : ""}` }] : []),
       { k: E2("PARA", "FOR"), v: paraL(c, x.para) }, ...(x.nivel ? [{ k: E2("NIVEL", "LEVEL"), v: { cero: E2("Desde cero", "From zero"), algo: E2("Sabe algo", "Knows some"), medio: E2("Intermedio", "Intermediate") }[x.nivel] }] : []),
       ...(x.equipo ? [{ k: E2("EQUIPO", "TEAM"), v: x.equipo }] : []),
-      { k: E2("PRECIO", "PRICE"), v: x.precio ? usdI(x.precio) : E2("Gratis", "Free") }, ...(x.mat ? [{ k: matL.toUpperCase(), v: `${usdI(x.mat)} · ${pay}` }] : x.matLocal ? [{ k: matL.toUpperCase(), v: `${usdI(x.matLocal)} · ${E2("en tu lugar", "at your place")}` }] : []),
+      { k: E2("PRECIO", "PRICE"), v: fe ? (x.precio ? E2(`Donativo sugerido ${usdI(x.precio)} · si no puede, no se cobra`, `Suggested donation ${usdI(x.precio)} · no charge if they cannot`) : E2("Gratis", "Free")) : x.precio ? usdI(x.precio) : E2("Gratis", "Free") }, ...(x.mat ? [{ k: matL.toUpperCase(), v: `${usdI(x.mat)} · ${pay}` }] : x.matLocal ? [{ k: matL.toUpperCase(), v: `${usdI(x.matLocal)} · ${E2("en tu lugar", "at your place")}` }] : []),
       ...(x.g1 ? [{ k: E2("PRIMERA CLASE", "FIRST CLASS"), v: E2("Gratis (primera vez aquí)", "Free (first time here)") }] : []),
     ] },
-    x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
+    x.nota ? { type: "note", tone: "ink", icon: x.notaPrivada ? "shield" : "bubble", t: x.notaPrivada ? E2(`Nota privada (cifrada; tu vista queda registrada y se borra a los 30 días): «${x.nota}»`, `Private note (encrypted; your view is logged and it is deleted after 30 days): “${x.nota}”`) : `«${x.nota}»` } : null,
   ];
   // Los datos del niño: solo aquí, para tu negocio; quedan en la auditoría y se borran a los 30 días de terminar.
   if (x.ninoPanel) out.push({ type: "group", k: E2("SU NIÑO O NIÑA · PRIVADO", "THEIR CHILD · PRIVATE") }, { type: "kv", items: [
@@ -114,9 +118,16 @@ export function inscDetalleBloques(c: Ctx): Sec {
     const otro = ui.iOtro === x.numero;
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "confirmar"), x.mat ? E2(`Confirmada: se cobró la ${matL.toLowerCase()}.`, "Confirmed: the fee was charged.") : E2("Confirmada.", "Confirmed.")) },
-      { l: E2("Otro grupo", "Another group"), v: "secondary", icon: "calendar", off: c.pending || !x.otros.length, onClick: () => c.setUi({ iOtro: otro ? null : x.numero }) },
-      { l: E2("No hay cupo", "No opening"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "nohay"), E2("Listo: la persona sabe y se liberó todo.", "Done: they know and everything was released.")) }] });
-    if (otro) out.push({ type: "chips", k: E2("¿EN QUÉ GRUPO SÍ HAY CUPO?", "WHICH GROUP HAS ROOM?"), help: E2("LA PERSONA TIENE 48 H PARA ACEPTAR", "THEY HAVE 48 H TO ACCEPT"),
+      { l: x.fecha ? E2("Otra fecha", "Another date") : E2("Otro grupo", "Another group"), v: "secondary", icon: "calendar", off: c.pending || (x.fecha ? !x.fechas.length : !x.otros.length), onClick: () => c.setUi({ iOtro: otro ? null : x.numero, iFecha: null }) },
+      { l: x.fecha ? E2("No hay fecha", "No date") : E2("No hay cupo", "No opening"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "nohay"), E2("Listo: la persona sabe y se liberó todo.", "Done: they know and everything was released.")) }] });
+    // 4ie · Iglesias «Pedir fecha»: la otra fecha y la franja (la persona tiene hasta 48 h para aceptar).
+    if (otro && x.fecha) {
+      const f0 = (ui.iFecha as string | null) ?? null;
+      out.push({ type: "chips", k: E2("¿QUÉ FECHA SÍ PUEDEN?", "WHICH DATE WORKS?"), items: x.fechas.map((d) => ({ l: diaVis(d, es), v: f0 === d ? "selected" : "filter", onClick: () => c.setUi({ iFecha: d }) })) });
+      if (f0) out.push({ type: "chips", k: E2("¿EN QUÉ FRANJA?", "WHAT TIME OF DAY?"), help: E2("LA PERSONA TIENE HASTA 48 H PARA ACEPTAR", "THEY HAVE UP TO 48 H TO ACCEPT"),
+        items: FRANJAS.map(([k, a, z]) => ({ l: es ? a : z, v: "filter", onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "otro", `${f0}|${k}`), E2("Propusiste otra fecha.", "You proposed another date."), () => c.setUi({ iOtro: null, iFecha: null })) })) });
+    }
+    if (otro && !x.fecha) out.push({ type: "chips", k: E2("¿EN QUÉ GRUPO SÍ HAY CUPO?", "WHICH GROUP HAS ROOM?"), help: E2("LA PERSONA TIENE 48 H PARA ACEPTAR", "THEY HAVE 48 H TO ACCEPT"),
       items: x.otros.map((g) => ({ l: `${nm(c, g.label)} · ${fechaCorta(g.inicio, es)}`, v: "filter", onClick: () => c.run(() => inscResponder(c.d.id, x.numero, "otro", g.id), E2("Propusiste otro grupo.", "You proposed another group."), () => c.setUi({ iOtro: null })) })) });
   }
   if (x.estado === "confirmed" && x.detalle === "cancel_req") out.push({ type: "acts", items: [{ l: E2("Confirmar la cancelación", "Confirm the cancellation"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => inscConfirmarBaja(c.d.id, x.numero), E2("Cancelada: le llegó su constancia.", "Cancelled: they got their record.")) }] });

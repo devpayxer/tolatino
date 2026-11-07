@@ -1346,3 +1346,46 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
 - **Qué mirar:** la ficha y la lista de «Cuartos Doña Mary» muestran la zona, no la casa. Si prefieres que el dueño lo decida con un
   interruptor, se agrega en Tu página.
 
+
+### 4ie · Pedir visita, prueba de manejo y fecha + Panel «Visitas» (7 nov)
+**Qué mirar** (sandbox; capturas `v4ie-*.png`, teléfono 390 y escritorio 1360):
+1. Cliente (5705550122) › `/n/rentas-hazleton-latino` › una propiedad › **Pedir visita**: Día de la visita (las horas tomadas no se eligen) →
+   Revisa y envía: PARA MUDARTE con el desglose, «Hoy $0 · Ver la propiedad es gratis», lo que piden, «Nunca pagues un depósito…», el pie de
+   igualdad de oportunidad. Escribe en la nota «123-45-6789»: se guarda como «•••-••-••••».
+2. `/vis/D-…`: PENDIENTE «Esperando a Rentas Hazleton Latino · Hoy no pagas nada.», pasos Enviada · Confirmada · Pasó, Mensaje y Cancelar (un toque).
+3. Yesenia (5705550433) › Hoy › «ESPERAN TU RESPUESTA»: Confirmar · Otra hora · No se puede; el detalle con lo que vio la persona. Lo que vendes ›
+   **Visitas**: esperan, hoy, próximas, por propiedad. Marca una propiedad **Rentada** con visitas vivas: se cancelan solas y avisa a cada persona.
+4. Un cuarto: la calle no sale ni en la ficha ni en `/vis/…` hasta confirmar; confirmada, sale en la pantalla y en el aviso.
+5. `/n/autos-el-cibao` › **Prueba de manejo**: «Prueba de manejo en tu casa», «Sí, tengo licencia vigente» (nunca el número), carro a cambio.
+   Juan (5705550444) no ve la dirección hasta confirmar; después sí (cada vista queda en la auditoría). Tu herramienta › **Horas de prueba de
+   manejo · cualquier carro**. Al llegar la hora: Pasó (la reseña se abre) o No vino.
+6. Iglesias: `/n/parroquia-santa-maria` › Catecismo › **Inscribirme** para tu hijo; Bendición de la casa › **Pedir fecha** (fecha + franja);
+   Padre Luis (5705550422) › Lo que vendes › **Fechas e inscripciones** › Confirmar / Otra fecha / No hay fecha. `consejeria-familiar-shalom`:
+   «Pedir cita» con nota cifrada y avisos que no dicen el lugar.
+7. Super Admin (5705550199) › Transacciones › **Visitas** (copia del total, línea de tiempo, $0) · Inscripciones con «Iglesias» · Colas › **Plantones**.
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Horas de prueba de manejo por negocio («cualquier carro»)**, no por carro: un patrón semanal en Tu herramienta (6 AM–10 PM, 1 a 5 por hora).
+  Si prefieres horas por carro, el motor ya las admite (`class_groups.item_id`); falta la pantalla.
+- **Plazo de respuesta:** 4 horas del horario publicado del negocio (sin horario: 4 horas de reloj) y nunca después de la hora − 1 h; se pide al
+  menos 2 h de anticipación y que quede ≥ 30 min para responder. Otra hora: la persona tiene hasta 24 h (nunca después de la hora − 1 h).
+- **La dirección de la casa del cliente** (prueba en casa) va cifrada en `op_private` (motivo `casa`), no en `operations`; el dealer la ve solo
+  confirmada y cada vista se audita; se borra a los 30 días.
+- **Nota:** se tapan 9 cifras (seguro social / ITIN) y 13–19 cifras (tarjeta / cuenta) y se rechazan teléfonos (como en las demás notas); la base
+  lo vuelve a comprobar en visitas e Iglesias. Las notas de visitas se borran a los 30 días de cerrar.
+- **Cancelar es de un toque** (sin pantalla de «¿seguro?»), como el prototipo. El negocio solo cancela una confirmada, con motivo.
+- **«No vino»** se guarda como `done` + `noshow` (la misma marca que citas: no abre la reseña). 3 en 30 días abren «Plantones» sobre el
+  **negocio** (para que no se use para frenar reseñas); el cliente nunca paga multa.
+- **Se rentó / vendió / se ocultó:** cancela las vivas sin culpa en la misma transacción; el aviso sale después (y el barrido lo reintenta).
+- **Free:** recibe solicitudes (10 al mes, §6 #6): en la ficha Free la fila va directo a pedir (no hay hoja); el botón de abajo sigue siendo llamar.
+  Educación, Niños y Deporte siguen solo con Pro.
+- **Precalificación y oferta:** solo el día y la hora en que te llaman (del horario del negocio, sin cupo); la cotización con precio sigue llamando.
+- **Iglesias:** se piden en la app solo lo que pide fecha (donativo o «con cita»), el catecismo y lo de consejería u oración; la misa y la ayuda
+  no se reservan (§6 #4). «Pedir fecha» = de pasado mañana a 60 días, franja mañana / tarde / noche; responde en 48 h. Consejería, capellanía,
+  oración y recuperación (por el tipo del lugar o por el nombre del servicio) llevan avisos `insc_fen_*` sin el lugar ni el servicio.
+- **Ayuda con la visita** llega con 4if: por ahora la pantalla dice «Escríbele al lugar por Mensaje» (sin promesa falsa).
+- **Mi cuenta** las lista como «VISITA D-…» dentro de «Inscripciones, planes, rentas y apartados» (el título no cambió).
+
+**Capturas:** `v4ie-dia-m`, `v4ie-revisa-m`, `v4ie-pend-m`, `v4ie-panel-hoy-m`, `v4ie-otra-m`, `v4ie-rentada-m`, `v4ie-conf-cuarto-m`,
+`v4ie-prueba-casa-m`, `v4ie-prueba-revisa-m`, `v4ie-dealer-pend-m`, `v4ie-dealer-conf-m`, `v4ie-paso-m`, `v4ie-catecismo-m`, `v4ie-fe-panel-m`,
+`v4ie-pedir-fecha-m`, `v4ie-pedir-d`, `v4ie-conf-d`, `v4ie-panel-visitas-d`, `v4ie-admin-tx-d`.

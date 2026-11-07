@@ -16,6 +16,8 @@ import {
   type Bhph, type Body, type CarroAuto, type Drive, type EstadoCarro, type Fuel, type Garantia, type HerrAutos, type Pago, type Puerta, type Titulo, type Trans,
 } from "@/lib/autos-comun";
 import { subirFoto } from "@/lib/subir-foto";
+import { cortoVis } from "@/lib/inmuebles-comun";
+import { DIA_FE, horaFe } from "@/lib/fe-comun";
 import { autosEstado, autosGuardar, autosHerramienta, autosTotal } from "./acciones-autos";
 import type { Ctx, Sec } from "./Panel";
 
@@ -214,6 +216,18 @@ export function herramientaAutosBloques(c: Ctx): Sec {
   const V = h.carros.filter((x) => x.adm == null && x.status !== "hidden"), enApp = V.filter((x) => visibleCarro(x.status)).length;
   out.push({ type: "step", t: E2("Carros en el lote", "Cars on the lot"), s: E2("Los que tienes, aunque no todos estén en la app.", "All you have, even if not all are in the app."), v: String(Math.max(h.lot, enApp)),
     onM: () => { if (h.lot - 1 < enApp) { c.toast(E2("En el lote hay al menos los que están en la app.", "The lot has at least the ones in the app.")); return; } save({ lote: h.lot - 1 }); }, onP: () => save({ lote: Math.max(h.lot, enApp) + 1 }) });
+  // 4ie · Horas de prueba de manejo «cualquier carro»: patrón semanal → 14 días adelante; toca para prender o apagar. La prueba es gratis.
+  const P0 = h.prueba.pattern, pDow = (c.ui.pDow as number | undefined) ?? 6, pMin = (c.ui.pMin as number | undefined) ?? 600;
+  const savePrueba = (pattern: typeof P0, cupo = h.prueba.cupo) => save({ prueba: { pattern, cupo } }, E2("Guardado: las horas ya salen en tu página.", "Saved: the times show on your page now."));
+  out.push({ type: "group", k: E2("HORAS DE PRUEBA DE MANEJO · CUALQUIER CARRO", "TEST DRIVE TIMES · ANY CAR") });
+  if (P0.length) out.push({ type: "chips", k: E2(`${h.prueba.horas} ABIERTAS EN 14 DÍAS`, `${h.prueba.horas} OPEN IN 14 DAYS`), help: E2("toca para prender o apagar", "tap to turn on or off"),
+    items: P0.map((v, i) => ({ l: cortoVis(v.dow, v.min, es), v: v.on ? "selected" : "filter", onClick: () => savePrueba(P0.map((x, j) => (j === i ? { ...x, on: !x.on } : x))) })) });
+  else out.push({ type: "note", tone: "info", icon: "calendar", t: E2("Sin horas de prueba: la gente te llama para pedirla. Agrega una y la piden en la app.", "No test drive times: people call to ask. Add one and they request it in the app.") });
+  out.push({ type: "chips", k: E2("DÍA", "DAY"), items: DIA_FE.map((d, i) => ({ l: es ? d[0] : d[1], v: pDow === i ? "selected" : "filter", onClick: () => c.setUi({ pDow: i }) })) },
+    { type: "step", t: E2("Hora de prueba", "Test drive time"), v: horaFe(pMin), onM: () => c.setUi({ pMin: Math.max(360, pMin - 30) }), onP: () => c.setUi({ pMin: Math.min(1320, pMin + 30) }) },
+    { type: "acts", pt: "0", items: [{ l: E2("Agregar hora", "Add time"), v: "secondary", icon: "plus", off: c.pending || P0.some((x) => x.dow === pDow && x.min === pMin) || P0.length >= 21, onClick: () => savePrueba([...P0, { dow: pDow, min: pMin, on: true }]) },
+      ...(P0.length ? [{ l: E2("Quitar las apagadas", "Remove the off ones"), v: "ghost", off: c.pending || !P0.some((x) => !x.on), onClick: () => savePrueba(P0.filter((x) => x.on)) }] : [])] },
+    { type: "step", t: E2("Personas por hora", "People per time"), s: E2("Cuántas pruebas caben a la misma hora.", "How many test drives fit at the same time."), v: String(h.prueba.cupo), onM: () => savePrueba(P0, Math.max(1, h.prueba.cupo - 1)), onP: () => savePrueba(P0, Math.min(5, h.prueba.cupo + 1)) });
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("EN EL LOTE", "ON THE LOT"), v: String(Math.max(h.lot, enApp)) }, { k: E2("VENDIDOS", "SOLD"), v: String(h.vendidos30), s: E2("30 días", "30 days") }, { k: E2("EN LA APP", "IN THE APP"), v: String(enApp) }] });
   if (!V.length) out.push({ type: "note", tone: "info", icon: "car", t: E2("Agrega tus carros en Inventario: VIN, millaje, precio y fotos.", "Add your cars in Inventory: VIN, mileage, price and photos."), cta: E2("Inventario", "Inventory"), onCta: () => c.go("mod", "inventario") });
   for (const x of V) {

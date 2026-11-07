@@ -50,6 +50,7 @@ import { carroDetalle, herramientaAutosBloques, inventarioBloques } from "./Auto
 import { conInventario } from "@/lib/autos-comun";
 import { hoyNoche, nocheDetalle, type NocPanel } from "./NocheReservas";
 import { hoyInsc, inscDetalleBloques, inscripcionesBloques, type InsPanel } from "./Inscripciones";
+import { hoyVis, visDetalleBloques, visitasBloques, type VisP } from "./Visitas";
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
@@ -107,10 +108,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; nav: (href: string) => void;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel }) {
+export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -151,7 +152,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, jo
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, nav };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -327,6 +328,7 @@ function secciones(c: Ctx): Sec {
   }
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
   if (c.ruta.sec === "mod" && c.ruta.sub === "inscripciones" && c.ins) return inscripcionesBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "visitas" && c.vis) return visitasBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "servicios") return c.ofi ? oficiosBloques(c) : serviciosBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ofi) return herramientaBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.sp) return herramientaSPBloques(c, licencias);
@@ -371,6 +373,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("fiesta:")) return fiestaDetalle(c);
   if (id.startsWith("noche:")) return nocheDetalle(c);
   if (id.startsWith("insc:")) return inscDetalleBloques(c);
+  if (id.startsWith("vis:")) return visDetalleBloques(c);
   if (id.startsWith("grp:")) return grupoEduDetalle(c, id);
   if (id.startsWith("fe:")) return feDetalle(c, id);
   if (id.startsWith("inm:")) return propiedadDetalle(c, id.slice(4));
@@ -482,6 +485,7 @@ function hoy(c: Ctx): (Bloque | null)[] {
   out.push(...hoyViajes(c));
   out.push(...hoyNoche(c));
   out.push(...hoyInsc(c));
+  out.push(...hoyVis(c));
   out.push(...hoyMercado(c));
   out.push(...hoyApartados(c));
   out.push(...hoyRentas(c));

@@ -4,7 +4,10 @@ import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRet
 import { db, tx } from "./db";
 import { etiquetaGrupo, fechaCorta, horaInsc, rubroInsc, sumarDiasI, usdI, type Bi, type KindInsc, type RubroInsc } from "./inscripciones-comun";
 import { esCuidado, kindNinosDe, type KindNinos } from "./ninos-comun";
-import { guardarNino, limpiarNino } from "./ninos-privado";
+import { guardarNino, guardarNotaFe, limpiarNino } from "./ninos-privado";
+import { kindFeDe } from "./fe-comun";
+import { FRANJAS, taparNumeros } from "./visitas-inm-comun";
+import { TOPE_FREE } from "./plan";
 import { pasarela } from "./pagos/pasarela";
 
 /* Inscribirse en un curso, programa o membresía (Fase 4 · 4ee · fase4-edu-ninos-deporte.md §3 y §4ee · neg-edu-flow.js).
@@ -22,6 +25,8 @@ import { pasarela } from "./pagos/pasarela";
 type Q = Pool | PoolClient;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, ID = /^\d{1,18}$/;
 export const NUM_I = /^I-\d{1,10}$/;
+/* Un servicio de Iglesias que es consejería, capellanía, oración o recuperación: se trata como neutro aunque la iglesia sea de misa o culto. */
+const NEUTRO_FE = /consejer|counsel|capell|chaplain|oraci[oó]n|prayer|recuperaci|recovery|duelo|grief/i;
 const VIVAS = ["pending", "change_proposed", "confirmed"];
 const no = (es: string, en: string, extra?: Record<string, true>) => ({ ok: false as const, msg: { es, en } as Bi, ...extra });
 export type Para = "yo" | "hijo" | "otro";
@@ -45,14 +50,17 @@ async function contexto(c: Q, negocio: string): Promise<(Ctx & { rubro: RubroIns
   const rubro = x ? rubroInsc(x.cat) : null;
   if (!x || !rubro) return null;
   const kn = rubro === "ninos" ? kindNinosDe(x.subs, x.ov) : null;
-  return { ...x, rubro, kn, neutro: kn === "terapia" || kn === "familia" };
+  // 4ie · Iglesias: consejería, capellanía, oración y recuperación son NEUTRAS (avisos sin el lugar ni el servicio; nota cifrada).
+  const kf = rubro === "fe" ? kindFeDe(x.subs, x.ov) : null;
+  return { ...x, rubro, kn, neutro: kn === "terapia" || kn === "familia" || kf === "consejo" || kf === "oracion", reply: rubro === "fe" ? 48 : x.reply };
 }
 type Svc = { id: string; k: KindInsc; name: Bi; cents: number; mat: number; plan: number; g1: boolean; lvl: boolean; team: boolean; sem: number | null; horas: number | null;
-  cert: Bi | null; certBy: Bi | null; oficial: boolean; no: Bi[]; inc: Bi[]; foto: string | null };
+  cert: Bi | null; certBy: Bi | null; oficial: boolean; no: Bi[]; inc: Bi[]; foto: string | null; fe: string | null; dur: boolean };
 const SVC_SQL = `select i.id::text, i.svc_kind as k, i.name, i.price_cents as cents, coalesce(i.deposit_cents, 0) as mat, coalesce((i.svc_attrs->>'plan_n')::int, 0) as plan,
             coalesce((i.svc_attrs->>'g1')::boolean, false) as g1, coalesce((i.svc_attrs->>'lvl')::boolean, false) as lvl, coalesce((i.svc_attrs->>'team')::boolean, false) as team,
             (i.svc_attrs->>'sem')::int as sem, (i.svc_attrs->>'horas')::int as horas, i.svc_attrs->'cert' as cert, i.svc_attrs->'certBy' as "certBy",
-            coalesce((i.svc_attrs->>'oficial')::boolean, false) as oficial, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto
+            coalesce((i.svc_attrs->>'oficial')::boolean, false) as oficial, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto,
+            i.svc_attrs->>'fe' as fe, (i.svc_attrs ? 'dur') as dur
        from items i where i.business_id = $1 and i.id = $2::bigint and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra
         and i.svc_kind in ('curso', 'mes', 'semana', 'clase', 'hora')`;
 async function servicio(c: Q, negocio: string, id: string): Promise<Svc | null> {
@@ -91,17 +99,35 @@ export function textoPlan(cal: { n: number; cents: number; due: string }[], nego
   };
 }
 
+/* 4ie · «Pedir fecha» de Iglesias: de mañana en 2 días a 60 días adelante (la oficina confirma, propone otra o dice que no hay). */
+export function fechasFe(hoy: string): string[] { return Array.from({ length: 59 }, (_, i) => sumarDiasI(hoy, i + 2)); }
+/* El tope de Free de Iglesias (§6 #6): 10 solicitudes al mes en la app. */
+async function topeFe(c: Q, negocio: string): Promise<boolean> {
+  const r = (await c.query<{ cap: number; usados: number }>(
+    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'free_ops_cap'), $2) as cap,
+            (select count(*)::int from operations o join businesses b on b.id = o.business_id join cities ci on ci.id = b.city_id
+              where o.business_id = $1 and o.kind <> 'table' and o.free_quota_month = to_char(now() at time zone ci.timezone, 'YYYY-MM')) as usados`, [negocio, TOPE_FREE])).rows[0];
+  return !!r && r.usados >= r.cap;
+}
+
+/* 4ie · En Iglesias se pide en la app solo lo que pide fecha (donativo o «con cita»), el catecismo (curso) y lo de consejería u oración;
+   la misa, el culto y la ayuda gratis no se reservan (§6 #4: llegas a la hora). */
+const pideFe = (s: Svc, neutro: boolean) => s.k === "curso" || s.fe === "don" || s.dur || neutro;
+
 /* ── Lo que necesita la pantalla de inscribirse ── */
 export type BookingInsc = {
   negocio: { id: string; nombre: string; foto: string | null; telefono: string | null }; rubro: RubroInsc; cuidado: boolean; neutro: boolean;
   svc: Svc; grupos: GrupoB[]; bandas: BandaB[]; necesitaGrupo: boolean; sinGrupos: boolean; mat: number; matLocal: number; plan: number; contrato: number; salir: number;
   g1: "si" | "usada" | null; para: Para[]; espera: { id: string; pos: number; estado: string; vence: string | null } | null; mias: number; free: boolean; tarjeta: boolean; hoy: string;
+  // 4ie · Iglesias: «Pedir fecha» (sin grupos con fecha: la fecha deseada y la franja), neutro (consejería) y el tope de Free (10 al mes).
+  fecha: boolean; fechas: string[]; tope: boolean;
 };
 export async function bookingInsc(negocio: string, svcId: string, userId: string | null): Promise<BookingInsc | null> {
   if (!ID.test(svcId)) return null;
   const x = await contexto(db(), negocio);
   const s = x ? await servicio(db(), negocio, svcId) : null;
   if (!x || !s) return null;
+  if (x.rubro === "fe" && !pideFe(s, x.neutro || NEUTRO_FE.test(`${s.name.es} ${s.name.en}`))) return null;
   const G = await grupos(db(), x, s, userId);
   const cuidado = x.kn ? esCuidado(x.kn) : false;
   const B = cuidado && (s.k === "semana" || s.k === "mes") ? await bandas(db(), negocio, userId) : [];
@@ -112,25 +138,30 @@ export async function bookingInsc(negocio: string, svcId: string, userId: string
             (select count(*)::int from waitlist_entries z where z.item_id = w.item_id and z.group_id is not distinct from w.group_id and z.band_id is not distinct from w.band_id and z.status = 'waiting' and z.id < w.id) as pos
        from waitlist_entries w where w.user_id = $1::uuid and w.item_id = $2::bigint and w.status in ('waiting', 'offered') order by w.id desc limit 1`, [userId, s.id])).rows[0] ?? null : null;
   const mias = userId ? ((await db().query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1::uuid and kind = 'enrollment' and (details->>'item_id') = $2 and status = any($3::text[])`, [userId, s.id, VIVAS])).rows[0]?.n ?? 0) : 0;
-  const tarjeta = !!x.cuenta && x.plan === "pro";
+  const tarjeta = !!x.cuenta && x.plan === "pro" && x.rubro !== "fe";
   const mat = s.k === "curso" && s.mat > 0 && tarjeta ? s.mat : 0;
+  const fecha = x.rubro === "fe" && s.k === "clase" && !tieneGrupos;
+  const tope = x.rubro === "fe" && x.plan !== "pro" && await topeFe(db(), x.id);
   return {
-    negocio: { id: x.id, nombre: x.name, foto: x.foto, telefono: x.phone }, rubro: x.rubro, cuidado, neutro: x.neutro, svc: s, grupos: G, bandas: B,
-    necesitaGrupo: !B.length && (tieneGrupos || s.k === "curso" || s.k === "clase" || s.k === "hora"), sinGrupos: !tieneGrupos, mat, matLocal: s.k === "curso" && s.mat > 0 && !mat ? s.mat : 0,
+    negocio: { id: x.id, nombre: x.name, foto: x.foto, telefono: x.phone }, rubro: x.rubro, cuidado, svc: s, grupos: G, bandas: B,
+    sinGrupos: !tieneGrupos, mat, matLocal: s.k === "curso" && s.mat > 0 && !mat ? s.mat : 0,
     plan: s.k === "curso" ? s.plan : 0, contrato: x.rubro === "dep" && s.k === "mes" ? x.contrato : 0, salir: x.rubro === "dep" && s.k === "mes" ? x.salir : 0,
     g1, para: x.rubro === "ninos" ? ["hijo"] : ["yo", "hijo", "otro"], espera, mias, free: x.plan !== "pro", tarjeta, hoy: x.hoy,
+    neutro: x.neutro || (x.rubro === "fe" && NEUTRO_FE.test(`${s.name.es} ${s.name.en}`)), necesitaGrupo: !fecha && !B.length && (tieneGrupos || s.k === "curso" || s.k === "clase" || s.k === "hora"),
+    fecha, fechas: fecha ? fechasFe(x.hoy) : [], tope,
   };
 }
 
 /* ── Inscribirme ── */
 export type InscIn = { svc: string; grupo?: string | null; banda?: string | null; para: Para; tutor?: boolean; nino?: unknown; nivel?: string | null; equipo?: string | null; nota?: string;
-  plan?: boolean; sms?: boolean; pm?: string | null; clave: string };
+  plan?: boolean; sms?: boolean; pm?: string | null; clave: string; fecha?: string | null; franja?: string | null };
 type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; grupo?: true; espera?: true };
 const inicioTs = (ymd: string, min: number | null, tz: string) => ({ sql: `(($1::date + make_interval(mins => $2::int)) at time zone $3)`, args: [ymd, min ?? 480, tz] });
 export async function inscribirme(userId: string, negocio: string, f: InscIn, entorno: string, ip: string | null): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc))) return no("Revisa tu solicitud y vuelve a intentarlo.", "Check your request and try again.");
   const para: Para = f.para === "hijo" || f.para === "otro" ? f.para : "yo";
-  const nota = limpio(f.nota, 200);
+  // 4ie · La nota se filtra: seguro social, ITIN, tarjetas y cuentas se tapan ANTES de guardar (notaSinNumeros; la base lo comprueba en Iglesias).
+  const nota = taparNumeros(limpio(f.nota, 200)).texto;
   if (/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(nota)) return no("Por seguridad, sin teléfonos en la nota.", "For safety, no phone numbers in the note.");
   // Los datos del niño se revisan ANTES de tocar el dinero (y otra vez al guardarlos, cifrados).
   if (para === "hijo") {
@@ -148,9 +179,11 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     await c.query(`select pg_advisory_xact_lock(hashtext('insc:' || $1))`, [negocio]);
     const x = await contexto(c, negocio);
     const s = x ? await servicio(c, negocio, String(f.svc)) : null;
-    if (!x || !s) { await c.query("rollback"); return no("Eso no se pide en línea.", "That is not requested online."); }
+    if (!x || !s || (x.rubro === "fe" && !pideFe(s, x.neutro || NEUTRO_FE.test(`${s.name.es} ${s.name.en}`)))) { await c.query("rollback"); return no("Eso no se pide en línea.", "That is not requested online."); }
     if (x.off.svc) { await c.query("rollback"); return no(`${x.name} no recibe inscripciones en línea por ahora: llama al lugar.`, `${x.name} is not taking online enrollments right now: call the place.`); }
-    if (x.plan !== "pro") { await c.query("rollback"); return no(`Aquí no te inscribes por la app: llama o escribe a ${x.name}.`, `You do not enroll in the app here: call or message ${x.name}.`); }
+    // Iglesias con Free recibe solicitudes, hasta 10 al mes (§6 #6); Educación, Niños y Deporte siguen con Pro.
+    if (x.plan !== "pro" && x.rubro !== "fe") { await c.query("rollback"); return no(`Aquí no te inscribes por la app: llama o escribe a ${x.name}.`, `You do not enroll in the app here: call or message ${x.name}.`); }
+    if (x.plan !== "pro" && await topeFe(c, x.id)) { await c.query("rollback"); return no(`${x.name} ya recibió las solicitudes de este mes en la app: llama a la oficina.`, `${x.name} already got this month's in-app requests: call the office.`); }
     if (x.rubro === "ninos" && para !== "hijo") { await c.query("rollback"); return no("Los programas de niños se piden para tu hijo o hija.", "Kids programs are requested for your child."); }
     const nivel = s.lvl ? (NIVELES.includes(f.nivel as Nivel) ? (f.nivel as Nivel) : null) : null;
     if (s.lvl && !nivel) { await c.query("rollback"); return no("Elige el nivel.", "Pick the level."); }
@@ -163,7 +196,11 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     let g: GrupoB | null = null, b: BandaB | null = null;
     // Guardería y cuidado en casa: el cupo es por edad (bandas); entonces no se pide grupo.
     const BB = cuidado && (s.k === "semana" || s.k === "mes") ? await bandas(c, negocio, userId) : [];
-    if (!BB.length && (tieneGrupos || s.k === "curso" || s.k === "clase" || s.k === "hora")) {
+    // 4ie · «Pedir fecha» (Iglesias, sin grupos con fecha): la fecha deseada y la franja; la oficina confirma.
+    const modoFecha = x.rubro === "fe" && s.k === "clase" && !tieneGrupos;
+    const franja = modoFecha ? FRANJAS.find((z) => z[0] === f.franja) ?? null : null;
+    if (modoFecha && (!fechasFe(x.hoy).includes(String(f.fecha ?? "")) || !franja)) { await c.query("rollback"); return no("Elige la fecha y la franja.", "Pick the date and the time of day.", { grupo: true }); }
+    if (!modoFecha && !BB.length && (tieneGrupos || s.k === "curso" || s.k === "clase" || s.k === "hora")) {
       g = G.find((y) => y.id === String(f.grupo ?? "")) ?? null;
       if (!tieneGrupos) { await c.query("rollback"); return no("Todavía no hay grupos con fecha. Anótate en la lista de espera o llama al lugar.", "There are no dated groups yet. Join the waitlist or call the place.", { espera: true }); }
       if (!g) { await c.query("rollback"); return no("Elige el grupo.", "Pick the group.", { grupo: true }); }
@@ -188,17 +225,18 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
       await c.query("rollback"); return no("Tienes 5 inscripciones esperando respuesta. Espera a que te contesten.", "You have 5 enrollments waiting for a reply. Wait for an answer.");
     }
     // Hasta cuándo responde el lugar: reply_h, y nunca después de 12 h antes de que empiece el grupo.
-    const empieza = g && !g.empezo ? g.inicio : null;
+    const empieza = modoFecha ? String(f.fecha) : g && !g.empezo ? g.inicio : null;
     const resp = (await c.query<{ rb: string; ok: boolean; ini: string | null }>(
       `select least(now() + make_interval(hours => $4::int), case when $1::date is null then 'infinity'::timestamptz else ${inicioTs("", null, "").sql} - interval '12 hours' end)::text as rb,
               least(now() + make_interval(hours => $4::int), case when $1::date is null then 'infinity'::timestamptz else ${inicioTs("", null, "").sql} - interval '12 hours' end) > now() + interval '1 hour' as ok,
               case when $1::date is null then null else ${inicioTs("", null, "").sql}::text end as ini`,
-      [empieza, g?.min ?? 480, x.tz, x.reply])).rows[0]!;
+      [empieza, franja ? franja[3] : g?.min ?? 480, x.tz, x.reply])).rows[0]!;
     if (!resp.ok) { await c.query("rollback"); return no("Ese grupo empieza muy pronto para que te confirmen: elige otro o llama al lugar.", "That group starts too soon to confirm you: pick another or call the place.", { grupo: true }); }
     // Primera clase gratis: una vez por persona y lugar cada 90 días.
     const g1 = s.g1 && s.k !== "curso" && !(await c.query(`select 1 from operations o join operation_events e on e.operation_id = o.id and e.kind = 'insc_g1' where o.user_id = $1 and o.business_id = $2 and e.at > now() - interval '90 days' limit 1`, [userId, negocio])).rowCount;
     // El dinero: solo la matrícula de un curso, y solo si el lugar cobra con tarjeta.
-    const mat = s.k === "curso" && s.mat > 0 && x.cuenta ? s.mat : 0;
+    // Iglesias nunca cobra en la app (sinDineroEnVisitas): ni matrícula ni donativo.
+    const mat = x.rubro === "fe" ? 0 : s.k === "curso" && s.mat > 0 && x.cuenta ? s.mat : 0;
     const planN = f.plan === true && s.k === "curso" && s.plan > 0 && (g?.inicio ?? null) ? s.plan : 0;
     const numero = `I-${(await c.query<{ n: string }>(`select nextval('insc_seq')::text as n`)).rows[0]!.n}`;
     let ret: Awaited<ReturnType<typeof pasarela.retener>> | null = null, fee = 0;
@@ -213,14 +251,18 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
       if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
     }
     // Lo que importa se COPIA al enviar.
-    const det = { rubro: x.rubro, k: s.k, item_id: s.id, svc: s.name, group_id: g?.id ?? null, band_id: b?.id ?? null, group: g ? g.label : b ? b.label : null, starts_on: g?.inicio ?? null, ends_on: g?.fin ?? null,
-      start_min: g?.min ?? null, dows: g?.dows ?? [], for: para, guardian_ok: para === "hijo", level: nivel, team_name: equipo || null, price_cents: s.cents, mat_cents: s.k === "curso" ? s.mat : 0,
+    const neutro = x.neutro || (x.rubro === "fe" && NEUTRO_FE.test(`${s.name.es} ${s.name.en}`));
+    const fLabel = modoFecha && franja ? { es: `${fechaCorta(String(f.fecha), true)} · ${franja[1]}`, en: `${fechaCorta(String(f.fecha), false)} · ${franja[2]}` } : null;
+    const det = { rubro: x.rubro, k: s.k, item_id: s.id, svc: s.name, group_id: g?.id ?? null, band_id: b?.id ?? null, group: fLabel ?? (g ? g.label : b ? b.label : null), starts_on: modoFecha ? String(f.fecha) : g?.inicio ?? null, ends_on: g?.fin ?? null,
+      fecha: modoFecha || undefined, franja: franja ? franja[0] : undefined,
+      start_min: franja ? franja[3] : g?.min ?? null, dows: g?.dows ?? [], for: para, guardian_ok: para === "hijo", level: nivel, team_name: equipo || null, price_cents: s.cents, mat_cents: s.k === "curso" ? s.mat : 0,
       mat_app: mat, plan_n: planN, cert: s.cert, cert_by: s.certBy, oficial: s.oficial, no: s.no, contract_m: x.rubro === "dep" && s.k === "mes" ? x.contrato : 0,
-      cancel_fee_cents: x.rubro === "dep" && s.k === "mes" ? x.salir : 0, g1, sms: f.sms !== false, neutro: x.neutro, cuidado };
+      cancel_fee_cents: x.rubro === "dep" && s.k === "mes" ? x.salir : 0, g1, sms: f.sms !== false, neutro, cuidado };
     const op = (await c.query<{ id: string }>(
-      `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, customer_note, details, party_size, subtotal_cents, total_cents, deposit_cents, pay_mode, respond_by, client_key, is_test)
-       values ($1, 'enrollment', $2, $3, $4, 'pending', $5::timestamptz, nullif($6, ''), $7::jsonb, 1, $8, $8, $9, $10, $11::timestamptz, $12, $13) returning id::text`,
-      [numero, x.city, x.id, userId, resp.ini, para === "hijo" ? "" : nota, JSON.stringify(det), s.cents, mat, mat > 0 ? "app" : s.cents > 0 ? "local" : "none", resp.rb, f.clave, entorno !== "produccion"])).rows[0]!.id;
+      `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, customer_note, details, party_size, subtotal_cents, total_cents, deposit_cents, pay_mode, respond_by, client_key, is_test, free_quota_month)
+       values ($1, 'enrollment', $2, $3, $4, 'pending', $5::timestamptz, nullif($6, ''), $7::jsonb, 1, $8, $8, $9, $10, $11::timestamptz, $12, $13,
+               case when $14 then (select to_char(now() at time zone ci.timezone, 'YYYY-MM') from cities ci where ci.id = $2) end) returning id::text`,
+      [numero, x.city, x.id, userId, resp.ini, para === "hijo" || (x.rubro === "fe" && neutro) ? "" : nota, JSON.stringify(det), x.rubro === "fe" ? 0 : s.cents, mat, mat > 0 ? "app" : s.cents > 0 && x.rubro !== "fe" ? "local" : "none", resp.rb, f.clave, entorno !== "produccion", x.plan !== "pro"])).rows[0]!.id;
     // El cupo, dentro del candado (la base no deja pasarse).
     if (g) {
       const u = await c.query(`update class_groups set seats_booked = seats_booked + 1, updated_at = now() where id = $1::bigint and seats_total - seats_outside - seats_booked >= 1`, [g.id]);
@@ -233,6 +275,8 @@ export async function inscribirme(userId: string, negocio: string, f: InscIn, en
     // Si venía de una oferta de la lista de espera, la oferta queda usada.
     if (g?.mia || b?.mia) await c.query(`update waitlist_entries set status = 'accepted', operation_id = $2::bigint, updated_at = now() where user_id = $1 and status = 'offered' and ${g ? "group_id = $3::bigint" : "band_id = $3::bigint"}`, [userId, op, g?.id ?? b?.id]);
     await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2, $3::jsonb, 1, $4, $4, 0, '[]'::jsonb)`, [op, s.id, JSON.stringify(s.name), s.cents]);
+    // Consejería, capellanía, oración: la nota va cifrada (op_private 'fe') y se borra a los 30 días; nunca en operations.
+    if (x.rubro === "fe" && neutro && nota && para !== "hijo") await guardarNotaFe(c, op, nota);
     if (para === "hijo") {
       const r = await guardarNino(c, op, f.nino);
       if (!r.ok) { await c.query("rollback"); if (retenido) await pasarela.liberar(retenido).catch(() => undefined); retenido = null; return no(r.es, r.en); }
@@ -276,9 +320,14 @@ export function cuandoInsc(det: Record<string, unknown>, es: boolean) {
   return `${lbl ? ` · ${lbl}` : ""}${ini ? (es ? ` · empieza el ${fechaCorta(ini, true)}` : ` · starts ${fechaCorta(ini, false)}`) : ""}`;
 }
 const svcAviso = (o: Op) => (o.det.neutro ? "una inscripción" : (o.det.svc as Bi)?.es ?? "una inscripción");
-async function avisarCliente(numero: string, tpl: string, extra: Record<string, string> = {}) {
+/* 4ie · Iglesias: las mismas plantillas con el habla de la iglesia (insc_fe_*) y, en consejería, capellanía, oración y recuperación,
+   NEUTRAS (insc_fen_*: sin el lugar, el servicio ni el motivo; guardián avisoFeNeutro). */
+const FE_TPL = ["insc_ok", "insc_alt", "insc_no", "insc_exp", "insc_cx", "insc_biz_cx", "insc_grupo_cx", "insc_empieza", "insc_done"];
+export const tplFe = (tpl: string, neutro: boolean) => (FE_TPL.includes(tpl) ? `${neutro ? "insc_fen_" : "insc_fe_"}${tpl.slice(5)}` : tpl);
+async function avisarCliente(numero: string, tpl0: string, extra: Record<string, string> = {}) {
   const o = await leer(db(), "o.number = $1", [numero]);
   if (!o) return;
+  const tpl = o.det.rubro === "fe" ? tplFe(tpl0, !!o.det.neutro) : tpl0;
   const { avisar } = await import("./avisos");
   await avisar(o.uid, tpl, { negocio: o.negocio, cuando: cuandoInsc(o.det, true), mat: "", dev: "", grupo: "", cert: "", ...extra }, { href: `/insc/${numero}`, ref: ["enrollment", numero], sinSms: o.det.sms === false });
 }
@@ -326,6 +375,20 @@ export async function responderInsc(negocio: string, numero: string, paso: PasoI
       await soltarCupo(c, o.det);
       await ev(c, o.id, "insc_no", "member", actorId);
       despues = async () => { await liberarOperacion(o.id); await avisarCliente(numero, "insc_no", { dev: o.mat ? ` Se liberó tu matrícula de ${usdI(o.mat)}.` : " No se cobró nada." }); };
+      return { ok: true };
+    }
+    if (paso === "otro" && o.det.fecha) {
+      // 4ie · Iglesias «Pedir fecha»: la oficina propone otra fecha y franja («AAAA-MM-DD|franja»).
+      const [fe, fr] = String(alt ?? "").split("|"), franja = FRANJAS.find((z) => z[0] === fr);
+      if (!fe || !franja || !fechasFe(o.hoy).includes(fe)) return no("Elige la otra fecha y la franja.", "Pick the other date and time of day.");
+      if (fe === o.det.starts_on && fr === o.det.franja) return no("Esa es la misma fecha que pidieron.", "That is the same date they asked for.");
+      const label = { es: `${fechaCorta(fe, true)} · ${franja[1]}`, en: `${fechaCorta(fe, false)} · ${franja[2]}` };
+      const rb = (await c.query<{ rb: string }>(`select least(now() + interval '48 hours', (($1::date + make_interval(mins => $2::int)) at time zone $3) - interval '12 hours')::text as rb`, [fe, franja[3], o.tz])).rows[0]!.rb;
+      await c.query(`insert into change_proposals (operation_id, kind, proposed, created_by, side, respond_by) values ($1::bigint, 'date', $2::jsonb, $3, 'business', $4::timestamptz)`,
+        [o.id, JSON.stringify({ group_id: null, label, starts_on: fe, ends_on: null, start_min: franja[3], dows: [], franja: franja[0], from: o.det.starts_on }), actorId, rb]);
+      await c.query(`update operations set status = 'change_proposed', answered_at = now(), respond_by = $2::timestamptz, updated_at = now() where id = $1::bigint`, [o.id, rb]);
+      await ev(c, o.id, "insc_alt", "member", actorId, { es: `Propusiste ${label.es}`, en: `You proposed ${label.en}` });
+      despues = async () => { await avisarCliente(numero, "insc_alt", { grupo: label.es }); };
       return { ok: true };
     }
     if (paso === "otro") {
@@ -414,7 +477,7 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
     if (o.mat > 0 && o.pay !== "held") return no("Tu matrícula ya no está retenida. Elige «No me sirve» y pide la inscripción otra vez.", "Your fee is no longer held. Choose “Doesn’t work” and request again.");
     const v = p.v;
     await c.query(`update operations set status = 'confirmed', confirmed_at = now(), respond_by = null, scheduled_at = (($2::date + make_interval(mins => $3::int)) at time zone $4), details = details || $5::jsonb, updated_at = now() where id = $1::bigint`,
-      [o.id, v.starts_on, v.start_min ?? 480, o.tz, JSON.stringify({ group_id: v.group_id, alt_group_id: null, group: v.label, starts_on: v.starts_on, ends_on: v.ends_on ?? null, start_min: v.start_min ?? null, dows: v.dows ?? [] })]);
+      [o.id, v.starts_on, v.start_min ?? 480, o.tz, JSON.stringify({ group_id: v.group_id ?? null, alt_group_id: null, group: v.label, starts_on: v.starts_on, ends_on: v.ends_on ?? null, start_min: v.start_min ?? null, dows: v.dows ?? [], ...(v.franja ? { franja: v.franja } : {}) })]);
     await c.query(`update change_proposals set status = 'accepted', answered_at = now() where id = $1`, [p.id]);
     await ev(c, o.id, "alt_accepted", "user", userId);
     despues = async () => { await cobrarOperacion(o.id); await avisarNeg(numero, "biz_insc_alt_ok", { grupo: (v.label as Bi)?.es ?? "" }); };
@@ -625,7 +688,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
   // 2. Empieza: el día de inicio, una inscripción confirmada pasa a EN CURSO (y el grupo a «empezó»).
   const E = (await db().query<{ id: string }>(
     `update operations o set status_detail = 'started', updated_at = now() from cities c where c.id = o.city_id and o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail is null
-        and (o.details->>'starts_on') is not null and (o.details->>'starts_on')::date <= (now() at time zone c.timezone)::date${y} returning o.id::text`, a)).rows;
+        and coalesce(o.details->>'fecha', '') <> 'true' and (o.details->>'starts_on') is not null and (o.details->>'starts_on')::date <= (now() at time zone c.timezone)::date${y} returning o.id::text`, a)).rows;
   for (const e of E) await db().query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'insc_start', 'system')`, [e.id]);
   n += E.length;
   if (!w.length) await db().query(`update class_groups g set status = 'started', updated_at = now() from cities c where c.id = g.city_id and g.purpose = 'insc' and g.status = 'open' and g.starts_on <= (now() at time zone c.timezone)::date`);
@@ -669,6 +732,8 @@ export type InscVista = {
   cert: Bi | null; oficial: boolean; certDado: boolean; contrato: number; salir: number; g1: boolean; vence: string | null; alt: { label: Bi; inicio: string } | null; perdio: boolean;
   cancelo: string | null; motivoNeg: string | null; bajaPedida: string | null; negocio: { id: string; nombre: string; foto: string | null; telefono: string | null; direccion: string | null };
   nino: { nombre: string } | null; enviada: string; pasos: { k: string; t: Bi; hecho: boolean }[]; resena: boolean; hoy: string;
+  // 4ie · Iglesias: fecha deseada y franja, neutro (consejería) y la fecha propuesta.
+  fecha: boolean; franja: string | null; neutro: boolean; altFranja: string | null;
 };
 export async function inscVista(userId: string, numero: string): Promise<InscVista | null> {
   if (!NUM_I.test(numero)) return null;
@@ -685,7 +750,7 @@ async function vista(o: Op, cliente: boolean): Promise<InscVista> {
        from operations o join businesses b on b.id = o.business_id where o.id = $1::bigint`, [o.id])).rows[0]!;
   const t = (await db().query<{ schedule: { n: number; cents: number; due: string }[]; text: Bi }>(`select schedule, text from plan_terms where operation_id = $1::bigint order by version desc limit 1`, [o.id])).rows[0];
   const pagadas = t ? (await db().query<{ n: number }>(`select n from plan_marks where operation_id = $1::bigint order by n`, [o.id])).rows.map((r) => r.n) : [];
-  const alt = o.status === "change_proposed" ? (await db().query<{ v: { label: Bi; starts_on: string } }>(`select proposed as v from change_proposals where operation_id = $1::bigint and status = 'open' order by id desc limit 1`, [o.id])).rows[0]?.v : null;
+  const alt = o.status === "change_proposed" ? (await db().query<{ v: { label: Bi; starts_on: string; franja?: string } }>(`select proposed as v from change_proposals where operation_id = $1::bigint and status = 'open' order by id desc limit 1`, [o.id])).rows[0]?.v : null;
   const nino = cliente && o.det.for === "hijo" ? await (await import("./ninos-privado")).leerNino(o.id, { usuario: o.uid }) : null;
   const k = o.det.k as KindInsc, memb = k === "mes" || k === "semana";
   const conf = o.status === "confirmed" || o.status === "done", enCurso = o.status === "done" || o.detail === "started";
@@ -704,7 +769,7 @@ async function vista(o: Op, cliente: boolean): Promise<InscVista> {
       { k: "curso", t: memb ? { es: "Activa", en: "Active" } : { es: "En curso", en: "In progress" }, hecho: enCurso },
       { k: "terminada", t: memb ? { es: "Cancelada", en: "Cancelled" } : { es: "Terminada", en: "Finished" }, hecho: memb ? o.status === "cancelled" && conf : o.status === "done" },
     ],
-    resena: x.resena, hoy: o.hoy,
+    resena: x.resena, hoy: o.hoy, fecha: !!o.det.fecha, franja: (o.det.franja as string) ?? null, neutro: !!o.det.neutro, altFranja: alt?.franja ?? null,
   };
 }
 
@@ -738,7 +803,7 @@ export async function inscPanel(negocio: string): Promise<InscPanel> {
 }
 /* El detalle en el panel: los datos del niño SOLO aquí, para el negocio de esa inscripción, y cada vista queda en la auditoría. */
 export type InscDetalle = InscVista & { cliente: string; nota: string | null; ninoPanel: { nombre: string; edad: number | null; grado: string | null; escuela: string | null; nota: string | null } | null;
-  historial: { at: string; kind: string; note: Bi | null }[]; otros: { id: string; label: Bi; inicio: string; libres: number }[] };
+  historial: { at: string; kind: string; note: Bi | null }[]; otros: { id: string; label: Bi; inicio: string; libres: number }[]; fechas: string[]; notaPrivada: boolean };
 export async function inscDetalle(negocio: string, numero: string, actorId: string): Promise<InscDetalle | null> {
   if (!NUM_I.test(numero)) return null;
   await vencerInsc({ negocio, numero });
@@ -750,13 +815,18 @@ export async function inscDetalle(negocio: string, numero: string, actorId: stri
     ninoPanel = await (await import("./ninos-privado")).leerNino(o.id, { negocio });
     if (ninoPanel) await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'insc.ver_nino', 'operation', $2, $3, null, null)`, [actorId, o.num, o.city]);
   }
-  const nota = (await db().query<{ n: string | null }>(`select customer_note as n from operations where id = $1::bigint`, [o.id])).rows[0]?.n ?? null;
+  let nota = (await db().query<{ n: string | null }>(`select customer_note as n from operations where id = $1::bigint`, [o.id])).rows[0]?.n ?? null, notaPrivada = false;
+  // 4ie · La nota de consejería o capellanía: cifrada; solo aquí, para ese negocio, y cada vista queda en la auditoría.
+  if (o.det.rubro === "fe" && o.det.neutro && !nota) {
+    nota = await (await import("./ninos-privado")).leerNotaFe(o.id, negocio);
+    if (nota) { notaPrivada = true; await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'insc.ver_nota_fe', 'operation', $2, $3, null, null)`, [actorId, o.num, o.city]); }
+  }
   const historial = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
   let otros: InscDetalle["otros"] = [];
   if (o.status === "pending" && o.det.group_id) {
     const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item_id));
     otros = s ? (await grupos(db(), x, s, null)).filter((g) => g.id !== String(o.det.group_id) && g.libres > 0 && !g.empezo).map((g) => ({ id: g.id, label: g.label, inicio: g.inicio, libres: g.libres })) : [];
   }
-  return { ...v, cliente: o.cliente, nota, ninoPanel, historial, otros };
+  return { ...v, cliente: o.cliente, nota, ninoPanel, historial, otros, fechas: o.status === "pending" && o.det.fecha ? fechasFe(o.hoy).slice(0, 21) : [], notaPrivada };
 }
 export const etiquetaInsc = (inicio: string | null, min: number | null, es: boolean) => (inicio ? `${fechaCorta(inicio, es)}${min != null ? ` · ${horaInsc(min)}` : ""}` : "");

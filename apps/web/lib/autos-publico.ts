@@ -23,7 +23,7 @@ export type AutosPublica = {
   carros: CarroPub[]; secciones: { id: string; name: Bi }[]; servicios: SvcAutoPub[];
   fin: boolean; itin: boolean; noCredit: boolean; trade: boolean; casa: boolean; reporta: boolean; garantia: number; lot: number; taxBp: number | null;
   sellos: SelloPub[]; lic: string | null;
-  booking: boolean; // «Prueba de manejo» en la app llega con 4ie: hasta entonces la hoja ofrece llamar o escribir.
+  booking: boolean; // 4ie: la prueba de manejo, la oferta, la precalificación y la cita se piden en la app (/n/{id}/ver).
   td?: { k: string; v: string }[]; // las columnas de la tarjeta de Hoy (las pone la página)
 };
 export const TOPE_CARROS_FICHA = 40;
@@ -79,7 +79,7 @@ export async function autosPublica(negocio: string): Promise<AutosPublica | null
     // Sin fila todavía: lo que dice hoy la página o lo que se dijo en Publica tu negocio (como herramientaAutos).
     fin: b.fin ?? (itin || onb.own?.fin === "si" || onb.own?.fin === "itin"), itin, noCredit: b.nc ?? fv.includes("sincredito"), trade: b.trade ?? (fv.includes("tradein") || onb.tool?.trade === true),
     casa: b.casa ?? fv.includes("casa"), reporta: b.rep ?? fv.includes("reporta"), garantia: b.gar ?? (garOnb === 6 ? 6 : garOnb > 0 || fv.includes("garantia") ? 3 : 0),
-    lot: Math.max(b.lot ?? 0, carros.length), taxBp: b.tax, sellos: L.rows, lic: L.rows.find((x) => x.kind === "pa_dealer")?.numero ?? null, booking: false,
+    lot: Math.max(b.lot ?? 0, carros.length), taxBp: b.tax, sellos: L.rows, lic: L.rows.find((x) => x.kind === "pa_dealer")?.numero ?? null, booking: true,
   };
 }
 

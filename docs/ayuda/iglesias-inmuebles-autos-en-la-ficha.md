@@ -30,7 +30,9 @@ with its breakdown, mileage, title and history (car dealers).
 - **Página de categoría:** cuántos lugares hay, cuántos abren ahora y cuántos son «En español», «Sin seguro social» o «Con ITIN».
 
 ## Qué pasa en cada caso · What happens
-- **Pedir visita, prueba de manejo o fecha** en la app llega en el siguiente paso; mientras, la hoja ofrece **llamar o escribir** al lugar.
+- **Pedir visita, prueba de manejo, cita, precalificación u oferta** (Bienes Raíces y Autos) y **Pedir fecha** o **Inscribirme** (Iglesias) ya se
+  piden en la app desde la hoja: día y hora, y revisa y envía. Hoy pagas $0. Ver `pedir-visita-y-prueba-de-manejo.md`. (4ie, 7 nov)
+  **EN.** Request visit, test drive, appointment, pre-qualification or offer, and «Ask for a date» / «Sign up» at churches, now work in the app from the sheet.
   Ver una propiedad y la prueba de manejo son gratis; nada se cobra ni se aparta en la app.
 - **Funeraria · «Pedir información»:** te deja llamar, escribir o WhatsApp (si lo tiene). Sin presión: la familia decide con calma y no se
   cobra por preguntar.
@@ -41,7 +43,8 @@ with its breakdown, mileage, title and history (car dealers).
   que pagas al final.
 - **Título salvage:** siempre dice «no se maneja en la calle hasta pasar la inspección de PA».
 - **Sellos** («Dealer con licencia de PA», «NMLS», «Funeraria con licencia de PA»): solo cuando To'Latino verificó la licencia.
-- **Plan Free:** se llama o se escribe al lugar; la lista enseña hasta 5.
+- **Plan Free:** la lista enseña hasta 5; tocar una propiedad, un carro o una fecha lleva directo a pedirla (hasta 10 solicitudes al mes por
+  negocio); el botón de abajo sigue siendo llamar o escribir.
 - To'Latino **nunca pide** seguro social, ITIN, ingresos, estados de cuenta ni licencia de conducir: los papeles se llevan en persona.
 
 ## FAQ

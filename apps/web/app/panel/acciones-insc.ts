@@ -14,7 +14,7 @@ const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): R
 async function entrar(id: unknown) {
   if (!(await mismoOrigen())) return null;
   const a = typeof id === "string" ? await accesoPanel(id, "ord") : null;
-  return a && ["NEG-EDU", "NEG-NINOS", "NEG-DEPORTE"].includes(a.negocio.category_id) ? a : null;
+  return a && ["NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE"].includes(a.negocio.category_id) ? a : null; // 4ie: Iglesias (fechas y catecismo, $0)
 }
 export async function inscResponder(id: string, numero: string, paso: PasoInsc, alt?: string): Promise<Res> {
   const a = await entrar(id); if (!a) return SIN_ACCESO;

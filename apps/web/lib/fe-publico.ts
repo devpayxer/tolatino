@@ -23,7 +23,7 @@ export type FePublica = {
   horarios: HorarioFe[]; proximo: ProximoFe | null;
   bil: boolean; esp: boolean; help: HelpFe[]; sinid: boolean; freq: FreqFe; agotado: boolean; h24: boolean; plan: boolean; rep: RepFe; repatria: boolean; catequesis: boolean;
   secciones: { id: string; name: Bi }[]; servicios: SvcFePub[]; sellos: SelloPub[];
-  booking: boolean; // «Pedir fecha» en la app llega con 4ie: hasta entonces la hoja ofrece llamar o escribir.
+  booking: boolean; // 4ie: «Pedir fecha» e «Inscribirme» se piden en la app (motor de inscripciones, $0).
   td?: { k: string; v: string }[]; // las columnas de la tarjeta de Hoy (las pone la página con hoyFe)
 };
 
@@ -66,7 +66,7 @@ export async function fePublica(negocio: string): Promise<FePublica | null> {
     horarios: h.horarios, proximo: proximoServicio(h.horarios, h.kind, b.dow, b.min),
     bil: h.bil, esp: fv.includes("esp") || h.horarios.some((x) => x.lang === "es" || x.lang === "bil"), help: h.help, sinid: h.sinid, freq: h.freq, agotado: h.agotado, h24: h.h24, plan: h.plan,
     rep: h.rep, repatria: h.repatria, catequesis: h.catequesis,
-    secciones: S.rows.filter((x) => usados.has(x.id)), servicios, sellos: L.rows, booking: false,
+    secciones: S.rows.filter((x) => usados.has(x.id)), servicios, sellos: L.rows, booking: true,
   };
 }
 /* nextCul (L34): el próximo servicio de la semana desde ahora (hora de la ciudad). En una parroquia, la próxima misa; en un culto, el

@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
+import { horasPrueba, retirarAnuncio } from "./visitas-inm";
 import type { Bi } from "./inscripciones-comun";
 import {
   BODIES, BODY, DRIVE, FUEL, GARANTIAS_DEALER, MESES_BHPH, MESES_PAGO, TOPE_CARROS_FREE, TRANS, anioCoincide, anioDeVin, conCdl, conInventario, kindAutosDe, limpiarVin, nombreCarro,
@@ -59,7 +60,8 @@ export function totalBhph(otd: number, enganche: number, semana: number, meses: 
 /* ── Lo de cada negocio: la herramienta (o lo de base), el tope y el impuesto de su ciudad ── */
 type FilaB = { subs: string[]; fv: string[]; ca: Record<string, any> | null; city: string; hay: boolean; ov: string | null; fee: number | null; tags: number | null; fin: boolean | null; itin: boolean | null;
   nc: boolean | null; idown: number | null; apr: number | null; term: number | null; trade: boolean | null; casa: boolean | null; rep: boolean | null; gar: number | null;
-  bd: number | null; bw: number | null; bm: number | null; lot: number | null; pro: boolean; tope: number; tax: number | null; lic: string | null; v30: number };
+  bd: number | null; bw: number | null; bm: number | null; lot: number | null; pro: boolean; tope: number; tax: number | null; lic: string | null; v30: number;
+  tp: { dow: number; min: number; on: boolean }[] | null; tc: number | null; th: number };
 type FilaC = Omit<CarroAuto, "puerta" | "est" | "bhph"> & { price: number; taxBp: number; tax: number; tagsC: number; feeC: number; otd: number;
   ed: number | null; ea: number | null; em: number | null; ep: number | null; et: number | null; bd: number | null; bw: number | null; bk: number | null; bt: number | null; ba: number | null };
 
@@ -73,7 +75,9 @@ export async function herramientaAutos(negocio: string, c: Q = db()): Promise<He
             coalesce((select (value #>> '{}')::int from platform_config where key = '${TOPE_KEY}'), 0) as tope,
             (select t.parts_bp from tax_rules t where t.city_id = b.city_id and t.category_id = 'NEG-DEALER' and t.effective_from <= now() order by t.effective_from desc, t.id desc limit 1) as tax,
             (select l.number from licenses l where l.business_id = b.id and l.kind = 'pa_dealer' and l.status = 'valid' order by l.verified_at desc nulls last limit 1) as lic,
-            (select count(*)::int from vehicle_listings v where v.business_id = b.id and v.status = 'sold' and v.status_at > now() - interval '30 days') as v30
+            (select count(*)::int from vehicle_listings v where v.business_id = b.id and v.status = 'sold' and v.status_at > now() - interval '30 days') as v30,
+            s.test_pattern as tp, s.test_cupo as tc,
+            (select count(*)::int from class_groups g where g.business_id = b.id and g.purpose = 'prueba' and g.status = 'open' and g.seats_total > g.seats_booked + g.seats_outside) as th
        from businesses b left join dealer_settings s on s.business_id = b.id where b.id = $1 and b.category_id = 'NEG-DEALER'`, [negocio])).rows[0];
   if (!b) return null;
   const C = await c.query<FilaC>(
@@ -101,6 +105,7 @@ export async function herramientaAutos(negocio: string, c: Q = db()): Promise<He
     garantia: b.gar ?? (garOnb === 6 ? 6 : garOnb > 0 || fv.includes("garantia") ? 3 : 0),
     fee: Math.min(b.fee ?? Math.max(0, Math.round(Number(onb.tool?.fee ?? 0)) * 100), b.tope), tags: b.tags ?? 15000, lot: b.lot ?? 0,
     bhphDown: b.bd ?? 99900, bhphWeek: b.bw ?? 9500, bhphMonths: b.bm ?? 18,
+    prueba: { pattern: Array.isArray(b.tp) ? b.tp : [], cupo: b.tc ?? 1, horas: b.th },
   };
 }
 export const autosPanel = herramientaAutos;
@@ -278,6 +283,8 @@ export async function cambiarEstadoCarro(c: PoolClient, negocio: string, itemId:
   await c.query(`update vehicle_listings set status = $2, status_at = now(), updated_at = now() where item_id = $1::bigint`, [itemId, st]);
   if (st === "sold" && x.status !== "sold") await c.query(`update dealer_settings set lot_total = greatest(lot_total - 1, 0) where business_id = $1`, [negocio]);
   if (x.status === "sold" && st !== "sold") await c.query(`update dealer_settings set lot_total = lot_total + 1 where business_id = $1`, [negocio]);
+  // 4ie · Vendido u oculto: las pruebas de manejo vivas de ese carro se cancelan sin culpa en esta misma transacción (el aviso sale después).
+  if (st === "sold" || st === "hidden") await retirarAnuncio(c, negocio, itemId, st === "sold" ? "sold" : "hidden");
   await recalcularTotales(c, negocio);
   return { ok: true };
 }
@@ -287,6 +294,7 @@ export type AutosIn = {
   fin?: boolean; itin?: boolean; noCredit?: boolean; trade?: boolean; casa?: boolean; reporta?: boolean; enganche?: number; garantia?: number; cargo?: number; lote?: number;
   pago?: { aprBp: number; meses: number } | null; bhphEng?: number; bhphSem?: number; bhphMeses?: number;
   estado?: { item: string; status: string }; precio?: { item: string; cents: number };
+  prueba?: { pattern: { dow: number; min: number; on: boolean }[]; cupo: number };
 };
 export async function guardarHerramientaAutos(c: PoolClient, negocio: string, p: AutosIn, actor: string): Promise<R> {
   const b = (await c.query<{ city: string }>(`select city_id as city from businesses where id = $1 and category_id = 'NEG-DEALER' for update`, [negocio])).rows[0];
@@ -350,6 +358,15 @@ export async function guardarHerramientaAutos(c: PoolClient, negocio: string, p:
     await c.query(`update vehicle_listings set price_cents = $2, tax_cents = $3, otd_cents = $4, est_down_cents = null, est_apr_bp = null, est_months = null, est_payment_cents = null, est_total_cents = null,
                     bhph_down_cents = null, bhph_week_cents = null, bhph_weeks = null, bhph_total_cents = null, bhph_apr_bp = null, updated_at = now() where item_id = $1::bigint`, [x.id, v, q.tax, q.otd]);
     await c.query(`update items set price_cents = $2, updated_at = now() where id = $1::bigint`, [x.id, v]);
+  } else if (p.prueba !== undefined) {
+    // 4ie · Horas de prueba de manejo «cualquier carro»: de 6 AM a 10 PM, cada media hora, sin repetir, hasta 21; de 1 a 5 a la misma hora.
+    const L = Array.isArray(p.prueba?.pattern) ? p.prueba.pattern : [], cupo = entero(p.prueba?.cupo);
+    const P = L.map((v) => ({ dow: entero(v?.dow), min: entero(v?.min), on: v?.on !== false }));
+    if (P.length > 21 || P.some((v) => !(v.dow >= 0 && v.dow <= 6 && v.min >= 360 && v.min <= 1320 && v.min % 30 === 0)) || new Set(P.map((v) => `${v.dow}:${v.min}`)).size !== P.length)
+      return err("Revisa las horas de prueba (de 6 AM a 10 PM, sin repetir).", "Check the test drive times (6 AM to 10 PM, no repeats).");
+    if (!(cupo >= 1 && cupo <= 5)) return err("Cada hora de prueba es para 1 a 5 personas.", "Each test drive time is for 1 to 5 people.");
+    await set(`test_pattern = $2::jsonb, test_cupo = $3`, [JSON.stringify(P.sort((a, b) => a.dow - b.dow || a.min - b.min)), cupo]);
+    await horasPrueba(c, negocio);
   } else r = err("No hay nada que guardar.", "Nothing to save.");
   if (r.ok) await recalcularTotales(c, negocio);
   return r;
@@ -358,7 +375,7 @@ export async function guardarHerramientaAutos(c: PoolClient, negocio: string, p:
 /* ── Los filtros de Venta de Autos que salen de los datos (nunca se editan a mano) y la tarjeta del buscador (apply L214–224). Lo que nadie
    deriva (esp, y10, verified, prueba hasta 4ie, flota…) se conserva. Sin términos de crédito sueltos en la tarjeta (Regulation Z): el
    enganche, el pago y la tasa van juntos en cada carro. ── */
-const DER = ["itin", "sincredito", "enganche", "garantia", "tradein", "limpio", "casa", "reporta"];
+const DER = ["itin", "sincredito", "enganche", "garantia", "tradein", "limpio", "casa", "reporta", "prueba"];
 type Tj = Record<string, Bi>;
 const esBi = (v: unknown): v is Bi => !!v && typeof v === "object" && typeof (v as Bi).es === "string";
 
@@ -377,6 +394,7 @@ export async function recalcularFiltrosAutos(c: Q, negocio: string) {
   if (V.length && V.every((x) => x.title === "limpio" && x.history)) F.add("limpio");
   if (h.casa) F.add("casa");
   if (bhph && h.reporta) F.add("reporta");
+  if (h.prueba.horas > 0) F.add("prueba"); // 4ie: alguna hora de prueba de manejo abierta
   if (conInventario(h.kind)) {
     const n = Math.max(h.lot, V.length), uno = n === 1;
     tj.eta = h.kind === "moto" ? { es: `${n} ${uno ? "vehículo" : "vehículos"} en la tienda`, en: `${n} ${uno ? "vehicle" : "vehicles"} in store` }

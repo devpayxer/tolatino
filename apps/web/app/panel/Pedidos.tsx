@@ -52,7 +52,8 @@ export function hoyPedidos(c: Ctx): (Bloque | null)[] {
   const cols2 = c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)";
   // Lo que espera respuesta en los bloques propios de cada categoría (fiestas, viajes, mercado) también cuenta aquí:
   // la cifra de arriba es TODO lo que espera al negocio, y «Nada pendiente» solo sale si de verdad no hay nada.
-  const otros = (c.fies?.hoy ?? []).filter((x) => x.st === "pending").length + (c.via?.hoy?.esperan ?? []).filter((x) => x.st === "pending" && x.detalle !== "precio").length + (c.mped?.hoy ?? []).filter((x) => x.st === "pending").length + (c.noc?.hoy?.esperan ?? []).filter((x) => x.st === "pending").length;
+  const otros = (c.fies?.hoy ?? []).filter((x) => x.st === "pending").length + (c.via?.hoy?.esperan ?? []).filter((x) => x.st === "pending" && x.detalle !== "precio").length + (c.mped?.hoy ?? []).filter((x) => x.st === "pending").length + (c.noc?.hoy?.esperan ?? []).filter((x) => x.st === "pending").length
+    + (c.vis?.panel?.esperan ?? []).filter((x) => x.estado === "pending").length; // 4ie: visitas y pruebas de manejo
   const nPend = pend.length + otros;
   const out: (Bloque | null)[] = [{ type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
     { k: E2("ESPERAN TU RESPUESTA", "AWAITING YOU"), v: String(nPend), bg: nPend ? "var(--tl-ink)" : undefined, fg: nPend ? "var(--tl-white)" : undefined, bd: nPend ? "none" : undefined, sFg: "rgba(255,255,255,.65)", s: nPend ? (c.ped || c.mped ? E2("responde en menos de 10 min", "reply within 10 min") : E2("responde antes de que venza", "reply before it expires")) : undefined },

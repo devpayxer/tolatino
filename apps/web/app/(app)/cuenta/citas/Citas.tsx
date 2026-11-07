@@ -38,9 +38,12 @@ export function Citas({ d, f, es, yo, pagina, otros = [] }: { d: MisReservas; f:
       insc_pending: ["PENDIENTE", "PENDING", "action"], insc_change_proposed: ["TE PROPONEN UN CAMBIO", "CHANGE PROPOSED", "action"], insc_confirmed: ["CONFIRMADA", "CONFIRMED", "signal"],
       insc_started: ["EN CURSO", "IN PROGRESS", "signal"], insc_cancel_req: ["CANCELACIÓN PEDIDA", "CANCELLATION REQUESTED", "action"], insc_done: ["TERMINADA", "FINISHED", "ink"], insc_declined: ["NO PUDO", "NOT POSSIBLE", "danger"],
       insc_expired: ["SIN RESPUESTA", "NO REPLY", "neutral"], insc_cancelled: ["CANCELADA", "CANCELLED", "neutral"],
+      // 4ie · Visitas, pruebas de manejo, citas, precalificaciones y ofertas (D-…).
+      vis_pending: ["PENDIENTE", "PENDING", "action"], vis_change_proposed: ["TE PROPONEN UN CAMBIO", "CHANGE PROPOSED", "action"], vis_confirmed: ["CONFIRMADA", "CONFIRMED", "signal"],
+      vis_done: ["PASÓ", "HAPPENED", "ink"], vis_noshow: ["NO FUISTE", "MISSED", "neutral"], vis_declined: ["NO PUDO", "NOT POSSIBLE", "danger"], vis_expired: ["SIN RESPUESTA", "NO REPLY", "neutral"], vis_cancelled: ["CANCELADA", "CANCELLED", "neutral"],
       pending: ["ENVIADO", "SENT", "action"], change_proposed: ["FALTA ALGO", "ITEM MISSING", "action"], confirmed: ["TE LO GUARDAN", "HELD", "signal"], declined: ["NO LO TIENEN", "NOT IN STOCK", "danger"], done: ["RECOGIDO", "PICKED UP", "ink"] };
-    const K = { plan: [E2("Plan", "Plan"), "calendar", "/plan/"], rental: [E2("Renta", "Rental"), "wrench", "/renta/"], hold: [E2("Apartado", "Hold"), "bag", "/apartado/"], enrollment: [E2("Inscripción", "Enrollment"), "calendar", "/insc/"] } as const;
-    B.push({ type: "sec", t: E2("Inscripciones, planes, rentas y apartados", "Enrollments, plans, rentals and holds"), mt: "8px" });
+    const K = { plan: [E2("Plan", "Plan"), "calendar", "/plan/"], rental: [E2("Renta", "Rental"), "wrench", "/renta/"], hold: [E2("Apartado", "Hold"), "bag", "/apartado/"], enrollment: [E2("Inscripción", "Enrollment"), "calendar", "/insc/"], visit: [E2("Visita", "Visit"), "key", "/vis/"] } as const;
+    B.push({ type: "sec", t: E2("Inscripciones, planes, rentas y apartados", "Enrollments, plans, rentals and holds"), mt: "8px" }); // 4ie: también las visitas (VISITA P-…)
     B.push({ type: "rows", rows: otros.map((o): Fila => { const t = ST[o.st] ?? [o.st.toUpperCase(), o.st.toUpperCase(), "neutral"]; return {
       key: o.num, ic: K[o.kind][1], t: o.bname, tag: [es ? t[0] : t[1], t[2]], s: `${K[o.kind][0]} ${o.num}${o.svc ? ` · ${es ? o.svc.es : o.svc.en || o.svc.es}` : ""}`.toUpperCase(), chev: true, on: () => router.push(`${K[o.kind][2]}${o.num}`) }; }) });
   }

@@ -57,11 +57,24 @@ export async function leerNino(operacion: string, quien: { usuario: string } | {
   try { return JSON.parse(t) as DatosNino; } catch { return null; }
 }
 
+/* 4ie · La nota de consejería, capellanía u oración de Iglesias (op_private motivo 'fe'): cifrada, solo para la oficina de ese negocio
+   (y la persona que la escribió), nunca en avisos; se borra a los 30 días con los datos de los niños. */
+export async function guardarNotaFe(c: PoolClient, operacion: string, nota: string) {
+  const t = limpio(nota, 200);
+  if (!t) return;
+  await c.query(`insert into op_private (operation_id, reason, note_enc) values ($1::bigint, 'fe', $2) on conflict (operation_id) do nothing`, [operacion, cifrar(t)]);
+}
+export async function leerNotaFe(operacion: string, negocio: string): Promise<string | null> {
+  const r = (await db().query<{ enc: Buffer | null }>(
+    `select p.note_enc as enc from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and p.reason = 'fe' and o.business_id = $2 and o.kind = 'enrollment'`, [operacion, negocio])).rows[0];
+  return r ? descifrar(r.enc) : null;
+}
+
 /* El barrido: a los 30 días de que la inscripción terminó, se canceló, venció o no se dio, los datos del niño se borran. */
 export async function purgarNinos(): Promise<number> {
   const r = await db().query(
     `update op_private p set note_enc = null, purge_at = now() from operations o
-      where o.id = p.operation_id and p.reason = 'nino' and p.note_enc is not null
+      where o.id = p.operation_id and p.reason in ('nino', 'fe') and p.note_enc is not null
         and o.status in ('done', 'cancelled', 'expired', 'declined')
         and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - interval '30 days'`);
   return r.rowCount ?? 0;

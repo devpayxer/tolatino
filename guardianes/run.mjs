@@ -531,7 +531,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts"]); // crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts"]); // 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -695,7 +695,7 @@ const guardianes = {
       if (!/^apps\/web\/lib\/inscripciones[^/]*\.ts$/.test(f)) continue;
       const t = readFileSync(f, "utf8");
       t.split("\n").forEach((l, i) => { if (/pasarela\.cobrar|off_session|fueraDeSesion|cobrarGuardada/.test(l)) falla("soloMatriculaEnLaApp", f, i + 1, "una inscripción nunca se cobra fuera de sesión: solo la matrícula retenida al enviar y cobrada al confirmar"); });
-      if (f.endsWith("/inscripciones.ts") && !/const mat = s\.k === "curso" && s\.mat > 0 && x\.cuenta \? s\.mat : 0;/.test(t)) falla("soloMatriculaEnLaApp", f, 0, "lo que se retiene en la app tiene que salir solo de la matrícula de un curso");
+      if (f.endsWith("/inscripciones.ts") && !/const mat = (x\.rubro === "fe" \? 0 : )?s\.k === "curso" && s\.mat > 0 && x\.cuenta \? s\.mat : 0;/.test(t)) falla("soloMatriculaEnLaApp", f, 0, "lo que se retiene en la app tiene que salir solo de la matrícula de un curso");
     }
   },
   matriculaInscripcion() {
@@ -710,7 +710,7 @@ const guardianes = {
   },
   gruposSinSobreventa() {
     for (const f of codigo) {
-      if (!/^apps\/web\/lib\/inscripciones[^/]*\.ts$/.test(f)) continue;
+      if (!/^apps\/web\/lib\/(inscripciones[^/]*|visitas-inm)\.ts$/.test(f)) continue; // 4ie: las horas de visita y de prueba también
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/seats_booked = seats_booked \+/.test(l) && !/seats_total - seats_outside - seats_booked >= /.test(l)) falla("gruposSinSobreventa", f, i + 1, "sumar un cupo al grupo sin comprobar en la misma consulta que queda uno libre");
         if (/openings = openings - /.test(l) && !/openings >= 1/.test(l)) falla("gruposSinSobreventa", f, i + 1, "restar un cupo de la banda sin comprobar que queda uno");
@@ -721,9 +721,18 @@ const guardianes = {
     const f = "apps/web/lib/inscripciones.ts";
     if (!existsSync(f)) return;
     const t = readFileSync(f, "utf8");
-    for (const k of ["price_cents: s.cents", "mat_cents:", "contract_m:", "cancel_fee_cents:", "cert: s.cert", "starts_on: g?.inicio"]) if (!t.includes(k)) falla("copiaDelPrecio", f, 0, `la inscripción no copia «${k}» al enviar`);
+    for (const k of ["price_cents: s.cents", "mat_cents:", "contract_m:", "cancel_fee_cents:", "cert: s.cert", "starts_on: modoFecha ? String(f.fecha) : g?.inicio"]) if (!t.includes(k)) falla("copiaDelPrecio", f, 0, `la inscripción no copia «${k}» al enviar`);
     const v = /async function vista\([\s\S]*?\n}\n/.exec(t)?.[0] ?? "";
     if (/from items|svc_attrs|insc_settings/.test(v)) falla("copiaDelPrecio", f, 0, "la vista de una inscripción lee la herramienta o el servicio de hoy en vez de lo copiado al enviar");
+    // 4ie · Una visita o prueba de manejo copia al enviar lo de mudarse, el total en la puerta, el cargo del dealer y el pago de ejemplo; la vista
+    // y el panel leen esa copia (copiaDe(o.det)), nunca la propiedad o el carro de hoy.
+    const V = "apps/web/lib/visitas-inm.ts";
+    if (existsSync(V)) {
+      const x = readFileSync(V, "utf8");
+      for (const k of ["move_in_cents: cp.moveIn", "otd_cents: cp.puerta?.otd", "doc_fee_cents: cp.puerta?.fee", "est_payment: cp.est", "rent_cents: cp.rent", "price_cents: cp.price"]) if (!x.includes(k)) falla("copiaDelPrecio", V, 0, `la visita no copia «${k}» al enviar`);
+      const vv = /async function vista\([\s\S]*?\n}\n/.exec(x)?.[0] ?? "";
+      if (!/copia: copiaDe\(o\.det\)/.test(vv) || /property_listings|vehicle_listings|dealer_settings|inm_settings/.test(vv.replace(/direccionCliente\([^)]*\)/g, ""))) falla("copiaDelPrecio", V, 0, "la vista de una visita muestra lo copiado al enviar (copiaDe), nunca los montos de hoy");
+    }
   },
 
   /* 4ef · Niños: ninguna foto pública de un niño. La reseña de un lugar de niños no lleva fotos (el servidor la rechaza) y la foto de una
@@ -873,7 +882,7 @@ const guardianes = {
   asientosDerivados() {
     for (const f of codigo) {
       // 4ea: también los cupos de los grupos (class_groups.seats_booked): solo el motor de inscripciones (lib/inscripciones*.ts).
-      if (!/^apps\/web\//.test(f) || /^apps\/web\/lib\/(transporte|viajes|inscripciones)[^/]*\.ts$/.test(f)) continue;
+      if (!/^apps\/web\//.test(f) || /^apps\/web\/lib\/(transporte|viajes|inscripciones)[^/]*\.ts$/.test(f) || f === "apps/web/lib/visitas-inm.ts") continue; // 4ie: las horas de visita y de prueba (lib/visitas-inm.ts, con su candado)
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/seats_booked\s*=(?!=)/.test(l)) falla("asientosDerivados", f, i + 1, "«seats_booked» es derivado: solo lo escriben los motores de Transporte (lib/transporte*.ts, lib/viajes*.ts) e Inscripciones (lib/inscripciones*.ts)"); });
     }
   },
@@ -1309,7 +1318,7 @@ const guardianes = {
   /* 4ib. La dirección exacta de una propiedad (addr_line, geom) solo la lee lib/inmuebles.ts (el panel del negocio) y, en 4ie, lib/visitas-inm*.ts
      (al confirmar la visita). Ninguna consulta pública la ve; los cuartos y «solo la zona» muestran la zona (§3, §6 #15). */
   direccionAlConfirmar() {
-    const G = "direccionAlConfirmar", OK = /^apps\/web\/lib\/(inmuebles|visitas-inm[a-z-]*)\.ts$/;
+    const G = "direccionAlConfirmar", OK = /^apps\/web\/lib\/(inmuebles|visitas-inm)\.ts$/; // 4ie: solo lib/visitas-inm.ts (no su -comun, que va al navegador)
     for (const f of codigo) {
       if (!/^(apps|services)\//.test(f) || OK.test(f)) continue;
       const s = readFileSync(f, "utf8");
@@ -1317,6 +1326,16 @@ const guardianes = {
       if (/property_listings/.test(s) && /\b(pl|property_listings)\.geom\b|\bgeom\b[^\n]*from property_listings|st_[xy]\(\s*(pl\.)?geom/.test(s)) falla(G, f, 0, "la ubicación exacta (geom) de una propiedad no se lee fuera de lib/inmuebles.ts");
       // Lo público no importa la librería del panel (trae la dirección): solo inmuebles-comun o, en 4id, inmuebles-publico.
       if (/^apps\/web\/(lib\/([a-z-]*publico|ficha|categoria|buscar|mapa|directorio|ciudad)\.ts|app\/\(app\)\/)/.test(f) && /from "(\.\/|@\/lib\/)inmuebles"/.test(s)) falla(G, f, 0, "una pantalla o consulta pública importa lib/inmuebles.ts (la del panel, con la dirección exacta)");
+    }
+    // 4ie · En lib/visitas-inm.ts la dirección exacta se lee en UN solo lugar (direccionCliente) y le llega al cliente solo con la visita
+    // confirmada o pasada; la dirección de la casa del cliente (prueba en casa) la lee el dealer solo confirmada y cada vista se audita.
+    const VI = "apps/web/lib/visitas-inm.ts";
+    if (existsSync(VI)) {
+      const t = readFileSync(VI, "utf8"), dc = /async function direccionCliente\([\s\S]*?\n}\n/.exec(t)?.[0] ?? "";
+      if ((t.match(/\baddr_line\b/g) ?? []).length !== (dc.match(/\baddr_line\b/g) ?? []).length || !dc) falla(G, VI, 0, "addr_line se lee solo en direccionCliente (una sola puerta)");
+      if (!/const direccion = cliente && conf \? await direccionCliente/.test(t)) falla(G, VI, 0, "la dirección exacta le llega al cliente solo con la visita confirmada o pasada");
+      if (!/p\.reason = 'casa' and o\.business_id = \$2 and o\.kind = 'visit' and o\.status in \('confirmed', 'done'\)/.test(t) || !/'vis\.ver_direccion'/.test(t)) falla(G, VI, 0, "la dirección de la casa del cliente: solo con la prueba confirmada, para ese negocio, y cada vista en la auditoría");
+      if (!/const enCasa[^\n]*\n[^\n]*\n[^\n]*\n[\s\S]*cifrar\(JSON\.stringify\(\{ calle, zip \}\)\)/.test(t)) falla(G, VI, 0, "la dirección de la casa del cliente se guarda cifrada (op_private 'casa')");
     }
     const C = "packages/db/migrations/0092_inmuebles_propiedades.sql";
     if (existsSync(C) && !/check \(kind not in \('cuarto', 'compartida'\) or not addr_public\)/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "los cuartos y la vivienda compartida nunca muestran la dirección exacta (check en la base)");
@@ -1372,22 +1391,36 @@ const guardianes = {
       if (new RegExp(`^\\s*(${MAL})\\s+[a-z]`).test(l) || new RegExp(`add column (if not exists )?(${MAL})\\b`).test(l)) falla(G, `${dir}/${x}`, i + 1, "columna de datos de crédito o de identidad: nunca se guarda (los papeles se llevan en persona)");
     });
     for (const f of codigo) {
-      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*|fe[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts))$/.test(f)) continue;
+      // 4ie: también las pantallas de pedir visita y su estado, y el panel de Visitas.
+      const area = /^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*|fe[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts|Visitas\.tsx|acciones-vis\.ts)|app\/\(app\)\/(n\/\[id\]\/ver|vis\/\[num\])\/[^/]+\.tsx?)$/.test(f);
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
-        if (new RegExp(`(\\b(${MAL})\\??\\s*:|\\.(${MAL})\\b)`).test(l)) falla(G, f, i + 1, "campo de datos de crédito o de identidad: nunca se pide ni se guarda");
+        if (area && new RegExp(`(\\b(${MAL})\\??\\s*:|\\.(${MAL})\\b)`).test(l)) falla(G, f, i + 1, "campo de datos de crédito o de identidad: nunca se pide ni se guarda");
+        // El número de la licencia de conducir de una persona no existe en ningún lado (4ie: solo «Sí, tengo licencia vigente»).
+        if (/^(apps|packages|services)\//.test(f) && /license_number|licenseNumber|driver_?license_?(no|num)|licencia_?de_?conducir_?(no|num)/i.test(l)) falla(G, f, i + 1, "número de licencia de conducir: nunca se pide ni se guarda (solo «tengo licencia vigente»)");
       });
     }
+    // La prueba de manejo solo marca que la tiene (has_license), nunca un número ni una foto.
+    const VI = "apps/web/lib/visitas-inm.ts";
+    if (existsSync(VI) && !/has_license: it\.que === "prueba" \? true : null/.test(readFileSync(VI, "utf8"))) falla(G, VI, 0, "la prueba de manejo guarda solo «tiene licencia vigente» (has_license), nada más");
   },
 
   /* 4ib/4ie. Ver una propiedad es gratis: el código de Bienes Raíces (y las visitas de 4ie) no toca pasarela, pagos ni retenciones (§3). */
   sinDineroEnVisitas() {
     for (const f of codigo) {
-      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts))$/.test(f)) continue;
+      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts|Visitas\.tsx|acciones-vis\.ts)|app\/\(app\)\/(n\/\[id\]\/ver|vis\/\[num\])\/[^/]+\.tsx?)$/.test(f)) continue; // 4ie: las pantallas y el panel de visitas también
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
         if (/pasarela|from "[^"]*pagos|stripe|insert into payments|update payments|retener\(|cobrar\(|capturar\(/i.test(l)) falla("sinDineroEnVisitas", f, i + 1, "Bienes Raíces y Venta de Autos no mueven dinero en la app: ver y la prueba de manejo son gratis (sin pasarela, pagos ni retenciones)");
       });
+    }
+    // 4ie · Una visita nace con $0 y sin pago (pay_mode 'none'); Iglesias por el motor de inscripciones nunca toca la tarjeta ni la matrícula.
+    const VI = "apps/web/lib/visitas-inm.ts";
+    if (existsSync(VI) && !/values \(\$1, 'visit', \$2, \$3, \$4, 'pending', \$5::timestamptz, nullif\(\$6, ''\), \$7::jsonb, 1, 0, 0, 0, 'none'/.test(readFileSync(VI, "utf8"))) falla("sinDineroEnVisitas", VI, 0, "una visita se guarda con total $0, depósito $0 y sin forma de pago (pay_mode 'none')");
+    const I = "apps/web/lib/inscripciones.ts";
+    if (existsSync(I)) {
+      const t = readFileSync(I, "utf8");
+      if (!/const mat = x\.rubro === "fe" \? 0 :/.test(t) || !/const tarjeta = !!x\.cuenta && x\.plan === "pro" && x\.rubro !== "fe";/.test(t)) falla("sinDineroEnVisitas", I, 0, "Iglesias (rubro 'fe') nunca cobra en la app: ni matrícula ni tarjeta");
     }
   },
 
@@ -1526,14 +1559,60 @@ const guardianes = {
     for (const f of ["apps/web/app/(app)/n/[id]/Fe.tsx", "apps/web/app/(app)/n/[id]/Inmueble.tsx", "apps/web/app/(app)/n/[id]/Dealer.tsx"]) {
       if (!existsSync(f)) continue;
       const s = readFileSync(f, "utf8");
-      if (!/abrir: \(id: string, ev\?: MouseEvent\) => \{ stop\(ev\); if \(pro\) setHoja\(id\); \}/.test(s)) falla(G, f, 0, "en Free la fila no abre la hoja (solo Pro)");
+      // 4ie: en Free la fila no abre la hoja; si se puede pedir en la app (10 al mes, §6 #6), va directo a la solicitud.
+      if (!/abrir: \(id: string, ev\?: MouseEvent\) => \{ stop\(ev\); if \(pro\) setHoja\(id\);( else (if \(pide\) )?acc\.pedir\(pedirHref\(id\)\);)? \}/.test(s)) falla(G, f, 0, "en Free la fila no abre la hoja (solo Pro); si se puede pedir, va directo a la solicitud");
       if (!/const cta: Cta = !pro (\? \(fp\.negocio\.telefono \? llamarC|\|\| k === "derechos" \? llamarC|\? llamarC)/.test(s)) falla(G, f, 0, "en Free el botón es llamar o escribir");
       s.split("\n").forEach((l, i) => {
         if (/AQU[IÍ] NO SE PIDE CITA POR LA APP|NO IN-APP BOOKING HERE/i.test(l)) falla(G, f, i + 1, "Free sí pedirá en la app (§6 #6): no se escribe que aquí no se pide cita");
-        if (/router\.push\([^)]*\/(visita|prueba|inscribirme|pedir)/.test(l)) falla(G, f, i + 1, "pedir en la app llega con 4ie: ninguna hoja lleva todavía a una ruta de solicitud");
+        if (/router\.push\(/.test(l)) falla(G, f, i + 1, "la ficha pide por acc.pedir (la ruta de la solicitud), nunca con router.push suelto");
       });
     }
-    for (const f of ["apps/web/lib/fe-publico.ts", "apps/web/lib/inmuebles-publico.ts", "apps/web/lib/autos-publico.ts"]) if (existsSync(f) && !/booking: false/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "booking se enciende con 4ie (visitas): hasta entonces es false");
+    for (const f of ["apps/web/lib/fe-publico.ts", "apps/web/lib/inmuebles-publico.ts", "apps/web/lib/autos-publico.ts"]) if (existsSync(f) && !/booking: true/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "4ie: pedir en la app ya existe (booking: true)");
+    for (const r of ["apps/web/app/(app)/n/[id]/ver/page.tsx", "apps/web/app/(app)/vis/[num]/page.tsx", "apps/web/app/(app)/n/[id]/inscribirme/page.tsx"]) if (!existsSync(r)) falla(G, r, 0, "un botón de la ficha lleva a una ruta que no existe");
+  },
+
+  /* 4ie · La nota de una visita, una prueba de manejo o una fecha de Iglesias nunca guarda un seguro social o ITIN (9 cifras) ni un número de
+     tarjeta o cuenta (13 a 19): el servidor los tapa ANTES de guardar (taparNumeros) y la base lo vuelve a comprobar. Se prueba de verdad:
+     las expresiones del archivo se ejecutan contra ejemplos (lo que debe taparse y lo que no). */
+  notaSinNumeros() {
+    const G = "notaSinNumeros", C = "apps/web/lib/visitas-inm-comun.ts";
+    if (!existsSync(C)) return falla(G, C, 0, "falta el filtro de la nota (taparNumeros)");
+    const t = readFileSync(C, "utf8");
+    const rx = (n) => { const m = new RegExp(`export const ${n} = /(.+)/g;`).exec(t); try { return m ? new RegExp(m[1], "g") : null; } catch { return null; } };
+    const T = rx("NUM_TARJETA"), S = rx("NUM_SSN");
+    if (!T || !S) return falla(G, C, 0, "NUM_TARJETA y NUM_SSN tienen que ser expresiones con /g");
+    const tapa = (x) => x.replace(T, "••••").replace(S, (_m, pre) => `${pre}•••-••-••••`);
+    const DEBE = ["mi seguro es 123-45-6789", "ITIN 912 70 1234 ok", "123456789", "tarjeta 4111 1111 1111 1111", "cuenta 4111-1111-1111-1111", "5500000000000004", "IBAN 1234567890123456789"];
+    const NO = ["llego a las 5:30", "mi carro es 2015 con 88400 millas", "tengo 2 niños y 1 perro", "apartamento 3B"];
+    for (const x of DEBE) if (/\d{3}[ -]?\d{2}[ -]?\d{4}(?!\d)|(\d[ -]?){12,18}\d/.test(tapa(x).replace(/(\d)(?=•)/g, "$1 "))) falla(G, C, 0, `el filtro deja pasar «${x}»`);
+    for (const x of NO) if (tapa(x) !== x) falla(G, C, 0, `el filtro tapa algo que no es un número privado: «${x}»`);
+    for (const [f, re] of [["apps/web/lib/visitas-inm.ts", /const nota = taparNumeros\(limpio\(f\.nota, 200\)\)\.texto;/], ["apps/web/lib/inscripciones.ts", /const nota = taparNumeros\(limpio\(f\.nota, 200\)\)\.texto;/]])
+      if (existsSync(f) && !re.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la nota pasa por taparNumeros antes de guardarse");
+    const M = "packages/db/migrations/0094_visitas_ver.sql";
+    if (existsSync(M) && !/customer_note !~ '\(\^\|\[\^0-9\]\)\[0-9\]\{3\}\[ -\]\?\[0-9\]\{2\}\[ -\]\?\[0-9\]\{4\}\(\[\^0-9\]\|\$\)' and customer_note !~ '\(\[0-9\]\[ -\]\?\)\{12,18\}\[0-9\]'/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "la base comprueba la nota (check operations_nota_sin_numeros)");
+    // La pantalla avisa (el texto del diseño, verbatim).
+    if (!/No escribas tu seguro social ni números de cuenta aquí\./.test(readFileSync("apps/web/lib/inmuebles-comun.ts", "utf8"))) falla(G, "apps/web/lib/inmuebles-comun.ts", 0, "falta el aviso «No escribas tu seguro social ni números de cuenta aquí.»");
+    for (const f of ["apps/web/app/(app)/n/[id]/ver/Visita.tsx", "apps/web/app/(app)/n/[id]/inscribirme/Inscribirme.tsx"]) if (existsSync(f) && !/AVISO_NOTA/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la nota muestra el aviso de números (AVISO_NOTA)");
+  },
+
+  /* 4ie · Ir a consejería, a una capellanía, pedir oración o ir a recuperación son datos sensibles: los avisos de esas fechas (insc_fen_*) no
+     dicen el lugar, el servicio, el motivo ni la nota (como privacidadSalud), y el motor los manda cuando el servicio o el lugar es de esos. */
+  avisoFeNeutro() {
+    const G = "avisoFeNeutro", dir = "packages/db/migrations";
+    let n = 0;
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql"))) readFileSync(`${dir}/${x}`, "utf8").split("\n").forEach((l, i) => {
+      if (!/\('insc_fen_\w+'/.test(l)) return;
+      n++;
+      if (/\{(negocio|servicio|svc|cliente|motivo|nota|item|nino)\}/.test(l)) falla(G, `${dir}/${x}`, i + 1, "un aviso de consejería, capellanía u oración es neutro: sin {negocio}, {servicio}, {motivo} ni {nota}");
+    });
+    if (n < 9) falla(G, dir, 0, "faltan avisos neutros insc_fen_* (ok, alt, no, exp, cx, biz_cx, grupo_cx, empieza, done)");
+    const I = "apps/web/lib/inscripciones.ts";
+    if (existsSync(I)) {
+      const t = readFileSync(I, "utf8");
+      if (!/export const tplFe = \(tpl: string, neutro: boolean\) => \(FE_TPL\.includes\(tpl\) \? `\$\{neutro \? "insc_fen_" : "insc_fe_"\}/.test(t)) falla(G, I, 0, "Iglesias manda insc_fen_* (neutros) cuando la fecha es de consejería u oración");
+      if (!/kf === "consejo" \|\| kf === "oracion"/.test(t) || !/const NEUTRO_FE = \/consejer\|counsel\|capell\|chaplain\|oraci\[oó\]n\|prayer\|recuperaci\|recovery/.test(t)) falla(G, I, 0, "consejería, capellanía, oración y recuperación cuentan como neutras (por el lugar o por el servicio)");
+      if (!/guardarNotaFe\(c, op, nota\)/.test(t)) falla(G, I, 0, "la nota de consejería va cifrada (guardarNotaFe), nunca en operations");
+    }
   },
 
   idioma() {

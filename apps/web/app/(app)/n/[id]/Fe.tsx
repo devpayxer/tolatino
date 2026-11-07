@@ -3,15 +3,16 @@
    fija (nunca se suaviza): «La ayuda de la iglesia es gratis; nunca se cobra por despensa, ropa ni oración.»; funeraria «El precio es el
    total por escrito antes de firmar…»; tienda «El precio de aquí es el de la caja.». La tarjeta de arriba responde la pregunta de cada
    tipo («¿HAY QUE INSCRIBIRSE?», «¿PIDEN PAPELES?», «¿ME DAN EL PRECIO ANTES?»). Iglesias no cobra nada en la app: el donativo es
-   sugerido («si no puedes, no se cobra») y la funeraria da el total por escrito. «Pedir fecha» en la app llega con 4ie: hasta entonces
-   la hoja ofrece llamar o escribir a la oficina (como 4ed antes de 4ee); la funeraria «Pedir información» es contacto, sin presión. */
+   sugerido («si no puedes, no se cobra») y la funeraria da el total por escrito. 4ie: «Pedir fecha» e
+   «Inscribirme» llevan a la solicitud por el motor de inscripciones ($0); con Free, la fila va directo. La funeraria «Pedir información» es
+   contacto, sin presión. */
 import { useState, type MouseEvent } from "react";
 import { fechaCorta, usdI, type Bi } from "@/lib/inscripciones-comun";
 import { REGLAS_FUN, cortoFe } from "@/lib/fe-comun";
 import type { FePublica, SvcFePub } from "@/lib/fe-publico";
 import { Barra, Button, Caja, Hoja, Icon, Lista, Nota, Renglon, Resumen, Riel, Top, stop, type Cta, type Item, type TopT } from "./Kit4i";
 
-type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void };
+type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const lst = (L: string[]) => L.join(" · ");
 export function useFe(fp: FePublica | null, es: boolean, pro: boolean, acc: Acc) {
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -30,8 +31,10 @@ export function useFe(fp: FePublica | null, es: boolean, pro: boolean, acc: Acc)
     return lst(horasDe(s)).toUpperCase();
   };
   const precio = (s: SvcFePub) => (s.cents ? usdI(s.cents) : E2("Gratis", "Free"));
-  const btnDe = (s: SvcFePub) => (s.forma === "tot" ? E2("Pedir información", "Ask for info") : s.forma === "curso" ? E2("Inscribirme", "Sign up") : s.forma === "don" || s.dur ? E2("Pedir fecha", "Ask for a date") : E2("Ver detalles", "See details"));
-  const item = (s: SvcFePub): Item => ({ id: s.id, name: nm(s.name), desc: nm(s.desc), foto: s.foto, price: precio(s), meta: meta(s), btn: btnDe(s) });
+  const btnDe = (s: SvcFePub) => (s.forma === "tot" ? E2("Pedir información", "Ask for info") : s.forma === "curso" ? E2("Inscribirme", "Sign up") : s.forma === "don" || s.dur ? E2("Pedir fecha", "Ask for a date") : k === "consejo" || k === "oracion" ? E2("Pedir cita", "Book") : E2("Ver detalles", "See details"));
+  // 4ie · Se pide en la app: «Pedir fecha» (donativo o con cita) e «Inscribirme» (catecismo). Lo demás: llegas a la hora.
+  const pide = (s: SvcFePub) => s.forma === "curso" || s.forma === "don" || !!s.dur || k === "consejo" || k === "oracion", pedirHref = (id: string) => `/n/${fp.negocio.id}/inscribirme?svc=${id}`;
+  const item = (s: SvcFePub): Item => ({ id: s.id, name: nm(s.name), desc: nm(s.desc), foto: s.foto, price: precio(s), meta: meta(s), btn: pro || pide(s) ? btnDe(s) : "" });
   const secs = [...fp.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: fp.servicios.filter((s) => s.sec === sc.id).map(item) })),
     { title: fp.secciones.length ? E2("OTROS", "OTHER") : E2("SERVICIOS", "SERVICES"), items: fp.servicios.filter((s) => !fp.secciones.some((sc) => sc.id === s.sec)).map(item) }].filter((x) => x.items.length);
   // tabL (L105).
@@ -54,7 +57,7 @@ export function useFe(fp: FePublica | null, es: boolean, pro: boolean, acc: Acc)
   if (k === "fun") notes.push(["check", E2("Lo que va aparte (terreno del cementerio, flores) se dice antes de firmar.", "What is extra (cemetery plot, flowers) is stated before you sign.")]);
   if (fp.sinid) notes.push(["verified", E2("La ayuda no pide papeles ni seguro social.", "Help never asks for papers or SSN.")]);
   for (const s of fp.sellos) notes.push(["verified", `${nm(s.titulo)}${s.numero ? ` · ${s.etiqueta} ${s.numero}` : ""}`]);
-  if (!pro) notes.unshift(["phone", E2("Para pedir una fecha o información, llama o escribe a la oficina.", "To ask for a date or information, call or message the office.")]);
+  if (!pro) notes.unshift(["phone", E2("Pide la fecha aquí o llama a la oficina.", "Ask for the date here or call the office.")]);
   // fromLabel y CTA (L129–136, L149–151).
   const algoConFecha = fp.servicios.some((s) => s.forma === "don" || s.forma === "curso" || s.dur);
   const desde = pro ? (k === "fun" ? E2("Precio por escrito", "Written price") : k === "ayuda" ? E2("Gratis · ve directo", "Free · walk in") : k === "tienda" ? E2("Precios de la caja", "Register prices")
@@ -68,7 +71,7 @@ export function useFe(fp: FePublica | null, es: boolean, pro: boolean, acc: Acc)
     : algoConFecha ? { l: E2("Pedir fecha", "Ask for a date"), icon: "calendar", go: acc.irTab } : { l: E2("Ver horarios", "See times"), icon: "calendar", go: acc.irTab };
   const sub = k === "fun" ? (fp.h24 ? E2("ATIENDE LAS 24 HORAS", "OPEN 24 HOURS") : "") : k === "ayuda" ? (fp.agotado ? E2("SE ACABÓ POR HOY", "OUT FOR TODAY") : "") : nx ? `${nxK} · ${nxV}` : fp.h24 ? E2("ATIENDE LAS 24 HORAS", "OPEN 24 HOURS") : "";
   return { fp, es, E2, nm, pro, secs, notes: notes.slice(0, 4), desde, linea, tabL, top, top2, hoja, cta, llamarC, acc, sub, td: fp.td ?? [], contacto, setContacto,
-    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); }, cerrar: () => setHoja(null), primeros: fp.servicios.slice(0, pro ? 4 : 5).map(item), item };
+    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); else acc.pedir(pedirHref(id)); }, cerrar: () => setHoja(null), primeros: fp.servicios.slice(0, pro ? 4 : 5).map(item), item, pide, pedirHref };
 }
 export type FeV = NonNullable<ReturnType<typeof useFe>>;
 
@@ -77,7 +80,7 @@ export function FeTab({ v, desk }: { v: FeV; desk: boolean }) {
     <div data-screen-label={desk ? "Ficha · iglesia · desktop" : "Ficha · iglesia"} className={desk ? "flex max-w-[760px] flex-col gap-4 pt-6" : "flex flex-col gap-4 px-5 pt-[18px]"}>
       <Top top={v.top} top2={v.top2} label="iglesia" />
       {v.notes.map(([ic, t]) => <Nota key={t} ic={ic} t={t} />)}
-      <Lista secs={v.secs} desk={desk} can={v.pro} abrir={v.abrir} vacio={v.E2("Todavía no publica sus servicios en To’Latino: pregúntalos a la oficina.", "No services posted on To’Latino yet: ask the office.")} />
+      <Lista secs={v.secs} desk={desk} can abrir={v.abrir} vacio={v.E2("Todavía no publica sus servicios en To’Latino: pregúntalos a la oficina.", "No services posted on To’Latino yet: ask the office.")} />
     </div>
   );
 }
@@ -89,10 +92,10 @@ export function FeHoja({ v }: { v: FeV }) {
   if (!s) return null;
   const it = v.item(s);
   const con = s.forma === "tot" ? `${E2("Te explican cada paso y te dan el total por escrito antes de firmar. ", "They explain each step and give you the written total before you sign. ")}${v.linea}`
-    : s.forma === "don" || s.forma === "curso" || s.dur ? `${s.don ? E2("El donativo es sugerido: si no puedes, no se cobra. ", "The donation is suggested: if you cannot, there is no charge. ") : E2("Es gratis. ", "It is free. ")}${E2("Pides la fecha a la oficina y te la confirman; por ahora, llamando o escribiendo.", "Ask the office for the date and they confirm it; for now, by calling or messaging.")}`
+    : v.pide(s) ? `${s.don ? E2("El donativo es sugerido: si no puedes, no se cobra. ", "The donation is suggested: if you cannot, there is no charge. ") : E2("Es gratis. ", "It is free. ")}${s.forma === "curso" ? E2("Te inscribes aquí y la oficina te confirma el lugar.", "Sign up here and the office confirms your spot.") : E2("Pides la fecha aquí y la oficina te la confirma.", "Ask for the date here and the office confirms it.")}`
     : `${E2("Es gratis y no hay que inscribirse: llegas a la hora. ", "It is free and there is no signup: just arrive on time. ")}${v.linea}`;
   const cta: Cta = s.forma === "tot" ? { l: E2("Pedir información", "Ask for info"), icon: "phone", go: () => { v.cerrar(); v.setContacto(true); } }
-    : s.forma === "don" || s.forma === "curso" || s.dur ? { l: v.llamarC.l, icon: v.llamarC.icon, go: () => { v.cerrar(); v.llamarC.go(); } } : { l: E2("Entendido", "Got it"), icon: "check", go: v.cerrar };
+    : v.pide(s) ? { l: it.btn, icon: "calendar", go: () => { v.cerrar(); v.acc.pedir(v.pedirHref(s.id)); } } : { l: E2("Entendido", "Got it"), icon: "check", go: v.cerrar };
   return (
     <Hoja label="Servicio · iglesia" titulo={it.name} fotos={[s.foto ?? fp.negocio.foto].filter((x): x is string => !!x)} price={it.price} meta={it.meta} desc={it.desc} cerrar={v.cerrar} cerrarL={E2("Cerrar", "Close")}
       pieK={s.forma === "tot" ? E2("PRECIO TOTAL", "TOTAL PRICE") : s.don ? E2("DONATIVO SUGERIDO", "SUGGESTED DONATION") : E2("COSTO", "COST")} pieV={it.price} cta={cta}>
@@ -139,9 +142,9 @@ export function FeContacto({ v }: { v: FeV }) {
   );
 }
 export function FeResumen({ v, desk, onAll }: { v: FeV; desk: boolean; onAll?: () => void }) {
-  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can={v.pro} abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
+  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
     top={v.pro ? <Top top={v.top} top2={v.top2} label="iglesia" /> : undefined}
-    pie={!v.pro ? <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Para pedir una fecha o información, llama o escribe a la oficina.", "To ask for a date or information, call or message the office.")}</div> : undefined} />;
+    pie={!v.pro ? <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Pide la fecha aquí o llama a la oficina.", "Ask for the date here or call the office.")}</div> : undefined} />;
 }
 export function FeRiel({ v }: { v: FeV }) {
   return <Riel desde={v.desde} td={v.pro ? v.td : []} linea={v.linea} cta={v.cta} label="iglesia" />;

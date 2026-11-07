@@ -2,8 +2,8 @@
 /* Ficha de Venta de Autos (4id · prototipo neg-dealer-kind.js metaOf L101–104, btnOf L106, tabL L107, post L110–160). Línea fija (nunca se
    suaviza): «El precio en la puerta: con impuestos, placas y cargos del dealer, antes de firmar.». Cada carro dice su total EN LA PUERTA
    (lo calculó el servidor), millaje, título e historial; el pago de ejemplo sale solo con enganche, tasa (APR) y meses juntos y dice
-   «estimado, sujeto a aprobación» (pagoTexto / bhphTexto; Regulation Z); un título salvage dice SIEMPRE su línea (notasCarro). «Prueba de
-   manejo» en la app llega con 4ie: hasta entonces la hoja ofrece llamar o escribir (como 4ed antes de 4ee). */
+   «estimado, sujeto a aprobación» (pagoTexto / bhphTexto; Regulation Z); un título salvage dice SIEMPRE su línea (notasCarro). 4ie: «Prueba de
+   manejo», «Pedir oferta», «Pedir precalificación» y «Pedir cita» llevan a la solicitud (/n/{id}/ver); con Free, la fila va directo. */
 import { useState, type MouseEvent } from "react";
 import type { Bi } from "@/lib/inscripciones-comun";
 import {
@@ -12,7 +12,7 @@ import {
 import type { AutosPublica, CarroPub, SvcAutoPub } from "@/lib/autos-publico";
 import { Barra, Caja, Datos, Hoja, Lista, Nota, Renglon, Resumen, Riel, Top, stop, type Cta, type Item, type Td, type TopT } from "./Kit4i";
 
-type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void };
+type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const bi = (t: Bi, es: boolean) => (es ? t.es : t.en || t.es);
 const VENDEN = ["lot", "new", "bhph", "work", "moto", "rv", "lux", "salv", "broker"];
 /* ¿CUÁNTO PAGO EN TOTAL?: el porcentaje es el de la ciudad (tax_rules, viene del servidor), nunca escrito a mano. */
@@ -30,7 +30,9 @@ export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, ac
     x.miles != null ? E2(`${x.miles.toLocaleString("en-US")} MILLAS`, `${x.miles.toLocaleString("en-US")} MILES`) : x.hours != null ? E2(`${x.hours.toLocaleString("en-US")} HORAS DE MOTOR`, `${x.hours.toLocaleString("en-US")} ENGINE HOURS`) : "",
     TITULO[x.title][es ? 0 : 1].toUpperCase()].filter(Boolean).join(" · ");
   const itemC = (x: CarroPub): Item => ({ id: x.id, name: nm(x.name), desc: nm(x.desc), foto: x.fotos[0] ?? null, price: usd(x.puerta.price), meta: metaC(x),
-    aviso: x.title === "salvage" ? notasCarro(x, es)[0] : undefined, btn: k === "mayor" ? E2("Ver en la subasta", "See at auction") : E2("Prueba de manejo", "Test drive") });
+    aviso: x.title === "salvage" ? notasCarro(x, es)[0] : undefined, btn: k === "mayor" ? (pro ? E2("Ver en la subasta", "See at auction") : "") : E2("Prueba de manejo", "Test drive") });
+  // 4ie · Se pide en la app: la prueba de manejo de cada carro y los servicios (oferta, precalificación o cita). La subasta, llamando.
+  const pide = k !== "mayor", pedirHref = (id: string) => `/n/${ap.negocio.id}/ver?item=${id}`;
   const btnS = (s: SvcAutoPub) => (k === "cash" ? E2("Pedir oferta", "Get an offer") : k === "fin" ? E2("Pedir precalificación", "Get pre-qualified") : E2("Pedir cita", "Book"));
   const itemS = (s: SvcAutoPub): Item => ({ id: s.id, name: nm(s.name), desc: nm(s.desc), foto: s.foto, price: s.cents ? usd(s.cents) : E2("Gratis", "Free"), meta: s.cents ? E2("PRECIO TOTAL", "TOTAL PRICE") : E2("GRATIS · SIN COMPROMISO", "FREE · NO COMMITMENT"), btn: btnS(s) });
   // tabL (L107).
@@ -52,7 +54,7 @@ export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, ac
   if (k === "fin") notes.push(["shield", bi(NO_OBLIGATORIA, es)]);
   for (const s of ap.sellos) if (s.kind !== "pa_dealer") notes.push(["verified", `${nm(s.titulo)}${s.numero ? ` · ${s.etiqueta} ${s.numero}` : ""}`]);
   notes.push(["calendar", E2("Pedir la prueba o la cita es gratis y no te compromete.", "Requesting a test drive or booking is free and commits you to nothing.")]);
-  if (!pro) notes.unshift(["phone", E2("Para ver el carro o pedir la cita, llama o pasa por el lugar.", "To see the car or book, call or stop by.")]);
+  if (!pro) notes.unshift(["phone", E2("Pide la prueba de manejo o la cita aquí, o llama al lugar.", "Request the test drive or booking here, or call the place.")]);
   // fromLabel, barra y CTA (L129–141, L154).
   const vMin = ap.carros.length ? Math.min(...ap.carros.map((x) => x.puerta.price)) : null, sMin = ap.servicios.filter((x) => x.cents > 0).map((x) => x.cents).sort((a, b) => a - b)[0];
   const desde = pro ? (vende && vMin != null ? `${E2("Desde", "From")} ${usd(vMin)}` : k === "fin" ? E2("Precalificación gratis", "Free pre-qualification") : sMin ? `${E2("Desde", "From")} ${usd(sMin)}` : E2("Gratis", "Free"))
@@ -62,8 +64,8 @@ export function useDealer(ap: AutosPublica | null, es: boolean, pro: boolean, ac
     : k === "cash" ? { l: E2("Pedir oferta", "Get an offer"), icon: "calendar", go: acc.irTab } : k === "fin" ? { l: E2("Pedir precalificación", "Get pre-qualified"), icon: "calendar", go: acc.irTab } : { l: E2("Pedir cita", "Book"), icon: "calendar", go: acc.irTab };
   const sub = vende ? [k === "bhph" ? E2("SIN CRÉDITO", "NO CREDIT") : ap.itin ? E2("CON ITIN", "WITH ITIN") : "", E2(`${ap.lot} EN EL LOTE`, `${ap.lot} ON THE LOT`)].filter(Boolean).join(" · ") : "";
   return { ap, es, E2, nm, pro, secs, notes: notes.slice(0, 4), desde, linea, tabL, top, top2, hoja, cta, llamarC, acc, sub, td: ap.td ?? [],
-    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); }, cerrar: () => setHoja(null),
-    primeros: [...ap.carros.map(itemC), ...ap.servicios.map(itemS)].slice(0, pro ? 4 : 5), itemC, itemS };
+    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); else if (pide) acc.pedir(pedirHref(id)); }, cerrar: () => setHoja(null),
+    primeros: [...ap.carros.map(itemC), ...ap.servicios.map(itemS)].slice(0, pro ? 4 : 5), itemC, itemS, pide, pedirHref };
 }
 export type DlV = NonNullable<ReturnType<typeof useDealer>>;
 
@@ -72,7 +74,7 @@ export function DlTab({ v, desk }: { v: DlV; desk: boolean }) {
     <div data-screen-label={desk ? "Ficha · autos · desktop" : "Ficha · autos"} className={desk ? "flex max-w-[760px] flex-col gap-4 pt-6" : "flex flex-col gap-4 px-5 pt-[18px]"}>
       <Top top={v.top} top2={v.top2} label="autos" />
       {v.notes.map(([ic, t]) => <Nota key={t} ic={ic} t={t} />)}
-      <Lista secs={v.secs} desk={desk} can={v.pro} abrir={v.abrir} vacio={v.E2("Ahora no tiene carros a la vista en To’Latino: pregunta en el lote.", "No cars listed on To’Latino right now: ask at the lot.")} />
+      <Lista secs={v.secs} desk={desk} can={v.pro || v.pide} abrir={v.abrir} vacio={v.E2("Ahora no tiene carros a la vista en To’Latino: pregunta en el lote.", "No cars listed on To’Latino right now: ask at the lot.")} />
     </div>
   );
 }
@@ -84,13 +86,14 @@ export function DlHoja({ v }: { v: DlV }) {
   if (!v.hoja) return null;
   const x = ap.carros.find((c) => c.id === v.hoja), s = x ? null : ap.servicios.find((c) => c.id === v.hoja);
   if (!x && !s) return null;
-  const cta: Cta = { l: v.llamarC.l, icon: v.llamarC.icon, go: () => { v.cerrar(); v.llamarC.go(); } };
+  const cta: Cta = v.pide ? { l: x ? E2("Prueba de manejo", "Test drive") : v.itemS(s!).btn, icon: x ? "car" : "calendar", go: () => { v.cerrar(); v.acc.pedir(v.pedirHref((x ?? s)!.id)); } }
+    : { l: v.llamarC.l, icon: v.llamarC.icon, go: () => { v.cerrar(); v.llamarC.go(); } };
   if (s) {
     const it = v.itemS(s);
     return (
       <Hoja label="Servicio · autos" titulo={it.name} fotos={[s.foto ?? ap.negocio.foto].filter((u): u is string => !!u)} price={it.price} meta={it.meta} desc={it.desc} cerrar={v.cerrar} cerrarL={E2("Cerrar", "Close")}
         pieK={s.cents ? E2("PRECIO TOTAL", "TOTAL PRICE") : E2("COSTO", "COST")} pieV={it.price} cta={cta}>
-        <Nota ic="check" t={`${s.cents ? E2("El precio es el total; lo que va aparte se dice antes. ", "The price is the total; anything extra is stated first. ") : E2("Es gratis y no te compromete. ", "It is free and commits you to nothing. ")}${E2("Por ahora se pide llamando o escribiendo al lugar.", "For now, request it by calling or messaging the place.")}`} />
+        <Nota ic="check" t={`${s.cents ? E2("El precio es el total; lo que va aparte se dice antes. ", "The price is the total; anything extra is stated first. ") : E2("Es gratis y no te compromete. ", "It is free and commits you to nothing. ")}${v.pide ? E2("Pides el día y la hora aquí; te confirman.", "Request the day and time here; they confirm.") : E2("Se pide llamando o escribiendo al lugar.", "Request it by calling or messaging the place.")}`} />
       </Hoja>
     );
   }
@@ -131,14 +134,14 @@ export function DlHoja({ v }: { v: DlV }) {
           <div className="mt-1.5 text-pretty text-[13.5px] font-bold leading-[1.45]">{bh}</div>
           <div className="mt-1.5 text-pretty text-[12px] font-medium leading-[1.5] text-ink/60">{bi(SIN_GARANTIA, es)}</div>
         </Caja>)}
-      <Nota ic="car" t={E2("La prueba de manejo es gratis. Por ahora se pide llamando o escribiendo al lugar.", "The test drive is free. For now, request it by calling or messaging the place.")} />
+      <Nota ic="car" t={E2("La prueba de manejo es gratis y no te compromete. Pides el día y la hora aquí; te confirman.", "The test drive is free and commits you to nothing. Request the day and time here; they confirm.")} />
     </Hoja>
   );
 }
 export function DlResumen({ v, desk, onAll }: { v: DlV; desk: boolean; onAll?: () => void }) {
-  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can={v.pro} abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
+  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can={v.pro || v.pide} abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
     top={v.pro ? <Top top={v.top} top2={v.top2} label="autos" /> : undefined}
-    pie={!v.pro ? <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Para ver el carro o pedir la cita, llama o pasa por el lugar.", "To see the car or book, call or stop by.")}</div> : undefined} />;
+    pie={!v.pro ? <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Pide la prueba de manejo o la cita aquí, o llama al lugar.", "Request the test drive or booking here, or call the place.")}</div> : undefined} />;
 }
 export function DlRiel({ v }: { v: DlV }) {
   return <Riel desde={v.desde} td={v.pro ? v.td : []} linea={v.linea} cta={v.cta} label="autos" />;

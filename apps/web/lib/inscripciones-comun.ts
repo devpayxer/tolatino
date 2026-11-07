@@ -4,10 +4,11 @@
    clase · hora. Solo la matrícula de un curso pasa por la app (4ee); lo demás se paga en el lugar. El vocabulario cambia por
    rubro (VOC, neg-edu-flow.js L13–19) para que Iglesias, Bienes Raíces y Venta de Autos lo reusen después. */
 export type Bi = { es: string; en: string };
-export type RubroInsc = "edu" | "ninos" | "dep";
+export type RubroInsc = "edu" | "ninos" | "dep" | "fe";
 export type KindInsc = "curso" | "mes" | "semana" | "clase" | "hora";
 export const KINDS_INSC: KindInsc[] = ["curso", "mes", "semana", "clase", "hora"];
-export const rubroInsc = (cat: string): RubroInsc | null => (cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : null);
+/* 4ie · Iglesias usa el mismo motor (Pedir fecha, catecismo, consejería) con rubro 'fe': nada se cobra (guardián sinDineroEnVisitas). */
+export const rubroInsc = (cat: string): RubroInsc | null => (cat === "NEG-EDU" ? "edu" : cat === "NEG-NINOS" ? "ninos" : cat === "NEG-DEPORTE" ? "dep" : cat === "NEG-FE" ? "fe" : null);
 export const PLANES = [0, 3, 6, 12] as const;
 
 /* Cómo se dice cada forma (editor, herramienta y tarjeta). */
@@ -23,6 +24,8 @@ export const VOC: Record<RubroInsc, { grupo: Bi; grupos: Bi; mat: Bi; inscribir:
   edu: { grupo: { es: "grupo", en: "group" }, grupos: { es: "Grupos y cupos", en: "Groups and seats" }, mat: { es: "Matrícula", en: "Registration" }, inscribir: { es: "Inscribirme", en: "Enroll" } },
   ninos: { grupo: { es: "sesión", en: "session" }, grupos: { es: "Cupos y licencia", en: "Openings and license" }, mat: { es: "Inscripción", en: "Signup fee" }, inscribir: { es: "Inscribir", en: "Enroll" } },
   dep: { grupo: { es: "temporada", en: "season" }, grupos: { es: "Membresías y contrato", en: "Memberships and contract" }, mat: { es: "Depósito", en: "Deposit" }, inscribir: { es: "Inscribirme", en: "Sign up" } },
+  // VOCS fe (neg-edu-flow.js L17): «Tu lugar» y «Fecha». Iglesias no cobra nada en la app: no hay matrícula.
+  fe: { grupo: { es: "fecha", en: "date" }, grupos: { es: "Fechas", en: "Dates" }, mat: { es: "Donativo", en: "Donation" }, inscribir: { es: "Tu lugar", en: "Your spot" } },
 };
 /* Las líneas fijas (verbatim; nunca se suavizan). */
 export const LINEA_EDU: Bi = { es: "El precio del curso es el total: libros y examen incluidos o dichos aparte.", en: "The course price is the total: books and exam included or listed separately." };

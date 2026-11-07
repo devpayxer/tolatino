@@ -4,8 +4,8 @@
    comercial. VIVIENDA JUSTA (guardián viviendaJusta): toda propiedad que se pinta (lista, Resumen y hoja) lleva el pie «Igualdad de
    oportunidad en la vivienda» y la nota de los animales de servicio (pie()); la hoja dice «Nunca pagues un depósito antes de ver la
    propiedad y firmar el contrato.». De cada propiedad se ve solo la zona (ciudad y código postal): la dirección de un cuarto o de «solo
-   la zona» llega al confirmar la visita (4ie). «Para mudarte» y la cuota ESTIMADA vienen del servidor. «Pedir visita» en la app llega con
-   4ie: hasta entonces la hoja ofrece llamar o escribir (como 4ed antes de 4ee). */
+   la zona» llega al confirmar la visita (4ie). «Para mudarte» y la cuota ESTIMADA vienen del servidor. 4ie: «Pedir visita», «Pedir
+   precalificación», «Pedir oferta» y «Pedir cita» llevan a la solicitud (/n/{id}/ver); con Free, la fila va directo (sin hoja). */
 import { useState, type MouseEvent } from "react";
 import type { Bi } from "@/lib/inscripciones-comun";
 import {
@@ -14,7 +14,7 @@ import {
 import type { InmPublica, PropPub, SvcInmPub } from "@/lib/inmuebles-publico";
 import { Barra, Caja, Datos, Hoja, Icon, Lista, Nota, Renglon, Resumen, Riel, Top, stop, type Cta, type Item, type Td, type TopT } from "./Kit4i";
 
-type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void };
+type Acc = { llamar: () => void; escribir: () => void; llegar: () => void; irTab: () => void; pedir: (href: string) => void };
 const bi = (t: Bi, es: boolean) => (es ? t.es : t.en || t.es);
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const fecha = (iso: string, hoy: string, es: boolean) => { if (iso <= hoy) return es ? "Ya" : "Now"; const [, m, d] = iso.split("-").map(Number) as [number, number, number]; return es ? `${d} ${MES[m - 1]![0]}` : `${MES[m - 1]![1]} ${d}`; };
@@ -44,9 +44,12 @@ export function useInm(ip: InmPublica | null, es: boolean, pro: boolean, acc: Ac
     E2("VER ES GRATIS", "VIEWING IS FREE")].filter(Boolean).join(" · ");
   const precioP = (p: PropPub) => (p.deal === "renta" ? `${usd(p.rent ?? 0)}${porL(p.kind, es)}` : usd(p.price ?? 0));
   const itemP = (p: PropPub): Item => ({ id: p.id, name: nm(p.name), desc: nm(p.desc), foto: p.fotos[0] ?? null, price: precioP(p), meta: metaP(p), btn: E2("Pedir visita", "Request visit") });
+  // 4ie · Se pide en la app: toda propiedad (visita) y los servicios de precalificación, oferta o gratis (cita); la cotización con precio, llamando.
+  const pideS = (s: SvcInmPub) => k === "hipo" || efectivo || !s.cents;
+  const pedirHref = (id: string) => `/n/${ip.negocio.id}/ver?item=${id}`;
   // Los servicios (btnOf L90): precalificación, oferta, cita o cotización.
   const btnS = (s: SvcInmPub) => (k === "hipo" ? E2("Pedir precalificación", "Get pre-qualified") : efectivo ? E2("Pedir oferta", "Get an offer") : !s.cents ? E2("Pedir cita", "Book") : E2("Pedir cotización", "Get a quote"));
-  const itemS = (s: SvcInmPub): Item => ({ id: s.id, name: nm(s.name), desc: nm(s.desc), foto: s.foto, price: s.cents ? usd(s.cents) : E2("Gratis", "Free"), meta: s.cents ? E2("PRECIO TOTAL", "TOTAL PRICE") : E2("GRATIS · SIN COMPROMISO", "FREE · NO COMMITMENT"), btn: btnS(s) });
+  const itemS = (s: SvcInmPub): Item => ({ id: s.id, name: nm(s.name), desc: nm(s.desc), foto: s.foto, price: s.cents ? usd(s.cents) : E2("Gratis", "Free"), meta: s.cents ? E2("PRECIO TOTAL", "TOTAL PRICE") : E2("GRATIS · SIN COMPROMISO", "FREE · NO COMMITMENT"), btn: pro || pideS(s) ? btnS(s) : "" });
   const secs = [{ title: R.some((x) => x.kind === "cuarto" || x.kind === "compartida") && R.every((x) => x.kind === "cuarto" || x.kind === "compartida") ? E2("CUARTOS", "ROOMS") : E2("PARA RENTAR", "FOR RENT"), items: R.map(itemP) },
     { title: E2("EN VENTA", "FOR SALE"), items: V.map(itemP) },
     ...ip.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: ip.servicios.filter((s) => s.sec === sc.id).map(itemS) })),
@@ -68,7 +71,7 @@ export function useInm(ip: InmPublica | null, es: boolean, pro: boolean, acc: Ac
   for (const s of ip.sellos) if (s.kind !== "nmls_inm") notes.push(["verified", `${nm(s.titulo)}${s.numero ? ` · ${s.etiqueta} ${s.numero}` : ""}`]);
   notes.push(["calendar", k === "hipo" ? (ip.softPull ? E2("Precalificar no afecta tu crédito ni te compromete.", "Pre-qualifying does not hurt your credit or commit you.") : E2("Precalificar es gratis y no te compromete.", "Pre-qualifying is free and commits you to nothing."))
     : E2("Pedir una visita o una cita es gratis y no te compromete.", "Requesting a visit or booking is free and commits you to nothing.")]);
-  if (!pro) notes.unshift(["phone", E2("Para ver la propiedad o pedir la cita, llama o escribe al lugar.", "To see the property or book, call or message the place.")]);
+  if (!pro) notes.unshift(["phone", E2("Pide la visita o la cita aquí, o llama al lugar.", "Request the visit or booking here, or call the place.")]);
   // fromLabel, barra y CTA (L129–138).
   const minRent = R.length ? Math.min(...R.map((x) => x.rent ?? 0)) : null, vMin = V.length ? Math.min(...V.map((x) => x.price ?? 0)) : null, sMin = ip.servicios.filter((x) => x.cents > 0).map((x) => x.cents).sort((a, b) => a - b)[0];
   const desde = pro ? (k === "rent" || k === "comercial" || k === "alm" ? (minRent != null ? `${E2("Desde", "From")} ${usd(minRent)}${E2("/mes", "/mo")}` : E2("Ver es gratis", "Viewing is free"))
@@ -85,8 +88,8 @@ export function useInm(ip: InmPublica | null, es: boolean, pro: boolean, acc: Ac
     : k === "cuarto" && libre ? E2(`LIBRE DESDE EL ${fecha(libre, ip.hoy, true).toUpperCase()}`, `FREE FROM ${fecha(libre, ip.hoy, false).toUpperCase()}`)
     : k === "hipo" ? `${ip.itin ? E2("CON ITIN · ", "WITH ITIN · ") : ""}${E2("ENGANCHE DESDE", "DOWN FROM")} ${String(ip.minDown).replace(/\.0$/, "")} %` : "";
   return { ip, es, E2, nm, pro, secs, notes: notes.slice(0, 4), desde, linea, tabL, top, hoja, cta, llamarC, acc, sub, td: ip.td ?? [], hayProps: ip.props.length > 0,
-    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); }, cerrar: () => setHoja(null),
-    primeros: [...ip.props.map(itemP), ...ip.servicios.map(itemS)].slice(0, pro ? 4 : 5), itemP, itemS, cuartos };
+    abrir: (id: string, ev?: MouseEvent) => { stop(ev); if (pro) setHoja(id); else acc.pedir(pedirHref(id)); }, cerrar: () => setHoja(null),
+    primeros: [...ip.props.map(itemP), ...ip.servicios.map(itemS)].slice(0, pro ? 4 : 5), itemP, itemS, cuartos, pideS, pedirHref };
 }
 export type InmV = NonNullable<ReturnType<typeof useInm>>;
 
@@ -95,7 +98,7 @@ export function InmTab({ v, desk }: { v: InmV; desk: boolean }) {
     <div data-screen-label={desk ? "Ficha · bienes raíces · desktop" : "Ficha · bienes raíces"} className={desk ? "flex max-w-[760px] flex-col gap-4 pt-6" : "flex flex-col gap-4 px-5 pt-[18px]"}>
       <Top top={v.top} label="bienes raíces" />
       {v.notes.map(([ic, t]) => <Nota key={t} ic={ic} t={t} />)}
-      <Lista secs={v.secs} desk={desk} can={v.pro} abrir={v.abrir} vacio={sinPropiedades(v.ip.kind) ? v.E2("Todavía no publica sus servicios en To’Latino: pregúntalos al lugar.", "No services posted on To’Latino yet: ask the place.") : v.E2("Ahora no tiene propiedades disponibles en To’Latino.", "No properties available on To’Latino right now.")}>
+      <Lista secs={v.secs} desk={desk} can abrir={v.abrir} vacio={sinPropiedades(v.ip.kind) ? v.E2("Todavía no publica sus servicios en To’Latino: pregúntalos al lugar.", "No services posted on To’Latino yet: ask the place.") : v.E2("Ahora no tiene propiedades disponibles en To’Latino.", "No properties available on To’Latino right now.")}>
         {v.hayProps && pie(v.es)}
       </Lista>
     </div>
@@ -109,14 +112,15 @@ export function InmHoja({ v }: { v: InmV }) {
   if (!v.hoja) return null;
   const p = ip.props.find((x) => x.id === v.hoja), s = p ? null : ip.servicios.find((x) => x.id === v.hoja);
   if (!p && !s) return null;
-  const cta: Cta = { l: v.llamarC.l, icon: v.llamarC.icon, go: () => { v.cerrar(); v.llamarC.go(); } };
+  const cta: Cta = p ? { l: E2("Pedir visita", "Request visit"), icon: "key", go: () => { v.cerrar(); v.acc.pedir(v.pedirHref(p.id)); } }
+    : s && v.pideS(s) ? { l: v.itemS(s).btn, icon: "calendar", go: () => { v.cerrar(); v.acc.pedir(v.pedirHref(s.id)); } } : { l: v.llamarC.l, icon: v.llamarC.icon, go: () => { v.cerrar(); v.llamarC.go(); } };
   if (s) {
     const it = v.itemS(s);
     return (
       <Hoja label="Servicio · bienes raíces" titulo={it.name} fotos={[s.foto ?? ip.negocio.foto].filter((x): x is string => !!x)} price={it.price} meta={it.meta} desc={it.desc} cerrar={v.cerrar} cerrarL={E2("Cerrar", "Close")}
         pieK={s.cents ? E2("PRECIO TOTAL", "TOTAL PRICE") : E2("COSTO", "COST")} pieV={it.price} cta={cta}>
         {s.no.length > 0 && <Caja k={E2("BUENO SABER", "GOOD TO KNOW")}>{s.no.map((z) => <Renglon key={z.es} t={nm(z)} />)}</Caja>}
-        <Nota ic="check" t={`${s.cents ? E2("El precio es el total; lo que va aparte se dice antes. ", "The price is the total; anything extra is stated first. ") : E2("Es gratis y no te compromete. ", "It is free and commits you to nothing. ")}${E2("Por ahora se pide llamando o escribiendo al lugar.", "For now, request it by calling or messaging the place.")}`} />
+        <Nota ic="check" t={`${s.cents ? E2("El precio es el total; lo que va aparte se dice antes. ", "The price is the total; anything extra is stated first. ") : E2("Es gratis y no te compromete. ", "It is free and commits you to nothing. ")}${v.pideS(s) ? E2("Pides el día y la hora aquí; te confirman.", "Request the day and time here; they confirm.") : E2("La cotización se pide llamando o escribiendo al lugar.", "Ask for the quote by calling or messaging the place.")}`} />
       </Hoja>
     );
   }
@@ -159,15 +163,15 @@ export function InmHoja({ v }: { v: InmV }) {
         {x.soloZona && <div className="mt-1.5 text-pretty text-[12px] font-semibold leading-[1.5] text-ink/60">{E2("La dirección exacta te llega cuando aceptan la visita.", "The exact address arrives once the visit is accepted.")}</div>}
       </Caja>
       <Nota ic="shield" t={bi(NO_PAGUES, es)} />
-      <Nota ic="key" t={E2("Ver es gratis. Por ahora la visita se pide llamando o escribiendo al lugar: te dicen las horas.", "Viewing is free. For now, request the visit by calling or messaging the place: they tell you the times.")} />
+      <Nota ic="key" t={E2("Ver es gratis y no te compromete. Pides el día y la hora aquí; te confirman.", "Viewing is free and commits you to nothing. Request the day and time here; they confirm.")} />
       {pie(es)}
     </Hoja>
   );
 }
 export function InmResumen({ v, desk, onAll }: { v: InmV; desk: boolean; onAll?: () => void }) {
-  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can={v.pro} abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
+  return <Resumen titulo={v.tabL} primeros={v.primeros} desk={desk} can abrir={v.abrir} onAll={onAll} verTodo={v.E2("Ver todo", "See all")}
     top={v.pro ? <Top top={v.top} label="bienes raíces" /> : undefined}
-    pie={<>{v.hayProps && <div className="mt-3">{pie(v.es)}</div>}{!v.pro && <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Para ver la propiedad o pedir la cita, llama o escribe al lugar.", "To see the property or book, call or message the place.")}</div>}</>} />;
+    pie={<>{v.hayProps && <div className="mt-3">{pie(v.es)}</div>}{!v.pro && <div className="mt-3 text-pretty text-[12.5px] font-medium leading-[1.5] text-ink/60">{v.E2("Pide la visita o la cita aquí, o llama al lugar.", "Request the visit or booking here, or call the place.")}</div>}</>} />;
 }
 export function InmRiel({ v }: { v: InmV }) {
   return <Riel desde={v.desde} td={v.pro ? v.td : []} linea={v.linea} cta={v.cta} label="bienes raíces" />;

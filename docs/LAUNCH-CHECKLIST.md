@@ -526,3 +526,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (p. ej. quien renta cuartos en su casa). La ficha ya no la muestra para cuartos; revisar la tarjeta y el mapa (zona aproximada) antes de abrir.
 - [ ] **4id · Pie de vivienda justa y nota de animales de servicio en la ficha:** confirmar con abogado el texto ES/EN y si va el logo de Equal
   Housing Opportunity (HUD) junto al texto.
+- [ ] **4ie · Ayuda con la visita / la prueba / la iglesia:** hoy `/vis/…` solo ofrece Mensaje; la ayuda con revisión de To'Latino (motivos,
+  fotos, «Posible estafa») llega con 4if (`NUM` acepta `D-`).
+- [ ] **4ie · SMS de visitas** (`vis_ok`, `vis_alt`, `vis_recordatorio`, `biz_vis`…): en el sandbox quedan «en modo pruebas»; salen con el proveedor
+  de SMS de producción. Revisar el texto ES/EN en el teléfono bloqueado (sobre todo los neutros `insc_fen_*`).
+- [ ] **4ie · Plazo de 4 h hábiles y 24 h de «Pasó»:** constantes en el código hasta que llegue Configuración (Fase 5); a confirmar con el fundador.
+- [ ] **4ie · Prueba de manejo en casa:** no se comprueba que la dirección esté dentro del área del dealer; seguro y responsabilidad de la prueba
+  (quién maneja, seguro del dealer) a revisar con abogado antes de abrir.
+- [ ] **4ie · Horas de prueba por carro:** el motor las admite; falta la pantalla si el fundador las pide.
+- [ ] **4ie · Plantones:** revisar el umbral (3 en 30 días) con datos reales; hoy solo mira al negocio, no al cliente.
+- [x] **4ie · Prefijo de las visitas (§6 #2), resuelto el 7 nov: las visitas usan «D-8101…»; «P-» queda para los pre-estimados.** Antes: los pre-estimados de Auto y Hogar también usan «P-» (otra tabla, `service_requests`, secuencia
+  en ~2,130). No chocan en la base, pero si esa secuencia llegara a 8,101 dos números se verían iguales. Decidir otro prefijo o separar rangos.

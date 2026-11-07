@@ -172,6 +172,8 @@ export type HerrAutos = {
   kind: KindAutos; forzado: boolean; subs: string[]; pro: boolean; carros: CarroAuto[];
   fin: boolean; itin: boolean; noCredit: boolean; itinDown: number; aprBp: number | null; termM: number | null; trade: boolean; casa: boolean; reporta: boolean; garantia: number;
   fee: number; tags: number; tope: number; taxBp: number | null; lot: number; vendidos30: number; bhphDown: number; bhphWeek: number; bhphMonths: number; lic: string | null;
+  // 4ie · Horas de prueba de manejo «cualquier carro» (patrón semanal → 14 días adelante) y cuántas siguen abiertas.
+  prueba: { pattern: { dow: number; min: number; on: boolean }[]; cupo: number; horas: number };
 };
 
 export function tituloAutos(h: Pick<HerrAutos, "kind">, es: boolean) { return conInventario(h.kind) ? (es ? "Inventario del lote" : "Lot inventory") : es ? "Tu herramienta" : "Your tool"; }

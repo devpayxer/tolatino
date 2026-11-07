@@ -27,7 +27,7 @@ export type InmPublica = {
   props: PropPub[]; secciones: { id: string; name: Bi }[]; servicios: SvcInmPub[];
   itin: boolean; s8: boolean; pets: boolean; minDown: number; prequal: number; softPull: boolean; sinCom: boolean; libre: string | null; util: boolean; mueble: boolean;
   sellos: SelloPub[]; nmls: string | null;
-  booking: boolean; // «Pedir visita» en la app llega con 4ie: hasta entonces la hoja ofrece llamar o escribir.
+  booking: boolean; // 4ie: la visita, la precalificación, la oferta y la cita se piden en la app (/n/{id}/ver).
   td?: { k: string; v: string }[]; // las columnas de la tarjeta de Hoy (las pone la página)
 };
 export const TOPE_PROPS_FICHA = 20;
@@ -75,7 +75,7 @@ export async function inmPublica(negocio: string): Promise<InmPublica | null> {
     // Sin fila todavía: lo que dice hoy la página o lo que se dijo en Publica tu negocio (como herramientaInm).
     itin: b.itin ?? (fv.includes("itin") || onb.tool?.itin === true), s8: b.s8 ?? (fv.includes("s8") || acc.includes("s8")), pets: b.pets ?? (fv.includes("mascotas") || onb.tool?.pets === true),
     minDown: b.down ?? 10, prequal: b.pre ?? 2, softPull: b.soft ?? false, sinCom: b.com ?? fv.includes("nocom"), libre: b.libre, util: b.util ?? fv.includes("utilidades"), mueble: b.mueb ?? fv.includes("amueblado"),
-    sellos: L.rows, nmls: L.rows.find((x) => x.kind === "nmls_inm")?.numero ?? null, booking: false,
+    sellos: L.rows, nmls: L.rows.find((x) => x.kind === "nmls_inm")?.numero ?? null, booking: true,
   };
 }
 

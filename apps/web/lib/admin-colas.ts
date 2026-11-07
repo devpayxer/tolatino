@@ -76,6 +76,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "cuidado" ? { title: `Cuidado de niños · ${b}`, sub: "No cuidaron bien a su niño · directo a To'Latino" }
       : x.queue === "salir" ? { title: `No le dejan cancelar · ${b}`, sub: "Membresía con la baja pedida en la app" }
       : x.queue === "grupo" ? { title: `Grupos que no abrieron · ${b}`, sub: "3 o más grupos cancelados en 90 días" }
+      : x.queue === "plantones" ? { title: `Plantones · ${b}`, sub: "3 o más «No vino» en 30 días · mira cada una" }
       : x.queue === "sop" ? { title: `${AYUDA_DE[x.sopk ?? "order"] ?? "Ayuda con un pedido"} · ${b}`, sub: x.sopr === "inseguro" ? "Se sintió inseguro · va directo a To'Latino" : "El cliente espera una respuesta" }
       : x.queue === "mesa" ? { title: `Mesas no respetadas · ${b}`, sub: `${UMBRAL_NOCHE} o más en 30 noches · mira cada una` }
       : x.queue === "noid" ? { title: `Sin identificación · ${b}`, sub: `${UMBRAL_NOCHE} o más mesas con depósito en 30 noches` }
@@ -158,6 +159,16 @@ export async function caso(s: Staff, id: string) {
     const reps = (await db().query<{ reason: string; note: string | null; at: string }>(
       `select reason, note, created_at as at from photo_reports where media_id = $1::uuid and status = 'open' order by created_at`, [q.subject_id])).rows;
     return { ...base, negocio, foto: m ?? null, reportes: reps };
+  }
+  if (q.queue === "plantones") {
+    // 4ie · Las visitas marcadas «No vino» en 30 días: cuál, qué, para cuándo y cuándo se marcó. Nunca la nota ni la dirección del cliente.
+    const L = (await db().query<{ num: string; que: string; item: string | null; dia: string; marcada: string; quien: string }>(
+      `select o.number as num, o.details->>'what' as que, o.details->'item'->>'es' as item, (o.details->>'dia') || ' ' || lpad(((o.details->>'min')::int / 60)::text, 2, '0') || ':' || lpad(((o.details->>'min')::int % 60)::text, 2, '0') as dia,
+              o.done_at::text as marcada, coalesce(nullif(u.first_name, ''), 'Cliente') as quien
+         from operations o join users u on u.id = o.user_id where o.business_id = $1 and o.kind = 'visit' and o.status_detail = 'noshow' and o.done_at > now() - interval '30 days' order by o.done_at desc limit 30`, [q.business_id])).rows;
+    const tot = (await db().query<{ n: number }>(`select count(*)::int as n from operations where business_id = $1 and kind = 'visit' and status = 'done' and done_at > now() - interval '30 days'`, [q.business_id])).rows[0]?.n ?? 0;
+    const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'svc', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
+    return { ...base, negocio, plantones: { L, tot, pausado: off } };
   }
   if (q.queue === "grupo") {
     // 4eg · Los grupos que el lugar canceló en 90 días: cuál, cuándo, el motivo y a cuántos se les devolvió todo. Nunca datos de inscritos.

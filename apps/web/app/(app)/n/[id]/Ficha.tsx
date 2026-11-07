@@ -81,7 +81,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // Educación, Niños y Deporte (Fase 4 · 4ed): cursos, programas o membresías con sus grupos; inscribirse en la app llega con 4ee.
   const ins = useInsc(insc ?? null, es, f.pro, { llamar: () => llamar(), escribir: () => escribir(), llegar: () => llegar() });
   // Iglesias, Bienes Raíces y Venta de Autos (Fase 4 · 4id): pestaña por tipo, tarjeta de arriba, lista, hoja; pedir en la app llega con 4ie.
-  const acc4i = { llamar: () => llamar(), escribir: () => escribir(), llegar: () => llegar(), irTab: () => (f.pro ? setTab("svc") : irSvc()) };
+  // 4ie · «Pedir visita», «Prueba de manejo», «Pedir fecha» e «Inscribirme» ya llevan a su solicitud (Free también: 10 al mes, §6 #6).
+  const acc4i = { llamar: () => llamar(), escribir: () => escribir(), llegar: () => llegar(), irTab: () => (f.pro ? setTab("svc") : irSvc()), pedir: (href: string) => router.push(href) };
   const fv = useFe(fe ?? null, es, f.pro, acc4i);
   const iv = useInm(inm ?? null, es, f.pro, acc4i);
   const dv = useDealer(dl ?? null, es, f.pro, acc4i);

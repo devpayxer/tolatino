@@ -89,13 +89,13 @@ const NEG_SQL = `(select b.id, b.name, coalesce(s.plan, 'free') = 'pro' as pro f
 
 /* La operación terminada que hace verificada una reseña: pedido entregado/recogido o mesa terminada (no «no llegaron»),
    de esa persona en ese negocio, de los últimos 30 días y sin reseña. Con número, esa; sin número, la más reciente. */
-export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment"; src: Src; hoy: boolean; lineas: string[] };
+export type OpResena = { id: string; numero: string; kind: "order" | "table" | "appointment" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment" | "visit"; src: Src; hoy: boolean; lineas: string[] };
 export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negocio: string, userId: string, numero?: string | null): Promise<OpResena | null> {
   const r = await c.query<{ id: string; number: string; kind: OpResena["kind"]; mode: string | null; hoy: boolean; lineas: string[] }>(
     `select o.id::text, o.number, o.kind, o.mode, (o.done_at at time zone ci.timezone)::date = (now() at time zone ci.timezone)::date as hoy,
             (select coalesce(array_agg(l.name->>'es' order by l.id), '{}') from operation_lines l where l.operation_id = o.id) as lineas
        from operations o join cities ci on ci.id = o.city_id
-      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment')
+      where o.business_id = $1 and o.user_id = $2 and o.kind in ('order', 'table', 'appointment', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit')
         and (o.status = 'done' or (o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail = 'started' and o.details->>'k' in ('mes', 'semana') and o.confirmed_at < now() - interval '28 days'))
         and coalesce(o.status_detail, '') <> 'noshow'
         and (o.kind <> 'night' or o.status_detail = 'entro')
@@ -105,7 +105,7 @@ export async function opParaResena(c: PoolClient | ReturnType<typeof db>, negoci
       order by o.done_at desc limit 1`, [negocio, userId, numero ?? null]);
   const o = r.rows[0];
   if (!o) return null;
-  return { id: o.id, numero: o.number, kind: o.kind, src: o.kind === "table" ? "rsv" : o.kind === "appointment" || o.kind === "party" || o.kind === "trip" || o.kind === "night" || o.kind === "enrollment" ? "cita" : o.mode === "delivery" ? "dl" : "pk", hoy: o.hoy, lineas: o.lineas };
+  return { id: o.id, numero: o.number, kind: o.kind, src: o.kind === "table" ? "rsv" : o.kind === "appointment" || o.kind === "party" || o.kind === "trip" || o.kind === "night" || o.kind === "enrollment" || o.kind === "visit" ? "cita" : o.mode === "delivery" ? "dl" : "pk", hoy: o.hoy, lineas: o.lineas };
 }
 
 /* Lo que va en la ficha: cifras, barras, verificadas, lo que importa (Comida, de pedidos calificados en 90 días), los más

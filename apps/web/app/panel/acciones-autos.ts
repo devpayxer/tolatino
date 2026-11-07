@@ -8,6 +8,7 @@ import { tx } from "@/lib/db";
 import { cambiarEstadoCarro, cotizarCarro, guardarCarro, guardarHerramientaAutos, recalcularFiltrosAutos, type AutosIn, type CarroIn } from "@/lib/autos";
 import type { Bhph, Pago, Puerta } from "@/lib/autos-comun";
 import { accesoPanel } from "@/lib/panel";
+import { avisarRetiradas } from "@/lib/visitas-inm";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -32,26 +33,32 @@ export async function autosEstado(negocio: string, itemId: string, status: strin
   if (!(await mismoOrigen())) return SIN_ACCESO;
   const a = typeof negocio === "string" ? await accesoPanel(negocio, "cat") : null;
   if (!a) return SIN_ACCESO;
-  return tx(async (c) => {
+  const r0 = await tx(async (c): Promise<Res> => {
     const r = await cambiarEstadoCarro(c, a.negocio.id, String(itemId), String(status));
     if (!r.ok) return no(r.es, r.en);
     await c.query(auditoria, [a.yo.id, "autos.carro.estado", a.negocio.id, a.negocio.city_id, JSON.stringify({ item: String(itemId), estado: String(status) })]);
     await recalcularFiltrosAutos(c, a.negocio.id);
     return { ok: true };
   });
+  // 4ie · Las visitas que se cancelaron porque se rentó, se vendió o se ocultó: el aviso sale ya confirmado el cambio.
+  if (r0.ok) await avisarRetiradas(a.negocio.id).catch(() => undefined);
+  return r0;
 }
 
 export async function autosHerramienta(negocio: string, p: AutosIn): Promise<Res> {
   if (!(await mismoOrigen())) return SIN_ACCESO;
   const a = typeof negocio === "string" ? await accesoPanel(negocio, "cat") : null;
   if (!a) return SIN_ACCESO;
-  return tx(async (c) => {
+  const r0 = await tx(async (c): Promise<Res> => {
     const r = await guardarHerramientaAutos(c, a.negocio.id, p ?? {}, a.yo.id);
     if (!r.ok) return no(r.es, r.en);
     await c.query(auditoria, [a.yo.id, "autos.herramienta", a.negocio.id, a.negocio.city_id, JSON.stringify(p ?? {})]);
     await recalcularFiltrosAutos(c, a.negocio.id);
     return { ok: true };
   });
+  // 4ie · Las visitas que se cancelaron porque se rentó, se vendió o se ocultó: el aviso sale ya confirmado el cambio.
+  if (r0.ok) await avisarRetiradas(a.negocio.id).catch(() => undefined);
+  return r0;
 }
 
 /* El total en la puerta de un precio, mientras el dueño lo escribe: lo calcula el servidor (impuesto de la ciudad, placas, cargo ≤ tope)

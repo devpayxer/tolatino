@@ -474,12 +474,13 @@ export async function decidirNoche(id: string, pausar: boolean, texto: string): 
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
-    if ((q.queue !== "mesa" && q.queue !== "noid" && q.queue !== "grupo") || !q.business_id) return "Ese caso no es de esta cola.";
+    if ((q.queue !== "mesa" && q.queue !== "noid" && q.queue !== "grupo" && q.queue !== "plantones") || !q.business_id) return "Ese caso no es de esta cola.";
     // 4eg · «Grupos que no abrieron» pausa las inscripciones (svc); Noche pausa mesas y lista (rsv).
-    const mod = q.queue === "grupo" ? "svc" : "rsv";
+    // 4ie · «Plantones» pausa las visitas y pruebas de manejo (svc).
+    const mod = q.queue === "grupo" || q.queue === "plantones" ? "svc" : "rsv";
     if (pausar) {
       await c.query(`update businesses set modules_off = modules_off || jsonb_build_object($4::text, jsonb_build_object('reason', $2::text, 'at', now(), 'by', $3::text)), updated_at = now() where id = $1 and not (modules_off ? $4::text)`, [q.business_id, m, s.id, mod]);
-      await auditar(c, { actor: s.id, action: "negocio.modulo.pausar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { modulo: q.queue === "grupo" ? "Inscripciones" : "Mesas y lista", estado: "activo" }, after: { estado: "pausado", cola: q.queue === "mesa" ? "Mesas no respetadas" : "Sin identificación" }, reason: m });
+      await auditar(c, { actor: s.id, action: "negocio.modulo.pausar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { modulo: q.queue === "grupo" ? "Inscripciones" : q.queue === "plantones" ? "Visitas" : "Mesas y lista", estado: "activo" }, after: { estado: "pausado", cola: q.queue === "mesa" ? "Mesas no respetadas" : q.queue === "plantones" ? "Plantones" : q.queue === "grupo" ? "Grupos que no abrieron" : "Sin identificación" }, reason: m });
     }
     await cerrar(c, q, s, pausar ? "pausar" : "revisado", m);
     await auditar(c, { actor: s.id, action: pausar ? "noche.cola_pausar" : "noche.cola_revisado", targetKind: "case", targetId: q.id, city: q.city_id, before: { caso: "abierto" }, after: { caso: pausar ? "mesas y lista en pausa" : "revisado, sin cambios" }, reason: m });
@@ -488,7 +489,7 @@ export async function decidirNoche(id: string, pausar: boolean, texto: string): 
   if (!r.startsWith("ok:")) return no(r);
   const mod = r.slice(3);
   listo();
-  return { ok: true, mensaje: pausar ? (mod === "svc" ? "Inscripciones en pausa. El dueño ve el motivo en su panel." : "Mesas y lista en pausa. El dueño ve el motivo en su panel.") : "Caso cerrado como revisado." };
+  return { ok: true, mensaje: pausar ? (mod === "svc" ? "En pausa (inscripciones o visitas). El dueño ve el motivo en su panel." : "Mesas y lista en pausa. El dueño ve el motivo en su panel.") : "Caso cerrado como revisado." };
 }
 
 /* Daño de una renta (4f-2): descontarlo del depósito o liberarlo. Pide decidir sobre dinero (tx:aprobar). */

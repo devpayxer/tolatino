@@ -7,6 +7,7 @@ import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { cambiarEstadoPropiedad, guardarHerramientaInm, guardarPropiedad, recalcularFiltrosInm, type InmIn, type PropIn } from "@/lib/inmuebles";
 import { accesoPanel } from "@/lib/panel";
+import { avisarRetiradas } from "@/lib/visitas-inm";
 import type { Res } from "./acciones";
 
 const no = (es: string, en: string): Res => ({ ok: false, mensaje: { es, en } });
@@ -34,7 +35,7 @@ export async function inmEstado(negocio: string, itemId: string, status: string)
   if (!(await mismoOrigen())) return SIN_ACCESO;
   const a = typeof negocio === "string" ? await accesoPanel(negocio, "cat") : null;
   if (!a) return SIN_ACCESO;
-  return tx(async (c) => {
+  const r0 = await tx(async (c): Promise<Res> => {
     const r = await cambiarEstadoPropiedad(c, a.negocio.id, String(itemId), String(status));
     if (!r.ok) return no(r.es, r.en);
     await c.query(auditoria, [a.yo.id, "inm.propiedad.estado", a.negocio.id, a.negocio.city_id, JSON.stringify({ item: String(itemId), estado: String(status) })]);
@@ -42,17 +43,23 @@ export async function inmEstado(negocio: string, itemId: string, status: string)
     await recalcularFiltrosInm(c, a.negocio.id);
     return { ok: true };
   });
+  // 4ie · Las visitas que se cancelaron porque se rentó, se vendió o se ocultó: el aviso sale ya confirmado el cambio.
+  if (r0.ok) await avisarRetiradas(a.negocio.id).catch(() => undefined);
+  return r0;
 }
 
 export async function inmHerramienta(negocio: string, p: InmIn): Promise<Res> {
   if (!(await mismoOrigen())) return SIN_ACCESO;
   const a = typeof negocio === "string" ? await accesoPanel(negocio, "cat") : null;
   if (!a) return SIN_ACCESO;
-  return tx(async (c) => {
+  const r0 = await tx(async (c): Promise<Res> => {
     const r = await guardarHerramientaInm(c, a.negocio.id, p ?? {}, a.yo.id);
     if (!r.ok) return no(r.es, r.en);
     await c.query(auditoria, [a.yo.id, "inm.herramienta", a.negocio.id, a.negocio.city_id, JSON.stringify(p ?? {})]);
     await recalcularFiltrosInm(c, a.negocio.id);
     return { ok: true };
   });
+  // 4ie · Las visitas que se cancelaron porque se rentó, se vendió o se ocultó: el aviso sale ya confirmado el cambio.
+  if (r0.ok) await avisarRetiradas(a.negocio.id).catch(() => undefined);
+  return r0;
 }

@@ -15,6 +15,7 @@ import { filaHerramientaTrans } from "./Transporte";
 import { filaHerramientaNoche } from "./Noche";
 import { filaHerramientaEdu } from "./Edu";
 import { filaInscripciones } from "./Inscripciones";
+import { filaVisitas } from "./Visitas";
 import { filaHerramientaNinos } from "./Ninos";
 import { filaHerramientaDeporte } from "./Deporte";
 import { filaHerramientaFe } from "./Fe";
@@ -41,9 +42,8 @@ export function vendesCitas(c: Ctx): Fila[] {
   const herr = filaHerramientaSP(c) ?? filaHerramientaFiesta(c) ?? filaHerramientaTrans(c) ?? filaHerramientaNoche(c) ?? filaHerramientaEdu(c) ?? filaHerramientaNinos(c) ?? filaHerramientaDeporte(c) ?? filaHerramientaFe(c) ?? filaHerramientaInm(c) ?? filaHerramientaAutos(c);
   // Noche (4na): la lista y las mesas llegan en 4nc (no son «citas»): aquí solo Servicios y «Esta noche».
   const noche = X.rubro === "noche";
-  // Iglesias (4ia): no hay citas con depósito; «Pedir fecha» y el catecismo llegan con las inscripciones (4ie).
-  // Bienes Raíces (4ib): sin citas con depósito; «Pedir visita» llega con 4ie (ver es gratis).
-  // Venta de Autos (4ic): sin citas con depósito; la prueba de manejo llega con 4ie (es gratis).
+  // Iglesias (4ia): no hay citas con depósito; «Pedir fecha» y el catecismo van por Inscripciones (4ie, $0).
+  // Bienes Raíces (4ib) y Venta de Autos (4ic): sin citas con depósito; la visita y la prueba de manejo van por Visitas (4ie, $0).
   const sinCitas = noche || X.rubro === "fe" || !!X.inm || !!X.autos;
   const prop = filaPropiedades(c) ?? filaInventario(c);
   return [
@@ -52,6 +52,8 @@ export function vendesCitas(c: Ctx): Fila[] {
       ...(X.off.svc != null ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}), tag: vis && X.off.svc == null ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "servicios") },
     ...(herr ? [herr] : []),
     ...((() => { const f = filaInscripciones(c); return f ? [f] : []; })()),
+    // 4ie · Visitas (Bienes Raíces) y Pruebas de manejo (Autos): las solicitudes de $0 con su respuesta.
+    ...((() => { const f = filaVisitas(c); return f ? [f] : []; })()),
     ...(sinCitas ? [] : [{ icon: "calendar", t: E2("Citas", "Bookings"), s: citasLine(c), ...(X.off.citas != null ? { m: E2("PAUSADAS POR TO’LATINO", "PAUSED BY TO’LATINO"), mFg: "var(--tl-danger)" } : {}),
       tag: X.on && X.off.citas == null ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "citas") } as Fila]),
     ...(X.model === "chair" && !noche ? [{ icon: "users", t: E2("Sillas y agenda", "Chairs and schedule"), s: E2(`${X.gente.length} sillas · cada una decide si confirma al instante y su depósito`, `${X.gente.length} chairs · each decides instant approval and deposit`), chev: true, onClick: () => c.go("mod", "sillas") } as Fila] : []),

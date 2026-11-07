@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import { contratoTexto } from "@/lib/deporte-comun";
 import { fechaCorta, FORMA, LINEA_EDU, usdI, VOC } from "@/lib/inscripciones-comun";
+import { DONATIVO, LINEA_FE } from "@/lib/fe-comun";
 import type { InscVista } from "@/lib/inscripciones";
 import { inscAccion } from "./acciones";
 
@@ -25,6 +26,8 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
     setOcupado(false); setConfirmar(false);
     if (r.ok) { setFlash(ok); setTimeout(() => setFlash(null), 3200); router.refresh(); } else setError(es ? r.msg.es : r.msg.en);
   };
+  // 4ie · Iglesias: «Tu lugar», la fecha y la franja; nada se cobra; consejería y capellanía, neutras.
+  const fe = x.rubro === "fe";
   const B = x.negocio.nombre, V = VOC[x.rubro], matL = nm(V.mat), memb = x.k === "mes" || x.k === "semana", curso = x.k === "curso";
   const cuando = nm(x.cuando) || E2("Empiezas cuando te confirmen", "You start once confirmed");
   const liberado = x.pago === "released", devuelto = x.devuelto;
@@ -38,9 +41,9 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
       ? ["clock", "bg-pro/20", "var(--tl-pro-ink)", E2("CANCELACIÓN PEDIDA", "CANCELLATION REQUESTED"), x.bajaPedida ? E2(`Pediste la baja el ${fechaHora(x.bajaPedida, true)}`, `You asked to cancel on ${fechaHora(x.bajaPedida, false)}`) : E2("Pediste la baja", "You asked to cancel"), E2("Queda cancelada cuando el lugar la confirme o a las 72 horas. Guarda esta pantalla como constancia.", "It is cancelled when the place confirms or after 72 hours. Keep this screen as proof.")]
       : x.detalle === "started"
       ? ["check", "bg-signal/[.18]", G, memb ? E2("ACTIVA", "ACTIVE") : x.rubro === "ninos" ? E2("ASISTIENDO", "ATTENDING") : E2("EN CURSO", "IN PROGRESS"), cuando, x.plan ? E2(`Plan: ${x.plan.cal.length} pagos de ${usdI(x.plan.cal[x.plan.cal.length - 1]?.cents ?? 0)} en la escuela.`, `Plan: ${x.plan.cal.length} payments of ${usdI(x.plan.cal[x.plan.cal.length - 1]?.cents ?? 0)} at the school.`) : memb ? E2(`Pagas ${usdI(x.precio)} ${nm(FORMA[x.k].por)} en el lugar.`, `You pay ${usdI(x.precio)} ${nm(FORMA[x.k].por)} at the place.`) : E2("Que te vaya muy bien.", "All the best.")]
-      : ["check", "bg-signal/[.18]", G, E2("CONFIRMADA", "CONFIRMED"), cuando, E2("Trae una identificación el primer día.", "Bring an ID on the first day.")],
-    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? nm(x.alt.label) : "", E2("Ese grupo ya no está libre. Si el nuevo no te sirve, se libera todo.", "That group is no longer open. If the new one does not work, everything is released.")],
-    declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUDO", "NOT POSSIBLE"), E2("No hay cupo", "No openings"), devT],
+      : ["check", "bg-signal/[.18]", G, E2("CONFIRMADA", "CONFIRMED"), fe && x.grupo ? nm(x.grupo) : cuando, fe ? E2("Te esperamos.", "See you there.") : E2("Trae una identificación el primer día.", "Bring an ID on the first day.")],
+    change_proposed: ["warning", "bg-pro/20", "var(--tl-pro-ink)", E2("TE PROPONEN UN CAMBIO", "A CHANGE IS PROPOSED"), x.alt ? nm(x.alt.label) : "", fe ? E2("Esa fecha no se puede. Si la nueva no te sirve, no pasa nada.", "That date is not possible. If the new one does not work, nothing happens.") : E2("Ese grupo ya no está libre. Si el nuevo no te sirve, se libera todo.", "That group is no longer open. If the new one does not work, everything is released.")],
+    declined: ["warning", "bg-danger/10", "var(--tl-danger)", E2("NO PUDO", "NOT POSSIBLE"), fe && x.fecha ? E2("No hay esa fecha", "That date is not available") : E2("No hay cupo", "No openings"), devT],
     expired: ["clock", "bg-ink/[.06]", grey, E2("SIN RESPUESTA", "NO REPLY"), E2("No contestaron a tiempo", "No reply in time"), devT],
     cancelled: ["close", "bg-ink/[.06]", grey, E2("CANCELADA", "CANCELLED"),
       x.cancelo === "grupo" ? E2(`${B} canceló el grupo`, `${B} cancelled the group`) : x.cancelo === "negocio" ? E2(`${B} canceló tu inscripción`, `${B} cancelled your enrollment`) : x.cancelo === "baja" ? E2("Tu membresía quedó cancelada", "Your membership is cancelled") : E2("La cancelaste tú", "You cancelled it"),
@@ -50,8 +53,8 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
   const h = H[x.estado] ?? H.pending!;
   const pos = ({ pending: 0, change_proposed: 0, confirmed: x.detalle === "started" ? 2 : 1, done: 4 } as Record<string, number>)[x.estado];
   const steps = pos == null || x.detalle === "cancel_req" ? [] : x.pasos.map((p, i) => ({ label: nm(p.t), time: "", state: i < pos ? "done" : i === pos ? "current" : "next" }));
-  const rows: [string, string][] = [[E2("INSCRIPCIÓN", "ENROLLMENT"), nm(x.svc)], ...(x.grupo ? [[E2("GRUPO", "GROUP"), nm(x.grupo)] as [string, string]] : []),
-    ...(x.inicio ? [[E2("EMPIEZA", "STARTS"), `${fechaCorta(x.inicio, es)}${x.fin ? ` · ${E2("termina", "ends")} ${fechaCorta(x.fin, es)}` : ""}`] as [string, string]] : []),
+  const rows: [string, string][] = [[fe ? E2("TU LUGAR", "YOUR SPOT") : E2("INSCRIPCIÓN", "ENROLLMENT"), nm(x.svc)], ...(x.grupo ? [[fe && x.fecha ? E2("FECHA", "DATE") : E2("GRUPO", "GROUP"), nm(x.grupo)] as [string, string]] : []),
+    ...(x.inicio && !x.fecha ? [[E2("EMPIEZA", "STARTS"), `${fechaCorta(x.inicio, es)}${x.fin ? ` · ${E2("termina", "ends")} ${fechaCorta(x.fin, es)}` : ""}`] as [string, string]] : []),
     [E2("PARA", "FOR"), x.para === "hijo" ? (x.nino ? x.nino.nombre : E2("Tu hijo o hija", "Your child")) : x.para === "otro" ? E2("Otra persona", "Someone else") : E2("Para ti", "For you")],
     ...(x.nivel ? [[E2("NIVEL", "LEVEL"), { cero: E2("Desde cero", "From zero"), algo: E2("Sé algo", "I know some"), medio: E2("Intermedio", "Intermediate") }[x.nivel]] as [string, string]] : []),
     ...(x.equipo ? [[E2("EQUIPO", "TEAM"), x.equipo] as [string, string]] : []),
@@ -73,8 +76,8 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
     <div data-screen-label="APP-NEG-EDU-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
       <div className="sticky top-[57px] z-20 flex items-center gap-3 border-b border-ink/[.07] bg-white px-4 py-3 lg:top-0">
         <button type="button" aria-label={E2("Volver al lugar", "Back to the place")} onClick={() => router.push(`/n/${x.negocio.id}`)} className="grid h-[38px] w-[38px] flex-none place-items-center rounded-[13px] bg-ink/5"><Icon name="close" size={15} strokeWidth={2.4} /></button>
-        <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{E2("Tu inscripción", "Your enrollment")}</div>
-          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${E2("INSCRIPCIÓN #", "ENROLLMENT #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
+        <div className="min-w-0 flex-1"><div className="truncate font-display text-[17px] font-extrabold leading-none tracking-[-0.03em]">{fe ? E2("Tu lugar", "Your spot") : E2("Tu inscripción", "Your enrollment")}</div>
+          <div className="mt-[5px] truncate font-mono text-[9.5px] font-semibold tracking-[0.06em] text-ink/50">{`${fe ? E2("TU LUGAR #", "YOUR SPOT #") : E2("INSCRIPCIÓN #", "ENROLLMENT #")}${x.numero} · ${B}`.toUpperCase()}</div></div>
       </div>
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-4">
         {flash && <div role="status" className="flex items-center gap-[9px] rounded-[14px] bg-signal/[.16] px-3.5 py-[11px]"><Icon name="check" size={15} color="var(--tl-open-text)" strokeWidth={2.4} /><span className="text-[12.5px] font-bold text-open-text">{flash}</span></div>}
@@ -87,7 +90,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
         </div>
         {x.estado === "change_proposed" && x.alt && (
           <div data-screen-label="Inscripción · otro grupo" className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-4">
-            <div className="text-[13.5px] font-bold">{E2(`Te proponen: ${nm(x.alt.label)} · empieza el ${fechaCorta(x.alt.inicio, true)}.`, `They propose: ${nm(x.alt.label)} · starts ${fechaCorta(x.alt.inicio, false)}.`)}</div>
+            <div className="text-[13.5px] font-bold">{fe && x.fecha ? E2(`Te proponen: ${nm(x.alt.label)}.`, `They propose: ${nm(x.alt.label)}.`) : E2(`Te proponen: ${nm(x.alt.label)} · empieza el ${fechaCorta(x.alt.inicio, true)}.`, `They propose: ${nm(x.alt.label)} · starts ${fechaCorta(x.alt.inicio, false)}.`)}</div>
             {x.mat > 0 && <div className="text-[12.5px] font-medium text-ink/60">{E2(`Si aceptas, se cobra tu ${matL.toLowerCase()} de ${usdI(x.mat)}. Si no, se libera.`, `If you accept, your ${usdI(x.mat)} ${matL.toLowerCase()} is charged. If not, it is released.`)}</div>}
             <div className="flex gap-2.5"><div className="flex min-w-0 flex-1"><Button block icon="check" disabled={ocupado} onClick={() => void hacer("aceptar", E2("Listo: inscripción confirmada", "Done: enrollment confirmed"))}>{E2("Aceptar", "Accept")}</Button></div>
               <div className="flex min-w-0 flex-1"><Button block variant="secondary" disabled={ocupado} onClick={() => void hacer("nogracias", E2("Listo: se liberó todo", "Done: everything was released"))}>{E2("No me sirve", "Doesn’t work")}</Button></div></div>
@@ -100,7 +103,7 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
         <div data-screen-label="Inscripción · tu dinero" className={caja}>
           <div className="border-b border-ink/[.07] px-[15px] py-3"><span className={Kh}>{E2("TU DINERO", "YOUR MONEY")}</span></div>
           <div className="px-[15px] py-0.5">
-            <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Precio", "Price")}</span><span className="text-[12.5px] font-bold">{x.precio ? `${usdI(x.precio)} ${nm(FORMA[x.k].por)}` : E2("Gratis si calificas", "Free if you qualify")}</span></div>
+            <div className="flex justify-between gap-3 py-[11px]"><span className="text-[12.5px] font-semibold">{fe ? E2("En la app", "In the app") : E2("Precio", "Price")}</span><span className="text-right text-[12.5px] font-bold">{fe ? `$0 · ${x.precio ? `${E2("Donativo sugerido", "Suggested donation")} ${usdI(x.precio)}: ${nm(DONATIVO).split("·")[1]?.trim() ?? ""}` : E2("Es gratis", "It is free")}` : x.precio ? `${usdI(x.precio)} ${nm(FORMA[x.k].por)}` : E2("Gratis si calificas", "Free if you qualify")}</span></div>
             {curso && (x.mat || x.matLocal) ? <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{matL}</span><span className="text-[12.5px] font-bold">{x.mat ? `${usdI(x.mat)}${matEstado ? ` · ${matEstado}` : ""}` : `${usdI(x.matLocal)} · ${E2("EN EL LUGAR", "AT THE PLACE")}`}</span></div> : null}
             {curso && resto > 0 && !x.plan && <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{E2("El resto", "The rest")}</span><span className="text-right text-[12.5px] font-bold">{`${usdI(resto)} · ${E2("en la escuela el primer día", "at the school on day one")}`}</span></div>}
             {memb && <div className="flex justify-between gap-3 border-t border-ink/[.06] py-[11px]"><span className="text-[12.5px] font-semibold">{E2("Cómo se paga", "How you pay")}</span><span className="text-right text-[12.5px] font-bold">{E2("En el lugar; nada en la tarjeta", "At the place; nothing on your card")}</span></div>}
@@ -115,12 +118,12 @@ export function InscEstado({ x, es }: { x: InscVista; es: boolean }) {
         <div className="flex flex-col gap-2.5">
           {vivo && x.negocio.direccion && <Button variant="secondary" icon="pin" onClick={llegar}>{E2("Cómo llegar", "Directions")}</Button>}
           {x.negocio.telefono && vivo && <Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${x.negocio.telefono}`; }}>{E2("Llamar", "Call")}</Button>}
-          {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{memb && x.estado === "confirmed" ? E2("Cancelar mi membresía", "Cancel my membership") : E2("Cancelar la inscripción", "Cancel the enrollment")}</Button>}
+          {vivo && <Button variant="ghost" icon="close" onClick={() => setConfirmar(true)}>{memb && x.estado === "confirmed" ? E2("Cancelar mi membresía", "Cancel my membership") : fe ? E2("Cancelar", "Cancel") : E2("Cancelar la inscripción", "Cancel the enrollment")}</Button>}
           {x.estado === "done" && !x.resena && <Button icon="star" onClick={() => router.push(`/n/${x.negocio.id}/resena?pedido=${x.numero}`)}>{E2("Calificar", "Rate")}</Button>}
           {(x.estado === "done" || (x.estado === "confirmed" && (x.detalle === "started" || x.detalle === "cancel_req")) || (x.estado === "cancelled" && (!!x.motivoNeg || x.mat > 0))) && <Button variant="secondary" icon="help" onClick={() => router.push(`/insc/${x.numero}/ayuda`)}>{E2("Ayuda con la inscripción", "Enrollment help")}</Button>}
-          {!vivo && x.estado !== "confirmed" && <Button variant="secondary" icon="calendar" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{E2("Ver otros grupos", "See other groups")}</Button>}
+          {!vivo && x.estado !== "confirmed" && <Button variant="secondary" icon="calendar" onClick={() => router.push(`/n/${x.negocio.id}?tab=svc`)}>{fe ? E2("Pedir otra fecha", "Ask for another date") : E2("Ver otros grupos", "See other groups")}</Button>}
         </div>
-        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{x.rubro === "edu" ? nm(LINEA_EDU) : E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.")}</div>
+        <div className="text-pretty text-center text-[12px] font-medium leading-[1.5] text-ink/50">{fe ? nm(LINEA_FE) : x.rubro === "edu" ? nm(LINEA_EDU) : E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.")}</div>
       </div>
       {confirmar && (
         <div data-screen-label="Inscripción · cancelar" className="fixed inset-0 z-[70]">

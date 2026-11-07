@@ -7,6 +7,7 @@ import {
   type Deal, type EstadoProp, type HerrInm, type KindProp, type Laundry, type PropInm, type Util, type VisitaPat,
 } from "./inmuebles-comun";
 import { revisarTexto } from "./vivienda-justa";
+import { retirarAnuncio } from "./visitas-inm";
 
 /* Bienes Raíces (Fase 4 · bloque 4ib). Plan: docs/diseno/plan/fase4-iglesias-inmuebles-autos.md §2 «0092», §3, §4ib y §5. Diseño:
    dash2-cat.js L508–533 («Propiedades y visitas» · «Casas en venta» · «Préstamos y requisitos» · «Cuartos y lo que incluye»), apply
@@ -244,6 +245,8 @@ export async function cambiarEstadoPropiedad(c: PoolClient, negocio: string, ite
     if (x.deal === "renta" && VIVIENDA(x.kind) && !(x.vp ?? []).some((v) => v.on !== false)) return err("Deja al menos una hora de visita.", "Keep at least one viewing time.");
   }
   await c.query(`update property_listings set status = $2, status_at = now(), updated_at = now() where item_id = $1::bigint`, [itemId, st]);
+  // 4ie · Se rentó, se vendió o se ocultó: las visitas vivas se cancelan sin culpa en esta misma transacción (el aviso sale después).
+  if (st === "rented" || st === "sold" || st === "hidden") await retirarAnuncio(c, negocio, itemId, st);
   await horasVisita(c, negocio, itemId);
   return { ok: true };
 }

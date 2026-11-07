@@ -95,7 +95,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -240,6 +240,18 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar", v: "danger", icon: "close", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.hide, peligro: true, hacer: (m) => decidirRep(k.id, "ocultar", m) }) },
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
+      ];
+    }
+    if (k.queue === "plantones" && "plantones" in k && k.plantones) {
+      // 4ie · Las visitas marcadas «No vino» en 30 días. Pausar quita las visitas de su página (modules_off.svc) hasta que se reanude.
+      const p = k.plantones;
+      cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "«NO VINO» EN 30 DÍAS", v: String(p.L.length), fg: "var(--tl-pro-ink)" }, { k: "VISITAS QUE PASARON", v: String(p.tot) }, { k: "VISITAS", v: p.pausado ? "En pausa" : "Activas" }] });
+      cuerpoB.push({ type: "rows", k: "CADA UNA", items: p.L.map((x) => ({ icon: "clock", t: `${x.num} · ${x.item ?? ""}`, s: `${({ visita: "Visita", prueba: "Prueba de manejo", cita: "Cita", precal: "Precalificación", oferta: "Oferta" } as Record<string, string>)[x.que] ?? x.que} · para el ${x.dia} · ${x.quien} · marcada ${new Date(x.marcada).toLocaleString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` })) });
+      if (k.puedeDecidir) acts = [
+        ...(p.pausado ? [] : [{ l: "Pausar visitas", v: "danger", icon: "warning", onClick: () => setConf({ titulo: "¿Por qué se pausan las visitas?", sub: "Sus visitas y pruebas de manejo salen de su página hasta que las reanudes desde Negocios 360°. El dueño ve el motivo en su panel. Lo ya confirmado sigue en pie.", cta: "Pausar", peligro: true,
+          plantillas: ["Marca «No vino» para que no lo califiquen.", "Los clientes dicen que sí fueron."], hacer: (m) => decidirNoche(k.id, true, m) }) }]),
+        { l: "Revisado, sin cambios", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; si marca 3 «No vino» más en 30 días, se abre otro.", cta: "Cerrar el caso",
+          plantillas: ["De verdad no fueron: tiene sus mensajes.", "Hablamos con el negocio y lo corrigió."], hacer: (m) => decidirNoche(k.id, false, m) }) },
       ];
     }
     if (k.queue === "grupo" && "grupos" in k && k.grupos) {
