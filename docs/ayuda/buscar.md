@@ -36,6 +36,15 @@ ahora», «sin cita», «con delivery», «24 horas», «a domicilio», «que ac
 - Si alguien no encuentra algo, sugiere quitar palabras o usar una categoría; si no existe, «Avísame cuando haya».
 - Las búsquedas sin resultados le dicen al equipo qué negocios faltan en la ciudad.
 
+## Vecinos y «Pregúntale al barrio» (Fase 5 · 5e, 7 nov)
+- **Con tu cuenta**, los resultados traen **«Lo que dicen los vecinos»**: publicaciones de la Comunidad de tu ciudad que dicen lo
+  que buscaste (la parte que encajó, en negrita), con sus votos y comentarios, ordenadas por **votos**, con la línea «Aquí nada se
+  compra: el orden lo ponen los votos de los vecinos.». «Ver N» (o la pestaña **Vecinos** en escritorio) trae la lista completa,
+  10 a la vez. No salen las de alguien que bloqueaste o silenciaste (ni las de quien te bloqueó), ni las que reportaste.
+- **Sin cuenta** no sale nada de los vecinos: ni la sección ni la pestaña.
+- **Pregúntale al barrio** (en «¿No encontraste lo que buscabas?», sin resultados y en Vecinos) abre **Publicar** como pregunta con lo
+  que buscaste ya escrito. Sin sesión, primero entras y vuelves con el texto.
+
 ---
 
 ## In English
@@ -45,3 +54,6 @@ understands English and Spanish and fixes typos. Suggestions appear while typing
 removable filters, quick filters, sort (Pro first), the full list with pages, «None yet» with an alert, «Did you
 mean…?», and voice search when the browser supports it. Recent searches stay on your device; «Most searched» comes
 from this week's real searches in your city.
+Neighbors (5e): signed-in people also get "What neighbors say" (Community posts from their city matching the search, ordered by
+votes, without blocked or muted people) and a Neighbors tab; signed-out people see nothing from neighbors. "Ask the neighborhood"
+opens Post as a question with the search text already written.

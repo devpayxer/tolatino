@@ -199,7 +199,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
         return (
           <PostCard key={p.id} card screenLabel="Novedades · publicación" avatar={logo ? `url(${logo}) center/cover` : undefined} avatarColor="var(--tl-photo-bg)" initials={logo ? undefined : v.negocio.name.slice(0, 1)}
             name={v.negocio.name} nameFont="700 14.5px/1.2" time={sc1(ago(p.h))}
-            tags={[p.pinned ? { label: E2("FIJADO", "PINNED"), tone: "ink" } : null, { label: TT[p.kind][0], tone: TT[p.kind][1] }].filter(Boolean)}
+            tags={[p.pinned ? { label: E2("FIJADO", "PINNED"), tone: "ink" } : null, { label: TT[p.kind][0], tone: TT[p.kind][1] }, p.hoy ? { label: E2(`EN HOY EN EL BARRIO · QUEDAN ${p.hoy} H`, `IN TODAY NEARBY · ${p.hoy} H LEFT`), tone: "signal" } : null].filter(Boolean)}
             body={p.body ? `${p.title}. ${p.body}` : p.title} bodyFont="500 14px/1.55" bodyGap={10}
             vote={{ labels: { up: E2("Votar a favor", "Upvote"), down: E2("Votar en contra", "Downvote"), comments: E2("Comentarios", "Comments"), save: E2("Guardar", "Save"), share: E2("Compartir", "Share") }, score: p.score, onUp: () => hacer(() => novVoto(p.id, 1)), onDown: () => hacer(() => novVoto(p.id, -1)), upColor: p.myVote === 1 ? "var(--tl-action)" : "rgba(11,14,18,.6)", downColor: p.myVote === -1 ? "var(--tl-danger)" : "rgba(11,14,18,.6)", scoreColor: p.myVote ? "var(--tl-action)" : "var(--tl-ink)" }}
             voteStyle={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)", gap: 6 }}

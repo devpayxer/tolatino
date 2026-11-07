@@ -4,7 +4,9 @@ import { idioma } from "@/lib/idioma";
 import { categorias } from "@/lib/directorio";
 import { nombresSub } from "@/lib/categoria";
 import { armarTarjetas } from "@/lib/tarjetas";
-import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, type Entendido } from "@/lib/buscar";
+import { dominante, ejemplos, entender, negocios, N, registrar, resaltar, sugerirCatalogo, tendencias, tsq, type Entendido } from "@/lib/buscar";
+import { buscarVecinos } from "@/lib/comunidad-portada";
+import { filaVecino } from "./vecinos";
 import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
 import { ubicacion } from "@/lib/ubicacion";
@@ -18,7 +20,7 @@ const FILTRABLES = new Set(["open", "near", "ver", "dlv", "pk", "walk", "casa", 
 // Filtros rápidos según la categoría dominante (prototipo QK).
 const RAPIDOS: Record<string, string[]> = { "NEG-FOOD": ["dlv", "pk"], "NEG-BELL": ["walk", "casa"], "NEG-SALUD": ["medicaid", "medicare", "sinseg", "esp"], "NEG-HOGAR": ["h24", "casa"], "NEG-AUTO": ["walk", "h24"], "NEG-NOCHE": ["free"], "NEG-PRO": ["esp"], "NEG-INMUEBLE": ["sinssn"], "NEG-MERC": ["dlv", "pk"] };
 
-type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string };
+type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string; vc?: string };
 
 /* Quita una frase de la búsqueda («barbería abierta ahora» − «abierta ahora»): así se quita una intención. */
 function sinFrase(q: string, frase: string) {
@@ -42,7 +44,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const extra = String(sp.f ?? "").split(",").filter((k) => FILTRABLES.has(k));
   const orden = (["rel", "near", "best"] as const).find((o) => o === sp.orden);
   const pagina = Math.max(0, (parseInt(String(sp.p ?? "1"), 10) || 1) - 1);
-  const tab = sp.tab === "biz" ? "biz" : "all";
+  // 5e · «Vecinos» (lo que dicen los vecinos en la Comunidad) solo con cuenta: sin sesión la pestaña no existe y no se lee nada.
+  const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : "all";
   const base: Omit<VistaBuscar, "res"> = {
     lang, q, cat: catSel ? { slug: catSel.slug, label: catSel.label, name: catSel.name } : null, ciudad: nomCiudad,
     explorar: null, conSesion: !!u,
@@ -67,9 +70,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     if (it) E.intenciones.push({ k, frase: "", label: it.label, tipo: it.tipo });
   }
   const limite = tab === "biz" ? 10 : 5;
-  const [r, C] = await Promise.all([
+  const [r, C, V] = await Promise.all([
     negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
+    u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
   ]);
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
@@ -127,6 +131,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         subsLado: C.subs.slice(0, 6).map((s) => ({ l: es ? s.es : s.en, m: `${(es ? s.catCorto : s.catCortoEn).toUpperCase()} · ${s.n}`, href: tileHref(es ? s.es : s.en, s.cat) })),
         probar: cats.slice(0, 8).map((c) => ({ l: c.label, slug: c.slug })),
         catDominante: dom,
+        vecinos: V ? { total: V.total, mas: V.mas, items: V.items.map((x) => filaVecino(x, E, es)) } : null,
       },
     }} />
   );

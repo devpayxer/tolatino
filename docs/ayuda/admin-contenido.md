@@ -11,7 +11,8 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   motivo; la novedad y la vacante salen de la página y el dueño ve el motivo en su panel (la vacante deja de recibir
   solicitudes; las que tiene se quedan); el comentario sale de la novedad. Nada se borra; todo queda en la auditoría.
 - **Ver negocio** abre su 360 › Contenido. Permiso: ver con `cont:ver`; ocultar con `neg:retirar`.
-- Publicaciones de la comunidad, «Hoy en el barrio», auto-moderación y cuenta oficial llegan con la comunidad (Fase 5).
+- Publicaciones de la Comunidad (5a), comentarios de vecinos (5b), auto-moderación (5d), «Hoy en el barrio» y cuenta oficial (5e)
+  están abajo y en `admin-cuenta-oficial.md`.
 
 ### Publicaciones de la Comunidad (5a, 7 nov)
 - Pestaña **Publicaciones** (y en **Todo**): preguntas, recomendaciones, encuestas y publicaciones de los vecinos y de la cuenta
@@ -31,6 +32,22 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   por las reglas del barrio») y deja de contar en «Recomendados en este hilo»; el autor recibe «Ocultamos tu comentario» con el
   motivo (sin SMS). Restaurar lo devuelve y le avisa. **Ver** abre la publicación en ese comentario. Auditoría `com.comentario.*`.
 
+### Hoy en el barrio (5e, 7 nov)
+- Pestaña **Hoy en el barrio** (la cifra «HOY EN EL BARRIO» de arriba también la abre): lo que sale **ahora** en Hoy en tus
+  ciudades, con su **origen** (la novedad de qué negocio, quién la publicó en su panel, hace cuánto, cuántos lo siguen) y la
+  etiqueta **EN HOY · QUEDAN N H**. Debajo, lo que To'Latino **retiró de Hoy** en las últimas 24 h, con quién y por qué.
+- Sale exactamente lo mismo que ve la gente: la regla vive en la base (novedad en vivo de un negocio **Pro** con Novedades encendido,
+  sin pausa, no oculta, no detenida, sin vencer, **para todos** —no «solo seguidores»—, publicada hace menos de **24 h** y no
+  retirada). Lo de un negocio Free, lo oculto, lo detenido, lo vencido o lo de más de 24 h nunca sale (guardián `hoySoloEnVivo`).
+- **Retirar de Hoy** (Admin y Moderador, `cont:retirar`): pide motivo (plantillas: no es una novedad, engañosa o con precio falso,
+  datos de otra persona, repetida, rompe las reglas). La novedad **sigue en la página del negocio**; solo sale de Hoy. El negocio
+  recibe «Retiramos una novedad de Hoy en el barrio» con el motivo (sin SMS) y lo ve en su panel. **Devolver a Hoy** lo deshace si
+  todavía está en sus 24 h. Para quitarla también de su página, se oculta desde **Novedades**. Auditoría `hoy.retirar` / `hoy.devolver`.
+- **Ver en su página** abre la ficha › Novedades; **Negocio 360** abre su contenido.
+
+### Cuenta oficial (5e, 7 nov)
+- Pestaña **Cuenta oficial**: escribir, programar y fijar como «To'Latino {Ciudad}». Detalle en `admin-cuenta-oficial.md`.
+
 ## Transacciones
 - **Qué es:** pedidos y reservaciones de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), pedidos terminados en 90 días
   (pagados en el local), los que no se dieron (cancelados, rechazados o sin respuesta) y reservaciones. Pestañas Todas, Pedidos
@@ -43,6 +60,10 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 ---
 
 ## English
+Today nearby (5e): the "Hoy en el barrio" tab lists what is live in Today nearby in your cities (the same database rule people
+see: a Pro business's live, public update from the last 24 h), with its origin and hours left, plus what To'Latino took out in the
+last 24 h. "Retirar de Hoy" (Admin, Moderator) asks for a reason, keeps the update on the business page, notifies the business (no
+SMS) and is audited; "Devolver a Hoy" undoes it within the 24 h. The "Cuenta oficial" tab is described in admin-cuenta-oficial.md.
 Neighbor comments (5b): the "Comentarios de vecinos" tab lists Community comments and replies; Admins and Moderators hide or
 restore them with a reason (the author gets a notice, no SMS; a hidden comment stops counting in the thread's recommended list),
 audited as com.comentario.*. Community posts (5a): the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or

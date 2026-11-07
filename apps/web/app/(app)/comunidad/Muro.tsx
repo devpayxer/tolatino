@@ -6,13 +6,15 @@
    ahí se ve el perfil de quien publicó, se le silencia o se le bloquea (con Deshacer). Tocar el nombre abre su perfil. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ComponentType } from "react";
+import { Fragment, useEffect, useRef, useState, type ComponentType } from "react";
 import { DESHACER_S } from "@/lib/comunidad-filtro";
 import type { Filtros, Pub } from "@/lib/comunidad-comun";
 import { comBorrar, comDeshacer, comEncuesta, comGuardar, comPagina, comReportar, comVotar } from "./acciones";
 import { YA_NO_LO_VES, abrirReporte } from "./Reportar";
 import { Avatar, LINE, MONO, Marco, useComUi, type ComUi, type YoCom } from "./Marco";
 import { Tarjeta } from "./Tarjeta";
+import { HoyCarrusel } from "../HoyCarrusel";
+import type { Historia } from "@/lib/hoy-comun";
 import { useVecinoAcciones } from "./vecinoAcciones";
 
 type N = "Icon" | "Button" | "Chip";
@@ -73,7 +75,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
   return { votar, encuesta, guardar, compartir, menu };
 }
 
-export function Muro({ es, yo, ciudad, abierta, filtros, inicial }: { es: boolean; yo: YoCom; ciudad: string; abierta: boolean; filtros: Filtros; inicial: { pubs: Pub[]; mas: string | null } }) {
+export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { es: boolean; yo: YoCom; ciudad: string; abierta: boolean; filtros: Filtros; inicial: { pubs: Pub[]; mas: string | null }; hoy?: Historia[] }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ruta = usePathname();
   const ui = useComUi();
@@ -111,6 +113,13 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial }: { es: boolea
     ? { t: E2("Todavía no sigues a nadie", "You are not following anyone yet"), s: E2("Cuando sigas a vecinos, aquí verás lo que publican, aunque estén en otra ciudad.", "When you follow neighbors, their posts show here, even from another city."), cta: false }
     : filtOn || filtros.kind ? { t: E2("Nada con ese filtro", "Nothing with that filter"), s: E2("Prueba con otra distancia o con «Todo».", "Try another distance or «All»."), cta: false }
     : { t: E2("Aún no hay nada aquí", "Nothing here yet"), s: E2("Sé el primero: pregunta o recomienda a alguien. Los puntos llegan cuando otros votan.", "Be the first: ask or recommend someone. Points come when others vote."), cta: true };
+  const conHoy = hoy.length > 0 && filtros.tab === "todo" && !filtros.kind;
+  const hoyFila = !conHoy ? null : (
+    <div data-screen-label="Comunidad · Hoy en el barrio" style={{ padding: "18px 0", borderBottom: LINE, background: "var(--tl-paper)" }}>
+      <HoyCarrusel es={es} historias={hoy} titulo={E2("Hoy en el barrio", "Today nearby")} dot="var(--tl-open)" verTodo="/comunidad/hoy"
+        sub={E2("LO QUE TRAEN HOY LOS NEGOCIOS · SE BORRA A LAS 24 H", "WHAT BUSINESSES HAVE TODAY · GONE IN 24 H")} ancho={190} alto={250} />
+    </div>
+  );
   return (
     <Marco es={es} yo={yo} ui={ui} code="APP-COM-FEED" titulo={E2("Comunidad", "Community")} sub={`${ciudad.toUpperCase()}${yo.invitado ? E2(` · INVITADO · DE ${yo.invitado.toUpperCase()}`, ` · VISITOR · FROM ${yo.invitado.toUpperCase()}`) : ""}`}>
       <div data-screen-label="APP-COM-FEED · conversación" style={{ background: "var(--tl-white)", borderRadius: 0, maxWidth: 720, overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
@@ -132,10 +141,13 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial }: { es: boolea
             {`${filtros.dist ? E2(`A ${filtros.dist} MI DE TI`, `WITHIN ${filtros.dist} MI`) : ciudad.toUpperCase()} · ${filtros.orden === "new" ? E2("RECIENTES", "NEWEST") : E2("MÁS VOTADOS", "TOP VOTED")}`}
           </div>
         )}
-        {pubs.map((p) => (
-          <Tarjeta key={p.id} p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onAuthor={p.autor.id && !p.autor.oficial ? () => router.push(`/comunidad/v/${p.autor.id}`) : undefined} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
+        {pubs.map((p, i) => (<Fragment key={p.id}>
+          {/* 5e · Hoy en el barrio dentro del muro, después de la segunda publicación (prototipo feedV rows.splice(2, 0, hoy)). */}
+          {i === 2 && hoyFila}
+          <Tarjeta p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onAuthor={p.autor.id && !p.autor.oficial ? () => router.push(`/comunidad/v/${p.autor.id}`) : undefined} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
             onSave={() => void acc.guardar(p)} onShare={() => void acc.compartir(p)} onBiz={(id) => router.push(`/n/${id}`)} />
-        ))}
+        </Fragment>))}
+        {pubs.length > 0 && pubs.length <= 2 && hoyFila}
         {!pubs.length && (
           <div data-screen-label="Comunidad · vacío" style={{ padding: "26px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={{ font: "800 18px/1.25 Sora,sans-serif", letterSpacing: "-.02em", textWrap: "pretty" }}>{vacio.t}</div>

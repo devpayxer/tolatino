@@ -62,11 +62,34 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
     db().query<FilaCont>(`select k, id, biz, bname, who, text, extra, up, dn, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, hidden, why, rep, pin, lock
        from (${base}) y order by (rep > 0) desc, at desc, id desc limit ${POR_PAGINA_CONT} offset ${(f.pag - 1) * POR_PAGINA_CONT}`, v),
     db().query<{ n: number }>(`select count(*)::int as n from (${base}) y`, v),
-    db().query<{ rev: number; nov: number; cm: number; vac: number; pub: number; ccm: number; rep: number; hid: number }>(
+    db().query<{ rev: number; nov: number; cm: number; vac: number; pub: number; ccm: number; rep: number; hid: number; hoy: number }>(
       `with x${COLS} as (${Object.values(PARTES).join("\nunion all\n")}) select count(*) filter (where k = 'rev')::int as rev, count(*) filter (where k = 'nov')::int as nov,
-              count(*) filter (where k = 'cm')::int as cm, count(*) filter (where k = 'vac')::int as vac, count(*) filter (where k = 'pub')::int as pub, count(*) filter (where k = 'ccm')::int as ccm, count(*) filter (where rep > 0)::int as rep, count(*) filter (where hidden)::int as hid
+              count(*) filter (where k = 'cm')::int as cm, count(*) filter (where k = 'vac')::int as vac, count(*) filter (where k = 'pub')::int as pub, count(*) filter (where k = 'ccm')::int as ccm, count(*) filter (where rep > 0)::int as rep, count(*) filter (where hidden)::int as hid,
+              (select count(*)::int from business_posts p where p.status = 'live' and p.hidden_at is null and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'
+                  and post_en_hoy(p) and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as hoy
          from x where cardinality($1::text[]) = 0 or x.city_id = any($1::text[])`, [s.cities]),
   ]);
   return { filas: L.rows, total: n.rows[0]!.n, cab: cab.rows[0]! };
 }
 export type ListaCont = Awaited<ReturnType<typeof listaContenido>>;
+
+/* 5e · Contenido › Hoy en el barrio: lo que sale ahora en Hoy de las ciudades de quien mira (la misma regla post_en_hoy de la base) y lo
+   que To'Latino retiró en las últimas 24 h, con su origen (la novedad de qué negocio, quién la publicó y cuándo) y cuánto le queda. */
+export type FilaHoy = { id: string; biz: string; bname: string; kind: string; title: string; quien: string | null; at: string; quedan: number; enHoy: boolean;
+  off: string | null; offAt: string | null; offBy: string | null; city_id: string; seguidores: number };
+export async function hoyAdmin(s: Staff) {
+  const r = await db().query<FilaHoy>(
+    `select p.id::text, p.business_id as biz, b.name as bname, p.kind, p.title,
+            coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), null) as quien,
+            to_char(p.publish_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
+            greatest(1, ceil(extract(epoch from least(p.publish_at + interval '24 hours', coalesce(p.ends_at, 'infinity'::timestamptz)) - now()) / 3600))::int as quedan,
+            post_en_hoy(p) as "enHoy", p.hoy_off_reason as off, to_char(p.hoy_off_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "offAt",
+            coalesce(nullif(trim(coalesce(o.first_name, '') || ' ' || left(coalesce(o.last_name, ''), 1)), ''), null) as "offBy", p.city_id,
+            (select count(*)::int from follows f where f.target_kind = 'business' and f.target_id = p.business_id) as seguidores
+       from business_posts p join businesses b on b.id = p.business_id left join users u on u.id = p.created_by left join users o on o.id = p.hoy_off_by
+      where p.status = 'live' and p.publish_at > now() - interval '24 hours' and p.publish_at <= now() and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))
+        and (post_en_hoy(p) or p.hoy_off_at is not null)
+      order by (p.hoy_off_at is not null), p.publish_at desc, p.id desc limit 200`, [s.cities]);
+  return { filas: r.rows, enHoy: r.rows.filter((x) => x.enHoy).length, negocios: new Set(r.rows.filter((x) => x.enHoy).map((x) => x.biz)).size, retiradas: r.rows.filter((x) => x.off).length };
+}
+export type HoyAdmin = Awaited<ReturnType<typeof hoyAdmin>>;

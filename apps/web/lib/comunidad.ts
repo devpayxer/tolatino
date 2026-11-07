@@ -21,6 +21,8 @@ export const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-D
 export const ID = /^\d{1,18}$/;
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const POR_PAGINA = 20;
+/* El sello de la cuenta oficial «To'Latino {Ciudad}» (5e): el logo, nunca una foto de persona. */
+export const SELLO_OFICIAL = "/assets/logo-tolatino.svg";
 
 /* Lo que alguien no debe ver: quien lo bloqueó o a quien bloqueó (de ida y vuelta) y a quien silenció. `autor` es la columna del
    autor y `viewer` el parámetro de quien mira. Toda función de lib/comunidad*.ts que lista para una persona lo usa (guardián). */
@@ -112,7 +114,7 @@ export async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
   const [mio, A] = await Promise.all([propios(filas.map((f) => f.id), viewer), autores(filas.map((f) => f.autor).filter((x): x is string => !!x))]);
   return filas.map((f) => {
     const p = mio.get(f.id) ?? { v: 0, s: false, o: null }, oficial = f.author_kind === "official";
-    const a: Autor = oficial ? { id: null, nombre: f.oficial?.es ?? "To'Latino", ini: "TL", foto: null, rango: 0, oficial: true } : (({ ciudad: _c, ...x }) => (void _c, x))(A(f.autor!));
+    const a: Autor = oficial ? { id: null, nombre: f.oficial?.es ?? "To'Latino", ini: "TL", foto: SELLO_OFICIAL, rango: 0, oficial: true } : (({ ciudad: _c, ...x }) => (void _c, x))(A(f.autor!));
     const lugar: Bi = oficial ? { es: f.ciudad_nombre, en: f.ciudad_nombre } : f.invitado ? { es: `Invitado · de ${f.invitado}`, en: `Visitor · from ${f.invitado}` } : f.zona ?? { es: f.ciudad_nombre, en: f.ciudad_nombre };
     const mia = !!f.autor && f.autor === viewer;
     const meta = (l: "es" | "en") => [f.biz_sub ? f.biz_sub[l].toUpperCase() : null, f.biz_rating && f.biz_reviews ? `★ ${f.biz_rating.toFixed(1)} (${f.biz_reviews})` : null].filter(Boolean).join(" · ");
@@ -164,7 +166,7 @@ export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filt
       ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
            where p.city_id = $2 and p.pinned_until > now() and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}
              and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)
-           order by p.pinned_until desc, p.id desc limit 1`, [viewer, ciudad])
+           order by p.publish_at desc, p.id desc limit 1`, [viewer, ciudad])
       : Promise.resolve({ rows: [] as Fila[] }),
   ]);
   const filas = L.rows.slice(0, POR_PAGINA), mas = L.rows.length > POR_PAGINA ? (top ? filas.at(-1)!.cur_top : filas.at(-1)!.cur_new) : null;

@@ -1,6 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
+import { quedanEnHoy } from "./hoy";
 
 /* Novedades (prototipo novVals / panel sub 'nov' / det 'nov:'; modelo «BusinessPost»). Solo Pro. En vivo, programada y
    terminada se derivan de las fechas; «oculta» = la ocultó To'Latino. La oferta se cobra de verdad: el menú y el pedido
@@ -24,6 +25,8 @@ export type Post = {
   was: number | null; now: number | null; aviso: { day: string; hrs: string; hrsT: string } | null;
   poll: { opts: { l: string; n: number }[]; mine: number | null; total: number; closesH: number | null } | null;
   score: number; myVote: number; saved: boolean; cm: Comentario[];
+  /* 5e · horas que le quedan en Hoy en el barrio (null = no sale en Hoy). */
+  hoy: number | null;
 };
 
 /* Pestaña Novedades de la ficha. Las de «solo seguidores» solo las ve quien sigue. */
@@ -53,7 +56,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
       where p.business_id = $1 and post_en_vivo(p)
         and (p.audience = 'all' or exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = p.business_id))
       order by p.pinned desc, p.publish_at desc limit 50`, [negocio, userId]);
-  const ids = r.rows.map((x) => x.id);
+  const ids = r.rows.map((x) => x.id), enHoy = ids.length ? await quedanEnHoy(negocio) : new Map<string, number>();
   const cms = ids.length ? (await db().query<{ id: string; post: string; first_name: string | null; last_name: string | null; h: number; body: string; up: number; mine: boolean; reply: string | null; propio: boolean }>(
     `select c.id::text, c.post_id::text as post, u.first_name, u.last_name, floor(extract(epoch from now() - c.created_at) / 3600)::int as h, c.body, c.reply,
             (select count(*)::int from post_comment_votes v where v.comment_id = c.id) as up,
@@ -64,7 +67,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
     id: x.id, kind: x.kind, title: x.title, body: x.body, fotos: x.fotos, h: Math.max(0, x.h), pinned: x.pinned, ends: x.ends, link: x.link_kind, url: x.url, was: x.was, now: x.now, aviso: x.aviso,
     item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null,
     poll: x.poll ? { opts: x.poll.map((l, i) => ({ l, n: x.poll_n[i] ?? 0 })), mine: x.poll_mine, total: x.poll_n.reduce((a, n) => a + n, 0), closesH: x.closes_h } : null,
-    score: x.score, myVote: x.my_vote, saved: x.saved,
+    score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
     cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
   }));
   return { negocio: { id: negocio, name: b.name, tel: b.tel }, fol: b.fol, seguidores: b.seguidores, posts };
@@ -152,10 +155,14 @@ export async function seguirNegocio(userId: string, negocio: string): Promise<{ 
 export type FilaNov = {
   id: string; kind: Tipo; title: string; body: string; st: "live" | "prog" | "done" | "adm"; hidden: string | null; pinned: boolean;
   publish: string; ends: string | null; views: number; saves: number; cm: number; tz: string;
+  /* 5e · Hoy en el barrio: horas que le quedan (null = no sale) y, si To'Latino la retiró de Hoy, el motivo. */
+  hoy: number | null; hoyOff: string | null;
 };
 const FILA_NOV = `p.id::text, p.kind, p.title, p.body, ${ESTADO_SQL} as st, p.hidden_reason as hidden, p.pinned, ${iso("p.publish_at")} as publish, ${iso("p.ends_at")} as ends,
   (select count(*)::int from post_views v where v.post_id = p.id) as views, (select count(*)::int from post_saves s where s.post_id = p.id) as saves,
-  (select count(*)::int from post_comments c where c.post_id = p.id and c.status = 'visible') as cm, ci.timezone as tz`;
+  (select count(*)::int from post_comments c where c.post_id = p.id and c.status = 'visible') as cm, ci.timezone as tz,
+  case when post_en_hoy(p) then greatest(1, ceil(extract(epoch from least(p.publish_at + interval '24 hours', coalesce(p.ends_at, 'infinity'::timestamptz)) - now()) / 3600))::int end as hoy,
+  p.hoy_off_reason as "hoyOff"`;
 export async function novedadesPanel(negocio: string) {
   const [L, m] = await Promise.all([
     db().query<FilaNov>(`select ${FILA_NOV} from business_posts p join cities ci on ci.id = p.city_id where p.business_id = $1 and p.status <> 'removed'

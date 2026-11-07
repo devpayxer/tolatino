@@ -1,11 +1,15 @@
 "use client";
-/* APP-NEG-HOME (prototipo «APP-NEG-HOME · móvil» y «· desktop»), compuesto con el sistema de diseño. */
+/* APP-NEG-HOME (prototipo «APP-NEG-HOME · móvil» y «· desktop»), compuesto con el sistema de diseño. 5e: Hoy en el barrio (StoryCard en
+   carrusel) y «Recomendados por vecinos» (InfoCard con el puesto, el negocio y cuántos vecinos lo recomiendan; en escritorio, en el riel). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useRef, type ComponentType } from "react";
 import type { Cat } from "@/lib/directorio";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { TarjetaNegocio } from "../TarjetaNegocio";
+import { HoyCarrusel } from "../HoyCarrusel";
+import type { Historia } from "@/lib/hoy-comun";
+import type { Recomendado } from "@/lib/comunidad-portada";
 
 type N = "Chip" | "Icon" | "SectionHeader" | "IconButton" | "InfoCard" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -13,11 +17,29 @@ const { Chip, Icon, SectionHeader, IconButton, InfoCard, Button } = UI as unknow
 
 type Textos = { cats: string; dest: string; nuevos: string; hoy: string; llamar: string; forBiz: string; publishTitle: string; publishBody: string; publishCta: string };
 
-export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t }: {
+export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t, es, hoy, recs }: {
   titulo: string; sub: string; intenciones: { l: string; icon: string; href: string }[];
-  cats: (Cat & { n: number; linea: string })[]; destacados: Tarjeta[]; nuevos: Tarjeta[]; t: Textos;
+  cats: (Cat & { n: number; linea: string })[]; destacados: Tarjeta[]; nuevos: Tarjeta[]; t: Textos; es: boolean; hoy: Historia[]; recs: Recomendado[];
 }) {
   const router = useRouter();
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const recomendados = recs.length === 0 ? null : (
+    <div data-screen-label="APP-NEG-HOME · Recomendados por vecinos" className="grid">
+      <InfoCard label={E2("RECOMENDADOS POR VECINOS", "RECOMMENDED BY NEIGHBORS")} padding="16px 16px 8px">
+        <div className="flex flex-col">
+          {recs.map((x, i) => (
+            <button key={x.id} type="button" onClick={() => router.push(`/n/${x.id}`)} className="flex items-center gap-3 border-t border-ink/[.07] py-[11px] text-left">
+              <span className="w-[22px] flex-none font-mono text-[13px] font-extrabold text-ink/30">{i + 1}</span>
+              <span className="min-w-0 flex-1"><span className="block truncate text-[13.5px] font-bold text-ink">{x.nombre}</span>
+                <span className="mt-[3px] block font-mono text-[10px] font-semibold tracking-[0.04em] text-ink/50">{`${x.rating && x.resenas ? `★ ${x.rating.toFixed(1)} · ` : ""}${x.vecinos} ${x.vecinos === 1 ? E2("VECINO LO RECOMIENDA", "NEIGHBOR RECOMMENDS") : E2("VECINOS LO RECOMIENDAN", "NEIGHBORS RECOMMEND")}`}</span></span>
+              <span className="grid text-ink/30"><Icon name="chevronRight" size={16} strokeWidth={2} /></span>
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-ink/[.07] pb-2 pt-2.5 text-[11.5px] font-semibold leading-[1.5] text-ink/50">{E2("Aquí nada se compra: el orden lo ponen los votos de los vecinos.", "Nothing here is bought: neighbors’ votes set the order.")}</div>
+      </InfoCard>
+    </div>
+  );
   const publica = (
     <InfoCard label={t.forBiz}>
       <div className="font-display text-[18px] font-extrabold leading-[1.2] tracking-[-0.03em] text-ink">{t.publishTitle}</div>
@@ -62,13 +84,19 @@ export function Negocios({ titulo, sub, intenciones, cats, destacados, nuevos, t
         <div className="xl:grid xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start xl:gap-[30px]">
           <div className="flex min-w-0 flex-col gap-[26px] lg:gap-[34px]">
             {destacados.length > 0 && <Fila titulo={t.dest} items={destacados} t={t} />}
+            {hoy.length > 0 && (
+              <div className="-mx-5 lg:mx-0">
+              <HoyCarrusel es={es} historias={hoy} titulo={E2("Hoy en el barrio", "Today nearby")} verTodo="/comunidad/hoy" escritorio />
+              </div>
+            )}
+            {recomendados && <div className="xl:hidden">{recomendados}</div>}
             {nuevos.length > 0 && <Fila titulo={t.nuevos} items={nuevos} t={t} />}
             <div className="xl:hidden lg:grid lg:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] lg:gap-3.5">
               <div className="grid">{publica}</div>
             </div>
           </div>
           <aside className="hidden xl:block">
-            <div className="sticky top-[88px] flex flex-col gap-4">{publica}</div>
+            <div className="sticky top-[88px] flex flex-col gap-4">{recomendados}{publica}</div>
           </aside>
         </div>
       </div>

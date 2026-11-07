@@ -3,6 +3,7 @@ import { leerFiltros } from "@/lib/comunidad-comun";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { ubicacion } from "@/lib/ubicacion";
+import { hoyEnElBarrio } from "@/lib/hoy";
 import { Invitado } from "./Invitado";
 import { Muro } from "./Muro";
 import { conCuenta } from "./sesion";
@@ -19,6 +20,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   }
   const s = await conCuenta("/comunidad");
   const f = leerFiltros(sp);
-  const d = await muro(s.u.id, s.loc.c.id, s.loc, f, null);
-  return <Muro es={s.es} yo={s.me} ciudad={s.loc.c.name} abierta={s.loc.c.status === "on"} filtros={f} inicial={d} />;
+  // 5e · Hoy en el barrio (público, de los negocios) sale dentro del muro en carrusel.
+  const [d, hoy] = await Promise.all([muro(s.u.id, s.loc.c.id, s.loc, f, null), hoyEnElBarrio(s.loc.c.id, null, null, s.loc, 8)]);
+  return <Muro es={s.es} yo={s.me} ciudad={s.loc.c.name} abierta={s.loc.c.status === "on"} filtros={f} inicial={d} hoy={hoy.historias} />;
 }

@@ -18,11 +18,14 @@ const verPro = (c: Ctx) => c.go("pay", "plan");
 const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 
 /* «Cuándo»: ahora · quedan N h / programada para … / terminada. */
-function cuando(c: Ctx, n: { st: string; publish: string; ends: string | null; tz: string }) {
+function cuando(c: Ctx, n: { st: string; publish: string; ends: string | null; tz: string; hoy?: number | null; hoyOff?: string | null }) {
   const { E2, es } = c, f = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: n.tz }).format(new Date(iso)).replace(/\./g, "");
   if (n.st === "prog") return E2(`Programada · ${f(n.publish)}`, `Scheduled · ${f(n.publish)}`);
   if (n.st === "done") return E2("Terminada", "Ended");
   if (n.st === "adm") return E2("Oculta por To’Latino", "Hidden by To’Latino");
+  // 5e · lo que está en Hoy en el barrio lo dice (dash2-nov whenOf); lo que To'Latino retiró de Hoy, también.
+  if (n.hoy) return E2(`En Hoy en el barrio · quedan ${n.hoy} h`, `In Today nearby · ${n.hoy} h left`);
+  if (n.hoyOff) return E2("En vivo en tu página · To’Latino la retiró de Hoy en el barrio", "Live on your page · To’Latino took it out of Today nearby");
   if (!n.ends) return E2("En vivo · sin fecha de fin", "Live · no end date");
   const h = Math.max(1, Math.ceil((new Date(n.ends).getTime() - Date.now()) / 3_600_000));
   return E2(`En vivo · quedan ${h} h`, `Live · ${h} h left`);
@@ -74,6 +77,7 @@ export function novDetalle(c: Ctx): Sec {
   const T = NOVT(c).find((t) => t[0] === n.kind) ?? NOVT(c)[4]!, out: (Bloque | null)[] = [];
   out.push({ type: "head", eye: `${T[1]} · ${n.st === "live" ? E2("EN VIVO", "LIVE") : n.st === "prog" ? E2("PROGRAMADA", "SCHEDULED") : n.st === "adm" ? E2("OCULTA", "HIDDEN") : E2("TERMINADA", "ENDED")}`.toUpperCase(), t: n.title, s: cuando(c, n), onBack: c.closeDet });
   if (n.st === "adm") out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino ocultó esta publicación: no sale en tu página. Motivo: ${n.hidden ?? "—"}`, `To’Latino hid this post: it does not show on your page. Reason: ${n.hidden ?? "—"}`) });
+  if (n.hoyOff && n.st !== "adm") out.push({ type: "note", tone: "warn", icon: "news", t: E2(`To’Latino la retiró de Hoy en el barrio; sigue en tu página. Motivo: ${n.hoyOff}`, `To’Latino took it out of Today nearby; it stays on your page. Reason: ${n.hoyOff}`) });
   out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("VISTAS", "VIEWS"), v: String(n.views) }, { k: E2("GUARDADOS", "SAVED"), v: String(n.saves) }, { k: E2("COMENTARIOS", "COMMENTS"), v: String(n.cm) }] });
   if (n.cms.length) {
     const kR = c.ui.nRpK as string | undefined, tR = (c.ui.nRpT as string | undefined) ?? "";

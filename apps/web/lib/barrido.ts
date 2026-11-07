@@ -25,9 +25,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
     const ok = (await c.query<{ ok: boolean }>(`select pg_try_advisory_lock($1) as ok`, [LOCK])).rows[0]?.ok;
     if (!ok) return { corrio: false, ms: Date.now() - t0, tareas: [] };
     try {
-      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod] = await Promise.all([
+      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
-        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion")]);
+        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -61,6 +61,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Moderación (5d): reseñas en ráfaga sin transacción (respaldo de la revisión al guardar) y redes de cuentas (votos y seguidores
         // desde un mismo dispositivo) → caso en «Reportes de usuario».
         ["moderacion", () => mod.barrerModeracion()],
+        // Hoy en el barrio y la cuenta oficial (5e): quien sigue a un negocio recibe una vez «Hoy en un negocio que sigues» cuando una
+        // novedad entra a Hoy (también la programada al salir), y si una oficial programada y fijada ya salió, queda una sola fijada.
+        ["hoyGuardados", () => hoy.avisarHoyGuardados()], ["fijadaUna", async () => (await db().query<{ n: number }>(`select com_fijada_una() as n`)).rows[0]?.n ?? 0],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);
           await mercado.repararMercado(b).catch(() => undefined); await apartados.repararApartados(b).catch(() => undefined); await layaway.repararPlanes(b).catch(() => undefined);

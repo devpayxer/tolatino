@@ -1,12 +1,17 @@
 "use client";
-/* APP-BUSCAR (diseño «To'Latino Buscar»): explorar, sugerencias mientras escribes, resultados (Todo · Negocios), sin
-   resultados y voz. El servidor entiende y busca; esta pantalla pinta y guarda tus búsquedas recientes en tu teléfono. */
+/* APP-BUSCAR (diseño «To'Latino Buscar»): explorar, sugerencias mientras escribes, resultados (Todo · Negocios · Vecinos), sin
+   resultados y voz. El servidor entiende y busca; esta pantalla pinta y guarda tus búsquedas recientes en tu teléfono.
+   5e: «Lo que dicen los vecinos» y la pestaña Vecinos solo con cuenta (el servidor no los lee sin sesión), con la línea fija; y
+   «Pregúntale al barrio» abre Publicar con lo que buscaste escrito. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import type { Tarjeta } from "@/lib/tarjeta";
 import { T as TX } from "@/lib/textos";
 import { avisameBusqueda } from "../acciones";
+import { LINEA_FIJA } from "@/lib/comunidad-filtro";
+import { vecinosMas } from "./acciones";
+import type { FilaVecino } from "./vecinos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard";
@@ -20,13 +25,14 @@ export type VistaBuscar = {
     cats: { slug: string; l: string; full: string; icon: string }[]; subs: string[];
   };
   res: null | {
-    tab: "all" | "biz"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
+    tab: "all" | "biz" | "vec"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
     titulo: string; eb: string; palabras: string[]; mostrarEntendido: boolean;
     intenciones: { k: string; label: string; quitar: string }[]; rapidos: { k: string; l: string; on: boolean; href: string }[];
     top: { img: string | null; eb: string; t: string; meta: string; href: string } | null;
     notYet: { t: string; primero: boolean } | null; nadaT: string; dym: string | null;
     tarjetas: Tarjeta[]; filas: { id: string; pro: boolean; parts: [string, string, string]; image: string | null; meta: string; status: string; statusColor: string }[];
     subsLado: { l: string; m: string; href: string }[]; probar: { l: string; slug: string }[]; catDominante: string | null;
+    vecinos: { total: number; mas: string | null; items: FilaVecino[] } | null;
   };
 };
 type Fila = { seccion: string; parts: [string, string, string]; image: string | null; icon: string | null; meta: string; right: string | null; rightColor: string | null; href: string };
@@ -46,6 +52,8 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const [voz, setVoz] = useState<"no" | "escuchando" | "sin">("no");
   const [alerta, setAlerta] = useState(false);
   const [ordenAbierto, setOrdenAbierto] = useState(false);
+  const [vecL, setVecL] = useState<FilaVecino[]>(v.res?.vecinos?.items ?? []), [vecMas, setVecMas] = useState<string | null>(v.res?.vecinos?.mas ?? null), [vecCarga, setVecCarga] = useState(false);
+  useEffect(() => { setVecL(v.res?.vecinos?.items ?? []); setVecMas(v.res?.vecinos?.mas ?? null); }, [v.res?.vecinos]);
   const inRef = useRef<HTMLInputElement>(null);
   const recRef = useRef<{ stop: () => void } | null>(null);
   useEffect(() => setRec(leer()), []);
@@ -103,6 +111,38 @@ export function Buscar({ v }: { v: VistaBuscar }) {
   const R = v.res;
   const conteoGo = sug?.total ? `${sug.total} ${sug.total === 1 ? t.negocio : t.negocios}` : t.irMeta;
   const secciones = sug ? [...new Set(sug.filas.map((x) => x.seccion))] : [];
+
+  const es = v.lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  const preguntar = () => router.push(`/comunidad/nuevo?k=pregunta${v.q ? `&q=${encodeURIComponent(v.q)}` : ""}`);
+  const fichaVecino = (x: FilaVecino, lineas: number) => (
+    <button key={x.id} type="button" onClick={() => router.push(`/comunidad/p/${x.id}`)} className="flex flex-col gap-2.5 rounded-[18px] border border-ink/[.07] bg-white p-3.5 text-left">
+      <span className="flex items-center gap-[9px]">
+        <span className="grid size-7 flex-none place-items-center rounded-full bg-desk bg-cover bg-center text-[10px] font-extrabold" style={x.foto ? { backgroundImage: `url("${x.foto}")` } : undefined}>{x.foto ? "" : x.ini}</span>
+        <span className="text-[13px] font-bold">{x.who}{x.oficial ? <span className="ml-1.5 font-mono text-[9.5px] font-bold tracking-[0.08em] text-action">{E2("CUENTA OFICIAL", "OFFICIAL")}</span> : null}</span>
+        <span className="font-mono text-[10px] font-semibold text-ink/45">{x.when}</span>
+      </span>
+      <span className="text-[13.5px] font-medium leading-[1.55] text-ink/80" style={{ display: "-webkit-box", WebkitLineClamp: lineas, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.parts[0]}<span className="font-extrabold text-ink">{x.parts[1]}</span>{x.parts[2]}</span>
+      <span className="flex gap-3.5 font-mono text-[11px] font-bold text-ink/50">
+        <span className="flex items-center gap-[5px]"><Icon name="like" size={14} color="rgba(11,14,18,.5)" />{x.votes}</span>
+        <span className="flex items-center gap-[5px]"><Icon name="chat" size={14} color="rgba(11,14,18,.5)" />{x.cms}</span>
+      </span>
+    </button>
+  );
+  const vecinosMasCargar = async () => {
+    if (!vecMas || vecCarga) return; setVecCarga(true);
+    try { const r = await vecinosMas(v.q, vecMas); setVecL((l) => [...l, ...r.items.filter((y) => !l.some((z) => z.id === y.id))]); setVecMas(r.mas); } catch { /* sin red */ } finally { setVecCarga(false); }
+  };
+  const lineaFija = <span className="text-[11.5px] font-semibold leading-[1.5] text-ink/50">{es ? LINEA_FIJA.es : LINEA_FIJA.en}</span>;
+  const seccionVecinos = R?.vecinos && vecL.length > 0 && (
+    <div data-screen-label="APP-BUSCAR · lo que dicen los vecinos" className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2.5">
+        <span className="font-display text-[18px] font-extrabold tracking-[-0.03em]">{E2("Lo que dicen los vecinos", "What neighbors say")}</span>
+        {R.vecinos.total > vecL.length && <button type="button" onClick={() => ir({ tab: "vec", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`, `See ${R.vecinos.total >= 100 ? "100+" : R.vecinos.total}`)}</button>}
+      </div>
+      <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{vecL.map((x) => fichaVecino(x, 3))}</div>
+      {lineaFija}
+    </div>
+  );
 
   /* ── Piezas ── */
   const caja = (desk: boolean) => (
@@ -172,7 +212,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             <div className="sticky top-[96px] flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.resU}</span>
-                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total]].map(([id, l, ic, n]) => (
+                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
                   <button key={String(id)} type="button" onClick={() => ir({ tab: id === "all" ? null : String(id), p: null })}
                     className={`flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-left text-[13.5px] font-bold ${R.tab === id ? "bg-ink/[.06] text-ink" : "text-ink/65"}`}>
                     <Icon name={String(ic)} size={17} /><span className="flex-1">{l}</span><span className="font-mono text-[11px] text-ink/45">{n ?? ""}</span>
@@ -223,7 +263,15 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             ) : null}
             {R.parcial && <div className="mx-5 mt-4 rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-[var(--tl-pro-ink)] lg:mx-0">{t.partial}</div>}
 
-            {R.nada ? (
+            {R.tab === "vec" && R.vecinos ? (
+              <div data-screen-label="APP-BUSCAR · vecinos" className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
+                <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/50">{E2(`${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} PUBLICACIONES DE VECINOS · ORDEN POR VOTOS`, `${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} NEIGHBOR POSTS · ORDERED BY VOTES`)}</span>
+                <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{vecL.map((x) => fichaVecino(x, 4))}</div>
+                {vecMas && <div className="flex justify-center"><Button variant="secondary" size="md" disabled={vecCarga} onClick={vecinosMasCargar}>{vecCarga ? E2("Cargando…", "Loading…") : E2("Ver más", "See more")}</Button></div>}
+                {lineaFija}
+                <div className="flex"><Button variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button></div>
+              </div>
+            ) : R.nada ? (
               <div data-screen-label="APP-BUSCAR · sin resultados" className="flex flex-col items-center gap-3.5 px-6 pb-12 pt-9 text-center lg:items-start lg:px-0 lg:text-left">
                 <span className="grid size-16 place-items-center rounded-[22px] border border-line bg-white lg:hidden"><Icon name="search" size={26} color="rgba(11,14,18,.5)" /></span>
                 <span className="text-balance font-display text-[22px] font-extrabold leading-[1.2] tracking-[-0.035em]">{R.nadaT}</span>
@@ -232,7 +280,9 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                 <div className="mt-1.5 flex w-full flex-col gap-2 lg:w-auto lg:flex-row">
                   <div className="flex"><Button block icon="bell" variant={alerta ? "secondary" : "primary"} onClick={alerta ? undefined : pedirAlerta}>{alerta ? t.alertaOn : t.alerta}</Button></div>
                   <div className="flex"><Button block variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button></div>
+                  <div className="flex"><Button block variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button></div>
                 </div>
+                {seccionVecinos && <div className="mt-3 w-full text-left">{seccionVecinos}</div>}
                 <div className="mt-3.5 flex w-full flex-col gap-2.5 text-left">
                   <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.tryCats}</span>
                   <div className="flex flex-wrap gap-2">{R.probar.map((c) => <Chip key={c.slug} onClick={() => router.push(`/c/${c.slug}`)}>{c.l}</Chip>)}</div>
@@ -279,12 +329,15 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                   ))}
                 </div>
                 {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
+                {seccionVecinos}
                 <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-4">
                   <span className="font-display text-[15px] font-extrabold tracking-[-0.02em]">{t.notFound}</span>
                   <div className="flex flex-wrap gap-2">
                     <Button size="sm" icon="bell" variant={alerta ? "secondary" : "primary"} onClick={alerta ? undefined : pedirAlerta}>{alerta ? t.alertaOn : t.alerta}</Button>
-                    <Button size="sm" variant="soft" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button>
+                    <Button size="sm" variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button>
+                    <Button size="sm" variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button>
                   </div>
+                  <span className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Pregúntale al barrio: los vecinos recomiendan y el orden lo ponen sus votos.", "Ask the neighborhood: neighbors recommend and their votes set the order.")}</span>
                 </div>
               </div>
             )}

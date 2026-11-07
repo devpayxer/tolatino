@@ -2,8 +2,9 @@
 /* ADM-CONT · Contenido (Super Admin.dc.html secCont / contRow): lo que escriben vecinos y negocios y ya existe en la app
    (reseñas, novedades, comentarios de novedades y vacantes). Cifras, pestañas, búsqueda, filtros (con reporte, ocultos,
    votos negativos), y ocultar o mostrar con motivo (el autor lo ve; queda en la auditoría). Publicaciones de la Comunidad
-   (5a): además fijar arriba de su ciudad y bloquear comentarios; comentarios de vecinos (5b): ocultar y restaurar con motivo. «Hoy en el barrio», auto-moderación y cuenta oficial llegan
-   en 5d–5e. */
+   (5a): además fijar arriba de su ciudad y bloquear comentarios; comentarios de vecinos (5b): ocultar y restaurar con motivo. Auto-moderación
+   (5d). «Hoy en el barrio» (lo que sale ahora y su origen; «Retirar de Hoy» con motivo y aviso al negocio) y «Cuenta oficial» (escribir,
+   programar y fijar) (5e, HoyAdmin.tsx). */
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -16,6 +17,9 @@ import type { ComponentType } from "react";
 import { ConfirmarMotivo, PLANT, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { AutoModeracion } from "./AutoModeracion";
 import type { AutoMod } from "@/lib/admin-confianza";
+import { HoyAdmin, OficialAdmin } from "./HoyAdmin";
+import type { HoyAdmin as DatosHoy } from "@/lib/admin-contenido";
+import type { CuentaOficial } from "@/lib/oficial";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminList" | "Pager" | "Icon", ComponentType<any>>;
@@ -24,7 +28,9 @@ const TIPO: Record<FilaCont["k"], [string, string]> = { rev: ["Reseña", "star"]
 const PUB: Record<string, string> = { pregunta: "Pregunta", recomendacion: "Recomendación", encuesta: "Encuesta", publicacion: "Publicación" };
 const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "HACE UN MOMENTO" : h < 24 ? `HACE ${Math.floor(h)} H` : `HACE ${Math.floor(h / 24)} D`; };
 
-export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null }: { d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null }) {
+export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null, hoy = null, oficial = null, escribeOficial = false }: {
+  d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean;
+}) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
@@ -55,11 +61,13 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
     { type: "head", eye: "CONTENIDO Y OFERTA", t: "Contenido", s: "Publicaciones de la Comunidad, reseñas, novedades, comentarios y vacantes: todo lo que escribe un vecino o un negocio. Ocultar avisa al autor con el motivo; nada se borra.", h1: desk ? 26 : 22 },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "PUBLICACIONES", v: String(c.pub), s: `${c.ccm} comentarios de vecinos · ${c.rev} reseñas` }, { k: "REPORTES ABIERTOS", v: String(c.rep), s: c.rep ? "SLA 24 h" : "al día", bg: c.rep ? "var(--tl-ink)" : undefined, fg: c.rep ? "var(--tl-white)" : undefined, onClick: c.rep ? () => router.push("/admin/colas?cola=rep") : undefined },
-      { k: "NOVEDADES Y VACANTES", v: String(c.nov + c.vac), s: `${c.nov} novedades · ${c.vac} vacantes` }, { k: "OCULTOS", v: String(c.hid), s: "restaurables" },
+      { k: "HOY EN EL BARRIO", v: String(c.hoy), s: "avisos de 24 h", onClick: () => router.push("/admin/contenido?tab=hoy") }, { k: "OCULTOS", v: String(c.hid), s: "restaurables" },
     ] },
-    { type: "tabs", items: ([["all", "Todo"], ["pub", "Publicaciones"], ["ccm", "Comentarios de vecinos"], ["rev", "Reseñas"], ["nov", "Novedades"], ["cm", "Comentarios"], ["vac", "Vacantes"], ["auto", "Auto-moderación"]] as const).map(([k, l]) => ({ l, on: auto ? k === "auto" : f.tab === k, onClick: () => ir({ tab: k === "all" ? null : k }) })) },
+    { type: "tabs", items: ([["all", "Todo"], ["pub", "Publicaciones"], ["ccm", "Comentarios de vecinos"], ["hoy", "Hoy en el barrio"], ["rev", "Reseñas"], ["nov", "Novedades"], ["cm", "Comentarios"], ["vac", "Vacantes"], ["auto", "Auto-moderación"], ["off", "Cuenta oficial"]] as const).map(([k, l]) => ({ l, on: auto ? k === "auto" : hoy ? k === "hoy" : oficial ? k === "off" : f.tab === k, onClick: () => ir({ tab: k === "all" ? null : k }) })) },
   ];
   if (auto) return <AutoModeracion d={auto} edita={editaCom} arriba={bloques} />;
+  if (hoy) return <HoyAdmin d={hoy} puede={puedeCom} arriba={bloques} />;
+  if (oficial) return <OficialAdmin d={oficial} escribe={escribeOficial} arriba={bloques} />;
   const despues: Bloque[] = [{ type: "chips", items: ([["rep", "Con reporte"], ["hid", "Ocultos"], ["neg", "Votos negativos"]] as const).map(([k, l]) => ({ l, v: f[k] ? "selected" : "filter", onClick: () => ir({ [k]: f[k] ? null : "1" }) })) }];
   const a = d.total ? (f.pag - 1) * porPagina + 1 : 0, b = Math.min(d.total, f.pag * porPagina);
   return (

@@ -1114,7 +1114,7 @@ const guardianes = {
      scripts/portar-sistema.mjs; los demás (fondos de hojas, cruces, filas) van en el bloque de accesibilidad del sistema
      (LAUNCH-CHECKLIST). Trinquete: el número no puede subir; cuando baja, se baja el tope aquí. */
   sistemaClicMudo() {
-    const TOPE = 193;
+    const TOPE = 190;
     let n = 0;
     const recorrer = (d) => { for (const x of readdirSync(d)) { const p = join(d, x); if (statSync(p).isDirectory()) recorrer(p); else if (p.endsWith(".js")) {
       const L = readFileSync(p, "utf8").split("\n");
@@ -1767,9 +1767,13 @@ const guardianes = {
     if (!/t ~ '\(\\d\[\\s\(\)\.-\]\*\)\{10\}'/.test(m)) falla("comunidadSinTelefonos", M, 0, "com_sin_datos() no frena teléfonos de 10 dígitos");
     for (const [tabla, col] of [["com_posts", "body"], ["com_comments", "body"], ["community_profiles", "bio"]])
       if (!new RegExp(`alter table ${tabla} add constraint \\w+ check \\(com_sin_datos\\(${col}\\)`).test(m)) falla("comunidadSinTelefonos", M, 0, `${tabla}.${col} sin la restricción com_sin_datos()`);
+    // 5e: la cuenta oficial (lib/oficial.ts) también escribe en com_posts, y también pasa antes por revisarPublicacion().
+    const O = "apps/web/lib/oficial.ts";
+    if (existsSync(O)) { const c = cuerpoFn(sinComent(O), "publicarOficial"), iF = c.search(/revisarPublicacion\(/), iW = c.search(/insert into com_posts/);
+      if (iF < 0 || iW < 0 || iF > iW) falla("comunidadSinTelefonos", O, 0, "«publicarOficial» escribe sin pasar antes por revisarPublicacion()"); }
     for (const x of codigo) {
-      if (!/^apps\/web\/.*\.tsx?$/.test(x) || /^apps\/web\/lib\/comunidad[^/]*\.ts$/.test(x)) continue;
-      readFileSync(x, "utf8").split("\n").forEach((t, i) => { if (/insert into com_(posts|comments)\b/i.test(t)) falla("comunidadSinTelefonos", x, i + 1, "solo lib/comunidad*.ts escribe publicaciones y comentarios (con el filtro)"); });
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || /^apps\/web\/lib\/comunidad[^/]*\.ts$/.test(x) || x === O) continue;
+      readFileSync(x, "utf8").split("\n").forEach((t, i) => { if (/insert into com_(posts|comments)\b/i.test(t)) falla("comunidadSinTelefonos", x, i + 1, "solo lib/comunidad*.ts y lib/oficial.ts escriben publicaciones y comentarios (con el filtro)"); });
     }
   },
 
@@ -2189,6 +2193,87 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === MO) continue;
       if (/\bset\b[^`;]*hidden_by = 'auto'/.test(sinComent(x))) falla(G, x, 0, "solo autoOcultar (lib/moderacion.ts) oculta «auto»");
     }
+  },
+
+  /* ── Fase 5 · Comunidad (5e) ── */
+  /* 5e. La cuenta oficial «To'Latino {Ciudad}» no es una persona: la base exige author_user_id null cuando el autor es oficial; solo
+     lib/oficial.ts la escribe (insert con 'official', null y el staff_id de quien la escribe, después de revisar rol Admin/Ciudad y su
+     ciudad) y nunca crea una fila en users; el muro la arma sin id (no se sigue, no se le escribe, no abre perfil) y con el sello; y
+     todo lo que reparta puntos o arme la Tabla (5f) filtra author_kind (nunca gana puntos ni sale en rankings). */
+  oficialNoEsPersona() {
+    const G = "oficialNoEsPersona", M = "packages/db/migrations/0097_comunidad_base.sql", O = "apps/web/lib/oficial.ts", C = "apps/web/lib/comunidad.ts";
+    if (!existsSync(M)) return;
+    if (!/check \(\(author_kind = 'official'\) = \(author_user_id is null\)\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "com_posts debe exigir author_user_id null para la cuenta oficial (y solo para ella)");
+    if (!existsSync(O)) return falla(G, O, 0, "falta lib/oficial.ts (la cuenta oficial la escribe el equipo)");
+    const t = sinComent(O), b = cuerpoFn(t, "publicarOficial"), iP = b.search(/if \(!puedeOficial\(s, ciudad\)\) return no\(/), iW = b.search(/insert into com_posts/);
+    if (iP < 0 || iW < 0 || iP > iW) falla(G, O, 0, "publicarOficial escribe sin revisar antes puedeOficial(s, ciudad)");
+    if (!/values \(\$1, 'official', null, \$2,/.test(b)) falla(G, O, 0, "la cuenta oficial se escribe con author_kind 'official', author_user_id null y staff_id = quien la escribe");
+    if (!/ROLES_OFICIAL = \["admin", "ciudad"\]/.test(t)) falla(G, O, 0, "solo Admin y Ciudad manager escriben como la cuenta oficial");
+    if (!/ROLES_OFICIAL\.includes\(s\.role\) && s\.puede\("cont", "editar"\) && \(!ciudad \|\| !s\.cities\.length \|\| s\.cities\.includes\(ciudad\)\)/.test(t)) falla(G, O, 0, "puedeOficial debe mirar el rol, el permiso de Contenido y la ciudad");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const u = sinComent(x);
+      if (x === O && /\binsert into users\b/i.test(u)) falla(G, x, 0, "la cuenta oficial nunca crea una fila en users");
+      if (x !== O && /insert into com_posts[\s\S]{0,400}'official'/.test(u)) falla(G, x, 0, "solo lib/oficial.ts escribe como la cuenta oficial");
+      for (const q of u.match(/`[^`]*`/g) ?? []) if (/\b(points_entries|monthly_boards)\b/.test(q) && !/author_kind|author_user_id is not null|user_id is not null/.test(q)) falla(G, x, 0, "lo que reparte puntos o arma la Tabla debe dejar fuera a la cuenta oficial (author_kind)");
+    }
+    if (existsSync(C)) {
+      const a = cuerpoFn(sinComent(C), "armar");
+      if (!/oficial \? \{ id: null, nombre: [^}]*foto: SELLO_OFICIAL, rango: 0, oficial: true \}/.test(a)) falla(G, C, 0, "armar(): la cuenta oficial sale sin id (no se sigue ni se le escribe), con el sello y sin rango");
+    }
+    const MU = "apps/web/app/(app)/comunidad/Muro.tsx";
+    if (existsSync(MU) && !/onAuthor=\{p\.autor\.id && !p\.autor\.oficial \?/.test(sinComent(MU))) falla(G, MU, 0, "tocar a la cuenta oficial no abre un perfil de persona");
+  },
+
+  /* 5e. Hoy en el barrio solo muestra lo que está en vivo: la regla vive en la base (post_en_hoy = post_en_vivo + para todos + < 24 h + no
+     retirada de Hoy; post_en_vivo = live, no oculta, ya publicada, sin vencer, negocio activo Pro con Novedades encendido y sin pausa) y
+     toda consulta de Hoy (lib/hoy.ts, el Super Admin) la usa. Al revés: quitar post_en_hoy de una consulta o una condición de la regla →
+     falla. */
+  hoySoloEnVivo() {
+    const G = "hoySoloEnVivo", H = "apps/web/lib/hoy.ts";
+    const vivo = ultimaFn("post_en_vivo"), hoy = ultimaFn("post_en_hoy");
+    if (!hoy) return falla(G, "packages/db/migrations", 0, "falta post_en_hoy (la regla de Hoy en el barrio vive en la base)");
+    for (const [re, que] of [[/post_en_vivo\(p\)/, "en vivo"], [/p\.audience = 'all'/, "para todos (no «solo seguidores»)"], [/p\.hoy_off_at is null/, "no retirada de Hoy"], [/p\.publish_at > now\(\) - interval '24 hours'/, "menos de 24 h"]])
+      if (!re.test(hoy)) falla(G, "packages/db/migrations", 0, `post_en_hoy sin «${que}»`);
+    for (const [re, que] of [[/p\.status = 'live'/, "no detenida"], [/p\.hidden_at is null/, "no oculta"], [/p\.publish_at <= now\(\)/, "ya publicada"], [/p\.ends_at is null or p\.ends_at > now\(\)/, "sin vencer"],
+      [/s\.plan = 'pro'/, "negocio Pro (no Free)"], [/b\.status = 'active'/, "negocio activo"], [/'nov' = any\(b\.modules_on\) and not \(b\.modules_off \? 'nov'\)/, "Novedades encendido y sin pausa de To'Latino"]])
+      if (!re.test(vivo)) falla(G, "packages/db/migrations", 0, `post_en_vivo sin «${que}»`);
+    if (!existsSync(H)) return falla(G, H, 0, "falta lib/hoy.ts");
+    const t = sinComent(H);
+    for (const fn of ["hoyEnElBarrio", "quedanEnHoy", "avisarHoyGuardados"]) {
+      const b = cuerpoFn(t, fn);
+      if (!b) { falla(G, H, 0, `falta ${fn}()`); continue; }
+      for (const q of b.match(/`[^`]*`/g) ?? []) if (/from business_posts\b/.test(q) && !/post_en_hoy\(/.test(q)) falla(G, H, 0, `«${fn}» lee novedades para Hoy sin post_en_hoy()`);
+    }
+    const A = "apps/web/lib/admin-contenido.ts";
+    if (existsSync(A)) { const h = cuerpoFn(sinComent(A), "hoyAdmin"); if (!/post_en_hoy\(p\) as "enHoy"/.test(h) || !/\n\s*where [\s\S]*\(post_en_hoy\(p\) or p\.hoy_off_at is not null\)/.test(h)) falla(G, A, 0, "«hoyAdmin» debe usar post_en_hoy() para decir qué está en Hoy (y para filtrar)"); }
+    // Nadie más arma Hoy por su cuenta: una consulta que mira hoy_off_at también usa post_en_hoy().
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === H) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/hoy_off_at is null/.test(q) && !/post_en_hoy\(/.test(q)) falla(G, x, 0, "consulta de Hoy en el barrio sin post_en_hoy()");
+    }
+  },
+
+  /* 5e. Buscar › Vecinos solo con cuenta: buscarVecinos() no lee nada sin quien mira y pasa por sinBloqueos(); quien la llama lo hace con
+     la sesión (u.id, después de revisar que hay sesión); la búsqueda en vivo (/api/buscar) nunca lee publicaciones de vecinos; la
+     pestaña «vec» no existe sin sesión. */
+  buscarVecinosConSesion() {
+    const G = "buscarVecinosConSesion", L = "apps/web/lib/comunidad-portada.ts", P = "apps/web/app/(app)/buscar/page.tsx";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/comunidad-portada.ts");
+    const b = cuerpoFn(sinComent(L), "buscarVecinos");
+    if (!/export async function buscarVecinos\(viewer: string,[^\n]*\n\s*if \(!viewer \|\| !consulta\) return \{ items: \[\], mas: null, total: 0 \};/.test(b)) falla(G, L, 0, "buscarVecinos debe empezar devolviendo nada sin quien mira");
+    if (!/w: string\[\] = \[[^\]]*sinBloqueos\("p\.author_user_id", "\$1"\)/.test(b)) falla(G, L, 0, "buscarVecinos sin sinBloqueos()");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === L) continue;
+      const t = sinComent(x);
+      if (/^apps\/web\/app\/api\/buscar\//.test(x) && /buscarVecinos|comunidad-portada|lib\/comunidad|from com_posts|com_comments/.test(t)) falla(G, x, 0, "la búsqueda en vivo no lee publicaciones de vecinos");
+      for (const m of t.matchAll(/buscarVecinos\(([^,]*),/g)) {
+        if (m[1].trim() !== "u.id") falla(G, x, 0, "buscarVecinos se llama con la sesión (u.id)");
+        const antes = t.slice(Math.max(0, m.index - 400), m.index);
+        if (!/\bu && [^\n]*$/.test(antes) && !/if \(!u\) return/.test(antes)) falla(G, x, 0, "buscarVecinos sin revisar antes que hay sesión");
+      }
+    }
+    if (existsSync(P) && !/sp\.tab === "vec" && u \? "vec"/.test(sinComent(P))) falla(G, P, 0, "la pestaña Vecinos no existe sin sesión");
   },
 
   idioma() {

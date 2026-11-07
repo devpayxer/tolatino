@@ -622,3 +622,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
       de la persona en 24 h) y `redDeCuentas` (votos de 7 días) no se midieron en la base de carga. (5d, 7 nov)
 - [ ] **5d · Punta a punta en 9 dispositivos:** `com5d` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz
       de CI. (5d, 7 nov)
+- [ ] **5e · Velocidad de Hoy y de Recomendados con 1 M:** `hoyEnElBarrio` (índice `business_posts_hoy_idx`, presupuesto ≤ 40 ms) y
+      `recomendadosPorVecinos` (agrega 180 días por ciudad en cada vista de Negocios) no se midieron en la base de carga; si no cumple,
+      Recomendados pasa a derivado cacheado (con 5f). (5e, 7 nov)
+- [ ] **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
+      1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov)
+- [ ] **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
+      matriz de CI. (5e, 7 nov)
+- [ ] **5e · Puntos y Tabla sin la cuenta oficial:** hoy la cuenta oficial no tiene fila en users; cuando llegue el libro de puntos (5f), el
+      guardián `oficialNoEsPersona` exige que toda consulta de `points_entries` / `monthly_boards` filtre la cuenta oficial. (5e, 7 nov)
+- [ ] **5e · Foto propia de la cuenta oficial por ciudad** (`city_official_accounts.photo_media_id`): hoy sale el logo de To'Latino; falta
+      dónde subirla en Contenido › Cuenta oficial si el fundador quiere una por ciudad. (5e, 7 nov)

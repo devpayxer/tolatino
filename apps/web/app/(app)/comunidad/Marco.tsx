@@ -3,16 +3,24 @@
    (título, ciudad y la pastilla del rango «6 · Teniente», MEM 91) o encabezado de detalle con volver; en escritorio, navegación
    240 + contenido 720 + contexto 320 (tu rango y las reglas del barrio con la línea fija). La hoja de abajo (filtros, menú,
    confirmar) y el aviso con «Deshacer» viven aquí. Colores = tokens. 5c: Mensajes (con los sin leer) y Mi perfil en el encabezado
-   del teléfono y en la navegación. Lo que todavía no existe (Hoy en el barrio, Tabla) no se enlaza: llega en su bloque. */
+   del teléfono y en la navegación. 5e: las pestañas del módulo (Tabs «title»: Conversación · Hoy en el barrio) debajo del encabezado del
+   teléfono y Hoy en el barrio en la navegación de escritorio. La Tabla del Barrio no se enlaza hasta que exista (5f). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { LINEA_FIJA, reglas } from "@/lib/comunidad-filtro";
 import { rango } from "@/lib/comunidad-comun";
 
-type N = "Icon" | "Button" | "Chip";
+type N = "Icon" | "Button" | "Chip" | "Tabs";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Tabs } = UI as unknown as Record<N, ComponentType<any>>;
+
+/* Las pestañas del módulo (prototipo TABS, sin El Patio; la Tabla llega en 5f). */
+export const PESTANAS = (es: boolean) => [{ id: "APP-COM-FEED", label: es ? "Conversación" : "Conversation", icon: "users", href: "/comunidad" }, { id: "APP-COM-HOY", label: es ? "Hoy en el barrio" : "Today nearby", icon: "news", href: "/comunidad/hoy" }];
+export function PestanasModulo({ es, code }: { es: boolean; code: string }) {
+  const router = useRouter(), P = PESTANAS(es);
+  return <div data-screen-label="Comunidad · pestañas" style={{ display: "grid" }}><Tabs variant="title" items={P.map(({ id, label, icon }) => ({ id, label, icon }))} active={code} onChange={(id: string) => { const t = P.find((x) => x.id === id); if (t && id !== code) router.push(t.href); }} /></div>;
+}
 export const MONO = "'JetBrains Mono',monospace";
 export const LINE = "1px solid rgba(11,14,18,.07)";
 type Fn = () => void;
@@ -75,6 +83,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
               <span style={{ font: "700 12.5px Manrope,sans-serif", whiteSpace: "nowrap" }}>{es ? rk.es : rk.en}</span>
             </span>
           </div>
+          {(code === "APP-COM-FEED" || code === "APP-COM-HOY") && <PestanasModulo es={es} code={code} />}
         </div>
       ))}
       <div style={{ display: "grid", gridTemplateColumns: cols, alignItems: "start", maxWidth: D ? 1360 : undefined, margin: "0 auto" }}>
@@ -88,6 +97,7 @@ export function Marco({ es, yo, ui, titulo, sub, back, children, aside, code }: 
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {([["/comunidad", "users", E2("Conversación", "Conversation"), code === "APP-COM-FEED" || code === "APP-COM-POST", 0],
+                  ["/comunidad/hoy", "news", E2("Hoy en el barrio", "Today nearby"), code === "APP-COM-HOY", 0],
                   ["/comunidad/mensajes", "chat", E2("Mensajes", "Messages"), code === "APP-COM-MENSAJES" || code === "APP-COM-CHAT", yo.sinLeer],
                   ["/comunidad/v/yo", "shield", E2("Mi perfil", "My profile"), code === "APP-COM-VECINO · yo", 0]] as [string, string, string, boolean, number][]).map(([h, ic, l, on, n]) => (
                   <div key={h} role="link" aria-current={on ? "page" : undefined} onClick={() => router.push(h)} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, borderRadius: 11, cursor: "pointer", background: on ? "rgba(75,55,245,.1)" : "transparent", color: on ? "var(--tl-action)" : "var(--tl-ink)" }}>

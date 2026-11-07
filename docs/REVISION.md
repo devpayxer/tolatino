@@ -1649,3 +1649,39 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 `c5d-apelar-m`, `c5d-apelacion-m`, `c5d-apel-mismo-d`, `c5d-apel-d`, `c5d-moderacion-lista-m`, `c5d-988-m`, `c5d-auto-d`, `c5d-limite-m`,
 `c5d-fraude-d`, `c5d-reportar-persona-m`, `c5d-colas-repusr-d`, `c5d-silenciado-m`, `c5d-foto-revision-m`, `c5d-medios-d`,
 `c5d-auto-img-off-d`, `c5d-reportar-d`, `c5d-confianza-d`, `c5d-confianza-m`.
+
+### 5e · Comunidad: Hoy en el barrio y cuenta oficial por ciudad (+ Inicio, Negocios, Buscar) (7 nov)
+**Qué mirar, paso a paso, en el sandbox** (capturas `c5e-*.png`; teléfono 390 y escritorio 1360):
+1. **Sin cuenta, `/comunidad/hoy`:** pestañas Conversación · **Hoy en el barrio**; una tarjeta (StoryCard 8a) por negocio con hasta 3 avisos de
+   menos de 24 h: OFERTA · NOVEDAD · LLEGÓ · AVISO y **«QUEDAN N H»**. Toca a la derecha / izquierda; después del último abre la ficha › Novedades.
+   Chips por categoría; sin avisos, «Nuevos en el barrio». A la derecha (escritorio) o abajo (teléfono), la invitación a la conversación.
+2. **Triángulo:** como dueño Pro (Sabor Dominicano), publica una Novedad para todos → sale en Hoy; tu panel y tu página dicen **«En Hoy en el
+   barrio · quedan N h»**; quien sigue el negocio recibe «Hoy en un negocio que sigues» (campana, sin SMS). En **Super Admin › Contenido › Hoy
+   en el barrio** sale con su origen; **Retirar de Hoy** con motivo → ya no sale, sigue en su página, el negocio recibe el aviso y su panel
+   dice por qué. **Devolver a Hoy** lo deshace.
+3. **Lo que nunca sale:** oculta, detenida, solo seguidores, de un negocio Free, vencida, de más de 24 h.
+4. **Cuenta oficial:** Contenido › **Cuenta oficial** → Nueva publicación → Pregunta de la semana → Programar (hora de la ciudad) → Fijada 3 días.
+   Antes de su hora no sale; a su hora sale arriba del muro con el sello y «Cuenta oficial», y la fijada anterior se desfija (una a la vez).
+5. **Inicio:** «Hoy en el barrio» en carrusel y «Comunidad» con la pregunta de la cuenta oficial (cifras reales) y Entrar / Ir a la comunidad.
+   **Negocios:** «Hoy en el barrio» y **«RECOMENDADOS POR VECINOS»** (puesto, negocio, ★ y cuántos vecinos lo recomiendan; en escritorio, en el riel).
+6. **Buscar:** sin cuenta, nada de vecinos. Con cuenta, «Lo que dicen los vecinos» + la línea fija (y pestaña Vecinos en escritorio); un vecino
+   bloqueado no sale. **Pregúntale al barrio** abre Publicar con lo que buscaste escrito.
+
+**Decidí (regla AB; si prefieres otra cosa, se cambia):**
+- **Hoy es Pro** (como Novedades, 2g-2): el prototipo decía «Gratis para todos los negocios»; la tarjeta para negocios dice «Con el plan Pro».
+- **Tipos:** oferta → OFERTA; «hoy hay / llegó» → LLEGÓ; aviso → AVISO; novedad y **encuesta → NOVEDAD** (la encuesta se vota en la página).
+- **«Quedan N h»** = lo que falta para las 24 h desde que salió, o para su fin si vence antes. En tarjetas anchas va arriba a la derecha; en las
+  angostas del teléfono (2 por fila) va junto al tipo para que el nombre del negocio no se corte (la StoryCard solo tiene un lugar para la hora).
+- **Orden de Hoy:** el negocio con el aviso más reciente primero (nadie paga el orden); hasta 3 avisos por negocio, los más nuevos.
+- **Retirar de Hoy ≠ ocultar:** retirar solo la saca de Hoy (sigue en la página); para quitarla de la página se oculta en Novedades.
+- **Recomendados por vecinos:** recomendaciones de los últimos **180 días** (publicaciones y comentarios), orden por votos y luego por vecinos
+  distintos; sin cuenta no hay bloqueos que aplicar; con cuenta se quitan los de quien bloqueaste o silenciaste. Solo negocios y cuántos.
+- **Inicio › Comunidad** muestra lo que la cuenta oficial tiene fijado (o su pregunta/encuesta de los últimos 7 días); si no hay, solo la entrada.
+- **Cuenta oficial:** solo pregunta, encuesta y aviso (no recomienda negocios ni sube fotos); programar hasta 30 días; fijar 1, 3 o 7 días
+  desde que sale; escribe Admin y Ciudad manager (el moderador puede ocultarla, no escribirla). El sello es el logo de To'Latino.
+- **Hoy en buscadores:** sigue `noindex` como todo `/comunidad` (contenido de 24 h); si lo quieres indexado, se cambia.
+- **Seed:** no hay semilla de Hoy (se vencería a las 24 h): en el sandbox Hoy sale vacío hasta que un negocio Pro publique.
+
+**Capturas:** `c5e-hoy-publico-m`, `c5e-hoy-historia-3-m`, `c5e-hoy-vacio-m`, `c5e-hoy-publico-d`, `c5e-admin-hoy-d`, `c5e-admin-retirar-d`,
+`c5e-panel-retirada-d`, `c5e-admin-oficial-d`, `c5e-muro-oficial-m`, `c5e-muro-oficial-d`, `c5e-hoy-vecino-m`, `c5e-inicio-m`, `c5e-inicio-d`,
+`c5e-negocios-m`, `c5e-negocios-d`, `c5e-buscar-invitado-m`, `c5e-buscar-vecinos-m`, `c5e-buscar-vecinos-d`, `c5e-preguntale-m`.

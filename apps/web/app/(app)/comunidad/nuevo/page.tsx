@@ -8,7 +8,8 @@ export const dynamic = "force-dynamic";
    Pide sesión; el servidor revisa todo otra vez al publicar. */
 export default async function Page({ searchParams }: { searchParams: Promise<{ k?: string; editar?: string; q?: string }> }) {
   const sp = await searchParams;
-  const volver = sp.editar ? `/comunidad/nuevo?editar=${encodeURIComponent(sp.editar)}` : "/comunidad/nuevo";
+  // 5e · «Pregúntale al barrio» (Buscar) llega con ?k=pregunta&q=…: sin sesión, vuelve aquí con lo escrito después de entrar.
+  const volver = sp.editar ? `/comunidad/nuevo?editar=${encodeURIComponent(sp.editar)}` : `/comunidad/nuevo${sp.q || sp.k ? `?${new URLSearchParams({ ...(sp.k ? { k: String(sp.k) } : {}), ...(sp.q ? { q: String(sp.q).slice(0, 300) } : {}) })}` : ""}`;
   const s = await conCuenta(volver);
   const ed = sp.editar ? await paraEditar(s.u.id, String(sp.editar)) : null;
   const k = (["pregunta", "recomendacion", "encuesta", "publicacion"] as const).find((x) => x === sp.k) ?? "pregunta";

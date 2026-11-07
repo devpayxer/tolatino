@@ -30,8 +30,16 @@ impuesta por trigger y check, colas `repUsr`/`apel`, `sanctions.ref_*`, `content
 comentario, perfil y conversación (3 pasos); Mi cuenta › Avisos de moderación (apelar); línea del 988; Super Admin › **Confianza y
 seguridad** (`/admin/confianza`) y Contenido › **Auto-moderación**; casos de la Comunidad en Colas. Guardianes `ocultarAvisaYApela`,
 `apelacionOtraPersona`, `libroSoloInsercion`, `limitesEnServidor`, `reportesSinManada` (34/34 al revés); e2e `com5d` 80 ✓. Ayuda:
-comunidad-reportar-y-apelar.md, admin-confianza-y-seguridad.md. Sigue **5e** (Hoy en el barrio y cuenta oficial por ciudad; migración
-0101).
+comunidad-reportar-y-apelar.md, admin-confianza-y-seguridad.md. **5e hecho (7 nov)** — Hoy en el barrio y cuenta oficial por ciudad: migración
+0101 (`business_posts.hoy_off_*` + `hoy_avisado_at`, índice de Hoy, `post_en_hoy()`, `com_fijada_una()`, plantillas `hoy_guardado` y
+`hoy_retirada`); `lib/hoy.ts` (`hoyEnElBarrio` agrupado por negocio con cursor, `quedanEnHoy`, aviso a quien sigue), `lib/oficial.ts`
+(`publicarOficial` con programar y fijar, `fijarOficial`), `lib/comunidad-portada.ts` (Recomendados por vecinos, la oficial de la semana,
+`buscarVecinos` solo con sesión); `/comunidad/hoy` público (StoryCard 8a, chips, «quedan N h») y pestaña dentro de la Comunidad + carrusel
+en el muro, Inicio y Negocios; Negocios › «Recomendados por vecinos»; Buscar › Vecinos y «Pregúntale al barrio»; Novedades (panel y
+ficha) dicen «En Hoy en el barrio · quedan N h»; Super Admin › Contenido › **Hoy en el barrio** (Retirar / Devolver con motivo y aviso al
+negocio) y **Cuenta oficial** (escribir, programar, fijar). Guardianes `oficialNoEsPersona`, `hoySoloEnVivo`, `buscarVecinosConSesion`
+(+ `comunidadSinTelefonos` ampliado; 23/23 al revés); e2e `com5e` 62 ✓. Ayuda: hoy-en-el-barrio.md, admin-cuenta-oficial.md,
+admin-contenido.md, buscar.md. Sigue **5f** (puntos, rangos, insignias y Tabla del Barrio; migración 0102).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›
