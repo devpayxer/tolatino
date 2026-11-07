@@ -681,6 +681,21 @@ const guardianes = {
     for (const k of b) if (!a.has(k)) falla("devolverCoincide", srv, 0, `devolverTx acepta «${k}» pero la pantalla no muestra «Devolver»`);
   },
 
+  /* Barrido central (0078). Los vencimientos solo corrían al abrir una página: una retención podía quedarse sin liberar si
+     nadie miraba. Todo barrido exportado (vencer*, barrer*, escalar*) de lib/ tiene que estar en lib/barrido.ts. */
+  barridoCompleto() {
+    const B = "apps/web/lib/barrido.ts";
+    if (!existsSync(B)) return falla("barridoCompleto", B, 0, "falta el barrido central");
+    const t = readFileSync(B, "utf8");
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/[^/]+\.ts$/.test(f) || f === B) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        const m = /^export async function ((?:vencer|barrer|escalar)\w*)\(/.exec(l);
+        if (m && !t.includes(`.${m[1]}(`)) falla("barridoCompleto", f, i + 1, `«${m[1]}» no corre en el barrido central (lib/barrido.ts): sin él, solo vence cuando alguien abre una página`);
+      });
+    }
+  },
+
   /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
      donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
      «fiesta:{negocio}:{día}». */

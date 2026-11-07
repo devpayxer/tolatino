@@ -21,9 +21,22 @@ services:
       MEDIOS_S3_URL: http://medios:3900
       MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
       MEDIOS_SECRET: ${MEDIOS_SECRET:-}
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
     depends_on:
       db:
         condition: service_healthy
+
+  # Barrido central (0078): cada minuto llama a la app por la red interna para vencer, liberar y avisar aunque nadie abra una
+  # página. Usa la misma imagen de la app (nada nuevo que bajar) y el token del entorno (lo crea deploy.sh).
+  barrido:
+    image: tolatino/web:pruebas
+    pull_policy: never # la construye el servicio web en este mismo `up --build`
+    restart: unless-stopped
+    environment:
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
+    command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;const go=async()=>{try{const r=await fetch('http://web:3000/api/interno/barrido',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(55000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'barrido',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'barrido',e.message)}};setTimeout(go,30000);setInterval(go,60000)"]
+    depends_on:
+      - web
 
   db:
     image: postgis/postgis:16-3.5

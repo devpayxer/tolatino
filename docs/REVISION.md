@@ -967,3 +967,12 @@ _Decidido por mí (reversible):_
 - El chofer no ve cobros, tarjetas ni teléfonos de los pasajeros.
 - El aviso automático corre con el barrido (hoy, cuando alguien abre el panel o un viaje); el barrido central que lo corre cada
   minuto está anotado en LAUNCH-CHECKLIST y es el bloque siguiente.
+
+### Barrido central (7 nov)
+**Qué es:** antes, una solicitud sin respuesta solo vencía (y su dinero retenido solo se liberaba) cuando alguien abría una página.
+Ahora el servidor lo hace solo cada minuto: vence citas, mesas, pedidos, mercado, apartados, planes, rentas, fiestas, viajes,
+pre-estimados, emergencias y totales por escrito; escala las ayudas; manda los avisos (por ejemplo «tu salida todavía no sale»)
+y reintenta los cobros que quedaron a medias. **Qué mirar:** nada que tocar; en el sandbox corre solo. Si algo falla, queda la
+tarea, la hora y el error en la base (`system_jobs`), y lo veremos en el Super Admin.
+_Decidido por mí:_ corre con la misma imagen de la app (nada nuevo que pagar ni bajar), con un token que deploy.sh crea en el
+servidor; desde fuera no se puede llamar (nginx). En producción se enciende igual en la fase 9 (anotado en LAUNCH-CHECKLIST).
