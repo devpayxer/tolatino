@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#EDEBE6;font-family:Manrope,sans-serif;color:#0B0E12}
+a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+.hs{scrollbar-width:none}.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<section data-screen-label="1 · Onboarding del vecino" style="padding:40px 44px 72px;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="font:800 30px/1.1 Sora,sans-serif;letter-spacing:-.04em">Onboarding del vecino nuevo</div>
+    <div style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">TURNO 1 · TRES VARIANTES · MISMO CASO: ANA RODRÍGUEZ, DE HAZLETON HEIGHTS, TOCA «ENTRAR»</div>
+  </div>
+
+  <div data-screen-label="Igual en las tres" style="max-width:1300px;padding:18px 20px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:10px 28px">
+    <div style="grid-column:1/-1;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">IGUAL EN LAS TRES</div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Cinco pantallas: Entra (idioma, teléfono y código) · Tú (foto, nombre, cómo te dicen, correo) · Tu zona (ubicación con motivo) · Lo que te gusta (negocios y Comunidad) · El barrio (reglas y avisos).</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Sale completo al tocar Entrar, Yo o Comunidad. Si ibas a pedir, solo te pide el nombre y sigues con tu pedido; lo demás queda en Mi cuenta.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Solo el teléfono y las reglas son obligatorios. Foto, apodo, correo, ubicación y gustos se saltan y se completan luego.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Cada paso se guarda: si sales, al volver sigues donde quedaste. La ciudad es Hazleton y se cambia cada 30 días.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">El permiso de avisos del teléfono se pide después de tu primer pedido, cita o publicación. Aquí solo eliges qué te avisamos.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Termina con «Eres Fundador #n», el rango Recluta, 100 monedas de bienvenida y 3 acciones según lo que elegiste.</span></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:64px">
+  <sc-for list="{{ vars }}" as="o" hint-placeholder-count="3">
+  <div id="{{ o.id }}" data-screen-label="{{ o.label }}" style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px"><a href="{{ o.href }}" style="padding:5px 10px;border-radius:8px;background:#0B0E12;color:#fff;font:800 12px 'JetBrains Mono',monospace;letter-spacing:.06em">{{ o.id }}</a><span style="font:800 19px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.t }}</span></div>
+    <div style="max-width:1100px;display:flex;flex-direction:column;gap:4px;font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.75);text-wrap:pretty"><span>{{ o.d1 }}</span><span>{{ o.d2 }}</span></div>
+    <div style="display:flex;gap:28px;align-items:flex-start">
+    <sc-for list="{{ o.screens }}" as="sc" hint-placeholder-count="6">
+      <div style="width:395px;flex:none;display:flex;flex-direction:column;gap:10px">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ sc.k }}</span>
+        <div style="padding:10px;border-radius:52px;background:#0B0E12;box-shadow:0 40px 80px -30px rgba(11,14,18,.45)">
+        <div style="border-radius:42px;overflow:hidden;background:{{ sc.bg }};height:812px;display:flex;flex-direction:column">
+          <div style="height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font:700 15px Manrope,sans-serif;color:{{ sc.stFg }};background:{{ sc.stBg }}"><span>9:41</span><span style="width:118px;height:32px;border-radius:20px;background:#0B0E12"></span><span style="font:700 12px 'JetBrains Mono',monospace">5G</span></div>
+
+          <sc-if value="{{ sc.top.isOnb }}" hint-placeholder-val="{{ false }}"><div style="display:grid;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbTopBar" label="{{ sc.top.label }}" saved="{{ sc.top.saved }}" segments="{{ sc.top.segs }}" hint-size="100%,58px"></x-import></div></sc-if>
+
+          <sc-if value="{{ sc.top.isCard }}" hint-placeholder-val="{{ false }}"><div style="flex:none;padding:8px 16px 18px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:11px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbProgress" compact="{{ true }}" label="{{ sc.top.label }}" saved="{{ sc.top.saved }}" segments="{{ sc.top.segs }}" hint-size="100%,24px"></x-import><span style="width:34px;height:34px;border-radius:11px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import></span></div>
+            <sc-if value="{{ sc.top.full }}" hint-placeholder-val="{{ true }}"><div style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.NeighborCard" name="{{ sc.top.card.name }}" nick="{{ sc.top.card.nick }}" initials="{{ sc.top.card.ini }}" badge="{{ sc.top.card.badge }}" cells="{{ sc.top.card.cells }}" hint-size="100%,150px"></x-import></div></sc-if>
+            <sc-if value="{{ sc.top.mini }}" hint-placeholder-val="{{ false }}"><div style="padding:9px 14px;border-radius:18px;background:#0B0E12;color:#fff;display:flex;align-items:center;gap:12px">
+              <span style="width:36px;height:36px;box-sizing:border-box;border-radius:99px;border:2px solid #00E5C4;background:#14181F;display:grid;place-items:center;font:800 15px Sora,sans-serif;flex:none">{{ sc.top.card.ini }}</span>
+              <div style="flex:1;min-width:0"><div style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ sc.top.card.name }}</div><div style="margin-top:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00E5C4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sc.top.card.line }}</div></div>
+              <img src="assets/logo-tolatino-white.svg" alt="To'Latino" style="height:16px;display:block;flex:none">
+            </div></sc-if>
+          </div></sc-if>
+
+          <sc-if value="{{ sc.top.isPeek }}" hint-placeholder-val="{{ false }}"><div style="position:relative;height:{{ sc.top.h }};flex:none;overflow:hidden;background:#F7F6F3">
+            <div style="padding:10px 20px;background:#fff;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(11,14,18,.08)"><img src="assets/logo-tolatino.svg" alt="To'Latino" style="height:22px;display:block"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ sc.top.where }}</span></div>
+            <div style="margin:12px 20px 0;height:46px;border-radius:14px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;align-items:center;gap:10px;padding:0 14px;font:600 14px Manrope,sans-serif;color:rgba(11,14,18,.5)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="search" size="{{ 16 }}" hint-size="16px,16px"></x-import>¿Qué necesitas hoy?</div>
+            <div style="position:absolute;inset:0;background:rgba(11,14,18,.5)"></div>
+          </div></sc-if>
+
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;background:#fff;border-radius:{{ sc.rad }};margin-top:{{ sc.mt }};position:relative;box-shadow:{{ sc.sh }}">
+            <sc-if value="{{ sc.sheetHead }}" hint-placeholder-val="{{ false }}"><div style="flex:none;padding:10px 20px 0;display:flex;flex-direction:column;gap:12px">
+              <span style="align-self:center;width:38px;height:4px;border-radius:99px;background:rgba(11,14,18,.18)"></span>
+              <div style="display:flex;align-items:center;gap:12px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbProgress" compact="{{ true }}" label="{{ sc.top.label }}" saved="{{ sc.top.saved }}" segments="{{ sc.top.segs }}" hint-size="100%,24px"></x-import><span style="width:32px;height:32px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import></span></div>
+            </div></sc-if>
+            <div class="hs" style="flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;padding-bottom:4px">
+            <sc-for list="{{ sc.blocks }}" as="b" hint-placeholder-count="5">
+              <sc-if value="{{ b.isLang }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="display:flex;align-items:center;gap:7px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="language" size="{{ 15 }}" color="rgba(11,14,18,.5)" hint-size="15px,15px"></x-import>IDIOMA</span><div style="display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(11,14,18,.05)"><span style="padding:7px 13px;border-radius:9px;background:#fff;box-shadow:0 1px 3px rgba(11,14,18,.12);font:800 12.5px Manrope,sans-serif">Español</span><span style="padding:7px 13px;border-radius:9px;font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">English</span></div></div></sc-if>
+              <sc-if value="{{ b.isKick }}" hint-placeholder-val="{{ false }}"><div style="margin:22px 20px 0;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ b.c }}">{{ b.t }}</div></sc-if>
+              <sc-if value="{{ b.isTitle }}" hint-placeholder-val="{{ false }}"><div style="margin:{{ b.m }} 20px 0;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ b.t }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ b.s }}</div></div></sc-if>
+              <sc-if value="{{ b.isField }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:flex;flex-direction:column;gap:7px">
+                <div style="display:flex;justify-content:space-between;gap:10px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ b.k }}</span><sc-if value="{{ b.opt }}" hint-placeholder-val="{{ false }}"><span style="color:rgba(11,14,18,.42)">OPCIONAL</span></sc-if></div>
+                <div style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid {{ b.bd }};background:#fff;padding:0 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;font:600 15px Manrope,sans-serif;color:{{ b.fg }}"><span>{{ b.v }}</span><sc-if value="{{ b.ok }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 17 }}" color="#00A88F" stroke-width="{{ 2.2 }}" hint-size="17px,17px"></x-import></sc-if></div>
+                <sc-if value="{{ b.hint }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ b.hint }}</span></sc-if>
+              </div></sc-if>
+              <sc-if value="{{ b.isPair }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"><sc-for list="{{ b.items }}" as="f" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ f.k }}</span><div style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);background:#fff;padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif;overflow:hidden">{{ f.v }}</div></div></sc-for></div></sc-if>
+              <sc-if value="{{ b.isCode }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:flex;flex-direction:column;gap:9px">
+                <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">CÓDIGO DE 6 NÚMEROS</span>
+                <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:7px"><sc-for list="{{ b.digits }}" as="d" hint-placeholder-count="6"><span style="height:52px;box-sizing:border-box;border-radius:13px;border:1.5px solid {{ d.bd }};background:#fff;display:grid;place-items:center;font:800 21px Sora,sans-serif">{{ d.v }}</span></sc-for></div>
+                <div style="display:flex;justify-content:space-between;gap:10px;font:600 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)"><span>{{ b.s }}</span><span style="font-weight:700;color:#4B37F5">Cambiar</span></div>
+              </div></sc-if>
+              <sc-if value="{{ b.isPhoto }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;display:flex;align-items:center;gap:14px">
+                <span style="width:72px;height:72px;box-sizing:border-box;border-radius:99px;border:1.5px dashed rgba(11,14,18,.25);background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="image" size="{{ 24 }}" color="rgba(11,14,18,.5)" hint-size="24px,24px"></x-import></span>
+                <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 14.5px Manrope,sans-serif;color:#4B37F5">Agregar foto</span><span style="font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">Puedes hacerlo luego</span></div>
+              </div></sc-if>
+              <sc-if value="{{ b.isCity }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;padding:14px;border-radius:16px;background:#F7F6F3;display:flex;align-items:center;gap:12px">
+                <span style="width:40px;height:40px;border-radius:12px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 18 }}" color="#fff" hint-size="18px,18px"></x-import></span>
+                <div style="flex:1;min-width:0"><div style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">Hazleton, PA</div><div style="margin-top:3px;font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">Tu ciudad · se cambia cada 30 días</div></div>
+              </div></sc-if>
+              <sc-if value="{{ b.isLoc }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;padding:14px;border-radius:16px;border:1px solid rgba(11,14,18,.1);display:flex;align-items:center;gap:12px">
+                <span style="width:40px;height:40px;border-radius:12px;background:rgba(75,55,245,.08);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import></span>
+                <div style="flex:1;min-width:0"><div style="font:700 14px Manrope,sans-serif">Usar mi ubicación</div><div style="margin-top:3px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">Solo para ordenar por distancia. Los vecinos nunca la ven.</div></div>
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="soft" size="sm" hint-size="80px,34px">Permitir</x-import>
+              </div></sc-if>
+              <sc-if value="{{ b.isChips }}" hint-placeholder-val="{{ false }}"><div style="margin:{{ b.m }} 20px 0;display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;justify-content:space-between;gap:10px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ b.k }}</span><span style="color:#4B37F5">{{ b.n }}</span></div>
+                <div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ b.items }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div>
+              </div></sc-if>
+              <sc-if value="{{ b.isLink }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:flex;align-items:center;gap:6px;font:700 13.5px Manrope,sans-serif;color:#4B37F5">{{ b.t }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 14 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="14px,14px"></x-import></div></sc-if>
+              <sc-if value="{{ b.isRules }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;display:flex;flex-direction:column"><sc-for list="{{ b.items }}" as="r" hint-placeholder-count="6"><div style="display:flex;gap:11px;align-items:flex-start;padding:5px 0;border-top:{{ r.bt }}"><span style="width:22px;height:22px;border-radius:8px;background:#F7F6F3;display:grid;place-items:center;font:800 11px Sora,sans-serif;flex:none">{{ r.n }}</span><span style="font:600 12.5px/1.4 Manrope,sans-serif;text-wrap:pretty">{{ r.t }}</span></div></sc-for></div></sc-if>
+              <sc-if value="{{ b.isRank }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 20px 0;padding:11px 12px;border-radius:14px;background:rgba(75,55,245,.07);display:flex;align-items:center;gap:10px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import><span style="font:700 13px/1.4 Manrope,sans-serif;color:#0B0E12;text-wrap:pretty">Empiezas como Recluta · ya puedes publicar, comentar y votar.</span></div></sc-if>
+              <sc-if value="{{ b.isTogs }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;display:flex;flex-direction:column;gap:2px">
+                <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">¿QUÉ TE AVISAMOS?</span>
+                <sc-for list="{{ b.items }}" as="g" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(11,14,18,.07)"><div style="flex:1;min-width:0"><div style="font:700 13.5px Manrope,sans-serif">{{ g.t }}</div><div style="margin-top:2px;font:500 12px Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ g.s }}</div></div><span style="width:40px;height:24px;box-sizing:border-box;border-radius:99px;padding:3px;background:{{ g.bg }};display:flex;justify-content:{{ g.j }};flex:none"><span style="width:18px;height:18px;border-radius:99px;background:#fff"></span></span></div></sc-for>
+              </div></sc-if>
+              <sc-if value="{{ b.isCheck }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:flex;align-items:center;gap:11px"><span style="width:22px;height:22px;border-radius:7px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 14 }}" color="#fff" stroke-width="{{ 2.4 }}" hint-size="14px,14px"></x-import></span><span style="font:700 13.5px Manrope,sans-serif">Acepto las reglas del barrio</span></div></sc-if>
+              <sc-if value="{{ b.isNote }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ b.t }}</div></sc-if>
+              <sc-if value="{{ b.isWel }}" hint-placeholder-val="{{ false }}"><div style="margin:{{ b.m }} 20px 0;display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+                <sc-if value="{{ b.ini }}" hint-placeholder-val="{{ false }}"><span style="width:76px;height:76px;box-sizing:border-box;border-radius:99px;border:2.5px solid #00E5C4;background:#0B0E12;color:#fff;display:grid;place-items:center;font:800 24px Sora,sans-serif">AR</span></sc-if>
+                <span style="padding:6px 10px;border-radius:8px;background:#0B0E12;color:#00E5C4;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em">FUNDADORES · #1,241</span>
+                <div style="font:800 28px/1.12 Sora,sans-serif;letter-spacing:-.04em;text-wrap:pretty">Bienvenida a Hazleton, Anita.</div>
+                <div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">Empiezas como Recluta y con 100 monedas de bienvenida.</div>
+              </div></sc-if>
+              <sc-if value="{{ b.isActs }}" hint-placeholder-val="{{ false }}"><div style="margin:20px 20px 0;display:flex;flex-direction:column;gap:8px">
+                <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">PARA EMPEZAR</span>
+                <sc-for list="{{ b.items }}" as="a" hint-placeholder-count="3"><div style="padding:12px;border-radius:16px;background:#F7F6F3;display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ a.icon }}" size="{{ 18 }}" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0"><div style="font:700 14px Manrope,sans-serif">{{ a.t }}</div><div style="margin-top:2px;font:500 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ a.s }}</div></div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" color="rgba(11,14,18,.42)" hint-size="15px,15px"></x-import></div></sc-for>
+              </div></sc-if>
+              <sc-if value="{{ b.isAcct }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompleteAccount" kicker="LO QUE DEJASTE PARA LUEGO" title="Completa tu cuenta" items="{{ b.items }}" action-label="Agregar" hint-size="100%,220px"></x-import></div></sc-if>
+            </sc-for>
+            </div>
+            <sc-if value="{{ sc.bar }}" hint-placeholder-val="{{ true }}"><div style="flex:none;padding:12px 20px 26px;border-top:1px solid rgba(11,14,18,.07);background:#fff;display:flex;flex-direction:column;gap:6px">
+              <sc-if value="{{ sc.bar.check }}" hint-placeholder-val="{{ false }}"><div style="padding:2px 0 6px;display:flex;align-items:center;gap:11px"><span style="width:22px;height:22px;border-radius:7px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 14 }}" color="#fff" stroke-width="{{ 2.4 }}" hint-size="14px,14px"></x-import></span><span style="font:700 13.5px Manrope,sans-serif">Acepto las reglas del barrio</span></div></sc-if>
+              <sc-if value="{{ sc.bar.note }}" hint-placeholder-val="{{ false }}"><span style="text-align:center;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sc.bar.note }}</span></sc-if>
+              <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" hint-size="100%,50px">{{ sc.bar.ok }}</x-import></div>
+              <sc-if value="{{ sc.bar.no }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="ghost" size="md" block="{{ true }}" hint-size="100%,42px">{{ sc.bar.no }}</x-import></div></sc-if>
+            </div></sc-if>
+          </div>
+        </div>
+        </div>
+      </div>
+    </sc-for>
+    </div>
+  </div>
+  </sc-for>
+  </div>
+
+  <div data-screen-label="Casos" style="display:flex;flex-direction:column;gap:14px;padding-top:20px;border-top:1px solid rgba(11,14,18,.1)">
+    <div style="display:flex;align-items:center;gap:10px"><span style="padding:5px 10px;border-radius:8px;background:#fff;border:1px solid rgba(11,14,18,.14);font:800 12px 'JetBrains Mono',monospace;letter-spacing:.06em">CASOS</span><span style="font:800 19px/1.2 Sora,sans-serif;letter-spacing:-.02em">Iguales en las tres · toman la forma de la que elijas</span></div>
+    <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+    <sc-for list="{{ cases }}" as="sc" hint-placeholder-count="3">
+      <div style="width:395px;flex:none;display:flex;flex-direction:column;gap:10px">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ sc.k }}</span>
+        <div style="padding:10px;border-radius:52px;background:#0B0E12;box-shadow:0 40px 80px -30px rgba(11,14,18,.45)">
+        <div style="border-radius:42px;overflow:hidden;background:{{ sc.bg }};height:812px;display:flex;flex-direction:column">
+          <div style="height:46px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font:700 15px Manrope,sans-serif;color:{{ sc.stFg }};background:{{ sc.stBg }}"><span>9:41</span><span style="width:118px;height:32px;border-radius:20px;background:#0B0E12"></span><span style="font:700 12px 'JetBrains Mono',monospace">5G</span></div>
+          <sc-if value="{{ sc.peek }}" hint-placeholder-val="{{ false }}"><div style="position:relative;flex:1;min-height:0;overflow:hidden;background:#F7F6F3">
+            <div style="padding:12px 20px;background:#fff;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(11,14,18,.08)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import><span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ sc.peekT }}</span></div>
+            <div style="margin:14px 20px 0;padding:14px;border-radius:16px;background:#fff;display:flex;flex-direction:column;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">TU PEDIDO</span><div style="display:flex;justify-content:space-between;font:600 14px Manrope,sans-serif"><span>2 × Pollo guisado con moro</span><span style="font-weight:800">$28.00</span></div><div style="display:flex;justify-content:space-between;font:600 14px Manrope,sans-serif"><span>1 × Jugo de chinola</span><span style="font-weight:800">$4.50</span></div></div>
+            <div style="position:absolute;inset:0;background:rgba(11,14,18,.5)"></div>
+          </div></sc-if>
+          <div style="flex:{{ sc.flex }};min-height:0;display:flex;flex-direction:column;background:#fff;border-radius:{{ sc.rad }};margin-top:{{ sc.mt }};position:relative">
+            <sc-if value="{{ sc.handle }}" hint-placeholder-val="{{ false }}"><span style="align-self:center;margin-top:10px;width:38px;height:4px;border-radius:99px;background:rgba(11,14,18,.18)"></span></sc-if>
+            <sc-if value="{{ sc.home }}" hint-placeholder-val="{{ false }}"><div style="padding:10px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(11,14,18,.08)"><img src="assets/logo-tolatino.svg" alt="To'Latino" style="height:22px;display:block"><span style="width:34px;height:34px;box-sizing:border-box;border-radius:99px;border:2px solid #00E5C4;background:#0B0E12;color:#fff;display:grid;place-items:center;font:800 12px Sora,sans-serif">AR</span></div></sc-if>
+            <div style="flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-bottom:16px">
+            <sc-for list="{{ sc.blocks }}" as="b" hint-placeholder-count="4">
+              <sc-if value="{{ b.isKick }}" hint-placeholder-val="{{ false }}"><div style="margin:18px 20px 0;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ b.c }}">{{ b.t }}</div></sc-if>
+              <sc-if value="{{ b.isTitle }}" hint-placeholder-val="{{ false }}"><div style="margin:{{ b.m }} 20px 0;display:flex;flex-direction:column;gap:6px"><div style="font:800 24px/1.15 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ b.t }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ b.s }}</div></div></sc-if>
+              <sc-if value="{{ b.isPair }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px"><sc-for list="{{ b.items }}" as="f" hint-placeholder-count="2"><div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ f.k }}</span><div style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);background:#fff;padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif;overflow:hidden">{{ f.v }}</div></div></sc-for></div></sc-if>
+              <sc-if value="{{ b.isField }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:flex;flex-direction:column;gap:7px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ b.k }}</span><div style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid {{ b.bd }};background:#fff;padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif">{{ b.v }}</div><sc-if value="{{ b.hint }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ b.hint }}</span></sc-if></div></sc-if>
+              <sc-if value="{{ b.isAcct }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompleteAccount" kicker="{{ b.kick }}" title="{{ b.t }}" items="{{ b.items }}" action-label="Agregar" hint-size="100%,220px"></x-import></div></sc-if>
+              <sc-if value="{{ b.isResume }}" hint-placeholder-val="{{ false }}"><div style="margin:16px 20px 0;padding:14px;border-radius:17px;background:#0B0E12;color:#fff;display:flex;flex-direction:column;gap:12px">
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbProgress" label="TE QUEDASTE EN «TU ZONA» · 3 DE 5" saved="GUARDADO" segments="{{ b.segs }}" hint-size="100%,24px"></x-import>
+                <div style="font:800 17px/1.25 Sora,sans-serif;letter-spacing:-.02em">Te faltan 3 pasos para entrar a Comunidad</div>
+                <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="action" size="md" block="{{ true }}" hint-size="100%,42px">Seguir donde quedé</x-import></div>
+              </div></sc-if>
+              <sc-if value="{{ b.isNote }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ b.t }}</div></sc-if>
+              <sc-if value="{{ b.isGhost }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;height:96px;border-radius:17px;background:repeating-linear-gradient(135deg,#E7E5E0 0 10px,#EDEBE6 10px 20px)"></div></sc-if>
+            </sc-for>
+            </div>
+            <sc-if value="{{ sc.bar }}" hint-placeholder-val="{{ false }}"><div style="flex:none;padding:12px 20px 26px;border-top:1px solid rgba(11,14,18,.07);background:#fff;display:flex;flex-direction:column;gap:6px">
+              <sc-if value="{{ sc.bar.note }}" hint-placeholder-val="{{ false }}"><span style="text-align:center;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sc.bar.note }}</span></sc-if>
+              <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" hint-size="100%,50px">{{ sc.bar.ok }}</x-import></div>
+              <sc-if value="{{ sc.bar.no }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="ghost" size="md" block="{{ true }}" hint-size="100%,42px">{{ sc.bar.no }}</x-import></div></sc-if>
+            </div></sc-if>
+          </div>
+        </div>
+        </div>
+      </div>
+    </sc-for>
+
+      <div data-screen-label="Caso · desktop" style="width:1180px;flex:none;display:flex;flex-direction:column;gap:10px">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">DESKTOP · VENTANA CENTRADA · PASO 2 DE 5</span>
+        <div style="position:relative;height:760px;border-radius:14px;overflow:hidden;background:#F7F6F3;border:1px solid rgba(11,14,18,.1);box-shadow:0 40px 80px -40px rgba(11,14,18,.4)">
+          <div style="height:64px;padding:0 32px;background:#fff;border-bottom:1px solid rgba(11,14,18,.08);display:flex;align-items:center;gap:24px"><img src="assets/logo-tolatino.svg" alt="To'Latino" style="height:24px;display:block"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em">HAZLETON, PA</span><div style="flex:1;max-width:460px;height:42px;border-radius:14px;background:#F7F6F3;border:1px solid rgba(11,14,18,.08)"></div></div>
+          <div style="padding:28px 32px;display:grid;grid-template-columns:240px minmax(0,1fr) 320px;gap:28px">
+            <div style="height:520px;border-radius:17px;background:repeating-linear-gradient(135deg,#E7E5E0 0 10px,#EDEBE6 10px 20px)"></div>
+            <div style="height:520px;border-radius:17px;background:repeating-linear-gradient(135deg,#E7E5E0 0 10px,#EDEBE6 10px 20px)"></div>
+            <div style="height:520px;border-radius:17px;background:repeating-linear-gradient(135deg,#E7E5E0 0 10px,#EDEBE6 10px 20px)"></div>
+          </div>
+          <div style="position:absolute;inset:0;background:rgba(11,14,18,.5);display:grid;place-items:center">
+            <div style="width:480px;border-radius:26px;background:#fff;box-shadow:0 30px 80px -20px rgba(11,14,18,.5);display:flex;flex-direction:column;overflow:hidden">
+              <div style="padding:18px 22px 0;display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbProgress" compact="{{ true }}" label="PASO 2 DE 5 · TÚ" saved="GUARDADO" segments="{{ deskSegs }}" hint-size="100%,24px"></x-import><span style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import></span></div>
+              <div style="padding:22px 28px 0;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">¿Cómo te llamas?</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68)">Así te ven los vecinos y los negocios.</div></div>
+              <div style="padding:18px 28px 0;display:flex;align-items:center;gap:14px"><span style="width:64px;height:64px;box-sizing:border-box;border-radius:99px;border:1.5px dashed rgba(11,14,18,.25);background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="image" size="{{ 22 }}" color="rgba(11,14,18,.5)" hint-size="22px,22px"></x-import></span><div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 14.5px Manrope,sans-serif;color:#4B37F5">Agregar foto</span><span style="font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">Puedes hacerlo luego</span></div></div>
+              <div style="padding:16px 28px 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+                <div style="display:flex;flex-direction:column;gap:7px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">NOMBRE</span><div style="height:48px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif">Ana</div></div>
+                <div style="display:flex;flex-direction:column;gap:7px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">APELLIDO</span><div style="height:48px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif">Rodríguez</div></div>
+              </div>
+              <div style="padding:16px 28px 0;display:flex;flex-direction:column;gap:7px"><div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">¿CÓMO TE DICEN?</span><span style="color:rgba(11,14,18,.42)">OPCIONAL</span></div><div style="height:48px;box-sizing:border-box;border-radius:14px;border:1.5px solid #0B0E12;padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif">Anita</div><span style="font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">Los vecinos ven: Anita R.</span></div>
+              <div style="padding:16px 28px 0;display:flex;flex-direction:column;gap:7px"><div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">CORREO</span><span style="color:rgba(11,14,18,.42)">OPCIONAL</span></div><div style="height:48px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;display:flex;align-items:center;font:600 15px Manrope,sans-serif;color:rgba(11,14,18,.42)">tu@correo.com</div><span style="font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">Para recibos y recuperar tu cuenta.</span></div>
+              <div style="margin-top:22px;padding:14px 28px 20px;border-top:1px solid rgba(11,14,18,.07);display:flex;justify-content:flex-end;gap:10px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="ghost" size="md" hint-size="90px,42px">Saltar</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" hint-size="130px,42px">Continuar</x-import></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const NAMES = ['ENTRA', 'TÚ', 'TU ZONA', 'LO QUE TE GUSTA', 'EL BARRIO'];
+    const segs = n => [1, 2, 3, 4, 5].map(i => i < n ? 'done' : i === n ? 'cur' : 'next');
+    const B = (t, o) => Object.assign({ ['is' + t]: true }, o || {});
+    const lbl = n => 'PASO ' + n + ' DE 5 · ' + NAMES[n - 1];
+    const chips = (k, all, on, m) => B('Chips', { k, n: on.length ? on.length + (on.length === 1 ? ' ELEGIDO' : ' ELEGIDOS') : '', m: m || '16px', items: all.map(l => ({ l, v: on.includes(l) ? 'selected' : 'filter' })) });
+    const ZONES = ['Hazleton Heights', 'Downtown', 'Alter St', 'North End', 'South Side', 'West Hazleton', 'Hazle Township', 'Otro cerca'];
+    const CATS = ['Comida', 'Belleza', 'Auto', 'Hogar', 'Noche', 'Mercados', 'Fiestas', 'Doctores', 'Profesionales', 'Tiendas', 'Transporte', 'Educación', 'Niños', 'Deporte', 'Iglesias', 'Bienes raíces', 'Venta de autos'];
+    const COM = ['Preguntas del barrio', 'Recomendaciones', 'Eventos', 'El Patio · dominó y parchís', 'Novedades de negocios', 'Avisos de la ciudad'];
+    const RULES = ['Habla de Hazleton y de lo que pasa aquí.', 'Recomienda por experiencia, nunca tu propio negocio.', 'Nada de ventas, rifas ni cadenas.', 'No publiques teléfonos, direcciones ni fotos de otras personas sin su permiso.', 'Respeto siempre: sin insultos ni acoso.', 'Una emergencia no se pregunta aquí: llama al 911.'];
+    const dig = ['4', '8', '2', '9', '1', ''].map((v, i) => ({ v, bd: i === 5 ? '#4B37F5' : v ? '#0B0E12' : 'rgba(11,14,18,.14)' }));
+    const tog = (t, s, on) => ({ t, s, bg: on ? '#0B0E12' : 'rgba(11,14,18,.15)', j: on ? 'flex-end' : 'flex-start' });
+    const body = {
+      1: [B('Lang'), B('Title', { m: '22px', t: 'Entra con tu teléfono', s: 'Te mandamos un código por texto. Sin contraseñas.' }), B('Field', { k: 'TU TELÉFONO', v: '+1  (570) 555-0134', bd: 'rgba(11,14,18,.14)', fg: '#0B0E12', ok: true }), B('Code', { digits: dig, s: 'Lo mandamos al (570) 555-0134' }), B('Note', { t: 'Al seguir aceptas los Términos y la Privacidad de To\'Latino, escritos en palabras claras.' })],
+      2: [B('Title', { m: '22px', t: '¿Cómo te llamas?', s: 'Así te ven los vecinos y los negocios.' }), B('Photo'), B('Pair', { items: [{ k: 'NOMBRE', v: 'Ana' }, { k: 'APELLIDO', v: 'Rodríguez' }] }), B('Field', { k: '¿CÓMO TE DICEN?', opt: true, v: 'Anita', bd: '#0B0E12', fg: '#0B0E12', hint: 'Los vecinos ven: Anita R.' }), B('Field', { k: 'CORREO', opt: true, v: 'tu@correo.com', bd: 'rgba(11,14,18,.14)', fg: 'rgba(11,14,18,.42)', hint: 'Para recibos y recuperar tu cuenta.' })],
+      3: [B('Title', { m: '22px', t: '¿Por dónde vives?', s: 'Te mostramos primero lo que está cerca.' }), B('City'), B('Loc'), chips('O ELIGE TU ZONA', ZONES, ['Hazleton Heights'], '20px'), B('Link', { t: 'No vivo en Hazleton' })],
+      4: [B('Title', { m: '22px', t: '¿Qué te gusta?', s: 'Elige lo que quieras. Con esto armamos tu inicio.' }), chips('NEGOCIOS', CATS, ['Comida', 'Belleza', 'Fiestas', 'Noche']), chips('EN COMUNIDAD', COM, ['Preguntas del barrio', 'El Patio · dominó y parchís'], '16px')],
+      5: [B('Title', { m: '20px', t: 'Las reglas del barrio', s: '' }), B('Rules', { items: RULES.map((t, i) => ({ n: String(i + 1), t, bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' })) }), B('Rank'), B('Togs', { items: [tog('Tus pedidos, citas y boletos', 'Siempre, para que no se te pase nada', true), tog('Eventos de lo que te gusta', 'Uno a la semana, como mucho', false)] })]
+    };
+    const bars = { 1: { ok: 'Verificar' }, 2: { ok: 'Continuar', no: 'Saltar por ahora' }, 3: { ok: 'Continuar', no: 'Saltar por ahora' }, 4: { ok: 'Continuar', no: 'Saltar por ahora' }, 5: { ok: 'Entrar a To\'Latino', check: true } };
+    const acts = B('Acts', { items: [{ icon: 'restaurant', t: 'Comida abierta ahora', s: 'Cerca de Hazleton Heights' }, { icon: 'star', t: 'Recomienda un negocio', s: '+50 puntos cuando 3 vecinos lo voten' }, { icon: 'bubble', t: 'La pregunta de la semana', s: 'Únete a la conversación de Hazleton' }] });
+    const wel = { ok: 'Ir al inicio' };
+    const card = n => n === 1 ? { name: 'Tu nombre aquí', ini: '?', badge: 'TU TARJETA DE VECINO', cells: [] } : n === 2 ? { name: 'Ana Rodríguez', nick: 'Anita', ini: 'AR', badge: 'RECLUTA', cells: [] } : { name: 'Ana Rodríguez · «Anita»', ini: 'AR', line: n === 3 ? 'RECLUTA · HAZLETON HEIGHTS' : 'RECLUTA · HAZLETON HEIGHTS · 6 GUSTOS' };
+    const mk = v => {
+      const out = [];
+      for (let n = 1; n <= 5; n++) {
+        const k = n + ' · ' + NAMES[n - 1];
+        const top = { label: lbl(n), saved: n > 1 ? 'GUARDADO' : '', segs: segs(n) };
+        if (v === 'a') out.push({ k, bg: '#fff', stBg: '#fff', stFg: '#0B0E12', top: Object.assign({ isOnb: true }, top), rad: '0', mt: '0', sh: 'none', blocks: body[n], bar: bars[n] });
+        if (v === 'b') out.push({ k, bg: '#F7F6F3', stBg: '#F7F6F3', stFg: '#0B0E12', top: Object.assign({ isCard: true, full: n <= 2, mini: n > 2, card: card(n) }, top), rad: '26px 26px 0 0', mt: '-14px', sh: '0 -10px 30px -18px rgba(11,14,18,.25)', blocks: n === 2 ? body[2].filter(x => !x.isTitle) : body[n].map(x => x.isTitle ? Object.assign({}, x, { m: n === 1 ? '20px' : '16px' }) : x.isChips && x.k === 'EN COMUNIDAD' ? Object.assign({}, x, { m: '12px' }) : x), bar: bars[n] });
+        if (v === 'c') out.push({ k, bg: '#818280', stBg: '#818280', stFg: '#fff', top: Object.assign({ isPeek: true, h: n === 1 ? '150px' : '44px', where: 'HAZLETON, PA' }, top), sheetHead: true, rad: '26px 26px 0 0', mt: '0', sh: 'none', blocks: body[n].map(x => x.isTitle ? Object.assign({}, x, { m: '12px' }) : x.isChips && x.m === '16px' && x.k === 'EN COMUNIDAD' ? Object.assign({}, x, { m: '12px' }) : x), bar: bars[n] });
+      }
+      const wk = 'LISTO · BIENVENIDA';
+      if (v === 'a') out.push({ k: wk, bg: '#fff', stBg: '#fff', stFg: '#0B0E12', top: {}, rad: '0', mt: '0', sh: 'none', blocks: [B('Wel', { m: '64px', ini: true }), acts], bar: wel });
+      if (v === 'b') out.push({ k: wk, bg: '#F7F6F3', stBg: '#F7F6F3', stFg: '#0B0E12', top: { isCard: true, full: true, label: 'LISTO', saved: 'TU TARJETA', segs: segs(6), card: { name: 'Ana Rodríguez', nick: 'Anita', ini: 'AR', badge: 'FUNDADORES · #1,241', cells: [{ label: 'RANGO', value: 'Recluta' }, { label: 'MONEDAS', value: '100', color: '#FFB020' }, { label: 'ZONA', value: 'Heights' }] } }, rad: '26px 26px 0 0', mt: '-14px', sh: '0 -10px 30px -18px rgba(11,14,18,.25)', blocks: [B('Title', { m: '18px', t: 'Bienvenida a Hazleton, Anita.', s: 'Tu tarjeta ya está lista.' }), acts], bar: wel });
+      if (v === 'c') out.push({ k: wk, bg: '#818280', stBg: '#818280', stFg: '#fff', top: { isPeek: true, h: '66px', where: 'HAZLETON, PA' }, rad: '26px 26px 0 0', mt: '0', sh: 'none', blocks: [B('Wel', { m: '30px', ini: true }), acts], bar: wel });
+      return out;
+    };
+    const vars = [
+      { id: '1a', href: '#1a', label: '1a · Pasos', t: 'Pasos · una cosa por pantalla', d1: 'Pantalla completa, barra de arriba con volver, progreso en 5 partes y cerrar (sale y guarda). Título grande, campos y el botón siempre abajo.', d2: 'La más clara y la más fácil de construir: es la misma barra del onboarding de negocios (2ad), así el vecino que luego publica su negocio ya la conoce.', screens: mk('a') },
+      { id: '1b', href: '#1b', label: '1b · Tu tarjeta', t: 'Tu tarjeta · se arma mientras llenas', d1: 'Arriba, tu tarjeta de vecino (la de Mi cuenta, 2s) se va llenando: nombre, apodo, zona y gustos. Abajo, la pregunta en una hoja blanca.', d2: 'Cada paso se siente como avance, no como formulario. Al final la tarjeta muestra Fundadores #1,241, Recluta, 100 monedas y tu zona.', screens: mk('b') },
+      { id: '1c', href: '#1c', label: '1c · Hoja', t: 'Hoja · encima de lo que estabas viendo', d1: 'Sigue la hoja de Entrar (2m): sube sobre el inicio, la ficha o Comunidad, y los 5 pasos pasan dentro de la misma hoja. En desktop, la misma ventana centrada.', d2: 'La más liviana: nunca sales de donde estabas, y al terminar la hoja baja y estás en el mismo lugar.', screens: mk('c') }
+    ];
+    const cases = [
+      { k: 'IBA A PEDIR · SOLO EL NOMBRE', bg: '#818280', stBg: '#818280', stFg: '#fff', peek: true, peekT: 'Tu pedido · Sabor Dominicano', flex: 'none', handle: true, rad: '26px 26px 0 0', mt: '-26px', blocks: [B('Kick', { t: 'TELÉFONO VERIFICADO · (570) 555-0134', c: '#00695B' }), B('Title', { m: '10px', t: '¿A nombre de quién va?', s: 'Es lo único que falta para pedir en Sabor Dominicano.' }), B('Pair', { items: [{ k: 'NOMBRE', v: 'Ana' }, { k: 'APELLIDO', v: 'Rodríguez' }] })], bar: { ok: 'Seguir con mi pedido', note: 'Lo demás lo completas luego en Mi cuenta.' } },
+      { k: 'NO VIVO EN HAZLETON', bg: '#fff', stBg: '#fff', stFg: '#0B0E12', flex: '1', rad: '0', mt: '0', blocks: [B('Kick', { t: 'PASO 3 DE 5 · TU ZONA', c: 'rgba(11,14,18,.5)' }), B('Title', { m: '10px', t: 'Aún no llegamos a tu ciudad', s: 'Empezamos en Hazleton. Dinos dónde vives y te avisamos cuando abramos ahí.' }), B('Field', { k: 'TU CIUDAD', v: 'Allentown, PA', bd: '#0B0E12' }), B('Note', { t: 'Tu cuenta queda lista y puedes pedir, reservar y entrar a Comunidad en Hazleton cuando vengas. Tu ciudad se cambia cada 30 días.' })], bar: { ok: 'Avísame cuando lleguen', no: 'Seguir con Hazleton' } },
+      { k: 'VOLVER · SIGUES DONDE QUEDASTE', bg: '#F7F6F3', stBg: '#fff', stFg: '#0B0E12', home: true, flex: '1', rad: '0', mt: '0', blocks: [B('Resume', { segs: segs(3) }), B('Acct', { kick: 'SI SOLO PUSISTE TU NOMBRE', t: 'Completa tu cuenta', items: [{ label: 'Foto de perfil', done: false }, { label: 'Tu zona en Hazleton', done: false }, { label: 'Lo que te gusta', done: false }, { label: 'Reglas del barrio', done: false }] }), B('Note', { t: 'Arriba: quien cerró el onboarding a medias. Abajo: quien entró desde un pedido; lo ve en Mi cuenta y al tocar Comunidad.' })] }
+    ];
+    return { vars, cases, deskSegs: segs(2) };
+  }
+}
+</script>
+</body>
+</html>

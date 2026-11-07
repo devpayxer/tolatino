@@ -1,0 +1,1520 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/evt-data.js"></script>
+  <script src="prototype/dash2-data.js"></script>
+  <script src="prototype/dash2-cat.js"></script>
+  <script src="prototype/dash2-evt.js"></script>
+  <style>
+    @keyframes eFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes ePop { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+    @keyframes eUp { from { transform: translateY(64px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .ehs { scrollbar-width: none; } .ehs::-webkit-scrollbar { display: none; }
+    a { color: #4B37F5; text-decoration: none; } a:hover { color: #2E1FD1; }
+  </style>
+</helmet>
+
+<sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100%;background:#F7F6F3;font-family:Manrope,system-ui,sans-serif;color:#0B0E12">
+
+  <sc-if value="{{ isBusq }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="APP-EVT-BUSQ · móvil" style="padding-bottom:110px;animation:eFade .2s ease-out">
+    <sc-if value="{{ bq.hasMine }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:12px 20px 0"><div onClick="{{ bq.onMine }}" style="padding:12px 14px;border-radius:16px;background:#0B0E12;color:#fff;display:flex;align-items:center;gap:11px;cursor:pointer">
+        <span style="width:36px;height:36px;border-radius:11px;background:rgba(255,255,255,.1);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="ticket" size="{{ 18 }}" hint-size="18px,18px"></x-import></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ bq.mineT }}</span><span style="display:block;margin-top:2px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.55)">{{ bq.mineS }}</span></span>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" hint-size="16px,16px"></x-import>
+      </div></div>
+    </sc-if>
+
+    <sc-if value="{{ bq.storiesShow }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:16px">
+      <div style="padding:0 20px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ bq.tonightT }}</span><span onClick="{{ bq.onAllTonight }}" style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#4B37F5;cursor:pointer">{{ bq.seeT }}</span></div>
+      <div class="ehs" style="margin-top:12px;display:flex;gap:14px;overflow-x:auto;padding:2px 20px 4px">
+        <sc-for list="{{ bq.stories }}" as="st" hint-placeholder-count="4">
+          <div onClick="{{ st.onOpen }}" style="flex:none;width:74px;display:flex;flex-direction:column;align-items:center;gap:7px;cursor:pointer">
+            <span style="width:70px;height:70px;border-radius:999px;padding:3px;background:linear-gradient(135deg,#FF2D7A,#7B61FF);display:grid">
+              <span style="border-radius:999px;padding:2.5px;background:#F7F6F3;display:grid;overflow:hidden"><img src="{{ st.img }}" alt="" style="width:100%;height:100%;border-radius:999px;object-fit:cover;display:block"></span>
+            </span>
+            <span style="font:700 10px/1.2 Manrope,sans-serif;color:rgba(11,14,18,.75);text-align:center;max-width:74px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ st.name }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ bq.featShow }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:16px;padding:0 20px">
+      <div onClick="{{ bq.feat.onOpen }}" style="position:relative;border-radius:22px;overflow:hidden;background:#0B0E12;color:#fff;cursor:pointer">
+        <img src="{{ bq.feat.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.52;display:block">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,0) 20%,rgba(11,14,18,.88))"></div>
+        <div style="position:relative;padding:88px 18px 18px">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#FF2D7A">{{ bq.feat.when }}</div>
+          <div style="margin-top:7px;font:800 24px/1.1 Sora,sans-serif;letter-spacing:-.035em">{{ bq.feat.title }}</div>
+          <div style="margin-top:7px;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.72)">{{ bq.feat.meta }}</div>
+          <div style="margin-top:13px;display:flex;align-items:center;gap:10px">
+            <span style="padding:10px 16px;border-radius:13px;background:#FF2D7A;font:800 12.5px Manrope,sans-serif">{{ bq.feat.cta }}</span>
+            <span style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.72)">{{ bq.feat.price }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="margin-top:16px;padding:10px 20px;background:#0B0E12;display:flex;align-items:center;gap:9px">
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="verified" size="{{ 15 }}" color="#00E5C4" hint-size="15px,15px"></x-import>
+      <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.82)">{{ bq.line }}</span>
+    </div>
+
+    <div style="position:sticky;top:0;z-index:20;background:#F7F6F3;padding:12px 0 10px;border-bottom:1px solid rgba(11,14,18,.06)">
+      <div class="ehs" style="display:flex;gap:7px;overflow-x:auto;padding:0 20px">
+        <sc-for list="{{ bq.dates }}" as="c" hint-placeholder-count="5"><span onClick="{{ c.onClick }}" style="flex:none;padding:9px 13px;border-radius:999px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:800 11px 'JetBrains Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap">{{ c.label }}</span></sc-for>
+      </div>
+      <div class="ehs" style="margin-top:8px;display:flex;gap:7px;overflow-x:auto;padding:0 20px">
+        <sc-for list="{{ bq.types }}" as="c" hint-placeholder-count="6"><span onClick="{{ c.onClick }}" style="flex:none;padding:8px 12px;border-radius:999px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:700 12px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ c.label }}</span></sc-for>
+      </div>
+    </div>
+
+    <div style="padding:14px 20px 0;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ bq.count }}</div>
+
+    <sc-if value="{{ bq.emptyShow }}" hint-placeholder-val="{{ false }}">
+      <div style="margin:16px 20px 0;padding:26px 20px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);text-align:center">
+        <div style="font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ bq.emptyT }}</div>
+        <div style="margin-top:6px;font:400 12.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ bq.emptyS }}</div>
+      </div>
+    </sc-if>
+
+    <sc-for list="{{ bq.secs }}" as="sec" hint-placeholder-count="2">
+      <div style="padding:18px 20px 0">
+        <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ sec.t }}</div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 12px">
+          <sc-for list="{{ sec.items }}" as="k" hint-placeholder-count="4">
+            <div style="min-width:0;animation:eFade .2s ease-out">
+              <div onClick="{{ k.onOpen }}" style="position:relative;aspect-ratio:3/4;border-radius:17px;overflow:hidden;background:#E4E1DA;cursor:pointer">
+                <img src="{{ k.img }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,0) 55%,rgba(11,14,18,.66))"></div>
+                <div style="position:absolute;top:10px;left:10px;width:40px;border-radius:11px;background:#fff;text-align:center;padding:5px 0 6px"><span style="display:block;font:800 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C0392B">{{ k.bm }}</span><span style="display:block;font:800 15px/1 Sora,sans-serif;letter-spacing:-.02em">{{ k.bd }}</span></div>
+                <div onClick="{{ k.onLike }}" style="position:absolute;top:10px;right:10px;width:32px;height:32px;border-radius:999px;background:rgba(11,14,18,.5);backdrop-filter:blur(8px);display:grid;place-items:center;color:{{ k.heartFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 16 }}" fill="{{ k.heartFill }}" hint-size="16px,16px"></x-import></div>
+                <sc-if value="{{ k.hasTag }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:10px;bottom:10px;padding:5px 9px;border-radius:7px;background:{{ k.tagBg }};color:{{ k.tagFg }};font:800 9px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ k.tagT }}</span></sc-if>
+              </div>
+              <div onClick="{{ k.onOpen }}" style="margin-top:9px;cursor:pointer">
+                <div style="font:800 14px/1.25 Sora,sans-serif;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ k.title }}</div>
+                <div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.meta }}</div>
+                <div style="margin-top:7px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span style="font:800 13px Sora,sans-serif;letter-spacing:-.02em">{{ k.price }}</span>
+                  <span style="display:flex;align-items:center">
+                    <sc-for list="{{ k.faces }}" as="f" hint-placeholder-count="3"><img src="{{ f }}" alt="" style="width:20px;height:20px;border-radius:999px;object-fit:cover;border:2px solid #F7F6F3;margin-left:-7px;display:block"></sc-for>
+                    <span style="margin-left:5px;font:700 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)">{{ k.more }}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="margin:22px 20px 0;padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+      <div style="font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ bq.pubT }}</div>
+      <div style="margin-top:6px;font:400 12.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ bq.pubS }}</div>
+      <div style="margin-top:12px;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" on-click="{{ bq.onPub }}" hint-size="160px,40px">{{ bq.pubBtn }}</x-import></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isNoche }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-NOCHE · móvil" style="background:#000">
+    <div style="padding:12px 20px;display:flex;align-items:center;justify-content:space-between;background:#0B0E12;color:#fff">
+      <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#FF2D7A">{{ nv.head }}</span>
+      <span onClick="{{ nv.onClose }}" style="display:flex;align-items:center;gap:6px;cursor:pointer;color:rgba(255,255,255,.72)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 16 }}" hint-size="16px,16px"></x-import><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ nv.closeT }}</span></span>
+    </div>
+    <div class="ehs" style="height:620px;overflow-y:auto;scroll-snap-type:y mandatory">
+      <sc-for list="{{ nv.slides }}" as="sl" hint-placeholder-count="2">
+        <div style="position:relative;height:620px;scroll-snap-align:start;scroll-snap-stop:always;background:#0B0E12;color:#fff;overflow:hidden">
+          <img src="{{ sl.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,.45),rgba(11,14,18,0) 30%,rgba(11,14,18,0) 45%,rgba(11,14,18,.92) 88%)"></div>
+          <div style="position:absolute;top:14px;left:16px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.72)">{{ sl.idx }}</div>
+          <div style="position:absolute;right:12px;bottom:150px;display:flex;flex-direction:column;gap:16px;align-items:center">
+            <span onClick="{{ sl.onLike }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{ sl.heartFg }}"><span style="width:44px;height:44px;border-radius:999px;background:rgba(11,14,18,.45);backdrop-filter:blur(8px);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 20 }}" fill="{{ sl.heartFill }}" hint-size="20px,20px"></x-import></span><span style="font:700 9.5px 'JetBrains Mono',monospace;color:#fff">{{ sl.likeN }}</span></span>
+            <span onClick="{{ sl.onShare }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:#fff"><span style="width:44px;height:44px;border-radius:999px;background:rgba(11,14,18,.45);backdrop-filter:blur(8px);display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="share" size="{{ 20 }}" hint-size="20px,20px"></x-import></span><span style="font:700 9.5px 'JetBrains Mono',monospace">{{ sl.shareT }}</span></span>
+          </div>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:0 18px 18px">
+            <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#FF2D7A">{{ sl.when }}</div>
+            <div style="margin-top:7px;font:800 26px/1.08 Sora,sans-serif;letter-spacing:-.035em;max-width:270px">{{ sl.title }}</div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:7px;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.05em;color:rgba(255,255,255,.75)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 13 }}" hint-size="13px,13px"></x-import><span>{{ sl.venue }}</span></div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:8px">
+              <span style="display:flex"><sc-for list="{{ sl.faces }}" as="f" hint-placeholder-count="3"><img src="{{ f }}" alt="" style="width:24px;height:24px;border-radius:999px;object-fit:cover;border:2px solid #0B0E12;margin-left:-8px;display:block"></sc-for></span>
+              <span style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(255,255,255,.75)">{{ sl.goingT }}</span>
+            </div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+              <span onClick="{{ sl.onCta }}" style="flex:1;text-align:center;padding:14px;border-radius:14px;background:#FF2D7A;font:800 14px Manrope,sans-serif;cursor:pointer">{{ sl.cta }}</span>
+              <span onClick="{{ sl.onOpen }}" style="padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);font:800 13px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ sl.moreT }}</span>
+            </div>
+            <div style="margin-top:9px;text-align:center;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5)">{{ sl.priceT }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isLst }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-LISTING · móvil" style="background:{{ ls.th.bg }};color:{{ ls.th.fg }};min-height:100%;padding-bottom:120px;animation:eFade .2s ease-out">
+    <div style="position:relative;height:340px;background:{{ ls.th.card }}">
+      <img src="{{ ls.img }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+      <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,.35),rgba(11,14,18,0) 35%,rgba(11,14,18,0) 55%,{{ ls.th.bg }})"></div>
+      <div onClick="{{ ls.onBack }}" style="position:absolute;top:14px;left:14px;width:38px;height:38px;border-radius:12px;background:rgba(11,14,18,.55);backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;color:#fff"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 18 }}" hint-size="18px,18px"></x-import></div>
+      <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px">
+        <span onClick="{{ ls.onLike }}" style="width:38px;height:38px;border-radius:12px;background:rgba(11,14,18,.55);backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;color:{{ ls.heartFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 18 }}" fill="{{ ls.heartFill }}" hint-size="18px,18px"></x-import></span>
+        <span onClick="{{ ls.onShare }}" style="width:38px;height:38px;border-radius:12px;background:rgba(11,14,18,.55);backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;color:#fff"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="share" size="{{ 18 }}" hint-size="18px,18px"></x-import></span>
+      </div>
+      <sc-if value="{{ ls.goingTag }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:14px;bottom:12px;padding:6px 10px;border-radius:8px;background:#00E5C4;color:#04120F;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ ls.goingTagT }}</span></sc-if>
+    </div>
+    <div style="padding:16px 20px 0">
+      <div style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:{{ ls.th.ac }}">{{ ls.when }}</div>
+      <h1 style="margin:8px 0 0;font:800 26px/1.1 Sora,sans-serif;letter-spacing:-.04em">{{ ls.title }}</h1>
+      <div onClick="{{ ls.onMap }}" style="margin-top:9px;display:flex;align-items:center;gap:7px;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 14 }}" color="{{ ls.th.w6 }}" hint-size="14px,14px"></x-import><span style="font:600 12.5px Manrope,sans-serif;color:{{ ls.th.w8 }}">{{ ls.venue }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ ls.th.w45 }}">{{ ls.dist }}</span></div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ls.tags }}" as="tg" hint-placeholder-count="3"><span style="padding:6px 10px;border-radius:8px;background:{{ ls.th.w09 }};font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w8 }}">{{ tg.t }}</span></sc-for></div>
+    </div>
+
+    <sc-if value="{{ ls.hasDesc }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;font:400 13.5px/1.62 Manrope,sans-serif;color:{{ ls.th.w75 }};text-wrap:pretty">{{ ls.desc }}</div></sc-if>
+    <sc-if value="{{ ls.hasSt }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 20px 0;padding:13px 15px;border-radius:14px;background:{{ ls.stBg }}"><div style="font:800 13.5px Manrope,sans-serif;color:{{ ls.stFg }}">{{ ls.stT }}</div><div style="margin-top:3px;font:400 12px/1.55 Manrope,sans-serif;color:{{ ls.th.w72 }}">{{ ls.stS }}</div></div></sc-if>
+
+    <div style="margin:16px 20px 0;padding:11px 14px;border-radius:13px;background:{{ ls.th.okBg }};border:1px solid {{ ls.th.okBd }};display:flex;align-items:center;gap:9px">
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="verified" size="{{ 15 }}" color="{{ ls.th.ok }}" hint-size="15px,15px"></x-import>
+      <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.ok }}">{{ ls.line }}</span>
+    </div>
+
+    <div style="margin:14px 20px 0;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};overflow:hidden">
+      <sc-for list="{{ ls.rows }}" as="w" hint-placeholder-count="3">
+        <div onClick="{{ w.onClick }}" style="padding:13px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid {{ ls.th.w07 }};cursor:pointer">
+          <span style="width:36px;height:36px;border-radius:11px;background:{{ ls.th.w07 }};display:grid;place-items:center;color:{{ ls.th.w75 }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ w.ic }}" size="{{ 17 }}" hint-size="17px,17px"></x-import></span>
+          <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ w.t }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ w.s }}</span></span>
+          <sc-if value="{{ w.hasLink }}" hint-placeholder-val="{{ false }}"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.ac }};white-space:nowrap">{{ w.link }}</span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ ls.hasSer }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 20px 0"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.serK }}</span><span style="font:400 11.5px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ ls.serS }}</span></div><div class="ehs" style="margin-top:10px;display:flex;gap:7px;overflow-x:auto"><sc-for list="{{ ls.ser }}" as="x" hint-placeholder-count="4"><span onClick="{{ x.onClick }}" style="flex:none;height:38px;padding:0 13px;border-radius:11px;border:1.5px solid {{ x.bd }};background:{{ x.bg }};color:{{ x.fg }};display:grid;place-items:center;font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap">{{ x.l }}</span></sc-for></div></div></sc-if>
+
+    <sc-if value="{{ ls.hasDays }}" hint-placeholder-val="{{ false }}"><div style="padding:18px 20px 0"><div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.daysK }}</div><div style="margin-top:10px;border-radius:16px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};overflow:hidden"><sc-for list="{{ ls.days }}" as="x" hint-placeholder-count="3"><div style="padding:12px 15px;display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid {{ ls.th.w07 }}"><span style="font:700 13px Manrope,sans-serif">{{ x.l }}</span><span style="font:600 11px 'JetBrains Mono',monospace;color:{{ ls.th.w6 }};white-space:nowrap">{{ x.s }}</span></div></sc-for></div></div></sc-if>
+
+    <sc-if value="{{ ls.hasTks }}" hint-placeholder-val="{{ true }}">
+    <div style="padding:22px 20px 0">
+      <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.tksT }}</div>
+      <div style="margin-top:12px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};overflow:hidden">
+        <sc-for list="{{ ls.tks }}" as="tk" hint-placeholder-count="2">
+          <div style="padding:13px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid {{ ls.th.w07 }}">
+            <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ tk.n }}</span><sc-if value="{{ tk.hasS }}" hint-placeholder-val="{{ false }}"><span style="display:block;margin-top:2px;font:400 11.5px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ tk.s }}</span></sc-if></span>
+            <sc-if value="{{ tk.hasLeft }}" hint-placeholder-val="{{ false }}"><span style="padding:4px 8px;border-radius:6px;background:rgba(255,176,32,.15);color:{{ ls.th.warn }};font:800 9px 'JetBrains Mono',monospace;letter-spacing:.08em">{{ tk.leftT }}</span></sc-if>
+            <span style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ tk.p }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ ls.hasMesas }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:22px 20px 0">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.mesasT }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w45 }}">{{ ls.mesaSeats }}</span></div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ ls.mesas }}" as="m" hint-placeholder-count="2">
+          <div onClick="{{ m.onClick }}" style="padding:13px 15px;border-radius:16px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};display:flex;align-items:center;gap:12px;cursor:pointer">
+            <span style="width:38px;height:38px;border-radius:12px;background:{{ ls.th.acT }};display:grid;place-items:center;color:{{ ls.th.ac }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="drink" size="{{ 18 }}" hint-size="18px,18px"></x-import></span>
+            <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ m.z }}</span><span style="display:block;margin-top:2px;font:400 11.5px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ m.s }}</span></span>
+            <span style="text-align:right"><span style="display:block;font:800 14px Sora,sans-serif">{{ m.depT }}</span><span style="display:block;margin-top:2px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ m.leftFg }}">{{ m.leftT }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:9px;font:400 11.5px/1.5 Manrope,sans-serif;color:{{ ls.th.w5 }}">{{ ls.mesaNote }}</div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ ls.free }}" hint-placeholder-val="{{ false }}">
+    <div style="margin:22px 20px 0;padding:16px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }}">
+      <div style="display:flex;align-items:center;gap:10px"><span style="padding:5px 9px;border-radius:7px;background:{{ ls.th.chipBg }};color:{{ ls.th.chipFg }};font:800 10px 'JetBrains Mono',monospace;letter-spacing:.1em">GRATIS</span><span style="font:700 13.5px Manrope,sans-serif">{{ ls.freeT }}</span></div>
+      <div style="margin-top:8px;font:400 12px/1.6 Manrope,sans-serif;color:{{ ls.th.w6 }}">{{ ls.freeS }}</div>
+      <sc-if value="{{ ls.hasParty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding-top:12px;border-top:1px solid {{ ls.th.w07 }}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.partyK }}</span><span style="font:400 11px Manrope,sans-serif;color:{{ ls.th.w5 }}">{{ ls.partyS }}</span></div><div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ ls.party }}" as="p" hint-placeholder-count="4"><span onClick="{{ p.onClick }}" style="min-width:40px;height:38px;padding:0 10px;box-sizing:border-box;border-radius:11px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};display:grid;place-items:center;font:800 13px Manrope,sans-serif;cursor:pointer">{{ p.l }}</span></sc-for></div></div></sc-if>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{ ls.hasLu }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:22px 20px 0">
+      <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.luT }}</div>
+      <div style="margin-top:14px;display:flex;flex-direction:column">
+        <sc-for list="{{ ls.lu }}" as="l" hint-placeholder-count="3">
+          <div style="display:flex;gap:14px">
+            <span style="display:flex;flex-direction:column;align-items:center"><span style="width:9px;height:9px;border-radius:999px;background:{{ ls.th.ac }};margin-top:5px"></span><sc-if value="{{ l.notLast }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:1.5px;background:{{ ls.th.w14 }};margin:4px 0"></span></sc-if></span>
+            <span style="flex:1;padding-bottom:18px;min-width:0"><span style="display:block;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ ls.th.w5 }}">{{ l.t }}</span><span style="display:block;margin-top:3px;font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ l.who }}</span><span style="display:block;margin-top:2px;font:400 12px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ l.role }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="padding:8px 20px 0">
+      <div style="padding:14px 15px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};display:flex;align-items:center;gap:11px">
+        <span style="display:flex"><sc-for list="{{ ls.faces }}" as="f" hint-placeholder-count="4"><img src="{{ f }}" alt="" style="width:30px;height:30px;border-radius:999px;object-fit:cover;border:2px solid {{ ls.th.card }};margin-left:-9px;display:block"></sc-for></span>
+        <span style="flex:1;font:700 12.5px Manrope,sans-serif">{{ ls.goingT }}</span>
+        <span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ ls.th.w45 }}">{{ ls.goingS }}</span>
+      </div>
+    </div>
+
+    <sc-if value="{{ ls.hasGal }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:22px 20px 0">
+      <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.galT }}</div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><sc-for list="{{ ls.gal }}" as="g" hint-placeholder-count="3"><img src="{{ g }}" alt="" style="width:100%;aspect-ratio:1;border-radius:13px;object-fit:cover;display:block"></sc-for></div>
+    </div>
+    </sc-if>
+
+    <div style="padding:22px 20px 0">
+      <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.orgT }}</div>
+      <div style="margin-top:12px;padding:14px 15px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};display:flex;align-items:center;gap:12px">
+        <span style="width:44px;height:44px;border-radius:13px;background:{{ ls.th.w08 }};display:grid;place-items:center;font:800 15px Sora,sans-serif">{{ ls.orgIni }}</span>
+        <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ ls.orgN }}</span><span style="display:block;margin-top:2px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w5 }}">{{ ls.orgS }}</span></span>
+        <span onClick="{{ ls.onOrg }}" style="padding:9px 13px;border-radius:11px;background:{{ ls.th.w1 }};font:800 11.5px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ ls.orgBtn }}</span>
+      </div>
+    </div>
+
+    <sc-if value="{{ ls.hasBefore }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:22px 20px 0">
+      <div style="font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.beforeT }}</div>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ ls.before }}" as="b" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:flex-start"><span style="color:{{ ls.th.ac }};padding-top:2px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="info" size="{{ 15 }}" hint-size="15px,15px"></x-import></span><span style="font:400 12.5px/1.55 Manrope,sans-serif;color:{{ ls.th.w72 }}">{{ b.t }}</span></div></sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="margin:22px 20px 0;padding:14px 15px;border-radius:16px;background:{{ ls.th.w05 }};border:1px solid {{ ls.th.w08 }}">
+      <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:{{ ls.th.w45 }}">{{ ls.polT }}</div>
+      <div style="margin-top:7px;font:400 11.5px/1.6 Manrope,sans-serif;color:{{ ls.th.w62 }}">{{ ls.pol }}</div>
+    </div>
+
+    <sc-if value="{{ ls.hasRel }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:24px 0 0">
+      <div style="padding:0 20px;font:800 18px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.relT }}</div>
+      <div class="ehs" style="margin-top:12px;display:flex;gap:12px;overflow-x:auto;padding:0 20px">
+        <sc-for list="{{ ls.rel }}" as="rl" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dark="{{ ls.th.dark }}" tag="{{ rl.tag }}" title="{{ rl.title }}" meta="{{ rl.meta }}" image="{{ rl.image }}" on-click="{{ rl.onClick }}" hint-size="212px,180px"></x-import></sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:40;background:{{ ls.th.bar }};backdrop-filter:blur(14px);border-top:1px solid {{ ls.th.w1 }};padding:12px 16px 16px;display:flex;align-items:center;gap:12px">
+      <span style="flex:1;min-width:0"><span style="display:block;font:800 17px Sora,sans-serif;letter-spacing:-.02em;color:{{ ls.th.fg }}">{{ ls.barP }}</span><span style="display:block;margin-top:2px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w5 }}">{{ ls.barS }}</span></span>
+      <sc-if value="{{ ls.barAlt }}" hint-placeholder-val="{{ false }}"><span onClick="{{ ls.onBarAlt }}" style="padding:13px 15px;border-radius:14px;background:{{ ls.th.w1 }};color:{{ ls.th.fg }};font:800 13px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ ls.barAltT }}</span></sc-if>
+      <span onClick="{{ ls.onBar }}" style="padding:13px 26px;border-radius:14px;background:{{ ls.barBg }};color:{{ ls.barFg }};font:800 14px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ ls.barCta }}</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isTk }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-BOLETOS · móvil" style="min-height:100%;background:#F7F6F3;padding-bottom:130px;animation:eFade .2s ease-out">
+    <div style="position:sticky;top:0;z-index:20;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.StepHeader" title="{{ tk.title }}" step="{{ 1 }}" total="{{ 2 }}" on-back="{{ tk.onBack }}" hint-size="100%,56px"></x-import></div>
+    <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+      <div style="padding:13px 15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px">
+        <img src="{{ tk.img }}" alt="" style="width:52px;height:52px;border-radius:13px;object-fit:cover;display:block">
+        <span style="flex:1;min-width:0"><span style="display:block;font:800 14px Sora,sans-serif;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tk.evT }}</span><span style="display:block;margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ tk.evS }}</span></span>
+      </div>
+
+      <div data-screen-label="Boletos · tipos" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.tksK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.42)">{{ tk.maxT }}</span></div>
+        <div style="margin-top:6px;display:flex;flex-direction:column">
+          <sc-for list="{{ tk.tRows }}" as="w" hint-placeholder-count="2">
+            <div style="padding:12px 0;border-bottom:1px solid rgba(11,14,18,.06);display:flex;align-items:center;gap:12px">
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif">{{ w.n }}</span><sc-if value="{{ w.hasS }}" hint-placeholder-val="{{ false }}"><span style="display:block;margin-top:2px;font:400 11.5px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ w.s }}</span></sc-if><span style="display:block;margin-top:3px;font:800 13px Sora,sans-serif">{{ w.p }}</span></span>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.QtyStepper" value="{{ w.qty }}" on-dec="{{ w.onDec }}" on-inc="{{ w.onInc }}" hint-size="100px,36px"></x-import>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <sc-if value="{{ tk.hasMesas }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Boletos · mesas" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.mesasK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.42)">{{ tk.mesasS }}</span></div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ tk.mesas }}" as="m" hint-placeholder-count="2">
+            <div onClick="{{ m.onSel }}" style="padding:12px 13px;border-radius:14px;border:1.5px solid {{ m.bd }};background:{{ m.bg }};display:flex;align-items:center;gap:11px;cursor:pointer;opacity:{{ m.op }}">
+              <span style="width:19px;height:19px;border-radius:999px;border:1.5px solid {{ m.rb }};display:grid;place-items:center;flex:none"><sc-if value="{{ m.sel }}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;border-radius:999px;background:#4B37F5"></span></sc-if></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ m.z }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ m.s }}</span></span>
+              <span style="text-align:right;flex:none"><span style="display:block;font:800 14px Sora,sans-serif">{{ m.depT }}</span><span style="display:block;margin-top:2px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ m.leftFg }}">{{ m.leftT }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:10px;font:400 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ tk.mesaNote }}</div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ tk.hasAdds }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Boletos · extras" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.addsK }}</div>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ tk.adds }}" as="a" hint-placeholder-count="2">
+            <div style="opacity:{{ a.op }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.AddOnRow" label="{{ a.label }}" price="{{ a.price }}" checked="{{ a.checked }}" on-toggle="{{ a.onToggle }}" hint-size="100%,48px"></x-import>
+            <sc-if value="{{ a.hasNote }}" hint-placeholder-val="{{ false }}"><div style="margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C0392B">{{ a.note }}</div></sc-if></div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <div data-screen-label="Boletos · código" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.codeK }}</div>
+        <div style="margin-top:9px;display:flex;gap:8px">
+          <input value="{{ tk.codeVal }}" onChange="{{ tk.onCode }}" placeholder="{{ tk.codePh }}" style="flex:1;min-width:0;padding:11px 13px;border-radius:13px;border:1.5px solid rgba(11,14,18,.12);background:#F7F6F3;font:700 12.5px 'JetBrains Mono',monospace;letter-spacing:.08em;outline:none;text-transform:uppercase">
+          <span onClick="{{ tk.onApply }}" style="padding:11px 15px;border-radius:13px;background:#0B0E12;color:#fff;font:800 12px Manrope,sans-serif;cursor:pointer;display:grid;place-items:center">{{ tk.applyT }}</span>
+        </div>
+        <sc-if value="{{ tk.hasCodeMsg }}" hint-placeholder-val="{{ false }}"><div style="margin-top:8px;font:700 11px 'JetBrains Mono',monospace;letter-spacing:.04em;color:{{ tk.codeFg }}">{{ tk.codeMsg }}</div></sc-if>
+      </div>
+
+      <div style="padding:12px 14px;border-radius:14px;background:rgba(75,55,245,.06);display:flex;gap:10px;align-items:flex-start">
+        <span style="color:#4B37F5;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="clock" size="{{ 15 }}" hint-size="15px,15px"></x-import></span>
+        <span style="font:600 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.72)">{{ tk.holdT }}</span>
+      </div>
+    </div>
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.TotalBar" label="{{ tk.totalK }}" total="{{ tk.total }}" cta="{{ tk.cta }}" on-cta="{{ tk.onCta }}" hint-size="100%,76px"></x-import></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isPay }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-PAGO · móvil" style="min-height:100%;background:#F7F6F3;padding-bottom:130px;animation:eFade .2s ease-out">
+    <div style="position:sticky;top:0;z-index:20;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.StepHeader" title="{{ py.title }}" step="{{ 2 }}" total="{{ 2 }}" on-back="{{ py.onBack }}" hint-size="100%,56px"></x-import></div>
+    <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+      <div style="padding:10px 14px;border-radius:13px;background:#0B0E12;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.72)">{{ py.holdK }}</span>
+        <span style="font:800 13px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#00E5C4">{{ py.holdV }}</span>
+      </div>
+
+      <sc-if value="{{ py.errShow }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:13px 15px;border-radius:16px;background:rgba(192,57,43,.08);border:1.5px solid rgba(192,57,43,.35)">
+        <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#C0392B;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="warning" size="{{ 16 }}" hint-size="16px,16px"></x-import></span>
+        <span style="flex:1"><span style="display:block;font:700 13px Manrope,sans-serif;color:#C0392B">{{ py.errT }}</span><span style="display:block;margin-top:3px;font:400 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ py.errS }}</span></span></div>
+        <div style="margin-top:10px;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" on-click="{{ py.onSwapCard }}" hint-size="140px,34px">{{ py.swapT }}</x-import></div>
+      </div>
+      </sc-if>
+
+      <div data-screen-label="Pago · nombres" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.namesK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ py.namesS }}</span></div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ py.names }}" as="n" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:9px">
+              <span style="flex:none;width:110px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ n.label }}</span>
+              <input value="{{ n.val }}" onChange="{{ n.onChange }}" placeholder="{{ n.ph }}" style="flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid rgba(11,14,18,.12);background:#F7F6F3;font:600 13px Manrope,sans-serif;outline:none">
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:9px;font:400 11px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ py.namesN }}</div>
+      </div>
+
+      <div data-screen-label="Pago · método" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.payK }}</div>
+        <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ py.pays }}" as="p" hint-placeholder-count="2">
+            <div onClick="{{ p.onSel }}" style="padding:12px 13px;border-radius:14px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};display:flex;align-items:center;gap:11px;cursor:pointer">
+              <span style="width:19px;height:19px;border-radius:999px;border:1.5px solid {{ p.rb }};display:grid;place-items:center;flex:none"><sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;border-radius:999px;background:#4B37F5"></span></sc-if></span>
+              <span style="width:34px;height:34px;border-radius:10px;background:rgba(11,14,18,.05);display:grid;place-items:center;color:rgba(11,14,18,.7)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ p.ic }}" size="{{ 16 }}" hint-size="16px,16px"></x-import></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ p.t }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ p.s }}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div data-screen-label="Pago · resumen" style="padding:15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.sumK }}</div>
+        <div style="margin-top:8px;display:flex;flex-direction:column">
+          <sc-for list="{{ py.sumRows }}" as="w" hint-placeholder-count="3"><div style="padding:7px 0;display:flex;justify-content:space-between;gap:12px;font:600 12.5px Manrope,sans-serif;color:{{ w.fg }}"><span style="min-width:0">{{ w.l }}</span><span style="white-space:nowrap">{{ w.v }}</span></div></sc-for>
+        </div>
+        <div style="margin-top:8px;padding-top:11px;border-top:1px solid rgba(11,14,18,.08);display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ py.totalK }}</span><span style="font:800 22px Sora,sans-serif;letter-spacing:-.03em">{{ py.total }}</span></div>
+        <div style="margin-top:6px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#00695B">{{ py.line }}</div>
+      </div>
+
+      <div style="padding:12px 14px;border-radius:14px;background:rgba(11,14,18,.04)">
+        <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ py.polK }}</div>
+        <div style="margin-top:6px;font:400 11.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ py.pol }}</div>
+      </div>
+    </div>
+    <div style="position:fixed;left:0;right:0;bottom:0;z-index:40;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.TotalBar" label="{{ py.barK }}" total="{{ py.barV }}" cta="{{ py.cta }}" on-cta="{{ py.onCta }}" hint-size="100%,76px"></x-import></div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isOrd }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-ORDEN · móvil" style="min-height:100%;background:#F7F6F3;padding-bottom:60px;animation:eFade .2s ease-out">
+    <div style="padding:22px 20px 0;text-align:center;animation:ePop .3s ease-out">
+      <span style="width:54px;height:54px;border-radius:999px;background:{{ od.topBg }};display:inline-grid;place-items:center;color:{{ od.topFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ od.topIc }}" size="{{ 26 }}" hint-size="26px,26px"></x-import></span>
+      <div style="margin-top:12px;font:800 22px/1.15 Sora,sans-serif;letter-spacing:-.03em">{{ od.topT }}</div>
+      <div style="margin-top:6px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ od.topS }}</div>
+    </div>
+
+    <sc-if value="{{ od.bannerShow }}" hint-placeholder-val="{{ false }}">
+    <div style="margin:16px 16px 0;padding:14px 15px;border-radius:16px;background:{{ od.bnBg }};border:1.5px solid {{ od.bnBd }}">
+      <div style="font:700 13.5px Manrope,sans-serif;color:{{ od.bnFg }}">{{ od.bnT }}</div>
+      <div style="margin-top:5px;font:400 12px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.7)">{{ od.bnS }}</div>
+      <sc-if value="{{ od.bnActs }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:11px;display:flex;gap:8px">
+        <span onClick="{{ od.onBnKeep }}" style="flex:1;text-align:center;padding:11px;border-radius:12px;background:#0B0E12;color:#fff;font:800 12.5px Manrope,sans-serif;cursor:pointer">{{ od.bnKeepT }}</span>
+        <span onClick="{{ od.onBnRef }}" style="flex:1;text-align:center;padding:11px;border-radius:12px;border:1.5px solid rgba(11,14,18,.14);font:800 12.5px Manrope,sans-serif;cursor:pointer">{{ od.bnRefT }}</span>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <div class="ehs" style="margin-top:18px;display:flex;gap:12px;overflow-x:auto;padding:0 20px 4px">
+      <sc-for list="{{ od.tks }}" as="k" hint-placeholder-count="2">
+        <div style="flex:none;width:250px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.TicketQR" dc-props="{{ k.ds }}" hint-size="250px,300px"></x-import></div>
+      </sc-for>
+    </div>
+    <div style="margin-top:9px;text-align:center;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ od.brightT }}</div>
+
+    <div style="padding:16px 16px 0;display:flex;flex-direction:column;gap:12px">
+      <div onClick="{{ od.onOpenEvt }}" style="padding:13px 15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px;cursor:pointer">
+        <img src="{{ od.img }}" alt="" style="width:52px;height:52px;border-radius:13px;object-fit:cover;display:block">
+        <span style="flex:1;min-width:0"><span style="display:block;font:800 14px Sora,sans-serif;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ od.evT }}</span><span style="display:block;margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ od.evS }}</span></span>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" color="rgba(11,14,18,.35)" hint-size="16px,16px"></x-import>
+      </div>
+
+      <sc-if value="{{ od.mesaShow }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:14px 15px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ od.mesaK }}</div>
+        <div style="margin-top:7px;font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ od.mesaZ }}</div>
+        <div style="margin-top:4px;font:400 12px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ od.mesaS }}</div>
+      </div>
+      </sc-if>
+
+
+      <div data-screen-label="Orden · estado" style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ od.steps }}" hint-size="100%,150px"></x-import>
+      </div>
+
+      <sc-if value="{{ od.rateShow }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Orden · calificar" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);text-align:center">
+        <div style="font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ od.rateT }}</div>
+        <div style="margin-top:10px;display:flex;justify-content:center;gap:6px">
+          <sc-for list="{{ od.stars }}" as="st" hint-placeholder-count="5"><span onClick="{{ st.onClick }}" style="cursor:pointer;color:{{ st.fg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="star" size="{{ 28 }}" fill="{{ st.fill }}" hint-size="28px,28px"></x-import></span></sc-for>
+        </div>
+        <sc-if value="{{ od.rateDone }}" hint-placeholder-val="{{ false }}"><div style="margin-top:9px;font:600 11.5px Manrope,sans-serif;color:#00695B">{{ od.rateS }}</div></sc-if>
+      </div>
+      </sc-if>
+
+      <div style="border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);overflow:hidden">
+        <sc-for list="{{ od.acts }}" as="a" hint-placeholder-count="4">
+          <div onClick="{{ a.onClick }}" style="padding:13px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(11,14,18,.06);cursor:pointer">
+            <span style="width:36px;height:36px;border-radius:11px;background:rgba(11,14,18,.05);display:grid;place-items:center;color:{{ a.fg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ a.ic }}" size="{{ 17 }}" hint-size="17px,17px"></x-import></span>
+            <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif;color:{{ a.fg }}">{{ a.t }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ a.s }}</span></span>
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" color="rgba(11,14,18,.3)" hint-size="15px,15px"></x-import>
+          </div>
+        </sc-for>
+      </div>
+
+      <sc-if value="{{ od.rcpShow }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Orden · recibo" style="display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.ReceiptCard" business="{{ od.rcp.business }}" address="{{ od.rcp.address }}" status="{{ od.rcp.status }}" status-tone="{{ od.rcp.statusTone }}" meta="{{ od.rcp.meta }}" lines="{{ od.rcp.lines }}" rows="{{ od.rcp.rows }}" total="{{ od.rcp.total }}" events="{{ od.rcp.events }}" net-label="{{ od.rcp.netLabel }}" net="{{ od.rcp.net }}" foot="{{ od.rcp.foot }}" hint-size="100%,400px"></x-import></div>
+      </sc-if>
+
+      <div style="padding:12px 14px;border-radius:14px;background:rgba(11,14,18,.04)">
+        <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ od.polK }}</div>
+        <div style="margin-top:6px;font:400 11.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ od.pol }}</div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isMis }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-MIS · móvil" style="min-height:100%;background:#F7F6F3;padding-bottom:60px;animation:eFade .2s ease-out">
+    <div style="position:sticky;top:0;z-index:20;padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px">
+      <div onClick="{{ ms.onBack }}" style="width:34px;height:34px;border-radius:11px;border:1px solid rgba(11,14,18,.1);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" hint-size="16px,16px"></x-import></div>
+      <span style="font:800 17px Sora,sans-serif;letter-spacing:-.02em">{{ ms.title }}</span>
+    </div>
+    <sc-if value="{{ ms.emptyShow }}" hint-placeholder-val="{{ false }}">
+      <div style="margin:18px 16px 0;padding:26px 20px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);text-align:center">
+        <span style="width:46px;height:46px;border-radius:14px;background:rgba(255,45,122,.1);display:inline-grid;place-items:center;color:#FF2D7A"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="ticket" size="{{ 22 }}" hint-size="22px,22px"></x-import></span>
+        <div style="margin-top:10px;font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ ms.emptyT }}</div>
+        <div style="margin-top:6px;font:400 12.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ ms.emptyS }}</div>
+        <div style="margin-top:14px;display:inline-flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" on-click="{{ ms.onCta }}" hint-size="140px,40px">{{ ms.cta }}</x-import></div>
+      </div>
+    </sc-if>
+    <sc-for list="{{ ms.groups }}" as="g" hint-placeholder-count="2">
+      <div style="padding:18px 16px 0">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ g.t }}</div>
+        <div style="margin-top:10px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);overflow:hidden">
+          <sc-for list="{{ g.rows }}" as="w" hint-placeholder-count="2">
+            <div onClick="{{ w.onOpen }}" style="padding:13px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(11,14,18,.06);cursor:pointer;opacity:{{ w.op }}">
+              <img src="{{ w.img }}" alt="" style="width:48px;height:48px;border-radius:12px;object-fit:cover;display:block">
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ w.t }}</span><span style="display:block;margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ w.s }}</span></span>
+              <span style="flex:none;padding:5px 9px;border-radius:7px;background:{{ w.tagBg }};color:{{ w.tagFg }};font:800 9px 'JetBrains Mono',monospace;letter-spacing:.08em">{{ w.tag }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ sh.helpShow }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:80">
+    <div onClick="{{ sh.onHelpClose }}" style="position:absolute;inset:0;background:rgba(11,14,18,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;border-radius:26px 26px 0 0;background:#F7F6F3;padding:18px 16px 22px;animation:eUp .25s ease-out">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:800 17px Sora,sans-serif;letter-spacing:-.02em">{{ sh.helpT }}</span><span onClick="{{ sh.onHelpClose }}" style="width:32px;height:32px;border-radius:999px;background:rgba(11,14,18,.06);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" hint-size="15px,15px"></x-import></span></div>
+      <div style="margin-top:12px;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.HelpReasonList" items="{{ sh.helpItems }}" hint-size="100%,220px"></x-import></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ sh.trShow }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;z-index:80">
+    <div onClick="{{ sh.onTrClose }}" style="position:absolute;inset:0;background:rgba(11,14,18,.5)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;border-radius:26px 26px 0 0;background:#fff;padding:18px 16px 22px;animation:eUp .25s ease-out">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><span style="font:800 17px Sora,sans-serif;letter-spacing:-.02em">{{ sh.trT }}</span><span onClick="{{ sh.onTrClose }}" style="width:32px;height:32px;border-radius:999px;background:rgba(11,14,18,.06);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" hint-size="15px,15px"></x-import></span></div>
+      <div style="margin-top:7px;font:400 12.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ sh.trS }}</div>
+      <input value="{{ sh.trPhone }}" onChange="{{ sh.onTrPhone }}" placeholder="(570) 555-0123" inputMode="tel" style="margin-top:12px;width:100%;box-sizing:border-box;padding:13px 15px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);background:#F7F6F3;font:700 15px Manrope,sans-serif;outline:none">
+      <div style="margin-top:12px;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ sh.onTrSend }}" hint-size="100%,48px">{{ sh.trCta }}</x-import></div>
+      <div style="margin-top:9px;text-align:center;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.45)">{{ sh.trNote }}</div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100%;background:#F7F6F3;font-family:Manrope,system-ui,sans-serif;color:#0B0E12">
+
+  <sc-if value="{{ isBusq }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="APP-EVT-BUSQ · desktop" style="max-width:1200px;margin:0 auto;padding:28px 36px 70px;animation:eFade .2s ease-out">
+    <div style="display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;align-items:stretch">
+      <div onClick="{{ bq.feat.onOpen }}" style="position:relative;border-radius:22px;overflow:hidden;background:#0B0E12;color:#fff;cursor:pointer;min-height:340px">
+        <img src="{{ bq.feat.img }}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.55;display:block">
+        <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,0) 25%,rgba(11,14,18,.9))"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;padding:26px">
+          <div style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#FF2D7A">{{ bq.feat.when }}</div>
+          <div style="margin-top:9px;font:800 34px/1.08 Sora,sans-serif;letter-spacing:-.04em;max-width:480px">{{ bq.feat.title }}</div>
+          <div style="margin-top:8px;font:600 11px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.72)">{{ bq.feat.meta }}</div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:12px">
+            <span style="padding:12px 20px;border-radius:13px;background:#FF2D7A;font:800 13.5px Manrope,sans-serif">{{ bq.feat.cta }}</span>
+            <span style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.72)">{{ bq.feat.price }}</span>
+          </div>
+        </div>
+      </div>
+      <div style="border-radius:22px;background:#0B0E12;color:#fff;padding:20px 20px 14px;display:flex;flex-direction:column;min-height:340px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 18px Sora,sans-serif;letter-spacing:-.03em">{{ bq.tonightT }}</span><span onClick="{{ bq.onAllTonight }}" style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#FF2D7A;cursor:pointer">{{ bq.seeT }}</span></div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:4px;flex:1">
+          <sc-for list="{{ bq.tonightRows }}" as="w" hint-placeholder-count="3">
+            <div onClick="{{ w.onOpen }}" style="padding:9px 10px;margin:0 -10px;border-radius:14px;display:flex;align-items:center;gap:12px;cursor:pointer" style-hover="background:rgba(255,255,255,.06)">
+              <img src="{{ w.img }}" alt="" style="width:46px;height:46px;border-radius:12px;object-fit:cover;display:block">
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13.5px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ w.t }}</span><span style="display:block;margin-top:2px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(255,255,255,.5)">{{ w.s }}</span></span>
+              <span style="font:800 12.5px Sora,sans-serif;white-space:nowrap">{{ w.p }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding-top:10px;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:8px">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="verified" size="{{ 14 }}" color="#00E5C4" hint-size="14px,14px"></x-import>
+          <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.7)">{{ bq.line }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:22px;display:flex;flex-wrap:wrap;gap:8px">
+      <sc-for list="{{ bq.dates }}" as="c" hint-placeholder-count="4"><span onClick="{{ c.onClick }}" style="padding:10px 15px;border-radius:999px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:800 11px 'JetBrains Mono',monospace;letter-spacing:.06em;cursor:pointer">{{ c.label }}</span></sc-for>
+      <span style="width:1px;background:rgba(11,14,18,.12);margin:4px 6px"></span>
+      <sc-for list="{{ bq.types }}" as="c" hint-placeholder-count="6"><span onClick="{{ c.onClick }}" style="padding:9px 14px;border-radius:999px;border:1.5px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font:700 12.5px Manrope,sans-serif;cursor:pointer">{{ c.label }}</span></sc-for>
+    </div>
+    <div style="margin-top:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ bq.count }}</span>
+      <sc-if value="{{ bq.hasMine }}" hint-placeholder-val="{{ false }}"><span onClick="{{ bq.onMine }}" style="display:flex;align-items:center;gap:7px;font:700 12px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="ticket" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ bq.mineT }}</span></sc-if>
+    </div>
+
+    <sc-if value="{{ bq.emptyShow }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:16px;padding:34px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);text-align:center">
+        <div style="font:800 17px Sora,sans-serif;letter-spacing:-.02em">{{ bq.emptyT }}</div>
+        <div style="margin-top:6px;font:400 13px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ bq.emptyS }}</div>
+      </div>
+    </sc-if>
+
+    <sc-for list="{{ bq.secs }}" as="sec" hint-placeholder-count="2">
+      <div style="margin-top:26px">
+        <div style="font:800 21px/1 Sora,sans-serif;letter-spacing:-.03em">{{ sec.t }}</div>
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px 16px">
+          <sc-for list="{{ sec.items }}" as="k" hint-placeholder-count="4">
+            <div style="min-width:0;animation:eFade .2s ease-out">
+              <div onClick="{{ k.onOpen }}" style="position:relative;aspect-ratio:3/4;border-radius:17px;overflow:hidden;background:#E4E1DA;cursor:pointer">
+                <img src="{{ k.img }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+                <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,0) 55%,rgba(11,14,18,.62))"></div>
+                <div style="position:absolute;top:10px;left:10px;width:42px;border-radius:11px;background:#fff;text-align:center;padding:5px 0 6px"><span style="display:block;font:800 8.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#C0392B">{{ k.bm }}</span><span style="display:block;font:800 16px/1 Sora,sans-serif;letter-spacing:-.02em">{{ k.bd }}</span></div>
+                <div onClick="{{ k.onLike }}" style="position:absolute;top:10px;right:10px;width:34px;height:34px;border-radius:999px;background:rgba(11,14,18,.5);backdrop-filter:blur(8px);display:grid;place-items:center;color:{{ k.heartFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 17 }}" fill="{{ k.heartFill }}" hint-size="17px,17px"></x-import></div>
+                <sc-if value="{{ k.hasTag }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:10px;bottom:10px;padding:5px 9px;border-radius:7px;background:{{ k.tagBg }};color:{{ k.tagFg }};font:800 9px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ k.tagT }}</span></sc-if>
+              </div>
+              <div onClick="{{ k.onOpen }}" style="margin-top:10px;cursor:pointer">
+                <div style="font:800 15px/1.25 Sora,sans-serif;letter-spacing:-.02em;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ k.title }}</div>
+                <div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ k.meta }}</div>
+                <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                  <span style="font:800 13.5px Sora,sans-serif;letter-spacing:-.02em">{{ k.price }}</span>
+                  <span style="display:flex;align-items:center"><sc-for list="{{ k.faces }}" as="f" hint-placeholder-count="3"><img src="{{ f }}" alt="" style="width:21px;height:21px;border-radius:999px;object-fit:cover;border:2px solid #F7F6F3;margin-left:-7px;display:block"></sc-for><span style="margin-left:5px;font:700 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.5)">{{ k.more }}</span></span>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+
+    <div style="margin-top:30px;padding:22px 26px;border-radius:22px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <span style="flex:1;min-width:260px"><span style="display:block;font:800 19px Sora,sans-serif;letter-spacing:-.02em">{{ bq.pubT }}</span><span style="display:block;margin-top:5px;font:400 13px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ bq.pubS }}</span></span>
+      <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" on-click="{{ bq.onPub }}" hint-size="180px,42px">{{ bq.pubBtn }}</x-import>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isNoche }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-NOCHE · desktop" style="background:#0B0E12;color:#fff;padding:36px 36px 60px">
+    <div style="max-width:1040px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <span style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.18em;color:#FF2D7A">{{ nv.head }}</span>
+        <span onClick="{{ nv.onClose }}" style="display:flex;align-items:center;gap:6px;cursor:pointer;color:rgba(255,255,255,.72)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 16 }}" hint-size="16px,16px"></x-import><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ nv.closeT }}</span></span>
+      </div>
+      <div style="margin-top:22px;display:grid;grid-template-columns:64px minmax(0,420px) minmax(0,1fr) 64px;gap:24px;align-items:center">
+        <span onClick="{{ nv.onPrev }}" style="width:52px;height:52px;border-radius:999px;background:rgba(255,255,255,.08);display:grid;place-items:center;cursor:pointer;opacity:{{ nv.prevOp }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 20 }}" hint-size="20px,20px"></x-import></span>
+        <div style="position:relative;aspect-ratio:9/14;border-radius:26px;overflow:hidden;background:#14181F">
+          <img src="{{ nv.cur.img }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+          <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,.35),rgba(11,14,18,0) 35%,rgba(11,14,18,0) 60%,rgba(11,14,18,.85))"></div>
+          <div style="position:absolute;top:16px;left:18px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(255,255,255,.75)">{{ nv.cur.idx }}</div>
+          <div style="position:absolute;left:18px;right:18px;bottom:16px">
+            <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:#FF2D7A">{{ nv.cur.when }}</div>
+            <div style="margin-top:6px;font:800 24px/1.1 Sora,sans-serif;letter-spacing:-.035em">{{ nv.cur.title }}</div>
+          </div>
+        </div>
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;font:600 12px 'JetBrains Mono',monospace;letter-spacing:.05em;color:rgba(255,255,255,.72)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 14 }}" hint-size="14px,14px"></x-import><span>{{ nv.cur.venue }}</span></div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
+            <span style="display:flex"><sc-for list="{{ nv.cur.faces }}" as="f" hint-placeholder-count="3"><img src="{{ f }}" alt="" style="width:28px;height:28px;border-radius:999px;object-fit:cover;border:2px solid #0B0E12;margin-left:-9px;display:block"></sc-for></span>
+            <span style="font:600 11.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(255,255,255,.72)">{{ nv.cur.goingT }}</span>
+          </div>
+          <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap">
+            <span onClick="{{ nv.cur.onCta }}" style="padding:14px 26px;border-radius:14px;background:#FF2D7A;font:800 14px Manrope,sans-serif;cursor:pointer">{{ nv.cur.cta }}</span>
+            <span onClick="{{ nv.cur.onOpen }}" style="padding:14px 20px;border-radius:14px;background:rgba(255,255,255,.1);font:800 13.5px Manrope,sans-serif;cursor:pointer">{{ nv.cur.moreT }}</span>
+            <span onClick="{{ nv.cur.onLike }}" style="width:48px;height:48px;border-radius:14px;background:rgba(255,255,255,.08);display:grid;place-items:center;cursor:pointer;color:{{ nv.cur.heartFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 19 }}" fill="{{ nv.cur.heartFill }}" hint-size="19px,19px"></x-import></span>
+          </div>
+          <div style="margin-top:12px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.5)">{{ nv.cur.priceT }}</div>
+        </div>
+        <span onClick="{{ nv.onNext }}" style="width:52px;height:52px;border-radius:999px;background:rgba(255,255,255,.08);display:grid;place-items:center;cursor:pointer;opacity:{{ nv.nextOp }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 20 }}" hint-size="20px,20px"></x-import></span>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isLst }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-LISTING · desktop" style="background:{{ ls.th.bg }};color:{{ ls.th.fg }};padding:32px 36px 70px;animation:eFade .2s ease-out">
+    <div style="max-width:1160px;margin:0 auto">
+      <div onClick="{{ ls.onBack }}" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:{{ ls.th.w6 }};font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ ls.backT }}</div>
+      <div style="margin-top:18px;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:32px 48px;align-items:start">
+        <div style="min-width:0">
+          <div style="position:relative;border-radius:22px;overflow:hidden;background:{{ ls.th.card }};aspect-ratio:16/9">
+            <img src="{{ ls.img }}" alt="" style="width:100%;height:100%;object-fit:cover;display:block">
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,14,18,0) 45%,rgba(11,14,18,.8))"></div>
+            <sc-if value="{{ ls.goingTag }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:16px;bottom:14px;padding:6px 10px;border-radius:8px;background:#00E5C4;color:#04120F;font:800 10px 'JetBrains Mono',monospace;letter-spacing:.1em">{{ ls.goingTagT }}</span></sc-if>
+            <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px">
+              <span onClick="{{ ls.onLike }}" style="width:40px;height:40px;border-radius:12px;background:rgba(11,14,18,.55);backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;color:{{ ls.heartFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="heart" size="{{ 18 }}" fill="{{ ls.heartFill }}" hint-size="18px,18px"></x-import></span>
+              <span onClick="{{ ls.onShare }}" style="width:40px;height:40px;border-radius:12px;background:rgba(11,14,18,.55);backdrop-filter:blur(10px);display:grid;place-items:center;cursor:pointer;color:#fff"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="share" size="{{ 18 }}" hint-size="18px,18px"></x-import></span>
+            </div>
+          </div>
+          <div style="margin-top:22px">
+            <div style="font:700 11px 'JetBrains Mono',monospace;letter-spacing:.16em;color:{{ ls.th.ac }}">{{ ls.when }}</div>
+            <h1 style="margin:9px 0 0;font:800 34px/1.08 Sora,sans-serif;letter-spacing:-.045em">{{ ls.title }}</h1>
+            <div onClick="{{ ls.onMap }}" style="margin-top:10px;display:flex;align-items:center;gap:7px;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 14 }}" color="{{ ls.th.w6 }}" hint-size="14px,14px"></x-import><span style="font:600 13.5px Manrope,sans-serif;color:{{ ls.th.w8 }}">{{ ls.venue }}</span><span style="font:600 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ ls.th.w45 }}">{{ ls.dist }}</span></div>
+            <div style="margin-top:13px;display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ls.tags }}" as="tg" hint-placeholder-count="3"><span style="padding:6px 10px;border-radius:8px;background:{{ ls.th.w09 }};font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w8 }}">{{ tg.t }}</span></sc-for></div>
+          </div>
+          <sc-if value="{{ ls.hasDesc }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;max-width:680px;font:400 14px/1.65 Manrope,sans-serif;color:{{ ls.th.w75 }};text-wrap:pretty">{{ ls.desc }}</div></sc-if>
+          <sc-if value="{{ ls.hasSt }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;padding:14px 16px;border-radius:16px;background:{{ ls.stBg }}"><div style="font:800 14px Manrope,sans-serif;color:{{ ls.stFg }}">{{ ls.stT }}</div><div style="margin-top:3px;font:400 12.5px/1.55 Manrope,sans-serif;color:{{ ls.th.w72 }}">{{ ls.stS }}</div></div></sc-if>
+          <div style="margin-top:20px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};overflow:hidden;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))">
+            <sc-for list="{{ ls.rows }}" as="w" hint-placeholder-count="3">
+              <div onClick="{{ w.onClick }}" style="padding:15px 16px;border-right:1px solid {{ ls.th.w07 }};cursor:pointer;min-width:0">
+                <span style="display:flex;align-items:center;gap:8px;color:{{ ls.th.w6 }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ w.ic }}" size="{{ 15 }}" hint-size="15px,15px"></x-import><sc-if value="{{ w.hasLink }}" hint-placeholder-val="{{ false }}"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:{{ ls.th.ac }}">{{ w.link }}</span></sc-if></span>
+                <span style="display:block;margin-top:8px;font:700 13px Manrope,sans-serif">{{ w.t }}</span>
+                <span style="display:block;margin-top:3px;font:400 11.5px/1.45 Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ w.s }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ ls.hasSer }}" hint-placeholder-val="{{ false }}"><div style="margin-top:22px"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.serK }}</span><span style="font:400 12px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ ls.serS }}</span></div><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><sc-for list="{{ ls.ser }}" as="x" hint-placeholder-count="4"><span onClick="{{ x.onClick }}" style="height:38px;padding:0 14px;border-radius:11px;border:1.5px solid {{ x.bd }};background:{{ x.bg }};color:{{ x.fg }};display:grid;place-items:center;font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.06em;cursor:pointer;white-space:nowrap">{{ x.l }}</span></sc-for></div></div></sc-if>
+
+          <sc-if value="{{ ls.hasDays }}" hint-placeholder-val="{{ false }}"><div style="margin-top:22px"><div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.daysK }}</div><div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px"><sc-for list="{{ ls.days }}" as="x" hint-placeholder-count="3"><div style="padding:12px 14px;border-radius:14px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }}"><div style="font:700 13px Manrope,sans-serif">{{ x.l }}</div><div style="margin-top:3px;font:600 11px 'JetBrains Mono',monospace;color:{{ ls.th.w6 }}">{{ x.s }}</div></div></sc-for></div></div></sc-if>
+
+          <sc-if value="{{ ls.hasLu }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:28px">
+            <div style="font:800 20px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.luT }}</div>
+            <div style="margin-top:16px;display:flex;flex-direction:column">
+              <sc-for list="{{ ls.lu }}" as="l" hint-placeholder-count="3">
+                <div style="display:flex;gap:16px">
+                  <span style="display:flex;flex-direction:column;align-items:center"><span style="width:9px;height:9px;border-radius:999px;background:{{ ls.th.ac }};margin-top:5px"></span><sc-if value="{{ l.notLast }}" hint-placeholder-val="{{ true }}"><span style="flex:1;width:1.5px;background:{{ ls.th.w14 }};margin:4px 0"></span></sc-if></span>
+                  <span style="flex:1;padding-bottom:20px;min-width:0;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:{{ ls.th.w5 }};width:70px;flex:none">{{ l.t }}</span><span style="font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ l.who }}</span><span style="font:400 12.5px Manrope,sans-serif;color:{{ ls.th.w55 }}">{{ l.role }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <div style="margin-top:8px;padding:15px 16px;border-radius:18px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w09 }};display:flex;align-items:center;gap:12px">
+            <span style="display:flex"><sc-for list="{{ ls.faces }}" as="f" hint-placeholder-count="4"><img src="{{ f }}" alt="" style="width:32px;height:32px;border-radius:999px;object-fit:cover;border:2px solid {{ ls.th.card }};margin-left:-10px;display:block"></sc-for></span>
+            <span style="flex:1;font:700 13.5px Manrope,sans-serif">{{ ls.goingT }}</span>
+            <span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ ls.th.w45 }}">{{ ls.goingS }}</span>
+          </div>
+
+          <sc-if value="{{ ls.hasGal }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:28px">
+            <div style="font:800 20px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.galT }}</div>
+            <div style="margin-top:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px"><sc-for list="{{ ls.gal }}" as="g" hint-placeholder-count="3"><img src="{{ g }}" alt="" style="width:100%;aspect-ratio:4/3;border-radius:16px;object-fit:cover;display:block"></sc-for></div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ ls.hasBefore }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:28px">
+            <div style="font:800 20px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.beforeT }}</div>
+            <div style="margin-top:12px;display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ ls.before }}" as="b" hint-placeholder-count="2"><div style="display:flex;gap:10px;align-items:flex-start"><span style="color:{{ ls.th.ac }};padding-top:2px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="info" size="{{ 15 }}" hint-size="15px,15px"></x-import></span><span style="font:400 13px/1.6 Manrope,sans-serif;color:{{ ls.th.w72 }}">{{ b.t }}</span></div></sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ ls.hasRel }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:30px">
+            <div style="font:800 20px/1 Sora,sans-serif;letter-spacing:-.03em">{{ ls.relT }}</div>
+            <div class="ehs" style="margin-top:14px;display:flex;gap:14px;overflow-x:auto;padding-bottom:4px">
+              <sc-for list="{{ ls.rel }}" as="rl" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" dark="{{ ls.th.dark }}" tag="{{ rl.tag }}" title="{{ rl.title }}" meta="{{ rl.meta }}" image="{{ rl.image }}" on-click="{{ rl.onClick }}" hint-size="212px,180px"></x-import></sc-for>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+
+        <div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+          <div style="border-radius:20px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w1 }};padding:18px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 22px Sora,sans-serif;letter-spacing:-.03em">{{ ls.barP }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w5 }}">{{ ls.barS }}</span></div>
+            <sc-if value="{{ ls.hasTks }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:12px;display:flex;flex-direction:column">
+              <sc-for list="{{ ls.tks }}" as="tk" hint-placeholder-count="2">
+                <div style="padding:10px 0;border-top:1px solid {{ ls.th.w08 }};display:flex;align-items:center;gap:10px">
+                  <span style="flex:1;min-width:0;font:700 12.5px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tk.n }}</span>
+                  <sc-if value="{{ tk.hasLeft }}" hint-placeholder-val="{{ false }}"><span style="padding:3px 7px;border-radius:6px;background:rgba(255,176,32,.15);color:{{ ls.th.warn }};font:800 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em">{{ tk.leftT }}</span></sc-if>
+                  <span style="font:800 13.5px Sora,sans-serif">{{ tk.p }}</span>
+                </div>
+              </sc-for>
+            </div>
+            </sc-if>
+            <sc-if value="{{ ls.free }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px"><div style="font:700 12.5px Manrope,sans-serif">{{ ls.freeT }}</div><div style="margin-top:4px;font:400 11.5px/1.55 Manrope,sans-serif;color:{{ ls.th.w6 }}">{{ ls.freeS }}</div></div></sc-if>
+            <sc-if value="{{ ls.hasParty }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding-top:12px;border-top:1px solid {{ ls.th.w07 }}"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w5 }}">{{ ls.partyK }}</span><span style="font:400 11px Manrope,sans-serif;color:{{ ls.th.w5 }}">{{ ls.partyS }}</span></div><div style="margin-top:9px;display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ ls.party }}" as="p" hint-placeholder-count="4"><span onClick="{{ p.onClick }}" style="min-width:40px;height:38px;padding:0 10px;box-sizing:border-box;border-radius:11px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};display:grid;place-items:center;font:800 13px Manrope,sans-serif;cursor:pointer">{{ p.l }}</span></sc-for></div></div></sc-if>
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <span onClick="{{ ls.onBar }}" style="flex:1;text-align:center;padding:14px;border-radius:14px;background:{{ ls.barBg }};color:{{ ls.barFg }};font:800 14px Manrope,sans-serif;cursor:pointer">{{ ls.barCta }}</span>
+              <sc-if value="{{ ls.barAlt }}" hint-placeholder-val="{{ false }}"><span onClick="{{ ls.onBarAlt }}" style="padding:14px 16px;border-radius:14px;background:{{ ls.th.w1 }};font:800 13px Manrope,sans-serif;cursor:pointer">{{ ls.barAltT }}</span></sc-if>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:7px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="verified" size="{{ 13 }}" color="{{ ls.th.ok }}" hint-size="13px,13px"></x-import><span style="font:700 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ ls.th.ok }}">{{ ls.line }}</span></div>
+          </div>
+          <sc-if value="{{ ls.hasMesas }}" hint-placeholder-val="{{ false }}">
+          <div style="border-radius:20px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w1 }};padding:16px 18px">
+            <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:{{ ls.th.w45 }}">{{ ls.mesasT }}</div>
+            <div style="margin-top:6px;display:flex;flex-direction:column">
+              <sc-for list="{{ ls.mesas }}" as="m" hint-placeholder-count="2">
+                <div onClick="{{ m.onClick }}" style="padding:10px 0;border-bottom:1px solid {{ ls.th.w07 }};display:flex;align-items:center;gap:10px;cursor:pointer">
+                  <span style="flex:1;min-width:0"><span style="display:block;font:700 12.5px Manrope,sans-serif">{{ m.z }}</span><span style="display:block;margin-top:2px;font:400 11px/1.45 Manrope,sans-serif;color:{{ ls.th.w5 }}">{{ m.s }}</span></span>
+                  <span style="font:800 13.5px Sora,sans-serif">{{ m.depT }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:9px;font:400 11px/1.5 Manrope,sans-serif;color:{{ ls.th.w5 }}">{{ ls.mesaNote }}</div>
+          </div>
+          </sc-if>
+          <div style="border-radius:20px;background:{{ ls.th.card }};border:1px solid {{ ls.th.w1 }};padding:16px 18px;display:flex;align-items:center;gap:12px">
+            <span style="width:42px;height:42px;border-radius:12px;background:{{ ls.th.w08 }};display:grid;place-items:center;font:800 14px Sora,sans-serif">{{ ls.orgIni }}</span>
+            <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ ls.orgN }}</span><span style="display:block;margin-top:2px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:{{ ls.th.w5 }}">{{ ls.orgS }}</span></span>
+            <span onClick="{{ ls.onOrg }}" style="padding:9px 12px;border-radius:11px;background:{{ ls.th.w1 }};font:800 11px Manrope,sans-serif;cursor:pointer;white-space:nowrap">{{ ls.orgBtn }}</span>
+          </div>
+          <div style="border-radius:16px;background:{{ ls.th.w05 }};border:1px solid {{ ls.th.w08 }};padding:13px 15px">
+            <div style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.14em;color:{{ ls.th.w45 }}">{{ ls.polT }}</div>
+            <div style="margin-top:6px;font:400 11px/1.6 Manrope,sans-serif;color:{{ ls.th.w62 }}">{{ ls.pol }}</div>
+          </div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isTk }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-BOLETOS · desktop" style="max-width:1160px;margin:0 auto;padding:28px 36px 70px;animation:eFade .2s ease-out">
+    <div onClick="{{ tk.onBack }}" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:rgba(11,14,18,.55);font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ tk.evT }}</div>
+    <h1 style="margin:12px 0 0;font:800 30px/1.08 Sora,sans-serif;letter-spacing:-.045em">{{ tk.title }}</h1>
+    <div style="margin-top:6px;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5)">{{ tk.evS }}</div>
+    <div style="margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:32px 48px;align-items:start">
+      <div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.tksK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ tk.maxT }}</span></div>
+          <div style="margin-top:6px;display:flex;flex-direction:column">
+            <sc-for list="{{ tk.tRows }}" as="w" hint-placeholder-count="2">
+              <div style="padding:13px 0;border-bottom:1px solid rgba(11,14,18,.06);display:flex;align-items:center;gap:14px">
+                <span style="flex:1;min-width:0"><span style="display:block;font:700 14px Manrope,sans-serif">{{ w.n }}</span><sc-if value="{{ w.hasS }}" hint-placeholder-val="{{ false }}"><span style="display:block;margin-top:2px;font:400 12px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ w.s }}</span></sc-if><span style="display:block;margin-top:3px;font:800 13.5px Sora,sans-serif">{{ w.p }}</span></span>
+                <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.QtyStepper" value="{{ w.qty }}" on-dec="{{ w.onDec }}" on-inc="{{ w.onInc }}" hint-size="100px,36px"></x-import>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ tk.hasMesas }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.mesasK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ tk.mesasS }}</span></div>
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+            <sc-for list="{{ tk.mesas }}" as="m" hint-placeholder-count="2">
+              <div onClick="{{ m.onSel }}" style="padding:13px 14px;border-radius:14px;border:1.5px solid {{ m.bd }};background:{{ m.bg }};display:flex;align-items:flex-start;gap:11px;cursor:pointer">
+                <span style="width:19px;height:19px;border-radius:999px;border:1.5px solid {{ m.rb }};display:grid;place-items:center;flex:none;margin-top:1px"><sc-if value="{{ m.sel }}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;border-radius:999px;background:#4B37F5"></span></sc-if></span>
+                <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ m.z }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ m.s }}</span></span>
+                <span style="text-align:right;flex:none"><span style="display:block;font:800 14px Sora,sans-serif">{{ m.depT }}</span><span style="display:block;margin-top:2px;font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:{{ m.leftFg }}">{{ m.leftT }}</span></span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top:10px;font:400 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ tk.mesaNote }}</div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ tk.hasAdds }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ tk.addsK }}</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ tk.adds }}" as="a" hint-placeholder-count="2">
+              <div style="opacity:{{ a.op }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.AddOnRow" label="{{ a.label }}" price="{{ a.price }}" checked="{{ a.checked }}" on-toggle="{{ a.onToggle }}" hint-size="100%,48px"></x-import>
+              <sc-if value="{{ a.hasNote }}" hint-placeholder-val="{{ false }}"><div style="margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#C0392B">{{ a.note }}</div></sc-if></div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+      <div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+        <div style="border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:18px">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.sumK }}</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column">
+            <sc-for list="{{ py.sumRows }}" as="w" hint-placeholder-count="3"><div style="padding:7px 0;display:flex;justify-content:space-between;gap:12px;font:600 12.5px Manrope,sans-serif;color:{{ w.fg }}"><span style="min-width:0">{{ w.l }}</span><span style="white-space:nowrap">{{ w.v }}</span></div></sc-for>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <input value="{{ tk.codeVal }}" onChange="{{ tk.onCode }}" placeholder="{{ tk.codePh }}" style="flex:1;min-width:0;padding:10px 12px;border-radius:12px;border:1.5px solid rgba(11,14,18,.12);background:#F7F6F3;font:700 11.5px 'JetBrains Mono',monospace;letter-spacing:.08em;outline:none;text-transform:uppercase">
+            <span onClick="{{ tk.onApply }}" style="padding:10px 13px;border-radius:12px;background:#0B0E12;color:#fff;font:800 11.5px Manrope,sans-serif;cursor:pointer;display:grid;place-items:center">{{ tk.applyT }}</span>
+          </div>
+          <sc-if value="{{ tk.hasCodeMsg }}" hint-placeholder-val="{{ false }}"><div style="margin-top:7px;font:700 10.5px 'JetBrains Mono',monospace;color:{{ tk.codeFg }}">{{ tk.codeMsg }}</div></sc-if>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(11,14,18,.08);display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">TOTAL</span><span style="font:800 24px Sora,sans-serif;letter-spacing:-.03em">{{ tk.total }}</span></div>
+          <div style="margin-top:12px;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ tk.onCta }}" hint-size="100%,48px">{{ tk.cta }}</x-import></div>
+          <div style="margin-top:9px;font:600 10.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.55);text-align:center">{{ tk.holdT }}</div>
+        </div>
+        <div style="padding:11px 14px;border-radius:13px;background:#0B0E12;display:flex;align-items:center;gap:9px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="verified" size="{{ 14 }}" color="#00E5C4" hint-size="14px,14px"></x-import><span style="font:700 8.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(255,255,255,.82)">{{ bq.line }}</span></div>
+      </div></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isPay }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-PAGO · desktop" style="max-width:1160px;margin:0 auto;padding:28px 36px 70px;animation:eFade .2s ease-out">
+    <div onClick="{{ py.onBack }}" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:rgba(11,14,18,.55);font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ py.backT }}</div>
+    <h1 style="margin:12px 0 0;font:800 30px/1.08 Sora,sans-serif;letter-spacing:-.045em">{{ py.title }}</h1>
+    <div style="margin-top:22px;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:32px 48px;align-items:start">
+      <div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+        <sc-if value="{{ py.errShow }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:14px 16px;border-radius:16px;background:rgba(192,57,43,.08);border:1.5px solid rgba(192,57,43,.35)">
+          <div style="display:flex;gap:10px;align-items:flex-start"><span style="color:#C0392B;padding-top:1px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="warning" size="{{ 16 }}" hint-size="16px,16px"></x-import></span>
+          <span style="flex:1"><span style="display:block;font:700 13.5px Manrope,sans-serif;color:#C0392B">{{ py.errT }}</span><span style="display:block;margin-top:3px;font:400 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ py.errS }}</span></span>
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" on-click="{{ py.onSwapCard }}" hint-size="140px,34px">{{ py.swapT }}</x-import></div>
+        </div>
+        </sc-if>
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="display:flex;justify-content:space-between;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.namesK }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ py.namesS }}</span></div>
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">
+            <sc-for list="{{ py.names }}" as="n" hint-placeholder-count="2">
+              <div><div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ n.label }}</div>
+              <input value="{{ n.val }}" onChange="{{ n.onChange }}" placeholder="{{ n.ph }}" style="margin-top:6px;width:100%;box-sizing:border-box;padding:11px 13px;border-radius:12px;border:1.5px solid rgba(11,14,18,.12);background:#F7F6F3;font:600 13.5px Manrope,sans-serif;outline:none"></div>
+            </sc-for>
+          </div>
+          <div style="margin-top:10px;font:400 11.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.5)">{{ py.namesN }}</div>
+        </div>
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.payK }}</div>
+          <div style="margin-top:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">
+            <sc-for list="{{ py.pays }}" as="p" hint-placeholder-count="2">
+              <div onClick="{{ p.onSel }}" style="padding:13px 14px;border-radius:14px;border:1.5px solid {{ p.bd }};background:{{ p.bg }};display:flex;align-items:center;gap:11px;cursor:pointer">
+                <span style="width:19px;height:19px;border-radius:999px;border:1.5px solid {{ p.rb }};display:grid;place-items:center;flex:none"><sc-if value="{{ p.sel }}" hint-placeholder-val="{{ false }}"><span style="width:10px;height:10px;border-radius:999px;background:#4B37F5"></span></sc-if></span>
+                <span style="width:34px;height:34px;border-radius:10px;background:rgba(11,14,18,.05);display:grid;place-items:center;color:rgba(11,14,18,.7)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ p.ic }}" size="{{ 16 }}" hint-size="16px,16px"></x-import></span>
+                <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif">{{ p.t }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ p.s }}</span></span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="padding:13px 15px;border-radius:14px;background:rgba(11,14,18,.04)">
+          <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ py.polK }}</div>
+          <div style="margin-top:6px;font:400 12px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ py.pol }}</div>
+        </div>
+      </div>
+      <div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+        <div style="padding:11px 14px;border-radius:13px;background:#0B0E12;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(255,255,255,.72)">{{ py.holdK }}</span>
+          <span style="font:800 13px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#00E5C4">{{ py.holdV }}</span>
+        </div>
+        <div style="border-radius:20px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:18px">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ py.sumK }}</div>
+          <div style="margin-top:8px;display:flex;flex-direction:column">
+            <sc-for list="{{ py.sumRows }}" as="w" hint-placeholder-count="3"><div style="padding:7px 0;display:flex;justify-content:space-between;gap:12px;font:600 12.5px Manrope,sans-serif;color:{{ w.fg }}"><span style="min-width:0">{{ w.l }}</span><span style="white-space:nowrap">{{ w.v }}</span></div></sc-for>
+          </div>
+          <div style="margin-top:10px;padding-top:12px;border-top:1px solid rgba(11,14,18,.08);display:flex;justify-content:space-between;align-items:baseline"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ py.barK }}</span><span style="font:800 24px Sora,sans-serif;letter-spacing:-.03em">{{ py.barV }}</span></div>
+          <div style="margin-top:6px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#00695B">{{ py.line }}</div>
+          <div style="margin-top:12px;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ py.onCta }}" hint-size="100%,48px">{{ py.cta }}</x-import></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isOrd }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-ORDEN · desktop" style="max-width:1160px;margin:0 auto;padding:28px 36px 70px;animation:eFade .2s ease-out">
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="width:50px;height:50px;border-radius:999px;background:{{ od.topBg }};display:grid;place-items:center;color:{{ od.topFg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ od.topIc }}" size="{{ 24 }}" hint-size="24px,24px"></x-import></span>
+      <span><span style="display:block;font:800 26px/1.1 Sora,sans-serif;letter-spacing:-.04em">{{ od.topT }}</span><span style="display:block;margin-top:4px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ od.topS }}</span></span>
+    </div>
+    <sc-if value="{{ od.bannerShow }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:16px;padding:15px 17px;border-radius:16px;background:{{ od.bnBg }};border:1.5px solid {{ od.bnBd }};max-width:760px">
+      <div style="font:700 14px Manrope,sans-serif;color:{{ od.bnFg }}">{{ od.bnT }}</div>
+      <div style="margin-top:5px;font:400 12.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.7)">{{ od.bnS }}</div>
+      <sc-if value="{{ od.bnActs }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:11px;display:flex;gap:8px;max-width:460px">
+        <span onClick="{{ od.onBnKeep }}" style="flex:1;text-align:center;padding:11px;border-radius:12px;background:#0B0E12;color:#fff;font:800 12.5px Manrope,sans-serif;cursor:pointer">{{ od.bnKeepT }}</span>
+        <span onClick="{{ od.onBnRef }}" style="flex:1;text-align:center;padding:11px;border-radius:12px;border:1.5px solid rgba(11,14,18,.14);font:800 12.5px Manrope,sans-serif;cursor:pointer">{{ od.bnRefT }}</span>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+    <div style="margin-top:24px;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:32px 48px;align-items:start">
+      <div style="min-width:0;display:flex;flex-direction:column;gap:16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+          <sc-for list="{{ od.tks }}" as="k" hint-placeholder-count="2">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.TicketQR" dc-props="{{ k.ds }}" hint-size="100%,300px"></x-import>
+          </sc-for>
+        </div>
+        <div style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ od.brightT }}</div>
+        <sc-if value="{{ od.mesaShow }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ od.mesaK }}</div>
+          <div style="margin-top:7px;font:800 16px Sora,sans-serif;letter-spacing:-.02em">{{ od.mesaZ }}</div>
+          <div style="margin-top:4px;font:400 12.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ od.mesaS }}</div>
+        </div>
+        </sc-if>
+        <div style="padding:18px 20px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)">
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ od.steps }}" horizontal="{{ true }}" hint-size="100%,90px"></x-import>
+        </div>
+        <sc-if value="{{ od.rateShow }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <span style="flex:1;min-width:200px;font:800 15px Sora,sans-serif;letter-spacing:-.02em">{{ od.rateT }}</span>
+          <span style="display:flex;gap:6px"><sc-for list="{{ od.stars }}" as="st" hint-placeholder-count="5"><span onClick="{{ st.onClick }}" style="cursor:pointer;color:{{ st.fg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="star" size="{{ 26 }}" fill="{{ st.fill }}" hint-size="26px,26px"></x-import></span></sc-for></span>
+        </div>
+        </sc-if>
+        <sc-if value="{{ od.rcpShow }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;max-width:560px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.ReceiptCard" business="{{ od.rcp.business }}" address="{{ od.rcp.address }}" status="{{ od.rcp.status }}" status-tone="{{ od.rcp.statusTone }}" meta="{{ od.rcp.meta }}" lines="{{ od.rcp.lines }}" rows="{{ od.rcp.rows }}" total="{{ od.rcp.total }}" events="{{ od.rcp.events }}" net-label="{{ od.rcp.netLabel }}" net="{{ od.rcp.net }}" foot="{{ od.rcp.foot }}" hint-size="100%,400px"></x-import></div>
+        </sc-if>
+      </div>
+      <div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+        <div onClick="{{ od.onOpenEvt }}" style="padding:14px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;align-items:center;gap:12px;cursor:pointer">
+          <img src="{{ od.img }}" alt="" style="width:52px;height:52px;border-radius:13px;object-fit:cover;display:block">
+          <span style="flex:1;min-width:0"><span style="display:block;font:800 14px Sora,sans-serif;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ od.evT }}</span><span style="display:block;margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ od.evS }}</span></span>
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 16 }}" color="rgba(11,14,18,.35)" hint-size="16px,16px"></x-import>
+        </div>
+        <div style="border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+          <sc-for list="{{ od.acts }}" as="a" hint-placeholder-count="4">
+            <div onClick="{{ a.onClick }}" style="padding:13px 15px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(11,14,18,.06);cursor:pointer">
+              <span style="width:36px;height:36px;border-radius:11px;background:rgba(11,14,18,.05);display:grid;place-items:center;color:{{ a.fg }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ a.ic }}" size="{{ 17 }}" hint-size="17px,17px"></x-import></span>
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 13px Manrope,sans-serif;color:{{ a.fg }}">{{ a.t }}</span><span style="display:block;margin-top:2px;font:400 11.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ a.s }}</span></span>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" color="rgba(11,14,18,.3)" hint-size="15px,15px"></x-import>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:13px 15px;border-radius:14px;background:rgba(11,14,18,.04)">
+          <div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.45)">{{ od.polK }}</div>
+          <div style="margin-top:6px;font:400 11.5px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.62)">{{ od.pol }}</div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{ isMis }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="APP-EVT-MIS · desktop" style="max-width:760px;margin:0 auto;padding:28px 36px 70px;animation:eFade .2s ease-out">
+    <div onClick="{{ ms.onBack }}" style="display:inline-flex;align-items:center;gap:7px;cursor:pointer;color:rgba(11,14,18,.55);font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" hint-size="15px,15px"></x-import>{{ ms.backT }}</div>
+    <h1 style="margin:12px 0 0;font:800 30px/1.08 Sora,sans-serif;letter-spacing:-.045em">{{ ms.title }}</h1>
+    <sc-if value="{{ ms.emptyShow }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:20px;padding:34px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);text-align:center">
+        <span style="width:46px;height:46px;border-radius:14px;background:rgba(255,45,122,.1);display:inline-grid;place-items:center;color:#FF2D7A"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="ticket" size="{{ 22 }}" hint-size="22px,22px"></x-import></span>
+        <div style="margin-top:10px;font:800 17px Sora,sans-serif;letter-spacing:-.02em">{{ ms.emptyT }}</div>
+        <div style="margin-top:6px;font:400 13px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ ms.emptyS }}</div>
+        <div style="margin-top:14px;display:inline-flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" on-click="{{ ms.onCta }}" hint-size="140px,40px">{{ ms.cta }}</x-import></div>
+      </div>
+    </sc-if>
+    <sc-for list="{{ ms.groups }}" as="g" hint-placeholder-count="2">
+      <div style="margin-top:22px">
+        <div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ g.t }}</div>
+        <div style="margin-top:10px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);overflow:hidden">
+          <sc-for list="{{ g.rows }}" as="w" hint-placeholder-count="2">
+            <div onClick="{{ w.onOpen }}" style="padding:14px 16px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(11,14,18,.06);cursor:pointer;opacity:{{ w.op }}">
+              <img src="{{ w.img }}" alt="" style="width:52px;height:52px;border-radius:13px;object-fit:cover;display:block">
+              <span style="flex:1;min-width:0"><span style="display:block;font:700 14px Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ w.t }}</span><span style="display:block;margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ w.s }}</span></span>
+              <span style="flex:none;padding:5px 9px;border-radius:7px;background:{{ w.tagBg }};color:{{ w.tagFg }};font:800 9px 'JetBrains Mono',monospace;letter-spacing:.08em">{{ w.tag }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;left:0;right:0;bottom:24px;z-index:120;display:flex;justify-content:center;pointer-events:none"><span style="max-width:80%;padding:11px 16px;border-radius:13px;background:#0B0E12;color:#fff;font:700 12.5px Manrope,sans-serif;box-shadow:0 14px 30px -12px rgba(0,0,0,.5);animation:eUp .25s ease-out">{{ toastT }}</span></div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 393, &quot;height&quot;: 820}, &quot;route&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{code: string, id?: string, o?: string}&quot;}, &quot;lang&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;'es'|'en'&quot;, &quot;default&quot;: &quot;es&quot;}, &quot;user&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object|null&quot;}, &quot;desk&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;boolean&quot;, &quot;default&quot;: false}, &quot;dw&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{nav, login, openBiz, encargo, vTop}&quot;}, &quot;sim&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;scen&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;, &quot;default&quot;: &quot;ok&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    let sv = {};
+    try { sv = JSON.parse(localStorage.getItem('tl-evt-v2') || '{}'); } catch (e) { sv = {}; }
+    this.state = { likes: sv.likes || {}, rsvp: sv.rsvp || {}, orders: sv.orders || [], wait: sv.wait || {}, fD: 'all', fT: 'all', sel: null, nIdx: 0, toast: null, help: false, tr: null, rcp: false, card2: false, payErr: false, altPick: null };
+  }
+  save() { const s = this.state; try { const L0 = JSON.parse(localStorage.getItem('tl-evt-v2') || '{}') || {}, W0 = L0.wait || {}, W = {}; Object.keys(s.wait || {}).forEach(k => { if (s.wait[k]) W[k] = { ...s.wait[k], ...(W0[k] && W0[k].off ? { off: W0[k].off } : {}) }; }); localStorage.setItem('tl-evt-v2', JSON.stringify({ ...L0, likes: s.likes, rsvp: s.rsvp, orders: s.orders, wait: W })); } catch (e) {} }
+  toast(t) { clearTimeout(this._tt); this.setState({ toast: t }); this._tt = setTimeout(() => this.setState({ toast: null }), 2600); }
+  nav(r) { this.props.api.nav(r); if (this.props.api.vTop) this.props.api.vTop(); }
+  componentDidUpdate(prev) {
+    if (prev.sim !== this.props.sim && this.props.sim) this.advance();
+    const r = this.props.route || {}, pr = prev.route || {};
+    if (r.code !== pr.code && r.code === 'APP-EVT-PAGO') this.startHold();
+  }
+  componentWillUnmount() { clearInterval(this._hi); clearTimeout(this._tt); }
+  startHold() { clearInterval(this._hi); this._hold = 8 * 60; this._hi = setInterval(() => { this._hold = Math.max(0, this._hold - 1); this.forceUpdate(); }, 1000); }
+  advance() {
+    const r = this.props.route || {};
+    if (r.code !== 'APP-EVT-ORDEN') return;
+    this.setState(z => ({ orders: z.orders.map(o => o.id === r.o ? { ...o, stage: Math.min(3, (o.stage || 0) + 1) } : o) }), () => this.save());
+  }
+  E2(a, b) { return (this.props.lang || 'es') === 'es' ? a : b; }
+  X() { if (window.TLEvP) window.TLEvP.sync(); const X = window.TLEvt; if (!X) return { E: [], P: () => '', FACES: [], byId: () => null, POL_PAGO: ['', ''], POL_GRATIS: ['', ''] }; const A = window.TLAdm; if (!A) return X; const E = X.E.filter(e => !A.evtHidden(e.id)); return Object.assign({}, X, { E }); }
+  dayD(d) { return new Date(2026, 8, 24 + d); }
+  /* Fecha corta: un día = «JUE 24 SEP · 10 PM»; varios días seguidos = «VIE 9 OCT – DOM 11 OCT». */
+  fR(e) { return (e.span || 1) > 1 ? this.fD(e.d) + ' – ' + this.fD(e.dEnd) : this.fD(e.d) + ' · ' + (e.t0); }
+  fD(d) { const es = (this.props.lang || 'es') === 'es'; return this.dayD(d).toLocaleDateString(es ? 'es' : 'en', { weekday: 'short', day: 'numeric', month: 'short' }).replace(/\./g, '').replace(/,/g, '').toUpperCase(); }
+  badge(d) { const es = (this.props.lang || 'es') === 'es', dt = this.dayD(d); return { m: dt.toLocaleDateString(es ? 'es' : 'en', { month: 'short' }).replace(/\./g, '').toUpperCase(), d: dt.getDate() }; }
+  money(n) { return '$' + (n % 1 ? n.toFixed(2) : n); }
+  faces(e) { const X = this.X(); const h = e.id.split('').reduce((a, c) => a + c.charCodeAt(0), 0); const out = []; for (let i = 0; i < Math.min(4, e.going); i++) out.push(X.P(X.FACES[(h + i) % X.FACES.length], 80)); return out; }
+  fromP(e) { if (e.free) return null; return Math.min.apply(null, (e.tks || []).map(t => t.p)); }
+  evLike(id) { return e => { if (e && e.stopPropagation) e.stopPropagation(); if (!this.props.user) { this.props.api.login({ ...(this.props.route || {}) }); return; } this.setState(z => ({ likes: { ...z.likes, [id]: !z.likes[id] } }), () => this.save()); }; }
+  card(e) {
+    const es = this.E2(true, false), X = this.X(), liked = !!this.state.likes[e.id], from = this.fromP(e);
+    const going = this.state.rsvp[e.id] || this.state.orders.some(o => o.evt === e.id && o.st === 'ok');
+    let tag = null;
+    if (going) tag = { t: this.E2('VAS', 'GOING'), bg: '#00E5C4', fg: '#04120F' };
+    else if (e.d === 0) tag = { t: this.E2('ESTA NOCHE', 'TONIGHT'), bg: '#FF2D7A', fg: '#fff' };
+    else if (e.free) tag = { t: 'GRATIS', bg: '#fff', fg: '#0B0E12' };
+    else { const min = Math.min.apply(null, (e.tks || []).map(t => t.left || 999)); if (min <= 20) tag = { t: this.E2('QUEDAN ' + min, min + ' LEFT'), bg: '#FFB020', fg: '#3A2A00' }; }
+    if (e.type === 'comida' && e.d === 0) tag = { t: 'HOY', bg: '#FF2D7A', fg: '#fff' };
+    const b = this.badge(e.d);
+    return { img: X.P(e.ph, 420), bm: b.m, bd: b.d, hasTag: !!tag, tagT: tag ? tag.t : '', tagBg: tag ? tag.bg : '#fff', tagFg: tag ? tag.fg : '#0B0E12',
+      title: es ? e.ti[0] : e.ti[1], meta: (e.venue + ' · ' + ((e.span || 1) > 1 ? e.span + this.E2(' DÍAS · HASTA EL ', ' DAYS · UNTIL ') + this.fD(e.dEnd) : e.t0)).toUpperCase(),
+      price: e.free ? this.E2('Gratis', 'Free') : this.E2('Desde ', 'From ') + this.money(from),
+      faces: this.faces(e), more: e.going > 4 ? '+' + (e.going - 4) : '',
+      heartFill: liked ? '#FF2D7A' : 'none', heartFg: liked ? '#FF2D7A' : '#fff',
+      onLike: this.evLike(e.id), onOpen: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }) };
+  }
+  filtered() {
+    const s = this.state, X = this.X();
+    return X.E.filter(e => {
+      if (s.fD === 'd0' && !(e.d <= 0 && (e.dEnd != null ? e.dEnd : e.d) >= 0)) return false;
+      if (s.fD === 'finde' && ((e.dEnd != null ? e.dEnd : e.d) < 1 || e.d > 3)) return false;
+      if (s.fD === 'next' && (e.dEnd != null ? e.dEnd : e.d) <= 3) return false;
+      if (s.fT === 'gratis' && !e.free) return false;
+      if (s.fT === 'pago' && e.free) return false;
+      if (s.fT === 'comunidad' && ['comunidad', 'fe', 'comida', 'clase'].indexOf(e.type) < 0) return false;
+      if (['Bachata', 'Merengue', 'Salsa', 'Dembow'].indexOf(s.fT) >= 0 && (e.gen || []).indexOf(s.fT) < 0) return false;
+      return true;
+    }).sort((a, b) => a.d - b.d);
+  }
+  chip(label, on, onClick) { return { label, bg: on ? '#0B0E12' : '#fff', fg: on ? '#fff' : 'rgba(11,14,18,.72)', bd: on ? '#0B0E12' : 'rgba(11,14,18,.12)', onClick }; }
+  bqVals() {
+    const s = this.state, es = this.E2(true, false), X = this.X();
+    const list = this.filtered(), all = X.E;
+    const tonight = all.filter(e => e.d === 0);
+    const myN = s.orders.filter(o => o.st === 'ok').length + Object.keys(s.rsvp).length;
+    const dOpts = [['all', this.E2('Todos', 'All')], ['d0', this.E2('Hoy', 'Today')], ['finde', this.E2('Este finde', 'This weekend')], ['next', this.E2('Próximos', 'Later')]];
+    const tOpts = [['all', this.E2('Todo', 'All')], ['gratis', 'Gratis'], ['pago', this.E2('Con boleto', 'Ticketed')], ['Bachata', 'Bachata'], ['Merengue', 'Merengue'], ['Salsa', 'Salsa'], ['Dembow', 'Dembow'], ['comunidad', this.E2('Comunidad', 'Community')]];
+    const secs = [];
+    const mk = (t, arr) => { if (arr.length) secs.push({ t, items: arr.map(e => this.card(e)) }); };
+    if (s.fD === 'all' && s.fT === 'all') {
+      mk(this.E2('Esta noche', 'Tonight'), list.filter(e => e.d === 0));
+      mk(this.E2('Este fin de semana', 'This weekend'), list.filter(e => e.d >= 1 && e.d <= 3));
+      mk(this.E2('Más adelante', 'Coming up'), list.filter(e => e.d > 3));
+    } else mk(this.E2('Resultados', 'Results'), list);
+    const feat = all.find(e => e.id === 'yeimy-en-concierto') || all[0];
+    return {
+      hasMine: myN > 0, mineT: this.E2('Mis boletos y RSVP', 'My tickets & RSVPs'), mineS: myN + this.E2(myN === 1 ? ' EVENTO' : ' EVENTOS', myN === 1 ? ' EVENT' : ' EVENTS'), onMine: () => this.nav({ code: 'APP-EVT-MIS' }),
+      tonightT: this.E2('Esta noche', 'Tonight'), seeT: this.E2('VER COMO HISTORIAS', 'VIEW AS STORIES'), storiesShow: tonight.length > 0, onAllTonight: () => { this.setState({ nIdx: 0 }); this.nav({ code: 'APP-EVT-NOCHE' }); },
+      stories: tonight.map((e, i) => ({ img: X.P(e.ph, 160), name: e.venue.replace(' Night Club', ''), onOpen: () => { this.setState({ nIdx: i }); this.nav({ code: 'APP-EVT-NOCHE' }); } })),
+      featShow: s.fD === 'all' && s.fT === 'all', feat: { img: X.P(feat.ph, 800), when: this.fD(feat.d) + ' · ' + feat.t0, title: es ? feat.ti[0] : feat.ti[1], meta: (feat.venue + ' · ' + (feat.age ? feat.age + '+' : this.E2('TODAS LAS EDADES', 'ALL AGES'))), cta: this.E2('Boletos', 'Tickets'), price: feat.free ? 'GRATIS' : this.E2('DESDE ', 'FROM ') + this.money(this.fromP(feat)), onOpen: () => this.nav({ code: 'APP-EVT-LISTING', id: feat.id }) },
+      line: this.E2('EL PRECIO QUE VES ES EL QUE PAGAS: CARGOS INCLUIDOS.', 'THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.'),
+      dates: dOpts.map(([k, l]) => this.chip(l, s.fD === k, () => this.setState({ fD: k }))),
+      types: tOpts.map(([k, l]) => this.chip(l, s.fT === k, () => this.setState({ fT: k }))),
+      count: list.length + this.E2(' EVENTOS EN HAZLETON', ' EVENTS IN HAZLETON'),
+      emptyShow: list.length === 0, emptyT: this.E2('Nada con esos filtros', 'Nothing with those filters'), emptyS: this.E2('Prueba otra fecha u otro tipo de plan.', 'Try another date or another kind of plan.'),
+      secs,
+      pubT: this.E2('¿Tu negocio tiene un evento?', 'Does your business have an event?'), pubS: this.E2('Publícalo gratis: boletos, RSVP, mesas y puerta, todo en To\u2019Latino.', 'Publish it free: tickets, RSVP, tables and door, all on To\u2019Latino.'), pubBtn: this.E2('Publica tu evento', 'Publish your event'),
+      onPub: () => this.nav({ code: 'APP-EVT-EDITAR' }),
+      tonightRows: tonight.map(e => ({ img: X.P(e.ph, 160), t: es ? e.ti[0] : e.ti[1], s: (e.venue + ' · ' + e.t0 + (e.age ? ' · ' + e.age + '+' : '')).toUpperCase(), p: e.free ? 'GRATIS' : this.money(this.fromP(e)), onOpen: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }) }))
+    };
+  }
+  share() { this.toast(this.E2('Enlace copiado para compartir', 'Link copied to share')); }
+  goTk(id) { const e = this.X().byId(id); if (!e) return; this.setState({ sel: { evt: id, tks: {}, mesa: null, adds: {}, code: '', codeOk: false, names: [] }, payErr: false }, () => this.nav({ code: 'APP-EVT-BOLETOS', id })); }
+  doRsvp(e) {
+    if (!this.props.user) { this.props.api.login({ code: 'APP-EVT-LISTING', id: e.id }); return; }
+    this.setState(z => { const r = { ...z.rsvp }; if (r[e.id]) delete r[e.id]; else r[e.id] = { at: Date.now(), n: (z.party || {})[e.id] || 1 }; return { rsvp: r }; }, () => { this.save(); if (this.state.rsvp[e.id]) this.toast(this.E2('Nos vemos ahí. Tu RSVP está guardado.', 'See you there. Your RSVP is saved.')); });
+  }
+  nvVals() {
+    const es = this.E2(true, false), X = this.X();
+    const tonight = X.E.filter(e => e.d === 0);
+    return {
+      head: this.E2('EVENTOS · ESTA NOCHE', 'EVENTS · TONIGHT'), closeT: this.E2('CERRAR', 'CLOSE'), onClose: () => this.nav({ code: 'APP-EVT-BUSQ' }),
+      slides: tonight.map((e, i) => { const liked = !!this.state.likes[e.id]; const from = this.fromP(e); return {
+        img: X.P(e.ph, 800), idx: (i + 1) + ' / ' + tonight.length,
+        when: this.E2('HOY', 'TONIGHT') + ' · ' + e.t0 + ' – ' + e.t1 + (e.age ? ' · ' + e.age + '+' : ''),
+        title: es ? e.ti[0] : e.ti[1], venue: e.venue + ' · ' + e.dist,
+        faces: this.faces(e), goingT: e.going + this.E2(' vecinos van', ' neighbors going'),
+        heartFill: liked ? '#FF2D7A' : 'none', heartFg: liked ? '#FF2D7A' : '#fff', likeN: e.going + (liked ? 1 : 0),
+        onLike: this.evLike(e.id), onShare: () => this.share(), shareT: this.E2('ENVIAR', 'SEND'),
+        cta: e.free ? this.E2('Voy · Gratis', 'Going · Free') : this.E2('Boletos', 'Tickets'),
+        onCta: () => { if (e.free) { this.doRsvp(e); } else this.goTk(e.id); },
+        moreT: this.E2('Ver más', 'Details'), onOpen: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }),
+        priceT: e.free ? this.E2('ENTRADA LIBRE · RSVP OPCIONAL', 'FREE ENTRY · OPTIONAL RSVP') : this.E2('DESDE ', 'FROM ') + this.money(from) + this.E2(' · CARGOS INCLUIDOS', ' · FEES INCLUDED')
+      }; })
+    };
+  }
+  nvDesk(nv) {
+    const n = nv.slides.length, i = Math.min(this.state.nIdx, Math.max(0, n - 1));
+    nv.cur = nv.slides[i] || { faces: [], tags: [] };
+    nv.onPrev = () => this.setState(z => ({ nIdx: Math.max(0, z.nIdx - 1) }));
+    nv.onNext = () => this.setState(z => ({ nIdx: Math.min(n - 1, z.nIdx + 1) }));
+    nv.prevOp = i === 0 ? .35 : 1; nv.nextOp = i >= n - 1 ? .35 : 1;
+    return nv;
+  }
+  lsVals() {
+    const es = this.E2(true, false), X = this.X(), r = this.props.route || {};
+    let e = X.byId(r.id);
+    if (!e && r.o) { const t = (r.o || '').toLowerCase(); e = X.E.find(x => x.ti[0].toLowerCase().indexOf(t) >= 0 || x.ti[1].toLowerCase().indexOf(t) >= 0); }
+    if (!e) e = X.E[0];
+    const V = window.TLEvP, F = (V && V.FMT[e.fmt || e.type]) || (V && V.FMT.noche) || { dark: 1, ages: [18, 21], tkL: ['Boletos', 'Tickets'], luL: ['Line up', 'Line up'], galL: ['El ambiente', 'The vibe'], cta: ['Boletos', 'Tickets'], l: ['', ''] }, L2 = p => p ? (es ? p[0] : p[1]) : '', dark = !!F.dark;
+    const AL = ['.05', '.07', '.08', '.09', '.1', '.12', '.14', '.45', '.5', '.55', '.6', '.62', '.72', '.75', '.8'], LM = { '.05': '.03', '.07': '.07', '.08': '.06', '.09': '.08', '.1': '.06', '.12': '.1', '.14': '.12', '.45': '.5', '.5': '.55', '.55': '.6', '.6': '.6', '.62': '.65', '.72': '.72', '.75': '.72', '.8': '.78' };
+    const th = Object.assign(dark ? { dark: true, bg: '#0B0E12', fg: '#fff', card: '#14181F', ac: '#FF2D7A', acT: 'rgba(255,45,122,.14)', ok: '#00E5C4', okBg: 'rgba(0,229,196,.1)', okBd: 'rgba(0,229,196,.25)', warn: '#FFB020', chipBg: '#fff', chipFg: '#0B0E12', bar: 'rgba(11,14,18,.92)' } : { dark: false, bg: '#fff', fg: '#0B0E12', card: '#F7F6F3', ac: '#4B37F5', acT: 'rgba(75,55,245,.1)', ok: '#00695B', okBg: 'rgba(0,229,196,.12)', okBd: 'rgba(0,168,143,.3)', warn: '#8A5A00', chipBg: '#0B0E12', chipFg: '#fff', bar: 'rgba(247,246,243,.96)' }, ...AL.map(a => ({ ['w' + a.slice(1)]: dark ? 'rgba(255,255,255,' + a + ')' : 'rgba(11,14,18,' + LM[a] + ')' })));
+    const liked = !!this.state.likes[e.id], from = this.fromP(e), rv = this.state.rsvp[e.id];
+    const myOrder = this.state.orders.find(o => o.evt === e.id && o.st === 'ok'), going = !!rv || !!myOrder;
+    const cx = e.st === 'cx' || e.st === 'admcx', paused = e.st === 'pause', tixE = !e.free, full = !tixE && e.rcap > 0 && e.going >= e.rcap && !rv, soldOut = tixE && (!!e.soldOut || !(e.tks || []).some(t => t.left > 0));
+    const nowH = 12.5, closedSale = tixE && e.d === 0 && (e.until === 'day' || (e.until === 'doors' && V && nowH >= V.pH(e.doors)));
+    const canAct = !cx && !paused && !closedSale && (tixE ? !soldOut : !full), WL = (() => { try { return (JSON.parse(localStorage.getItem('tl-evt-v2') || '{}') || {}).wait || {}; } catch (er) { return {}; } })(), wt = (this.state.wait || {})[e.id] ? { ...this.state.wait[e.id], ...(WL[e.id] || {}) } : null, wPos = wt ? 3 + [...String(e.id)].reduce((p, q) => (p * 31 + q.charCodeAt(0)) >>> 0, 7) % 9 + 1 : 0, offerNow = !!(wt && wt.off && canAct);
+    const pk = (this.state.party || {})[e.id] || (rv && rv.n) || 1, party = !tixE && (e.party || 1) > 1 && !cx;
+    const rows = [
+      { ic: 'calendar', t: (e.span || 1) > 1 ? this.fD(e.d) + ' – ' + this.fD(e.dEnd) : this.fD(e.d) + ' · ' + (e.t0) + ' – ' + e.t1, s: (e.span || 1) > 1 ? e.span + this.E2(' días seguidos · ', ' days in a row · ') + (e.sameH ? e.t0 + ' – ' + e.t1 + this.E2(' cada día', ' each day') : this.E2('el horario cambia cada día', 'hours change each day')) : this.E2('Puertas a las ', 'Doors at ') + e.doors, hasLink: true, link: this.E2('CALENDARIO', 'CALENDAR'), onClick: () => this.props.api.encargo('APP-CALENDARIO', this.E2('Evento · Calendario', 'Event · Calendar'), { t: this.E2(e.ti[0], e.ti[1]), day: e.d, t0: e.t0, t1: e.t1, place: e.venue, addr: e.addr, url: 'tolatino.app/evt/' + e.id, notes: this.E2('Puertas a las ', 'Doors at ') + e.doors + '.', key: 'evt:' + e.id }, this.E2('Agregar al calendario', 'Add to calendar')) },
+      { ic: 'pin', t: e.venue, s: e.addr + ' · Hazleton, PA', hasLink: true, link: this.E2('CÓMO LLEGAR', 'DIRECTIONS'), onClick: () => this.props.api.encargo('APP-NEG-MAPA', this.E2('Evento · Cómo llegar', 'Event · Directions'), { name: e.venue, addr: e.addr }) },
+      { ic: 'users', t: e.age ? e.age + this.E2('+ con ID', '+ with ID') : this.E2('Todas las edades', 'All ages'), s: e.free ? (e.rcap ? this.E2('Cupo de ' + e.rcap + ' · quedan ' + Math.max(0, e.rcap - e.going), e.rcap + ' spots · ' + Math.max(0, e.rcap - e.going) + ' left') : this.E2('Entrada libre', 'Free entry')) : this.E2('Tu QR es la entrada; no hace falta imprimir.', 'Your QR is the entry; no printing needed.'), hasLink: false, link: '', onClick: () => {} }
+    ].concat(e.dress ? [{ ic: 'info', t: this.E2('Vestimenta', 'Dress code'), s: L2(e.dress), hasLink: false, link: '', onClick: () => {} }] : []);
+    const luArr = e.lu || [], kidsT = e.kids === 'care' ? this.E2('CUIDADO DE NIÑOS', 'CHILDCARE') : e.kids === 'fam' ? this.E2('PARA TODA LA FAMILIA', 'FOR THE WHOLE FAMILY') : '';
+    const relArr = X.E.filter(x => x.id !== e.id && (x.base || x.id) !== (e.base || e.id) && (x.type === e.type || x.venue === e.venue)).slice(0, 4);
+    const freeT = e.fmt === 'clase' ? this.E2('Clase gratis · cupo limitado', 'Free class · limited spots') : e.fmt === 'comunidad' ? this.E2('Evento gratuito para la comunidad', 'Free community event') : this.E2('Entrada libre', 'Free entry') + (e.payAt ? this.E2(' · la comida se paga en el local', ' · food is paid at the venue') : '');
+    const stB = cx ? { t: this.E2('Evento cancelado', 'Event cancelled'), s: (e.cxWhy ? e.cxWhy + '. ' : '') + (tixE ? this.E2('Si compraste, te devolvemos todo en 3–5 días hábiles. No tienes que hacer nada.', 'If you bought, you get everything back in 3–5 business days. Nothing to do.') : this.E2('Si ibas, no tienes que hacer nada.', 'If you were going, nothing to do.')), bg: 'rgba(192,57,43,.14)', fg: dark ? '#FF8A7E' : '#C0392B' }
+      : paused ? { t: this.E2('Venta pausada', 'Sales paused'), s: this.E2(e.org.n + ' pausó la venta en línea por ahora. Vuelve más tarde.', e.org.n + ' paused online sales for now. Check back later.'), bg: 'rgba(255,176,32,.16)', fg: th.warn }
+      : closedSale ? { t: this.E2('La venta en línea cerró', 'Online sales closed'), s: this.E2('En la puerta no se venden boletos.', 'No tickets are sold at the door.'), bg: 'rgba(255,176,32,.16)', fg: th.warn }
+      : e.moved ? { t: this.E2('Cambió de fecha', 'New date'), s: this.E2('Antes era ' + e.moved.from + '. Si ya no puedes ir, pide la devolución completa desde tu orden.', 'It was ' + e.moved.from + '. If you can no longer go, ask for a full refund from your order.'), bg: 'rgba(75,55,245,.12)', fg: dark ? '#A99BFF' : '#4B37F5' } : null;
+    const pol = e.free ? this.E2(X.POL_GRATIS[0], X.POL_GRATIS[1]) : this.E2(X.POL_PAGO[0], X.POL_PAGO[1]);
+    return {
+      th, img: X.P(e.ph, 800), onBack: () => this.nav({ code: 'APP-EVT-BUSQ' }), backT: this.E2('EVENTOS EN HAZLETON', 'EVENTS IN HAZLETON'),
+      onLike: this.evLike(e.id), heartFill: liked ? '#FF2D7A' : 'none', heartFg: liked ? '#FF2D7A' : '#fff', onShare: () => this.share(),
+      goingTag: going && !cx, goingTagT: myOrder ? this.E2('TIENES BOLETOS', 'YOU HAVE TICKETS') : this.E2('VAS · RSVP', 'GOING · RSVP') + (rv && rv.n > 1 ? ' · ' + rv.n : ''),
+      when: (e.span || 1) > 1 ? this.fD(e.d) + ' – ' + this.fD(e.dEnd) + ' · ' + e.span + this.E2(' DÍAS', ' DAYS') : (e.d === 0 ? this.E2('HOY · ', 'TODAY · ') : '') + this.fD(e.d) + ' · ' + (e.t0) + ' – ' + e.t1,
+      title: es ? e.ti[0] : e.ti[1], venue: e.venue + ' · ' + e.addr, dist: e.dist, onMap: () => this.props.api.encargo('APP-NEG-MAPA', this.E2('Evento · Cómo llegar', 'Event · Directions'), { name: e.venue, addr: e.addr }),
+      hasDesc: !!e.desc, desc: e.desc ? L2(e.desc) : '',
+      hasDays: (e.span || 1) > 1 && !!e.dayH, daysK: this.E2('DÍAS Y HORARIO', 'DAYS AND HOURS'), days: (e.dayH || []).map((x, i) => ({ l: this.E2('Día ', 'Day ') + (i + 1) + ' · ' + this.fD(x.d), s: x.t0 + ' – ' + x.t1 })),
+      hasSer: !!(e.series && e.series.dates.length > 1), serK: e.series ? this.E2('FECHAS · ', 'DATES · ') + L2(e.series.l).toUpperCase() : '', serS: tixE ? this.E2('Cada fecha tiene sus boletos.', 'Each date has its own tickets.') : this.E2('Dices que vas a la fecha que elijas.', 'You RSVP for the date you pick.'),
+      ser: e.series ? e.series.dates.slice(0, 12).map(x => { const on = x.id === e.id; return { l: this.fD(x.d), bg: on ? th.chipBg : 'transparent', fg: on ? th.chipFg : th.fg, bd: on ? th.chipBg : th.w14, onClick: () => { if (!on) this.nav({ code: 'APP-EVT-LISTING', id: x.id }); } }; }) : [],
+      tags: (dark ? [] : [{ t: L2(F.l).toUpperCase() }]).concat(e.series ? [{ t: L2(e.series.l).toUpperCase() }] : []).concat((e.span || 1) > 1 ? [{ t: e.span + this.E2(' DÍAS', ' DAYS') }] : []).concat(e.age || (F.ages || []).length > 1 ? [{ t: e.age ? e.age + '+' : this.E2('TODAS LAS EDADES', 'ALL AGES') }] : []).concat((e.gen || []).map(g => ({ t: g.toUpperCase() }))).concat(e.free ? [{ t: this.E2('GRATIS', 'FREE') }] : []).concat(kidsT ? [{ t: kidsT }] : []),
+      hasSt: !!stB, stT: stB ? stB.t : '', stS: stB ? stB.s : '', stBg: stB ? stB.bg : 'transparent', stFg: stB ? stB.fg : th.fg,
+      line: tixE ? this.E2('EL PRECIO QUE VES ES EL QUE PAGAS: CARGOS INCLUIDOS.', 'THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.') : this.E2('NO SE COBRA NADA: TU RSVP SOLO GUARDA TU LUGAR.', 'NOTHING IS CHARGED: YOUR RSVP ONLY HOLDS YOUR SPOT.'),
+      rows,
+      hasTks: !e.free && (e.tks || []).length > 0, tksT: L2(F.tkL),
+      tks: (e.tks || []).map(t => ({ n: es ? t.n[0] : t.n[1], hasS: !!t.s, s: t.s ? (es ? t.s[0] : t.s[1]) : '', p: this.money(t.p), hasLeft: t.left <= 20, leftT: t.left <= 0 ? this.E2('AGOTADO', 'SOLD OUT') : this.E2('QUEDAN ' + t.left, t.left + ' LEFT') })),
+      hasMesas: (e.mesas || []).length > 0, mesasT: this.E2('Mesas', 'Tables'), mesaSeats: this.E2('SE VENDEN UNA SOLA VEZ', 'EACH SOLD ONLY ONCE'),
+      mesas: (e.mesas || []).map(m => ({ z: es ? m.z[0] : m.z[1], s: m.seats + this.E2(' personas · incluye sus entradas · consumo mínimo ', ' people · entry included · minimum spend ') + this.money(m.min), depT: this.money(m.dep), leftT: m.left <= 0 ? this.E2('AGOTADA', 'SOLD OUT') : m.left <= 2 ? this.E2('QUEDAN ' + m.left, m.left + ' LEFT') : this.E2('DEPÓSITO', 'DEPOSIT'), leftFg: m.left <= 2 ? th.warn : th.w45, onClick: () => canAct ? this.goTk(e.id) : null })),
+      mesaNote: this.E2('El depósito aparta tu mesa y se descuenta de tu consumo esa noche.', 'The deposit holds your table and is deducted from your spend that night.'),
+      free: !!e.free, freeT, freeS: this.E2('Tu RSVP guarda tu lugar y le dice a ' + e.org.n + ' cuántos van. ', 'Your RSVP holds your spot and tells ' + e.org.n + ' how many are coming. ') + this.E2(X.POL_GRATIS[0], X.POL_GRATIS[1]),
+      hasParty: party, partyK: this.E2('¿CUÁNTOS VAN?', 'HOW MANY ARE GOING?'), partyS: rv ? this.E2('Puedes cambiarlo hasta el día del evento.', 'You can change it until the day of the event.') : this.E2('Hasta ' + e.party + ' por RSVP.', 'Up to ' + e.party + ' per RSVP.'),
+      party: party ? Array.from({ length: Math.min(10, e.party) }, (_, i) => i + 1).map(n => { const on = n === pk; return { l: String(n), bg: on ? th.fg : 'transparent', fg: on ? th.bg : th.fg, bd: on ? th.fg : th.w14, onClick: () => { this.setState(z => ({ party: { ...(z.party || {}), [e.id]: n }, rsvp: z.rsvp[e.id] ? { ...z.rsvp, [e.id]: { ...z.rsvp[e.id], n } } : z.rsvp }), () => this.save()); } }; }) : [],
+      hasLu: luArr.length > 0, luT: L2(F.luL),
+      lu: luArr.map((l, i) => ({ t: ((e.span || 1) > 1 ? this.fD(e.d + (l[3] || 0)) + ' · ' : '') + l[2], who: l[0], role: es ? l[1][0] : l[1][1], notLast: i < luArr.length - 1 })),
+      faces: this.faces(e), goingT: e.going + this.E2(' vecinos van', ' neighbors going'), goingS: this.E2('DE TO\u2019LATINO', 'FROM TO\u2019LATINO'),
+      hasGal: (e.gal || []).length > 0, galT: L2(F.galL), gal: (e.gal || []).map(g => X.P(g, 400)),
+      orgT: this.E2('Organiza', 'Organized by'), orgN: e.org.n, orgIni: e.org.n.split(' ').slice(0, 2).map(w => w[0]).join(''), orgS: this.E2('ORGANIZADOR EN TO\u2019LATINO', 'ORGANIZER ON TO\u2019LATINO'),
+      orgBtn: e.org.biz ? this.E2('Ver negocio', 'View business') : this.E2('Avísame', 'Notify me'),
+      onOrg: () => { if (e.org.biz) this.props.api.openBiz(e.org.biz, this.E2('Evento · Organizador', 'Event · Organizer')); else this.toast(this.E2('Te avisaremos de los eventos de ' + e.org.n + '.', 'We will notify you about events from ' + e.org.n + '.')); },
+      hasBefore: (e.before || []).length > 0 || !!e.payAt, beforeT: this.E2('Antes de ir', 'Before you go'),
+      before: (e.payAt ? [[this.E2('La entrada es libre; lo que comas se paga en el local.', 'Entry is free; what you eat is paid at the venue.'), '']] : []).map(x => ({ t: x[0] })).concat((e.before || []).map(b => ({ t: es ? b[0] : b[1] }))),
+      polT: this.E2('POLÍTICA DE ESTE EVENTO', 'THIS EVENT\u2019S POLICY'), pol,
+      hasRel: relArr.length > 0, relT: this.E2('Te puede gustar', 'You may also like'),
+      rel: relArr.map(x => ({ tag: this.fD(x.d) + ' · ' + x.t0, title: es ? x.ti[0] : x.ti[1], meta: (x.free ? this.E2('GRATIS', 'FREE') : this.E2('DESDE ', 'FROM ') + this.money(this.fromP(x))) + (x.age ? ' · ' + x.age + '+' : ''), image: X.P(x.ph, 420), onClick: () => { this.nav({ code: 'APP-EVT-LISTING', id: x.id }); } })),
+      barP: myOrder ? this.E2('Tus boletos están listos', 'Your tickets are ready') : cx ? this.E2('Cancelado', 'Cancelled') : e.free ? (rv ? this.E2('Vas a este evento', 'You are going') : full ? this.E2('Cupo lleno', 'Full') : this.E2('Gratis', 'Free')) : soldOut ? this.E2('Agotado', 'Sold out') : this.E2('Desde ', 'From ') + this.money(from),
+      barS: myOrder ? ('ORDEN ' + myOrder.id) : offerNow ? this.E2('SE LIBERÓ UN LUGAR · TIENES 30 MIN', 'A SPOT OPENED · YOU HAVE 30 MIN') : wt && !canAct ? this.E2('TE AVISAMOS POR SMS', 'WE WILL TEXT YOU') : cx ? this.E2('NO SE COBRA NADA', 'NOTHING IS CHARGED') : e.free ? (rv ? 'RSVP' + (rv.n > 1 ? ' · ' + rv.n + this.E2(' PERSONAS', ' PEOPLE') : '') : e.rcap ? this.E2('QUEDAN ', '') + Math.max(0, e.rcap - e.going) + this.E2(' LUGARES', ' SPOTS LEFT') : this.E2('RSVP OPCIONAL', 'OPTIONAL RSVP')) : this.E2('CARGOS INCLUIDOS', 'FEES INCLUDED'),
+      barCta: myOrder ? this.E2('Ver boletos', 'View tickets') : cx ? this.E2('Cancelado', 'Cancelled') : wt && !canAct && (full || soldOut) ? this.E2('En lista · #', 'On list · #') + wPos : !canAct && (full || soldOut) && !paused && !closedSale ? this.E2('Lista de espera', 'Join waitlist') : paused ? this.E2('Venta pausada', 'Sales paused') : closedSale ? this.E2('Venta cerrada', 'Sales closed') : e.free ? (rv ? this.E2('Ya no voy', 'Not going') : full ? this.E2('Avísame', 'Notify me') : this.E2('Voy', 'I\u2019m going') + (party && pk > 1 ? ' · ' + pk : '')) : soldOut ? this.E2('Avísame', 'Notify me') : L2(F.cta),
+      barBg: myOrder ? '#00E5C4' : !canAct && !rv ? th.w12 : e.free && rv ? th.w12 : dark ? '#FF2D7A' : '#0B0E12', barFg: myOrder ? '#04120F' : (!canAct || (e.free && rv)) ? th.fg : '#fff',
+      onBar: () => { if (myOrder) this.nav({ code: 'APP-EVT-ORDEN', o: myOrder.id }); else if (cx) return; else if (e.free && rv) this.doRsvp(e); else if (!canAct && (full || soldOut) && !paused && !closedSale) { if (wt) { this.toast(this.E2('Eres el #' + wPos + ' en la lista. Si se libera un lugar, te llega un SMS y tienes 30 min.', 'You are #' + wPos + ' on the list. If a spot opens, you get a text and have 30 min.')); return; } this.setState(z => ({ wait: { ...(z.wait || {}), [e.id]: { at: Date.now(), n: pk } } }), () => this.save()); this.toast(this.E2('Estás en la lista de espera. Si se libera un lugar, te llega un SMS y tienes 30 min.', 'You are on the waitlist. If a spot opens, you get a text and have 30 min.')); } else if (!canAct) this.toast(this.E2('Ahora no se puede: vuelve más tarde.', 'Not available right now: check back later.')); else if (e.free) this.doRsvp(e); else this.goTk(e.id); },
+      barAlt: (e.free && !!rv) || (!!wt && !canAct), barAltT: wt && !canAct ? this.E2('Salir de la lista', 'Leave list') : this.E2('Invita', 'Invite'), onBarAlt: () => { if (wt && !canAct) { this.setState(z => { const w = { ...(z.wait || {}) }; delete w[e.id]; return { wait: w }; }, () => this.save()); this.toast(this.E2('Saliste de la lista de espera.', 'You left the waitlist.')); return; } this.share(); }, offerNow, offerT: this.E2('Se liberó un lugar para ti: tienes 30 min.', 'A spot opened for you: you have 30 min.')
+    };
+  }
+  selEvt() { const s = this.state.sel; return s ? this.X().byId(s.evt) : null; }
+  cartCalc() {
+    const s = this.state.sel, e = this.selEvt();
+    if (!s || !e) return { rows: [], tksN: 0, sub: 0, disc: 0, total: 0 };
+    const es = this.E2(true, false), rows = [];
+    let sub = 0, tksN = 0;
+    (e.tks || []).forEach(t => { const q = s.tks[t.id] || 0; if (q) { rows.push({ l: q + ' × ' + (es ? t.n[0] : t.n[1]), v: this.money(q * t.p), fg: '#0B0E12' }); sub += q * t.p; tksN += q; } });
+    const m = (e.mesas || []).find(x => x.id === s.mesa);
+    if (m) { rows.push({ l: this.E2('Depósito · ', 'Deposit · ') + (es ? m.z[0] : m.z[1]), v: this.money(m.dep), fg: '#0B0E12' }); sub += m.dep; }
+    (e.adds || []).forEach(a => { if (s.adds[a.id]) { rows.push({ l: es ? a.n[0] : a.n[1], v: this.money(a.p), fg: '#0B0E12' }); sub += a.p; } });
+    let disc = 0;
+    if (s.codeOk) { const pc = (e.codes || []).find(c => c.c === s.codeOk); disc = pc ? Math.min(sub, pc.k === 'pct' ? Math.round(sub * pc.v) / 100 : pc.v) : Math.min(5, sub); if (disc) rows.push({ l: pc ? pc.c : 'TOLATINO5', v: '−' + this.money(disc), fg: '#00695B' }); }
+    return { rows, tksN, sub, disc, total: Math.max(0, sub - disc), mesa: m };
+  }
+  setSel(fn) { this.setState(z => ({ sel: fn({ ...(z.sel || { evt: (this.props.route || {}).id, tks: {}, mesa: null, adds: {}, code: '', codeOk: false, names: [] }) }) })); }
+  tkVals() {
+    const es = this.E2(true, false), e = this.selEvt() || this.X().byId((this.props.route || {}).id) || this.X().E[0];
+    const s = this.state.sel || { evt: e.id, tks: {}, mesa: null, adds: {}, code: '', codeOk: false, names: [] };
+    const cc = this.cartCalc(), X = this.X();
+    const hasMesa = !!s.mesa;
+    return {
+      title: (() => { const F = window.TLEvP && window.TLEvP.FMT[e.fmt || e.type]; return F ? (es ? F.tkL[0] : F.tkL[1]) : this.E2('Boletos', 'Tickets'); })(), onBack: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }),
+      img: X.P(e.ph, 200), evT: es ? e.ti[0] : e.ti[1], evS: this.fR(e) + ' · ' + e.venue.toUpperCase(),
+      tksK: this.E2('BOLETOS', 'TICKETS'), maxT: e.perP ? this.E2('MÁX. ' + e.perP + ' POR PERSONA', 'MAX ' + e.perP + ' PER PERSON') : '',
+      tRows: (e.tks || []).map(t => { const q = s.tks[t.id] || 0, PP = e.perP || 99, tot = Object.keys(s.tks || {}).reduce((a, k) => a + (+s.tks[k] || 0), 0), max = Math.min(PP, t.left != null ? t.left : PP); return {
+        n: es ? t.n[0] : t.n[1], hasS: !!t.s, s: t.s ? (es ? t.s[0] : t.s[1]) : '', p: this.money(t.p) + this.E2(' · cargos incluidos', ' · fees included'), qty: q,
+        onDec: () => this.setSel(x => ({ ...x, tks: { ...x.tks, [t.id]: Math.max(0, (x.tks[t.id] || 0) - 1) } })),
+        onInc: () => { if (tot >= PP) { this.toast(this.E2('Máximo ' + PP + ' por persona.', 'Up to ' + PP + ' per person.')); return; } if (q >= max) { this.toast(t.left <= 0 ? this.E2('Agotado.', 'Sold out.') : this.E2('Solo quedan ' + t.left + '.', 'Only ' + t.left + ' left.')); return; } this.setSel(x => ({ ...x, tks: { ...x.tks, [t.id]: Math.min(max, (x.tks[t.id] || 0) + 1) } })); }
+      }; }),
+      hasMesas: (e.mesas || []).length > 0, mesasK: this.E2('MESA · OPCIONAL', 'TABLE · OPTIONAL'), mesasS: this.E2('UNA POR ORDEN', 'ONE PER ORDER'),
+      mesas: (e.mesas || []).map(m => { const sel = s.mesa === m.id; return {
+        z: es ? m.z[0] : m.z[1], s: m.seats + this.E2(' personas · consumo mínimo ', ' people · minimum spend ') + this.money(m.min) + this.E2(' · incluye las entradas del grupo', ' · group entry included'),
+        depT: this.money(m.dep), leftT: this.E2('QUEDAN ' + m.left, m.left + ' LEFT'), leftFg: m.left <= 2 ? '#FFB020' : 'rgba(11,14,18,.45)',
+        sel, bd: sel ? '#4B37F5' : 'rgba(11,14,18,.1)', bg: sel ? 'rgba(75,55,245,.05)' : '#fff', rb: sel ? '#4B37F5' : 'rgba(11,14,18,.25)', op: 1,
+        onSel: () => this.setSel(x => ({ ...x, mesa: x.mesa === m.id ? null : m.id, adds: x.mesa === m.id ? Object.keys(x.adds).reduce((o, k) => { const a = (e.adds || []).find(v => v.id === k); if (!(a && a.mesa)) o[k] = true; return o; }, {}) : x.adds }))
+      }; }),
+      mesaNote: this.E2('El depósito aparta tu mesa esa noche y se descuenta de tu consumo mínimo.', 'The deposit holds your table that night and is deducted from your minimum spend.'),
+      hasAdds: (e.adds || []).length > 0, addsK: 'EXTRAS',
+      adds: (e.adds || []).map(a => { const dis = a.mesa && !hasMesa; return {
+        label: (es ? a.n[0] : a.n[1]) + (a.s ? ' · ' + (es ? a.s[0] : a.s[1]) : ''), price: this.money(a.p), checked: !!s.adds[a.id], op: dis ? .45 : 1,
+        hasNote: dis, note: this.E2('SOLO CON MESA', 'TABLE REQUIRED'),
+        onToggle: () => { if (dis) { this.toast(this.E2('Este extra necesita una mesa.', 'This extra needs a table.')); return; } this.setSel(x => { const ad = { ...x.adds }; if (ad[a.id]) delete ad[a.id]; else ad[a.id] = true; return { ...x, adds: ad }; }); }
+      }; }),
+      codeK: this.E2('CÓDIGO', 'CODE'), codePh: 'TOLATINO5', codeVal: s.code || '', applyT: this.E2('Aplicar', 'Apply'),
+      onCode: ev => { const v = ev.target.value.toUpperCase(); this.setSel(x => ({ ...x, code: v, codeOk: false })); },
+      onApply: () => { const cd = (s.code || '').trim().toUpperCase(), pc = (e.codes || []).find(c => c.c === cd); if (pc) { const ok = (pc.used || 0) < pc.uses; this.setSel(x => ({ ...x, codeOk: ok ? cd : false })); if (!ok) this.toast(this.E2('Ese código ya se usó todas las veces.', 'That code has been used up.')); return; } const ok = cd === 'TOLATINO5' && cc.sub >= 20; this.setSel(x => ({ ...x, codeOk: ok ? cd : false })); if (!ok) this.toast(this.E2('Ese código no aplica aquí (mínimo $20).', 'That code does not apply here ($20 minimum).')); },
+      hasCodeMsg: s.codeOk, codeFg: '#00695B', codeMsg: this.E2('CÓDIGO APLICADO · −', 'CODE APPLIED · −') + this.money(cc.disc),
+      holdT: this.E2('Al continuar te guardamos boletos y mesa por 8 minutos mientras pagas.', 'When you continue we hold your tickets and table for 8 minutes while you pay.'),
+      totalK: (cc.tksN + (cc.mesa ? 1 : 0)) === 0 ? this.E2('ELIGE TUS BOLETOS', 'PICK YOUR TICKETS') : cc.tksN + this.E2(cc.tksN === 1 ? ' BOLETO' : ' BOLETOS', cc.tksN === 1 ? ' TICKET' : ' TICKETS') + (cc.mesa ? this.E2(' + MESA', ' + TABLE') : ''),
+      total: this.money(cc.total), cta: this.E2('Continuar', 'Continue'),
+      onCta: () => {
+        if (cc.tksN === 0 && !cc.mesa) { this.toast(this.E2('Elige al menos un boleto o una mesa.', 'Pick at least one ticket or a table.')); return; }
+        this.setSel(x => ({ ...x, names: Array.from({ length: cc.tksN }, (_, i) => (x.names || [])[i] || '') }));
+        if (!this.props.user) { this.props.api.login({ code: 'APP-EVT-PAGO', id: e.id }); return; }
+        this.nav({ code: 'APP-EVT-PAGO', id: e.id }); this.startHold();
+      }
+    };
+  }
+  ticketLabels(e, s) {
+    const es = this.E2(true, false), out = [];
+    (e.tks || []).forEach(t => { const q = s.tks[t.id] || 0; for (let i = 0; i < q; i++) out.push(es ? t.n[0] : t.n[1]); });
+    return out;
+  }
+  pay() {
+    const e = this.selEvt(), s = this.state.sel, cc = this.cartCalc();
+    if (!e || !s) return;
+    if ((this.props.scen || 'ok') === 'card' && (s.method || 'card') === 'card' && !this.state.card2) { this.setState({ payErr: true }); return; }
+    const id = 'EV-' + String(Math.abs((e.id + Date.now()).split('').reduce((a, c) => (a * 31 + c.charCodeAt(0)) | 0, 7)) % 900000 + 100000);
+    const labels = this.ticketLabels(e, s);
+    const order = { id, evt: e.id, tks: { ...(s.tks || {}) }, code: s.codeOk || '', labels, names: (s.names || []).slice(0, labels.length), mesa: s.mesa, adds: Object.keys(s.adds || {}), disc: cc.disc, total: cc.total, method: s.method || 'card', st: 'ok', stage: 0, rated: 0, at: Date.now() };
+    clearInterval(this._hi);
+    this.setState(z => ({ orders: [order].concat(z.orders), sel: null, payErr: false }), () => { this.save(); this.nav({ code: 'APP-EVT-ORDEN', o: id }); });
+  }
+  pyVals() {
+    const es = this.E2(true, false), X = this.X();
+    const e = this.selEvt() || X.E[0];
+    const s = this.state.sel || { tks: {}, adds: {}, names: [], method: 'card' };
+    const cc = this.cartCalc();
+    const labels = this.ticketLabels(e, s);
+    const method = s.method || 'card';
+   
+    const mm = Math.floor((this._hold || 0) / 60), ss = String((this._hold || 0) % 60).padStart(2, '0');
+    const pays = [
+      { k: 'card', ic: 'card', t: this.state.card2 ? 'Visa •• 8821' : 'Visa •• 4242', s: this.E2('Se cobra ahora · reembolsos a la misma tarjeta en 3–5 días', 'Charged now · refunds to the same card in 3–5 days') }
+    ];
+    return {
+      title: this.E2('Revisa y paga', 'Review & pay'), backT: this.E2('BOLETOS', 'TICKETS'), onBack: () => this.nav({ code: 'APP-EVT-BOLETOS', id: e.id }),
+      holdK: this.E2('TUS BOLETOS ESTÁN GUARDADOS', 'YOUR TICKETS ARE HELD'), holdV: mm + ':' + ss,
+      errShow: this.state.payErr, errT: this.E2('Tu banco rechazó la tarjeta', 'Your bank declined the card'), errS: this.E2('No se cobró nada y tus boletos siguen guardados. Prueba con otra tarjeta.', 'Nothing was charged and your tickets are still held. Try another card.'),
+      swapT: this.E2('Cambiar tarjeta', 'Change card'), onSwapCard: () => this.setState({ card2: true, payErr: false }, () => this.toast(this.E2('Tarjeta cambiada a Visa •• 8821', 'Card changed to Visa •• 8821'))),
+      namesK: this.E2('NOMBRE EN CADA BOLETO', 'NAME ON EACH TICKET'), namesS: this.E2('OPCIONAL', 'OPTIONAL'),
+      names: labels.map((lb, i) => ({ label: this.E2('Boleto ', 'Ticket ') + (i + 1) + ' · ' + lb.toUpperCase(), val: (s.names || [])[i] || '', ph: i === 0 ? (this.props.user && this.props.user.name) || 'Camila R.' : this.E2('Nombre', 'Name'),
+        onChange: ev => { const v = ev.target.value; this.setSel(x => { const ns = (x.names || []).slice(); ns[i] = v; return { ...x, names: ns }; }); } })),
+      namesN: this.E2('Con nombre, cada quien puede enseñar su boleto desde su teléfono en la puerta.', 'With a name, each person can show their own ticket from their phone at the door.'),
+      payK: this.E2('CÓMO PAGAS', 'HOW YOU PAY'),
+      pays: pays.map(p => { const sel = method === p.k; return { ...p, sel, bd: sel ? '#4B37F5' : 'rgba(11,14,18,.1)', bg: sel ? 'rgba(75,55,245,.05)' : '#fff', rb: sel ? '#4B37F5' : 'rgba(11,14,18,.25)', onSel: () => this.setSel(x => ({ ...x, method: p.k })) }; }),
+      sumK: this.E2('RESUMEN', 'SUMMARY'), sumRows: cc.rows.length ? cc.rows : [{ l: this.E2('Nada elegido', 'Nothing selected'), v: '—', fg: 'rgba(11,14,18,.5)' }],
+      totalK: 'TOTAL', total: this.money(cc.total), line: this.E2('CARGOS INCLUIDOS · NADA MÁS EN LA PUERTA', 'FEES INCLUDED · NOTHING EXTRA AT THE DOOR'),
+      polK: this.E2('ANTES DE PAGAR', 'BEFORE YOU PAY'), pol: this.E2(X.POL_PAGO[0], X.POL_PAGO[1]),
+      barK: this.E2('SE COBRA AHORA', 'CHARGED NOW'), barV: this.money(cc.total),
+      cta: this.E2('Pagar ', 'Pay ') + this.money(cc.total), onCta: () => this.pay()
+    };
+  }
+  qr(seed, used) {
+    let h = 2166136261;
+    for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = (h * 16777619) | 0; }
+    const rnd = () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) / 4294967296); };
+    const N = 21, cells = [];
+    const fixed = (r, c) => (r < 7 && c < 7) || (r < 7 && c >= N - 7) || (r >= N - 7 && c < 7);
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!fixed(r, c) && rnd() > .52) cells.push([r, c]);
+    const S = 6, pad = 2, sz = (N + pad * 2) * S;
+    const finder = (r, c) => [
+      React.createElement('rect', { key: 'f' + r + c, x: (c + pad) * S, y: (r + pad) * S, width: 7 * S, height: 7 * S, fill: 'none', stroke: '#0B0E12', strokeWidth: S }),
+      React.createElement('rect', { key: 'g' + r + c, x: (c + pad + 2) * S, y: (r + pad + 2) * S, width: 3 * S, height: 3 * S, fill: '#0B0E12' })
+    ];
+    return React.createElement('svg', { width: 148, height: 148, viewBox: '0 0 ' + sz + ' ' + sz, style: { display: 'block', opacity: used ? .28 : 1 } },
+      React.createElement('rect', { x: 0, y: 0, width: sz, height: sz, fill: '#fff' }),
+      cells.map(([r, c], i) => React.createElement('rect', { key: i, x: (c + pad) * S, y: (r + pad) * S, width: S, height: S, fill: '#0B0E12' })),
+      finder(0, 0), finder(0, N - 7), finder(N - 7, 0)
+    );
+  }
+  refund(o, full) {
+    const fee = full ? 0 : 3;
+    this.setState(z => ({ orders: z.orders.map(x => x.id === o.id ? { ...x, st: 'reembolsado', ref: Math.max(0, x.total - fee), fee } : x), help: false }), () => { this.save(); this.toast(this.E2('Devolución en camino a tu tarjeta (3–5 días).', 'Refund on its way to your card (3–5 days).')); });
+  }
+  odVals() {
+    const es = this.E2(true, false), X = this.X(), r = this.props.route || {};
+    const o = this.state.orders.find(x => x.id === r.o) || this.state.orders[0];
+    if (!o) return { tks: [], acts: [], steps: [], stars: [], topBg: '#0B0E12', topFg: '#fff', topIc: 'ticket', topT: this.E2('Sin orden', 'No order'), topS: '', evWhen: '', brightT: '', evT: '', evS: '', polK: '', pol: '', rcp: { meta: [], lines: [], rows: [], events: [] } };
+    const e = X.byId(o.evt) || X.E[0];
+    const scen = this.props.scen || 'ok';
+    const stage = o.stage || 0, canceled = o.st === 'reembolsado';
+    const orgCancel = scen === 'no' && !canceled, dateChange = scen === 'alt' && !canceled && !this.state.altPick;
+    const used = stage >= 2;
+   
+    const stT = canceled ? [this.E2('DEVUELTO', 'REFUNDED'), 'rgba(11,14,18,.08)', 'rgba(11,14,18,.6)'] : used ? [this.E2('USADO', 'USED'), 'rgba(11,14,18,.08)', 'rgba(11,14,18,.6)'] : [this.E2('VÁLIDO', 'VALID'), 'rgba(0,229,196,.18)', '#00E5C4'];
+    const steps = [
+      { label: this.E2('Boletos listos', 'Tickets ready'), time: this.E2('Pagado ', 'Paid ') + this.money(o.total), state: 'done' },
+      { label: this.E2('Día del evento', 'Event day'), time: this.fD(e.d), state: stage >= 2 ? 'done' : stage >= 1 ? 'current' : 'next' },
+      { label: this.E2('En la puerta · escaneo', 'At the door · scan'), state: stage >= 2 ? 'done' : 'next' },
+      { label: this.E2('Después · califica', 'After · rate it'), state: stage >= 3 ? 'current' : 'next' }
+    ];
+    const m = (e.mesas || []).find(x => x.id === o.mesa);
+    const acts = [
+      { ic: 'calendar', t: this.E2('Agregar al calendario', 'Add to calendar'), s: this.fR(e), fg: '#0B0E12', onClick: () => this.props.api.encargo('APP-CALENDARIO', this.E2('Evento · Calendario', 'Event · Calendar'), { t: this.E2(e.ti[0], e.ti[1]), day: e.d, t0: e.t0, t1: e.t1, place: e.venue, addr: e.addr, url: 'tolatino.app/evt/' + e.id, notes: this.E2('Puertas a las ', 'Doors at ') + e.doors + '.', key: 'evt:' + e.id }, this.E2('Agregar al calendario', 'Add to calendar')) },
+      { ic: 'share', t: this.E2('Transferir boletos', 'Transfer tickets'), s: this.E2('Hasta 2 h antes del evento', 'Up to 2 h before the event'), fg: '#0B0E12', onClick: () => this.setState({ tr: { phone: '' } }) },
+      { ic: 'pin', t: this.E2('Cómo llegar', 'Directions'), s: e.venue + ' · ' + e.addr, fg: '#0B0E12', onClick: () => this.props.api.encargo('APP-NEG-MAPA', this.E2('Orden · Cómo llegar', 'Order · Directions'), { name: e.venue, addr: e.addr }) },
+      { ic: 'news', t: this.state.rcp ? this.E2('Ocultar recibo', 'Hide receipt') : this.E2('Ver recibo', 'View receipt'), s: this.E2('Orden ', 'Order ') + o.id, fg: '#0B0E12', onClick: () => this.setState(z => ({ rcp: !z.rcp })) },
+      { ic: 'help', t: this.E2('Ayuda con esta orden', 'Help with this order'), s: canceled ? this.E2('Devolución en camino', 'Refund on the way') : this.E2('Cancelar, boletos, pago', 'Cancel, tickets, payment'), fg: '#0B0E12', onClick: () => this.setState({ help: true }) }
+    ];
+    const labels = o.labels || [];
+    return {
+      topBg: canceled || orgCancel ? 'rgba(192,57,43,.1)' : '#00E5C4', topFg: canceled || orgCancel ? '#C0392B' : '#04120F',
+      topIc: canceled || orgCancel ? 'warning' : stage >= 3 ? 'star' : stage >= 2 ? 'verified' : 'ticket',
+      topT: canceled ? this.E2('Orden reembolsada', 'Order refunded') : orgCancel ? this.E2('El organizador canceló', 'The organizer canceled') : stage >= 3 ? this.E2('¿Cómo estuvo?', 'How was it?') : stage >= 2 ? this.E2('¡Adentro! Que lo disfrutes', 'You\u2019re in! Enjoy') : stage >= 1 ? this.E2('¡Es hoy!', 'It\u2019s today!') : this.E2('¡Listo, vas!', 'Done, you\u2019re going!'),
+      topS: this.E2('ORDEN ', 'ORDER ') + o.id + ' · ' + labels.length + this.E2(labels.length === 1 ? ' BOLETO' : ' BOLETOS', labels.length === 1 ? ' TICKET' : ' TICKETS') + (m ? ' + MESA' : ''),
+      bannerShow: orgCancel || dateChange, bnActs: dateChange,
+      bnBg: orgCancel ? 'rgba(192,57,43,.06)' : 'rgba(255,176,32,.08)', bnBd: orgCancel ? 'rgba(192,57,43,.3)' : 'rgba(255,176,32,.4)', bnFg: orgCancel ? '#C0392B' : '#8A5A00',
+      bnT: orgCancel ? this.E2('Este evento fue cancelado por el organizador', 'This event was canceled by the organizer') : this.E2('El evento cambió de fecha', 'The event changed its date'),
+      bnS: orgCancel ? this.E2('Se te devuelve todo: ' + this.money(o.total) + ' a tu tarjeta en 3–5 días. No tienes que hacer nada.', 'You get everything back: ' + this.money(o.total) + ' to your card in 3–5 days. Nothing to do on your end.') : this.E2('Nueva fecha: ' + this.fD(e.d + 7) + ' · misma hora y lugar. Tus boletos valen igual, o te devolvemos todo.', 'New date: ' + this.fD(e.d + 7) + ' · same time and place. Your tickets still count, or we refund everything.'),
+      bnKeepT: this.E2('Me quedo con la nueva fecha', 'Keep the new date'), bnRefT: this.E2('Devolución total', 'Full refund'),
+      onBnKeep: () => this.setState({ altPick: 'keep' }, () => this.toast(this.E2('Listo: tus boletos valen para la nueva fecha.', 'Done: your tickets are valid for the new date.'))),
+      onBnRef: () => { this.setState({ altPick: 'ref' }); this.refund(o, true); },
+      tks: labels.map((lb, i) => ({ type: lb, name: (o.names || [])[i] ? (o.names[i] || '').toUpperCase() : this.E2('SIN NOMBRE', 'NO NAME'), st: stT[0], stBg: stT[1], stFg: stT[2], code: o.id + '-' + (i + 1), op: canceled ? .55 : 1, ds: { type: lb, name: (o.names || [])[i] ? (o.names[i] || '').toUpperCase() : this.E2('SIN NOMBRE', 'NO NAME'), status: stT[0], statusBg: stT[1], statusColor: stT[2], seed: o.id + '-' + i, used: !!(used || canceled), code: o.id + '-' + (i + 1), when: this.fR(e), opacity: canceled ? .55 : 1 } })),
+      evWhen: this.fR(e),
+      brightT: this.E2('MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO', 'SHOW IT AT THE DOOR · TURN UP BRIGHTNESS'),
+      img: X.P(e.ph, 200), evT: es ? e.ti[0] : e.ti[1], evS: this.fR(e) + ' · ' + e.venue.toUpperCase(), onOpenEvt: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }),
+      mesaShow: !!m, mesaK: this.E2('TU MESA', 'YOUR TABLE'), mesaZ: m ? (es ? m.z[0] : m.z[1]) : '',
+      mesaS: m ? this.E2('Hasta ' + m.seats + ' personas · consumo mínimo ' + this.money(m.min) + ' · tu depósito de ' + this.money(m.dep) + ' se descuenta de tu consumo.', 'Up to ' + m.seats + ' people · minimum spend ' + this.money(m.min) + ' · your ' + this.money(m.dep) + ' deposit is deducted from your spend.') : '',
+      steps,
+      rateShow: stage >= 3 && !canceled, rateT: this.E2('¿Cómo estuvo ' + (es ? e.ti[0] : e.ti[1]) + '?', 'How was ' + (es ? e.ti[0] : e.ti[1]) + '?'),
+      stars: [1, 2, 3, 4, 5].map(n => ({ fg: (o.rated || 0) >= n ? '#FFB020' : 'rgba(11,14,18,.25)', fill: (o.rated || 0) >= n ? '#FFB020' : 'none', onClick: () => this.setState(z => ({ orders: z.orders.map(x => x.id === o.id ? { ...x, rated: n } : x) }), () => { this.save(); this.toast(this.E2('Gracias: tu calificación ayuda al barrio.', 'Thanks: your rating helps the neighborhood.')); }) })),
+      rateDone: (o.rated || 0) > 0, rateS: this.E2('Calificaste con ' + (o.rated || 0) + ' estrellas', 'You rated it ' + (o.rated || 0) + ' stars'),
+      acts,
+      rcpShow: this.state.rcp, rcp: {
+        business: e.org.n, address: e.venue + ' · ' + e.addr, status: canceled ? this.E2('Devuelto', 'Refunded') : this.E2('Pagado', 'Paid'), statusTone: canceled ? 'neutral' : 'signal',
+        meta: [{ k: this.E2('ORDEN', 'ORDER'), v: o.id }, { k: this.E2('EVENTO', 'EVENT'), v: this.fD(e.d) }, { k: this.E2('PAGO', 'PAYMENT'), v: 'VISA •• 4242'}],
+        lines: labels.map(lb => ({ q: 1, name: lb, price: '' })).concat(m ? [{ q: 1, name: this.E2('Depósito de mesa · ', 'Table deposit · ') + (es ? m.z[0] : m.z[1]), price: this.money(m.dep) }] : []),
+        rows: (o.disc ? [{ l: 'TOLATINO5', v: '−' + this.money(o.disc) }] : []).concat([{ l: this.E2('Cargos de servicio', 'Service fees'), v: this.E2('Incluidos', 'Included') }]),
+        total: this.money(o.total),
+        events: canceled ? [{ l: this.E2('Cobrado', 'Charged'), v: this.money(o.total) }, { l: this.E2('Devuelto', 'Refunded'), sub: this.E2('A tu tarjeta en 3–5 días', 'To your card in 3–5 days'), v: '−' + this.money(o.ref || o.total) }] : [{ l: this.E2('Cobrado', 'Charged'), v: this.money(o.total)}],
+        netLabel: this.E2('Pagado en total', 'Paid in total'), net: canceled ? this.money(Math.max(0, o.total - (o.ref || 0))) : this.money(o.total),
+        foot: this.E2('El precio que ves es el que pagas: cargos incluidos.', 'The price you see is what you pay: fees included.')
+      },
+      polK: this.E2('POLÍTICA DE ESTE EVENTO', 'THIS EVENT\u2019S POLICY'), pol: this.E2(X.POL_PAGO[0], X.POL_PAGO[1]),
+      o, e
+    };
+  }
+  msVals() {
+    const es = this.E2(true, false), X = this.X();
+    const ords = this.state.orders.map(o => ({ o, e: X.byId(o.evt) })).filter(x => x.e);
+    const rsvps = Object.keys(this.state.rsvp).map(id => X.byId(id)).filter(Boolean);
+    const up = [], past = [];
+    ords.forEach(({ o, e }) => { const row = {
+      img: X.P(e.ph, 200), t: es ? e.ti[0] : e.ti[1], s: this.fR(e) + ' · ' + (o.labels || []).length + this.E2(' BOLETOS', ' TICKETS'),
+      tag: o.st === 'reembolsado' ? this.E2('DEVUELTO', 'REFUNDED') : this.E2('CON QR', 'QR READY'),
+      tagBg: o.st === 'reembolsado' ? 'rgba(11,14,18,.07)' : 'rgba(0,229,196,.18)',
+      tagFg: o.st === 'reembolsado' ? 'rgba(11,14,18,.55)' : '#00695B',
+      op: o.st === 'reembolsado' ? .6 : 1, onOpen: () => this.nav({ code: 'APP-EVT-ORDEN', o: o.id })
+    }; ((o.stage || 0) >= 3 || o.st === 'reembolsado' ? past : up).push(row); });
+    rsvps.forEach(e => up.push({ img: X.P(e.ph, 200), t: es ? e.ti[0] : e.ti[1], s: this.fR(e) + ' · RSVP', tag: 'GRATIS', tagBg: 'rgba(11,14,18,.07)', tagFg: 'rgba(11,14,18,.6)', op: 1, onOpen: () => this.nav({ code: 'APP-EVT-LISTING', id: e.id }) }));
+    const groups = [];
+    if (up.length) groups.push({ t: this.E2('PRÓXIMOS', 'UPCOMING'), rows: up });
+    if (past.length) groups.push({ t: this.E2('PASADOS', 'PAST'), rows: past });
+    return {
+      title: this.E2('Mis boletos', 'My tickets'), backT: this.E2('EVENTOS EN HAZLETON', 'EVENTS IN HAZLETON'), onBack: () => this.nav({ code: 'APP-EVT-BUSQ' }), groups,
+      emptyShow: groups.length === 0, emptyT: this.E2('Todavía no tienes boletos', 'No tickets yet'),
+      emptyS: this.E2('Los boletos y RSVP de los eventos del barrio viven aquí, con su QR.', 'Tickets and RSVPs for neighborhood events live here, with their QR.'),
+      cta: this.E2('Ver eventos', 'Browse events'), onCta: () => this.nav({ code: 'APP-EVT-BUSQ' })
+    };
+  }
+  shVals() {
+    const od = this._lastOd || {};
+    const o = od.o, e = od.e;
+    return {
+      helpShow: this.state.help, onHelpClose: () => this.setState({ help: false }),
+      helpT: this.E2('¿Qué pasó?', 'What happened?'),
+      helpItems: !o ? [] : [
+        { icon: 'ticket', label: this.E2('No veo mis boletos', 'I can\u2019t see my tickets'), sub: this.E2('Te los reenviamos por SMS', 'We resend them by SMS'), onClick: () => { this.setState({ help: false }); this.toast(this.E2('Boletos reenviados por SMS.', 'Tickets resent by SMS.')); } },
+        { icon: 'edit', label: this.E2('Cambiar un nombre', 'Change a name'), sub: this.E2('Gratis hasta 2 h antes', 'Free up to 2 h before'), onClick: () => { this.setState({ help: false }); this.toast(this.E2('Toca el boleto en Pago para editar el nombre.', 'Tap the ticket in Payment to edit the name.')); } },
+        { icon: 'card', label: this.E2('Un problema con el pago', 'A payment problem'), sub: this.E2('Lo revisa To\u2019Latino', 'To\u2019Latino reviews it'), onClick: () => { this.setState({ help: false }); this.props.api.encargo('APP-EVT-AYUDA-PAGO', this.E2('Orden de evento · pago', 'Event order · payment'), { id: o.id, ev: e.ti[0], evEn: e.ti[1], org: e.org.n, orgBiz: e.org.biz, total: o.total, method: o.method, when: this.fR(e) }); } },
+        { icon: 'trash', label: this.E2('Cancelar mis boletos', 'Cancel my tickets'), sub: this.E2('Se devuelve menos $3 de cargo', 'Refunded minus a $3 fee'), danger: true, onClick: () => this.refund(o, false) }
+      ],
+      trShow: !!this.state.tr, onTrClose: () => this.setState({ tr: null }),
+      trT: this.E2('Transferir boletos', 'Transfer tickets'),
+      trS: this.E2('La persona recibe un SMS con su boleto y su QR. Puedes transferir hasta 2 h antes del evento.', 'They get an SMS with their ticket and QR. You can transfer up to 2 h before the event.'),
+      trPhone: (this.state.tr || {}).phone || '', onTrPhone: ev => { const v = ev.target.value; this.setState(z => ({ tr: { ...(z.tr || {}), phone: v } })); },
+      trCta: this.E2('Enviar boleto', 'Send ticket'),
+      onTrSend: () => { const ph = (this.state.tr || {}).phone; if (!ph) { this.toast(this.E2('Escribe el teléfono.', 'Enter the phone number.')); return; } this.setState({ tr: null }); this.toast(this.E2('Boleto enviado a ' + ph + '.', 'Ticket sent to ' + ph + '.')); },
+      trNote: this.E2('EL QR ANTERIOR QUEDA ANULADO', 'THE OLD QR IS VOIDED')
+    };
+  }
+  renderVals() {
+    const r = this.props.route || {}, code = r.code || 'APP-EVT-BUSQ';
+    const desk = !!this.props.desk;
+    return {
+      mob: !desk, dsk: desk,
+      isBusq: code === 'APP-EVT-BUSQ', isNoche: code === 'APP-EVT-NOCHE', isLst: code === 'APP-EVT-LISTING' || code === 'APP-EVT-DETALLE', isTk: code === 'APP-EVT-BOLETOS', isPay: code === 'APP-EVT-PAGO', isOrd: code === 'APP-EVT-ORDEN' && this.state.orders.length > 0, isMis: code === 'APP-EVT-MIS' || (code === 'APP-EVT-ORDEN' && !this.state.orders.length),
+      toastShow: !!this.state.toast, toastT: this.state.toast || '',
+      bq: this.bqVals(), nv: this.nvDesk(this.nvVals()), ls: this.lsVals(), tk: this.tkVals(), py: this.pyVals(),
+      od: (this._lastOd = this.odVals()), ms: this.msVals(), sh: this.shVals()
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<style>body{margin:0}a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}input::placeholder,textarea::placeholder{color:rgba(11,14,18,.38)}</style>
+</helmet>
+<div data-screen-label="{{ scr }}" style="min-height:100%;background:#F7F6F3;color:#0B0E12;font-family:Manrope,sans-serif">
+
+<sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}">
+<div style="position:sticky;top:0;z-index:20;padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px">
+  <span onClick="{{ onBack }}" style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+  <div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ l.title }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ l.k }}</div></div>
+</div>
+</sc-if>
+
+<div style="max-width:{{ lay.max }};margin:0 auto;padding:{{ lay.pad }};display:grid;grid-template-columns:{{ lay.cols }};gap:{{ lay.gap }};align-items:start">
+<div style="min-width:0;display:flex;flex-direction:column;gap:14px">
+  <sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}"><div onClick="{{ onBack }}" style="display:inline-flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ l.back }}</div></sc-if>
+
+  <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">{{ l.k }}</span>
+    <h1 style="margin:0;font:800 {{ lay.h1 }}/1.08 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ l.h1 }}</h1>
+    <p style="margin:0;font:500 14px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ l.sub }}</p>
+  </div>
+
+  <div data-screen-label="Publica tu evento · quién" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:10px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.orgK }}</span>
+    <sc-for list="{{ orgs }}" as="o" hint-placeholder-count="2">
+      <div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;border:{{ o.bd }};cursor:pointer"><span style="width:40px;height:40px;border-radius:12px;background:{{ o.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><span style="flex:1;min-width:0"><span style="display:block;font:700 14px Manrope,sans-serif">{{ o.n }}</span><span style="display:block;margin-top:2px;font:600 10px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ o.s }}</span></span><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ o.ring }};flex:none"></span></div>
+    </sc-for>
+    <span onClick="{{ onNewBiz }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ l.newBiz }}</span>
+  </div>
+
+  <div data-screen-label="Publica tu evento · el evento" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.evK }}</span>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="font:700 13px Manrope,sans-serif">{{ l.nameL }}</span><input value="{{ f.name }}" onChange="{{ onName }}" placeholder="{{ l.namePh }}" style="height:48px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:600 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></label>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.typeL }}</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ types }}" as="t" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ t.v }}" on-click="{{ t.onClick }}" hint-size="110px,32px">{{ t.l }}</x-import></sc-for></div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.phL }}</span><div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px"><sc-for list="{{ phs }}" as="p" hint-placeholder-count="4"><div onClick="{{ p.onClick }}" style="aspect-ratio:1;border-radius:13px;background:{{ p.bg }} center/cover;background-color:#E4E1DA;cursor:pointer;box-sizing:border-box;border:{{ p.bd }}"></div></sc-for></div></div>
+    <label style="display:flex;flex-direction:column;gap:7px"><span style="display:flex;justify-content:space-between;gap:10px;font:700 13px Manrope,sans-serif"><span>{{ l.descL }}</span><span style="font:600 10px 'JetBrains Mono',monospace;color:rgba(11,14,18,.42)">{{ descN }}</span></span><textarea value="{{ f.desc }}" onChange="{{ onDesc }}" placeholder="{{ l.descPh }}" rows="3" style="padding:12px 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:500 14px/1.5 Manrope,sans-serif;color:#0B0E12;outline:none;resize:none;box-sizing:border-box;width:100%"></textarea></label>
+  </div>
+
+  <div data-screen-label="Publica tu evento · cuándo y dónde" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.whenK }}</span>
+    <div style="display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -2px;padding:0 2px"><sc-for list="{{ days }}" as="d" hint-placeholder-count="7"><div onClick="{{ d.onClick }}" style="flex:none;width:56px;padding:9px 0;border-radius:13px;text-align:center;cursor:pointer;background:{{ d.bg }};color:{{ d.fg }};border:1px solid {{ d.bd }}"><div style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.08em;opacity:.7">{{ d.w }}</div><div style="margin-top:3px;font:800 17px Sora,sans-serif">{{ d.n }}</div></div></sc-for></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><sc-for list="{{ hrs }}" as="h" hint-placeholder-count="3"><label style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ h.k }}</span><select value="{{ h.v }}" onChange="{{ h.onChange }}" style="height:44px;padding:0 10px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);font:700 14px Manrope,sans-serif;color:#0B0E12;background:#fff;width:100%;min-width:0"><sc-for list="{{ h.opts }}" as="o" hint-placeholder-count="6"><option value="{{ o.v }}">{{ o.l }}</option></sc-for></select></label></sc-for></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.whereL }}</span>
+      <sc-for list="{{ wheres }}" as="w" hint-placeholder-count="2"><div onClick="{{ w.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;border:{{ w.bd }};cursor:pointer"><span style="flex:1;min-width:0"><span style="display:block;font:700 14px Manrope,sans-serif">{{ w.t }}</span><span style="display:block;margin-top:2px;font:500 12px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ w.s }}</span></span><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ w.ring }};flex:none"></span></div></sc-for>
+      <sc-if value="{{ isOther }}" hint-placeholder-val="{{ false }}"><input value="{{ f.addr }}" onChange="{{ onAddr }}" placeholder="{{ l.addrPh }}" style="height:48px;padding:0 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);font:600 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></sc-if>
+    </div>
+  </div>
+
+  <div data-screen-label="Publica tu evento · entrada" style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:14px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.tkK }}</span>
+    <sc-for list="{{ entries }}" as="e" hint-placeholder-count="4"><div onClick="{{ e.onClick }}" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:15px;border:{{ e.bd }};cursor:pointer"><span style="flex:1;min-width:0"><span style="display:block;font:700 14px Manrope,sans-serif">{{ e.t }}</span><span style="display:block;margin-top:2px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ e.s }}</span></span><span style="width:20px;height:20px;border-radius:99px;box-sizing:border-box;border:{{ e.ring }};flex:none"></span></div></sc-for>
+    <sc-if value="{{ hasNums }}" hint-placeholder-val="{{ false }}"><div style="display:grid;grid-template-columns:{{ numCols }};gap:8px">
+      <sc-if value="{{ hasPrice }}" hint-placeholder-val="{{ false }}"><label style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ l.priceK }}</span><input value="{{ f.price }}" onChange="{{ onPrice }}" inputmode="decimal" placeholder="15" style="height:44px;padding:0 12px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);font:700 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></label></sc-if>
+      <label style="display:flex;flex-direction:column;gap:6px;min-width:0"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ l.capK }}</span><input value="{{ f.cap }}" onChange="{{ onCap }}" inputmode="numeric" placeholder="80" style="height:44px;padding:0 12px;border-radius:13px;border:1.5px solid rgba(11,14,18,.14);font:700 15px Manrope,sans-serif;color:#0B0E12;outline:none;background:#fff;box-sizing:border-box;width:100%"></label>
+    </div></sc-if>
+    <sc-if value="{{ hasPrice }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ feeL }}</span></sc-if>
+    <div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 13px Manrope,sans-serif">{{ l.ageL }}</span><div style="display:flex;flex-wrap:wrap;gap:6px"><sc-for list="{{ ages }}" as="a" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ a.v }}" on-click="{{ a.onClick }}" hint-size="90px,32px">{{ a.l }}</x-import></sc-for></div></div>
+    <div style="padding:12px 14px;border-radius:14px;background:#F7F6F3;display:flex;flex-direction:column;gap:4px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.polK }}</span><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.7)">{{ pol }}</span></div>
+  </div>
+
+  <sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:8px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.pvK }}</span><div style="display:flex;justify-content:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" title="{{ pv.title }}" meta="{{ pv.meta }}" tag="{{ pv.tag }}" dark="{{ pv.dark }}" image="{{ pv.image }}" width="{{ 300 }}" hint-size="300px,220px"></x-import></div></div></sc-if>
+  <sc-if value="{{ hasMiss }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 14px;border-radius:14px;background:rgba(11,14,18,.04);display:flex;flex-direction:column;gap:4px"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.missK }}</span><sc-for list="{{ miss }}" as="m" hint-placeholder-count="2"><span style="font:600 13px Manrope,sans-serif;color:rgba(11,14,18,.7)">· {{ m.t }}</span></sc-for></div></sc-if>
+  <sc-if value="{{ mob }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:8px;padding-bottom:24px"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ onSend }}" hint-size="100%,52px">{{ ctaL }}</x-import></div><span style="text-align:center;font:600 11.5px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ l.revS }}</span></div></sc-if>
+  </sc-if>
+
+  <sc-if value="{{ isSent }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Publica tu evento · en revisión" style="display:flex;flex-direction:column;gap:14px">
+    <span style="width:54px;height:54px;border-radius:18px;background:#00E5C4;display:grid;place-items:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 26 }}" stroke-width="{{ 2.2 }}" hint-size="26px,26px"></x-import></span>
+    <h1 style="margin:0;font:800 {{ lay.h1 }}/1.08 Sora,sans-serif;letter-spacing:-.04em;text-wrap:balance">{{ sent.t }}</h1>
+    <p style="margin:0;font:500 14px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ sent.s }}</p>
+    <div style="padding:16px 18px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ sent.steps }}" hint-size="100%,150px"></x-import></div>
+    <div style="padding:6px 16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07)"><sc-for list="{{ sent.rows }}" as="r" hint-placeholder-count="4"><div style="display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-bottom:1px solid rgba(11,14,18,.06)"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5);padding-top:2px">{{ r.k }}</span><span style="font:600 13.5px/1.4 Manrope,sans-serif;text-align:right;min-width:0">{{ r.v }}</span></div></sc-for></div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding-bottom:24px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" block="{{ true }}" on-click="{{ onPanel }}" hint-size="100%,44px">{{ l.panel }}</x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" block="{{ true }}" on-click="{{ onBack }}" hint-size="100%,44px">{{ l.toEvents }}</x-import></div>
+  </div>
+  </sc-if>
+</div>
+
+<sc-if value="{{ dsk }}" hint-placeholder-val="{{ false }}">
+<div style="align-self:stretch"><div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+  <div style="padding:16px;border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:12px">
+    <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.42)">{{ l.pvK }}</span>
+    <div style="display:flex;justify-content:center"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.EventCard" title="{{ pv.title }}" meta="{{ pv.meta }}" tag="{{ pv.tag }}" dark="{{ pv.dark }}" image="{{ pv.image }}" width="{{ 300 }}" hint-size="300px,220px"></x-import></div>
+    <sc-for list="{{ pv.rows }}" as="r" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;font:600 12.5px Manrope,sans-serif"><span style="color:rgba(11,14,18,.55)">{{ r.k }}</span><span style="text-align:right">{{ r.v }}</span></div></sc-for>
+  </div>
+  <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" on-click="{{ onSend }}" hint-size="100%,52px">{{ ctaL }}</x-import></div><span style="text-align:center;font:600 11.5px Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ l.revS }}</span></div></sc-if>
+</div></div>
+</sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DK = 'tl-evt-pub-draft-v1', LK = 'tl-evt-pub-v1';
+const PX = (id, h) => 'https://images.pexels.com/photos/' + id + '/pexels-photo-' + id + '.jpeg?auto=compress&cs=tinysrgb&h=' + (h || 500);
+const PHS = [1763075, 1190298, 274192, 1089930];
+const TYPES = [['noche', 'Noche y baile', 'Nightlife & dance'], ['comida', 'Comida', 'Food'], ['comunidad', 'Comunidad y familia', 'Community & family'], ['fe', 'Fe', 'Faith']];
+const WD = [['DOM', 'SUN'], ['LUN', 'MON'], ['MAR', 'TUE'], ['MIÉ', 'WED'], ['JUE', 'THU'], ['VIE', 'FRI'], ['SÁB', 'SAT']];
+const HRS = [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26];
+const hL = h => { const H = h % 24; return ((H % 12) || 12) + (H >= 12 ? ' PM' : ' AM'); };
+const F0 = { org: null, name: '', type: null, ph: 0, desc: '', day: 2, h0: 21, h1: 25, doors: 20, where: 'biz', addr: '', entry: null, price: '', cap: '', age: 'all' };
+const rd = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch (e) { return d; } };
+class Component extends DCLogic {
+  state = { f: { ...F0, ...rd(DK, {}) }, sent: null, tried: false };
+  get es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es ? a : b; }
+  api() { return this.props.api || { nav: () => {}, back: () => {}, login: () => {} }; }
+  up(o) { const f = { ...this.state.f, ...o }; try { localStorage.setItem(DK, JSON.stringify(f)); } catch (e) {} this.setState({ f }); }
+  orgs() { const A = (window.TLAll && window.TLAll.B) || []; return ['sabor-dominicano', 'barberia-el-primo'].map(id => A.find(b => b.id === id)).filter(Boolean); }
+  day(i) { const d = new Date(2026, 8, 24 + i); return { w: WD[d.getDay()][this.es ? 0 : 1], n: d.getDate(), l: (i === 0 ? this.E2('Hoy', 'Today') : i === 1 ? this.E2('Mañana', 'Tomorrow') : (this.es ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'][d.getDay()] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]) + ' ' + d.getDate() + (this.es ? ' sep' : ' Sep').replace(/sep|Sep/, d.getMonth() === 8 ? (this.es ? 'sep' : 'Sep') : (this.es ? 'oct' : 'Oct'))) }; }
+  miss() { const f = this.state.f, E2 = this.E2.bind(this), m = []; if (!f.org) m.push(E2('Elige qué negocio lo organiza', 'Pick the business hosting it')); if (f.name.trim().length < 4) m.push(E2('Ponle nombre al evento', 'Name the event')); if (!f.type) m.push(E2('Elige el tipo', 'Pick the type')); if (f.where === 'otro' && f.addr.trim().length < 4) m.push(E2('Escribe la dirección del lugar', 'Enter the venue address')); if (!f.entry) m.push(E2('Elige cómo se entra', 'Pick how people get in')); if (f.entry === 'tk' && !(+f.price > 0)) m.push(E2('Pon el precio de la entrada', 'Set the ticket price')); if ((f.entry === 'rsvp' || f.entry === 'tk') && !(+f.cap > 0)) m.push(E2('Pon cuántos caben', 'Set the capacity')); if (f.h1 <= f.h0) m.push(E2('La hora de terminar va después de la de empezar', 'End time must be after start time')); return m; }
+  send() { if (!this.props.user) { this.api().login({ code: 'APP-EVT-EDITAR' }); return; } if (this.miss().length) { this.setState({ tried: true }); return; } const f = this.state.f, id = 'EV-' + (5100 + Math.floor(Math.random() * 800)), x = { id, ...f, at: '12:36 PM' }; try { localStorage.setItem(LK, JSON.stringify(rd(LK, []).concat(x))); localStorage.removeItem(DK); } catch (e) {} this.setState({ sent: x, f: { ...F0 }, tried: false }); }
+  renderVals() {
+    const es = this.es, E2 = this.E2.bind(this), D = !!this.props.desk, dw = this.props.dw || 1280, f = this.state.f, O = this.orgs(), org = O.find(b => b.id === f.org), radio = on => ({ bd: on ? '1.5px solid #0B0E12' : '1px solid rgba(11,14,18,.1)', ring: on ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)' });
+    const money = n => '$' + (Math.round(n * 100) % 100 ? (+n).toFixed(2) : Math.round(n));
+    const fee = +f.price > 0 ? Math.round(+f.price * 0.08 * 100) / 100 + 0.99 : 0, miss = this.state.tried ? this.miss() : [];
+    const dy = this.day(f.day), whenL = dy.l + ' · ' + hL(f.h0) + ' – ' + hL(f.h1), whereL = f.where === 'otro' ? (f.addr.trim() || E2('Otro lugar', 'Another venue')) : org ? org.name : E2('Tu negocio', 'Your business');
+    const entL = { free: E2('Entrada libre', 'Free entry'), rsvp: E2('Gratis con RSVP', 'Free with RSVP'), tk: (+f.price > 0 ? money(+f.price) : '$—') + E2(' · boletos en la app', ' · tickets in the app') }[f.entry] || '—';
+    const pol = f.entry === 'tk' ? E2('Si cancelas el evento o cambias la fecha, devolvemos todo a quien compró, sin que tengas que hacer nada. Si el comprador cancela: se devuelve el boleto menos el cargo de servicio.', 'If you cancel or move the event, everyone who bought gets everything back automatically. If a buyer cancels: the ticket is refunded minus the service fee.') : E2('Si cancelas el evento, avisamos por SMS a todos los que dijeron que van.', 'If you cancel the event, we text everyone who said they are going.');
+    const sx = this.state.sent;
+    return {
+      scr: 'APP-EVT-EDITAR' + (sx ? ' · en revisión' : '') + (D ? ' · desktop' : ' · móvil'), mob: !D, dsk: D, isForm: !sx, isSent: !!sx,
+      lay: D ? { max: '1080px', pad: '28px 32px 70px', cols: dw >= 960 ? 'minmax(0,1fr) 360px' : 'minmax(0,1fr)', gap: '28px 48px', h1: '32px' } : { max: '100%', pad: '16px 16px 0', cols: 'minmax(0,1fr)', gap: '14px', h1: '26px' },
+      l: { title: E2('Publica tu evento', 'Publish your event'), k: E2('EVENTOS · HAZLETON', 'EVENTS · HAZLETON'), back: E2('Volver a Eventos', 'Back to Events'), h1: E2('Publica tu evento', 'Publish your event'), sub: E2('Gratis. To\'Latino lo revisa antes de publicarlo y te avisa por SMS.', 'Free. To\'Latino reviews it before it goes live and texts you.'),
+        orgK: E2('¿QUÉ NEGOCIO LO ORGANIZA?', 'WHICH BUSINESS IS HOSTING?'), newBiz: E2('Mi negocio no está aquí · Publícalo gratis', 'My business isn\u2019t here · List it free'), evK: E2('EL EVENTO', 'THE EVENT'), nameL: E2('Nombre', 'Name'), namePh: E2('Ej.: Noche de merengue en vivo', 'E.g. Live merengue night'), typeL: E2('Tipo', 'Type'), phL: E2('Foto de portada', 'Cover photo'), descL: E2('De qué se trata · Opcional', 'What it\u2019s about · Optional'), descPh: E2('Quién toca, qué hay de comer, si hay parqueo…', 'Who plays, what food there is, parking…'),
+        whenK: E2('CUÁNDO Y DÓNDE', 'WHEN AND WHERE'), whereL: E2('¿Dónde es?', 'Where is it?'), addrPh: E2('Nombre del lugar y dirección', 'Venue name and address'), tkK: E2('ENTRADA', 'ENTRY'), priceK: E2('PRECIO', 'PRICE'), capK: E2('CUÁNTOS CABEN', 'CAPACITY'), ageL: E2('Edad', 'Age'), polK: E2('SI ALGO CAMBIA', 'IF SOMETHING CHANGES'), pvK: E2('ASÍ LO VEN LOS VECINOS', 'HOW NEIGHBORS SEE IT'), missK: E2('TE FALTA', 'STILL NEEDED'),
+        revS: E2('To\'Latino lo revisa en 24 h. Nada se publica antes.', 'To\'Latino reviews it within 24 h. Nothing goes live before.'), panel: E2('Ver en el panel', 'See in the panel'), toEvents: E2('Volver a Eventos', 'Back to Events') },
+      f, onName: e => this.up({ name: e.target.value.slice(0, 70) }), onDesc: e => this.up({ desc: e.target.value.slice(0, 400) }), descN: f.desc.length + ' / 400', onAddr: e => this.up({ addr: e.target.value.slice(0, 100) }), onPrice: e => this.up({ price: e.target.value.replace(/[^\d.]/g, '').slice(0, 6) }), onCap: e => this.up({ cap: e.target.value.replace(/\D/g, '').slice(0, 4) }),
+      orgs: O.map(b => ({ n: b.name, s: (b.addr || 'Hazleton, PA').toUpperCase(), ph: 'url(' + PX(b.ph[0], 120) + ')', ...radio(f.org === b.id), onClick: () => this.up({ org: b.id }) })), onNewBiz: () => this.api().nav({ code: 'ONB-NEG-A1' }),
+      types: TYPES.map(([k, a, b]) => ({ l: es ? a : b, v: f.type === k ? 'selected' : 'filter', onClick: () => this.up({ type: k }) })),
+      phs: PHS.map((id, i) => ({ bg: 'url(' + PX(id, 200) + ')', bd: f.ph === i ? '3px solid #0B0E12' : '0', onClick: () => this.up({ ph: i }) })),
+      days: Array.from({ length: 14 }, (_, i) => { const d = this.day(i), on = f.day === i; return { w: d.w, n: d.n, bg: on ? '#0B0E12' : '#fff', fg: on ? '#fff' : '#0B0E12', bd: on ? '#0B0E12' : 'rgba(11,14,18,.1)', onClick: () => this.up({ day: i }) }; }),
+      hrs: [['h0', E2('EMPIEZA', 'STARTS')], ['h1', E2('TERMINA', 'ENDS')], ['doors', E2('PUERTAS', 'DOORS')]].map(([k, l]) => ({ k: l, v: String(f[k]), opts: HRS.map(h => ({ v: String(h), l: hL(h) })), onChange: e => this.up({ [k]: +e.target.value }) })),
+      wheres: [['biz', org ? E2('En ', 'At ') + org.name : E2('En tu negocio', 'At your business'), org ? org.addr || 'Hazleton, PA' : E2('La dirección de tu página', 'Your page address')], ['otro', E2('En otro lugar', 'Somewhere else'), E2('Salón, parque, iglesia…', 'Hall, park, church…')]].map(([k, t, s]) => ({ t, s, ...radio(f.where === k), onClick: () => this.up({ where: k }) })), isOther: f.where === 'otro',
+      entries: [['free', E2('Entrada libre', 'Free entry'), E2('Sin lista. Llegas y entras.', 'No list. Just show up.')], ['rsvp', E2('Gratis con RSVP', 'Free with RSVP'), E2('Los vecinos apartan su lugar. Tú pones el cupo.', 'Neighbors save a spot. You set the capacity.')], ['tk', E2('Boletos en la app', 'Tickets in the app'), E2('Pagan con tarjeta o Wallet y entran con QR. Te pagamos al día siguiente del evento.', 'They pay by card or Wallet and get in with a QR. We pay you the day after the event.')]].map(([k, t, s]) => ({ t, s, ...radio(f.entry === k), onClick: () => this.up({ entry: k }) })),
+      hasNums: f.entry === 'rsvp' || f.entry === 'tk', hasPrice: f.entry === 'tk', numCols: f.entry === 'rsvp' ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))',
+      feeL: f.entry === 'tk' ? E2('El vecino ve el precio completo: ' + (+f.price > 0 ? money(+f.price + fee) : '$—') + ' con el cargo de servicio incluido. Tú recibes ' + (+f.price > 0 ? money(+f.price) : '$—') + ' por boleto.', 'Neighbors see the full price: ' + (+f.price > 0 ? money(+f.price + fee) : '$—') + ' with the service fee included. You get ' + (+f.price > 0 ? money(+f.price) : '$—') + ' per ticket.') : E2('To\'Latino no cobra nada: el pago es entre tú y el vecino.', 'To\'Latino charges nothing: payment is between you and the neighbor.'),
+      ages: [['all', E2('Todas las edades', 'All ages')], ['18', '18+'], ['21', '21+']].map(([k, l]) => ({ l, v: f.age === k ? 'selected' : 'filter', onClick: () => this.up({ age: k }) })), pol,
+      pv: { title: f.name.trim() || E2('Nombre del evento', 'Event name'), meta: (dy.l + ' · ' + hL(f.h0)).toUpperCase(), tag: f.entry === 'free' || f.entry === 'rsvp' ? E2('GRATIS', 'FREE') : '', dark: f.type === 'noche', image: PX(PHS[f.ph], 500), rows: [[E2('Cuándo', 'When'), whenL], [E2('Dónde', 'Where'), whereL], [E2('Entrada', 'Entry'), entL], [E2('Edad', 'Age'), f.age === 'all' ? E2('Todas', 'All') : f.age + '+']].map(([k, v]) => ({ k, v })) },
+      miss: miss.map(t => ({ t })), hasMiss: miss.length > 0, ctaL: this.props.user ? E2('Enviar a revisión', 'Send for review') : E2('Entra para publicar', 'Sign in to publish'), onSend: () => this.send(),
+      sent: sx ? { t: E2('Tu evento está en revisión', 'Your event is under review'), s: E2('To\'Latino lo revisa en 24 h y te avisa por SMS. Cuando se publique, lo manejas desde el panel: boletos, lista y puerta.', 'To\'Latino reviews it within 24 h and texts you. Once live, you manage it from the panel: tickets, list and door.'),
+        steps: [[E2('Enviado', 'Sent'), sx.at, 'done'], [E2('Revisión de To\'Latino', 'To\'Latino review'), E2('Hasta 24 h', 'Up to 24 h'), 'current'], [E2('Publicado en Eventos', 'Live in Events'), '', 'next']].map(([label, time, state]) => ({ label, time, state })),
+        rows: [[E2('EVENTO', 'EVENT'), sx.name], [E2('CUÁNDO', 'WHEN'), this.day(sx.day).l + ' · ' + hL(sx.h0) + ' – ' + hL(sx.h1)], [E2('DÓNDE', 'WHERE'), sx.where === 'otro' ? sx.addr : (O.find(b => b.id === sx.org) || {}).name || ''], [E2('ENTRADA', 'ENTRY'), { free: E2('Entrada libre', 'Free entry'), rsvp: E2('Gratis con RSVP · ', 'Free with RSVP · ') + sx.cap, tk: money(+sx.price) + E2(' · ' + sx.cap + ' boletos', ' · ' + sx.cap + ' tickets') }[sx.entry]]].map(([k, v]) => ({ k, v })) } : { steps: [], rows: [] },
+      onPanel: () => this.api().nav({ code: 'DASH-EVENTOS' }), onBack: () => this.api().nav({ code: 'APP-EVT-BUSQ' })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<script src="prototype/web-pages.js"></script>
+<script src="prototype/sop-store.js"></script>
+<script src="prototype/compa.js"></script>
+<style>body{margin:0}a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}</style>
+</helmet>
+<div data-screen-label="{{ scr }}" style="display:contents">
+  <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaFrame" mode="{{ mode }}" desktop="{{ desk }}" top="{{ top }}" title="{{ title }}" sub="{{ subK }}" on-close="{{ onClose }}" on-back="{{ onBack }}" person-label="{{ l.person }}" person2-label="{{ l.person2 }}" on-person="{{ onPerson }}" disclaimer="{{ l.disc }}" confirm="{{ confirm }}" composer="{{ composer }}" body-ref="{{ bodyRef }}" hint-size="100%,100%">
+    <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="3">
+      <sc-if value="{{ b.isSys }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaSysLine" hint-size="100%,20px">{{ b.t }}</x-import></sc-if>
+      <sc-if value="{{ b.isQa }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaUserMsg" hint-size="60%,40px">{{ b.t }}</x-import></sc-if>
+      <sc-if value="{{ b.isNote }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaMsg" source="{{ b.src }}" hint-size="100%,72px">{{ b.t }}</x-import></sc-if>
+      <sc-if value="{{ b.isTyping }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaTyping" hint-size="64px,40px"></x-import></sc-if>
+      <sc-if value="{{ b.isCtx }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaSlot" hint-size="100%,76px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.RequestCard" label="{{ b.label }}" tag="{{ b.tag }}" tone="{{ b.tone }}" title="{{ b.title }}" sub="{{ b.sub }}" on-click="{{ b.onClick }}" hint-size="100%,76px"></x-import></x-import></sc-if>
+      <sc-if value="{{ b.isReasons }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaSlot" hint-size="100%,240px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.HelpReasonList" items="{{ b.items }}" hint-size="100%,240px"></x-import></x-import></sc-if>
+      <sc-if value="{{ b.isOpts }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaSlot" stack="{{ true }}" hint-size="100%,200px"><sc-for list="{{ b.items }}" as="p" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OptionCard" icon="{{ p.icon }}" title="{{ p.title }}" sub="{{ p.sub }}" on="{{ p.on }}" on-click="{{ p.onClick }}" hint-size="100%,64px"></x-import></sc-for></x-import></sc-if>
+      <sc-if value="{{ b.isAct }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaActionCard" data-screen-label="El Compa · acción para confirmar" label="{{ b.k }}" title="{{ b.t }}" sub="{{ b.s }}" rows="{{ b.rows }}" active="{{ b.active }}" hint-size="100%,160px"></x-import></sc-if>
+      <sc-if value="{{ b.isHand }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaHandoffCard" title="{{ b.t }}" tag="{{ b.tag }}" sub="{{ b.s }}" label="{{ b.k }}" lines="{{ b.lines }}" open-label="{{ b.open }}" on-open="{{ b.onOpen }}" hint-size="100%,200px"></x-import></sc-if>
+      <sc-if value="{{ b.isChips }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.CompaChips" items="{{ b.items }}" hint-size="100%,36px"></x-import></sc-if>
+    </sc-for>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 393, &quot;height&quot;: 852}, &quot;mode&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;page&quot;, &quot;sheet&quot;], &quot;default&quot;: &quot;page&quot;, &quot;tsType&quot;: &quot;'page'|'sheet'&quot;}, &quot;lang&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;es&quot;, &quot;en&quot;], &quot;default&quot;: &quot;es&quot;, &quot;tsType&quot;: &quot;'es'|'en'&quot;}, &quot;desk&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;cref&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object&quot;}, &quot;live&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object&quot;}, &quot;n&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { th: [], pend: null, busy: false, txt: '', id: null, k: null };
+  bodyRef = React.createRef();
+  componentDidMount() { window.__tlCompa = this; this.reset(); if (!window.TLCompa) this._w = setInterval(() => { if (window.TLCompa) { clearInterval(this._w); this.forceUpdate(); } }, 60); }
+  componentDidUpdate(pp) { if (pp.n !== this.props.n || pp.mode !== this.props.mode || JSON.stringify(pp.cref) !== JSON.stringify(this.props.cref)) this.reset(); }
+  componentWillUnmount() { clearInterval(this._w); }
+  es() { return (this.props.lang || 'es') === 'es'; }
+  E2(a, b) { return this.es() ? a : b; }
+  scroll() { setTimeout(() => { let el = this.bodyRef.current; if (el && this.props.mode !== 'sheet') { let p = el.parentElement; while (p && !(p.scrollHeight > p.clientHeight + 4 && /auto|scroll/.test(getComputedStyle(p).overflowY))) p = p.parentElement; if (p) p.scrollTop = p.scrollHeight; return; } if (el) el.scrollTop = el.scrollHeight; }, 80); }
+  fmtH(h) { if (h == null || isNaN(+h)) return ''; const H = ((+h % 24) + 24) % 24, hh = Math.floor(H), m = Math.round((H - hh) * 60); return (hh % 12 === 0 ? 12 : hh % 12) + (m ? ':' + String(m).padStart(2, '0') : '') + (hh < 12 ? ' AM' : ' PM'); }
+  ops() { const es = this.es(), E2 = this.E2.bind(this), lv = this.props.live || {}, A = (window.TLAll && window.TLAll.B) || [], nm = id => (A.find(b => b.id === id) || {}).name || id;
+    const STL = { pend: [E2('PENDIENTE', 'PENDING'), 'neutral'], ok: [E2('CONFIRMADA', 'CONFIRMED'), 'signal'], alt: [E2('TE PROPONEN UN CAMBIO', 'THEY PROPOSE A CHANGE'), 'action'], no: [E2('NO PUDO', 'COULD NOT'), 'danger'], exp: [E2('SIN RESPUESTA', 'NO ANSWER'), 'neutral'], cx: [E2('CANCELADA', 'CANCELLED'), 'neutral'], done: [E2('TERMINADA', 'DONE'), 'neutral'] };
+    const day = d => d === 0 ? E2('Hoy', 'Today') : d === 1 ? E2('Mañana', 'Tomorrow') : E2('En ' + d + ' días', 'In ' + d + ' days');
+    const out = (lv.ops || []).map(x => { const kind = x.ped ? 'pedido' : x.rid ? 'reserva' : x.kind === 'evp' ? 'evento' : 'cita', st = STL[x.st] || STL.ok;
+      return { id: x.id, kind, code: x.code, biz: x.biz, bizN: nm(x.biz), lab: (x.t || [])[es ? 0 : 1] || '', when: day(x.day || 0) + (x.h != null ? ' · ' + this.fmtH(x.h) : ''), st: x.st, stL: st[0], tone: st[1], rid: x.rid }; });
+    const o = lv.order; if (o && o.num) out.unshift({ id: 'o' + o.num, kind: 'pedido', code: 'APP-NEG-PEDIDO', biz: o.biz, bizN: o.name || nm(o.biz), lab: E2('Pedido #', 'Order #') + o.num, when: o.total ? '$' + Number(o.total).toFixed(2) : '', st: o.cancelled ? 'cx' : 'ok', stL: o.cancelled ? STL.cx[0] : E2('EN CURSO', 'IN PROGRESS'), tone: 'neutral', order: true });
+    return out.filter(x => x.st !== 'cx' || x.order); }
+  ctxData(text) { const es = this.es(), u = (this.props.live || {}).user || {}, ops = this.ops(), A = (window.TLAll && window.TLAll.B) || [], N = v => String(v || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''), q = N(text);
+    const hit = A.filter(b => !b.admHidden && (ops.some(o => o.biz === b.id) || (q && N(b.name).split(/\s+/).filter(w => w.length > 3).some(w => q.includes(w)) && q.includes(N(b.name).split(/\s+/).filter(w => w.length > 3).slice(-1)[0] || '~')))).slice(0, 3);
+    const DAYS = es ? 'todos los días' : 'every day', hrs = b => b.hrs ? this.fmtH(b.hrs[0]) + '–' + this.fmtH(b.hrs[1]) + (b.days === 'finde' ? (es ? ' · solo fines de semana' : ' · weekends only') : ' · ' + DAYS) : '';
+    const C = window.TLContact, negocios = hit.map(b => ({ nombre: b.name, horario: hrs(b), ahora: b.open ? (es ? 'abierto' : 'open') + (b.st ? ' · ' + b.st : '') : (es ? 'cerrado' : 'closed'), que: (b.subs || []).slice(0, 3).join(', '), direccion: C && C.addr ? C.addr(b) : '', telefono: C && C.tel ? C.tel(b) : '', formas: (b.tags || []).filter(t => /delivery|pickup|cita|dinein|card|efectivo|cash/.test(t)).join(', ') }));
+    return { name: u.first || String(u.name || '').split(' ')[0] || '', lang: es ? 'es' : 'en', ops: ops.map(o => ({ id: o.id, tipo: o.kind, negocio: o.bizN, que: o.lab, cuando: o.when, estado: o.stL })), negocios }; }
+  opOf(ref) { const L = this.ops(); return ref ? L.find(o => o.id === ref.id) || (ref.kind ? L.find(o => o.kind === ref.kind || (ref.kind === 'cita' && o.kind === 'reserva')) : null) : null; }
+  reset() { const es = this.es(), E2 = this.E2.bind(this), u = (this.props.live || {}).user || {}, first = u.first || String(u.name || '').split(' ')[0] || '';
+    const id = window.TLCompa ? window.TLCompa.newId() : 'CP-0', op = this.props.mode === 'sheet' ? this.opOf(this.props.cref) : null;
+    let th;
+    if (op) th = [{ k: 'ctx', op }, { k: 'note', t: E2('Hola' + (first ? ', ' + first : '') + '. ¿Qué necesitas con ' + (op.kind === 'pedido' ? 'este pedido' : op.kind === 'evento' ? 'este evento' : 'esta ' + (op.kind === 'reserva' ? 'reservación' : 'cita')) + '?', 'Hi' + (first ? ', ' + first : '') + '. What do you need with this ' + (op.kind === 'pedido' ? 'order' : op.kind === 'evento' ? 'event' : op.kind === 'reserva' ? 'reservation' : 'booking') + '?') }, { k: 'reasons', op }];
+    else th = [{ k: 'note', t: E2('Hola' + (first ? ', ' + first : '') + '. Soy El Compa, el asistente de IA de To\u2019Latino. ¿Con qué te ayudo? Toca una opción o escríbelo con tus palabras.', 'Hi' + (first ? ', ' + first : '') + '. I\u2019m El Compa, To\u2019Latino\u2019s AI assistant. What can I help with? Tap an option or type it in your own words.') }, { k: 'kinds' }];
+    this.setState({ th, pend: null, busy: false, txt: '', id, k: null }); }
+  push(items, extra) { this.setState(z => ({ th: z.th.concat(items), ...(extra || {}) }), () => { this.save(); this.scroll(); }); }
+  save() { const C = window.TLCompa; if (!C) return; const th = this.state.th; C.save({ id: this.state.id, at: Date.now(), mode: this.props.mode || 'page', ref: this.props.cref || null, ai: !!this._ai, act: th.some(x => x.k === 'sys' && /CANCELASTE|YOU CANCELLED/.test(x.t || '')) ? 1 : 0, hand: this._hand || null, msgs: th.filter(x => x.k === 'qa' || x.k === 'note').map(x => ({ me: x.k === 'qa', t: x.t })) }); }
+  pickKind(kind, label) { const E2 = this.E2.bind(this), L = this.ops().filter(o => kind === 'cita' ? (o.kind === 'cita' || o.kind === 'reserva' || o.kind === 'evento') : o.kind === kind);
+    const items = [{ k: 'qa', t: label }];
+    if (kind === 'pago') items.push({ k: 'note', t: E2('¿Qué pasó con el pago?', 'What happened with the payment?') }, { k: 'pay' });
+    else if (kind === 'cuenta') items.push({ k: 'note', t: E2('¿Qué quieres hacer con tu cuenta?', 'What do you want to do with your account?') }, { k: 'acct' });
+    else if (!L.length) items.push({ k: 'note', t: E2('No veo ' + (kind === 'pedido' ? 'pedidos' : kind === 'boleto' ? 'boletos' : 'citas') + ' recientes en tu cuenta. Cuéntame qué pasó y lo vemos.', 'I don\u2019t see recent ' + (kind === 'pedido' ? 'orders' : kind === 'boleto' ? 'tickets' : 'bookings') + ' on your account. Tell me what happened and we\u2019ll look into it.') });
+    else if (L.length === 1) items.push({ k: 'ctx', op: L[0] }, { k: 'reasons', op: L[0] });
+    else items.push({ k: 'note', t: E2('¿Cuál?', 'Which one?') }, { k: 'oplist', ops: L });
+    this.push(items); }
+  pickOp(op) { this.push([{ k: 'ctx', op }, { k: 'reasons', op }]); }
+  reason(op, r) { const E2 = this.E2.bind(this), api = this.props.api || {};
+    if (r === 'other') { this.push([{ k: 'qa', t: E2('Otra cosa', 'Something else') }, { k: 'note', t: E2('Cuéntame qué pasó, con tus palabras.', 'Tell me what happened, in your own words.') }]); return; }
+    if (r === 'money') { this.hand(op, E2('Un cobro de ', 'A charge on ') + op.lab + ' · ' + op.bizN, E2('Me cobraron de más', 'I was overcharged')); return; }
+    if (r === 'cancel') { if (op.st === 'pend' && !op.order) { this.push([{ k: 'qa', t: E2('Cancelarla', 'Cancel it') }, { k: 'note', t: E2('Todavía es una solicitud: ' + op.bizN + ' no la ha confirmado. Si la cancelas no pagas nada y se libera lo retenido.', 'It\u2019s still a request: ' + op.bizN + ' hasn\u2019t confirmed it. If you cancel, you pay nothing and any hold is released.'), src: E2('SEGÚN EL CENTRO DE AYUDA', 'PER THE HELP CENTER') }, { k: 'act', type: 'cancel', op }], { pend: { type: 'cancel', op } }); return; }
+      this.push([{ k: 'qa', t: E2('Cancelar', 'Cancel') }, { k: 'note', t: op.order ? E2('Te abro la cancelación del pedido: ahí ves si todavía es gratis antes de confirmar.', 'I\u2019ll open the order cancellation: you\u2019ll see whether it\u2019s still free before confirming.') : E2(op.bizN + ' ya la confirmó, así que se aplica su política. Te abro la ayuda de la cita para que veas qué pasa si cancelas.', op.bizN + ' already confirmed it, so its policy applies. I\u2019ll open the booking help so you see what happens if you cancel.'), src: E2('SEGÚN LA POLÍTICA DE ', 'PER THE POLICY OF ') + op.bizN.toUpperCase() }]);
+      setTimeout(() => { if (op.order) api.cancelOrder && api.cancelOrder(op); else api.flow && api.flow(op, 'cancel'); }, 700); return; }
+    this.push([{ k: 'qa', t: this.rLabel(op, r) }, { k: 'note', t: E2('Te abro la ayuda de ' + op.bizN + ' para eso.', 'I\u2019ll open ' + op.bizN + '\u2019s help for that.') }]);
+    setTimeout(() => api.flow && api.flow(op, r), 600); }
+  rLabel(op, r) { const E2 = this.E2.bind(this); return { alt: E2('Pedir otra hora', 'Ask for another time'), late: E2('Voy tarde', 'Running late'), wrong: E2('Algo no está bien', 'Something is wrong'), pay: E2('Un problema con el pago', 'A payment problem') }[r] || r; }
+  confirm() { const p = this.state.pend, E2 = this.E2.bind(this), api = this.props.api || {}; if (!p) return;
+    const res = api.act ? api.act({ type: p.type, ref: p.op.id }) : { ok: false };
+    if (res && res.ok) this.push([{ k: 'sys', t: E2('CANCELASTE LA SOLICITUD EN ', 'YOU CANCELLED THE REQUEST AT ') + p.op.bizN.toUpperCase() + E2(' · NO SE COBRÓ NADA', ' · NOTHING WAS CHARGED') }, { k: 'note', t: E2('Listo. ' + p.op.bizN + ' ya recibió el aviso. ¿Algo más?', 'Done. ' + p.op.bizN + ' got the notice. Anything else?') }], { pend: null });
+    else this.push([{ k: 'note', t: E2('No pude cancelarla desde aquí. Te abro la cita para hacerlo ahí.', 'I couldn\u2019t cancel it from here. I\u2019ll open the booking so you can do it there.') }], { pend: null }); }
+  drop() { this.push([{ k: 'note', t: this.E2('Perfecto, la dejamos como está.', 'Sure, we\u2019ll leave it as is.') }], { pend: null }); }
+  hand(op, refL, ask) { const E2 = this.E2.bind(this), api = this.props.api || {}, C = window.TLCompa, tm = C ? C.team(this.es()) : { when: '' };
+    const conv = this.state.th.filter(x => x.k === 'qa').map(x => x.t).concat(ask ? [ask] : []).slice(-4);
+    const text = E2('Desde El Compa: ', 'From El Compa: ') + (conv.join(' · ') || E2('Pidió hablar con una persona.', 'Asked to talk to a person.'));
+    const cat = op ? (op.kind === 'pedido' ? 'pedido' : 'cita') : /cobr|pago|charge|pay/i.test(text) ? 'pago' : 'cuenta';
+    const t = api.handoff ? api.handoff({ cat: ask && /cobr|charge/i.test(ask) ? 'pago' : cat, ref: op ? op.id : '', refL: refL || (op ? op.lab + ' · ' + op.bizN : ''), biz: op ? op.biz : '', text }) : null; this._hand = t ? t.id : null;
+    const lines = [{ t: refL || (op ? op.lab + ' · ' + op.bizN : E2('Sin operación', 'No transaction')) }].concat(conv.slice(-2).map(x => ({ t: '«' + x + '»' }))).concat([{ t: E2('Tu conversación con El Compa', 'Your conversation with El Compa') }]);
+    this.push((ask ? [{ k: 'qa', t: ask }] : []).concat([{ k: 'note', t: E2('Eso lo revisa una persona del equipo: yo no muevo dinero ni cambio tu cuenta. Ya le pasé tu caso con el resumen.', 'A person on the team reviews that: I don\u2019t move money or change your account. I passed your case on with a summary.') }, { k: 'hand', id: t ? t.id : '', lines, when: tm.when }]), { pend: null }); }
+  async send(text0) { const text = String(text0 != null ? text0 : this.state.txt).trim(); if (!text || this.state.busy) return; const C = window.TLCompa, es = this.es();
+    const msgs = this.state.th.filter(x => x.k === 'qa' || x.k === 'note').map(x => ({ me: x.k === 'qa', t: x.t })).concat([{ me: true, t: text }]);
+    this.push([{ k: 'qa', t: text }], { txt: '', busy: true });
+    const r = C ? await C.ask({ msgs, ctx: this.ctxData(text), es }) : null; this._ai = this._ai || !!(r && r.ai);
+    if (!r) { this.setState({ busy: false }); return; }
+    if (r.handoff && !/cobr|pago|devol|reembols|dinero|tarjeta|cuenta|robad|acoso|segur|estafa|persona|humano|charge|refund|money|account|scam|person|human|harass/i.test(text)) { r.handoff = false; r.chips = (r.chips || []).slice(0, 2).concat([this.E2('Con una persona', 'Talk to a person')]); }
+    const ops = this.ops(), op = r.action ? ops.find(o => o.id === r.action.ref) : null, items = [{ k: 'note', t: r.reply, src: r.src }];
+    this.setState({ busy: false });
+    if (r.handoff) { this.push([{ k: 'note', t: r.reply, src: r.src }]); setTimeout(() => this.hand(null, '', null), 300); return; }
+    if (op && r.action.type === 'cancel' && op.st === 'pend' && !op.order) { items.push({ k: 'act', type: 'cancel', op }); this.push(items, { pend: { type: 'cancel', op } }); return; }
+    if (op && (r.action.type === 'open' || r.action.type === 'cancel')) items.push({ k: 'ctx', op });
+    if (r.chips && r.chips.length) items.push({ k: 'chips', items: r.chips });
+    this.push(items); }
+  block(x, i, last) { const es = this.es(), E2 = this.E2.bind(this), api = this.props.api || {}, B = o => Object.assign({ isSys: false, isQa: false, isNote: false, isTyping: false, isCtx: false, isReasons: false, isOpts: false, isAct: false, isHand: false, isChips: false }, o);
+    const op = x.op, act = last && !this.state.pend;
+    if (x.k === 'sys') return B({ isSys: true, t: x.t });
+    if (x.k === 'qa') return B({ isQa: true, t: x.t });
+    if (x.k === 'note') return B({ isNote: true, t: x.t, hasSrc: !!x.src, src: x.src || '' });
+    if (x.k === 'ctx') return B({ isCtx: true, label: op.kind === 'pedido' ? E2('SOBRE ESTE PEDIDO', 'ABOUT THIS ORDER') : E2('SOBRE ESTA OPERACIÓN', 'ABOUT THIS ITEM'), tag: op.stL, tone: op.tone, title: op.bizN + ' · ' + op.lab, sub: op.when, onClick: () => api.open && api.open(op) });
+    if (x.k === 'reasons') { const R = op.kind === 'pedido' ? [['wrong', E2('Algo no está bien', 'Something is wrong'), E2('Falta algo, llegó mal o tarde', 'Missing, wrong or late'), 'warning'], ['cancel', E2('Cancelarlo', 'Cancel it'), E2('Ves si todavía es gratis', 'See if it\u2019s still free'), 'close'], ['money', E2('Me cobraron de más', 'I was overcharged'), E2('Lo revisa una persona', 'A person reviews it'), 'card'], ['other', E2('Otra cosa', 'Something else'), E2('Escríbele al Compa', 'Write to El Compa'), 'bubble']]
+        : op.kind === 'evento' ? [['cancel', E2('Cancelarlo', 'Cancel it'), op.st === 'pend' ? E2('Todavía es una solicitud', 'It\u2019s still a request') : E2('Según su política', 'Per its policy'), 'close'], ['pay', E2('Un problema con el pago', 'A payment problem'), E2('Lo revisa To\u2019Latino en 48 h', 'To\u2019Latino reviews in 48 h'), 'card'], ['other', E2('Otra cosa', 'Something else'), E2('Escríbele al Compa', 'Write to El Compa'), 'bubble']]
+        : [['cancel', E2('Cancelarla', 'Cancel it'), op.st === 'pend' ? E2('Todavía es una solicitud: no pagas nada', 'Still a request: you pay nothing') : E2('Según la política de ', 'Per the policy of ') + op.bizN, 'close'], ['alt', E2('Pedir otra hora', 'Ask for another time'), E2('Le preguntamos a ', 'We ask ') + op.bizN, 'clock'], ['late', E2('Voy tarde', 'Running late'), E2('Le avisamos al negocio', 'We tell the business'), 'warning'], ['other', E2('Otra cosa', 'Something else'), E2('Escríbele al Compa', 'Write to El Compa'), 'bubble']];
+      return B({ isReasons: true, items: R.map(([k, l, s, ic]) => ({ label: l, sub: s, icon: ic, onClick: act ? () => this.reason(op, k) : () => {} })) }); }
+    if (x.k === 'kinds') { const L = this.ops(), f = k => L.find(o => k === 'cita' ? (o.kind === 'cita' || o.kind === 'reserva') : o.kind === k);
+      const K = [['cita', 'calendar', E2('Una cita o reservación', 'A booking or reservation')], ['pedido', 'bag', E2('Un pedido', 'An order')], ['boleto', 'ticket', E2('Un boleto', 'A ticket')], ['pago', 'card', E2('Un pago o cobro', 'A payment or charge')], ['cuenta', 'users', E2('Mi cuenta', 'My account')]];
+      return B({ isOpts: true, items: K.map(([k, ic, t]) => { const o = f(k); return { icon: ic, title: t, sub: o ? o.bizN + ' · ' + o.when : k === 'pago' ? E2('Cobros, devoluciones y tarjetas', 'Charges, refunds and cards') : k === 'cuenta' ? E2('Teléfono, ciudad y privacidad', 'Phone, city and privacy') : k === 'boleto' ? E2('Tus boletos de eventos', 'Your event tickets') : E2('No hay recientes', 'None recent'), on: false, onClick: act ? () => this.pickKind(k, t) : () => {} }; }) }); }
+    if (x.k === 'oplist') return B({ isOpts: true, items: x.ops.map(o => ({ icon: o.kind === 'pedido' ? 'bag' : 'calendar', title: o.bizN, sub: o.lab + ' · ' + o.when, on: false, onClick: act ? () => this.pickOp(o) : () => {} })) });
+    if (x.k === 'pay') return B({ isOpts: true, items: [['dup', 'card', E2('Me cobraron dos veces', 'I was charged twice')], ['ref', 'dollar', E2('No me llegó una devolución', 'A refund didn\u2019t arrive')], ['unk', 'warning', E2('Un cobro que no reconozco', 'A charge I don\u2019t recognize')]].map(([k, ic, t]) => ({ icon: ic, title: t, sub: E2('Lo revisa una persona', 'A person reviews it'), on: false, onClick: act ? () => this.hand(null, '', t) : () => {} })) });
+    if (x.k === 'acct') return B({ isOpts: true, items: [['tel', 'phone', E2('Cambiar mi teléfono', 'Change my phone')], ['city', 'pin', E2('Cambiar de ciudad', 'Change city')], ['priv', 'lock', E2('Privacidad o borrar mi cuenta', 'Privacy or delete my account')], ['rob', 'shield', E2('Alguien entró a mi cuenta', 'Someone got into my account')]].map(([k, ic, t]) => ({ icon: ic, title: t, sub: k === 'rob' ? E2('Te atiende una persona', 'A person helps you') : E2('Te abro la pantalla', 'I\u2019ll open the screen'), on: false, onClick: act ? () => { if (k === 'rob') this.hand(null, '', t); else { this.push([{ k: 'qa', t }, { k: 'note', t: E2('Te abro Mi cuenta para eso. Tú confirmas cada cambio.', 'I\u2019ll open My account for that. You confirm every change.') }]); setTimeout(() => api.account && api.account(k), 600); } } : () => {} })) });
+    if (x.k === 'act') return B({ isAct: true, active: !!this.state.pend, k: E2('ASÍ QUEDA', 'HERE\u2019S HOW IT ENDS UP'), t: E2('Cancelar la solicitud', 'Cancel the request'), s: op.bizN + ' · ' + op.lab + ' · ' + op.when, rows: [{ k: E2('Cobro', 'Charge'), v: '$0', c: '#0B0E12' }, { k: E2('Lo retenido', 'Any hold'), v: E2('Retenido → Liberado', 'Held → Released'), c: '#00695B' }, { k: E2('Aviso al negocio', 'Notice to the business'), v: E2('Al instante', 'Instantly'), c: '#0B0E12' }] });
+    if (x.k === 'hand') return B({ isHand: true, t: E2('Tu caso pasó a Soporte', 'Your case went to Support'), tag: x.id || 'TK', s: E2('Una persona te escribe ' + x.when + '. El equipo atiende de lunes a viernes, de 9 AM a 6 PM.', 'A person writes to you ' + x.when + '. The team works Monday to Friday, 9 AM to 6 PM.'), k: E2('LO QUE RECIBIÓ EL EQUIPO', 'WHAT THE TEAM RECEIVED'), lines: x.lines, open: E2('Ver mi caso', 'See my case'), onOpen: () => api.soporte && api.soporte(x.id) });
+    if (x.k === 'chips') return B({ isChips: true, items: x.items.map(l => ({ l, onClick: act ? () => (/^(con una persona|talk to a person)$/i.test(l) ? this.hand(null, '', l) : this.send(l)) : () => {} })) });
+    return B({ isSys: true, t: '' }); }
+  renderVals() { const es = this.es(), E2 = this.E2.bind(this), desk = !!this.props.desk, sheet = this.props.mode === 'sheet', api = this.props.api || {}, s = this.state;
+    const th = s.th, blocks = th.map((x, i) => this.block(x, i, i >= th.length - 2)).concat(s.busy ? [{ isSys: false, isQa: false, isNote: false, isTyping: true, isCtx: false, isReasons: false, isOpts: false, isAct: false, isHand: false, isChips: false }] : []);
+    const p = s.pend;
+    return { scr: sheet ? 'El Compa · hoja de ayuda (2as)' : 'APP-COMPA · pasos guiados (2at)', mode: sheet ? 'sheet' : 'page', desk, top: this.props.top || 0, title: sheet ? 'El Compa' : E2('Ayuda', 'Help'), bodyRef: this.bodyRef, blocks,
+      subK: sheet ? E2('ASISTENTE DE IA', 'AI ASSISTANT') : E2('TE GUÍA EL COMPA · IA', 'EL COMPA GUIDES YOU · AI'),
+      l: { title: E2('Ayuda', 'Help'), person: E2('Con una persona', 'Talk to a person'), person2: E2('Hablar con una persona', 'Talk to a person'), ph: E2('O escríbelo con tus palabras', 'Or type it in your own words'), disc: E2('EL COMPA ES UNA IA Y PUEDE EQUIVOCARSE. LO QUE MUEVE DINERO O CAMBIA TU CUENTA LO REVISA UNA PERSONA.', 'EL COMPA IS AN AI AND CAN MAKE MISTAKES. ANYTHING THAT MOVES MONEY OR CHANGES YOUR ACCOUNT IS REVIEWED BY A PERSON.') },
+      onClose: () => api.close && api.close(), onBack: () => api.back && api.back(), onPerson: () => { if (!s.busy) this.hand(sheet ? this.opOf(this.props.cref) : null, '', E2('Quiero hablar con una persona', 'I want to talk to a person')); },
+      confirm: p ? { note: E2('EL COMPA LO PREPARÓ · CONFÍRMALO TÚ', 'EL COMPA PREPARED IT · YOU CONFIRM'), okLabel: E2('Sí, cancelar la solicitud', 'Yes, cancel the request'), noLabel: E2('No, dejarla', 'No, keep it'), onOk: () => this.confirm(), onNo: () => this.drop() } : null,
+      composer: p ? null : { value: s.txt, placeholder: E2('O escríbelo con tus palabras', 'Or type it in your own words'), onChange: e => this.setState({ txt: e.target.value }), onKeyDown: e => { if (e.key === 'Enter') this.send(); }, onSend: () => this.send(), canSend: !!(s.txt.trim() && !s.busy) } };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+  <script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+  <script src="prototype/evp-flow.js"></script>
+  <style>
+    a { color: #4B37F5; text-decoration: none; }
+    a:hover { color: #2E1FD1; }
+    @keyframes tlEpFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes tlEpUp { from { transform: translateY(64px); opacity: .5; } to { transform: none; opacity: 1; } }
+  </style>
+</helmet>
+<div data-screen-label="{{ label }}" style="min-height:100%;background:#F7F6F3;font-family:Manrope,sans-serif;color:#0B0E12;animation:tlEpFade .2s ease-out">
+  <div style="max-width:{{ maxW }};margin:0 auto;padding:{{ pad }};display:grid;grid-template-columns:{{ cols }};gap:48px;align-items:start">
+    <div style="min-width:0;display:flex;flex-direction:column;gap:22px">
+
+      <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ m }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.StepHeader" title="{{ stepT }}" step="{{ step }}" total="{{ 3 }}" on-back="{{ onStepBack }}" hint-size="100%,56px"></x-import></sc-if>
+        <sc-if value="{{ d }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <span onClick="{{ onBack }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ backL }}</span>
+            <span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ eye }}</span>
+            <h1 style="margin:0;font:800 30px/1.1 Sora,sans-serif;letter-spacing:-.035em;text-wrap:balance">{{ titleD }}</h1>
+            <p style="margin:0;max-width:620px;font:500 14px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ intro }}</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ sh1 }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.occK }}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ occ }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="110px,34px">{{ c.l }}</x-import></sc-for></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.pK }}</span>
+            <div style="padding:14px 16px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;align-items:center;gap:14px">
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font:800 22px/1 Sora,sans-serif;letter-spacing:-.03em">{{ pL }}</span><span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ pS }}</span></div>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="minus" size="{{ 42 }}" on-click="{{ onPm }}" hint-size="42px,42px"></x-import>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="plus" size="{{ 42 }}" on-click="{{ onPp }}" hint-size="42px,42px"></x-import>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.areaK }}</span>
+            <div style="border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:0 16px">
+              <sc-for list="{{ areas }}" as="x" hint-placeholder-count="3"><div onClick="{{ x.on }}" style="display:flex;gap:12px;align-items:center;padding:13px 0;border-top:{{ x.bt }};cursor:pointer"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:99px;border:{{ x.ring }};flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 14px/1.35 Manrope,sans-serif">{{ x.t }}</div><div style="margin-top:2px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ x.s }}</div></div></div></sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ sh2 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.dayK }}</span>
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.DateStrip" days="{{ days }}" selected="{{ dSel }}" on-select="{{ onDay }}" hint-size="100%,76px"></x-import>
+            <span style="font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ L.leadS }}</span>
+          </div>
+          <sc-for list="{{ turns }}" as="tu" hint-placeholder-count="2">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ tu.k }}</span>
+              <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.TimeSlots" slots="{{ tu.slots }}" selected="{{ tSel }}" on-select="{{ onTime }}" hint-size="100%,44px"></x-import>
+            </div>
+          </sc-for>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.durK }}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ durs }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="70px,34px">{{ c.l }}</x-import></sc-for></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ sh3 }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.menuK }}</span>
+            <div style="border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:0 16px">
+              <sc-for list="{{ menus }}" as="x" hint-placeholder-count="3"><div onClick="{{ x.on }}" style="display:flex;gap:12px;align-items:center;padding:13px 0;border-top:{{ x.bt }};cursor:pointer"><span style="width:20px;height:20px;box-sizing:border-box;border-radius:99px;border:{{ x.ring }};flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 14px/1.35 Manrope,sans-serif">{{ x.t }}</div><div style="margin-top:2px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ x.s }}</div></div></div></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.budK }}</span>
+            <div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ buds }}" as="c" hint-placeholder-count="4"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.on }}" hint-size="96px,34px">{{ c.l }}</x-import></sc-for></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.extK }}</span>
+            <div style="display:flex;flex-direction:column;gap:8px"><sc-for list="{{ exts }}" as="x" hint-placeholder-count="5"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.AddOnRow" label="{{ x.l }}" price="{{ x.p }}" checked="{{ x.on }}" on-toggle="{{ x.tog }}" hint-size="100%,52px"></x-import></sc-for></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.noteK }}</span>
+            <textarea value="{{ note }}" onChange="{{ onNote }}" placeholder="{{ L.notePh }}" rows="3" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);background:#fff;font:500 14px/1.5 Manrope,sans-serif;color:#0B0E12;resize:none;outline:none"></textarea>
+          </div>
+          <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.DepositNote" hint-size="100%,56px">{{ L.money }}</x-import>
+          <div style="padding:14px 16px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;gap:12px;align-items:center">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="users" size="{{ 18 }}" color="rgba(11,14,18,.6)" hint-size="18px,18px"></x-import>
+            <div style="flex:1;min-width:0"><div style="font:700 14px/1.35 Manrope,sans-serif">{{ whoT }}</div><div style="margin-top:2px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ whoS }}</div></div>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{ isSt }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <span onClick="{{ onBack }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 15 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import>{{ backL }}</span>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ tagTone }}" hint-size="120px,18px">{{ tagL }}</x-import><span style="font:700 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ num }}</span></div>
+          <h1 style="margin:0;font:800 {{ h1 }}/1.12 Sora,sans-serif;letter-spacing:-.035em;text-wrap:balance">{{ stT }}</h1>
+          <p style="margin:0;font:500 14px/1.6 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ stS }}</p>
+        </div>
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OrderTracker" steps="{{ steps }}" horizontal="{{ d }}" hint-size="100%,150px"></x-import>
+
+        <sc-if value="{{ hasQ }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:18px;border-radius:20px;background:#fff;border:1.5px solid #0B0E12;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><span style="font:800 17px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ qT }}</span><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5);flex:none">{{ qValid }}</span></div>
+            <sc-for list="{{ qRows }}" as="r" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;padding-top:10px;border-top:{{ r.bt }}"><div style="min-width:0"><div style="font:700 13.5px/1.35 Manrope,sans-serif">{{ r.l }}</div><div style="margin-top:2px;font:500 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.55)">{{ r.s }}</div></div><span style="font:700 13px 'JetBrains Mono',monospace;flex:none">{{ r.v }}</span></div></sc-for>
+            <div style="padding-top:10px;border-top:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:7px;font:500 13px Manrope,sans-serif;color:rgba(11,14,18,.7)">
+              <sc-for list="{{ qSum }}" as="r" hint-placeholder-count="3"><div style="display:flex;justify-content:space-between;gap:12px;font-weight:{{ r.fw }};color:{{ r.fg }}"><span>{{ r.l }}</span><span style="font-family:'JetBrains Mono',monospace">{{ r.v }}</span></div></sc-for>
+            </div>
+            <span style="font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ qPol }}</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ hasNote }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:14px 16px;border-radius:17px;background:{{ noteBg }};display:flex;gap:10px;align-items:flex-start">
+            <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ noteIc }}" size="{{ 17 }}" color="{{ noteFg }}" stroke-width="{{ 2 }}" hint-size="17px,17px"></x-import>
+            <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font:700 13.5px/1.45 Manrope,sans-serif;color:{{ noteFg }};text-wrap:pretty">{{ noteT }}</span><sc-if value="{{ hasNoteS }}" hint-placeholder-val="{{ false }}"><span style="font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.65);text-wrap:pretty">{{ noteS }}</span></sc-if></div>
+          </div>
+        </sc-if>
+
+        <div style="display:grid;grid-template-columns:{{ actCols }};gap:8px"><sc-for list="{{ acts }}" as="a" hint-placeholder-count="2"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="{{ a.v }}" size="{{ a.sz }}" block="{{ true }}" icon="{{ a.ic }}" on-click="{{ a.on }}" hint-size="100%,50px">{{ a.l }}</x-import></div></sc-for></div>
+
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.askedK }}</span>
+          <div style="border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:4px 16px">
+            <sc-for list="{{ kv }}" as="r" hint-placeholder-count="5"><div style="display:flex;gap:14px;padding:11px 0;border-top:{{ r.bt }}"><span style="flex:none;width:96px;font:700 9.5px/1.6 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ r.k }}</span><span style="flex:1;min-width:0;font:600 13.5px/1.45 Manrope,sans-serif;text-wrap:pretty">{{ r.v }}</span></div></sc-for>
+          </div>
+        </div>
+
+        <sc-if value="{{ hasOthers }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font:800 10.5px 'JetBrains Mono',monospace;letter-spacing:.12em">{{ L.othK }}</span>
+            <sc-for list="{{ others }}" as="o" hint-placeholder-count="2"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ o.name }}" meta="{{ o.meta }}" verified="{{ o.ver }}" image="{{ o.img }}" slot="{{ o.slot }}" on-click="{{ o.on }}" hint-size="100%,78px"></x-import></sc-for>
+          </div>
+        </sc-if>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ d }}" hint-placeholder-val="{{ false }}">
+      <div data-sticky-rail="1" style="display:flex;flex-direction:column;gap:14px">
+        <x-import component-from-global-scope="ToLatinoDesignSystem_d26632.BusinessRow" name="{{ biz.name }}" meta="{{ biz.meta }}" verified="{{ biz.ver }}" image="{{ biz.img }}" hint-size="100%,78px"></x-import>
+        <div style="padding:16px 18px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:9px">
+          <span style="font:800 10px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ L.sumK }}</span>
+          <sc-for list="{{ sum }}" as="r" hint-placeholder-count="4"><div style="display:flex;gap:10px;align-items:center;font:600 13.5px/1.4 Manrope,sans-serif"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ r.ic }}" size="{{ 15 }}" color="rgba(11,14,18,.55)" hint-size="15px,15px"></x-import><span style="flex:1;min-width:0">{{ r.t }}</span></div></sc-for>
+        </div>
+        <sc-if value="{{ isForm }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ hasErr }}" hint-placeholder-val="{{ false }}"><span style="font:600 12.5px/1.45 Manrope,sans-serif;color:#C0392B">{{ err }}</span></sc-if>
+          <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" on-click="{{ onSend }}" hint-size="100%,50px">{{ sendL }}</x-import></div>
+          <span style="font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ respL }}</span>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ mBar }}" hint-placeholder-val="{{ true }}">
+    <div style="position:sticky;bottom:0;padding:12px 20px 24px;background:rgba(247,246,243,.96);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-top:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:8px">
+      <sc-if value="{{ hasErr }}" hint-placeholder-val="{{ false }}"><span style="font:600 12px/1.45 Manrope,sans-serif;color:#C0392B">{{ err }}</span></sc-if>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="flex:1;min-width:0"><div style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ barK }}</div><div style="margin-top:3px;font:800 14px/1.3 Sora,sans-serif;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ barV }}</div></div>
+        <div style="display:flex;flex:none;min-width:150px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" on-click="{{ onNext }}" hint-size="150px,50px">{{ nextL }}</x-import></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ cx.open }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Evento privado · cancelar" style="position:fixed;inset:0;z-index:96">
+      <div onClick="{{ cx.onNo }}" style="position:absolute;inset:0;background:rgba(11,14,18,.5);animation:tlEpFade .2s ease-out"></div>
+      <div style="position:absolute;left:{{ cx.l }};right:{{ cx.r }};top:{{ cx.t }};bottom:{{ cx.b }};width:{{ cx.w }};margin-left:{{ cx.ml }};box-sizing:border-box;background:#fff;border-radius:{{ cx.rad }};padding:22px 22px 28px;display:flex;flex-direction:column;gap:14px;animation:tlEpUp .26s cubic-bezier(.2,.8,.2,1)">
+        <span style="font:800 20px/1.2 Sora,sans-serif;letter-spacing:-.03em">{{ cx.t1 }}</span>
+        <span style="font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ cx.s1 }}</span>
+        <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" block="{{ true }}" on-click="{{ cx.onYes }}" hint-size="100%,50px">{{ cx.yes }}</x-import></div>
+        <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" block="{{ true }}" on-click="{{ cx.onNo }}" hint-size="100%,50px">{{ cx.no }}</x-import></div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;biz&quot;: {&quot;editor&quot;: &quot;text&quot;, &quot;default&quot;: &quot;sabor-dominicano&quot;, &quot;tsType&quot;: &quot;string&quot;}, &quot;desk&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;lang&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;es&quot;, &quot;en&quot;], &quot;default&quot;: &quot;es&quot;, &quot;tsType&quot;: &quot;'es' | 'en'&quot;}, &quot;p0&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;eid&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;string&quot;}, &quot;list&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object[]&quot;}, &quot;user&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;object | null&quot;}, &quot;dw&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;number&quot;}, &quot;api&quot;: {&quot;editor&quot;: null, &quot;tsType&quot;: &quot;{ back, login, add, upd, open, reform, other, toRsv, encargo, top, vTop }&quot;}}">
+class Component extends DCLogic {
+  state = { f: null, step: 1, err: '', cx: false, cardTry: 0 };
+  E2(a, b) { return (this.props.lang || 'es') === 'es' ? a : b; }
+  api() { return this.props.api || {}; }
+  vTop() { const a = this.api(); return a.vTop ? a.vTop() : 80; }
+  biz() { const A = (window.TLAll && window.TLAll.B) || []; return A.find(x => x.id === this.props.biz) || null; }
+  ev() { const id = this.props.eid; return id ? (this.props.list || []).find(x => x.id === id) || null : null; }
+  base(b) { const C = window.TLEvp.cfg(b), p0 = +this.props.p0 || 0; return { biz: b.id, occ: '', p: Math.min(C.cap, Math.max(C.max + 1, p0)), area: C.areas[0][0], i: C.lead, h: null, dur: 3, menu: 'buffet', bud: '30', ext: {}, note: '' }; }
+  F(b) { const f = this.state.f; return f && f.biz === b.id ? f : this.base(b); }
+  set(o) { const b = this.biz(); if (!b) return; this.setState(z => ({ f: Object.assign({}, z.f && z.f.biz === b.id ? z.f : this.base(b), o), err: '' })); }
+  componentDidUpdate(pp) { if (pp.biz !== this.props.biz || (pp.eid && !this.props.eid)) { if (pp.biz !== this.props.biz) this.setState({ f: null, step: 1, err: '', cx: false }); } }
+  meta(b) { return (b.r ? '★ ' + b.r + ' · ' : '') + (b.d != null ? b.d + ' MI · ' : '') + String((b.subs || [])[0] || '').toUpperCase(); }
+  img(b) { const p = (b.ph || [])[0]; return p ? 'https://images.pexels.com/photos/' + p + '/pexels-photo-' + p + '.jpeg?auto=compress&cs=tinysrgb&h=350' : ''; }
+  renderVals() {
+    const E2 = this.E2.bind(this), es = (this.props.lang || 'es') === 'es', T = window.TLEvp, b = this.biz(), desk = !!this.props.desk, api = this.api();
+    const lay = { m: !desk, d: desk, maxW: desk ? '1180px' : 'none', pad: desk ? '22px 30px 64px' : '0 20px 28px', cols: desk ? 'minmax(0,1fr) 372px' : 'minmax(0,1fr)', h1: desk ? '30px' : '24px', actCols: desk ? 'repeat(2,minmax(0,1fr))' : 'minmax(0,1fr)' };
+    const L = { occK: E2('¿QUÉ CELEBRAN?', 'WHAT ARE YOU CELEBRATING?'), pK: E2('¿CUÁNTOS SON?', 'HOW MANY GUESTS?'), areaK: E2('¿DÓNDE LOS SIENTAN?', 'WHERE DO YOU SIT?'), dayK: E2('¿QUÉ DÍA?', 'WHICH DAY?'), durK: E2('¿CUÁNTO DURA?', 'HOW LONG?'), menuK: E2('¿QUÉ VAN A COMER?', 'WHAT WILL YOU EAT?'), budK: E2('PRESUPUESTO POR PERSONA', 'BUDGET PER PERSON'), extK: E2('TAMBIÉN NECESITAN', 'YOU ALSO NEED'), noteK: E2('ALGO MÁS · OPCIONAL', 'ANYTHING ELSE · OPTIONAL'), notePh: E2('Alergias, sorpresas, a qué hora llega el bizcocho…', 'Allergies, surprises, when the cake arrives…'), sumK: E2('TU EVENTO', 'YOUR EVENT'), askedK: E2('LO QUE PEDISTE', 'WHAT YOU ASKED FOR'), othK: E2('OTROS QUE HACEN EVENTOS PRIVADOS', 'OTHERS THAT HOST PRIVATE EVENTS'),
+      leadS: E2('Con 3 días o más para que preparen la comida.', 'At least 3 days ahead so they can prepare the food.'), money: E2('Nada se cobra hasta que aceptes su propuesta. Al aceptar, se cobra el depósito y se descuenta del total.', 'Nothing is charged until you accept their proposal. When you accept, the deposit is charged and taken off the total.') };
+    const off = Object.assign({}, lay, { label: 'APP-NEG-EVENTO-PRIVADO', L, isForm: false, isSt: false, occ: [], areas: [], days: [], turns: [], durs: [], menus: [], buds: [], exts: [], steps: [], qRows: [], qSum: [], acts: [], kv: [], others: [], sum: [], biz: {}, cx: { open: false }, mBar: false, onBack: () => api.back && api.back() });
+    if (!b || !T) return off;
+    const C = T.cfg(b), u = this.props.user, ev = this.ev(), money = T.money, fT = T.fT, dl = (i, long) => T.cap(T.dayL(i, es, long));
+    const bizV = { name: b.name, meta: this.meta(b), ver: !!b.verified, img: this.img(b) }, areaL = k => { const a = C.areas.find(x => x[0] === k); return a ? (es ? a[1] : a[2]) : ''; };
+    const lbl = (L0, k) => { const x = L0.find(y => y[0] === k); return x ? (es ? x[1] : x[2]) : ''; };
+    const out = Object.assign({}, off, { biz: bizV, backL: b.name, label: 'APP-NEG-EVENTO-PRIVADO · ' + (desk ? 'desktop' : 'móvil') });
+    if (!ev) { const f = this.F(b), step = desk ? 0 : this.state.step, okStep = n => n === 1 ? !!f.occ : n === 2 ? f.h != null : true;
+      const need = () => !f.occ ? E2('Elige qué celebran.', 'Pick what you are celebrating.') : f.h == null ? E2('Elige la hora.', 'Pick the time.') : '';
+      const send = () => { const e = need(); if (e) { this.setState({ err: e }); return; } if (!u) { if (api.login) api.login(); return; }
+        const occL = lbl(T.OCC, f.occ), mL = lbl(T.MENU, f.menu), bL = lbl(T.BUD, f.bud);
+        const x = Object.assign({}, f, { own: b.id, title: E2('Evento privado · ', 'Private event · ') + f.p + E2(' personas', ' guests'), dL: dl(f.i) + ' · ' + fT(f.h), hL: f.p + E2(' personas · ', ' guests · ') + mL + ' · ' + bL + E2(' p/p', ' pp'), who: u.name || '', phone: u.phone || '', occL, i: f.i, h: f.h });
+        const id = api.add ? api.add(x) : null; this.setState({ step: 1, err: '' }); if (id && api.open) api.open(id); };
+      const days = [...Array(14)].map((_, k) => { const i = C.lead + k, d = new Date(2026, 8, 24 + i); return { id: 'd' + i, dow: d.toLocaleDateString(es ? 'es' : 'en', { weekday: 'short' }).replace(/\./g, '').toUpperCase().slice(0, 3), num: d.getDate() }; });
+      const turns = C.sv.map(sv => { const sl = []; for (let h = sv[0]; h <= sv[1] - 1 && sl.length < 5; h += .5) sl.push({ t: fT(h), h }); return { k: (es ? sv[2] : sv[3]).toUpperCase(), slots: sl.map(x => ({ t: x.t })), map: sl }; });
+      const hOf = t => { for (const tu of turns) { const m = tu.map.find(x => x.t === t); if (m) return m.h; } return null; };
+      Object.assign(out, { isForm: true, eye: E2('EVENTO PRIVADO · ', 'PRIVATE EVENT · ') + b.name.toUpperCase(), titleD: E2('Pide tu evento privado', 'Request your private event'), intro: E2(b.name + ' atiende grupos de más de ' + C.max + ' como evento privado. Cuéntales qué necesitas y te mandan una propuesta con el precio total.', b.name + ' hosts groups of more than ' + C.max + ' as a private event. Tell them what you need and they send a proposal with the full price.'),
+        step: step || 1, stepT: [E2('Tu evento', 'Your event'), E2('Fecha y hora', 'Date and time'), E2('Menú y presupuesto', 'Menu and budget')][(step || 1) - 1], onStepBack: () => step > 1 ? this.setState({ step: step - 1, err: '' }) : api.back && api.back(),
+        sh1: desk || step === 1, sh2: desk || step === 2, sh3: desk || step === 3,
+        occ: T.OCC.map(o => ({ l: es ? o[1] : o[2], v: f.occ === o[0] ? 'selected' : 'filter', on: () => this.set({ occ: o[0] }) })),
+        pL: f.p + E2(' personas', ' guests'), pS: E2('Desde ' + (C.max + 1) + ' hasta ' + C.cap + ' personas.', 'From ' + (C.max + 1) + ' to ' + C.cap + ' guests.'), onPm: () => this.set({ p: Math.max(C.max + 1, f.p - 1) }), onPp: () => this.set({ p: Math.min(C.cap, f.p + 1) }),
+        areas: C.areas.map((a, i) => ({ t: es ? a[1] : a[2], s: a[0] === 'todo' ? E2('Cierran el local para ustedes. Tiene costo aparte.', 'They close the place for you. Extra cost.') : E2('Juntan las mesas para su grupo.', 'They put tables together for your group.'), bt: i ? '1px solid rgba(11,14,18,.08)' : 'none', ring: f.area === a[0] ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)', on: () => this.set({ area: a[0] }) })),
+        days, dSel: 'd' + f.i, onDay: id => this.set({ i: +String(id).slice(1) }), turns, tSel: f.h != null ? fT(f.h) : '', onTime: t => this.set({ h: hOf(t) }),
+        durs: [2, 3, 4].map(n => ({ l: n + ' h', v: f.dur === n ? 'selected' : 'filter', on: () => this.set({ dur: n }) })),
+        menus: T.MENU.map((x, i) => ({ t: es ? x[1] : x[2], s: es ? x[3] : x[4], bt: i ? '1px solid rgba(11,14,18,.08)' : 'none', ring: f.menu === x[0] ? '6px solid #0B0E12' : '1.5px solid rgba(11,14,18,.25)', on: () => this.set({ menu: x[0] }) })),
+        buds: T.BUD.map(x => ({ l: es ? x[1] : x[2], v: f.bud === x[0] ? 'selected' : 'filter', on: () => this.set({ bud: x[0] }) })),
+        exts: T.EXT.map(x => ({ l: es ? x[1] : x[2], p: x[3] ? E2('Lo cotizan', 'They quote it') : E2('Sin cargo', 'No charge'), on: !!f.ext[x[0]], tog: () => this.set({ ext: Object.assign({}, f.ext, { [x[0]]: !f.ext[x[0]] }) }) })),
+        note: f.note, onNote: e => this.set({ note: String(e.target.value || '').slice(0, 300) }),
+        whoT: u ? E2('A nombre de ', 'Under ') + (u.name || '') : E2('Entra para enviarla', 'Sign in to send it'), whoS: u ? (u.phone || '') + E2(' · te avisan por SMS', ' · they text you') : E2('Te mandamos un código por SMS. Lo que llenaste se queda igual.', 'We text you a code. What you filled in stays the same.'),
+        sum: [{ ic: 'party', t: f.occ ? lbl(T.OCC, f.occ) : E2('Ocasión por elegir', 'Occasion to pick') }, { ic: 'users', t: f.p + E2(' personas · ', ' guests · ') + areaL(f.area) }, { ic: 'calendar', t: dl(f.i) + (f.h != null ? ' · ' + fT(f.h) + ' – ' + fT(f.h + f.dur) : E2(' · hora por elegir', ' · time to pick')) }, { ic: 'restaurant', t: lbl(T.MENU, f.menu) + ' · ' + lbl(T.BUD, f.bud) + E2(' p/p', ' pp') }],
+        sendL: u ? E2('Enviar solicitud', 'Send request') : E2('Entrar y enviar', 'Sign in and send'), onSend: send, respL: E2(b.name + ' suele responder en ' + C.resp + ' h con una propuesta. Si no responde en 24 h, se cancela sola.', b.name + ' usually replies within ' + C.resp + ' h with a proposal. If they do not reply in 24 h, it cancels on its own.'),
+        hasErr: !!this.state.err, err: this.state.err, mBar: !desk, barK: E2('PASO ', 'STEP ') + (step || 1) + E2(' DE 3', ' OF 3'), barV: f.p + E2(' personas', ' guests') + ' · ' + dl(f.i) + (f.h != null ? ' · ' + fT(f.h) : ''),
+        nextL: step === 3 ? (u ? E2('Enviar solicitud', 'Send request') : E2('Entrar y enviar', 'Sign in and send')) : E2('Continuar', 'Continue'), onNext: () => { if (step === 3) return send(); if (!okStep(step)) { this.setState({ err: need() }); return; } this.setState({ step: step + 1, err: '' }); if (api.top) api.top(); } });
+      return out; }
+    const st = ev.st, q = ev.q, iDay = st === 'alt' && ev.alt ? ev.alt.i : ev.i, hh = st === 'alt' && ev.alt ? ev.alt.h : ev.h, when = dl(iDay, true) + ' · ' + fT(hh) + ' – ' + fT(hh + ev.dur);
+    const leftH = iDay * 24 + hh - T.NOW, cxH = q ? q.cxH : 72, inTime = leftH >= cxH, card = 'Visa •• 4242';
+    const TAG = { pend: [E2('PENDIENTE', 'PENDING'), 'action'], quote: [E2('TE MANDARON SU PROPUESTA', 'PROPOSAL RECEIVED'), 'action'], alt: [E2('TE PROPONEN UN CAMBIO', 'CHANGE PROPOSED'), 'action'], ok: [E2('CONFIRMADO', 'CONFIRMED'), 'signal'], no: [E2('NO PUDO', 'DECLINED'), 'danger'], exp: [E2('SIN RESPUESTA', 'NO REPLY'), 'neutral'], cx: [E2('CANCELADO', 'CANCELED'), 'neutral'] }[st] || ['', 'neutral'];
+    const upd = p => api.upd && api.upd(ev.id, p), msg = () => api.encargo && api.encargo('APP-NEG-MENSAJE', 'APP-NEG-EVENTO-PRIVADO', b.name, E2('Mensaje', 'Message'));
+    const cal = () => api.encargo && api.encargo('APP-CALENDARIO', 'APP-NEG-EVENTO-PRIVADO', { t: E2('Evento privado · ', 'Private event · ') + ev.p + E2(' personas', ' guests') + (st === 'ok' ? '' : E2(' (por confirmar)', ' (not confirmed)')), day: iDay, h0: hh, h1: hh + ev.dur, biz: b.id, place: b.name, url: 'tolatino.app/c/' + ev.id, key: 'evp:' + ev.id, notes: st === 'ok' ? E2('Confirmado por ' + b.name + '. Depósito pagado: ' + money(ev.dep) + '. Resta ' + money(ev.rest) + ' en el local.', 'Confirmed by ' + b.name + '. Deposit paid: ' + money(ev.dep) + '. ' + money(ev.rest) + ' left to pay there.') : E2('Solicitud enviada. ' + b.name + ' todavía no confirma.', 'Request sent. ' + b.name + ' has not confirmed yet.') }, E2('Agregar al calendario', 'Add to calendar'));
+    const retry = () => { this.setState({ f: Object.assign(this.base(b), { occ: ev.occ, p: ev.p, area: ev.area, i: ev.i, h: null, dur: ev.dur, menu: ev.menu, bud: ev.bud, ext: ev.ext || {}, note: ev.note || '' }), step: 2 }); if (api.reform) api.reform(b.id); };
+    const accept = () => { if (ev.scen === 'tarjeta' && !this.state.cardTry) { this.setState({ cardTry: 1 }); return; } upd(Object.assign({ st: 'ok', paid: true, paidAt: Date.now(), dep: q.dep, rest: q.rest, tot: q.tot }, st === 'alt' && ev.alt ? { i: ev.alt.i, h: ev.alt.h, dL: dl(ev.alt.i) + ' · ' + fT(ev.alt.h), alt: null } : {})); this.setState({ cardTry: 0 }); };
+    const A = (l, v, on, ic) => ({ l, v, on, ic: ic || '', sz: 'lg' });
+    const steps = [{ label: E2('Solicitud enviada', 'Request sent'), time: ev.sentL || fT(T.NOW + 1 / 60), state: 'done' }, { label: E2('Propuesta de ', 'Proposal from ') + b.name, time: st === 'pend' ? E2('suele tardar ' + C.resp + ' h', 'usually ' + C.resp + ' h') : '', state: st === 'pend' ? 'current' : ['no', 'exp'].includes(st) ? 'next' : 'done' }, { label: E2('Aceptas y pagas el depósito', 'You accept and pay the deposit'), time: st === 'ok' ? money(ev.dep) : '', state: st === 'ok' ? 'done' : ['quote', 'alt'].includes(st) ? 'current' : 'next' }, { label: E2('El día del evento', 'Event day'), time: dl(iDay), state: st === 'ok' ? 'current' : 'next' }];
+    const kv = [[E2('OCASIÓN', 'OCCASION'), ev.occL || lbl(T.OCC, ev.occ)], [E2('PERSONAS', 'GUESTS'), ev.p + ' · ' + areaL(ev.area)], [E2('CUÁNDO', 'WHEN'), dl(ev.i, true) + ' · ' + fT(ev.h) + ' – ' + fT(ev.h + ev.dur)], [E2('MENÚ', 'MENU'), lbl(T.MENU, ev.menu) + ' · ' + lbl(T.BUD, ev.bud) + E2(' por persona', ' per person')], [E2('EXTRAS', 'EXTRAS'), T.EXT.filter(x => (ev.ext || {})[x[0]]).map(x => es ? x[1] : x[2]).join(' · ') || '—'], ev.note ? [E2('NOTA', 'NOTE'), ev.note] : null, [E2('A NOMBRE DE', 'NAME'), (ev.who || '') + (ev.phone ? ' · ' + ev.phone : '')]].filter(Boolean).map((r, i) => ({ k: r[0], v: r[1], bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' }));
+    const others = ((window.TLAll && window.TLAll.B) || []).filter(x => x.pro && x.id !== b.id && window.TLRsv && window.TLRsv.CFG && window.TLRsv.CFG[x.id]).slice(0, 2).map(x => ({ name: x.name, meta: this.meta(x), ver: !!x.verified, img: this.img(x), slot: E2('Hasta ', 'Up to ') + T.cfg(x).cap + E2(' personas', ' guests'), on: () => api.other && api.other(x.id, ev) }));
+    Object.assign(out, { isSt: true, tagL: TAG[0], tagTone: TAG[1], num: E2('EVENTO PRIVADO #', 'PRIVATE EVENT #') + ev.id, steps, kv, sum: [{ ic: 'party', t: ev.occL || '' }, { ic: 'users', t: ev.p + E2(' personas · ', ' guests · ') + areaL(ev.area) }, { ic: 'calendar', t: when }, { ic: 'restaurant', t: lbl(T.MENU, ev.menu) }] });
+    const note = (t, s, tone, ic) => Object.assign(out, { hasNote: true, noteT: t, noteS: s || '', hasNoteS: !!s, noteIc: ic, noteBg: { warn: 'rgba(255,176,32,.14)', ok: 'rgba(0,229,196,.16)', bad: 'rgba(192,57,43,.08)', ink: '#fff' }[tone], noteFg: { warn: '#8A5A00', ok: '#00695B', bad: '#C0392B', ink: '#0B0E12' }[tone] });
+    if (q && (st === 'quote' || st === 'alt' || st === 'ok')) Object.assign(out, { hasQ: true, qT: st === 'ok' ? E2('Lo que acordaron', 'What you agreed') : E2('La propuesta de ', 'Proposal from ') + b.name, qValid: st === 'ok' ? '' : E2('VÁLIDA 24 H', 'VALID 24 H'), qRows: q.rows.map((r, i) => ({ l: r[0], s: r[1], v: r[2] ? money(r[2]) : '—', bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' })),
+      qSum: [[E2('Subtotal', 'Subtotal'), money(q.sub)], [E2('Impuesto 6 %', 'Tax 6%'), money(q.tax)], ['Total', money(q.tot), '800', '#0B0E12'], [st === 'ok' ? E2('Depósito cobrado · ', 'Deposit charged · ') + card : E2('Depósito al aceptar', 'Deposit when you accept'), money(q.dep), '700', st === 'ok' ? '#00695B' : '#8A5A00'], [E2('Lo pagas en el local el día del evento', 'You pay there on the event day'), money(q.rest)]].map(r => ({ l: r[0], v: r[1], fw: r[2] || '500', fg: r[3] || 'rgba(11,14,18,.7)' })),
+      qPol: E2('Cancelar: gratis hasta ' + q.cxH + ' h antes (te devolvemos el depósito en 3–5 días hábiles). Después: el depósito se queda con ' + b.name + '. La propina no está incluida.', 'Cancel: free up to ' + q.cxH + ' h before (deposit back in 3–5 business days). After that: ' + b.name + ' keeps the deposit. Tip not included.') });
+    if (st === 'pend') { Object.assign(out, { stT: E2('Solicitud enviada', 'Request sent'), stS: E2(b.name + ' suele responder en ' + C.resp + ' h con una propuesta y el precio total. Si no responde en 24 h, se cancela sola.', b.name + ' usually replies within ' + C.resp + ' h with a proposal and the full price. If they do not reply in 24 h, it cancels on its own.'), acts: [A(E2('Mensaje', 'Message'), 'secondary', msg, 'chat'), A(E2('Cancelar solicitud', 'Cancel request'), 'secondary', () => this.setState({ cx: true }), 'close')] }); note(E2('No se cobra nada todavía.', 'Nothing is charged yet.'), E2('El depósito se cobra solo si aceptas su propuesta.', 'The deposit is only charged if you accept their proposal.'), 'ink', 'dollar'); }
+    if (st === 'quote' || st === 'alt') { const alt = st === 'alt' && ev.alt; Object.assign(out, { stT: alt ? E2('Te proponen otra fecha', 'They suggest another date') : E2('Te mandaron su propuesta', 'They sent their proposal'), stS: alt ? (es ? ev.why[0] : ev.why[1]) + ' ' + when + '.' : E2('Revísala y decide. Tienes 24 h; después vence.', 'Review it and decide. You have 24 h; then it expires.'),
+      acts: [A((alt ? E2('Aceptar el ', 'Accept ') + dl(iDay) : E2('Aceptar', 'Accept')) + E2(' y pagar ', ' and pay ') + money(q.dep), 'primary', accept, 'check'), A(E2('Pedir un cambio', 'Ask for a change'), 'secondary', msg, 'chat'), alt ? A(E2('Buscar otra fecha', 'Find another date'), 'secondary', retry, 'calendar') : A(E2('Agregar al calendario', 'Add to calendar'), 'secondary', cal, 'calendar'), A(E2('No, gracias', 'No, thanks'), 'secondary', () => upd({ st: 'cx', cxWhy: 'dec' }), 'close')] });
+      if (this.state.cardTry) note(E2('Tu tarjeta fue rechazada. No se cobró nada.', 'Your card was declined. Nothing was charged.'), E2('Prueba otra vez o usa otra tarjeta. La propuesta sigue apartada.', 'Try again or use another card. The proposal is still held.'), 'bad', 'warning'); }
+    if (st === 'ok') { Object.assign(out, { stT: E2('Tu evento está confirmado', 'Your event is confirmed'), stS: when + ' · ' + b.name + '. ' + E2('Te avisan por SMS si algo cambia.', 'They text you if anything changes.'),
+      acts: [A(E2('Agregar al calendario', 'Add to calendar'), 'secondary', cal, 'calendar'), A(E2('Cómo llegar', 'Directions'), 'secondary', () => api.encargo && api.encargo('APP-NEG-MAPA', 'APP-NEG-EVENTO-PRIVADO', b.name, E2('Cómo llegar', 'Directions')), 'pin'), A(E2('Mensaje', 'Message'), 'secondary', msg, 'chat'), A(E2('Cancelar el evento', 'Cancel the event'), 'secondary', () => this.setState({ cx: true }), 'close')] });
+      note(E2('Depósito cobrado: ', 'Deposit charged: ') + money(ev.dep) + ' · ' + card, E2('Resta ' + money(ev.rest) + ': lo pagas en el local el día del evento.', money(ev.rest) + ' left: you pay it there on the event day.'), 'ok', 'check'); }
+    if (st === 'no' || st === 'exp') { Object.assign(out, { stT: st === 'no' ? b.name + E2(' no puede esa fecha', ' cannot do that date') : E2('No respondieron a tiempo', 'They did not reply in time'), stS: st === 'no' ? (es ? ev.why[0] : ev.why[1]) : E2('Pasaron 24 h sin respuesta y la solicitud se canceló sola.', '24 h passed without a reply and the request canceled on its own.'), acts: [A(E2('Probar otra fecha', 'Try another date'), 'primary', retry, 'calendar'), A(E2('Reservar mesas aparte', 'Book separate tables'), 'secondary', () => api.toRsv && api.toRsv(b.id), 'restaurant')], hasOthers: others.length > 0, others }); note(E2('No se cobró nada.', 'Nothing was charged.'), '', 'ink', 'dollar'); }
+    if (st === 'cx') { Object.assign(out, { stT: E2('Cancelaste el evento', 'You canceled the event'), stS: ev.cxWhy === 'dec' ? E2('No aceptaste la propuesta.', 'You did not accept the proposal.') : dl(ev.i, true), acts: [A(E2('Pedir otro evento', 'Request another event'), 'secondary', retry, 'party')] });
+      note(ev.paid ? (ev.refund ? E2('Te devolvemos ', 'We refund ') + money(ev.dep) + E2(' a tu ', ' to your ') + card : E2('El depósito se quedó con ', 'The deposit stayed with ') + b.name) : E2('No se cobró nada.', 'Nothing was charged.'), ev.paid ? (ev.refund ? E2('Llega en 3–5 días hábiles.', 'It arrives in 3–5 business days.') : E2('Cancelaste a menos de ' + cxH + ' h del evento.', 'You canceled less than ' + cxH + ' h before the event.')) : '', ev.paid && !ev.refund ? 'warn' : 'ink', 'dollar'); }
+    if (this.state.cx) { const M = !desk, paid = st === 'ok'; out.cx = { open: true, l: M ? '0' : '50%', r: M ? '0' : 'auto', t: M ? 'auto' : (this.vTop() + 40) + 'px', b: M ? '0' : 'auto', w: M ? 'auto' : '480px', ml: M ? '0' : '-240px', rad: M ? '26px 26px 0 0' : '22px',
+      t1: paid ? E2('¿Cancelar el evento?', 'Cancel the event?') : E2('¿Cancelar la solicitud?', 'Cancel the request?'), s1: paid ? (inTime ? E2('Faltan más de ' + cxH + ' h: te devolvemos ' + money(ev.dep) + ' en 3–5 días hábiles.', 'More than ' + cxH + ' h left: we refund ' + money(ev.dep) + ' in 3–5 business days.') : E2('Faltan menos de ' + cxH + ' h: el depósito de ' + money(ev.dep) + ' se queda con ' + b.name + '.', 'Less than ' + cxH + ' h left: the ' + money(ev.dep) + ' deposit stays with ' + b.name + '.')) : E2('No se cobró nada. ' + b.name + ' recibe el aviso.', 'Nothing was charged. ' + b.name + ' gets the notice.'),
+      yes: E2('Sí, cancelar', 'Yes, cancel'), no: E2('No', 'No'), onNo: () => this.setState({ cx: false }), onYes: () => { upd({ st: 'cx', cxWhy: 'me', refund: paid && inTime, cxAt: Date.now() }); this.setState({ cx: false }); } }; }
+    return out;
+  }
+}
+</script>
+</body>
+</html>

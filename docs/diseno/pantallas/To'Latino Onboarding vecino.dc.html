@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<style>
+body{margin:0;font-family:Manrope,sans-serif;color:#0B0E12}
+a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+.hs{scrollbar-width:none}.hs::-webkit-scrollbar{display:none}
+@keyframes tlOnbIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+<div data-screen-label="{{ v.label }}" onClick="{{ v.onBackdrop }}" style="position:absolute;inset:0;background:{{ v.backdrop }};display:flex;justify-content:center;align-items:flex-start;font-family:Manrope,sans-serif;color:#0B0E12">
+  <input ref="{{ v.fileRef }}" type="file" accept="image/*" onChange="{{ v.onFile }}" style="display:none">
+  <div onClick="{{ v.stop }}" style="position:relative;width:{{ v.cw }};height:{{ v.ch }};max-height:{{ v.cmh }};margin-top:{{ v.ct }};border-radius:{{ v.cr }};box-shadow:{{ v.csh }};background:#fff;display:flex;flex-direction:column;overflow:hidden;animation:tlOnbIn .22s ease-out">
+
+    <sc-if value="{{ v.hasTop }}" hint-placeholder-val="{{ true }}"><div style="display:grid;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OnbTopBar" label="{{ v.top.label }}" saved="{{ v.top.saved }}" segments="{{ v.top.segs }}" on-back="{{ v.onBack }}" on-exit="{{ v.onExit }}" hint-size="100%,58px"></x-import></div></sc-if>
+    <sc-if value="{{ v.hasXOnly }}" hint-placeholder-val="{{ false }}"><div style="flex:none;padding:12px 16px 0;display:flex;justify-content:flex-end"><span onClick="{{ v.onExit }}" style="width:36px;height:36px;border-radius:12px;background:rgba(11,14,18,.05);display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 17 }}" stroke-width="{{ 2 }}" hint-size="17px,17px"></x-import></span></div></sc-if>
+
+    <div class="hs" data-onb-scroll="1" style="flex:1;min-height:0;overflow-y:auto;padding:0 {{ v.px }} 18px">
+
+      <sc-if value="{{ v.s1 }}" hint-placeholder-val="{{ true }}"><div data-screen-label="ONB-USR-1 · Entra" style="display:flex;flex-direction:column">
+        <div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:12px"><span style="display:flex;align-items:center;gap:7px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="language" size="{{ 15 }}" color="rgba(11,14,18,.5)" hint-size="15px,15px"></x-import>{{ l.langK }}</span><div style="display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(11,14,18,.05)"><sc-for list="{{ v.langs }}" as="g" hint-placeholder-count="2"><span onClick="{{ g.onClick }}" style="padding:7px 13px;border-radius:9px;background:{{ g.bg }};box-shadow:{{ g.sh }};font:{{ g.fw }} 12.5px Manrope,sans-serif;color:{{ g.fg }};cursor:pointer">{{ g.l }}</span></sc-for></div></div>
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ l.t1 }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ v.sub1 }}</div></div>
+        <div style="margin-top:18px;display:flex;flex-direction:column;gap:7px">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.phK }}</span>
+          <div style="height:52px;box-sizing:border-box;border-radius:14px;border:1.5px solid {{ v.phBd }};background:#fff;padding:0 14px;display:flex;align-items:center;gap:10px"><span style="font:700 15px Manrope,sans-serif;color:rgba(11,14,18,.6)">+1</span><input value="{{ v.ph }}" onChange="{{ v.onPh }}" inputmode="numeric" autocomplete="tel" placeholder="(570) 555-0134" readonly="{{ v.codeSent }}" style="flex:1;min-width:0;border:0;outline:none;background:none;font:600 16px Manrope,sans-serif;color:#0B0E12"><sc-if value="{{ v.codeSent }}" hint-placeholder-val="{{ false }}"><span onClick="{{ v.onChangePh }}" style="font:700 13px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ l.change }}</span></sc-if></div>
+        </div>
+        <sc-if value="{{ v.codeSent }}" hint-placeholder-val="{{ false }}"><div style="margin-top:16px;display:flex;flex-direction:column;gap:7px">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.codeK }}</span>
+          <input value="{{ v.code }}" onChange="{{ v.onCode }}" inputmode="numeric" autocomplete="one-time-code" placeholder="······" style="height:56px;box-sizing:border-box;border-radius:14px;border:1.5px solid {{ v.codeBd }};background:#fff;padding:0 18px;outline:none;font:800 24px Sora,sans-serif;letter-spacing:.5em;color:#0B0E12;width:100%">
+          <div style="display:flex;justify-content:space-between;gap:10px;font:600 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)"><span>{{ v.sentTo }}</span><span onClick="{{ v.onResend }}" style="font-weight:700;color:#4B37F5;cursor:pointer">{{ v.resendL }}</span></div>
+        </div></sc-if>
+        <div style="margin-top:16px;font:500 12px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ l.terms }}</div>
+      </div></sc-if>
+
+      <sc-if value="{{ v.s2 }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR-2 · Tú" style="display:flex;flex-direction:column">
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.t2 }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68)">{{ l.s2 }}</div></div>
+        <div onClick="{{ v.onPhoto }}" style="margin-top:18px;display:flex;align-items:center;gap:14px;cursor:pointer">
+          <span style="width:72px;height:72px;box-sizing:border-box;border-radius:99px;border:{{ v.phoBd }};background:{{ v.phoBg }};display:grid;place-items:center;flex:none"><sc-if value="{{ v.noPhoto }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="image" size="{{ 24 }}" color="rgba(11,14,18,.5)" hint-size="24px,24px"></x-import></sc-if></span>
+          <div style="display:flex;flex-direction:column;gap:3px"><span style="font:700 14.5px Manrope,sans-serif;color:#4B37F5">{{ v.photoL }}</span><span style="font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ v.photoS }}</span></div>
+        </div>
+        <div style="margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.fnK }}</span><input value="{{ v.first }}" onChange="{{ v.onFirst }}" autocomplete="given-name" placeholder="Ana" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%;min-width:0"></div>
+          <div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.lnK }}</span><input value="{{ v.last }}" onChange="{{ v.onLast }}" autocomplete="family-name" placeholder="Rodríguez" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%;min-width:0"></div>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ l.nickK }}</span><span style="color:rgba(11,14,18,.42)">{{ l.opt }}</span></div>
+          <input value="{{ v.nick }}" onChange="{{ v.onNick }}" placeholder="{{ l.nickPh }}" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%">
+          <span style="font:500 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ v.seeAs }}</span>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-direction:column;gap:7px">
+          <div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ l.emK }}</span><span style="color:rgba(11,14,18,.42)">{{ l.opt }}</span></div>
+          <input value="{{ v.email }}" onChange="{{ v.onEmail }}" type="email" autocomplete="email" placeholder="{{ l.emPh }}" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid {{ v.emBd }};padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%">
+          <span style="font:500 12.5px/1.45 Manrope,sans-serif;color:{{ v.emHc }}">{{ v.emH }}</span>
+        </div>
+      </div></sc-if>
+
+      <sc-if value="{{ v.s3 }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR-3 · Tu zona" style="display:flex;flex-direction:column">
+        <sc-if value="{{ v.inHz }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column">
+          <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.t3 }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68)">{{ l.s3 }}</div></div>
+          <div style="margin-top:18px;padding:14px;border-radius:16px;background:#F7F6F3;display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 18 }}" color="#fff" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0"><div style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">Hazleton, PA</div><div style="margin-top:3px;font:500 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ l.cityS }}</div></div></div>
+          <div style="margin-top:12px;padding:14px;border-radius:16px;border:1px solid rgba(11,14,18,.1);display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;border-radius:12px;background:rgba(75,55,245,.08);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="pin" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0"><div style="font:700 14px Manrope,sans-serif">{{ v.locT }}</div><div style="margin-top:3px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ l.locS }}</div></div><sc-if value="{{ v.locOff }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="soft" size="sm" on-click="{{ v.onLoc }}" hint-size="80px,34px">{{ l.allow }}</x-import></sc-if><sc-if value="{{ v.locOn }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 18 }}" color="#00A88F" stroke-width="{{ 2.2 }}" hint-size="18px,18px"></x-import></sc-if></div>
+          <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ v.zoneK }}</span><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ v.zones }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div></div>
+          <div onClick="{{ v.onOut }}" style="margin-top:18px;align-self:flex-start;display:flex;align-items:center;gap:6px;font:700 13.5px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ l.notHz }}<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 14 }}" color="#4B37F5" stroke-width="{{ 2 }}" hint-size="14px,14px"></x-import></div>
+        </div></sc-if>
+        <sc-if value="{{ v.out }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR-3 · fuera de Hazleton" style="display:flex;flex-direction:column">
+          <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.outT }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ l.outS }}</div></div>
+          <div style="margin-top:18px;display:flex;flex-direction:column;gap:7px"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.outK }}</span><input value="{{ v.outCity }}" onChange="{{ v.onOutCity }}" placeholder="Allentown, PA" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%"></div>
+          <div style="margin-top:14px;font:500 12.5px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.6);text-wrap:pretty">{{ l.outN }}</div>
+        </div></sc-if>
+      </div></sc-if>
+
+      <sc-if value="{{ v.s4 }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR-4 · Lo que te gusta" style="display:flex;flex-direction:column">
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.t4 }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68)">{{ l.s4 }}</div></div>
+        <div style="margin-top:18px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ l.catK }}</span><span style="color:#4B37F5">{{ v.catN }}</span></div><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ v.cats }}" as="c" hint-placeholder-count="12"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div></div>
+        <div style="margin-top:20px;display:flex;flex-direction:column;gap:10px"><div style="display:flex;justify-content:space-between;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em"><span style="color:rgba(11,14,18,.5)">{{ l.comK }}</span><span style="color:#4B37F5">{{ v.comN }}</span></div><div style="display:flex;flex-wrap:wrap;gap:7px"><sc-for list="{{ v.coms }}" as="c" hint-placeholder-count="6"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="{{ c.v }}" on-click="{{ c.onClick }}" hint-size="90px,34px">{{ c.l }}</x-import></sc-for></div></div>
+      </div></sc-if>
+
+      <sc-if value="{{ v.s5 }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR-5 · El barrio" style="display:flex;flex-direction:column">
+        <div style="margin-top:20px;font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.t5 }}</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column"><sc-for list="{{ v.rules }}" as="r" hint-placeholder-count="6"><div style="display:flex;gap:11px;align-items:flex-start;padding:6px 0;border-top:{{ r.bt }}"><span style="width:22px;height:22px;border-radius:8px;background:#F7F6F3;display:grid;place-items:center;font:800 11px Sora,sans-serif;flex:none">{{ r.n }}</span><span style="font:600 13px/1.45 Manrope,sans-serif;text-wrap:pretty">{{ r.t }}</span></div></sc-for></div>
+        <div style="margin-top:12px;padding:11px 12px;border-radius:14px;background:rgba(75,55,245,.07);display:flex;align-items:center;gap:10px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="shield" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import><span style="font:700 13px/1.4 Manrope,sans-serif;text-wrap:pretty">{{ l.rank }}</span></div>
+        <div style="margin-top:16px;display:flex;flex-direction:column">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.ntK }}</span>
+          <sc-for list="{{ v.togs }}" as="g" hint-placeholder-count="2"><div onClick="{{ g.onClick }}" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(11,14,18,.07);cursor:pointer"><div style="flex:1;min-width:0"><div style="font:700 13.5px Manrope,sans-serif">{{ g.t }}</div><div style="margin-top:2px;font:500 12px Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ g.s }}</div></div><span style="width:40px;height:24px;box-sizing:border-box;border-radius:99px;padding:3px;background:{{ g.bg }};display:flex;justify-content:{{ g.j }};flex:none"><span style="width:18px;height:18px;border-radius:99px;background:#fff"></span></span></div></sc-for>
+          <span style="margin-top:8px;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ l.ntN }}</span>
+        </div>
+      </div></sc-if>
+
+      <sc-if value="{{ v.wel }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR · bienvenida" style="display:flex;flex-direction:column">
+        <div style="margin-top:{{ v.welM }};display:flex;flex-direction:column;gap:12px;align-items:flex-start">
+          <span style="width:76px;height:76px;box-sizing:border-box;border-radius:99px;border:2.5px solid #00E5C4;background:{{ v.avBg }};color:#fff;display:grid;place-items:center;font:800 24px Sora,sans-serif">{{ v.ini }}</span>
+          <span style="padding:6px 10px;border-radius:8px;background:#0B0E12;color:#00E5C4;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em">{{ v.fundL }}</span>
+          <div style="font:800 28px/1.12 Sora,sans-serif;letter-spacing:-.04em;text-wrap:pretty">{{ v.welT }}</div>
+          <div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ v.welS }}</div>
+        </div>
+        <div style="margin-top:22px;display:flex;flex-direction:column;gap:8px">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.startK }}</span>
+          <sc-for list="{{ v.acts }}" as="a" hint-placeholder-count="3"><div onClick="{{ a.onClick }}" style="padding:12px;border-radius:16px;background:#F7F6F3;display:flex;align-items:center;gap:12px;cursor:pointer" style-hover="background:#EDEBE6"><span style="width:40px;height:40px;border-radius:12px;background:#fff;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="{{ a.icon }}" size="{{ 18 }}" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0"><div style="font:700 14px Manrope,sans-serif">{{ a.t }}</div><div style="margin-top:2px;font:500 12px/1.4 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ a.s }}</div></div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" color="rgba(11,14,18,.42)" hint-size="15px,15px"></x-import></div></sc-for>
+        </div>
+      </div></sc-if>
+
+      <sc-if value="{{ v.bk }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR · ya tienes cuenta" style="min-height:420px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center">
+        <span style="width:76px;height:76px;box-sizing:border-box;border-radius:99px;border:2.5px solid #00E5C4;background:{{ v.avBg }};color:#fff;display:grid;place-items:center;font:800 24px Sora,sans-serif">{{ v.ini }}</span>
+        <div style="font:800 24px/1.15 Sora,sans-serif;letter-spacing:-.035em;text-wrap:pretty">{{ v.bkT }}</div>
+        <div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ v.bkS }}</div>
+      </div></sc-if>
+      <sc-if value="{{ v.sN }}" hint-placeholder-val="{{ false }}"><div data-screen-label="ONB-USR · solo el nombre" style="display:flex;flex-direction:column">
+        <div style="margin-top:8px;display:flex;align-items:center;gap:7px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00695B"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 14 }}" color="#00695B" stroke-width="{{ 2.2 }}" hint-size="14px,14px"></x-import>{{ v.verK }}</div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px"><div style="font:800 26px/1.15 Sora,sans-serif;letter-spacing:-.035em">{{ l.tN }}</div><div style="font:500 14px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.68);text-wrap:pretty">{{ v.subN }}</div></div>
+        <div style="margin-top:18px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
+          <div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.fnK }}</span><input value="{{ v.first }}" onChange="{{ v.onFirst }}" autocomplete="given-name" placeholder="Ana" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%;min-width:0"></div>
+          <div style="display:flex;flex-direction:column;gap:7px;min-width:0"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ l.lnK }}</span><input value="{{ v.last }}" onChange="{{ v.onLast }}" autocomplete="family-name" placeholder="Rodríguez" style="height:50px;box-sizing:border-box;border-radius:14px;border:1.5px solid rgba(11,14,18,.14);padding:0 14px;outline:none;font:600 15px Manrope,sans-serif;color:#0B0E12;width:100%;min-width:0"></div>
+        </div>
+      </div></sc-if>
+    </div>
+
+    <div style="flex:none;padding:12px {{ v.px }} {{ v.pb }};border-top:1px solid rgba(11,14,18,.07);background:#fff;display:flex;flex-direction:column;gap:6px">
+      <sc-if value="{{ v.hasCheck }}" hint-placeholder-val="{{ false }}"><div onClick="{{ v.onRules }}" style="padding:2px 0 6px;display:flex;align-items:center;gap:11px;cursor:pointer"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:7px;border:1.5px solid {{ v.ckBd }};background:{{ v.ckBg }};display:grid;place-items:center;flex:none"><sc-if value="{{ v.rulesOk }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="check" size="{{ 14 }}" color="#fff" stroke-width="{{ 2.4 }}" hint-size="14px,14px"></x-import></sc-if></span><span style="font:700 13.5px Manrope,sans-serif">{{ l.accept }}</span></div></sc-if>
+      <sc-if value="{{ v.hasNote }}" hint-placeholder-val="{{ false }}"><span style="text-align:center;font:500 12px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.6)">{{ v.note }}</span></sc-if>
+      <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" disabled="{{ v.goDis }}" on-click="{{ v.onGo }}" hint-size="100%,50px">{{ v.goL }}</x-import></div>
+      <sc-if value="{{ v.hasAlt }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="ghost" size="md" block="{{ true }}" on-click="{{ v.onAlt }}" hint-size="100%,42px">{{ v.altL }}</x-import></div></sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:393,&quot;height&quot;:800},&quot;lang&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;es&quot;,&quot;en&quot;],&quot;default&quot;:&quot;es&quot;,&quot;tsType&quot;:&quot;'es'|'en'&quot;},&quot;desk&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;name&quot;],&quot;default&quot;:&quot;full&quot;,&quot;tsType&quot;:&quot;'full'|'name'&quot;},&quot;start&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;tsType&quot;:&quot;number&quot;},&quot;nx&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;home&quot;,&quot;com&quot;,&quot;me&quot;,&quot;order&quot;,&quot;cita&quot;],&quot;default&quot;:&quot;home&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;top&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:80,&quot;tsType&quot;:&quot;number&quot;},&quot;user&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;api&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">class Component extends DCLogic {
+  constructor(p) { super(p); this.fileRef = React.createRef(); const s = this.load(); const st = this.startStep(s);
+    this.state = { s, step: st, ph: s.verified && s.phone ? s.phone : '', code: '', codeSent: false, out: false, outCity: s.outCity || '', wel: false, sendN: 0, rulesTick: !!s.rules }; }
+  load() { if (this.props.demo) return { ...this.props.demo }; try { return JSON.parse(localStorage.getItem('tl-onb-usr-v1')) || {}; } catch (e) { return {}; } }
+  save(p) { const s = { ...this.state.s, ...p }; this.setState({ s }); if (this.props.demo) return s; try { localStorage.setItem('tl-onb-usr-v1', JSON.stringify(s)); } catch (e) {} return s; }
+  startStep(s) { const p = this.props, u = p.user; if (p.mode === 'name') return 0; if (p.start) return p.start; if (!u) return 1; return Math.min(5, Math.max(2, s.step || 2)); }
+  get es() { return this.props.lang !== 'en'; }
+  E2(a, b) { return this.es ? a : b; }
+  api() { return this.props.api || {}; }
+  fmt(d) { d = String(d || '').replace(/\D/g, '').slice(0, 10); return d.length < 4 ? d : d.length < 7 ? '(' + d.slice(0, 3) + ') ' + d.slice(3) : '(' + d.slice(0, 3) + ') ' + d.slice(3, 6) + '-' + d.slice(6); }
+  digits(v) { return String(v || '').replace(/\D/g, ''); }
+  CATS() { return [['NEG-FOOD', 'Comida', 'Food', 'restaurant'], ['NEG-BELL', 'Belleza', 'Beauty', 'scissors'], ['NEG-AUTO', 'Auto', 'Auto', 'car'], ['NEG-HOGAR', 'Hogar', 'Home', 'wrench'], ['NEG-NOCHE', 'Noche', 'Nightlife', 'drink'], ['NEG-MERC', 'Mercados', 'Markets', 'cart'], ['NEG-FIESTA', 'Fiestas', 'Parties', 'party'], ['NEG-SALUD', 'Doctores', 'Doctors', 'medical'], ['NEG-PRO', 'Profesionales', 'Professionals', 'brief'], ['NEG-TIENDA', 'Tiendas', 'Shops', 'bag'], ['NEG-TRANS', 'Transporte', 'Transport', 'truck'], ['NEG-EDU', 'Educación', 'Education', 'grid'], ['NEG-NINOS', 'Niños', 'Kids', 'smile'], ['NEG-DEPORTE', 'Deporte', 'Sports', 'bolt'], ['NEG-FE', 'Iglesias', 'Churches', 'building'], ['NEG-INMUEBLE', 'Bienes raíces', 'Real estate', 'key'], ['NEG-DEALER', 'Venta de autos', 'Car dealers', 'car']]; }
+  COMS() { return [['preg', 'Preguntas del barrio', 'Neighborhood questions'], ['rec', 'Recomendaciones', 'Recommendations'], ['evt', 'Eventos', 'Events'], ['patio', 'El Patio · dominó y parchís', 'El Patio · dominoes and parcheesi'], ['nov', 'Novedades de negocios', 'Business updates'], ['avisos', 'Avisos de la ciudad', 'City notices']]; }
+  ZONES() { return [['Centro', 'Downtown'], ['North End', 'North End'], ['Alter St', 'Alter St'], ['The Heights', 'The Heights'], ['West Hazleton', 'West Hazleton'], ['Hazle Township', 'Hazle Township'], ['Cerca de Hazleton', 'Near Hazleton']]; }
+  RULES() { const R = window.TLCom && window.TLCom.RULES; return R && R.length ? R : [['Habla de Hazleton y de lo que pasa aquí.', 'Talk about Hazleton and what happens here.'], ['Recomienda por experiencia, nunca tu propio negocio.', 'Recommend from experience, never your own business.'], ['Nada de ventas, rifas ni cadenas.', 'No sales, raffles or chain messages.'], ['No publiques teléfonos, direcciones ni fotos de otras personas sin su permiso.', "Don't post other people's phones, addresses or photos without permission."], ['Respeto siempre: sin insultos ni acoso.', 'Respect always: no insults or harassment.'], ['Una emergencia no se pregunta aquí: llama al 911.', "An emergency isn't asked here: call 911."]]; }
+  user(s) { s = s || this.state.s; const f = (s.first || '').trim(), l = (s.last || '').trim(), u0 = this.props.user || {};
+    return { ...u0, name: [f, l].filter(Boolean).join(' '), short: f ? f + (l ? ' ' + l[0] + '.' : '') : '', first: f, last: l, nick: (s.nick || '').trim(), phone: '+1 ' + this.fmt(s.phone || this.state.ph), email: (s.email || '').trim(), photo: s.photo || u0.photo || null, zone: s.zone || '', city: 'Hazleton, PA', outCity: s.outCity || '', loc: !!s.loc, ints: s.cats || [], com: s.com || [], rules: s.rules ? 1 : 0, nt: s.nt || { ev: 0 }, n: s.n || u0.n || 1241, fund: 1, onb: s.done ? 'done' : s.step || 1 }; }
+  go(n) { this.save({ step: n }); this.setState({ step: n, out: false }); setTimeout(() => { const el = document.querySelector('[data-onb-scroll]'); if (el) el.scrollTop = 0; }, 0); }
+  accts() { let r = {}; try { r = JSON.parse(localStorage.getItem('tl-usr-accts-v1')) || {}; } catch (e) {} return { ...{ '5705550142': { phone: '5705550142', verified: true, first: 'Ana', last: 'Rodríguez', nick: '', email: '', photo: null, zone: 'The Heights', loc: false, cats: ['NEG-FOOD', 'NEG-BELL'], com: ['preg'], rules: true, nt: { ev: 0 }, n: 214, done: true, step: 5 } }, ...r }; }
+  saveAcct(s) { if (!s.phone || !(s.first || '').trim()) return; let r = {}; try { r = JSON.parse(localStorage.getItem('tl-usr-accts-v1')) || {}; } catch (e) {} r[s.phone] = s; try { localStorage.setItem('tl-usr-accts-v1', JSON.stringify(r)); } catch (e) {} }
+  exit() { const a = this.api(); if (this.state.s.verified && a.save) a.save(this.user()); if (a.close) a.close(); }
+  verify() { const ph = this.digits(this.state.ph), s0 = this.state.s, a = this.api();
+    const acc = s0.phone === ph && (s0.first || '').trim() ? s0 : this.accts()[ph];
+    if (acc) { const s1 = this.save({ ...acc, verified: true }); this.setState({ back: true }); clearTimeout(this._bT); this._bT = setTimeout(() => { if (a.done) a.done(this.user(s1), null); }, 1600); return; }
+    const fresh = s0.phone && s0.phone !== ph; const s = this.save({ ...(fresh ? { first: '', last: '', nick: '', email: '', photo: null, zone: '', loc: false, cats: [], com: [], rules: false, done: false, outCity: '' } : {}), phone: ph, verified: true, n: s0.n || 1241 + Math.floor(Math.random() * 40) });
+    if (a.save) a.save(this.user(s)); this.go(2); }
+  pickPhoto() { const el = this.fileRef.current; if (el) el.click(); }
+  onFile(e) { const f = e.target.files && e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const N = 240, c = document.createElement('canvas'); c.width = N; c.height = N; const k = Math.max(N / im.width, N / im.height), w = im.width * k, h = im.height * k; const cx = c.getContext('2d'); cx.fillStyle = '#E4E1DA'; cx.fillRect(0, 0, N, N); cx.drawImage(im, (N - w) / 2, (N - h) / 2, w, h); this.save({ photo: c.toDataURL('image/jpeg', .85) }); }; im.src = r.result; }; r.readAsDataURL(f); e.target.value = ''; }
+  componentWillUnmount() { clearTimeout(this._bT); }
+  finish() { const s = this.save({ done: true, step: 5, rules: true }); this.saveAcct(s); const a = this.api(); if (a.save) a.save(this.user(s)); this.setState({ wel: true }); }
+  welActs() { const E2 = (a, b) => this.E2(a, b), s = this.state.s, C = this.CATS(), c0 = C.find(x => x[0] === (s.cats || [])[0]), z = s.zone || 'Hazleton', out = [];
+    const act = r => () => { const a = this.api(); if (a.act) a.act(this.user(), r); };
+    out.push(c0 ? { icon: c0[3], t: (this.es ? c0[1] : c0[2]) + E2(' abierto ahora', ' open now'), s: E2('Cerca de ', 'Near ') + z, onClick: act({ cat: c0[0] }) } : { icon: 'clock', t: E2('Abierto ahora en Hazleton', 'Open now in Hazleton'), s: E2('Lo que puedes pedir ya', 'What you can order now'), onClick: act({ code: 'APP-NEG-ABIERTO' }) });
+    out.push((s.com || []).includes('patio') ? { icon: 'users', t: E2('Juega dominó en El Patio', 'Play dominoes at El Patio'), s: E2('Siempre hay mesas gratis', 'There are always free tables'), onClick: act({ code: 'APP-PATIO' }) } : { icon: 'bubble', t: E2('La pregunta de la semana', 'Question of the week'), s: E2('Únete a la conversación de Hazleton', 'Join the Hazleton conversation'), onClick: act({ code: 'APP-COM-FEED' }) });
+    out.push({ icon: 'star', t: E2('Recomienda un negocio', 'Recommend a business'), s: E2('+50 puntos cuando 3 vecinos lo voten', '+50 points when 3 neighbors vote for it'), onClick: act({ code: 'APP-NEG-RECOMENDAR' }) });
+    return out; }
+  renderVals() {
+    const s = this.state, S = s.s, es = this.es, E2 = (a, b) => es ? a : b, D = !!this.props.desk, a = this.api(), mode = this.props.mode === 'name' ? 'name' : 'full';
+    const step = mode === 'name' ? 0 : s.step, NAMES = [E2('ENTRA', 'SIGN IN'), E2('TÚ', 'YOU'), E2('TU ZONA', 'YOUR AREA'), E2('LO QUE TE GUSTA', 'WHAT YOU LIKE'), E2('EL BARRIO', 'THE NEIGHBORHOOD')];
+    const ph = this.digits(s.ph), cd = this.digits(s.code).slice(0, 6), first = S.first || '', last = S.last || '', emOk = !S.email || /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(S.email.trim());
+    const tog = (k, t, sub, on, lock) => ({ t, s: sub, bg: on ? '#0B0E12' : 'rgba(11,14,18,.15)', j: on ? 'flex-end' : 'flex-start', onClick: lock ? () => {} : () => this.save({ nt: { ...(S.nt || {}), [k]: on ? 0 : 1 } }) });
+    const nm = (S.nick || first || '').trim(), ini = ((first[0] || '') + (last[0] || '')).toUpperCase() || '·';
+    const l = { langK: E2('IDIOMA', 'LANGUAGE'), t1: E2('Entra con tu teléfono', 'Sign in with your phone'), phK: E2('TU TELÉFONO', 'YOUR PHONE'), change: E2('Cambiar', 'Change'), codeK: E2('CÓDIGO DE 6 NÚMEROS', '6-DIGIT CODE'),
+      terms: E2("Al seguir aceptas los Términos y la Privacidad de To'Latino, escritos en palabras claras. Nunca te pedimos tu estatus ni tu seguro social.", "By continuing you accept To'Latino's Terms and Privacy, written in plain words. We never ask for your status or social security number."),
+      t2: E2('¿Cómo te llamas?', "What's your name?"), s2: E2('Así te ven los vecinos y los negocios.', 'This is how neighbors and businesses see you.'), fnK: E2('NOMBRE', 'FIRST NAME'), lnK: E2('APELLIDO', 'LAST NAME'), nickK: E2('¿CÓMO TE DICEN?', 'WHAT DO PEOPLE CALL YOU?'), opt: E2('OPCIONAL', 'OPTIONAL'), nickPh: E2('Ej.: Anita', 'E.g. Anita'), emK: E2('CORREO', 'EMAIL'), emPh: E2('tu@correo.com', 'you@email.com'),
+      t3: E2('¿Por dónde vives?', 'Where do you live?'), s3: E2('Te mostramos primero lo que está cerca.', "We'll show you what's close first."), cityS: E2('Tu ciudad · se cambia cada 30 días', 'Your city · changes every 30 days'), locS: E2('Solo para ordenar por distancia. Los vecinos nunca la ven.', 'Only to sort by distance. Neighbors never see it.'), allow: E2('Permitir', 'Allow'), notHz: E2('No vivo en Hazleton', "I don't live in Hazleton"),
+      outT: E2('Aún no llegamos a tu ciudad', "We're not in your city yet"), outS: E2('Empezamos en Hazleton. Dinos dónde vives y te avisamos cuando abramos ahí.', "We're starting in Hazleton. Tell us where you live and we'll let you know when we open there."), outK: E2('TU CIUDAD', 'YOUR CITY'), outN: E2('Tu cuenta queda lista: puedes pedir, reservar y entrar a Comunidad en Hazleton cuando vengas. Tu ciudad se cambia cada 30 días.', 'Your account is ready: you can order, book and join the Hazleton community when you visit. Your city changes every 30 days.'),
+      t4: E2('¿Qué te gusta?', 'What do you like?'), s4: E2('Elige lo que quieras. Con esto armamos tu inicio.', "Pick anything. We'll build your home with it."), catK: E2('NEGOCIOS', 'BUSINESSES'), comK: E2('EN COMUNIDAD', 'IN COMMUNITY'),
+      t5: E2('Las reglas del barrio', 'Neighborhood rules'), rank: E2('Empiezas como Recluta · ya puedes publicar, comentar y votar.', 'You start as Recruit · you can already post, comment and vote.'), ntK: E2('¿QUÉ TE AVISAMOS?', 'WHAT SHOULD WE TELL YOU?'), ntN: E2('El permiso del teléfono te lo pedimos después de tu primer pedido, cita o publicación.', "We'll ask for your phone's permission after your first order, booking or post."), accept: E2('Acepto las reglas del barrio', 'I accept the neighborhood rules'),
+      startK: E2('PARA EMPEZAR', 'TO START'), tN: E2('¿A nombre de quién va?', 'Whose name should we use?') };
+    const v = { label: D ? 'ONB-USR · desktop' : 'ONB-USR · móvil', backdrop: D ? 'rgba(11,14,18,.45)' : '#fff', cw: D ? '480px' : '100%', ch: D ? '700px' : '100%', cmh: D ? 'calc(100% - ' + ((this.props.top || 80) + 24) + 'px)' : '100%', ct: D ? (this.props.top || 80) + 'px' : '0', cr: D ? '26px' : '0', csh: D ? '0 30px 80px -20px rgba(11,14,18,.5)' : 'none', px: D ? '28px' : '20px', pb: D ? '20px' : '26px',
+      onBackdrop: D ? () => this.exit() : undefined, stop: e => { if (e && e.stopPropagation) e.stopPropagation(); }, fileRef: this.fileRef, onFile: e => this.onFile(e),
+      hasTop: mode === 'full' && !s.wel && !s.back, hasXOnly: mode === 'name', onExit: () => this.exit(),
+      onBack: () => { if (s.step === 3 && s.out) return this.setState({ out: false }); if (s.step === 1 && s.codeSent) return this.setState({ codeSent: false, code: '' }); if (s.step <= 2) return this.exit(); this.go(s.step - 1); },
+      top: step === 1 ? { label: E2('ENTRA O CREA TU CUENTA', 'SIGN IN OR SIGN UP'), saved: '', segs: [] } : { label: E2('PASO ', 'STEP ') + step + E2(' DE 5 · ', ' OF 5 · ') + (NAMES[step - 1] || ''), saved: E2('GUARDADO', 'SAVED'), segs: [1, 2, 3, 4, 5].map(i => i < step ? 'done' : i === step ? 'cur' : 'next') },
+      s1: !s.wel && !s.back && step === 1, bk: !!s.back, s2: !s.wel && step === 2, s3: !s.wel && step === 3, s4: !s.wel && step === 4, s5: !s.wel && step === 5, sN: mode === 'name', wel: s.wel };
+    const L0 = this.props.lang === 'en' ? 'en' : 'es';
+    v.langs = [['es', 'Español'], ['en', 'English']].map(([k, t]) => ({ l: t, bg: L0 === k ? '#fff' : 'transparent', sh: L0 === k ? '0 1px 3px rgba(11,14,18,.12)' : 'none', fw: L0 === k ? 800 : 700, fg: L0 === k ? '#0B0E12' : 'rgba(11,14,18,.6)', onClick: () => { if (a.setLang) a.setLang(k); } }));
+    v.sub1 = E2('Te mandamos un código por texto, sin contraseñas. Si ya tienes cuenta, entras directo.', 'We text you a code, no passwords. If you already have an account, you go straight in.');
+    v.ph = this.fmt(ph); v.onPh = e => this.setState({ ph: this.digits(e.target.value).slice(0, 10) }); v.codeSent = s.codeSent; v.phBd = !s.codeSent && ph.length === 10 ? '#0B0E12' : 'rgba(11,14,18,.14)';
+    v.onChangePh = () => this.setState({ codeSent: false, code: '' }); v.code = cd; v.onCode = e => this.setState({ code: this.digits(e.target.value).slice(0, 6) }); v.codeBd = cd.length === 6 ? '#0B0E12' : '#4B37F5';
+    v.sentTo = E2('Lo mandamos al ', 'Sent to ') + this.fmt(ph); v.resendL = s.sendN ? E2('Reenviado', 'Resent') : E2('Reenviar', 'Resend'); v.onResend = () => this.setState({ sendN: s.sendN + 1, code: '' });
+    v.first = first; v.last = last; v.nick = S.nick || ''; v.email = S.email || '';
+    v.onFirst = e => this.save({ first: e.target.value.slice(0, 24) }); v.onLast = e => this.save({ last: e.target.value.slice(0, 24) }); v.onNick = e => this.save({ nick: e.target.value.slice(0, 20) }); v.onEmail = e => this.save({ email: e.target.value.slice(0, 60) });
+    v.seeAs = first ? E2('Los vecinos ven: ', 'Neighbors see: ') + (nm || first) + (last ? ' ' + last[0] + '.' : '') : E2('Tu apellido sale solo con la inicial.', 'Your last name shows as an initial only.');
+    v.emBd = emOk ? 'rgba(11,14,18,.14)' : '#C0392B'; v.emHc = emOk ? 'rgba(11,14,18,.6)' : '#C0392B'; v.emH = emOk ? E2('Para recibos y recuperar tu cuenta.', 'For receipts and account recovery.') : E2('Revisa el correo: falta algo.', 'Check the email: something is missing.');
+    v.noPhoto = !S.photo; v.phoBg = S.photo ? 'url("' + S.photo + '") center/cover' : '#F7F6F3'; v.phoBd = S.photo ? '2px solid #00E5C4' : '1.5px dashed rgba(11,14,18,.25)'; v.onPhoto = () => this.pickPhoto();
+    v.photoL = S.photo ? E2('Cambiar foto', 'Change photo') : E2('Agregar foto', 'Add photo'); v.photoS = S.photo ? E2('Así te ven en Comunidad', 'How you look in Community') : E2('Puedes hacerlo luego', 'You can do it later');
+    v.inHz = !s.out; v.out = s.out; v.locOn = !!S.loc; v.locOff = !S.loc; v.locT = S.loc ? E2('Ubicación activada', 'Location on') : E2('Usar mi ubicación', 'Use my location'); v.onLoc = () => this.save({ loc: true, zone: S.zone || 'The Heights' });
+    v.zoneK = S.zone ? E2('TU ZONA · ', 'YOUR AREA · ') + S.zone.toUpperCase() : E2('O ELIGE TU ZONA', 'OR PICK YOUR AREA');
+    v.zones = this.ZONES().map(z => ({ l: es ? z[0] : z[1], v: S.zone === z[0] ? 'selected' : 'filter', onClick: () => this.save({ zone: S.zone === z[0] ? '' : z[0] }) }));
+    v.onOut = () => this.setState({ out: true }); v.outCity = s.outCity; v.onOutCity = e => this.setState({ outCity: e.target.value.slice(0, 40) });
+    const cats = S.cats || [], coms = S.com || [], tg = (arr, k) => arr.includes(k) ? arr.filter(x => x !== k) : arr.concat([k]);
+    v.cats = this.CATS().map(c => ({ l: es ? c[1] : c[2], v: cats.includes(c[0]) ? 'selected' : 'filter', onClick: () => this.save({ cats: tg(cats, c[0]) }) }));
+    v.coms = this.COMS().map(c => ({ l: es ? c[1] : c[2], v: coms.includes(c[0]) ? 'selected' : 'filter', onClick: () => this.save({ com: tg(coms, c[0]) }) }));
+    const nn = n => n ? n + (n === 1 ? E2(' ELEGIDO', ' PICKED') : E2(' ELEGIDOS', ' PICKED')) : ''; v.catN = nn(cats.length); v.comN = nn(coms.length);
+    v.rules = this.RULES().map((r, i) => ({ n: String(i + 1), t: es ? r[0] : r[1], bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' }));
+    const nt = S.nt || {}; v.togs = [tog('ord', E2('Tus pedidos, citas y boletos', 'Your orders, bookings and tickets'), E2('Siempre, para que no se te pase nada', "Always, so you don't miss anything"), true, true), tog('ev', E2('Eventos de lo que te gusta', 'Events you might like'), E2('Uno a la semana, como mucho', 'One a week at most'), !!nt.ev)];
+    v.rulesOk = !!s.rulesTick; v.ckBg = s.rulesTick ? '#0B0E12' : '#fff'; v.ckBd = s.rulesTick ? '#0B0E12' : 'rgba(11,14,18,.3)'; v.onRules = () => this.setState({ rulesTick: !s.rulesTick });
+    v.ini = S.photo ? '' : ini; v.avBg = S.photo ? 'url("' + S.photo + '") center/cover' : '#0B0E12'; v.welM = D ? '28px' : '56px';
+    v.fundL = E2('FUNDADORES · #', 'FOUNDERS · #') + (S.n || 1241).toLocaleString('en-US') + E2(' · RECLUTA', ' · RECRUIT');
+    v.welT = (S.outCity ? E2("Bienvenida a To'Latino, ", "Welcome to To'Latino, ") : E2('Bienvenida a Hazleton, ', 'Welcome to Hazleton, ')) + (nm || E2('vecino', 'neighbor')) + '.';
+    v.welS = S.outCity ? E2('Te avisamos cuando abramos en ' + S.outCity + '. Mientras, tienes 100 monedas de bienvenida y todo Hazleton.', "We'll let you know when we open in " + S.outCity + '. Meanwhile, you have 100 welcome coins and all of Hazleton.') : E2('Empiezas como Recluta y con 100 monedas de bienvenida.', 'You start as Recruit with 100 welcome coins.');
+    v.acts = s.wel ? this.welActs() : []; v.bkT = E2('Qué bueno verte de nuevo, ', 'Good to see you again, ') + (nm || '') + '.'; v.bkS = E2('Ya tienes cuenta con el ', 'You already have an account with ') + this.fmt(S.phone || ph) + E2('. Entrando…', '. Signing in…');
+    const nx = this.props.nx || 'home'; v.verK = E2('TELÉFONO VERIFICADO · ', 'PHONE VERIFIED · ') + this.fmt(S.phone || ''); v.subN = E2('Es lo único que falta. Lo demás lo completas luego en Mi cuenta.', "That's all we need. You can finish the rest later in My account.");
+    v.hasCheck = false; v.hasNote = false; v.hasAlt = false; v.goDis = false; v.note = ''; v.altL = ''; v.onAlt = () => {};
+    if (mode === 'name') { v.goL = { order: E2('Seguir con mi pedido', 'Continue with my order'), cita: E2('Seguir con mi cita', 'Continue with my booking') }[nx] || E2('Seguir', 'Continue'); v.goDis = !first.trim() || !last.trim();
+      v.onGo = () => { if (!first.trim() || !last.trim()) return; const s2 = this.save({ step: Math.max(2, S.step || 2), verified: true }); this.saveAcct(s2); if (a.done) a.done(this.user(s2), null); }; }
+    else if (s.back) { v.goL = E2('Seguir', 'Continue'); v.onGo = () => { clearTimeout(this._bT); if (a.done) a.done(this.user(), null); }; }
+    else if (s.wel) { v.goL = { com: E2('Entrar a Comunidad', 'Go to Community'), me: E2('Ir a Mi cuenta', 'Go to My account') }[nx] || E2('Ir al inicio', 'Go home'); v.onGo = () => { if (a.done) a.done(this.user(), null); }; }
+    else if (step === 1) { if (s.codeSent) { v.goL = E2('Verificar', 'Verify'); v.goDis = cd.length !== 6; v.onGo = () => { if (cd.length === 6) this.verify(); }; } else { v.goL = E2('Enviarme el código', 'Text me the code'); v.goDis = ph.length !== 10; v.onGo = () => { if (ph.length === 10) this.setState({ codeSent: true, code: '' }); }; } }
+    else if (step === 2) { v.goL = E2('Continuar', 'Continue'); const dis = !first.trim() || !last.trim() || !emOk; v.goDis = dis; v.onGo = () => { if (!dis) { if (a.save) a.save(this.user()); this.saveAcct(this.state.s); this.go(3); } }; v.hasNote = true; v.note = E2('Foto, apodo y correo puedes dejarlos para luego.', 'Photo, nickname and email can wait.'); }
+    else if (step === 3 && s.out) { v.goL = E2('Avísame cuando lleguen', 'Let me know when you arrive'); const dis = s.outCity.trim().length < 3; v.goDis = dis; v.onGo = () => { if (dis) return; const s2 = this.save({ outCity: s.outCity.trim() }); if (a.waitlist) a.waitlist(s.outCity.trim()); if (a.save) a.save(this.user(s2)); this.go(4); }; v.hasAlt = true; v.altL = E2('Seguir con Hazleton', 'Continue with Hazleton'); v.onAlt = () => this.setState({ out: false }); }
+    else if (step === 3 || step === 4) { v.goL = E2('Continuar', 'Continue'); v.onGo = () => { if (a.save) a.save(this.user()); this.go(step + 1); }; v.hasAlt = true; v.altL = E2('Saltar por ahora', 'Skip for now'); v.onAlt = () => this.go(step + 1); }
+    else if (step === 5) { v.hasCheck = true; v.goL = E2("Entrar a To'Latino", "Enter To'Latino"); v.goDis = !s.rulesTick; v.onGo = () => { if (this.state.rulesTick) this.finish(); }; }
+    return { v, l };
+  }
+}</script>
+</body>
+</html>

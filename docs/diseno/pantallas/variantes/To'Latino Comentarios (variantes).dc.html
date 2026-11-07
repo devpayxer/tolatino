@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="../../">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<script src="prototype/com-data.js"></script>
+<style>
+body{margin:0;background:#EDEBE6;font-family:Manrope,sans-serif;color:#0B0E12}
+a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+@keyframes tlFade{from{opacity:0}to{opacity:1}}
+.hs{scrollbar-width:none}.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<section data-screen-label="17 · Comentarios" style="padding:40px 44px 60px;display:flex;flex-direction:column;gap:24px">
+  <div><div style="font:800 28px/1.1 Sora,sans-serif;letter-spacing:-.04em">Comentarios del hilo</div><div style="margin-top:8px;font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">17 · CINCO VARIANTES · MISMO HILO: PREGUNTA DE LA SEMANA</div></div>
+  <div style="display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start">
+  <sc-for list="{{ vars }}" as="o" hint-placeholder-count="5">
+  <div id="{{ o.id }}" data-screen-label="{{ o.label }}" style="width:415px;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;gap:10px"><a href="{{ o.href }}" style="padding:5px 10px;border-radius:8px;background:#0B0E12;color:#fff;font:800 12px 'JetBrains Mono',monospace;letter-spacing:.06em">{{ o.id }}</a><span style="font:800 17px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.t }}</span></div>
+    <div style="padding:11px;border-radius:54px;background:#0B0E12;box-shadow:0 40px 80px -30px rgba(11,14,18,.45)">
+    <div style="border-radius:43px;overflow:hidden;background:{{ o.bg }};min-height:852px;display:flex;flex-direction:column">
+      <div style="height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font:700 15px Manrope,sans-serif;background:#fff"><span>9:41</span><span style="width:120px;height:32px;border-radius:20px;background:#0B0E12"></span><span style="font:700 12px 'JetBrains Mono',monospace">5G</span></div>
+      <div style="padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span><div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">Pregunta de To'Latino Hazleton</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">CUENTA OFICIAL · HACE 2 DÍAS · 7 COMENTARIOS</div></div></div>
+      <div style="background:#fff;padding:14px 18px;border-bottom:1px solid rgba(11,14,18,.07)">
+        <div style="display:flex;gap:10px;align-items:center"><span style="width:34px;height:34px;box-sizing:border-box;border-radius:11px;border:1px solid rgba(11,14,18,.1);background:#fff url(assets/logo-tolatino.svg) center/64% no-repeat;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:700 13.5px Manrope,sans-serif">To'Latino Hazleton</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="56px,17px">OFICIAL</x-import></div><div style="margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:#4B37F5">PREGUNTA DE LA SEMANA · HACE 2 DÍAS</div></div></div>
+        <div style="margin-top:10px;font:500 15px/1.5 Manrope,sans-serif;text-wrap:pretty">¿Quién conoce un buen sastre en Hazleton? Cuéntanos a quién vas y qué te arregló.</div>
+        <div style="margin-top:10px;display:flex;gap:16px;align-items:center;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" hint-size="15px,15px"></x-import>63</span><span style="display:flex;align-items:center;gap:5px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="bubble" size="{{ 15 }}" hint-size="15px,15px"></x-import>7</span></div>
+      </div>
+
+      <sc-if value="{{ o.isA }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 12px 20px;display:flex;flex-direction:column;gap:10px">
+        <div data-screen-label="Recomendados · 17a" style="border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:16px 16px 4px">
+          <div style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">Recomendados en este hilo</div>
+          <div style="margin-top:5px;margin-bottom:6px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5)">POR VOTOS DE VECINOS · TOCA SI TÚ TAMBIÉN</div>
+          <sc-for list="{{ o.recs }}" as="b" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(11,14,18,.07)"><span style="width:48px;height:48px;border-radius:13px;background:{{ b.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 14px/1.25 Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div><div style="margin-top:5px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.meta }}</div></div><span onClick="{{ b.onVote }}" style="height:38px;min-width:64px;box-sizing:border-box;padding:0 12px;border-radius:12px;border:1.5px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};display:flex;align-items:center;justify-content:center;gap:6px;font:800 13px Sora,sans-serif;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ b.fg }}" hint-size="15px,15px"></x-import>{{ b.n }}</span></div></sc-for>
+        </div>
+        <div style="height:6px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px 4px"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.cmT }}</span><div style="display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(11,14,18,.06)"><span style="padding:5px 10px;border-radius:8px;background:#fff;font:700 11px Manrope,sans-serif">Más votados</span><span style="padding:5px 10px;border-radius:8px;font:700 11px Manrope,sans-serif;color:rgba(11,14,18,.55)">Recientes</span></div></div>
+        <sc-for list="{{ o.cms }}" as="c" hint-placeholder-count="4">
+        <div style="border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:16px 16px 12px">
+          <div style="display:flex;gap:11px;align-items:center">
+            <span style="width:38px;height:38px;border-radius:99px;background:{{ c.av.bg }};background-color:#DDD9D1;display:grid;place-items:center;font:800 12px Sora,sans-serif;flex:none">{{ c.av.ini }}</span>
+            <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font:700 14px/1.25 Manrope,sans-serif">{{ c.name }}</span><sc-if value="{{ c.rk.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.rk.tone }}" hint-size="60px,17px">{{ c.rk.l }}</x-import></sc-if></div><div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ c.time }}</div></div>
+            <sc-if value="{{ c.best.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="signal" hint-size="80px,17px">{{ c.best.l }}</x-import></sc-if>
+          </div>
+          <div style="margin-top:12px;font:500 14.5px/1.6 Manrope,sans-serif;text-wrap:pretty">{{ c.body }}</div>
+          <sc-if value="{{ c.biz.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding:10px;border-radius:14px;background:#F7F6F3;display:flex;gap:11px;align-items:center;cursor:pointer"><span style="width:44px;height:44px;border-radius:12px;background:{{ c.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 13.5px/1.25 Manrope,sans-serif">{{ c.biz.name }}</div><div style="margin-top:3px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ c.biz.meta }}</div></div><span style="font:700 12px Manrope,sans-serif;color:#4B37F5;flex:none">Ver</span></div></sc-if>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:4px">
+            <div style="display:flex;align-items:center;gap:2px;height:34px;padding:0 4px;border-radius:11px;background:rgba(11,14,18,.04)"><span onClick="{{ c.onUp }}" style="width:28px;height:28px;display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.upC }}" hint-size="15px,15px"></x-import></span><span style="min-width:20px;text-align:center;font:800 12.5px Sora,sans-serif;color:{{ c.scC }}">{{ c.score }}</span><span onClick="{{ c.onDn }}" style="width:28px;height:28px;display:grid;place-items:center;cursor:pointer;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.dnC }}" hint-size="15px,15px"></x-import></span></div>
+            <span style="padding:8px 10px;font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6);cursor:pointer">Responder</span><span style="flex:1"></span><span style="width:30px;height:30px;display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 15 }}" color="rgba(11,14,18,.4)" hint-size="15px,15px"></x-import></span>
+          </div>
+          <sc-if value="{{ c.hasReps }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ c.closed }}" hint-placeholder-val="{{ false }}"><div onClick="{{ c.onToggle }}" style="margin-top:6px;padding:8px 0 2px;display:flex;align-items:center;gap:9px;cursor:pointer"><div style="display:flex"><sc-for list="{{ c.faces }}" as="f" hint-placeholder-count="3"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:99px;border:2px solid #fff;margin-left:{{ f.ml }};background:{{ f.bg }};background-color:#DDD9D1"></span></sc-for></div><span style="font:700 12.5px Manrope,sans-serif;color:#4B37F5">{{ c.togL }}</span></div></sc-if>
+            <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;border-radius:14px;background:#F7F6F3;padding:14px;display:flex;flex-direction:column;gap:16px;animation:tlFade .2s ease-out">
+              <sc-for list="{{ c.reps }}" as="x" hint-placeholder-count="3"><div style="display:flex;gap:10px"><span style="width:28px;height:28px;border-radius:99px;background:{{ x.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font:700 13px Manrope,sans-serif">{{ x.name }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ x.time }}</span></div><div style="margin-top:3px;font:500 14px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ x.body }}</div><div style="margin-top:6px;display:flex;align-items:center;gap:14px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span onClick="{{ x.onUp }}" style="display:flex;align-items:center;gap:5px;cursor:pointer;color:{{ x.upC }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ x.upC }}" hint-size="14px,14px"></x-import>{{ x.score }}</span><span style="cursor:pointer">Responder</span></div></div></div></sc-for>
+              <span onClick="{{ c.onToggle }}" style="font:700 12px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ c.togL }}</span>
+            </div></sc-if>
+          </sc-if>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ o.isB }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:6px 0 18px;background:#fff">
+        <div data-screen-label="Recomendados · 17b" style="padding:14px 0 2px;border-bottom:1px solid rgba(11,14,18,.07)">
+          <div style="padding:0 18px;display:flex;align-items:baseline;justify-content:space-between;gap:10px"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">Recomendados en este hilo</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5);flex:none">POR VOTOS</span></div>
+          <div class="hs" style="margin-top:12px;display:flex;gap:10px;overflow-x:auto;padding:0 18px 16px">
+            <sc-for list="{{ o.recs }}" as="b" hint-placeholder-count="2"><div style="flex:none;width:176px;border-radius:16px;border:1px solid rgba(11,14,18,.1);overflow:hidden;background:#fff"><div style="position:relative;height:92px;background:{{ b.ph }} center/cover;background-color:#E4E1DA"><span style="position:absolute;top:8px;left:8px;padding:3px 7px;border-radius:7px;background:#0B0E12;color:#fff;font:800 10px 'JetBrains Mono',monospace">{{ b.pos }}</span></div><div style="padding:10px 12px 12px"><div style="font:700 13.5px/1.25 Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div><div style="margin-top:4px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ b.short }}</div><div style="margin-top:6px;font:700 11.5px/1.35 Manrope,sans-serif;color:#4B37F5">{{ b.nL }}</div><div onClick="{{ b.onVote }}" style="margin-top:10px;height:34px;box-sizing:border-box;border-radius:11px;border:1.5px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};display:flex;align-items:center;justify-content:center;gap:6px;font:700 12px Manrope,sans-serif;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ b.fg }}" hint-size="14px,14px"></x-import>{{ b.btnL }}</div></div></div></sc-for>
+          </div>
+        </div>
+        <div style="padding:14px 18px 2px;display:flex;align-items:center;justify-content:space-between"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.cmT }}</span><span style="display:flex;align-items:center;gap:5px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.6)">Más votados<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 13 }}" hint-size="13px,13px"></x-import></span></div>
+        <sc-for list="{{ o.cms }}" as="c" hint-placeholder-count="4">
+        <div style="padding:20px 18px 2px">
+          <div style="display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:12px">
+            <div style="display:flex;flex-direction:column;align-items:center"><span style="width:40px;height:40px;border-radius:99px;background:{{ c.av.bg }};background-color:#DDD9D1;flex:none"></span><sc-if value="{{ c.hasReps }}" hint-placeholder-val="{{ false }}"><span style="flex:1;width:2px;margin-top:6px;background:rgba(11,14,18,.1);border-radius:2px"></span></sc-if></div>
+            <div style="min-width:0;padding-bottom:4px">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:20px"><span style="font:700 14px/1.25 Manrope,sans-serif">{{ c.name }}</span><sc-if value="{{ c.rk.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.rk.tone }}" hint-size="60px,17px">{{ c.rk.l }}</x-import></sc-if><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ c.time }}</span></div>
+              <sc-if value="{{ c.best.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:4px;display:flex;align-items:center;gap:5px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00695B"><span style="width:6px;height:6px;border-radius:99px;background:#00A88F"></span>{{ c.best.l }}</div></sc-if>
+              <div style="margin-top:6px;font:500 14.5px/1.6 Manrope,sans-serif;text-wrap:pretty">{{ c.body }}</div>
+              <sc-if value="{{ c.biz.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;padding:9px 10px;border-radius:14px;border:1px solid rgba(11,14,18,.1);display:flex;gap:10px;align-items:center;cursor:pointer"><span style="width:38px;height:38px;border-radius:11px;background:{{ c.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 13px/1.25 Manrope,sans-serif">{{ c.biz.name }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ c.biz.meta }}</div></div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronRight" size="{{ 15 }}" color="#4B37F5" hint-size="15px,15px"></x-import></div></sc-if>
+              <div style="margin-top:8px;display:flex;align-items:center;gap:16px;font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.55)">
+                <span style="display:flex;align-items:center;gap:4px"><span onClick="{{ c.onUp }}" style="display:grid;cursor:pointer;padding:4px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.upC }}" hint-size="15px,15px"></x-import></span><span style="font:800 12.5px Sora,sans-serif;color:{{ c.scC }}">{{ c.score }}</span><span onClick="{{ c.onDn }}" style="display:grid;cursor:pointer;padding:4px;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.dnC }}" hint-size="15px,15px"></x-import></span></span>
+                <span style="cursor:pointer">Responder</span><span style="flex:1"></span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 14 }}" color="rgba(11,14,18,.4)" hint-size="14px,14px"></x-import>
+              </div>
+            </div>
+          </div>
+          <sc-if value="{{ c.hasReps }}" hint-placeholder-val="{{ false }}"><div style="padding-left:52px">
+            <sc-for list="{{ c.reps }}" as="x" hint-placeholder-count="3"><div style="position:relative;padding-top:16px">
+              <span style="position:absolute;left:-33px;top:0;width:25px;height:30px;box-sizing:border-box;border-left:2px solid rgba(11,14,18,.1);border-bottom:2px solid rgba(11,14,18,.1);border-bottom-left-radius:12px"></span>
+              <sc-if value="{{ x.cont }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;left:-33px;top:0;bottom:0;border-left:2px solid rgba(11,14,18,.1)"></span></sc-if>
+              <div style="display:flex;gap:10px"><span style="width:28px;height:28px;border-radius:99px;background:{{ x.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font:700 13px Manrope,sans-serif">{{ x.name }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ x.time }}</span></div><div style="margin-top:3px;font:500 14px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ x.body }}</div><div style="margin-top:6px;display:flex;align-items:center;gap:14px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span onClick="{{ x.onUp }}" style="display:flex;align-items:center;gap:5px;cursor:pointer;color:{{ x.upC }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ x.upC }}" hint-size="14px,14px"></x-import>{{ x.score }}</span><span style="cursor:pointer">Responder</span></div></div></div>
+            </div></sc-for>
+          </div></sc-if>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ o.isC }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 16px 20px;background:#fff;display:flex;flex-direction:column;gap:22px">
+        <div data-screen-label="Recomendados · 17c" style="border-radius:18px;background:#F7F6F3;padding:14px">
+          <div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">Lo que recomiendan los vecinos</div>
+          <div style="margin-top:4px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.5)">TOCA PARA SUMAR TU VOTO</div>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px"><sc-for list="{{ o.recs }}" as="b" hint-placeholder-count="2"><div onClick="{{ b.onVote }}" style="position:relative;overflow:hidden;height:54px;box-sizing:border-box;border-radius:14px;background:#fff;border:1.5px solid {{ b.bd2 }};display:flex;align-items:center;gap:10px;padding:0 14px 0 9px;cursor:pointer"><span style="position:absolute;left:0;top:0;bottom:0;width:{{ b.pct }};background:rgba(75,55,245,.09);transition:width .4s"></span><span style="position:relative;width:36px;height:36px;border-radius:10px;background:{{ b.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="position:relative;flex:1;min-width:0"><div style="font:700 13.5px/1.25 Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ b.short }}</div></div><span style="position:relative;display:flex;align-items:center;gap:5px;font:800 14px Sora,sans-serif;color:{{ b.fg2 }};flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ b.fg2 }}" hint-size="15px,15px"></x-import>{{ b.n }}</span></div></sc-for></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.cmT }}</span><div style="display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(11,14,18,.06)"><span style="padding:5px 10px;border-radius:8px;background:#fff;font:700 11px Manrope,sans-serif">Más votados</span><span style="padding:5px 10px;border-radius:8px;font:700 11px Manrope,sans-serif;color:rgba(11,14,18,.55)">Recientes</span></div></div>
+        <sc-for list="{{ o.cms }}" as="c" hint-placeholder-count="4">
+        <div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <span style="width:36px;height:36px;border-radius:99px;background:{{ c.av.bg }};background-color:#DDD9D1;flex:none"></span>
+            <div style="flex:1;min-width:0">
+              <div style="position:relative;padding:11px 14px 13px;border-radius:5px 18px 18px 18px;background:#F7F6F3">
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font:700 13.5px/1.25 Manrope,sans-serif">{{ c.name }}</span><sc-if value="{{ c.rk.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.rk.tone }}" hint-size="60px,17px">{{ c.rk.l }}</x-import></sc-if></div>
+                <div style="margin-top:5px;font:500 14.5px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ c.body }}</div>
+                <sc-if value="{{ c.biz.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;padding:9px 10px;border-radius:13px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;gap:10px;align-items:center;cursor:pointer"><span style="width:38px;height:38px;border-radius:10px;background:{{ c.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 13px/1.25 Manrope,sans-serif">{{ c.biz.name }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ c.biz.meta }}</div></div><span style="font:700 12px Manrope,sans-serif;color:#4B37F5;flex:none">Ver</span></div></sc-if>
+                <span style="position:absolute;right:12px;bottom:-13px;display:flex;align-items:center;gap:4px;padding:4px 9px 4px 7px;border-radius:99px;background:#fff;border:1px solid rgba(11,14,18,.1);font:800 11.5px Sora,sans-serif;color:{{ c.scC }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 12 }}" color="#4B37F5" hint-size="12px,12px"></x-import>{{ c.score }}</span>
+              </div>
+              <div style="margin-top:9px;padding-left:6px;display:flex;align-items:center;gap:14px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ c.time }}</span><span onClick="{{ c.onUp }}" style="display:grid;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.upC }}" hint-size="15px,15px"></x-import></span><span onClick="{{ c.onDn }}" style="display:grid;cursor:pointer;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ c.dnC }}" hint-size="15px,15px"></x-import></span><span style="cursor:pointer">Responder</span><sc-if value="{{ c.best.has }}" hint-placeholder-val="{{ false }}"><span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:#00695B">{{ c.best.l }}</span></sc-if></div>
+            </div>
+          </div>
+          <sc-if value="{{ c.hasReps }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;padding-left:46px;display:flex;flex-direction:column;gap:14px">
+            <sc-for list="{{ c.reps }}" as="x" hint-placeholder-count="3"><div style="display:flex;gap:9px;align-items:flex-start"><span style="width:28px;height:28px;border-radius:99px;background:{{ x.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:inline-block;max-width:100%;box-sizing:border-box;padding:9px 13px 10px;border-radius:5px 16px 16px 16px;background:#F7F6F3"><div style="font:700 12.5px Manrope,sans-serif">{{ x.name }}</div><div style="margin-top:3px;font:500 14px/1.5 Manrope,sans-serif;text-wrap:pretty">{{ x.body }}</div></div><div style="margin-top:6px;padding-left:6px;display:flex;align-items:center;gap:14px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ x.time }}</span><span onClick="{{ x.onUp }}" style="display:flex;align-items:center;gap:5px;cursor:pointer;color:{{ x.upC }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ x.upC }}" hint-size="14px,14px"></x-import>{{ x.score }}</span><span style="cursor:pointer">Responder</span></div></div></div></sc-for>
+          </div></sc-if>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ o.isD }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:16px 12px 20px;display:flex;flex-direction:column;gap:12px">
+        <div style="border-radius:20px;border:1.5px solid rgba(0,168,143,.28);background:#fff;overflow:hidden">
+          <div style="padding:11px 16px;background:rgba(0,229,196,.1);display:flex;align-items:center;gap:7px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.14em;color:#00695B"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="star" size="{{ 13 }}" color="#00695B" hint-size="13px,13px"></x-import>{{ o.topL }}</div>
+          <div style="padding:16px">
+            <div style="display:flex;gap:11px;align-items:center"><span style="width:40px;height:40px;border-radius:99px;background:{{ o.top.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font:700 14.5px/1.25 Manrope,sans-serif">{{ o.top.name }}</span><sc-if value="{{ o.top.rk.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ o.top.rk.tone }}" hint-size="60px,17px">{{ o.top.rk.l }}</x-import></sc-if></div><div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ o.top.time }}</div></div></div>
+            <div style="margin-top:12px;font:500 15.5px/1.6 Manrope,sans-serif;text-wrap:pretty">{{ o.top.body }}</div>
+            <div style="margin-top:14px;padding:12px;border-radius:16px;background:#F7F6F3;display:flex;gap:12px;align-items:center"><span style="width:54px;height:54px;border-radius:14px;background:{{ o.top.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.top.biz.name }}</div><div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ o.top.biz.meta }}</div></div><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="sm" hint-size="60px,34px">Ver</x-import></div></div>
+            <div style="margin-top:14px;display:flex;align-items:center;gap:8px">
+              <div style="display:flex;align-items:center;gap:2px;height:36px;padding:0 4px;border-radius:12px;background:rgba(11,14,18,.04)"><span onClick="{{ o.top.onUp }}" style="width:30px;height:30px;display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 16 }}" color="{{ o.top.upC }}" hint-size="16px,16px"></x-import></span><span style="min-width:22px;text-align:center;font:800 13px Sora,sans-serif;color:{{ o.top.scC }}">{{ o.top.score }}</span><span onClick="{{ o.top.onDn }}" style="width:30px;height:30px;display:grid;place-items:center;cursor:pointer;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 16 }}" color="{{ o.top.dnC }}" hint-size="16px,16px"></x-import></span></div>
+              <span style="padding:8px 6px;font:700 12.5px Manrope,sans-serif;color:rgba(11,14,18,.6);cursor:pointer">Responder</span><span style="flex:1"></span>
+              <span onClick="{{ o.top.onToggle }}" style="display:flex;align-items:center;gap:7px;cursor:pointer"><span style="display:flex"><sc-for list="{{ o.top.faces }}" as="f" hint-placeholder-count="3"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:99px;border:2px solid #fff;margin-left:{{ f.ml }};background:{{ f.bg }};background-color:#DDD9D1"></span></sc-for></span><span style="font:700 12px Manrope,sans-serif;color:#4B37F5">{{ o.top.togS }}</span></span>
+            </div>
+            <sc-if value="{{ o.top.open }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:16px;animation:tlFade .2s ease-out">
+              <sc-for list="{{ o.top.reps }}" as="x" hint-placeholder-count="3"><div style="display:flex;gap:10px"><span style="width:28px;height:28px;border-radius:99px;background:{{ x.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font:700 13px Manrope,sans-serif">{{ x.name }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ x.time }}</span></div><div style="margin-top:3px;font:500 14px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ x.body }}</div><div style="margin-top:6px;display:flex;align-items:center;gap:14px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span onClick="{{ x.onUp }}" style="display:flex;align-items:center;gap:5px;cursor:pointer;color:{{ x.upC }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ x.upC }}" hint-size="14px,14px"></x-import>{{ x.score }}</span><span style="cursor:pointer">Responder</span></div></div></div></sc-for>
+            </div></sc-if>
+          </div>
+        </div>
+        <sc-if value="{{ o.hasRest }}" hint-placeholder-val="{{ false }}"><div data-screen-label="Recomendados · 17d" style="border-radius:16px;background:#fff;border:1px solid rgba(11,14,18,.08);padding:12px 14px 4px"><div style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.16em;color:rgba(11,14,18,.45)">TAMBIÉN RECOMIENDAN</div><sc-for list="{{ o.recsRest }}" as="b" hint-placeholder-count="1"><div style="display:flex;align-items:center;gap:11px;padding:10px 0"><span style="width:38px;height:38px;border-radius:11px;background:{{ b.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 13.5px/1.25 Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ b.short }}</div></div><span onClick="{{ b.onVote }}" style="height:36px;min-width:60px;box-sizing:border-box;padding:0 11px;border-radius:12px;border:1.5px solid {{ b.bd }};background:{{ b.bg }};color:{{ b.fg }};display:flex;align-items:center;justify-content:center;gap:6px;font:800 12.5px Sora,sans-serif;cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ b.fg }}" hint-size="14px,14px"></x-import>{{ b.n }}</span></div></sc-for></div></sc-if>
+        <div style="margin-top:6px;padding:0 4px;display:flex;align-items:center;justify-content:space-between"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.2em;color:rgba(11,14,18,.45)">{{ o.restL }}</span><span style="display:flex;align-items:center;gap:5px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.6)">Más votados<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 13 }}" hint-size="13px,13px"></x-import></span></div>
+        <div style="border-radius:18px;background:#fff;border:1px solid rgba(11,14,18,.08);overflow:hidden">
+          <sc-for list="{{ o.rest }}" as="c" hint-placeholder-count="3">
+          <div style="padding:16px;border-top:{{ c.bt }}">
+            <div style="display:flex;gap:10px;align-items:center"><span style="width:32px;height:32px;border-radius:99px;background:{{ c.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font:700 13.5px/1.25 Manrope,sans-serif">{{ c.name }}</span><sc-if value="{{ c.rk.has }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="{{ c.rk.tone }}" hint-size="60px,17px">{{ c.rk.l }}</x-import></sc-if><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ c.time }}</span></div></div>
+            <div style="margin-top:9px;font:500 14.5px/1.6 Manrope,sans-serif;text-wrap:pretty">{{ c.body }}</div>
+            <sc-if value="{{ c.biz.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;padding:9px 10px;border-radius:13px;background:#F7F6F3;display:flex;gap:10px;align-items:center;cursor:pointer"><span style="width:36px;height:36px;border-radius:10px;background:{{ c.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><div style="flex:1;min-width:0"><div style="font:700 13px/1.25 Manrope,sans-serif">{{ c.biz.name }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5)">{{ c.biz.meta }}</div></div><span style="font:700 12px Manrope,sans-serif;color:#4B37F5;flex:none">Ver</span></div></sc-if>
+            <div style="margin-top:10px;display:flex;align-items:center;gap:16px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.55)"><span style="display:flex;align-items:center;gap:4px"><span onClick="{{ c.onUp }}" style="display:grid;cursor:pointer;padding:3px"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ c.upC }}" hint-size="14px,14px"></x-import></span><span style="font:800 12px Sora,sans-serif;color:{{ c.scC }}">{{ c.score }}</span><span onClick="{{ c.onDn }}" style="display:grid;cursor:pointer;padding:3px;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 14 }}" color="{{ c.dnC }}" hint-size="14px,14px"></x-import></span></span><span style="cursor:pointer">Responder</span></div>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ o.isE }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#fff;padding-bottom:10px">
+        <div data-screen-label="Recomendados · 17e" style="padding:4px 18px 10px;border-bottom:8px solid #F7F6F3">
+          <div style="padding:12px 0 6px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.2em;color:rgba(11,14,18,.45)">RECOMENDADOS EN ESTE HILO</div>
+          <sc-for list="{{ o.recs }}" as="b" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-top:{{ b.bt }}"><span style="width:16px;font:800 18px Sora,sans-serif;color:rgba(11,14,18,.28);flex:none">{{ b.pos }}</span><div style="flex:1;min-width:0"><div style="font:700 14px/1.25 Manrope,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.name }}</div><div style="margin-top:4px;font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.meta }}</div></div><span onClick="{{ b.onVote }}" style="display:flex;align-items:center;gap:6px;padding:6px 2px;font:800 13.5px Sora,sans-serif;color:{{ b.fg2 }};cursor:pointer;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 15 }}" color="{{ b.fg2 }}" hint-size="15px,15px"></x-import>{{ b.n }}</span></div></sc-for>
+        </div>
+        <div style="padding:16px 18px 12px;display:flex;align-items:center;justify-content:space-between"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.cmT }}</span><span style="display:flex;align-items:center;gap:5px;font:700 12px Manrope,sans-serif;color:rgba(11,14,18,.6)">Más votados<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronDown" size="{{ 13 }}" hint-size="13px,13px"></x-import></span></div>
+        <sc-for list="{{ o.cms }}" as="c" hint-placeholder-count="4">
+        <div onClick="{{ c.onSel }}" style="padding:18px 18px 16px;border-top:1px solid rgba(11,14,18,.07);background:{{ c.selBg }};cursor:pointer">
+          <div style="display:grid;grid-template-columns:34px minmax(0,1fr) 30px;column-gap:12px;align-items:start">
+            <span style="width:34px;height:34px;border-radius:99px;background:{{ c.av.bg }};background-color:#DDD9D1"></span>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:baseline;gap:7px;flex-wrap:wrap"><span style="font:700 14px/1.25 Manrope,sans-serif">{{ c.name }}</span><span style="font:600 9.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ c.meta }}</span></div>
+              <sc-if value="{{ c.best.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:4px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:#00695B">{{ c.best.l }}</div></sc-if>
+              <div style="margin-top:6px;font:500 15px/1.6 Manrope,sans-serif;text-wrap:pretty">{{ c.body }}</div>
+              <sc-if value="{{ c.biz.has }}" hint-placeholder-val="{{ false }}"><div style="margin-top:10px;display:flex;align-items:center;gap:9px"><span style="width:28px;height:28px;border-radius:8px;background:{{ c.biz.ph }} center/cover;background-color:#E4E1DA;flex:none"></span><span style="flex:1;min-width:0;font:700 13px Manrope,sans-serif;color:#4B37F5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.biz.name }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.04em;color:rgba(11,14,18,.5);flex:none">{{ c.biz.short }}</span></div></sc-if>
+              <sc-if value="{{ c.sel }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;display:flex;gap:6px;animation:tlFade .2s ease-out"><div style="display:flex;flex:1;min-width:0"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="sm" icon="bubble" block="{{ true }}" hint-size="100%,34px">Responder</x-import></div><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="share" size="{{ 40 }}" hint-size="40px,40px"></x-import><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.IconButton" icon="warning" size="{{ 40 }}" hint-size="40px,40px"></x-import></div></sc-if>
+              <sc-if value="{{ c.hasReps }}" hint-placeholder-val="{{ false }}">
+                <sc-if value="{{ c.closed }}" hint-placeholder-val="{{ false }}"><div onClick="{{ c.onToggle }}" style="margin-top:12px;display:flex;align-items:center;gap:9px;cursor:pointer"><div style="display:flex"><sc-for list="{{ c.faces }}" as="f" hint-placeholder-count="3"><span style="width:22px;height:22px;box-sizing:border-box;border-radius:99px;border:2px solid #fff;margin-left:{{ f.ml }};background:{{ f.bg }};background-color:#DDD9D1"></span></sc-for></div><span style="font:700 12.5px Manrope,sans-serif;color:#4B37F5">{{ c.togL }}</span></div></sc-if>
+                <sc-if value="{{ c.open }}" hint-placeholder-val="{{ false }}"><div style="margin-top:14px;display:flex;flex-direction:column;gap:14px;animation:tlFade .2s ease-out"><sc-for list="{{ c.reps }}" as="x" hint-placeholder-count="3"><div style="display:flex;gap:10px"><span style="width:26px;height:26px;border-radius:99px;background:{{ x.av.bg }};background-color:#DDD9D1;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap"><span style="font:700 13px Manrope,sans-serif">{{ x.name }}</span><span style="font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.45)">{{ x.time }}</span></div><div style="margin-top:3px;font:500 14px/1.55 Manrope,sans-serif;text-wrap:pretty">{{ x.body }}</div></div><span style="font:800 12px Sora,sans-serif;color:rgba(11,14,18,.55);flex:none">{{ x.score }}</span></div></sc-for><span onClick="{{ c.onToggle }}" style="font:700 12px Manrope,sans-serif;color:#4B37F5;cursor:pointer">{{ c.togL }}</span></div></sc-if>
+              </sc-if>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><span onClick="{{ c.onUp }}" style="width:30px;height:28px;display:grid;place-items:center;cursor:pointer"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 16 }}" color="{{ c.upC }}" hint-size="16px,16px"></x-import></span><span style="font:800 13px Sora,sans-serif;color:{{ c.scC }}">{{ c.score }}</span><span onClick="{{ c.onDn }}" style="width:30px;height:28px;display:grid;place-items:center;cursor:pointer;transform:rotate(180deg)"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="like" size="{{ 16 }}" color="{{ c.dnC }}" hint-size="16px,16px"></x-import></span></div>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <div style="margin-top:auto;padding:10px 14px 26px;background:rgba(247,246,243,.96);border-top:1px solid rgba(11,14,18,.08);display:flex;gap:8px;align-items:center"><span style="width:42px;height:42px;box-sizing:border-box;border-radius:13px;border:1px solid rgba(11,14,18,.12);background:#fff;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="store" size="{{ 18 }}" color="#4B37F5" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0;height:42px;box-sizing:border-box;padding:0 13px;border-radius:13px;border:1px solid rgba(11,14,18,.12);background:#fff;display:flex;align-items:center;font:500 14px Manrope,sans-serif;color:rgba(11,14,18,.42);white-space:nowrap;overflow:hidden">¿Conoces a alguien? Recomiéndalo…</div><span style="width:42px;height:42px;border-radius:13px;background:rgba(11,14,18,.22);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="right" size="{{ 18 }}" stroke-width="{{ 2 }}" color="#fff" hint-size="18px,18px"></x-import></span></div>
+    </div></div>
+  </div>
+  </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const stop = e => { if (e && e.stopPropagation) e.stopPropagation(); };
+const VARS = [['17a', 'Tarjetas separadas', 'a', '#F7F6F3'], ['17b', 'Hilo con línea', 'b', '#fff'], ['17c', 'Burbujas', 'c', '#fff'], ['17d', 'La más votada arriba', 'd', '#F7F6F3'], ['17e', 'Limpio · acciones al tocar', 'e', '#fff']];
+class Component extends DCLogic {
+  state = { open: { a_ts1: 1 }, v: {}, sel: 'e_ts1' };
+  componentDidMount() { if (!window.TLCom) this._w = setInterval(() => { if (window.TLCom) { clearInterval(this._w); this.forceUpdate(); } }, 60); }
+  componentWillUnmount() { clearInterval(this._w); }
+  renderVals() {
+    const C = window.TLCom; if (!C) return { vars: [] };
+    const s = this.state, P = C.POSTS.find(p => p.id === 'tl-sastre');
+    const av = id => { const u = C.U[id]; return u.ph ? { bg: 'url(' + C.IMG(u.ph, 160) + ') center/cover', ini: '' } : { bg: '#EDEBE6', ini: u.n.split(' ').map(x => x[0]).join('').slice(0, 2) }; };
+    const rk = u => u.rk >= 4 ? { has: true, l: C.RANKS[u.rk - 1][0].toUpperCase(), tone: u.rk >= 9 ? 'ink' : 'neutral' } : { has: false };
+    const ago = h => h < 24 ? 'HACE ' + Math.round(h) + ' H' : h < 48 ? 'AYER' : 'HACE ' + Math.round(h / 24) + ' DÍAS';
+    const bz = id => { const b = C.BZ[id]; return { has: true, name: b[0], meta: b[1] + ' · ★ ' + b[3] + ' · ' + b[5] + ' MI', short: '★ ' + b[3] + ' · ' + b[5] + ' MI', ph: 'url(' + C.IMG(b[6], 200) + ')' }; };
+    const my = id => s.v[id] || 0;
+    const vote = (id, d) => e => { stop(e); this.setState(st => ({ v: { ...st.v, [id]: st.v[id] === d ? 0 : d } })); };
+    const col = (id, d) => my(id) === d ? (d > 0 ? '#4B37F5' : '#C0392B') : 'rgba(11,14,18,.55)';
+    const mk = k => (c, i) => { const u = C.U[c.u], key = k + '_' + c.id, open = !!s.open[key];
+      const reps = (c.rp || []).map((x, j, all) => ({ id: x.id, av: av(x.u), name: C.U[x.u].s, time: ago(x.h), body: x.es, score: String(x.up + my(x.id)), upC: col(x.id, 1), onUp: vote(x.id, 1), cont: j < all.length - 1 }));
+      const r = rk(u);
+      return { id: c.id, av: av(c.u), name: u.s, rk: r, time: ago(c.h), meta: (r.has ? r.l + ' · ' : '') + ago(c.h), body: c.es, biz: c.biz ? bz(c.biz) : { has: false },
+        score: String(c.up + my(c.id)), scC: my(c.id) ? '#4B37F5' : '#0B0E12', upC: col(c.id, 1), dnC: col(c.id, -1), onUp: vote(c.id, 1), onDn: vote(c.id, -1),
+        best: i === 0 ? { has: true, l: 'MÁS VOTADA' } : { has: false }, bt: i > 1 ? '1px solid rgba(11,14,18,.07)' : 'none',
+        hasReps: reps.length > 0, reps, open, closed: !open, onToggle: e => { stop(e); this.setState(st => ({ open: { ...st.open, [key]: !st.open[key] } })); },
+        togL: open ? 'Ocultar respuestas' : 'Ver ' + reps.length + (reps.length === 1 ? ' respuesta' : ' respuestas'), togS: open ? 'Ocultar' : reps.length + ' respuestas',
+        faces: reps.slice(0, 3).map((x, j) => ({ bg: x.av.bg, ml: j ? '-7px' : '0' })),
+        sel: s.sel === key, selBg: s.sel === key ? 'rgba(75,55,245,.04)' : '#fff', onSel: () => this.setState(st => ({ sel: st.sel === key ? null : key })) }; };
+    const n = P.cm.reduce((a, c) => a + 1 + (c.rp || []).length, 0);
+    return { vars: VARS.map(([id, t, k, bg]) => { const cms = P.cm.slice().sort((a, b) => b.up - a.up).map(mk(k)), top = cms[0];
+      return { id, href: '#' + id, t, label: id + ' · ' + t, bg, isA: k === 'a', isB: k === 'b', isC: k === 'c', isD: k === 'd', isE: k === 'e', cms, top, rest: cms.slice(1), cmT: n + ' comentarios',
+        topL: 'MÁS VOTADA · ' + top.score + ' VECINOS', restL: 'OTRAS RESPUESTAS · ' + (cms.length - 1), ...this.recsOf(cms, my) }; }) };
+  }
+  recsOf(cms, my) { const R = cms.filter(c => c.biz.has), tot = R.reduce((a, c) => a + +c.score, 0) || 1;
+    const recs = R.map((c, i) => { const on = my(c.id) === 1; return { pos: String(i + 1), name: c.biz.name, meta: c.biz.meta, short: c.biz.short, ph: c.biz.ph, n: c.score, nL: c.score + ' vecinos lo recomiendan', onVote: c.onUp,
+      bd: on ? '#4B37F5' : 'rgba(11,14,18,.14)', bg: on ? 'rgba(75,55,245,.08)' : '#fff', fg: on ? '#4B37F5' : '#0B0E12', btnL: on ? 'Recomendado' : 'Yo también', bd2: on ? '#4B37F5' : 'rgba(11,14,18,.08)', fg2: on ? '#4B37F5' : '#0B0E12',
+      pct: Math.round(+c.score * 100 / tot) + '%', bt: i ? '1px solid rgba(11,14,18,.07)' : 'none' }; });
+    return { recs, recsRest: recs.slice(1), hasRest: recs.length > 1 };
+  }
+}
+
+</script>
+</body>
+</html>

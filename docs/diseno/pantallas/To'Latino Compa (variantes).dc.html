@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/colors.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/typography.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/tokens/shape.css">
+<link rel="stylesheet" href="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/styles.css">
+<script src="_ds/to-latino-design-system-d2663232-04f6-45a5-908b-d9e3f8cc8e08/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#EDEBE6;font-family:Manrope,sans-serif;color:#0B0E12}
+a{color:#4B37F5;text-decoration:none}a:hover{color:#2E1FD1}
+.hs{scrollbar-width:none}.hs::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<section data-screen-label="1 · Compa" style="padding:40px 44px 72px;display:flex;flex-direction:column;gap:28px">
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <div style="font:800 30px/1.1 Sora,sans-serif;letter-spacing:-.04em">El Compa, el asistente de IA</div>
+    <div style="font:600 10.5px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">TURNO 1 · TRES VARIANTES · MISMO CASO: ANA CANCELA SU CITA Y PIDE AYUDA CON UN COBRO DOBLE</div>
+  </div>
+
+  <div data-screen-label="Igual en las tres" style="max-width:1300px;padding:18px 20px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:10px 28px">
+    <div style="grid-column:1/-1;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">IGUAL EN LAS TRES</div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Dice que es IA desde el primer mensaje y nunca se hace pasar por una persona.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Contesta con la ayuda de To'Latino y la política de cada negocio, y dice de dónde lo sacó.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Prepara la acción y tú la confirmas. No mueve dinero ni cambia tu cuenta: eso pasa a una persona, con el resumen.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">El equipo atiende de lunes a viernes, de 9 AM a 6 PM. Fuera de ese horario, El Compa te dice cuándo te escriben.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">Por WhatsApp y SMS es la misma conversación en texto; para confirmar una acción te llega un enlace a la app.</span></div>
+    <div style="display:flex;gap:10px;align-items:flex-start"><span style="flex:none;width:6px;height:6px;margin-top:8px;border-radius:99px;background:#4B37F5"></span><span style="font:500 13.5px/1.55 Manrope,sans-serif;text-wrap:pretty">El panel del negocio y el Super Admin usan el mismo chat. Las respuestas automáticas a clientes son solo de Pro y el dueño las apaga con un toque.</span></div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:64px;align-items:flex-start">
+  <sc-for list="{{ vars }}" as="o" hint-placeholder-count="3">
+  <div id="{{ o.id }}" data-screen-label="{{ o.label }}" style="display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;align-items:center;gap:10px"><a href="{{ o.href }}" style="padding:5px 10px;border-radius:8px;background:#0B0E12;color:#fff;font:800 12px 'JetBrains Mono',monospace;letter-spacing:.06em">{{ o.id }}</a><span style="font:800 19px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ o.t }}</span></div>
+    <div style="max-width:1300px;display:flex;flex-direction:column;gap:4px;font:500 13.5px/1.55 Manrope,sans-serif;color:rgba(11,14,18,.75);text-wrap:pretty"><span>{{ o.d1 }}</span><span>{{ o.d2 }}</span></div>
+    <div style="display:flex;gap:28px;align-items:flex-start">
+    <sc-for list="{{ o.screens }}" as="sc" hint-placeholder-count="3">
+      <div style="width:415px;display:flex;flex-direction:column;gap:10px">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;color:rgba(11,14,18,.5)">{{ sc.k }}</span>
+        <div style="padding:11px;border-radius:54px;background:#0B0E12;box-shadow:0 40px 80px -30px rgba(11,14,18,.45)">
+        <div style="border-radius:43px;overflow:hidden;background:#F7F6F3;height:852px;display:flex;flex-direction:column">
+          <div style="height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 30px;font:700 15px Manrope,sans-serif;background:#fff;flex:none"><span>{{ sc.clock }}</span><span style="width:120px;height:32px;border-radius:20px;background:#0B0E12"></span><span style="font:700 12px 'JetBrains Mono',monospace">5G</span></div>
+          <div style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden">
+          <sc-for list="{{ sc.blocks }}" as="b" hint-placeholder-count="5">
+            <sc-if value="{{ b.isTop }}" hint-placeholder-val="{{ false }}"><div style="padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:11px;flex:none">
+              <span style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span>
+              <sc-if value="{{ b.av }}" hint-placeholder-val="{{ true }}"><span style="width:36px;height:36px;box-sizing:border-box;border-radius:99px;border:1px solid rgba(11,14,18,.1);background:#fff url(assets/logo-tolatino.svg) center/60% no-repeat;flex:none"></span></sc-if>
+              <div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ b.t }}</span><sc-if value="{{ b.av }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="26px,17px">IA</x-import></sc-if></div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.sub }}</div></div>
+              <sc-if value="{{ b.pill }}" hint-placeholder-val="{{ false }}"><span style="height:34px;padding:0 12px;border-radius:99px;border:1.5px solid rgba(11,14,18,.14);background:#fff;display:flex;align-items:center;gap:6px;font:700 12px Manrope,sans-serif;flex:none;white-space:nowrap"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="users" size="{{ 14 }}" hint-size="14px,14px"></x-import>{{ b.pillL }}</span></sc-if>
+            </div></sc-if>
+            <sc-if value="{{ b.isStep }}" hint-placeholder-val="{{ false }}"><div style="display:grid;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.StepHeader" title="{{ b.title }}" step="{{ b.step }}" total="{{ b.total }}" hint-size="100%,58px"></x-import></div></sc-if>
+            <sc-if value="{{ b.isUnder }}" hint-placeholder-val="{{ false }}"><div style="position:relative;height:190px;flex:none;overflow:hidden">
+              <div style="padding:12px 16px;background:#fff;border-bottom:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:11px;background:#F7F6F3;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="chevronLeft" size="{{ 16 }}" stroke-width="{{ 2 }}" hint-size="16px,16px"></x-import></span><div style="flex:1;min-width:0"><div style="font:800 15px/1.2 Sora,sans-serif;letter-spacing:-.02em">{{ b.t }}</div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ b.s }}</div></div></div>
+              <div style="padding:14px 14px 0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.RequestCard" label="{{ b.label }}" tag="{{ b.tag }}" tone="neutral" title="{{ b.title }}" sub="{{ b.sub2 }}" hint-size="100%,76px"></x-import></div>
+              <div style="position:absolute;inset:0;background:rgba(11,14,18,.5)"></div>
+            </div></sc-if>
+            <sc-if value="{{ b.isSheet }}" hint-placeholder-val="{{ false }}"><div style="position:relative;margin-top:-22px;padding:10px 16px 2px;border-radius:26px 26px 0 0;background:#F7F6F3;display:flex;flex-direction:column;gap:10px;flex:none">
+              <span style="align-self:center;width:38px;height:4px;border-radius:99px;background:rgba(11,14,18,.18)"></span>
+              <div style="display:flex;align-items:center;gap:10px"><span style="width:36px;height:36px;box-sizing:border-box;border-radius:99px;border:1px solid rgba(11,14,18,.1);background:#fff url(assets/logo-tolatino.svg) center/60% no-repeat;flex:none"></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font:800 16px/1.2 Sora,sans-serif;letter-spacing:-.02em">El Compa</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="26px,17px">IA</x-import></div><div style="margin-top:3px;font:600 9px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5)">{{ b.sub }}</div></div><span style="width:34px;height:34px;border-radius:11px;background:#fff;border:1px solid rgba(11,14,18,.08);display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="close" size="{{ 15 }}" stroke-width="{{ 2 }}" hint-size="15px,15px"></x-import></span></div>
+            </div></sc-if>
+            <sc-if value="{{ b.isSys }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 22px 0;align-self:center;text-align:center;font:600 9.5px/1.6 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.5);text-wrap:pretty">{{ b.t }}</div></sc-if>
+            <sc-if value="{{ b.isMsg }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;display:flex;flex-direction:column;align-items:{{ b.al }};gap:4px">
+              <sc-if value="{{ b.hasName }}" hint-placeholder-val="{{ false }}"><span style="display:flex;align-items:center;gap:6px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.55)"><sc-if value="{{ b.isCompa }}" hint-placeholder-val="{{ false }}"><span style="width:18px;height:18px;box-sizing:border-box;border-radius:99px;border:1px solid rgba(11,14,18,.1);background:#fff url(assets/logo-tolatino.svg) center/60% no-repeat"></span></sc-if>{{ b.name }}</span></sc-if>
+              <div style="max-width:84%;padding:10px 13px;border-radius:{{ b.rad }};background:{{ b.bg }};color:{{ b.fg }};border:{{ b.bd }};font:500 14px/1.45 Manrope,sans-serif;text-wrap:pretty;box-sizing:border-box">{{ b.t }}</div>
+              <sc-if value="{{ b.hasSrc }}" hint-placeholder-val="{{ false }}"><span style="max-width:84%;font:700 9px/1.5 'JetBrains Mono',monospace;letter-spacing:.08em;color:#4B37F5">{{ b.src }}</span></sc-if>
+              <sc-if value="{{ b.hasTime }}" hint-placeholder-val="{{ false }}"><span style="font:600 8.5px 'JetBrains Mono',monospace;letter-spacing:.06em;color:rgba(11,14,18,.42)">{{ b.time }}</span></sc-if>
+            </div></sc-if>
+            <sc-if value="{{ b.isQa }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;align-self:flex-end;padding:8px 13px;border-radius:16px 16px 4px 16px;background:#0B0E12;color:#fff;font:600 13.5px Manrope,sans-serif">{{ b.t }}</div></sc-if>
+            <sc-if value="{{ b.isNote }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;padding:12px 13px;border-radius:16px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;gap:10px;align-items:flex-start">
+              <span style="width:28px;height:28px;box-sizing:border-box;border-radius:99px;border:1px solid rgba(11,14,18,.1);background:#fff url(assets/logo-tolatino.svg) center/60% no-repeat;flex:none"></span>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><span style="display:flex;align-items:center;gap:6px;font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.08em;color:rgba(11,14,18,.55)">EL COMPA<x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="action" hint-size="26px,17px">IA</x-import></span><span style="font:500 14px/1.5 Manrope,sans-serif;text-wrap:pretty">{{ b.t }}</span><sc-if value="{{ b.hasSrc }}" hint-placeholder-val="{{ false }}"><span style="font:700 9px/1.5 'JetBrains Mono',monospace;letter-spacing:.08em;color:#4B37F5">{{ b.src }}</span></sc-if></div>
+            </div></sc-if>
+            <sc-if value="{{ b.isCtx }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.RequestCard" label="{{ b.label }}" tag="{{ b.tag }}" tone="neutral" title="{{ b.title }}" sub="{{ b.sub }}" hint-size="100%,76px"></x-import></div></sc-if>
+            <sc-if value="{{ b.isReasons }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;display:grid"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.HelpReasonList" items="{{ b.items }}" hint-size="100%,240px"></x-import></div></sc-if>
+            <sc-if value="{{ b.isOpts }}" hint-placeholder-val="{{ false }}"><div style="margin:12px 14px 0;display:flex;flex-direction:column;gap:8px"><sc-for list="{{ b.items }}" as="p" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.OptionCard" icon="{{ p.icon }}" title="{{ p.title }}" sub="{{ p.sub }}" on="{{ p.on }}" hint-size="100%,64px"></x-import></sc-for></div></sc-if>
+            <sc-if value="{{ b.isAct }}" hint-placeholder-val="{{ false }}"><div data-screen-label="Compa · acción para confirmar" style="margin:12px 14px 0;padding:14px;border-radius:17px;background:#fff;border:1.5px solid #0B0E12;display:flex;flex-direction:column;gap:12px">
+              <span style="font:700 9.5px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ b.k }}</span>
+              <div><div style="font:800 16px/1.25 Sora,sans-serif;letter-spacing:-.02em">{{ b.t }}</div><div style="margin-top:4px;font:600 12.5px/1.45 Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ b.s }}</div></div>
+              <div style="border-top:1px solid rgba(11,14,18,.07)"><sc-for list="{{ b.rows }}" as="r" hint-placeholder-count="2"><div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(11,14,18,.06)"><span style="font:600 12.5px Manrope,sans-serif;color:rgba(11,14,18,.65)">{{ r.k }}</span><span style="font:700 12.5px Manrope,sans-serif;color:{{ r.c }};text-align:right">{{ r.v }}</span></div></sc-for></div>
+              <sc-if value="{{ b.btns }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:8px"><div style="flex:1;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="md" block="{{ true }}" hint-size="100%,42px">{{ b.ok }}</x-import></div><div style="flex:1;display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="secondary" size="md" block="{{ true }}" hint-size="100%,42px">{{ b.no }}</x-import></div></div></sc-if>
+            </div></sc-if>
+            <sc-if value="{{ b.isHand }}" hint-placeholder-val="{{ false }}"><div data-screen-label="Compa · pasa a una persona" style="margin:12px 14px 0;padding:14px;border-radius:17px;background:#fff;border:1px solid rgba(11,14,18,.08);display:flex;flex-direction:column;gap:12px">
+              <div style="display:flex;gap:11px;align-items:flex-start"><span style="width:38px;height:38px;border-radius:12px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="users" size="{{ 18 }}" color="#fff" hint-size="18px,18px"></x-import></span><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span style="font:800 15px/1.25 Sora,sans-serif;letter-spacing:-.02em">{{ b.t }}</span><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Tag" tone="neutral" hint-size="64px,17px">{{ b.tag }}</x-import></div><div style="margin-top:4px;font:500 13px/1.5 Manrope,sans-serif;color:rgba(11,14,18,.72);text-wrap:pretty">{{ b.s }}</div></div></div>
+              <div style="padding:11px 12px;border-radius:13px;background:#F7F6F3;display:flex;flex-direction:column;gap:6px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;color:rgba(11,14,18,.5)">{{ b.k }}</span><sc-for list="{{ b.lines }}" as="l" hint-placeholder-count="3"><span style="font:600 12.5px/1.45 Manrope,sans-serif">{{ l.t }}</span></sc-for></div>
+            </div></sc-if>
+            <sc-if value="{{ b.isSpacer }}" hint-placeholder-val="{{ false }}"><div style="flex:1;min-height:8px"></div></sc-if>
+            <sc-if value="{{ b.isLink }}" hint-placeholder-val="{{ false }}"><div style="margin:14px 14px 22px;text-align:center;font:700 13.5px Manrope,sans-serif;color:#4B37F5;flex:none">{{ b.t }}</div></sc-if>
+            <sc-if value="{{ b.isChips }}" hint-placeholder-val="{{ false }}"><div class="hs" style="margin-top:12px;display:flex;gap:8px;overflow-x:auto;padding:0 14px;flex:none"><sc-for list="{{ b.items }}" as="c" hint-placeholder-count="3"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Chip" variant="filter" hint-size="150px,36px">{{ c.l }}</x-import></sc-for></div></sc-if>
+            <sc-if value="{{ b.isComp }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding:10px 12px 18px;background:#fff;border-top:1px solid rgba(11,14,18,.07);display:flex;align-items:center;gap:8px;flex:none">
+              <div style="flex:1;height:44px;box-sizing:border-box;border-radius:14px;background:#F7F6F3;border:1px solid rgba(11,14,18,.08);display:flex;align-items:center;padding:0 14px;font:500 14px Manrope,sans-serif;color:rgba(11,14,18,.45)">{{ b.ph }}</div>
+              <span style="width:44px;height:44px;border-radius:14px;background:#0B0E12;display:grid;place-items:center;flex:none"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Icon" name="right" size="{{ 18 }}" color="#fff" stroke-width="{{ 2 }}" hint-size="18px,18px"></x-import></span>
+            </div></sc-if>
+            <sc-if value="{{ b.isBar }}" hint-placeholder-val="{{ false }}"><div style="margin-top:12px;padding:12px 14px 20px;background:rgba(247,246,243,.96);border-top:1px solid rgba(11,14,18,.07);display:flex;flex-direction:column;gap:8px;flex:none">
+              <sc-if value="{{ b.hasNote }}" hint-placeholder-val="{{ false }}"><span style="text-align:center;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;color:rgba(11,14,18,.5)">{{ b.note }}</span></sc-if>
+              <div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="primary" size="lg" block="{{ true }}" hint-size="100%,50px">{{ b.ok }}</x-import></div>
+              <sc-if value="{{ b.hasNo }}" hint-placeholder-val="{{ false }}"><div style="display:flex"><x-import component-from-global-scope="ToLatinoDesignSystem_d26632.Button" variant="ghost" size="md" block="{{ true }}" hint-size="100%,42px">{{ b.no }}</x-import></div></sc-if>
+            </div></sc-if>
+          </sc-for>
+          </div>
+        </div>
+        </div>
+      </div>
+    </sc-for>
+    </div>
+  </div>
+  </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const base = { isTop: false, isStep: false, isUnder: false, isSheet: false, isSys: false, isMsg: false, isQa: false, isNote: false, isCtx: false, isReasons: false, isOpts: false, isAct: false, isHand: false, isSpacer: false, isLink: false, isChips: false, isComp: false, isBar: false };
+    const B = o => Object.assign({}, base, o);
+    const top = o => B(Object.assign({ isTop: true, av: true, t: 'El Compa', sub: 'ASISTENTE DE IA', pill: true, pillL: 'Con una persona' }, o));
+    const sys = t => B({ isSys: true, t });
+    const msg = (who, t, o) => { const me = who === 'me'; return B(Object.assign({ isMsg: true, al: me ? 'flex-end' : 'flex-start', rad: me ? '16px 16px 4px 16px' : '16px 16px 16px 4px', bg: me ? '#0B0E12' : '#fff', fg: me ? '#fff' : '#0B0E12', bd: me ? 'none' : '1px solid rgba(11,14,18,.08)', hasName: !me, isCompa: who === 'compa', name: who === 'compa' ? 'EL COMPA · IA' : String(who).toUpperCase() + ' · TO\u2019LATINO', t, hasSrc: false, src: '', hasTime: false, time: '' }, o)); };
+    const at = (time, o) => Object.assign({ hasTime: true, time }, o || {});
+    const SRC = 'SEGÚN LA POLÍTICA DE BARBERÍA EL PRIMO';
+    const spacer = B({ isSpacer: true });
+    const comp = ph => B({ isComp: true, ph: ph || 'Escríbele al Compa' });
+    const chips = L => B({ isChips: true, items: L.map(l => ({ l })) });
+    const act = o => B(Object.assign({ isAct: true, k: 'EL COMPA LO PREPARÓ · CONFÍRMALO TÚ', t: 'Cancelar la solicitud', s: 'Barbería El Primo · Corte + barba · vie 10:30 AM', rows: [{ k: 'Cobro', v: '$0', c: '#0B0E12' }, { k: 'Depósito de $10', v: 'Retenido → Liberado', c: '#00695B' }], btns: false, ok: 'Sí, cancelar', no: 'No, dejarla' }, o));
+    const hand = B({ isHand: true, t: 'Tu caso pasó a Soporte', tag: 'TK-5231', s: 'Una persona te escribe hoy antes de las 6 PM. El equipo atiende de lunes a viernes, de 9 AM a 6 PM.', k: 'LO QUE RECIBIÓ EL EQUIPO', lines: [{ t: 'Pedido #4821 · Sabor Dominicano · $23.40' }, { t: 'Dos cobros iguales el 23 sep' }, { t: 'Tu conversación con El Compa' }] });
+    const ctx = o => B(Object.assign({ isCtx: true, label: 'SOBRE ESTA CITA', tag: 'PENDIENTE', title: 'Barbería El Primo · Corte + barba', sub: 'Mañana vie 10:30 AM · Depósito de $10 retenido' }, o));
+    const note = (t, s) => B({ isNote: true, t, hasSrc: !!s, src: s || '' });
+    const bar = (ok, no, n) => B({ isBar: true, ok, hasNo: !!no, no: no || '', hasNote: !!n, note: n || '' });
+    const link = t => B({ isLink: true, t });
+    const qa = t => B({ isQa: true, t });
+    const sheet = sub => B({ isSheet: true, sub });
+    const opts = L => B({ isOpts: true, items: L.map(x => Object.assign({ sub: '', on: false }, x)) });
+    const step = (title, n, total) => B({ isStep: true, title, step: n, total });
+    const underCita = B({ isUnder: true, t: 'Tu cita', s: 'BARBERÍA EL PRIMO · SOLICITUD ENVIADA', label: 'TU SOLICITUD', tag: 'PENDIENTE', title: 'Corte + barba · vie 10:30 AM', sub2: 'Depósito de $10 retenido' });
+    const underPed = B({ isUnder: true, t: 'Tu pedido', s: 'SABOR DOMINICANO · AYER 7:10 PM', label: 'PEDIDO #4821', tag: 'COBRADO', title: 'Delivery · 3 platos', sub2: '$23.40 · Visa ·· 4242' });
+    const S = (k, clock, blocks) => ({ k, clock, blocks });
+    const hello = 'Hola, Ana. Soy El Compa, el asistente de IA de To\u2019Latino. Te ayudo con pedidos, citas, boletos y pagos.';
+    const ans = 'Tu solicitud en Barbería El Primo es mañana, viernes, a las 10:30 AM. Cancelar es gratis hasta hoy a las 10:30 PM: no pagas nada y se libera tu depósito de $10.';
+    const money = 'Eso lo revisa una persona del equipo: yo no muevo dinero. Ya le pasé tu caso con lo que me contaste.';
+    const vars = [
+      { id: '1a', t: 'Conversación', label: '1a · Conversación',
+        d1: 'Escribes como le hablarías a alguien; El Compa entiende y te lleva al proceso. Las sugerencias ayudan si no sabes qué decir.',
+        d2: 'Vive en Ayuda y soporte. En desktop, como Soporte hoy: tus casos a la izquierda y la conversación a la derecha.',
+        screens: [
+          S('1 · EMPIEZA', '12:30', [top(), sys('EL COMPA ES UNA IA Y PUEDE EQUIVOCARSE. LO QUE MUEVE DINERO O CAMBIA TU CUENTA LO CONFIRMAS TÚ.'), msg('compa', hello, at('12:30 PM')), msg('compa', 'Tienes una solicitud de cita mañana en Barbería El Primo y un pedido de ayer en Sabor Dominicano. ¿Es sobre alguno?'), spacer, chips(['Cancelar mi cita de mañana', 'Algo con mi pedido de ayer', 'Otra cosa']), comp()]),
+          S('2 · PREPARA UNA ACCIÓN', '12:31', [top(), msg('me', 'Quiero cancelar la cita de mañana', at('12:31 PM')), msg('compa', ans, { hasSrc: true, src: SRC }), act({ btns: true }), spacer, comp()]),
+          S('3 · PASA A UNA PERSONA', '1:05', [top(), sys('CANCELASTE LA SOLICITUD · TU DEPÓSITO DE $10 QUEDÓ LIBERADO'), msg('me', 'Otra cosa: del pedido de ayer me cobraron dos veces', at('12:33 PM')), msg('compa', money), hand, msg('Dayana', 'Hola, Ana, soy Dayana. Ya vi los dos cobros de $23.40: el segundo te lo devolvemos a la misma tarjeta hoy.', at('1:05 PM')), spacer, comp()])
+        ] },
+      { id: '1b', t: 'Hoja de ayuda', label: '1b · Hoja de ayuda',
+        d1: 'El Compa se abre sobre el pedido, la cita o el boleto donde está el problema: ya sabe de qué hablas y te ofrece lo que se puede hacer ahí.',
+        d2: 'Para dudas generales se entra por Ayuda y soporte. En desktop, la misma hoja se abre como panel de 400 a la derecha.',
+        screens: [
+          S('1 · EMPIEZA DESDE TU CITA', '12:30', [underCita, sheet('ASISTENTE DE IA · SOBRE ESTA CITA'), ctx(), note('Hola, Ana. ¿Qué necesitas con esta cita?'), B({ isReasons: true, items: [{ label: 'Cancelarla', sub: 'Gratis hasta hoy 10:30 PM', icon: 'close' }, { label: 'Pedir otra hora', sub: 'Le preguntamos a El Primo', icon: 'clock' }, { label: 'Voy tarde', sub: 'Le avisamos al negocio', icon: 'warning' }, { label: 'Otra cosa', sub: 'Escríbele al Compa', icon: 'bubble' }] }), spacer, link('Hablar con una persona')]),
+          S('2 · PREPARA UNA ACCIÓN', '12:31', [underCita, sheet('ASISTENTE DE IA · SOBRE ESTA CITA'), qa('Cancelarla'), note('Es gratis hasta hoy a las 10:30 PM. No pagas nada y se libera tu depósito de $10.', SRC), act({ k: 'ASÍ QUEDA' }), spacer, bar('Sí, cancelar la solicitud', 'No, dejarla', 'EL COMPA LO PREPARÓ · CONFÍRMALO TÚ')]),
+          S('3 · PASA A UNA PERSONA', '12:33', [underPed, sheet('ASISTENTE DE IA · SOBRE ESTE PEDIDO'), ctx({ label: 'SOBRE ESTE PEDIDO', tag: 'COBRADO', title: 'Sabor Dominicano · #4821', sub: 'Ayer 7:10 PM · $23.40' }), qa('Me cobraron dos veces'), note(money), hand, spacer, link('Volver al pedido')])
+        ] },
+      { id: '1c', t: 'Pasos guiados', label: '1c · Pasos guiados',
+        d1: 'Primero tocas qué necesitas y cada paso dice qué va a pasar antes de confirmarlo. Se puede usar sin escribir.',
+        d2: 'Más toques que conversar. Si lo que buscas no está en la lista, lo escribes y El Compa sigue desde ahí.',
+        screens: [
+          S('1 · EMPIEZA', '12:30', [top({ av: false, t: 'Ayuda', sub: 'TE GUÍA EL COMPA · IA' }), note('Hola, Ana. ¿Con qué te ayudo? Toca una opción o escríbelo con tus palabras.'), opts([{ icon: 'calendar', title: 'Una cita', sub: 'Barbería El Primo · mañana 10:30 AM' }, { icon: 'bag', title: 'Un pedido', sub: 'Sabor Dominicano · ayer' }, { icon: 'ticket', title: 'Un boleto', sub: 'No tienes boletos próximos' }, { icon: 'card', title: 'Un pago o cobro', sub: 'Cobros, devoluciones y tarjetas' }, { icon: 'users', title: 'Mi cuenta', sub: 'Teléfono, ciudad y privacidad' }]), spacer, comp('O escríbelo con tus palabras')]),
+          S('2 · PREPARA UNA ACCIÓN', '12:31', [step('Cancelar tu cita', 2, 2), ctx({ label: 'TU CITA', sub: 'Mañana vie 10:30 AM' }), note('Es gratis hasta hoy a las 10:30 PM. No pagas nada y se libera tu depósito de $10.', SRC), act({ k: 'ASÍ QUEDA', s: 'Barbería El Primo recibe el aviso al instante' }), spacer, bar('Sí, cancelar la solicitud', 'Volver')]),
+          S('3 · PASA A UNA PERSONA', '12:33', [step('Un pago o cobro', 2, 2), opts([{ icon: 'card', title: 'Me cobraron dos veces', sub: 'Pedido #4821 · Sabor Dominicano · $23.40', on: true }, { icon: 'dollar', title: 'No me llegó una devolución' }]), note('Esto lo revisa una persona del equipo: yo no muevo dinero. Ya le pasé tu caso con este pedido.'), hand, spacer, bar('Ver mi caso')])
+        ] }
+    ].map(o => Object.assign(o, { href: '#' + o.id }));
+    return { vars };
+  }
+}
+</script>
+</body>
+</html>
