@@ -880,3 +880,10 @@ _Decidido por mí (reversible):_
 - **Arreglo que toca también Belleza, Hogar y Auto:** al abrir Hoy del panel, la reparación de pagos liberaba el depósito de una
   solicitud con «otra hora» propuesta mientras el cliente decidía. Ya no (guardián `reparaVivas`), y nada se confirma sin el
   depósito retenido.
+
+### 4v-2 · Fiestas en Mi cuenta y en el Super Admin (7 nov)
+**Qué mirar:** Marisol › Mi cuenta › Citas y reservas: sus fiestas (abren «Tu fiesta»). Super Admin › Transacciones › **Fiestas**:
+cada fiesta con el día, invitados, el depósito (retenido / cobrado / liberado / devuelto / se quedó con el negocio), la versión
+del acuerdo y si canceló el negocio.
+_Decidido por mí: los extras del acuerdo (versión 2 que el cliente acepta) y la cola «Fechas canceladas por el negocio» llegan con
+la ayuda y las reseñas de Fiestas (4z)._

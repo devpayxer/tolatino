@@ -643,6 +643,18 @@ const guardianes = {
     if (!/terminos\(x\.negocio, x\.total, x\.r\)/.test(l)) falla("layawayAceptado", L, 1, "crearPlan guarda el texto de terminos() (el mismo que se leyó)");
   },
 
+  /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
+     donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
+     «fiesta:{negocio}:{día}». */
+  candadoFiesta() {
+    const f = "apps/web/lib/fiestas-reservas.ts";
+    if (!existsSync(f)) return;
+    for (const p of readFileSync(f, "utf8").split(/\nexport async function /).slice(1)) {
+      const nombre = p.slice(0, p.indexOf("(")), i = p.search(/insert into party_days/), j = p.search(/pg_advisory_xact_lock\(hashtext\('fiesta:'/);
+      if (i >= 0 && (j < 0 || j > i)) falla("candadoFiesta", f, 0, `«${nombre}» ocupa un día sin tomar antes el candado del día (fiesta:{negocio}:{día})`);
+    }
+  },
+
   /* 4v. La reparación de pagos liberaba el depósito de una solicitud con otra hora propuesta (change_proposed) mientras el
      cliente decidía: luego aceptaba y quedaba confirmada sin dinero. Una consulta que libera o cobra lo «retenido» de
      operaciones que «ya no siguen» tiene que dejar fuera las vivas: pending Y change_proposed. */
