@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
+import { misTarjetas } from "@/lib/cobros";
+import { pasarela } from "@/lib/pagos/pasarela";
 import { viajeVista } from "@/lib/viajes";
 import { ViajeEstado } from "./ViajeEstado";
 
@@ -14,5 +16,8 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!u) redirect(`/entrar?volver=${encodeURIComponent(`/viaje/${num}`)}`);
   const x = await viajeVista(u.id, num);
   if (!x) notFound();
-  return <ViajeEstado x={x} es={lang === "es"} />;
+  // La mudanza con su precio cerrado: la tarjeta para aceptarlo.
+  const modo = pasarela.modo();
+  const pago = x.k === "cotiza" && x.precio?.st === "sent" && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
+  return <ViajeEstado x={x} es={lang === "es"} pago={pago} />;
 }

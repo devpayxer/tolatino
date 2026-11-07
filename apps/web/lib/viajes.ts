@@ -2,7 +2,9 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { contexto } from "./citas";
 import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
+import { cifrar } from "./cifrado";
 import { db, tx } from "./db";
+import { destinatarioDe, fotosDe, precioDe, type Precio } from "./envios";
 import { pasarela } from "./pagos/pasarela";
 import { kindTrans, salidasDe } from "./transporte";
 import { LIC_TRANS, type Bi, type SvcTrans } from "./transporte-comun";
@@ -15,7 +17,12 @@ import { LIC_TRANS, type Bi, type SvcTrans } from "./transporte-comun";
      «salida:{id}» y en la misma transacción, así nadie vende un asiento que no queda.
    - Cancelar (cliente): sin confirmar → se libera; confirmado y faltan 24 h o más → devolución completa; menos → se cobra la mitad
      (la otra mitad vuelve; redondeo a favor del cliente). Si el negocio cancela la salida: devolución completa a cada pasajero.
-   - Pasos de la salida: va tarde (aviso a todos) · salió · llegó (el viaje queda terminado). */
+   - Pasos de la salida: va tarde (aviso a todos) · salió · llegó (el viaje queda terminado).
+   - 4y-2 · Envío de caja: cuántas cajas (1–4) × precio, recogida en tu dirección de la zona, DESTINATARIO cifrado en op_private
+     (nunca en operations, avisos ni vistas públicas) y «Lo que no se puede mandar» aceptado; se retiene y se cobra igual que un
+     viaje. Pasos del envío (lib/envios.ts): recogida hecha · salió del almacén con rastreo · entregada.
+   - 4y-2 · Mudanza (cotiza): fotos (1–6, privadas), recogida y destino; hoy $0. El negocio manda el precio cerrado (vale 48 h); al
+     aceptarlo se retiene y se cobra (lib/envios.ts). */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/, ID = /^\d{1,18}$/;
 export const NUM_V = /^V-\d{1,10}$/;
 export const HORAS_PRIV = Array.from({ length: 18 }, (_, i) => (i + 5) * 60); // vehículo completo: 5 AM – 10 PM
@@ -26,12 +33,14 @@ const horaL = (m: number) => `${Math.floor(m / 60) % 12 || 12}:${String(m % 60).
 type Q = PoolClient | ReturnType<typeof db>;
 
 /* Lo que se cobra (el servidor; la pantalla muestra lo mismo con la misma regla). */
-export function calcularViaje(s: Pick<SvcTrans, "k" | "cents" | "child">, q: { adults?: number; kids?: number; bagsExtra?: number }, extraBag: number | null) {
+export function calcularViaje(s: Pick<SvcTrans, "k" | "cents" | "child">, q: { adults?: number; kids?: number; bagsExtra?: number; boxes?: number }, extraBag: number | null) {
+  if (s.k === "caja") { const boxes = Math.max(1, Math.min(4, Math.round(Number(q.boxes) || 1))); return { seats: 0, adults: 1, kids: 0, bags: 0, boxes, tot: boxes * s.cents }; }
+  if (s.k === "cotiza") return { seats: 0, adults: 1, kids: 0, bags: 0, boxes: 0, tot: 0 }; // el precio cerrado llega después, con las fotos
   if (s.k === "asiento") {
     const adults = Math.max(0, Math.round(Number(q.adults) || 0)), kids = Math.max(0, Math.round(Number(q.kids) || 0)), bags = extraBag == null ? 0 : Math.max(0, Math.min(6, Math.round(Number(q.bagsExtra) || 0)));
-    return { seats: adults + kids, adults, kids, bags, tot: adults * s.cents + kids * (s.child ?? s.cents) + bags * (extraBag ?? 0) };
+    return { seats: adults + kids, adults, kids, bags, boxes: 0, tot: adults * s.cents + kids * (s.child ?? s.cents) + bags * (extraBag ?? 0) };
   }
-  return { seats: 0, adults: Math.max(1, Math.round(Number(q.adults) || 1)), kids: 0, bags: 0, tot: s.cents };
+  return { seats: 0, adults: Math.max(1, Math.round(Number(q.adults) || 1)), kids: 0, bags: 0, boxes: 0, tot: s.cents };
 }
 
 type SvcV = SvcTrans & { dur: number };
@@ -42,7 +51,7 @@ async function servicio(c: Q, negocio: string, id: string): Promise<SvcV | null>
             coalesce((select array_agg(x::int order by x::int) from jsonb_array_elements_text(coalesce(i.svc_attrs->'sal', '[]'::jsonb)) x), '{}') as sal,
             (i.svc_attrs->>'pax')::int as pax, (i.svc_attrs->>'child')::int as child, i.svc_attrs->'to' as "to", i.svc_attrs->'from' as "from", (i.svc_attrs->>'dmin')::int as dmin,
             (i.svc_attrs->>'wait')::int as wait, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto, null::jsonb as prox, coalesce((i.svc_attrs->>'dmin')::int, 60) as dur
-       from items i where i.id = $1::bigint and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and i.svc_kind in ('asiento', 'priv')`, [id, negocio])).rows[0] ?? null;
+       from items i where i.id = $1::bigint and i.business_id = $2 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and i.svc_kind in ('asiento', 'priv', 'caja', 'cotiza')`, [id, negocio])).rows[0] ?? null;
 }
 async function licOk(c: Q, negocio: string) {
   const k = await kindTrans(negocio, c), req = LIC_TRANS[k?.kind ?? "taxi"] ?? [];
@@ -74,7 +83,7 @@ export async function bookingViaje(negocio: string, svcId: string, userId: strin
       dias.push({ ymd, salidas: L.map((r) => ({ run: r.run, m: r.m, quedan: r.quedan, libre: r.futura && !r.cancelada && r.quedan > 0 })) });
     } else dias.push({ ymd, salidas: HORAS_PRIV.map((m) => ({ run: "", m, quedan: 0, libre: i > 0 || m > x.now + 60 })) });
   }
-  const dirs = s.k === "priv" && userId ? (await c.query<{ id: string; t: string; enZona: boolean; def: boolean }>(
+  const dirs = s.k !== "asiento" && userId ? (await c.query<{ id: string; t: string; enZona: boolean; def: boolean }>(
     `select a.id::text, concat_ws(', ', a.street || coalesce(' ' || nullif(a.apt, ''), ''), a.zip) as t, a.is_default as def,
             coalesce(a.geo is null or bz.geo is null or bz.service_radius_mi is null or st_dwithin(a.geo, bz.geo, bz.service_radius_mi * 1609.344), true) as "enZona"
        from user_addresses a, businesses bz where bz.id = $2 and a.user_id = $1 and a.removed_at is null order by a.is_default desc, a.created_at limit 10`, [userId, negocio])).rows : [];
@@ -101,8 +110,18 @@ async function soltarAsientos(c: PoolClient, op: string) {
 }
 
 /* ── Reservar ── */
+export type Destino = { nombre: string; tel: string; prov: string; dir: string; ref?: string };
 export type ViajeIn = { svc: string; day: string; m: number; run?: string | null; adults: number; kids?: number; childSeat?: boolean; bagsExtra?: number;
-  pickup?: string | null; nota?: string; sms?: boolean; pm?: string | null; clave: string };
+  pickup?: string | null; nota?: string; sms?: boolean; pm?: string | null; clave: string;
+  boxes?: number; dest?: Destino | null; prohibido?: boolean; drop?: string; fotos?: string[] };
+/* El destinatario de una caja: se revisa aquí y se guarda cifrado. */
+const limpio = (v: unknown, max: number) => String(v ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+export function destinoValido(d: Destino | null | undefined): Destino | null {
+  if (!d || typeof d !== "object") return null;
+  const x = { nombre: limpio(d.nombre, 80), tel: limpio(d.tel, 24), prov: limpio(d.prov, 60), dir: limpio(d.dir, 200), ref: limpio(d.ref, 120) };
+  if (x.nombre.length < 3 || x.prov.length < 2 || x.dir.length < 6 || !/^\+?[\d\s().-]{7,24}$/.test(x.tel) || (x.tel.match(/\d/g) ?? []).length < 7) return null;
+  return x;
+}
 type Res = { ok: true; numero: string } | { ok: false; msg: Bi; tarjeta?: true; salida?: true };
 export async function reservarViaje(userId: string, negocio: string, f: ViajeIn, entorno: string): Promise<Res> {
   if (!UUID.test(String(f?.clave)) || !ID.test(String(f?.svc)) || !/^\d{4}-\d{2}-\d{2}$/.test(String(f?.day))) return no("Revisa tu reserva y vuelve a intentarlo.", "Check your booking and try again.");
@@ -118,10 +137,18 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
     if (!x || !s) { await c.query("rollback"); return no("Ese servicio no se reserva en línea.", "That service is not booked online."); }
     if (x.plan !== "pro" || !x.mods.includes("citas") || x.off.citas || x.off.svc) { await c.query("rollback"); return no(`${x.name} no toma reservas en línea por ahora: llama al negocio.`, `${x.name} is not taking online bookings right now: call the business.`); }
     if (!(await licOk(c, negocio))) { await c.query("rollback"); return no(`La licencia de ${x.name} está en revisión: por ahora se reserva llamando.`, `${x.name}'s license is under review: book by phone for now.`); }
-    if (s.k !== "asiento" && s.k !== "priv") { await c.query("rollback"); return no("Ese servicio se pide llamando al negocio.", "That service is requested by calling the business."); }
+    // Caja: destinatario completo y «Lo que no se puede mandar» aceptado. Mudanza: fotos (1–6, del propio cliente) y el destino.
+    const dest = s.k === "caja" ? destinoValido(f.dest) : null;
+    if (s.k === "caja" && !dest) { await c.query("rollback"); return no("Completa el destinatario: nombre, teléfono, provincia y dirección.", "Complete the recipient: name, phone, province and address."); }
+    if (s.k === "caja" && f.prohibido !== true) { await c.query("rollback"); return no("Confirma que la caja no lleva nada de «Lo que no se puede mandar».", "Confirm the box has nothing from “What can’t be shipped”."); }
+    const fotos = s.k === "cotiza" && Array.isArray(f.fotos) ? [...new Set(f.fotos.map(String).filter((z) => UUID.test(z)))] : [];
+    const drop = s.k === "cotiza" ? limpio(f.drop, 200) : "";
+    if (s.k === "cotiza" && !fotos.length) { await c.query("rollback"); return no("Agrega al menos una foto: cuartos, muebles grandes y escaleras.", "Add at least one photo: rooms, large furniture and stairs."); }
+    if (s.k === "cotiza" && fotos.length > 6) { await c.query("rollback"); return no("Hasta 6 fotos.", "Up to 6 photos."); }
+    if (s.k === "cotiza" && drop.length < 6) { await c.query("rollback"); return no("Escribe a dónde va la mudanza.", "Write where the move is going."); }
     const dias = (await c.query<{ d: number }>(`select ($1::date - $2::date)::int as d`, [f.day, x.hoy])).rows[0]!.d;
     if (!(dias >= 0 && dias < DIAS_VIAJE)) { await c.query("rollback"); return no("Elige un día de esta semana.", "Pick a day this week.", { salida: true }); }
-    const aj = await ajustes(c, negocio), calc = calcularViaje(s, { adults: f.adults, kids: f.kids, bagsExtra: f.bagsExtra }, aj.extra);
+    const aj = await ajustes(c, negocio), calc = calcularViaje(s, { adults: f.adults, kids: f.kids, bagsExtra: f.bagsExtra, boxes: f.boxes }, aj.extra);
     let run: string | null = null, m = Math.floor(Number(f.m)), people = calc.adults + calc.kids;
     if (s.k === "asiento") {
       if (!calc.adults) { await c.query("rollback"); return no("¿Cuántos viajan? Al menos un adulto.", "How many are traveling? At least one adult."); }
@@ -134,9 +161,9 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
       if (!HORAS_PRIV.includes(m) || (dias === 0 && m <= x.now + 60)) { await c.query("rollback"); return no("Elige la hora: desde una hora a partir de ahora.", "Pick the time: from one hour from now.", { salida: true }); }
       if (s.pax && people > s.pax) { await c.query("rollback"); return no(`Caben hasta ${s.pax} personas.`, `Fits up to ${s.pax} people.`); }
     }
-    // Recogida (vehículo completo): una de tus direcciones, dentro de su zona (PostGIS).
+    // Recogida (vehículo completo, caja, mudanza): una de tus direcciones, dentro de su zona (PostGIS).
     let pickup: { id: string; t: string } | null = null;
-    if (s.k === "priv") {
+    if (s.k !== "asiento") {
       if (!f.pickup || !UUID.test(String(f.pickup))) { await c.query("rollback"); return no("Elige dónde te recogen.", "Pick where they pick you up."); }
       const p = (await c.query<{ t: string; ok: boolean }>(
         `select concat_ws(', ', a.street || coalesce(' ' || nullif(a.apt, ''), ''), a.zip) as t,
@@ -162,17 +189,23 @@ export async function reservarViaje(userId: string, negocio: string, f: ViajeIn,
       if (ret.estado === "accion") { await c.query("rollback"); await pasarela.liberar(ret.pi).catch(() => undefined); retenido = null; return no("Tu banco pide una verificación extra. Prueba con otra tarjeta.", "Your bank asks for an extra verification. Try another card.", { tarjeta: true }); }
     }
     const det = { svc: s.name, svcId: s.id, k: s.k, unit: s.cents, child: s.child, adults: calc.adults, kids: calc.kids, childSeat: !!f.childSeat && aj.nino, bagsIncl: aj.bags, bagsExtra: calc.bags, extraBag: aj.extra,
-      inc: s.inc, from: s.from, to: s.to, run, pickup, sms: f.sms !== false, terms: { cancelH: 24, feePct: 50 } };
+      inc: s.inc, from: s.from, to: s.to, run, pickup, sms: f.sms !== false, terms: { cancelH: 24, feePct: 50 },
+      ...(s.k === "caja" ? { boxes: calc.boxes, prov: dest!.prov } : {}), ...(s.k === "cotiza" ? { quote: true, drop, fotos: fotos.length } : {}) };
     const op = (await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, buffer_min, customer_note, details, party_size,
                                subtotal_cents, total_cents, pay_mode, respond_by, free_quota_month, client_key, is_test)
        values ($1, 'trip', $2, $3, $4, 'pending', ($5::date + make_interval(mins => $6::int)) at time zone $7, $8, 0, nullif($9, ''), $10::jsonb, $11,
                $12, $12, $13, least(now() + case when $5::date = (now() at time zone $7)::date then interval '2 hours' else interval '24 hours' end, ($5::date + make_interval(mins => $6::int)) at time zone $7),
                null, $14, $15) returning id::text`,
-      [numero, x.city, x.id, userId, f.day, m, x.tz, Math.min(600, Math.max(15, s.dur)), nota, JSON.stringify(det), Math.min(500, Math.max(1, people)), tot, enApp ? "app" : "local", f.clave, entorno !== "produccion"])).rows[0]!.id;
+      [numero, x.city, x.id, userId, f.day, m, x.tz, Math.min(600, Math.max(15, s.dur)), nota, JSON.stringify(det), Math.min(500, Math.max(1, people)), tot, enApp || (s.k === "cotiza" && !!x.cuenta) ? "app" : "local", f.clave, entorno !== "produccion"])).rows[0]!.id;
+    if (dest) await c.query(`insert into op_private (operation_id, reason, note_enc) values ($1::bigint, 'destinatario', $2)`, [op, cifrar(JSON.stringify(dest))]);
+    if (fotos.length) {
+      const u = await c.query(`update media set owner_kind = 'trip', owner_id = $1, sort = array_position($3::uuid[], id) where id = any($3::uuid[]) and uploaded_by = $2 and owner_kind = 'user' and status = 'visible'`, [op, userId, fotos]);
+      if (u.rowCount !== fotos.length) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Una de las fotos ya no está. Súbela otra vez.", "One of the photos is gone. Upload it again."); }
+    }
     if (run && !(await tomarAsientos(c, op, run, calc.seats))) { await c.query("rollback"); if (retenido) { await pasarela.liberar(retenido).catch(() => undefined); retenido = null; } return no("Ya no quedan tantos asientos en esa salida. Elige otra.", "Not enough seats left on that departure. Pick another.", { salida: true }); }
     await c.query(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct, options) values ($1, $2, $3::jsonb, $4, $5, $6, 0, '[]'::jsonb)`,
-      [op, s.id, JSON.stringify(s.name), Math.max(1, calc.seats || 1), s.cents, tot]);
+      [op, s.id, JSON.stringify(s.name), Math.max(1, calc.seats || calc.boxes || 1), s.cents, tot]);
     if (ret?.ok) await registrarRetencion(c, { opId: op, userId, negocio: x.id, city: x.city, total: tot, comision: fee, r: ret, pm: f.pm ?? undefined, kind: "full" });
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1, 'sent', 'user', $2)`, [op, userId]);
     await c.query("commit");
@@ -214,7 +247,10 @@ async function avisarNeg(numero: string, tpl: string, extra: Record<string, stri
   await avisarNegocio(o.biz, tpl, { cliente: o.cliente, dia: diaL(o.ymd), hora: horaL(o.m), servicio: (o.det.svc as Bi)?.es ?? "", personas: `${a + k} ${a + k === 1 ? "persona" : "personas"}`, dep: "", ...extra },
     { href: `/panel/${o.biz}/hoy?det=viaje:${numero}`, ref: ["trip", numero] });
 }
-export async function avisarViajeNuevo(numero: string) { await avisarNeg(numero, "biz_viaje"); }
+export async function avisarViajeNuevo(numero: string) {
+  const k = (await db().query<{ k: string }>(`select details->>'k' as k from operations where number = $1 and kind = 'trip'`, [numero])).rows[0]?.k;
+  await avisarNeg(numero, k === "caja" ? "biz_envio" : k === "cotiza" ? "biz_mudanza" : "biz_viaje");
+}
 async function ev(c: PoolClient, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) {
   await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, actor, actorId, note ? JSON.stringify(note) : null]);
 }
@@ -230,6 +266,7 @@ export async function responderViaje(negocio: string, numero: string, paso: "con
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Ese viaje no existe.", "That trip does not exist.");
     if (o.status !== "pending") return no("Esta reserva ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
+    if (o.det.k === "cotiza" && paso !== "nopuedo") return no("En una mudanza mandas el precio cerrado (o «No lo hacemos»).", "For a move you send the fixed price (or “We don’t do it”).");
     if (paso === "confirmar") {
       if (o.tot > 0 && o.pay && o.pay !== "held") return no("Lo retenido ya no está: usa «No hay cupo».", "The hold is gone: use “No room”.");
       await c.query(`update operations set status = 'confirmed', answered_at = now(), confirmed_at = now(), respond_by = null, updated_at = now() where id = $1::bigint`, [o.id]);
@@ -280,7 +317,7 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
     if (!o) return no("Ese viaje no existe.", "That trip does not exist.");
     const ya = no("Este viaje ya cambió. Actualiza la pantalla.", "This trip already changed. Refresh the screen.");
     if (que === "cancelar") {
-      if (!["pending", "change_proposed", "confirmed"].includes(o.status) || o.detail === "camino") return ya;
+      if (!["pending", "change_proposed", "confirmed"].includes(o.status) || o.detail === "camino" || o.detail === "recogida") return ya;
       const conf = o.status === "confirmed", aTiempo = !conf || o.hours_to >= 24;
       // Tarde: se cobra la mitad (redondeo a favor del cliente: se queda con la mitad hacia abajo).
       const cobra = conf && !aTiempo && o.tot > 0 ? Math.floor(o.tot / 2) : 0;
@@ -414,7 +451,7 @@ export async function pasoViaje(negocio: string, numero: string, paso: "salio" |
   let despues: (() => Promise<void>) | null = null;
   const r = await tx(async (c): Promise<ResV> => {
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
-    if (!o || o.status !== "confirmed" || o.det.k !== "priv") return no("Este viaje ya cambió.", "This trip already changed.");
+    if (!o || o.status !== "confirmed" || (o.det.k !== "priv" && o.det.k !== "cotiza")) return no("Este viaje ya cambió.", "This trip already changed.");
     if (paso === "salio") {
       if (o.detail === "camino") return no("Ya salió.", "Already left.");
       await c.query(`update operations set status_detail = 'camino', updated_at = now() where id = $1::bigint`, [o.id]); await ev(c, o.id, "run_departed", "member", actorId);
@@ -442,7 +479,10 @@ export async function barrerViajes(f: { negocio?: string; userId?: string; numer
       const o = (await c.query<{ st: string }>(`select status as st from operations where id = $1::bigint for update`, [v.id])).rows[0];
       if (!o || o.st !== v.st) return false;
       await soltarAsientos(c, v.id);
-      if (v.st === "pending") await c.query(`update operations set status = 'expired', status_detail = 'sin_respuesta', updated_at = now() where id = $1::bigint`, [v.id]);
+      if (v.st === "pending") {
+        await c.query(`update operations set status = 'expired', status_detail = case when status_detail = 'precio' then 'precio_vencido' else 'sin_respuesta' end, updated_at = now() where id = $1::bigint`, [v.id]);
+        await c.query(`update written_totals set status = 'expired' where operation_id = $1::bigint and status = 'sent'`, [v.id]);
+      }
       else { await c.query(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now(), cancel_reason = 'alt_vencida', updated_at = now() where id = $1::bigint`, [v.id]); await c.query(`update change_proposals set status = 'expired', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [v.id]); }
       await ev(c, v.id, v.st === "pending" ? "expired" : "cancelled", "system", null, v.st === "pending" ? { es: "No contestaron a tiempo", en: "No reply in time" } : { es: "No respondió a la otra salida", en: "No answer to the other departure" });
       return true;
@@ -459,6 +499,8 @@ export type ViajeVista = {
   ymd: string; m: number; adults: number; kids: number; childSeat: boolean; bagsIncl: number; bagsExtra: number; inc: Bi[]; from: Bi | null; to: Bi | null; pickup: string | null;
   tot: number; pago: { st: string | null; devuelto: number; marca: string | null; l4: string | null }; horasFaltan: number; cobroMitad: number; motivoNeg: string | null;
   alt: { ymd: string; m: number } | null; tarde: number | null; linea: { at: number; kind: string; note: Bi | null }[];
+  // 4y-2: caja (cajas, destinatario descifrado solo para su dueño, rastreo) y mudanza (fotos, destino, precio cerrado)
+  boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null;
 };
 export async function viajeVista(userId: string, numero: string): Promise<ViajeVista | null> {
   if (!NUM_V.test(numero)) return null;
@@ -478,6 +520,8 @@ export async function viajeVista(userId: string, numero: string): Promise<ViajeV
     inc: (d.inc as Bi[] | undefined) ?? [], from: (d.from as Bi | null) ?? null, to: (d.to as Bi | null) ?? null, pickup: (d.pickup as { t: string } | null)?.t ?? null,
     tot: o.tot, pago: { st: o.pay, devuelto: o.refunded ?? 0, marca: b?.marca ?? null, l4: b?.l4 ?? null }, horasFaltan: o.hours_to, cobroMitad: Number(d.cobroMitad ?? 0), motivoNeg: (d.motivoNeg as string | undefined) ?? null,
     alt: P.rows[0] ?? null, tarde: R.rows[0]?.m ?? null, linea: E.rows,
+    boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,
+    fotos: d.k === "cotiza" ? await fotosDe(o.id) : [], drop: (d.drop as string | undefined) ?? null, precio: d.k === "cotiza" ? await precioDe(o.id) : null,
   };
 }
 
@@ -504,7 +548,8 @@ export async function viajesHoy(negocio: string): Promise<{ esperan: FilaViaje[]
   return { esperan: L.filter((x) => x.st === "pending" || x.st === "change_proposed"), salidas: R.map((r) => ({ ...r, pasajeros: L.filter((x) => x.st === "confirmed" && x.run === r.run) })),
     privados: L.filter((x) => x.st === "confirmed" && !x.run) };
 }
-export type ViajePanelV = FilaViaje & { pickup: string | null; nota: string | null; pay: string | null; alt: { ymd: string; m: number } | null; otras: { run: string; ymd: string; m: number; quedan: number }[]; eventos: { at: number; kind: string; note: Bi | null }[] };
+export type ViajePanelV = FilaViaje & { pickup: string | null; nota: string | null; pay: string | null; alt: { ymd: string; m: number } | null; otras: { run: string; ymd: string; m: number; quedan: number }[]; eventos: { at: number; kind: string; note: Bi | null }[];
+  boxes: number; dest: Destino | null; rastreo: string | null; fotos: string[]; drop: string | null; precio: Precio | null };
 export async function viajePanel(negocio: string, numero: string): Promise<ViajePanelV | null> {
   if (!NUM_V.test(numero)) return null;
   await barrerViajes({ negocio, numero });
@@ -532,5 +577,7 @@ export async function viajePanel(negocio: string, numero: string): Promise<Viaje
   }
   return { numero, st: o.status, who: o.cliente, svc: d.svc as Bi, k: String(d.k), ymd: o.ymd, m: o.m, adults: Number(d.adults ?? 1), kids: Number(d.kids ?? 0), childSeat: !!d.childSeat, bagsExtra: Number(d.bagsExtra ?? 0),
     tot: o.tot, resp: N.rows[0]?.resp ?? null, detalle: o.detail, run: (d.run as string | null) ?? null, abordo: null, pickup: (d.pickup as { t: string } | null)?.t ?? null, nota: N.rows[0]?.nota ?? null, pay: o.pay,
-    alt: P.rows[0] ?? null, otras, eventos: E.rows };
+    alt: P.rows[0] ?? null, otras, eventos: E.rows,
+    boxes: Number(d.boxes ?? 0), dest: d.k === "caja" ? await destinatarioDe(o.id) : null, rastreo: ((d.tracking as { code?: string } | undefined)?.code) ?? null,
+    fotos: d.k === "cotiza" ? await fotosDe(o.id) : [], drop: (d.drop as string | undefined) ?? null, precio: d.k === "cotiza" ? await precioDe(o.id) : null };
 }

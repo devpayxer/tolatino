@@ -4,6 +4,7 @@
    con acceso a «Hoy y pedidos» (parte ord). El servidor decide todo y cada paso queda en la línea de tiempo del viaje. */
 import { mismoOrigen } from "@/lib/cuenta";
 import { accesoPanel } from "@/lib/panel";
+import { mandarPrecio, pasoEnvio } from "@/lib/envios";
 import { abordo, cancelarSalida, pasoSalida, pasoViaje, responderViaje } from "@/lib/viajes";
 import type { Res } from "./acciones";
 
@@ -39,4 +40,15 @@ export async function viajePasoPriv(id: string, numero: string, paso: "salio" | 
   const a = await entrar(id); if (!a) return SIN_ACCESO;
   if (!["salio", "llego"].includes(paso)) return no("Ese paso no existe.", "That step does not exist.");
   return r2(await pasoViaje(a.negocio.id, String(numero ?? ""), paso, a.yo.id));
+}
+
+/* 4y-2 · La mudanza: mandar el precio cerrado (vale 48 h). La caja: recogida hecha · salió del almacén (rastreo) · entregada. */
+export async function viajePrecio(id: string, numero: string, cents: number, inc: string): Promise<Res> {
+  const a = await entrar(id); if (!a) return SIN_ACCESO;
+  return r2(await mandarPrecio(a.negocio.id, String(numero ?? ""), Number(cents), String(inc ?? ""), a.yo.id));
+}
+export async function viajeEnvio(id: string, numero: string, paso: "recogida" | "salio" | "entregada", rastreo?: string): Promise<Res> {
+  const a = await entrar(id); if (!a) return SIN_ACCESO;
+  if (!["recogida", "salio", "entregada"].includes(paso)) return no("Ese paso no existe.", "That step does not exist.");
+  return r2(await pasoEnvio(a.negocio.id, String(numero ?? ""), paso, a.yo.id, rastreo == null ? undefined : String(rastreo)));
 }

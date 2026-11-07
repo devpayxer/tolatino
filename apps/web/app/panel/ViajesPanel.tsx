@@ -2,10 +2,12 @@
 /* Los viajes en el panel (4y-1 · neg-trans-flow.js: el diseño trae «Salidas y asientos»; lo de Hoy se compone con los bloques del panel).
    Hoy: «Viajes que esperan tu respuesta», «Salidas» (cada salida con sus pasajeros, va tarde / salió / llegó / cancelar con motivo)
    y «Vehículo completo». El detalle del viaje: quién, cuántos, maletas, recogida, el dinero retenido; Confirmar (se cobra) ·
-   Otra salida (las que tienen cupo) · No hay cupo; confirmado: Abordó / No llegó. */
+   Otra salida (las que tienen cupo) · No hay cupo; confirmado: Abordó / No llegó.
+   4y-2: la caja (destinatario descifrado solo aquí; Recogida hecha → Salió del almacén con rastreo → Entregada) y la mudanza (sus
+   fotos, recogida y destino; «Mandar el precio cerrado» con monto y qué incluye, vale 48 h; confirmada: Salió · Llegó). */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaViaje, SalidaPanel, ViajePanelV } from "@/lib/viajes";
-import { viajeAbordo, viajeCancelarSalida, viajePasoPriv, viajeResponder, viajeSalida } from "./acciones-viajes";
+import { viajeAbordo, viajeCancelarSalida, viajeEnvio, viajePasoPriv, viajePrecio, viajeResponder, viajeSalida } from "./acciones-viajes";
 import type { Ctx, Editor } from "./Panel";
 
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -25,9 +27,12 @@ export function hoyViajes(c: Ctx): Bloque[] {
   const out: Bloque[] = [];
   const fila = (x: FilaViaje): Fila => {
     const h = restan(x.resp);
-    return { key: x.numero, icon: x.k === "priv" ? "truck" : "users", t: `${x.who} · ${nm(x.svc)}`, s: `${x.numero} · ${dia(x.ymd, es)} · ${horaL(x.m)} · ${pax(x, E2)}`,
-      tag: x.st === "pending" ? (h ? E2(`RESPONDE EN ${h} H`, `REPLY IN ${h} H`) : E2("VENCE", "EXPIRES")) : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.detalle === "camino" ? E2("EN CAMINO", "ON THE WAY") : E2("CONFIRMADO", "CONFIRMED"),
-      tone: x.st === "pending" ? "action" : x.st === "change_proposed" ? "ink" : "signal", chev: true, onClick: () => c.det(`viaje:${x.numero}`) };
+    const espera = x.st === "change_proposed" || (x.st === "pending" && x.detalle === "precio");
+    const que = x.k === "caja" ? E2("envío", "shipment") : x.k === "cotiza" ? E2("mudanza", "move") : pax(x, E2);
+    return { key: x.numero, icon: x.k === "priv" ? "truck" : x.k === "caja" ? "bag" : x.k === "cotiza" ? "home" : "users", t: `${x.who} · ${nm(x.svc)}`, s: `${x.numero} · ${dia(x.ymd, es)} · ${horaL(x.m)} · ${que}`,
+      tag: espera ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.st === "pending" ? (x.k === "cotiza" ? (h ? E2(`MANDA EL PRECIO · ${h} H`, `SEND THE PRICE · ${h} H`) : E2("VENCE", "EXPIRES")) : h ? E2(`RESPONDE EN ${h} H`, `REPLY IN ${h} H`) : E2("VENCE", "EXPIRES"))
+        : x.detalle === "camino" ? E2("EN CAMINO", "ON THE WAY") : x.detalle === "recogida" ? E2("RECOGIDA", "PICKED UP") : E2("CONFIRMADO", "CONFIRMED"),
+      tone: espera ? "ink" : x.st === "pending" ? "action" : "signal", chev: true, onClick: () => c.det(`viaje:${x.numero}`) };
   };
   if (H.esperan.length) out.push({ type: "rows", k: `${E2("VIAJES QUE ESPERAN TU RESPUESTA", "TRIPS AWAITING YOUR REPLY")} · ${H.esperan.length}`, items: H.esperan.map(fila) });
   if (H.salidas.length) out.push({ type: "rows", k: E2("SALIDAS CON PASAJEROS", "DEPARTURES WITH PASSENGERS"), items: H.salidas.map((r): Fila => {
@@ -35,7 +40,7 @@ export function hoyViajes(c: Ctx): Bloque[] {
     return { key: `r${r.run}`, icon: "truck", t: `${nm(r.svc)} · ${dia(r.ymd, es)} · ${horaL(r.m)}`, s: E2(`${n} en la app · ${r.fuera} vendidos fuera · ${Math.max(0, r.total - r.fuera - r.booked)} libres`, `${n} in the app · ${r.fuera} sold outside · ${Math.max(0, r.total - r.fuera - r.booked)} open`),
       tag: r.st === "departed" ? E2("EN CAMINO", "ON THE WAY") : r.tarde != null ? E2(`TARDE · ${horaL(r.tarde)}`, `LATE · ${horaL(r.tarde)}`) : E2("PROGRAMADA", "SCHEDULED"), tone: r.st === "departed" ? "signal" : r.tarde != null ? "action" : "ink", chev: true, onClick: () => c.det(`salida:${r.run}`) };
   }) });
-  if (H.privados.length) out.push({ type: "rows", k: E2("VEHÍCULO COMPLETO", "WHOLE VEHICLE"), items: H.privados.map(fila) });
+  if (H.privados.length) out.push({ type: "rows", k: E2("VEHÍCULO, ENVÍOS Y MUDANZAS", "VEHICLE, SHIPMENTS AND MOVES"), items: H.privados.map(fila) });
   return out;
 }
 
@@ -76,18 +81,34 @@ export function viajeDetalle(c: Ctx): Sec {
     declined: E2("NO HABÍA CUPO", "NO ROOM"), expired: E2("VENCIÓ", "EXPIRED"), cancelled: E2("CANCELADO", "CANCELLED"), done: E2("LLEGÓ", "ARRIVED") } as Record<string, string>)[x.st] ?? x.st.toUpperCase();
   const h = restan(x.resp), payL = x.pay === "held" ? E2("retenido", "held") : x.pay === "captured" ? E2("cobrado", "charged") : x.pay === "released" ? E2("liberado", "released") : x.pay === "refunded" ? E2("devuelto", "refunded") : x.pay === "partially_refunded" ? E2("la mitad", "half") : "—";
   const out: (Bloque | null)[] = [
-    { type: "head", eye: `${x.k === "priv" ? E2("VEHÍCULO COMPLETO", "WHOLE VEHICLE") : E2("ASIENTO", "SEAT")} · ${stL}`, t: x.numero, s: `${x.who} · ${dia(x.ymd, es)} · ${horaL(x.m)}`, onBack: c.closeDet },
-    x.st === "pending" ? { type: "note", tone: "info", icon: "clock", t: h ? E2(`Responde en ${h} h. Si no, vence y se le libera el dinero.`, `Reply within ${h} h. Otherwise it expires and the money is released.`) : E2("Está por vencer.", "About to expire.") } : null,
+    { type: "head", eye: `${x.k === "priv" ? E2("VEHÍCULO COMPLETO", "WHOLE VEHICLE") : x.k === "caja" ? E2("ENVÍO DE CAJA", "BOX SHIPMENT") : x.k === "cotiza" ? E2("MUDANZA", "MOVE") : E2("ASIENTO", "SEAT")} · ${stL}`, t: x.numero, s: `${x.who} · ${dia(x.ymd, es)} · ${horaL(x.m)}`, onBack: c.closeDet },
+    x.st === "pending" && x.k === "cotiza" ? (x.precio ? null : { type: "note", tone: "info", icon: "clock", t: h ? E2(`Manda el precio cerrado en ${h} h. Si no, vence. No se cobra nada hasta que el cliente lo acepte.`, `Send the fixed price within ${h} h. Otherwise it expires. Nothing is charged until the client accepts it.`) : E2("Está por vencer.", "About to expire.") })
+      : x.st === "pending" ? { type: "note", tone: "info", icon: "clock", t: h ? E2(`Responde en ${h} h. Si no, vence y se le libera el dinero.`, `Reply within ${h} h. Otherwise it expires and the money is released.`) : E2("Está por vencer.", "About to expire.") } : null,
     { type: "kv", items: [
       { k: E2("SERVICIO", "SERVICE"), v: nm(x.svc) },
-      { k: E2("PASAJEROS", "PASSENGERS"), v: `${pax(x, E2)}${x.childSeat ? E2(" · asiento de niño", " · child seat") : ""}` },
+      ...(x.k === "caja" ? [{ k: E2("CAJAS", "BOXES"), v: String(x.boxes) }, ...(x.dest ? [{ k: E2("DESTINATARIO", "RECIPIENT"), v: `${x.dest.nombre} · ${x.dest.tel}` }, { k: E2("ENTREGA EN", "DELIVER TO"), v: `${x.dest.dir}, ${x.dest.prov}${x.dest.ref ? ` (${x.dest.ref})` : ""}` }] : []), ...(x.rastreo ? [{ k: E2("RASTREO", "TRACKING"), v: x.rastreo }] : [])]
+        : x.k === "cotiza" ? (x.drop ? [{ k: E2("VA A", "GOES TO"), v: x.drop }] : []) : [{ k: E2("PASAJEROS", "PASSENGERS"), v: `${pax(x, E2)}${x.childSeat ? E2(" · asiento de niño", " · child seat") : ""}` }]),
       ...(x.bagsExtra ? [{ k: E2("MALETAS EXTRA", "EXTRA BAGS"), v: String(x.bagsExtra) }] : []),
       ...(x.pickup ? [{ k: E2("RECOGIDA", "PICKUP"), v: x.pickup }] : []),
-      { k: E2("PRECIO CERRADO", "FIXED PRICE"), v: `${money(x.tot)} · ${payL}` },
+      x.k === "cotiza" && !x.precio ? { k: E2("PRECIO CERRADO", "FIXED PRICE"), v: E2("Lo mandas tú, con las fotos", "You send it, from the photos") }
+        : x.k === "cotiza" && x.precio && x.st === "pending" ? { k: E2("PRECIO CERRADO", "FIXED PRICE"), v: `${money(x.precio.cents)} · ${E2(`versión ${x.precio.v}`, `version ${x.precio.v}`)} · ${E2("espera al cliente", "awaiting client")}` }
+        : { k: E2("PRECIO CERRADO", "FIXED PRICE"), v: `${money(x.tot)} · ${payL}` },
     ] },
+    x.k === "cotiza" && x.fotos.length ? { type: "photos", k: E2("SUS FOTOS", "THEIR PHOTOS"), cols: 3, items: x.fotos.map((u) => ({ bg: `url("${u}")`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) } : null,
+    x.k === "caja" && x.dest ? { type: "note", tone: "info", icon: "lock", t: E2("El destinatario es privado: solo lo ven tú y el cliente, para entregar la caja. Se borra a los 30 días de entregada.", "The recipient is private: only you and the client see it, to deliver the box. It is deleted 30 days after delivery.") } : null,
     x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
   ];
-  if (x.st === "pending") {
+  if (x.st === "pending" && x.k === "cotiza") {
+    const kM = `vpm:${x.numero}`, kI = `vpi:${x.numero}`, monto = (ui[kM] as string | undefined) ?? "", inc = (ui[kI] as string | undefined) ?? (x.precio?.inc ?? "");
+    const cents = Math.round(Number(monto.replace(/[^\d.]/g, "")) * 100);
+    if (x.precio) out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Mandaste ${money(x.precio.cents)} (versión ${x.precio.v}). Vale 48 h. Si lo cambias, el cliente ve la versión nueva.`, `You sent ${money(x.precio.cents)} (version ${x.precio.v}). Valid for 48 h. If you change it, the client sees the new version.`) });
+    out.push({ type: "field", k: E2("PRECIO CERRADO (DÓLARES)", "FIXED PRICE (DOLLARS)"), val: monto, pre: "$", ph: "650", max: 6, im: "numeric", onChange: (v) => c.setUi({ [kM]: v.replace(/[^\d]/g, "").slice(0, 6) }) });
+    out.push({ type: "field", k: E2("QUÉ INCLUYE", "WHAT IT INCLUDES"), val: inc, max: 200, ph: E2("Camión, 3 personas, mantas y peajes", "Truck, 3 people, blankets and tolls"), onChange: (v) => c.setUi({ [kI]: v.slice(0, 200) }) });
+    out.push({ type: "acts", items: [
+      { l: x.precio ? E2("Mandar precio nuevo", "Send new price") : E2("Mandar el precio cerrado", "Send the fixed price"), v: "primary", icon: "dollar", off: c.pending || !(cents >= 2000) || inc.trim().length < 4, onClick: () => c.run(() => viajePrecio(c.d.id, x.numero, cents, inc), E2("Precio mandado: el cliente tiene 48 h para aceptarlo.", "Price sent: the client has 48 h to accept it."), () => c.setUi({ [kM]: "" })) },
+      { l: E2("No lo hacemos", "We don’t do it"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "nopuedo"), E2("Listo: el cliente sabe. No se cobró nada.", "Done: the client knows. Nothing was charged.")) }] });
+  }
+  if (x.st === "pending" && x.k !== "cotiza") {
     const otra = ui.vOtra === x.numero;
     out.push({ type: "acts", items: [
       { l: E2("Confirmar", "Confirm"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajeResponder(c.d.id, x.numero, "confirmar"), E2("Confirmado: se cobró el viaje.", "Confirmed: the trip was charged.")) },
@@ -102,7 +123,16 @@ export function viajeDetalle(c: Ctx): Sec {
   if (x.st === "confirmed" && x.k === "asiento" && x.run) out.push({ type: "acts", items: [
     { l: E2("Abordó", "Boarded"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajeAbordo(c.d.id, x.numero, true), E2("Marcado: abordó.", "Marked: boarded.")) },
     { l: E2("No llegó", "No-show"), v: "ghost", icon: "close", off: c.pending, onClick: () => c.run(() => viajeAbordo(c.d.id, x.numero, false), E2("Marcado: no llegó. El cobro no cambia.", "Marked: no-show. The charge does not change.")) }] });
-  if (x.st === "confirmed" && x.k === "priv") out.push({ type: "acts", items: [x.detalle === "camino"
+  if (x.st === "confirmed" && x.k === "caja") {
+    const kR = `vtr:${x.numero}`, code = (ui[kR] as string | undefined) ?? "";
+    if (!x.detalle) out.push({ type: "acts", items: [{ l: E2("Recogida hecha", "Picked up"), v: "primary", icon: "bag", off: c.pending, onClick: () => c.run(() => viajeEnvio(c.d.id, x.numero, "recogida"), E2("Listo: el cliente sabe que la recogiste.", "Done: the client knows you picked it up.")) }] });
+    if (x.detalle === "recogida") {
+      out.push({ type: "field", k: E2("NÚMERO DE RASTREO", "TRACKING NUMBER"), val: code, max: 40, ph: "QC-12345", onChange: (v) => c.setUi({ [kR]: v.replace(/[^A-Za-z0-9-]/g, "").slice(0, 40) }) });
+      out.push({ type: "acts", items: [{ l: E2("Salió del almacén", "Left the warehouse"), v: "primary", icon: "truck", off: c.pending || code.length < 4, onClick: () => c.run(() => viajeEnvio(c.d.id, x.numero, "salio", code), E2("Listo: le mandamos el rastreo al cliente.", "Done: we sent the tracking to the client."), () => c.setUi({ [kR]: "" })) }] });
+    }
+    if (x.detalle === "camino") out.push({ type: "acts", items: [{ l: E2("Entregada", "Delivered"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajeEnvio(c.d.id, x.numero, "entregada"), E2("Listo: le pedimos su reseña.", "Done: we asked for their review.")) }] });
+  }
+  if (x.st === "confirmed" && (x.k === "priv" || x.k === "cotiza")) out.push({ type: "acts", items: [x.detalle === "camino"
     ? { l: E2("Llegó", "Arrived"), v: "primary", icon: "check", off: c.pending, onClick: () => c.run(() => viajePasoPriv(c.d.id, x.numero, "llego"), E2("Listo: le pedimos su reseña.", "Done: we asked for their review.")) }
     : { l: E2("Salió", "It left"), v: "primary", icon: "truck", off: c.pending, onClick: () => c.run(() => viajePasoPriv(c.d.id, x.numero, "salio"), E2("Listo: el cliente sabe que va en camino.", "Done: the client knows it is on the way.")) }] });
   out.push({ type: "rows", k: E2("LÍNEA DE TIEMPO", "TIMELINE"), items: x.eventos.map((e, i): Fila => ({ key: `e${i}`, icon: "clock", t: e.note ? nm(e.note) : verbo(e.kind, es), s: new Date(e.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }), compact: true, chev: false })) });
@@ -110,7 +140,8 @@ export function viajeDetalle(c: Ctx): Sec {
 }
 function verbo(k: string, es: boolean) {
   const V: Record<string, [string, string]> = { sent: ["Reservó", "Booked"], accepted: ["Confirmaste", "You confirmed"], declined: ["No había cupo", "No room"], change_proposed: ["Propusiste otra salida", "You proposed another departure"],
-    alt_accepted: ["Aceptó la otra salida", "Accepted the other departure"], alt_declined: ["No le sirvió la otra salida", "The other departure did not work"], expired: ["Venció sin respuesta", "Expired without reply"], cancelled: ["Cancelado", "Cancelled"],
+    alt_accepted: ["Aceptó la otra salida", "Accepted the other departure"], quote_sent: ["Mandaste el precio", "You sent the price"], quote_ok: ["Aceptó el precio cerrado", "Accepted the fixed price"], quote_no: ["No aceptó el precio", "Declined the price"],
+    box_picked: ["Recogida hecha", "Picked up"], box_departed: ["Salió del almacén", "Left the warehouse"], box_delivered: ["Entregada", "Delivered"], alt_declined: ["No le sirvió la otra salida", "The other departure did not work"], expired: ["Venció sin respuesta", "Expired without reply"], cancelled: ["Cancelado", "Cancelled"],
     run_departed: ["Salió", "Left"], run_arrived: ["Llegó", "Arrived"], run_late: ["Va tarde", "Running late"], run_cancelled: ["Cancelaste la salida", "You cancelled the departure"], boarded: ["Abordó", "Boarded"], noshow: ["No llegó", "No-show"],
     payment_captured: ["Se cobró", "Charged"], payment_released: ["Se liberó el dinero", "Money released"], refund: ["Se devolvió el dinero", "Money refunded"] };
   const v = V[k]; return v ? v[es ? 0 : 1] : k;

@@ -26,7 +26,9 @@ const AJ = {
   "keystone-hotshot-cdl": { lic: ["usdot", "fmcsa_mc", "cdl", "seguro_carga"] },
   "renta-camionetas-hzl": { lic: [] },
 };
-const DUENO = { "van-express-nyc": ["+15705550322", "Wilson", "Express", "Dueño", "Owner", 2013] };
+const DUENO = { "van-express-nyc": ["+15705550322", "Wilson", "Express", "Dueño", "Owner", 2013],
+  // 4y-2: dueños de prueba para probar la caja y la mudanza desde el panel.
+  "envios-quisqueya-cargo": ["+15705550333", "Yolanda", "Peña", "Dueña", "Owner", 2009], "mudanzas-el-primo": ["+15705550344", "Ramón", "Primo", "Dueño", "Owner", 2016] };
 const LK = { pa_puc: ["Autorización de la PUC de Pennsylvania", "Pennsylvania PUC authority", "A-00"], usdot: ["Número USDOT", "USDOT number", "31"], fmcsa_mc: ["Autoridad interestatal (MC)", "Interstate authority (MC)", "MC-9"],
   cdl: ["Licencia de conducir comercial (CDL)", "Commercial driver license (CDL)", "PA-CDL-"], seguro_carga: ["Seguro de carga", "Cargo insurance", "POL-"], fmc_oti: ["Intermediario de envíos al extranjero (OTI)", "Ocean transportation intermediary (OTI)", "OTI-0"] };
 
@@ -64,6 +66,9 @@ for (const [id, secs] of Object.entries(w.TLTransL.SVC || {})) {
   });
   out.push("end $$;");
 }
+// Fuera del bloque (que no corre si el negocio ya tiene servicios): los dueños de prueba, idempotentes.
+for (const [id, D] of Object.entries(DUENO)) out.push(`insert into users (phone, first_name, last_name, lang, home_city_id) select ${q(D[0])}, ${q(D[1])}, ${q(D[2])}, 'es', 'hzl' where exists (select 1 from businesses where id = ${q(id)} and is_demo) on conflict (phone) do nothing;`,
+  `insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select ${q(id)}, u.id, 'owner', ${q(D[1] + " " + D[2])}, ${J(bi(D[3], D[4]))}, 'active', true, '{all}', ${D[5]}, 0, true from users u where u.phone = ${q(D[0])} and exists (select 1 from businesses where id = ${q(id)} and is_demo) and not exists (select 1 from business_members m where m.business_id = ${q(id)} and m.kind = 'owner');`);
 for (const id of Object.keys(DUENO)) out.push(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
   select ${q(id)}, ${q("acct_sim_" + id)}, 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = ${q(id)} and is_demo) on conflict (business_id) do nothing;`);
 out.push("commit;");

@@ -929,3 +929,20 @@ _Decidido por mí (reversible):_
 - La caja con destinatario y la mudanza con fotos dicen «Llama para enviar» / «Llama para tu precio» hasta el bloque 4y-2.
 - La cifra «ESPERAN TU RESPUESTA» de Hoy ahora suma fiestas, viajes y pedidos del mercado (antes decía 0 con un viaje
   esperando); guardián esperanCuentan.
+
+### 4y-2 · Enviar una caja y la mudanza con precio cerrado (7 nov)
+**Qué mirar (teléfono, Marisol 5705550122):** Envíos Quisqueya › Caja grande › **Enviar una caja**: 2 cajas, recogida, el
+DESTINATARIO (nombre, teléfono, provincia, dirección, referencia) y «No lleva nada de lo que no se puede mandar» → Enviar (se
+retienen $170). **Panel (Yolanda 5705550333):** el destinatario en el detalle (privado) → Confirmar → Recogida hecha → número de
+rastreo → Salió del almacén → Entregada. Mudanzas El Primo › Apartamento de 1 cuarto › **Pedir precio cerrado**: una foto, a
+dónde va → hoy $0. **Panel (Ramón 5705550344):** SUS FOTOS, precio en dólares y qué incluye → Mandar el precio cerrado. El
+cliente: «Aceptar $650» con su tarjeta (se cobra) o «No, gracias».
+_Decidido por mí (reversible):_
+- El destinatario va cifrado en op_private y se borra con las notas cifradas a los 30 días de entregada (no 90).
+- Desde «Recogida hecha» el cliente ya no cancela la caja en la app (lo que pase después va por la ayuda, 4z).
+- El precio cerrado vale 48 h; el negocio puede mandar uno nuevo (hasta 20 versiones) mientras no se acepte y solo se acepta la
+  versión más nueva. Al aceptarlo se retiene y se cobra en la misma pasada.
+- La caja pide de 1 a 4 cajas y recogida en una dirección del cliente dentro de la zona del negocio.
+- Las fotos de la mudanza son privadas como las del pre-estimado (solo cliente y negocio).
+- La migración de la ayuda de Fiestas y Transporte pasa a ser la 0077 (la 0076 es esta).
+- Dueños de prueba nuevos en el sandbox: Yolanda (Envíos Quisqueya, 5705550333) y Ramón (Mudanzas El Primo, 5705550344).
