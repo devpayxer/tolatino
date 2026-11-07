@@ -91,3 +91,38 @@ export async function saludPro(s: Staff, dias: number) {
   ]);
   return { sal: sal.rows[0]!, pro: pro.rows[0]!, rev: rev.rows[0]!, ayuda: ayuda.rows };
 }
+
+/* Mercados y Tiendas (4s): solo cifras. Mercado: % con foto de cada peso, estimado contra cobrado, sustituciones aceptadas,
+   no aceptados / vencidos, tiempo de aceptación. Tienda: apartados recogidos / vencidos, % falta talla, envíos, planes
+   terminados / cancelados y «precio de la caja = publicado» de las reseñas. Y los motivos de ayuda de los dos. */
+export async function mercadosTiendas(s: Staff, dias: number) {
+  const [merc, tienda, rev, ayuda] = await Promise.all([
+    db().query<{ n: number; hechos: number; pesados: number; confoto: number; est: number; cob: number; sustOk: number; sustN: number; noacep: number; resp: number | null }>(
+      `select count(*)::int as n, count(*) filter (where o.status = 'done')::int as hechos,
+              count(*) filter (where exists (select 1 from operation_lines l where l.operation_id = o.id and l.weight_final is not null))::int as pesados,
+              count(*) filter (where exists (select 1 from operation_lines l where l.operation_id = o.id and l.weight_final is not null)
+                                 and not exists (select 1 from operation_lines l where l.operation_id = o.id and l.weight_final is not null and l.weigh_photo_id is null))::int as confoto,
+              coalesce(sum(coalesce((o.details->>'est_cents')::int, o.total_cents)) filter (where o.status = 'done' and o.pay_mode = 'app'), 0)::int as est,
+              coalesce((select sum(p.amount_cents) from payments p join operations o2 on o2.id = p.operation_id where o2.kind = 'market_order' and p.status in ('captured', 'partially_refunded', 'refunded') and o2.sent_at > now() - make_interval(days => $2) and ${scope("o2.city_id")}), 0)::int as cob,
+              (select count(*) filter (where cp.status = 'accepted')::int from change_proposals cp join operations o3 on o3.id = cp.operation_id where o3.kind = 'market_order' and o3.sent_at > now() - make_interval(days => $2) and ${scope("o3.city_id")}) as "sustOk",
+              (select count(*)::int from change_proposals cp join operations o3 on o3.id = cp.operation_id where o3.kind = 'market_order' and cp.status in ('accepted', 'declined', 'expired') and o3.sent_at > now() - make_interval(days => $2) and ${scope("o3.city_id")}) as "sustN",
+              count(*) filter (where o.status in ('declined', 'expired'))::int as noacep,
+              round(avg(extract(epoch from o.answered_at - o.sent_at) / 60) filter (where o.answered_at is not null))::int as resp
+         from operations o where o.kind = 'market_order' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ n: number; recogidos: number; vencidos: number; talla: number; envios: number; planes: number; pagados: number; cancelados: number }>(
+      `select count(*)::int as n, count(*) filter (where o.status = 'done')::int as recogidos, count(*) filter (where o.status = 'expired')::int as vencidos,
+              count(*) filter (where exists (select 1 from change_proposals cp where cp.operation_id = o.id and cp.line_id is not null))::int as talla,
+              count(*) filter (where o.mode = 'delivery')::int as envios,
+              count(lp.id)::int as planes, count(lp.id) filter (where lp.status = 'paid')::int as pagados, count(lp.id) filter (where lp.status = 'cancelled')::int as cancelados
+         from operations o join businesses b on b.id = o.business_id left join layaway_plans lp on lp.operation_id = o.id
+        where o.kind = 'hold' and b.category_id = 'NEG-TIENDA' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ caja: number; base: number; pes: number; pbase: number }>(
+      `select count(*) filter (where (r.answers->>'caja')::int = 1)::int as caja, count(*) filter (where r.answers ? 'caja')::int as base,
+              count(*) filter (where (r.facts->>'fotoPeso')::boolean or (r.answers->>'peso')::int = 1)::int as pes, count(*) filter (where r.facts ? 'fotoPeso' or r.answers ? 'peso')::int as pbase
+         from reviews r join businesses b on b.id = r.business_id where b.category_id in ('NEG-MERC', 'NEG-TIENDA') and r.status = 'visible' and r.created_at > now() - make_interval(days => $2) and ${scope("b.city_id")}`, [s.cities, dias]),
+    db().query<{ rub: string; reason: string; n: number }>(
+      `select case when o.kind = 'market_order' then 'merc' else 'tienda' end as rub, h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
+        where o.kind in ('market_order', 'hold') and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
+  ]);
+  return { merc: merc.rows[0]!, tienda: tienda.rows[0]!, rev: rev.rows[0]!, ayuda: ayuda.rows };
+}

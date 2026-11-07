@@ -19,6 +19,7 @@ export type DatosAnalitica = {
   nosup?: { q: string; cat: string | null; n: number }[];
   sp?: { sal: { n: number; conseg: number; segok: number; segno: number; hechas: number; noshow: number; resp: number | null }; pro: { n: number; consultas: number; contrato: number; total: number; resp: number | null };
     rev: { cobro: number; base: number }; ayuda: { rub: string; reason: string; n: number }[] };
+  mt?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").mercadosTiendas>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -27,7 +28,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -90,6 +91,30 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Doctores y Profesionales`} items={ayuda.map((x) => ({ label: `${x.rub === "salud" ? "Doctores" : "Profesionales"} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con Doctores ni Profesionales en el período.</A.AdminNote>}
         <PanelBloques bloques={[{ type: "note", tone: "info", icon: "lock", t: "Solo cifras. Los motivos de consulta, las notas y los seguros de cada persona nunca salen en Analítica ni en un CSV." }]} />
+      </>);
+  } else if (d.tab === "mt" && d.mt) {
+    // Mercados y Tiendas (4s): solo cifras.
+    const { merc, tienda, rev, ayuda } = d.mt, min = (m: number | null) => (m == null ? "—" : m < 60 ? `${m} min` : `${Math.round(m / 60)} h`), mx = Math.max(1, ...ayuda.map((x) => x.n));
+    const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "MERCADOS" }, kpis([
+          { k: "PEDIDOS", v: String(merc.n), s: `${merc.hechos} entregados o recogidos` },
+          { k: "CON FOTO DE CADA PESO", v: pct(merc.confoto, merc.pesados), s: `de ${merc.pesados} pedidos con algo por peso`, dark: true },
+          { k: "ESTIMADO → COBRADO", v: `${usd(merc.est)} → ${usd(merc.cob)}`, s: "pagados con tarjeta en la app" },
+          { k: "SUSTITUCIONES ACEPTADAS", v: pct(merc.sustOk, merc.sustN), s: `${merc.sustN} propuestas` },
+          { k: "NO ACEPTADOS O VENCIDOS", v: pct(merc.noacep, merc.n), s: `${merc.noacep} pedidos` },
+          { k: "ACEPTAN EN", v: min(merc.resp), s: "promedio" },
+          { k: "«COBRARON EL PESO REAL»", v: pct(rev.pes, rev.pbase), s: `de ${rev.pbase} reseñas` },
+        ]), { type: "group", k: "TIENDAS" }, kpis([
+          { k: "APARTADOS", v: String(tienda.n), s: `${tienda.envios} con envío` },
+          { k: "RECOGIDOS", v: pct(tienda.recogidos, tienda.n), s: `${tienda.vencidos} vencieron`, dark: true },
+          { k: "FALTÓ LA TALLA", v: pct(tienda.talla, tienda.n), s: `${tienda.talla} apartados` },
+          { k: "PLANES", v: String(tienda.planes), s: `${tienda.pagados} terminados · ${tienda.cancelados} cancelados` },
+          { k: "«PRECIO DE LA CAJA = PUBLICADO»", v: pct(rev.caja, rev.base), s: `de ${rev.base} reseñas` },
+        ])]} />
+        {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Mercados y Tiendas`} items={ayuda.map((x) => ({ label: `${x.rub === "merc" ? "Mercados" : "Tiendas"} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+          : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con Mercados ni Tiendas en el período.</A.AdminNote>}
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;

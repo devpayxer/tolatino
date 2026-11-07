@@ -27,7 +27,9 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // 4m: Doctores (solo si el seguro se aceptó; nunca el servicio, el motivo ni la nota) y Profesionales (el total por escrito y el paso).
   rub: string | null; segOk: boolean | null; proTot: number | null; proPaso: string | null;
   // 4p: pedido del mercado (estimado, retenido; lo cobrado y liberado salen de pago/devuelto/cob).
-  mEst: number | null; mRet: number | null };
+  mEst: number | null; mRet: number | null;
+  // 4q–4r: apartado de Tiendas: tallas, envío y plan (pagado / total / estado).
+  tallas: string | null; lay: { st: string; total: number; pagado: number } | null };
 function donde(s: Staff, f: FiltrosTx) {
   const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
   if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
@@ -50,6 +52,8 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               case when o.details->>'rubro' = 'pro' then (select t.total_cents from written_totals t where t.operation_id = o.id order by t.version desc limit 1) end as "proTot",
               case when o.details->>'rubro' = 'pro' then o.status_detail end as "proPaso",
               case when o.kind = 'market_order' then coalesce((o.details->>'est_cents')::int, o.total_cents) end as "mEst", case when o.kind = 'market_order' then py.held_cents end as "mRet",
+              case when o.kind = 'hold' then (select string_agg(distinct l.variant_label, ', ') from operation_lines l where l.operation_id = o.id and l.variant_label is not null) end as tallas,
+              (select jsonb_build_object('st', lp.status, 'total', lp.total_cents, 'pagado', (select coalesce(sum(lpp.amount_cents), 0) from layaway_payments lpp where lpp.plan_id = lp.id and lpp.status in ('paid', 'waived'))) from layaway_plans lp where lp.operation_id = o.id) as lay,
               (select count(distinct l.estimate_id)::int from estimate_lines l where l.operation_id = o.id and not l.is_extra) as "estV",
               (select coalesce(sum(coalesce(l.final_cents, l.line_total_cents)), 0)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as "estAp",
               (select coalesce(sum(p2.amount_cents), 0)::int from payments p2 where p2.operation_id = o.id and p2.kind in ('estimate', 'extra') and p2.status in ('captured', 'partially_refunded', 'refunded')) as "estCob",
