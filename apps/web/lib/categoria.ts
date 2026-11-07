@@ -108,7 +108,17 @@ export const FOTO = (x: string) =>
   `(select m.url from media m where m.owner_kind = 'business' and m.owner_id = ${x}.id and m.status = 'visible' order by m.sort limit 1) as photo`;
 export const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, photo: foto(x.photo) });
 
+/* Fiestas (4t): «Libre este sábado» cambia solo a medianoche; la primera vez del día que alguien mira la categoría en una
+   ciudad se recalculan sus filtros de fechas (una vez por ciudad y día por proceso). */
+const FIESTAS_HOY = new Map<string, string>();
+async function fechasFiestas(ciudad: string) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (FIESTAS_HOY.get(ciudad) === hoy) return;
+  FIESTAS_HOY.set(ciudad, hoy);
+  await (await import("./fiestas")).refrescarFiestasCiudad(ciudad).catch(() => FIESTAS_HOY.delete(ciudad));
+}
 export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total: number; pagina: number; paginas: number }> {
+  if (p.cat === "NEG-FIESTA") await fechasFiestas(p.punto.ciudad);
   const params: unknown[] = [p.punto.ciudad, p.cat];
   const extra = condiciones(p, params);
   const pagina = Math.max(0, Math.min(p.pagina, PAGINA_MAX - 1));

@@ -837,3 +837,10 @@ Plan: `docs/diseno/plan/fase4-fiestas-transporte.md` (bloques 4t–4z, migracion
 - **Cancelar un viaje tarde** (menos de 24 h) cobra la mitad. «No llegaron» va directo a To'Latino. Si el negocio no sale, todos reciben
   la devolución completa.
 - Escolar y grúas: solo contacto en esta fase. Renta de vehículos: el motor de rentas (21+ y licencia revisada antes de entregar).
+
+### 4t · Fiestas: servicios y «Calendario y depósito» (7 nov)
+**Qué mirar:** entra como Rosa (5705550311, Salón Imperial) › Lo que vendes › **Calendario y depósito**: sube el depósito, toca un
+sábado para marcarlo ocupado y vuelve a tocarlo. En Servicios › Agregar: «Cómo lo cobras» (Paquete con horas, invitados, montaje y
+lo que incluye; Por unidad con la unidad). En Buscar › Fiestas, el filtro «Libre este sábado».
+_Decidido por mí: el calendario del panel (hueco del diseño) se compuso con chips de fin de semana y un campo para otra fecha; los
+filtros de fecha del prototipo («Libre el 3 oct», «(26 sep)») ahora salen del calendario real y cambian a medianoche._

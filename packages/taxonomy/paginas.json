@@ -8318,7 +8318,7 @@
    "es": "Qué necesitas para tu fiesta",
    "en": "What your party needs"
   },
-  "stats_tag": "d:2",
+  "stats_tag": "d:sab",
   "stats_label": {
    "es": "LIBRES ESTE SÁBADO",
    "en": "FREE THIS SATURDAY"
@@ -8489,37 +8489,37 @@
     "all_photo": null,
     "items": [
      {
-      "key": "d:2",
+      "key": "d:sab",
       "label": {
-       "es": "Libre este sábado (26 sep)",
-       "en": "Free this Saturday (Sep 26)"
+       "es": "Libre este sábado",
+       "en": "Free this Saturday"
       },
       "match": {
-       "tag": "d:2"
+       "tag": "d:sab"
       },
       "photo": "https://images.pexels.com/photos/8159018/pexels-photo-8159018.jpeg",
       "flag": null
      },
      {
-      "key": "d:3",
+      "key": "d:dom",
       "label": {
-       "es": "Libre este domingo (27 sep)",
-       "en": "Free this Sunday (Sep 27)"
+       "es": "Libre este domingo",
+       "en": "Free this Sunday"
       },
       "match": {
-       "tag": "d:3"
+       "tag": "d:dom"
       },
       "photo": "https://images.pexels.com/photos/8159018/pexels-photo-8159018.jpeg",
       "flag": null
      },
      {
-      "key": "d:9",
+      "key": "d:sab2",
       "label": {
-       "es": "Libre el sábado 3 oct",
-       "en": "Free Saturday Oct 3"
+       "es": "Libre el sábado siguiente",
+       "en": "Free the following Saturday"
       },
       "match": {
-       "tag": "d:9"
+       "tag": "d:sab2"
       },
       "photo": "https://images.pexels.com/photos/8159018/pexels-photo-8159018.jpeg",
       "flag": null
@@ -9488,24 +9488,24 @@
     "kind": "f",
     "options": [
      {
-      "key": "d:2",
+      "key": "d:sab",
       "label": {
        "es": "Libre este sábado",
        "en": "Free this Saturday"
       }
      },
      {
-      "key": "d:3",
+      "key": "d:dom",
       "label": {
        "es": "Libre este domingo",
        "en": "Free this Sunday"
       }
      },
      {
-      "key": "d:9",
+      "key": "d:sab2",
       "label": {
-       "es": "Libre el 3 oct",
-       "en": "Free Oct 3"
+       "es": "Libre el sábado siguiente",
+       "en": "Free the following Saturday"
       }
      }
     ]
@@ -9659,7 +9659,7 @@
     }
    },
    {
-    "key": "d:2",
+    "key": "d:sab",
     "icon": "dateFree",
     "label": {
      "es": "Libre este sábado",

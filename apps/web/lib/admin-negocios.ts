@@ -4,6 +4,8 @@ import { herramientaSP } from "./salud-pro";
 import { aceptaTexto, resumenSP } from "./salud-pro-comun";
 import { herramientaRetail, rubroRetail } from "./retail";
 import { resumenRetail } from "./retail-comun";
+import { herramientaFiesta } from "./fiestas";
+import { resumenFiesta } from "./fiestas-comun";
 import { db } from "./db";
 import { aPanel, fuerza, prueba } from "./panel-reglas";
 import { TLOnbNeg } from "./onb/datos";
@@ -163,6 +165,7 @@ export async function negocio360(s: Staff, id: string) {
     // Tu herramienta de Doctores y Profesionales (4h-2): el mismo resumen que ve el dueño, en solo lectura.
     // Mercados y Tiendas (4n): Tu herramienta en solo lectura.
     herramientaRetail: rubroRetail(b.cat_id) ? await (async () => { const h = await herramientaRetail(id); return h ? { titulo: h.rubro === "merc" ? "Balanza y pedidos" : "Tallas y apartados", resumen: resumenRetail(h, true) } : null; })() : null,
+    herramientaFiesta: b.cat_id === "NEG-FIESTA" ? await (async () => { const h = await herramientaFiesta(id); return h ? { resumen: resumenFiesta(h, true) } : null; })() : null,
     herramientaSP: b.cat_id === "NEG-SALUD" || b.cat_id === "NEG-PRO" ? await (async () => { const h = await herramientaSP(id, b.cat_id === "NEG-SALUD" ? "salud" : "pro"); return h ? { resumen: resumenSP(h, true, { ok: lic.filter((l) => l.status === "valid").length, rev: lic.filter((l) => l.status === "review").length }), gov: h.rubro === "pro" ? h.gov : [], acepta: h.rubro === "salud" && h.ins.length ? aceptaTexto(h, true) : null } : null; })() : null,
     rsvMes: mods.rows[0]?.rmes ?? 0, rsvPend: mods.rows[0]?.rpend ?? 0, rsvOn: !!mods.rows[0]?.rsv,
     puede: { editar: s.puede("neg", "editar"), retirar: s.puede("neg", "retirar"), cerrar: s.puede("neg", "retirar") && s.role === "admin" },

@@ -1,5 +1,6 @@
 "use server";
-import { limpiarSP, rubroSP, type AttrsSP } from "@/lib/servicios";
+import { limpiarFiesta, limpiarSP, rubroSvc, type AttrsSP } from "@/lib/servicios";
+import { recalcularFiltrosFiesta } from "@/lib/fiestas";
 import { invitarCobro } from "@/lib/sillas";
 import { recalcularFiltrosSP } from "@/lib/salud-pro";
 /* Servicios y reglas de citas desde el panel (Lo que vendes › Servicios, Citas y Sillas y agenda). Cada acción: mismo
@@ -24,7 +25,7 @@ async function hacer(id: string, fn: (c: PoolClient, a: Acceso) => Promise<Res |
   const r = await tx(async (c) => {
     const x = await fn(c, a);
     // Doctores y Profesionales: sus filtros salen de los servicios (sin cita, consulta gratis, por video…).
-    if (!x || x.ok) await recalcularFiltrosSP(c, a.negocio.id);
+    if (!x || x.ok) { await recalcularFiltrosSP(c, a.negocio.id); await recalcularFiltrosFiesta(c, a.negocio.id); }
     return x;
   });
   return r ?? { ok: true };
@@ -46,10 +47,10 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
     if (name.length < 2) return no("Escribe el nombre del servicio.", "Type the service name.");
     const cents = ent(Number(p?.price) * 100, 0, 1_000_000, -1);
     // Doctores y Profesionales: la forma de cobrar decide si el precio puede ser $0 (gratis con tu seguro, consulta gratis…).
-    const cat = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [a.negocio.id])).rows[0]?.cat ?? "", rub = extra ? null : rubroSP(cat);
+    const cat = (await c.query<{ cat: string }>(`select category_id as cat from businesses where id = $1`, [a.negocio.id])).rows[0]?.cat ?? "", rub = extra ? null : rubroSvc(cat);
     let k: string | null = null, attrs: AttrsSP | null = null, cents2 = cents;
     if (rub) {
-      const v = limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
+      const v = rub === "fiesta" ? limpiarFiesta(p?.k, cents, p?.a) : limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
       if (!v.ok) return no(v.es, v.en);
       k = v.k; attrs = v.a; cents2 = v.cents;
     } else if (cents < 0 || (!extra && cents === 0 && !Object.values(p?.hacen ?? {}).some((v) => (v ?? 0) > 0))) return no("Ponle precio.", "Set a price.");

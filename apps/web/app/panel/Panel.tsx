@@ -35,6 +35,7 @@ import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./M
 import { citasBloques, modeloDetalle, servicioDetalle, serviciosBloques, sillasBloques } from "./Servicios";
 import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques } from "./Oficios";
 import { herramientaSPBloques } from "./SaludPro";
+import { herramientaFiestaBloques } from "./Fiestas";
 import { herramientaRetailBloques } from "./Retail";
 import type { HerrRetail } from "@/lib/retail-comun";
 import type { OfiPanel } from "@/lib/oficios";
@@ -313,6 +314,7 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mod" && c.ruta.sub === "servicios") return c.ofi ? oficiosBloques(c) : serviciosBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ofi) return herramientaBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.sp) return herramientaSPBloques(c, licencias);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.fiesta) return herramientaFiestaBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ret) return herramientaRetailBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "productos" && c.menu?.mod === "shop") return menuBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "citas") return c.ofi ? citasOficioBloques(c) : citasBloques(c);

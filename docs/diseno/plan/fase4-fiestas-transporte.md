@@ -149,7 +149,7 @@ tienda · invit · chispa` (`kind` L10–20); Transporte `van · air · caja · 
   `alimentos` (licencia de alimentos de la ciudad o del estado: taquiza, pastel), `pa_puc_limo` (limosina y party bus), `seguro_general`.
 - `fee_rules.kind` + `'fiesta'` (sembrada en 800 bp = `cita`, adm-data L133; Preguntas #20).
 
-**0071 `fiestas_reservas` (4v)** — `operations` `kind 'party'` con `details`: `event check in (EVT)`, `guests`, `where {kind, address_id |
+**0072 `fiestas_reservas` (4v)** (0071 = filtros de fecha de Fiestas, 4t; desde aquí todo corre uno) — `operations` `kind 'party'` con `details`: `event check in (EVT)`, `guests`, `where {kind, address_id |
 venue_business_id}`, `mi` (distancia calculada), `svc_k`, `qty` (servidor), `h`, `visit bool`, `agreement_version`; `scheduled_at` = día y hora
 de inicio; `deposit_cents` = mín(depósito, total) (`depFor` L24). Secuencia **`party_seq start 5101`** (número **F-5101**, `FIESTA #`;
 Preguntas #24). `written_totals`: se generaliza a `F-` (fee = total del paquete o lo escrito, `credit_cents` = depósito cobrado, `gov_cents` 0,

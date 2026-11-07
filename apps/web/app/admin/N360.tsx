@@ -37,9 +37,9 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
 const KIND_L: Record<string, string> = { fijo: "Precio cerrado", desde: "Desde · estimado", cotiza: "Se cotiza", diag: "Diagnóstico", lav: "Por tamaño", goma: "Por goma", insp: "Inspección", grua: "Grúa · se llama",
-  visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan" };
+  visita: "Visita", hora: "Por hora", area: "Por medida", pres: "Presupuesto", emer: "Emergencia 24/7", plan: "Plan", pack: "Paquete", unid: "Por unidad" };
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -149,6 +149,7 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
           actions: P.retirar ? [off ? { label: "Reanudar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué se reanuda ${t}?`, hacer: (m) => moduloPausar(n.id, k, false, m) }) }
             : { label: "Pausar", variant: "danger", onClick: () => setConf({ titulo: `Pausar ${t}`, sub: k === "svc" ? "La pestaña Servicios deja de salir en su página. El dueño ve el motivo en su panel." : "Su página no recibe solicitudes en línea; las citas ya pedidas siguen. El dueño ve el motivo en su panel.", peligro: true, plantillas: PLS, hacer: (m) => moduloPausar(n.id, k, true, m) }) }] : undefined }; })} />
         {n.herramientaRetail ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-MERC" ? "scale" : "bag", title: n.herramientaRetail.titulo, sub: n.herramientaRetail.resumen }]} /> : null}
+        {n.herramientaFiesta ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: "calendar", title: "Calendario y depósito", sub: n.herramientaFiesta.resumen }]} /> : null}
         {n.herramientaSP ? <A.AdminList label="SU HERRAMIENTA · SOLO LECTURA" rows={[{ icon: n.cat_id === "NEG-SALUD" ? "insurance" : "law", title: n.cat_id === "NEG-SALUD" ? "Seguros e idiomas" : "Licencias y el total por escrito", sub: n.herramientaSP.resumen + (n.herramientaSP.acepta ? ` · «${n.herramientaSP.acepta}»` : "") },
           ...n.herramientaSP.gov.filter((g) => g.gov > 0).map((g) => ({ icon: "law", title: g.name.es, sub: `Honorario $${(g.cents / 100).toLocaleString("en-US")} + gobierno $${(g.gov / 100).toLocaleString("en-US")} = total $${((g.cents + g.gov) / 100).toLocaleString("en-US")}` }))]} /> : null}
         {n.cat_id === "NEG-PRO" || n.cat_id === "NEG-SALUD" ? (n.licencias.length ? <A.AdminList label={`LICENCIAS · ${n.licencias.length}`} rows={n.licencias.map((l) => {

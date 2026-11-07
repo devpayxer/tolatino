@@ -18,7 +18,38 @@ export type OpcionSvc = { t: Bi; o: { n: Bi; p: number; m: number }[] };
 export type RubroSP = "salud" | "pro";
 export const rubroSP = (cat: string): RubroSP | null => (cat === "NEG-SALUD" ? "salud" : cat === "NEG-PRO" ? "pro" : null);
 export const KINDS_SP: Record<RubroSP, string[]> = { salud: ["cons", "tele", "walk", "free", "proc"], pro: ["cons", "fijo", "hora", "pct", "walk", "cotiza"] };
-export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boolean; hrs?: string; mes?: boolean; unit?: "cheque" | "fianza" | "carga" | "caso"; no?: Bi[] };
+export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boolean; hrs?: string; mes?: boolean; unit?: "cheque" | "fianza" | "carga" | "caso"; no?: Bi[];
+  // Fiestas (4t · neg-fiesta-listing.js): horas del paquete, lo que incluye, invitados, montaje incluido, unidad e invitados por
+  // unidad, mínimo (horas o unidades).
+  h?: number; inc?: Bi[]; cap?: number; mont?: boolean; u?: Bi; per?: number; min?: number };
+/* Fiestas usa el mismo editor de servicios con sus formas de cobrar. */
+export type RubroSvc = RubroSP | "fiesta";
+export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : rubroSP(cat));
+export const KINDS_FIESTA = ["pack", "hora", "unid", "fijo", "visita", "cotiza"];
+export function limpiarFiesta(k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+  const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
+  if (!KINDS_FIESTA.includes(k)) return { ok: false, es: "Elige cómo lo cobras.", en: "Pick how you charge." };
+  const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const n = (v: unknown, lo: number, hi: number) => { const z = Math.round(Number(v)); return Number.isFinite(z) && z >= lo && z <= hi ? z : null; };
+  const inc = (Array.isArray(x.inc) ? x.inc : []).slice(0, 6).map((z) => ({ es: t((z as Bi)?.es, 60), en: t((z as Bi)?.en, 60) })).filter((z) => z.es.length >= 2);
+  if (inc.length) a.inc = inc.map((z) => ({ es: z.es, en: z.en || z.es }));
+  const cap = n(x.cap, 1, 2000); if (cap) a.cap = cap;
+  if (x.mont === true) a.mont = true;
+  if (k === "pack") { const h = n(x.h, 0, 24); a.h = h ?? 0; if (cents <= 0) return { ok: false, es: "Ponle el precio del paquete.", en: "Set the package price." }; }
+  if (k === "hora") { const m = n(x.min, 1, 12); a.min = m ?? 1; if (cents <= 0) return { ok: false, es: "Ponle el precio por hora.", en: "Set the hourly price." }; }
+  if (k === "unid") {
+    const u = x.u as Bi | undefined, ue = t(u?.es, 20);
+    if (ue.length < 2) return { ok: false, es: "Escribe la unidad (juego, mantel, porción…).", en: "Write the unit (set, linen, slice…)." };
+    a.u = { es: ue, en: t(u?.en, 20) || ue };
+    const per = n(x.per, 1, 100); if (per) a.per = per;
+    const m = n(x.min, 1, 1000); if (m) a.min = m;
+    if (cents <= 0) return { ok: false, es: "Ponle el precio por unidad.", en: "Set the unit price." };
+  }
+  if (k === "fijo" && cents <= 0) return { ok: false, es: "Ponle el precio.", en: "Set the price." };
+  if (k === "visita") cents = 0;
+  if (k === "cotiza" && cents < 0) cents = 0;
+  return { ok: true, k, a, cents };
+}
 export function limpiarSP(rubro: RubroSP, k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
   const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
   if (!KINDS_SP[rubro].includes(k)) return { ok: false, es: "Elige cómo lo cobras.", en: "Pick how you charge." };
@@ -57,11 +88,12 @@ export type Persona = { id: string; nombre: string; kind: "owner" | "staff" | "r
   cobro: "none" | "pending" | "restricted" | "enabled"; banco: string | null; invitado: boolean; usuario: boolean }; // cuenta de cobro propia (sillas rentadas, 3d)
 export type Politica = { auto: boolean; resp: number; dep: number; cxh: number; tol: number; pick: boolean; exp: number };
 export type SvcPanel = {
-  rubro: RubroSP | null;
+  rubro: RubroSvc | null;
   model: "emp" | "comm" | "chair"; rent: number | null; comm: number | null;
   secciones: { id: string; name: Bi; sort: number }[]; servicios: Servicio[]; gente: Persona[]; pol: Politica;
   on: boolean; off: { svc: string | null; citas: string | null };
   sp: HerrSP | null; // Tu herramienta de Doctores y Profesionales (4h-2)
+  fiesta: import("./fiestas-comun").HerrFiesta | null; // Tu herramienta de Fiestas (4t)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -86,7 +118,7 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   ]);
   const x = b.rows[0]!, off = x.off ?? {}, rub = rubroSP(x.cat);
   return {
-    rubro: rub, sp: rub ? await herramientaSP(negocio, rub) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },
