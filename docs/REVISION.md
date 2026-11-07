@@ -1067,3 +1067,22 @@ _Arreglado de paso (clase):_ «Lo que importa» de Fiestas no mostraba «Respeta
 devolvía los nombres en minúsculas); ahora sí, con su guardián.
 _Decidido por mí:_ «Me sentí inseguro» reusa la misma vía directa que «Manejo inseguro»; «No me descontaron el depósito» pide la foto del
 recibo; una mesa cancelada por el local también puede pedir ayuda.
+
+### 4ne · Super Admin de Noche (7 nov) · NOCHE COMPLETA
+**Qué mirar (Admin, 5705550199):** Transacciones › pestaña **Noche**: cada lista o mesa con su noche, personas, cuántos entraron, cómo
+cerró («no entró: sin identificación», «canceló a tiempo»…) y el depósito; **Devolver** en una mesa con depósito cobrado. **Colas** › «Sin
+identificación» y «Mesas no respetadas» de La Terraza: cada noche con lo que pasó y el depósito; **Revisado, sin cambios** o **Pausar mesas
+y lista** (la página del local deja de ofrecerlas; se reanuda en Negocios 360°). **Analítica › Noche**: mesas confirmadas en 60 min,
+vencidas, no respetadas, depósitos, % de la lista que entró, el cover que subió después de publicado, «la fila, como decía», «cobraron más
+cover» por cada 100 noches y licencias de licor vencidas.
+_Decidido por mí:_ las dos colas se abren solas desde la **3.ª vez en 30 noches** de un mismo local (un caso abierto por local); cuentan una
+mesa confirmada que el local cancela, una ayuda «no respetaron la mesa / la lista» y un «sin identificación» con depósito. La decisión
+del equipo es **pausar mesas y lista** (reversible), no quitar el sello como sugería el plan: quitar el sello afecta todo el negocio y no
+solo la noche. «El cover subió» cuenta solo subidas del cover de esa noche frente a lo publicado antes (bajar es a favor del cliente);
+el «después de las 11 PM» no cuenta como subida porque se publicó desde el principio. La ayuda «Me sentí inseguro» va primero en la
+lista de Colas, antes que todo lo demás de Soporte. Las ayudas de fiesta, viaje y noche ahora dicen su nombre en Colas (antes decían
+«Ayuda con un pedido»).
+_Ojo en el sandbox:_ la semilla no trae reservas de noche de ejemplo; Transacciones › Noche, las colas y la Analítica se llenan cuando se
+usan (Marisol pide mesas en La Terraza y Héctor las confirma y marca la puerta). Las colas aparecen a la 3.ª vez en 30 noches.
+_Pendiente (Fase 5):_ Configuración de los plazos (60 min de respuesta, 6 PM, 30 min de mesa, 60 min de fila) — hoy son constantes del
+código; ya están en `docs/LAUNCH-CHECKLIST.md`.

@@ -669,6 +669,35 @@ const guardianes = {
 
   /* 4y-3. Super Admin › Transacciones mostraba «Devolver» en fiestas y viajes, pero el servidor solo devolvía pedidos y citas
      («Ese pedido no existe»). Los tipos que la pantalla deja devolver (DEVUELVE) son exactamente los que devolverTx acepta. */
+  /* 4ne. Una cola nueva en lib/colas.ts que la base no acepta (queue_items_queue_check) revienta al abrir el primer caso, y
+     nadie lo ve hasta que pasa de verdad. Toda cola del tipo Cola está en el check de la última migración que lo redefine. */
+  colasEnLaBase() {
+    const f = "apps/web/lib/colas.ts";
+    if (!existsSync(f)) return;
+    const m = /export type Cola = ([^;]+);/.exec(readFileSync(f, "utf8"));
+    if (!m) return falla("colasEnLaBase", f, 0, "no encuentro el tipo Cola");
+    const colas = [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1]);
+    const dir = "packages/db/migrations", migs = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort();
+    let check = null, donde = null;
+    for (const x of migs) { const t = readFileSync(`${dir}/${x}`, "utf8"), c = [...t.matchAll(/add constraint queue_items_queue_check check \(([^;]+)\);/g)].pop(); if (c) { check = c[1]; donde = x; } }
+    if (!check) return falla("colasEnLaBase", dir, 0, "ninguna migración define queue_items_queue_check");
+    const base = new Set([...check.matchAll(/'(\w+)'/g)].map((x) => x[1]));
+    for (const k of colas) if (!base.has(k)) falla("colasEnLaBase", `${dir}/${donde}`, 0, `la cola «${k}» está en lib/colas.ts pero queue_items_queue_check no la acepta`);
+  },
+
+  /* 4ne. Transacciones lista un tipo de operación nuevo pero la pantalla no tiene su nombre: la fila sale «undefined N-…».
+     Cada kind que lee lib/admin-tx.ts tiene su etiqueta en el título de app/admin/Transacciones.tsx. */
+  txConNombre() {
+    const srv = "apps/web/lib/admin-tx.ts", ui = "apps/web/app/admin/Transacciones.tsx";
+    if (!existsSync(srv) || !existsSync(ui)) return;
+    const m = /const DESDE = `[^`]*o\.kind in \(([^)]*)\)/.exec(readFileSync(srv, "utf8"));
+    if (!m) return falla("txConNombre", srv, 0, "no encuentro la lista de tipos de DESDE");
+    const t = /title: `\$\{\(\{ ([^}]*) \} as Record<string, string>\)\[x\.k\]\}/.exec(readFileSync(ui, "utf8"));
+    if (!t) return falla("txConNombre", ui, 0, "no encuentro el mapa de nombres del título");
+    const nombres = new Set([...t[1].matchAll(/(\w+): /g)].map((x) => x[1]));
+    for (const k of [...m[1].matchAll(/'(\w+)'/g)].map((x) => x[1])) if (!nombres.has(k)) falla("txConNombre", ui, 0, `Transacciones lee «${k}» pero el título no tiene su nombre`);
+  },
+
   devolverCoincide() {
     const ui = "apps/web/app/admin/Transacciones.tsx", srv = "apps/web/app/admin/acciones-tx.ts";
     if (!existsSync(ui) || !existsSync(srv)) return;

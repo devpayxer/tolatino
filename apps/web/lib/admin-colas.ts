@@ -2,7 +2,8 @@ import "server-only";
 import { FOTO_AYUDA_SQL } from "./ayuda-cita";
 const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
 import type { Staff } from "./admin";
-import { COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
+import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
+import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
 import { db } from "./db";
 import { MOTIVO, evidenciaDe } from "./disputas";
 import { telefonoBonito } from "./panel";
@@ -26,7 +27,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const r = await db().query<{
     id: string; queue: Cola; opened_at: string; priority: string; assigned_to: string | null; assignee: string | null;
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
-    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
+    subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -45,6 +46,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz,
             (select o.number from disputes d join operations o on o.id = d.operation_id where q.queue = 'disputa' and d.id::text = q.subject_id) as dpnum,
             (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue = 'sop' and h.id::text = q.subject_id) as sopk,
+            (select h.reason from help_requests h where q.queue = 'sop' and h.id::text = q.subject_id) as sopr,
             (select d.amount_cents from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpamt,
             (select d.reason from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpreason,
             (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue
@@ -56,7 +58,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
        left join sensitive_changes sc on q.subject_kind = 'sensitive_change' and sc.id = q.subject_id
        left join users su on sc.target_kind = 'user' and su.id::text = sc.target_id
       where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
-      order by extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
+      order by (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
       limit 200`,
     [colas, s.cities]);
   const conteo: Record<string, number> = {};
@@ -71,7 +73,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
-      : x.queue === "sop" ? { title: `${x.sopk === "appointment" ? "Ayuda con una cita" : x.sopk === "hold" ? "Ayuda con una compra" : x.sopk === "market_order" ? "Ayuda con un pedido del mercado" : "Ayuda con un pedido"} · ${b}`, sub: "El cliente espera una respuesta" }
+      : x.queue === "sop" ? { title: `${AYUDA_DE[x.sopk ?? "order"] ?? "Ayuda con un pedido"} · ${b}`, sub: x.sopr === "inseguro" ? "Se sintió inseguro · va directo a To'Latino" : "El cliente espera una respuesta" }
+      : x.queue === "mesa" ? { title: `Mesas no respetadas · ${b}`, sub: `${UMBRAL_NOCHE} o más en 30 noches · mira cada una` }
+      : x.queue === "noid" ? { title: `Sin identificación · ${b}`, sub: `${UMBRAL_NOCHE} o más mesas con depósito en 30 noches` }
       : x.queue === "renta" ? { title: `Daño de renta · ${b}`, sub: "El cliente no está de acuerdo · el depósito sigue retenido" }
       : x.queue === "disputa" ? { title: `Disputa · pedido #${x.dpnum ?? "—"} · $${((x.dpamt ?? 0) / 100).toFixed(2)}`, sub: `${b || "Negocio"} · ${MOTIVO[x.dpreason ?? "general"]?.es ?? "Otro motivo del banco"}${x.dpdue ? ` · responder antes del ${new Date(x.dpdue).toLocaleDateString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short" })}` : ""}` }
       : x.queue === "chat" ? { title: `Mensajes reportados · ${b}`, sub: `${x.chreason ? MOTIVO_CHAT[x.chreason] ?? "Otro motivo" : "Reporte"}${x.chn > 1 ? ` · ${x.chn} reportes` : ""}${x.chbiz ? " · lo reportó el negocio" : ""}` }
@@ -205,6 +209,19 @@ export async function caso(s: Staff, id: string) {
       `select cr.reason, cr.note, cr.created_at as at, cr.by_business, nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(left(u.last_name, 1), '')), '') as quien
          from content_reports cr join users u on u.id = cr.reporter_user_id where cr.target_kind = 'review' and cr.target_id = $1 and cr.status = 'open' order by cr.created_at`, [q.subject_id])).rows;
     return { ...base, negocio, resena: r ?? null, reportesR: reps };
+  }
+  if (q.queue === "mesa" || q.queue === "noid") {
+    // 4ne · Noche: lo que pasó en los últimos 30 días (cada noche con su número, lo que pasó, el depósito y si hubo ayuda) y si
+    // mesas y lista ya están en pausa. Nunca el código de la puerta.
+    const L = (await db().query<{ num: string; noche: string; k: string; pax: number; st: string; det: string | null; dep: number; pago: string | null; devuelto: number; quien: string; motivo: string | null; ayuda: string | null }>(
+      `select o.number as num, o.night_date::text as noche, o.details->>'k' as k, coalesce(o.party_size, 1) as pax, o.status as st, o.status_detail as det, coalesce(o.deposit_cents, 0) as dep,
+              p.status as pago, coalesce(p.refunded_cents, 0) as devuelto, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as quien,
+              o.details->>'motivoNeg' as motivo, (select h.reason from help_requests h where h.operation_id = o.id) as ayuda
+         from operations o join users u on u.id = o.user_id left join payments p on p.operation_id = o.id and p.kind = 'deposit'
+        where o.business_id = $1 and o.kind = 'night' and o.night_date > current_date - 30 and ${INCIDENTE_SQL[q.queue]}
+        order by o.night_date desc, o.id desc limit 50`, [q.business_id])).rows;
+    const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'rsv', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
+    return { ...base, negocio, noche: { L, pausado: off } };
   }
   if (q.queue === "rec") {
     const r = (await db().query<{ business_name: string; cat: string | null; cat_id: string | null; where: string | null; address: string | null; contact_phone: string | null; how_known: string | null; note: string | null; ciudad: string; by_user_id: string; quien: string | null; reveal_me: boolean; is_mine: boolean }>(

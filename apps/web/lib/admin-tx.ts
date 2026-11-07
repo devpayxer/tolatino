@@ -5,20 +5,20 @@ import { db } from "./db";
 /* ADM-TX · Transacciones (Super Admin.dc.html secTx / txRow): pedidos, reservaciones y citas (3e: el depósito con
    tarjeta y la comisión de citas sobre el depósito) de los últimos 90 días de tus ciudades. Hoy todo se paga en el local o al recibir: no hay retenido, cobro con tarjeta, devoluciones ni comisión
    (llegan con Stripe, bloque 2d). Estados: pendiente · en curso · terminado · cancelado · no se dio (no lo aceptaron / sin respuesta). */
-export type TabTx = "all" | "ped" | "merc" | "rsv" | "cita" | "sal" | "pro" | "plan" | "renta" | "apt" | "fiesta" | "viaje";
+export type TabTx = "all" | "ped" | "merc" | "rsv" | "cita" | "sal" | "pro" | "plan" | "renta" | "apt" | "fiesta" | "viaje" | "noche";
 export type EstTx = "pend" | "curso" | "done" | "cx" | "no";
 export type FiltrosTx = { tab: TabTx; q: string; st: EstTx[]; pag: number };
 export const POR_PAGINA_TX = 20;
 const ESTS = new Set<EstTx>(["pend", "curso", "done", "cx", "no"]);
 export function leerFiltrosTx(sp: Record<string, string | undefined>): FiltrosTx {
-  const tab = (["all", "ped", "merc", "rsv", "cita", "sal", "pro", "plan", "renta", "apt", "fiesta", "viaje"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
+  const tab = (["all", "ped", "merc", "rsv", "cita", "sal", "pro", "plan", "renta", "apt", "fiesta", "viaje", "noche"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
   const st = String(sp.st ?? "").split(",").filter((x): x is EstTx => ESTS.has(x as EstTx));
   return { tab, q: String(sp.q ?? "").trim().slice(0, 60), st, pag: Math.max(1, Math.min(500, Number(sp.pag) || 1)) };
 }
 const EST = `case when o.status in ('pending', 'change_proposed') then 'pend'
   when o.status = 'confirmed' and (o.kind <> 'order' or coalesce(o.stage, '') not in ('delivered', 'picked_up')) then 'curso'
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'done' when o.status = 'cancelled' then 'cx' else 'no' end`;
-export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
+export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip" | "night"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
   pago: string | null; devuelto: number; comision: number; tarjeta: string | null; pid: string | null; disputa: string | null;
   // 4d: estimado de Auto y Hogar (versiones, aprobado, cobrado en la app y retenciones que no se pudieron renovar).
   estV: number; estAp: number; estCob: number; estFallo: number;
@@ -33,16 +33,18 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // 4v: fiesta (día, invitados, versión del acuerdo, quién canceló y si el depósito se quedó).
   fi: { dia: string; g: number | null; v: number | null; perdio: boolean; vis: boolean } | null;
   // 4y: viaje (forma, día y hora, asientos o cajas, la mitad cobrada, si canceló la salida el negocio y la versión del precio cerrado).
-  vi: { k: string; dia: string; n: number; mitad: number; salida: boolean; precioV: number | null; rastreo: string | null } | null };
+  vi: { k: string; dia: string; n: number; mitad: number; salida: boolean; precioV: number | null; rastreo: string | null } | null;
+  // 4ne: noche (lista o mesa, la noche, personas, cuántos entraron, cómo cerró y si el depósito se quedó). Nunca el código de la puerta.
+  no: { k: string; noche: string; pax: number; inN: number | null; cierre: string | null; perdio: boolean } | null };
 function donde(s: Staff, f: FiltrosTx) {
-  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
+  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
   if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
-  else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip" } as const)[f.tab]}'`);
+  else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip", noche: "night" } as const)[f.tab]}'`);
   if (f.st.length) { v.push(f.st); w.push(`(${EST}) = any($${v.length}::text[])`); }
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
 }
-const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip') join users u on u.id = o.user_id`;
+const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night') join users u on u.id = o.user_id`;
 export async function listaTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const [L, n, k] = await Promise.all([
@@ -63,6 +65,8 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
                 'n', case when o.details->>'k' = 'caja' then coalesce((o.details->>'boxes')::int, 1) else coalesce((o.details->>'adults')::int, 1) + coalesce((o.details->>'kids')::int, 0) end,
                 'mitad', coalesce((o.details->>'cobroMitad')::int, 0), 'salida', coalesce(o.cancel_reason = 'salida', false),
                 'precioV', (select max(t.version) from written_totals t where t.operation_id = o.id and t.status = 'accepted'), 'rastreo', o.details->'tracking'->>'code') end as vi,
+              case when o.kind = 'night' then jsonb_build_object('k', o.details->>'k', 'noche', o.night_date::text, 'pax', coalesce(o.party_size, 1), 'inN', (o.details->>'in_n')::int,
+                'cierre', o.status_detail, 'perdio', coalesce((o.details->>'perdio')::boolean, false)) end as no,
               (select jsonb_build_object('st', lp.status, 'total', lp.total_cents, 'pagado', (select coalesce(sum(lpp.amount_cents), 0) from layaway_payments lpp where lpp.plan_id = lp.id and lpp.status in ('paid', 'waived'))) from layaway_plans lp where lp.operation_id = o.id) as lay,
               (select count(distinct l.estimate_id)::int from estimate_lines l where l.operation_id = o.id and not l.is_extra) as "estV",
               (select coalesce(sum(coalesce(l.final_cents, l.line_total_cents)), 0)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as "estAp",
@@ -82,7 +86,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               (select coalesce(sum(fee_cents * (amount_cents - refunded_cents) / amount_cents), 0)::int from payments p where p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as com,
               (select coalesce(sum(refunded_cents), 0)::int from payments p where p.updated_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as dev,
               (select count(*)::int from operation_events ev join operations o2 on o2.id = ev.operation_id where ev.kind = 'hold_failed' and ev.at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o2.city_id = any($1::text[]))) as fallos
-         from operations o where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip') and o.sent_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))`, [s.cities]),
+         from operations o where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night') and o.sent_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))`, [s.cities]),
   ]);
   return { filas: L.rows, total: n.rows[0]!.n, kpi: k.rows[0]! };
 }

@@ -7,9 +7,9 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Caso, CasoLista } from "@/lib/admin-colas";
-import { COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
+import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, type ResAdm } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -95,7 +95,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${"ayuda" in k && k.ayuda?.k === "appointment" ? "Ayuda con una cita" : "ayuda" in k && k.ayuda?.k === "hold" ? "Ayuda con una compra" : "ayuda" in k && k.ayuda?.k === "market_order" ? "Ayuda con un pedido del mercado" : "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -235,6 +235,20 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar", v: "danger", icon: "close", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.hide, peligro: true, hacer: (m) => decidirRep(k.id, "ocultar", m) }) },
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
+      ];
+    }
+    if ((k.queue === "mesa" || k.queue === "noid") && "noche" in k && k.noche) {
+      // 4ne · Noche: cada noche de los últimos 30 días que cuenta para esta cola, con lo que pasó y el depósito. Pausar quita
+      // mesas y lista de la página del local (modules_off.rsv) hasta que se reanude desde Negocios 360°.
+      const nc = k.noche, usd = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
+      const QUE = (x: (typeof nc.L)[number]) => x.det === "noid" ? "No entró: sin identificación" : x.ayuda === "mesa" ? "Ayuda: no respetaron la mesa" : x.ayuda === "lista" ? "Ayuda: no respetaron la lista" : "Canceló el local una mesa confirmada";
+      cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "EN 30 NOCHES", v: String(nc.L.length), fg: "var(--tl-pro-ink)" }, { k: "DEPÓSITOS QUE SE QUEDARON", v: usd(nc.L.filter((x) => x.pago === "captured" || x.pago === "partially_refunded").filter((x) => x.st === "done").reduce((a, x) => a + x.dep - x.devuelto, 0)) }, { k: "MESAS Y LISTA", v: nc.pausado ? "En pausa" : "Activas" }] });
+      cuerpoB.push({ type: "rows", k: "CADA NOCHE", items: nc.L.map((x) => ({ icon: "drink", t: `${x.num} · ${x.noche} · ${x.k === "lista" ? "lista" : "mesa"} para ${x.pax}`, s: `${x.quien} · ${QUE(x)}${x.motivo ? ` · «${x.motivo}»` : ""}${x.dep ? ` · depósito ${usd(x.dep)}${x.devuelto ? ` (devuelto ${usd(x.devuelto)})` : x.pago === "captured" && x.st === "done" ? " se quedó" : ""}` : " · sin depósito"}` })) });
+      if (k.puedeDecidir) acts = [
+        ...(nc.pausado ? [] : [{ l: "Pausar mesas y lista", v: "danger", icon: "warning", onClick: () => setConf({ titulo: "¿Por qué se pausan mesas y lista?", sub: "Salen de su página hasta que las reanudes desde Negocios 360°. El dueño ve el motivo en su panel. Lo ya confirmado sigue en pie.", cta: "Pausar", peligro: true,
+          plantillas: k.queue === "mesa" ? ["Canceló mesas confirmadas varias noches.", "Los clientes dicen que no respetan la mesa ni la lista."] : ["Marca «sin identificación» para quedarse depósitos.", "No responde a nuestras preguntas sobre la puerta."], hacer: (m) => decidirNoche(k.id, true, m) }) }]),
+        { l: "Revisado, sin cambios", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; si vuelve a pasar 3 veces en 30 noches, se abre otro.", cta: "Cerrar el caso",
+          plantillas: ["Cada caso tiene una explicación razonable.", "Hablamos con el local y lo corrigió.", "Los depósitos ya se devolvieron."], hacer: (m) => decidirNoche(k.id, false, m) }) },
       ];
     }
     if (k.queue === "renta" && "renta" in k) {

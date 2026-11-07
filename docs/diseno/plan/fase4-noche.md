@@ -434,23 +434,30 @@ panel, la puerta y los barridos del servidor (SP «Pasos del servicio», «Plazo
 N+1. Capturas teléfono + escritorio de cada pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre del grupo (todo marcado antes de decir «Noche completa»)
-- [ ] Migraciones 0081–0083 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
-- [ ] Semilla 0023 solo en pruebas (guardián `semilla`); demo `demo-noche` con listas, mesas, historia de la semana, reseñas y ayudas.
-- [ ] Editor de servicios de Noche con todos sus tipos (cover que sigue a la herramienta, lista, mesa con cuántas hay, por hora, VIP, evento
+- [x] Migraciones 0081–0083 (+ 0084 de las colas) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
+- [~] Semilla 0023 solo en pruebas (guardián `semilla`); demo `demo-noche` con listas, mesas, historia de la semana, reseñas y ayudas.
+- [x] Editor de servicios de Noche con todos sus tipos (cover que sigue a la herramienta, lista, mesa con cuántas hay, por hora, VIP, evento
       oculto hasta Eventos, por fecha).
-- [ ] «Esta noche» guarda cada toque con su historia, refleja en ficha, tarjeta y Buscar, y el Super Admin la ve (triángulo).
-- [ ] `sincover` y la fila cambian a su hora (reloj movido); la fila nunca sale «ahora» si no lo es.
-- [ ] Lista de punta a punta ($0, código, puerta, entrada, cierre) y mesa con tarjeta (retiene, confirma y cobra, otra hora, no, vence, cancelar
+- [x] «Esta noche» guarda cada toque con su historia, refleja en ficha, tarjeta y Buscar, y el Super Admin la ve (triángulo).
+- [x] `sincover` y la fila cambian a su hora (reloj movido); la fila nunca sale «ahora» si no lo es.
+- [x] Lista de punta a punta ($0, código, puerta, entrada, cierre) y mesa con tarjeta (retiene, confirma y cobra, otra hora, no, vence, cancelar
       antes y después del corte, no llegaron, sin identificación, el negocio cancela) y sin tarjeta (Free): cifras exactas en `payments` y en
       Stripe simulado.
-- [ ] Ninguna imagen de ID, fecha de nacimiento ni venta de alcohol en la app (guardianes probados al revés).
-- [ ] Reseñas verificadas con preguntas y «Lo que importa de noche»; ayudas con motivos, fotos, 911 y escalado a To'Latino con el historial
+- [x] Ninguna imagen de ID, fecha de nacimiento ni venta de alcohol en la app (guardianes probados al revés).
+- [x] Reseñas verificadas con preguntas y «Lo que importa de noche»; ayudas con motivos, fotos, 911 y escalado a To'Latino con el historial
       de esa noche.
-- [ ] Super Admin: Transacciones › Noche, Colas (mesas no respetadas, sin identificación, ayudas), Licencias (PLCB), Notificaciones, Analítica.
-- [ ] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va.
-- [ ] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4ne).
-- [ ] Guardianes nuevos de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Comida
+- [x] Super Admin: Transacciones › Noche, Colas (mesas no respetadas, sin identificación, ayudas), Licencias (PLCB), Notificaciones, Analítica.
+- [x] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va.
+- [x] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4ne).
+- [x] Guardianes nuevos de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Comida
       (mesas), Belleza, Fiestas y Transporte sin regresión.
-- [ ] Preguntas #1–#14 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencia de licor con abogado, boletos y
+- [x] Preguntas #1–#14 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencia de licor con abogado, boletos y
       Puerta en la Fase 6, Configuración de plazos en la Fase 5).
-- [ ] `docs/PROGRESS.md` al día y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.
+- [x] `docs/PROGRESS.md` al día y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.
+
+_Cierre (4ne, 7 nov):_ `[~]` = la semilla 0023 trae los 17 locales con su «Esta noche», servicios, licencias e historia de lo publicado,
+pero **no** listas, mesas, reseñas ni ayudas de ejemplo: esas las crean las pruebas punta a punta (noc4a–noc4d, adm4ne) en la base local;
+en el sandbox se crean usándolo (anotado en `docs/LAUNCH-CHECKLIST.md`). Las pruebas punta a punta locales corren en teléfono (iPhone 13)
+y escritorio; los 9 dispositivos son los de CI. Los docs del cliente quedaron en `noche-en-la-ficha`, `lista-y-mesa-de-noche` y
+`resena-y-ayuda-con-la-noche`; los del negocio en `esta-noche-negocio` y `panel-mesas-y-lista`; más `licencia-de-licor` y `admin-analitica`.
+

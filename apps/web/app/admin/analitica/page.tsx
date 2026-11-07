@@ -1,10 +1,10 @@
 import { requerir } from "@/lib/admin";
-import { confianza, embudo, fiestasTransporte, gente, mercadosTiendas, PERIODOS, saludPro } from "@/lib/admin-analitica";
+import { confianza, embudo, fiestasTransporte, gente, mercadosTiendas, noche, PERIODOS, saludPro } from "@/lib/admin-analitica";
 import { sinOferta } from "@/lib/admin-catalogo";
 import { Analitica, type DatosAnalitica } from "../Analitica";
 
-/* ADM-ANALIT · Analítica. ?tab= sum | ppl | trust | nosup | exp · ?p= 7 | 30 | 90 días. */
-const TABS = new Set(["sum", "ppl", "trust", "sp", "mt", "ft", "nosup", "exp"]);
+/* ADM-ANALIT · Analítica. ?tab= sum | ppl | trust | sp | mt | ft | no | nosup | exp · ?p= 7 | 30 | 90 días. */
+const TABS = new Set(["sum", "ppl", "trust", "sp", "mt", "ft", "no", "nosup", "exp"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("analit", "ver");
   const sp = await searchParams;
@@ -18,5 +18,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   if (tab === "sp") d.sp = await saludPro(s, dias);
   if (tab === "mt") d.mt = await mercadosTiendas(s, dias);
   if (tab === "ft") d.ft = await fiestasTransporte(s, dias);
+  if (tab === "no") d.no = await noche(s, dias);
   return <Analitica d={d} />;
 }

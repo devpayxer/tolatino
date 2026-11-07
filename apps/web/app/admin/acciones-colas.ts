@@ -465,6 +465,29 @@ export async function decidirDisputa(id: string, accion: "responder" | "aceptar"
   return { ok: true, mensaje: accion === "responder" ? "Respondida. El banco decide; te avisamos el resultado y al negocio también." : "Aceptada: el dinero vuelve al cliente." };
 }
 
+/* 4ne · Noche (Mesas no respetadas / Sin identificación): pausar mesas y lista del local o cerrar como revisado. */
+export async function decidirNoche(id: string, pausar: boolean, texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s) return no("Tu rol solo puede ver esta cola.");
+  const m = motivoOk(texto);
+  if (m.length < 4) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const q = await abrir(c, s, id);
+    if (typeof q === "string") return q;
+    if ((q.queue !== "mesa" && q.queue !== "noid") || !q.business_id) return "Ese caso no es de esta cola.";
+    if (pausar) {
+      await c.query(`update businesses set modules_off = modules_off || jsonb_build_object('rsv', jsonb_build_object('reason', $2::text, 'at', now(), 'by', $3::text)), updated_at = now() where id = $1 and not (modules_off ? 'rsv')`, [q.business_id, m, s.id]);
+      await auditar(c, { actor: s.id, action: "negocio.modulo.pausar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { modulo: "Mesas y lista", estado: "activo" }, after: { estado: "pausado", cola: q.queue === "mesa" ? "Mesas no respetadas" : "Sin identificación" }, reason: m });
+    }
+    await cerrar(c, q, s, pausar ? "pausar" : "revisado", m);
+    await auditar(c, { actor: s.id, action: pausar ? "noche.cola_pausar" : "noche.cola_revisado", targetKind: "case", targetId: q.id, city: q.city_id, before: { caso: "abierto" }, after: { caso: pausar ? "mesas y lista en pausa" : "revisado, sin cambios" }, reason: m });
+    return "ok";
+  });
+  if (r !== "ok") return no(r);
+  listo();
+  return { ok: true, mensaje: pausar ? "Mesas y lista en pausa. El dueño ve el motivo en su panel." : "Caso cerrado como revisado." };
+}
+
 /* Daño de una renta (4f-2): descontarlo del depósito o liberarlo. Pide decidir sobre dinero (tx:aprobar). */
 export async function decidirRenta(id: string, cobrar: boolean, texto: string): Promise<ResAdm> {
   const s = await quien();

@@ -165,3 +165,48 @@ export async function fiestasTransporte(s: Staff, dias: number) {
   ]);
   return { fi: fi.rows[0]!, dep: dep.rows[0]!, vi: vi.rows[0]!, sal: sal.rows[0]!, ayuda: ayuda.rows };
 }
+
+/* 4ne · Analítica › Noche (fase4-noche.md §4ne): mesas confirmadas en 60 min, vencidas, no respetadas; depósitos retenidos /
+   cobrados / devueltos / que se quedaron; % de la lista que entró; veces que el cover sube después de publicado esa misma noche;
+   % «fila como decía» en reseñas; ayudas «cobraron más cover» por cada 100 noches; licencias de licor vencidas. Solo cifras;
+   todo por ciudad (city_id) y con índices (operations_noche_idx, night_posts_noche_idx). */
+export async function noche(s: Staff, dias: number) {
+  const { INCIDENTE_SQL } = await import("./noche-vigilar");
+  const [me, dep, li, cov, fila, ay, lic] = await Promise.all([
+    db().query<{ n: number; conf60: number; vencidas: number; noResp: number }>(
+      `select count(*)::int as n,
+              count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= interval '60 minutes')::int as conf60,
+              count(*) filter (where o.status = 'expired')::int as vencidas,
+              count(*) filter (where ${INCIDENTE_SQL.mesa})::int as "noResp"
+         from operations o where o.kind = 'night' and o.details->>'k' <> 'lista' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ ret: number; cob: number; dev: number; quedo: number }>(
+      `select coalesce(sum(p.amount_cents) filter (where p.status = 'held'), 0)::int as ret,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded')), 0)::int as cob,
+              coalesce(sum(p.refunded_cents), 0)::int as dev,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded')
+                and (coalesce((o.details->>'perdio')::boolean, false) or o.status_detail in ('nollegaron', 'noid'))), 0)::int as quedo
+         from payments p join operations o on o.id = p.operation_id where o.kind = 'night' and p.kind = 'deposit' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ n: number; cerradas: number; entro: number; noches: number }>(
+      `select count(*) filter (where o.details->>'k' = 'lista')::int as n,
+              count(*) filter (where o.details->>'k' = 'lista' and o.status = 'done')::int as cerradas,
+              count(*) filter (where o.details->>'k' = 'lista' and o.status = 'done' and o.status_detail = 'entro')::int as entro,
+              count(*) filter (where o.status = 'done')::int as noches
+         from operations o where o.kind = 'night' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    // Una subida = una publicación del cover de esa noche más alta que la anterior de la misma noche (night_posts, solo inserción).
+    db().query<{ sube: number; locales: number }>(
+      `select count(*)::int as sube, count(distinct business_id)::int as locales from (
+         select p.business_id, (p.value->>'cents')::int as c, lag((p.value->>'cents')::int) over (partition by p.business_id, p.night order by p.at, p.id) as antes
+           from night_posts p where p.field = 'cover' and p.night > current_date - $2::int and ${scope("p.city_id")}) x
+        where x.antes is not null and x.c > x.antes`, [s.cities, dias]),
+    db().query<{ n: number; ok: number }>(
+      `select count(*) filter (where r.answers ? 'filaOk')::int as n, count(*) filter (where r.answers->>'filaOk' = 'a')::int as ok
+         from reviews r join operations o on o.id = r.operation_id where o.kind = 'night' and r.status <> 'removed' and r.created_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ reason: string; n: number }>(
+      `select h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
+        where o.kind = 'night' and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1 order by 2 desc`, [s.cities, dias]),
+    db().query<{ vencidas: number; total: number }>(
+      `select count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas, count(*)::int as total
+         from licenses l join businesses b on b.id = l.business_id where l.kind = 'pa_plcb' and ${scope("b.city_id")}`, [s.cities]),
+  ]);
+  return { me: me.rows[0]!, dep: dep.rows[0]!, li: li.rows[0]!, cov: cov.rows[0]!, fila: fila.rows[0]!, ayuda: ay.rows, lic: lic.rows[0]! };
+}

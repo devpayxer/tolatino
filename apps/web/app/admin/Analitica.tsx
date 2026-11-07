@@ -21,6 +21,7 @@ export type DatosAnalitica = {
     rev: { cobro: number; base: number }; ayuda: { rub: string; reason: string; n: number }[] };
   mt?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").mercadosTiendas>>;
   ft?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").fiestasTransporte>>;
+  no?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").noche>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -29,7 +30,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -139,6 +140,29 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         ])]} />
         {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Fiestas y Transporte`} items={ayuda.map((x) => ({ label: `${x.rub === "fiesta" ? "Fiestas" : "Transporte"} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con Fiestas ni Transporte en el período.</A.AdminNote>}
+      </>);
+  } else if (d.tab === "no" && d.no) {
+    // Noche (4ne): solo cifras.
+    const { me, dep, li, cov, fila, ayuda, lic } = d.no, mx = Math.max(1, ...ayuda.map((x) => x.n));
+    const usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const coverMas = ayuda.find((x) => x.reason === "cover")?.n ?? 0;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "MESAS Y VIP" }, kpis([
+          { k: "SOLICITUDES DE MESA", v: String(me.n), s: "mesas y VIP pedidas" },
+          { k: "CONFIRMADAS EN 60 MIN", v: pct(me.conf60, me.n), s: `${me.conf60} solicitudes`, dark: true },
+          { k: "VENCIDAS SIN RESPUESTA", v: pct(me.vencidas, me.n), s: `${me.vencidas} solicitudes` },
+          { k: "MESAS NO RESPETADAS", v: String(me.noResp), s: "canceló el local o el cliente pidió ayuda" },
+          { k: "DEPÓSITOS", v: usd(dep.cob), s: `retenido ${usd(dep.ret)} · devuelto ${usd(dep.dev)} · se quedó con el local ${usd(dep.quedo)}` },
+        ]), { type: "group", k: "LISTA, COVER Y FILA" }, kpis([
+          { k: "DE LA LISTA ENTRÓ", v: pct(li.entro, li.cerradas), s: `${li.entro} de ${li.cerradas} noches cerradas · ${li.n} en la lista` , dark: true },
+          { k: "EL COVER SUBIÓ DESPUÉS DE PUBLICADO", v: String(cov.sube), s: `veces · ${cov.locales} local${cov.locales === 1 ? "" : "es"}` },
+          { k: "«LA FILA, COMO DECÍA»", v: pct(fila.ok, fila.n), s: `${fila.n} reseñas lo contestaron` },
+          { k: "«COBRARON MÁS COVER» POR CADA 100", v: li.noches ? (Math.round((1000 * coverMas) / li.noches) / 10).toString() : "—", s: `${coverMas} ayudas · ${li.noches} noches` },
+          { k: "LICENCIAS DE LICOR VENCIDAS", v: String(lic.vencidas), s: `de ${lic.total} en Licencias` },
+        ])]} />
+        {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Noche`} items={ayuda.map((x) => ({ label: motivoAyuda(x.reason, "noche")[0], width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
+          : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con la noche en el período.</A.AdminNote>}
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;

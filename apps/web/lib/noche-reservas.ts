@@ -1,6 +1,7 @@
 import "server-only";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
+import { vigilarNoche } from "./noche-vigilar";
 import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
 import { herramientaNoche, NOCHE_SQL } from "./noche";
@@ -347,6 +348,8 @@ export async function cancelarNocheNegocio(negocio: string, numero: string, moti
     if (!o || o.status !== "confirmed" || o.det.in_n || o.det.llego) return no("Esta reserva ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
     await c.query(`update operations set status = 'cancelled', cancelled_by = 'business', cancelled_at = now(), cancel_reason = 'negocio', details = details || $2::jsonb, updated_at = now() where id = $1::bigint`, [o.id, JSON.stringify({ motivoNeg: mot })]);
     await ev(c, o.id, "night_biz_cx", "member", actorId, { es: `Canceló el local: ${mot}`, en: `Cancelled by the venue: ${mot}` });
+    // 4ne: una mesa confirmada que el local cancela cuenta para «Mesas no respetadas».
+    if (o.det.k !== "lista") await vigilarNoche(c, negocio, "mesa");
     despues = async () => {
       if (o.pay === "held") await liberarOperacion(o.id);
       else if (o.pay === "captured" && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "business", actorId, motivo: "El local canceló", idem: `nbx-${numero}` });
@@ -384,6 +387,8 @@ export async function marcarNoche(negocio: string, numero: string, que: MarcaMes
     if (que === "nollegaron" && o.nowN < Number(o.det.arrive) + Number(o.det.hold ?? 30)) return no(`Su mesa se guarda hasta las ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? 30))}.`, `Their table is held until ${hNoche(Number(o.det.arrive) + Number(o.det.hold ?? 30))}.`);
     await c.query(`update operations set status = 'done', status_detail = $2, done_at = now(), door_code = null, updated_at = now() where id = $1::bigint`, [o.id, que]);
     await ev(c, o.id, que === "noid" ? "night_noid" : "night_noshow", "member", actorId);
+    // 4ne: «sin identificación» con depósito cuenta para la cola «Sin identificación».
+    if (que === "noid" && o.dep) await vigilarNoche(c, negocio, "noid");
     return { ok: true };
   });
 }

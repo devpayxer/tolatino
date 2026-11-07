@@ -130,6 +130,8 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
        values ('H-' || nextval('help_request_number_seq'), $1, $2, $3, $4, $5, $6, $7, $8) on conflict (operation_id) do nothing returning id::text, number`,
       [o.id, o.business_id, o.city_id, userId, reason, Q2W[q], body, cents])).rows[0];
     if (!h) return no("Ya tienes una solicitud para esta cita.", "You already have a request for this booking.");
+    // 4ne: «No respetaron la mesa / la lista» cuenta para la cola «Mesas no respetadas».
+    if (rubro === "noche" && (reason === "mesa" || reason === "lista")) await (await import("./noche-vigilar")).vigilarNoche(c, o.business_id, "mesa");
     if (DIRECTO.has(reason)) {
       await c.query(`update help_requests set status = 'escalated', escalated_at = now(), escalated_by = 'system', updated_at = now() where id = $1::bigint`, [h.id]);
       await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ('sop', 'help_request', $1, $2, $3, 'alta') on conflict do nothing`, [h.id, o.business_id, o.city_id]);
