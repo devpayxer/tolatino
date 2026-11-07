@@ -1179,3 +1179,12 @@ notas de 4ea–4ef de arriba (Free sin inscribirse por la app, plazos de respues
 **Arreglo de clase:** en Colas, una ayuda de fiesta, viaje o noche se abría con la vista del pedido de comida; ahora todas usan la vista de
 la cita (motivo con su nombre, lo devolvible y «Resolver y devolver»).
 
+### Plan del grupo Iglesias + Bienes Raíces + Venta de Autos (7 nov)
+`docs/diseno/plan/fase4-iglesias-inmuebles-autos.md` (bloques 4ia–4ig, migraciones 0091–0095). Ninguna de las tres cobra en la app: visitas
+y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- Iglesias: no se cobra nada en la app (tampoco la inscripción del catecismo) y no se construyen diezmos ni donativos en línea.
+- Venta de Autos: el pago al mes lo calcula el servidor (tasa, meses y enganche) y siempre dice «estimado».
+- Plan Free: recibe solicitudes de visita, con techo de 10 al mes.
+- Bienes Raíces: la cuota de solicitud va dentro del «total para mudarte»; el depósito tiene tope de 2 meses de renta (ley de PA, a verificar).
+- Buscar por recámaras, año o millas: se construyen los datos e índices; la pantalla queda como hueco para tu OK.
+
