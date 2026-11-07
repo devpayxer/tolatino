@@ -79,6 +79,22 @@ const guardianes = {
     }
   },
 
+  /* 4id. Un componente de cliente («use client») no importa VALORES de un módulo del servidor (import "server-only"): solo tipos
+     (7 nov: Dealer.tsx importó una función de lib/autos-publico.ts y el build se cayó). Lo que el navegador necesita vive en *-comun.ts. */
+  clienteSinServidor() {
+    const srv = new Set(codigo.filter((f) => /^apps\/web\/lib\/.*\.ts$/.test(f) && /^import "server-only";/m.test(readFileSync(f, "utf8"))).map((f) => f.replace(/^apps\/web\/lib\//, "").replace(/\.ts$/, "")));
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      if (!/^\s*["']use client["']/.test(t)) continue;
+      for (const m of t.matchAll(/import\s+(type\s+)?\{([^}]*)\}\s+from\s+"@\/lib\/([^"]+)"/g)) {
+        if (m[1] || !srv.has(m[3])) continue;
+        const valores = m[2].split(",").map((x) => x.trim()).filter((x) => x && !/^type\s/.test(x));
+        if (valores.length) falla("clienteSinServidor", f, t.slice(0, m.index).split("\n").length, `importa ${valores.join(", ")} de lib/${m[3]}.ts (server-only): en el cliente solo tipos; lo demás va en un *-comun.ts`);
+      }
+    }
+  },
+
   /* 3d. Ningún enlace a una pantalla que no existe (5 nov: «/ciudad» del encabezado no tenía página).
      Toda ruta literal en router.push/replace, href o Link debe casar con un page.tsx de apps/web/app
      (los grupos «(app)» no cuentan en la URL; «[slug]» acepta cualquier segmento). */
@@ -774,7 +790,7 @@ const guardianes = {
     }
     // Ningún texto de Iglesias dice que se cobra: «cobra», «charge» solo negados.
     for (const f of codigo) {
-      if (!/^apps\/web\/(lib\/fe(-comun)?\.ts|app\/panel\/(Fe\.tsx|acciones-fe\.ts))$/.test(f)) continue;
+      if (!/^apps\/web\/(lib\/fe(-comun|-publico)?\.ts|app\/panel\/(Fe\.tsx|acciones-fe\.ts)|app\/\(app\)\/n\/\[id\]\/Fe\.tsx)$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
         for (const m of l.matchAll(/"[^"\n]*(cobr|charg)[^"\n]*"/gi)) if (!/(no|nunca|nada)( se| lo)? cobr|no cobran|not charge|never charged|no charge|nothing is charged/i.test(m[0])) falla(G, f, i + 1, `texto de Iglesias que habla de cobrar sin negarlo: ${m[0].slice(0, 80)}`);
@@ -799,6 +815,11 @@ const guardianes = {
         if (/^\s*(\/\/|\*|\/\*)/.test(l)) return;
         if (/\.add\(\s*["']lic["']\s*\)|filter_values\s*\|\|\s*'\{?lic|array_append\([^)]*'lic'\)/.test(l)) falla("licenciaNoSeFinge", f, i + 1, "«lic» lo pone la base desde una licencia verificada (licencias_refrescar), nunca el código");
       });
+    }
+    // 4id · Los sellos de las fichas de Iglesias, Bienes Raíces y Autos salen SOLO de una licencia «valid».
+    for (const f of ["apps/web/lib/fe-publico.ts", "apps/web/lib/inmuebles-publico.ts", "apps/web/lib/autos-publico.ts"]) {
+      if (!existsSync(f)) continue;
+      for (const m of readFileSync(f, "utf8").matchAll(/from licenses l[^`]*`/g)) if (!/l\.status = 'valid'/.test(m[0])) falla("licenciaNoSeFinge", f, 0, "un sello público sale solo de una licencia verificada (l.status = 'valid')");
     }
     const sem = "infra/pruebas/semilla/0025_ninos.sql";
     if (existsSync(sem) && !/select licencias_refrescar\(id\) from businesses where category_id = 'NEG-NINOS'/.test(readFileSync(sem, "utf8"))) falla("licenciaNoSeFinge", sem, 0, "la semilla de Niños no rehace «lic» desde las licencias al final");
@@ -1256,9 +1277,35 @@ const guardianes = {
       const pie = /function pie\([\s\S]*?\n}\n/.exec(s)?.[0] ?? "";
       if (!/bi\(EHO, es\)/.test(pie) || !/bi\(ANIMALES_SERVICIO, es\)/.test(pie)) falla(G, f, 0, "pinta propiedades sin el pie de igualdad de oportunidad y la nota de animales de servicio (function pie)");
       if ((s.match(/type: "mprev"/g) ?? []).length > (s.match(/\.\.\.pie\(c, /g) ?? []).length) falla(G, f, 0, "cada propiedad que se pinta («Así se ve») va seguida de su pie (...pie(c, …))");
+      // 4id · La ficha pública: toda función que pinta propiedades (la lista, el Resumen y la hoja) pone el pie; la hoja dice además
+      // «Nunca pagues un depósito antes de ver la propiedad y firmar el contrato.».
+      if (/from "@\/lib\/inmuebles-publico"/.test(s)) {
+        for (const fn of s.split(/\nexport function /).slice(1)) {
+          const n = fn.slice(0, fn.indexOf("("));
+          if (/mudarteTexto\(|<Lista |v\.primeros|primeros=\{/.test(fn) && !/pie\(/.test(fn)) falla(G, f, 0, `«${n}» pinta propiedades sin el pie de igualdad de oportunidad y la nota de animales de servicio`);
+          if (/mudarteTexto\(/.test(fn) && !/bi\(NO_PAGUES, es\)/.test(fn)) falla(G, f, 0, `«${n}» (la hoja) no dice «Nunca pagues un depósito antes de ver la propiedad y firmar el contrato.»`);
+        }
+      }
     }
   },
 
+  /* 4id. El punto de un negocio en lo público (lista, ficha, mapa, Ciudad, relacionados) sale de PUNTO_PUBLICO (lib/punto.ts): quien trabaja desde
+     casa (o renta un cuarto en su casa) sale como zona de ~500 m y su punto exacto nunca llega al navegador. Pedido, reserva y visita confirmada
+     sí llevan el punto (la persona ya tiene la operación). Además, guardarPropiedad pasa a «desde casa» al negocio que renta en su dirección. */
+  puntoPublico() {
+    const G = "puntoPublico";
+    const PUB = /^apps\/web\/lib\/([a-z-]*publico|ficha|categoria|buscar|mapa|directorio|ciudad|tarjeta)\.ts$/;
+    for (const f of codigo) {
+      if (!PUB.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/st_[xy]\(\s*[a-z]+\.geo\b|st_astext\(\s*[a-z]+\.geo\b|st_asgeojson\(\s*[a-z]+\.geo\b/i.test(l)) falla(G, f, i + 1, "el punto de un negocio en lo público sale de PUNTO_PUBLICO (lib/punto.ts): quien trabaja desde casa sale como zona");
+      });
+    }
+    const P = "apps/web/lib/punto.ts";
+    if (!/when \$\{x\}\.works_from_home then round\(st_y/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "PUNTO_PUBLICO redondea el punto de quien trabaja desde casa");
+    const I = "apps/web/lib/inmuebles.ts";
+    if (existsSync(I) && !/update businesses b set works_from_home = true/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "quien renta en su propia dirección (propiedad con la dirección oculta) pasa a «trabaja desde casa»");
+  },
   /* 4ib. La dirección exacta de una propiedad (addr_line, geom) solo la lee lib/inmuebles.ts (el panel del negocio) y, en 4ie, lib/visitas-inm*.ts
      (al confirmar la visita). Ninguna consulta pública la ve; los cuartos y «solo la zona» muestran la zona (§3, §6 #15). */
   direccionAlConfirmar() {
@@ -1275,6 +1322,19 @@ const guardianes = {
     if (existsSync(C) && !/check \(kind not in \('cuarto', 'compartida'\) or not addr_public\)/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "los cuartos y la vivienda compartida nunca muestran la dirección exacta (check en la base)");
     const I = "apps/web/lib/inmuebles.ts";
     if (existsSync(I) && !/const zona = soloZona\(kind\) \|\| p\.soloZona === true/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "guardarPropiedad fuerza «solo la zona» en cuartos");
+    // 4id · La ficha pública: de cada propiedad solo la zona; un cuarto siempre «solo la zona»; la ficha de quien renta cuartos (en su casa)
+    // nunca lleva la dirección ni el punto del negocio.
+    const P = "apps/web/lib/inmuebles-publico.ts";
+    if (existsSync(P)) {
+      const t = readFileSync(P, "utf8");
+      if (!/not pl\.addr_public as "soloZona"/.test(t) || !/soloZona: p\.soloZona \|\| soloZona\(p\.kind\)/.test(t)) falla(G, P, 0, "la ficha pública marca «solo la zona» con addr_public y siempre en cuartos");
+      if (/\bpl\.\*|select \*/.test(t)) falla(G, P, 0, "la consulta pública de propiedades nombra cada columna (nunca select *: traería la dirección)");
+    }
+    const F = "apps/web/app/(app)/n/[id]/page.tsx";
+    if (existsSync(F) && /inmPublica\(/.test(readFileSync(F, "utf8"))) {
+      const t = readFileSync(F, "utf8");
+      if (!/inm\?\.kind === "cuarto" \?/.test(t) || !/if \(sinLocal\) Object\.assign\(f, \{ direccion: null, lat: null, lng: null,/.test(t)) falla(G, F, 0, "la ficha de quien renta cuartos no lleva la dirección ni el punto del negocio (sinLocal)");
+    }
   },
 
   /* 4ib. Toda cuota de venta (y en 4ic el pago de ejemplo) dice «estimada» / «estimated»: nunca una promesa (Regulation Z, §3). */
@@ -1368,6 +1428,15 @@ const guardianes = {
         if (/^apps\/web\/(lib\/autos[a-z-]*\.ts|app\/panel\/(Autos\.tsx|acciones-autos\.ts))$/.test(x) && /\b0\.06\b|\* 6 \/ 100|\b(price|precio)\w* \* 6\b|\+ 150\b|15000 \+/.test(l)) falla(G, x, i + 1, "6 % o placas $150 escritos a mano: salen de tax_rules y de la herramienta");
       });
     }
+    // 4id · Lo público solo LEE el total en la puerta que calculó el servidor: ningún carro sin total, ninguna suma propia, y el pago de
+    // ejemplo solo con enganche, tasa y meses juntos.
+    const PU = "apps/web/lib/autos-publico.ts";
+    if (existsSync(PU)) {
+      const t = readFileSync(PU, "utf8");
+      if (!/v\.otd_cents is not null/.test(t)) falla(G, PU, 0, "la ficha pública no saca un carro sin su total en la puerta");
+      if (!/est: x\.ep != null && x\.ed != null && x\.ea != null && x\.em != null \?/.test(t)) falla(G, PU, 0, "el pago de ejemplo público solo con pago, enganche, tasa y meses juntos");
+      t.split("\n").forEach((l0, i) => { const l = l0.replace(/"[^"]*"|`[^`]*`/g, '""'); if (!/^\s*(\/\/|\/?\*)/.test(l) && /\b(price|tax|tags|fee|tagsC|feeC)\b\s*\+\s*\w|\+\s*x\.(tax|tagsC|feeC)\b/.test(l)) falla(G, PU, i + 1, "lo público no suma el total en la puerta: lo lee del servidor (otd_cents)"); });
+    }
     const p = /export function pagoEjemplo\([\s\S]*?\n\}/.exec(a)?.[0] ?? "";
     if (!/if \(enganche == null \|\| aprBp == null \|\| meses == null/.test(p)) falla(G, A, 0, "pagoEjemplo no existe sin enganche, tasa y meses");
     // La cuenta, de verdad: se sacan las funciones del servidor sin sus tipos y se corren contra la tabla hecha a mano.
@@ -1430,10 +1499,10 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx$/.test(f)) continue;
       const s = readFileSync(f, "utf8");
-      if (!/from "@\/lib\/autos-comun"/.test(s) || !/CarroAuto|HerrAutos/.test(s)) continue;
+      if (!/from "@\/lib\/autos-comun"/.test(s) || !/CarroAuto|HerrAutos|CarroPub/.test(s)) continue;
       if (!/notasCarro\(/.test(s)) falla(G, f, 0, "pinta vehículos sin sus notas (notasCarro)");
       // Cada función que pinta un vehículo (su total, su vista previa) lleva la línea del salvage (notasCarro o SALVAGE).
-      for (const fn of s.split(/\nexport function /).slice(1)) if (/puerta\.otd|puertaTexto\(|type: "mprev"/.test(fn) && !/notasCarro\(|bi\(SALVAGE, es\)/.test(fn)) falla(G, f, 0, `«${fn.slice(0, fn.indexOf("("))}» pinta vehículos sin la línea del título salvage`);
+      for (const fn of s.split(/\nexport function /).slice(1)) if (/puerta\.otd|\.puerta\b|puertaTexto\(|type: "mprev"/.test(fn) && !/notasCarro\(|bi\(SALVAGE, es\)/.test(fn)) falla(G, f, 0, `«${fn.slice(0, fn.indexOf("("))}» pinta vehículos sin la línea del título salvage`);
     }
   },
 
@@ -1447,6 +1516,24 @@ const guardianes = {
     chk("apps/web/app/panel/acciones-servicios.ts", 3, "guardar, mostrar u ocultar y quitar un servicio no tocan un vehículo (3 consultas con el filtro)");
     const a = "apps/web/lib/admin-negocios.ts";
     if (existsSync(a) && !/x\.module === 'svc' && x\.k !== 'renta' && x\.k !== 'venta' && x\.k !== 'auto'/.test(readFileSync(a, "utf8"))) falla(G, a, 0, "el 360 no lista los vehículos como servicios");
+  },
+
+  /* 4id · Lo que dice una ficha de Iglesias, Bienes Raíces o Autos se puede hacer de verdad: en Free la fila no abre una hoja con un botón de
+     pedir (se llama o se escribe, como 4ed antes de su inscripción); mientras «pedir en la app» no exista (booking: false hasta 4ie), ninguna
+     hoja lleva a una ruta de solicitud; y nunca «AQUÍ NO SE PIDE CITA POR LA APP» (la decisión del 3 nov da a Free sus solicitudes, §6 #6). */
+  freeNoPromete() {
+    const G = "freeNoPromete";
+    for (const f of ["apps/web/app/(app)/n/[id]/Fe.tsx", "apps/web/app/(app)/n/[id]/Inmueble.tsx", "apps/web/app/(app)/n/[id]/Dealer.tsx"]) {
+      if (!existsSync(f)) continue;
+      const s = readFileSync(f, "utf8");
+      if (!/abrir: \(id: string, ev\?: MouseEvent\) => \{ stop\(ev\); if \(pro\) setHoja\(id\); \}/.test(s)) falla(G, f, 0, "en Free la fila no abre la hoja (solo Pro)");
+      if (!/const cta: Cta = !pro (\? \(fp\.negocio\.telefono \? llamarC|\|\| k === "derechos" \? llamarC|\? llamarC)/.test(s)) falla(G, f, 0, "en Free el botón es llamar o escribir");
+      s.split("\n").forEach((l, i) => {
+        if (/AQU[IÍ] NO SE PIDE CITA POR LA APP|NO IN-APP BOOKING HERE/i.test(l)) falla(G, f, i + 1, "Free sí pedirá en la app (§6 #6): no se escribe que aquí no se pide cita");
+        if (/router\.push\([^)]*\/(visita|prueba|inscribirme|pedir)/.test(l)) falla(G, f, i + 1, "pedir en la app llega con 4ie: ninguna hoja lleva todavía a una ruta de solicitud");
+      });
+    }
+    for (const f of ["apps/web/lib/fe-publico.ts", "apps/web/lib/inmuebles-publico.ts", "apps/web/lib/autos-publico.ts"]) if (existsSync(f) && !/booking: false/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "booking se enciende con 4ie (visitas): hasta entonces es false");
   },
 
   idioma() {

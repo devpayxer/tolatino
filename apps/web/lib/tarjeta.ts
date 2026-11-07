@@ -59,6 +59,8 @@ export function botonPrincipal(cat: string, pro: boolean, tags: string[], lang: 
     if (!pro) return llamar;
     if (cat === "NEG-DEALER") return { label: L("Prueba de manejo", "Test drive"), icon: "calendar", accion: "ficha" };
     if (cat === "NEG-INMUEBLE") return { label: L("Pedir visita", "Request a visit"), icon: "calendar", accion: "ficha" };
+    // 4id · Iglesias: a misa y al culto no se inscribe nadie (neg-fe-kind.js btnOf L104: «Ver detalles»).
+    if (cat === "NEG-FE") return { label: L("Ver detalles", "See details"), icon: "calendar", accion: "ficha" };
     return { label: L("Inscribirme", "Enroll"), icon: "calendar", accion: "ficha" };
   }
   if (cat === "NEG-TRANS") return pro ? { label: L("Reservar", "Book"), icon: "calendar", accion: "ficha" } : llamar;

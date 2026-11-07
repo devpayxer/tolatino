@@ -19,3 +19,10 @@ export function radioSQL(p: Punto) {
 export const DENTRO = (rad: string) =>
   `(b.geo is null or st_dwithin(b.geo, c.center, ${rad} * 1609.34)
      or (b.service_radius_mi is not null and st_dwithin(b.geo, c.center, b.service_radius_mi * 1609.34)))`;
+
+/* El punto de un negocio en lo público (lista, ficha, mapa, Ciudad). Quien trabaja desde casa (o renta un cuarto en su casa)
+   sale como zona aproximada: el servidor redondea a ~500 m y el punto exacto nunca sale de aquí (guardián puntoPublico). */
+export const ZONA_GRADOS = 0.005;
+export const PUNTO_PUBLICO = (x: string) =>
+  `case when ${x}.geo is null then null when ${x}.works_from_home then round(st_y(${x}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_y(${x}.geo::geometry) end as lat,
+   case when ${x}.geo is null then null when ${x}.works_from_home then round(st_x(${x}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_x(${x}.geo::geometry) end as lng`;

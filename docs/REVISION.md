@@ -1300,3 +1300,49 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
   Servicios. La garantía extendida y el GAP dicen «no son obligatorios».
 - **Nada derivado se siembra a mano**: la semilla calcula el total en la puerta en la base; el pago de ejemplo, la tarjeta y los filtros los
   rehace el barrido.
+
+### 4id · Fichas de Iglesias, Bienes Raíces y Venta de Autos y sus páginas de categoría (7 nov)
+**Qué mirar** (sandbox, sin entrar; teléfono 390 y escritorio 1360; capturas `f4id-*.png`):
+1. `/n/parroquia-santa-maria`: tarjeta de Hoy PRÓXIMA MISA (sale del horario de la semana) · IDIOMA · AYUDA GRATIS; «¿HAY QUE INSCRIBIRSE? No:
+   llegas al servicio»; pestaña «Misas y sacramentos» con «Gratis» y «DONATIVO SUGERIDO · SI NO PUEDES, NO SE COBRA»; la hoja del Bautizo.
+2. `/n/funeraria-la-paz`: «¿ME DAN EL PRECIO ANTES? Sí, el total por escrito», repatriación, «Pedir información» → llamar / escribir (WhatsApp si
+   lo tiene) con «Sin presión». `/n/despensa-manos-unidas`: «¿PIDEN PAPELES?» y «Se acabó por hoy». `/n/linea-oracion-luz-del-valle`: sin local.
+3. `/n/rentas-hazleton-latino` › Propiedades: «$1,050/mes · PARA MUDARTE $2,100 · VER ES GRATIS»; la hoja con «Para mudarte: $1,050 + depósito
+   $1,050 = $2,100», lo que piden, la zona, «Nunca pagues un depósito…» y el pie «Igualdad de oportunidad en la vivienda» + animales de servicio.
+4. `/n/cuartos-dona-mary`: «LA DIRECCIÓN TE LLEGA AL ACEPTAR LA VISITA»; ni la ficha ni la hoja tienen la dirección. `/n/realty-bilingue-hzl`:
+   «Cuota estimada $X al mes con 10 % de enganche». `/n/hipotecas-itin-pa`: «¿ME GARANTIZAN LA APROBACIÓN? No, nadie puede».
+5. `/n/autos-el-cibao` › En el lote: «¿CUÁNTO PAGO EN TOTAL? Precio + 6 % + placas + cargo»; la hoja con el desglose EN LA PUERTA y «Pago de
+   ejemplo: $X al mes con $1,500 de enganche, 48 meses al 14.9 % APR (estimado, sujeto a aprobación)». `/n/compre-aqui-hzl`: el total pagado.
+6. Free: `/n/iglesia-bautista-hispana` («Ve al servicio»), `/n/locales-centro`, `/n/lote-la-81` (llamar; la fila no abre hoja).
+7. `/c/iglesias`, `/c/bienes-raices`, `/c/venta-de-autos`: «N EN ESPAÑOL» / «N SIN SEGURO SOCIAL» / «N CON ITIN»; la tarjeta de una iglesia
+   dice «Ver detalles» (antes «Inscribirme»).
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Pedir en la app llega con 4ie** (como 4ed antes de 4ee): «Pedir visita», «Prueba de manejo», «Pedir fecha» abren la hoja y la hoja ofrece
+  **llamar o escribir**; ningún botón lleva a una pantalla que todavía no existe (`booking: false`, guardián `freeNoPromete`).
+- **De cada propiedad se ve solo la zona** (ciudad y código postal), también de las que tienen la dirección pública: la consulta pública no lee
+  la calle ni el punto (guardián `direccionAlConfirmar`). Sin mapa por propiedad. La ficha de quien renta **cuartos** (en su casa) no muestra su
+  dirección ni su punto (la semilla le puso la misma calle que a los cuartos). Si prefieres mostrar la calle de las propiedades con dirección
+  pública, se hace con una consulta que solo la lea con `addr_public`.
+- **Sin local**: cuartos, capellanía / línea de oración con radio y compra de carros que va a domicilio, como el prototipo.
+- **Compre aquí pague aquí en la tarjeta de Hoy**: EN LA PUERTA · PLAN «Total pagado por escrito» · CRÉDITO, y el plan completo (enganche, pago,
+  pagos, total y APR) en la frase; el prototipo ponía enganche y pago sueltos (Regulation Z, como 4ic). Con ITIN: «Sí · tasa y meses por escrito».
+- **Copy del prototipo que no se copia por no ser cierto**: «(Carfax)» (el historial lo da el dealer y dice de quién), «dos recibos de pago»,
+  «2 a 4 semanas», «12 meses o 12,000 millas», «Tarjeta y efectivo», «Precalificar no afecta tu crédito» (solo si el prestamista marca
+  `soft_pull`, §6 #8), «AQUÍ NO SE PIDE CITA POR LA APP» (Free pedirá en 4ie, §6 #6).
+- **Reseñas**: «VERIFICADAS POR VISITA O CITA» / «POR PRUEBA DE MANEJO O CITA» / «POR FECHA O CATECISMO»; funeraria y tienda dicen «RESEÑAS
+  DE VECINOS» sin contar verificadas (§6 #13).
+- **Ayuda migratoria de una iglesia**: sin sello del DOJ verificado, «Pregunta si tienen un representante acreditado del DOJ» (§6 #18).
+- **Búsqueda por propiedad o por carro** (§6 #10) sigue como hueco: la página de categoría filtra negocios con sus cifras de `filter_values`.
+
+**Capturas:** `f4id-iglesia-m/d`, `f4id-iglesia-hoja-m`, `f4id-funeraria-contacto-m`, `f4id-renta-hoja-m/d`, `f4id-cuarto-m`,
+`f4id-cuarto-hoja-m`, `f4id-venta-hoja-m`, `f4id-dealer-d`, `f4id-dealer-hoja-m/d`, `f4id-dealer-salvage-m`, `f4id-bhph-hoja-m`,
+`f4id-iglesia-free-m`, `f4id-inm-free-m`, `f4id-autos-free-m`, `f4id-cat-{iglesias,bienes-raices,venta-de-autos}-m/d`.
+
+#### 4id · Privacidad del punto del negocio (arreglo de clase)
+- **Qué cambió:** la lista de categoría, la ficha, los «relacionados» y el mapa de Ciudad mandaban el punto exacto del negocio aunque
+  trabajara desde casa (el mapa ya lo redondeaba). Ahora todos sacan el punto de un solo lugar que lo redondea a ~500 m para quien
+  trabaja desde casa. Quien publica un cuarto con la dirección oculta en la misma dirección del negocio pasa solo a «trabaja desde casa».
+- **Qué mirar:** la ficha y la lista de «Cuartos Doña Mary» muestran la zona, no la casa. Si prefieres que el dueño lo decida con un
+  interruptor, se agrega en Tu página.
+

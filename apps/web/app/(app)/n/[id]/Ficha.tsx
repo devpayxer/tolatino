@@ -24,6 +24,12 @@ import { ViBarra, ViHoja, ViResumen, ViRiel, ViTab, useViaje } from "./Viaje";
 import { NoBarra, NoHoja, NoResumen, NoRiel, NoTab, useNoche } from "./Noche";
 import { InBarra, InHoja, InResumen, InRiel, InTab, useInsc } from "./Insc";
 import type { InscPublica } from "@/lib/inscripciones-publico";
+import { FeBarra, FeContacto, FeHoja, FeResumen, FeRiel, FeTab, useFe } from "./Fe";
+import { InmBarra, InmHoja, InmResumen, InmRiel, InmTab, useInm } from "./Inmueble";
+import { DlBarra, DlHoja, DlResumen, DlRiel, DlTab, useDealer } from "./Dealer";
+import type { FePublica } from "@/lib/fe-publico";
+import type { InmPublica } from "@/lib/inmuebles-publico";
+import type { AutosPublica } from "@/lib/autos-publico";
 import type { NochePublica } from "@/lib/noche-publico";
 import type { TransPublico } from "@/lib/trans-publico";
 import type { FiestaPublico } from "@/lib/fiestas-publico";
@@ -48,9 +54,9 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
 export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
-export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, trans, noche, insc, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas?: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; noche?: NochePublica | null; insc?: InscPublica | null; fe?: FePublica | null; inm?: InmPublica | null; dl?: AutosPublica | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas?: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
-  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta || trans || noche || insc) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
+  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta || trans || noche || insc || fe || inm || dl) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
   const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
@@ -74,6 +80,12 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const no = useNoche(noche ?? null, es, f.pro, { llegar: () => llegar(), escribir: () => escribir(), llamar: () => llamar(), reservar: (svc, pax) => router.push(`/n/${f.id}/noche?s=${svc}&p=${pax}`) });
   // Educación, Niños y Deporte (Fase 4 · 4ed): cursos, programas o membresías con sus grupos; inscribirse en la app llega con 4ee.
   const ins = useInsc(insc ?? null, es, f.pro, { llamar: () => llamar(), escribir: () => escribir(), llegar: () => llegar() });
+  // Iglesias, Bienes Raíces y Venta de Autos (Fase 4 · 4id): pestaña por tipo, tarjeta de arriba, lista, hoja; pedir en la app llega con 4ie.
+  const acc4i = { llamar: () => llamar(), escribir: () => escribir(), llegar: () => llegar(), irTab: () => (f.pro ? setTab("svc") : irSvc()) };
+  const fv = useFe(fe ?? null, es, f.pro, acc4i);
+  const iv = useInm(inm ?? null, es, f.pro, acc4i);
+  const dv = useDealer(dl ?? null, es, f.pro, acc4i);
+  const v4i = fv ?? iv ?? dv;
   // DJ y promotor no tienen local (neg-noche-kind.js post): en vez de «Cerrado · Abre a las…», «Por contrato» / «Según la noche».
   const porContrato = !!no && no.np.porFecha && no.np.kind !== "salon";
   if (porContrato) {
@@ -96,7 +108,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov || sa || pr || me || fi || vi || (no && no.secs.length) || (ins && ins.secs.length)) && f.pro ? [{ id: "svc", label: ins ? ins.tabL : no ? no.tabL : me ? (es ? "Productos" : "Products") : es ? "Servicios" : "Services", icon: ins ? (insc?.rubro === "dep" ? "star" : insc?.rubro === "ninos" ? "users" : "calendar") : me ? "bag" : ov ? (ov.auto ? "wrench" : "home") : sa ? "insurance" : pr ? "law" : fi ? "party" : vi ? "truck" : no ? "drink" : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: f.cat === "NEG-TIENDA" ? (es ? "Productos" : "Products") : f.cat === "NEG-TRANS" ? (es ? "Rentar" : "Rent") : es ? "Tienda" : "Shop", icon: f.cat === "NEG-TRANS" ? "car" : "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov || sa || pr || me || fi || vi || (no && no.secs.length) || (ins && ins.secs.length) || (v4i && v4i.secs.length)) && f.pro ? [{ id: "svc", label: v4i ? v4i.tabL : ins ? ins.tabL : no ? no.tabL : me ? (es ? "Productos" : "Products") : es ? "Servicios" : "Services", icon: fv ? "calendar" : iv ? "home" : dv ? "car" : ins ? (insc?.rubro === "dep" ? "star" : insc?.rubro === "ninos" ? "users" : "calendar") : me ? "bag" : ov ? (ov.auto ? "wrench" : "home") : sa ? "insurance" : pr ? "law" : fi ? "party" : vi ? "truck" : no ? "drink" : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: f.cat === "NEG-TIENDA" ? (es ? "Productos" : "Products") : f.cat === "NEG-TRANS" ? (es ? "Rentar" : "Rent") : es ? "Tienda" : "Shop", icon: f.cat === "NEG-TRANS" ? "car" : "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -446,6 +458,21 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
             <div className="min-w-0"><div className="lg:hidden"><ViTab v={vi} desk={false} /></div><div className="hidden lg:block"><ViTab v={vi} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><ViRiel v={vi} onCta={irSvc} /></div></div>
             <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><ViRiel v={vi} onCta={irSvc} /></aside>
           </div>
+        ) : tab === "svc" && fv ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><FeTab v={fv} desk={false} /></div><div className="hidden lg:block"><FeTab v={fv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><FeRiel v={fv} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><FeRiel v={fv} /></aside>
+          </div>
+        ) : tab === "svc" && iv ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><InmTab v={iv} desk={false} /></div><div className="hidden lg:block"><InmTab v={iv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><InmRiel v={iv} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><InmRiel v={iv} /></aside>
+          </div>
+        ) : tab === "svc" && dv ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><DlTab v={dv} desk={false} /></div><div className="hidden lg:block"><DlTab v={dv} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><DlRiel v={dv} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><DlRiel v={dv} /></aside>
+          </div>
         ) : tab === "svc" && ins ? (
           <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
             <div className="min-w-0"><div className="lg:hidden"><InTab v={ins} desk={false} /></div><div className="hidden lg:block"><InTab v={ins} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><InRiel v={ins} /></div></div>
@@ -544,6 +571,24 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
                   <div className="hidden lg:block"><ViResumen v={vi} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
                 </>
               )}
+              {fv && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><FeResumen v={fv} desk={false} onAll={f.pro && fv.secs.length ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><FeResumen v={fv} desk onAll={f.pro && fv.secs.length ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
+              {iv && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><InmResumen v={iv} desk={false} onAll={f.pro && iv.secs.length ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><InmResumen v={iv} desk onAll={f.pro && iv.secs.length ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
+              {dv && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><DlResumen v={dv} desk={false} onAll={f.pro && dv.secs.length ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><DlResumen v={dv} desk onAll={f.pro && dv.secs.length ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
               {ins && (
                 <>
                   <div className="px-5 pt-[26px] lg:hidden"><InResumen v={ins} desk={false} onAll={f.pro && ins.secs.length ? () => setTab("svc") : undefined} /></div>
@@ -590,6 +635,9 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
               {vi && <ViRiel v={vi} onCta={irSvc} />}
               {no && <NoRiel v={no} onCta={irSvc} />}
               {ins && <InRiel v={ins} />}
+              {fv && <FeRiel v={fv} />}
+              {iv && <InmRiel v={iv} />}
+              {dv && <DlRiel v={dv} />}
               {mn && (
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
                   <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
@@ -629,6 +677,13 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
       {no && <NoHoja v={no} />}
       {ins && tab !== "svc" && tab !== "shop" && <InBarra v={ins} />}
       {ins && <InHoja v={ins} />}
+      {fv && tab !== "svc" && tab !== "shop" && <FeBarra v={fv} />}
+      {fv && <FeHoja v={fv} />}
+      {fv && <FeContacto v={fv} />}
+      {iv && tab !== "svc" && tab !== "shop" && <InmBarra v={iv} />}
+      {iv && <InmHoja v={iv} />}
+      {dv && tab !== "svc" && tab !== "shop" && <DlBarra v={dv} />}
+      {dv && <DlHoja v={dv} />}
       {fi && tab !== "svc" && tab !== "shop" && <FiBarra v={fi} onCta={irSvc} />}
       {fi && <FiHoja v={fi} />}
       {fi && <FiFecha v={fi} />}

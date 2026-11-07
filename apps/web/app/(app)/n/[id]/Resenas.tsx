@@ -201,7 +201,13 @@ function Cifras({ v, size }: { v: CtlResenas; size: number }) {
   );
 }
 function Verif({ v }: { v: CtlResenas }) {
-  const { r, es } = v, ok = r.ver > 0;
+  const { r, es } = v, vl = r.negocio.verL, ok = r.ver > 0 && (!vl || vl.ok != null);
+  if (vl) return (
+    <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.5)" }}>
+      <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.5)"} />
+      {ok ? `${r.ver} ${vl.ok}` : vl.no}
+    </div>
+  );
   return (
     <div className="flex items-start gap-1.5 font-mono text-[9.5px] font-bold leading-[1.4] tracking-[0.08em]" style={{ color: ok ? BIEN : "rgba(11,14,18,.5)" }}>
       <Icon name={ok ? "verified" : "users"} size={13} color={ok ? BIEN : "rgba(11,14,18,.5)"} />

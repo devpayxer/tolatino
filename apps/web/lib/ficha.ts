@@ -1,5 +1,5 @@
 import "server-only";
-import { centroSQL, type Punto } from "./punto";
+import { centroSQL, PUNTO_PUBLICO, type Punto } from "./punto";
 import { db } from "./db";
 import { foto } from "./directorio";
 import type { Lang } from "./idioma";
@@ -53,7 +53,7 @@ export async function ficha(id: string, lang: Lang, p?: Punto) {
     `select b.id, b.category_id as cat, b.city_id as city, b.name, s.plan, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs, b.about, b.founded_year as founded, b.phone,
             b.address, b.service_radius_mi as radius, b.works_from_home as from_home,
-            st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
+            ${PUNTO_PUBLICO("b")},
             case when b.geo is null then null else round((st_distance(b.geo, ${desde}) / 1609.34)::numeric, 1)::float end as mi,
             negocio_abierto(b.id, now() at time zone c.timezone) as open,
             exists (select 1 from business_members m where m.business_id = b.id and m.kind = 'owner' and m.status = 'active') as chat,
@@ -212,7 +212,7 @@ async function relacionados(id: string, lang: Lang, desde: string) {
             o.address, negocio_abierto(o.id, now() at time zone c.timezone) as open, o.filter_values as tags,
             (select m.url from media m where m.owner_kind = 'business' and m.owner_id = o.id and m.status = 'visible' order by m.sort limit 1) as foto,
             (select string_agg(x.n, ' · ' order by x.p) from (select sc.name->>$2 as n, array_position(o.subcategory_ids, sc.id) as p from subcategorias_vivas sc where sc.id = any(o.subcategory_ids) order by 2 limit 2) x) as subs,
-            o.service_radius_mi as radius, o.works_from_home as from_home, st_y(o.geo::geometry) as lat, st_x(o.geo::geometry) as lng, o.phone
+            o.service_radius_mi as radius, o.works_from_home as from_home, ${PUNTO_PUBLICO("o")}, o.phone
        from business_links l
        join businesses o on o.id = case when l.a_id = $1 then l.b_id else l.a_id end and o.status = 'active'
        join business_stats_cache s on s.business_id = o.id

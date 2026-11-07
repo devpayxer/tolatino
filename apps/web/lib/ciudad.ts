@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "./db";
 import { millas, type LL } from "./mapa-geo";
-import { centroSQL, DENTRO, radioSQL, type Punto } from "./punto";
+import { centroSQL, DENTRO, PUNTO_PUBLICO, radioSQL, type Punto } from "./punto";
 import { centroDe, ciudades, porDefecto, type Ciudad } from "./ubicacion";
 
 /* Datos de APP-CIUDAD: cuánto entra en el radio, qué pueblos, los puntos del mapa, la búsqueda de lugar y la lista
@@ -22,7 +22,7 @@ export async function medir(p: Punto, c: Ciudad): Promise<Medida> {
          from businesses b, c where b.city_id = $1 and b.status = 'active'`, [p.ciudad]),
     db().query<{ lat: number; lng: number; pro: boolean; dentro: boolean }>(
       `with c as (select ${centro} as center)
-       select round(st_y(b.geo::geometry)::numeric, 5)::float as lat, round(st_x(b.geo::geometry)::numeric, 5)::float as lng,
+       select ${PUNTO_PUBLICO("b")},
               s.plan = 'pro' as pro, st_dwithin(b.geo, c.center, ${R} * 1609.34) as dentro
          from businesses b join business_stats_cache s on s.business_id = b.id, c
         where b.city_id = $1 and b.status = 'active' and b.geo is not null and st_dwithin(b.geo, c.center, ${R} * 2.6 * 1609.34)

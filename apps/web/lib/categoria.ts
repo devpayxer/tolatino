@@ -1,5 +1,5 @@
 import "server-only";
-import { centroSQL, DENTRO, radioSQL, type Punto } from "./punto";
+import { centroSQL, DENTRO, PUNTO_PUBLICO, radioSQL, type Punto } from "./punto";
 import { db } from "./db";
 import { foto, slugCat } from "./directorio";
 import type { Lang } from "./idioma";
@@ -104,7 +104,7 @@ export const COLUMNAS = `b.id, b.category_id as cat, b.name, s.plan = 'pro' as p
                    s.review_count as reviews,
                    case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,
                    b.service_radius_mi as radius, b.works_from_home as "fromHome", b.phone,
-                   st_y(b.geo::geometry) as lat, st_x(b.geo::geometry) as lng,
+                   ${PUNTO_PUBLICO("b")},
                    b.subcategory_ids as subs, b.filter_values as tags, b.category_attrs as attrs,
                    negocio_abierto(b.id, t.t) as open,
                    coalesce(s.rating_avg, 0) * ln(s.review_count + 2) as score,

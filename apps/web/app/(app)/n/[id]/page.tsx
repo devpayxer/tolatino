@@ -20,6 +20,9 @@ import { fiestaPublico } from "@/lib/fiestas-publico";
 import { transPublico } from "@/lib/trans-publico";
 import { nochePublica } from "@/lib/noche-publico";
 import { inscPublica } from "@/lib/inscripciones-publico";
+import { faqFe, fePublica, hoyFe } from "@/lib/fe-publico";
+import { faqInm, hoyInm, inmPublica } from "@/lib/inmuebles-publico";
+import { autosPublica, faqAutos, hoyAutos } from "@/lib/autos-publico";
 import { contratoTexto } from "@/lib/deporte-comun";
 import { edadTexto } from "@/lib/ninos-comun";
 import { coverTexto, filaCorta, filaCuando, hNoche, LINEA_NOCHE } from "@/lib/noche-comun";
@@ -48,7 +51,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -73,7 +76,36 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-NOCHE" ? nochePublica(f.id) : Promise.resolve(null),
     // Educación, Niños y Deporte (4ed): cursos, programas o membresías con sus grupos, la licencia del DHS y el contrato.
     f.cat === "NEG-EDU" || f.cat === "NEG-NINOS" || f.cat === "NEG-DEPORTE" ? inscPublica(f.id) : Promise.resolve(null),
+    // Iglesias, Bienes Raíces y Venta de Autos (4id): horarios y servicios; propiedades con la zona (nunca la dirección); carros con el total en la puerta.
+    f.cat === "NEG-FE" ? fePublica(f.id) : Promise.resolve(null),
+    f.cat === "NEG-INMUEBLE" ? inmPublica(f.id) : Promise.resolve(null),
+    f.cat === "NEG-DEALER" ? autosPublica(f.id) : Promise.resolve(null),
   ]);
+  // 4id · La tarjeta de Hoy, la FAQ, el rótulo de las reseñas y la variante sin local de las tres (neg-fe-kind / neg-inm-kind /
+  // neg-dealer-kind post). El servidor decide: columnas con datos reales; la FAQ de Tu página gana a la automática.
+  if (fe || inm || dl) {
+    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), hoyTxt = f.semana.find((w) => w.hoy)?.v ?? "";
+    const h = fe ? hoyFe(fe, es, hoyTxt) : inm ? hoyInm(inm, es, hoyTxt) : hoyAutos(dl!, es, hoyTxt);
+    f.hoy = { ...f.hoy, sub: h.sub, cols: h.cols };
+    if (fe) fe.td = h.cols; else if (inm) inm.td = h.cols; else if (dl) dl.td = h.cols;
+    if (f.pro) {
+      const auto = fe ? faqFe(fe, es) : inm ? faqInm(inm, es) : faqAutos(dl!, es);
+      const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+      f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
+    }
+    // Reseñas (fe L114, inm L99, dealer L115; §6 #13: la funeraria no cuenta verificadas porque no tiene operación en la app).
+    if (res) res.negocio.verL = fe ? (fe.kind === "fun" || fe.kind === "tienda" ? { ok: null, no: E2("RESEÑAS DE VECINOS", "NEIGHBOR REVIEWS") } : { ok: E2("VERIFICADAS POR FECHA O CATECISMO", "VERIFIED BY DATE OR CATECHISM"), no: E2("RESEÑAS DE VECINOS QUE VAN · AQUÍ NO SE COBRA NI SE RESERVA", "REVIEWS FROM NEIGHBORS WHO GO · NOTHING TO PAY OR BOOK HERE") })
+      : inm ? { ok: E2("VERIFICADAS POR VISITA O CITA", "VERIFIED BY VISIT OR BOOKING"), no: E2("RESEÑAS DE VECINOS · AÚN SIN VISITAS VERIFICADAS", "NEIGHBOR REVIEWS · NO VERIFIED VISITS YET") }
+      : { ok: E2("VERIFICADAS POR PRUEBA DE MANEJO O CITA", "VERIFIED BY TEST DRIVE OR BOOKING"), no: E2("RESEÑAS DE VECINOS · AÚN SIN PRUEBAS VERIFICADAS", "NEIGHBOR REVIEWS · NO VERIFIED TEST DRIVES YET") };
+    // Sin local (fe L152–153, inm L137–138, dealer L156). Un cuarto vive en la casa de quien lo renta: la ficha NUNCA lleva la dirección ni
+    // el punto del negocio (guardián direccionAlConfirmar); la dirección llega al confirmar la visita.
+    const radio = fe?.negocio.radio ?? inm?.negocio.radio ?? dl?.negocio.radio ?? null;
+    const sinLocal = inm?.kind === "cuarto" ? { zona: radio ? E2(`Zona donde trabaja · hasta ${radio} mi`, `Service area · up to ${radio} mi`) : E2(`Cuartos en ${f.ciudad.charAt(0)}${f.ciudad.slice(1).toLowerCase()}`, `Rooms in ${f.ciudad.charAt(0)}${f.ciudad.slice(1).toLowerCase()}`), meta: E2("LA DIRECCIÓN TE LLEGA AL ACEPTAR LA VISITA", "ADDRESS SENT WHEN THE VISIT IS ACCEPTED") }
+      : fe?.kind === "oracion" && radio ? { zona: `${fe.negocio.whatsapp ? E2("Por teléfono y WhatsApp", "By phone and WhatsApp") : E2("Por teléfono", "By phone")}${E2(` · va a hospitales hasta ${radio} mi`, ` · visits hospitals up to ${radio} mi`)}`, meta: E2("NO TIENE LOCAL · ATIENDE POR TELÉFONO", "NO OFFICE · BY PHONE") }
+      : dl && !f.direccion && radio ? { zona: E2(`Zona donde trabaja · hasta ${radio} mi`, `Service area · up to ${radio} mi`), meta: E2("VA A DONDE ESTÁ EL CARRO", "COMES TO WHERE THE CAR IS") }
+      : null;
+    if (sinLocal) Object.assign(f, { direccion: null, lat: null, lng: null, zona: sinLocal.zona, direccionMeta: sinLocal.meta, amenK: E2("CÓMO TRABAJA", "HOW THEY WORK"), dist: "—", metaD: f.metaD.replace(/ · [\d.—]+ MI · /, " · ") });
+  }
   // FAQ de Educación, Niños y Deporte (neg-edu-kind faq, neg-ninos-kind faq L26–39, neg-deporte-kind faq L35–54): salen de los servicios
   // y de Tu herramienta; si el negocio escribió la misma pregunta en Tu página, gana la suya.
   if (insc && f.pro) {
@@ -158,6 +190,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       trans={trans}
       noche={noche}
       insc={insc}
+      fe={fe}
+      inm={inm}
+      dl={dl}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}

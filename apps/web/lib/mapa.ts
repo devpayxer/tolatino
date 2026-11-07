@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "./db";
 import { conFoto, condiciones, CTE, FOTO, type Regla } from "./categoria";
 import type { Lang } from "./idioma";
-import { DENTRO } from "./punto";
+import { DENTRO, PUNTO_PUBLICO } from "./punto";
 import type { Ubicacion } from "./ubicacion";
 
 /* APP-NEG-MAPA: negocios con pin + lista, el más cerca primero, con los mismos filtros de donde vienes. Se mide desde el
@@ -25,13 +25,11 @@ export async function negociosMapa(loc: Ubicacion, o: { cat: string | null; sub:
   if (o.f === "open") w.push("negocio_abierto(b.id, t.t)");
   if (o.f === "ver") w.push("s.verified");
   if (o.f === "pro") w.push("s.plan = 'pro'");
-  const GRID = 0.005;
   const r = await db().query<Pin & { total: string; adentro: string; sinpin: string }>(
     `${CTE(loc)}
      select b.id, b.name, s.plan = 'pro' as pro, s.verified, s.rating_avg::float as rating, s.review_count as reviews,
             case when b.geo is null then null else round((st_distance(b.geo, c.center) / 1609.34)::numeric, 1)::float end as mi,
-            case when b.geo is null then null when b.works_from_home then round(st_y(b.geo::geometry) / ${GRID}) * ${GRID} else st_y(b.geo::geometry) end as lat,
-            case when b.geo is null then null when b.works_from_home then round(st_x(b.geo::geometry) / ${GRID}) * ${GRID} else st_x(b.geo::geometry) end as lng,
+            ${PUNTO_PUBLICO("b")},
             (b.geo is not null and b.works_from_home) as casa, (b.service_radius_mi is not null) as domicilio,
             (b.geo is null or st_dwithin(b.geo, c.center, c.default_radius * 1609.34)) as dentro,
             (select sc.name->>$2 from subcategorias_vivas sc where sc.id = any(b.subcategory_ids) order by array_position(b.subcategory_ids, sc.id) limit 1) as sub,

@@ -214,6 +214,15 @@ export async function guardarPropiedad(c: PoolClient, negocio: string, itemId: s
         est_down_pct = excluded.est_down_pct, available_on = excluded.available_on, furnished = excluded.furnished, pets = excluded.pets, s8 = excluded.s8, ssn_required = excluded.ssn_required,
         utilities = excluded.utilities, parking = excluded.parking, laundry = excluded.laundry, papers = excluded.papers, lease = excluded.lease, senior_62 = excluded.senior_62,
         senior_status = excluded.senior_status, addr_line = excluded.addr_line, zip = excluded.zip, geom = excluded.geom, addr_public = excluded.addr_public, updated_at = now()`, V);
+  /* Quien renta un cuarto en su casa: si una propiedad con la dirección oculta está donde está el negocio (a menos de 60 m o con la misma calle), el
+     negocio pasa a «trabaja desde casa» y en lo público sale como zona (PUNTO_PUBLICO). Solo se enciende; nunca se apaga solo. */
+  await c.query(
+    `update businesses b set works_from_home = true, updated_at = now()
+      where b.id = $1 and not b.works_from_home and b.geo is not null
+        and exists (select 1 from property_listings pl join items i on i.id = pl.item_id
+                     where pl.business_id = b.id and not pl.addr_public and i.removed_at is null
+                       and ((pl.geom is not null and st_dwithin(pl.geom, b.geo, 60))
+                         or (pl.addr_line is not null and lower(b.address) like lower(pl.addr_line) || '%')))`, [negocio]);
   await horasVisita(c, negocio, id);
   return { ok: true, id };
 }

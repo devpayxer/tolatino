@@ -221,7 +221,8 @@ export async function resumenResenas(negocio: string, userId: string | null, mie
   const n = c.n, pct = (k: number) => (n ? Math.round((100 * k) / n) : 0);
   const destacadas = (mine && mine.stars ? [mine] : []).concat(dest.rows.map(tarjeta)).slice(0, b.pro ? 2 : 3);
   return {
-    negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, dlv: b.dlv },
+    // verL: el rótulo de las verificadas por rubro (4id: «VERIFICADAS POR VISITA O CITA»…); lo pone la ficha, que sabe el tipo. ok null = nunca se cuentan.
+    negocio: { id: b.id, name: b.name, pro: b.pro, food: b.food, dlv: b.dlv, verL: null as { ok: string | null; no: string } | null },
     n, avg: c.avg, ver: c.ver, bars: [[5, pct(c.s5)], [4, pct(c.s4)], [3, pct(c.s3)], [2, pct(c.s2)], [1, pct(c.s1)]] as [number, number][],
     asp: b.food && a.orders > 0 ? { orders: a.orders, hot: a.hot, time: a.time, val: a.val, taste: a.taste } : null,
     aspSP: sp && aspSP?.rows[0] && Number(aspSP.rows[0].n) > 0 ? { rub: sp as "salud" | "pro" | "merc" | "tienda" | "fiesta" | "trans" | "noche" | "edu" | "ninos" | "dep", n: Number(aspSP.rows[0].n), v: aspSP.rows[0] as Record<string, number | null> } : null,
