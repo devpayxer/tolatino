@@ -946,3 +946,11 @@ _Decidido por mí (reversible):_
 - Las fotos de la mudanza son privadas como las del pre-estimado (solo cliente y negocio).
 - La migración de la ayuda de Fiestas y Transporte pasa a ser la 0077 (la 0076 es esta).
 - Dueños de prueba nuevos en el sandbox: Yolanda (Envíos Quisqueya, 5705550333) y Ramón (Mudanzas El Primo, 5705550344).
+
+### 4y-3a · Super Admin › Transacciones › Viajes (7 nov)
+**Qué mirar (Admin 5705550199):** Transacciones › **Viajes**: cada viaje con su forma (asiento, vehículo completo, caja,
+mudanza), día y hora, pasajeros o cajas, lo retenido / cobrado / devuelto, «se cobró la mitad», «el negocio canceló la salida»,
+el rastreo de la caja y la versión del precio cerrado. El destinatario de la caja nunca aparece aquí. **Devolver** ahora funciona
+en viajes y fiestas (antes el botón salía pero el servidor decía «Ese pedido no existe»); guardián devolverCoincide.
+_Decidido por mí:_ las colas «Salidas canceladas» y «Retenciones que fallaron», la app del chofer y la renta de vehículos van en
+4y-3b.
