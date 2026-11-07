@@ -35,6 +35,25 @@ function hechos(c: Tarjeta, es: boolean) {
   const E2 = (a: string, b: string) => (es ? a : b), dl = c.src === "dl", ord = c.src === "dl" || c.src === "pk", f: { icon: string; label: string; color: string }[] = [];
   // Hogar y Auto (4g): el dato de la visita (franja, lo cotizado contra lo cobrado, algo extra con su OK) y lo que contestó.
   const A = c.answers, F = c.facts;
+  // Fiestas y Transporte (4z): la fecha respetada (del dato), a la hora, lo del paquete / el precio cerrado, fotos, limpieza,
+  // salida y llegada, manejo, equipaje, trato.
+  if (["llegaron", "fotosOk", "limpio", "fechaOk", "paquete", "cerrado", "salio", "llego", "manejo", "carga"].some((k) => k in A) || F.dia != null) {
+    const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
+    const fiesta = ["llegaron", "fotosOk", "limpio", "fechaOk", "paquete"].some((k) => k in A);
+    if (F.dia != null && fiesta) add(true, "calendar", E2("Respetaron la fecha", "Kept the date"));
+    else if (A.fechaOk != null) add(A.fechaOk === 1, "calendar", A.fechaOk === 1 ? E2("Respetaron la fecha", "Kept the date") : E2("Cancelaron o cambiaron la fecha", "Cancelled or changed the date"));
+    if (A.llegaron) add(A.llegaron === "a" ? true : A.llegaron === "c" ? false : null, "clock", { a: E2("Llegaron a la hora", "Arrived on time"), b: E2("Llegaron un poco tarde", "Arrived a bit late"), c: E2("Llegaron muy tarde", "Arrived very late") }[A.llegaron]);
+    if (A.paquete != null) add(A.paquete === 1, "dollar", A.paquete === 1 ? E2("Cobraron lo del paquete", "Charged the package price") : E2("Cobraron más del paquete", "Charged more than the package"));
+    if (A.fotosOk != null && A.fotosOk !== 0) add(A.fotosOk === 1, "image", A.fotosOk === 1 ? E2("Quedó como en las fotos", "Looked like the photos") : E2("No quedó como en las fotos", "Did not look like the photos"));
+    if (A.limpio != null) add(A.limpio === 1, "check", A.limpio === 1 ? E2("Recogieron y limpiaron", "Picked up and cleaned") : E2("No recogieron", "Did not pick up"));
+    if (A.cerrado != null) add(A.cerrado === 1, "dollar", A.cerrado === 1 ? E2("Cobró el precio cerrado", "Charged the fixed price") : E2("Cobró más del precio cerrado", "Charged more than the fixed price"));
+    if (A.salio) add(A.salio === "a" ? true : A.salio === "c" ? false : null, "clock", { a: E2("Salió a la hora", "Left on time"), b: E2("Salió hasta 15 min tarde", "Left up to 15 min late"), c: E2("Salió tarde", "Left late") }[A.salio]);
+    if (A.llego) add(A.llego === "a" ? true : A.llego === "c" ? false : null, "check", { a: E2("Llegó a la hora", "Arrived on time"), b: E2("Llegó un poco tarde", "Arrived a bit late"), c: E2("Llegó muy tarde", "Arrived very late") }[A.llego]);
+    if (A.manejo != null) add(A.manejo === 1, "shield", A.manejo === 1 ? E2("Manejo seguro", "Safe driving") : E2("Manejo inseguro", "Unsafe driving"));
+    if (A.carga != null && A.carga !== 0) add(A.carga === 1, "bag", A.carga === 1 ? E2("Equipaje bien", "Luggage fine") : E2("Equipaje dañado o perdido", "Luggage damaged or lost"));
+    if (A.trato != null && A.trato !== 0) add(A.trato === 1, "bubble", A.trato === 1 ? E2("Buen trato", "Treated well") : E2("Mal trato", "Treated badly"));
+    return f.slice(0, 6);
+  }
   // Mercados y Tiendas (4s): foto de cada peso, fresco, precio del estante / de la caja, sustituciones, talla, apartado, cambios.
   if (["fresco", "estante", "sust", "pesaron", "peso", "caja", "tenian", "talla", "guardo", "cambio"].some((k) => k in A) || F.nArt != null) {
     const add = (ok: boolean | null, icon: string, label: string) => f.push({ icon, label, color: ok === null ? NEUTRO : ok ? BIEN : MAL });
@@ -184,7 +203,15 @@ function aspectos(v: CtlResenas) {
   const z = r.aspSP;
   if (z) {
     const P = (k: string) => z.v[k] ?? null;
-    const L: [string, string, string, string, string][] = z.rub === "merc" ? [
+    const L: [string, string, string, string, string][] = z.rub === "fiesta" ? [
+      ["calendar", E2("RESPETARON LA FECHA", "KEPT THE DATE"), "fechaOk", "rgba(0,229,196,.16)", BIEN], ["clock", E2("LLEGARON A LA HORA", "ARRIVED ON TIME"), "llegaron", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["dollar", E2("COBRARON LO DEL PAQUETE", "CHARGED THE PACKAGE PRICE"), "paquete", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["image", E2("QUEDÓ COMO EN LAS FOTOS", "LOOKED LIKE THE PHOTOS"), "fotosOk", "rgba(0,229,196,.16)", BIEN],
+      ["check", E2("RECOGIERON Y LIMPIARON", "PICKED UP AND CLEANED"), "limpio", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : z.rub === "trans" ? [
+      ["dollar", E2("COBRÓ EL PRECIO CERRADO", "CHARGED THE FIXED PRICE"), "cerrado", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"], ["clock", E2("SALIÓ A LA HORA", "LEFT ON TIME"), "salio", "rgba(75,55,245,.1)", "var(--tl-action)"],
+      ["check", E2("LLEGÓ A LA HORA", "ARRIVED ON TIME"), "llego", "rgba(0,229,196,.16)", BIEN], ["shield", E2("MANEJO SEGURO", "SAFE DRIVING"), "manejo", "rgba(0,229,196,.16)", BIEN],
+      ["bag", E2("EQUIPAJE O CARGA BIEN", "LUGGAGE OR CARGO OK"), "carga", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
+    ] : z.rub === "merc" ? [
       ["check", E2("PESARON DELANTE DE TI", "WEIGHED IN FRONT OF YOU"), "pesaron", "rgba(0,229,196,.16)", BIEN], ["dollar", E2("COBRARON EL PESO REAL", "CHARGED THE REAL WEIGHT"), "peso", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"],
       ["check", E2("FRESCO", "FRESH"), "fresco", "rgba(0,229,196,.16)", BIEN], ["dollar", E2("PRECIO DEL ESTANTE = CAJA", "SHELF PRICE = REGISTER"), "estante", "rgba(255,176,32,.16)", "var(--tl-pro-ink)"],
       ["bubble", E2("SUSTITUCIONES CON TU OK", "SWAPS WITH YOUR OK"), "sust", "rgba(75,55,245,.1)", "var(--tl-action)"], ["users", E2("TRATO", "TREATMENT"), "trato", "rgba(11,14,18,.06)", "var(--tl-ink)"],
@@ -211,14 +238,18 @@ function aspectos(v: CtlResenas) {
     a.taste != null ? ["restaurant", E2("SABOR", "FLAVOR"), a.taste.toFixed(1), "rgba(11,14,18,.06)", "var(--tl-ink)"] : null,
   ].filter(Boolean) as [string, string, string, string, string][]).map(([ic, k, val, bg, fg]) => ({ ic, k, v: val, bg, fg }));
 }
-const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "merc" || v.r.aspSP?.rub === "tienda" ? (v.es
+const aspNota = (v: CtlResenas) => v.r.aspSP?.rub === "fiesta" ? (v.es
+  ? `De ${v.r.aspSP.n} reseñas del último año. «Respetaron la fecha» sale de las fiestas reservadas en To'Latino; lo demás es el % que contestó que sí.`
+  : `From ${v.r.aspSP.n} reviews in the last year. “Kept the date” comes from parties booked on To'Latino; the rest is the % who answered yes.`) : v.r.aspSP?.rub === "trans" ? (v.es
+  ? `De ${v.r.aspSP.n} reseñas de viajes y envíos de los últimos 90 días. Es el % que contestó que sí.`
+  : `From ${v.r.aspSP.n} trip and shipment reviews in the last 90 days. It is the % who answered yes.`) : v.r.aspSP?.rub === "merc" || v.r.aspSP?.rub === "tienda" ? (v.es
   ? `De ${v.r.aspSP.n} reseñas del último año (pedidos, apartados y compras calificadas). Es el % que contestó que sí; «pesaron» y «peso real» cuentan la foto de cada peso de los pedidos por To'Latino.`
   : `From ${v.r.aspSP.n} reviews in the last year (rated orders, holds and purchases). It is the % who answered yes; “weighed” and “real weight” count the photo of each weight on To'Latino orders.`) : v.r.aspSP ? (v.es
   ? `De ${v.r.aspSP.n} reseñas del último año. Es el % que contestó que sí. Nunca se publica el motivo de la consulta ni de qué trata un caso.`
   : `From ${v.r.aspSP.n} reviews in the last year. It is the % who answered yes. The reason for a visit or what a case is about is never published.`) : v.es
   ? `De ${v.r.asp?.orders} pedidos calificados en To'Latino en los últimos 90 días. A tiempo = hasta 5 min después de la hora prometida.`
   : `From ${v.r.asp?.orders} rated To'Latino orders in the last 90 days. On time = up to 5 min after the promised time.`;
-const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "merc" ? (v.es ? "LO QUE IMPORTA EN UN MERCADO" : "WHAT MATTERS AT A MARKET") : v.r.aspSP?.rub === "tienda" ? (v.es ? "LO QUE IMPORTA EN UNA TIENDA" : "WHAT MATTERS AT A STORE") : v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
+const aspTit = (v: CtlResenas) => (v.r.aspSP?.rub === "fiesta" ? (v.es ? "LO QUE IMPORTA EN UNA FIESTA" : "WHAT MATTERS AT A PARTY") : v.r.aspSP?.rub === "trans" ? (v.es ? "LO QUE IMPORTA EN UN VIAJE" : "WHAT MATTERS ON A TRIP") : v.r.aspSP?.rub === "merc" ? (v.es ? "LO QUE IMPORTA EN UN MERCADO" : "WHAT MATTERS AT A MARKET") : v.r.aspSP?.rub === "tienda" ? (v.es ? "LO QUE IMPORTA EN UNA TIENDA" : "WHAT MATTERS AT A STORE") : v.r.aspSP?.rub === "salud" ? (v.es ? "LO QUE IMPORTA EN SALUD" : "WHAT MATTERS IN HEALTH") : v.r.aspSP?.rub === "pro" ? (v.es ? "LO QUE IMPORTA EN UN TRÁMITE" : "WHAT MATTERS IN A CASE") : v.es ? "LO QUE IMPORTA EN LA COMIDA" : "WHAT MATTERS IN FOOD");
 function Pocas({ v }: { v: CtlResenas }) {
   const { r, es } = v;
   return r.n > 0 ? (

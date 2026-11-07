@@ -986,3 +986,12 @@ recogió» no se puede tocar) → al volver, millas al volver: dice cuántas rec
 _Decidido por mí (reversible):_ las millas de más van por el mismo camino del daño (foto, el cliente acepta o To'Latino decide);
 el remolque no cuenta millas; los servicios «precio cerrado con fotos» que traía este negocio del prototipo quedaron retirados
 (no aplican a una renta). Dueño de prueba nuevo: Daniel (5705550355).
+
+### 4z-1 · Reseñas de Fiestas y Transporte (7 nov)
+**Qué mirar (Marisol):** Salón Imperial › escribir reseña de tu fiesta terminada: «TU FIESTA · DATO DE LA RESERVA» con la fecha
+«· respetada» y lo que pagaste (no se edita); preguntas «¿Llegaron a la hora?», «¿Quedó como en las fotos?», «¿Cobraron lo del
+paquete?», «¿Recogieron y limpiaron?», trato; con 2 ★ o menos, «La reseña no devuelve dinero… Ayuda con la fiesta». En la ficha:
+marcas en la tarjeta y «LO QUE IMPORTA EN UNA FIESTA». Van Express: «TU VIAJE · DATO DE LA RESERVA» (pagaste · precio cerrado),
+«¿Cobró el precio cerrado?», salió / llegó a la hora, manejo seguro, equipaje; «LO QUE IMPORTA EN UN VIAJE» (últimos 90 días).
+_Decidido por mí:_ «¿Respetaron la fecha?» solo se pregunta a quien no reservó por To'Latino (con reserva sale del dato). El botón
+«Ir a Ayuda con la fiesta / el viaje» aparece con 4z-2.
