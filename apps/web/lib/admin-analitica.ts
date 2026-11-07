@@ -210,3 +210,49 @@ export async function noche(s: Staff, dias: number) {
   ]);
   return { me: me.rows[0]!, dep: dep.rows[0]!, li: li.rows[0]!, cov: cov.rows[0]!, fila: fila.rows[0]!, ayuda: ay.rows, lic: lic.rows[0]! };
 }
+
+/* Analítica › Educación · Niños · Deporte (4eg · fase4-edu-ninos-deporte.md §4eg): solo cifras, nunca datos de un niño ni de un inscrito. */
+export async function inscripcionesAnalitica(s: Staff, dias: number) {
+  const [me, gr, mat, esp, baja, rev, ay, lic] = await Promise.all([
+    db().query<{ n: number; conf24: number; vencidas: number; edu: number; ninos: number; dep: number }>(
+      `select count(*)::int as n, count(*) filter (where o.confirmed_at is not null and o.confirmed_at - o.sent_at <= interval '24 hours')::int as conf24,
+              count(*) filter (where o.status = 'expired')::int as vencidas, count(*) filter (where o.details->>'rubro' = 'edu')::int as edu,
+              count(*) filter (where o.details->>'rubro' = 'ninos')::int as ninos, count(*) filter (where o.details->>'rubro' = 'dep')::int as dep
+         from operations o where o.kind = 'enrollment' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ cancelados: number; vivos: number; ocupados: number; cupos: number }>(
+      `select count(*) filter (where g.status = 'cancelled' and g.updated_at > now() - make_interval(days => $2))::int as cancelados,
+              count(*) filter (where g.status in ('open', 'started'))::int as vivos,
+              coalesce(sum(g.seats_booked + g.seats_outside) filter (where g.status in ('open', 'started')), 0)::int as ocupados,
+              coalesce(sum(g.seats_total) filter (where g.status in ('open', 'started')), 0)::int as cupos
+         from class_groups g where ${scope("g.city_id")}`, [s.cities, dias]),
+    db().query<{ ret: number; cob: number; dev: number; quedo: number }>(
+      `select coalesce(sum(p.amount_cents) filter (where p.status = 'held'), 0)::int as ret,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded')), 0)::int as cob,
+              coalesce(sum(p.refunded_cents), 0)::int as dev,
+              coalesce(sum(p.amount_cents - p.refunded_cents) filter (where p.status in ('captured', 'partially_refunded') and coalesce((o.details->>'perdio')::boolean, false)), 0)::int as quedo
+         from payments p join operations o on o.id = p.operation_id where o.kind = 'enrollment' and p.kind = 'deposit' and o.sent_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ esperando: number; dias: number | null; ofrecidas: number; tomadas: number }>(
+      `select count(*) filter (where w.status = 'waiting')::int as esperando,
+              round(avg(extract(epoch from coalesce(w.updated_at, now()) - w.created_at) / 86400) filter (where w.status in ('accepted', 'waiting')), 1)::float as dias,
+              count(*) filter (where w.status in ('offered', 'accepted', 'expired') and w.offered_until is not null)::int as ofrecidas, count(*) filter (where w.status = 'accepted')::int as tomadas
+         from waitlist_entries w where w.created_at > now() - make_interval(days => $2) and ${scope("w.city_id")}`, [s.cities, dias]),
+    db().query<{ pedidas: number; en72: number }>(
+      `select count(*)::int as pedidas,
+              count(*) filter (where exists (select 1 from operation_events e2 where e2.operation_id = e.operation_id and e2.kind = 'insc_cancel_ok' and e2.at <= e.at + interval '72 hours'))::int as en72
+         from operation_events e join operations o on o.id = e.operation_id where e.kind = 'insc_cancel_req' and e.at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ tn: number; tok: number; cn: number; cok: number }>(
+      `select count(*) filter (where r.answers ? 'totalOk')::int as tn, count(*) filter (where (r.answers->>'totalOk')::int = 1)::int as tok,
+              count(*) filter (where r.answers ? 'certOk')::int as cn, count(*) filter (where (r.answers->>'certOk')::int = 1)::int as cok
+         from reviews r join operations o on o.id = r.operation_id where o.kind = 'enrollment' and r.status <> 'removed' and r.created_at > now() - make_interval(days => $2) and ${scope("o.city_id")}`, [s.cities, dias]),
+    db().query<{ rub: string; reason: string; n: number }>(
+      `select o.details->>'rubro' as rub, h.reason, count(*)::int as n from help_requests h join operations o on o.id = h.operation_id
+        where o.kind = 'enrollment' and h.created_at > now() - make_interval(days => $2) and ${scope("h.city_id")} group by 1, 2 order by 3 desc`, [s.cities, dias]),
+    db().query<{ vigentes: number; vencidas: number; cuidado: number }>(
+      `select count(distinct l.business_id) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
+              count(distinct l.business_id) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas,
+              (select count(*)::int from businesses b2 where b2.category_id = 'NEG-NINOS' and b2.status = 'active' and ${scope("b2.city_id")}) as cuidado
+         from licenses l join businesses b on b.id = l.business_id where l.kind = 'pa_dhs_childcare' and ${scope("b.city_id")}`, [s.cities]),
+  ]);
+  return { me: me.rows[0]!, gr: gr.rows[0]!, mat: mat.rows[0]!, esp: esp.rows[0]!, baja: baja.rows[0]!, rev: rev.rows[0]!, ayuda: ay.rows, lic: lic.rows[0]! };
+}
+

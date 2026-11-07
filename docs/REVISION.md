@@ -1170,3 +1170,12 @@ exacto de la matrícula). La reseña de un curso terminado («Lo que importa en 
 - La reseña de Niños se rechaza si trae el nombre de pila del niño que esa persona inscribió en ese lugar (comparado en el servidor con el
   dato cifrado); no se detectan otros nombres.
 
+### 4eg · Super Admin y cierre de Educación + Niños + Deporte (7 nov)
+**Qué mirar (computadora, Super Admin):** Transacciones › Inscripciones (y «Devolver matrícula»); Colas › «Cuidado de niños» (primera de la
+lista; «Ver los datos del niño» pide el motivo), «No me dejan cancelar» y «Grupos que no abrieron»; Analítica › Educación · Niños · Deporte.
+**Preguntas #1–#22 del plan (§6):** se aplicó el default más seguro de cada una tal como está escrito en el plan; lo que se ajustó está en las
+notas de 4ea–4ef de arriba (Free sin inscribirse por la app, plazos de respuesta, banda por edad, oferta de la lista de espera, baja a las
+72 h, reseña de membresía a las 4 semanas, nombre del niño en reseñas). Si prefieres otra cosa en alguna, se cambia.
+**Arreglo de clase:** en Colas, una ayuda de fiesta, viaje o noche se abría con la vista del pedido de comida; ahora todas usan la vista de
+la cita (motivo con su nombre, lo devolvible y «Resolver y devolver»).
+

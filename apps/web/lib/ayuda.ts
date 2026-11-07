@@ -1,4 +1,5 @@
 import "server-only";
+import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 
 /* Ayuda con el pedido (diseño Mi cuenta · hoja help; Super Admin secSop). La persona abre una solicitud sobre un pedido
@@ -24,7 +25,7 @@ export async function escalarVencidas() {
     const L = (await c.query<{ id: string; business_id: string; city_id: string }>(
       `update help_requests set status = 'escalated', escalated_at = now(), escalated_by = 'system', updated_at = now()
         where status = 'open' and created_at <= now() - interval '24 hours' returning id::text, business_id, city_id`)).rows;
-    for (const h of L) await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ('sop', 'help_request', $1, $2, $3, 'normal') on conflict do nothing`, [h.id, h.business_id, h.city_id]);
+    for (const h of L) await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) select ${COLA_AYUDA_SQL}, 'help_request', $1, $2, $3, 'normal' on conflict do nothing`, [h.id, h.business_id, h.city_id]);
   });
 }
 
@@ -76,7 +77,7 @@ export async function pedirRevisionAyuda(userId: string, numero: string): Promis
       `update help_requests h set status = 'escalated', escalated_at = now(), escalated_by = 'user', updated_at = now() from operations o
         where o.id = h.operation_id and o.number = $1 and h.user_id = $2 and h.status = 'answered' returning h.id::text, h.business_id, h.city_id`, [numero, userId])).rows[0];
     if (!h) return no("Esta solicitud ya cambió. Actualiza la pantalla.", "This request already changed. Refresh the screen.");
-    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ('sop', 'help_request', $1, $2, $3, 'normal') on conflict do nothing`, [h.id, h.business_id, h.city_id]);
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) select ${COLA_AYUDA_SQL}, 'help_request', $1, $2, $3, 'normal' on conflict do nothing`, [h.id, h.business_id, h.city_id]);
     return { ok: true as const };
   });
 }

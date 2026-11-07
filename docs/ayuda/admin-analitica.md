@@ -19,6 +19,10 @@ o 90 días, solo de tus ciudades.
   **veces que el cover subió después de publicado** esa misma noche (sale del historial «Esta noche», que nunca se borra),
   **% «la fila, como decía»** en las reseñas, ayudas **«cobraron más cover» por cada 100 noches** y **licencias de licor
   vencidas** (PLCB). Debajo, los motivos de ayuda de la noche.
+- **Educación · Niños · Deporte (4eg):** inscripciones pedidas por rubro, **% confirmadas en 24 h**, % vencidas, **grupos que no
+  abrieron**, **ocupación de los grupos**, matrículas (cobrado, retenido, devuelto y lo que **se quedó con el lugar**), gente en **lista
+  de espera** y días en promedio, **bajas de membresía** pedidas y confirmadas en 72 h, % «cobraron el total» y «certificado prometido»
+  en las reseñas, **ayudas por cada 100 inscripciones** y **guarderías con licencia DHS vigente**. Nunca datos de un niño ni de un inscrito.
 - **Búsquedas sin oferta:** lo que buscaron y no había (pidieron aviso), con enlace a Catálogo.
 - **Exportar:** Negocios, Historial y Búsquedas sin oferta en CSV (abre en Excel o Sheets). Permiso analit · exportar;
   cada descarga queda en la auditoría.

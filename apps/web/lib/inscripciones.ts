@@ -493,6 +493,11 @@ export async function cancelarGrupo(negocio: string, grupo: string, motivo: stri
     await c.query(`update waitlist_entries set status = 'left', updated_at = now() where group_id = $1::bigint and status in ('waiting', 'offered')`, [grupo]);
     await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after, reason)
                    select 'user', $1, 'insc.grupo_cancelado', 'class_group', id::text, city_id, null, $3::jsonb, $4 from class_groups where id = $2::bigint`, [actorId, grupo, JSON.stringify({ inscritos: L.length }), mot]);
+    // 4eg · «Grupos que no abrieron»: 3 o más en 90 días abren un caso para To'Latino (uno abierto por lugar).
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
+                   select 'grupo', 'business', b.id, b.id, b.city_id, 'normal' from businesses b
+                    where b.id = $1 and (select count(*) from class_groups g where g.business_id = b.id and g.status = 'cancelled' and g.updated_at > now() - interval '90 days') >= 3
+                   on conflict do nothing`, [negocio]);
     return { ok: true };
   });
   if (!r.ok) return r;

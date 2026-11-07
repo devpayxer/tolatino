@@ -1,6 +1,6 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
    cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
-export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid";
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo";
 export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
@@ -15,11 +15,19 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   // 4ne · Noche: un local que no respeta mesas o lista, o que marca muchos «sin identificación» con depósito (3 en 30 noches).
   mesa: { es: "Mesas no respetadas", en: "Tables not honored", icon: "drink", sla: 72, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["El local canceló mesas ya confirmadas o los clientes dicen que no les respetaron la mesa o la lista: 3 en 30 noches. Pausar quita mesas y lista de su página hasta que lo reanudes.", "The venue cancelled confirmed tables or customers say their table or list spot was not honored: 3 in 30 nights. Pausing removes tables and the list from its page until you resume it."] },
   noid: { es: "Sin identificación", en: "No ID at the door", icon: "lock", sla: 72, roles: ["admin", "soporte", "finanzas", "ciudad", "lectura"], regla: ["El local marcó «No entró: sin identificación» en mesas con depósito (el depósito se queda): 3 en 30 noches. Mira cada noche; un depósito se devuelve desde Transacciones › Noche.", "The venue marked «No ID» on tables with a deposit (the deposit is kept): 3 in 30 nights. Check each night; a deposit is refunded from Transactions › Night."] },
+  // 4eg · Educación, Niños y Deporte.
+  cuidado: { es: "Cuidado de niños", en: "Child care", icon: "shield", sla: 4, roles: ["admin", "soporte"], regla: ["Alguien dice que no cuidaron bien a su niño: va directo a To'Latino, sin esperar al lugar. Si un niño corre peligro, 911; si hay sospecha de maltrato o abuso, ChildLine de PA (1-800-932-0313). Ver los datos del niño exige escribir el motivo y queda en la auditoría.", "Someone says their child was not cared for: it comes straight to To'Latino, without waiting for the place. If a child is in danger, 911; if abuse is suspected, PA ChildLine (1-800-932-0313). Viewing the child's details requires a reason and is audited."] },
+  salir: { es: "No me dejan cancelar", en: "Will not let me cancel", icon: "close", sla: 48, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["Una membresía que el lugar no deja cancelar. La baja pedida en la app tiene fecha y hora: es la constancia. To'Latino nunca cobra penalidades.", "A membership the place will not let them cancel. The cancellation requested in the app has a date and time: that is the record. To'Latino never charges penalties."] },
+  grupo: { es: "Grupos que no abrieron", en: "Groups that did not open", icon: "users", sla: 72, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["El lugar canceló 3 grupos en 90 días. A cada inscrito se le devolvió todo; mira si promete cursos que no da. Pausar quita las inscripciones de su página hasta que lo reanudes.", "The place cancelled 3 groups in 90 days. Everyone enrolled got everything back; check whether it promises courses it does not run. Pausing removes enrollments from its page until you resume it."] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
 /* Título de una ayuda según la operación (Colas y su caso). */
-export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", order: "Ayuda con un pedido" };
-export const ORDEN_COLAS: Cola[] = ["disputa", "sop", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
+export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", order: "Ayuda con un pedido" };
+export const ORDEN_COLAS: Cola[] = ["cuidado", "disputa", "sop", "salir", "grupo", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "rep", "chat", "rec"];
+/* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg). */
+export const COLA_AYUDA_SQL = `(select case h.reason when 'cuidado' then 'cuidado' when 'salir' then 'salir' else 'sop' end from help_requests h where h.id::text = $1)`;
+/* Las colas que muestran una ayuda (help_request). */
+export const COLAS_AYUDA: Cola[] = ["sop", "cuidado", "salir"];
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

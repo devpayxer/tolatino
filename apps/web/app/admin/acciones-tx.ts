@@ -21,15 +21,15 @@ export async function exportarTx(filtros: Record<string, string>): Promise<ResAd
 export async function devolverTx(numero: string, monto: string, motivo: string, clave: string): Promise<ResAdm> {
   const s = await staff();
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no devuelve dinero." };
-  if (!/^([CFVN]-)?\d{1,12}$/.test(String(numero ?? "")) || !/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return { ok: false, mensaje: "Ese pedido no existe." };
+  if (!/^([CFVNI]-)?\d{1,12}$/.test(String(numero ?? "")) || !/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return { ok: false, mensaje: "Ese pedido no existe." };
   const cents = Math.round((parseFloat(String(monto ?? "").replace(/[^0-9.]/g, "")) || 0) * 100);
   const p = (await db().query<{ id: string; city: string | null }>(
-    `select p.id::text, p.city_id as city from payments p join operations o on o.id = p.operation_id where o.number = $1 and ((o.kind in ('order', 'trip') and p.kind = 'full') or (o.kind in ('appointment', 'party', 'night') and p.kind = 'deposit'))
+    `select p.id::text, p.city_id as city from payments p join operations o on o.id = p.operation_id where o.number = $1 and ((o.kind in ('order', 'trip') and p.kind = 'full') or (o.kind in ('appointment', 'party', 'night', 'enrollment') and p.kind = 'deposit'))
         and (cardinality($2::text[]) = 0 or p.city_id = any($2::text[]))`, [String(numero), s.cities])).rows[0];
   if (!p) return { ok: false, mensaje: "Ese pedido no se pagó con tarjeta (o no es de tus ciudades)." };
   const r = await devolverPago({ paymentId: p.id, centavos: cents, por: "admin", actorId: s.id, motivo: String(motivo ?? "").trim(), idem: `adm-${clave}` });
   if (!r.ok) return { ok: false, mensaje: r.msg.es };
-  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "payment", targetId: p.id, city: p.city, after: { [({ C: "cita", F: "fiesta", V: "viaje", N: "noche" } as Record<string, string>)[String(numero)[0]!] ?? "pedido"]: /^[CFVN]-/.test(String(numero)) ? String(numero) : `#${numero}`, monto: `$${(cents / 100).toFixed(2)}` }, reason: String(motivo ?? "").trim() }));
+  await tx((c) => auditar(c, { actor: s.id, action: "transacciones.devolver", targetKind: "payment", targetId: p.id, city: p.city, after: { [({ C: "cita", F: "fiesta", V: "viaje", N: "noche", I: "inscripcion" } as Record<string, string>)[String(numero)[0]!] ?? "pedido"]: /^[CFVNI]-/.test(String(numero)) ? String(numero) : `#${numero}`, monto: `$${(cents / 100).toFixed(2)}` }, reason: String(motivo ?? "").trim() }));
   return { ok: true, mensaje: `Devueltos $${(cents / 100).toFixed(2)}. El cliente ya lo sabe.` };
 }
 

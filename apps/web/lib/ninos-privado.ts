@@ -45,11 +45,13 @@ export async function guardarNino(c: PoolClient, operacion: string, p: unknown):
 }
 
 /* Leer: solo quien inscribió o un miembro activo del negocio de esa inscripción (lo comprueba la consulta, no quien llama). */
-export async function leerNino(operacion: string, quien: { usuario: string } | { negocio: string }): Promise<DatosNino | null> {
-  const por = "usuario" in quien ? `o.user_id = $2::uuid` : `o.business_id = $2`;
+export async function leerNino(operacion: string, quien: { usuario: string } | { negocio: string } | { cola: string }): Promise<DatosNino | null> {
+  // { cola }: To'Latino desde un caso abierto de «Cuidado de niños» de esa misma inscripción (lo comprueba la consulta).
+  const por = "usuario" in quien ? `o.user_id = $2::uuid` : "negocio" in quien ? `o.business_id = $2`
+    : `exists (select 1 from queue_items q join help_requests h on h.id::text = q.subject_id where q.id = $2::bigint and q.queue = 'cuidado' and q.status = 'open' and h.operation_id = o.id)`;
   const r = (await db().query<{ enc: Buffer | null }>(
     `select p.note_enc as enc from op_private p join operations o on o.id = p.operation_id where p.operation_id = $1::bigint and p.reason = 'nino' and ${por}`,
-    [operacion, "usuario" in quien ? quien.usuario : quien.negocio])).rows[0];
+    [operacion, "usuario" in quien ? quien.usuario : "negocio" in quien ? quien.negocio : quien.cola])).rows[0];
   const t = r ? descifrar(r.enc) : null;
   if (!t) return null;
   try { return JSON.parse(t) as DatosNino; } catch { return null; }

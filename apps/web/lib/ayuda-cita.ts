@@ -1,4 +1,5 @@
 import "server-only";
+import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 import { devolverPago } from "./cobros";
 import { escalarVencidas } from "./ayuda";
@@ -141,7 +142,7 @@ export async function pedirAyudaCita(userId: string, numero: string, p: AyudaCit
     if (rubro === "noche" && (reason === "mesa" || reason === "lista")) await (await import("./noche-vigilar")).vigilarNoche(c, o.business_id, "mesa");
     if (DIRECTO.has(reason)) {
       await c.query(`update help_requests set status = 'escalated', escalated_at = now(), escalated_by = 'system', updated_at = now() where id = $1::bigint`, [h.id]);
-      await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ('sop', 'help_request', $1, $2, $3, 'alta') on conflict do nothing`, [h.id, o.business_id, o.city_id]);
+      await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) select ${COLA_AYUDA_SQL}, 'help_request', $1, $2, $3, 'alta' on conflict do nothing`, [h.id, o.business_id, o.city_id]);
     }
     if (fotos.length) {
       // Salud y Pro: solo fotos privadas (una pública con una factura médica no entra).
@@ -193,7 +194,7 @@ export async function citaAyudaCliente(userId: string, numero: string, accion: "
   const ok = await tx(async (c) => {
     const u = await c.query(`update help_requests set status = 'escalated', escalated_at = now(), escalated_by = 'user', updated_at = now() where id = $1::bigint and status = 'answered'`, [h.id]);
     if (!u.rowCount) return false;
-    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) values ('sop', 'help_request', $1, $2, $3, 'normal') on conflict do nothing`, [h.id, h.business_id, h.city_id]);
+    await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) select ${COLA_AYUDA_SQL}, 'help_request', $1, $2, $3, 'normal' on conflict do nothing`, [h.id, h.business_id, h.city_id]);
     return true;
   });
   if (!ok) return cambio();

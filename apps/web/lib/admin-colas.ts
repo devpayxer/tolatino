@@ -45,8 +45,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select count(*)::int from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open') as chn,
             coalesce((select bool_or(cr.by_business) from content_reports cr where q.queue = 'chat' and cr.target_kind = 'chat' and cr.target_id = q.subject_id and cr.status = 'open'), false) as chbiz,
             (select o.number from disputes d join operations o on o.id = d.operation_id where q.queue = 'disputa' and d.id::text = q.subject_id) as dpnum,
-            (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue = 'sop' and h.id::text = q.subject_id) as sopk,
-            (select h.reason from help_requests h where q.queue = 'sop' and h.id::text = q.subject_id) as sopr,
+            (select o.kind from help_requests h join operations o on o.id = h.operation_id where q.queue in ('sop', 'cuidado', 'salir') and h.id::text = q.subject_id) as sopk,
+            (select h.reason from help_requests h where q.queue in ('sop', 'cuidado', 'salir') and h.id::text = q.subject_id) as sopr,
             (select d.amount_cents from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpamt,
             (select d.reason from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpreason,
             (select to_char(d.evidence_due_by at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from disputes d where q.queue = 'disputa' and d.id::text = q.subject_id) as dpdue
@@ -58,7 +58,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
        left join sensitive_changes sc on q.subject_kind = 'sensitive_change' and sc.id = q.subject_id
        left join users su on sc.target_kind = 'user' and su.id::text = sc.target_id
       where q.status = 'open' and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
-      order by (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
+      order by (q.queue = 'cuidado') desc, (q.queue = 'sop' and q.priority = 'alta') desc, extract(epoch from now() - q.opened_at) / (${SLA_SQL} * 3600) desc
       limit 200`,
     [colas, s.cities]);
   const conteo: Record<string, number> = {};
@@ -73,6 +73,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · por verificar` }
       : x.queue === "cambio" && x.subject_kind === "sensitive_change" ? { title: `${CAMBIO_L[x.sctype ?? ""] ?? "Cambio sensible"} · ${x.sname ?? ""}`, sub: "Cambio sensible · lo aprueba otra persona" }
       : x.queue === "cambio" ? { title: `Reclamo · ${b}`, sub: "Cambio sensible · lo aprueba una persona" }
+      : x.queue === "cuidado" ? { title: `Cuidado de niños · ${b}`, sub: "No cuidaron bien a su niño · directo a To'Latino" }
+      : x.queue === "salir" ? { title: `No le dejan cancelar · ${b}`, sub: "Membresía con la baja pedida en la app" }
+      : x.queue === "grupo" ? { title: `Grupos que no abrieron · ${b}`, sub: "3 o más grupos cancelados en 90 días" }
       : x.queue === "sop" ? { title: `${AYUDA_DE[x.sopk ?? "order"] ?? "Ayuda con un pedido"} · ${b}`, sub: x.sopr === "inseguro" ? "Se sintió inseguro · va directo a To'Latino" : "El cliente espera una respuesta" }
       : x.queue === "mesa" ? { title: `Mesas no respetadas · ${b}`, sub: `${UMBRAL_NOCHE} o más en 30 noches · mira cada una` }
       : x.queue === "noid" ? { title: `Sin identificación · ${b}`, sub: `${UMBRAL_NOCHE} o más mesas con depósito en 30 noches` }
@@ -156,14 +159,23 @@ export async function caso(s: Staff, id: string) {
       `select reason, note, created_at as at from photo_reports where media_id = $1::uuid and status = 'open' order by created_at`, [q.subject_id])).rows;
     return { ...base, negocio, foto: m ?? null, reportes: reps };
   }
-  if (q.queue === "sop") {
+  if (q.queue === "grupo") {
+    // 4eg · Los grupos que el lugar canceló en 90 días: cuál, cuándo, el motivo y a cuántos se les devolvió todo. Nunca datos de inscritos.
+    const L = (await db().query<{ id: string; svc: string; label: string; inicio: string; motivo: string | null; at: string; n: number }>(
+      `select g.id::text, i.name->>'es' as svc, g.label->>'es' as label, g.starts_on::text as inicio, g.cancel_reason as motivo, g.updated_at::text as at,
+              (select count(*)::int from operations o where o.business_id = g.business_id and o.kind = 'enrollment' and o.cancel_reason = 'grupo' and (o.details->>'group_id' = g.id::text or o.details->>'alt_group_id' = g.id::text)) as n
+         from class_groups g join items i on i.id = g.item_id where g.business_id = $1 and g.status = 'cancelled' and g.updated_at > now() - interval '90 days' order by g.updated_at desc limit 30`, [q.business_id])).rows;
+    const off = (await db().query<{ off: boolean }>(`select coalesce(modules_off ? 'svc', false) as off from businesses where id = $1`, [q.business_id])).rows[0]?.off ?? false;
+    return { ...base, negocio, grupos: { L, pausado: off } };
+  }
+  if (q.queue === "sop" || q.queue === "cuidado" || q.queue === "salir") {
     // Ayuda con un pedido: la solicitud, lo que pidió, la respuesta del negocio (si hubo) y el pedido.
     // Citas (3e): también el monto que pide, la decisión del negocio, sus fotos y lo que se puede devolver a la tarjeta.
     const h = (await db().query<{ number: string; reason: string; items: { n: string; q: number }[]; wants: string; body: string | null; status: string; reply: string | null; escalated_by: string | null; creada: string; num: string; total: number; quien: string; uid: string;
-      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
+      k: "order" | "appointment" | "market_order" | "hold" | "party" | "trip" | "night" | "enrollment"; amount: number | null; decision: string | null; offer: number | null; fotos: string[]; pago: number; svc: string | null; rub: string | null }>(
       `select h.number, h.reason, h.items, h.wants, h.body, h.status, h.reply, h.escalated_by, h.created_at as creada, o.number as num, o.total_cents as total,
               coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, u.id::text as uid,
-              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub,
+              o.kind as k, h.amount_cents as amount, h.decision, h.offer_cents as offer, o.details->'svc'->>'es' as svc, coalesce(o.details->>'rubro', case o.kind when 'party' then 'fiesta' when 'trip' then 'trans' when 'night' then 'noche' when 'enrollment' then o.details->>'rubro' when 'market_order' then 'merc' when 'hold' then 'tienda' end) as rub,
               array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos,
               coalesce((select p.amount_cents - p.refunded_cents from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1), 0) as pago
          from help_requests h join operations o on o.id = h.operation_id join users u on u.id = h.user_id where h.id = $1::bigint`, [q.subject_id])).rows[0];

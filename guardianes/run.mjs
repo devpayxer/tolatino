@@ -735,6 +735,15 @@ const guardianes = {
     }
   },
 
+  /* 4eg · Una ayuda que pasa a To'Latino entra a la cola de su motivo («Cuidado de niños», «No me dejan cancelar» o Soporte): nadie
+     escribe la cola a mano al insertar un help_request (se usa COLA_AYUDA_SQL de lib/colas.ts). */
+  colaAyudaRuteada() {
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/[^/]+\.ts$/.test(f) || f.endsWith("/colas.ts")) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/'(sop|cuidado|salir)',\s*'help_request'/.test(l)) falla("colaAyudaRuteada", f, i + 1, "la cola de una ayuda sale de su motivo (COLA_AYUDA_SQL), no se escribe a mano"); });
+    }
+  },
+
   licenciaNoSeFinge() {
     const dir = "packages/db/migrations";
     const ult = readdirSync(dir).filter((x) => x.endsWith(".sql")).sort().filter((x) => /function licencias_refrescar/.test(readFileSync(`${dir}/${x}`, "utf8"))).pop();

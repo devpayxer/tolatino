@@ -329,7 +329,7 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
     if (!/^[0-9a-f-]{36}$/.test(String(clave ?? ""))) return no("Prueba de nuevo.");
     const p = (await (await import("@/lib/db")).db().query<{ pid: string; hid: string }>(
       `select p.id::text as pid, h.id::text as hid from queue_items q join help_requests h on h.id = q.subject_id::bigint join payments p on p.operation_id = h.operation_id
-        where q.id = $1::bigint and q.queue = 'sop' and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [id, s.cities])).rows[0];
+        where q.id = $1::bigint and q.queue in ('sop', 'cuidado', 'salir') and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[])) and p.status in ('captured', 'partially_refunded') order by p.id desc limit 1`, [id, s.cities])).rows[0];
     if (!p) return no("Ahí no hay nada pagado en la app para devolver (o el caso ya se decidió).");
     const d = await (await import("@/lib/cobros")).devolverPago({ paymentId: p.pid, centavos: cents, por: "admin", actorId: s.id, motivo: m, idem: `sop-${clave}` });
     if (!d.ok) return no(d.msg.es);
@@ -337,7 +337,7 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
   }
   return tx(async (c) => {
     const q = (await c.query<{ subject_id: string; business_id: string | null; city_id: string }>(
-      `select subject_id, business_id, city_id from queue_items where id = $1::bigint and queue = 'sop' and status = 'open' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
+      `select subject_id, business_id, city_id from queue_items where id = $1::bigint and queue in ('sop', 'cuidado', 'salir') and status = 'open' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
     if (!q) return no("Este caso ya se decidió.");
     const h = await c.query(`update help_requests set status = 'resolved', resolution = $2, resolved_at = now(), resolved_by = $3, closed_by = 'admin', refunded_cents = refunded_cents + $4, updated_at = now()
                               where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id, devuelto]);
@@ -474,18 +474,21 @@ export async function decidirNoche(id: string, pausar: boolean, texto: string): 
   const r = await tx(async (c) => {
     const q = await abrir(c, s, id);
     if (typeof q === "string") return q;
-    if ((q.queue !== "mesa" && q.queue !== "noid") || !q.business_id) return "Ese caso no es de esta cola.";
+    if ((q.queue !== "mesa" && q.queue !== "noid" && q.queue !== "grupo") || !q.business_id) return "Ese caso no es de esta cola.";
+    // 4eg · «Grupos que no abrieron» pausa las inscripciones (svc); Noche pausa mesas y lista (rsv).
+    const mod = q.queue === "grupo" ? "svc" : "rsv";
     if (pausar) {
-      await c.query(`update businesses set modules_off = modules_off || jsonb_build_object('rsv', jsonb_build_object('reason', $2::text, 'at', now(), 'by', $3::text)), updated_at = now() where id = $1 and not (modules_off ? 'rsv')`, [q.business_id, m, s.id]);
-      await auditar(c, { actor: s.id, action: "negocio.modulo.pausar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { modulo: "Mesas y lista", estado: "activo" }, after: { estado: "pausado", cola: q.queue === "mesa" ? "Mesas no respetadas" : "Sin identificación" }, reason: m });
+      await c.query(`update businesses set modules_off = modules_off || jsonb_build_object($4::text, jsonb_build_object('reason', $2::text, 'at', now(), 'by', $3::text)), updated_at = now() where id = $1 and not (modules_off ? $4::text)`, [q.business_id, m, s.id, mod]);
+      await auditar(c, { actor: s.id, action: "negocio.modulo.pausar", targetKind: "business", targetId: q.business_id, city: q.city_id, before: { modulo: q.queue === "grupo" ? "Inscripciones" : "Mesas y lista", estado: "activo" }, after: { estado: "pausado", cola: q.queue === "mesa" ? "Mesas no respetadas" : "Sin identificación" }, reason: m });
     }
     await cerrar(c, q, s, pausar ? "pausar" : "revisado", m);
     await auditar(c, { actor: s.id, action: pausar ? "noche.cola_pausar" : "noche.cola_revisado", targetKind: "case", targetId: q.id, city: q.city_id, before: { caso: "abierto" }, after: { caso: pausar ? "mesas y lista en pausa" : "revisado, sin cambios" }, reason: m });
-    return "ok";
+    return `ok:${mod}`;
   });
-  if (r !== "ok") return no(r);
+  if (!r.startsWith("ok:")) return no(r);
+  const mod = r.slice(3);
   listo();
-  return { ok: true, mensaje: pausar ? "Mesas y lista en pausa. El dueño ve el motivo en su panel." : "Caso cerrado como revisado." };
+  return { ok: true, mensaje: pausar ? (mod === "svc" ? "Inscripciones en pausa. El dueño ve el motivo en su panel." : "Mesas y lista en pausa. El dueño ve el motivo en su panel.") : "Caso cerrado como revisado." };
 }
 
 /* Daño de una renta (4f-2): descontarlo del depósito o liberarlo. Pide decidir sobre dinero (tx:aprobar). */
@@ -512,3 +515,21 @@ export async function decidirRenta(id: string, cobrar: boolean, texto: string): 
   listo();
   return { ok: true, mensaje: cobrar ? "Descontado del depósito. Los dos ya lo saben." : "No se descuenta: el depósito se liberó. Los dos ya lo saben." };
 }
+
+/* 4eg · «Cuidado de niños»: ver los datos del niño exige un rol de Soporte o Admin y escribir el motivo; queda en la auditoría y la
+   respuesta solo se muestra en la pantalla (nunca en un registro ni en el caso). */
+export async function verNinoCaso(id: string, texto: string): Promise<ResAdm> {
+  const s = await quien();
+  if (!s || !["admin", "soporte"].includes(s.role)) return no("Solo Soporte o Admin ven los datos de un niño.");
+  const m = motivoOk(texto);
+  if (m.length < 10) return no("Escribe para qué necesitas verlos (10 letras o más).");
+  const q = (await (await import("@/lib/db")).db().query<{ op: string; city: string }>(
+    `select h.operation_id::text as op, q.city_id as city from queue_items q join help_requests h on h.id::text = q.subject_id
+      where q.id = $1::bigint and q.queue = 'cuidado' and q.status = 'open' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))`, [String(id ?? ""), s.cities])).rows[0];
+  if (!q) return no("Ese caso ya no está abierto.");
+  const n = await (await import("@/lib/ninos-privado")).leerNino(q.op, { cola: String(id) });
+  await tx((c) => auditar(c, { actor: s.id, action: "nino.ver", targetKind: "case", targetId: String(id), city: q.city, before: null, after: { datos: n ? "vistos" : "ya borrados" }, reason: m }));
+  if (!n) return { ok: true, mensaje: "Los datos de ese niño ya se borraron (30 días después de terminar)." };
+  return { ok: true, mensaje: `${n.nombre} · ${n.edad != null ? `${n.edad} años` : n.grado ?? "—"}${n.escuela ? ` · escuela: ${n.escuela}` : ""}${n.nota ? ` · nota: «${n.nota}»` : ""}` };
+}
+

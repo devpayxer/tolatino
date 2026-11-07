@@ -9,7 +9,7 @@ import { useEffect, useState, useTransition, type ComponentType, type ReactNode 
 import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
-import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, type ResAdm } from "./acciones-colas";
+import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, type ResAdm, verNinoCaso } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -95,7 +95,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
+    const titulo = k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "";
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -182,13 +182,15 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Quitar foto", v: "danger", icon: "trash", off: unica, onClick: () => setConf({ titulo: "¿Por qué se quita?", plantillas: PLANT.foto, peligro: true, hacer: (m) => decidirMedios(k.id, "quitar", m) }) },
       ];
     }
-    if (k.queue === "sop" && "ayuda" in k && k.ayuda && (k.ayuda.k === "appointment" || k.ayuda.k === "market_order" || k.ayuda.k === "hold")) {
+    // Toda ayuda que no es de un pedido de comida usa esta vista (citas, mercado, apartados, fiestas, viajes, noche e inscripciones; 4eg:
+    // antes fiestas, viajes y noche caían en la vista del pedido de comida). También las colas «Cuidado de niños» y «No me dejan cancelar».
+    if ((k.queue === "sop" || k.queue === "cuidado" || k.queue === "salir") && "ayuda" in k && k.ayuda && k.ayuda.k !== "order") {
       // Ayuda con una cita (3e): qué pasó, qué quiere y cuánto, su nota y fotos, la decisión del negocio y lo que se puede
       // devolver a la tarjeta (el depósito pagado en la app). Resolver con monto devuelve a la tarjeta.
       const h = k.ayuda;
       const DEC: Record<string, string> = { ok: "Aceptó", alt: `Propuso devolver $${((h.offer ?? 0) / 100).toFixed(2)}`, no: "Dijo que no puede" };
       const usd = (c: number) => `$${(c / 100).toFixed(2)}`, dinero = "puedeDinero" in k && !!k.puedeDinero;
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: h.k === "market_order" ? "PEDIDO" : h.k === "hold" ? "APARTADO" : h.k === "party" ? "FIESTA" : h.k === "trip" ? "VIAJE" : h.k === "night" ? "NOCHE" : "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0] },
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "SOLICITUD", v: h.number }, { k: h.k === "market_order" ? "PEDIDO" : h.k === "hold" ? "APARTADO" : h.k === "party" ? "FIESTA" : h.k === "trip" ? "VIAJE" : h.k === "night" ? "NOCHE" : h.k === "enrollment" ? "INSCRIPCIÓN" : "CITA", v: `${h.num}${h.svc ? ` · ${h.svc}` : ""} · ${usd(h.total)}` }, { k: "CLIENTE", v: h.quien }, { k: "QUÉ PASÓ", v: motivoAyuda(h.reason, h.k === "market_order" ? "merc" : h.k === "hold" ? "tienda" : h.rub)[0] },
         { k: "QUÉ QUIERE", v: `${quiereAyuda(h.wants)[0]}${h.amount ? ` · ${usd(h.amount)}` : ""}` }, { k: "DEVOLVIBLE A LA TARJETA", v: h.pago ? `${usd(h.pago)} (${h.k === "trip" ? "el viaje" : "depósito"})` : h.rub === "salud" || h.rub === "pro" ? "Nada: no se cobra en la app" : "Nada: pagó en el local" }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
       if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
@@ -200,9 +202,12 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
           sub: `Hasta ${usd(h.pago)} (el depósito pagado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; la comisión baja en proporción.`,
           valor: { k: "MONTO EN DÓLARES", ini: ((Math.min(h.amount ?? h.pago, h.pago)) / 100).toFixed(2), max: 8 }, plantillas: plant, hacer: (m, _e, v) => decidirSop(k.id, m, v, clave) }); } }] : []),
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
+        // 4eg · «Cuidado de niños»: los datos del niño solo con motivo, y quedan en la auditoría.
+        ...(k.queue === "cuidado" ? [{ l: "Ver los datos del niño", icon: "shield", onClick: () => setConf({ titulo: "¿Para qué necesitas ver los datos del niño?", sub: "Solo Soporte o Admin. Queda en la auditoría con tu motivo; se muestran solo en esta pantalla.", cta: "Ver los datos",
+          plantillas: ["Para hablar con el lugar sobre lo que pasó con este niño.", "Para pasar el caso a las autoridades (ChildLine)."], hacer: (m) => verNinoCaso(k.id, m) }) }] : []),
       ];
     }
-    if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k !== "appointment") {
+    if (k.queue === "sop" && "ayuda" in k && k.ayuda && k.ayuda.k === "order") {
       // Ayuda con un pedido: qué pasó, qué platos, qué quiere, su nota, la respuesta del negocio y el pedido.
       const h = k.ayuda, MOT: Record<string, string> = { falta: "Falta algo", equivocado: "Llegó algo equivocado", frio: "Llegó frío o mal preparado", danado: "Llegó dañado o derramado", tarde: "Llegó tarde", nollego: "No le llegó", pago: "Problema con el pago", otro: "Otro problema" };
       const Q: Record<string, string> = { reponer: "Que se lo repongan", devolver: "Que le devuelvan lo de esos platos", avisar: "Solo quiere que lo sepan" };
@@ -235,6 +240,19 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ocultar", v: "danger", icon: "close", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", plantillas: PLANT.hide, peligro: true, hacer: (m) => decidirRep(k.id, "ocultar", m) }) },
         { l: "Ocultar y sancionar", v: "danger", icon: "warning", off: oculta, onClick: () => setConf({ titulo: "¿Por qué se oculta?", sub: "Además, una sanción al autor.", plantillas: PLANT.hide, peligro: true,
           elegir: { label: "SANCIÓN", items: [{ k: "adv", l: "Advertencia" }, { k: "mute7", l: "Silencio 7 días" }, { k: "nopub", l: "Bloquear publicación 30 días" }, { k: "susp14", l: "Suspender 14 días" }] }, hacer: (m, e) => decidirRep(k.id, "ocultar", m, e) }) },
+      ];
+    }
+    if (k.queue === "grupo" && "grupos" in k && k.grupos) {
+      // 4eg · Los grupos cancelados en 90 días (cada uno con su motivo y a cuántos se les devolvió todo). Pausar quita las inscripciones
+      // de su página (modules_off.svc) hasta que se reanude desde Negocios 360°.
+      const g = k.grupos;
+      cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "EN 90 DÍAS", v: String(g.L.length), fg: "var(--tl-pro-ink)" }, { k: "PERSONAS CON DEVOLUCIÓN", v: String(g.L.reduce((a, x) => a + x.n, 0)) }, { k: "INSCRIPCIONES", v: g.pausado ? "En pausa" : "Activas" }] });
+      cuerpoB.push({ type: "rows", k: "CADA GRUPO", items: g.L.map((x) => ({ icon: "users", t: `${x.svc} · ${x.label}`, s: `Empezaba el ${x.inicio} · ${x.n} inscrito${x.n === 1 ? "" : "s"} con devolución completa${x.motivo ? ` · «${x.motivo}»` : ""}` })) });
+      if (k.puedeDecidir) acts = [
+        ...(g.pausado ? [] : [{ l: "Pausar inscripciones", v: "danger", icon: "warning", onClick: () => setConf({ titulo: "¿Por qué se pausan las inscripciones?", sub: "Sus servicios salen de su página hasta que los reanudes desde Negocios 360°. El dueño ve el motivo en su panel. Lo ya confirmado sigue en pie.", cta: "Pausar", peligro: true,
+          plantillas: ["Cancela grupos seguidos: la gente se queda sin curso.", "Anuncia cursos que no da."], hacer: (m) => decidirNoche(k.id, true, m) }) }]),
+        { l: "Revisado, sin cambios", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; si cancela 3 grupos más en 90 días, se abre otro.", cta: "Cerrar el caso",
+          plantillas: ["Cada grupo tiene una razón razonable (pocos alumnos, maestro enfermo).", "Hablamos con el lugar y lo corrigió.", "A todos se les devolvió completo."], hacer: (m) => decidirNoche(k.id, false, m) }) },
       ];
     }
     if ((k.queue === "mesa" || k.queue === "noid") && "noche" in k && k.noche) {

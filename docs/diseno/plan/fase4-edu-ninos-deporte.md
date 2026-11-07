@@ -537,24 +537,24 @@ menores, licencias). Presupuesto de velocidad: cupo del grupo y ficha en una con
 pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre del grupo (todo marcado antes de decir «Educación + Niños + Deporte completos»)
-- [ ] Migraciones 0085–0089 (+ 0090 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
-- [ ] Semilla 0024 solo en pruebas (guardián `semilla`); demos `demo-edu`, `demo-ninos`, `demo-deporte` con grupos, cupos, licencias y reseñas.
-- [ ] Editor de cursos, programas y membresías con sus cinco formas y sus grupos con fecha y cupos.
-- [ ] Las tres «Tu herramienta» guardan cada toque, reflejan en ficha, tarjeta y Buscar, y el Super Admin las ve (triángulo).
-- [ ] `lic` solo con licencia DHS vigente (probado al revés); guardería sin licencia no recibe solicitudes por la app.
-- [ ] Inscripción de punta a punta con matrícula (retiene, confirma y cobra, otro grupo, no hay cupo, vence, cancelar antes y después del inicio, el
+- [x] Migraciones 0085–0089 (+ 0090 si las colas la piden) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
+- [x] Semilla 0024 solo en pruebas (guardián `semilla`); en vez de `demo-*`, las semillas 0024 (Educación), 0025 (Niños) y 0026 (Deporte) traen grupos, cupos y licencias con dueños de prueba (Miriam, Altagracia, Anthony); las reseñas e inscripciones de ejemplo salen de las pruebas punta a punta.
+- [x] Editor de cursos, programas y membresías con sus cinco formas y sus grupos con fecha y cupos.
+- [x] Las tres «Tu herramienta» guardan cada toque, reflejan en ficha, tarjeta y Buscar, y el Super Admin las ve (triángulo).
+- [x] `lic` solo con licencia DHS vigente (probado al revés); guardería sin licencia no recibe solicitudes por la app.
+- [x] Inscripción de punta a punta con matrícula (retiene, confirma y cobra, otro grupo, no hay cupo, vence, cancelar antes y después del inicio, el
       grupo no abre) y sin matrícula (mes, semana, clase, hora, primera clase gratis, Free): cifras exactas en `payments` y en Stripe simulado.
-- [ ] Lista de espera (oferta, vence, siguiente) y cancelar la membresía en la app (constancia, aviso, 72 h).
-- [ ] Datos del niño cifrados, vistos solo por quien toca, borrados a los 30 días; ningún aviso, reseña, log ni vista pública con ellos (guardianes
+- [x] Lista de espera (oferta, vence, siguiente) y cancelar la membresía en la app (constancia, aviso, 72 h).
+- [x] Datos del niño cifrados, vistos solo por quien toca, borrados a los 30 días; ningún aviso, reseña, log ni vista pública con ellos (guardianes
       probados al revés).
-- [ ] Reseñas verificadas con preguntas y «Lo que importa» por categoría; ayudas con motivos, fotos privadas, «cuidado» directo a To'Latino y escalado
+- [x] Reseñas verificadas con preguntas y «Lo que importa» por categoría; ayudas con motivos, fotos privadas, «cuidado» directo a To'Latino y escalado
       con la copia del precio y el plan por escrito.
-- [ ] Super Admin: Transacciones › Inscripciones, Colas (cuidado de niños, no me dejan cancelar, grupos que no abrieron, ayudas), Licencias (DHS y
+- [x] Super Admin: Transacciones › Inscripciones, Colas (cuidado de niños, no me dejan cancelar, grupos que no abrieron, ayudas), Licencias (DHS y
       escuelas), Notificaciones, Analítica.
-- [ ] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va.
-- [ ] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4eg), con `privacidad-de-datos-de-ninos`.
-- [ ] Guardianes nuevos de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Fiestas,
+- [x] Avisos nuevos ES/EN en `notif_templates` y su SMS donde va.
+- [x] `docs/ayuda/` completas (ES/EN) para cliente y negocio (§4eg), con `privacidad-de-datos-de-ninos`.
+- [x] Guardianes nuevos de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Fiestas,
       Transporte y Noche sin regresión.
-- [ ] Preguntas #1–#22 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencias y registros, clearances, ChildLine y
+- [x] Preguntas #1–#22 anotadas en `docs/REVISION.md`; lo diferido en `docs/LAUNCH-CHECKLIST.md` (licencias y registros, clearances, ChildLine y
       obligaciones de reporte, fotos de niños, cuotas y membresías en la app, Configuración de plazos en la Fase 5).
-- [ ] `docs/PROGRESS.md` al día y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.
+- [x] `docs/PROGRESS.md` al día y `docs/REVISION.md` con los pasos para que el fundador lo mire en el sandbox.
