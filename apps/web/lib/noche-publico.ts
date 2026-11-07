@@ -17,7 +17,7 @@ export type NochePublica = {
   // Hoy: abierto ahora, aún no abre (abre a…), hoy no abre. Minutos desde las 12 PM de la noche.
   hoy: "abierto" | "aun" | "cerrado"; abre: number | null; cierra: number | null;
   lic: boolean; tags: string[]; lista: boolean; mesas: boolean;
-  // Lista y mesas en la app: nacen en 4nc. Hasta entonces se llama o se escribe.
+  // Lista y mesas en la app (4nc).
   booking: boolean;
 };
 
@@ -59,7 +59,8 @@ export async function nochePublica(negocio: string): Promise<NochePublica | null
     noche: h.porFecha || !b.hay ? null : h.prox, fila: h.porFecha ? null : h.fila, nota: h.musicaNota, vestimenta: h.vestimenta,
     otras: h.noches.filter((n, i) => i > 0 && n.abre && n.distinto).slice(0, 3), publicado: b.hay && !h.porFecha,
     hoy, abre, cierra, lic, tags, lista: h.lista && servicios.some((s) => s.k === "lista"), mesas: servicios.some((s) => s.k === "mesa" || s.k === "vip"),
-    booking: false,
+    // Lista y mesas en la app (4nc): con el módulo encendido y sin pausa de To'Latino (Free también, sin depósito; Preguntas #7).
+    booking: (b.mods ?? []).includes("rsv") && !(b.off ?? {}).rsv && !(b.off ?? {}).svc,
   };
 }
 export const esPorFecha = (k: KindNoche) => POR_FECHA.includes(k);

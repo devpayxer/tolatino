@@ -44,25 +44,25 @@ export type MisPedidos = Awaited<ReturnType<typeof misPedidos>>;
 /* ── Citas y reservas (hoy: mesas; las citas de belleza, salud y autos llegan con sus fases) ── */
 export type EstMesa = "pend" | "alt" | "ok" | "in" | "done" | "nos" | "no" | "exp" | "cx";
 export type MiReserva = { num: string; biz: string; bname: string; foto: string | null; st: EstMesa; at: string; tz: string; dia: number; p: number; area: string; rev: boolean; up: boolean;
-  cita: boolean; svc: { es: string; en: string } | null; con: string | null; fiesta: boolean; viaje: boolean }; // cita (Belleza): el servicio y con quién · fiesta (4v): F-… · viaje (4y): V-…
+  cita: boolean; svc: { es: string; en: string } | null; con: string | null; fiesta: boolean; viaje: boolean; noche: boolean }; // noche (4nc): N-… · cita (Belleza): el servicio y con quién · fiesta (4v): F-… · viaje (4y): V-…
 const EST_MESA = `case when o.status = 'pending' then 'pend' when o.status = 'change_proposed' then 'alt' when o.status = 'confirmed' then (case when o.status_detail in ('seated', 'live') then 'in' else 'ok' end)
   when o.status = 'done' then (case when o.status_detail = 'noshow' then 'nos' else 'done' end) when o.status = 'declined' then 'no' when o.status = 'expired' then 'exp' else 'cx' end`;
 const UP_MESA = `(o.status in ('pending', 'change_proposed', 'confirmed') and (o.scheduled_at at time zone c.timezone)::date >= (now() at time zone c.timezone)::date)`;
 export async function misReservas(userId: string, f: "up" | "past", antes: string | null) {
-  await Promise.all([vencerMesas({ userId }), vencerCitas({ userId }), import("./fiestas-reservas").then((F) => F.barrerFiestas({ userId })), import("./viajes").then((V) => V.barrerViajes({ userId }))]);
+  await Promise.all([vencerMesas({ userId }), vencerCitas({ userId }), import("./fiestas-reservas").then((F) => F.barrerFiestas({ userId })), import("./viajes").then((V) => V.barrerViajes({ userId })), import("./noche-reservas").then((N) => N.vencerNoche({ userId }))]);
   const cur = antes && /^\d{1,18}$/.test(antes) ? antes : null;
   const [L, n] = await Promise.all([
     db().query<MiReserva & { k: string }>(
       `select o.number as num, o.business_id as biz, b.name as bname, ${FOTO} as foto, ${EST_MESA} as st, ${ISO("o.scheduled_at")} as at, c.timezone as tz,
               ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int as dia, o.party_size as p, coalesce(o.details->>'area', 'salon') as area,
               exists (select 1 from reviews r where r.business_id = o.business_id and r.user_id = o.user_id and r.status <> 'removed') as rev, ${UP_MESA} as up, o.id::text as k,
-              o.kind in ('appointment', 'party', 'trip') as cita, o.kind = 'party' as fiesta, o.kind = 'trip' as viaje, o.details->'svc' as svc, (select split_part(m.display_name, ' ', 1) from business_members m where m.id = o.member_id) as con
+              o.kind in ('appointment', 'party', 'trip', 'night') as cita, o.kind = 'party' as fiesta, o.kind = 'trip' as viaje, o.kind = 'night' as noche, o.details->'svc' as svc, (select split_part(m.display_name, ' ', 1) from business_members m where m.id = o.member_id) as con
          from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
-        where o.user_id = $1 and o.kind in ('table', 'appointment', 'party', 'trip') and (${f === "up" ? UP_MESA : `not ${UP_MESA}`}) and ($2::bigint is null or o.id < $2::bigint)
+        where o.user_id = $1 and o.kind in ('table', 'appointment', 'party', 'trip', 'night') and (${f === "up" ? UP_MESA : `not ${UP_MESA}`}) and ($2::bigint is null or o.id < $2::bigint)
         order by ${f === "up" ? "o.scheduled_at asc, o.id desc" : "o.id desc"} limit 31`, [userId, f === "up" ? null : cur]),
     db().query<{ up: number; past: number }>(
       `select count(*) filter (where ${UP_MESA})::int as up, count(*) filter (where not ${UP_MESA})::int as past
-         from operations o join cities c on c.id = o.city_id where o.user_id = $1 and o.kind in ('table', 'appointment', 'party', 'trip')`, [userId]),
+         from operations o join cities c on c.id = o.city_id where o.user_id = $1 and o.kind in ('table', 'appointment', 'party', 'trip', 'night')`, [userId]),
   ]);
   const mas = f === "past" && L.rows.length > 30;
   return { filas: L.rows.slice(0, 30).map(({ k: _k, ...x }) => x), sig: mas ? L.rows[29]!.k : null, n: n.rows[0]! };

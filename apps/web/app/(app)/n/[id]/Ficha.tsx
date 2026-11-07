@@ -69,7 +69,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   // Transporte (Fase 4 · 4x): precio cerrado, la próxima salida y la licencia.
   const vi = useViaje(trans ?? null, es, f.pro);
   // Noche (Fase 4 · 4nb): el cover de esta noche, la fila con su hora real, la lista y las mesas.
-  const no = useNoche(noche ?? null, es, f.pro, { llegar: () => llegar(), escribir: () => escribir(), llamar: () => llamar() });
+  const no = useNoche(noche ?? null, es, f.pro, { llegar: () => llegar(), escribir: () => escribir(), llamar: () => llamar(), reservar: (svc, pax) => router.push(`/n/${f.id}/noche?s=${svc}&p=${pax}`) });
   // DJ y promotor no tienen local (neg-noche-kind.js post): en vez de «Cerrado · Abre a las…», «Por contrato» / «Según la noche».
   const porContrato = !!no && no.np.porFecha && no.np.kind !== "salon";
   if (porContrato) {

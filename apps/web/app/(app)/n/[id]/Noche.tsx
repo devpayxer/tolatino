@@ -16,7 +16,7 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const DOW = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 
-type Acc = { llegar: () => void; escribir: () => void; llamar: () => void };
+type Acc = { llegar: () => void; escribir: () => void; llamar: () => void; reservar: (svc: string, pax: number) => void };
 export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc: Acc) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [hoja, setHoja] = useState<string | null>(null);
@@ -148,8 +148,9 @@ export function NoHoja({ v }: { v: No }) {
   const pago = s.k === "lista" ? E2(`Anotarte no cobra nada. En la puerta pagas ${s.cents ? `${usdN(s.cents)} por persona` : "nada"} si llegas antes de las ${hNoche(s.until ?? 660)}; después, el cover normal.`, `Joining costs nothing. At the door you pay ${s.cents ? `${usdN(s.cents)} per person` : "nothing"} if you arrive before ${hNoche(s.until ?? 660)}; after that, the regular cover.`)
     : s.k === "cover" ? v.linea
     : `${s.dep ? E2(`Hoy se retiene el depósito de ${usdN(s.dep)}; se cobra cuando confirmen y se descuenta de tu cuenta. Si no confirman, se libera completo. `, `Today a ${usdN(s.dep)} deposit is held; it is charged when they confirm and comes off your bill. If they do not confirm, it is fully released. `) : E2("Sin depósito y sin tarjeta. ", "No deposit and no card. ")}${!s.hr && s.cents ? E2("El mínimo es consumo, no un cargo aparte.", "The minimum is spend, not an extra fee.") : ""}`;
-  const cta = s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Llamar para anotarme", "Call to join the list") : E2("Llamar para pedir la mesa", "Call to request the table");
-  const go = () => { v.cerrar(); if (s.k === "cover") v.acc.llegar(); else v.acc.llamar(); };
+  const app = np.booking && s.k !== "cover";
+  const cta = s.k === "cover" ? E2("Cómo llegar", "Directions") : !app ? E2("Llamar al local", "Call the venue") : s.k === "lista" ? E2("Anotarme en la lista", "Join the list") : E2("Pedir la mesa", "Request the table");
+  const go = () => { v.cerrar(); if (s.k === "cover") v.acc.llegar(); else if (!app) v.acc.llamar(); else v.acc.reservar(s.id, pn); };
   return (
     <div data-screen-label="Servicio · Noche" className="fixed inset-0 z-[60]">
       <div onClick={v.cerrar} className="absolute inset-0 bg-ink/50" />
@@ -185,12 +186,12 @@ export function NoHoja({ v }: { v: No }) {
                 {s.inc.map((z) => <div key={z.es} className="mt-2 flex items-start gap-2 text-[13px] font-semibold leading-[1.45]"><span className="grid flex-none pt-0.5"><Icon name="check" size={14} color="var(--tl-open-text)" /></span>{nm(z)}</div>)}
               </div>)}
             <Nota ic={s.k === "lista" ? "check" : "dollar"} t={pago} />
-            {s.k !== "cover" && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Anotarte y pedir mesa por To’Latino llega muy pronto; por ahora, llama al local.", "Joining the list and requesting tables on To’Latino is coming soon; for now, call the venue.")}</div>}
+            {s.k !== "cover" && !app && <div className="text-pretty text-[12px] font-medium leading-[1.5] text-ink/55">{E2("Este local no toma listas ni mesas en To’Latino por ahora: llama al local.", "This venue is not taking lists or tables on To’Latino right now: call the venue.")}</div>}
           </div>
         </div>
         <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
           <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{P.s || E2("PRECIO", "PRICE")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{P.l}</div></div>
-          <div className="flex min-w-0 flex-1"><Button block icon={s.k === "cover" ? "pin" : "phone"} onClick={go}>{cta}</Button></div>
+          <div className="flex min-w-0 flex-1"><Button block icon={s.k === "cover" ? "pin" : !app ? "phone" : s.k === "lista" ? "check" : "drink"} onClick={go}>{cta}</Button></div>
         </div>
       </div>
     </div>

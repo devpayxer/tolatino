@@ -110,3 +110,8 @@ export function filaCuando(f: FilaNoche, es: boolean): string {
 }
 export const filaEtiqueta = (f: FilaNoche, es: boolean) => (f.viva ? (es ? "FILA AHORA" : "LINE NOW") : f.hoy ? (es ? "FILA HOY" : "LINE TODAY") : f.anoche ? (es ? "FILA ANOCHE" : "LINE LAST NIGHT")
   : es ? `FILA EL ${dia3Noche(f.dow, true).toUpperCase()}` : `LINE ON ${dia3Noche(f.dow, false).toUpperCase()}`);
+/* «2026-11-07» → «sáb 7 nov» (nunca la fecha en crudo en pantalla). */
+export function nocheCorta(fecha: string, es: boolean): string {
+  const d = new Date(`${fecha}T12:00:00Z`), M = es ? ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"] : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return es ? `${dia3Noche(d.getUTCDay(), true)} ${d.getUTCDate()} ${M[d.getUTCMonth()]}` : `${dia3Noche(d.getUTCDay(), false)} ${M[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}

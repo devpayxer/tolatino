@@ -1045,3 +1045,14 @@ Pestaña **Esta noche** (o «Mañana viernes» si hoy cierra): Entrada, Lista, M
 para ver la hoja. DJ Rafy: «Por contrato», «Para tu fecha» y **Pedir fecha**, sin horario ni dirección.
 _Decidido por mí:_ hasta que llegue 4nc, la hoja de lista y mesa ofrece **llamar al local**; el texto del depósito ya dice «se retiene
 hoy y se cobra cuando confirmen» (corrección del prototipo, Preguntas #1).
+
+### 4nc · Lista de la noche y mesa con depósito (7 nov)
+**Qué mirar (Marisol, 5705550122):** La Terraza › Esta noche › **Lista de la noche** › Anotarme: 3 pasos (cuántos van y ocasión → noche
+y hora → revisa y envía). Queda al instante con su **código de 4 cifras**. **Mesa en la terraza** › Pedir la mesa: se retienen $50 y
+queda «Esperando a La Terraza». **Panel (Héctor, 5705550366) › Hoy:** «Mesas que esperan tu respuesta» → Confirmar (se cobra) / Otra hora
+/ No hay mesa (se libera). Esta noche: «Mesas de esta noche» con Llegaron / No llegaron (desde los 30 min) / No entró: sin
+identificación, y **«La lista de esta noche»** para la puerta (buscar por nombre o código, + / − por cada persona que entra).
+_Decidido por mí:_ la otra hora se acepta en 30 min (la noche no espera 24 h); la lista no pide tarjeta nunca; Free toma lista y mesa sin
+depósito (Preguntas #7); el código no se muestra hasta que la mesa está confirmada y nunca va en un SMS; «No llegaron» se puede marcar
+desde que vence la mesa guardada; la carrera por la última mesa la gana el primero que entra al candado.
+_Pendiente (4ne):_ Super Admin › Transacciones › Noche y las colas «Mesas no respetadas» y «Sin identificación».

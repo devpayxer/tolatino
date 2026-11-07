@@ -35,7 +35,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -213,5 +213,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : compra && /^(merc|apt):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(merc|apt):/, "")) : /^(fiesta|viaje):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(fiesta|viaje):/, "")) : undefined,
     ayudas: (conCitas || compra) && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} />;
+  // Noche (4nc): mesas que esperan, mesas de esta noche, la lista para la puerta y el detalle. Responder pide «Hoy y pedidos».
+  const nocOk = d.cat === "NEG-NOCHE" && ord;
+  if (ruta.det?.startsWith("noche:") && !nocOk) ruta.det = null;
+  const noc = nocOk && (ruta.sec === "hoy" || ruta.det?.startsWith("noche:")) ? await (async () => {
+    const N = await import("@/lib/noche-reservas");
+    if (ruta.sec === "hoy") await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
+    return { hoy: ruta.sec === "hoy" ? await N.nocheHoy(d.id) : undefined, det: ruta.det?.startsWith("noche:") ? await N.nochePanel(d.id, ruta.det.slice(6)) : undefined };
+  })() : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} />;
 }
