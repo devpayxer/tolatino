@@ -1,7 +1,8 @@
 "use server";
 /* Super Admin › Contenido › Publicaciones (Comunidad, 5a): ocultar o restaurar con motivo (cont:retirar; el autor recibe el aviso con
-   el motivo, sin SMS), fijar arriba de su ciudad hasta 7 días y bloquear o abrir los comentarios (cont:editar). Cada una: permiso y
-   ciudad de quien actúa → cambio → auditoría con motivo y antes → después, en una transacción. Nada se borra. */
+   el motivo, sin SMS), fijar arriba de su ciudad hasta 7 días y bloquear o abrir los comentarios (cont:editar). Comentarios de vecinos
+   (5b): ocultar o restaurar con motivo (cont:retirar), igual. Cada una: permiso y ciudad de quien actúa → cambio → auditoría con motivo
+   y antes → después, en una transacción. Nada se borra. */
 import { revalidatePath } from "next/cache";
 import { auditar, staff } from "@/lib/admin";
 import { avisar } from "@/lib/avisos";
@@ -71,4 +72,29 @@ export async function pubComentarios(id: string, bloquear: boolean, motivo: stri
       before: { publicacion: p.body.slice(0, 80), comentarios: bloquear ? "abiertos" : "bloqueados" }, after: { comentarios: bloquear ? "bloqueados" : "abiertos" }, reason: m });
     return null;
   }, bloquear ? "Comentarios bloqueados." : "Comentarios abiertos otra vez.")).r;
+}
+
+/* Comentarios de vecinos (5b): ocultar (sale del hilo para todos; si tiene respuestas queda «Comentario oculto por las reglas») o restaurar. */
+export async function cmComOcultar(id: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("cont", "retirar")) return no("Tu rol no puede hacer esto.");
+  if (typeof id !== "string" || !/^\d{1,18}$/.test(id)) return no("Ese comentario no existe.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const e = await tx(async (c) => {
+    const x = (await c.query<{ city_id: string; status: string; autor: string; body: string; post: string }>(
+      `select city_id, status, author_user_id::text as autor, body, post_id::text as post from com_comments
+        where id = $1::bigint and status <> 'deleted' and (cardinality($2::text[]) = 0 or city_id = any($2::text[])) for update`, [id, s.cities])).rows[0];
+    if (!x) return { err: "Ese comentario ya no está." };
+    if ((x.status === "hidden") === ocultar) return { err: ocultar ? "Ya está oculto." : "Ya se ve." };
+    await c.query(`update com_comments set status = $2, hidden_by = $3, hidden_staff_id = $4, hidden_reason = $5, hidden_at = $6 where id = $1::bigint`,
+      [id, ocultar ? "hidden" : "visible", ocultar ? "admin" : null, ocultar ? s.id : null, ocultar ? m : null, ocultar ? new Date() : null]);
+    await auditar(c, { actor: s.id, action: ocultar ? "com.comentario.ocultar" : "com.comentario.restaurar", targetKind: "com_comment", targetId: id, city: x.city_id,
+      before: { comentario: x.body.slice(0, 80), estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
+    return { err: null, x };
+  });
+  if (e.err || !e.x) return no(e.err ?? "Ese comentario ya no está.");
+  revalidatePath("/admin/contenido");
+  await avisar(e.x.autor, ocultar ? "com_cm_hide" : "com_cm_restore", { motivo: m.slice(0, 140) }, { href: `/comunidad/p/${e.x.post}`, ref: ["com_comment", id], sinSms: true }).catch(() => undefined);
+  return { ok: true, mensaje: ocultar ? "Comentario oculto. El autor ve el motivo." : "El comentario se ve otra vez." };
 }

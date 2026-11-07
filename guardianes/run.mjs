@@ -17,6 +17,8 @@ const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + line
 
 /* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
 const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
+/* La última definición de una función de la base en las migraciones (una migración nueva puede reemplazarla). */
+const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
 const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
 
 const guardianes = {
@@ -1750,6 +1752,11 @@ const guardianes = {
       const iF = c.search(/revisarPublicacion\(/), iW = c.search(/insert into com_posts|update com_posts set body/);
       if (iF < 0 || iW < 0 || iF > iW) falla("comunidadSinTelefonos", L, 0, `«${fn}» escribe sin pasar antes por revisarPublicacion()`);
     }
+    // 5b: los comentarios y respuestas pasan por revisarComentario() (que corre revisarTexto) antes de guardarse.
+    const H = "apps/web/lib/comunidad-hilo.ts";
+    if (!/export function revisarComentario[\s\S]*?revisarTexto\(t\)/.test(f)) falla("comunidadSinTelefonos", F, 0, "revisarComentario no pasa el texto por revisarTexto");
+    if (existsSync(H)) { const c = cuerpoFn(sinComent(H), "comentar"), iF = c.search(/revisarComentario\(/), iW = c.search(/insert into com_comments/);
+      if (iF < 0 || iW < 0 || iF > iW) falla("comunidadSinTelefonos", H, 0, "«comentar» escribe sin pasar antes por revisarComentario()"); }
     if (!/t ~ '\(\\d\[\\s\(\)\.-\]\*\)\{10\}'/.test(m)) falla("comunidadSinTelefonos", M, 0, "com_sin_datos() no frena teléfonos de 10 dígitos");
     for (const [tabla, col] of [["com_posts", "body"], ["com_comments", "body"], ["community_profiles", "bio"]])
       if (!new RegExp(`alter table ${tabla} add constraint \\w+ check \\(com_sin_datos\\(${col}\\)`).test(m)) falla("comunidadSinTelefonos", M, 0, `${tabla}.${col} sin la restricción com_sin_datos()`);
@@ -1818,7 +1825,7 @@ const guardianes = {
     if (existsSync(S) && !/if \(!u\?\.first_name\) redirect\(`\/entrar\?volver=/.test(readFileSync(S, "utf8"))) falla("comunidadSoloConCuenta", S, 0, "conCuenta() debe mandar a /entrar sin sesión");
     for (const x of codigo) {
       if (!/^apps\/web\/app\/\(app\)\/comunidad\/(.*\/)?page\.tsx$/.test(x)) continue;
-      const t = sinComent(x), iDatos = t.search(/await (muro|publicacion|paraEditar)\(/), iCuenta = t.search(/await conCuenta\(/), iInv = t.search(/if \(!u\) \{[\s\S]*?return <Invitado/);
+      const t = sinComent(x), iDatos = t.search(/\b(muro|publicacion|paraEditar|hilo|respuestas)\(/), iCuenta = t.search(/await conCuenta\(/), iInv = t.search(/if \(!u\) \{[\s\S]*?return <Invitado/);
       if (iDatos >= 0 && (iCuenta < 0 || iCuenta > iDatos)) falla("comunidadSoloConCuenta", x, 0, "lee contenido de vecinos antes de pedir la cuenta (conCuenta)");
       if (iCuenta < 0 && iInv < 0) falla("comunidadSoloConCuenta", x, 0, "pantalla de la Comunidad sin conCuenta() ni muro de registro");
       if (/Invitado/.test(t) && iInv > iCuenta && iCuenta >= 0) falla("comunidadSoloConCuenta", x, 0, "el muro de registro va antes de conCuenta()");
@@ -1837,6 +1844,95 @@ const guardianes = {
     const iS = c.search(/\n\s*if \(await esSuNegocio\(c, userId, b\.id\)\) return no\(/), iW = c.search(/insert into com_posts/);
     if (iS < 0 || iW < 0 || iS > iW) falla("noTePromuevas", L, 0, "publicar guarda una recomendación sin revisar esSuNegocio() antes");
     if (!/owner_user_id = \$1/.test(s) || !/business_members m where m\.business_id = b\.id and m\.user_id = \$1 and m\.status = 'active'/.test(s)) falla("noTePromuevas", L, 0, "esSuNegocio debe mirar al dueño y al equipo activo del negocio");
+    // 5b: recomendar un negocio en un comentario también pasa por esSuNegocio() antes de guardar.
+    const H = "apps/web/lib/comunidad-hilo.ts";
+    if (existsSync(H)) { const h = cuerpoFn(sinComent(H), "comentar"), iS = h.search(/\n\s*if \(await esSuNegocio\(c, userId, b\.id\)\) return no\(/), iW = h.search(/insert into com_comments/);
+      if (iS < 0 || iW < 0 || iS > iW) falla("noTePromuevas", H, 0, "comentar guarda un negocio recomendado sin revisar esSuNegocio() antes"); }
+  },
+
+  /* ── Fase 5 · Comunidad (5b) ── */
+  /* 5b. Un voto por persona y nada más: la llave (destino, persona) en com_votes y (encuesta, persona) en com_poll_votes; lo propio no se
+     vota (la base lo rechaza y votar() lo revisa antes); dos cuentas del mismo dispositivo no suman (counted lo pone la base y los
+     contadores solo cuentan los que cuentan); la app solo escribe votos con com_votar() desde lib/comunidad-hilo.ts. */
+  votoUnico() {
+    const M0 = "packages/db/migrations/0097_comunidad_base.sql", H = "apps/web/lib/comunidad-hilo.ts";
+    if (!existsSync(M0)) return;
+    const m0 = readFileSync(M0, "utf8");
+    if (!/create table if not exists com_votes \([\s\S]*?primary key \(target_kind, target_id, user_id\)/.test(m0)) falla("votoUnico", M0, 0, "com_votes sin la llave (target_kind, target_id, user_id): una persona podría votar dos veces");
+    if (!/create table if not exists com_poll_votes \([\s\S]*?primary key \(post_id, user_id\)/.test(m0)) falla("votoUnico", M0, 0, "com_poll_votes sin la llave (post_id, user_id)");
+    const antes = ultimaFn("com_votes_antes"), despues = ultimaFn("com_votes_despues");
+    if (!antes) return falla("votoUnico", "packages/db/migrations", 0, "falta com_votes_antes (lo propio y el mismo dispositivo los decide la base)");
+    if (!/if autor = new\.user_id then raise exception 'lo propio no se vota'/.test(antes)) falla("votoUnico", "packages/db/migrations", 0, "com_votes_antes debe rechazar el voto a lo propio");
+    if (!/new\.counted := not exists \(select 1 from com_votes o where [^;]*o\.device = new\.device and o\.user_id <> new\.user_id\)/.test(antes)) falla("votoUnico", "packages/db/migrations", 0, "com_votes_antes debe callar el voto de otra cuenta del mismo dispositivo (counted)");
+    if (!/new\.counted := old\.counted/.test(antes)) falla("votoUnico", "packages/db/migrations", 0, "cambiar de signo no puede volver a contar un voto callado");
+    if (!/old\.counted/.test(despues) || !/new\.counted/.test(despues)) falla("votoUnico", "packages/db/migrations", 0, "com_votes_despues debe sumar solo los votos que cuentan");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((t, i) => {
+        if (/\b(insert into|update|delete from) com_votes\b/i.test(t)) falla("votoUnico", x, i + 1, "los votos solo se escriben con com_votar() (candado, mismo toque quita, otro signo cambia)");
+        if (/com_votar\(/.test(t) && x !== H) falla("votoUnico", x, i + 1, "solo lib/comunidad-hilo.ts llama a com_votar() (después de revisar bloqueos y lo propio)");
+      });
+    }
+    if (existsSync(H)) {
+      const c = cuerpoFn(sinComent(H), "votar"), iP = c.search(/if \(t\.autor === userId\) return no\(/), iV = c.search(/com_votar\(/);
+      if (iP < 0 || iV < 0 || iP > iV) falla("votoUnico", H, 0, "votar() debe rechazar lo propio antes de llamar a com_votar()");
+    }
+  },
+
+  /* 5b. Los contadores, score, hot, los recomendados del hilo y los del perfil son derivados: solo los escriben sus triggers y funciones en
+     la base. Ninguna línea de la app los asigna ni enciende la marca tl.derivados; la base rechaza el cambio a mano (y com_thread_recs
+     solo lo escribe com_recs_recalcular). */
+  saldoDerivado() {
+    const COLS = /\b(up_n|down_n|score|hot|comments_n|replies_n|poll_counts|votes_n|recs_n|top_comment_id|followers_n|following_n|posts_n|answers_best_n)\s*=(?!=)/;
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      for (const q of t.match(/`[^`]*`|"[^"\n]*"/g) ?? []) {
+        const u = /\bupdate\s+(com_posts|com_comments|community_profiles|com_thread_recs)\b[\s\S]*?\bset\b([\s\S]*?)(\bwhere\b|$)/i.exec(q);
+        if (u && COLS.test(u[2])) falla("saldoDerivado", x, 0, `«${COLS.exec(u[2])[1]}» de ${u[1]} es derivado: solo lo escribe la base (triggers)`);
+        if (/\binsert into com_thread_recs\b/i.test(q)) falla("saldoDerivado", x, 0, "com_thread_recs es derivado: solo lo escribe com_recs_recalcular()");
+      }
+      if (/tl\.derivados|com_derivados_(on|entrar)\(/.test(t)) falla("saldoDerivado", x, 0, "la app no enciende la marca de derivados: los contadores son de la base");
+    }
+    const guardas = [["com_posts_antes", "los contadores de una publicación son derivados"], ["com_comments_antes", "los contadores de un comentario son derivados"],
+      ["community_profiles_antes", "los contadores del perfil son derivados"], ["com_thread_recs_guardia", "com_thread_recs es derivado"]];
+    for (const [fn, msg] of guardas) {
+      const b = ultimaFn(fn);
+      if (!b || !b.includes(`raise exception '${msg}`) || !/com_derivados_ok\(\)/.test(b)) falla("saldoDerivado", "packages/db/migrations", 0, `${fn} debe rechazar el cambio a mano («${msg}»)`);
+    }
+    const c = ultimaFn("com_posts_antes");
+    if (c && !/new\.hot := com_hot\(new\.score, new\.publish_at\)/.test(c)) falla("saldoDerivado", "packages/db/migrations", 0, "hot debe recalcularse en la base con cada cambio de score");
+  },
+
+  /* 5b. Con un bloqueo de por medio no se toca ni se avisa: comentar, votar, «Me sirvió», la encuesta y guardar pasan antes por tocable() o
+     comentarioTocable() (que llevan sinBloqueos); a quién se avisa de un comentario (autor, contestado, «@Nombre») sale de una consulta con
+     sinBloqueos en los dos sentidos, y solo a esas personas se les avisa; el resultado de una encuesta tampoco llega a quien tiene un bloqueo con su autor. */
+  bloqueoAlEscribir() {
+    const H = "apps/web/lib/comunidad-hilo.ts";
+    if (!existsSync(H)) return;
+    const t = sinComent(H);
+    for (const fn of ["postPara", "comentarioTocable"]) if (!/sinBloqueos\(/.test(cuerpoFn(t, fn))) falla("bloqueoAlEscribir", H, 0, `${fn}() debe filtrar con sinBloqueos()`);
+    const escrituras = [["comentar", /insert into com_comments/], ["votar", /com_votar\(/], ["meSirvio", /update com_posts set best_comment_id/], ["votarEncuesta", /insert into com_poll_votes/], ["guardar", /insert into com_saves/]];
+    for (const [fn, w] of escrituras) {
+      const c = cuerpoFn(t, fn), iT = c.search(/await (tocable|comentarioTocable)\(/), iW = c.search(w);
+      if (iW < 0 || iT < 0 || iT > iW) falla("bloqueoAlEscribir", H, 0, `«${fn}» escribe sin pasar antes por tocable()/comentarioTocable() (bloqueos)`);
+    }
+    const a = cuerpoFn(t, "aQuienAvisar");
+    if (!/sinBloqueos\("u\.id", "\$1"\)/.test(a) || !/sinBloqueos\("\$1", "u\.id"\)/.test(a)) falla("bloqueoAlEscribir", H, 0, "aQuienAvisar debe excluir bloqueos y silencios en los dos sentidos");
+    const cm = cuerpoFn(t, "comentar");
+    if (!/aQuienAvisar\(/.test(cm)) falla("bloqueoAlEscribir", H, 0, "comentar() debe sacar a quién avisar de aQuienAvisar()");
+    for (const m of cm.matchAll(/\bavisar\((\w+(?:\.\w+)?)/g)) if (m[1] !== "a.id") falla("bloqueoAlEscribir", H, 0, `comentar() avisa a «${m[1]}» sin pasar por aQuienAvisar()`);
+    const b = cuerpoFn(t, "barrerEncuestas");
+    if (/from com_poll_votes/.test(b) && !/from com_poll_votes v where [^`]*sinBloqueos\(/.test(b)) falla("bloqueoAlEscribir", H, 0, "el resultado de una encuesta no se avisa a quien tiene un bloqueo con su autor");
+  },
+
+  /* 5b. Ningún aviso de la Comunidad sale por SMS (§3): toda plantilla com_* de notif_templates va con sms = false. */
+  avisoComunidadSinSms() {
+    const dir = "packages/db/migrations";
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
+      const t = readFileSync(`${dir}/${x}`, "utf8");
+      for (const m of t.matchAll(/\(\s*'((?:com|gam|dm)_[a-z0-9_]+)',\s*'[a-z]+',\s*(?:null|'[a-z]+'),\s*(true|false)\s*,/g)) if (m[2] !== "false") falla("avisoComunidadSinSms", `${dir}/${x}`, 0, `la plantilla «${m[1]}» de la Comunidad no puede ir por SMS`);
+    }
   },
 
   idioma() {

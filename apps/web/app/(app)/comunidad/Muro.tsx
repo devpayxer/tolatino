@@ -33,7 +33,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
   };
   const encuesta = async (p: Pub, i: number) => {
     const r = await correr(() => comEncuesta(p.id, i)); if (!r) return;
-    if (r.ok) poner(p.id, (x) => x.encuesta ? { ...x, encuesta: { ...x.encuesta, mio: i, total: x.encuesta.total + 1, opts: x.encuesta.opts.map((o, j) => j === i ? { ...o, n: o.n + 1 } : o) } } : x); else fallo(r);
+    if (r.ok && "encuesta" in r) poner(p.id, (x) => ({ ...x, encuesta: r.encuesta })); else fallo(r);
   };
   const guardar = async (p: Pub) => {
     const r = await correr(() => comGuardar(p.id)); if (!r) return;

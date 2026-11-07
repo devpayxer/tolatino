@@ -33,7 +33,7 @@ export type Pub = {
   autor: Autor; lugar: Bi; invitado: boolean; mi: number | null;
   negocio: { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean; para: string[] } | null;
   fotos: string[];
-  encuesta: { opts: { l: string; n: number }[]; mio: number | null; total: number; cierra: string; cerrada: boolean } | null;
+  encuesta: { opts: { l: string; n: number; pc: number }[]; mio: number | null; total: number; cierra: string; cerrada: boolean; ver: boolean } | null;
   up: number; dn: number; score: number; miVoto: number; guardada: boolean; comentarios: number;
 };
 export type Filtros = { tab: "todo" | "sig"; kind: keyof typeof TIPO | null; dist: 0 | 5 | 10 | 30; orden: "top" | "new" };
@@ -42,4 +42,14 @@ export function leerFiltros(sp: Record<string, string | undefined>): Filtros {
   const kind = (["pregunta", "recomendacion", "encuesta", "publicacion"] as const).find((k) => k === sp.k) ?? null;
   const dist = ([5, 10, 30] as const).find((d) => String(d) === sp.d) ?? 0;
   return { tab: sp.t === "sig" ? "sig" : "todo", kind, dist, orden: sp.o === "new" ? "new" : "top" };
+}
+
+/* Porcentajes que suman 100 (mayor residuo): lo calcula el servidor; la pantalla solo los pinta. */
+export function porcentajes(n: number[]): number[] {
+  const t = n.reduce((a, x) => a + x, 0);
+  if (!t) return n.map(() => 0);
+  const raw = n.map((x) => (100 * x) / t), base = raw.map(Math.floor);
+  let falta = 100 - base.reduce((a, x) => a + x, 0);
+  for (const i of raw.map((x, i) => [x - Math.floor(x), i] as const).sort((a, b) => b[0] - a[0] || a[1] - b[1]).map((x) => x[1])) { if (falta <= 0) break; base[i]! += 1; falta--; }
+  return base;
 }

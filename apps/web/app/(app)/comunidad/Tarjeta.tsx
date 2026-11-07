@@ -28,7 +28,7 @@ export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, o
   const [ix, setIx] = useState(0);
   const a = p.autor, rk = a.oficial ? { label: E2("Cuenta oficial", "Official account"), shield: null } : a.rango >= 4 ? { label: es ? rango(a.rango).es : rango(a.rango).en, shield: a.rango >= 9 ? "gold" : "gray" } : null;
   const lugar = (es ? p.lugar.es : p.lugar.en) + (p.mi != null ? ` · ${p.mi} mi` : "");
-  const enc = p.encuesta, ver = !!enc && (enc.mio != null || enc.cerrada);
+  const enc = p.encuesta, ver = !!enc && enc.ver;
   return (
     <PostCard screenLabel={full ? "APP-COM-POST · publicación" : "Comunidad · publicación"}
       pin={p.fijada ? (p.kind === "pregunta" ? E2("PREGUNTA DE LA SEMANA · FIJADA", "QUESTION OF THE WEEK · PINNED") : E2("FIJADA", "PINNED")) : undefined}
@@ -70,10 +70,10 @@ export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, o
       {enc && (
         <div data-screen-label="Publicación · encuesta" style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 6 }}>
           {enc.opts.map((o, i) => {
-            const pc = enc.total ? Math.round((100 * o.n) / enc.total) : 0, mia = enc.mio === i;
+            const pc = o.pc, mia = enc.mio === i;
             return (
-              <button key={i} type="button" disabled={ver} onClick={() => onPoll(i)} aria-pressed={mia || undefined}
-                style={{ position: "relative", overflow: "hidden", minHeight: 46, boxSizing: "border-box", padding: "0 14px", borderRadius: 12, background: "var(--tl-paper)", display: "flex", alignItems: "center", gap: 10, cursor: ver ? "default" : "pointer", border: "none", textAlign: "left", color: "var(--tl-ink)" }}>
+              <button key={i} type="button" disabled={enc.mio != null || enc.cerrada} onClick={() => onPoll(i)} aria-pressed={mia || undefined}
+                style={{ position: "relative", overflow: "hidden", minHeight: 46, boxSizing: "border-box", padding: "0 14px", borderRadius: 12, background: "var(--tl-paper)", display: "flex", alignItems: "center", gap: 10, cursor: enc.mio != null || enc.cerrada ? "default" : "pointer", border: "none", textAlign: "left", color: "var(--tl-ink)" }}>
                 <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: ver ? `${pc}%` : "0%", background: mia ? "rgba(75,55,245,.14)" : "rgba(11,14,18,.05)", transition: "width .4s" }} />
                 <span style={{ position: "relative", flex: 1, minWidth: 0, padding: "12px 0", font: `${mia ? 800 : 600} 14px/1.3 Manrope,sans-serif` }}>{o.l}</span>
                 {mia && <span style={{ position: "relative", display: "grid" }}><Icon name="check" size={14} color="var(--tl-action)" strokeWidth={2.2} /></span>}

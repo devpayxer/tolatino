@@ -38,6 +38,25 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }
 
+/* El mismo aviso a muchas personas en una sola escritura (p. ej. el resultado de una encuesta a quienes votaron). Solo plantillas
+   sin SMS (las que llevan SMS van una por una con avisar()). Las variables pueden cambiar con el idioma de cada persona. */
+export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string] } = {}) {
+  const L = [...new Set(ids)].filter(Boolean);
+  if (!L.length) return;
+  try {
+    const t = (await db().query<{ sms: boolean; title: { es: string; en: string }; body: { es: string; en: string } }>(`select sms, title, body from notif_templates where key = $1`, [tpl])).rows[0];
+    if (!t) return;
+    if (t.sms) { for (const id of L) await avisar(id, tpl, v.es, o); return; }
+    for (let i = 0; i < L.length; i += 1000) {
+      await db().query(
+        `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to)
+         select u.id, u.home_city_id, $2, case when u.lang = 'en' then $4 else $3 end, case when u.lang = 'en' then $6 else $5 end, $7, $8, $9, 'no', null
+           from users u where u.id = any($1::uuid[])`,
+        [L.slice(i, i + 1000), tpl, t.title.es, t.title.en, llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null]);
+    }
+  } catch { /* un aviso nunca rompe la acción que lo dispara */ }
+}
+
 /* Los dueños activos de un negocio (para los avisos al negocio). */
 export async function avisarNegocio(negocio: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string] } = {}) {
   const L = (await db().query<{ id: string }>(`select user_id::text as id from business_members where business_id = $1 and status = 'active' and kind = 'owner'`, [negocio]).catch(() => ({ rows: [] as { id: string }[] }))).rows;

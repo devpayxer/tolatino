@@ -42,6 +42,7 @@ const DIRECCION_ES = /\b(?:calle|avenida|ave\.?|av\.)\s+[A-Za-zÁÉÍÓÚÑáé�
 export const EMERGENCIA = /\b(emergencia|incendio|se est[aá] quemando|disparos?|balacera|tiroteo|no respira|infarto|sobredosis|convulsi\w+|me (?:est[aá]n )?(?:robando|atacando|siguiendo)|emergency|on fire|shooting|not breathing|overdose|heart attack)\b/i;
 
 export type Falla = { campo: "texto" | "negocio" | "opciones" | "para" | "tema" | "tipo" | "fotos" | "dias"; msg: Bi };
+export const MAX_COMENTARIO = 600;
 const falla = (campo: Falla["campo"], es: string, en: string): Falla => ({ campo, msg: { es, en } });
 
 /* Un texto que escribe un vecino (publicación, opción de encuesta, «para…»; luego comentario, bio y mensaje). */
@@ -83,4 +84,12 @@ export function revisarPublicacion(p: Borrador): Falla | null {
   }
   if ((p.fotos ?? []).length > MAX_FOTOS) return falla("fotos", `Hasta ${MAX_FOTOS} fotos.`, `Up to ${MAX_FOTOS} photos.`);
   return null;
+}
+
+/* Un comentario o una respuesta (5b): texto de hasta 600 letras, o solo el negocio que recomienda; mismas reglas que una publicación. */
+export function revisarComentario(c: { body: string; business?: string | null }): Falla | null {
+  const t = String(c.body ?? "").trim();
+  if (!t && !c.business) return falla("texto", "Escribe algo o recomienda un negocio.", "Write something or recommend a business.");
+  if (t.length > MAX_COMENTARIO) return falla("texto", `Máximo ${MAX_COMENTARIO} letras.`, `${MAX_COMENTARIO} characters at most.`);
+  return t ? revisarTexto(t) : null;
 }

@@ -1,8 +1,9 @@
 "use server";
-/* Comunidad · acciones del vecino (muro, publicar, la publicación). Todo pide sesión y que la llamada venga de nuestra página;
-   las reglas las decide lib/comunidad.ts (filtro, sanciones, límites, negocio propio, rango). */
+/* Comunidad · acciones del vecino (muro, publicar, la publicación y su hilo). Todo pide sesión y que la llamada venga de nuestra
+   página; las reglas las deciden lib/comunidad.ts y lib/comunidad-hilo.ts (filtro, sanciones, límites, negocio propio, rango, bloqueos). */
 import { dispositivo, mismoOrigen, yo } from "@/lib/cuenta";
-import { borrar, deshacerBorrar, editar, guardar, muro, negociosParaRecomendar, publicar, votar, votarEncuesta, type Entrada } from "@/lib/comunidad";
+import { borrar, deshacerBorrar, editar, muro, negociosParaRecomendar, publicar, type Entrada } from "@/lib/comunidad";
+import { borrarComentario, comentar, guardar, hilo, meSirvio, respuestas, votar, votarEncuesta } from "@/lib/comunidad-hilo";
 import type { Filtros } from "@/lib/comunidad-comun";
 import { ubicacion } from "@/lib/ubicacion";
 
@@ -40,8 +41,20 @@ export async function comDeshacer(id: string) { const q = await quien(); return 
 export async function comVotar(id: string, v: number) {
   const q = await quien();
   if (q.e) return q.e;
-  return votar(q.u.id, texto(id, 20), v === 1 ? 1 : -1, await dispositivo(false));
+  return votar(q.u.id, "post", texto(id, 20), v === 1 ? 1 : -1, await dispositivo(false));
 }
+export async function comVotarCm(id: string, v: number) {
+  const q = await quien();
+  if (q.e) return q.e;
+  return votar(q.u.id, "comment", texto(id, 20), v === 1 ? 1 : -1, await dispositivo(false));
+}
+export async function comComentar(post: string, p: { body?: unknown; business?: unknown; parent?: unknown; replyTo?: unknown }) {
+  const q = await quien();
+  if (q.e) return q.e;
+  return comentar(q.u.id, texto(post, 20), { body: texto(p?.body, 601), business: p?.business ? texto(p.business, 80) : null, parent: p?.parent ? texto(p.parent, 20) : null, replyTo: p?.replyTo ? texto(p.replyTo, 20) : null });
+}
+export async function comBorrarCm(id: string) { const q = await quien(); return q.e ?? borrarComentario(q.u.id, texto(id, 20)); }
+export async function comMeSirvio(post: string, cm: string) { const q = await quien(); return q.e ?? meSirvio(q.u.id, texto(post, 20), texto(cm, 20)); }
 export async function comEncuesta(id: string, opt: number) { const q = await quien(); return q.e ?? votarEncuesta(q.u.id, texto(id, 20), Number(opt)); }
 export async function comGuardar(id: string) { const q = await quien(); return q.e ?? guardar(q.u.id, texto(id, 20)); }
 
@@ -60,4 +73,17 @@ export async function comNegocios(qs: string) {
   if (q.e) return { ok: true as const, items: [] };
   const loc = await ubicacion(q.u);
   return { ok: true as const, items: await negociosParaRecomendar(loc.c.id, texto(qs, 60)) };
+}
+// solo lectura (con sesión): el hilo (otra página u otro orden) y las respuestas de un comentario.
+export async function comHilo(post: string, orden: string, cursor: string | null) {
+  const q = await quien();
+  if (q.e) return q.e;
+  const h = await hilo(texto(post, 20), q.u.id, cursor ? texto(cursor, 40) : null, orden === "new" ? "new" : "top");
+  return h ? { ok: true as const, h } : { ok: false as const, msg: { es: "Esta publicación ya no está.", en: "This post is no longer here." } };
+}
+export async function comRespuestas(root: string, cursor: string | null) {
+  const q = await quien();
+  if (q.e) return q.e;
+  const r = await respuestas(texto(root, 20), q.u.id, cursor ? texto(cursor, 20) : null);
+  return r ? { ok: true as const, ...r } : { ok: false as const, msg: { es: "Ese comentario ya no está.", en: "That comment is gone." } };
 }

@@ -5,16 +5,17 @@ import { db } from "./db";
 /* ADM-CONT · Contenido (Super Admin.dc.html secCont / contRow): todo lo que escribe un vecino o un negocio y que ya existe
    (reseñas, novedades, comentarios de novedades, vacantes y publicaciones de la Comunidad), en una lista con búsqueda, filtros
    (con reporte, ocultos, votos negativos) y paginación. Ocultar avisa al autor con el motivo; nada se borra. Acotado a las ciudades
-   de quien mira. Publicaciones (5a): también fijar y bloquear comentarios; las borradas por su autor no salen aquí. */
-export type TabCont = "all" | "rev" | "nov" | "cm" | "vac" | "pub";
+   de quien mira. Publicaciones (5a): también fijar y bloquear comentarios; las borradas por su autor no salen aquí. Comentarios de
+   la Comunidad (5b, «Comentarios de vecinos»): ocultar y restaurar con motivo. */
+export type TabCont = "all" | "rev" | "nov" | "cm" | "vac" | "pub" | "ccm";
 export type FiltrosCont = { tab: TabCont; q: string; rep: boolean; hid: boolean; neg: boolean; pag: number };
 export const POR_PAGINA_CONT = 20;
-const TABS = new Set<TabCont>(["all", "rev", "nov", "cm", "vac", "pub"]);
+const TABS = new Set<TabCont>(["all", "rev", "nov", "cm", "vac", "pub", "ccm"]);
 export function leerFiltrosCont(sp: Record<string, string | undefined>): FiltrosCont {
   const tab = (TABS.has(sp.tab as TabCont) ? sp.tab : "all") as TabCont;
   return { tab, q: String(sp.q ?? "").trim().slice(0, 60), rep: sp.rep === "1", hid: sp.hid === "1", neg: sp.neg === "1", pag: Math.max(1, Math.min(500, Number(sp.pag) || 1)) };
 }
-export type FilaCont = { k: "rev" | "nov" | "cm" | "vac" | "pub"; id: string; biz: string; bname: string; who: string; text: string; extra: string | null; up: number; dn: number; at: string; hidden: boolean; why: string | null; rep: number; pin: boolean; lock: boolean };
+export type FilaCont = { k: "rev" | "nov" | "cm" | "vac" | "pub" | "ccm"; id: string; biz: string; bname: string; who: string; text: string; extra: string | null; up: number; dn: number; at: string; hidden: boolean; why: string | null; rep: number; pin: boolean; lock: boolean };
 
 /* Una sola consulta con UNION ALL: cada tipo trae lo mismo (tipo, id, negocio, autor, texto, votos, fecha, oculto, reportes). */
 const PARTES: Record<Exclude<TabCont, "all">, string> = {
@@ -42,6 +43,11 @@ const PARTES: Record<Exclude<TabCont, "all">, string> = {
           coalesce(p.pinned_until > now(), false), p.comments_locked_at is not null, p.city_id
         from com_posts p left join users u on u.id = p.author_user_id left join businesses b on b.id = p.business_id
         left join city_official_accounts oa on p.author_kind = 'official' and oa.city_id = p.city_id where p.status <> 'deleted'`,
+  // Comentarios de la Comunidad (5b): «extra» = la publicación donde está (para «Ver»); «negocio» = el que recomienda, si lo hay.
+  ccm: `select 'ccm', c.id::text, coalesce(c.business_id, ''), coalesce(b.name, ''), coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), u.phone),
+          c.body, c.post_id::text, c.up_n, c.down_n, c.created_at, c.status = 'hidden', c.hidden_reason,
+          (select count(*)::int from content_reports x where x.target_kind = 'com_comment' and x.target_id = c.id::text and x.status = 'open'), false, false, c.city_id
+        from com_comments c join users u on u.id = c.author_user_id left join businesses b on b.id = c.business_id where c.status <> 'deleted'`,
 };
 export async function listaContenido(s: Staff, f: FiltrosCont) {
   const partes = f.tab === "all" ? Object.values(PARTES) : [PARTES[f.tab]];
@@ -56,9 +62,9 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
     db().query<FilaCont>(`select k, id, biz, bname, who, text, extra, up, dn, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, hidden, why, rep, pin, lock
        from (${base}) y order by (rep > 0) desc, at desc, id desc limit ${POR_PAGINA_CONT} offset ${(f.pag - 1) * POR_PAGINA_CONT}`, v),
     db().query<{ n: number }>(`select count(*)::int as n from (${base}) y`, v),
-    db().query<{ rev: number; nov: number; cm: number; vac: number; pub: number; rep: number; hid: number }>(
+    db().query<{ rev: number; nov: number; cm: number; vac: number; pub: number; ccm: number; rep: number; hid: number }>(
       `with x${COLS} as (${Object.values(PARTES).join("\nunion all\n")}) select count(*) filter (where k = 'rev')::int as rev, count(*) filter (where k = 'nov')::int as nov,
-              count(*) filter (where k = 'cm')::int as cm, count(*) filter (where k = 'vac')::int as vac, count(*) filter (where k = 'pub')::int as pub, count(*) filter (where rep > 0)::int as rep, count(*) filter (where hidden)::int as hid
+              count(*) filter (where k = 'cm')::int as cm, count(*) filter (where k = 'vac')::int as vac, count(*) filter (where k = 'pub')::int as pub, count(*) filter (where k = 'ccm')::int as ccm, count(*) filter (where rep > 0)::int as rep, count(*) filter (where hidden)::int as hid
          from x where cardinality($1::text[]) = 0 or x.city_id = any($1::text[])`, [s.cities]),
   ]);
   return { filas: L.rows, total: n.rows[0]!.n, cab: cab.rows[0]! };

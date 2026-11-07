@@ -3,7 +3,7 @@ import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { centroSQL, type Punto } from "./punto";
 import { EDITAR_MIN, DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
-import { type Autor, type Filtros, type Pub } from "./comunidad-comun";
+import { porcentajes, type Autor, type Filtros, type Pub } from "./comunidad-comun";
 
 /* Comunidad · el muro, publicar y la publicación (APP-COM-FEED, APP-COM-NUEVO, APP-COM-POST; fase5-comunidad.md §4 5a).
    Todo pide sesión (comunidadSoloConCuenta): cada función recibe la persona que mira (viewer) y nada de vecinos sale sin ella.
@@ -15,10 +15,10 @@ import { type Autor, type Filtros, type Pub } from "./comunidad-comun";
      rango para encuestas, fotos propias). Editar 30 min (la versión anterior queda en com_edits); borrar = estado, con Deshacer. */
 type Bi = { es: string; en: string };
 export type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi; campo?: Falla["campo"] };
-const no = (es: string, en: string, campo?: Falla["campo"]): { ok: false; msg: Bi; campo?: Falla["campo"] } => ({ ok: false, msg: { es, en }, campo });
-const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
-const ID = /^\d{1,18}$/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+export const no = (es: string, en: string, campo?: Falla["campo"]): { ok: false; msg: Bi; campo?: Falla["campo"] } => ({ ok: false, msg: { es, en }, campo });
+export const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
+export const ID = /^\d{1,18}$/;
+export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export const POR_PAGINA = 20;
 const LIMITE_DIA = 10;
 
@@ -30,9 +30,9 @@ export const sinBloqueos = (autor: string, viewer: string) =>
 
 /* ── Perfiles de autores: 60 s en memoria (nombre corto, foto, rango). ── */
 const cache = new Map<string, { at: number; a: Autor & { ciudad: string | null } }>();
-const ini = (n: string) => n.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
-const corto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
-async function autores(ids: string[]) {
+export const ini = (n: string) => n.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
+export const corto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
+export async function autores(ids: string[]) {
   const ahora = Date.now(), faltan = [...new Set(ids)].filter((id) => !(cache.get(id) && ahora - cache.get(id)!.at < 60_000));
   if (faltan.length) {
     const r = await db().query<{ id: string; first_name: string | null; last_name: string | null; photo_url: string | null; rango: number; ciudad: string | null }>(
@@ -84,13 +84,20 @@ async function propios(ids: string[], viewer: string) {
   return new Map(r.rows.map((x) => [x.id, { v: x.v ?? 0, s: x.s, o: x.o }]));
 }
 
+/* La encuesta como la ve quien mira (prototipo: show = voted || closed): los votos y los % (los calcula el servidor) solo después
+   de votar o al cerrar; antes no salen del servidor. */
+export function encuesta(opts: string[], conteo: number[], mio: number | null, cierra: string, cerrada: boolean): NonNullable<Pub["encuesta"]> {
+  const ver = mio != null || cerrada, n = opts.map((_, i) => (ver ? conteo[i] ?? 0 : 0)), pc = porcentajes(n);
+  return { opts: opts.map((l, i) => ({ l, n: n[i]!, pc: pc[i]! })), mio, total: ver ? n.reduce((a, x) => a + x, 0) : 0, cierra, cerrada, ver };
+}
+
 async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
   const [mio, A] = await Promise.all([propios(filas.map((f) => f.id), viewer), autores(filas.map((f) => f.autor).filter((x): x is string => !!x))]);
   return filas.map((f) => {
     const p = mio.get(f.id) ?? { v: 0, s: false, o: null }, oficial = f.author_kind === "official";
     const a: Autor = oficial ? { id: null, nombre: f.oficial?.es ?? "To'Latino", ini: "TL", foto: null, rango: 0, oficial: true } : (({ ciudad: _c, ...x }) => (void _c, x))(A(f.autor!));
     const lugar: Bi = oficial ? { es: f.ciudad_nombre, en: f.ciudad_nombre } : f.invitado ? { es: `Invitado · de ${f.invitado}`, en: `Visitor · from ${f.invitado}` } : f.zona ?? { es: f.ciudad_nombre, en: f.ciudad_nombre };
-    const total = (f.conteo ?? []).reduce((s, n) => s + n, 0), mia = !!f.autor && f.autor === viewer;
+    const mia = !!f.autor && f.autor === viewer;
     const meta = (l: "es" | "en") => [f.biz_sub ? f.biz_sub[l].toUpperCase() : null, f.biz_rating && f.biz_reviews ? `★ ${f.biz_rating.toFixed(1)} (${f.biz_reviews})` : null].filter(Boolean).join(" · ");
     return {
       id: f.id, kind: f.kind, topic: f.topic, body: f.body, at: f.at, editada: f.editada, mia, editarHasta: mia && f.editable && f.status === "visible" ? f.editar_hasta : null,
@@ -98,7 +105,7 @@ async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
       autor: a, lugar, invitado: !!f.invitado, mi: f.mi,
       negocio: f.biz_id ? { id: f.biz_id, nombre: f.biz_name!, meta: { es: meta("es"), en: meta("en") }, foto: f.biz_foto, verificado: f.biz_ver, para: f.para ?? [] } : null,
       fotos: f.fotos ?? [],
-      encuesta: f.opts ? { opts: f.opts.map((l, i) => ({ l, n: f.conteo[i] ?? 0 })), mio: p.o, total, cierra: f.cierra!, cerrada: f.cerrada } : null,
+      encuesta: f.opts ? encuesta(f.opts, f.conteo, p.o, f.cierra!, f.cerrada) : null,
       up: f.up, dn: f.dn, score: f.score, miVoto: p.v, guardada: p.s, comentarios: f.cms,
     };
   });
@@ -149,8 +156,8 @@ export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filt
 }
 export type Muro = Awaited<ReturnType<typeof muro>>;
 
-/* Una publicación (APP-COM-POST). El autor también ve la suya oculta (con el motivo). Comentarios: las raíces por votos (el hilo
-   completo, responder y votar llegan en 5b). */
+/* Una publicación (APP-COM-POST). El autor también ve la suya oculta (con el motivo). El hilo (comentarios, respuestas, votos,
+   recomendados y la mejor respuesta) lo arma lib/comunidad-hilo.ts. */
 export async function publicacion(id: string, viewer: string) {
   if (!ID.test(id)) return null;
   const r = (await db().query<Fila>(
@@ -160,16 +167,7 @@ export async function publicacion(id: string, viewer: string) {
         and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)`, [viewer, id])).rows[0];
   if (!r) return null;
   const [pub] = await armar([r], viewer);
-  const cm = await db().query<{ id: string; autor: string; body: string; at: string; up: number; dn: number; score: number; replies: number; biz: string | null; biz_name: string | null; mejor: boolean }>(
-    `select c.id::text, c.author_user_id::text as autor, c.body, ${ISO("c.created_at")} as at, c.up_n as up, c.down_n as dn, c.score, c.replies_n as replies,
-            c.business_id as biz, b.name as biz_name, c.id = p.best_comment_id as mejor
-       from com_comments c join com_posts p on p.id = c.post_id left join businesses b on b.id = c.business_id
-      where c.post_id = $2::bigint and c.parent_id is null and c.status = 'visible' and ${sinBloqueos("c.author_user_id", "$1")}
-        and not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'comment' and h.target_id = c.id)
-      order by (c.id = p.best_comment_id) desc, c.score desc, c.id limit ${POR_PAGINA}`, [viewer, id]);
-  const A = await autores(cm.rows.map((c) => c.autor));
-  const comentarios = cm.rows.map((c) => { const a = A(c.autor); return { id: c.id, autor: { nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango }, body: c.body, at: c.at, up: c.up, dn: c.dn, score: c.score, respuestas: c.replies, negocio: c.biz ? { id: c.biz, nombre: c.biz_name! } : null, mejor: c.mejor }; });
-  return { pub: pub!, comentarios };
+  return { pub: pub! };
 }
 export type Publicacion = NonNullable<Awaited<ReturnType<typeof publicacion>>>;
 
@@ -190,16 +188,16 @@ export type NegocioRec = Awaited<ReturnType<typeof negociosParaRecomendar>>[numb
 
 /* ── Escribir ── */
 type Quien = { estado: string; hasta: string | null; motivo: string | null; nueva: boolean; lang: string; rango: number; ciudadOn: boolean };
-async function quien(c: PoolClient, userId: string, ciudad: string): Promise<Quien | null> {
+export async function quien(c: PoolClient, userId: string, ciudad: string): Promise<Quien | null> {
   return (await c.query<Quien>(
     `select cuenta_estado(u.status, u.status_until) as estado, ${ISO("u.status_until")} as hasta, u.status_reason as motivo, u.created_at > now() - interval '24 hours' as nueva,
             coalesce(u.lang, 'es') as lang, coalesce(cp.rank_level, 1) as rango, coalesce((select status = 'on' from cities where id = $2), false) as "ciudadOn"
        from users u left join community_profiles cp on cp.user_id = u.id where u.id = $1`, [userId, ciudad])).rows[0] ?? null;
 }
-const fechaHasta = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" }) : "";
+export const fechaHasta = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" }) : "";
 
 /* Un negocio que la persona maneja (dueña o en su equipo): no se lo recomienda a sí misma (guardián noTePromuevas). */
-async function esSuNegocio(c: PoolClient, userId: string, negocio: string) {
+export async function esSuNegocio(c: PoolClient, userId: string, negocio: string) {
   return (await c.query(
     `select 1 from businesses b where b.id = $2 and (b.owner_user_id = $1 or exists (select 1 from business_members m where m.business_id = b.id and m.user_id = $1 and m.status = 'active'))`,
     [userId, negocio])).rowCount! > 0;
@@ -296,54 +294,6 @@ export async function deshacerBorrar(userId: string, id: string): Promise<Res> {
   const r = await db().query(
     `update com_posts set status = 'visible', deleted_at = null where id = $1::bigint and author_user_id = $2 and status = 'deleted' and deleted_at > now() - interval '${DESHACER_S + 5} seconds'`, [id, userId]);
   return r.rowCount ? { ok: true } : no("Ya no se puede deshacer.", "It can no longer be undone.");
-}
-
-/* Lo que se puede tocar en una publicación ajena: visible, de la ciudad, sin bloqueos entre los dos. */
-async function tocable(c: PoolClient, viewer: string, id: string) {
-  return (await c.query<{ autor: string | null; kind: string; opts: number; abierta: boolean }>(
-    `select p.author_user_id::text as autor, p.kind, coalesce(cardinality(p.poll_options), 0) as opts, coalesce(p.poll_ends_at > now(), false) as abierta
-       from com_posts p where p.id = $2::bigint and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}`, [viewer, id])).rows[0] ?? null;
-}
-
-/* Voto + / −: uno por persona; el mismo toque lo quita; lo propio no se vota. Contadores y orden los recalcula la base. */
-export async function votar(userId: string, id: string, v: 1 | -1, device: string | null): Promise<Res<{ score: number; miVoto: number }>> {
-  if (!ID.test(id) || (v !== 1 && v !== -1)) return no("Esa publicación ya no está.", "That post is gone.");
-  return tx(async (c) => {
-    const p = await tocable(c, userId, id);
-    if (!p) return no("Esa publicación ya no está.", "That post is gone.");
-    if (p.autor === userId) return no("Lo tuyo lo votan los demás.", "Others vote on your posts.");
-    const ya = (await c.query<{ v: number }>(`select v from com_votes where target_kind = 'post' and target_id = $1::bigint and user_id = $2 for update`, [id, userId])).rows[0];
-    let mio: number = v;
-    if (ya?.v === v) { await c.query(`delete from com_votes where target_kind = 'post' and target_id = $1::bigint and user_id = $2`, [id, userId]); mio = 0; }
-    else await c.query(`insert into com_votes (target_kind, target_id, user_id, v, device) values ('post', $1::bigint, $2, $3, $4)
-                        on conflict (target_kind, target_id, user_id) do update set v = excluded.v, updated_at = now()`, [id, userId, v, device && UUID.test(device) ? device : null]);
-    const s = (await c.query<{ score: number }>(`select score from com_posts where id = $1::bigint`, [id])).rows[0]!;
-    return { ok: true as const, score: s.score, miVoto: mio };
-  });
-}
-
-/* Encuesta: un voto, no se cambia; abierta hasta su cierre. */
-export async function votarEncuesta(userId: string, id: string, opt: number): Promise<Res> {
-  if (!ID.test(id) || !Number.isInteger(opt) || opt < 0 || opt > 3) return no("Esa encuesta ya no está.", "That poll is gone.");
-  return tx(async (c) => {
-    const p = await tocable(c, userId, id);
-    if (!p || p.kind !== "encuesta" || opt >= p.opts) return no("Esa encuesta ya no está.", "That poll is gone.");
-    if (!p.abierta) return no("Esta encuesta ya cerró.", "This poll is closed.");
-    const r = await c.query(`insert into com_poll_votes (post_id, user_id, opt) values ($1::bigint, $2, $3) on conflict do nothing`, [id, userId, opt]);
-    return r.rowCount ? { ok: true as const } : no("Ya votaste: tu voto no se cambia.", "You already voted: your vote is final.");
-  });
-}
-
-/* Guardar / quitar de guardados (USR-FAVORITOS › publicaciones). */
-export async function guardar(userId: string, id: string): Promise<Res<{ guardada: boolean }>> {
-  if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
-  return tx(async (c) => {
-    if (!(await tocable(c, userId, id))) return no("Esa publicación ya no está.", "That post is gone.");
-    const d = await c.query(`delete from com_saves where post_id = $1::bigint and user_id = $2`, [id, userId]);
-    if (d.rowCount) return { ok: true as const, guardada: false };
-    await c.query(`insert into com_saves (post_id, user_id) values ($1::bigint, $2) on conflict do nothing`, [id, userId]);
-    return { ok: true as const, guardada: true };
-  });
 }
 
 /* Para editar: la publicación propia tal como está (solo en los 30 minutos). */

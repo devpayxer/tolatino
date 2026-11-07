@@ -27,8 +27,8 @@ cuenta; lo de los vecinos no sale en buscadores._
   - Ves a quién le sale («Lo ven tus vecinos de Hazleton · sale con tu nombre y tu barrio, nunca tu dirección») y las reglas.
     En escritorio, la vista previa a la derecha.
 - **Tu publicación:** el menú (···) deja **Editar** en los primeros **30 minutos** y **Borrar** (con **Deshacer** 10 segundos).
-- **Comentarios:** en la publicación se ven los comentarios por votos (la mejor respuesta arriba). Comentar, responder, votar
-  comentarios y «Me sirvió» llegan con el hilo (bloque 5b).
+- **Comentarios:** en la publicación está el hilo: comentar, responder con «@Nombre», recomendar un negocio en el comentario,
+  votar comentarios, «Me sirvió» y las encuestas. Todo en `comunidad-comentar-votar-y-encuestas.md` (bloque 5b).
 
 ## Las reglas del barrio
 1. Habla de tu ciudad y de lo que pasa aquí.
@@ -62,7 +62,7 @@ base de datos: no hay manera de saltárselo.
 | Borrar | Sale del muro al instante; **Deshacer** durante 10 segundos la devuelve a su lugar. Después ya no está para nadie (nada se borra de la base: queda como borrada). |
 | Votar lo tuyo | «Lo tuyo lo votan los demás.» |
 | Votar dos veces | El mismo toque quita tu voto; el otro lo cambia. Un voto por persona. |
-| Encuesta | Un voto, no se cambia; al cerrar ya no se vota. |
+| Encuesta | Un voto, no se cambia; los % se ven después de votar; al cerrar ya no se vota, todos ven el resultado y llega un aviso a quien la publicó y a quienes votaron. |
 | Bloqueaste o te bloquearon | No ven nada el uno del otro (bloqueo mutuo e invisible). Bloquear y silenciar llegan en 5c; el muro ya los respeta. |
 | To'Latino oculta tu publicación | Sale del muro para todos; tú la sigues viendo con el motivo y recibes un aviso (sin SMS). Si se restaura, vuelve y te avisamos. |
 | Ubicación | Tu publicación lleva el **centro de tu barrio** (o de la ciudad si no tienes barrio), nunca tu GPS ni tu dirección. La distancia se mide contra ese centro. |

@@ -1515,3 +1515,49 @@ una base nueva, 0001–0096 y luego 0091–0096 dos veces más aplican sin error
 
 **Capturas:** `c5a-invitado-m`, `c5a-invitado-d`, `c5a-muro-m`, `c5a-muro-d`, `c5a-telefono-m`, `c5a-pregunta-m`, `c5a-nuevo-d`,
 `c5a-recomendacion-d`, `c5a-propio-m`, `c5a-deshacer-m`, `c5a-filtros-m`, `c5a-admin-d`, `c5a-post-d`.
+
+### 5b · Comunidad: el hilo — comentar, responder, recomendar, votos, «Me sirvió» y encuestas (7 nov)
+**Qué mirar, paso a paso, en el sandbox** (capturas `c5b-*.png`; teléfono 390 y escritorio 1360):
+1. **Como vecino (Héctor, 5705550288) en el teléfono:** abre una pregunta y comenta con la barra de abajo. Prueba un teléfono (sale «No
+   publiques teléfonos…» y no se guarda). Toca la tienda → busca «espiga» → el negocio queda adjunto («RECOMIENDAS ESTE NEGOCIO»).
+2. **Como vecina (Marisol, 5705550122) en escritorio:** la caja está en el mismo hilo (Ctrl + Enter envía). «Responder» en un comentario abre
+   la cajita debajo («Respondiendo a …»; Esc cancela). En «Ver N respuestas», responder a una respuesta pone «@Nombre» y sale un nivel abajo.
+3. **Recomendados en este hilo:** las barras de % (las calcula el servidor; suman 100) y el número para sumar tu voto. Si eliges un negocio
+   que ya está en el hilo, sale «YA LO RECOMENDARON AQUÍ» con **Sumar mi voto**.
+4. **Votos:** + / − en la publicación (votaste = borde y tinte morado) y en cada comentario; el mismo toque lo quita, el otro lo cambia.
+5. **Quien preguntó (Yaritza, 5705550299):** «Me sirvió» en un comentario → la pregunta queda **Resuelta** y esa respuesta sale arriba
+   («LE SIRVIÓ A YARITZA · N VOTOS»). En el menú (⌄) de otra respuesta: «Esta me sirvió más».
+6. **Encuesta:** vota y ve los %; cuando cierra (el barrido de cada minuto), todos ven el resultado y llega «Cerró la encuesta» con el resultado.
+7. **Campana:** «Comentaron tu publicación», «Te respondieron», «Te mencionaron», «Tu respuesta le sirvió», «Llegaste a 10 votos», «Cerró la encuesta».
+8. **Super Admin (5705550199) › Contenido › Comentarios de vecinos:** Ocultar con motivo (sale del hilo y de los recomendados; el autor recibe
+   el aviso) y Restaurar.
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Votos honestos ya en 5b:** la base rechaza votar lo propio y, si otra cuenta ya votó lo mismo desde el mismo teléfono (cookie de
+  dispositivo), el voto se guarda pero **no cuenta** (callado, §3). El caso «posible red» en `repUsr` llega en 5d.
+- **La destacada** = la que le sirvió a quien preguntó; si no hay, la más votada con **5 votos a favor o más** (como el prototipo) y solo en
+  «Más votados». En «Recientes» la que le sirvió sigue arriba.
+- **«Votos» de un negocio recomendado** = suma de los votos a favor de los comentarios que lo recomiendan (como el prototipo); «Sumar mi voto»
+  es votar a favor el comentario que más votos tiene para ese negocio. Si ese comentario es de alguien con quien hay un bloqueo, ese negocio no
+  sale en tu lista.
+- **«Me sirvió»** solo en preguntas, sobre comentarios raíz de otra persona; se cambia con «Esta me sirvió más» (siempre una; no se quita).
+- **Menciones:** «@Nombre» avisa solo a gente de ese hilo (quien publicó o comentó) cuyo nombre coincide sin dudas (nombre, o nombre e
+  inicial «@Gaby R.»); hasta 5 por comentario; nunca a alguien con bloqueo o silencio de por medio, en los dos sentidos. Contestar una
+  respuesta siempre avisa a esa persona.
+- **Plantillas:** además de las 5 del plan, `com_comment` (a quien publicó) y `com_cm_hide` / `com_cm_restore` (comentario oculto o
+  restaurado). Todas sin SMS, grupo `tx` sin interruptor (el grupo «Comunidad» llega en 5i).
+- **«Llegaste a 10 votos»:** al llegar a 10 votos **a favor**, una vez por publicación o comentario (si baja y vuelve a 10, no se repite).
+- **Encuesta:** los % se ven después de votar o al cerrar, también para quien la publicó (prototipo: `show = voted || closed`); los manda el
+  servidor (antes de votar no llegan al navegador). Al cerrar, el aviso va a quien la publicó y a quienes votaron, una vez; empate dice «Empate entre…».
+- **Comentario de solo negocio** (sin texto) permitido, como el prototipo. Hasta 600 letras. **100 comentarios en 24 h** (50 si la cuenta es
+  de hoy); los borrados cuentan.
+- **Borrar comentario propio** = estado; si tenía respuestas queda «Comentario eliminado» (y «Comentario oculto por las reglas del barrio» si
+  lo ocultó To'Latino) con sus respuestas. **Reportar** (5d) y **Bloquear** (5c) no salen en el menú hasta que existan.
+- **A las respuestas solo se les vota a favor** (así viene ReplyThread 18a del sistema de diseño).
+- **Teléfono:** la caja de abajo dice «Recomienda a alguien…» en preguntas (la del prototipo, «¿Conoces a alguien? Recomiéndalo…», no cabe
+  en 390). Escritorio mantiene la del prototipo.
+- **Super Admin:** la pestaña se llama **«Comentarios de vecinos»** porque «Comentarios» ya era la de las Novedades de los negocios.
+- **Los puntos** de votos y «Me sirvió» llegan en 5f (marcados «HOOK 5f» en el código); ningún mensaje los promete hoy.
+
+**Capturas:** `c5b-comentar-m`, `c5b-responder-d`, `c5b-respuestas-m`, `c5b-sumar-m`, `c5b-recomendados-d`, `c5b-mesirvio-m`, `c5b-hilo-d`,
+`c5b-hilo-m`, `c5b-encuesta-d`, `c5b-encuesta-cerrada-m`, `c5b-admin-d`.

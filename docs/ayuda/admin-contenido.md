@@ -21,8 +21,15 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   el motivo y recibe el aviso «Ocultamos tu publicación» (sin SMS). Restaurar la devuelve y le avisa. Al ocultarla deja de estar fijada.
 - **Fijar / Desfijar** (Admin, Ciudad, Moderador): con motivo; sale arriba del muro de su ciudad **7 días**, una a la vez (la que
   estaba fijada se desfija). No cambia los votos de nadie.
-- **Bloquear / Abrir comentarios**: con motivo; nadie más comenta (el hilo llega en 5b), lo que ya está se queda.
+- **Bloquear / Abrir comentarios**: con motivo; nadie más comenta ni responde en el hilo, lo que ya está se queda.
 - **Ver** abre la publicación como la ve un vecino. Todo queda en la auditoría (`com.publicacion.*`) con antes → después.
+
+### Comentarios de vecinos (5b, 7 nov)
+- Pestaña **Comentarios de vecinos** (y en **Todo**): comentarios y respuestas del hilo de la Comunidad, con autor, el negocio
+  que recomiendan, votos + / − y, si está oculto, el motivo. Los que su autor borró no salen aquí.
+- **Ocultar / Restaurar** (Admin y Moderador): con motivo. Sale del hilo para todos (si tenía respuestas, queda «Comentario oculto
+  por las reglas del barrio») y deja de contar en «Recomendados en este hilo»; el autor recibe «Ocultamos tu comentario» con el
+  motivo (sin SMS). Restaurar lo devuelve y le avisa. **Ver** abre la publicación en ese comentario. Auditoría `com.comentario.*`.
 
 ## Transacciones
 - **Qué es:** pedidos y reservaciones de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), pedidos terminados en 90 días
@@ -36,7 +43,9 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 ---
 
 ## English
-Community posts (5a): the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or
+Neighbor comments (5b): the "Comentarios de vecinos" tab lists Community comments and replies; Admins and Moderators hide or
+restore them with a reason (the author gets a notice, no SMS; a hidden comment stops counting in the thread's recommended list),
+audited as com.comentario.*. Community posts (5a): the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or
 restore them with a reason (the author still sees it with the reason and gets a notice, no SMS), and Admin, City and Moderator
 roles pin one per city for 7 days or lock comments, all audited.
 
