@@ -21,10 +21,45 @@ export const KINDS_SP: Record<RubroSP, string[]> = { salud: ["cons", "tele", "wa
 export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boolean; hrs?: string; mes?: boolean; unit?: "cheque" | "fianza" | "carga" | "caso"; no?: Bi[];
   // Fiestas (4t · neg-fiesta-listing.js): horas del paquete, lo que incluye, invitados, montaje incluido, unidad e invitados por
   // unidad, mínimo (horas o unidades).
-  h?: number; inc?: Bi[]; cap?: number; mont?: boolean; u?: Bi; per?: number; min?: number };
+  h?: number; inc?: Bi[]; cap?: number; mont?: boolean; u?: Bi; per?: number; min?: number;
+  // Transporte (4w · neg-trans-listing.js): horas de salida (0–23), de dónde sale y a dónde va, cuánto dura, asientos o personas,
+  // precio de niño y espera incluida (min).
+  sal?: number[]; from?: Bi; to?: Bi; dmin?: number; pax?: number; child?: number; wait?: number };
 /* Fiestas usa el mismo editor de servicios con sus formas de cobrar. */
-export type RubroSvc = RubroSP | "fiesta";
-export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : rubroSP(cat));
+export type RubroSvc = RubroSP | "fiesta" | "trans";
+export const rubroSvc = (cat: string): RubroSvc | null => (cat === "NEG-FIESTA" ? "fiesta" : cat === "NEG-TRANS" ? "trans" : rubroSP(cat));
+/* Transporte (4w · neg-trans-listing.js k): por asiento con salidas fijas, vehículo completo, caja o envío, precio cerrado con
+   fotos. El servidor valida: un asiento sin salidas o sin asientos no se guarda. */
+export const KINDS_TRANS = ["asiento", "priv", "caja", "cotiza"];
+export function limpiarTrans(k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
+  const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
+  if (!KINDS_TRANS.includes(k)) return { ok: false, es: "Elige cómo lo vendes.", en: "Pick how you sell it." };
+  const t = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, "").replace(/\s+/g, " ").trim().slice(0, n) : "");
+  const n = (v: unknown, lo: number, hi: number) => { const z = Math.round(Number(v)); return Number.isFinite(z) && z >= lo && z <= hi ? z : null; };
+  const inc = (Array.isArray(x.inc) ? x.inc : []).slice(0, 6).map((z) => ({ es: t((z as Bi)?.es, 60), en: t((z as Bi)?.en, 60) })).filter((z) => z.es.length >= 2);
+  if (inc.length) a.inc = inc.map((z) => ({ es: z.es, en: z.en || z.es }));
+  const bi = (v: unknown) => { const e = t((v as Bi)?.es, 40); return e.length >= 2 ? { es: e, en: t((v as Bi)?.en, 40) || e } : undefined; };
+  const from = bi(x.from), to = bi(x.to);
+  if (from) a.from = from;
+  if (to) a.to = to;
+  if (cents <= 0) return { ok: false, es: k === "cotiza" ? "Pon el «desde»: el precio más bajo." : "Ponle el precio.", en: k === "cotiza" ? "Set the “from” price." : "Set the price." };
+  if (k === "asiento") {
+    const sal = [...new Set((Array.isArray(x.sal) ? x.sal : []).map(Number).filter((h) => Number.isInteger(h) && h >= 0 && h <= 23))].sort((p, q) => p - q).slice(0, 12);
+    if (!sal.length) return { ok: false, es: "Marca a qué hora sale.", en: "Mark the departure times." };
+    a.sal = sal;
+    const pax = n(x.pax, 1, 56); if (!pax) return { ok: false, es: "¿Cuántos asientos tiene?", en: "How many seats?" };
+    a.pax = pax;
+    if (!to) return { ok: false, es: "Escribe a dónde va.", en: "Write where it goes." };
+    const ch = n(x.child, 0, 1_000_000); if (ch && ch < cents) a.child = ch;
+    const dm = n(x.dmin, 10, 1440); if (dm) a.dmin = dm;
+  }
+  if (k === "priv") {
+    const pax = n(x.pax, 1, 56); if (!pax) return { ok: false, es: "¿Hasta cuántas personas?", en: "Up to how many people?" };
+    a.pax = pax;
+    const w = n(x.wait, 0, 240); if (w) a.wait = w;
+  }
+  return { ok: true, k, a, cents };
+}
 export const KINDS_FIESTA = ["pack", "hora", "unid", "fijo", "visita", "cotiza"];
 export function limpiarFiesta(k0: unknown, cents: number, a0: unknown): { ok: true; k: string; a: AttrsSP; cents: number } | { ok: false; es: string; en: string } {
   const k = String(k0 ?? ""), x = (a0 && typeof a0 === "object" ? a0 : {}) as Record<string, unknown>, a: AttrsSP = {};
@@ -94,6 +129,7 @@ export type SvcPanel = {
   on: boolean; off: { svc: string | null; citas: string | null };
   sp: HerrSP | null; // Tu herramienta de Doctores y Profesionales (4h-2)
   fiesta: import("./fiestas-comun").HerrFiesta | null; // Tu herramienta de Fiestas (4t)
+  trans: import("./transporte-comun").HerrTrans | null; // Tu herramienta de Transporte (4w)
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -118,7 +154,7 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   ]);
   const x = b.rows[0]!, off = x.off ?? {}, rub = rubroSP(x.cat);
   return {
-    rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
+    rubro: rubroSvc(x.cat), sp: rub ? await herramientaSP(negocio, rub) : null, fiesta: x.cat === "NEG-FIESTA" ? await (await import("./fiestas")).herramientaFiesta(negocio) : null, trans: x.cat === "NEG-TRANS" ? await (await import("./transporte")).herramientaTrans(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },

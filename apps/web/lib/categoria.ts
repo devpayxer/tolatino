@@ -125,8 +125,17 @@ async function fechasFiestas(ciudad: string) {
   FIESTAS_HOY.set(ciudad, hoy);
   await (await import("./fiestas")).refrescarFiestasCiudad(ciudad).catch(() => FIESTAS_HOY.delete(ciudad));
 }
+/* Transporte (4w): «Disponible hoy» vence a medianoche; la primera vista del día en la ciudad lo recalcula. */
+const TRANS_HOY = new Map<string, string>();
+async function hoyTrans(ciudad: string) {
+  const hoy = new Date().toISOString().slice(0, 10);
+  if (TRANS_HOY.get(ciudad) === hoy) return;
+  TRANS_HOY.set(ciudad, hoy);
+  await (await import("./transporte")).refrescarTransCiudad(ciudad).catch(() => TRANS_HOY.delete(ciudad));
+}
 export async function resultados(p: Pedido): Promise<{ items: Resultado[]; total: number; pagina: number; paginas: number }> {
   if (p.cat === "NEG-FIESTA") await fechasFiestas(p.punto.ciudad);
+  if (p.cat === "NEG-TRANS") await hoyTrans(p.punto.ciudad);
   const params: unknown[] = [p.punto.ciudad, p.cat];
   const extra = condiciones(p, params);
   const pagina = Math.max(0, Math.min(p.pagina, PAGINA_MAX - 1));

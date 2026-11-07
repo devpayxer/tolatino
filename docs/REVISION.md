@@ -887,3 +887,16 @@ cada fiesta con el día, invitados, el depósito (retenido / cobrado / liberado 
 del acuerdo y si canceló el negocio.
 _Decidido por mí: los extras del acuerdo (versión 2 que el cliente acepta) y la cola «Fechas canceladas por el negocio» llegan con
 la ayuda y las reseñas de Fiestas (4z)._
+
+### 4w · Transporte: servicios y «Salidas y asientos» (7 nov)
+**Qué mirar:** entra como Wilson (5705550322, Van Express Hazleton–NY) › Lo que vendes › **Salidas y asientos**: las próximas
+salidas con «Quedan 14 de 14», apaga una con el interruptor, suma un vendido en la oficina (+) y mira cómo baja «Quedan». Maletas
+incluidas y maleta extra. Disponible hoy / asiento de niño / rampa (Buscar › Transporte los dice). Servicios › Agregar: «Cómo lo
+vendes» (Por asiento con las horas de salida; Vehículo completo con la espera). Super Admin › Envíos Quisqueya › 360 › Lo que vende:
+«Salidas de la caja · Sale el sábado · llega en 3 a 4 semanas».
+_Decidido por mí (reversible):_
+- El tipo del negocio sale de sus subcategorías (como el prototipo); forzarlo desde el Super Admin llega con la ayuda y el admin de
+  Transporte (4z).
+- La regla de cancelar dice «después de 24 h, se cobra la mitad» (decisión del plan), no «se queda el pago» del prototipo.
+- Una salida con pasajeros de la app no se apaga con el interruptor: se cancela con su devolución (4y).
+- Licencias de ejemplo válidas en el sandbox para los Pro que reservan (PUC, USDOT/MC, OTI); en producción las revisa el equipo.

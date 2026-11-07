@@ -643,6 +643,15 @@ const guardianes = {
     if (!/terminos\(x\.negocio, x\.total, x\.r\)/.test(l)) falla("layawayAceptado", L, 1, "crearPlan guarda el texto de terminos() (el mismo que se leyó)");
   },
 
+  /* 4w. «Quedan 4 asientos» se deriva (asientos − vendidos en la oficina − reservados en la app). Si alguna pantalla o acción
+     escribe seats_booked por su cuenta, la app vende asientos que no existen. Solo el motor de Transporte lo toca. */
+  asientosDerivados() {
+    for (const f of codigo) {
+      if (!/^apps\/web\//.test(f) || /^apps\/web\/lib\/(transporte|viajes)[^/]*\.ts$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/seats_booked\s*=(?!=)/.test(l)) falla("asientosDerivados", f, i + 1, "«seats_booked» es derivado: solo lo escribe el motor de Transporte (lib/transporte*.ts, lib/viajes*.ts)"); });
+    }
+  },
+
   /* 4v. Dos clientes piden el mismo sábado: si dos funciones confirman a la vez sin el candado del día, quedan dos fiestas
      donde cabe una. Toda función que ocupa un día (insert into party_days … 'booking') toma antes el candado
      «fiesta:{negocio}:{día}». */
