@@ -42,17 +42,34 @@ export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
     done: ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("RECOGIDO", "PICKED UP"), E2("Gracias por usar To'Latino", "Thanks for using To'Latino"), `${E2("Pagaste ", "You paid ")}${dinero(x.tot)}.`],
     cancelled: ["close", "bg-ink/[.06]", "rgba(11,14,18,.6)", E2("CANCELADO", "CANCELLED"), E2("Cancelaste el apartado", "You cancelled the hold"), E2("No se cobró nada.", "Nothing was charged.")],
   };
+  // Envío de la tienda (4q-2): lo retenido, en camino (con seguimiento) y entregado; se cobra al enviarlo.
+  const camino = x.ship && x.etapa === "on_the_way", ret = dinero(x.retenido ?? x.tot), cob = dinero(x.cobrado ?? x.tot);
+  if (x.ship) {
+    H.pending = ["clock", "bg-action/10", "var(--tl-action)", E2("PEDIDO ENVIADO", "ORDER SENT"), `${E2("Esperando a ", "Waiting for ")}${x.bname}`, E2(`Confirman que lo tienen. Se retuvieron ${ret} en tu tarjeta; se cobra al enviarlo.`, `They confirm stock. ${ret} is held on your card; you are charged when it ships.`)];
+    H.confirmed = camino ? ["truck", "bg-signal/[.18]", "var(--tl-open-text)", E2("VA EN CAMINO", "ON ITS WAY"), E2(`Llega en ${x.dias} días`, `Arrives in ${x.dias} days`), E2(`Se cobraron ${cob}.`, `${cob} was charged.`)]
+      : ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("LO PREPARAN", "BEING PREPARED"), E2(`Lo envían en ${x.dias} días`, `Ships within ${x.dias} days`), E2(`Te avisamos cuando salga. Se cobra al enviarlo (hasta ${ret}).`, `We let you know when it ships. You are charged then (up to ${ret}).`)];
+    H.done = ["check", "bg-signal/[.18]", "var(--tl-open-text)", E2("ENTREGADO", "DELIVERED"), E2("Gracias por usar To'Latino", "Thanks for using To'Latino"), E2(`Pagaste ${cob}.`, `You paid ${cob}.`)];
+    H.declined = [H.declined[0], H.declined[1], H.declined[2], H.declined[3], H.declined[4], E2("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
+    H.cancelled = [H.cancelled[0], H.cancelled[1], H.cancelled[2], H.cancelled[3], E2("Cancelaste el pedido", "You cancelled the order"), E2("Se liberó lo retenido. No se cobró nada.", "The hold was released. Nothing was charged.")];
+    if (x.detalle === "no_envio") H.expired = [H.expired[0], H.expired[1], H.expired[2], H.expired[3], E2("No lo enviaron a tiempo", "Not shipped in time"), E2("Se liberó lo retenido en tu tarjeta. No se cobró nada.", "The hold on your card was released. Nothing was charged.")];
+  }
   const h = H[x.st];
   const pos = ({ pending: 0, change_proposed: 0, confirmed: 1, done: 2 } as Record<string, number>)[x.st];
-  const steps = pos == null ? [] : [[E2("Enviado", "Sent"), hora(x.enviado)], [E2("Guardado", "Held"), hora(x.guardado)], [E2("Recogido", "Picked up"), hora(x.recogido)]].map(([label, time], i) => ({ label, time, state: i < pos || x.st === "done" ? "done" : i === pos ? "current" : "next" }));
+  const pos2 = x.ship ? ({ pending: 0, change_proposed: 0, confirmed: camino ? 2 : 1, done: 3 } as Record<string, number>)[x.st] : pos;
+  const pasos = x.ship ? [[E2("Pedido", "Ordered"), hora(x.enviado)], [E2("Lo tienen", "In stock"), hora(x.guardado)], [E2("En camino", "On its way"), hora(x.salio)], [E2("Entregado", "Delivered"), hora(x.recogido)]]
+    : [[E2("Enviado", "Sent"), hora(x.enviado)], [E2("Guardado", "Held"), hora(x.guardado)], [E2("Recogido", "Picked up"), hora(x.recogido)]];
+  const steps = pos2 == null ? [] : pasos.map(([label, time], i) => ({ label, time, state: i < pos2 || x.st === "done" ? "done" : i === pos2 ? "current" : "next" }));
   const llegar = () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(x.dir || x.bname)}`, "_blank", "noopener");
   const acts: [string, string, () => void, boolean?][] = x.st === "change_proposed" && otra ? [["check", E2(`Sí, la talla ${otra.label}`, `Yes, size ${otra.label}`), () => void hacer("otraTalla", E2(`Listo: te guardan la talla ${otra.label}`, `Done: they hold size ${otra.label}`)), true], ["close", E2("Quitarlo", "Remove it"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest"))], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]
     : x.st === "change_proposed" ? [["check", E2("Quitarlo y seguir", "Remove it and continue"), () => void hacer("quitar", E2("Listo: te guardan lo demás", "Done: they keep the rest")), true], ["close", E2("Cancelar el apartado", "Cancel the hold"), () => setConfirmar(true)]]
+    : camino ? (x.track ? [["truck", E2("Ver el seguimiento", "Track it"), () => window.open(x.track!, "_blank", "noopener"), true]] : [])
+    : x.ship && (x.st === "pending" || x.st === "confirmed") ? [["close", E2("Cancelar", "Cancel"), () => setConfirmar(true)]]
     : x.st === "pending" || x.st === "confirmed" ? [["pin", E2("Cómo llegar", "Directions"), llegar], ["close", E2("Cancelar", "Cancel"), () => setConfirmar(true)]]
       : x.st === "done" ? [] : [["search", E2("Volver a la tienda", "Back to the store"), () => router.push(`/n/${x.biz}?tab=shop`)]];
   const vivas = x.lineas.filter((l) => l.st !== "removed");
   const rows: [string, string, boolean][] = [...vivas.map((l): [string, string, boolean] => [`${nm(l.n)}${l.talla ? ` · ${l.talla}` : ""}${l.qty > 1 ? ` × ${l.qty}` : ""}`.toUpperCase(), l.st === "out" ? (l.otra ? `${E2("Te ofrecen la ", "Offered: ")}${l.otra.label}` : E2("No había", "Out")) : dinero(l.total), l.st === "out"]),
-    [E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store"), false], ...(x.st === "pending" || x.st === "confirmed" || x.st === "change_proposed" ? [[E2("CUÁNDO PASAS", "WHEN YOU COME"), fH(new Date(new Date(x.hasta).getTime() - HH * 3600000).toISOString()), false] as [string, string, boolean]] : []),
+    ...(x.ship ? [[E2("CÓMO", "HOW"), E2("Envío a tu casa", "Ship to your home"), false], [E2("A DÓNDE", "WHERE TO"), x.to ?? "—", false], [E2("ENVÍO", "SHIPPING"), x.envio ? dinero(x.envio) : E2("Gratis", "Free"), false], ...(x.tarjeta ? [[E2("TARJETA", "CARD"), x.tarjeta, false]] : [])] as [string, string, boolean][] : []),
+    ...(x.ship ? [] : [[E2("CÓMO", "HOW"), E2("Recoger en tienda", "Pick up in store"), false] as [string, string, boolean]]), ...(!x.ship && (x.st === "pending" || x.st === "confirmed" || x.st === "change_proposed") ? [[E2("CUÁNDO PASAS", "WHEN YOU COME"), fH(new Date(new Date(x.hasta).getTime() - HH * 3600000).toISOString()), false] as [string, string, boolean]] : []),
     ...(x.nota ? [[E2("TU NOTA", "YOUR NOTE"), `«${x.nota}»`, false] as [string, string, boolean]] : [])];
   return (
     <div data-screen-label="APP-NEG-TIENDA-ESTADO" className="min-h-[100dvh] bg-paper pb-10">
@@ -82,7 +99,7 @@ export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
           <div className="border-b border-ink/[.07] px-[15px] py-3 font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("TU APARTADO", "YOUR HOLD")}</div>
           <div className="px-[15px] py-0.5">{rows.map(([k, v, out], n) => (
             <div key={`${k}${n}`} className={`flex justify-between gap-3.5 py-[11px] ${n ? "border-t border-ink/[.06]" : ""}`}><span className={`flex-none pt-0.5 font-mono text-[9px] font-bold tracking-[0.14em] ${out ? "text-danger line-through" : "text-ink/[.42]"}`}>{k}</span><span className={`text-pretty text-right text-[13px] font-semibold leading-[1.45] ${out ? "text-danger" : ""}`}>{v}</span></div>))}
-            <div className="flex justify-between gap-3.5 border-t border-ink/[.06] py-[11px]"><span className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{E2("EN LA CAJA", "AT THE REGISTER")}</span><span className="font-display text-[15px] font-extrabold">{dinero(x.tot)}</span></div></div>
+            <div className="flex justify-between gap-3.5 border-t border-ink/[.06] py-[11px]"><span className="font-mono text-[9px] font-bold tracking-[0.14em] text-ink/[.42]">{x.ship ? (x.cobrado != null ? E2("COBRADO", "CHARGED") : E2("TOTAL · SE COBRA AL ENVIARLO", "TOTAL · CHARGED WHEN IT SHIPS")) : E2("EN LA CAJA", "AT THE REGISTER")}</span><span className="font-display text-[15px] font-extrabold">{dinero(x.cobrado ?? x.tot)}</span></div></div>
         </div>
         <div className="flex items-start gap-2 rounded-[14px] bg-white px-3.5 py-3"><span className="grid flex-none pt-0.5"><Icon name="dollar" size={14} color="var(--tl-open-text)" /></span><span className="text-pretty text-[12px] font-semibold leading-[1.45] text-ink/70">{LINE}</span></div>
         {acts.length > 0 && <div className="grid grid-cols-2 gap-2">{acts.map(([icon, l, on, prim]) => <div key={l} className="grid"><Button variant={prim ? "primary" : "secondary"} size="md" icon={icon} disabled={ocupado} onClick={on}>{l}</Button></div>)}
@@ -93,7 +110,7 @@ export function ApartadoEstado({ x, es }: { x: ApartadoVista; es: boolean }) {
           <div onClick={() => setConfirmar(false)} className="absolute inset-0 bg-ink/50" />
           <div role="dialog" aria-modal="true" aria-label={E2("¿Cancelar el apartado?", "Cancel the hold?")} className="absolute inset-x-0 bottom-0 rounded-t-[26px] bg-white px-5 pb-7 pt-6 lg:inset-auto lg:left-1/2 lg:top-1/2 lg:w-[440px] lg:-translate-x-1/2 lg:-translate-y-1/2 lg:rounded-[26px]">
             <div className="font-display text-[20px] font-extrabold tracking-[-0.03em]">{E2("¿Cancelar el apartado?", "Cancel the hold?")}</div>
-            <p className="m-0 mt-2 text-pretty text-[13px] leading-[1.55] text-ink/65">{E2("Vuelve al estante y la tienda lo sabe. No se cobra nada.", "It goes back on the shelf and the store is told. Nothing is charged.")}</p>
+            <p className="m-0 mt-2 text-pretty text-[13px] leading-[1.55] text-ink/65">{x.ship ? E2("La tienda lo sabe y se libera lo retenido en tu tarjeta. No se cobra nada.", "The store is told and the hold on your card is released. Nothing is charged.") : E2("Vuelve al estante y la tienda lo sabe. No se cobra nada.", "It goes back on the shelf and the store is told. Nothing is charged.")}</p>
             <div className="mt-5 flex flex-col gap-2">
               <div className="grid"><Button variant="danger" disabled={ocupado} onClick={() => void hacer("cancelar", E2("Listo: apartado cancelado", "Done: hold cancelled"))}>{E2("Sí, cancelar", "Yes, cancel")}</Button></div>
               <div className="grid"><Button variant="secondary" onClick={() => setConfirmar(false)}>{E2("No, lo quiero", "No, keep it")}</Button></div>

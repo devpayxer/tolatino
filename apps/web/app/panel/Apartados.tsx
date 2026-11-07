@@ -21,8 +21,8 @@ export function hoyApartados(c: Ctx): Bloque[] {
   if (!L.length) return [];
   const pend = L.filter((x) => x.st === "pending").length;
   return [{ type: "rows", k: `${E2("APARTADOS", "HOLDS")}${pend ? ` · ${pend} ${E2("POR CONFIRMAR", "TO CONFIRM")}` : ""}`, items: L.map((x: ApartadoFila): Fila => ({
-    key: x.numero, icon: "bag", t: `${x.cliente} · ${x.n} ${x.n === 1 ? E2("artículo", "item") : E2("artículos", "items")} · ${money(x.tot)}`, s: `#${x.numero} · ${E2("pasa el ", "comes ")}${cuando(es, x.dia, x.hora)}`,
-    tag: x.st === "pending" ? E2("CONFIRMA QUE LO TIENES", "CONFIRM STOCK") : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.st === "confirmed" ? E2("GUARDADO", "HELD") : E2("RECOGIDO", "PICKED UP"),
+    key: x.numero, icon: "bag", t: `${x.cliente} · ${x.n} ${x.n === 1 ? E2("artículo", "item") : E2("artículos", "items")} · ${money(x.tot)}`, s: `#${x.numero} · ${x.ship ? E2("envío a su casa", "ship to home") : `${E2("pasa el ", "comes ")}${cuando(es, x.dia, x.hora)}`}`,
+    tag: x.st === "pending" ? E2("CONFIRMA QUE LO TIENES", "CONFIRM STOCK") : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.ship ? (x.st === "confirmed" ? (x.etapa === "on_the_way" ? E2("EN CAMINO", "SHIPPED") : E2("POR ENVIAR", "TO SHIP")) : E2("ENTREGADO", "DELIVERED")) : x.st === "confirmed" ? E2("GUARDADO", "HELD") : E2("RECOGIDO", "PICKED UP"),
     tone: x.st === "pending" ? "action" : x.st === "confirmed" ? "signal" : "neutral", chev: true, onClick: () => c.det(`apt:${x.numero}`) })) }];
 }
 
@@ -35,7 +35,8 @@ export function apartadoDetalle(c: Ctx): Sec {
   const out: (Bloque | null)[] = [
     { type: "head", eye: `${E2("APARTADO", "HOLD")} · ${stL}`, t: `#${x.numero}`, s: `${x.cliente} · ${money(x.tot)} ${E2("en la caja", "at the register")}`, onBack: c.closeDet },
     { type: "rows", k: E2("LO QUE APARTÓ", "WHAT THEY HELD"), items: vivas.map((l): Fila => ({ key: l.id, ...(l.foto ? { img: `url("${l.foto}")` } : { imgIni: (l.n.es || "?").slice(0, 1) }), imgW: "44px", t: nm(l.n), s: `${l.talla ? `${E2("Talla", "Size")} ${l.talla} · ` : ""}× ${l.qty} · ${money(l.precio)}`, r: l.st === "out" ? (l.otra ? `${E2("Ofreciste la ", "Offered ")}${l.otra.label}` : E2("No había", "Out")) : money(l.total), tag: l.st === "out" ? E2("FALTA", "MISSING") : null, tone: "danger", chev: false })) },
-    { type: "kv", items: [{ k: E2("CLIENTE", "CLIENT"), v: x.cliente }, { k: E2("PASA", "COMES"), v: cuando(es, x.dia, x.hora) }, { k: E2("CÓMO", "HOW"), v: E2("Recoge en la tienda · paga en la caja", "Picks up in store · pays at the register") }] },
+    { type: "kv", items: x.ship ? [{ k: E2("CLIENTE", "CLIENT"), v: x.cliente }, { k: E2("ENVÍO A", "SHIP TO"), v: x.to ?? "—" }, { k: E2("ENVÍO", "SHIPPING"), v: x.envio ? money(x.envio) : E2("Gratis", "Free") }, { k: E2("PAGO", "PAYMENT"), v: x.cobrado != null ? `${E2("Cobrado ", "Charged ")}${money(x.cobrado)}` : `${E2("Retenido ", "Held ")}${money(x.retenido ?? x.tot)} · ${E2("se cobra al enviarlo", "charged when it ships")}` }]
+      : [{ k: E2("CLIENTE", "CLIENT"), v: x.cliente }, { k: E2("PASA", "COMES"), v: cuando(es, x.dia, x.hora) }, { k: E2("CÓMO", "HOW"), v: E2("Recoge en la tienda · paga en la caja", "Picks up in store · pays at the register") }] },
     x.nota ? { type: "note", tone: "ink", icon: "bubble", t: `«${x.nota}»` } : null,
   ];
   const acc = (a: Parameters<typeof apartadoAccionPanel>[2], ok: string, after?: () => void) => c.run(() => apartadoAccionPanel(c.d.id, x.numero, a), ok, after);
@@ -57,6 +58,17 @@ export function apartadoDetalle(c: Ctx): Sec {
     else {
       out.push({ type: "rows", k: E2("¿QUÉ FALTA?", "WHAT IS MISSING?"), items: vivas.map((l): Fila => ({ key: `f${l.id}`, icon: "warning", t: nm(l.n), s: `× ${l.qty}`, chev: true, onClick: () => acc({ que: "falta", linea: l.id }, E2(`Listo: ${nombre} decide si sigue con lo demás.`, `Done: ${nombre} decides whether to keep the rest.`), () => c.setUi({ aptF: false })) })) });
       out.push({ type: "acts", items: [{ l: E2("Volver", "Back"), v: "secondary", icon: "close", off: c.pending, onClick: () => c.setUi({ aptF: false }) }] });
+    }
+  } else if (x.st === "confirmed" && x.ship) {
+    // Envío de la tienda: «Enviado» (con el enlace de seguimiento si tienes) cobra lo que va; después «Entregado».
+    if (x.etapa !== "on_the_way") {
+      const key = `aptT:${x.numero}`, val = (c.ui[key] as string | undefined) ?? "";
+      out.push({ type: "note", tone: "info", icon: "info", t: E2(`Envíalo antes de ${new Date(x.hasta).toLocaleString("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" })}. Al marcarlo «Enviado» se cobran ${money(Math.min(x.tot, x.retenido ?? x.tot))} en la tarjeta de ${nombre}. Si no lo envías a tiempo, se libera.`, `Ship it before ${new Date(x.hasta).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" })}. Marking it “Shipped” charges ${money(Math.min(x.tot, x.retenido ?? x.tot))} to ${nombre}’s card. If you do not ship in time, it is released.`) });
+      out.push({ type: "field", k: E2("ENLACE DE SEGUIMIENTO (OPCIONAL)", "TRACKING LINK (OPTIONAL)"), val, ph: "https://", max: 300, onChange: (v: string) => c.setUi({ [key]: v }), help: E2("USPS, UPS, FedEx… El cliente lo ve en su pedido.", "USPS, UPS, FedEx… The client sees it in their order.") });
+      out.push({ type: "acts", items: [{ l: E2("Enviado", "Shipped"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "enviado", track: val.trim() || null }, E2(`Listo: enviado y cobrado. ${nombre} lo sabe.`, `Done: shipped and charged. ${nombre} knows.`)) }] });
+    } else {
+      out.push({ type: "note", tone: "info", icon: "info", t: x.track ? E2(`En camino · ${x.track}`, `On its way · ${x.track}`) : E2("En camino.", "On its way.") });
+      out.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "entregado" }, E2("Listo: entregado.", "Done: delivered.")) }] });
     }
   } else if (x.st === "confirmed") {
     out.push({ type: "note", tone: "info", icon: "info", t: E2(`Guárdalo hasta ${new Date(x.hasta).toLocaleString("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}. Cobras ${money(x.tot)} en la caja. Si no pasa, vuelve solo al estante.`, `Keep it until ${new Date(x.hasta).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}. Collect ${money(x.tot)} at the register. If they do not come, it returns to the shelf on its own.`) });

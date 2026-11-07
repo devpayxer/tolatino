@@ -796,3 +796,15 @@ menos (todavía no hay «pedir OK por $X más» → LAUNCH-CHECKLIST)._
 _Decidido por mí (reversible): la talla ofrecida no se aparta hasta que el cliente dice que sí (si en ese rato se acaba, se le
 dice y puede quitarla); la tienda solo ve para ofrecer las tallas con existencia suficiente; «EN LA CAJA» durante la propuesta
 muestra el total como si aceptara (mismo precio). El envío de la tienda (con tarjeta retenida) va en 4q-2._
+
+### 4q-2 · Envío de la tienda con tarjeta (7 nov)
+**Qué mirar (teléfono, sandbox):**
+1. Marisol: Boutique Yaritza › Productos › Blusa M y Vestido S › Ver apartado › **Envío a tu casa** ($6.99) › A dónde y cómo
+   pagas › Revisa: «SE RETIENE $89.99 · SE COBRA AL ENVIARLO».
+2. Yaritza: Hoy › el pedido › «Falta uno» › Vestido. Marisol: «Quitarlo y seguir» → LO PREPARAN.
+3. Yaritza: pega un enlace https de USPS › **Enviado** → se cobran $30.99 (no $89.99). Marisol: VA EN CAMINO · Ver el
+   seguimiento. Yaritza: **Entregado**.
+_Decidido por mí (reversible): se retiene al **mandar** el pedido (con la persona en la app; Preguntas #10 decía «al confirmar
+la tienda»: así no hay cobros fuera de sesión que el banco pueda rechazar); la tienda tiene 4 horas para confirmar y 6 días para
+enviarlo (la retención de la tarjeta dura ~7); el envío no exige zona (va por correo o camión); comisión 6 % (`apt`) solo de los
+artículos; si el banco pide verificación extra (3-D Secure) todavía no se puede pagar el envío → LAUNCH-CHECKLIST._

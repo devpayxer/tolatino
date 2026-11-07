@@ -120,14 +120,14 @@ prototipo `M-6xxx`; Preguntas #13). `payments.kind` ya admite `full` + `extra` (
 `details.ship true` + `details.tracking_url` + `details.shipped_at` (envío de la tienda); `change_proposals kind 'items'` para «la talla de al
 lado» (`proposed {line_id, variant_id, label}`); `operation_lines.status` + `'swapped'`.
 
-**0067 `layaway` (4r)** — **`layaway_plans`**: `operation_id` (el apartado A-…), `total_cents`, `down_pct`, `down_cents`, `n_payments`,
+**0068 `layaway` (4r)** — **`layaway_plans`**: `operation_id` (el apartado A-…), `total_cents`, `down_pct`, `down_cents`, `n_payments`,
 `every_days`, `cancel_pct`, `terms jsonb` (texto ES/EN exacto que el cliente aceptó), `accepted_at`, `accepted_ip`, `accepted_version`
 (inmutable, como `written_totals` de 4l), `status active|paid|late|cancelled`, `paid_cents` **derivado** (Σ pagos capturados − devueltos),
 `next_due_at`, `city_id`. **`layaway_payments`**: `plan_id`, `seq`, `due_at`, `amount_cents`, `payment_id` (→ `payments kind 'balance'
 seq`), `status due|paid|late|waived`. `payments.kind` + `'layaway'` si conviene separarlo de `balance` (decidir al migrar; sin cambiar
 `unique (operation_id, kind, seq)`). La unidad apartada queda reservada (`stock_left`/`item_variants`) mientras el plan está vivo.
 
-**0068 `ayuda_mercados_tiendas` (4s)** — `help_requests.reason` amplía Mercados (`neg-merc-rev.js RSN`: `peso`(foto), `falto`(foto),
+**0069 `ayuda_mercados_tiendas` (4s)** — `help_requests.reason` amplía Mercados (`neg-merc-rev.js RSN`: `peso`(foto), `falto`(foto),
 `fresco`(foto), `sust`, `caja`(foto), `tarde`, `otro`; `falto` ≠ `falta` de Comida para no mezclar etiquetas) y Tiendas
 (`neg-tienda-rev.js RSN`: `caja`(foto), `apa`, `talla`, `cambio`(foto), `dano`(foto), `otro`; `dano` ya existe con etiqueta de Auto →
 `POR_RUBRO.tienda`); `wants` reusa `devolver` · `reponer` (Mercados «Que me lo repongan», Tiendas «Cambiarlo») · `avisar`.
@@ -461,7 +461,7 @@ respuesta»). Revisión de seguridad (regla 5) de 4n/4p/4r/4s antes de cerrar. C
 su línea en `docs/REVISION.md`.
 
 ## 9. Lista de cierre del grupo (todo marcado antes de decir «Mercados + Tiendas completos»)
-- [ ] Migraciones 0064–0068 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
+- [ ] Migraciones 0064–0069 (0067 = envío de la tienda, 4q-2) aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI.
 - [ ] Semilla 0019 solo en pruebas (guardián `semilla`); demos `demo-merc` y `demo-tienda` con pedidos, apartados, plan y reseñas.
 - [ ] Editor de productos en el panel (por libra, tallas, plan, solo en la tienda, EBT, gravable) — ítem de `LAUNCH-CHECKLIST` cerrado.
 - [ ] Tu herramienta de las dos guarda cada toque, refleja en ficha y Buscar y el Super Admin la ve (triángulo de las tres puntas).

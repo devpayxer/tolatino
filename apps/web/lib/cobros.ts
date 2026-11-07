@@ -32,7 +32,7 @@ export async function tarjetaDe(negocio: string): Promise<{ on: boolean; cuenta:
 }
 
 /* Dentro de la transacción del pedido: retiene el total en la tarjeta. Idempotente por la clave del pedido. */
-export async function retenerPedido(x: { negocio: string; cuenta: string; clave: string; total: number; subtotal: number; pm: string; userId: string; numero: string; tipo?: "ped" | "merc" }, c: Q): Promise<Retencion & { comision: number }> {
+export async function retenerPedido(x: { negocio: string; cuenta: string; clave: string; total: number; subtotal: number; pm: string; userId: string; numero: string; tipo?: "ped" | "merc" | "apt" }, c: Q): Promise<Retencion & { comision: number }> {
   const fee = Math.min(await comision(c, x.tipo ?? "ped", x.subtotal), x.total);
   const cliente = await pasarela.cliente(x.userId).catch(() => null);
   const r = await pasarela.retener({ centavos: x.total, comision: fee, destino: x.cuenta, pm: x.pm, cliente, idem: `ord-${x.clave}-${x.pm.slice(-24)}` /* otra tarjeta = otro intento; la misma = idempotente */, meta: { order: x.numero, business_id: x.negocio } });
@@ -56,6 +56,7 @@ const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const refDe = (kind: string, num: string) => kind === "appointment"
   ? { num, href: `/cita/${num}`, ref: ["appointment", num] as [string, string] }
   : kind === "market_order" ? { num, href: `/mercado/${num}`, ref: ["order", num] as [string, string] }
+  : kind === "hold" ? { num, href: `/apartado/${num}`, ref: ["apartado", num] as [string, string] }
   : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
 /* Cobrar lo retenido de una operación (el negocio aceptó). */
@@ -97,13 +98,15 @@ export async function liberarOperacion(opId: string) {
 export async function repararPagos(negocio: string) {
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.status <> 'pending' and o.kind <> 'market_order' limit 20`, [negocio])).rows;
+      where p.business_id = $1 and p.status = 'held' and o.status <> 'pending' and o.kind not in ('market_order', 'hold') limit 20`, [negocio])).rows;
   for (const x of L) {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
     else await liberarOperacion(x.op);
   }
   // Pedido del mercado (4p): nunca se captura lo retenido completo; se cobra lo que pesó (liquidarMercado) o se libera.
   await (await import("./mercado")).repararMercado(negocio);
+  // Envío de la tienda (4q-2): se cobra lo que se envió (cobrarApartado), nunca lo retenido completo; o se libera.
+  await (await import("./apartados")).repararApartados(negocio);
   // Auto y Hogar (4d): estimado y «algo más» (liquidaciones a medias, retenciones que vencen).
   await (await import("./estimados")).repararEstimados(negocio);
 }
