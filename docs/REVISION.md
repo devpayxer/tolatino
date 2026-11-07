@@ -1086,3 +1086,13 @@ _Ojo en el sandbox:_ la semilla no trae reservas de noche de ejemplo; Transaccio
 usan (Marisol pide mesas en La Terraza y Héctor las confirma y marca la puerta). Las colas aparecen a la 3.ª vez en 30 noches.
 _Pendiente (Fase 5):_ Configuración de los plazos (60 min de respuesta, 6 PM, 30 min de mesa, 60 min de fila) — hoy son constantes del
 código; ya están en `docs/LAUNCH-CHECKLIST.md`.
+
+### Plan · Educación + Niños + Deporte (7 nov) — `docs/diseno/plan/fase4-edu-ninos-deporte.md`
+Bloques 4ea–4eg (un solo motor de inscripción para las tres, que después reusan Iglesias, Bienes Raíces y Venta de Autos).
+_Decidido por mí (se cambia si prefieres otra cosa):_ en la app solo se cobra la **matrícula** de un curso (se retiene al enviar, se cobra
+al confirmar, vuelve completa si cancelas antes de empezar o el grupo no abre); mensualidad, semana de guardería y clase suelta se pagan en
+el lugar. De los niños solo se guarda nombre de pila, edad o grado, la escuela si los recogen ahí y una nota, todo cifrado y borrado a los
+30 días; nunca fecha de nacimiento, fotos, salud ni Medicaid, y los avisos nunca llevan el nombre del niño. Una guardería sin licencia del
+DHS vigente puede publicarse pero no recibe solicitudes por la app. Las membresías no se cobran por la app; «Cancelar mi membresía» deja
+constancia con fecha. «No cuidaron bien a mi niño» va directo a To'Latino con el 911 y ChildLine (número a verificar). El número de
+inscripción es **I-4101** (`E-` ya es de las emergencias de Hogar).
