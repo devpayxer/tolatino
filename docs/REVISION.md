@@ -808,3 +808,14 @@ _Decidido por mí (reversible): se retiene al **mandar** el pedido (con la perso
 la tienda»: así no hay cobros fuera de sesión que el banco pueda rechazar); la tienda tiene 4 horas para confirmar y 6 días para
 enviarlo (la retención de la tarjeta dura ~7); el envío no exige zona (va por correo o camión); comisión 6 % (`apt`) solo de los
 artículos; si el banco pide verificación extra (3-D Secure) todavía no se puede pagar el envío → LAUNCH-CHECKLIST._
+
+### 4r · Plan de pagos (layaway) de Tiendas (7 nov)
+**Qué mirar (teléfono, sandbox):**
+1. Marisol: Boutique Yaritza › Productos › **Vestido de quince (en plan)** («ABONO 20 % · 4 PAGOS») › Apartar › Ver apartado ›
+   Tu plan › **El acuerdo, por escrito** (léelo: es lo que queda guardado) › marcar «Leí el acuerdo y lo acepto» › Aceptar y apartar.
+2. Yaritza: Hoy › el plan › **Lo tengo · guárdalo** (se cobra el abono de $64). Marisol: «Tu plan» › **Pagar $64**.
+3. Yaritza: **Pagó en la tienda · $64**. (Para ver «Cancelar el plan» hace falta un pago con 14 días de atraso.)
+_Decidido por mí (reversible): lo que va en plan se aparta solo y se recoge en la tienda (sin envío); el cargo al cancelar es el %
+del acuerdo **sobre lo abonado** y se toma primero de lo pagado en la app (lo pagado en la tienda lo devuelve la tienda); la persona
+puede cancelar su plan cuando quiera con la misma regla; la tienda tiene 4 horas para confirmar; comisión `apt` (6 %) en cada
+pago cobrado en la app, ninguna en lo pagado en la tienda; ningún cobro automático (Preguntas #11)._

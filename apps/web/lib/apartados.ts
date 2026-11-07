@@ -11,7 +11,9 @@ import { db, tx } from "./db";
    - El negocio marca «Lo recogió». Si no pasas a tiempo, vuelve al estante. Lo que no se lleva vuelve a la tienda.
    - Envío de la tienda (4q-2, solo Tiendas con envío y tarjeta): se retiene lo apartado + el envío al mandarlo; la tienda
      confirma, lo envía (con enlace de seguimiento si tiene) y al marcar «Enviado» se cobra lo que de verdad va (nunca más de
-     lo retenido; lo demás se libera). Si no lo tiene, se cancela o no lo envía a tiempo, se libera todo. */
+     lo retenido; lo demás se libera). Si no lo tiene, se cancela o no lo envía a tiempo, se libera todo.
+   - Layaway (4r, lib/layaway.ts): lo que va «en plan» se aparta solo, con su acuerdo por escrito; se retiene el abono, se cobra
+     cuando la tienda confirma y el apartado queda guardado mientras paga (no vence); se recoge al terminar de pagar. */
 type Bi = { es: string; en: string };
 type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
@@ -44,7 +46,7 @@ export async function tiendaVenta(negocio: string): Promise<ArticuloVenta[]> {
 /* ── Cuándo pasas: hoy, mañana y pasado; horas en que abre (desde una hora después de abrir; hoy, desde dentro de una hora) ── */
 export type DiaApartar = { f: string; k: "hoy" | "man" | "pas"; horas: number[] };
 export type EnvioTienda = { fee: number; free: number; dias: string };
-export type OpcionesApartar = { negocio: { id: string; nombre: string; dir: string; foto: string | null }; dias: DiaApartar[]; arts: ArticuloVenta[]; horas: number; envio: EnvioTienda | null };
+export type OpcionesApartar = { negocio: { id: string; nombre: string; dir: string; foto: string | null }; dias: DiaApartar[]; arts: ArticuloVenta[]; horas: number; envio: EnvioTienda | null; plan: import("./layaway-comun").ReglaPlan | null };
 /* El envío de la tienda (Tu herramienta de Tiendas) solo si la tienda cobra con tarjeta ahora (Preguntas #10). */
 async function envioDe(negocio: string): Promise<EnvioTienda | null> {
   const r = (await db().query<{ fee: number; free: number; dias: string }>(`select d.ship_fee_cents as fee, coalesce(d.ship_free_over_cents, 0) as free, coalesce(nullif(d.ship_days, ''), '3-5') as dias
@@ -81,15 +83,19 @@ export async function opcionesApartar(negocio: string): Promise<OpcionesApartar 
   if (!b) return null;
   const arts = await tiendaVenta(negocio);
   if (!arts.length) return null;
-  return { negocio: { id: negocio, nombre: b.nombre, dir: b.dir, foto: b.foto }, dias: await diasDe(negocio, b.city), arts, horas: await horasApartado(negocio), envio: await envioDe(negocio) };
+  return { negocio: { id: negocio, nombre: b.nombre, dir: b.dir, foto: b.foto }, dias: await diasDe(negocio, b.city), arts, horas: await horasApartado(negocio), envio: await envioDe(negocio), plan: await (await import("./layaway")).reglaPlan(negocio) };
 }
 
 /* ── Apartar ── */
-export type ApartarIn = { negocio: string; lineas: { item: string; qty: number; v?: string | null }[]; dia: string; hora: number; nota?: string; sms?: boolean; clave: string; envio?: { pm: string; dir: string | null } | null };
-export async function apartar(userId: string, f: ApartarIn, entorno: string): Promise<Res<{ numero: string }>> {
-  const ship = !!f?.envio;
+export type ApartarIn = { negocio: string; lineas: { item: string; qty: number; v?: string | null }[]; dia: string; hora: number; nota?: string; sms?: boolean; clave: string; envio?: { pm: string; dir: string | null } | null;
+  plan?: { pm: string; acepto: boolean } | null };
+export async function apartar(userId: string, f: ApartarIn, entorno: string, ip: string | null = null): Promise<Res<{ numero: string }>> {
+  const conPlan = !!f?.plan, ship = !!f?.envio || conPlan;  // el plan, como el envío, no pide «cuándo pasas» y se paga con tarjeta
   if (!UUID.test(String(f?.clave)) || typeof f.negocio !== "string" || (!ship && (!YMD.test(String(f?.dia)) || !Number.isInteger(f?.hora))) || !Array.isArray(f?.lineas)) return no("Revisa tu apartado y vuelve a intentarlo.", "Check your hold and try again.");
-  if (ship && (typeof f.envio?.pm !== "string" || !/^pm_[A-Za-z0-9_]{3,80}$/.test(f.envio.pm) || (f.envio.dir != null && !UUID.test(String(f.envio.dir))))) return no("Elige la tarjeta con que pagas el envío.", "Choose the card for the shipment.");
+  if (conPlan && f.envio) return no("Lo que va en plan se recoge en la tienda al terminar de pagar.", "Layaway items are picked up in store when fully paid.");
+  if (conPlan && (typeof f.plan?.pm !== "string" || !/^pm_[A-Za-z0-9_]{3,80}$/.test(f.plan.pm))) return no("Elige la tarjeta con que pagas el abono.", "Choose the card for the down payment.");
+  if (conPlan && f.plan?.acepto !== true) return no("Lee y acepta el acuerdo del plan.", "Read and accept the plan agreement.");
+  if (f?.envio && (typeof f.envio?.pm !== "string" || !/^pm_[A-Za-z0-9_]{3,80}$/.test(f.envio.pm) || (f.envio.dir != null && !UUID.test(String(f.envio.dir))))) return no("Elige la tarjeta con que pagas el envío.", "Choose the card for the shipment.");
   const L = f.lineas.filter((l) => ID.test(String(l?.item)) && Number.isInteger(l?.qty) && l.qty >= 1 && l.qty <= MAX_QTY && (l.v == null || ID.test(String(l.v))));
   if (!L.length || L.length !== f.lineas.length || L.length > MAX_LINEAS || new Set(L.map((l) => `${l.item}:${l.v ?? ""}`)).size !== L.length) return no("Revisa los artículos de tu apartado.", "Check the items in your hold.");
   const nota = String(f.nota ?? "").replace(/\s+/g, " ").trim().slice(0, 200);
@@ -98,8 +104,10 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
   if (!o) return no("Esta tienda no aparta en la app ahora.", "This store is not taking holds in the app right now.");
   const dia = o.dias.find((d) => d.f === f.dia);
   if (!ship && (!dia || !dia.horas.includes(f.hora))) return no("Elige cuándo pasas de las horas que se ofrecen.", "Pick when you come from the offered times.");
-  if (ship && !o.envio) return no("Esta tienda no está enviando ahora. Elige recogerlo en la tienda.", "This store is not shipping right now. Choose pickup.");
-  const cob = await import("./cobros"), T = ship ? await cob.tarjetaDe(f.negocio) : null;
+  if (f.envio && !o.envio) return no("Esta tienda no está enviando ahora. Elige recogerlo en la tienda.", "This store is not shipping right now. Choose pickup.");
+  const lay = await import("./layaway"), regla = conPlan ? await lay.reglaPlan(f.negocio) : null;
+  if (conPlan && !regla) return no("Esta tienda no está tomando planes ahora.", "This store is not taking layaway right now.");
+  const cob = await import("./cobros"), T = ship ? await cob.tarjetaDe(f.negocio) : null;  // envío o plan: con tarjeta
   if (ship && (!T?.on || !T.cuenta)) return no("Esta tienda no está cobrando con tarjeta ahora. Elige recogerlo en la tienda.", "This store is not taking cards right now. Choose pickup.");
   let aviso: { cliente: string; n: number } | null = null, retenido: string | null = null;
   try {
@@ -109,8 +117,8 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
     if (Number((await c.query<{ n: number }>(`select count(*)::int as n from operations where user_id = $1 and business_id = $2 and kind = 'hold' and status in ('pending', 'change_proposed', 'confirmed')`, [userId, f.negocio])).rows[0]!.n) >= 3)
       return no("Ya tienes 3 apartados abiertos en esta tienda.", "You already have 3 open holds at this store.");
     // Los artículos bloqueados en orden: dos personas a la vez por las últimas unidades → una se las lleva.
-    const I = (await c.query<{ id: string; n: Bi; p: number; tax: number; mode: string; left: number }>(
-      `select id::text, name as n, price_cents as p, tax_pct::float as tax, stock_mode as mode, stock_left as left from items
+    const I = (await c.query<{ id: string; n: Bi; p: number; tax: number; mode: string; left: number; k: string | null }>(
+      `select id::text, name as n, price_cents as p, tax_pct::float as tax, stock_mode as mode, stock_left as left, shop_kind as k from items
         where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by id for update`, [f.negocio, [...new Set(L.map((l) => l.item))]])).rows;
     if (I.length !== new Set(L.map((l) => l.item)).size) return no("Algo de tu apartado ya no está en la tienda. Revísalo.", "Something in your hold is no longer in the store. Check it.");
     // Tallas: si el artículo tiene tallas, la talla es obligatoria y se reserva (una talla en 0 no se aparta).
@@ -125,13 +133,24 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
       } else if (l.v != null) return no("Ese artículo no tiene tallas.", "That item has no sizes.");
       else if (it.mode === "qty" && it.left < l.qty) return no(it.left ? `De «${it.n.es}» quedan ${it.left}.` : `«${it.n.es}» se agotó.`, it.left ? `Only ${it.left} of “${it.n.en || it.n.es}” left.` : `“${it.n.en || it.n.es}” sold out.`);
     }
+    // Lo que va en plan se aparta solo (con su acuerdo); lo demás, como siempre.
+    const enPlan = I.filter((x) => x.k === "plan").length;
+    if (enPlan && enPlan !== I.length) return no("Lo que va en plan se aparta solo. Quita lo demás de tu apartado.", "Layaway items are held on their own. Remove the rest from your hold.");
+    if (!!enPlan !== conPlan) return no(enPlan ? "Ese artículo va en plan: lee y acepta el acuerdo." : "Ese apartado no es un plan.", enPlan ? "That item is on layaway: read and accept the agreement." : "That hold is not a layaway.");
     const holdH = o.horas;
     const b = (await c.query<{ city: string; tz: string }>(`select b.city_id as city, ci.timezone as tz from businesses b join cities ci on ci.id = b.city_id where b.id = $1`, [f.negocio])).rows[0]!;
     const tot = L.reduce((s, l) => s + (I.find((x) => x.id === l.item)?.p ?? 0) * l.qty, 0);
     const numero = `A-${(await c.query<{ n: string }>(`select nextval('hold_seq')::text as n`)).rows[0]!.n}`;
     // Envío: la dirección (cualquier distancia: va por correo o en el camión de la tienda), el costo y la retención.
     let fee = 0, to: Record<string, unknown> | null = null, ret: Awaited<ReturnType<typeof cob.retenerPedido>> | null = null;
-    if (ship) {
+    if (conPlan) {
+      // El abono se retiene hoy (con la persona en la app) y se cobra cuando la tienda confirma que lo tiene.
+      const abono = lay.cuotas(tot, regla!).abono;
+      ret = await cob.retenerPedido({ negocio: f.negocio, cuenta: T!.cuenta!, clave: f.clave, total: abono, subtotal: abono, pm: f.plan!.pm, userId, numero, tipo: "apt" }, c);
+      if (!ret.ok) return no(ret.mensaje.es, ret.mensaje.en);
+      retenido = ret.pi;
+      if (ret.estado === "accion") return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta.", "Your bank asks for an extra verification we can't do here yet. Try another card.");
+    } else if (ship) {
       const dir = await (await import("./pedir")).dirEntrega(c, userId, f.negocio, 100000, f.envio!.dir);
       if (!dir) return no("Agrega la dirección a donde te lo envían.", "Add the address to ship to.");
       fee = envioCosto(o.envio!, tot);
@@ -141,8 +160,12 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
       retenido = ret.pi;
       if (ret.estado === "accion") return no("Tu banco pide una verificación extra que todavía no hacemos aquí. Prueba con otra tarjeta o recógelo en la tienda.", "Your bank asks for an extra verification we can't do here yet. Try another card or pick it up in store.");
     }
-    const det = ship ? { sms: f.sms !== false, como: "envio", ship: true, to, ship_days: o.envio!.dias, hold_hours: holdH } : { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda", hold_hours: holdH };
-    const op = ship ? (await c.query<{ id: string }>(
+    const det = conPlan ? { sms: f.sms !== false, como: "plan", hold_hours: holdH } : ship ? { sms: f.sms !== false, como: "envio", ship: true, to, ship_days: o.envio!.dias, hold_hours: holdH } : { dia: f.dia, hora: f.hora, sms: f.sms !== false, como: "tienda", hold_hours: holdH };
+    const op = conPlan ? (await c.query<{ id: string }>(
+      `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, customer_note, details, subtotal_cents, total_cents, pay_mode, client_key, is_test)
+       values ($1, 'hold', $2, $3, $4, 'pending', 'sent', 'pickup', now(), now() + interval '400 days', now() + interval '4 hours', nullif($5, ''), $6::jsonb, $7::int, $7::int, 'app', $8::uuid, $9) returning id::text`,
+      [numero, b.city, f.negocio, userId, nota, JSON.stringify(det), tot, f.clave, entorno !== "produccion"])).rows[0]!.id
+      : ship ? (await c.query<{ id: string }>(
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, customer_note, details, subtotal_cents, delivery_cents, total_cents, pay_mode, client_key, is_test)
        values ($1, 'hold', $2, $3, $4, 'pending', 'sent', 'delivery', now(), now() + interval '6 days', now() + interval '4 hours', nullif($5, ''), $6::jsonb, $7::int, $8::int, $7::int + $8::int, 'app', $9::uuid, $10) returning id::text`,
       [numero, b.city, f.negocio, userId, nota, JSON.stringify(det), tot, fee, f.clave, entorno !== "produccion"])).rows[0]!.id
@@ -150,7 +173,10 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
       `insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, scheduled_at, ready_at, respond_by, customer_note, details, subtotal_cents, total_cents, pay_mode, client_key, is_test)
        values ($1, 'hold', $2, $3, $4, 'pending', 'sent', 'pickup', $5::timestamptz, $5::timestamptz + make_interval(hours => $11::int), greatest(now() + interval '30 minutes', $5::timestamptz - interval '30 minutes'), nullif($6, ''), $7::jsonb, $8, $8, 'local', $9::uuid, $10) returning id::text`,
       [numero, b.city, f.negocio, userId, (await c.query<{ t: string }>(`select (($1::date + make_interval(mins => $2::int)) at time zone $3)::text as t`, [f.dia, f.hora, b.tz])).rows[0]!.t, nota, JSON.stringify(det), tot, f.clave, entorno !== "produccion", holdH])).rows[0]!.id;
-    if (ret?.ok) await cob.registrarRetencion(c, { opId: op, userId, negocio: f.negocio, city: b.city, total: tot + fee, comision: ret.comision, r: ret, pm: f.envio!.pm });
+    if (ret?.ok && conPlan) {
+      await cob.registrarRetencion(c, { opId: op, userId, negocio: f.negocio, city: b.city, total: lay.cuotas(tot, regla!).abono, comision: ret.comision, r: ret, pm: f.plan!.pm, kind: "deposit" });
+      await lay.crearPlan(c, { opId: op, city: b.city, negocio: o.negocio.nombre, total: tot, r: regla!, ip });
+    } else if (ret?.ok) await cob.registrarRetencion(c, { opId: op, userId, negocio: f.negocio, city: b.city, total: tot + fee, comision: ret.comision, r: ret, pm: f.envio!.pm });
     for (const l of L) {
       const it = I.find((x) => x.id === l.item)!;
       const v = V.find((z) => z.id === String(l.v ?? ""));
@@ -158,7 +184,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
       if (v) await c.query(`update item_variants set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [v.id, l.qty]);
       else if (it.mode === "qty") await c.query(`update items set stock_left = stock_left - $2, updated_at = now() where id = $1::bigint`, [l.item, l.qty]);
     }
-    await ev(c, op, "sent", "user", userId, ship ? { es: `Mandó el pedido con envío · se retuvieron ${money(tot + fee)}`, en: `Sent the order to ship · ${money(tot + fee)} held` } : { es: "Mandó el apartado", en: "Sent the hold" });
+    await ev(c, op, "sent", "user", userId, conPlan ? { es: "Mandó el apartado en plan · aceptó el acuerdo · se retuvo el abono", en: "Sent the layaway hold · accepted the agreement · down payment held" } : ship ? { es: `Mandó el pedido con envío · se retuvieron ${money(tot + fee)}`, en: `Sent the order to ship · ${money(tot + fee)} held` } : { es: "Mandó el apartado", en: "Sent the hold" });
     aviso = { cliente: (await c.query<{ n: string }>(`select coalesce(nullif(first_name, ''), 'Un cliente') as n from users where id = $1`, [userId])).rows[0]?.n ?? "Un cliente", n: L.reduce((s, l) => s + l.qty, 0) };
     return { ok: true, numero };
   });
@@ -167,7 +193,7 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string): Pr
   if (r.ok && aviso) {
     const a = aviso as { cliente: string; n: number }, av = await import("./avisos"), n = `${a.n} ${a.n === 1 ? "artículo" : "artículos"}`;
     const d = ship ? null : s2d(f.dia);
-    await av.avisarNegocio(f.negocio, "biz_apartado", { cliente: a.cliente, que: d ? `apartó ${n} para el ${DIA[d.getUTCDay()]} ${d.getUTCDate()} a las ${horaL(f.hora)} · confirma que lo tienes` : `pidió ${n} con envío · confirma que lo tienes` }, { href: `/panel/${f.negocio}/hoy?det=apt:${r.numero}`, ref: ["apartado", r.numero] });
+    await av.avisarNegocio(f.negocio, "biz_apartado", { cliente: a.cliente, que: conPlan ? `apartó ${n} en plan · confirma que lo tienes (se cobra el abono)` : d ? `apartó ${n} para el ${DIA[d.getUTCDay()]} ${d.getUTCDate()} a las ${horaL(f.hora)} · confirma que lo tienes` : `pidió ${n} con envío · confirma que lo tienes` }, { href: `/panel/${f.negocio}/hoy?det=apt:${r.numero}`, ref: ["apartado", r.numero] });
   }
   return r;
   } catch (e) {
@@ -183,7 +209,8 @@ export type LineaApartado = { id: string; item: string | null; n: Bi; qty: numbe
 export type ApartadoVista = { numero: string; st: St; detalle: string | null; biz: string; bname: string; dir: string; tel: string | null; foto: string | null; cliente: string; tot: number; lineas: LineaApartado[];
   dia: string; hora: number; sms: boolean; hasta: string; responde: string; nota: string | null; enviado: string; guardado: string | null; recogido: string | null; cxBy: string | null; horas: number;
   // Envío de la tienda (4q-2): a dónde, cuánto, en cuántos días, seguimiento, cuándo salió y el dinero (retenido / cobrado).
-  ship: boolean; envio: number; to: string | null; dias: string; track: string | null; salio: string | null; etapa: string; retenido: number | null; cobrado: number | null; tarjeta: string | null };
+  ship: boolean; envio: number; to: string | null; dias: string; track: string | null; salio: string | null; etapa: string; retenido: number | null; cobrado: number | null; tarjeta: string | null;
+  plan: import("./layaway").PlanVista | null };
 async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { op: string; uid: string }) | null> {
   const x = (await db().query<ApartadoVista & { op: string; uid: string }>(
     `select o.id::text as op, o.user_id::text as uid, o.number as numero, o.status as st, o.status_detail as detalle, o.business_id as biz, b.name as bname, coalesce(b.address, '') as dir, b.phone as tel, b.logo_url as foto,
@@ -201,6 +228,7 @@ async function leer(where: string, args: unknown[]): Promise<(ApartadoVista & { 
       case when l.variant_id is null then '[]'::jsonb else coalesce((select jsonb_agg(jsonb_build_object('id', v.id::text, 'label', v.label, 'quedan', v.stock_left) order by v.sort, v.id) from item_variants v
         where v.item_id = l.item_id and v.id <> l.variant_id and v.removed_at is null and v.stock_left >= l.qty), '[]'::jsonb) end as alt
     from operation_lines l left join items i on i.id = l.item_id where l.operation_id = $1::bigint order by l.id`, [x.op])).rows;
+  x.plan = await (await import("./layaway")).planDe(x.op);
   return x;
 }
 export async function apartadoVista(userId: string, numero: string): Promise<ApartadoVista | null> {
@@ -219,12 +247,12 @@ export async function apartadoPanel(negocio: string, numero: string): Promise<Ap
   const { op: _o, uid: _u, ...v } = x;
   return v;
 }
-export type ApartadoFila = { numero: string; st: St; cliente: string; tot: number; n: number; dia: string; hora: number; hasta: string; responde: string; ship: boolean; etapa: string };
+export type ApartadoFila = { numero: string; st: St; cliente: string; tot: number; n: number; dia: string; hora: number; hasta: string; responde: string; ship: boolean; etapa: string; plan: string | null };
 export async function apartadosNegocio(negocio: string): Promise<ApartadoFila[]> {
   await barrerApartados({ negocio });
   return (await db().query<ApartadoFila>(
     `select o.number as numero, o.status as st, coalesce(nullif(u.first_name, ''), 'Cliente') || coalesce(' ' || left(nullif(u.last_name, ''), 1) || '.', '') as cliente, o.total_cents as tot,
-            (select coalesce(sum(qty), 0)::int from operation_lines l where l.operation_id = o.id and l.status = 'ok') as n, o.details->>'dia' as dia, (o.details->>'hora')::int as hora, o.ready_at as hasta, o.respond_by as responde, o.mode = 'delivery' as ship, o.stage as etapa
+            (select coalesce(sum(qty), 0)::int from operation_lines l where l.operation_id = o.id and l.status = 'ok') as n, o.details->>'dia' as dia, (o.details->>'hora')::int as hora, o.ready_at as hasta, o.respond_by as responde, o.mode = 'delivery' as ship, o.stage as etapa, (select lp.status from layaway_plans lp where lp.operation_id = o.id) as plan
        from operations o join users u on u.id = o.user_id
       where o.business_id = $1 and o.kind = 'hold' and (o.status in ('pending', 'change_proposed', 'confirmed') or (o.status = 'done' and o.done_at > now() - interval '1 day'))
       order by case o.status when 'pending' then 0 when 'change_proposed' then 1 when 'confirmed' then 2 else 3 end, o.scheduled_at limit 40`, [negocio])).rows;
@@ -253,12 +281,18 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.user_id = $2", [numero, userId]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
   const av = await import("./avisos"), href = { href: `/panel/${x.biz}/hoy?det=apt:${numero}`, ref: ["apartado", numero] as [string, string] };
+  if (a?.que === "cancelar" && x.plan && (x.plan.st === "active" || x.plan.st === "late")) {
+    // Un plan vivo se cancela con su regla: lo abonado menos el cargo.
+    const r = await (await import("./layaway")).cancelarPlan({ numero, userId }, "user", userId);
+    return r.ok ? { ok: true } : r;
+  }
   if (a?.que === "cancelar") {
     const ok = await tx(async (c) => {
       const u = await c.query(`update operations set status = 'cancelled', cancelled_at = now(), cancelled_by = 'user', updated_at = now() where id = $1::bigint and status in ('pending', 'change_proposed', 'confirmed') and stage <> 'on_the_way'`, [x.op]);
       if (!u.rowCount) return false;
       await devolverStock(c, x.op);
       await cerrarPropuestas(c, x.op, "declined");
+      await (await import("./layaway")).cerrarPlanPendiente(c, x.op, "cancelled");
       await ev(c, x.op, "cancelled", "user", userId, { es: "Canceló el apartado", en: "Cancelled the hold" });
       return true;
     });
@@ -308,7 +342,7 @@ export async function apartadoCliente(userId: string, numero: string, a: QueClie
   return no("Eso no se puede.", "That cannot be done.");
 }
 
-export type QueNegocioApt = { que: "tengo" | "no" | "recogio" | "entregado" } | { que: "falta"; linea: string } | { que: "talla"; linea: string; variante: string } | { que: "enviado"; track?: string | null };
+export type QueNegocioApt = { que: "tengo" | "no" | "recogio" | "entregado" | "pagoTienda" | "cancelarPlan" } | { que: "falta"; linea: string } | { que: "talla"; linea: string; variante: string } | { que: "enviado"; track?: string | null };
 export async function apartadoNegocio(negocio: string, numero: string, a: QueNegocioApt, actorId: string): Promise<Res> {
   const x = NUM.test(String(numero)) ? await leer("o.number = $1 and o.business_id = $2", [numero, negocio]) : null;
   if (!x) return no("Ese apartado no existe.", "That hold does not exist.");
@@ -318,7 +352,8 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
     const u = await db().query(`update operations set status = 'confirmed', stage = 'accepted', confirmed_at = now(), answered_at = now(), updated_at = now() where id = $1::bigint and status = 'pending'`, [x.op]);
     if (!u.rowCount) return no("Este apartado ya se respondió.", "This hold was already answered.");
     await ev(db(), x.op, "accepted", "business", actorId, x.ship ? { es: "La tienda lo tiene: lo prepara para enviar", en: "The store has it: preparing to ship" } : { es: "La tienda lo tiene: se lo guarda", en: "The store has it: held" });
-    if (x.ship) await av.avisar(x.uid, "apt_prepara", { negocio: x.bname, dias: x.dias }, href);
+    if (x.plan) await (await import("./layaway")).activarPlan(x.op);  // cobra el abono y empieza el calendario (avisa lay_abono)
+    else if (x.ship) await av.avisar(x.uid, "apt_prepara", { negocio: x.bname, dias: x.dias }, href);
     else await av.avisar(x.uid, "apt_ok", { negocio: x.bname, hasta: hastaL(x.hasta, tz), monto: money(x.tot) }, href);
     return { ok: true };
   }
@@ -329,6 +364,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
       // No lo tiene: la existencia de la app estaba mal. Lo apartado no vuelve al estante (no estaba) y queda en 0.
       await c.query(`update items i set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.item_id = i.id and l.variant_id is null and i.stock_mode = 'qty'`, [x.op]);
       await c.query(`update item_variants v set stock_left = 0, updated_at = now() from operation_lines l where l.operation_id = $1::bigint and l.variant_id = v.id`, [x.op]);
+      await (await import("./layaway")).cerrarPlanPendiente(c, x.op, "declined");
       await ev(c, x.op, "declined", "business", actorId, { es: "La tienda no lo tiene", en: "The store does not have it" });
       return true;
     });
@@ -337,6 +373,9 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
     await av.avisar(x.uid, "apt_no", { negocio: x.bname }, href);
     return { ok: true };
   }
+  if ((a?.que === "falta" || a?.que === "talla") && x.plan) return no("Un plan no se cambia: si no lo tienes, usa «No lo tengo» (se libera el abono).", "A layaway cannot change: if you do not have it, use “Not in stock” (the down payment is released).");
+  if (a?.que === "pagoTienda") { const r = await (await import("./layaway")).pagoEnTienda(negocio, numero, actorId); return r.ok ? { ok: true } : r; }
+  if (a?.que === "cancelarPlan") { const r = await (await import("./layaway")).cancelarPlan({ numero, negocio }, "business", actorId); return r.ok ? { ok: true } : r; }
   if (a?.que === "falta") {
     const ln = x.lineas.find((l) => l.id === String(a.linea) && l.st === "ok");
     if (!ln) return no("Elige qué falta.", "Pick what is missing.");
@@ -394,6 +433,7 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
     await av.avisar(x.uid, "apt_entregado", { negocio: x.bname }, href);
     return { ok: true };
   }
+  if (a?.que === "recogio" && x.plan && x.plan.st !== "paid") return no(`Le falta pagar ${money(x.plan.falta)} del plan: se entrega al terminar de pagar.`, `${money(x.plan.falta)} of the plan is still due: it is handed over when fully paid.`);
   if (a?.que === "recogio") {
     const u = await db().query(`update operations set status = 'done', stage = 'picked_up', done_at = now(), updated_at = now() where id = $1::bigint and status = 'confirmed' and mode = 'pickup'`, [x.op]);
     if (!u.rowCount) return no("Este apartado no está guardado.", "This hold is not being kept.");
@@ -405,11 +445,12 @@ export async function apartadoNegocio(negocio: string, numero: string, a: QueNeg
 
 /* ── El barrido (idempotente): sin respuesta a tiempo y no pasó en 48 h → vence y vuelve al estante ── */
 export async function barrerApartados(f: { negocio?: string; userId?: string; numero?: string }): Promise<void> {
+  await (await import("./layaway")).barrerPlanes(f);
   const W = f.numero ? "o.number = $1" : f.negocio ? "o.business_id = $1" : f.userId ? "o.user_id = $1" : "true", A = f.numero ? [f.numero] : f.negocio ? [f.negocio] : f.userId ? [f.userId] : [];
   const V = (await db().query<{ op: string; numero: string; st: St; uid: string; biz: string; bname: string; cliente: string; sms: boolean; hh: number; ship: boolean }>(
     `select o.id::text as op, o.number as numero, o.status as st, coalesce((o.details->>'sms')::boolean, true) as sms, coalesce((o.details->>'hold_hours')::int, 48) as hh, o.mode = 'delivery' as ship, o.user_id::text as uid, o.business_id as biz, b.name as bname, coalesce(nullif(u.first_name, ''), 'Cliente') as cliente
        from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id
-      where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now() and o.stage <> 'on_the_way')) limit 50`, A)).rows;
+      where ${W} and o.kind = 'hold' and ((o.status in ('pending', 'change_proposed') and o.respond_by < now()) or (o.status = 'confirmed' and o.ready_at < now() and o.stage <> 'on_the_way' and not exists (select 1 from layaway_plans lp where lp.operation_id = o.id and lp.status in ('active', 'late', 'paid')))) limit 50`, A)).rows;
   const av = await import("./avisos");
   for (const x of V) {
     const det = x.st === "pending" ? "sin_respuesta" : x.st === "change_proposed" ? "sin_decision" : x.ship ? "no_envio" : "no_paso";
@@ -418,6 +459,7 @@ export async function barrerApartados(f: { negocio?: string; userId?: string; nu
       if (!u.rowCount) return false;
       await devolverStock(c, x.op);
       await cerrarPropuestas(c, x.op, "expired");
+      await (await import("./layaway")).cerrarPlanPendiente(c, x.op, "cancelled");
       await ev(c, x.op, "expired", "system", null, det === "no_envio" ? { es: "La tienda no lo envió a tiempo: se liberó lo retenido", en: "The store did not ship in time: the hold was released" } : det === "no_paso" ? { es: `Pasaron las ${x.hh} horas: volvió al estante`, en: `${x.hh} hours passed: back on the shelf` } : det === "sin_respuesta" ? { es: "La tienda no respondió a tiempo", en: "The store did not reply in time" } : { es: "No decidió a tiempo qué hacer con lo que faltaba", en: "No decision in time on the missing item" });
       return true;
     });
@@ -469,9 +511,10 @@ export async function cobrarApartado(opId: string): Promise<{ cobrado: number; l
 }
 /* Lo que quedó a medias (una llamada a la pasarela que falló): enviado o entregado → cobrar; ya no sigue → liberar. */
 export async function repararApartados(negocio: string) {
+  await (await import("./layaway")).repararPlanes(negocio);
   const L = (await db().query<{ op: string; st: string; stage: string }>(
     `select p.operation_id::text as op, o.status as st, o.stage from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.kind = 'hold' and (o.stage in ('on_the_way', 'delivered') or o.status in ('declined', 'cancelled', 'expired')) limit 20`, [negocio])).rows;
+      where p.business_id = $1 and p.status = 'held' and p.kind = 'full' and o.kind = 'hold' and (o.stage in ('on_the_way', 'delivered') or o.status in ('declined', 'cancelled', 'expired')) limit 20`, [negocio])).rows;
   for (const x of L) {
     if (x.stage === "on_the_way" || x.stage === "delivered") await cobrarApartado(x.op);
     else await (await import("./cobros")).liberarOperacion(x.op);

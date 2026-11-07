@@ -607,4 +607,7 @@ update delivery_settings set pay_card = true where business_id = 'supermercado-l
 insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
   select 'boutique-yaritza', 'acct_sim_boutique-yaritza', 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo) on conflict (business_id) do nothing;
 update delivery_settings set pay_card = true where business_id = 'boutique-yaritza' and exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo);
+insert into items (business_id, module, name, descr, price_cents, unit, tax_pct, shop_kind, sort)
+  select 'boutique-yaritza', 'shop', '{"es":"Vestido de quince (en plan)","en":"Quinceañera dress (layaway)"}'::jsonb, '{"es":"Con corsé y cola. Se aparta con abono.","en":"Corset and train. Held with a down payment."}'::jsonb, 32000, 'u', 6, 'plan', 90
+   where exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo) and not exists (select 1 from items where business_id = 'boutique-yaritza' and shop_kind = 'plan' and removed_at is null);
 commit;

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { ArticuloVenta } from "@/lib/apartados";
 import type { ArticuloRenta } from "@/lib/rentas";
+import { cuotas, type ReglaPlan } from "@/lib/layaway-comun";
 
 type N = "Button" | "Tag" | "Chip" | "Icon" | "OptionGroup" | "DepositNote" | "ReservationCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -23,7 +24,7 @@ type Mia = { abiertos: { numero: string; st: string; n: number; tot: number }[];
 
 /* Una línea del carrito sigue valiendo si el artículo sigue a la venta y, si tiene tallas, la talla existe. */
 export const lineaValida = (V: ArticuloVenta[], l: { item: string; v?: string }) => { const a = V.find((x) => x.id === l.item); return !!a && (a.tallas.length ? a.tallas.some((t) => t.id === l.v) : !l.v); };
-export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas = 48 }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas?: number }) {
+export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas = 48, plan = null }: { L: ArticuloRenta[]; V: ArticuloVenta[]; negocio: string; es: boolean; mia: Mia; auto: boolean; tienda?: boolean; horas?: number; plan?: ReglaPlan | null }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es);
   const [carro, setCarro] = useState<Carrito>([]), [hoja, setHoja] = useState<ArticuloVenta | null>(null), [qi, setQi] = useState(0), [ti, setTi] = useState<number | null>(null);
   const gomas = V.some((x) => x.size), [fSize, setFSize] = useState<"mine" | "all">(mia.goma && gomas ? "mine" : "all"), [fCond, setFCond] = useState<"all" | "n" | "u">("all");
@@ -32,7 +33,9 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas 
   const ventas = V.filter((x) => !x.size || ((!mine || x.size === mia.goma!.size) && (fCond === "all" || x.cond === fCond)));
   const sinGoma = gomas && !ventas.some((x) => x.size);
   const nC = carro.reduce((s, l) => s + l.qty, 0), totC = carro.reduce((s, l) => s + (V.find((x) => x.id === l.item)?.precio ?? 0) * l.qty, 0);
-  const agregar = (a: ArticuloVenta, q: number, v?: string) => { const n = { item: a.id, qty: q, ...(v ? { v } : {}) }; const c = [...carro.filter((l) => llaveLinea(l) !== llaveLinea(n)), n].slice(-10); setCarro(c); guardarCarrito(negocio, c); setHoja(null); };
+  // Lo que va en plan se aparta solo (con su acuerdo): al agregarlo se quita lo demás, y al revés.
+  const esPlan = (id: string) => V.find((x) => x.id === id)?.k === "plan";
+  const agregar = (a: ArticuloVenta, q: number, v?: string) => { const n = { item: a.id, qty: q, ...(v ? { v } : {}) }; const c = [...carro.filter((l) => llaveLinea(l) !== llaveLinea(n) && esPlan(l.item) === (a.k === "plan") && a.k !== "plan"), n].slice(-10); setCarro(c); guardarCarrito(negocio, c); setHoja(null); };
   const H = `${horas}`, enCarro = (a: ArticuloVenta) => carro.filter((l) => l.item === a.id).reduce((s, l) => s + l.qty, 0);
   const ab = mia.abiertos[0];
   const nota = tienda ? E2(`El precio que ves es el que pagas en la caja. Apartar no cobra nada: te lo guardan ${H} horas y pagas en la caja lo mismo que ves aquí.`, `The price you see is the price you pay at the register. Holding costs nothing: they keep it ${H} hours and you pay at the register the same as you see here.`)
@@ -81,7 +84,7 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas 
       )}
       <div className="grid grid-cols-2 gap-x-3 gap-y-4 lg:grid-cols-4 lg:gap-x-5">
         {L.map((x) => tarjeta({ ...x }, `${dinero(x.precio)}${E2("/día", "/day")}`, { t: E2("RENTA", "RENTAL"), tone: "signal" }, () => router.push(`/n/${negocio}/rentar?a=${x.id}`), true))}
-        {ventas.map((x) => tarjeta(x, dinero(x.precio), x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => { const l = carro.find((z) => z.item === x.id); setQi(Math.max(0, (l?.qty ?? 1) - 1)); const k = x.tallas.findIndex((t) => t.id === l?.v); setTi(k >= 0 ? k : x.tallas.length === 1 && x.tallas[0]!.quedan > 0 ? 0 : null); setHoja(x); }, false, enCarro(x)))}
+        {ventas.map((x) => x.k === "plan" && !plan ? null : tarjeta(x, dinero(x.precio), x.k === "plan" && plan ? { t: `${E2("ABONO", "DOWN")} ${plan.pct} % · ${plan.n} ${E2("PAGOS", "PAYMENTS")}`, tone: "signal" } : x.cond ? { t: x.cond === "u" ? E2("USADA", "USED") : E2("NUEVA", "NEW"), tone: x.cond === "u" ? "neutral" : "signal" } : null, () => { const l = carro.find((z) => z.item === x.id); setQi(Math.max(0, (l?.qty ?? 1) - 1)); const k = x.tallas.findIndex((t) => t.id === l?.v); setTi(k >= 0 ? k : x.tallas.length === 1 && x.tallas[0]!.quedan > 0 ? 0 : null); setHoja(x); }, false, enCarro(x)))}
       </div>
       {nC > 0 && (
         <div data-screen-label="Tienda · tu apartado" className="fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t border-line bg-paper/95 px-5 pb-[22px] pt-[13px] backdrop-blur-[14px] lg:static lg:mt-2 lg:max-w-[460px] lg:rounded-[18px] lg:border lg:bg-white lg:p-4">
@@ -94,7 +97,8 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas 
       )}
       {hoja && (() => {
         const tl = ti != null ? hoja.tallas[ti] ?? null : null, tq = hoja.tallas.length ? (tl?.quedan ?? 3) : hoja.quedan;
-        const q = [1, 2, 3].filter((n) => n <= Math.max(1, tq)), qv = q[Math.min(qi, q.length - 1)]!, falta = hoja.tallas.length > 0 && !tl;
+        const enPlan = hoja.k === "plan" && !!plan, q = [1, 2, 3].filter((n) => n <= Math.max(1, tq) && (!enPlan || n === 1)), qv = q[Math.min(qi, q.length - 1)]!, falta = hoja.tallas.length > 0 && !tl;
+        const cu = enPlan ? cuotas(hoja.precio, plan!) : null, otros = carro.some((l) => esPlan(l.item) !== enPlan || (enPlan && l.item !== hoja.id));
         const tit = hoja.label ? nm(hoja.label) : E2("Talla", "Size");
         return (
           <div data-screen-label="Tienda · artículo" className="fixed inset-0 z-[60]">
@@ -114,11 +118,13 @@ export function TiendaTab({ L, V, negocio, es, mia, auto, tienda = false, horas 
                     options={hoja.tallas.map((t, i) => ({ label: t.label, price: t.quedan < 1 ? E2("Agotada", "Sold out") : t.quedan <= 2 ? `${E2("quedan ", "")}${t.quedan}${E2("", " left")}` : "", selected: i === ti, disabled: t.quedan < 1 }))} onToggle={(i: number) => { if (hoja.tallas[i]!.quedan > 0) { setTi(i); setQi(0); } }} /></div>}
                   <div className="mt-5 grid"><OptionGroup title={E2("¿Cuántos?", "How many?")} meta={E2("ELIGE 1", "CHOOSE 1")} required done reqLabel={E2("Elige: ", "Choose: ")} doneLabel={E2("Listo", "Done")}
                     options={q.map((n, i) => ({ label: String(n), price: dinero(hoja.precio * n), selected: i === Math.min(qi, q.length - 1) }))} onToggle={(i: number) => setQi(i)} /></div>
-                  <div className="mt-[18px] grid"><DepositNote>{`${E2(`Apartar no cobra nada. Te lo guardan ${H} horas y pagas ${dinero(hoja.precio * qv)} en la caja.`, `Holding costs nothing. They keep it ${H} hours and you pay ${dinero(hoja.precio * qv)} at the register.`)} ${E2("El precio que ves es el que pagas en la caja.", "The price you see is the price you pay at the register.")}`}</DepositNote></div>
+                  <div className="mt-[18px] grid"><DepositNote>{cu ? E2(`Plan: hoy se retiene el abono de ${dinero(cu.abono)} (${plan!.pct} %) y el resto en ${plan!.n} pagos de ${dinero(cu.pagos[0]!)}, uno cada ${plan!.cada} días, sin intereses. Te lo entregan al terminar de pagar.`, `Layaway: the ${dinero(cu.abono)} down payment (${plan!.pct}%) is held today and the rest in ${plan!.n} payments of ${dinero(cu.pagos[0]!)}, one every ${plan!.cada} days, no interest. You get it when fully paid.`)
+                    : `${E2(`Apartar no cobra nada. Te lo guardan ${H} horas y pagas ${dinero(hoja.precio * qv)} en la caja.`, `Holding costs nothing. They keep it ${H} hours and you pay ${dinero(hoja.precio * qv)} at the register.`)} ${E2("El precio que ves es el que pagas en la caja.", "The price you see is the price you pay at the register.")}`}</DepositNote></div>
+                  {otros && <div className="mt-2.5 text-pretty text-[12px] font-semibold leading-[1.45] text-pro-ink">{E2("Lo que va en plan se aparta solo: se quita lo demás de tu apartado.", "Layaway items are held on their own: the rest leaves your hold.")}</div>}
                 </div>
               </div>
               <div className="flex flex-none items-center gap-3.5 border-t border-ink/[.08] bg-white px-4 pb-[22px] pt-3 lg:pb-4">
-                <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{E2("EN LA CAJA", "AT THE REGISTER")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(hoja.precio * qv)}</div></div>
+                <div className="flex-none pl-1"><div className="font-mono text-[9px] font-semibold tracking-[0.12em] text-ink/45">{cu ? E2("ABONO HOY", "DOWN TODAY") : E2("EN LA CAJA", "AT THE REGISTER")}</div><div className="mt-1 font-display text-[19px] font-extrabold leading-none tracking-[-0.02em]">{dinero(cu ? cu.abono : hoja.precio * qv)}</div></div>
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5"><div className="flex"><Button block disabled={falta} onClick={() => agregar(hoja, qv, tl?.id)}>{E2("Apartar", "Hold")}</Button></div>
                   {falta && <div className="text-center font-mono text-[9.5px] font-semibold tracking-[0.1em] text-pro-ink">{`${E2("ELIGE LA ", "CHOOSE THE ")}${tit.toUpperCase()}`}</div>}</div>
               </div>

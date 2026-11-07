@@ -7,7 +7,7 @@ import type { Res } from "./acciones";
 
 /* Apartados (4f-3) desde el panel: lo tengo, falta uno, no lo tengo, lo recogió. Pide «Hoy y pedidos» (ord). Auditoría. */
 const SIN = { ok: false as const, mensaje: { es: "No tienes acceso a esta parte del panel.", en: "You don’t have access to this part of the dashboard." } };
-const QUE = new Set(["tengo", "no", "recogio", "falta", "talla", "enviado", "entregado"]);
+const QUE = new Set(["tengo", "no", "recogio", "falta", "talla", "enviado", "entregado", "pagoTienda", "cancelarPlan"]);
 export async function apartadoAccionPanel(id: string, numero: string, a: QueNegocioApt): Promise<Res> {
   if (!(await mismoOrigen())) return SIN;
   const x = typeof id === "string" ? await accesoPanel(id, "ord") : null;

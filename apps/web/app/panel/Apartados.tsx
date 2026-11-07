@@ -22,7 +22,7 @@ export function hoyApartados(c: Ctx): Bloque[] {
   const pend = L.filter((x) => x.st === "pending").length;
   return [{ type: "rows", k: `${E2("APARTADOS", "HOLDS")}${pend ? ` · ${pend} ${E2("POR CONFIRMAR", "TO CONFIRM")}` : ""}`, items: L.map((x: ApartadoFila): Fila => ({
     key: x.numero, icon: "bag", t: `${x.cliente} · ${x.n} ${x.n === 1 ? E2("artículo", "item") : E2("artículos", "items")} · ${money(x.tot)}`, s: `#${x.numero} · ${x.ship ? E2("envío a su casa", "ship to home") : `${E2("pasa el ", "comes ")}${cuando(es, x.dia, x.hora)}`}`,
-    tag: x.st === "pending" ? E2("CONFIRMA QUE LO TIENES", "CONFIRM STOCK") : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.ship ? (x.st === "confirmed" ? (x.etapa === "on_the_way" ? E2("EN CAMINO", "SHIPPED") : E2("POR ENVIAR", "TO SHIP")) : E2("ENTREGADO", "DELIVERED")) : x.st === "confirmed" ? E2("GUARDADO", "HELD") : E2("RECOGIDO", "PICKED UP"),
+    tag: x.plan && x.st === "confirmed" ? (x.plan === "late" ? E2("PLAN · ATRASADO", "PLAN · LATE") : x.plan === "paid" ? E2("PAGADO · POR RECOGER", "PAID · TO PICK UP") : E2("EN PLAN", "ON LAYAWAY")) : x.st === "pending" ? E2("CONFIRMA QUE LO TIENES", "CONFIRM STOCK") : x.st === "change_proposed" ? E2("ESPERA AL CLIENTE", "AWAITING CLIENT") : x.ship ? (x.st === "confirmed" ? (x.etapa === "on_the_way" ? E2("EN CAMINO", "SHIPPED") : E2("POR ENVIAR", "TO SHIP")) : E2("ENTREGADO", "DELIVERED")) : x.st === "confirmed" ? E2("GUARDADO", "HELD") : E2("RECOGIDO", "PICKED UP"),
     tone: x.st === "pending" ? "action" : x.st === "confirmed" ? "signal" : "neutral", chev: true, onClick: () => c.det(`apt:${x.numero}`) })) }];
 }
 
@@ -43,7 +43,8 @@ export function apartadoDetalle(c: Ctx): Sec {
   if (x.st === "pending") {
     const resp = new Date(x.responde), hh = Math.max(0, Math.round((resp.getTime() - Date.now()) / 60000));
     out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Confirma que lo tienes ${hh >= 60 ? `en las próximas ${Math.floor(hh / 60)} h` : `en ${hh} min`}; si no, vence y ${nombre} lo sabe. Las unidades ya están reservadas.`, `Confirm you have it ${hh >= 60 ? `within ${Math.floor(hh / 60)} h` : `within ${hh} min`}; otherwise it expires and ${nombre} is told. The units are already reserved.`) });
-    const eligiendo = !!c.ui.aptF, conTalla = vivas.filter((l) => l.talla && l.alt.length), tl = conTalla.find((l) => l.id === c.ui.aptT);
+    const eligiendo = !!c.ui.aptF && !x.plan, conTalla = x.plan ? [] : vivas.filter((l) => l.talla && l.alt.length), tl = conTalla.find((l) => l.id === c.ui.aptT);
+    if (x.plan) out.push({ type: "note", tone: "info", icon: "info", t: E2(`Es un plan: al confirmar se cobra el abono de ${money(x.plan.abono)} y empieza el calendario (${x.plan.n} pagos cada ${x.plan.cada} días). Guárdalo mientras paga.`, `It is a layaway: confirming charges the ${money(x.plan.abono)} down payment and starts the schedule (${x.plan.n} payments every ${x.plan.cada} days). Keep it while they pay.`) });
     if (c.ui.aptT === "?" || tl) {
       // «Falta esa talla»: primero qué artículo (si hay varios) y luego qué talla ofreces; el cliente decide.
       if (!tl) out.push({ type: "rows", k: E2("¿QUÉ TALLA FALTA?", "WHICH SIZE IS OUT?"), items: conTalla.map((l): Fila => ({ key: `t${l.id}`, icon: "warning", t: `${nm(l.n)} · ${l.talla}`, s: `× ${l.qty}`, chev: true, onClick: () => c.setUi({ aptT: l.id }) })) });
@@ -53,12 +54,21 @@ export function apartadoDetalle(c: Ctx): Sec {
     } else if (!eligiendo) out.push({ type: "acts", items: [
       { l: E2("Lo tengo · guárdalo", "I have it · hold it"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "tengo" }, E2(`Listo: ${nombre} sabe que se lo guardas ${x.horas} horas.`, `Done: ${nombre} knows you hold it ${x.horas} hours.`)) },
       ...(conTalla.length ? [{ l: E2("Falta esa talla · ofrecer otra", "Size is out · offer another"), v: "secondary" as const, icon: "warning", off: c.pending, onClick: () => c.setUi({ aptT: conTalla.length === 1 ? conTalla[0]!.id : "?" }) }] : []),
-      ...(vivas.length > 1 ? [{ l: E2("Falta uno", "One is missing"), v: "secondary" as const, icon: "warning", off: c.pending, onClick: () => c.setUi({ aptF: true }) }] : []),
+      ...(vivas.length > 1 && !x.plan ? [{ l: E2("Falta uno", "One is missing"), v: "secondary" as const, icon: "warning", off: c.pending, onClick: () => c.setUi({ aptF: true }) }] : []),
       { l: E2("No lo tengo", "Not in stock"), v: "secondary", icon: "close", off: c.pending, onClick: () => acc({ que: "no" }, E2(`Listo: ${nombre} sabe que no lo tienes.`, `Done: ${nombre} knows you do not have it.`)) }] });
     else {
       out.push({ type: "rows", k: E2("¿QUÉ FALTA?", "WHAT IS MISSING?"), items: vivas.map((l): Fila => ({ key: `f${l.id}`, icon: "warning", t: nm(l.n), s: `× ${l.qty}`, chev: true, onClick: () => acc({ que: "falta", linea: l.id }, E2(`Listo: ${nombre} decide si sigue con lo demás.`, `Done: ${nombre} decides whether to keep the rest.`), () => c.setUi({ aptF: false })) })) });
       out.push({ type: "acts", items: [{ l: E2("Volver", "Back"), v: "secondary", icon: "close", off: c.pending, onClick: () => c.setUi({ aptF: false }) }] });
     }
+  } else if (x.st === "confirmed" && x.plan && x.plan.st !== "paid") {
+    // Layaway vivo: lo pagado, lo que falta, el próximo pago; «Pagó en la tienda» y, con 14 días de atraso, cancelar el plan.
+    const p = x.plan, f = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short" }) : "—");
+    out.push({ type: "kv", items: [{ k: E2("PLAN", "PLAN"), v: `${money(p.pagado)} ${E2("de", "of")} ${money(p.total)}` }, { k: E2("FALTA", "LEFT"), v: money(p.falta) }, { k: E2("PRÓXIMO PAGO", "NEXT PAYMENT"), v: p.siguiente ? `${money(p.siguiente.monto)} · ${f(p.siguiente.vence)}${p.siguiente.st === "late" ? E2(" · ATRASADO", " · LATE") : ""}` : "—" }] });
+    out.push({ type: "rows", k: E2("PAGOS", "PAYMENTS"), items: p.pagos.map((z): Fila => ({ key: `lp${z.seq}`, icon: z.st === "paid" || z.st === "waived" ? "check" : z.st === "late" ? "warning" : "clock", t: z.seq === 0 ? E2("Abono", "Down payment") : `${E2("Pago", "Payment")} ${z.seq}`, s: z.st === "paid" || z.st === "waived" ? `${f(z.pagado)} · ${z.donde === "store" ? E2("en la tienda", "at the store") : E2("en la app", "in the app")}` : f(z.vence), r: money(z.monto), tag: z.st === "late" ? E2("ATRASADO", "LATE") : null, tone: "danger", chev: false })) });
+    out.push({ type: "acts", items: [
+      ...(p.siguiente ? [{ l: `${E2("Pagó en la tienda", "Paid at the store")} · ${money(p.siguiente.monto)}`, v: "primary" as const, icon: "check", off: c.pending, onClick: () => acc({ que: "pagoTienda" }, E2("Listo: pago anotado.", "Done: payment recorded.")) }] : []),
+      ...(p.puedeCancelarTienda ? [{ l: E2("Cancelar el plan", "Cancel the plan"), v: "secondary" as const, icon: "close", off: c.pending, onClick: () => acc({ que: "cancelarPlan" }, E2(`Listo: plan cancelado. Se devuelven ${money(p.siCancela.app)} por la tarjeta${p.siCancela.tienda ? `; tú devuelves ${money(p.siCancela.tienda)} de lo pagado en la tienda` : ""}.`, `Done: plan cancelled. ${money(p.siCancela.app)} goes back to the card${p.siCancela.tienda ? `; you return ${money(p.siCancela.tienda)} paid at the store` : ""}.`)) }] : [])] });
+    if (!p.puedeCancelarTienda && p.st === "late") out.push({ type: "note", tone: "info", icon: "clock", t: E2(`Lleva ${p.atrasoDias} días de atraso. Con 14 puedes cancelar el plan (te quedas con el ${p.cargo} % de lo abonado).`, `${p.atrasoDias} days late. At 14 you can cancel the plan (you keep ${p.cargo}% of what was paid).`) });
   } else if (x.st === "confirmed" && x.ship) {
     // Envío de la tienda: «Enviado» (con el enlace de seguimiento si tienes) cobra lo que va; después «Entregado».
     if (x.etapa !== "on_the_way") {
@@ -70,6 +80,9 @@ export function apartadoDetalle(c: Ctx): Sec {
       out.push({ type: "note", tone: "info", icon: "info", t: x.track ? E2(`En camino · ${x.track}`, `On its way · ${x.track}`) : E2("En camino.", "On its way.") });
       out.push({ type: "acts", items: [{ l: E2("Entregado", "Delivered"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "entregado" }, E2("Listo: entregado.", "Done: delivered.")) }] });
     }
+  } else if (x.st === "confirmed" && x.plan) {
+    out.push({ type: "note", tone: "info", icon: "check", t: E2(`Terminó de pagar el plan (${money(x.plan.total)}). Entrégaselo cuando pase.`, `The plan is fully paid (${money(x.plan.total)}). Hand it over when they come.`) });
+    out.push({ type: "acts", items: [{ l: E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "recogio" }, E2("Listo: recogido.", "Done: picked up.")) }] });
   } else if (x.st === "confirmed") {
     out.push({ type: "note", tone: "info", icon: "info", t: E2(`Guárdalo hasta ${new Date(x.hasta).toLocaleString("es-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}. Cobras ${money(x.tot)} en la caja. Si no pasa, vuelve solo al estante.`, `Keep it until ${new Date(x.hasta).toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}. Collect ${money(x.tot)} at the register. If they do not come, it returns to the shelf on its own.`) });
     out.push({ type: "acts", items: [{ l: E2("Lo recogió", "Picked up"), v: "primary", icon: "check", off: c.pending, onClick: () => acc({ que: "recogio" }, E2("Listo: recogido.", "Done: picked up.")) }] });

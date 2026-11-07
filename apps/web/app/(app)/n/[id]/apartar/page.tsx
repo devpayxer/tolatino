@@ -18,7 +18,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   if (!o) redirect(`/n/${id}`);
   // Envío de la tienda (4q-2): la tarjeta y la dirección de la persona (solo si la tienda envía y cobra con tarjeta).
   const modo = pasarela.modo();
-  const pago = o.envio && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
+  const pago = (o.envio || o.plan) && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: u ? await misTarjetas(u.id) : [] } : null;
   const dir = o.envio && u ? await dirEnvio(u.id, id) : null;
   return <Apartar o={o} es={lang === "es"} yo={!!u} pago={pago} dir={dir} />;
 }

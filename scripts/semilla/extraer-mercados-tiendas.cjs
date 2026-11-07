@@ -62,5 +62,10 @@ for (const [id, secs] of Object.entries(w.TLTienda.SVC)) {
 for (const id of Object.keys(DUENO)) out.push(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
   select ${q(id)}, ${q("acct_sim_" + id)}, 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = ${q(id)} and is_demo) on conflict (business_id) do nothing;`,
   `update delivery_settings set pay_card = true where business_id = ${q(id)} and exists (select 1 from businesses where id = ${q(id)} and is_demo);`);
+// Layaway (4r): la boutique de prueba vende un vestido de quince en plan (abono 20 % y 4 pagos cada 14 días), para probar el plan
+// de punta a punta con su dueña (el prototipo no le trae un artículo en plan).
+out.push(`insert into items (business_id, module, name, descr, price_cents, unit, tax_pct, shop_kind, sort)
+  select 'boutique-yaritza', 'shop', '{"es":"Vestido de quince (en plan)","en":"Quinceañera dress (layaway)"}'::jsonb, '{"es":"Con corsé y cola. Se aparta con abono.","en":"Corset and train. Held with a down payment."}'::jsonb, 32000, 'u', 6, 'plan', 90
+   where exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo) and not exists (select 1 from items where business_id = 'boutique-yaritza' and shop_kind = 'plan' and removed_at is null);`);
 out.push("commit;");
 process.stdout.write(out.join("\n") + "\n");
