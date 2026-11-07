@@ -46,6 +46,8 @@ import { herramientaDeporteBloques } from "./Deporte";
 import { feDetalle, herramientaFeBloques } from "./Fe";
 import { herramientaInmBloques, propiedadDetalle, propiedadesBloques } from "./Inmuebles";
 import { sinPropiedades } from "@/lib/inmuebles-comun";
+import { carroDetalle, herramientaAutosBloques, inventarioBloques } from "./Autos";
+import { conInventario } from "@/lib/autos-comun";
 import { hoyNoche, nocheDetalle, type NocPanel } from "./NocheReservas";
 import { hoyInsc, inscDetalleBloques, inscripcionesBloques, type InsPanel } from "./Inscripciones";
 import { herramientaRetailBloques } from "./Retail";
@@ -74,8 +76,8 @@ export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
   { k: "lic", icon: "law", l: ["Tus licencias", "Your licenses"], s: ["Lo que puedes hacer por ley y lo que no haces.", "What you may do by law and what you do not do."] },
 ];
 const HECHOS = new Set(PARTS.map((p) => p.k));
-/* «Tus licencias» solo existe para Trámites y profesionales, Iglesias (4ia: funeraria, DOJ, 501(c)(3)) y Bienes Raíces (4ib: corredor,
-   NMLS, avaluador, inspector). */
+/* «Tus licencias» solo existe para Trámites y profesionales, Iglesias (4ia: funeraria, DOJ, 501(c)(3)), Bienes Raíces (4ib: corredor,
+   NMLS, avaluador, inspector) y Venta de Autos (4ic: dealer, vendedor, venta a plazos, NMLS). */
 const partesDe = (d: DatosPanel) => PARTS.filter((p) => p.k !== "lic" || !!d.lic);
 const MES: Bi[] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
 const DIA_L: Bi[] = [["DOMINGO", "SUNDAY"], ["LUNES", "MONDAY"], ["MARTES", "TUESDAY"], ["MIÉRCOLES", "WEDNESDAY"], ["JUEVES", "THURSDAY"], ["VIERNES", "FRIDAY"], ["SÁBADO", "SATURDAY"]];
@@ -336,6 +338,8 @@ function secciones(c: Ctx): Sec {
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.dep && (c.svc.dep.memb || c.svc.dep.liga)) return herramientaDeporteBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.fe && c.svc.fe.kind !== "tienda") return herramientaFeBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.inm && !sinPropiedades(c.svc.inm.kind)) return herramientaInmBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.svc?.autos && conInventario(c.svc.autos.kind)) return herramientaAutosBloques(c);
+  if (c.ruta.sec === "mod" && c.ruta.sub === "inventario" && c.svc?.autos) return inventarioBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "propiedades" && c.svc?.inm) return propiedadesBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "herramienta" && c.ret) return herramientaRetailBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "productos" && c.menu?.mod === "shop") return menuBloques(c);
@@ -370,6 +374,7 @@ function detalle(c: Ctx): Sec | null {
   if (id.startsWith("grp:")) return grupoEduDetalle(c, id);
   if (id.startsWith("fe:")) return feDetalle(c, id);
   if (id.startsWith("inm:")) return propiedadDetalle(c, id.slice(4));
+  if (id.startsWith("auto:")) return carroDetalle(c, id.slice(5));
   if (id.startsWith("viaje:")) return viajeDetalle(c);
   if (id.startsWith("salida:")) return salidaDetalle(c, id.slice(7));
   if (id.startsWith("rev:")) return resenaDetalle(c);
@@ -659,6 +664,8 @@ function licencias(c: Ctx): Sec {
   // Iglesias (4ia): los sellos de funeraria, representante acreditado del DOJ y 501(c)(3) no bloquean nada; el 501(c)(3) es opcional.
   out.push(d.cat === "NEG-FE" ? { type: "note", tone: "ink", icon: "law", t: E2("Los sellos salen solo cuando To’Latino los revisa en el registro público. El 501(c)(3) es opcional: no tenerlo nunca sale en tu página.", "Badges show only after To’Latino checks the public registry. The 501(c)(3) is optional: not having it never shows on your page.") }
     // Bienes Raíces (4ib): el sello sale solo con la licencia verificada; el número que se ve es el de la licencia (nunca un texto tuyo).
+    // Venta de Autos (4ic): dealer, vendedor, venta a plazos y NMLS; el sello sale solo con la licencia verificada en el registro público.
+    : d.cat === "NEG-DEALER" ? { type: "note", tone: "ink", icon: "law", t: E2("El sello «Dealer con licencia de PA» sale solo cuando To’Latino revisa tu licencia en el registro público. Si vendes a plazos, agrega la licencia de venta a plazos. Nadie garantiza la aprobación de un préstamo.", "The «PA licensed dealer» badge shows only after To’Latino checks your license in the public registry. If you sell on installments, add the installment seller license. No one guarantees loan approval.") }
     : d.cat === "NEG-INMUEBLE" ? { type: "note", tone: "ink", icon: "law", t: E2("El sello «Agente con licencia de PA» o «NMLS» sale solo cuando To’Latino revisa tu licencia en el registro público. Nadie garantiza la aprobación de un préstamo.", "The «PA licensed agent» or «NMLS» badge shows only after To’Latino checks your license in the public registry. No one guarantees loan approval.") }
     : { type: "note", tone: "ink", icon: "law", t: E2("Nadie te garantiza un resultado. En EE. UU. un notario no es abogado: tu página lo dice.", "No one can guarantee a result. In the U.S. a notary is not a lawyer: your page says so.") });
   return { blocks: out, ed: { F, l: E2("Guardar", "Save"), valid: true, toast: E2("Enviado. To’Latino lo revisa en 72 h.", "Sent. To’Latino checks it within 72 h."),

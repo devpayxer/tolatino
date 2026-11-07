@@ -10,7 +10,7 @@ import type { Dinero } from "@/lib/admin-dinero";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
-import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
+import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, moduloPausar, nota, novedadOcultar, vacanteOcultar, platoOcultar, propiedadOcultar, mayoresRevisar, carroOcultar, reabrir, resenaOcultar, restaurar, sello, staffPagina } from "./acciones-negocios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
@@ -44,7 +44,7 @@ const usdN = (c: number) => `$${Math.round(c / 100).toLocaleString("en-US")}`;
 const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> }) => i.a?.fe === "tot" ? `Precio total por escrito ${usdN(i.cents)}`
   : `${i.k === "curso" ? `Curso · ${Number(i.a?.sem ?? 0)} semanas · ` : ""}${i.cents ? `Donativo sugerido ${usdN(i.cents)}` : "Gratis"}`;
 /* Las categorías con «Lo que vende» en el 360: la pestaña y su contenido salen de la MISMA lista (guardián pestanaVende). */
-const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE"];
+const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
@@ -166,6 +166,11 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
               { label: "No se confirma", variant: "danger", onClick: () => setConf({ titulo: `No se confirma · «${p.name}»`, sub: "La propiedad queda oculta con el motivo hasta que el dueño la corrija.", peligro: true, plantillas: ["No hay declaración de vivienda para mayores"], hacer: (m) => mayoresRevisar(n.id, p.id, false, m) }) }] : []),
               p.adm != null ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${p.name}»?`, hacer: (m) => propiedadOcultar(n.id, p.id, false, m) }) }
               : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${p.name}»`, sub: "Deja de salir en su página y en Buscar. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Texto contra la vivienda justa", "Posible estafa: piden dinero antes de ver", "Fotos o datos que no son de la propiedad"], hacer: (m) => propiedadOcultar(n.id, p.id, true, m) }) }] : undefined }))]} /> : null}
+        {n.herramientaAutos ? <A.AdminList label={`${n.herramientaAutos.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "car", title: n.herramientaAutos.titulo, sub: `${n.herramientaAutos.resumen} · tipo ${n.herramientaAutos.kind}${n.herramientaAutos.forzado ? " (forzado)" : ""}` },
+          { icon: "lock", title: "Línea fija", sub: n.herramientaAutos.linea }, { icon: "dollar", title: "En la puerta", sub: n.herramientaAutos.cargo },
+          ...n.herramientaAutos.carros.map((x) => ({ icon: "car", title: x.name, sub: `${x.sub}${x.adm != null ? ` · Oculto: ${x.adm}` : ""}`, tag: x.adm != null ? "OCULTO" : undefined, tone: "danger",
+            actions: P.retirar ? [x.adm != null ? { label: "Volver a mostrar", variant: "secondary", onClick: () => setConf({ titulo: `¿Por qué vuelve «${x.name}»?`, hacer: (m) => carroOcultar(n.id, x.id, false, m) }) }
+              : { label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: `Ocultar «${x.name}»`, sub: "Deja de salir en su página y en Buscar. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["El precio en la puerta no coincide con el del lote", "Posible estafa: piden dinero antes de ver el carro", "Fotos o datos que no son del vehículo", "Título salvage sin decirlo"], hacer: (m) => carroOcultar(n.id, x.id, true, m) }) }] : undefined }))]} /> : null}
         {n.herramientaDep ? <A.AdminList label={`${n.herramientaDep.titulo.toUpperCase()} · SOLO LECTURA`} rows={[{ icon: "star", title: n.herramientaDep.titulo, sub: `${n.herramientaDep.resumen} · tipo ${n.herramientaDep.kind}` },
           ...(n.herramientaDep.contrato ? [{ icon: "law", title: "¿Hay contrato?", sub: n.herramientaDep.contrato }] : [])]} /> : null}
         {n.herramientaNinos ? <A.AdminList label={`${n.herramientaNinos.cuidado ? "CUPOS Y LICENCIA" : "GRUPOS Y CUPOS"} · SOLO LECTURA`} rows={[

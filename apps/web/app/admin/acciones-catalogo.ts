@@ -179,3 +179,26 @@ export async function fraseActiva(id: string, encender: boolean, motivo: string)
     return null;
   }, encender ? "Encendida." : "Apagada: ya no frena anuncios.");
 }
+
+/* Catálogo › Cargo del dealer (4ic): el tope de PA. Solo un Admin, con motivo y auditoría. Los cargos que pasan bajan al tope en la misma
+   transacción (cada dealer queda en la auditoría); después los totales en la puerta de todos los carros se recalculan por lotes. */
+export async function topeCargoDealer(dolares: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin") return no("Solo un Admin cambia el tope del cargo del dealer.");
+  const v = Math.round(Number(String(dolares ?? "").replace(/[^0-9.]/g, "")));
+  const m = limpio(motivo, 300);
+  if (!(Number.isFinite(v) && v >= 0 && v <= 2000) || !String(dolares ?? "").trim()) return no("Escribe el tope en dólares (de $0 a $2,000).");
+  if (m.length < 3) return no("Escribe el motivo.");
+  const A = await import("@/lib/autos");
+  const r = await tx(async (c) => {
+    const x = await A.cambiarTopeCargo(c, v * 100, s.id);
+    if (!x) return null;
+    await auditar(c, { actor: s.id, action: "autos.cargo.tope", targetKind: "platform_config", targetId: "dealer_doc_fee_cap_cents", before: { tope: `$${x.antes / 100}` }, after: { tope: `$${v}`, dealers_al_tope: String(x.bajados.length) }, reason: m });
+    for (const b of x.bajados) await auditar(c, { actor: s.id, action: "autos.cargo.bajado_al_tope", targetKind: "business", targetId: b, before: { cargo: "sobre el tope" }, after: { cargo: `$${v}` }, reason: m });
+    return x;
+  });
+  if (!r) return no("Escribe el tope en dólares (de $0 a $2,000).");
+  const n = await A.recalcularTodosPorLotes();
+  revalidatePath("/admin/catalogo");
+  return { ok: true, mensaje: `Tope guardado: $${v}. ${r.bajados.length} dealers bajaron su cargo; ${n} negocios recalculados.` };
+}

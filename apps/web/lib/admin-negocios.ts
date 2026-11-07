@@ -163,7 +163,7 @@ export async function negocio360(s: Staff, id: string) {
     ...b, phone: telefonoBonito(b.phone), owner_phone: telefonoBonito(b.owner_phone), trial: tr && tr.on ? tr : null,
     fotos: fotos.rows, horas: dias, equipo: equipo.rows.map((m) => ({ ...m, phone: telefonoBonito(m.phone) })), notas: notas.rows, historial: historial.rows,
     casos: casos.rows, sello: sello.rows[0] ?? null, licencias: lic, cifras: cifras.rows[0] ?? { v30: 0, c30: 0 },
-    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc' && x.k !== 'renta' && x.k !== 'venta'), productos: menu.rows.filter((x) => x.module === 'shop'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
+    menu: menu.rows.filter((x) => x.module === 'menu'), servicios: menu.rows.filter((x) => x.module === 'svc' && x.k !== 'renta' && x.k !== 'venta' && x.k !== 'auto'), productos: menu.rows.filter((x) => x.module === 'shop'), modsOff: mods.rows[0]?.off ?? {}, pedidosMes: mods.rows[0]?.mes ?? 0, pedidosFree: mods.rows[0]?.free ?? 0, pedidosCap: mods.rows[0]?.cap ?? 10,
     // Tu herramienta (Auto y Hogar, 4a): solo lectura en el Super Admin.
     herramienta: (await db().query<{ rate: number; warrM: number | null; warrMi: number | null; cut: number | null; h24: boolean; zone: number | null }>(`select t.labor_rate_cents as rate, t.warranty_months as "warrM", t.warranty_miles as "warrMi", t.same_day_cutoff_h as cut, t.h24, b.service_radius_mi as zone from trade_settings t join businesses b on b.id = t.business_id where t.business_id = $1`, [id])).rows[0] ?? null,
     // Tu herramienta de Doctores y Profesionales (4h-2): el mismo resumen que ve el dueño, en solo lectura.
@@ -198,6 +198,14 @@ export async function negocio360(s: Staff, id: string) {
           sub: [C.PROP[p.kind].es, p.rent != null ? `${C.usd(p.rent)}${C.porL(p.kind, true)}` : p.price != null ? C.usd(p.price) : "", p.moveIn != null ? `Para mudarte ${C.usd(p.moveIn)}` : "",
             p.cuota != null ? C.cuotaTexto(p.cuota, p.downPct, true) : "", C.ESTADO[p.status][0], p.deal === "renta" ? (p.ssnReq ? "piden seguro social" : "sin seguro social") : "",
             p.addrPublic ? "dirección en su página" : "solo la zona", `${p.horas} horas de visita`].filter(Boolean).join(" · ") })) }; })() : null,
+    // Venta de Autos (4ic): «Inventario del lote» en solo lectura (summary L321), cada vehículo con su total en la puerta (del servidor), la
+    // línea fija y el cargo del dealer con el tope de PA.
+    herramientaAutos: b.cat_id === "NEG-DEALER" ? await (async () => { const h = await (await import("./autos")).herramientaAutos(id); if (!h) return null;
+      const C = await import("./autos-comun");
+      return { titulo: C.conInventario(h.kind) ? C.tituloAutos(h, true) : "Por servicios", resumen: C.resumenAutos(h, true), kind: h.kind, forzado: h.forzado, linea: C.lineaAutos(h.kind, h.pro).es,
+        cargo: `Cargo del dealer ${C.usd(h.fee)} · tope de PA ${C.usd(h.tope)} · placas y título ${C.usd(h.tags)}${h.taxBp != null ? ` · impuesto ${C.pctBp(h.taxBp)}` : " · falta el impuesto de la ciudad"}`,
+        carros: h.carros.map((x) => ({ id: x.id, name: x.name.es, adm: x.adm, sub: [C.BODY[x.body].es, x.vin ? `VIN ${x.vin}` : "sin VIN", C.TITULO[x.title][0], x.miles != null ? `${x.miles.toLocaleString("en-US")} millas` : "",
+          C.puertaTexto(x.puerta, true), x.est ? C.pagoTexto(x.est, true) : "", x.bhph ? C.bhphTexto(x.bhph, true) : "", x.title === "salvage" ? C.SALVAGE.es : "", C.ESTADO_CARRO[x.status][0]].filter(Boolean).join(" · ") })) }; })() : null,
     herramientaDep: b.cat_id === "NEG-DEPORTE" ? await (async () => { const h = await (await import("./deporte")).herramientaDeporte(id); if (!h) return null;
       const C = await import("./deporte-comun");
       return { titulo: h.memb || h.liga ? C.tituloDep(h, true) : "Por contacto", resumen: h.memb || h.liga ? C.resumenDep(h, true) : "Visita, club, tiro o nutrición: la gente llama o escribe", kind: h.kind,

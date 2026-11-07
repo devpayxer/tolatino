@@ -343,3 +343,20 @@ export async function mayoresRevisar(id: string, itemId: string, confirma: boole
     return null;
   }, confirma ? "Confirmada: sale como vivienda para mayores." : "No confirmada: la propiedad queda oculta con el motivo.");
 }
+
+/* Venta de Autos (4ic): ocultar o volver a mostrar un vehículo con motivo (neg:retirar). Sale de su página y de Buscar al instante (la
+   tarjeta y los filtros se recalculan en la misma transacción); el dueño ve el motivo en su panel y no lo puede volver a encender. */
+export async function carroOcultar(id: string, itemId: string, ocultar: boolean, motivo: string): Promise<ResAdm> {
+  if (!/^\d{1,18}$/.test(String(itemId))) return no("Ese vehículo no existe.");
+  return hacer(id, "retirar", motivo, async (c, s, b, m) => {
+    const it = (await c.query<{ name: string; status: string }>(
+      `select i.name->>'es' as name, i.status from items i join vehicle_listings v on v.item_id = i.id where i.id = $1::bigint and i.business_id = $2 and i.removed_at is null for update of i`, [itemId, b.id])).rows[0];
+    if (!it) return "Ese vehículo ya no está.";
+    if ((it.status === "hidden") === ocultar) return ocultar ? "Ya está oculto." : "Ya se ve.";
+    await c.query(`update items set status = $3, hidden_reason = $4, hidden_by = $5, updated_at = now() where id = $1::bigint and business_id = $2`, [itemId, b.id, ocultar ? "hidden" : "live", ocultar ? m : null, ocultar ? s.id : null]);
+    const A = await import("@/lib/autos");
+    await A.recalcularFiltrosAutos(c, b.id);
+    await auditar(c, { actor: s.id, action: ocultar ? "autos.carro.ocultar" : "autos.carro.mostrar", targetKind: "business", targetId: b.id, city: b.city_id, before: { vehiculo: it.name, estado: ocultar ? "visible" : "oculto" }, after: { estado: ocultar ? "oculto" : "visible" }, reason: m });
+    return null;
+  }, ocultar ? "Vehículo oculto. El dueño ve el motivo en su panel." : "El vehículo se ve otra vez.");
+}

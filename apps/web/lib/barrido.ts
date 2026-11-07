@@ -25,9 +25,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
     const ok = (await c.query<{ ok: boolean }>(`select pg_try_advisory_lock($1) as ok`, [LOCK])).rows[0]?.ok;
     if (!ok) return { corrio: false, ms: Date.now() - t0, tareas: [] };
     try {
-      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm] = await Promise.all([
+      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
-        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles")]);
+        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -47,6 +47,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["fe", () => fe.barrerFe()],
         // Bienes Raíces (4ib): las horas de visita 14 días adelante, las que ya pasaron se cierran, la tarjeta y los filtros del día.
         ["inmuebles", () => inm.barrerInm()],
+        // Venta de Autos (4ic): el recálculo por lotes si cambió el tope o el impuesto, y los totales, la tarjeta y los filtros del día.
+        ["autos", () => autos.barrerAutos()],
         // Inscripciones (4ee): sin respuesta a tiempo, empieza, recordatorio, terminó, baja de membresía a las 72 h y ofertas de la lista.
         ["inscripciones", () => insc.vencerInsc({})],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {

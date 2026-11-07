@@ -6,7 +6,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
-import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado } from "./acciones-catalogo";
+import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -25,6 +25,7 @@ export type DatosCatalogo = {
   mods?: { key: string; es: string; cats: string[] }[];
   seg?: { filas: { key: string; kind: "pub" | "priv"; es: string; en: string; hidden: boolean; planes: number; consultorios: number; personas: number }[]; historial: Hist };
   topeFree?: number;
+  dealer?: { tope: number; nota: string | null; dealers: number; enTope: number; carros: number; historial: Hist; admin: boolean };
   vj?: { filas: { id: string; phrase: string; lang: "es" | "en"; active: boolean; base: boolean; quien: string | null }[]; frenadas: number; historial: Hist; admin: boolean };
 };
 const TX: Record<string, string> = { order: "Pedido", booking: "Cita / solicitud", ticket: "Boletos", none: "Sin transacción" };
@@ -34,7 +35,7 @@ const FP: [string, boolean, boolean][] = [["Página con pestañas", false, true]
 const VERBO: Record<string, string> = {
   "catalogo.sub.agregar": "agregó la subcategoría", "catalogo.sub.quitar": "quitó la subcategoría", "catalogo.sub.restaurar": "restauró la subcategoría",
   "catalogo.sinonimo.agregar": "agregó un sinónimo", "catalogo.sinonimo.apagar": "apagó un sinónimo", "catalogo.sinonimo.encender": "encendió un sinónimo",
-  "catalogo.filtro.apagar": "apagó un filtro", "catalogo.filtro.encender": "encendió un filtro",
+  "catalogo.filtro.apagar": "apagó un filtro", "catalogo.filtro.encender": "encendió un filtro", "autos.cargo.tope": "cambió el tope del cargo del dealer",
 };
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
@@ -112,7 +113,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
       </div>);
   }
 
-  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"], ["vj", "Vivienda justa"]] as [string, string, string?][])
+  const tabs: Bloque = { type: "tabs", items: ([["cats", "Categorías", String(d.cats?.length ?? 17)], ["syn", "Sinónimos"], ["nosup", "Búsquedas sin oferta"], ["filt", "Familias de filtros"], ["mod", "Módulos y Free/Pro"], ["seg", "Seguros"], ["vj", "Vivienda justa"], ["dealer", "Cargo del dealer"]] as [string, string, string?][])
     .map(([k, l, n]) => ({ l, n, on: d.tab === k, onClick: () => router.push(k === "cats" ? path : `${path}?tab=${k}`, { scroll: false }) })) };
   let cuerpo: ReactNode = null;
   if (d.tab === "cats" && d.cats) {
@@ -190,6 +191,18 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
           ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: "Agregar frase", v: "action", icon: "plus", off: pend, onClick: () => setConf({ titulo: "Nueva frase", sub: "Escribe: idioma: frase (ej.: es: solo parejas · en: couples only).", cta: "Agregar", hacer: (m) => fraseAgregar(m) }) }] } as Bloque] : []),
           { type: "rows", k: "ESPAÑOL", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "es").map(fila) },
           { type: "rows", k: "INGLÉS", cols: desk ? "repeat(2,minmax(0,1fr))" : undefined, items: v.filas.filter((x) => x.lang === "en").map(fila) },
+          { type: "group", k: "HISTORIAL RECIENTE" }]} />
+        {historial(v.historial)}
+      </>);
+  } else if (d.tab === "dealer" && d.dealer) {
+    // Catálogo › Cargo del dealer (4ic · §3): el tope de PA del cargo del dealer. Solo un Admin lo cambia; recalcula los totales por lotes.
+    const v = d.dealer, usdC = (x: number) => `$${Math.round(x / 100).toLocaleString("en-US")}`;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[{ type: "note", tone: "warn", icon: "law", t: `Tope de PA a verificar cada año con el Board of Vehicles. ${v.nota ?? ""}` },
+          { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: "TOPE", v: usdC(v.tope) }, { k: "DEALERS", v: String(v.dealers), s: `${v.enTope} en el tope` }, { k: "CARROS A LA VISTA", v: String(v.carros) }] },
+          { type: "note", tone: "ink", icon: "dollar", t: "Ningún cargo del dealer pasa del tope: al bajarlo, los cargos que pasan bajan al tope y el total en la puerta de cada carro se recalcula por lotes." },
+          ...(v.admin ? [{ type: "acts", pt: "0", items: [{ l: "Cambiar el tope", v: "action", icon: "edit", off: pend, onClick: () => setConf({ titulo: "Tope del cargo del dealer", sub: "Escribe el tope nuevo en dólares y el motivo (el registro del estado, el año).", cta: "Guardar", valor: { k: "TOPE EN DÓLARES", ini: String(Math.round(v.tope / 100)), max: 5 }, plantillas: ["Ajuste anual de PA verificado"], hacer: (m, _e, val) => topeCargoDealer(val, m) }) }] } as Bloque] : [{ type: "note", tone: "info", t: "Solo un Admin cambia el tope." } as Bloque]),
           { type: "group", k: "HISTORIAL RECIENTE" }]} />
         {historial(v.historial)}
       </>);

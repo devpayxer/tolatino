@@ -1258,3 +1258,45 @@ y pruebas de manejo son $0. **Decidido por seguridad (AB), se cambia si prefiere
 - **Dirección**: se ubica con los tramos del Censo (sin terceros); si no se encuentra, la propiedad se guarda y el panel lo avisa.
 - **Licencia NMLS** de Bienes Raíces es `nmls_inm` (la clave `nmls` ya era de Profesionales).
 - **Búsqueda por propiedad** (recámaras, precio; §6 #10): los datos y los índices ya están; la pantalla queda como hueco para componer con OK.
+
+### 4ic · Venta de Autos: «Inventario del lote», carro con total en la puerta, financiamiento por escrito y licencias (7 nov)
+**Qué mirar** (sandbox, entra con 5705550444 = Juan Polanco, Autos El Cibao; capturas `a4ic-*.png`, teléfono y escritorio):
+1. Lo que vendes › **Inventario**: la lista con su estado (En el lote · Apartado en persona · Vendido · Oculto) y «EN LA PUERTA $13,163» del Civic
+   ($11,900 + 6 % $714 + placas $150 + cargo $399). Toca **Agregar**: escribe un VIN con una letra cambiada → «Ese VIN no cuadra…» mientras
+   escribes y, al guardar, el servidor no lo guarda. Pon el precio: «En la puerta: … = $X» aparece en vivo (lo calcula el servidor) con el pago
+   de ejemplo «$X al mes con $1,500 de enganche, 48 meses al 14.9 % APR (estimado, sujeto a aprobación)».
+2. Escribe «$250 al mes» en la descripción: no se guarda (los pagos los calcula To'Latino). Elige **Título salvage**: sale la línea fija y «Va
+   por la calle» queda con candado.
+3. **Tu herramienta › Inventario del lote**: financias, con ITIN, sin historial de crédito, trade-in, prueba en casa; enganche desde; pago de
+   ejemplo (meses y tasa); garantía en motor y transmisión; **cargo del dealer** (pasa de $449 a $499 → «no puede pasar del tope de PA ($477)»);
+   carros en el lote; por carro En el lote / Vendido y Precio. Cada toque recalcula el total de todos los carros (míralo en las filas).
+4. Compre Aquí Pague Aquí: «Sin crédito: $999 de enganche y $95 a la semana por 18 meses (78 pagos). Total pagado: $8,409 · 14.24 % APR».
+5. Super Admin › Negocios 360 › Lo que vende: «Inventario del lote · solo lectura» («37 en el lote · 1 vendido · ITIN desde $1,500 · garantía 3
+   meses · cargo del dealer $399»), el cargo con el tope y cada carro con su total; **Ocultar** con motivo. Catálogo › **Cargo del dealer**: el
+   tope, cuántos dealers están en el tope y «Cambiar el tope» (solo Admin, con motivo; recalcula todo por lotes).
+6. Tu página › **Tus licencias**: dealer de PA, vendedor, venta a plazos, NMLS.
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **La tarjeta del buscador no dice enganche ni pago** (el prototipo dice «Enganche desde $1,500 con ITIN» y «Enganche $999 y $95 a la semana»):
+  bajo Regulation Z un enganche o un pago sueltos obligan a decir la tasa y los meses. Dice «Financian con ITIN · tasa, meses y enganche por
+  escrito» / «Sin crédito · el total que pagas, por escrito en cada carro»; cada carro trae su ejemplo completo. Lo del prototipo con enganche o
+  pago sueltos se quita al derivar. El resumen del panel y del Super Admin sí dice «ITIN desde $1,500» (no es anuncio).
+- **Tope del cargo del dealer: $477** (PA, a verificar cada año) en `platform_config`, en Catálogo › Cargo del dealer hasta que llegue
+  Configuración (Fase 5). En la semilla, Valle Motors ($499) y Clásicos ($599) quedan en $477. La base también lo frena (trigger).
+- **Pago de ejemplo**: solo con «Financias en el lote» y una tasa y meses elegidos; enganche = «Enganche desde». Sin tasa, no hay ejemplo.
+  Semilla: solo Autos El Cibao (48 meses al 14.9 %, del prototipo L40; da $324 en el Civic, no $272).
+- **Compre aquí pague aquí**: enganche, pago a la semana y meses son del dealer y valen para todos sus carros (como el prototipo); To'Latino
+  calcula la tasa que resulta y, si los pagos no cubren el total en la puerta de un carro, ese carro no muestra plan. Puede que haga falta un
+  plan por carro: se cambia si lo pides.
+- **«Carros en el lote»** es un número del dealer: no baja de los que están en la app; vender un carro lo baja en uno y devolverlo al lote lo sube.
+- **Garantía de la herramienta** (como está · 3 · 6 meses, con 3,000 o 6,000 millas) se pone en cada carro que no trae la de fábrica o la
+  certificada, para que coincida con la Buyers Guide.
+- **VIN** obligatorio salvo botes, carritos de golf y modelos de antes de 1981; la letra 10 tiene que decir el año; no se repite en el lote.
+  «Llenar año y marca con el VIN» usa una tabla corta de fabricantes, sin servicio externo (§6 #11).
+- **Descripción sin pagos**: «$X al mes», «a la semana» o «enganche $X» no se guardan.
+- **Free = 5 vehículos a la vista** en el servidor. Los vehículos no salen en Servicios ni se reservan como cita; Citas no sale en Autos.
+- **Horas de prueba de manejo** (class_groups `prueba`): llegan con la solicitud en 4ie; el filtro «Prueba de manejo» se conserva del prototipo
+  hasta entonces. Subasta y mayorista quedan en directorio y contacto (§6 #20); placas, compra en efectivo, financiamiento, taller y envío van en
+  Servicios. La garantía extendida y el GAP dicen «no son obligatorios».
+- **Nada derivado se siembra a mano**: la semilla calcula el total en la puerta en la base; el pago de ejemplo, la tarjeta y los filtros los
+  rehace el barrido.

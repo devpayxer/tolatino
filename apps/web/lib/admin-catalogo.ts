@@ -122,3 +122,16 @@ export async function frasesViviendaJusta() {
   const frenadas = (await db().query<{ n: number }>(`select count(*)::int as n from audit_entries where action = 'inm.vivienda_justa.frenada' and at > now() - interval '30 days'`)).rows[0]?.n ?? 0;
   return { filas: L.map((x) => ({ ...x, base: esBase(x.phrase) })), frenadas, historial: await historial(["fair_housing"], null) };
 }
+
+/* Catálogo › Cargo del dealer (4ic · §3): el tope de PA del cargo del dealer (platform_config, A VERIFICAR cada año), cuántos dealers lo
+   usan y quién está en el tope. Solo un Admin lo cambia; el cambio recalcula los totales en la puerta por lotes. Llega a Configuración
+   con la Fase 5. */
+export async function cargoDealer() {
+  const x = (await db().query<{ tope: number; nota: string | null; dealers: number; enTope: number; carros: number }>(
+    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'dealer_doc_fee_cap_cents'), 0) as tope,
+            (select note from platform_config where key = 'dealer_doc_fee_cap_cents') as nota,
+            (select count(*)::int from dealer_settings) as dealers,
+            (select count(*)::int from dealer_settings where doc_fee_cents >= coalesce((select (value #>> '{}')::int from platform_config where key = 'dealer_doc_fee_cap_cents'), 0)) as "enTope",
+            (select count(*)::int from vehicle_listings where status in ('lot', 'pending')) as carros`)).rows[0]!;
+  return { ...x, historial: await historial(["platform_config"], "dealer_doc_fee_cap_cents") };
+}

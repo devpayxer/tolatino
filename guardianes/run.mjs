@@ -1284,11 +1284,21 @@ const guardianes = {
       const f = /export function cuotaTexto[\s\S]*?\n}\n/.exec(readFileSync(C, "utf8"))?.[0] ?? "";
       if (!f.includes("`Cuota estimada ") || !f.includes("`Estimated payment ")) falla(G, C, 0, "cuotaTexto dice siempre «Cuota estimada» / «Estimated payment»");
     }
+    const A = "apps/web/lib/autos-comun.ts";
+    if (existsSync(A)) {
+      const a = readFileSync(A, "utf8"), p = /export function pagoTexto[\s\S]*?\n}\n/.exec(a)?.[0] ?? "", b = /export function bhphTexto[\s\S]*?\n}\n/.exec(a)?.[0] ?? "";
+      for (const [n, f] of [["pagoTexto", p], ["bhphTexto", b]]) if (!f.includes("APR (estimado, sujeto a aprobación)") || !f.includes("APR (estimated, subject to approval)")) falla(G, A, 0, `${n} dice siempre la tasa (APR) y «estimado, sujeto a aprobación» / «estimated, subject to approval»`);
+      if (!/if \(!p \|\| p\.down == null \|\| p\.aprBp == null \|\| !p\.months \|\| !p\.pago\) return "";/.test(p)) falla(G, A, 0, "pagoTexto no escribe un pago sin enganche, tasa y meses (Regulation Z)");
+      if (!/if \(!b \|\| b\.down == null \|\| !b\.week \|\| !b\.weeks \|\| b\.aprBp == null\) return "";/.test(b)) falla(G, A, 0, "bhphTexto no escribe un pago a la semana sin enganche, semanas y tasa");
+    }
+    // Lo que pinta carros (importa autos-comun o es de Autos): ningún pago suelto.
+    const autos = new Set(codigo.filter((f) => /^apps\/web\/.*\.tsx?$/.test(f) && (/autos/i.test(f) || /from "(@\/lib\/|\.\/)autos(-comun)?"/.test(readFileSync(f, "utf8")))));
     for (const f of codigo) {
-      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === "apps/web/lib/inmuebles.ts") continue;
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === "apps/web/lib/inmuebles.ts" || f === "apps/web/lib/autos.ts") continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
         if (/(usd|dinero|fp|money)\([^)]*\b(cuota|est_payment_cents|estPago)\b[^)]*\)/.test(l) && !/estimad|Estimated|cuotaTexto\(/.test(l)) falla(G, f, i + 1, "una cuota se muestra sin «estimada»: usa cuotaTexto() o dilo en la misma línea");
+        if (autos.has(f) && /(usd|dinero|fp|money)\([^)]*\b(\w+\.pago|est_payment_cents|bhph_week_cents|\w+\.est\.\w+|\w+\.bhph\.week)\b[^)]*\)/.test(l) && !/pagoTexto\(|bhphTexto\(|sujeto a aprobación|subject to approval/.test(l)) falla(G, f, i + 1, "un pago de carro se muestra sin tasa, meses y enganche: usa pagoTexto() / bhphTexto()");
       });
     }
   },
@@ -1302,7 +1312,7 @@ const guardianes = {
       if (new RegExp(`^\\s*(${MAL})\\s+[a-z]`).test(l) || new RegExp(`add column (if not exists )?(${MAL})\\b`).test(l)) falla(G, `${dir}/${x}`, i + 1, "columna de datos de crédito o de identidad: nunca se guarda (los papeles se llevan en persona)");
     });
     for (const f of codigo) {
-      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*|fe[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts))$/.test(f)) continue;
+      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*|fe[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts))$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
         if (new RegExp(`(\\b(${MAL})\\??\\s*:|\\.(${MAL})\\b)`).test(l)) falla(G, f, i + 1, "campo de datos de crédito o de identidad: nunca se pide ni se guarda");
@@ -1313,10 +1323,10 @@ const guardianes = {
   /* 4ib/4ie. Ver una propiedad es gratis: el código de Bienes Raíces (y las visitas de 4ie) no toca pasarela, pagos ni retenciones (§3). */
   sinDineroEnVisitas() {
     for (const f of codigo) {
-      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts))$/.test(f)) continue;
+      if (!/^apps\/web\/(lib\/(inmuebles[a-z-]*|vivienda-justa|visitas-inm[a-z-]*|autos[a-z-]*)\.ts|app\/panel\/(Inmuebles\.tsx|acciones-inm\.ts|Autos\.tsx|acciones-autos\.ts))$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         if (/^\s*(\/\/|\/?\*)/.test(l)) return;
-        if (/pasarela|from "[^"]*pagos|stripe|insert into payments|update payments|retener\(|cobrar\(|capturar\(/i.test(l)) falla("sinDineroEnVisitas", f, i + 1, "Bienes Raíces no mueve dinero en la app: ver es gratis (sin pasarela, pagos ni retenciones)");
+        if (/pasarela|from "[^"]*pagos|stripe|insert into payments|update payments|retener\(|cobrar\(|capturar\(/i.test(l)) falla("sinDineroEnVisitas", f, i + 1, "Bienes Raíces y Venta de Autos no mueven dinero en la app: ver y la prueba de manejo son gratis (sin pasarela, pagos ni retenciones)");
       });
     }
   },
@@ -1324,12 +1334,119 @@ const guardianes = {
   /* 4ib. Una propiedad es un ítem 'svc' (renta | venta) pero NO es un servicio: no sale en Servicios, no se reserva como cita (con su
      depósito) ni se edita por el editor de servicios. Solo por Propiedades (lib/inmuebles.ts). */
   propiedadNoEsServicio() {
-    const G = "propiedadNoEsServicio", K = "coalesce(i.svc_kind, '') not in ('renta', 'venta')", K2 = "coalesce(svc_kind, '') not in ('renta', 'venta')";
+    const G = "propiedadNoEsServicio", K = "coalesce(i.svc_kind, '') not in ('renta', 'venta', 'auto')", K2 = "coalesce(svc_kind, '') not in ('renta', 'venta', 'auto')"; // 4ic suma los vehículos
     const chk = (f, re, msg) => { if (existsSync(f) && !re.test(readFileSync(f, "utf8"))) falla(G, f, 0, msg); };
     chk("apps/web/lib/citas.ts", new RegExp(`i\\.sell and i\\.status <> 'hidden' and ${K.replace(/[()]/g, "\\$&")}`), "los servicios que se reservan (citas) dejan fuera las propiedades");
     chk("apps/web/lib/servicios.ts", new RegExp(`i\\.removed_at is null and ${K.replace(/[()]/g, "\\$&")}`), "la lista de Servicios del panel deja fuera las propiedades");
     const a = "apps/web/app/panel/acciones-servicios.ts";
     if (existsSync(a)) { const n = readFileSync(a, "utf8").split(K2).length - 1; if (n < 3) falla(G, a, 0, "guardar, mostrar u ocultar y quitar un servicio no tocan una propiedad (3 consultas con el filtro)"); }
+  },
+
+  /* 4ic. El precio en la puerta (§3): todo carro con otd_cents = precio + impuesto de la ciudad + placas + cargo del dealer, calculado por
+     UNA función del servidor (enLaPuerta) y comprobado por la base; el cargo nunca pasa del tope de PA (platform_config + trigger); el pago
+     de ejemplo nunca sin tasa, meses y enganche juntos (Regulation Z). Se prueba también la cuenta: Civic $11,900 → $13,163 en la puerta;
+     $1,500 de enganche, 48 meses al 14.9 % → $324; compre aquí pague aquí $999 + $95 × 78 = $8,409. */
+  totalEnLaPuerta() {
+    const G = "totalEnLaPuerta", M = "packages/db/migrations/0093_autos_inventario.sql", A = "apps/web/lib/autos.ts", C = "apps/web/lib/autos-comun.ts";
+    if (!existsSync(M) || !existsSync(A) || !existsSync(C)) return falla(G, A, 0, "faltan 0093, lib/autos.ts o lib/autos-comun.ts");
+    const m = readFileSync(M, "utf8"), a = readFileSync(A, "utf8");
+    if (!m.includes("check (otd_cents = price_cents + tax_cents + tags_cents + doc_fee_cents)")) falla(G, M, 0, "la base no comprueba otd = precio + impuesto + placas + cargo");
+    if (!m.includes("check (tax_cents = (price_cents::bigint * tax_bp + 5000) / 10000)")) falla(G, M, 0, "la base no comprueba el impuesto sobre el precio");
+    if (!/check \(\(est_payment_cents is null\) = \(est_down_cents is null\) and \(est_payment_cents is null\) = \(est_apr_bp is null\)\s+and \(est_payment_cents is null\) = \(est_months is null\)/.test(m)) falla(G, M, 0, "el pago de ejemplo va con enganche, tasa y meses o no va (check todo o nada)");
+    if (!/create trigger vehicle_listings_tope before insert or update on vehicle_listings/.test(m) || !/new\.doc_fee_cents > tope then\s+raise exception/.test(m)) falla(G, M, 0, "falta el candado del tope del cargo del dealer en la base");
+    // Una sola fórmula, y ninguna otra pieza escribe el total ni el impuesto de un carro.
+    const f = /export function enLaPuerta\([^)]*\): Puerta \{\n([\s\S]*?)\n\}/.exec(a)?.[1] ?? "";
+    if (!f.includes("const tax = Math.floor((price * taxBp + 5000) / 10000);") || !f.includes("otd: price + tax + tags + fee")) falla(G, A, 0, "enLaPuerta: impuesto redondeado como la base y otd = precio + impuesto + placas + cargo");
+    if (!/from tax_rules t where t\.city_id = b\.city_id and t\.category_id = 'NEG-DEALER'/.test(a)) falla(G, A, 0, "el impuesto sale de tax_rules de la ciudad, nunca escrito a mano");
+    if (!/where key = '\$\{TOPE_KEY\}'/.test(a) || !/const TOPE_KEY = "dealer_doc_fee_cap_cents"/.test(a)) falla(G, A, 0, "el tope del cargo sale de platform_config");
+    if ((a.match(/Math\.min\(h\.fee, h\.tope\)/g) ?? []).length < 2 || !/if \(v > h\.tope\) return err\(/.test(a) || !/const fee = Math\.min\(s\.fee, h\.tope\);/.test(a)) falla(G, A, 0, "el cargo del dealer nunca pasa del tope (al cotizar, al guardar, en la herramienta y al recalcular)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      readFileSync(x, "utf8").split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\/?\*)/.test(l)) return;
+        if (x !== A && /\b(otd_cents|tax_cents)\s*=/.test(l)) falla(G, x, i + 1, "el total en la puerta y su impuesto solo los escribe lib/autos.ts");
+        if (/^apps\/web\/(lib\/autos[a-z-]*\.ts|app\/panel\/(Autos\.tsx|acciones-autos\.ts))$/.test(x) && /\b0\.06\b|\* 6 \/ 100|\b(price|precio)\w* \* 6\b|\+ 150\b|15000 \+/.test(l)) falla(G, x, i + 1, "6 % o placas $150 escritos a mano: salen de tax_rules y de la herramienta");
+      });
+    }
+    const p = /export function pagoEjemplo\([\s\S]*?\n\}/.exec(a)?.[0] ?? "";
+    if (!/if \(enganche == null \|\| aprBp == null \|\| meses == null/.test(p)) falla(G, A, 0, "pagoEjemplo no existe sin enganche, tasa y meses");
+    // La cuenta, de verdad: se sacan las funciones del servidor sin sus tipos y se corren contra la tabla hecha a mano.
+    try {
+      const sinTipos = (s) => s.replace(/export /g, "").replace(/\): (Puerta|Pago \| null|Bhph \| null) \{/g, ") {").replace(/(\w+): (number \| null|number)/g, "$1").replace(/ as readonly number\[\]/g, "");
+      const src = ["enLaPuerta", "pagoEjemplo", "totalBhph"].map((n) => sinTipos(new RegExp(`export function ${n}\\([\\s\\S]*?\\n\\}`).exec(a)?.[0] ?? ""));
+      const T = new Function(`const MESES_PAGO = [12, 24, 36, 48, 60, 72], MESES_BHPH = [12, 18, 24, 36];\n${src.join("\n")}\nreturn { enLaPuerta, pagoEjemplo, totalBhph };`)();
+      const civic = T.enLaPuerta(1190000, 600, 15000, 39900);
+      if (civic.otd !== 1316300 || civic.tax !== 71400) falla(G, A, 0, `Civic $11,900 + 6 % + $150 + $399 tiene que dar $13,163 en la puerta (da ${civic.otd})`);
+      const pe = T.pagoEjemplo(1316300, 150000, 1490, 48);
+      if (!pe || pe.pago !== 32400 || pe.total !== 150000 + 32400 * 48) falla(G, A, 0, `$13,163 − $1,500 a 48 meses al 14.9 % tiene que dar $324 al mes (da ${pe?.pago})`);
+      if (T.pagoEjemplo(1316300, null, 1490, 48) !== null || T.pagoEjemplo(1316300, 150000, null, 48) !== null || T.pagoEjemplo(1316300, 150000, 1490, null) !== null) falla(G, A, 0, "un pago de ejemplo sin enganche, tasa o meses tiene que ser null");
+      const bh = T.totalBhph(766300, 99900, 9500, 18);
+      if (!bh || bh.total !== 840900 || bh.weeks !== 78 || !(bh.aprBp > 0)) falla(G, A, 0, `compre aquí pague aquí $999 + $95 × 78 = $8,409 con su tasa (da ${bh?.total})`);
+      if (T.totalBhph(900000, 99900, 9500, 18) !== null) falla(G, A, 0, "si los pagos no cubren el total en la puerta, no hay plan");
+    } catch (e) { falla(G, A, 0, `no se pudo correr la cuenta del servidor: ${e.message}`); }
+  },
+
+  /* 4ic. El VIN (49 CFR 565): 17 caracteres sin I, O ni Q y el dígito verificador de la posición 9. La misma cuenta en el servidor
+     (autos-comun vinValido, que se corre aquí contra VIN conocidos) y en la base (vin_valido en el check de vehicle_listings); la semilla
+     de pruebas solo trae VIN válidos. */
+  vinValido() {
+    const G = "vinValido", C = "apps/web/lib/autos-comun.ts", A = "apps/web/lib/autos.ts", M = "packages/db/migrations/0093_autos_inventario.sql", S = "infra/pruebas/semilla/0029_autos.sql";
+    if (!existsSync(C) || !existsSync(M)) return falla(G, C, 0, "faltan lib/autos-comun.ts o 0093");
+    const c = readFileSync(C, "utf8"), m = readFileSync(M, "utf8");
+    let fn = null;
+    try {
+      const k = ["VIN_PESOS", "VIN_LETRAS"].map((n) => new RegExp(`const ${n} = [^\\n]*`).exec(c)?.[0] ?? "").join("\n");
+      const f = (/export function vinValido\(v: string\): boolean \{[\s\S]*?\n\}/.exec(c)?.[0] ?? "").replace("export function vinValido(v: string): boolean {", "function vinValido(v) {").replace(/!/g, (x, i, s) => (s[i + 1] === "." || s[i + 1] === "[" || s[i + 1] === ";" || s[i + 1] === ")" ? "" : x));
+      fn = new Function(`${k}\n${f}\nreturn vinValido;`)();
+    } catch (e) { falla(G, C, 0, `no se pudo correr vinValido: ${e.message}`); }
+    if (fn) {
+      for (const v of ["1HGCM82633A004352", "11111111111111111", "1M8GDM9AXKP042788", "5YJSA1E14FF087599"]) if (!fn(v)) falla(G, C, 0, `«${v}» es un VIN válido y vinValido lo rechaza`);
+      for (const v of ["1HGCM82633A004353", "1HGCM82633A0O4352", "1HGCM82633A00435", "IHGCM82633A004352", "1hgcm82633a004352"]) if (fn(v)) falla(G, C, 0, `«${v}» no es un VIN válido y vinValido lo acepta`);
+      if (existsSync(S)) for (const x of readFileSync(S, "utf8").matchAll(/insert into vehicle_listings[\s\S]*?select it, b, x\.city_id, '([^']*)'/g)) if (!fn(x[1])) falla(G, S, 0, `VIN de prueba inválido en la semilla: ${x[1]}`);
+    }
+    if (!/export function vinValido\(v: string\): boolean \{\n  if \(typeof v !== "string" \|\| !\/\^\[A-HJ-NPR-Z0-9\]\{17\}\$\/\.test\(v\)\) return false;/.test(c)) falla(G, C, 0, "vinValido: 17 caracteres sin I, O ni Q");
+    if (!m.includes("if v !~ '^[A-HJ-NPR-Z0-9]{17}$' then return false; end if;")) falla(G, M, 0, "vin_valido de la base: 17 caracteres sin I, O ni Q");
+    if (!m.includes("pesos constant int[] := array[8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];") || !m.includes("valores constant text := '12345678123457923456789';")) falla(G, M, 0, "vin_valido de la base no usa los pesos y valores del VIN");
+    if (!c.includes("const VIN_PESOS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2];") || !c.includes('VIN_VALORES = "12345678123457923456789"')) falla(G, C, 0, "vinValido del servidor no usa los pesos y valores del VIN");
+    if (!/vin text check \(vin is null or vin_valido\(vin\)\)/.test(m)) falla(G, M, 0, "la base no revisa el VIN de cada vehículo");
+    if (existsSync(A)) {
+      const g = /export async function guardarCarro[\s\S]*?\n\}\n/.exec(readFileSync(A, "utf8"))?.[0] ?? "";
+      if (!/if \(vin && !vinValido\(vin\)\) return err\(/.test(g) || g.indexOf("vinValido(vin)") > g.indexOf("insert into items")) falla(G, A, 0, "guardarCarro rechaza un VIN inválido antes de escribir");
+    }
+  },
+
+  /* 4ic. Un título salvage dice SIEMPRE «Título salvage: no se maneja en la calle hasta pasar la inspección de PA» (faq L55): la línea vive
+     en autos-comun, notasCarro la pone primero, todo lo que pinta carros llama a notasCarro, el servidor lo marca «no va por la calle» y la
+     base no deja un salvage que vaya por la calle. */
+  tituloSalvage() {
+    const G = "tituloSalvage", C = "apps/web/lib/autos-comun.ts", A = "apps/web/lib/autos.ts", M = "packages/db/migrations/0093_autos_inventario.sql";
+    if (!existsSync(C)) return falla(G, C, 0, "falta lib/autos-comun.ts");
+    const c = readFileSync(C, "utf8");
+    if (!c.includes('export const SALVAGE: Bi = { es: "Título salvage: no se maneja en la calle hasta pasar la inspección de PA.')) falla(G, C, 0, "la línea del título salvage va verbatim");
+    const n = /export function notasCarro\([\s\S]*?\n\}/.exec(c)?.[0] ?? "";
+    if (!/if \(x\.title === "salvage"\) L\.push\(b\(SALVAGE\)\);/.test(n) || n.indexOf("b(SALVAGE)") > n.indexOf("L.push(garantiaTexto")) falla(G, C, 0, "notasCarro pone la línea del salvage primero");
+    if (existsSync(M) && !readFileSync(M, "utf8").includes("check (title <> 'salvage' or not street_legal)")) falla(G, M, 0, "la base no deja un salvage que vaya por la calle");
+    if (existsSync(A) && !/const street = title === "salvage" \? false :/.test(readFileSync(A, "utf8"))) falla(G, A, 0, "guardarCarro marca un salvage como «no va por la calle»");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx$/.test(f)) continue;
+      const s = readFileSync(f, "utf8");
+      if (!/from "@\/lib\/autos-comun"/.test(s) || !/CarroAuto|HerrAutos/.test(s)) continue;
+      if (!/notasCarro\(/.test(s)) falla(G, f, 0, "pinta vehículos sin sus notas (notasCarro)");
+      // Cada función que pinta un vehículo (su total, su vista previa) lleva la línea del salvage (notasCarro o SALVAGE).
+      for (const fn of s.split(/\nexport function /).slice(1)) if (/puerta\.otd|puertaTexto\(|type: "mprev"/.test(fn) && !/notasCarro\(|bi\(SALVAGE, es\)/.test(fn)) falla(G, f, 0, `«${fn.slice(0, fn.indexOf("("))}» pinta vehículos sin la línea del título salvage`);
+    }
+  },
+
+  /* 4ic. Un vehículo es un ítem 'svc' (auto) pero NO es un servicio: no sale en Servicios, no se reserva como cita (con su depósito) ni se
+     edita por el editor de servicios. Solo por Inventario (lib/autos.ts). */
+  carroNoEsServicio() {
+    const G = "carroNoEsServicio", K = "not in ('renta', 'venta', 'auto')";
+    const chk = (f, n, msg) => { if (existsSync(f) && readFileSync(f, "utf8").split(K).length - 1 < n) falla(G, f, 0, msg); };
+    chk("apps/web/lib/citas.ts", 1, "los servicios que se reservan (citas) dejan fuera los vehículos");
+    chk("apps/web/lib/servicios.ts", 1, "la lista de Servicios del panel deja fuera los vehículos");
+    chk("apps/web/app/panel/acciones-servicios.ts", 3, "guardar, mostrar u ocultar y quitar un servicio no tocan un vehículo (3 consultas con el filtro)");
+    const a = "apps/web/lib/admin-negocios.ts";
+    if (existsSync(a) && !/x\.module === 'svc' && x\.k !== 'renta' && x\.k !== 'venta' && x\.k !== 'auto'/.test(readFileSync(a, "utf8"))) falla(G, a, 0, "el 360 no lista los vehículos como servicios");
   },
 
   idioma() {

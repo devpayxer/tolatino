@@ -114,7 +114,7 @@ async function servicios(c: Q, x: Ctx, G: Persona[]) {
   const I = await c.query<Omit<ServicioPub, "hacen">>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur,
               i.price_from as desde, i.svc_opts as opts, i.is_extra as extra, i.photos[1] as foto
-         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status <> 'hidden' and coalesce(i.svc_kind, '') not in ('renta', 'venta') order by i.is_extra, i.sort, i.id`, [x.id]);
+         from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status <> 'hidden' and coalesce(i.svc_kind, '') not in ('renta', 'venta', 'auto') order by i.is_extra, i.sort, i.id`, [x.id]);
   const H = await c.query<{ item: string; member: string; cents: number | null }>(
       `select s.item_id::text as item, s.member_id::text as member, s.price_cents as cents from staff_services s join items i on i.id = s.item_id where i.business_id = $1`, [x.id]);
   const ok = G.filter((p) => p.recibe);

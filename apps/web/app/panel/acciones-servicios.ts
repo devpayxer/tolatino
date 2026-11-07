@@ -87,7 +87,7 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
       if (!ID.test(itemId)) return no("Ese servicio no existe.", "That service does not exist.");
       const u = await c.query(`update items set section_id = $2, name = $3::jsonb, descr = $4::jsonb, price_cents = $5, duration_min = $6, buffer_min = $7, price_from = $8, svc_opts = $9::jsonb, is_extra = $10, photos = $11, sell = $12,
                                svc_kind = coalesce($13, svc_kind), svc_attrs = case when $13::text is null then svc_attrs else $14::jsonb end, updated_at = now()
-                               where id = $15 and business_id = $1 and module = 'svc' and removed_at is null and coalesce(svc_kind, '') not in ('renta', 'venta')`, [...vals, itemId]); // una propiedad (4ib) se edita en Propiedades
+                               where id = $15 and business_id = $1 and module = 'svc' and removed_at is null and coalesce(svc_kind, '') not in ('renta', 'venta', 'auto')`, [...vals, itemId]); // una propiedad (4ib) se edita en Propiedades
       if (!u.rowCount) return no("Ese servicio ya no está.", "That service is gone.");
     }
     // Noche: el depósito de la mesa o del VIP (lo que se retiene al pedirla en 4nc). Lo demás, sin depósito.
@@ -107,7 +107,7 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
 export async function servicioVisible(negocio: string, itemId: string, visible: boolean): Promise<Res> {
   return hacer(negocio, async (c, a) => {
     if (!ID.test(String(itemId))) return no("Ese servicio no existe.", "That service does not exist.");
-    await c.query(`update items set sell = $3, updated_at = now() where id = $2 and business_id = $1 and module = 'svc' and coalesce(svc_kind, '') not in ('renta', 'venta')`, [a.negocio.id, itemId, !!visible]);
+    await c.query(`update items set sell = $3, updated_at = now() where id = $2 and business_id = $1 and module = 'svc' and coalesce(svc_kind, '') not in ('renta', 'venta', 'auto')`, [a.negocio.id, itemId, !!visible]);
     await auditar(c, a, visible ? "servicio.mostrar" : "servicio.ocultar", null, { servicio: itemId });
     return null;
   });
@@ -115,7 +115,7 @@ export async function servicioVisible(negocio: string, itemId: string, visible: 
 export async function servicioQuitar(negocio: string, itemId: string): Promise<Res> {
   return hacer(negocio, async (c, a) => {
     if (!ID.test(String(itemId))) return no("Ese servicio no existe.", "That service does not exist.");
-    const r = await c.query<{ n: string }>(`update items set removed_at = now(), updated_at = now() where id = $2 and business_id = $1 and module = 'svc' and removed_at is null and coalesce(svc_kind, '') not in ('renta', 'venta') returning name->>'es' as n`, [a.negocio.id, itemId]);
+    const r = await c.query<{ n: string }>(`update items set removed_at = now(), updated_at = now() where id = $2 and business_id = $1 and module = 'svc' and removed_at is null and coalesce(svc_kind, '') not in ('renta', 'venta', 'auto') returning name->>'es' as n`, [a.negocio.id, itemId]);
     if (r.rows[0]) await auditar(c, a, "servicio.quitar", { servicio: r.rows[0].n }, null);
     return null;
   });

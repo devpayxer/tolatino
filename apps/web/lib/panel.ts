@@ -109,7 +109,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     db().query<{ n: number }>(`select count(*)::int as n from faqs where business_id = $1`, [id]),
     db().query<{ key: string; icon: string; label: Bi }>(`select key, icon, label from amenities where categories = '{}' or $1 = any(categories) order by (categories = '{}'), sort`, [b.cat]),
     misNegocios(acc.yo.id),
-    b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" ? licenciasDe(id) : Promise.resolve([]),
+    b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" || b.cat === "NEG-DEALER" ? licenciasDe(id) : Promise.resolve([]),
     db().query<{ key: string; title: Bi }>(`select key, title from license_kinds where category_id = $1 order by sort`, [b.cat]),
   ]);
   const licEq = b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? await licenciasEquipo(id) : [];
@@ -162,7 +162,7 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     owner: b.owner, equipo, equipoFree: EQUIPO_FREE, tope: tope.cap, usadosMes: tope.usados,
     hoy: { fecha: b.hoy, tz: b.tz, dow: b.dow, hm: b.hm, saludo: ahoraHora < 12 ? (es ? "Buenos días" : "Good morning") : ahoraHora < 19 ? (es ? "Buenas tardes" : "Good afternoon") : es ? "Buenas noches" : "Good evening" },
     // Tus licencias (Trámites y profesionales): las del negocio con su estado y las del catálogo que puede agregar.
-    lic: b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,
+    lic: b.cat === "NEG-PRO" || b.cat === "NEG-FE" || b.cat === "NEG-INMUEBLE" || b.cat === "NEG-DEALER" ? { filas: lic, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })), cant: Array.isArray(b.attrs?.cant) ? (b.attrs.cant as string[])[es ? 0 : 1] ?? null : null } : null,
     // Licencias de cada persona del equipo (Doctores y Profesionales, 4h-3): solo quien la tiene verificada atiende citas.
     licEq: b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? { filas: licEq, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })) } : null,
     negocios: negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
