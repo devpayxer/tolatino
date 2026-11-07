@@ -900,3 +900,16 @@ _Decidido por mí (reversible):_
 - La regla de cancelar dice «después de 24 h, se cobra la mitad» (decisión del plan), no «se queda el pago» del prototipo.
 - Una salida con pasajeros de la app no se apaga con el interruptor: se cancela con su devolución (4y).
 - Licencias de ejemplo válidas en el sandbox para los Pro que reservan (PUC, USDOT/MC, OTI); en producción las revisa el equipo.
+
+### 4x · La página de Transporte (7 nov)
+**Qué mirar (teléfono):** Buscar › Transporte › **Van Express Hazleton–NY**: «¿CUÁNTO ES EN TOTAL?», la licencia verificada, la
+FAQ. Servicios: «$45 · POR PERSONA · NIÑO $30 · SALE 5 AM · 1 PM · 7 PM · MAÑANA 5 AM · QUEDAN 14». Toca la ruta: EL PRECIO
+INCLUYE y «Reservar». **Envíos Quisqueya:** «Enviar una caja» y en escritorio SALE Sábado · LLEGA EN 3 a 4 semanas. **Mudanzas El
+Primo:** «Pedir precio cerrado».
+_Decidido por mí (reversible):_
+- Licencia que hace falta para reservar en la app según el tipo: van → MC o PUC; aeropuerto, taxi, médico, empleados → PUC;
+  mudanza → PUC o MC; caja → OTI; CDL → USDOT; escolar → la autorización escolar. Mensajería, grúa y renta no la piden. Sin
+  ella: «Licencia en revisión» y se llama.
+- Del prototipo quité las promesas que la app no controla («te avisan por SMS si sale tarde», «la primera hora de espera no se
+  cobra»). La FAQ dice solo lo que el negocio guardó.
+- «Reservar» lleva al Booking de Transporte, que es el bloque siguiente (4y).

@@ -17,6 +17,7 @@ import { horasApartado, tiendaMia, tiendaVenta } from "@/lib/apartados";
 import { reglaPlan } from "@/lib/layaway";
 import { mercPublico } from "@/lib/merc-publico";
 import { fiestaPublico } from "@/lib/fiestas-publico";
+import { transPublico } from "@/lib/trans-publico";
 import { diaFiesta } from "@/lib/fiestas-comun";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
@@ -42,7 +43,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta] = await Promise.all([
+  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans] = await Promise.all([
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -61,6 +62,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     f.cat === "NEG-MERC" ? mercPublico(f.id) : Promise.resolve(null),
     // Fiestas (4u): servicios con su forma de cobrar, el calendario real y «Tu fecha».
     f.cat === "NEG-FIESTA" ? fiestaPublico(f.id, u?.id ?? null) : Promise.resolve(null),
+    // Transporte (4x): precio cerrado, la próxima salida con asientos y la licencia.
+    f.cat === "NEG-TRANS" ? transPublico(f.id) : Promise.resolve(null),
   ]);
   // FAQ de Fiestas (neg-fiesta-kind.js faq): la de la fecha y la del depósito salen del calendario y del panel; si el negocio
   // escribió la misma pregunta en Tu página, gana la suya.
@@ -72,6 +75,19 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       { q: E2("¿Qué pasa con el depósito?", "What about the deposit?"), a: fiesta.dep ? E2(`Se retienen ${usd(fiesta.dep)} al enviar la solicitud y se cobran cuando confirman; se descuentan del total. Si no confirman o proponen otra hora que no aceptas, se libera completo.`, `${usd(fiesta.dep)} is held when you send the request and charged once they confirm; credited to the total. If they do not confirm or propose another time you decline, it is fully released.`) : E2("No pide depósito.", "No deposit.") },
       { q: E2("¿Qué incluye el paquete?", "What does the package include?"), a: E2("Cada paquete dice lo que incluye. Lo que no está escrito, no está incluido.", "Each package lists what it includes. If it is not written, it is not included.") },
       { q: E2("¿Y si cancelo?", "What if I cancel?"), a: E2(`Gratis hasta ${fiesta.cancel} días antes de la fiesta. Después, el depósito se queda con el negocio.`, `Free up to ${fiesta.cancel} days before the party. After that, the business keeps the deposit.`) },
+    ];
+    const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
+    f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
+  }
+  // FAQ de Transporte (neg-trans-kind.js faq): el precio cerrado, la cancelación y lo que dice su herramienta; gana la de Tu página.
+  if (trans && f.pro) {
+    const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b), h = trans.h;
+    const auto = [
+      { q: E2("¿El precio puede cambiar?", "Can the price change?"), a: E2("No. El precio es cerrado antes de salir: lo que pagas al reservar es todo.", "No. The price is fixed before leaving: what you pay when booking is everything.") },
+      { q: E2("¿Y si cancelo?", "What if I cancel?"), a: E2("Gratis hasta 24 horas antes. Después, se cobra la mitad. Si el negocio no sale, te devolvemos todo.", "Free up to 24 hours before. After that, half is charged. If the business does not run, you get everything back.") },
+      ...(h?.bags && trans.servicios.some((x) => x.k === "asiento") ? [{ q: E2("¿Cuántas maletas puedo llevar?", "How many bags can I bring?"), a: `${E2(`${h.bags} maletas incluidas por persona.`, `${h.bags} bags included per person.`)}${h.extraBag != null ? E2(` La extra cuesta $${h.extraBag / 100} y se paga al reservar.`, ` An extra bag is $${h.extraBag / 100}, paid when booking.`) : E2(" No venden maleta extra.", " No extra bags sold.")}` }] : []),
+      ...(h?.kind === "caja" && h.shipDay ? [{ q: E2("¿Cuánto tarda en llegar?", "How long does it take?"), a: E2(`Sale ${({ sab: "el sábado", mie: "el miércoles", "15d": "cada 15 días" } as Record<string, string>)[h.shipDay]}${h.shipWeeks ? ` y llega en ${h.shipWeeks.replace("-", " a ")} semanas` : ""}.`, `Ships ${({ sab: "on Saturday", mie: "on Wednesday", "15d": "every 2 weeks" } as Record<string, string>)[h.shipDay]}${h.shipWeeks ? ` and arrives in ${h.shipWeeks.replace("-", " to ")} weeks` : ""}.`) }] : []),
+      ...(h?.nino ? [{ q: E2("¿Tienen asiento de niño?", "Do you have a child seat?"), a: E2("Sí, sin costo si lo pides al reservar.", "Yes, free if you ask when booking.") }] : []),
     ];
     const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[^a-z]/g, "");
     f.faqs = [...auto.filter((x) => !f.faqs.some((y) => norm(y.q) === norm(x.q))), ...f.faqs];
@@ -91,6 +107,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       prof={prof}
       merc={merc}
       fiesta={fiesta}
+      trans={trans}
       tienda={tienda}
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}

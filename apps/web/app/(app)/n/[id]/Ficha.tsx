@@ -20,6 +20,8 @@ import { SaBarra, SaHoja, SaResumen, SaRiel, SaSeguro, SaTab, useSalud } from ".
 import type { SaludPublico } from "@/lib/salud-publico";
 import { PrBarra, PrHoja, PrResumen, PrRiel, PrTab, usePro } from "./Pro";
 import { FiBarra, FiFecha, FiHoja, FiResumen, FiRiel, FiTab, useFiesta } from "./Fiesta";
+import { ViBarra, ViHoja, ViResumen, ViRiel, ViTab, useViaje } from "./Viaje";
+import type { TransPublico } from "@/lib/trans-publico";
 import type { FiestaPublico } from "@/lib/fiestas-publico";
 import { MeBarra, MeHoja, MeResumen, MeRiel, MeTab, useMerc } from "./Mercado";
 import type { MercPublico } from "@/lib/merc-publico";
@@ -42,9 +44,9 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const h2 = "font-display text-[18px] font-extrabold leading-[1.1] tracking-[-0.03em] lg:text-[24px] lg:tracking-[-0.035em]";
 
 export type SillaFicha = { k: string; name: string; meta: string; logo: string | null; href: string; miembro: string };
-export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas?: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
+export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, trans, tienda, resenas, novedades, jobs, sesion, es, tabInicial, rsvInicial, silla }: { f: F; t: Textos; menu: MenuPublico | null; rsv: RsvPublica | null; svc: CitasPublica | null; ofi?: OficiosPublico | null; salud?: SaludPublico | null; prof?: ProPublico | null; merc?: MercPublico | null; fiesta?: FiestaPublico | null; trans?: TransPublico | null; tienda?: { L: ArticuloRenta[]; V: ArticuloVenta[]; mia: { abiertos: { numero: string; st: string; n: number; tot: number }[]; goma: { modelo: string; size: string } | null }; horas?: number; plan?: import("@/lib/layaway-comun").ReglaPlan | null } | null; silla?: SillaFicha | null; resenas: ResumenResenas | null; novedades: NovedadesFicha | null; jobs: VacanteFicha[]; sesion: boolean; es: boolean; tabInicial?: string; rsvInicial?: { p?: number; i?: number; h?: number; editar?: string } }) {
   const router = useRouter();
-  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
+  const [tab, setTabS] = useState(tabInicial === "menu" || (tabInicial === "svc" && (svc || ofi || salud || prof || merc || fiesta || trans) && f.pro) || (tabInicial === "rsv" && rsv) || (tabInicial === "rev" && f.pro && resenas) || (tabInicial === "nov" && novedades) || (tabInicial === "jobs" && jobs.length) || (tabInicial === "shop" && tienda && (tienda.L.length || tienda.V.length) && f.pro) ? tabInicial : "res");
   // Sin sesión: «Entra» y vuelve al pago con el carrito igual (vive en el teléfono).
   const pagar = () => router.push(sesion ? `/n/${f.id}/pagar` : `/entrar?volver=${encodeURIComponent(`/n/${f.id}/pagar`)}`);
   const mn = useMenu(menu && !menu.vacio ? menu : null, es, { onPay: pagar });
@@ -62,6 +64,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
   const pr = usePro(prof ?? null, es);
   // Fiestas (Fase 4 · 4u): la misma pestaña con «Tu fecha» y el calendario real.
   const fi = useFiesta(fiesta ?? null, es, f.pro);
+  // Transporte (Fase 4 · 4x): precio cerrado, la próxima salida y la licencia.
+  const vi = useViaje(trans ?? null, es, f.pro);
   // Mercados (Fase 4 · 4o): la pestaña Productos, la hoja con el estimado por libra y el carrito de un mercado a la vez.
   const me = useMerc(merc ?? null, es);
   // Free con pedidos este mes: se pide desde el Resumen; Free sin pedidos: la lista de platos y Llamar.
@@ -76,7 +80,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
   const [guardado, setGuardado] = useState(f.guardado);
   const [copiado, setCopiado] = useState(false);
   const [faq, setFaq] = useState<number | null>(null);
-  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov || sa || pr || me || fi) && f.pro ? [{ id: "svc", label: me ? (es ? "Productos" : "Products") : es ? "Servicios" : "Services", icon: me ? "bag" : ov ? (ov.auto ? "wrench" : "home") : sa ? "insurance" : pr ? "law" : fi ? "party" : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: f.cat === "NEG-TIENDA" ? (es ? "Productos" : "Products") : es ? "Tienda" : "Shop", icon: "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
+  const tabs = [{ id: "res", label: t.tabRes, icon: "grid" }, ...(mn && f.pro ? [{ id: "menu", label: es ? "Menú" : "Menu", icon: "restaurant" }] : []), ...((sv || ov || sa || pr || me || fi || vi) && f.pro ? [{ id: "svc", label: me ? (es ? "Productos" : "Products") : es ? "Servicios" : "Services", icon: me ? "bag" : ov ? (ov.auto ? "wrench" : "home") : sa ? "insurance" : pr ? "law" : fi ? "party" : vi ? "truck" : "scissors" }] : []), ...(tienda && (tienda.L.length || tienda.V.length) && f.pro ? [{ id: "shop", label: f.cat === "NEG-TIENDA" ? (es ? "Productos" : "Products") : es ? "Tienda" : "Shop", icon: "bag" }] : []), ...(rv ? [{ id: "rsv", label: es ? "Reservaciones" : "Reservations", icon: "calendar" }] : []), ...(novedades ? [{ id: "nov", label: es ? "Novedades" : "News", icon: "news" }] : []), ...(jobs.length ? [{ id: "jobs", label: "Jobs", icon: "brief" }] : []), ...(rs && f.pro ? [{ id: "rev", label: es ? "Reseñas" : "Reviews", icon: "star" }] : []), ...(f.relacionados.length ? [{ id: "rel", label: t.tabRel, icon: "store" }] : [])];
   const conTabs = f.pro && tabs.length > 1;
   const verFotos = (i?: number) => router.push(`/n/${f.id}/fotos${typeof i === "number" ? `?at=${i}` : ""}`);
 
@@ -419,6 +423,11 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
             <div className="min-w-0"><div className="lg:hidden"><PrTab v={pr} desk={false} /></div><div className="hidden lg:block"><PrTab v={pr} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><PrRiel v={pr} onCta={irSvc} /></div></div>
             <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><PrRiel v={pr} onCta={irSvc} /></aside>
           </div>
+        ) : tab === "svc" && vi ? (
+          <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
+            <div className="min-w-0"><div className="lg:hidden"><ViTab v={vi} desk={false} /></div><div className="hidden lg:block"><ViTab v={vi} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><ViRiel v={vi} onCta={irSvc} /></div></div>
+            <aside className="hidden pt-6 min-[1100px]:sticky min-[1100px]:top-[96px] min-[1100px]:block"><ViRiel v={vi} onCta={irSvc} /></aside>
+          </div>
         ) : tab === "svc" && fi ? (
           <div className="pb-[110px] lg:grid lg:items-start lg:gap-12 lg:pb-0 min-[1100px]:grid-cols-[minmax(0,1fr)_372px]">
             <div className="min-w-0"><div className="lg:hidden"><FiTab v={fi} desk={false} /></div><div className="hidden lg:block"><FiTab v={fi} desk /></div><div className="mt-7 hidden max-w-[520px] lg:max-[1099px]:block"><FiRiel v={fi} onCta={irSvc} /></div></div>
@@ -501,6 +510,12 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
                   <div className="hidden lg:block"><PrResumen v={pr} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
                 </>
               )}
+              {vi && (
+                <>
+                  <div className="px-5 pt-[26px] lg:hidden"><ViResumen v={vi} desk={false} onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                  <div className="hidden lg:block"><ViResumen v={vi} desk onAll={f.pro ? () => setTab("svc") : undefined} /></div>
+                </>
+              )}
               {fi && (
                 <>
                   <div className="px-5 pt-[26px] lg:hidden"><FiResumen v={fi} desk={false} onAll={f.pro ? () => setTab("svc") : undefined} /></div>
@@ -532,6 +547,7 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
               {pr && <PrRiel v={pr} onCta={irSvc} />}
               {me && <MeRiel v={me} onCta={irSvc} />}
               {fi && <FiRiel v={fi} onCta={irSvc} />}
+              {vi && <ViRiel v={vi} onCta={irSvc} />}
               {mn && (
                 <div data-screen-label="Resumen desktop · pedir" className="rounded-[22px] border border-ink/10 bg-white p-6 shadow-[var(--shadow-float)]">
                   <div className="font-display text-[32px] font-extrabold leading-none tracking-[-0.04em]">{es ? "Desde" : "From"} ${(mn.m.desde / 100).toFixed(2)}</div>
@@ -565,6 +581,8 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, ti
       {sa && <SaHoja v={sa} />}
       {pr && tab !== "svc" && tab !== "shop" && f.pro && <PrBarra v={pr} onCta={irSvc} />}
       {pr && <PrHoja v={pr} />}
+      {vi && tab !== "svc" && tab !== "shop" && <ViBarra v={vi} onCta={irSvc} />}
+      {vi && <ViHoja v={vi} />}
       {fi && tab !== "svc" && tab !== "shop" && <FiBarra v={fi} onCta={irSvc} />}
       {fi && <FiHoja v={fi} />}
       {fi && <FiFecha v={fi} />}
