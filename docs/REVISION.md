@@ -862,3 +862,21 @@ _Decidido por mí (reversible):_
   se cobra cuando confirman. Ahora lo dice así en la página, la hoja, el Booking, el panel y la ayuda; un guardián (`depositoRetenido`)
   no deja que vuelva.
 - «Pedir la fecha» lleva al Booking de Fiestas, que es el bloque siguiente (4v).
+
+### 4v-1 · Pedir la fecha de la fiesta, con depósito (7 nov)
+**Qué mirar (teléfono, Marisol 5705550122):** Salón Imperial › Servicios › «Sábado · 6 horas» › **Pedir la fecha**: 1 Tu fiesta
+(Quinceañera, 150) → 2 Fecha y hora (ocupadas no se eligen) → 3 Revisa y envía (HOY PAGAS $500 · RESTO $1,300 el día del evento,
+y «Tu depósito de $500» caso por caso) → **Enviar solicitud** → «Tu fiesta» PENDIENTE. **Rosa (5705550311):** Panel › Hoy ›
+«Fiestas que esperan tu respuesta» › Confirmar / Otra hora / No puedo. Vuelve como Marisol: FECHA CONFIRMADA con «El acuerdo por
+escrito · versión 1». Prueba Cancelar (te dice la regla que aplica antes de hacerlo).
+_Decidido por mí (reversible):_
+- La fiesta tiene su propio número **F-5101…** y su propia pantalla (`/fiesta/F-…`), separada de las citas.
+- Las fiestas no se confirman solas: siempre las confirma el negocio (24 h).
+- Si con una confirmada el día se llena, las otras solicitudes de ese día se declinan solas y se libera su depósito.
+- El acuerdo v1 es el paquete copiado al enviar, aceptado por el cliente en ese momento (hora e IP). Los extras como versión
+  nueva quedan para 4v-2.
+- La dirección de la fiesta (cuando el negocio va a tu lugar) es una de tus direcciones o un salón del directorio; la distancia
+  la mide el servidor.
+- **Arreglo que toca también Belleza, Hogar y Auto:** al abrir Hoy del panel, la reparación de pagos liberaba el depósito de una
+  solicitud con «otra hora» propuesta mientras el cliente decidía. Ya no (guardián `reparaVivas`), y nada se confirma sin el
+  depósito retenido.

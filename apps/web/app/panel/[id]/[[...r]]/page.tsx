@@ -35,7 +35,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -165,6 +165,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       prods: ruta.det?.startsWith("merc:") ? (await M.opcionesMercado(d.id, null))?.prods.filter((p) => p.puede).map((p) => ({ id: p.id, name: p.name, cents: p.cents, k: p.k })) : undefined,
     };
   })() : undefined;
+  // Fiestas (4v): las solicitudes de fecha que esperan respuesta, las próximas y el detalle. Responder pide «Hoy y pedidos».
+  const fiesOk = d.cat === "NEG-FIESTA" && ord;
+  if (ruta.det?.startsWith("fiesta:") && !fiesOk) ruta.det = null;
+  const fies = fiesOk ? await (async () => {
+    const F = await import("@/lib/fiestas-reservas");
+    if (ruta.sec === "hoy") await (await import("@/lib/cobros")).repararPagos(d.id).catch(() => undefined);
+    return { hoy: ruta.sec === "hoy" ? await F.fiestasHoy(d.id) : undefined, det: ruta.det?.startsWith("fiesta:") ? await F.fiestaPanel(d.id, ruta.det.slice(7)) : undefined };
+  })() : undefined;
   // Citas (Belleza): las vivas para Hoy, Clientes › Citas y el detalle. Responder pide «Hoy y pedidos».
   if (ruta.det?.startsWith("cita:") && !(conCitas && ord)) ruta.det = null;
   // Auto y Hogar (4d): al mirar Hoy se reintenta lo que quedó a medias (cobros de una liquidación, retenciones de citas
@@ -195,5 +203,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : compra && /^(merc|apt):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(merc|apt):/, "")) : undefined,
     ayudas: (conCitas || compra) && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} />;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} />;
 }

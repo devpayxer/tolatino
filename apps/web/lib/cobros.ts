@@ -57,6 +57,7 @@ const refDe = (kind: string, num: string) => kind === "appointment"
   ? { num, href: `/cita/${num}`, ref: ["appointment", num] as [string, string] }
   : kind === "market_order" ? { num, href: `/mercado/${num}`, ref: ["order", num] as [string, string] }
   : kind === "hold" ? { num, href: `/apartado/${num}`, ref: ["apartado", num] as [string, string] }
+  : kind === "party" ? { num, href: `/fiesta/${num}`, ref: ["party", num] as [string, string] }
   : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
 /* Cobrar lo retenido de una operación (el negocio aceptó). */
@@ -94,11 +95,12 @@ export async function liberarOperacion(opId: string) {
 }
 
 /* Repara lo que quedó a medias (una llamada a la pasarela que falló): retenido de un pedido que ya no se da → liberar;
-   retenido de uno aceptado → cobrar. Barato: índice por negocio y solo los retenidos. */
+   retenido de uno aceptado → cobrar. Una solicitud con otra hora propuesta (change_proposed) sigue VIVA: su retención no se
+   toca (4v: se liberaba el depósito mientras el cliente decidía; guardián reparaVivas). Barato: índice por negocio y solo los retenidos. */
 export async function repararPagos(negocio: string) {
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.status <> 'pending' and o.kind not in ('market_order', 'hold') limit 20`, [negocio])).rows;
+      where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold') limit 20`, [negocio])).rows;
   for (const x of L) {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
     else await liberarOperacion(x.op);

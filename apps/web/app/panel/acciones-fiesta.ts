@@ -5,6 +5,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { tx } from "@/lib/db";
 import { marcarDia, recalcularFiltrosFiesta } from "@/lib/fiestas";
+import { cancelarFechaNegocio, responderFecha, terminarFiesta, type PasoFiesta } from "@/lib/fiestas-reservas";
 import { accesoPanel } from "@/lib/panel";
 import type { Res } from "./acciones";
 
@@ -52,4 +53,22 @@ export async function fiestaDia(negocio: string, dia: string, ocupada: boolean):
     await recalcularFiltrosFiesta(c, a.negocio.id);
     return { ok: true };
   });
+}
+
+/* ── La solicitud de fecha (4v): Confirmar · Otra hora · No puedo; «Terminó»; cancelar una fecha confirmada (con motivo).
+   Miembro activo con acceso a «Hoy y pedidos» (parte ord). El servidor decide todo y cada paso queda en la línea de tiempo. ── */
+const r2 = (r: { ok: true } | { ok: false; msg: { es: string; en: string } }): Res => (r.ok ? { ok: true } : { ok: false, mensaje: r.msg });
+async function entrar(id: unknown) { if (!(await mismoOrigen())) return null; return typeof id === "string" ? accesoPanel(id, "ord") : null; }
+export async function fiestaResponder(id: string, numero: string, paso: PasoFiesta, alt?: number): Promise<Res> {
+  const a = await entrar(id); if (!a) return SIN_ACCESO;
+  if (!["confirmar", "otra", "nopuedo"].includes(paso)) return no("Ese paso no existe.", "That step does not exist.");
+  return r2(await responderFecha(a.negocio.id, String(numero ?? ""), paso, a.yo.id, alt == null ? undefined : Number(alt)));
+}
+export async function fiestaCancelarNeg(id: string, numero: string, motivo: string): Promise<Res> {
+  const a = await entrar(id); if (!a) return SIN_ACCESO;
+  return r2(await cancelarFechaNegocio(a.negocio.id, String(numero ?? ""), String(motivo ?? ""), a.yo.id));
+}
+export async function fiestaTerminar(id: string, numero: string): Promise<Res> {
+  const a = await entrar(id); if (!a) return SIN_ACCESO;
+  return r2(await terminarFiesta(a.negocio.id, String(numero ?? ""), a.yo.id));
 }

@@ -68,3 +68,9 @@ export async function guardarTuFecha(userId: string, f0: unknown): Promise<{ ok:
     [userId, r.city, f.e || null, f.day, f.g, f.w || null]);
   return { ok: true, fecha: f };
 }
+
+export async function tuFechaDe(userId: string): Promise<TuFecha | null> {
+  const r = (await db().query<{ e: string; day: string; g: number | null; w: string }>(
+    `select coalesce(kind, '') as e, day::text as day, guests as g, coalesce(where_kind, '') as w from user_event_plans where user_id = $1`, [userId])).rows[0];
+  return r ?? null;
+}

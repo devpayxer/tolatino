@@ -49,6 +49,10 @@ for (const [id, secs] of Object.entries(w.TLFiestaL.SVC || {})) {
   });
   out.push("end $$;");
 }
+// 4v: la cuenta de cobro simulada de la dueña de prueba (para retener y cobrar el depósito en el sandbox). Fuera del bloque
+// de arriba: se aplica aunque el negocio ya tenga servicios.
+for (const id of Object.keys(DUENO)) out.push(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+  select ${q(id)}, ${q("acct_sim_" + id)}, 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = ${q(id)} and is_demo) on conflict (business_id) do nothing;`);
 // Las claves de fecha del prototipo (d:2, d:3, d:9) ya no existen: las de verdad las pone el recálculo (lib/fiestas.ts).
 out.push("update businesses set filter_values = array(select x from unnest(filter_values) x where x not in ('d:2', 'd:3', 'd:9')) where category_id = 'NEG-FIESTA' and filter_values && array['d:2', 'd:3', 'd:9'];");
 out.push("commit;");

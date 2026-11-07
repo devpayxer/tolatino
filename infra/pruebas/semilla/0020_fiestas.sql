@@ -321,5 +321,7 @@ begin
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, price_from, photos, sort) values (b, 'svc', s, '{"es":"Planeación del evento","en":"Event planning"}'::jsonb, '{"es":"Lugar, proveedores y el día del evento; presupuesto por escrito.","en":"Venue, vendors and day-of; budget in writing."}'::jsonb, 120000, 120, 'cotiza', '{}'::jsonb, true, array['https://images.pexels.com/photos/35042459/pexels-photo-35042459.jpeg?auto=compress&cs=tinysrgb&h=600'], 0);
   insert into items (business_id, module, section_id, name, descr, price_cents, duration_min, svc_kind, svc_attrs, price_from, photos, sort) values (b, 'svc', s, '{"es":"Coordinación del día","en":"Day-of coordination"}'::jsonb, '{"es":"8 horas.","en":"8 hours."}'::jsonb, 60000, 480, 'pack', '{"h":8}'::jsonb, false, array['https://images.pexels.com/photos/35042459/pexels-photo-35042459.jpeg?auto=compress&cs=tinysrgb&h=600'], 1);
 end $$;
+insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+  select 'salon-imperial', 'acct_sim_salon-imperial', 'enabled', true, true, '[]'::jsonb, '4288', true where exists (select 1 from businesses where id = 'salon-imperial' and is_demo) on conflict (business_id) do nothing;
 update businesses set filter_values = array(select x from unnest(filter_values) x where x not in ('d:2', 'd:3', 'd:9')) where category_id = 'NEG-FIESTA' and filter_values && array['d:2', 'd:3', 'd:9'];
 commit;
