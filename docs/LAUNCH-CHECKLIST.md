@@ -663,3 +663,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       de CI. (5g, 7 nov)
 - [ ] **5g · Push de los avisos de monedas y cupones** (`gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*`): hoy en la campana, sin SMS. (5g, 7 nov)
 - [ ] **5g · Analítica › Comunidad:** monedas emitidas y canjeadas, canjes por negocio (por ciudad, sin personas) — bloque 5i. (5g, 7 nov)
+- [ ] **5h · LibreTranslate real en el sandbox:** aquí solo se probó con un traductor de mentira (los modelos de argos-net.com están
+      bloqueados en la red de la sesión de trabajo). En el sandbox: que `tolatino-traductor` baje los modelos y quede arriba, Auto-moderación
+      «RESPONDE», tiempos reales de `/translate` y `/detect` (presupuesto: traducir ≤ 3 s; detectar ≤ 1.5 s) y la memoria con moderacion-img
+      en el cx33 (§6 #24). (5h, 7 nov)
+- [ ] **5h · Calidad del traductor:** comparar 200 textos reales ES↔EN (Comunidad y reseñas) contra una referencia antes de abrir; si no
+      alcanza, el fundador decide un traductor pago (§6 #15). (5h, 7 nov)
+- [ ] **5h · Abogado:** LibreTranslate es **AGPL-3.0** (lo corremos sin modificar como servicio aparte; revisar §13 si algún día se
+      modifica o se expone) y las licencias de cada modelo Argos (es→en, en→es) y de MiniSBD. Aviso en los Términos: «traducción
+      automática; vale el original». (5h, 7 nov)
+- [ ] **5h · Borrado de cuenta (D5):** cuando se construya la purga de textos a los 30 días, debe borrar también sus filas de
+      `ugc_translations` (derivadas) para que no quede el texto traducido. (5h, 7 nov)
+- [ ] **5h · Límite sin cuenta:** es por cookie del dispositivo (se puede borrar); el costo lo acota la caché (cada texto se traduce una
+      vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov)
+- [ ] **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
+      corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov)
+- [ ] **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
+      de CI (y un traductor de prueba en CI). (5h, 7 nov)
+- [ ] **5h · El Compa con «Ver traducción»** cuando llegue su fase (ayuda `ver-traduccion.md` lista). (5h, 7 nov)

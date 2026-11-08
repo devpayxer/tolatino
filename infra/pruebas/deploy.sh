@@ -69,6 +69,14 @@ if ! systemctl is-active --quiet tolatino-moderacion; then
   systemd-run --unit tolatino-moderacion --collect ${COMPOSE_MOD[*]} up -d --build moderacion-img || true
 fi
 
+# 3g) Traductor propio (5h, «Ver traducción»): se baja y se enciende aparte (perfil «traductor»). Primero los modelos español ↔ inglés
+#     (una sola vez, al volumen; si ya están, no baja nada) y después el traductor, solo en la red interna. Si algo falla, la app sigue
+#     arriba y «Ver traducción» dice «La traducción no está disponible ahora.»; el texto nunca va a un tercero.
+COMPOSE_TRAD=(docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" --profile traductor)
+if ! systemctl is-active --quiet tolatino-traductor; then
+  systemd-run --unit tolatino-traductor --collect bash -c "${COMPOSE_TRAD[*]} run --rm traductor-modelos && ${COMPOSE_TRAD[*]} up -d traductor" || true
+fi
+
 # 3e) Direcciones propias: tramos de calle del Censo (TIGER) para ubicar direcciones de entrega. Aparte y sin esperar;
 #     el script mismo no hace nada si la carga tiene menos de 90 días.
 if ! systemctl is-active --quiet tolatino-direcciones; then

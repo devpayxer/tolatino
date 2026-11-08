@@ -1,6 +1,7 @@
 import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
+import { detectarIdioma } from "./traductor";
 import { quedanEnHoy } from "./hoy";
 
 /* Novedades (prototipo novVals / panel sub 'nov' / det 'nov:'; modelo «BusinessPost»). Solo Pro. En vivo, programada y
@@ -18,7 +19,7 @@ const iso = (col: string) => `to_char((${col}) at time zone 'UTC', 'YYYY-MM-DD"T
 const ESTADO_SQL = `case when p.hidden_at is not null then 'adm' when p.status = 'stopped' or (p.ends_at is not null and p.ends_at <= now()) then 'done'
                          when p.publish_at > now() then 'prog' else 'live' end`;
 
-export type Comentario = { id: string; name: string; ini: string; h: number; body: string; up: number; mine: boolean; reply: string | null; propio: boolean };
+export type Comentario = { id: string; name: string; ini: string; h: number; body: string; lang: "es" | "en"; up: number; mine: boolean; reply: string | null; propio: boolean };
 export type Post = {
   id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null;
   link: Enlace; item: { id: string; name: Bi; ph: string | null; cents: number } | null; url: string | null;
@@ -57,8 +58,8 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
         and (p.audience = 'all' or exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = p.business_id))
       order by p.pinned desc, p.publish_at desc limit 50`, [negocio, userId]);
   const ids = r.rows.map((x) => x.id), enHoy = ids.length ? await quedanEnHoy(negocio) : new Map<string, number>();
-  const cms = ids.length ? (await db().query<{ id: string; post: string; first_name: string | null; last_name: string | null; h: number; body: string; up: number; mine: boolean; reply: string | null; propio: boolean }>(
-    `select c.id::text, c.post_id::text as post, u.first_name, u.last_name, floor(extract(epoch from now() - c.created_at) / 3600)::int as h, c.body, c.reply,
+  const cms = ids.length ? (await db().query<{ id: string; post: string; first_name: string | null; last_name: string | null; h: number; body: string; lang: "es" | "en"; up: number; mine: boolean; reply: string | null; propio: boolean }>(
+    `select c.id::text, c.post_id::text as post, u.first_name, u.last_name, floor(extract(epoch from now() - c.created_at) / 3600)::int as h, c.body, c.lang, c.reply,
             (select count(*)::int from post_comment_votes v where v.comment_id = c.id) as up,
             coalesce($2::uuid is not null and exists (select 1 from post_comment_votes v where v.comment_id = c.id and v.user_id = $2::uuid), false) as mine,
             c.user_id = $2::uuid as propio
@@ -68,7 +69,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
     item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null,
     poll: x.poll ? { opts: x.poll.map((l, i) => ({ l, n: x.poll_n[i] ?? 0 })), mine: x.poll_mine, total: x.poll_n.reduce((a, n) => a + n, 0), closesH: x.closes_h } : null,
     score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
-    cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
+    cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, lang: c.lang, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
   }));
   return { negocio: { id: negocio, name: b.name, tel: b.tel }, fol: b.fol, seguidores: b.seguidores, posts };
 }
@@ -122,11 +123,12 @@ export async function comentarPost(userId: string, id: string, texto: string): P
   const t = String(texto ?? "").trim();
   if (!t) return no("Escribe tu comentario.", "Write your comment.");
   if (t.length > 300) return no("Máximo 300 letras.", "300 characters max.");
+  const det = await detectarIdioma(t); // 5h: antes de la transacción; si no se sabe, el idioma de la app de quien comenta
   return tx(async (c) => {
     if (!(await visible(c, id, userId))) return NO_ESTA();
     const n = (await c.query<{ n: number }>(`select count(*)::int as n from post_comments where user_id = $1 and created_at > now() - interval '1 hour'`, [userId])).rows[0]!.n;
     if (n >= 30) return no("Escribiste muchos comentarios seguidos. Prueba en un rato.", "Too many comments in a row. Try again later.");
-    await c.query(`insert into post_comments (post_id, user_id, body) values ($1::bigint, $2, $3)`, [id, userId, t]);
+    await c.query(`insert into post_comments (post_id, user_id, body, lang) values ($1::bigint, $2, $3, coalesce($4, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $2), 'es'))`, [id, userId, t, det]);
     return { ok: true } as const;
   });
 }

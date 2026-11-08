@@ -2,6 +2,7 @@ import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
 import { saludImagen } from "./moderacion-img";
+import { saludTraductor } from "./traductor";
 import { LIMITES, ORDEN_LIMITES, ORDEN_REGLAS, type ReglaKey } from "./moderacion-comun";
 import { SANCIONES, type Sancion } from "./sanciones";
 
@@ -106,18 +107,22 @@ export type Confianza = Awaited<ReturnType<typeof confianza>>;
 
 /* ── Contenido › Auto-moderación: reglas, términos, límites y si el modelo de fotos responde ── */
 export async function autoModeracion() {
-  const [R, T, L, img] = await Promise.all([
+  const [R, T, L, img, trad, tope] = await Promise.all([
     db().query<{ key: ReglaKey; enabled: boolean; params: Record<string, number>; updated_at: string; quien: string | null }>(
       `select r.key, r.enabled, r.params, r.updated_at, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
          from mod_rules r left join users u on u.id = r.updated_by`),
     db().query<{ id: string; lang: string; term: string; kind: string; enabled: boolean }>(`select id::text, lang, term, kind, enabled from mod_terms order by kind, lang, term`),
     db().query<{ key: string; v: number }>(`select key, (value #>> '{}')::int as v from platform_config where key = any($1::text[])`, [ORDEN_LIMITES.map((k) => LIMITES[k].key)]),
     saludImagen(),
+    // 5h · El traductor propio (salud, nunca textos: el Super Admin ve siempre el original) y el tope por persona en una hora.
+    saludTraductor(),
+    db().query<{ v: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = 'com_traduccion_hora'), 60) as v`),
   ]);
   const marcas = (await db().query<{ regla: string; n: number }>(`select rule_key as regla, count(*)::int as n from mod_flags where created_at > now() - interval '30 days' group by rule_key`)).rows;
   return {
     reglas: ORDEN_REGLAS.map((k) => { const r = R.rows.find((x) => x.key === k); return { k, on: r?.enabled ?? true, params: r?.params ?? {}, at: r?.updated_at ?? null, quien: r?.quien ?? null, n30: marcas.find((m) => m.regla === k)?.n ?? 0 }; }),
     terminos: T.rows, limites: ORDEN_LIMITES.map((k) => ({ k, v: L.rows.find((x) => x.key === LIMITES[k].key)?.v ?? LIMITES[k].def })), img,
+    trad: { ...trad, tope: tope.rows[0]!.v },
   };
 }
 export type AutoMod = Awaited<ReturnType<typeof autoModeracion>>;

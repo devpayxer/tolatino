@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { NovedadesFicha, Post } from "@/lib/novedades";
 import { novComentar, novEncuesta, novGuardar, novLikeComentario, novVista, novVoto, seguir } from "./acciones-novedades";
+import { LineaTr, useTraducir } from "../../Traducir";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,7 +23,7 @@ const T = (es: boolean): Record<Post["kind"], [string, string, string]> => ({
 });
 
 export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesFicha; logo: string | null; sesion: boolean; es: boolean; onItem: (id: string) => void; onHoras: () => void }) {
-  const router = useRouter();
+  const router = useRouter(), tr = useTraducir(es);
   const E2 = (a: string, b: string) => (es ? a : b);
   const [f, setF] = useState("all");
   const [open, setOpen] = useState<string | null>(null);
@@ -133,7 +134,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
       <div data-slot="after">
         {open === p.id && (
           <div className="mt-1.5 animate-[tlFade_.2s_ease-out]">
-            {cms.map((c, j) => (
+            {cms.map((c, j) => { const t = tr("post_comment", c.id, c.lang, c.body, c.propio); return (
               <div key={c.id} className="border-t border-ink/[.07] py-3">
                 <div className="flex gap-2.5">
                   <span className="grid size-[30px] flex-none place-items-center rounded-full bg-desk font-display text-[11px] font-extrabold">{c.ini}</span>
@@ -143,7 +144,8 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
                       <span className="font-mono text-[9.5px] font-semibold text-ink/45">{ago(c.h)}</span>
                       {j === 0 && cms.length > 1 && c.up >= 5 && <Tag tone="signal">{E2("MÁS VOTADO", "TOP")}</Tag>}
                     </div>
-                    <div className="mt-[3px] text-pretty text-[13px] font-medium leading-[1.5]">{c.body}</div>
+                    <div className="mt-[3px] text-pretty text-[13px] font-medium leading-[1.5]">{t.body}</div>
+                    <LineaTr t={t.translate} mt={3} />
                     <div className="mt-1.5 flex items-center gap-3.5 text-[11.5px] font-bold">
                       <button type="button" disabled={c.propio} onClick={() => hacer(() => novLikeComentario(c.id))} className="flex items-center gap-[5px]" style={{ color: c.mine ? "var(--tl-action)" : "rgba(11,14,18,.55)" }}>
                         <Icon name="like" size={13} color={c.mine ? "var(--tl-action)" : "rgba(11,14,18,.55)"} />{c.up}
@@ -162,7 +164,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
                   </div>
                 </div>
               </div>
-            ))}
+            ); })}
             <div className="flex items-center gap-2 border-t border-ink/[.07] pt-3">
               <div className="box-border flex h-[42px] min-w-0 flex-1 items-center rounded-xl border border-ink/[.12] px-3">
                 <input value={draft} onChange={(e) => setDraft(e.target.value.slice(0, 300))} placeholder={E2("Escribe un comentario…", "Write a comment…")} aria-label={E2("Comentario", "Comment")}

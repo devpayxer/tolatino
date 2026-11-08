@@ -29,6 +29,10 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
   en 24 h, cuentas de más de 72 h). «Cambiar valores» edita sus números. **Listas de términos** ES/EN (Odio · Estafa · Inmigración ·
   Autolesión): agregar o apagar (no se borran). **Límites del día** (publicaciones, comentarios, votos, conversaciones nuevas, reportes).
   Todo con motivo y auditoría.
+- **Contenido › Auto-moderación › Ver traducción (traductor propio)** (5h): si el traductor propio (español ↔ inglés, en nuestro servidor)
+  **responde** y en cuánto, o por qué no («no está configurado aquí», «no responde», o «dejó de llamarlo un minuto» tras varias fallas);
+  y el **tope de traducciones por persona en una hora** (de fábrica 60; «Cambiar» con motivo y auditoría). El Super Admin **ve siempre el
+  original**: aquí no hay «Ver traducción» (ver `ver-traduccion.md`).
 
 ## Qué pasa en cada caso
 - **Cinco cuentas del mismo teléfono reportan:** cuentan como una persona; no se oculta. Si son de un mismo dispositivo y votan a favor de
@@ -60,5 +64,9 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
   uphold; **if you hid or sanctioned it you cannot decide it** — the database enforces it too).
 - **Content › Auto-moderation:** rule toggles with their text and values (phones are always on), term lists ES/EN (turned off, never
   deleted), daily limits; everything with a reason and audit trail. The photo rule shows whether our own model responds.
+- **Content › Auto-moderation › See translation (our own translator)** (5h): whether our own translator (Spanish ↔ English, on our
+  server) **responds** and how fast, or why not («not configured here», «not responding», or «stopped calling it for a minute» after
+  repeated failures); and the **per-person hourly translation limit** (default 60; «Change» with reason and audit). The Super Admin
+  **always sees the original**: there is no «See translation» here (see `ver-traduccion.md`).
 - Five accounts on one phone count as one person for auto-hide. A photo is never published unchecked: if the model is down it waits for a
   person.

@@ -8,6 +8,7 @@ import { useState, type ComponentType } from "react";
 import { LINEA911 } from "@/lib/comunidad-filtro";
 import { hace, rango, type Pub } from "@/lib/comunidad-comun";
 import { Avatar, MONO } from "./Marco";
+import type { Tr } from "../Traducir";
 
 type N = "Icon" | "PostCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,14 +22,16 @@ const dias = (iso: string, es: boolean) => {
     : (es ? `CIERRA EN ${Math.max(1, Math.round(h))} H` : `CLOSES IN ${Math.max(1, Math.round(h))} H`);
 };
 
-export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, onShare, onBiz, onAuthor }: {
-  p: Pub; es: boolean; full?: boolean; onOpen?: Fn; onMenu?: Fn; onVote: (v: 1 | -1) => void; onPoll: (i: number) => void; onSave: Fn; onShare: Fn; onBiz: (id: string) => void; onAuthor?: Fn;
+export function Tarjeta({ p, es, full, tr, onOpen, onMenu, onVote, onPoll, onSave, onShare, onBiz, onAuthor }: {
+  p: Pub; es: boolean; full?: boolean; tr?: Tr; onOpen?: Fn; onMenu?: Fn; onVote: (v: 1 | -1) => void; onPoll: (i: number) => void; onSave: Fn; onShare: Fn; onBiz: (id: string) => void; onAuthor?: Fn;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [ix, setIx] = useState(0);
   const a = p.autor, rk = a.oficial ? { label: E2("Cuenta oficial", "Official account"), shield: null } : a.rango >= 4 ? { label: es ? rango(a.rango).es : rango(a.rango).en, shield: a.rango >= 9 ? "gold" : "gray" } : null;
   const lugar = (es ? p.lugar.es : p.lugar.en) + (p.mi != null ? ` · ${p.mi} mi` : "");
   const enc = p.encuesta, ver = !!enc && enc.ver;
+  // 5h · «Ver traducción» bajo el texto si está en el otro idioma (nunca en lo propio).
+  const t = tr ? tr("com_post", p.id, p.lang, p.body, p.mia) : { body: p.body, translate: undefined };
   return (
     <PostCard screenLabel={full ? "APP-COM-POST · publicación" : "Comunidad · publicación"}
       pin={p.fijada ? (p.kind === "pregunta" ? E2("PREGUNTA DE LA SEMANA · FIJADA", "QUESTION OF THE WEEK · PINNED") : E2("FIJADA", "PINNED")) : undefined}
@@ -36,7 +39,7 @@ export function Tarjeta({ p, es, full, onOpen, onMenu, onVote, onPoll, onSave, o
       initials={a.foto ? undefined : <span style={{ color: a.oficial ? "var(--tl-white)" : "var(--tl-ink)" }}>{a.ini}</span>} onAuthor={onAuthor}
       name={p.mia ? `${a.nombre}${E2(" · tú", " · you")}` : a.nombre} rank={rk} time={hace(p.at, es)} place={lugar} placeColor={p.invitado ? "var(--tl-pro-ink)" : undefined}
       solved={p.kind === "pregunta" && p.resuelta ? E2("Resuelta", "Solved") : undefined} edited={p.editada && !p.resuelta ? E2("Editada", "Edited") : undefined}
-      onMenu={onMenu} menuLabel={E2("Opciones", "Options")} body={p.body} bodyFont={full ? "500 16px/1.55" : "500 15px/1.5"} onOpen={onOpen}
+      onMenu={onMenu} menuLabel={E2("Opciones", "Options")} body={t.body} translate={t.translate} bodyFont={full ? "500 16px/1.55" : "500 15px/1.5"} onOpen={onOpen}
       vote={{ score: p.score, voted: p.miVoto !== 0, onUp: () => onVote(1), onDown: () => onVote(-1), upColor: p.miVoto === 1 ? "var(--tl-action)" : undefined, downColor: p.miVoto === -1 ? "var(--tl-danger)" : undefined,
         scoreColor: p.miVoto ? "var(--tl-action)" : "var(--tl-ink)", labels: { up: E2("Votar a favor", "Upvote"), down: E2("Votar en contra", "Downvote"), comments: E2("Comentarios", "Comments"), save: E2("Guardar", "Save"), share: E2("Compartir", "Share") } }}
       comments={p.comentarios ? String(p.comentarios) : E2("Comentar", "Comment")} onComments={onOpen}

@@ -24,6 +24,10 @@ services:
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
       # 5d · Moderación de imágenes propia (regla `img`): solo por la red interna; si no responde, las fotos esperan revisión.
       MODERACION_IMG_URL: http://moderacion-img:8790
+      # 5h · Traductor propio («Ver traducción»): la única dirección de traducción de la app, por la red interna. Si no responde, la
+      # pantalla dice «La traducción no está disponible ahora.» y sigue igual. El texto de los vecinos nunca va a un tercero.
+      TRADUCTOR_URL: http://traductor:5000
+    networks: [default, interna]
     depends_on:
       db:
         condition: service_healthy
@@ -41,6 +45,50 @@ services:
     restart: unless-stopped
     mem_limit: 768m
     cpus: 1.0
+
+  # 5h · Traductor propio: LibreTranslate 1.9.6 (AGPL-3.0, sin modificar, como servicio aparte) con los modelos Argos español ↔ inglés.
+  # Solo en la red «interna» (internal: sin salida a internet y sin puertos hacia afuera): la app le habla y nadie más. La app no lo
+  # espera para arrancar. Memoria acotada (cx33, 8 GB, junto a moderacion-img: §6 #24). Perfil propio (como moderacion y mapa):
+  # deploy.sh lo baja y lo enciende APARTE con `|| true`, así una falla al bajar la imagen o los modelos nunca frena la app.
+  #     Los modelos los baja UNA vez «traductor-modelos» (misma imagen, en la red con salida, solo es+en, al volumen) y termina; el
+  #     traductor los lee del volumen y, con los modelos ya puestos, no sale a internet (LT_UPDATE_MODELS apagado).
+  traductor-modelos:
+    image: libretranslate/libretranslate:v1.9.6
+    profiles: ["traductor"]
+    restart: "no"
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - >-
+        ./venv/bin/python -c "import sys; from argostranslate import package as p, settings as s;
+        c = {(x.from_code, x.to_code) for x in p.get_installed_packages()};
+        sys.exit(0 if {('en', 'es'), ('es', 'en')} <= c and any((s.data_dir / 'minisbd').glob('*.onnx')) else 1)"
+        || ./venv/bin/python scripts/install_models.py --load_only_lang_codes es,en
+    volumes:
+      - traductor-modelos:/home/libretranslate/.local
+    mem_limit: 1g
+
+  traductor:
+    image: libretranslate/libretranslate:v1.9.6
+    profiles: ["traductor"]
+    restart: unless-stopped
+    environment:
+      LT_LOAD_ONLY: es,en
+      LT_UPDATE_MODELS: "false"
+      LT_DISABLE_WEB_UI: "true"
+      LT_DISABLE_FILES_TRANSLATION: "true"
+      LT_CHAR_LIMIT: "2000"
+      LT_THREADS: "2"
+    volumes:
+      - traductor-modelos:/home/libretranslate/.local
+    networks: [interna]
+    mem_limit: 1536m
+    cpus: 1.5
+    healthcheck:
+      test: ["CMD", "./venv/bin/python", "scripts/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
 
   # Barrido central (0078): cada minuto llama a la app por la red interna para vencer, liberar y avisar aunque nadie abra una
   # página. Usa la misma imagen de la app (nada nuevo que bajar) y el token del entorno (lo crea deploy.sh).
@@ -99,3 +147,10 @@ services:
 
 volumes:
   db-data:
+  traductor-modelos:
+
+networks:
+  default: {}
+  # 5h · Red sin salida a internet: la app (que también está en «default») le habla al traductor; el traductor no ve otra cosa.
+  interna:
+    internal: true

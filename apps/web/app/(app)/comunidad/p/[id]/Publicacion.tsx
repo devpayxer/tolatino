@@ -12,6 +12,7 @@ import type { Hilo as H, OrdenHilo } from "@/lib/comunidad-hilo";
 import { Avatar, MONO, Marco, Reglas, useAncho, useComUi, type YoCom } from "../../Marco";
 import { useAccionesPub } from "../../Muro";
 import { Tarjeta } from "../../Tarjeta";
+import { useTraducir } from "../../../Traducir";
 import { Hilo } from "./Hilo";
 import { Linea988 } from "../../Linea988";
 
@@ -21,7 +22,7 @@ const { Icon, Button } = UI as unknown as Record<N, ComponentType<any>>;
 
 export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisis = false }: { es: boolean; yo: YoCom; ciudad: string; d: P | null; h: H | null; orden: OrdenHilo; nueva: boolean; editada: boolean; crisis?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024, tr = useTraducir(es);
   const [pub, setPub] = useState<Pub | null>(d?.pub ?? null);
   const [borrada, setBorrada] = useState(false);
   useEffect(() => { setPub(d?.pub ?? null); }, [d]);
@@ -61,9 +62,9 @@ export function Publicacion({ es, yo, ciudad, d, h, orden, nueva, editada, crisi
           </div>
         )}
         <div style={{ background: "var(--tl-white)", overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
-          <Tarjeta p={pub} es={es} full onMenu={() => acc.menu(pub)} onAuthor={a.id && !a.oficial ? () => router.push(`/comunidad/v/${a.id}`) : undefined} onVote={(v) => void acc.votar(pub, v)} onPoll={(i) => void acc.encuesta(pub, i)} onSave={() => void acc.guardar(pub)} onShare={() => void acc.compartir(pub)} onBiz={(id) => router.push(`/n/${id}`)} />
+          <Tarjeta p={pub} es={es} tr={tr} full onMenu={() => acc.menu(pub)} onAuthor={a.id && !a.oficial ? () => router.push(`/comunidad/v/${a.id}`) : undefined} onVote={(v) => void acc.votar(pub, v)} onPoll={(i) => void acc.encuesta(pub, i)} onSave={() => void acc.guardar(pub)} onShare={() => void acc.compartir(pub)} onBiz={(id) => router.push(`/n/${id}`)} />
         </div>
-        {pub.estado === "visible" && <Hilo es={es} yo={yo} pub={pub} h0={h} orden={orden} ui={ui} D={D} />}
+        {pub.estado === "visible" && <Hilo es={es} yo={yo} pub={pub} h0={h} orden={orden} ui={ui} D={D} tr={tr} />}
       </div>
     </Marco>
   );

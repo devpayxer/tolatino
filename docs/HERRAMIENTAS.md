@@ -68,3 +68,13 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
   de PyPI (metadatos y clasificador). **A revisar con abogado antes de producción:** el detector se entrenó con YOLOv8 y Ultralytics dice
   que los pesos entrenados con su código quedan bajo AGPL-3.0 (LAUNCH-CHECKLIST). Solo mide **desnudez**; violencia y texto promocional
   no tienen modelo todavía (los revisa una persona). Costo: $0 (cabe en el cx33; límite de 768 MB en el compose). Sin proveedor pago.
+- **7 nov 2026 · #29 Traductor propio «Ver traducción» (5h, D3):** **LibreTranslate 1.9.6** (`libretranslate/libretranslate:v1.9.6`, imagen
+  oficial sin modificar) con los modelos abiertos **Argos Translate** español ↔ inglés (solo `es,en`), servicio `traductor` del compose en
+  su perfil propio, **solo en la red interna** (`internal: true`: sin salida a internet ni puertos hacia afuera); los modelos los baja una
+  vez `traductor-modelos` a un volumen. Detección de idioma con su `/detect` al publicar; traducción con su `/translate` (3 s, corta-circuito,
+  caché `ugc_translations`, 60 por persona y hora). **Licencia: AGPL-3.0** (LibreTranslate) — lo corremos **sin modificar y como servicio
+  aparte** al que solo habla nuestra app; los modelos Argos se publican con licencias abiertas (a confirmar modelo por modelo).
+  **A revisar con abogado antes de producción** (LAUNCH-CHECKLIST): las obligaciones de la AGPL §13 si algún día se modifica o se expone,
+  y las licencias de los modelos. Calidad menor que Claude o DeepL: comparar 200 textos reales antes de abrir (§6 #15); un traductor
+  pago = decisión del fundador. Costo: $0 (límite de 1.5 GB y 1.5 CPU en el compose, junto a moderacion-img de 768 MB en el cx33).
+  Sin proveedor pago; ningún texto sale de nuestros servidores (guardián `traduccionPropia`).

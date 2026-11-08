@@ -17,6 +17,7 @@ import { comBorrarCm, comComentar, comHilo, comMeSirvio, comNegocios, comRespues
 import { YA_NO_LO_VES, abrirReporte } from "../../Reportar";
 import { LINEA988 } from "@/lib/moderacion-comun";
 import { useVecinoAcciones } from "../../vecinoAcciones";
+import type { Tr } from "../../../Traducir";
 
 type N = "Icon" | "Button" | "TopAnswer" | "CommentCard" | "ReplyThread" | "AlsoRecommended";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ type Adjunto = { id: string; nombre: string; foto: string | null; meta: string }
 const fondo = (u: string | null) => (u ? `url("${u}")` : undefined);
 const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
-export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom; pub: Pub; h0: H; orden: OrdenHilo; ui: ComUi; D: boolean }) {
+export function Hilo({ es, yo, pub, h0, orden, ui, D, tr }: { es: boolean; yo: YoCom; pub: Pub; h0: H; orden: OrdenHilo; ui: ComUi; D: boolean; tr: Tr }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [h, setH] = useState(h0), [extra, setExtra] = useState<Cm[]>([]), [mas, setMas] = useState(h0.mas);
@@ -160,9 +161,9 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
     onMenu: c.estado === "visible" || c.mia ? () => menu(c, true) : undefined, menuLabel: E2("Opciones del comentario", "Comment options"),
   });
   const respuesta = (root: Cm, r: Cm, kids?: Cm[], cont?: boolean): Record<string, unknown> => {
-    const m = /^(@\S+)\s*([\s\S]*)$/.exec(r.body);
+    const t = tr("com_comment", r.id, r.lang, r.body, r.mia), m = /^(@\S+)\s*([\s\S]*)$/.exec(t.body);
     return {
-      key: r.id, ...quien(r), time: hace(r.at, es), hasText: !!r.body.trim() || !!r.replyTo, at: m ? m[1] : r.replyTo ? `@${primero(r.replyTo.nombre)}` : "", text: m ? m[2] : r.body,
+      key: r.id, ...quien(r), time: hace(r.at, es), hasText: !!r.body.trim() || !!r.replyTo, at: m ? m[1] : r.replyTo ? `@${primero(r.replyTo.nombre)}` : "", text: m ? m[2] : t.body, translate: t.translate,
       business: r.negocio ? { name: r.negocio.nombre, meta: es ? r.negocio.meta.es : r.negocio.meta.en, verified: r.negocio.verificado, image: r.negocio.foto ?? undefined, onClick: () => router.push(`/n/${r.negocio!.id}`) } : null,
       vote: { score: String(r.up), onUp: () => void votar(r, 1), upColor: r.miVoto === 1 ? "var(--tl-action)" : undefined, scoreColor: r.miVoto === 1 ? "var(--tl-action)" : undefined },
       replyLabel: E2("Responder", "Reply"), onReply: h.cerrados ? undefined : () => responder(root, r), onMenu: () => menu(r, false), menuLabel: E2("Opciones de la respuesta", "Reply options"),
@@ -213,6 +214,8 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
         </div></div>
     </div>) : null;
 
+  /* 5h · El texto del comentario y «Ver traducción» si está en el otro idioma (nunca en lo propio). */
+  const cuerpo = (c: Cm) => { const t = tr("com_comment", c.id, c.lang, c.body, c.mia); return { body: t.body || undefined, translate: t.translate }; };
   const tarjeta = (c: Cm) => c.estado !== "visible" ? (
     <div key={c.id} id={`c${c.id}`} data-screen-label="Publicación · comentario eliminado" style={{ borderRadius: 18, background: "var(--tl-paper)", border: "1px solid rgba(11,14,18,.08)", padding: "14px 16px 12px" }}>
       <div style={{ font: "600 13px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.55)" }}>{c.estado === "hidden" ? E2("Comentario oculto por las reglas del barrio", "Comment hidden under the neighborhood rules") : E2("Comentario eliminado", "Comment deleted")}</div>
@@ -220,7 +223,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
     </div>) : (
     <div key={c.id} id={`c${c.id}`}>
       <CommentCard screenLabel="Publicación · comentario" bg={c.mia ? "rgba(75,55,245,.03)" : "var(--tl-white)"} {...quien(c)} time={hace(c.at, es).toUpperCase()}
-        best={c.mejor ? E2(`LE SIRVIÓ A ${primero(pub.autor.nombre).toUpperCase()}`, `HELPED ${primero(pub.autor.nombre).toUpperCase()}`) : undefined} body={c.body || undefined}
+        best={c.mejor ? E2(`LE SIRVIÓ A ${primero(pub.autor.nombre).toUpperCase()}`, `HELPED ${primero(pub.autor.nombre).toUpperCase()}`) : undefined} {...cuerpo(c)}
         business={c.negocio ? { name: c.negocio.nombre, meta: es ? c.negocio.meta.es : c.negocio.meta.en, verified: c.negocio.verificado, image: c.negocio.foto ?? undefined, onClick: () => router.push(`/n/${c.negocio!.id}`) } : null}
         actions={acciones(c)}>
         {cajita(c)}{hiloDe(c)}
@@ -235,7 +238,7 @@ export function Hilo({ es, yo, pub, h0, orden, ui, D }: { es: boolean; yo: YoCom
     <div data-screen-label="Publicación · hilo" style={{ display: "flex", flexDirection: "column", gap: 12, padding: D ? 0 : "12px 16px 0" }}>
       {T && (
         <div id={`c${T.id}`}>
-          <TopAnswer screenLabel="Publicación · la más votada" kicker={kick} {...quien(T)} time={hace(T.at, es).toUpperCase()} body={T.body || undefined}
+          <TopAnswer screenLabel="Publicación · la más votada" kicker={kick} {...quien(T)} time={hace(T.at, es).toUpperCase()} {...cuerpo(T)}
             business={T.negocio ? { name: T.negocio.nombre, image: fondo(T.negocio.foto), verified: T.negocio.verificado, meta: es ? T.negocio.meta.es : T.negocio.meta.en, cta: E2("Ver", "View"), onOpen: () => router.push(`/n/${T.negocio!.id}`) } : null}
             actions={acciones(T)}>
             {cajita(T)}{hiloDe(T)}

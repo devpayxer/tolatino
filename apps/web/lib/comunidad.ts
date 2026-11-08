@@ -5,6 +5,7 @@ import { centroSQL, type Punto } from "./punto";
 import { EDITAR_MIN, DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
 import { porcentajes, type Autor, type Filtros, type Pub } from "./comunidad-comun";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir, revisarFotosCom } from "./moderacion";
+import { detectarIdioma, idiomaTexto } from "./traductor";
 
 /* Comunidad · el muro, publicar y la publicación (APP-COM-FEED, APP-COM-NUEVO, APP-COM-POST; fase5-comunidad.md §4 5a).
    Todo pide sesión (comunidadSoloConCuenta): cada función recibe la persona que mira (viewer) y nada de vecinos sale sin ella.
@@ -63,7 +64,7 @@ export async function autores(ids: string[]) {
 
 /* Columnas de una publicación para la pantalla (una fila; negocio, barrio, invitado y fotos en la misma consulta). */
 export const COLS = (centro: string | null) => `
-  p.id::text as id, p.kind, p.topic, p.body, p.author_kind, p.author_user_id::text as autor, p.city_id, p.status, p.hidden_reason,
+  p.id::text as id, p.kind, p.topic, p.body, p.lang, p.author_kind, p.author_user_id::text as autor, p.city_id, p.status, p.hidden_reason,
   ${ISO("p.publish_at")} as at, p.edited_at is not null as editada, ${ISO("p.created_at + interval '" + EDITAR_MIN + " minutes'")} as editar_hasta,
   p.created_at > now() - interval '${EDITAR_MIN} minutes' as editable,
   coalesce(p.pinned_until > now(), false) as fijada, p.health_notice as salud, p.solved_at is not null as resuelta, p.comments_locked_at is not null as cerrados,
@@ -84,7 +85,7 @@ export const JOINS = `
   left join business_stats_cache bs on bs.business_id = b.id
   left join subcategorias_vivas sc on sc.id = b.subcategory_ids[1]`;
 export type Fila = {
-  id: string; kind: Pub["kind"]; topic: string | null; body: string; author_kind: string; autor: string | null; city_id: string; status: Pub["estado"]; hidden_reason: string | null;
+  id: string; kind: Pub["kind"]; topic: string | null; body: string; lang: Pub["lang"]; author_kind: string; autor: string | null; city_id: string; status: Pub["estado"]; hidden_reason: string | null;
   at: string; editada: boolean; editar_hasta: string; editable: boolean; fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean;
   para: string[]; opts: string[] | null; conteo: number[]; cierra: string | null; cerrada: boolean; up: number; dn: number; score: number; cms: number;
   hot_t: string; cur_new: string; cur_top: string; zona: Bi | null; invitado: string | null; ciudad_nombre: string; oficial: Bi | null; mi: number | null;
@@ -119,7 +120,7 @@ export async function armar(filas: Fila[], viewer: string): Promise<Pub[]> {
     const mia = !!f.autor && f.autor === viewer;
     const meta = (l: "es" | "en") => [f.biz_sub ? f.biz_sub[l].toUpperCase() : null, f.biz_rating && f.biz_reviews ? `★ ${f.biz_rating.toFixed(1)} (${f.biz_reviews})` : null].filter(Boolean).join(" · ");
     return {
-      id: f.id, kind: f.kind, topic: f.topic, body: f.body, at: f.at, editada: f.editada, mia, editarHasta: mia && f.editable && f.status === "visible" ? f.editar_hasta : null,
+      id: f.id, kind: f.kind, topic: f.topic, body: f.body, lang: f.lang, at: f.at, editada: f.editada, mia, editarHasta: mia && f.editable && f.status === "visible" ? f.editar_hasta : null,
       fijada: f.fijada, salud: f.salud, resuelta: f.resuelta, cerrados: f.cerrados, estado: f.status, motivo: mia ? f.hidden_reason : null,
       autor: a, lugar, invitado: !!f.invitado, mi: f.mi,
       negocio: f.biz_id ? { id: f.biz_id, nombre: f.biz_name!, meta: { es: meta("es"), en: meta("en") }, foto: f.biz_foto, verificado: f.biz_ver, para: f.para ?? [] } : null,
@@ -242,6 +243,8 @@ export type Entrada = Borrador;
 export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   const f = revisarPublicacion(p);
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
+  // 5h · El idioma del texto (para «Ver traducción»): el traductor propio lo detecta antes de abrir la transacción; si no, el de la app.
+  const det = await detectarIdioma(p.body);
   const r = await tx(async (c) => {
     const u = await quien(c, userId, ciudad);
     if (!u) return no("Entra para publicar.", "Sign in to post.");
@@ -267,7 +270,7 @@ export async function publicar(userId: string, ciudad: string, p: Entrada): Prom
       `insert into com_posts (city_id, author_kind, author_user_id, kind, topic, body, lang, business_id, looking_for, poll_options, poll_ends_at, health_notice)
        values ($1, 'user', $2, $3, $4, $5, $6, $7, $8, $9, case when $10::int is null then null else now() + make_interval(days => $10::int) end, $11)
        returning id::text`,
-      [ciudad, userId, p.kind, topic, body, u.lang === "en" ? "en" : "es", negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body)])).rows[0]!;
+      [ciudad, userId, p.kind, topic, body, idiomaTexto(det, u.lang), negocio, para, opts, p.kind === "encuesta" ? Number(p.dias) : null, pareceEmergencia(body)])).rows[0]!;
     if (p.kind !== "encuesta" && !(await ponerFotos(c, userId, r.id, p.fotos ?? []))) throw new FotosAjenas();
     // 5d · Las reglas que marcan (nunca ocultan solas): listas, parecidos repetidos, dónde vive alguien; autolesión → línea del 988.
     const rv = await revisarAlEscribir(c, { kind: "com_post", id: r.id, autor: userId, ciudad, texto: [body, ...para, ...(opts ?? [])].join(" \n") });
@@ -286,6 +289,7 @@ class FotosAjenas extends Error {}
 /* Editar: solo quien la escribió, en los primeros 30 minutos; el tipo, el negocio y las opciones no cambian. */
 export async function editar(userId: string, id: string, p: Pick<Entrada, "body" | "topic" | "para" | "fotos">): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
+  const det = await detectarIdioma(p.body); // 5h: si cambia el texto, su idioma se vuelve a detectar (y la traducción, por el hash)
   const r = await tx(async (c) => {
     const x = (await c.query<{ kind: Entrada["kind"]; body: string; business_id: string | null; poll_options: string[] | null; topic: string | null; a_tiempo: boolean; city_id: string }>(
       `select kind, body, business_id, poll_options, topic, created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, city_id
@@ -300,8 +304,8 @@ export async function editar(userId: string, id: string, p: Pick<Entrada, "body"
     if (f) return { ok: false as const, msg: f.msg, campo: f.campo };
     const body = p.body.trim();
     if (body !== x.body) await c.query(`insert into com_edits (target_kind, target_id, old_body) values ('post', $1::bigint, $2)`, [id, x.body]);
-    await c.query(`update com_posts set body = $2, topic = $3, looking_for = $4, edited_at = now(), health_notice = $5 where id = $1::bigint`,
-      [id, body, x.kind === "pregunta" ? p.topic || x.topic || "otro" : p.topic || x.topic, x.kind === "recomendacion" ? (p.para ?? []).map((s) => s.trim()).filter(Boolean) : [], pareceEmergencia(body)]);
+    await c.query(`update com_posts set body = $2, topic = $3, looking_for = $4, edited_at = now(), health_notice = $5, lang = case when body = $2 then lang else $6 end where id = $1::bigint`,
+      [id, body, x.kind === "pregunta" ? p.topic || x.topic || "otro" : p.topic || x.topic, x.kind === "recomendacion" ? (p.para ?? []).map((s) => s.trim()).filter(Boolean) : [], pareceEmergencia(body), idiomaTexto(det, u.lang)]);
     if (x.kind !== "encuesta" && !(await ponerFotos(c, userId, id, p.fotos ?? []))) throw new FotosAjenas();
     const rv = body !== x.body ? await revisarAlEscribir(c, { kind: "com_post", id, autor: userId, ciudad: x.city_id, texto: body }) : { crisis: false };
     return { ok: true as const, id, crisis: rv.crisis };

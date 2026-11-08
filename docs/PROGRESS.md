@@ -65,7 +65,22 @@ perfil, Tu rango y la tarjeta de vecino de Mi cuenta; panel › Tu página › *
 Usuarios 360° › Comunidad › Monedas (ajuste ±); avisos `gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*` (sin SMS); barrido
 `vencerCupones`. Guardianes `monedasSinDinero` y `cuponUnaVez` (nuevos) + `libroSoloInsercion`, `saldoDerivado` ampliados (42/42 al
 revés); e2e `com5g` 73 ✓ (carrera de la última unidad, doble canje, código usado dos veces, vencer con el reloj movido). Ayuda:
-monedas-y-cupones.md, panel-cupones-por-monedas.md, admin-gamificacion.md al día. Sigue **5h** («Ver traducción» propia; migración 0104).
+monedas-y-cupones.md, panel-cupones-por-monedas.md, admin-gamificacion.md al día. **5h hecho (7 nov)** — «Ver traducción» propia (D3):
+migración 0104 (`ugc_translations` derivada, pk `(target_kind, target_id, dst_lang, src_hash)` con sha-256 del texto, `engine`, `ms`;
+`ugc_translation_uses` + `trad_usar` = límite por persona o dispositivo por hora, `com_traduccion_hora` 60; `reviews.reply_lang` y
+`post_comments.lang`). `lib/traductor.ts` (único cliente del traductor: solo `TRADUCTOR_URL`, 3 s, detectar 1.5 s, corta-circuito 5
+fallas → 60 s), `lib/traduccion.ts` (`traducir`: límite → texto visible para quien pide → caché → servicio → guarda),
+`lib/traduccion-comun.ts`; idioma detectado al publicar (antes de la transacción; respaldo: el de la app) en publicaciones, ediciones,
+comentarios, reseñas, respuestas del negocio y comentarios de Novedades. Acción `acciones-traducir.ts` y `Traducir.tsx`
+(`useTraducir` → prop `translate` de PostCard / CommentCard / TopAnswer / ReplyThread / ReviewCard; `LineaTr` en la respuesta del negocio y
+Novedades): «Ver traducción» → «Traduciendo…» → «Ver original · Traducción automática del inglés»; error «La traducción no está
+disponible ahora.» + Reintentar; nunca en lo propio. Super Admin ve siempre el original; Auto-moderación muestra si el traductor responde
+y el tope (con auditoría). Infra: servicio `traductor` (LibreTranslate **v1.9.6**, AGPL-3.0 sin modificar, solo es/en, red `interna`
+sin salida, 1.5 GB) + `traductor-modelos` (baja los modelos una vez al volumen), perfil «traductor», `deploy.sh` 3g aparte con `|| true`.
+Guardianes nuevos `traduccionPropia`, `traductorEnPerfil`, `adminVeOriginal`, `traductorFueraDeTx` (31/31 al revés); e2e `com5h` 37 ✓
+**con un traductor de mentira solo de prueba** (el LibreTranslate real NO corrió aquí: la imagen se bajó, pero los modelos de argos-net.com
+están bloqueados por la red de esta sesión; verlo en el sandbox). Ayuda: ver-traduccion.md, admin-confianza-y-seguridad.md al día.
+Sigue **5i** (Super Admin completo de la fase, Configuración, avisos, analítica y ayuda; migración 0105).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

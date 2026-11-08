@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import type { AutoMod } from "@/lib/admin-confianza";
 import { LIMITES, PARAMS, REGLAS, TIPOS_TERMINO, textoRegla, type ReglaKey } from "@/lib/moderacion-comun";
-import { limiteCambiar, reglaCambiar, reglaParams, terminoAgregar, terminoApagar } from "./acciones-confianza";
+import { limiteCambiar, reglaCambiar, reglaParams, terminoAgregar, terminoApagar, traduccionTope } from "./acciones-confianza";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -32,6 +32,10 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
     : !img.configurado ? "Encendida, pero el servicio no está configurado aquí: cada foto nueva espera revisión manual en Medios marcados (nunca se publica sin revisar)."
       : img.ok ? `Encendida · ${img.modelo ?? "modelo propio"} · responde en ${img.ms} ms. Solo mide desnudez; violencia y texto promocional los revisa una persona.`
         : "Encendida, pero el servicio no responde: cada foto nueva espera revisión manual en Medios marcados (nunca se publica sin revisar).";
+  const estadoTrad = !d.trad.configurado ? "No está configurado aquí: «Ver traducción» dice «La traducción no está disponible ahora.» y todo lo demás sigue igual. El texto nunca va a un tercero."
+    : d.trad.ok ? `Responde en ${d.trad.ms} ms · ${d.trad.idiomas.join(" · ")}. Corre en nuestro servidor: el texto de los vecinos nunca sale de él. Lo traducido se guarda y se reutiliza.`
+      : d.trad.cortado ? "No respondió varias veces seguidas: la app dejó de llamarlo un minuto y vuelve a probar sola. Mientras, «Ver traducción» dice que no está disponible."
+        : "No responde: «Ver traducción» dice «La traducción no está disponible ahora.» y todo lo demás sigue igual. El texto nunca va a un tercero.";
   const B: Bloque[] = [...arriba,
     { type: "note", tone: "ink", icon: "shield", t: "Las reglas marcan; una persona decide. Nada se oculta solo salvo los teléfonos (se frenan antes de publicarse) y el auto-ocultar por reportes de personas distintas (con aviso y apelación)." },
     { type: "group", k: "REGLAS" },
@@ -56,6 +60,13 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
     { type: "note", tone: "info", t: "Día local de la ciudad. La mitad el primer día de la cuenta. Al llegar al límite, la app dice cuál y hasta cuándo." },
     { type: "rows", items: d.limites.map((x) => ({ key: x.k, icon: "clock", t: `${x.v} ${LIMITES[x.k].es} al día`, s: `De fábrica: ${LIMITES[x.k].def}`,
       acts: edita ? [{ l: "Cambiar", v: "secondary", icon: "edit", onClick: () => setConf({ titulo: "", sub: `Límite de ${LIMITES[x.k].es} al día por persona.`, cta: "Guardar", valor: { k: `${LIMITES[x.k].es.toUpperCase()} AL DÍA`, ini: String(x.v), max: 4 }, plantillas: ["Mucho spam", "Vecinos llegan al límite sin abusar"], hacer: (m, _e, v) => limiteCambiar(x.k, v, m) }) }] : undefined })) },
+    // 5h · «Ver traducción» con el traductor propio: si responde (nunca muestra textos: aquí todo se ve en el original) y el tope por persona.
+    { type: "group", k: "VER TRADUCCIÓN (TRADUCTOR PROPIO)" },
+    { type: "rows", items: [
+      { key: "trad-salud", icon: "language", t: "Traductor propio · español ↔ inglés", s: estadoTrad, tag: d.trad.ok ? "RESPONDE" : "NO RESPONDE", tone: d.trad.ok ? "signal" : "danger" },
+      { key: "trad-tope", icon: "clock", t: `${d.trad.tope} traducciones por hora`, s: "Por persona (o por dispositivo sin cuenta). De fábrica: 60. Al llegar, la app dice cuántas y que vuelva en un rato.",
+        acts: edita ? [{ l: "Cambiar", v: "secondary", icon: "edit", onClick: () => setConf({ titulo: "", sub: "«Ver traducción» por persona en una hora.", cta: "Guardar", valor: { k: "TRADUCCIONES POR HORA", ini: String(d.trad.tope), max: 4 }, plantillas: ["El traductor va lento", "Vecinos llegan al límite sin abusar"], hacer: (m, _e, v) => traduccionTope(v, m) }) }] : undefined },
+    ] },
   ];
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }

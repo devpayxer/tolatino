@@ -16,6 +16,7 @@ import { Tarjeta } from "./Tarjeta";
 import { HoyCarrusel } from "../HoyCarrusel";
 import type { Historia } from "@/lib/hoy-comun";
 import { useVecinoAcciones } from "./vecinoAcciones";
+import { useTraducir } from "../Traducir";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -81,7 +82,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
 export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { es: boolean; yo: YoCom; ciudad: string; abierta: boolean; filtros: Filtros; inicial: { pubs: Pub[]; mas: string | null }; hoy?: Historia[] }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ruta = usePathname();
-  const ui = useComUi(yo);
+  const ui = useComUi(yo), tr = useTraducir(es);
   const [pubs, setPubs] = useState(inicial.pubs), [mas, setMas] = useState(inicial.mas), [cargando, setCargando] = useState(false);
   useEffect(() => { setPubs(inicial.pubs); setMas(inicial.mas); }, [inicial]);
   const poner = (id: string, f: (p: Pub) => Pub | null) => setPubs((L) => L.flatMap((p) => { if (p.id !== id) return [p]; const n = f(p); return n ? [n] : []; }));
@@ -147,7 +148,7 @@ export function Muro({ es, yo, ciudad, abierta, filtros, inicial, hoy = [] }: { 
         {pubs.map((p, i) => (<Fragment key={p.id}>
           {/* 5e · Hoy en el barrio dentro del muro, después de la segunda publicación (prototipo feedV rows.splice(2, 0, hoy)). */}
           {i === 2 && hoyFila}
-          <Tarjeta p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onAuthor={p.autor.id && !p.autor.oficial ? () => router.push(`/comunidad/v/${p.autor.id}`) : undefined} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
+          <Tarjeta p={p} es={es} tr={tr} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onAuthor={p.autor.id && !p.autor.oficial ? () => router.push(`/comunidad/v/${p.autor.id}`) : undefined} onVote={(v) => void acc.votar(p, v)} onPoll={(i) => void acc.encuesta(p, i)}
             onSave={() => void acc.guardar(p)} onShare={() => void acc.compartir(p)} onBiz={(id) => router.push(`/n/${id}`)} />
         </Fragment>))}
         {pubs.length > 0 && pubs.length <= 2 && hoyFila}

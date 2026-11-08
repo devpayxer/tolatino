@@ -6,6 +6,7 @@ import { revisarComentario } from "./comunidad-filtro";
 import { porcentajes, type Pub } from "./comunidad-comun";
 import { ID, ISO, autores, corto, encuesta, esSuNegocio, no, quien, sinBloqueos, type Res } from "./comunidad";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir } from "./moderacion";
+import { detectarIdioma, idiomaTexto } from "./traductor";
 import { puntosDelVoto, puntosMejorRespuesta, recalcularRango } from "./puntos";
 
 /* Comunidad · el hilo (APP-COM-POST; fase5-comunidad.md §4 5b): comentar, responder, recomendar un negocio en el comentario,
@@ -25,7 +26,7 @@ export const POR_PAGINA_HILO = 20, POR_PAGINA_RESP = 50, DESTACAR_DESDE = 5, UMB
 export type AutorCm = { id: string; nombre: string; ini: string; foto: string | null; rango: number };
 export type NegocioCm = { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean };
 export type Cm = {
-  id: string; autor: AutorCm; body: string; at: string; up: number; dn: number; score: number; miVoto: number; mia: boolean;
+  id: string; autor: AutorCm; body: string; lang: "es" | "en"; at: string; up: number; dn: number; score: number; miVoto: number; mia: boolean;
   estado: "visible" | "hidden" | "deleted"; negocio: NegocioCm | null; mejor: boolean;
   respuestas: number; caras: { ini: string; foto: string | null }[]; replyTo: { id: string; nombre: string } | null;
 };
@@ -37,13 +38,13 @@ export type Hilo = {
 
 /* Columnas de un comentario (una fila; negocio recomendado con su meta y foto en la misma consulta). */
 const CCOLS = `
-  c.id::text as id, c.author_user_id::text as autor, c.body, ${ISO("c.created_at")} as at, c.up_n as up, c.down_n as dn, c.score, c.status,
+  c.id::text as id, c.author_user_id::text as autor, c.body, c.lang, ${ISO("c.created_at")} as at, c.up_n as up, c.down_n as dn, c.score, c.status,
   c.parent_id::text as parent, c.reply_to_id::text as reply_to, c.score::text || '|' || c.id as cur_top, c.id::text as cur_new,
   b.id as biz_id, b.name as biz_name, coalesce(bs.verified, false) as biz_ver, bs.rating_avg::float8 as biz_rating, bs.review_count as biz_reviews, sc.name as biz_sub,
   coalesce(b.logo_url, (select m.url from media m where m.owner_kind = 'business' and m.owner_id = b.id and m.status = 'visible' order by m.sort limit 1)) as biz_foto`;
 const CJOINS = `left join businesses b on b.id = c.business_id left join business_stats_cache bs on bs.business_id = b.id left join subcategorias_vivas sc on sc.id = b.subcategory_ids[1]`;
 type FilaCm = {
-  id: string; autor: string; body: string; at: string; up: number; dn: number; score: number; status: Cm["estado"]; parent: string | null; reply_to: string | null;
+  id: string; autor: string; body: string; lang: Cm["lang"]; at: string; up: number; dn: number; score: number; status: Cm["estado"]; parent: string | null; reply_to: string | null;
   cur_top: string; cur_new: string; biz_id: string | null; biz_name: string | null; biz_ver: boolean; biz_rating: number | null; biz_reviews: number | null; biz_sub: Bi | null; biz_foto: string | null;
   vivas?: number; caras?: string[] | null;
 };
@@ -71,7 +72,7 @@ async function armarCm(filas: FilaCm[], viewer: string, mejor: string | null): P
   return filas.map((f) => {
     const a = A(f.autor), vivo = f.status === "visible";
     return {
-      id: f.id, autor: { id: a.id!, nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango }, body: vivo ? f.body : "", at: f.at,
+      id: f.id, autor: { id: a.id!, nombre: a.nombre, ini: a.ini, foto: a.foto, rango: a.rango }, body: vivo ? f.body : "", lang: f.lang, at: f.at,
       up: f.up, dn: f.dn, score: f.score, miVoto: V.get(f.id) ?? 0, mia: f.autor === viewer, estado: f.status, negocio: vivo ? negocioDe(f) : null, mejor: !!mejor && f.id === mejor,
       respuestas: f.vivas ?? 0, caras: (f.caras ?? []).map((u) => { const x = A(u); return { ini: x.ini, foto: x.foto }; }),
       replyTo: f.reply_to && f.reply_to !== f.parent && RT.get(f.reply_to) ? { id: f.reply_to, nombre: A2(RT.get(f.reply_to)!).nombre } : null,
@@ -197,6 +198,7 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
   const f = revisarComentario({ body: e.body, business: e.business });
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
   if (!ID.test(postId) || (e.parent && !ID.test(e.parent)) || (e.replyTo && !ID.test(e.replyTo))) return no("Esa publicación ya no está.", "That post is gone.");
+  const det = await detectarIdioma(e.body.replace(/^@\S+\s*/, "")); // 5h: antes de abrir la transacción; si no se sabe, el de la app
   const r = await tx(async (c) => {
     const p = await tocable(c, userId, postId);
     if (!p) return no("Esa publicación ya no está.", "That post is gone.");
@@ -229,7 +231,7 @@ export async function comentar(userId: string, postId: string, e: EntradaCm): Pr
     const body = e.body.trim();
     const id = (await c.query<{ id: string }>(
       `insert into com_comments (post_id, parent_id, reply_to_id, author_user_id, body, lang, business_id) values ($1::bigint, $2::bigint, $3::bigint, $4, $5, $6, $7) returning id::text`,
-      [p.id, e.parent ?? null, replyTo, userId, body, u.lang === "en" ? "en" : "es", negocio])).rows[0]!.id;
+      [p.id, e.parent ?? null, replyTo, userId, body, idiomaTexto(det, u.lang), negocio])).rows[0]!.id;
     const avisos = await aQuienAvisar(c, userId, p, parentAutor, replyAutor, body);
     const menciones = avisos.filter((a) => a.tpl === "com_mention").map((a) => a.id);
     if (menciones.length) await c.query(`insert into com_mentions (comment_id, user_id) select $1::bigint, x from unnest($2::uuid[]) x on conflict do nothing`, [id, menciones]);

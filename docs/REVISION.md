@@ -1788,3 +1788,41 @@ sus 200 del premio). Teléfono y escritorio.
 **Capturas:** `c5g-bienvenida-m`, `c5g-monedas-m`, `c5g-canje-m`, `c5g-codigo-m`, `c5g-carrera-perdio-m`, `c5g-monedas-d`, `c5g-cuenta-m`,
 `c5g-panel-crear-m`, `c5g-panel-cupones-m`, `c5g-panel-validar-m`, `c5g-panel-cupones-d`, `c5g-panel-free-m`, `c5g-admin-cupones-d`,
 `c5g-admin-aprobar-d`, `c5g-admin-monedas-d`, `c5g-admin-u360-monedas-d`.
+
+### 5h · Comunidad: «Ver traducción» propia (D3) (7 nov)
+Míralo en el sandbox cuando el servicio `traductor` esté arriba (el primer despliegue baja los modelos español ↔ inglés, unos minutos; si
+no, «Ver traducción» dice «La traducción no está disponible ahora.» y lo demás sigue igual). Teléfono y escritorio.
+1. **Comunidad** (app en español): publica algo en inglés con una cuenta y ábrelo con otra. Bajo el texto: **«Ver traducción»** →
+   «Traduciendo…» → la traducción con **«Ver original · Traducción automática del inglés»**. Lo mismo en los comentarios y respuestas en
+   inglés. Lo que está en español no trae botón; lo tuyo, nunca.
+2. **App en inglés** (botón ES/EN): lo que está en español trae **«See translation»**.
+3. **Reseñas** (`/n/{negocio}?tab=rev`): una reseña en inglés y la **respuesta del negocio** en inglés, cada una con su botón.
+4. **Novedades** (`/n/{negocio}?tab=nov` › Comentarios): un comentario en inglés.
+5. **Editar** una publicación en inglés (primeros 30 min): la traducción se vuelve a hacer con el texto nuevo.
+6. **Super Admin › Contenido**: siempre el original (sin botón). **› Auto-moderación › VER TRADUCCIÓN (TRADUCTOR PROPIO)**: si responde y en
+   cuánto, y «60 traducciones por hora» con Cambiar (motivo y auditoría).
+
+**Decidí (se cambia si prefieres otra cosa):**
+- **Traductor propio = LibreTranslate 1.9.6 autoalojado** con modelos abiertos Argos (§6 #15): el texto nunca sale de nuestros servidores.
+  Calidad menor que Claude o DeepL; antes de abrir, comparar 200 textos reales (LAUNCH-CHECKLIST). Un traductor pago es tu decisión.
+- **Idioma del texto:** lo detecta el traductor al publicar (español o inglés con confianza ≥ 50 %); si no puede (texto de menos de 12
+  letras, otro idioma o el traductor no responde en 1.5 s), el idioma de la app de quien escribe. Lo publicado antes de 5h quedó con el
+  idioma de la app (español): no se vuelve a detectar (antes de abrir no hay textos reales; la semilla es de prueba).
+- **Solo español ↔ inglés.** Mensajes vecino ↔ vecino **sin** traducción (§6 #15). La cuenta oficial publica con el idioma que elige el equipo.
+- **«Traducción automática del inglés»** junto a «Ver original»: el prototipo solo decía «Ver original»; lo agregué para no presentar una
+  traducción de máquina como si la hubiera escrito la persona (nada falso).
+- **Límite: 60 por persona y hora** (sin cuenta: por teléfono o computadora, cookie del dispositivo), contando cada toque (también lo que
+  sale de la caché). Ir y volver entre original y traducción en la misma pantalla no cuenta. El tope se cambia en Auto-moderación.
+- **Caídas:** 3 s por traducción; 5 fallas seguidas → la app deja de llamarlo 60 s y luego prueba sola (en la memoria de cada proceso).
+  Lo ya traducido sigue saliendo de la caché aunque el traductor esté caído.
+- **Lo que no se puede ver no se traduce** (oculto, borrado, bloqueo, Novedades solo para seguidores, respuesta de un negocio que ya no es
+  Pro): «Este texto ya no está.»
+- **La caché `ugc_translations` es derivada**: se puede tirar y se regenera; por eso es la única tabla que una prueba limpia con `delete`.
+- **Infra:** el traductor vive solo en la red `interna` (sin salida a internet, sin puertos); los modelos los baja una vez
+  `traductor-modelos` (misma imagen) a un volumen; perfil «traductor» encendido aparte en `deploy.sh` (3g) con `|| true`. Memoria 1.5 GB
+  + moderacion-img 768 MB en el cx33 de 8 GB: medir en el sandbox (§6 #24).
+- **No probado aquí con el LibreTranslate real:** la imagen v1.9.6 se bajó, pero los modelos (argos-net.com) están bloqueados por la red de
+  esta sesión. La e2e `com5h` usa un traductor de mentira **solo de prueba** (fuera del repo) que imita su API. En el sandbox: confirmar
+  que `tolatino-traductor` terminó, que Auto-moderación dice RESPONDE y probar 1–6 con textos reales.
+
+**Capturas:** `c5h-ver-m`, `c5h-traducida-m`, `c5h-ingles-d`, `c5h-resenas-d`, `c5h-novedades-m`, `c5h-caido-m`, `c5h-limite-m`, `c5h-admin-d`.

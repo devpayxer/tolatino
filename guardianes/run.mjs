@@ -2449,6 +2449,106 @@ const guardianes = {
     if (existsSync(P) && /\b(costo|cost|cost_coins)\b/.test(sinComent(P).replace(/"[^"\n]*"/g, ""))) falla(G, P, 0, "el panel del negocio no recibe ni escribe el costo en monedas");
   },
 
+  /* 5h. El texto de los vecinos nunca sale de nuestros servidores (§3 «Traducción», D3): ningún traductor de terceros (Google, DeepL,
+     Microsoft, Yandex, MyMemory, el LibreTranslate público) en ningún código ni dependencia; ningún modelo de lenguaje externo en un
+     archivo que traduce; la única dirección de traducción es TRADUCTOR_URL, que lee solo lib/traductor.ts (sin direcciones escritas a
+     mano y sin otro fetch que el de esa base) y que el compose apunta al servicio interno (http://traductor:5000). */
+  traduccionPropia() {
+    const G = "traduccionPropia", TD = "apps/web/lib/traductor.ts", TR = "apps/web/lib/traduccion.ts", C = "infra/pruebas/docker-compose.yml";
+    if (!existsSync(TD)) return;
+    const TERCEROS = /translat(e|ion)\.googleapis\.com|translate\.google\.[a-z.]+\/(translate_a|m\?)|api(-free)?\.deepl\.com|microsofttranslator\.com|translator\.azure|translate\.yandex|mymemory\.translated\.net|libretranslate\.(com|de|org)|translate\.argosopentech\.com|api\.reverso\.net|papago\.naver/i;
+    const LLM = /api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.cohere\.(ai|com)/i;
+    const PAQ = /"(@google-cloud\/translate|deepl-node|deepl|@vitalets\/google-translate-api|google-translate-api[\w-]*|translate|bing-translate-api|@iamtraction\/google-translate|libretranslate)"\s*:/;
+    for (const f of archivos) {
+      if (f.startsWith("guardianes/") || f.startsWith("docs/") || !/\.(tsx?|jsx?|mjs|cjs|sh|ya?ml|json|py|conf)$/.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      t.split("\n").forEach((l, i) => { const m = TERCEROS.exec(l); if (m) falla(G, f, i + 1, `«${m[0]}»: un traductor de terceros; el texto de los vecinos no sale de nuestros servidores`); });
+      if (/traduc|translat/i.test(t) && LLM.test(t)) falla(G, f, 0, `«${LLM.exec(t)[0]}» en un archivo que traduce: la traducción es propia (un modelo pago es decisión del fundador, §6 #15)`);
+      if (/(^|\/)package\.json$/.test(f) && PAQ.test(t)) falla(G, f, 0, `dependencia de traducción de terceros (${PAQ.exec(t)[1]})`);
+    }
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/TRADUCTOR_URL/.test(t) && x !== TD) falla(G, x, 0, "TRADUCTOR_URL solo la lee lib/traductor.ts");
+      if (x !== TD && /fetch\([^)]*["'`/](translate|detect)\b/.test(t)) falla(G, x, 0, "solo lib/traductor.ts le habla al traductor");
+    }
+    const d = sinComent(TD);
+    if (!/const base = \(\) => \(process\.env\.TRADUCTOR_URL \?\? ""\)/.test(d)) falla(G, TD, 0, "la dirección del traductor sale solo de TRADUCTOR_URL");
+    if (/https?:\/\//.test(d)) falla(G, TD, 0, "lib/traductor.ts no lleva direcciones escritas a mano");
+    for (const m of d.matchAll(/fetch\(([^,)]*)/g)) if (!/^b \+ /.test(m[1])) falla(G, TD, 0, `fetch(${m[1]}) no usa la base de TRADUCTOR_URL`);
+    if (existsSync(TR) && (/fetch\(/.test(sinComent(TR)) || !/from "\.\/traductor"/.test(sinComent(TR)))) falla(G, TR, 0, "lib/traduccion.ts traduce solo con lib/traductor.ts (sin fetch propio)");
+    if (existsSync(C) && !/\n      TRADUCTOR_URL: http:\/\/traductor:5000\n/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "la app apunta TRADUCTOR_URL al servicio interno (http://traductor:5000)");
+  },
+
+  /* 5h. El traductor va en su propio perfil del compose y deploy.sh lo enciende APARTE con `|| true` (lección de 5d: un servicio que no
+     se puede bajar o construir no frena el despliegue de la app). Imagen con versión exacta, solo español e inglés, sin actualizar
+     modelos solo, memoria acotada, sin puertos hacia afuera y solo en la red interna (sin salida a internet). */
+  traductorEnPerfil() {
+    const G = "traductorEnPerfil", C = "infra/pruebas/docker-compose.yml", D = "infra/pruebas/deploy.sh";
+    if (!existsSync(C) || !existsSync(D)) return;
+    const c = readFileSync(C, "utf8").replace(/^\s*#.*$/gm, ""), d = readFileSync(D, "utf8");
+    const bloque = (n) => { const i = c.search(new RegExp(`\\n  ${n}:\\n`)); if (i < 0) return ""; const r = c.slice(i + 1); const j = r.slice(3).search(/\n  [a-z][\w-]*:\n|\n[a-z]/); return j < 0 ? r : r.slice(0, j + 3); };
+    const T = bloque("traductor"), M = bloque("traductor-modelos");
+    if (!T) { falla(G, C, 0, "falta el servicio «traductor»"); return; }
+    for (const [b, n] of [[T, "traductor"], [M, "traductor-modelos"]]) {
+      if (!b) { falla(G, C, 0, `falta el servicio «${n}»`); continue; }
+      if (!/\n    profiles: \["traductor"\]\n/.test(b)) falla(G, C, 0, `«${n}» va en su perfil propio (profiles: ["traductor"])`);
+      if (!/\n    image: libretranslate\/libretranslate:v\d+\.\d+\.\d+\n/.test(b)) falla(G, C, 0, `«${n}»: imagen con versión exacta (nunca latest ni sin etiqueta)`);
+      if (/\n    ports:/.test(b)) falla(G, C, 0, `«${n}» no publica puertos: solo la app le habla`);
+      if (!/\n    mem_limit: \d+[mg]\n/.test(b)) falla(G, C, 0, `«${n}» con memoria acotada (mem_limit)`);
+      if (/\n    build:/.test(b)) falla(G, C, 0, `«${n}» usa la imagen publicada, sin construir`);
+    }
+    const img = (b) => /\n    image: (\S+)\n/.exec(b)?.[1];
+    if (M && img(M) !== img(T)) falla(G, C, 0, "los modelos se bajan con la misma imagen del traductor");
+    if (!/\n    networks: \[interna\]\n/.test(T)) falla(G, C, 0, "el traductor vive solo en la red «interna»");
+    if (!/\n  interna:\n    internal: true\n/.test(c)) falla(G, C, 0, "la red «interna» es internal: true (sin salida a internet)");
+    if (!/\n      LT_LOAD_ONLY: es,en\n/.test(T) || !/\n      LT_UPDATE_MODELS: "false"\n/.test(T)) falla(G, C, 0, "solo los modelos español e inglés, sin actualizarlos solo (LT_LOAD_ONLY: es,en · LT_UPDATE_MODELS: \"false\")");
+    if (!/--load_only_lang_codes es,en/.test(M)) falla(G, C, 0, "traductor-modelos baja solo español e inglés");
+    if (!/\n      - traductor-modelos:\/home\/libretranslate\/\.local\n/.test(T)) falla(G, C, 0, "los modelos viven en un volumen (un reinicio no los vuelve a bajar)");
+    const web = bloque("web");
+    if (!/\n    networks: \[default, interna\]\n/.test(web)) falla(G, C, 0, "la app está en «default» y en «interna» (para hablarle al traductor)");
+    if (/\n      traductor:/.test(web)) falla(G, C, 0, "la app no espera al traductor para arrancar (sin depends_on)");
+    if (!/COMPOSE_TRAD=\(docker compose [^)]*--profile traductor\)/.test(d)) falla(G, D, 0, "deploy.sh enciende el traductor con su perfil (COMPOSE_TRAD … --profile traductor)");
+    if (!/\n  systemd-run --unit tolatino-traductor --collect [^\n]*traductor-modelos && [^\n]*up -d traductor[^\n]*\|\| true\n/.test(d)) falla(G, D, 0, "deploy.sh baja los modelos y enciende el traductor APARTE (systemd-run … || true)");
+    for (const l of d.split("\n")) if (/^docker compose .* up -d --build/.test(l) && /--profile/.test(l)) falla(G, D, 0, "el despliegue de la app no enciende perfiles: cada uno va aparte");
+  },
+
+  /* 5h. El Super Admin ve siempre el original (§4 5h): nada del Super Admin traduce ni lee la caché de traducciones; lo que ve es el texto
+     tal como lo escribió la persona (para moderar, decidir y auditar). Solo puede ver si el traductor responde y su tope. */
+  adminVeOriginal() {
+    const G = "adminVeOriginal";
+    if (!existsSync("apps/web/lib/traduccion.ts")) return;
+    for (const x of codigo) {
+      if (!/^apps\/web\/(app\/admin\/|lib\/admin[^/]*\.ts$)/.test(x)) continue;
+      const t = sinComent(x), m = /useTraducir|verTraduccion|LineaTr|acciones-traducir|Traducir"|traduccion"|ugc_translations|\btraducir\(|traducirTexto/.exec(t);
+      if (m) falla(G, x, 0, `«${m[0]}» en el Super Admin: el equipo ve siempre el original`);
+    }
+    // Y al revés: las pantallas de la Comunidad y de reseñas sí lo ofrecen (lo de los vecinos, en su idioma con «Ver traducción»).
+    for (const [f, re] of [["apps/web/app/(app)/comunidad/Tarjeta.tsx", /translate=\{t\.translate\}/], ["apps/web/app/(app)/comunidad/p/[id]/Hilo.tsx", /translate: t\.translate/], ["apps/web/app/(app)/n/[id]/Resenas.tsx", /translate: tb\.translate/], ["apps/web/app/(app)/n/[id]/Novedades.tsx", /<LineaTr t=\{t\.translate\}/]])
+      if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "esta pantalla de vecinos ofrece «Ver traducción»");
+  },
+
+  /* 5h. Nunca la red dentro de una transacción: detectar el idioma o traducir se llama ANTES de abrir tx() (publicar no retiene la base
+     esperando al traductor), y todo lo que publica texto de una persona guarda su idioma detectado (para «Ver traducción»). */
+  traductorFueraDeTx() {
+    const G = "traductorFueraDeTx";
+    if (!existsSync("apps/web/lib/traductor.ts")) return;
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) || x === "apps/web/lib/traductor.ts") continue;
+      const t = sinComent(x);
+      if (!/detectarIdioma\(|traducirTexto\(/.test(t)) continue;
+      for (const p of t.split(/\n(?=(?:export )?(?:async )?function )/)) {
+        const iT = p.search(/\btx\(/), iD = p.search(/detectarIdioma\(|traducirTexto\(/);
+        if (iD >= 0 && iT >= 0 && iD > iT) falla(G, x, 0, `«${p.slice(0, p.indexOf("(")).replace(/^(export )?(async )?function /, "")}» llama al traductor dentro de una transacción`);
+      }
+    }
+    for (const [f, fns] of [["apps/web/lib/comunidad.ts", ["publicar", "editar"]], ["apps/web/lib/comunidad-hilo.ts", ["comentar"]], ["apps/web/lib/resenas.ts", ["guardarResena", "responderResena"]], ["apps/web/lib/novedades.ts", ["comentarPost"]]]) {
+      if (!existsSync(f)) continue;
+      const t = sinComent(f);
+      for (const fn of fns) if (!/detectarIdioma\(/.test(cuerpoFn(t, fn))) falla(G, f, 0, `«${fn}» guarda texto sin detectar su idioma (detectarIdioma)`);
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

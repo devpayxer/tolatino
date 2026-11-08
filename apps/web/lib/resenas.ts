@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
+import { detectarIdioma, idiomaTexto } from "./traductor";
 import { hora } from "./pedir";
 
 /* Reseñas (prototipo revAdd / revWVals / revSVals; modelo «Review»). Una por persona y negocio; se publica al instante.
@@ -60,7 +61,8 @@ export type Hechos = { promised?: string; done?: string; late?: number; win?: nu
   que?: string; seRento?: "rentada" | "vendida"; noLlegaron?: boolean };
 export type Tarjeta = {
   id: string; name: string; ini: string; mine: boolean; cnt: number; d: number; editada: boolean; src: Src; stars: number;
-  answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number } | null;
+  answers: Respuestas; facts: Hechos; body: string; fotos: string[]; rec: Bi[]; reply: { text: string; d: number; lang?: "es" | "en" } | null;
+  lang?: "es" | "en"; // 5h: el idioma del texto (lo detecta el servidor al publicar) → «Ver traducción»
   help: number; helpOn: boolean; reported: boolean; pro?: string | null; // la cita fue con esa persona (3d)
   rango?: { n: number; es: string; en: string } | null; pts?: number; // 5f: rango (desde Sargento) y los puntos que sumó
 };
@@ -77,7 +79,7 @@ const iniciales = (s: string) => s.split(/\s+/).map((w) => w[0] ?? "").join("").
 
 /* Columnas de una tarjeta. $2 = la persona que mira (o null). */
 const TARJETA_SQL = `
-  r.id::text, r.user_id = $2::uuid as mine, u.first_name, u.last_name, r.src, r.stars, r.answers, r.facts, r.body, r.rec,
+  r.id::text, r.user_id = $2::uuid as mine, u.first_name, u.last_name, r.src, r.stars, r.answers, r.facts, r.body, r.lang, coalesce(r.reply_lang, 'es') as reply_lang, r.rec,
   (now()::date - r.created_at::date) as d, r.edited_at is not null as editada, r.helpful_count as help,
   case when b.pro then r.reply end as reply, case when b.pro and r.reply_at is not null then (now()::date - r.reply_at::date) end as reply_d,
   (select count(*)::int from reviews x where x.user_id = r.user_id and x.status = 'visible') as cnt,
@@ -89,7 +91,7 @@ const TARJETA_SQL = `
   (select jsonb_build_object('n', cp.rank_level, 'es', rk.name->>'es', 'en', rk.name->>'en') from community_profiles cp join ranks rk on rk.level = cp.rank_level where cp.user_id = r.user_id) as rango,
   (select coalesce(sum(e.delta), 0)::int from points_entries e join users pu on pu.id = e.user_id where e.target_kind = 'review' and e.target_id = r.id::text and e.rule_key = 'resena_verificada') as pts`;
 type FilaT = {
-  id: string; mine: boolean; first_name: string | null; last_name: string | null; src: Src; stars: number; answers: Respuestas; facts: Hechos; body: string;
+  id: string; mine: boolean; first_name: string | null; last_name: string | null; src: Src; stars: number; answers: Respuestas; facts: Hechos; body: string; lang: "es" | "en"; reply_lang: "es" | "en";
   rec: string[]; d: number; editada: boolean; help: number; reply: string | null; reply_d: number | null; cnt: number; fotos: string[]; help_on: boolean; reported: boolean; rec_names: Bi[]; con_pro: string | null;
   rango: { n: number; es: string; en: string } | null; pts: number;
 };
@@ -97,7 +99,7 @@ const tarjeta = (x: FilaT): Tarjeta => {
   const name = nombreCorto(x.first_name, x.last_name);
   return {
     id: x.id, name, ini: iniciales(name), mine: x.mine, cnt: x.cnt, d: x.d, editada: x.editada, src: x.src, stars: x.stars, answers: x.answers ?? {}, facts: x.facts ?? {},
-    body: x.body, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0 } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
+    body: x.body, lang: x.lang, fotos: x.fotos ?? [], rec: x.rec_names ?? [], reply: x.reply ? { text: x.reply, d: x.reply_d ?? 0, lang: x.reply_lang } : null, help: x.help, helpOn: x.help_on, reported: x.reported, pro: x.con_pro ?? null,
     // 5f · El rango se ve desde Sargento (4); «+15 puntos» si la reseña verificada sumó (y sigue sumando) al rango de quien la escribió.
     rango: x.rango && x.rango.n >= 4 ? x.rango : null, pts: x.pts > 0 ? x.pts : 0,
   };
@@ -531,7 +533,8 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
   const fotos = Array.isArray(p.fotos) ? [...new Set(p.fotos.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)))] : [];
   if (fotos.length > MAX_FOTOS) return no(`Hasta ${MAX_FOTOS} fotos.`, `Up to ${MAX_FOTOS} photos.`);
   const rec0 = Array.isArray(p.rec) ? [...new Set(p.rec.filter((x): x is string => typeof x === "string" && /^\d{1,18}$/.test(x)))].slice(0, 12) : [];
-  const lang = p.lang === "en" ? "en" : "es";
+  // 5h · El idioma del texto lo detecta el traductor propio (antes de la transacción); si no se sabe, el de la app de quien escribe.
+  const lang = idiomaTexto(await detectarIdioma(body), p.lang);
   let puntos = 0;
   const res = await tx(async (c) => {
     const b = (await c.query<{ id: string; city_id: string; cat: string }>(`select id, city_id, category_id as cat from businesses where id = $1 and status = 'active' for share`, [p.negocio])).rows[0];
@@ -708,8 +711,10 @@ export async function responderResena(negocio: string, id: string, texto: string
   if (!/^\d{1,18}$/.test(id)) return no("Esa reseña no existe.", "That review does not exist.");
   const pro = (await db().query<{ pro: boolean }>(`select coalesce(plan, 'free') = 'pro' as pro from business_stats_cache where business_id = $1`, [negocio])).rows[0]?.pro;
   if (!pro) return no("Responder reseñas es de Pro.", "Replying to reviews is a Pro feature.");
+  const det = await detectarIdioma(t); // 5h: si no se sabe, el idioma de la app de quien responde
   const r = await db().query<{ id: string }>(
-    `update reviews set reply = $3, reply_at = now(), reply_by = $4 where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId]);
+    `update reviews set reply = $3, reply_at = now(), reply_by = $4, reply_lang = coalesce($5, (select case when u.lang = 'en' then 'en' else 'es' end from users u where u.id = $4), 'es')
+      where business_id = $1 and id = $2::bigint and status = 'visible' and reply is null returning id::text`, [negocio, id, t, actorId, det]);
   return r.rows[0] ? { ok: true, id } : no("Esta reseña ya tiene respuesta o ya no está.", "This review already has a reply or is gone.");
 }
 

@@ -33,7 +33,7 @@ export function hace(iso: string, es: boolean, ahora = Date.now()) {
 
 export type Autor = { id: string | null; nombre: string; ini: string; foto: string | null; rango: number; oficial: boolean };
 export type Pub = {
-  id: string; kind: keyof typeof TIPO; topic: string | null; body: string; at: string; editada: boolean; mia: boolean; editarHasta: string | null;
+  id: string; kind: keyof typeof TIPO; topic: string | null; body: string; lang: "es" | "en"; at: string; editada: boolean; mia: boolean; editarHasta: string | null;
   fijada: boolean; salud: boolean; resuelta: boolean; cerrados: boolean; estado: "visible" | "hidden" | "deleted"; motivo: string | null;
   autor: Autor; lugar: Bi; invitado: boolean; mi: number | null;
   negocio: { id: string; nombre: string; meta: Bi; foto: string | null; verificado: boolean; para: string[] } | null;

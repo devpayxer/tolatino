@@ -271,3 +271,24 @@ export async function limiteCambiar(k: string, valor: string, motivo: string): P
   listo();
   return { ok: true, mensaje: "Límite guardado. Quedó en la auditoría." };
 }
+
+/* 5h · «Ver traducción»: cuántas por persona en una hora (de fábrica 60). El traductor es propio; el tope lo protege. */
+export async function traduccionTope(valor: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!edita(s)) return no("Tu rol no edita los límites.");
+  const v = Number(valor);
+  if (!Number.isInteger(v) || v < 1 || v > 1000) return no("Un número entero entre 1 y 1,000.");
+  const m = motivoOk(motivo);
+  if (!m) return no("Escribe el motivo.");
+  const r = await tx(async (c) => {
+    const x = (await c.query<{ v: number }>(`select (value #>> '{}')::int as v from platform_config where key = 'com_traduccion_hora' for update`)).rows[0];
+    if (x?.v === v) return "Ya tiene ese valor.";
+    await c.query(`insert into platform_config (key, value, note, updated_by) values ('com_traduccion_hora', to_jsonb($1::int), $2, $3) on conflict (key) do update set value = excluded.value, updated_at = now(), updated_by = excluded.updated_by`,
+      [v, "Comunidad y reseñas: «Ver traducción» por persona en una hora", s.id]);
+    await auditar(c, { actor: s.id, action: "moderacion.limite", targetKind: "platform_config", targetId: "com_traduccion_hora", before: { "traducciones por hora": x?.v ?? 60 }, after: { "traducciones por hora": v }, reason: m });
+    return null;
+  });
+  if (r) return no(r);
+  listo();
+  return { ok: true, mensaje: "Límite guardado. Quedó en la auditoría." };
+}

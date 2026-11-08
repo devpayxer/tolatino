@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
 import type { ResumenResenas, Tarjeta } from "@/lib/resenas";
 import { masResenas, reportarRes, utilResena } from "./acciones-resena";
+import { LineaTr, useTraducir, type Tr } from "../../Traducir";
 
 type N = "Icon" | "Button" | "Chip" | "ReviewCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -131,8 +132,11 @@ function hechos(c: Tarjeta, es: boolean) {
 
 /* Tarjeta → props de ReviewCard (e1 · rev). summary = forma corta del Resumen; preview = sin pie (estado, vista previa). */
 export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summary?: boolean; preview?: boolean; helpOn?: boolean; help?: number; reported?: boolean;
-  onHelp?: () => void; onRep?: () => void; onEdit?: () => void; onPhoto?: (i: number) => void; padding?: number; bodySize?: number }) {
+  onHelp?: () => void; onRep?: () => void; onEdit?: () => void; onPhoto?: (i: number) => void; padding?: number; bodySize?: number; tr?: Tr }) {
   const E2 = (a: string, b: string) => (o.es ? a : b), S = !!o.summary, foot = !o.preview && !S;
+  // 5h · «Ver traducción» bajo la reseña y bajo la respuesta del negocio si están en el otro idioma (nunca en la propia ni en la vista previa).
+  const tb = o.tr && !o.preview ? o.tr("review", c.id, c.lang, c.body, c.mine) : { body: c.body, translate: undefined };
+  const tp = c.reply && o.tr && !o.preview ? o.tr("review_reply", c.id, c.reply.lang, c.reply.text) : null;
   const hOn = o.helpOn ?? c.helpOn, hN = o.help ?? c.help, rep = o.reported ?? c.reported;
   // Cita con una persona (3d): «VERIFICADA · CON KELVIN».
   const src: [string, string, string] = c.src === "cita" && c.pro ? [`VERIFICADA · CON ${c.pro.toUpperCase()}`, `VERIFIED · WITH ${c.pro.toUpperCase()}`, "signal"] : SRC[c.src];
@@ -143,10 +147,10 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
     who: [c.rango ? (o.es ? c.rango.es : c.rango.en).toUpperCase() : null, `${c.cnt} ${c.cnt === 1 ? E2("RESEÑA", "REVIEW") : E2("RESEÑAS", "REVIEWS")}`,
       c.pts ? E2(`+${c.pts} PUNTOS`, `+${c.pts} POINTS`) : null].filter(Boolean).join(" · "),
     starsOn: "★★★★★".slice(0, c.stars), starsOff: "★★★★★".slice(c.stars), when: revWhen(c.d, o.es) + (c.editada ? E2(" · EDITADA", " · EDITED") : ""),
-    source: { label: o.es ? src[0] : src[1], tone: src[2] }, facts: hechos(c, o.es), body: c.body,
+    source: { label: o.es ? src[0] : src[1], tone: src[2] }, facts: hechos(c, o.es), body: tb.body, translate: tb.translate,
     photos: c.fotos.map((u, i) => ({ image: `url(${u})`, onClick: o.onPhoto ? () => o.onPhoto!(i) : undefined })),
     recommend: !S && c.rec.length ? { label: E2("Recomienda:", "Recommends:"), text: c.rec.map((x) => (o.es ? x.es : x.en || x.es)).join(" · ") } : null,
-    reply: c.reply ? { kicker: `${E2("RESPUESTA DE ", "REPLY FROM ")}${o.negocio} · ${revWhen(c.reply.d, o.es)}`.toUpperCase(), text: c.reply.text } : null,
+    reply: c.reply ? { kicker: `${E2("RESPUESTA DE ", "REPLY FROM ")}${o.negocio} · ${revWhen(c.reply.d, o.es)}`.toUpperCase(), text: tp?.translate ? <>{tp.body}<LineaTr t={tp.translate} /></> : c.reply.text } : null,
     helpful: foot ? (!c.mine ? { label: E2("Útil", "Helpful") + (hN ? ` · ${hN}` : ""), bg: hOn ? "var(--tl-action-tint)" : "var(--tl-white)", border: hOn ? "rgba(75,55,245,.35)" : "rgba(11,14,18,.14)", color: hOn ? "var(--tl-action)" : "var(--tl-ink)", onClick: o.onHelp }
       : hN > 0 ? { label: E2("Útil", "Helpful") + ` · ${hN}` } : null) : null,
     edit: foot && c.mine ? { label: E2("Ver y editar", "View and edit"), onClick: o.onEdit } : null,
@@ -156,7 +160,7 @@ export function propsTarjeta(c: Tarjeta, o: { es: boolean; negocio: string; summ
 
 /* Estado compartido de la ficha: Útil y Reportar (piden cuenta), la hoja de reportar y el visor de fotos. */
 export function useResenas(r: ResumenResenas | null, negocioId: string, sesion: boolean, es: boolean) {
-  const router = useRouter();
+  const router = useRouter(), tr = useTraducir(es);
   const [util, setUtil] = useState<Record<string, { on: boolean; n: number }>>({});
   const [reportadas, setReportadas] = useState<Record<string, true>>({});
   const [rep, setRep] = useState<{ id: string; name: string; when: string; why: string; note: string; sent: boolean; err: string | null; busy: boolean } | null>(null);
@@ -182,7 +186,7 @@ export function useResenas(r: ResumenResenas | null, negocioId: string, sesion: 
   const escribir = () => router.push(r.tengo ? `/n/${negocioId}/resena/tuya` : `/n/${negocioId}/resena`);
   const card = (c: Tarjeta, extra: { summary?: boolean; padding?: number; bodySize?: number } = {}) => propsTarjeta(c, {
     es, negocio: r.negocio.name, ...extra, helpOn: util[c.id]?.on, help: util[c.id]?.n, reported: reportadas[c.id] ?? c.reported,
-    onHelp: () => help(c), onRep: () => abrirRep(c), onEdit: () => router.push(`/n/${negocioId}/resena/tuya`), onPhoto: (i) => setPv({ c, i }),
+    onHelp: () => help(c), onRep: () => abrirRep(c), onEdit: () => router.push(`/n/${negocioId}/resena/tuya`), onPhoto: (i) => setPv({ c, i }), tr,
   });
   return { r, es, negocioId, card, escribir, rep, setRep, enviarRep, pv, setPv,
     porEstrellas: (n: number) => router.push(`/n/${negocioId}/resena?pedido=${encodeURIComponent(r.prompt?.numero ?? "")}&e=${n}`) };

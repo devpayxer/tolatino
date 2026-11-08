@@ -14,6 +14,7 @@ import { abrirReporte } from "../../Reportar";
 import { LINE, MONO, Marco, useAncho, useComUi, type ComUi, type YoCom } from "../../Marco";
 import { useAccionesPub } from "../../Muro";
 import { Tarjeta } from "../../Tarjeta";
+import { useTraducir } from "../../../Traducir";
 import { useVecinoAcciones } from "../../vecinoAcciones";
 
 type N = "Icon" | "Button" | "IconButton" | "Tag";
@@ -26,7 +27,7 @@ const primero = (n: string) => n.split(/\s+/)[0] ?? n;
 
 export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCom; ciudad: string; v: V | null; bloqueado: { id: string; nombre: string } | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
-  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
+  const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024, tr = useTraducir(es);
   const vec = useVecinoAcciones(es, ui);
   const [sigo, setSigo] = useState(v?.yoSigo ?? false), [pubs, setPubs] = useState<Pub[]>(v?.pubs ?? []), [mas, setMas] = useState(v?.mas ?? null), [busy, setBusy] = useState(false);
   useEffect(() => { setSigo(v?.yoSigo ?? false); setPubs(v?.pubs ?? []); setMas(v?.mas ?? null); }, [v]);
@@ -139,7 +140,7 @@ export function Vecino({ es, yo, ciudad, v, bloqueado }: { es: boolean; yo: YoCo
         <div data-screen-label="APP-COM-VECINO · publicaciones" style={{ background: "var(--tl-white)", overflow: "hidden" }} className="lg:rounded-[20px] lg:border lg:border-ink/[.08]">
           <div style={{ padding: "14px 20px", borderBottom: LINE, font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" }}>{v.yo ? E2("LO QUE PUBLICASTE", "WHAT YOU POSTED") : E2("LO QUE PUBLICÓ", "WHAT THEY POSTED")}</div>
           {pubs.map((p) => (
-            <Tarjeta key={p.id} p={p} es={es} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onVote={(x) => void acc.votar(p, x)} onPoll={(i) => void acc.encuesta(p, i)}
+            <Tarjeta key={p.id} p={p} es={es} tr={tr} onOpen={() => router.push(`/comunidad/p/${p.id}`)} onMenu={() => acc.menu(p)} onVote={(x) => void acc.votar(p, x)} onPoll={(i) => void acc.encuesta(p, i)}
               onSave={() => void acc.guardar(p)} onShare={() => void acc.compartir(p)} onBiz={(id) => router.push(`/n/${id}`)} />
           ))}
           {!pubs.length && (
