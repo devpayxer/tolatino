@@ -37,7 +37,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}))$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -52,12 +52,13 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "eventos") ruta = { sec: "evt", sub: null, det: null };
   else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
   else if (r.length === 2 && r[0] === "cobros" && r[1] === "plan") ruta = { sec: "pay", sub: "plan", det: null };
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta" || r[1] === "productos" || r[1] === "inscripciones" || r[1] === "propiedades" || r[1] === "inventario" || r[1] === "visitas")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "mas" ? undefined : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "evt" ? "evt" : ruta.sec === "mas" ? undefined : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -241,5 +242,20 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     const V = await import("@/lib/visitas-inm");
     return { dl: d.cat === "NEG-DEALER", panel: ruta.sec === "hoy" || ruta.sub === "visitas" ? await V.visPanel(d.id) : undefined, det: ruta.det?.startsWith("vis:") ? await V.visDetalle(d.id, ruta.det.slice(4), acc.yo.id) : undefined };
   })() : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} />;
+  // Eventos (6a · DASH-EVENTOS): la lista, los formatos de su categoría, el organizador (verificado / bloqueado) y la ficha o el editor.
+  // Pide la parte «evt» del equipo (el dueño siempre).
+  const evtOk = acc.partes.includes("all") || acc.partes.includes("evt");
+  if (ruta.det?.startsWith("evt:") && !evtOk) ruta.det = null;
+  const evt = evtOk && (ruta.sec === "evt" || ruta.det?.startsWith("evt:")) ? await (async () => {
+    const E = await import("@/lib/evt"), { valores } = await import("@/lib/config");
+    const eid = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "") : "";
+    const [lista, formatos, generos, org, cfg, fee, b] = await Promise.all([
+      E.eventosDelNegocio(d.id), E.formatosDe(d.cat), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante"),
+      db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
+      db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
+    ]);
+    return { lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
+      fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null };
+  })() : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;
 }

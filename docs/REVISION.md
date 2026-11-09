@@ -1918,3 +1918,42 @@ AB); si prefieres otra cosa, se cambia. **Decidí X; si prefieres Y, se cambia:*
 **Choques entre fuentes (se siguió PLAN y las decisiones):** puerta sin conexión ahora (PLAN fila 6 y decisión T #23), aunque
 `apps-delivery-checkin.md` la dejaba para v1.1; la puerta no vende (D1), aunque ese mismo documento describía «escanear + vender».
 Las pantallas de la app Puerta no existen en el prototipo: se componen con piezas del sistema de diseño y se anotan como hueco.
+
+### 6a · Eventos: crear y editar en el Panel, Publica tu evento y revisión (9 nov)
+Qué mirar en el sandbox, paso a paso (teléfono y escritorio):
+1. **Panel de La Terraza** (dueño 570-555-0366) › Más › **Eventos**: Próximos · Borradores; las tarjetas con el cartel y la fecha, el
+   estado (PUBLICADO · EN REVISIÓN) y abajo **Lo que puedes publicar** con los 4 tipos de Noche.
+2. **Crear › Fiesta o show**: sube el cartel, ponle nombre, elige el día en el calendario (tus otros eventos tienen un punto ámbar; lo
+   cerrado según tu horario sale gris), las horas (la 1 AM dice «día siguiente»), puertas, entrada con boletos, una mesa, un extra.
+   Prueba un extra «Botella»: no deja guardar. Mira **Así lo ve el cliente** y **Para guardar falta**. **Enviar a revisión**.
+3. **Super Admin** (570-555-0199) › Colas › **Eventos a revisar**: el caso con todo para decidir. **Pedir cambios** con un motivo → en el
+   panel sale «To'Latino pide un cambio: …». Corrígelo y envíalo otra vez → **Aprobar** desde Super Admin › Eventos y boletos › la ficha.
+4. Con el evento publicado, en el panel cámbiale la **hora**: dice **CAMBIO EN REVISIÓN · sigue en vivo la versión anterior**; en el admin
+   la ficha muestra **LO QUE CAMBIA**. Apruébalo: sube a versión 2.
+5. **Ocultar del módulo** con motivo → el panel dice **OCULTO POR TO'LATINO** con el motivo y «Apelar». Apela desde el aviso; la apelación
+   la decide otra persona del equipo (570-555-0188), no quien lo ocultó.
+6. **Publica tu evento** (`/eventos/publicar`, dueño de Sabor 570-555-0133): el formulario corto → «Tu evento está en revisión» con sus 3 pasos.
+7. Super Admin › Eventos y boletos › **Organizadores**: **Bloquear publicación** a un negocio (el panel lo dice y no deja crear ni enviar;
+   le llega el aviso con la apelación) y **Permitir publicar**. La Parroquia (570-555-0422) es **organizador verificado**: su evento se
+   publica al instante.
+8. Negocios 360° › Contenido › **Eventos** y Configuración › **Eventos** (el plazo de 24 h y los demás límites con su auditoría).
+
+**Decidí X; si prefieres Y, se cambia (6a):**
+- **Qué es «un cambio que importa»:** día, hora, puertas, lugar, edad y entrada (con boletos, mesas y extras). Lo demás (texto, fotos,
+  programa, antes de ir) se aplica al guardar, también en un evento publicado de un organizador sin verificar.
+- **Panel › Entrada con 3 opciones:** «Entrada libre · sin lista», el RSVP del formato y los boletos (el diseño del panel trae 2; Publica tu
+  evento trae las 3 y se igualaron).
+- **Publica tu evento:** el cartel se **sube** (el prototipo elegía entre 4 fotos de muestra); «Abren puertas» como en el panel (al empezar ·
+  30 min · 1 h antes); «otro lugar» pide nombre y dirección por separado; el texto del cargo dice lo decidido en §6 #1 (el precio que pones
+  es el que paga el vecino; la comisión sale de lo tuyo) y la venta «abre pronto»; nada de «Te pagamos al día siguiente».
+- **Eventos sale en el panel de todo negocio** con la parte «Eventos» (no solo los que tienen el módulo encendido): todas las categorías
+  publican algún formato. El candado Pro sale en Free.
+- **Ocultar del módulo y bloquear** piden evt:retirar (Admin); **decidir y verificar**, evt:aprobar (Admin y Ciudad), como la matriz del
+  prototipo. Verificador, moderador, soporte, finanzas y lectura **ven** Eventos y boletos (se encendió su «ver»).
+- **No aprobar un cambio** de un evento publicado no se apela (sigue en vivo la versión anterior; el negocio lo corrige en su panel); no
+  aprobar un evento nuevo sí.
+- **«Hacer cartel»** del editor = usar esa foto como cartel (moverla a la primera), como en el prototipo; hacer un cartel con diseño no se
+  construye (§6 #19).
+Huecos compuestos con piezas del sistema (capturas locales e6a-*, teléfono y escritorio): la cola «Eventos a revisar» y la ficha del evento en el
+Super Admin (kv, fotos, filas, «Lo que cambia», línea de tiempo), Organizadores (lista con acciones) y la ficha del evento en el panel
+(bloque `evhd` portado del Panel v2).

@@ -701,3 +701,24 @@ en el momento. Se marca solo cuando está hecho de verdad.
       CI. (5i, 8 nov)
 - [ ] **5i · Textos del Super Admin en inglés:** el Super Admin está en español (como el resto del admin); las etiquetas de Configuración
       ya traen ES/EN en `config_keys`. (5i, 8 nov)
+
+## Fase 6 · 6a (base de eventos, panel, Publica tu evento, revisión)
+- [ ] **6a → 6c · Boletos, mesas y extras guardados como configuración:** hoy viven en `events.tickets_cfg / tables_cfg / addons_cfg`
+      (validados por el servidor y la base: sin alcohol, botellas ni hookah). 6c los pasa a `ticket_types`, `event_tables`, `event_addons`
+      con existencias por fecha, y **antes de vender exige Cobros con tarjeta encendido** (`stripe_accounts.charges_enabled`) del
+      organizador. Hasta entonces el editor y Publica tu evento dicen «La venta en la app abre pronto». (6a, 9 nov)
+- [ ] **6a → 6b · «Otro lugar» sin ubicar en el mapa:** un evento en otro lugar guarda nombre y dirección pero `geom` queda vacío (no hay
+      geocodificador propio todavía); su ciudad es la del negocio. 6b lo ubica con el Nominatim propio para el radio y el mapa. (6a, 9 nov)
+- [ ] **6a → 6f · Series y varios días:** el editor publica un solo día (con «Repetir otro día»); «Se repite» y «Varios días seguidos» del
+      calendario llegan en 6f. La semilla mete el sancocho de cada domingo, la vigilia de cada mes y el festival de 3 días como un solo día. (6a, 9 nov)
+- [ ] **6a → 6c/6g · Super Admin › Eventos y boletos: «Buscar boleto» y «Modo puerta»:** las dos pestañas llegan con la venta (6c) y la
+      puerta (6g); hoy salen Eventos y Organizadores. KPI BOLETOS EMITIDOS · BRUTO BOLETOS, con 6c. (6a, 9 nov)
+- [ ] **6a → 6b · Encender / apagar el módulo Eventos en «Lo que vendes»:** el panel muestra Eventos a todo negocio con la parte «evt»
+      (todas las categorías publican algún formato). El interruptor del módulo (`modules_on` «eventos») y la pausa del admin por módulo
+      se conectan cuando haya página pública (6b). (6a, 9 nov)
+- [ ] **6a · Fotos locales:** en local `/medios/…` no se sirve (lo sirve Caddy en el sandbox): carteles y fotos salen grises en las capturas
+      locales. Verlos en el sandbox. (6a, 9 nov)
+- [ ] **6a · Eventos en los 9 dispositivos:** `evt6a` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6a, 9 nov)
+- [ ] **6a · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (los avisos y el panel sí ES/EN). (6a, 9 nov)
+- [ ] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** hoy vive en la base (0106) y se lee de ahí; el editor
+      del catálogo llega en 6j. (6a, 9 nov)

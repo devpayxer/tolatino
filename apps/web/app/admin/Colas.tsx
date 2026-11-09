@@ -10,6 +10,7 @@ import type { Caso, CasoLista } from "@/lib/admin-colas";
 import { AYUDA_DE, COLAS, MOTIVO_RESENA, type Cola } from "@/lib/colas";
 import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
+import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -65,8 +66,8 @@ export function useToast() {
 }
 
 
-export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0 }: {
-  casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number;
+export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {} }: {
+  casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
@@ -96,7 +97,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const detalle = caso ? cuerpo() : null;
   function cuerpo(): ReactNode {
     const k = caso!, Q = COLAS[k.queue], n = k.negocio, out: (Bloque | null)[] = [];
-    const titulo = tituloComunidad(k) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
+    const titulo = tituloComunidad(k) ?? tituloEventos(k) ?? (k.queue === "cambio" && "cambio" in k && k.cambio ? `${k.cambio.type === "deleteUser" ? "Borrar cuenta" : "Cambio sensible"} · ${k.cambio.nombre ?? k.cambio.phone}` : k.queue === "cambio" ? `Reclamo · ${n?.name ?? ""}` : k.queue === "lic" ? `Licencia · ${n?.name ?? ""}` : k.queue === "sello" ? `Sello · ${n?.name ?? ""}` : k.queue === "nuevo" ? n?.name ?? "" : k.queue === "medios" ? `Foto marcada · ${n?.name ?? ""}` : k.queue === "cuidado" ? `Cuidado de niños · ${n?.name ?? ""}` : k.queue === "salir" ? `No le dejan cancelar · ${n?.name ?? ""}` : k.queue === "grupo" ? `Grupos que no abrieron · ${n?.name ?? ""}` : k.queue === "plantones" ? `Plantones · ${n?.name ?? ""}` : k.queue === "vivienda" ? `${k.subject_kind === "listing" ? "Vivienda para mayores" : "Vivienda justa"} · ${n?.name ?? ""}` : k.queue === "estafa" ? `Posible estafa · ${n?.name ?? ""}` : k.queue === "sop" ? `${AYUDA_DE["ayuda" in k && k.ayuda ? k.ayuda.k : "order"] ?? "Ayuda con un pedido"} · ${n?.name ?? ""}` : k.queue === "mesa" ? `Mesas no respetadas · ${n?.name ?? ""}` : k.queue === "noid" ? `Sin identificación · ${n?.name ?? ""}` : k.queue === "rep" ? `Reseña reportada · ${n?.name ?? ""}` : k.queue === "rec" && "rec" in k ? k.rec?.business_name ?? "" : "");
     out.push({ type: "head", eye: `${Q.es.toUpperCase()} · ${k.esp.r >= 1 ? `${k.esp.t} · VENCIDO` : `${k.esp.t} esperando`}`, t: titulo, h1: 22, onBack: lado ? undefined : () => ir({ caso: null }) });
     if (k.status !== "open") return <><PanelBloques bloques={[out[0]!, { type: "empty", icon: "check", t: "Ya se decidió", s: "Este caso salió de la cola." }]} /></>;
     const notas: ReactNode[] = [];
@@ -429,6 +430,9 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     // 5d · Casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel y fotos de la Comunidad): ./ColasComunidad.tsx.
     const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`), apelarDias });
     if (com) { cuerpoB.push(...com.bloques); acts = com.acts; extra = null; }
+    // 6a · Eventos a revisar (k.queue === "evt"): ./ColasEventos.tsx.
+    const evt = cuerpoEventos(k, { setConf, abrir: (h) => (h.startsWith("/admin/") ? router.push(h) : window.open(h, "_blank", "noopener")), negocio: (id) => router.push(`/admin/negocios/${id}`) });
+    if (evt) { cuerpoB.push(...evt.bloques); acts = evt.acts; extra = null; }
     const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio);
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;
     return (
@@ -448,7 +452,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const columnaLista = (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
       <PanelBloques bloques={lista} h1={desk ? 26 : 22} />
-      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${regla.sla} h${regla.regla ? ` · ${regla.regla[0]}` : ""}`}</A.AdminNote> : null}
+      {regla ? <A.AdminNote tone="ink" icon={regla.icon}>{`Plazo de esta cola: ${(cola && slas[cola]) ?? regla.sla} h${regla.regla ? ` · ${regla.regla[0]}` : ""}`}</A.AdminNote> : null}
       {casos.length ? <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{tarjetas}</div>
         : <PanelBloques bloques={[{ type: "empty", icon: "check", t: "Nada por aquí", s: "Esta cola está al día con los filtros que elegiste." }]} />}
     </div>

@@ -19,7 +19,9 @@ export type ClaveConfig =
   | "sp_seguro_guardar_h" | "sp_total_escrito_dias" | "sp_notas_purga_dias" | "sp_fotos_ayuda_dias" | "ayuda_negocio_h"
   | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min"
   | "insc_responder_h" | "insc_oferta_h" | "insc_baja_h" | "ninos_purga_dias" | "insc_grupos_n" | "insc_grupos_dias"
-  | "fe_responder_h" | "vis_responder_h" | "vis_paso_h" | "vis_purga_dias" | "lic_aviso_dias" | "dealer_doc_fee_cap_cents";
+  | "fe_responder_h" | "vis_responder_h" | "vis_paso_h" | "vis_purga_dias" | "lic_aviso_dias" | "dealer_doc_fee_cap_cents"
+  // 6a · Eventos (0106)
+  | "evt_revision_h" | "evt_fechas_max" | "evt_dias_adelante" | "evt_fotos_max" | "evt_dias_seguidos_max";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -48,7 +50,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos";
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
   editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;

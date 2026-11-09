@@ -15,5 +15,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const veDinero = s.puede("tx", "ver");
   const tab = TABS.has(sp.tab ?? "") && (sp.tab !== "din" || veDinero) ? sp.tab! : "resumen";
   const din = !veDinero ? undefined : tab === "din" ? await datosDinero(s, n.id) : null;
-  return <N360 n={n} tab={tab} din={din} />;
+  // 6a · Contenido › Eventos (quien ve Eventos y boletos).
+  const evts = tab === "cont" && s.puede("evt", "ver") ? { ...(await (await import("@/lib/evt-revision")).eventosDeNegocioAdmin(n.id)), puede: { aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") } } : null;
+  return <N360 n={n} tab={tab} din={din} evts={evts} />;
 }

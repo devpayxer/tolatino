@@ -1,7 +1,8 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
    cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
-export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones" | "estafa" | "vivienda" | "repUsr" | "apel";
-export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; roles: string[]; regla?: [string, string] }> = {
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones" | "estafa" | "vivienda" | "repUsr" | "apel" | "evt";
+/* slaCfg: el plazo sale de Configuración (lib/config.ts); `sla` es solo el de fábrica para mostrar mientras llega. */
+export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; slaCfg?: "evt_revision_h"; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
   lic: { es: "Licencias", en: "Licenses", icon: "law", sla: 72, roles: ["admin", "verificador", "lectura"], regla: ["Lo que decidas se ve en la ficha Licencia.", "Your decision shows on the License page."] },
@@ -30,17 +31,21 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   // 5d · Comunidad: reportes de una persona (reportes, reseñas en ráfaga, red de cuentas) y apelaciones (segunda revisión).
   repUsr: { es: "Reportes de usuario", en: "User reports", icon: "users", sla: 24, roles: ["admin", "moderador", "lectura"], regla: ["Reportes de vecinos sobre una persona y lo que marcaron las reglas (reseñas en ráfaga, cuentas del mismo dispositivo). Sancionar avisa con el motivo y abre la apelación; nada se borra.", "Neighbors' reports about a person and what the rules flagged (review bursts, accounts on the same device). Sanctioning notifies with the reason and opens the appeal; nothing is deleted."] },
   apel: { es: "Apelaciones", en: "Appeals", icon: "scale", sla: 72, roles: ["admin", "moderador", "lectura"], regla: ["Segunda revisión: la decide otra persona, nunca quien ocultó o sancionó (la base lo impide). Levantar devuelve el contenido o quita la sanción; mantener es final. La persona recibe el motivo.", "Second review: decided by another person, never the one who hid or sanctioned (the database enforces it). Lifting restores the content or removes the sanction; upholding is final. The person gets the reason."] },
+  // 6a · Eventos: lo que piden publicar los negocios (evento nuevo o un cambio que importa de un organizador sin verificar). Nada sale antes.
+  evt: { es: "Eventos a revisar", en: "Events to review", icon: "ticket", sla: 24, slaCfg: "evt_revision_h", roles: ["admin", "ciudad", "lectura"], regla: ["Nada sale en Eventos sin tu decisión. Pedir cambios o no aprobar avisa al negocio con el motivo; no aprobar se puede apelar. Un cambio en revisión deja en vivo la versión anterior.", "Nothing shows in Events without your decision. Asking for changes or not approving tells the business the reason; not approving can be appealed. A change under review keeps the previous version live."] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
 /* Título de una ayuda según la operación (Colas y su caso). */
 export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", visit: "Ayuda con una visita", order: "Ayuda con un pedido" };
-export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "salir", "grupo", "plantones", "vivienda", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "rep", "repUsr", "chat", "apel", "rec"];
+export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "salir", "grupo", "plantones", "vivienda", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "evt", "rep", "repUsr", "chat", "apel", "rec"];
 /* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg); «Me cobraron por
    ver», «Pidieron más para mudarme» y, en Iglesias, «Me pidieron dinero por la ayuda» van a «Posible estafa» (4if). */
 export const COLA_AYUDA_SQL = `(select case when h.reason in ('ver', 'mudar') or (h.reason = 'cobro' and b.category_id = 'NEG-FE') then 'estafa' when h.reason = 'cuidado' then 'cuidado' when h.reason = 'salir' then 'salir' else 'sop' end
   from help_requests h join businesses b on b.id = h.business_id where h.id::text = $1)`;
 /* Las colas que muestran una ayuda (help_request). */
 export const COLAS_AYUDA: Cola[] = ["sop", "cuidado", "salir", "estafa"];
+/* El plazo de cada cola en una consulta: el de Configuración cuando lo tiene (el servidor pasa su cfgSql). */
+export const slaCase = (cfg: (k: "evt_revision_h") => string) => `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.slaCfg ? cfg(v.slaCfg) : v.sla}`).join(" ")} else 24 end`;
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

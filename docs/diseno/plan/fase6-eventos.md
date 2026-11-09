@@ -721,8 +721,13 @@ solo teléfono) y su línea en `docs/REVISION.md`.
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 6 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
 - [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0038 solo en pruebas (`semilla`).
-- [ ] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
-      público sin aprobar (`revisionAntesDePublicar` al revés).
+      _6a (9 nov): 0106 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y el archivo vuelto a correr a mano sin errores; semilla 0035
+      aplicada dos veces (13 eventos, no se repiten). CI y 0107–0115 pendientes._
+- [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
+      público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
+      cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
+      Publica tu evento → no aprobar; bloquear / permitir; verificado publica al instante; la base rechaza en vivo sin aprobar, bloqueado y
+      botella); `alreves6a` 26/26._
 - [ ] Módulo Eventos (buscar, Esta noche, ficha clara/oscura), ficha › Eventos, Inicio, Buscar › Eventos, Ciudad, Noche `evento`, Novedad → Hoy; RSVP con
       cupo exacto con personas a la vez.
 - [ ] Boletos, mesas, extras y códigos: apartado de 8 min del servidor, compra en nuestra hoja contra el simulador, QR firmado real, Mis boletos; sin

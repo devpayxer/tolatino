@@ -57,7 +57,15 @@ export type Bloque =
      etiqueta, líneas con ícono y, abierta, el detalle y las acciones. */
   | { type: "evbuy"; items: { key?: string; ini: string; pend?: boolean; n: string; m?: string; total?: string; tag?: string; tone?: string; dim?: boolean; open: boolean; onClick: Fn;
       lines: { icon: string; l: string; tone?: "ink" | "action" | "pro" }[]; det: { l: string; v: string }[]; totL?: string; totV?: string; acts: Accion[] }[] }
-  | { type: "rvsum"; icon: string; t: string; s?: string; tag?: string; tone?: string; progT: string; progR: string; pct: string; barC: string; stats: { k: string; v: string; s?: string; fg?: string }[]; tools: { l: string; icon: string; onClick?: Fn }[] };
+  | { type: "rvsum"; icon: string; t: string; s?: string; tag?: string; tone?: string; progT: string; progR: string; pct: string; barC: string; stats: { k: string; v: string; s?: string; fg?: string }[]; tools: { l: string; icon: string; onClick?: Fn }[] }
+  /* Plantilla del Panel v2 (isEvrow, DASH-EVENTOS): tarjetas de eventos con cartel 78×104 y la fecha en caja, tipo + etiqueta, título,
+     cuándo, barra de lo vendido o apuntado y la cifra a la derecha. */
+  | { type: "evrow"; cols?: string; items: { key?: string; img?: string; bm: string; bd: string; m: string; tag?: string; tone?: string; t: string; s: string; hasBar?: boolean; pct?: string; barC?: string; l: string; r: string; op?: number; onClick?: Fn }[] }
+  /* isCal (evCalB): mes con flechas, la cuadrícula de días (fondo, color, anillo, tachado, punto) y la leyenda. */
+  | { type: "cal"; month: string; onPrev?: Fn; prevOff?: boolean; onNext?: Fn; nextOff?: boolean; wd: string[]; days: { n: string; bg?: string; fg?: string; ring?: string; td?: string; fw?: number; dot?: string; off?: boolean; onClick?: Fn; label?: string }[]; leg?: { c: string; r: string; t: string }[]; s?: string }
+  /* isEvhd (evView): volver, rótulo y etiqueta; cartel, título, cuándo y dónde; progreso; 3 cifras; botón principal y herramientas. */
+  | { type: "evhd"; onBack?: Fn; eye: string; tag?: string; tone?: string; img?: string; t: string; when: string; where: string; progT?: string; progR?: string; pct?: string; barC?: string;
+      stats: { k: string; v: string; s?: string }[]; mainL?: string; mainIcon?: string; onMain?: Fn; tools: { l: string; icon: string; onClick?: Fn }[] };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
 const bolita = (on: boolean): CSSProperties => ({ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", transform: `translateX(${on ? 18 : 0}px)`, transition: "transform .2s" });
@@ -343,6 +351,94 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center" }}><Icon name={x.icon} size={18} /></span>
               <span style={{ font: "700 11px/1.25 Manrope,sans-serif", color: "var(--tl-ink)" }}>{x.l}</span>
             </span>))}
+        </div>
+      </div>);
+    case "evrow": return (
+      <div style={{ display: "grid", gridTemplateColumns: b.cols ?? "minmax(0,1fr)", gap: 10 }}>
+        {b.items.map((x, i) => (
+          <button type="button" key={x.key ?? i} onClick={x.onClick} style={{ font: "inherit", color: "inherit", textAlign: "left", width: "100%", minWidth: 0, padding: 12, borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", gap: 13, cursor: "pointer", opacity: x.op ?? 1 }}>
+            <span style={{ position: "relative", width: 78, height: 104, flex: "none", borderRadius: 13, backgroundImage: x.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }}>
+              <span style={{ position: "absolute", left: 6, top: 6, minWidth: 34, padding: "5px 6px 4px", boxSizing: "border-box", borderRadius: 9, background: "var(--tl-white)", textAlign: "center" }}>
+                <span style={{ display: "block", font: `700 8.5px/1 ${MONO}`, letterSpacing: ".1em", color: "var(--tl-danger)" }}>{x.bm}</span>
+                <span style={{ display: "block", marginTop: 3, font: "800 16px/1 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)" }}>{x.bd}</span>
+              </span>
+            </span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+              <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <span style={{ minWidth: 0, font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.m}</span>
+                {x.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={x.tone ?? "neutral"}>{x.tag}</Tag></span> : null}
+              </span>
+              <span style={{ font: "800 15px/1.22 Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{x.t}</span>
+              <span style={{ font: "500 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{x.s}</span>
+              <span style={{ marginTop: "auto", paddingTop: 4, display: "flex", flexDirection: "column", gap: 6 }}>
+                {x.hasBar ? <span style={{ display: "block", height: 5, borderRadius: 99, background: "rgba(11,14,18,.07)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: x.pct, borderRadius: 99, background: x.barC }} /></span> : null}
+                <span style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ minWidth: 0, font: `700 10.5px ${MONO}`, letterSpacing: ".04em", color: "rgba(11,14,18,.6)" }}>{x.l}</span>
+                  <span style={{ flex: "none", font: "800 14px Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{x.r}</span>
+                </span>
+              </span>
+            </span>
+          </button>))}
+      </div>);
+    case "cal": return (
+      <div style={{ padding: 14, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <span style={{ font: "800 15px Sora,sans-serif", letterSpacing: "-.02em" }}>{b.month}</span>
+          <span style={{ display: "flex", gap: 6 }}>
+            <button type="button" aria-label="Mes anterior" disabled={b.prevOff} onClick={b.onPrev} style={{ padding: 0, background: "transparent", color: "inherit", width: 36, height: 36, borderRadius: 11, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: b.prevOff ? "default" : "pointer", opacity: b.prevOff ? 0.3 : 1 }}><Icon name="chevronLeft" size={16} /></button>
+            <button type="button" aria-label="Mes siguiente" disabled={b.nextOff} onClick={b.onNext} style={{ padding: 0, background: "transparent", color: "inherit", width: 36, height: 36, borderRadius: 11, border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: b.nextOff ? "default" : "pointer", opacity: b.nextOff ? 0.3 : 1 }}><Icon name="chevronRight" size={16} /></button>
+          </span>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 3 }}>
+          {b.wd.map((w, i) => <span key={`w${i}`} style={{ textAlign: "center", padding: "2px 0 4px", font: `700 9.5px ${MONO}`, letterSpacing: ".1em", color: "rgba(11,14,18,.42)" }}>{w}</span>)}
+          {b.days.map((x, i) => (
+            <button type="button" key={i} aria-label={x.label} aria-pressed={!!x.bg && x.bg !== "transparent"} disabled={x.off || !x.onClick} onClick={x.onClick}
+              style={{ font: "inherit", padding: 0, border: 0, height: 44, borderRadius: 12, background: x.bg ?? "transparent", color: x.fg ?? (x.off ? "rgba(11,14,18,.22)" : "var(--tl-ink)"), boxShadow: x.ring ?? "none", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 3, cursor: x.onClick && !x.off ? "pointer" : "default" }}>
+              <span style={{ font: `${x.fw ?? 600} 13.5px Manrope,sans-serif`, textDecoration: x.td ?? "none" }}>{x.n}</span>
+              <span style={{ width: 5, height: 5, borderRadius: 99, background: x.dot ?? "transparent" }} />
+            </button>))}
+        </div>
+        {b.leg && b.leg.length > 1 ? <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 14px", paddingTop: 8, borderTop: "1px solid rgba(11,14,18,.07)" }}>
+          {b.leg.map((l, i) => <span key={i} style={{ display: "flex", alignItems: "center", gap: 6, font: "600 11px Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}><span style={{ width: 10, height: 10, borderRadius: l.r, background: l.c, flex: "none" }} />{l.t}</span>)}
+        </div> : null}
+        {b.s ? <span style={{ font: "700 12.5px/1.45 Manrope,sans-serif", color: "var(--tl-ink)", textWrap: "pretty" } as CSSProperties}>{b.s}</span> : null}
+      </div>);
+    case "evhd": return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {b.onBack ? <button type="button" aria-label="Atrás" onClick={b.onBack} style={{ padding: 0, color: "inherit", width: 36, height: 36, flex: "none", borderRadius: 12, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.1)", display: "grid", placeItems: "center", cursor: "pointer" }}><Icon name="chevronLeft" size={16} /></button> : null}
+          <span style={{ flex: 1, minWidth: 0, font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.eye}</span>
+          {b.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={b.tone ?? "neutral"}>{b.tag}</Tag></span> : null}
+        </div>
+        <div style={{ padding: 14, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "flex", gap: 13 }}>
+            <span style={{ width: 72, height: 96, flex: "none", borderRadius: 12, backgroundImage: b.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 7 }}>
+              <span style={{ font: "800 19px/1.18 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden", textWrap: "pretty" } as CSSProperties}>{b.t}</span>
+              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="calendar" size={14} color="rgba(11,14,18,.5)" /></span><span style={{ minWidth: 0 }}>{b.when}</span></span>
+              <span style={{ display: "flex", alignItems: "flex-start", gap: 6, font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}><span style={{ display: "grid", flex: "none", paddingTop: 1 }}><Icon name="pin" size={14} color="rgba(11,14,18,.5)" /></span><span style={{ minWidth: 0 }}>{b.where}</span></span>
+            </span>
+          </div>
+          {b.progT ? <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}><span style={{ minWidth: 0, font: "700 13px Manrope,sans-serif", color: "var(--tl-ink)" }}>{b.progT}</span><span style={{ flex: "none", font: `700 11px ${MONO}`, color: "rgba(11,14,18,.55)" }}>{b.progR}</span></div>
+            {b.pct ? <span style={{ display: "block", height: 6, borderRadius: 99, background: "rgba(11,14,18,.07)", overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: b.pct, borderRadius: 99, background: b.barC }} /></span> : null}
+          </div> : null}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)" }}>
+            {b.stats.map((x, i) => (
+              <span key={i} style={{ minWidth: 0, padding: i === 0 ? "0 12px 0 0" : "0 0 0 12px", borderLeft: i === 0 ? "none" : "1px solid rgba(11,14,18,.07)" }}>
+                <span style={{ display: "block", font: `700 9px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.k}</span>
+                <span style={{ display: "block", marginTop: 6, font: "800 17px/1 Sora,sans-serif", letterSpacing: "-.03em", color: "var(--tl-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.v}</span>
+                {x.s ? <span style={{ display: "block", marginTop: 5, font: "500 11px Manrope,sans-serif", color: "rgba(11,14,18,.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.s}</span> : null}
+              </span>))}
+          </div>
+          {b.mainL ? <div style={{ display: "flex" }}><Button variant="primary" size="md" block icon={b.mainIcon ?? "check"} onClick={b.onMain}>{b.mainL}</Button></div> : null}
+          {b.tools.length ? <div style={{ display: "grid", gridTemplateColumns: `repeat(${b.tools.length},minmax(0,1fr))`, gap: 4, margin: "-4px -4px -6px" }}>
+            {b.tools.map((x, i) => (
+              <button type="button" key={i} onClick={x.onClick} style={{ font: "inherit", border: 0, background: "transparent", minWidth: 0, padding: "8px 2px", borderRadius: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, cursor: "pointer", textAlign: "center" }}>
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(11,14,18,.05)", display: "grid", placeItems: "center" }}><Icon name={x.icon} size={18} /></span>
+                <span style={{ font: "700 11px/1.25 Manrope,sans-serif", color: "var(--tl-ink)" }}>{x.l}</span>
+              </button>))}
+          </div> : null}
         </div>
       </div>);
     case "utabs": return (

@@ -1,7 +1,7 @@
 import "server-only";
 import { cfgSql } from "./config";
 import type { Staff } from "./admin";
-import { COLAS, type Cola } from "./colas";
+import { COLAS, slaCase, type Cola } from "./colas";
 import { db } from "./db";
 
 /* ADM-ANALIT · Analítica (Super Admin.dc.html secAnalit) con lo que existe en la Fase 1: gente y negocios, el embudo
@@ -51,7 +51,7 @@ export async function embudo(s: Staff, dias: number) {
 
 /* Soporte y confianza: sancionados, colas abiertas y plazo cumplido de lo decidido en el período. */
 export async function confianza(s: Staff, dias: number) {
-  const sla = `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.sla}`).join(" ")} else 24 end`;
+  const sla = slaCase(cfgSql), slas = await (await import("./admin-colas")).slasColas();
   const [sanc, abiertas, cumplido] = await Promise.all([
     db().query<{ n: number }>(
       `select count(distinct x.target_id)::int as n from sanctions x left join users u on u.id::text = x.target_id
@@ -61,7 +61,7 @@ export async function confianza(s: Staff, dias: number) {
       `select count(*)::int as total, count(*) filter (where extract(epoch from q.decided_at - q.opened_at) <= ${sla} * 3600)::int as a_tiempo
          from queue_items q where q.status = 'decided' and q.decided_at > now() - make_interval(days => $2) and ${scope("q.city_id")}`, [s.cities, dias]),
   ]);
-  return { sancionados: sanc.rows[0]?.n ?? 0, abiertas: abiertas.rows.map((x) => ({ ...x, es: COLAS[x.queue]?.es ?? x.queue, sla: COLAS[x.queue]?.sla ?? 24 })), cumplido: cumplido.rows[0]! };
+  return { sancionados: sanc.rows[0]?.n ?? 0, abiertas: abiertas.rows.map((x) => ({ ...x, es: COLAS[x.queue]?.es ?? x.queue, sla: slas[x.queue] ?? 24 })), cumplido: cumplido.rows[0]! };
 }
 
 /* Doctores y Profesionales (fase4-salud-pro §4m): seguro aceptado, «no aceptamos su seguro», no llegó, tiempo de respuesta,

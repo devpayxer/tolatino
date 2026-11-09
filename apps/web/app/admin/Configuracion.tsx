@@ -12,7 +12,7 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
 const SECCION: Record<Seccion, string> = {
-  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS",
+  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS",
 };
 const fmt = (f: { key: string; unidad: { es: string } }, v: number) => (f.key.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${f.unidad.es}`);
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");

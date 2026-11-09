@@ -58,12 +58,15 @@ export const LINEA988: Bi = {
 };
 
 /* Lo que se puede apelar. */
-export type Apelable = "com_post" | "com_comment" | "dm_message" | "media" | "sanction";
+export type Apelable = "com_post" | "com_comment" | "dm_message" | "media" | "sanction" | "event" | "evt_org";
 export const APELABLE: Record<Apelable, { es: string; en: string; oculto: Bi }> = {
   com_post: { es: "publicación", en: "post", oculto: { es: "Ocultamos tu publicación", en: "We hid your post" } },
   com_comment: { es: "comentario", en: "comment", oculto: { es: "Ocultamos tu comentario", en: "We hid your comment" } },
   dm_message: { es: "mensaje", en: "message", oculto: { es: "Ocultamos tu mensaje", en: "We hid your message" } },
   media: { es: "foto", en: "photo", oculto: { es: "Quitamos tu foto", en: "We removed your photo" } },
   sanction: { es: "sanción", en: "sanction", oculto: { es: "Recibiste una sanción", en: "You received a sanction" } },
+  // 6a · lo apela el dueño del negocio organizador.
+  event: { es: "evento", en: "event", oculto: { es: "To’Latino ocultó o no aprobó tu evento", en: "To’Latino hid or did not approve your event" } },
+  evt_org: { es: "bloqueo de eventos", en: "event block", oculto: { es: "No puedes publicar eventos", en: "You cannot publish events" } },
 };
 export const MIN_APELACION = 20, MAX_APELACION = 500;

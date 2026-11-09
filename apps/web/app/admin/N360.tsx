@@ -14,6 +14,11 @@ import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, 
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
+import { accionesOrg, estadoEvt } from "./ColasEventos";
+import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
+
+/* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. */
+export type Evts360 = { filas: { id: string; t: Bi; st: string; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }[]; org: { verificado: boolean; bloqueado: string | null }; puede: { aprobar: boolean; retirar: boolean } };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "HBars" | "Icon", ComponentType<any>>;
@@ -29,6 +34,7 @@ const VERBO: Record<string, string> = {
   "negocio.reabrir": "reabrió", "negocio.dueno.cambiar": "cambió el dueño de", "negocio.pagos.pausar": "pausó los pagos al banco de", "plan.cortesia": "dio Pro de cortesía a", "plan.quitar_cortesia": "quitó la cortesía a", "plan.extender_prueba": "extendió la prueba de", "plan.reintentar_cobro": "reintentó el cobro de Pro de", "plan.anular": "anuló la suscripción de",  "negocio.pagos.reanudar": "reanudó los pagos al banco de", "negocio.sello.dar": "dio el sello a", "negocio.sello.quitar": "quitó el sello a", "negocio.sello.aprobar": "aprobó el sello de",
   "negocio.sello.pedir_dato": "pidió un dato a", "negocio.sello.rechazar": "no aprobó el sello de", "negocio.editar": "editó", "negocio.foto.quitar": "quitó una foto de",
   "negocio.foto.restaurar": "restauró una foto de", "negocio.staff.quitar": "quitó de la página a alguien de", "negocio.staff.mostrar": "volvió a mostrar a alguien de",
+  "evt.organizador.verificar": "verificó como organizador de eventos a", "evt.organizador.quitar_verificado": "quitó el verificado de eventos a", "evt.organizador.bloquear": "bloqueó la publicación de eventos de", "evt.organizador.desbloquear": "permitió publicar eventos otra vez a",
   "negocio.nota": "agregó una nota a", "negocio.revisado": "revisó", "licencia.verificar": "verificó la licencia de", "licencia.vencida": "marcó vencida la licencia de", "licencia.no_aparece": "no encontró la licencia de",
 };
 const DIAS = [["Lunes", 1], ["Martes", 2], ["Miércoles", 3], ["Jueves", 4], ["Viernes", 5], ["Sábado", 6], ["Domingo", 0]] as const;
@@ -47,7 +53,7 @@ const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> })
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero | null }) {
+export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -269,6 +275,13 @@ export function N360({ n, tab, din }: { n: Negocio360; tab: string; din?: Dinero
             : { label: "Ocultar la vacante", variant: "danger", onClick: () => setConf({ titulo: `Ocultar «${j.title}»`, sub: "Sale de su página y nadie nuevo aplica. El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Pide papeles, SSN o pago para aplicar", "Pago por debajo del mínimo", "Vacante falsa o engañosa", "Discriminatoria"], hacer: (m) => vacanteOcultar(n.id, j.id, true, m) }) }] : undefined,
         }))} />
         {!n.vacantes.length ? <A.AdminNote tone="info" icon="brief">Sin vacantes.</A.AdminNote> : null}
+        {evts ? <>
+          <A.AdminList label={`EVENTOS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZADOR BLOQUEADO" : evts.org.verificado ? " · ORGANIZADOR VERIFICADO" : ""}`} rows={evts.filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return {
+            icon: "ticket", title: e.t.es, sub: `${diaCorto(e.dia, true)} · ${hora(e.h0)} · ${e.entrada === "tickets" ? "Boletos" : e.entrada === "rsvp" ? "RSVP" : "Libre"}`, tag, tone, chevron: true, onClick: () => router.push(`/admin/eventos/${e.id}`) }; })} />
+          {!evts.filas.length ? <A.AdminNote tone="info" icon="ticket">Sin eventos enviados.</A.AdminNote> : null}
+          {evts.org.bloqueado ? <A.AdminNote tone="bad" icon="ban">{`Bloqueado para publicar eventos: ${evts.org.bloqueado}`}</A.AdminNote> : null}
+          {(() => { const L = accionesOrg({ id: n.id, name: n.name, verificado: evts.org.verificado, bloqueado: evts.org.bloqueado }, { setConf, puede: evts.puede }); return L.length ? <PanelBloques bloques={[{ type: "acts", items: L }]} /> : null; })()}
+        </> : null}
         {P.retirar && n.plan === "pro" ? (n.modsOff.jobs
           ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Jobs?", hacer: (m) => moduloPausar(n.id, "jobs", false, m) })}>{`Jobs en pausa: ${n.modsOff.jobs.reason}`}</A.AdminNote>
           : <A.AdminNote tone="info" icon="brief" cta="Pausar Jobs" onCta={() => setConf({ titulo: "Pausar Jobs", sub: "La pestaña Jobs deja de salir en la ficha y nadie aplica hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de vecinos", "Pide papeles o pago para aplicar", "Vacantes falsas"], hacer: (m) => moduloPausar(n.id, "jobs", true, m) })}>Jobs activo en su página.</A.AdminNote>) : null}

@@ -20,7 +20,7 @@ type Q = Pick<PoolClient, "query">;
 const ID = /^\d{1,18}$/, UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const no = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
 export const RUTA_AVISO = (k: Apelable, id: string) => `/cuenta/moderacion?k=${k}&id=${encodeURIComponent(id)}`;
-const okId = (k: string, id: string) => (k === "media" ? UUID.test(id) : ID.test(id));
+const okId = (k: string, id: string) => (k === "media" ? UUID.test(id) : k === "evt_org" ? /^[a-z0-9]+(-[a-z0-9]+)*$/.test(id) && id.length <= 80 : ID.test(id));
 
 /* ── Avisos ── */
 export async function avisarOculto(userId: string, k: Exclude<Apelable, "sanction">, id: string, motivo: string, o: { auto?: boolean } = {}) {
@@ -62,6 +62,14 @@ const FILAS = (filtro: string) => `
   select 'media', m.id::text, m.removed_note, m.removed_at, coalesce(left(p.body, 120), ''), m.url, false, '/comunidad/p/' || p.id, null, null
     from media m join com_posts p on m.owner_kind = 'com_post' and p.id::text = m.owner_id
    where m.uploaded_by = $1 and m.status = 'removed' and m.removed_reason = 'admin' and m.removed_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'media'").replace(/\$X/g, "m.id::text")}
+  union all
+  select 'event', e.id::text, coalesce(e.hidden_reason, e.review_note), coalesce(e.hidden_at, e.reviewed_at), e.title->>'es', null, false, '/panel/' || e.business_id || '/eventos?det=evt:' || e.id, null, null
+    from events e join business_members bm on bm.business_id = e.business_id and bm.kind = 'owner' and bm.status = 'active' and bm.user_id = $1
+   where (e.hidden_at is not null or e.status = 'rejected') and coalesce(e.hidden_at, e.reviewed_at) > now() - interval '90 days' ${filtro.replace(/\$K/g, "'event'").replace(/\$X/g, "e.id::text")}
+  union all
+  select 'evt_org', o.business_id, o.blocked_reason, o.blocked_at, b.name, null, false, '/panel/' || o.business_id || '/eventos', null, null
+    from event_organizers o join businesses b on b.id = o.business_id join business_members bm on bm.business_id = o.business_id and bm.kind = 'owner' and bm.status = 'active' and bm.user_id = $1
+   where o.blocked_at is not null ${filtro.replace(/\$K/g, "'evt_org'").replace(/\$X/g, "o.business_id")}
   union all
   select 'sanction', s.id::text, s.reason, s.starts_at, '', null, false, null, s.kind, s.ends_at
     from sanctions s where s.target_kind = 'user' and s.target_id = $1::text and s.lifted_at is null and (s.ends_at is null or s.ends_at > now())
@@ -153,6 +161,11 @@ export async function apelacionDeCaso(appealId: string) {
   if (a.k === "media") contenido = (await db().query<{ texto: string; foto: string; href: string }>(`select '' as texto, url as foto, '/comunidad/p/' || owner_id as href from media where id = $1::uuid`, [a.tid])).rows[0] ?? contenido;
   if (a.k === "dm_message" && a.estado === "open") contenido = { texto: (await (await import("./admin-dm")).dmApelado(a.tid)) ?? "", foto: null, href: null };
   if (a.k === "sanction" && a.sancion) contenido = { texto: `${SANCIONES[a.sancion].es} · ${SANCIONES[a.sancion].com.es}`, foto: null, href: null };
+  if (a.k === "event") contenido = (await db().query<{ texto: string; href: string; foto: string | null }>(
+    `select e.title->>'es' || ' · ' || b.name as texto, '/admin/eventos/' || e.id as href,
+            (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort limit 1) as foto
+       from events e join businesses b on b.id = e.business_id where e.id = $1::bigint`, [a.tid])).rows[0] ?? contenido;
+  if (a.k === "evt_org") contenido = (await db().query<{ texto: string; href: string }>(`select 'Bloqueo de eventos · ' || name as texto, '/admin/eventos?tab=org' as href, null as foto from businesses where id = $1`, [a.tid])).rows[0] as typeof contenido ?? contenido;
   const [hist] = await Promise.all([
     db().query<{ kind: Sancion; at: string; reason: string; lifted: boolean }>(
       `select kind, starts_at as at, reason, lifted_at is not null as lifted from sanctions where target_kind = 'user' and target_id = $1 order by starts_at desc limit 10`, [a.uid]),
@@ -181,6 +194,14 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
       await (await import("./admin-dm")).restaurarDmApelado(c, a.tid);
     } else if (a.k === "media") {
       await c.query(`update media set status = 'visible', removed_reason = null, removed_note = null, removed_by = null, removed_at = null where id = $1::uuid and status = 'removed' and removed_reason = 'admin'`, [a.tid]);
+    } else if (a.k === "event") {
+      // 6a · Tenía razón: el evento vuelve a verse; si no se había aprobado, queda aprobado por quien decide la apelación.
+      await c.query(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = $1::bigint and hidden_at is not null`, [a.tid]);
+      const ap = await c.query(`update events set status = 'live', approved_at = now(), approved_by = $2, reviewed_at = now(), reviewed_by = $2, review_note = null, review_reason_key = null
+                                 where id = $1::bigint and status = 'rejected' and not exists (select 1 from event_organizers o where o.business_id = events.business_id and o.blocked_at is not null)`, [a.tid, staffId]);
+      if (ap.rowCount) await (await import("./evt")).registrar(c, a.tid, "approved", "staff", staffId, null, `Apelación ${a.numero}: ${motivo}`.slice(0, 500));
+    } else if (a.k === "evt_org") {
+      await c.query(`update event_organizers set blocked_at = null, blocked_by = null, blocked_reason = null, updated_at = now() where business_id = $1 and blocked_at is not null`, [a.tid]);
     } else if (a.sid) {
       await c.query(`update sanctions set lifted_at = now(), lifted_by = $2, lift_reason = $3 where id = $1::bigint and lifted_at is null`, [a.sid, staffId, `Apelación ${a.numero}: ${motivo}`.slice(0, 500)]);
       const otra = (await c.query(`select 1 from sanctions where target_kind = 'user' and target_id = $1 and lifted_at is null and (ends_at is null or ends_at > now()) and kind in ('mute7', 'nopub', 'susp14', 'ban')`, [a.uid])).rowCount;
@@ -196,6 +217,7 @@ export async function decidirApelacion(c: PoolClient, staffId: string, appealId:
 export async function avisarDecision(a: { numero: string; k: Apelable; tid: string; uid: string }, accion: "upheld" | "lifted", motivo: string) {
   if (accion === "lifted") await (await import("./puntos")).recalcularRango(a.uid).catch(() => undefined);
   const en = (await db().query<{ lang: string }>(`select coalesce(lang, 'es') as lang from users where id = $1`, [a.uid])).rows[0]?.lang === "en";
-  const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;
+  const que = a.k === "sanction" ? (en ? "the sanction was lifted" : "levantamos la sanción") : a.k === "evt_org" ? (en ? "you can publish events again" : "puedes publicar eventos otra vez")
+    : en ? `your ${APELABLE[a.k].en} is visible again` : `tu ${APELABLE[a.k].es} se ve otra vez`;
   await avisar(a.uid, accion === "lifted" ? "apel_lifted" : "apel_upheld", { numero: a.numero, que, motivo: motivo.slice(0, 160) }, { href: RUTA_AVISO(a.k, a.tid), ref: ["appeal", a.numero], sinSms: true }).catch(() => undefined);
 }

@@ -54,8 +54,7 @@ export async function tomarSiguiente(): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver las colas.");
   const vis = colasVisibles(s);
-  const { COLAS } = await import("@/lib/colas");
-  const sla = `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.sla}`).join(" ")} else 24 end`;
+  const sla = (await import("@/lib/admin-colas")).SLA_SQL;
   const r = await tx(async (c) => {
     const q = (await c.query<{ id: string; city_id: string }>(
       `select q.id::text, q.city_id from queue_items q

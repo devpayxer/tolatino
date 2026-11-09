@@ -19,6 +19,8 @@ const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + line
 const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
 /* La última definición de una función de la base en las migraciones (una migración nueva puede reemplazarla). */
 const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
+/* Las filas del catálogo config_keys en todas las migraciones que lo amplían (0105 Comunidad, 0106 Eventos…). */
+const catalogoConfig = () => { const out = []; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); if (!/insert into config_keys/.test(t)) continue; for (const m of t.matchAll(/^\s*\('([a-z0-9_]+)', (-?\d+), (-?\d+), (-?\d+), '\{/gm)) out.push({ k: m[1], a: +m[2], b: +m[3], d: +m[4], f: `packages/db/migrations/${x}` }); } return out; };
 const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
 
 const guardianes = {
@@ -1203,6 +1205,24 @@ const guardianes = {
       const m = /'NEG-NOCHE': \[([^\]]*)\]/.exec(readFileSync(O, "utf8"));
       if (m && /'(menu|shop|pedidos)'/.test(m[1])) falla("alcoholNoSeVende", O, 0, "el alta de Noche no ofrece Menú, Tienda ni Pedidos (la app no vende tragos)");
     }
+    // 6a · Extras de eventos (fase6 §3 y §6 #4): solo detalle · material · servicio · otro, nunca alcohol, botellas ni hookah. La misma
+    // lista en lib/evt-comun.ts y en la base (evt_extras_ok, en el check de events.addons_cfg); el servidor rechaza antes de guardar;
+    // el editor no sugiere botellas.
+    const G = "alcoholNoSeVende", EC = "apps/web/lib/evt-comun.ts", EV = "apps/web/lib/evt.ts", M6 = "packages/db/migrations/0106_eventos_base.sql", ED = "apps/web/app/panel/EventosPanel.tsx";
+    if (existsSync(EC) && existsSync(M6)) {
+      const ec = sinComent(EC), m6 = readFileSync(M6, "utf8");
+      const k = [.../export const EXTRA_KINDS: ExtraKind\[\] = \[([^\]]*)\]/.exec(ec)?.[1]?.matchAll(/"(\w+)"/g) ?? []].map((x) => x[1]).sort().join(",");
+      if (k !== "detalle,material,otro,servicio") falla(G, EC, 0, `los extras de un evento son solo detalle, material, servicio u otro (hay: ${k || "nada"})`);
+      const re = /export const ALCOHOL = \/(.+)\/;/.exec(ec)?.[1] ?? "";
+      for (const w of ["botell", "bottle", "hookah", "trago", "cerveza", "licor", "vino"]) if (!re.includes(w)) falla(G, EC, 0, `ALCOHOL no reconoce «${w}»`);
+      const fn = /create or replace function evt_extras_ok\(a jsonb\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m6)?.[1] ?? "";
+      if (!fn.includes(`~ '${re}'`)) falla(G, M6, 0, "evt_extras_ok (base) y ALCOHOL (lib/evt-comun.ts) deben ser la misma lista");
+      if (!/not in \('detalle', 'material', 'servicio', 'otro'\)/.test(fn)) falla(G, M6, 0, "evt_extras_ok debe rechazar tipos fuera de detalle · material · servicio · otro");
+      if (!/addons_cfg\s+jsonb not null default '\[\]' check \(evt_extras_ok\(addons_cfg\)\)/.test(m6)) falla(G, M6, 0, "events.addons_cfg sin el check evt_extras_ok");
+    }
+    if (existsSync(EV)) { const b = cuerpoFn(sinComent(EV), "normalizar"), iA = b.search(/if \(extras\.some\(esAlcohol\)\) return no\(/), iR = b.search(/return \{ ok: true, d:/);
+      if (iA < 0 || iR < 0 || iA > iR) falla(G, EV, 0, "normalizar debe rechazar un extra de alcohol, botellas o hookah antes de guardar"); }
+    if (existsSync(ED)) sinComent(ED).split("\n").forEach((l, i) => { if (/ph: [^}]*(Botella|Bottle|[Hh]ookah|Trago|Cubeta)/.test(l)) falla(G, ED, i + 1, "el editor de eventos no sugiere botellas, tragos ni hookah"); });
   },
 
   /* 4nc. Noche · dinero. To'Latino nunca cobra cover ni lista (solo el depósito de la mesa): la lista va con $0 y el cover no se
@@ -1702,11 +1722,22 @@ const guardianes = {
     const m = /export type Cola = ([^;]+);/.exec(readFileSync(f, "utf8"));
     if (!m) return falla("colaConVista", f, 0, "no encuentro el tipo Cola");
     // 5d: los casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel, fotos) se pintan en ColasComunidad.tsx.
-    const CC = "apps/web/app/admin/ColasComunidad.tsx";
-    const tl = readFileSync(L, "utf8"), tu = readFileSync(U, "utf8") + (existsSync(CC) ? readFileSync(CC, "utf8") : "");
+    const CC = "apps/web/app/admin/ColasComunidad.tsx", CE = "apps/web/app/admin/ColasEventos.tsx";
+    // 6a: los eventos a revisar se pintan en ColasEventos.tsx.
+    // Sin comentarios: un comentario que nombra la cola no es su vista (6a: lo cazó la prueba al revés).
+    const tl = sinComent(L), tu = sinComent(U) + (existsSync(CC) ? sinComent(CC) : "") + (existsSync(CE) ? sinComent(CE) : "");
     for (const k of [...m[1].matchAll(/"(\w+)"/g)].map((x) => x[1])) {
       if (!tl.includes(`x.queue === "${k}"`)) falla("colaConVista", L, 0, `la cola «${k}» no tiene su título en la lista (sale como otra cola)`);
       if (!tu.includes(`k.queue === "${k}"`)) falla("colaConVista", U, 0, `la cola «${k}» no tiene su detalle en Colas`);
+    }
+    // 6a: el plazo de una cola que lo toma de Configuración (slaCfg) se calcula siempre con ella: la lista, el contador, «Tomar siguiente» y
+    // la Analítica usan slaCase(cfgSql); nadie arma el plazo con COLAS[…].sla a mano; la clave existe en ClaveConfig.
+    const tc = readFileSync(f, "utf8"), cfg = existsSync("apps/web/lib/config.ts") ? readFileSync("apps/web/lib/config.ts", "utf8") : "";
+    for (const m of tc.matchAll(/\n  (\w+): \{[^\n]*slaCfg: "([a-z0-9_]+)"/g)) if (!cfg.includes(`"${m[2]}"`)) falla("colaConVista", f, 0, `la cola «${m[1]}» toma su plazo de «${m[2]}», que no está en ClaveConfig`);
+    if (/slaCfg:/.test(tc)) {
+      if (!/export const SLA_SQL = slaCase\(cfgSql\);/.test(sinComent(L))) falla("colaConVista", L, 0, "el plazo de las colas se arma con slaCase(cfgSql) (Configuración)");
+      if (!/espera\(x\.opened_at, x\.sla_h\)/.test(sinComent(L))) falla("colaConVista", L, 0, "la lista mide la espera con el plazo de la base (sla_h), no con COLAS[…].sla");
+      for (const x of codigo) if (/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) && x !== f && /`case q\.queue \$\{Object\.entries\(COLAS\)/.test(sinComent(x))) falla("colaConVista", x, 0, "plazo de las colas armado a mano: usa SLA_SQL / slaCase(cfgSql)");
     }
   },
 
@@ -2178,6 +2209,68 @@ const guardianes = {
     if (!/export const RUTA_AVISO = \(k: Apelable, id: string\) => `\/cuenta\/moderacion\?k=\$\{k\}&id=/.test(a)) falla(G, AP, 0, "RUTA_AVISO debe llevar a la pantalla de apelar (/cuenta/moderacion?k=…&id=…)");
     for (const fn of ["avisarOculto", "avisarSancion"]) { const b = cuerpoFn(a, fn); if (!/motivo/.test(b) || !/href: RUTA_AVISO\(/.test(b)) falla(G, AP, 0, `${fn} debe avisar con el motivo y la ruta de la apelación`); }
     if (!existsSync("apps/web/app/(app)/cuenta/moderacion/page.tsx") || !/apelar\(/.test(sinComent("apps/web/app/(app)/cuenta/moderacion/acciones.ts"))) falla(G, "apps/web/app/(app)/cuenta/moderacion", 0, "falta la pantalla de apelar (Mi cuenta › Avisos de moderación)");
+    // 6a · Eventos: ocultar un evento o bloquear a un organizador avisa al negocio con el motivo y la ruta para apelar (avisarEvtOculto /
+    // avisarOrgBloqueado, después de guardar); los dos se pueden apelar (APELABLE, el check de appeals y appeals_antes) y levantar la
+    // apelación lo deshace (decidirApelacion).
+    const ER = "apps/web/lib/evt-revision.ts";
+    if (existsSync(ER)) {
+      for (const x of codigo) {
+        if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) || x === AP) continue;
+        const t = sinComent(x);
+        for (const mm of t.matchAll(/\n(?:export )?async function (\w+)\(/g)) {
+          const b = cuerpoFn(t, mm[1]);
+          if (/update events set hidden_at = now\(\)/.test(b) && !/\bavisarEvtOculto\(/.test(b)) falla(G, x, 0, `«${mm[1]}» oculta un evento sin avisar con el motivo y la apelación (avisarEvtOculto)`);
+          if (/update event_organizers set blocked_at = now\(\)/.test(b) && !/\bavisarOrgBloqueado\(/.test(b)) falla(G, x, 0, `«${mm[1]}» bloquea a un organizador sin avisar con el motivo y la apelación (avisarOrgBloqueado)`);
+        }
+      }
+      const er = sinComent(ER);
+      for (const [fn, k] of [["avisarEvtOculto", "event"], ["avisarOrgBloqueado", "evt_org"]]) { const b = cuerpoFn(er, fn); if (!/motivo/.test(b) || !new RegExp(`href: RUTA_AVISO\\("${k}"`).test(b)) falla(G, ER, 0, `${fn} debe avisar con el motivo y la ruta de la apelación (RUTA_AVISO("${k}", …))`); }
+      const mc = sinComent("apps/web/lib/moderacion-comun.ts");
+      if (!/"event"/.test(/export type Apelable = [^;]+;/.exec(mc)?.[0] ?? "") || !/"evt_org"/.test(/export type Apelable = [^;]+;/.exec(mc)?.[0] ?? "")) falla(G, "apps/web/lib/moderacion-comun.ts", 0, "un evento oculto y un bloqueo de organizador se pueden apelar (Apelable: event, evt_org)");
+      const ant = ultimaFn("appeals_antes");
+      if (!/new\.target_kind = 'event'/.test(ant) || !/new\.target_kind = 'evt_org'/.test(ant)) falla(G, "packages/db/migrations", 0, "appeals_antes debe aceptar apelaciones de eventos y de organizadores (sanctioned_by desde la fuente)");
+      const da = cuerpoFn(sinComent(AP), "decidirApelacion");
+      if (!/a\.k === "event"/.test(da) || !/a\.k === "evt_org"/.test(da)) falla(G, AP, 0, "decidirApelacion debe deshacer lo de un evento o un organizador al levantar la apelación");
+    }
+  },
+
+  /* 6a. Ningún evento sale al público sin revisión (fase6 §3 «Guardianes nuevos»; PLAN fila 6, decisión #3). En la base: `live` exige
+     approved_at (check); pasar a live sin persona que apruebe (approved_by null) solo con el organizador verificado y un organizador
+     bloqueado no envía ni publica (trigger events_antes); `listable` de una fecha lo calcula solo la base (evt_listable: publicado,
+     aprobado, sin ocultar) y nadie lo escribe a mano. En la app: solo tres lugares ponen un evento en vivo y los tres ponen approved_at
+     en la misma sentencia (enviarEn con el organizador verificado, decidirEvento al aprobar y la apelación levantada). Al revés: quitar
+     una de estas revisiones → falla. */
+  revisionAntesDePublicar() {
+    const G = "revisionAntesDePublicar", M6 = "packages/db/migrations/0106_eventos_base.sql";
+    if (!existsSync(M6)) return;
+    const m = readFileSync(M6, "utf8");
+    if (!/check \(status not in \('live', 'paused', 'done'\) or approved_at is not null\)/.test(m)) falla(G, M6, 0, "events debe exigir approved_at para estar en vivo (check)");
+    const ea = ultimaFn("events_antes");
+    if (!/if new\.approved_at is null then raise exception/.test(ea)) falla(G, M6, 0, "events_antes debe impedir publicar sin aprobar");
+    if (!/if new\.approved_by is null and o\.verified_at is null then raise exception/.test(ea)) falla(G, M6, 0, "events_antes: sin revisión solo publica un organizador verificado");
+    if ([...ea.matchAll(/o\.blocked_at is not null then\s*raise exception 'el organizador está bloqueado/g)].length < 2) falla(G, M6, 0, "events_antes: un organizador bloqueado no envía a revisión, no publica ni manda un cambio");
+    if (!/create trigger events_antes before insert or update or delete on events/.test(m)) falla(G, M6, 0, "falta el trigger events_antes");
+    const ls = ultimaFn("evt_listable");
+    if (!/e\.status in \('live', 'paused'\)/.test(ls) || !/e\.approved_at is not null/.test(ls) || !/e\.hidden_at is null/.test(ls)) falla(G, M6, 0, "evt_listable: solo publicado, aprobado y sin ocultar");
+    if (!/new\.listable := evt_listable\(e, new\.status\);/.test(ultimaFn("event_dates_antes"))) falla(G, M6, 0, "listable de una fecha lo pone solo la base (event_dates_antes)");
+    const OK = new Set(["apps/web/lib/evt.ts", "apps/web/lib/evt-revision.ts", "apps/web/lib/apelaciones.ts"]);
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        if (/\bevent_dates\b/.test(q) && /\blistable\s*=/.test(q) && /\b(update|insert)\b/.test(q)) falla(G, x, 0, "listable de una fecha no se escribe desde la app (lo decide la base)");
+        if (/update events set[^`]*status = 'live'/.test(q)) {
+          if (!OK.has(x)) falla(G, x, 0, "solo lib/evt.ts, lib/evt-revision.ts y la apelación ponen un evento en vivo");
+          if (!/approved_at = now\(\)/.test(q)) falla(G, x, 0, "poner un evento en vivo pone approved_at en la misma sentencia");
+        }
+      }
+    }
+    const ev = existsSync("apps/web/lib/evt.ts") ? cuerpoFn(sinComent("apps/web/lib/evt.ts"), "enviarEn") : "";
+    if (ev) { const iV = ev.search(/if \(verificado\) \{/), iL = ev.search(/status = 'live'/); if (iV < 0 || iL < 0 || iV > iL || !/approved_by = null/.test(ev)) falla(G, "apps/web/lib/evt.ts", 0, "enviarEn publica sin revisión solo con el organizador verificado (approved_by null)"); }
+    const dr = existsSync("apps/web/lib/evt-revision.ts") ? cuerpoFn(sinComent("apps/web/lib/evt-revision.ts"), "decidirEvento") : "";
+    if (dr && !/status = 'live', approved_at = now\(\), approved_by = \$2/.test(dr)) falla(G, "apps/web/lib/evt-revision.ts", 0, "aprobar pone approved_by = quien decide");
+    // El libro de la revisión es de solo inserción y nadie lo cambia.
+    if (!/create trigger event_review_log_no_cambia before update or delete on event_review_log/.test(m)) falla(G, M6, 0, "event_review_log sin el trigger de solo inserción");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /\b(update|delete from) event_review_log\b/.test(sinComent(x))) falla(G, x, 0, "event_review_log es solo de inserción");
   },
 
   /* 5d. La apelación la decide otra persona: la base pone quién ocultó o sancionó (sanctioned_by, de la fuente) y rechaza que esa persona
@@ -2563,7 +2656,8 @@ const guardianes = {
   configDesdeUnLugar() {
     const G = "configDesdeUnLugar", K = "packages/db/migrations/0105_configuracion_comunidad.sql", CF = "apps/web/lib/config.ts";
     if (!existsSync(K)) return;
-    const claves = [...readFileSync(K, "utf8").matchAll(/^\s*\('([a-z0-9_]+)', -?\d+, -?\d+, -?\d+, '\{/gm)].map((m) => m[1]);
+    // 6a: el catálogo crece en migraciones nuevas (0106 · Eventos): se leen todas las que insertan en config_keys.
+    const claves = catalogoConfig().map((x) => x.k);
     if (claves.length < 10) return falla(G, K, 0, "no encuentro el catálogo config_keys");
     if (!existsSync(CF)) return falla(G, CF, 0, "falta lib/config.ts (el único lector de la configuración)");
     const tipo = /export type ClaveConfig =([\s\S]*?);/.exec(sinComent(CF))?.[1] ?? "", enTipo = new Set([...tipo.matchAll(/"([a-z0-9_]+)"/g)].map((m) => m[1]));
@@ -2599,7 +2693,7 @@ const guardianes = {
     if (!existsSync(K)) return;
     const m = readFileSync(K, "utf8");
     if (!/min\s+numeric not null,\s*\n\s*max\s+numeric not null,\s*\n\s*def\s+numeric not null,/.test(m) || !/check \(min < max\),\s*\n\s*check \(def >= min and def <= max\)/.test(m)) falla(G, K, 0, "config_keys debe exigir min, max y def con min < max y def dentro");
-    for (const [, k, a, b, d] of m.matchAll(/^\s*\('([a-z0-9_]+)', (-?\d+), (-?\d+), (-?\d+), '\{/gm)) if (!(+a < +b && +d >= +a && +d <= +b)) falla(G, K, 0, `«${k}»: de fábrica ${d} fuera de ${a}–${b}`);
+    for (const x of catalogoConfig()) if (!(x.a < x.b && x.d >= x.a && x.d <= x.b)) falla(G, x.f, 0, `«${x.k}»: de fábrica ${x.d} fuera de ${x.a}–${x.b}`);
     const tr = /create or replace function platform_config_limites\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
     if (!/if v < c\.min or v > c\.max then raise exception/.test(tr) || !/v <> trunc\(v\) then raise exception/.test(tr) || !/create trigger platform_config_limites before insert or update on platform_config/.test(m))
       falla(G, K, 0, "la base debe rechazar en platform_config un valor fuera de sus límites o no entero (trigger platform_config_limites)");

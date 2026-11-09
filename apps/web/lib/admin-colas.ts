@@ -4,7 +4,8 @@ const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "O
 export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
-import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, type Cola } from "./colas";
+import { AYUDA_DE, COLAS, MOTIVO_RESENA, colasDelRol, espera, slaCase, type Cola } from "./colas";
+import { cfgSql, valor } from "./config";
 import { APELABLE, MOTIVO_REP, REGLA_L, type Apelable } from "./moderacion-comun";
 import { db } from "./db";
 import { MOTIVO, evidenciaDe } from "./disputas";
@@ -15,7 +16,12 @@ import { telefonoBonito } from "./panel";
 export function colasVisibles(s: Staff): Cola[] {
   return s.puede("colas", "ver") ? colasDelRol(s.role) : [];
 }
-const SLA_SQL = `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.sla}`).join(" ")} else 24 end`;
+export const SLA_SQL = slaCase(cfgSql);
+/* El plazo de cada cola en horas (con lo de Configuración), para lo que se dice en pantalla. */
+export async function slasColas(): Promise<Record<Cola, number>> {
+  const v = await valor("evt_revision_h");
+  return Object.fromEntries(Object.entries(COLAS).map(([k, x]) => [k, x.slaCfg ? v : x.sla])) as Record<Cola, number>;
+}
 
 export type CasoLista = {
   id: string; queue: Cola; title: string; sub: string; who: { name: string; image?: string; initials?: string } | null;
@@ -31,7 +37,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     bname: string | null; cover: string | null; rname: string | null; rcat: string | null; mnote: string | null; mreason: string | null; nrep: number; ltitle: string | null;
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
     lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
-    ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null;
+    ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null; evt: string | null; sla_h: number;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -66,7 +72,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select f.rule_key || '|' || f.detail from mod_flags f where f.queue_item_id = q.id order by f.id desc limit 1) as cflag,
             (select coalesce(nullif(trim(coalesce(x.first_name, '') || ' ' || coalesce(x.last_name, '')), ''), 'Vecino') from users x where q.subject_kind = 'user' and x.id::text = q.subject_id) as uname,
             (select a.number || '|' || a.target_kind from appeals a where q.subject_kind = 'appeal' and a.id::text = q.subject_id) as apel,
-            (select m.owner_kind from media m where q.queue = 'medios' and m.id::text = q.subject_id) as mkind
+            (select m.owner_kind from media m where q.queue = 'medios' and m.id::text = q.subject_id) as mkind,
+            (select case when e.pending_status = 'review' then 'cambio' else 'nuevo' end || '|' || (e.title->>'es') from events e where q.queue = 'evt' and e.id::text = q.subject_id) as evt,
+            ${SLA_SQL} as sla_h
        from queue_items q
        left join businesses b on b.id = q.business_id
        left join users u on u.id = q.assigned_to
@@ -81,7 +89,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
   const conteo: Record<string, number> = {};
   let vencidos = 0;
   const todos = r.rows.map((x): CasoLista => {
-    const e = espera(x.opened_at, COLAS[x.queue].sla);
+    const e = espera(x.opened_at, x.sla_h);
     conteo[x.queue] = (conteo[x.queue] ?? 0) + 1;
     if (e.r >= 1) vencidos++;
     const b = x.bname ?? "";
@@ -108,6 +116,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "rep" && (x.subject_kind === "com_post" || x.subject_kind === "com_comment") ? { title: `${x.subject_kind === "com_post" ? "Publicación" : "Comentario"} de la Comunidad · «${(x.ctext ?? "").slice(0, 60)}»`, sub: subCom(x.cn, x.creason, x.cflag) }
       : x.queue === "repUsr" ? { title: `Vecino reportado · ${x.uname ?? "Vecino"}`, sub: subCom(x.cn, x.creason, x.cflag) }
       : x.queue === "apel" ? { title: `Apelación ${(x.apel ?? "").split("|")[0]} · ${APELABLE[(x.apel ?? "|sanction").split("|")[1] as Apelable]?.es ?? "contenido"}`, sub: "Segunda revisión · la decide otra persona" }
+      // 6a · Eventos a revisar: un evento nuevo o un cambio que importa (la versión anterior sigue en vivo).
+      : x.queue === "evt" ? { title: `Evento · ${(x.evt ?? "|").split("|").slice(1).join("|")}`, sub: `${b}${(x.evt ?? "").startsWith("cambio") ? " · cambio que importa · sigue en vivo la versión anterior" : " · nuevo · nada se publica antes"}` }
       : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
       : x.queue === "medios" ? { title: `Foto marcada · ${b}`, sub: `${MOTIVO_FOTO[x.mreason ?? "otro"] ?? "Otro motivo"}${x.mnote ? ` · «${x.mnote}»` : ""}${x.nrep > 1 ? ` · ${x.nrep} reportes` : ""}` }
@@ -157,7 +167,8 @@ export async function caso(s: Staff, id: string) {
     `select q.id::text, q.queue, q.subject_kind, q.subject_id, q.business_id, q.city_id, q.opened_at, q.status, q.assigned_to, u.first_name as assignee, q.decision
        from queue_items q left join users u on u.id = q.assigned_to where q.id = $1`, [id])).rows[0];
   if (!q || !colasVisibles(s).includes(q.queue) || (s.cities.length && (!q.city_id || !s.cities.includes(q.city_id)))) return null;
-  const base = { ...q, esp: espera(q.opened_at, COLAS[q.queue].sla), mine: q.assigned_to === s.id, puedeDecidir: s.puede("colas", "aprobar") };
+  const sla = q.queue === "evt" ? await valor("evt_revision_h") : COLAS[q.queue].sla;
+  const base = { ...q, esp: espera(q.opened_at, sla), sla, mine: q.assigned_to === s.id, puedeDecidir: s.puede("colas", "aprobar") };
   const negocio = q.business_id ? await negocioCorto(q.business_id) : null;
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
@@ -204,6 +215,8 @@ export async function caso(s: Staff, id: string) {
     return { ...base, negocio: null, com: await (await import("./admin-confianza")).casoComunidad(q.subject_kind, q.subject_id) };
   }
   if (q.queue === "repUsr") return { ...base, negocio: null, persona: await (await import("./admin-confianza")).casoPersona(q.subject_id), banea: s.role === "admin" };
+  // 6a · Eventos a revisar: el evento (o el cambio que espera) con todo lo que hace falta para decidir.
+  if (q.queue === "evt") return { ...base, negocio, evt: await (await import("./evt-revision")).eventoAdmin(s, q.subject_id), puedeEvt: s.puede("evt", "aprobar") };
   if (q.queue === "apel") {
     const ap = q.status === "open" ? await (await import("./apelaciones")).apelacionDeCaso(q.subject_id) : null;
     return { ...base, negocio: null, apel: ap ? { ...ap, mia: ap.por === s.id } : null };
