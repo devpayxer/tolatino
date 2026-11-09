@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 
@@ -19,12 +20,12 @@ const COLS = `h.id::text, h.number, h.reason, h.items, h.wants, h.body, h.status
 
 /* Pasa a To'Latino lo que el negocio no respondió en 24 h (barato: índice parcial de las abiertas). */
 export async function escalarVencidas() {
-  const hay = await db().query(`select 1 from help_requests where status = 'open' and created_at <= now() - interval '24 hours' limit 1`);
+  const hay = await db().query(`select 1 from help_requests where status = 'open' and created_at <= now() - make_interval(hours => ${cfgSql("ayuda_negocio_h")}) limit 1`);
   if (!hay.rowCount) return;
   await tx(async (c) => {
     const L = (await c.query<{ id: string; business_id: string; city_id: string }>(
       `update help_requests set status = 'escalated', escalated_at = now(), escalated_by = 'system', updated_at = now()
-        where status = 'open' and created_at <= now() - interval '24 hours' returning id::text, business_id, city_id`)).rows;
+        where status = 'open' and created_at <= now() - make_interval(hours => ${cfgSql("ayuda_negocio_h")}) returning id::text, business_id, city_id`)).rows;
     for (const h of L) await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority) select ${COLA_AYUDA_SQL}, 'help_request', $1, $2, $3, 'normal' on conflict do nothing`, [h.id, h.business_id, h.city_id]);
   });
 }

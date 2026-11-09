@@ -8,7 +8,7 @@ acceso a «Tu página»; validar un código: «Tu página» o «Hoy y pedidos».
 - **Validar un código** (arriba): escribe el código que el vecino te muestra en su teléfono (TL-CQ- y 4 letras o números; da igual
   mayúsculas o minúsculas) → **Validar** → «Código válido: «…» para {vecino}: ya quedó usado.» Cada código se usa **una sola vez**.
 - **Crear un cupón:** qué das (español, y en inglés si quieres), condiciones (opcional), **cuántos al mes** (1–500) y **días para usarlo**
-  después de canjearlo (7 · 15 · 30 · 60 · 90). **El costo en monedas lo fija To'Latino** al aprobarlo (de 80 a 1,000). Sale **Por
+  después de canjearlo (7 · 15 · 30 · 60 · 90; el formulario propone lo que To'Latino fija en Configuración, 30 de fábrica). **El costo en monedas lo fija To'Latino** al aprobarlo (de 80 a 1,000). Sale **Por
   aprobar**; te avisamos cuando está **En la Comunidad** (con el costo) o si no salió (con el motivo).
 - **Tus cupones:** estado, cuántos van este mes de tu cupo, cuántos se usaron y cuántos códigos siguen vivos. **Editar** (por aprobar:
   todo; aprobado: solo el cupo y los días — la oferta no cambia debajo de quien ya la canjeó; para otra oferta, termina este y crea otro),

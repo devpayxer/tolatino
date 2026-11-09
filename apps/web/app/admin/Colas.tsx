@@ -65,8 +65,8 @@ export function useToast() {
 }
 
 
-export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar }: {
-  casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean;
+export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0 }: {
+  casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
@@ -427,7 +427,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       ];
     }
     // 5d · Casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel y fotos de la Comunidad): ./ColasComunidad.tsx.
-    const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`) });
+    const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`), apelarDias });
     if (com) { cuerpoB.push(...com.bloques); acts = com.acts; extra = null; }
     const arriba = k.queue === "medios" || ("cambio" in k && !!k.cambio);
     if (conf) return <><PanelBloques bloques={[out[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={false} onBack={() => setConf(null)} onDone={hecho} /></>;

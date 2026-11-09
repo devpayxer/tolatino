@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { Staff } from "./admin";
 import { COLAS, type Cola } from "./colas";
 import { db } from "./db";
@@ -307,7 +308,7 @@ export async function feInmAutos(s: Staff, dias: number) {
     db().query<{ cat: string; vigentes: number; porvencer: number; vencidas: number; revision: number }>(
       `select k.category_id as cat,
               count(*) filter (where l.status = 'valid' and (l.next_review is null or l.next_review >= current_date))::int as vigentes,
-              count(*) filter (where l.status = 'valid' and l.next_review between current_date and current_date + 14)::int as porvencer,
+              count(*) filter (where l.status = 'valid' and l.next_review between current_date and current_date + ${cfgSql("lic_aviso_dias")})::int as porvencer,
               count(*) filter (where l.status = 'expired' or (l.status = 'valid' and l.next_review < current_date))::int as vencidas,
               count(*) filter (where l.status = 'review')::int as revision
          from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
@@ -324,4 +325,35 @@ export async function feInmAutos(s: Staff, dias: number) {
   ]);
   const V = (r: string) => vis.rows.find((x) => x.rub === r) ?? { rub: r, n: 0, items: 0, atiempo: 0, vencidas: 0, noshow: 0, pasaron: 0 };
   return { inm: V("inm"), dealer: V("dealer"), dias: dias2.rows, vivos: vivos.rows, rev: rev.rows[0]!, ayuda: ay.rows, estafa: est.rows[0]!, lic: lic.rows, fe: fe.rows[0]!, vj: vj.rows[0]! };
+}
+
+/* 5i · Analítica › Comunidad (fase5-comunidad.md §4 5i): publicaciones, comentarios, % de preguntas resueltas, tiempo a la primera respuesta,
+   vecinos activos por rango, reportes por cada 1,000 publicaciones, apelaciones levantadas, monedas emitidas y canjeadas y canjes por negocio.
+   SOLO lee las vistas de 0105 (por ciudad y día local, sin personas) y com_activos_por_rango() (cuántos, nunca quiénes): guardián
+   analiticaSinPersonas. El período cuenta días locales completos desde hoy hacia atrás. */
+export async function comunidadAnalitica(s: Staff, dias: number) {
+  const DESDE = `(now() at time zone 'America/New_York')::date - ($2::int - 1)`;
+  const [tot, ciu, rk, neg] = await Promise.all([
+    db().query<{ publicaciones: number; comentarios: number; preguntas: number; resueltas: number; con_respuesta: number; min_primera: number; reportes: number;
+      levantadas: number; decididas: number; emitidas: number; canjeadas: number; devueltas: number; canjes: number; usados: number }>(
+      `select coalesce(sum(a.publicaciones), 0)::int as publicaciones, coalesce(sum(a.comentarios), 0)::int as comentarios, coalesce(sum(a.preguntas), 0)::int as preguntas,
+              coalesce(sum(a.resueltas), 0)::int as resueltas, coalesce(sum(a.con_respuesta), 0)::int as con_respuesta, coalesce(sum(a.min_primera), 0)::float8 as min_primera,
+              coalesce(sum(a.reportes), 0)::int as reportes, coalesce(sum(a.apelaciones_levantadas), 0)::int as levantadas, coalesce(sum(a.apelaciones_decididas), 0)::int as decididas,
+              coalesce(sum(a.monedas_emitidas), 0)::int as emitidas, coalesce(sum(a.monedas_canjeadas), 0)::int as canjeadas, coalesce(sum(a.monedas_devueltas), 0)::int as devueltas,
+              coalesce(sum(a.canjes), 0)::int as canjes, coalesce(sum(a.canjes_usados), 0)::int as usados
+         from com_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
+    db().query<{ ciudad: string; publicaciones: number; comentarios: number; preguntas: number; resueltas: number; reportes: number }>(
+      `select ci.name as ciudad, coalesce(sum(a.publicaciones), 0)::int as publicaciones, coalesce(sum(a.comentarios), 0)::int as comentarios,
+              coalesce(sum(a.preguntas), 0)::int as preguntas, coalesce(sum(a.resueltas), 0)::int as resueltas, coalesce(sum(a.reportes), 0)::int as reportes
+         from cities ci left join com_analitica_dia a on a.city_id = ci.id and a.dia >= ${DESDE}
+        where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.publicaciones), 0) > 0 order by ci.name`, [s.cities, dias]),
+    db().query<{ rango: number; activos: number; nombre: string | null }>(
+      `select a.rango::int as rango, a.activos, r.name->>'es' as nombre from com_activos_por_rango($1::text[], (${DESDE})::timestamp at time zone 'America/New_York') a
+         left join ranks r on r.level = a.rango order by a.rango`, [s.cities, dias]),
+    db().query<{ negocio: string; ciudad: string; canjes: number; usados: number; monedas: number }>(
+      `select k.negocio, ci.name as ciudad, sum(k.canjes)::int as canjes, sum(k.usados)::int as usados, sum(k.monedas)::int as monedas
+         from com_canjes_negocio_dia k join cities ci on ci.id = k.city_id where k.dia >= ${DESDE} and ${scope("k.city_id")}
+        group by k.business_id, k.negocio, ci.name order by 3 desc, 1 limit 20`, [s.cities, dias]),
+  ]);
+  return { t: tot.rows[0]!, ciudades: ciu.rows, rangos: rk.rows, negocios: neg.rows };
 }

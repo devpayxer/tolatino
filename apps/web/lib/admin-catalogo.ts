@@ -1,5 +1,6 @@
 import "server-only";
 import type { Staff } from "./admin";
+import { cfgSql } from "./config";
 import { db } from "./db";
 import { slugCat } from "./directorio";
 
@@ -124,14 +125,14 @@ export async function frasesViviendaJusta() {
 }
 
 /* Catálogo › Cargo del dealer (4ic · §3): el tope de PA del cargo del dealer (platform_config, A VERIFICAR cada año), cuántos dealers lo
-   usan y quién está en el tope. Solo un Admin lo cambia; el cambio recalcula los totales en la puerta por lotes. Llega a Configuración
-   con la Fase 5. */
+   usan y quién está en el tope. Solo un Admin lo cambia; el cambio recalcula los totales en la puerta por lotes. Es un valor de
+   Configuración (5i, lib/config.ts): se cambia aquí porque baja a los dealers que lo pasan. */
 export async function cargoDealer() {
   const x = (await db().query<{ tope: number; nota: string | null; dealers: number; enTope: number; carros: number }>(
-    `select coalesce((select (value #>> '{}')::int from platform_config where key = 'dealer_doc_fee_cap_cents'), 0) as tope,
-            (select note from platform_config where key = 'dealer_doc_fee_cap_cents') as nota,
+    `select ${cfgSql("dealer_doc_fee_cap_cents")} as tope,
+            (select help->>'es' from config_keys where key = 'dealer_doc_fee_cap_cents') as nota,
             (select count(*)::int from dealer_settings) as dealers,
-            (select count(*)::int from dealer_settings where doc_fee_cents >= coalesce((select (value #>> '{}')::int from platform_config where key = 'dealer_doc_fee_cap_cents'), 0)) as "enTope",
+            (select count(*)::int from dealer_settings where doc_fee_cents >= ${cfgSql("dealer_doc_fee_cap_cents")}) as "enTope",
             (select count(*)::int from vehicle_listings where status in ('lot', 'pending')) as carros`)).rows[0]!;
   return { ...x, historial: await historial(["platform_config"], "dealer_doc_fee_cap_cents") };
 }

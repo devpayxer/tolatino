@@ -1,0 +1,101 @@
+import "server-only";
+import { auditar } from "./admin";
+import { db, tx } from "./db";
+
+/* 5i · Configuración global (fase5-comunidad.md §2 0105 y §4 5i; hueco #10). ÚNICO lugar de la app que lee o escribe un valor
+   del catálogo `config_keys` (los plazos de la Comunidad y los diferidos de la Fase 4 viven en platform_config):
+   - valor(k) / valores(...ks): el número acotado a [min, max] (el de fábrica si no hay fila), desde cfg_int() de la base, con
+     una caché de 15 s por proceso que se vacía al guardar (otro proceso lo ve a más tardar en 15 s).
+   - cfgSql(k): el mismo valor dentro de una consulta (`cfg_int('k')`, sin caché: lo que decide en la base).
+   - cambiarConfig(): la única escritura. Revisa que la clave exista, que se pueda cambiar aquí, que sea un entero dentro de sus
+     límites (la base lo vuelve a imponer con un trigger) y deja la AuditEntry con antes → después y el motivo, en la misma
+     transacción. Lo llaman Configuración y las pantallas que ya tenían su editor (Auto-moderación, Gamification, Catálogo).
+   El guardián configDesdeUnLugar vigila que nadie más lea platform_config para estas claves ni deje copias del valor en el
+   código de la Comunidad; configConLimites, que cada clave tenga límites y que el servidor rechace lo que se sale. */
+export type ClaveConfig =
+  | "com_lim_publicaciones" | "com_lim_comentarios" | "com_lim_votos" | "com_lim_conversaciones" | "com_lim_reportes"
+  | "com_editar_min" | "com_apelar_dias" | "com_encuesta_dias_max" | "com_traduccion_hora" | "com_resumen_hora" | "cup_dias_def"
+  | "pts_tope_dia"
+  | "sp_seguro_guardar_h" | "sp_total_escrito_dias" | "sp_notas_purga_dias" | "sp_fotos_ayuda_dias" | "ayuda_negocio_h"
+  | "noche_responder_min" | "noche_mesa_guardada_min" | "noche_fila_viva_min"
+  | "insc_responder_h" | "insc_oferta_h" | "insc_baja_h" | "ninos_purga_dias" | "insc_grupos_n" | "insc_grupos_dias"
+  | "fe_responder_h" | "vis_responder_h" | "vis_paso_h" | "vis_purga_dias" | "lic_aviso_dias" | "dealer_doc_fee_cap_cents";
+
+type Bi = { es: string; en: string };
+const TTL_MS = 15_000;
+let cache: { at: number; m: Map<string, number> } | null = null;
+
+async function mapa(): Promise<Map<string, number>> {
+  if (cache && Date.now() - cache.at < TTL_MS) return cache.m;
+  const r = await db().query<{ key: string; v: number }>(`select key, cfg_int(key) as v from config_keys`);
+  cache = { at: Date.now(), m: new Map(r.rows.map((x) => [x.key, x.v])) };
+  return cache.m;
+}
+export function olvidarConfig() { cache = null; }
+
+/* El valor de una clave (acotado; el de fábrica si no hay fila). */
+export async function valor(k: ClaveConfig): Promise<number> {
+  const v = (await mapa()).get(k);
+  if (v == null) throw new Error(`config: ${k} no está en config_keys`);
+  return v;
+}
+export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record<K, number>> {
+  const m = await mapa(), out = {} as Record<K, number>;
+  for (const k of ks) { const v = m.get(k); if (v == null) throw new Error(`config: ${k} no está en config_keys`); out[k] = v; }
+  return out;
+}
+/* El mismo valor dentro de una consulta (lo decide la base en el momento, sin caché). */
+export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
+
+/* ── Configuración (Super Admin › Sistema › Configuración) ── */
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos";
+export type FilaConfig = {
+  key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
+  editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;
+};
+export async function catalogoConfig(): Promise<FilaConfig[]> {
+  const r = await db().query<FilaConfig>(
+    `select k.key, k.section as seccion, k.label, k.help, k.unit as unidad, k.min::float8 as min, k.max::float8 as max, k.def::float8 as def, cfg_int(k.key) as v,
+            exists (select 1 from platform_config p where p.key = k.key) and cfg_int(k.key) <> k.def as cambiado, k.editable, k.bloqueo, k.edit_in as "editIn",
+            to_char(a.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, a.quien
+       from config_keys k
+       left join lateral (select e.at, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
+                            from audit_entries e left join users u on u.id::text = e.actor_id
+                           where e.target_kind = 'platform_config' and e.target_id = k.key order by e.at desc limit 1) a on true
+      order by k.sort, k.key`);
+  return r.rows;
+}
+/* Lo que se dice del valor: «30 min», «$477.00». */
+export const conUnidad = (k: string, v: number, u: Bi) => (k.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${u.es}`);
+
+export type ResConfig = { ok: true; antes: number; v: number } | { ok: false; msg: string };
+/* La única escritura de un valor del catálogo. `desde` = la pantalla que lo cambia (una clave con edit_in solo se cambia allí,
+   porque esa pantalla hace algo más en la misma transacción: `tambien`). */
+export async function cambiarConfig(actor: string, k: string, valorTxt: string | number, motivo: string,
+  o: { desde?: string; tambien?: (c: import("pg").PoolClient, antes: number, v: number) => Promise<unknown> } = {}): Promise<ResConfig> {
+  const m = (motivo ?? "").trim().slice(0, 500);
+  if (m.length < 3) return { ok: false, msg: "Escribe el motivo." };
+  const txt = String(valorTxt ?? "").trim().replace(/[,\s]/g, "");
+  const v = Number(txt);
+  const r = await tx(async (c): Promise<ResConfig> => {
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`cfg:${k}`]);
+    const x = (await c.query<{ min: number; max: number; label: Bi; unit: Bi; editable: boolean; bloqueo: Bi | null; edit_in: string | null; antes: number }>(
+      `select min::float8 as min, max::float8 as max, label, unit, editable, bloqueo, edit_in, cfg_int(key) as antes from config_keys where key = $1`, [k])).rows[0];
+    if (!x) return { ok: false, msg: "Ese valor no existe en la configuración." };
+    if (!x.editable) return { ok: false, msg: `Todavía no se cambia aquí: ${x.bloqueo?.es ?? "un texto dice el número"}` };
+    if (x.edit_in && o.desde !== x.edit_in) return { ok: false, msg: "Este valor se cambia en su pantalla (hace algo más al guardar)." };
+    if (!txt || !Number.isFinite(v) || !Number.isInteger(v)) return { ok: false, msg: "Escribe un número entero." };
+    if (v < x.min || v > x.max) return { ok: false, msg: `Entre ${conUnidad(k, x.min, x.unit)} y ${conUnidad(k, x.max, x.unit)}.` };
+    if (v === x.antes) return { ok: false, msg: "Ya tiene ese valor." };
+    await c.query(
+      `insert into platform_config (key, value, note, updated_by, updated_at) values ($1, to_jsonb($2::int), $3, $4, now())
+       on conflict (key) do update set value = excluded.value, note = excluded.note, updated_by = excluded.updated_by, updated_at = now()`,
+      [k, v, x.label.es, actor]);
+    await auditar(c, { actor, action: "config.cambiar", targetKind: "platform_config", targetId: k,
+      before: { [x.label.es]: conUnidad(k, x.antes, x.unit) }, after: { [x.label.es]: conUnidad(k, v, x.unit) }, reason: m });
+    if (o.tambien) await o.tambien(c, x.antes, v);
+    return { ok: true, antes: x.antes, v };
+  });
+  if (r.ok) olvidarConfig();
+  return r;
+}

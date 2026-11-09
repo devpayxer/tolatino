@@ -24,6 +24,7 @@ export type DatosAnalitica = {
   no?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").noche>>;
   en?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").inscripcionesAnalitica>>;
   ia?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").feInmAutos>>;
+  com?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").comunidadAnalitica>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -32,7 +33,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -232,6 +233,32 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         ])]} />
         {ayuda.length ? <A.HBars label="AYUDA · MOTIVOS" help={`${d.dias} días · Iglesias, Bienes Raíces y Autos`} items={ayuda.map((x) => ({ label: `${RUB[x.rub] ?? x.rub} · ${motivoAyuda(x.reason, x.rub)[0]}`, width: `${Math.round((x.n / mx) * 100)}%`, color: "var(--tl-ink)", value: String(x.n) }))} />
           : <A.AdminNote tone="ok" icon="check">Nadie pidió ayuda con una visita o una fecha en el período.</A.AdminNote>}
+      </>);
+  } else if (d.tab === "com" && d.com) {
+    // 5i · Comunidad: por ciudad, sin personas (solo las vistas de 0105 y cuántos por rango).
+    const { t, ciudades, rangos, negocios } = d.com, mxR = Math.max(1, ...rangos.map((x) => x.activos)), mxN = Math.max(1, ...negocios.map((x) => x.canjes));
+    const min = t.con_respuesta ? Math.round(t.min_primera / t.con_respuesta) : null;
+    const tiempo = min == null ? "—" : min < 60 ? `${min} min` : min < 2880 ? `${Math.round(min / 6) / 10} h` : `${Math.round(min / 144) / 10} días`;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "CONVERSACIÓN" }, kpis([
+          { k: "PUBLICACIONES", v: t.publicaciones.toLocaleString("en-US"), s: `${t.preguntas} preguntas` },
+          { k: "COMENTARIOS", v: t.comentarios.toLocaleString("en-US"), s: t.publicaciones ? `${Math.round((10 * t.comentarios) / t.publicaciones) / 10} por publicación` : "—" },
+          { k: "PREGUNTAS RESUELTAS", v: pct(t.resueltas, t.preguntas), s: `${t.resueltas} de ${t.preguntas} · con «Me sirvió»`, dark: true },
+          { k: "TIEMPO A LA PRIMERA RESPUESTA", v: tiempo, s: `promedio de ${t.con_respuesta} preguntas respondidas` },
+        ]), { type: "group", k: "MODERACIÓN" }, kpis([
+          { k: "REPORTES POR CADA 1,000 PUBLICACIONES", v: t.publicaciones ? (Math.round((10000 * t.reportes) / t.publicaciones) / 10).toString() : "—", s: `${t.reportes} reportes de publicaciones y comentarios` },
+          { k: "APELACIONES LEVANTADAS", v: String(t.levantadas), s: `${pct(t.levantadas, t.decididas)} de ${t.decididas} decididas` },
+        ]), { type: "group", k: "MONEDAS Y CUPONES · SIN VALOR EN DINERO" }, kpis([
+          { k: "MONEDAS EMITIDAS", v: t.emitidas.toLocaleString("en-US"), s: "bienvenida y premios del mes" },
+          { k: "MONEDAS CANJEADAS", v: t.canjeadas.toLocaleString("en-US"), s: `${t.devueltas.toLocaleString("en-US")} devueltas por códigos vencidos` },
+          { k: "CANJES", v: String(t.canjes), s: `${t.usados} usados en el negocio` },
+        ]),
+        { type: "rows", k: "VECINOS ACTIVOS POR RANGO · PUBLICARON, COMENTARON O VOTARON", items: rangos.length ? rangos.map((x) => ({ key: String(x.rango), icon: "shield", t: `${x.rango} · ${x.nombre ?? ""}`, r: String(x.activos), s: "▮".repeat(Math.max(1, Math.round((12 * x.activos) / mxR))) })) : [{ key: "0", icon: "shield", t: "Nadie activo en el período" }] },
+        { type: "rows", k: "POR CIUDAD", items: ciudades.map((x) => ({ key: x.ciudad, icon: "pin", t: x.ciudad, s: `${x.publicaciones} publicaciones · ${x.comentarios} comentarios · ${pct(x.resueltas, x.preguntas)} resueltas · ${x.reportes} reportes` })) },
+        { type: "rows", k: "CANJES POR NEGOCIO", items: negocios.length ? negocios.map((x) => ({ key: x.negocio + x.ciudad, icon: "ticket", t: `${x.negocio} · ${x.ciudad}`, r: String(x.canjes), s: `${x.usados} usados · ${x.monedas.toLocaleString("en-US")} monedas · ${"▮".repeat(Math.max(1, Math.round((12 * x.canjes) / mxN)))}` })) : [{ key: "0", icon: "ticket", t: "Sin canjes en el período" }] },
+        { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad y día: nunca quién publicó, votó o canjeó." },
+        ]} />
       </>);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;

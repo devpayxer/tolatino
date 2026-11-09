@@ -13,7 +13,7 @@ import type { Monedas360, Puntos360 } from "@/lib/admin-gam";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
-  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar,
+  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
 } from "./acciones-usuarios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -27,14 +27,14 @@ const VERBO: Record<string, string> = {
   "usuario.sesiones.cerrar": "cerró las sesiones de", "usuario.sesion.cerrar": "cerró una sesión de", "usuario.sesion.bloquear": "bloqueó un dispositivo de",
   "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.verificacion.restablecer": "restableció la verificación de",
   "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
-  "usuario.exportar": "exportó los datos de",
+  "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de",
 };
 const CAMBIO_K: Record<string, string> = { phone: "Teléfono", city: "Ciudad", email: "Correo", name: "Nombre" };
 const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, com, pts, mon, topeAjuste = 500, topeMonedas = 500 }: { u: Usuario360; tab: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500 }: { u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -141,26 +141,37 @@ export function U360({ u, tab, com, pts, mon, topeAjuste = 500, topeMonedas = 50
           : <A.AdminNote tone="info" icon="bubble">Ninguno.</A.AdminNote>}
       </>);
   } else if (tab === "comunidad" && com) {
+    // 5i · Usuarios 360° › Comunidad (MEM 696–699): arriba rango, puntos, monedas, votos recibidos y la red; debajo las sub-pestañas
+    // Publicaciones · Comentarios · Seguidores y siguiendo · Puntos y monedas · Cupones y referidos (sin El Patio, decisión G).
     const lista = (k: string, L: Comunidad360["listas"]["seg"], vacio: string) => <>
       <PanelBloques bloques={[{ type: "group", k: `${k} · ${L.length}` }]} />
-      {L.length ? <A.AdminList rows={L.map((x) => ({ icon: "users", title: x.nombre, sub: `${x.rango} · ${x.ciudad ?? "Sin ciudad"} · ${fecha(x.at)}`, tag: x.mismo ? "MISMO DISPOSITIVO" : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}?tab=comunidad`) }))} />
+      {L.length ? <A.AdminList rows={L.map((x) => ({ icon: "users", title: x.nombre, sub: `${x.rango} · ${x.ciudad ?? "Sin ciudad"} · ${fecha(x.at)}`, tag: x.mismo ? "MISMO DISPOSITIVO" : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}?tab=comunidad&sub=seg`) }))} />
         : <A.AdminNote tone="info" icon="users">{vacio}</A.AdminNote>}
     </>;
-    cuerpo = (
-      <>
-        <PanelBloques bloques={[
-          { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
-            { k: "RANGO", v: String(com.rango) }, { k: "PUBLICACIONES", v: String(com.publicaciones), s: `${com.comentarios} comentarios` },
-            { k: "VOTOS RECIBIDOS", v: `+${com.votos.up}`, s: `−${com.votos.dn}` }, { k: "MEJORES RESPUESTAS", v: String(com.mejores) }] },
-          { type: "kv", cols: desk ? 3 : 2, items: [
-            { k: "SEGUIDORES", v: String(com.seguidores) }, { k: "SIGUIENDO", v: String(com.siguiendo) }, { k: "BLOQUEÓ", v: String(com.bloqueo) }, { k: "SILENCIÓ", v: String(com.silencio) },
-            { k: "CONVERSACIONES PRIVADAS", v: `${com.conversaciones} · el equipo no las lee salvo reporte` }, { k: "CUENTAS", v: com.ocultaCuentas ? "Ocultas al público" : "Visibles" },
-            { k: "18 AÑOS O MÁS", v: com.declaracion ? `${com.declaracion.adulto ? "Declaró que sí" : "Declaró que no: no entra a la Comunidad"} · ${fecha(com.declaracion.at)}` : "Sin declarar", fg: com.declaracion?.adulto === false ? WARN : undefined },
-            { k: "BIENVENIDA", v: com.bienvenida ? fecha(com.bienvenida) : "No la ha hecho" },
-          ] },
-        ]} />
-        {com.ocultas ? <A.AdminNote tone="warn" icon="warning" cta="Ver" onCta={() => router.push(`/admin/contenido?tab=pub`)}>{`${com.ocultas} de sus publicaciones o comentarios están ocultos por las reglas.`}</A.AdminNote> : null}
-        {com.red ? <A.AdminNote tone="bad" icon="warning">{`${com.red} ${com.red === 1 ? "seguidor entró" : "seguidores entraron"} desde el mismo dispositivo que esta cuenta: posible red de cuentas. El caso de red de cuentas se abre desde Reportes de usuario cuando exista esa cola (5d).`}</A.AdminNote> : null}
+    const EST_C: Record<string, string> = { visible: "SE VE", hidden: "OCULTO", deleted: "BORRADO POR SU AUTOR" };
+    const TIPO_C: Record<string, string> = { pregunta: "Pregunta", recomendacion: "Recomendación", encuesta: "Encuesta", publicacion: "Publicación" };
+    const EST_K: Record<string, string> = { issued: "CÓDIGO VIVO", used: "USADO", expired: "VENCIDO · MONEDAS DEVUELTAS" };
+    const subTabs: Bloque = { type: "tabs", items: ([["pub", "Publicaciones", com.pubs.length], ["cm", "Comentarios", com.cms.length], ["seg", "Seguidores y siguiendo"], ["pym", "Puntos y monedas"], ["cup", "Cupones y referidos"]] as [string, string, number?][])
+      .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: sub === k, onClick: () => router.push(`/admin/usuarios/${u.id}?tab=comunidad&sub=${k}`, { scroll: false }) })) };
+    let parte: ReactNode = null;
+    if (sub === "pub") parte = com.pubs.length ? <PanelBloques bloques={[{ type: "rows", items: com.pubs.map((x) => ({ key: x.id, icon: "bubble", t: x.body,
+      s: `${TIPO_C[x.kind] ?? "Publicación"} · ${x.ciudad} · +${x.up} / −${x.dn} · ${x.cms} comentarios · ${fecha(x.at)}${x.rep ? ` · ${x.rep} reportes` : ""}${x.why ? ` · ${x.why}` : ""}`,
+      tag: EST_C[x.status] ?? x.status, tone: x.status === "hidden" ? "danger" : "neutral", chev: x.status !== "deleted", onClick: x.status !== "deleted" ? () => router.push(`/admin/contenido/hilo/${x.id}`) : undefined })) },
+      { type: "acts", items: [{ l: "Ver todo en Contenido", v: "secondary", icon: "search", onClick: () => router.push(`/admin/contenido?autor=${u.id}`) }] }]} />
+      : <PanelBloques bloques={[{ type: "empty", icon: "bubble", t: "Sin publicaciones", s: "Todavía no ha publicado en la Comunidad." }]} />;
+    else if (sub === "cm") parte = com.cms.length ? <PanelBloques bloques={[{ type: "rows", items: com.cms.map((x) => ({ key: x.id, icon: "chat", t: x.body,
+      s: `+${x.up} / −${x.dn} · ${fecha(x.at)}${x.rep ? ` · ${x.rep} reportes` : ""}${x.why ? ` · ${x.why}` : ""}`, tag: EST_C[x.status] ?? x.status, tone: x.status === "hidden" ? "danger" : "neutral",
+      chev: true, onClick: () => router.push(`/admin/contenido/hilo/${x.post}?c=${x.id}`) })) }]} />
+      : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Sin comentarios", s: "Todavía no ha comentado en la Comunidad." }]} />;
+    else if (sub === "seg") parte = <>
+        {lista("SEGUIDORES", com.listas.seg, "Nadie la sigue todavía.")}
+        {lista("SIGUIENDO", com.listas.sig, "No sigue a nadie.")}
+        {lista("BLOQUEADOS", com.listas.blk, "No ha bloqueado a nadie.")}
+        {com.listas.blk.length ? <A.AdminNote tone="info" icon="lock">El bloqueo es mutuo e invisible para la persona bloqueada.</A.AdminNote> : null}
+        {lista("SILENCIADOS", com.listas.mut, "No ha silenciado a nadie.")}
+        <A.AdminNote tone="info" icon="info">Seguir o tener seguidores no da puntos ni rango. Los mensajes privados solo se leen con un reporte abierto, en Colas › Mensajes reportados.</A.AdminNote>
+      </>;
+    else if (sub === "pym") parte = <>
         {pts && <>
           <PanelBloques bloques={[{ type: "group", k: "PUNTOS Y RANGO" },
             { type: "kv", cols: desk ? 3 : 2, items: [
@@ -195,12 +206,37 @@ export function U360({ u, tab, com, pts, mon, topeAjuste = 500, topeMonedas = 50
               s: `${x.quien ? `Equipo · ${x.quien} · ` : ""}${fecha(x.at)}`, r: x.delta > 0 ? `+${x.delta}` : `−${-x.delta}` })) } : { type: "empty", icon: "ticket", t: "Sin movimientos", s: "Todavía no tiene monedas." },
           ]} />
         </>}
-        {lista("SEGUIDORES", com.listas.seg, "Nadie la sigue todavía.")}
-        {lista("SIGUIENDO", com.listas.sig, "No sigue a nadie.")}
-        {lista("BLOQUEADOS", com.listas.blk, "No ha bloqueado a nadie.")}
-        {com.listas.blk.length ? <A.AdminNote tone="info" icon="lock">El bloqueo es mutuo e invisible para la persona bloqueada.</A.AdminNote> : null}
-        {lista("SILENCIADOS", com.listas.mut, "No ha silenciado a nadie.")}
-        <A.AdminNote tone="info" icon="info">Seguir o tener seguidores no da puntos ni rango. Los mensajes privados solo se leen con un reporte abierto, en Colas › Mensajes reportados.</A.AdminNote>
+      </>;
+    else if (sub === "cup") parte = <PanelBloques bloques={[
+      { type: "group", k: `CUPONES CANJEADOS · ${com.cupones.length}` },
+      com.cupones.length ? { type: "rows", items: com.cupones.map((x) => ({ key: x.id, icon: "ticket", t: `${x.titulo} · ${x.negocio}`, s: `${x.costo} monedas · ${x.codigo} · ${fecha(x.at)}`, tag: EST_K[x.status] ?? x.status, tone: x.status === "used" ? "signal" : "neutral" })) }
+        : { type: "empty", icon: "ticket", t: "Sin cupones", s: "Todavía no ha canjeado monedas por un cupón." },
+      { type: "group", k: "REFERIDOS · SIN DINERO, SOLO CUENTAN PARA CAPITÁN" },
+      { type: "kv", cols: desk ? 3 : 2, items: [{ k: "SU CÓDIGO", v: com.referidos.codigo ?? "Todavía no tiene" }, { k: "INVITADOS", v: String(com.referidos.invitados) }, { k: "PARTICIPAN", v: String(com.referidos.activos) },
+        { k: "LLEGÓ INVITADA POR", v: com.referidos.vino ?? "Nadie" }] },
+      ...(com.referidos.lista.length ? [{ type: "rows" as const, items: com.referidos.lista.map((x, i) => ({ key: String(i), icon: "users", t: x.nombre, s: fecha(x.at), tag: x.estado === "active" ? "PARTICIPA" : "SE UNIÓ", tone: x.estado === "active" ? "signal" : "neutral" })) }] : []),
+    ]} />;
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[
+          { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+            { k: "RANGO", v: String(com.rango), s: pts ? pts.name.es : undefined }, { k: "PUNTOS", v: pts ? pts.total.toLocaleString("en-US") : "—", s: pts ? `${pts.mes} este mes` : undefined },
+            { k: "MONEDAS", v: mon ? mon.saldo.toLocaleString("en-US") : "—", s: "sin valor en dinero" }, { k: "VOTOS RECIBIDOS", v: `+${com.votos.up}`, s: `−${com.votos.dn} · ${com.mejores} mejores respuestas` }] },
+          { type: "kv", cols: desk ? 3 : 2, items: [
+            { k: "PUBLICACIONES", v: `${com.publicaciones} · ${com.comentarios} comentarios` }, { k: "SEGUIDORES", v: String(com.seguidores) }, { k: "SIGUIENDO", v: String(com.siguiendo) },
+            { k: "BLOQUEÓ", v: String(com.bloqueo) }, { k: "SILENCIÓ", v: String(com.silencio) },
+            { k: "CONVERSACIONES PRIVADAS", v: `${com.conversaciones} · el equipo no las lee salvo reporte` }, { k: "CUENTAS", v: com.ocultaCuentas ? "Ocultas al público" : "Visibles" },
+            { k: "18 AÑOS O MÁS", v: com.declaracion ? `${com.declaracion.adulto ? "Declaró que sí" : "Declaró que no: no entra a la Comunidad"} · ${fecha(com.declaracion.at)}` : "Sin declarar", fg: com.declaracion?.adulto === false ? WARN : undefined },
+            { k: "BIENVENIDA", v: com.bienvenida ? fecha(com.bienvenida) : "No la ha hecho" },
+          ] },
+        ]} />
+        {com.ocultas ? <A.AdminNote tone="warn" icon="warning" cta="Ver" onCta={() => router.push(`/admin/contenido?autor=${u.id}&est=hid`)}>{`${com.ocultas} de sus publicaciones o comentarios están ocultos por las reglas.`}</A.AdminNote> : null}
+        {com.red ? <A.AdminNote tone="bad" icon="warning" cta={P.editar && !intocable && !borrada ? "Abrir caso de red de cuentas" : undefined}
+          onCta={() => setConf({ titulo: `Caso de red de cuentas · ${corto}`, sub: "Va a Colas › Reportes de usuario con la marca «posible red». Lo decide una persona, con la escalera de sanciones y la apelación. Queda en la auditoría.", cta: "Abrir caso",
+            plantillas: ["Seguidores desde el mismo dispositivo", "Votos entre cuentas del mismo dispositivo", "Lo reportaron vecinos"], hacer: (m) => usrCasoRed(u.id, m) })}>
+          {`${com.red} ${com.red === 1 ? "seguidor entró" : "seguidores entraron"} desde el mismo dispositivo que esta cuenta: posible red de cuentas.`}</A.AdminNote> : null}
+        <PanelBloques bloques={[subTabs]} />
+        {parte}
       </>);
   } else if (tab === "privacidad") {
     cuerpo = (

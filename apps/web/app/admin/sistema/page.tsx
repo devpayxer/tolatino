@@ -5,8 +5,9 @@ import { agregarMiembro, cambiarPermiso, quitarMiembro } from "../acciones";
 import {ConMotivo, Matriz, Titulo } from "../ui";
 import { Auditoria } from "./Auditoria";
 import { AgregarMiembro } from "./AgregarMiembro";
+import { PestanasSistema } from "./Pestanas";
 
-/* ADM-SYS · Sistema: equipo y roles, matriz de permisos (2am), auditoría (2al). */
+/* ADM-SYS · Sistema: equipo y roles, matriz de permisos (2am), auditoría (2al) y (5i) la pestaña Configuración. */
 export default async function Sistema() {
   const s = await requerir("sys", "ver");
   const editar = s.puede("sys", "editar");
@@ -26,6 +27,7 @@ export default async function Sistema() {
   return (
     <>
       <Titulo eyebrow="SUPER ADMIN · SISTEMA" titulo="Equipo, permisos y auditoría" sub="Cada cambio pide motivo y queda en la auditoría, que nadie puede editar ni borrar." />
+      <PestanasSistema on="equipo" />
       <section className="flex flex-col gap-2.5">
         <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">EQUIPO · {eq.rows.length}</span>
         <div className="flex flex-col gap-2">

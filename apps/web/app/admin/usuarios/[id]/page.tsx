@@ -7,7 +7,8 @@ import { U360 } from "../../U360";
 
 /* ADM-USR · 360° de una persona (pantalla completa, como el prototipo por defecto en Usuarios). ?tab= la pestaña. */
 const TABS = new Set(["resumen", "seguridad", "confianza", "privacidad", "comunidad"]);
-export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
+const SUBS = new Set(["pub", "cm", "seg", "pym", "cup"]);
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; sub?: string }> }) {
   const s = await requerir("usr", "ver");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
   const u = await usuario360(s, id);
@@ -15,5 +16,5 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const tab = TABS.has(sp.tab ?? "") ? sp.tab! : "resumen";
   // Comunidad (5c): solo después de usuario360() (permiso y ciudad ya revisados).
   const [com, pts, mon] = tab === "comunidad" ? await Promise.all([comunidad360(u.id), puntos360(u.id), monedas360(u.id)]) : [null, null, null];
-  return <U360 u={u} tab={tab} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
+  return <U360 u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
 }

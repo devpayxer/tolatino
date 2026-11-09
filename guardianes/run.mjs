@@ -1179,9 +1179,11 @@ const guardianes = {
     const C = "apps/web/lib/noche-comun.ts", L = "apps/web/lib/noche.ts";
     if (!existsSync(C)) return;
     const t = readFileSync(C, "utf8");
-    if (!/export const FILA_VIVA_MIN = 60;/.test(t)) falla("filaNoFalsa", C, 0, "la fila «ahora» vale 60 minutos (FILA_VIVA_MIN = 60)");
+    // 5i: el valor vive en Configuración (config_keys · noche_fila_viva_min, 60 de fábrica); la base y lib/noche.ts lo leen de ahí.
+    const K = "packages/db/migrations/0105_configuracion_comunidad.sql";
+    if (!existsSync(K) || !/\('noche_fila_viva_min', 15, 240, 60,/.test(readFileSync(K, "utf8"))) falla("filaNoFalsa", K, 0, "la fila «ahora» vale 60 minutos de fábrica (config_keys · noche_fila_viva_min)");
     if (!/if \(f\.viva\) return f\.min \? E2\(`Fila ahora/.test(t) || !/if \(f\.viva\) return E2\(`Ahora · lo puso/.test(t) || !/f\.viva \? \(es \? "FILA AHORA"/.test(t)) falla("filaNoFalsa", C, 0, "«Fila ahora» solo dentro de if (f.viva)");
-    if (existsSync(L) && !/s\.line_at > now\(\) - make_interval\(mins => \$\{FILA_VIVA_MIN\}\)/.test(readFileSync(L, "utf8"))) falla("filaNoFalsa", L, 0, "«viva» se calcula en el servidor con FILA_VIVA_MIN");
+    if (existsSync(L) && !/s\.line_at > now\(\) - make_interval\(mins => \$\{cfgSql\("noche_fila_viva_min"\)\}\)/.test(readFileSync(L, "utf8"))) falla("filaNoFalsa", L, 0, "«viva» se calcula en el servidor con el valor de Configuración (noche_fila_viva_min)");
     for (const f of codigo) {
       if (!/^apps\/web\//.test(f) || f === C) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, n) => { if (/Fila ahora|Line now|(?<!LA )FILA AHORA|LINE NOW|Ahora · lo puso|HACE \d+ MIN/.test(l)) falla("filaNoFalsa", f, n + 1, "la fila «ahora» solo la dice filaTexto (con su hora real)"); });
@@ -1482,7 +1484,7 @@ const guardianes = {
     const f = /export function enLaPuerta\([^)]*\): Puerta \{\n([\s\S]*?)\n\}/.exec(a)?.[1] ?? "";
     if (!f.includes("const tax = Math.floor((price * taxBp + 5000) / 10000);") || !f.includes("otd: price + tax + tags + fee")) falla(G, A, 0, "enLaPuerta: impuesto redondeado como la base y otd = precio + impuesto + placas + cargo");
     if (!/from tax_rules t where t\.city_id = b\.city_id and t\.category_id = 'NEG-DEALER'/.test(a)) falla(G, A, 0, "el impuesto sale de tax_rules de la ciudad, nunca escrito a mano");
-    if (!/where key = '\$\{TOPE_KEY\}'/.test(a) || !/const TOPE_KEY = "dealer_doc_fee_cap_cents"/.test(a)) falla(G, A, 0, "el tope del cargo sale de platform_config");
+    if (!/\$\{cfgSql\(TOPE_KEY\)\} as tope/.test(a) || !/const TOPE_KEY = "dealer_doc_fee_cap_cents"/.test(a)) falla(G, A, 0, "el tope del cargo sale de Configuración (cfgSql: platform_config acotado por config_keys)");
     if ((a.match(/Math\.min\(h\.fee, h\.tope\)/g) ?? []).length < 2 || !/if \(v > h\.tope\) return err\(/.test(a) || !/const fee = Math\.min\(s\.fee, h\.tope\);/.test(a)) falla(G, A, 0, "el cargo del dealer nunca pasa del tope (al cotizar, al guardar, en la herramienta y al recalcular)");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
@@ -1967,7 +1969,7 @@ const guardianes = {
     if (!/d := least\(r\.points, pts_tope\(\) - hoy\);\s*if d <= 0 then return 0; end if;/.test(S)) falla(G, "packages/db/migrations", 0, "pts_sumar debe guardar solo lo que cabe en el tope del día");
     if (!/dia := \(now\(\) at time zone tz\)::date;/.test(S)) falla(G, "packages/db/migrations", 0, "el día del tope es el día local de la ciudad de la persona");
     if (!/pg_advisory_xact_lock\(hashtextextended\('pts:' \|\| uid::text, 0\)\)/.test(S)) falla(G, "packages/db/migrations", 0, "pts_sumar sin candado por persona (dos a la vez se pasarían del tope)");
-    if (!/key = 'pts_tope_dia'/.test(T)) falla(G, "packages/db/migrations", 0, "el tope vive en platform_config (pts_tope_dia)");
+    if (!/key = 'pts_tope_dia'|cfg_int\('pts_tope_dia'\)/.test(T)) falla(G, "packages/db/migrations", 0, "el tope vive en Configuración (pts_tope_dia)");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       if (/points_today\s*[+-]|pts_tope_dia'\s*,\s*'\d/.test(sinComent(x))) falla(G, x, 0, "la app no cuenta los puntos del día por su cuenta (lo hace la base)");
@@ -2113,7 +2115,9 @@ const guardianes = {
     const iS = e.search(/if \(!o\.me_sigue && !t\?\.me_escribio\) return/), iL = e.search(/const lim = await limiteDia\(c, viewer, "conversaciones"\);\s*if \(!lim\.ok\) return lim;/), iT = e.search(/insert into dm_threads/);
     if (iS < 0 || iT < 0 || iS > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin revisar antes que la otra persona te sigue");
     if (iL < 0 || iT < 0 || iL > iT) falla("mensajeSoloAQuienTeSigue", MV, 0, "enviar() crea la conversación sin el límite de conversaciones nuevas al día");
-    if (!/conversaciones: \{ key: "com_lim_conversaciones", def: 10,/.test(readFileSync("apps/web/lib/moderacion-comun.ts", "utf8"))) falla("mensajeSoloAQuienTeSigue", "apps/web/lib/moderacion-comun.ts", 0, "el límite de fábrica es 10 conversaciones nuevas al día (§4 5c)");
+    const K5 = "packages/db/migrations/0105_configuracion_comunidad.sql";
+    if (!/conversaciones: \{ key: "com_lim_conversaciones",/.test(readFileSync("apps/web/lib/moderacion-comun.ts", "utf8")) || !existsSync(K5) || !/\('com_lim_conversaciones', 1, 100, 10,/.test(readFileSync(K5, "utf8")))
+      falla("mensajeSoloAQuienTeSigue", K5, 0, "el límite de fábrica es 10 conversaciones nuevas al día (§4 5c; config_keys)");
     if (!/if not exists \(select 1 from follows f where f\.follower_user_id = otro and f\.target_kind = 'user' and f\.target_id = new\.sender_user_id::text\)\s*and not exists \(select 1 from dm_messages m where m\.thread_id = new\.thread_id and m\.sender_user_id = otro\) then\s*raise exception 'solo le escribes a quien te sigue'/.test(m))
       falla("mensajeSoloAQuienTeSigue", M, 0, "dm_messages_antes debe rechazar el mensaje a quien no te sigue (ni te escribió)");
     if (!/raise exception 'los contadores de una conversación son derivados'/.test(m)) falla("mensajeSoloAQuienTeSigue", M, 0, "dm_threads_antes debe rechazar el cambio a mano de los derivados");
@@ -2547,6 +2551,103 @@ const guardianes = {
       const t = sinComent(f);
       for (const fn of fns) if (!/detectarIdioma\(/.test(cuerpoFn(t, fn))) falla(G, f, 0, `«${fn}» guarda texto sin detectar su idioma (detectarIdioma)`);
     }
+  },
+
+  /* ── Fase 5 · 5i ── Configuración: un solo lugar, con límites; analítica sin personas; el lote nunca toca la cuenta oficial. */
+  /* 5i (clase: un plazo copiado en dos lugares que se desincronizan; un valor leído sin límites). Las claves del catálogo (config_keys de
+     0105) se leen SOLO con lib/config.ts (valor/valores/cfgSql → cfg_int de la base) y se escriben SOLO con cambiarConfig: ninguna consulta
+     fuera de lib/config.ts toca platform_config con una clave del catálogo, una clave en variable ($n, any(...)) o una clave armada; el
+     tipo ClaveConfig es exactamente el catálogo; y el código de la Comunidad no guarda copias de esos valores (30 min de editar, 14 días
+     de apelar, 60 traducciones, 7 PM del resumen, 1·3·7 días de encuesta, 30 días del cupón, límites del día). Al revés: devolver una
+     constante o leer platform_config directo → falla. */
+  configDesdeUnLugar() {
+    const G = "configDesdeUnLugar", K = "packages/db/migrations/0105_configuracion_comunidad.sql", CF = "apps/web/lib/config.ts";
+    if (!existsSync(K)) return;
+    const claves = [...readFileSync(K, "utf8").matchAll(/^\s*\('([a-z0-9_]+)', -?\d+, -?\d+, -?\d+, '\{/gm)].map((m) => m[1]);
+    if (claves.length < 10) return falla(G, K, 0, "no encuentro el catálogo config_keys");
+    if (!existsSync(CF)) return falla(G, CF, 0, "falta lib/config.ts (el único lector de la configuración)");
+    const tipo = /export type ClaveConfig =([\s\S]*?);/.exec(sinComent(CF))?.[1] ?? "", enTipo = new Set([...tipo.matchAll(/"([a-z0-9_]+)"/g)].map((m) => m[1]));
+    for (const k of claves) if (!enTipo.has(k)) falla(G, CF, 0, `ClaveConfig no tiene «${k}» del catálogo`);
+    for (const k of enTipo) if (!claves.includes(k)) falla(G, CF, 0, `ClaveConfig tiene «${k}», que no está en config_keys`);
+    const CAT = new RegExp(`'(${claves.join("|")})'`);
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === CF) continue;
+      const t = sinComent(x);
+      for (const q of t.match(/`[^`]*`/g) ?? []) {
+        if (!/platform_config/.test(q)) continue;
+        if (CAT.test(q) || /key = (\$\d|any\()|key = '\$\{/.test(q)) falla(G, x, 0, "lee o escribe platform_config para una clave de Configuración: usa valor()/cfgSql()/cambiarConfig() de lib/config.ts");
+      }
+    }
+    const COM = (x) => /^apps\/web\/lib\/(comunidad[^/]*|moderacion[^/]*|apelaciones|traduccion|cupones|oficial)\.ts$/.test(x) || /^apps\/web\/app\/\(app\)\/(comunidad|cuenta\/avisos|cuenta\/moderacion)\//.test(x)
+      || /^apps\/web\/app\/admin\/(ColasComunidad|Confianza|AutoModeracion|HoyAdmin|Contenido|Notificaciones)\.tsx$/.test(x) || x === "apps/web/app/panel/CuponesPanel.tsx";
+    const COPIAS = [[/\b30 min(utos|utes)?\b/i, "los minutos para editar (com_editar_min)"], [/(apela[rn]?|apelaci[oó]n|appeal)[^"`\n]{0,24}\b14 (d[ií]as|days)/i, "los días para apelar (com_apelar_dias)"],
+      [/\b60 (traducciones|translations)\b|de f[aá]brica: 60\b/i, "las traducciones por hora (com_traduccion_hora)"], [/A LAS 7 PM|AT 7 PM/, "la hora del resumen (com_resumen_hora)"],
+      [/\bDIAS_ENCUESTA\b|\[1, 3, 7\]\.map|\bEDITAR_MIN\b|\bFILA_VIVA_MIN\b/, "una constante de un plazo de Configuración"], [/dias: 30\b|diasDef \?\? 30\b/, "los días del cupón (cup_dias_def)"],
+      [/\bdef: \d+/, "el valor de fábrica de un límite (vive en config_keys)"], [/\b(10|100|500|20) (publicaciones|comentarios|votos|reportes) al d[ií]a/i, "un límite del día (com_lim_*)"]];
+    for (const x of codigo) {
+      if (!COM(x)) continue;
+      sinComent(x).split("\n").forEach((l, i) => { for (const [re, que] of COPIAS) if (re.test(l)) falla(G, x, i + 1, `copia de ${que}: léelo de Configuración (lib/config.ts)`); });
+    }
+  },
+
+  /* 5i. Cada valor de Configuración tiene límites y el servidor rechaza lo que se sale: el catálogo pide min < max y el de fábrica dentro;
+     la base rechaza en platform_config un valor fuera de [min, max] o no entero (trigger); cambiarConfig revisa clave, que se cambie ahí,
+     entero y límites ANTES de escribir, y deja la auditoría antes → después en la misma transacción; solo un Admin cambia desde
+     Configuración. Al revés: quitar una revisión o poner un de fábrica fuera de sus límites → falla. */
+  configConLimites() {
+    const G = "configConLimites", K = "packages/db/migrations/0105_configuracion_comunidad.sql", CF = "apps/web/lib/config.ts", AC = "apps/web/app/admin/acciones-config.ts";
+    if (!existsSync(K)) return;
+    const m = readFileSync(K, "utf8");
+    if (!/min\s+numeric not null,\s*\n\s*max\s+numeric not null,\s*\n\s*def\s+numeric not null,/.test(m) || !/check \(min < max\),\s*\n\s*check \(def >= min and def <= max\)/.test(m)) falla(G, K, 0, "config_keys debe exigir min, max y def con min < max y def dentro");
+    for (const [, k, a, b, d] of m.matchAll(/^\s*\('([a-z0-9_]+)', (-?\d+), (-?\d+), (-?\d+), '\{/gm)) if (!(+a < +b && +d >= +a && +d <= +b)) falla(G, K, 0, `«${k}»: de fábrica ${d} fuera de ${a}–${b}`);
+    const tr = /create or replace function platform_config_limites\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/if v < c\.min or v > c\.max then raise exception/.test(tr) || !/v <> trunc\(v\) then raise exception/.test(tr) || !/create trigger platform_config_limites before insert or update on platform_config/.test(m))
+      falla(G, K, 0, "la base debe rechazar en platform_config un valor fuera de sus límites o no entero (trigger platform_config_limites)");
+    if (!/greatest\(c\.min, least\(c\.max, coalesce\(v, c\.def\)\)\)/.test(ultimaFn("cfg_int"))) falla(G, K, 0, "cfg_int debe acotar el valor a [min, max] y usar el de fábrica si no hay fila");
+    if (!existsSync(CF)) return;
+    const b = cuerpoFn(sinComent(CF), "cambiarConfig"), iW = b.search(/insert into platform_config/);
+    for (const [re, que] of [[/if \(!x\.editable\) return/, "que se pueda cambiar aquí"], [/if \(x\.edit_in && o\.desde !== x\.edit_in\) return/, "que se cambie en su pantalla"],
+      [/!Number\.isInteger\(v\)\) return/, "que sea un entero"], [/if \(v < x\.min \|\| v > x\.max\) return/, "los límites"]]) {
+      const i = b.search(re);
+      if (i < 0 || iW < 0 || i > iW) falla(G, CF, 0, `cambiarConfig escribe sin revisar antes ${que}`);
+    }
+    const iA = b.search(/await auditar\(c, \{ actor, action: "config\.cambiar"/);
+    if (iA < 0 || iA < iW || !/before: \{ \[x\.label\.es\]: conUnidad\(k, x\.antes, x\.unit\) \}, after: \{ \[x\.label\.es\]: conUnidad\(k, v, x\.unit\) \}/.test(b)) falla(G, CF, 0, "cambiarConfig debe dejar la auditoría con antes → después en la misma transacción");
+    if (existsSync(AC)) {
+      const a = cuerpoFn(sinComent(AC), "configCambiar"), i1 = a.search(/s\.role !== "admin"/), i2 = a.search(/cambiarConfig\(/);
+      if (i1 < 0 || i2 < 0 || i1 > i2) falla(G, AC, 0, "solo un Admin cambia la configuración (revisar el rol antes de cambiarConfig)");
+    }
+  },
+
+  /* 5i. Analítica › Comunidad nunca muestra personas: comunidadAnalitica solo lee las vistas por ciudad y día de 0105, cuántos por rango
+     (com_activos_por_rango) y nombres de ciudades, rangos y negocios; ninguna columna de una persona. Las vistas no sacan columnas de
+     personas. Al revés: unir users o pedir author_user_id → falla. */
+  analiticaSinPersonas() {
+    const G = "analiticaSinPersonas", A = "apps/web/lib/admin-analitica.ts", K = "packages/db/migrations/0105_configuracion_comunidad.sql", UI = "apps/web/app/admin/Analitica.tsx";
+    if (!existsSync(A) || !existsSync(K)) return;
+    const b = cuerpoFn(sinComent(A), "comunidadAnalitica");
+    if (!b) return falla(G, A, 0, "falta comunidadAnalitica");
+    const OK = new Set(["com_analitica_dia", "com_canjes_negocio_dia", "com_activos_por_rango", "cities", "ranks"]);
+    for (const [, t] of b.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK.has(t)) falla(G, A, 0, `comunidadAnalitica lee «${t}»: solo las vistas sin personas de 0105`);
+    const P = /\b(user_id|author_user_id|reporter_user_id|promoter_user_id|first_name|last_name|phone|nick|photo_url|email)\b/;
+    if (P.test(b)) falla(G, A, 0, `comunidadAnalitica pide «${P.exec(b)[0]}»: nunca personas`);
+    const m = readFileSync(K, "utf8"), v = /create or replace view com_canjes_negocio_dia as([\s\S]*?);/.exec(m)?.[1] ?? "", d = /\nselect d\.city_id, d\.dia,([\s\S]*?)\n  from d /.exec(m)?.[1] ?? "";
+    if (!v || !d) falla(G, K, 0, "no encuentro las vistas de la analítica de la Comunidad");
+    if (P.test(v) || P.test(d)) falla(G, K, 0, "una vista de la analítica de la Comunidad saca una columna de una persona");
+    if (!/returns table \(rango smallint, activos integer\)/.test(m)) falla(G, K, 0, "com_activos_por_rango devuelve solo rango y cuántos");
+    if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "com"'), j = u.indexOf("} else if", i + 10); if (i >= 0 && /admin\/usuarios|\.uid\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › Comunidad no lleva a personas"); }
+  },
+
+  /* 5i (MEM 651). «Ocultar los N reportados» nunca oculta la cuenta oficial: el lote pasa por loteOcultarUno, que lee author_kind y se
+     niega ANTES de ocultar; la pantalla manda cada uno a esa acción (nunca a pubOcultar). Al revés: quitar la revisión → falla. */
+  loteNoTocaOficial() {
+    const G = "loteNoTocaOficial", A = "apps/web/app/admin/acciones-contenido.ts", UI = "apps/web/app/admin/Contenido.tsx";
+    if (!existsSync(A)) return falla(G, A, 0, "falta la acción del lote (acciones-contenido.ts)");
+    const b = cuerpoFn(sinComent(A), "loteOcultarUno"), iO = b.search(/if \(x\.oficial \|\| !x\.autor\) return/), iH = b.search(/set status = 'hidden'/);
+    if (!/t\.author_kind = 'official'/.test(b) || iO < 0 || iH < 0 || iO > iH) falla(G, A, 0, "loteOcultarUno debe negarse con la cuenta oficial antes de ocultar");
+    if (!/where t\.id = \$1::bigint and \(cardinality\(\$2::text\[\]\) = 0 or t\.city_id = any\(\$2::text\[\]\)\) for update/.test(b)) falla(G, A, 0, "loteOcultarUno: ciudad de quien actúa y fila bloqueada");
+    if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), e = /const enLote = \(\) => setConf\(\{([\s\S]*?)\n  \}\);/.exec(u)?.[1] ?? "";
+      if (!/loteOcultarUno\(x\.k, x\.id, motivo\)/.test(e) || /pubOcultar|cmComOcultar/.test(e)) falla(G, UI, 0, "el lote manda cada uno a loteOcultarUno (nunca a pubOcultar)"); }
   },
 
   idioma() {

@@ -1,10 +1,10 @@
 import { requerir } from "@/lib/admin";
-import { confianza, embudo, feInmAutos, fiestasTransporte, gente, inscripcionesAnalitica, mercadosTiendas, noche, PERIODOS, saludPro } from "@/lib/admin-analitica";
+import { comunidadAnalitica, confianza, embudo, feInmAutos, fiestasTransporte, gente, inscripcionesAnalitica, mercadosTiendas, noche, PERIODOS, saludPro } from "@/lib/admin-analitica";
 import { sinOferta } from "@/lib/admin-catalogo";
 import { Analitica, type DatosAnalitica } from "../Analitica";
 
-/* ADM-ANALIT · Analítica. ?tab= sum | ppl | trust | sp | mt | ft | no | en | ia | nosup | exp · ?p= 7 | 30 | 90 días. */
-const TABS = new Set(["sum", "ppl", "trust", "sp", "mt", "ft", "no", "en", "ia", "nosup", "exp"]);
+/* ADM-ANALIT · Analítica. ?tab= sum | ppl | trust | sp | mt | ft | no | en | ia | com | nosup | exp · ?p= 7 | 30 | 90 días. */
+const TABS = new Set(["sum", "ppl", "trust", "sp", "mt", "ft", "no", "en", "ia", "com", "nosup", "exp"]);
 export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const s = await requerir("analit", "ver");
   const sp = await searchParams;
@@ -21,5 +21,6 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   if (tab === "no") d.no = await noche(s, dias);
   if (tab === "en") d.en = await inscripcionesAnalitica(s, dias);
   if (tab === "ia") d.ia = await feInmAutos(s, dias);
+  if (tab === "com") d.com = await comunidadAnalitica(s, dias);
   return <Analitica d={d} />;
 }

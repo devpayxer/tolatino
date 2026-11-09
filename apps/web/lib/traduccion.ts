@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { cfgSql } from "./config";
 import { db } from "./db";
 import { enComunidad, sinBloqueos } from "./comunidad";
 import { MOTOR, SinTraductor, traducirTexto } from "./traductor";
@@ -17,7 +18,7 @@ export type Quien = { userId: string | null; dispositivo: string | null };
 const no = (motivo: Extract<ResTr, { ok: false }>["motivo"], msg: Bi): ResTr => ({ ok: false, motivo, msg });
 const NO_ESTA: Bi = { es: "Este texto ya no está.", en: "This text is no longer available." };
 export const huella = (t: string) => createHash("sha256").update(t, "utf8").digest("hex");
-const TOPE = `coalesce((select (value #>> '{}')::int from platform_config where key = 'com_traduccion_hora'), 60)`;
+const TOPE = cfgSql("com_traduccion_hora"); // 5i · valor de Configuración (lib/config.ts)
 
 /* El texto y su idioma, si quien pide lo puede ver. $1 = la persona (o null), $2 = el id. */
 const FUENTE: Record<KindTr, string> = {

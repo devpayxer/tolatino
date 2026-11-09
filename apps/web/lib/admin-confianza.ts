@@ -1,6 +1,7 @@
 import "server-only";
 import type { Staff } from "./admin";
 import { db } from "./db";
+import { catalogoConfig, valor } from "./config";
 import { saludImagen } from "./moderacion-img";
 import { saludTraductor } from "./traductor";
 import { LIMITES, ORDEN_LIMITES, ORDEN_REGLAS, type ReglaKey } from "./moderacion-comun";
@@ -99,7 +100,7 @@ export async function confianza(s: Staff) {
   ]);
   const cola = Object.fromEntries(COLAS_CONF.map((k) => [k, Q.rows.find((x) => x.queue === k) ?? { queue: k, n: 0, tarde: 0 }]));
   return {
-    cola, sanc: sanc.rows, fraude: fraude.rows, disp: disp.rows, bloqueados: bloq.rows[0]!.n, apel: apel.rows,
+    cola, sanc: sanc.rows, fraude: fraude.rows, disp: disp.rows, bloqueados: bloq.rows[0]!.n, apel: apel.rows, apelarDias: await valor("com_apelar_dias"),
     catalogo: (Object.keys(SANCIONES) as Sancion[]).map((k) => ({ k, ...SANCIONES[k] })),
   };
 }
@@ -107,22 +108,22 @@ export type Confianza = Awaited<ReturnType<typeof confianza>>;
 
 /* ── Contenido › Auto-moderación: reglas, términos, límites y si el modelo de fotos responde ── */
 export async function autoModeracion() {
-  const [R, T, L, img, trad, tope] = await Promise.all([
+  const [R, T, cfg, img, trad] = await Promise.all([
     db().query<{ key: ReglaKey; enabled: boolean; params: Record<string, number>; updated_at: string; quien: string | null }>(
       `select r.key, r.enabled, r.params, r.updated_at, nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), '') as quien
          from mod_rules r left join users u on u.id = r.updated_by`),
     db().query<{ id: string; lang: string; term: string; kind: string; enabled: boolean }>(`select id::text, lang, term, kind, enabled from mod_terms order by kind, lang, term`),
-    db().query<{ key: string; v: number }>(`select key, (value #>> '{}')::int as v from platform_config where key = any($1::text[])`, [ORDEN_LIMITES.map((k) => LIMITES[k].key)]),
+    catalogoConfig(),
     saludImagen(),
     // 5h · El traductor propio (salud, nunca textos: el Super Admin ve siempre el original) y el tope por persona en una hora.
     saludTraductor(),
-    db().query<{ v: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = 'com_traduccion_hora'), 60) as v`),
   ]);
   const marcas = (await db().query<{ regla: string; n: number }>(`select rule_key as regla, count(*)::int as n from mod_flags where created_at > now() - interval '30 days' group by rule_key`)).rows;
   return {
     reglas: ORDEN_REGLAS.map((k) => { const r = R.rows.find((x) => x.key === k); return { k, on: r?.enabled ?? true, params: r?.params ?? {}, at: r?.updated_at ?? null, quien: r?.quien ?? null, n30: marcas.find((m) => m.regla === k)?.n ?? 0 }; }),
-    terminos: T.rows, limites: ORDEN_LIMITES.map((k) => ({ k, v: L.rows.find((x) => x.key === LIMITES[k].key)?.v ?? LIMITES[k].def })), img,
-    trad: { ...trad, tope: tope.rows[0]!.v },
+    // Los límites y el tope de traducciones son de Configuración (lib/config.ts): valor, de fábrica y límites salen del catálogo.
+    terminos: T.rows, limites: ORDEN_LIMITES.map((k) => { const c = cfg.find((x) => x.key === LIMITES[k].key)!; return { k, v: c.v, def: c.def, min: c.min, max: c.max }; }), img,
+    trad: { ...trad, ...(({ v, def, min, max }) => ({ tope: v, def, min, max }))(cfg.find((x) => x.key === "com_traduccion_hora")!) },
   };
 }
 export type AutoMod = Awaited<ReturnType<typeof autoModeracion>>;

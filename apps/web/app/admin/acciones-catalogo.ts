@@ -2,6 +2,7 @@
 /* Acciones del Catálogo (ADM-CAT). Permiso cat:editar; cada cambio queda en la auditoría con lo que afecta
    («afecta a N negocios»). Nada se borra: una subcategoría quitada, un sinónimo o un filtro apagado vuelven con un toque.
    Lo leen la página de categoría (al instante) y Buscar (en menos de un minuto: tiene 60 s de memoria). */
+import { cambiarConfig } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import type { PoolClient } from "pg";
 import { auditar, staff, type Staff } from "@/lib/admin";
@@ -190,15 +191,17 @@ export async function topeCargoDealer(dolares: string, motivo: string): Promise<
   if (!(Number.isFinite(v) && v >= 0 && v <= 2000) || !String(dolares ?? "").trim()) return no("Escribe el tope en dólares (de $0 a $2,000).");
   if (m.length < 3) return no("Escribe el motivo.");
   const A = await import("@/lib/autos");
-  const r = await tx(async (c) => {
-    const x = await A.cambiarTopeCargo(c, v * 100, s.id);
-    if (!x) return null;
-    await auditar(c, { actor: s.id, action: "autos.cargo.tope", targetKind: "platform_config", targetId: "dealer_doc_fee_cap_cents", before: { tope: `$${x.antes / 100}` }, after: { tope: `$${v}`, dealers_al_tope: String(x.bajados.length) }, reason: m });
+  // 5i · El tope es un valor de Configuración: lo escribe cambiarConfig (límites del catálogo, auditoría antes → después); los dealers que
+  // pasan bajan en la misma transacción (cada uno queda en la auditoría).
+  let bajados: string[] = [];
+  const r = await cambiarConfig(s.id, "dealer_doc_fee_cap_cents", v * 100, m, { desde: "/admin/catalogo?tab=dealer", tambien: async (c) => {
+    const x = await A.cambiarTopeCargo(c, v * 100);
+    if (!x) throw new Error("tope inválido");
+    bajados = x.bajados;
     for (const b of x.bajados) await auditar(c, { actor: s.id, action: "autos.cargo.bajado_al_tope", targetKind: "business", targetId: b, before: { cargo: "sobre el tope" }, after: { cargo: `$${v}` }, reason: m });
-    return x;
-  });
-  if (!r) return no("Escribe el tope en dólares (de $0 a $2,000).");
+  } });
+  if (!r.ok) return no(r.msg);
   const n = await A.recalcularTodosPorLotes();
   revalidatePath("/admin/catalogo");
-  return { ok: true, mensaje: `Tope guardado: $${v}. ${r.bajados.length} dealers bajaron su cargo; ${n} negocios recalculados.` };
+  return { ok: true, mensaje: `Tope guardado: $${v}. ${bajados.length} dealers bajaron su cargo; ${n} negocios recalculados.` };
 }

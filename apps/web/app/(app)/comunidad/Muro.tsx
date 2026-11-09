@@ -2,7 +2,7 @@
 /* APP-COM-FEED · pestaña Conversación (versión simple, MEM 91): avatar + «¿Qué pasa en tu cuadra?» + «+»; una fila de chips
    (Todo · Siguiendo · Preguntas · Recomendaciones · Encuestas · Publicaciones) y el botón de filtro → hoja «Qué ves primero»
    (distancia 5 · 10 · 30 mi y orden Más votados · Recientes); la fijada de la ciudad arriba; 20 por página con cursor («Ver más»).
-   Menú de cada publicación: lo tuyo se edita (30 min) o se borra con Deshacer (10 s); lo de otros se guarda o se comparte, y (5c) desde
+   Menú de cada publicación: lo tuyo se edita (sus minutos de Configuración) o se borra con Deshacer (10 s); lo de otros se guarda o se comparte, y (5c) desde
    ahí se ve el perfil de quien publicó, se le silencia o se le bloquea (con Deshacer). Tocar el nombre abre su perfil. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
@@ -25,6 +25,8 @@ type Bi = { es: string; en: string };
 type R = { ok: boolean; msg?: Bi; entrar?: true };
 
 /* Acciones de una publicación (las usan el muro y la publicación): votar, encuesta, guardar, compartir, menú, borrar con Deshacer. */
+/* «hasta las 7:42 PM»: la hora del teléfono de quien mira. */
+const horaCorta = (iso: string, es: boolean) => new Date(iso).toLocaleTimeString(es ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" });
 export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p: Pub) => Pub | null) => void, alBorrar?: (p: Pub) => void, alDeshacer?: (p: Pub) => void, alQuitarAutor?: (autor: string) => void, alReportar?: (p: Pub) => void) {
   const router = useRouter();
   const vec = useVecinoAcciones(es, ui);
@@ -63,7 +65,7 @@ export function useAccionesPub(es: boolean, ui: ComUi, poner: (id: string, f: (p
   const menu = (p: Pub) => {
     const editable = !!p.editarHasta && new Date(p.editarHasta).getTime() > Date.now();
     ui.setHoja({ title: p.mia ? E2("Tu publicación", "Your post") : E2("Publicación", "Post"), rows: p.mia ? [
-      { t: E2("Editar", "Edit"), s: editable ? E2("Puedes editarla en los primeros 30 minutos.", "You can edit it in the first 30 minutes.") : E2("Ya pasaron 30 minutos: puedes borrarla y publicar otra.", "30 minutes have passed: you can delete it and post again."), ic: "edit", off: !editable, on: () => { ui.setHoja(null); router.push(`/comunidad/nuevo?editar=${p.id}`); } },
+      { t: E2("Editar", "Edit"), s: editable ? E2(`Puedes editarla hasta las ${horaCorta(p.editarHasta!, true)}.`, `You can edit it until ${horaCorta(p.editarHasta!, false)}.`) : E2("Ya pasó el tiempo para editarla: puedes borrarla y publicar otra.", "The time to edit it has passed: you can delete it and post again."), ic: "edit", off: !editable, on: () => { ui.setHoja(null); router.push(`/comunidad/nuevo?editar=${p.id}`); } },
       // 5f · Sargento Mayor: destacar 1 recomendación al mes (7 días en Negocios › Recomendados por vecinos; nunca cambia el muro).
       ...(p.kind === "recomendacion" ? [{ t: E2("Destacar en Negocios", "Feature in Businesses"), s: E2("Desde Sargento Mayor, una al mes: sale 7 días en «Recomendados por vecinos». El muro no cambia.", "From Sergeant Major, one a month: it shows 7 days in «Recommended by neighbors». The feed does not change."), ic: "star",
         on: async () => { ui.setHoja(null); const r = await correr(() => comDestacar(p.id)); if (!r) return; if (r.ok) ui.setAviso({ t: E2("Destacada 7 días en Negocios.", "Featured for 7 days in Businesses.") }); else fallo(r); } }] : []),

@@ -55,9 +55,9 @@ export async function limiteDia(c: Q, userId: string, que: Limite): Promise<{ ok
   await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`lim:${que}:${userId}`]);
   const u = (await c.query<{ desde: string; nueva: boolean; tope: number }>(
     `select (date_trunc('day', now() at time zone z.tz) at time zone z.tz) as desde, u.created_at > now() - interval '24 hours' as nueva,
-            coalesce((select (value #>> '{}')::int from platform_config where key = $2), $3::int) as tope
+            cfg_int($2) as tope
        from users u left join cities ci on ci.id = u.home_city_id cross join lateral (select coalesce(ci.timezone, 'America/New_York') as tz) z where u.id = $1`,
-    [userId, L.key, L.def])).rows[0];
+    [userId, L.key])).rows[0];
   if (!u) return no("Entra para seguir.", "Sign in to continue.");
   const tope = u.nueva ? Math.max(1, Math.floor(u.tope / 2)) : u.tope;
   const n = (await c.query<{ n: number }>(CONTAR[que], [userId, u.desde])).rows[0]!.n;

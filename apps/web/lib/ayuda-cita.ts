@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { COLA_AYUDA_SQL } from "./colas";
 import { db, tx } from "./db";
 import { devolverPago } from "./cobros";
@@ -79,7 +80,7 @@ export type AyudaCita = {
 };
 const COLS = `h.id::text, h.number, h.reason, h.wants, coalesce(h.body, '') as body, h.amount_cents as amount, h.status, h.decision, h.offer_cents as offer, h.reply, ${ISO("h.reply_at")} as "replyAt",
   h.resolution, ${ISO("h.resolved_at")} as "resolvedAt", h.refunded_cents as refunded, h.closed_by as "closedBy", coalesce(h.escalated_by = 'user', false) as "porUsuario",
-  ${ISO("h.created_at")} as at, ${ISO("h.created_at + interval '24 hours'")} as vence, h.outside_refund as fuera,
+  ${ISO("h.created_at")} as at, ${ISO(`h.created_at + make_interval(hours => ${cfgSql("ayuda_negocio_h")})`)} as vence, h.outside_refund as fuera,
   case when h.paused_at is null then null when h.unpaused_at is null then 'on' else 'off' end as pausa, coalesce(h.escalated_by = 'system' and h.reply_at is null, false) as directa,
   array(select ${FOTO_AYUDA_SQL} from media m where m.owner_kind = 'help' and m.owner_id = h.id::text and m.status = 'visible' order by m.sort) as fotos`;
 const fila = (x: Omit<AyudaCita, "wants"> & { wants: string }): AyudaCita => ({ ...x, wants: W2Q[x.wants] ?? "avis" });
@@ -367,17 +368,17 @@ async function marcarLicencia(numero: string) {
      on conflict do nothing`, [numero]);
 }
 
-/* Las fotos privadas de una ayuda (Salud y Pro) se borran 90 días después de cerrarse (§3): el archivo sale del
+/* Las fotos privadas de una ayuda (Salud y Pro) se borran a los días de Configuración (sp_fotos_ayuda_dias) de cerrarse (§3): el archivo sale del
    almacenamiento y la fila queda como borrada (nada se borra de la base; la URL ya no lleva a nada). */
 export async function purgarFotosAyuda() {
   const L = (await db().query<{ id: string; url: string }>(
     `select m.id::text, m.url from media m join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id
-      where m.private and m.status = 'visible' and h.status = 'resolved' and h.resolved_at < now() - interval '90 days' limit 50`)).rows;
+      where m.private and m.status = 'visible' and h.status = 'resolved' and h.resolved_at < now() - make_interval(days => ${cfgSql("sp_fotos_ayuda_dias")}) limit 50`)).rows;
   if (!L.length) return 0;
   const { borrarObjeto, mediosListos } = await import("./medios");
   for (const m of L) {
     if (mediosListos() && m.url.startsWith("privado/")) await borrarObjeto(m.url);
-    await db().query(`update media set status = 'removed', removed_reason = 'Borrada a los 90 días (ayuda cerrada)', url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
+    await db().query(`update media set status = 'removed', removed_reason = 'Borrada a los ' || ${cfgSql("sp_fotos_ayuda_dias")} || ' días (ayuda cerrada)', url = 'privado/borrada', purged_at = now() where id = $1::uuid`, [m.id]);
   }
   return L.length;
 }

@@ -45,8 +45,9 @@ Versión: Fase 2 · bloque 2g (6 nov 2026). Solo Pro._
 **¿El precio de la oferta es de verdad?** Sí: mientras la oferta está en vivo, el menú, el carrito y el pedido cobran ese
 precio. El «antes» es el precio del menú.
 
-**¿Mis seguidores reciben un aviso?** Todavía no: los avisos llegan con las notificaciones. Hoy ven las publicaciones «solo
-para seguidores» en tu página.
+**¿Mis seguidores reciben un aviso?** Sí, en la campana (sin SMS): «Hoy en un negocio que sigues» cuando tu novedad para todos
+sale en **Hoy en el barrio** (24 h, negocios Pro; la persona lo apaga en Mi cuenta › Avisos › «Lo que traen hoy»). Las publicaciones «solo
+para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`. (Al día con 5e–5i.)
 
 ---
 

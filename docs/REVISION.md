@@ -1826,3 +1826,70 @@ no, «Ver traducción» dice «La traducción no está disponible ahora.» y lo 
   que `tolatino-traductor` terminó, que Auto-moderación dice RESPONDE y probar 1–6 con textos reales.
 
 **Capturas:** `c5h-ver-m`, `c5h-traducida-m`, `c5h-ingles-d`, `c5h-resenas-d`, `c5h-novedades-m`, `c5h-caido-m`, `c5h-limite-m`, `c5h-admin-d`.
+
+### 5i · Super Admin completo, Configuración, avisos de la Comunidad, analítica y ayuda · FASE 5 COMPLETA (8 nov)
+**Qué mirar, paso a paso, toda la Fase 5 en el sandbox** (teléfono 390 y escritorio 1360; capturas `c5a-*` … `c5h-*` y `g5i-*`). Cuentas de
+prueba: vecinos Yaritza (5705550299), Héctor (5705550288), Marisol (5705550122); Super Admin Ana (5705550199).
+1. **El muro** (`/comunidad`, Yaritza): publica una pregunta, una recomendación y una encuesta (desde Cabo); prueba poner un teléfono (no se
+   publica). Abre la publicación: el hilo, votar ±, «Me sirvió» desde quien preguntó, la encuesta con sus %.
+2. **Vecinos** (Héctor): sigue a Yaritza, ábrele su perfil, mándale un mensaje (solo a quien te sigue); silencia y bloquea a Marisol con
+   Deshacer: ya no se ven en ninguna parte.
+3. **Reportar y apelar** (Marisol reporta una publicación): «Ya no lo ves. Lo revisamos en 48 h.» Super Admin › Colas › Reportes: ocultar con
+   motivo → la autora recibe el aviso con «Apelar» → apela → otra persona del equipo decide.
+4. **Hoy en el barrio** (`/comunidad/hoy`, sin sesión también) y la **cuenta oficial** (Contenido › Cuenta oficial: escribir, programar, fijar).
+5. **Rango, puntos y Tabla** (`/comunidad/rango`, `/comunidad/tabla`), **monedas y cupones** (`/comunidad/monedas`: canjear y usar el código en
+   el panel del negocio › Tu página › Cupones por monedas), **«Ver traducción»** en algo escrito en inglés (si el traductor está arriba).
+6. **Mi cuenta › Avisos › Comunidad (nuevo, 5i):** «Respuestas y votos», «Un resumen al día en vez de cada aviso» (A LAS 7 PM) y «Mensajes
+   de vecinos». Con el resumen encendido, los avisos de la Comunidad no salen uno por uno en la campana: llega uno a las 7 PM («Hoy en la
+   Comunidad: 2 respuestas y 1 seguidor nuevo.»).
+7. **Super Admin › Sistema › Configuración (nuevo):** los valores por sección con su unidad, de fábrica y límites. Cambia «Editar una
+   publicación» de 30 a 20 min con un motivo → mira la auditoría (Sistema, abajo): antes → después. Prueba 2 min: «Entre 5 min y 1,440 min.»
+   Déjalo otra vez en 30. Las filas SOLO LECTURA dicen por qué todavía no se cambian.
+8. **Contenido:** las 7 pestañas; filtros Ciudad, Tipo, Ocultos, Con reporte, 10+ votos, De invitados, Rango del autor; «Ver hilo» desde un
+   comentario (queda marcado); **«Ocultar los N reportados»** (escritorio): progreso y, al final, cuáles no se pudieron (la cuenta oficial
+   nunca); **«Mover de ciudad»** en una publicación.
+9. **Usuarios › Yaritza › Comunidad:** rango, puntos, monedas, votos recibidos y las sub-pestañas; si sale «posible red», «Abrir caso de red de
+   cuentas» → Colas › Reportes de usuario. Usuarios › Más filtros › «Con reportes» y «Rango en la Comunidad».
+10. **Notificaciones › Solo Comunidad** (el grupo Comunidad y «Tu día en la Comunidad») y **Analítica › Comunidad** (cifras por ciudad, sin
+    personas).
+
+**Decidido por seguridad (AB), se cambia si prefieres otra cosa:**
+- **Configuración vive en Sistema** (como el prototipo: `secSys` sub «cfg»), solo un Admin cambia. Cada valor: entero, con mínimo y máximo;
+  lo rechaza la acción y también la base (trigger). Cada cambio deja antes → después con el motivo. Los límites del día y las traducciones
+  también se cambian en Auto-moderación (el mismo valor, la misma auditoría); el tope de puntos en Gamification; el tope del cargo del dealer
+  solo en Catálogo (porque baja a los dealers que lo pasan); el umbral de auto-ocultar sigue con su regla en Auto-moderación (se ve en
+  Configuración).
+- **Plazos de la Fase 4 en SOLO LECTURA:** ya se leen de Configuración (un solo lugar), pero 16 de ellos (2 h del seguro, 30 días del total
+  por escrito, 24 h de la ayuda, Noche, inscripciones, visitas…) aparecen escritos en textos que ve la persona; cambiarlos haría falso ese
+  texto. Se abren cuando esos textos lean el valor (LAUNCH-CHECKLIST). Editables ya: fotos de ayuda (90 días), licencias que vuelven (14
+  días) y el tope del dealer. El corte de las 6 PM de Noche y los 14 días de «Me lo devolvieron» (no existe) quedan fuera.
+- **Encuestas:** «lo más que dura» (7 de fábrica); las opciones son 1 · 3 · 7 días hasta ese máximo (y el máximo si no es una de ellas).
+- **Editar:** el menú ya no dice «30 minutos»: dice **hasta qué hora** («Puedes editarla hasta las 7:42 PM»), así nunca queda falso.
+- **Avisos de la Comunidad:** grupo nuevo `community` (comentarios, respuestas, menciones, «Me sirvió», 10 votos, encuestas cerradas,
+  seguidores, rango y top 3 → «Respuestas y votos»; mensajes de vecinos → «Mensajes de vecinos»). Apagado = no llega ni a la campana (no
+  tienen SMS). Moderación, apelaciones y monedas siempre llegan. **Resumen diario**: a la hora de Configuración (19 = 7 PM de la ciudad de
+  cada persona), una vez al día (la base lo impide dos veces); lo de alguien con quien hay un bloqueo no se cuenta ni se nombra.
+- **«Ocultar los N reportados»:** solo escritorio (como el prototipo); cada uno se decide en el servidor (sigue reportado, se ve, no es de la
+  cuenta oficial); cierra sus reportes y su caso de Reportes; avisa al autor con Apelar y a quienes reportaron el resultado.
+- **Mover de ciudad:** solo lo que no recomienda negocios (una recomendación va con su negocio); se desfija y la ubicación la pone el sistema.
+- **Contenido:** novedades, comentarios de novedades y vacantes quedan en Todo con el filtro «Tipo» (el prototipo tiene 7 pestañas).
+- **Analítica › Comunidad:** días locales de cada ciudad; «tiempo a la primera respuesta» = promedio, de alguien que no es quien preguntó;
+  activos = publicaron, comentaron o votaron en el período; lo de la cuenta oficial no cuenta como publicación de vecinos.
+- **El Patio** (decisión G): no se construye. Su puerta se queda como el diseño la deja: en Rangos, los desbloqueos de El Patio dicen «Cuando
+  abra El Patio»; en Usuarios 360° › Comunidad la sub-pestaña se llama «Cupones y referidos» (sin El Patio); Gamification sin la subpestaña.
+
+**Preguntas #1–#25 del plan (§6), anotadas:** el default más seguro de cada una, como está en el plan y en las notas de 5a–5h: #1 se compuso
+con el prototipo traído al repo (`To'Latino Comunidad.dc.html`) · #2 4 tipos · #3 monedas sin valor en dinero · #4 «liquidar» = reporte de
+canjes, ningún pago · #5 cupones solo Pro, To'Latino fija el costo · #6 monedas: bienvenida y premios del mes · #7 el rango solo sube · #8
+umbrales 0 · 100 · 300 · 800 · 1,500 · 2,300 · 3,500 · 5,000 · #9 Coronel: sus reportes primero, no oculta solo · #10 General del Barrio =
+3 primeros al cierre · #11 destacar 7 días en Negocios, nunca cambia el muro · #12 cierre de la Tabla con 72 h para excluir, premios en
+monedas · #13 con cuenta todo, sin cuenta solo Hoy · #14 «Tengo 18 años o más» · #15 LibreTranslate propio · #16 mensajes solo a quien te
+sigue, solo texto · #17 solo personas en la Comunidad · #18 editar (30 min, Configuración), borrar = estado, apelar 14 días (Configuración) ·
+#19 operativos de inmigración sin fotos de personas, placas ni direcciones · #20 enlaces como texto · #21 límites en Configuración, día local,
+la mitad el primer día · #22 referidos sin dinero · #23 rango del negocio no se construye · #24 moderación de imágenes con modelo propio ·
+#25 los errores del prototipo no se copiaron. Si prefieres otra cosa en alguna, se cambia.
+
+**Para saber:** el lote de 5i y las pruebas usan datos `[a5i]` que se marcan borrados al terminar; la configuración vuelve a la de fábrica.
+
+**Capturas:** `g5i-config-d`, `g5i-config-fuera-d`, `g5i-config-m`, `g5i-editar-20-m`, `g5i-contenido-d`, `g5i-contenido-m`, `g5i-lote-d`,
+`g5i-hilo-d`, `g5i-hilo-m`, `g5i-u360-d`, `g5i-u360-m`, `g5i-analitica-d`, `g5i-analitica-m`, `g5i-notif-d`, `g5i-avisos-m`, `g5i-resumen-m`.

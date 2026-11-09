@@ -3,6 +3,7 @@
    solo Admin; ajustar puntos: usr editar, con tope por rol) y ciudad de quien actúa → cambio con las funciones de la base → auditoría con
    motivo, en una transacción; después, el aviso a la persona. Nada se borra: los libros de puntos y de monedas solo reciben asientos.
    5g: el costo de un cupón (80–1,000 monedas) lo fija solo el equipo, aquí; aprobar, rechazar, pausar y activar avisan al negocio. */
+import { cambiarConfig } from "@/lib/config";
 import { revalidatePath } from "next/cache";
 import { auditar, staff } from "@/lib/admin";
 import { avisar, avisarMuchos, avisarNegocio } from "@/lib/avisos";
@@ -67,12 +68,9 @@ export async function gamTope(v: number, motivo: string): Promise<ResAdm> {
   const m = motivoOk(motivo);
   if (![50, 100, 150, 200].includes(Number(v))) return no("Elige 50, 100, 150 o 200.");
   if (!m) return no("Escribe el motivo.");
-  await tx(async (c) => {
-    const antes = (await c.query<{ t: number }>(`select pts_tope() as t`)).rows[0]!.t;
-    await c.query(`insert into platform_config (key, value, note, updated_at, updated_by) values ('pts_tope_dia', to_jsonb($1::int), 'Puntos máximos por persona en un día local de su ciudad (5f)', now(), $2)
-                   on conflict (key) do update set value = excluded.value, updated_at = now(), updated_by = excluded.updated_by`, [Number(v), s.id]);
-    await auditar(c, { actor: s.id, action: "gam.puntos.tope", targetKind: "platform_config", targetId: "pts_tope_dia", before: { tope: antes }, after: { tope: Number(v) }, reason: m });
-  });
+  // 5i · Valor de Configuración: lo escribe cambiarConfig (límites del catálogo y auditoría antes → después).
+  const r = await cambiarConfig(s.id, "pts_tope_dia", Number(v), m);
+  if (!r.ok) return no(r.msg);
   listo();
   return { ok: true, mensaje: "Listo. El tope nuevo cuenta desde ahora." };
 }

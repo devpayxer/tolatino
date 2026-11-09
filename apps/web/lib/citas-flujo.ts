@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { db, tx } from "./db";
 import { cobrarOperacion, devolverPago, liberarOperacion } from "./cobros";
 import { cobrarLiquidacion, conEstimado, planLiquidar } from "./estimados";
@@ -139,7 +140,7 @@ async function borrarNotas() {
   await db().query(
     `update op_private p set note_enc = null, purge_at = now() from operations o
       where o.id = p.operation_id and p.note_enc is not null and o.status in ('done', 'cancelled', 'expired', 'declined')
-        and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - interval '30 days'`);
+        and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - make_interval(days => ${cfgSql("sp_notas_purga_dias")})`);
 }
 
 /* Recordatorios 24 h y 2 h antes, a quien lo pidió (Booking › Detalles), una vez cada uno. */
@@ -168,11 +169,11 @@ export async function citaPaso(negocio: string, numero: string, paso: PasoCita, 
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o) return no("Esa cita no existe.", "That booking does not exist.");
     const ya = no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
-    // Doctores: «No aceptamos su seguro» — la hora queda guardada 2 h y el paciente elige (seguir sin seguro, otro seguro u otro consultorio).
+    // Doctores: «No aceptamos su seguro» — la hora queda guardada (Configuración · sp_seguro_guardar_h) y el paciente elige (seguir sin seguro, otro seguro u otro consultorio).
     if (paso === "noseguro") {
       const sg = o.det?.seguro as { kind?: string } | undefined;
       if (o.det?.rubro !== "salud" || o.status !== "pending" || o.detail || !sg || sg.kind === "none") return ya;
-      await c.query(`update operations set status_detail = 'seg', respond_by = now() + interval '2 hours', answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
+      await c.query(`update operations set status_detail = 'seg', respond_by = now() + make_interval(hours => ${cfgSql("sp_seguro_guardar_h")}), answered_at = now(), updated_at = now() where id = $1::bigint`, [o.id]);
       await ev(c, o.id, "declined", "member", actorId, { es: "No aceptan su seguro: elige el paciente", en: "Insurance not accepted: the patient chooses" });
       despues = async () => { await avisarSeg(numero); };
       return { ok: true };

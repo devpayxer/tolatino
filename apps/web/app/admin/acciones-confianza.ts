@@ -12,6 +12,7 @@ import { avisarMuchos, avisar } from "@/lib/avisos";
 import type { Cola } from "@/lib/colas";
 import { tx } from "@/lib/db";
 import { olvidarReglas } from "@/lib/moderacion";
+import { cambiarConfig } from "@/lib/config";
 import { LIMITES, PARAMS, REGLAS, TIPOS_TERMINO, type Limite, type ReglaKey } from "@/lib/moderacion-comun";
 import { ORDEN_SANCIONES, SANCIONES, type Sancion } from "@/lib/sanciones";
 import type { ResAdm } from "./acciones-colas";
@@ -254,41 +255,19 @@ export async function limiteCambiar(k: string, valor: string, motivo: string): P
   const s = await staff();
   if (!edita(s)) return no("Tu rol no edita los límites.");
   if (!(k in LIMITES)) return no("Ese límite no existe.");
-  const v = Number(valor);
-  if (!Number.isInteger(v) || v < 1 || v > 5000) return no("Un número entero entre 1 y 5,000.");
-  const m = motivoOk(motivo);
-  if (!m) return no("Escribe el motivo.");
-  const L = LIMITES[k as Limite];
-  const r = await tx(async (c) => {
-    const x = (await c.query<{ v: number }>(`select (value #>> '{}')::int as v from platform_config where key = $1 for update`, [L.key])).rows[0];
-    if (x?.v === v) return "Ya tiene ese valor.";
-    await c.query(`insert into platform_config (key, value, note, updated_by) values ($1, to_jsonb($2::int), $3, $4) on conflict (key) do update set value = excluded.value, updated_at = now(), updated_by = excluded.updated_by`,
-      [L.key, v, `Comunidad: ${L.es} al día por persona`, s.id]);
-    await auditar(c, { actor: s.id, action: "moderacion.limite", targetKind: "platform_config", targetId: L.key, before: { [L.es]: x?.v ?? L.def }, after: { [L.es]: v }, reason: m });
-    return null;
-  });
-  if (r) return no(r);
+  // 5i · Un solo camino para escribir un valor de Configuración: límites, auditoría antes → después y caché (lib/config.ts).
+  const r = await cambiarConfig(s.id, LIMITES[k as Limite].key, valor, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
   listo();
   return { ok: true, mensaje: "Límite guardado. Quedó en la auditoría." };
 }
 
-/* 5h · «Ver traducción»: cuántas por persona en una hora (de fábrica 60). El traductor es propio; el tope lo protege. */
+/* 5h · «Ver traducción»: cuántas por persona en una hora. El traductor es propio; el tope lo protege. Valor de Configuración. */
 export async function traduccionTope(valor: string, motivo: string): Promise<ResAdm> {
   const s = await staff();
   if (!edita(s)) return no("Tu rol no edita los límites.");
-  const v = Number(valor);
-  if (!Number.isInteger(v) || v < 1 || v > 1000) return no("Un número entero entre 1 y 1,000.");
-  const m = motivoOk(motivo);
-  if (!m) return no("Escribe el motivo.");
-  const r = await tx(async (c) => {
-    const x = (await c.query<{ v: number }>(`select (value #>> '{}')::int as v from platform_config where key = 'com_traduccion_hora' for update`)).rows[0];
-    if (x?.v === v) return "Ya tiene ese valor.";
-    await c.query(`insert into platform_config (key, value, note, updated_by) values ('com_traduccion_hora', to_jsonb($1::int), $2, $3) on conflict (key) do update set value = excluded.value, updated_at = now(), updated_by = excluded.updated_by`,
-      [v, "Comunidad y reseñas: «Ver traducción» por persona en una hora", s.id]);
-    await auditar(c, { actor: s.id, action: "moderacion.limite", targetKind: "platform_config", targetId: "com_traduccion_hora", before: { "traducciones por hora": x?.v ?? 60 }, after: { "traducciones por hora": v }, reason: m });
-    return null;
-  });
-  if (r) return no(r);
+  const r = await cambiarConfig(s.id, "com_traduccion_hora", valor, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
   listo();
   return { ok: true, mensaje: "Límite guardado. Quedó en la auditoría." };
 }

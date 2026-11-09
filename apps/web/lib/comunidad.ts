@@ -2,7 +2,8 @@ import "server-only";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { centroSQL, type Punto } from "./punto";
-import { EDITAR_MIN, DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
+import { DESHACER_S, RANGO_ENCUESTA, MAX_FOTOS, diasEncuesta, pareceEmergencia, revisarPublicacion, type Borrador, type Falla } from "./comunidad-filtro";
+import { cfgSql, valor } from "./config";
 import { porcentajes, type Autor, type Filtros, type Pub } from "./comunidad-comun";
 import { efectoSancion, limiteDia, noPuede, revisarAlEscribir, revisarFotosCom } from "./moderacion";
 import { detectarIdioma, idiomaTexto } from "./traductor";
@@ -48,6 +49,8 @@ export async function enComunidad(userId: string, c: Pick<PoolClient, "query"> =
 }
 
 /* ── Perfiles de autores: 60 s en memoria (nombre corto, foto, rango). ── */
+/* 5i · Minutos para editar: valor de Configuración (com_editar_min), leído por la base en la misma consulta. */
+const EDITAR = cfgSql("com_editar_min");
 const cache = new Map<string, { at: number; a: Autor & { ciudad: string | null } }>();
 export const ini = (n: string) => n.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase();
 export const corto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
@@ -65,8 +68,8 @@ export async function autores(ids: string[]) {
 /* Columnas de una publicación para la pantalla (una fila; negocio, barrio, invitado y fotos en la misma consulta). */
 export const COLS = (centro: string | null) => `
   p.id::text as id, p.kind, p.topic, p.body, p.lang, p.author_kind, p.author_user_id::text as autor, p.city_id, p.status, p.hidden_reason,
-  ${ISO("p.publish_at")} as at, p.edited_at is not null as editada, ${ISO("p.created_at + interval '" + EDITAR_MIN + " minutes'")} as editar_hasta,
-  p.created_at > now() - interval '${EDITAR_MIN} minutes' as editable,
+  ${ISO("p.publish_at")} as at, p.edited_at is not null as editada, ${ISO(`p.created_at + make_interval(mins => ${EDITAR})`)} as editar_hasta,
+  p.created_at > now() - make_interval(mins => ${EDITAR}) as editable,
   coalesce(p.pinned_until > now(), false) as fijada, p.health_notice as salud, p.solved_at is not null as resuelta, p.comments_locked_at is not null as cerrados,
   p.looking_for as para, p.poll_options as opts, p.poll_counts as conteo, ${ISO("p.poll_ends_at")} as cierra, coalesce(p.poll_ends_at <= now(), false) as cerrada,
   p.up_n as up, p.down_n as dn, p.score, p.comments_n as cms, p.hot::text as hot_t, ${ISO("p.publish_at")} || '|' || p.id as cur_new, p.hot::text || '|' || p.id as cur_top,
@@ -241,7 +244,7 @@ async function ponerFotos(c: PoolClient, userId: string, post: string, fotos: st
 
 export type Entrada = Borrador;
 export async function publicar(userId: string, ciudad: string, p: Entrada): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
-  const f = revisarPublicacion(p);
+  const f = revisarPublicacion(p, diasEncuesta(await valor("com_encuesta_dias_max")));
   if (f) return { ok: false, msg: f.msg, campo: f.campo };
   // 5h · El idioma del texto (para «Ver traducción»): el traductor propio lo detecta antes de abrir la transacción; si no, el de la app.
   const det = await detectarIdioma(p.body);
@@ -286,16 +289,16 @@ export async function publicar(userId: string, ciudad: string, p: Entrada): Prom
 }
 class FotosAjenas extends Error {}
 
-/* Editar: solo quien la escribió, en los primeros 30 minutos; el tipo, el negocio y las opciones no cambian. */
+/* Editar: solo quien la escribió, en sus primeros minutos (Configuración · com_editar_min); el tipo, el negocio y las opciones no cambian. */
 export async function editar(userId: string, id: string, p: Pick<Entrada, "body" | "topic" | "para" | "fotos">): Promise<Res<{ id: string; crisis: boolean; revision: number }>> {
   if (!ID.test(id)) return no("Esa publicación ya no está.", "That post is gone.");
   const det = await detectarIdioma(p.body); // 5h: si cambia el texto, su idioma se vuelve a detectar (y la traducción, por el hash)
   const r = await tx(async (c) => {
     const x = (await c.query<{ kind: Entrada["kind"]; body: string; business_id: string | null; poll_options: string[] | null; topic: string | null; a_tiempo: boolean; city_id: string }>(
-      `select kind, body, business_id, poll_options, topic, created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, city_id
+      `select kind, body, business_id, poll_options, topic, created_at > now() - make_interval(mins => ${EDITAR}) as a_tiempo, city_id
          from com_posts where id = $1::bigint and author_user_id = $2 and status = 'visible' for update`, [id, userId])).rows[0];
     if (!x) return no("Esa publicación ya no está.", "That post is gone.");
-    if (!x.a_tiempo) return no(`Ya no se puede editar: pasaron ${EDITAR_MIN} minutos. Puedes borrarla y publicar otra.`, `It can no longer be edited: ${EDITAR_MIN} minutes have passed. You can delete it and post again.`);
+    if (!x.a_tiempo) { const m = await valor("com_editar_min"); return no(`Ya no se puede editar: pasaron ${m} minutos. Puedes borrarla y publicar otra.`, `It can no longer be edited: ${m} minutes have passed. You can delete it and post again.`); }
     const u = await quien(c, userId, x.city_id);
     if (!u) return no("Tu cuenta no puede publicar ahora.", "Your account can't post right now.");
     const ef = await efectoSancion(c, userId);
@@ -332,11 +335,11 @@ export async function deshacerBorrar(userId: string, id: string): Promise<Res> {
   return r.rowCount ? { ok: true } : no("Ya no se puede deshacer.", "It can no longer be undone.");
 }
 
-/* Para editar: la publicación propia tal como está (solo en los 30 minutos). */
+/* Para editar: la publicación propia tal como está (solo en sus minutos para editar). */
 export async function paraEditar(userId: string, id: string) {
   if (!ID.test(id)) return null;
   const r = (await db().query<{ kind: Entrada["kind"]; body: string; topic: string | null; para: string[]; a_tiempo: boolean; biz: string | null; biz_name: string | null; opts: string[] | null }>(
-    `select p.kind, p.body, p.topic, p.looking_for as para, p.created_at > now() - interval '${EDITAR_MIN} minutes' as a_tiempo, p.business_id as biz, b.name as biz_name, p.poll_options as opts
+    `select p.kind, p.body, p.topic, p.looking_for as para, p.created_at > now() - make_interval(mins => ${EDITAR}) as a_tiempo, p.business_id as biz, b.name as biz_name, p.poll_options as opts
        from com_posts p left join businesses b on b.id = p.business_id where p.id = $1::bigint and p.author_user_id = $2 and p.status = 'visible'`, [id, userId])).rows[0];
   if (!r) return null;
   const fotos = (await db().query<{ id: string; url: string }>(`select id::text, url from media where owner_kind = 'com_post' and owner_id = $1 and status in ('visible', 'review') order by sort, created_at`, [id])).rows;

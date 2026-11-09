@@ -58,13 +58,13 @@ export function AutoModeracion({ d, edita, arriba }: { d: AutoMod; edita: boolea
       hacer: (m, e, v) => terminoAgregar(e ?? "es", lista, v, m) }) }] }] : []),
     { type: "group", k: "LÍMITES DEL DÍA (POR PERSONA)" },
     { type: "note", tone: "info", t: "Día local de la ciudad. La mitad el primer día de la cuenta. Al llegar al límite, la app dice cuál y hasta cuándo." },
-    { type: "rows", items: d.limites.map((x) => ({ key: x.k, icon: "clock", t: `${x.v} ${LIMITES[x.k].es} al día`, s: `De fábrica: ${LIMITES[x.k].def}`,
+    { type: "rows", items: d.limites.map((x) => ({ key: x.k, icon: "clock", t: `${x.v} ${LIMITES[x.k].es} al día`, s: `De fábrica: ${x.def} · de ${x.min} a ${x.max} · también en Sistema › Configuración`,
       acts: edita ? [{ l: "Cambiar", v: "secondary", icon: "edit", onClick: () => setConf({ titulo: "", sub: `Límite de ${LIMITES[x.k].es} al día por persona.`, cta: "Guardar", valor: { k: `${LIMITES[x.k].es.toUpperCase()} AL DÍA`, ini: String(x.v), max: 4 }, plantillas: ["Mucho spam", "Vecinos llegan al límite sin abusar"], hacer: (m, _e, v) => limiteCambiar(x.k, v, m) }) }] : undefined })) },
     // 5h · «Ver traducción» con el traductor propio: si responde (nunca muestra textos: aquí todo se ve en el original) y el tope por persona.
     { type: "group", k: "VER TRADUCCIÓN (TRADUCTOR PROPIO)" },
     { type: "rows", items: [
       { key: "trad-salud", icon: "language", t: "Traductor propio · español ↔ inglés", s: estadoTrad, tag: d.trad.ok ? "RESPONDE" : "NO RESPONDE", tone: d.trad.ok ? "signal" : "danger" },
-      { key: "trad-tope", icon: "clock", t: `${d.trad.tope} traducciones por hora`, s: "Por persona (o por dispositivo sin cuenta). De fábrica: 60. Al llegar, la app dice cuántas y que vuelva en un rato.",
+      { key: "trad-tope", icon: "clock", t: `${d.trad.tope} traducciones por hora`, s: `Por persona (o por dispositivo sin cuenta). De fábrica: ${d.trad.def} · de ${d.trad.min} a ${d.trad.max}. Al llegar, la app dice cuántas y que vuelva en un rato.`,
         acts: edita ? [{ l: "Cambiar", v: "secondary", icon: "edit", onClick: () => setConf({ titulo: "", sub: "«Ver traducción» por persona en una hora.", cta: "Guardar", valor: { k: "TRADUCCIONES POR HORA", ini: String(d.trad.tope), max: 4 }, plantillas: ["El traductor va lento", "Vecinos llegan al límite sin abusar"], hacer: (m, _e, v) => traduccionTope(v, m) }) }] : undefined },
     ] },
   ];

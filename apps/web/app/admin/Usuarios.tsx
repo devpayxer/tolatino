@@ -26,7 +26,7 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const toggle = (k: "quien" | "est" | "mas", v: string) => { const l = f[k].includes(v) ? f[k].filter((x) => x !== v) : [...f[k], v]; ir({ [k]: l.join(",") || null }); };
   const chips = (k: "quien" | "est" | "mas", label: string, items: [string, string][]): Bloque => ({ type: "chips", k: label, items: items.map(([v, l]) => ({ l, v: f[k].includes(v) ? "selected" : "filter", onClick: () => toggle(k, v) })) });
-  const hayFiltro = !!(f.q || f.quien.length || f.est.length || f.mas.length || f.orden !== "last");
+  const hayFiltro = !!(f.q || f.quien.length || f.est.length || f.mas.length || f.rk || f.orden !== "last");
   const nombre = (r: Fila) => r.nombre ?? "(sin nombre todavía)";
   const lugar = (r: Fila) => [r.zona, r.ciudad].filter(Boolean).join(" · ") || "Sin ciudad";
   const tag = (r: Fila): [string, string] => r.estado !== "ok" ? [EST_USR[r.estado] ?? r.estado.toUpperCase(), "danger"] : r.staff ? [r.staff.toUpperCase(), "ink"] : r.dueno ? ["DUEÑO", "action"] : ["ACTIVO", "neutral"];
@@ -34,7 +34,8 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
   const despues: (Bloque | null)[] = [
     chips("quien", "QUIÉN", [["own", "Dueños de negocio"], ["cli", "Solo clientes"]]),
     chips("est", "ESTADO", [["ok", "Activo"], ["adv", "Advertido"], ["mute", "Silenciado"], ["susp", "Suspendido"], ["ban", "Baneado"], ["del", "Borrado"]]),
-    mas ? chips("mas", "ACTIVIDAD", [["new", "Nuevos 30 d"], ["act7", "Activos 7 d"], ["inact", "Sin entrar 30 d+"], ["mdev", "Varios dispositivos"], ["noemail", "Sin correo"]]) : null,
+    mas ? chips("mas", "ACTIVIDAD", [["new", "Nuevos 30 d"], ["act7", "Activos 7 d"], ["inact", "Sin entrar 30 d+"], ["mdev", "Varios dispositivos"], ["noemail", "Sin correo"], ["rep", "Con reportes"]]) : null,
+    mas ? { type: "chips", k: "RANGO EN LA COMUNIDAD", items: ([["", "Cualquiera"], ["4", "4 o más"], ["7", "7 o más"], ["9", "9 o más"]] as [string, string][]).map(([v, l]) => ({ l, v: String(f.rk ?? "") === v ? "selected" : "filter", onClick: () => ir({ rk: v || null }) })) } : null,
     { type: "chips", k: "ORDENAR", items: ([["last", "Última vez"], ["new", "Más nuevos"]] as const).map(([v, l]) => ({ l, v: f.orden === v ? "selected" : "filter", onClick: () => ir({ orden: v === "last" ? null : v }) })) },
     { type: "acts", items: [
       { l: mas ? "Menos filtros" : `Más filtros${f.mas.length ? ` (${f.mas.length})` : ""}`, icon: "grid", onClick: () => setMas(!mas) },

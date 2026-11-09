@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
@@ -50,7 +51,7 @@ export type AvisoMod = {
   apelacion: { numero: string; estado: "open" | "upheld" | "lifted"; texto: string; at: string; decision: string | null; decidida: string | null } | null;
 };
 type Fila = { k: Apelable; id: string; motivo: string | null; at: string; texto: string; foto: string | null; auto: boolean; href: string | null; kind: Sancion | null; hasta: string | null };
-const DIAS = `coalesce((select (value #>> '{}')::int from platform_config where key = 'com_apelar_dias'), 14)`;
+const DIAS = cfgSql("com_apelar_dias"); // 5i · valor de Configuración (lib/config.ts)
 const FILAS = (filtro: string) => `
   select 'com_post' as k, p.id::text as id, p.hidden_reason as motivo, p.hidden_at as at, left(p.body, 280) as texto, null::text as foto, p.hidden_by = 'auto' as auto, '/comunidad/p/' || p.id as href, null::text as kind, null::timestamptz as hasta
     from com_posts p where p.author_user_id = $1 and p.status = 'hidden' and p.hidden_at > now() - interval '90 days' ${filtro.replace(/\$K/g, "'com_post'").replace(/\$X/g, "p.id::text")}

@@ -68,7 +68,7 @@ export function cupDetalle(c: Ctx): Sec {
   const { E2, d } = c, id = (c.ruta.det ?? "").slice(4), edita = id.startsWith("edit:") ? id.slice(5) : null;
   const x0 = edita ? c.cup?.lista?.cupones.find((x) => x.id === edita) ?? null : null;
   if (!d.pro || (edita && (!x0 || x0.estado === "ended"))) return { blocks: [{ type: "head", t: E2("Cupón no encontrado", "Coupon not found"), onBack: c.closeDet }, { type: "empty", icon: "ticket", t: E2("Ese cupón ya no se puede editar", "That coupon can no longer be edited"), s: "" }], ed: null };
-  const b0: FC = x0 ? { es: x0.titulo.es, en: x0.titulo.en, condEs: x0.condiciones.es, condEn: x0.condiciones.en, cupo: x0.cupo, dias: x0.dias } : { es: "", en: "", condEs: "", condEn: "", cupo: 20, dias: 30 };
+  const b0: FC = x0 ? { es: x0.titulo.es, en: x0.titulo.en, condEs: x0.condiciones.es, condEn: x0.condiciones.en, cupo: x0.cupo, dias: x0.dias } : { es: "", en: "", condEs: "", condEn: "", cupo: 20, dias: c.cup?.lista?.diasDef ?? 7 };
   const F = c.form<FC>(`det:cup:${id}`, b0), x = F.d, fija = !!x0 && x0.estado !== "pending", out: (Bloque | null)[] = [];
   out.push({ type: "head", eye: E2("CUPÓN POR MONEDAS", "COUPON FOR COINS"), t: edita ? E2("Editar cupón", "Edit coupon") : E2("Nuevo cupón", "New coupon"), s: E2("Sale en la Comunidad cuando To’Latino lo aprueba.", "Shows in the Community once To’Latino approves it."), onBack: c.closeDet });
   if (fija) out.push({ type: "note", tone: "info", icon: "lock", t: E2("La oferta ya está aprobada y puede haber vecinos que ya la canjearon: no cambia. Para otra oferta, termina este cupón y crea otro.", "The offer is approved and neighbors may have redeemed it: it does not change. For another offer, end this coupon and create a new one.") });

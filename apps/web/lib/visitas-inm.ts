@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { cifrar, descifrar } from "./cifrado";
 import { db, tx } from "./db";
@@ -137,7 +138,7 @@ async function horasDe(c: Q, x: Ctx, it: ItemVis, _quien: string | null): Promis
   return r.rows.map((h) => ({ id: slotDe(h.dia, h.min), dia: h.dia, min: h.min, libres: null }));
 }
 
-/* Hasta cuándo responde el negocio: 4 horas hábiles de su horario (sin horario: 4 horas) y nunca después de la hora − 1 h (§6 #3). */
+/* Hasta cuándo responde el negocio: las horas hábiles de Configuración (vis_responder_h, 4 de fábrica) de su horario (sin horario: corridas) y nunca después de la hora − 1 h (§6 #3). */
 async function plazo(c: Q, negocio: string, tz: string, ini: string): Promise<{ rb: string; ok: boolean }> {
   return (await c.query<{ rb: string; ok: boolean }>(
     `with r as (
@@ -148,8 +149,9 @@ async function plazo(c: Q, negocio: string, tz: string, ini: string): Promise<{ 
          cross join jsonb_array_elements(h.ranges) rg),
      v as (select greatest(a, now()) as a, z from r where z > now()),
      s as (select z, sum(extract(epoch from z - a)) over (order by a) as cum from v),
-     h4 as (select min(z - make_interval(secs => (cum - 14400)::float8)) as t from s where cum >= 14400),
-     t as (select least(coalesce((select t from h4), now() + interval '4 hours'), $3::timestamptz - interval '1 hour') as t)
+     k as (select ${cfgSql("vis_responder_h")} * 3600 as seg),
+     h4 as (select min(z - make_interval(secs => (cum - (select seg from k))::float8)) as t from s where cum >= (select seg from k)),
+     t as (select least(coalesce((select t from h4), now() + make_interval(hours => ${cfgSql("vis_responder_h")})), $3::timestamptz - interval '1 hour') as t)
      select t::text as rb, t > now() + interval '30 minutes' as ok from t`, [negocio, tz, ini])).rows[0]!;
 }
 
@@ -517,7 +519,7 @@ export async function barrerVisitas(f: { negocio?: string; userId?: string; nume
   }
   // 2. «Pasó»: si nadie marca, a las 24 h de la hora se da por pasada y se abre la reseña.
   const D = (await db().query<{ num: string; id: string }>(
-    `update operations o set status = 'done', done_at = now(), status_detail = 'sin_marcar', updated_at = now() where o.kind = 'visit' and o.status = 'confirmed' and o.scheduled_at < now() - interval '24 hours'${y}
+    `update operations o set status = 'done', done_at = now(), status_detail = 'sin_marcar', updated_at = now() where o.kind = 'visit' and o.status = 'confirmed' and o.scheduled_at < now() - make_interval(hours => ${cfgSql("vis_paso_h")})${y}
      returning o.number as num, o.id::text`, a)).rows;
   for (const d of D) {
     await db().query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'vis_done', 'system')`, [d.id]);
@@ -547,9 +549,9 @@ export async function barrerVisitas(f: { negocio?: string; userId?: string; nume
   for (const t of T) await horasPrueba(db(), t.id);
   // 6. Lo privado se borra a los 30 días de cerrar: la nota y la dirección de la prueba en casa.
   await db().query(`update operations set customer_note = null, updated_at = now() where kind = 'visit' and customer_note is not null and status in ('done', 'cancelled', 'expired', 'declined')
-                      and coalesce(done_at, cancelled_at, updated_at) < now() - interval '30 days'`);
+                      and coalesce(done_at, cancelled_at, updated_at) < now() - make_interval(days => ${cfgSql("vis_purga_dias")})`);
   await db().query(`update op_private p set note_enc = null, purge_at = now() from operations o where o.id = p.operation_id and o.kind = 'visit' and p.reason = 'casa' and p.note_enc is not null
-                      and o.status in ('done', 'cancelled', 'expired', 'declined') and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - interval '30 days'`);
+                      and o.status in ('done', 'cancelled', 'expired', 'declined') and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - make_interval(days => ${cfgSql("vis_purga_dias")})`);
   return n;
 }
 

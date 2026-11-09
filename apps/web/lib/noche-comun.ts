@@ -5,8 +5,8 @@ export type Bi = { es: string; en: string };
 export type KindNoche = "club" | "salsa" | "urbano" | "banda" | "bar" | "sport" | "karaoke" | "billar" | "cerve" | "lounge" | "show" | "dj" | "promo" | "salon";
 /* DJ, promotor y salón trabajan por fecha: no tienen «Esta noche» (sin cover, sin fila). */
 export const POR_FECHA: KindNoche[] = ["dj", "promo", "salon"];
-/* La fila «ahora» vale 60 minutos desde que el local la puso; después sale con su hora (Preguntas #4). Nunca se inventa. */
-export const FILA_VIVA_MIN = 60;
+/* La fila «ahora» vale lo que diga Configuración (noche_fila_viva_min, 60 min de fábrica) desde que el local la puso; después sale con
+   su hora (Preguntas #4). Nunca se inventa. La base decide (lib/noche.ts). */
 export const MUSICA: [string, string, string][] = [["m:bachata", "Bachata", "Bachata"], ["m:salsa", "Salsa", "Salsa"], ["m:tipico", "Típico", "Típico"], ["m:reggaeton", "Reguetón", "Reggaeton"],
   ["m:banda", "Banda y norteño", "Banda and norteño"], ["m:envivo", "En vivo", "Live"], ["m:mixto", "Mixto", "Mixed"]];
 export const FILAS: [number, string, string][] = [[0, "Sin fila", "No line"], [10, "10 min", "10 min"], [20, "20 min", "20 min"], [35, "30 min o más", "30+ min"]];

@@ -227,3 +227,17 @@ export async function exportarDatos(id: string, motivo: string): Promise<ResAdm 
   }, "Datos exportados. Quedó en la auditoría.", { borrada: true });
   return r.ok ? { ...r, archivo } : r;
 }
+
+/* 5i · Usuarios 360° › Comunidad › «Abrir caso de red de cuentas» (MEM 699): seguidores o votos desde el mismo dispositivo que esta cuenta.
+   Abre (o reúsa, si ya está abierto) el caso en la cola Reportes de usuario (repUsr) con la marca «red» y el motivo; lo decide una persona
+   en Colas, con su escalera de sanciones y la apelación. Queda en la auditoría. */
+export async function usrCasoRed(id: string, motivo: string): Promise<ResAdm> {
+  return hacer(id, ["editar", "retirar"], motivo, async (c, s, u, m) => {
+    if (u.staff) return "Es del equipo de To’Latino: se revisa desde Sistema › Equipo.";
+    const { marcar } = await import("@/lib/moderacion");
+    const caso = await marcar(c, { kind: "user", id: u.id, regla: "red", autor: u.id, ciudad: u.city_id, detalle: `Abierto por el equipo desde Usuarios 360°: ${m}` });
+    if (!caso) return "Esta cuenta no tiene ciudad: el caso no tiene a qué cola ir.";
+    await auditar(c, { actor: s.id, action: "usuario.red.caso", targetKind: "user", targetId: u.id, city: u.city_id, before: { caso: "sin caso de red" }, after: { caso: "abierto en Reportes de usuario" }, reason: m });
+    return null;
+  }, "Caso abierto en Colas › Reportes de usuario.");
+}

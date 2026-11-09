@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
 import { cifrar, descifrar } from "./cifrado";
 import { db } from "./db";
@@ -76,6 +77,6 @@ export async function purgarNinos(): Promise<number> {
     `update op_private p set note_enc = null, purge_at = now() from operations o
       where o.id = p.operation_id and p.reason in ('nino', 'fe') and p.note_enc is not null
         and o.status in ('done', 'cancelled', 'expired', 'declined')
-        and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - interval '30 days'`);
+        and coalesce(o.done_at, o.cancelled_at, o.updated_at) < now() - make_interval(days => ${cfgSql("ninos_purga_dias")})`);
   return r.rowCount ?? 0;
 }

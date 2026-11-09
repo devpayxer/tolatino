@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { randomInt } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { vigilarNoche } from "./noche-vigilar";
@@ -48,7 +49,7 @@ async function contexto(c: Q, negocio: string): Promise<Ctx | null> {
             (select a.stripe_account_id from stripe_accounts a where a.business_id = b.id and a.charges_enabled and not a.payouts_paused) as cuenta,
             to_char(now() at time zone ci.timezone, 'YYYY-MM') as mes, ${NOCHE_SQL("now()", "ci.timezone")}::text as hoy,
             (extract(epoch from (now() at time zone ci.timezone) - (${NOCHE_SQL("now()", "ci.timezone")} + time '12:00')) / 60)::int as "ahoraN",
-            coalesce(s.reply_min, 60) as reply, coalesce(s.hold_min, 30) as hold, s.list_cap as "listCap"
+            coalesce(s.reply_min, ${cfgSql("noche_responder_min")}) as reply, coalesce(s.hold_min, ${cfgSql("noche_mesa_guardada_min")}) as hold, s.list_cap as "listCap"
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id left join noche_settings s on s.business_id = b.id
       where b.id = $1 and b.status = 'active' and b.category_id = 'NEG-NOCHE'`, [negocio])).rows[0] ?? null;
 }
@@ -489,7 +490,7 @@ export async function nocheHoy(negocio: string): Promise<{ esperan: FilaNoche[];
             o.details->>'k' as k, o.details->'svc' as svc, o.night_date::text as night, (o.details->>'arrive')::int as llega, o.party_size as pax, o.details->>'occ' as occ, o.customer_note as nota,
             o.deposit_cents as dep, o.pay_status as pay, case when o.status = 'confirmed' then o.door_code end as code, (o.details->>'in_n')::int as "inN", coalesce((o.details->>'llego')::boolean, false) as llego,
             case when o.status = 'pending' then greatest(0, ceil(extract(epoch from o.respond_by - now()) / 60))::int end as resp, o.details->>'item' as item,
-            coalesce((i.svc_attrs->>'tables')::int, 1) as tables, coalesce((o.details->>'hold')::int, 30) as hold, o.night_date = $2::date as "esHoy", $3::int as "nowN", null::int as cupo
+            coalesce((i.svc_attrs->>'tables')::int, 1) as tables, coalesce((o.details->>'hold')::int, ${cfgSql("noche_mesa_guardada_min")}) as hold, o.night_date = $2::date as "esHoy", $3::int as "nowN", null::int as cupo
        from operations o join users u on u.id = o.user_id left join items i on i.id = (o.details->>'item')::bigint
       where o.business_id = $1 and o.kind = 'night' and ((o.status in ('pending', 'change_proposed') and o.night_date >= $2::date) or (o.night_date = $2::date and o.status in ('confirmed', 'done')))
       order by o.night_date, (o.details->>'arrive')::int, o.id`, [negocio, x.hoy, x.ahoraN])).rows;

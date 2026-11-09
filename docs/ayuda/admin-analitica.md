@@ -35,6 +35,14 @@ o 90 días, solo de tus ciudades.
 - **Exportar:** Negocios, Historial y Búsquedas sin oferta en CSV (abre en Excel o Sheets). Permiso analit · exportar;
   cada descarga queda en la auditoría.
 
+### Comunidad (5i, 8 nov)
+Pestaña **Comunidad** (7 · 30 · 90 días; días locales de cada ciudad): **publicaciones** y **comentarios**, **% de preguntas resueltas** (con
+«Me sirvió»), **tiempo a la primera respuesta** (promedio, de otra persona), **reportes por cada 1,000 publicaciones**, **apelaciones
+levantadas** (de las decididas), **monedas emitidas** (bienvenida y premios) y **canjeadas** (y las devueltas por códigos vencidos),
+**canjes** y **canjes por negocio**, **vecinos activos por rango** (publicaron, comentaron o votaron) y **por ciudad**. Solo cifras: sale
+de vistas por ciudad y día que no tienen personas; nunca quién publicó, votó o canjeó. Lo de la cuenta oficial no cuenta como publicación
+de vecinos.
+
 ## Qué se cuenta y qué no
 | Se guarda | No se guarda |
 |---|---|
@@ -67,6 +75,9 @@ prioridad y una persona la mira en el registro oficial; el sello cambia cuando d
 ---
 
 ## English
+Community (5i): posts, comments, % of questions solved, time to first answer, reports per 1,000 posts, appeals lifted, coins issued and
+redeemed, redemptions per business, active neighbors by rank and by city. Figures only, from per-city, per-day views with no people.
+
 Analytics shows what happens on the platform with first-party data only (nothing goes to third parties), for 7, 30 or
 90 days in your cities: the directory funnel (search or open a category → open a business page → tap Call, WhatsApp
 or Directions, counted in people), people and businesses (neighbors, new, % active, Pro/Free, % verified, new-account

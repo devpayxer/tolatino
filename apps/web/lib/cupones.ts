@@ -1,4 +1,5 @@
 import "server-only";
+import { valor } from "./config";
 import { avisar, avisarNegocio } from "./avisos";
 import { corto, enComunidad } from "./comunidad";
 import { revisarTexto } from "./comunidad-filtro";
@@ -141,6 +142,8 @@ export async function cuponesNegocio(negocio: string): Promise<CuponesPanel> {
   return {
     cupones: L.rows.map((x) => ({ id: x.id, titulo: x.title, condiciones: x.terms, costo: x.cost, cupo: x.stock, dias: x.dias, estado: x.status, pausaPor: x.pb, motivo: x.motivo, mes: x.mes, usados: x.usados, vivos: x.vivos, creado: x.creado })),
     usados: U.rows.map((x) => ({ codigo: x.code, titulo: x.title, at: x.at })),
+    // 5i · Los días que el formulario propone para un cupón nuevo: valor de Configuración (cup_dias_def).
+    diasDef: await valor("cup_dias_def"),
   };
 }
 

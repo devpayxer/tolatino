@@ -17,7 +17,7 @@ reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-mo
   traductor no responde), usa el idioma de la app de quien escribe.
 - **Lo traducido se guarda:** la segunda vez (tú u otra persona) sale al instante, sin volver a traducir. **Si el autor edita el texto**,
   se traduce otra vez el texto nuevo.
-- **Límite:** **60 traducciones por hora por persona** (sin cuenta, por teléfono o computadora). To'Latino puede cambiarlo.
+- **Límite:** **60 traducciones por hora por persona** (sin cuenta, por teléfono o computadora). To'Latino puede cambiarlo en Configuración.
 - **Es una traducción automática:** puede tener errores. Lo que vale es lo que escribió la persona («Ver original»).
 
 ## Qué pasa en cada caso

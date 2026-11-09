@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { cobrarOperacion, comision, devolverPago, liberarOperacion, registrarRetencion } from "./cobros";
 import { db, tx } from "./db";
@@ -36,7 +37,7 @@ const limpio = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\
 
 /* ── El negocio y el servicio ── */
 type Ctx = { id: string; name: string; city: string; tz: string; plan: string; mods: string[]; off: Record<string, unknown>; cuenta: string | null; hoy: string; cat: string; subs: string[];
-  ov: string | null; reply: number; contrato: number; salir: number; address: string | null; phone: string | null; foto: string | null };
+  ov: string | null; reply: number; feReply: number; contrato: number; salir: number; address: string | null; phone: string | null; foto: string | null };
 async function contexto(c: Q, negocio: string): Promise<(Ctx & { rubro: RubroInsc; neutro: boolean; kn: KindNinos | null }) | null> {
   const x = (await c.query<Ctx>(
     `select b.id, b.name, b.city_id as city, ci.timezone as tz, coalesce(st.plan, 'free') as plan, b.modules_on as mods, coalesce(b.modules_off, '{}'::jsonb) as off, b.category_id as cat,
@@ -44,7 +45,7 @@ async function contexto(c: Q, negocio: string): Promise<(Ctx & { rubro: RubroIns
             (select a.stripe_account_id from stripe_accounts a where a.business_id = b.id and a.charges_enabled and not a.payouts_paused) as cuenta,
             (now() at time zone ci.timezone)::date::text as hoy,
             coalesce((select array_agg(sc.name->>'es') from subcategorias_vivas sc where sc.id = any(b.subcategory_ids)), '{}') as subs, s.kind_override as ov,
-            coalesce(s.reply_h, 24) as reply, coalesce(s.contract_m, 0) as contrato, coalesce(s.cancel_fee_cents, 0) as salir
+            coalesce(s.reply_h, ${cfgSql("insc_responder_h")}) as reply, ${cfgSql("fe_responder_h")} as "feReply", coalesce(s.contract_m, 0) as contrato, coalesce(s.cancel_fee_cents, 0) as salir
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id left join insc_settings s on s.business_id = b.id
       where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   const rubro = x ? rubroInsc(x.cat) : null;
@@ -52,7 +53,7 @@ async function contexto(c: Q, negocio: string): Promise<(Ctx & { rubro: RubroIns
   const kn = rubro === "ninos" ? kindNinosDe(x.subs, x.ov) : null;
   // 4ie · Iglesias: consejería, capellanía, oración y recuperación son NEUTRAS (avisos sin el lugar ni el servicio; nota cifrada).
   const kf = rubro === "fe" ? kindFeDe(x.subs, x.ov) : null;
-  return { ...x, rubro, kn, neutro: kn === "terapia" || kn === "familia" || kf === "consejo" || kf === "oracion", reply: rubro === "fe" ? 48 : x.reply };
+  return { ...x, rubro, kn, neutro: kn === "terapia" || kn === "familia" || kf === "consejo" || kf === "oracion", reply: rubro === "fe" ? x.feReply : x.reply };
 }
 type Svc = { id: string; k: KindInsc; name: Bi; cents: number; mat: number; plan: number; g1: boolean; lvl: boolean; team: boolean; sem: number | null; horas: number | null;
   cert: Bi | null; certBy: Bi | null; oficial: boolean; no: Bi[]; inc: Bi[]; foto: string | null; fe: string | null; dur: boolean };
@@ -559,7 +560,7 @@ export async function cancelarGrupo(negocio: string, grupo: string, motivo: stri
     // 4eg · «Grupos que no abrieron»: 3 o más en 90 días abren un caso para To'Latino (uno abierto por lugar).
     await c.query(`insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
                    select 'grupo', 'business', b.id, b.id, b.city_id, 'normal' from businesses b
-                    where b.id = $1 and (select count(*) from class_groups g where g.business_id = b.id and g.purpose = 'insc' and g.status = 'cancelled' and g.updated_at > now() - interval '90 days') >= 3
+                    where b.id = $1 and (select count(*) from class_groups g where g.business_id = b.id and g.purpose = 'insc' and g.status = 'cancelled' and g.updated_at > now() - make_interval(days => ${cfgSql("insc_grupos_dias")})) >= ${cfgSql("insc_grupos_n")}
                    on conflict do nothing`, [negocio]);
     return { ok: true };
   });
@@ -647,7 +648,7 @@ export async function ofrecerCupo(negocio: string, entrada: string, actorId: str
       : 1; // sin grupo (todavía no hay fechas): la oferta es para pedir el cupo cuando abra
     if (libres < 1) return no("No hay un cupo libre para ofrecer. Sube los cupos en Tu herramienta o espera a que se libere uno.", "There is no free spot to offer. Raise the spots in Your tool or wait for one to free up.");
     const v = (await c.query<{ until: string; neg: string; tz: string }>(
-      `update waitlist_entries w set status = 'offered', offered_until = now() + interval '48 hours', offered_by = $2, updated_at = now() from businesses b join cities ci on ci.id = b.city_id
+      `update waitlist_entries w set status = 'offered', offered_until = now() + make_interval(hours => ${cfgSql("insc_oferta_h")}), offered_by = $2, updated_at = now() from businesses b join cities ci on ci.id = b.city_id
         where w.id = $1::bigint and b.id = w.business_id returning to_char(w.offered_until at time zone ci.timezone, 'FMHH12:MI AM') || ' del ' || to_char(w.offered_until at time zone ci.timezone, 'FMDD/FMMM') as until, b.name as neg, ci.timezone as tz`, [w.id, actorId])).rows[0]!;
     aviso = { uid: w.uid, negocio: v.neg, vence: v.until, href: `/n/${negocio}/inscribirme?svc=${w.item}${w.grupo ? `&grupo=${w.grupo}` : ""}${w.banda ? `&banda=${w.banda}` : ""}` };
     return { ok: true };
@@ -709,7 +710,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
   n += T.length;
   if (!w.length) await db().query(`update class_groups g set status = 'finished', updated_at = now() from cities c where c.id = g.city_id and g.purpose = 'insc' and g.status = 'started' and coalesce(g.ends_on + 7, g.starts_on + 1) <= (now() at time zone c.timezone)::date`);
   // 5. La baja pedida de una membresía: a las 72 h queda cancelada sola, con su constancia.
-  const B = (await db().query<{ num: string; biz: string }>(`select o.number as num, o.business_id as biz from operations o where o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail = 'cancel_req' and (o.details->>'cancel_req_at')::timestamptz < now() - interval '72 hours'${y} limit 200`, a)).rows;
+  const B = (await db().query<{ num: string; biz: string }>(`select o.number as num, o.business_id as biz from operations o where o.kind = 'enrollment' and o.status = 'confirmed' and o.status_detail = 'cancel_req' and (o.details->>'cancel_req_at')::timestamptz < now() - make_interval(hours => ${cfgSql("insc_baja_h")})${y} limit 200`, a)).rows;
   for (const b of B) { const r = await confirmarBaja(b.biz, b.num, null); if (r.ok) n++; }
   // 6. Ofertas de la lista de espera vencidas → se ofrece a la siguiente si sigue habiendo cupo.
   if (!f.userId && !f.numero) {

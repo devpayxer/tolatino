@@ -21,12 +21,12 @@ cuenta; lo de los vecinos no sale en buscadores._
   - **Pregunta** (tema opcional: Comida, Belleza, Autos, Hogar, Salud, Trámites, Fiestas, Niños, Otro).
   - **Recomendación**: buscas el negocio de tu ciudad, confirmas **«No es mi negocio y no trabajo ahí»**, eliges para qué lo
     recomiendas (de sus categorías) y cuentas qué te hicieron, cuánto pagaste y cómo te trataron.
-  - **Encuesta** (se abre en **Cabo**, rango 3): de 2 a 4 opciones y dura **1, 3 o 7 días**. Votas una vez y ves los %.
+  - **Encuesta** (se abre en **Cabo**, rango 3): de 2 a 4 opciones y dura **1, 3 o 7 días** (lo más largo lo fija To'Latino en Configuración; de fábrica 7). Votas una vez y ves los %.
   - **Publicación**: un aviso, algo que viste, una foto del barrio.
   - Hasta **4 fotos** (no en encuestas); les quitamos la ubicación de la cámara. Texto de 10 a 1,000 letras.
   - Ves a quién le sale («Lo ven tus vecinos de Hazleton · sale con tu nombre y tu barrio, nunca tu dirección») y las reglas.
     En escritorio, la vista previa a la derecha.
-- **Tu publicación:** el menú (···) deja **Editar** en los primeros **30 minutos** y **Borrar** (con **Deshacer** 10 segundos).
+- **Tu publicación:** el menú (···) deja **Editar** en los primeros **30 minutos** (de fábrica; To'Latino lo ajusta en Configuración y el menú dice hasta qué hora) y **Borrar** (con **Deshacer** 10 segundos).
 - **5c · De otra persona:** el menú (···) también deja **ver su perfil**, **silenciarla** o **bloquearla** (con Deshacer); tocar su
   nombre abre su perfil. Arriba, **Mensajes** (con un punto si hay algo sin leer) y la pastilla de tu rango abren tus mensajes y tu
   perfil. Para entrar a la Comunidad hace falta la bienvenida con «Tengo 18 años o más». Detalle:
@@ -62,7 +62,7 @@ base de datos: no hay manera de saltárselo.
 | Vives en otra ciudad | Puedes leer y publicar en la que estás viendo; sales como **«Invitado · de {tu ciudad}»**. |
 | La ciudad todavía no abre | El muro sale vacío y Publicar dice que la Comunidad abre cuando abra la ciudad. |
 | Tu cuenta está silenciada | Lees todo; Publicar dice hasta cuándo y por qué. |
-| Editar después de 30 minutos | «Ya no se puede editar»: bórrala y publica otra. La versión anterior de lo editado queda guardada para moderación. |
+| Editar después del plazo (30 min de fábrica) | «Ya no se puede editar»: bórrala y publica otra. La versión anterior de lo editado queda guardada para moderación. |
 | Borrar | Sale del muro al instante; **Deshacer** durante 10 segundos la devuelve a su lugar. Después ya no está para nadie (nada se borra de la base: queda como borrada). |
 | Votar lo tuyo | «Lo tuyo lo votan los demás.» |
 | Votar dos veces | El mismo toque quita tu voto; el otro lo cambia. Un voto por persona. |
@@ -97,7 +97,7 @@ business in your city, confirm "It is not my business and I don't work there", s
 never posted: phone numbers or WhatsApp links, emails, Social Security/ITIN, card, A-numbers or USCIS case numbers, exact
 addresses (house number + street; the street or neighborhood alone is fine), and your own business ("Your business posts in
 its Updates"); the error shows in the same box and the server and database check it again. Health questions carry "A
-recommendation does not replace a doctor. If it is an emergency, call 911." You can edit your post in the first 30 minutes
+recommendation does not replace a doctor. If it is an emergency, call 911." You can edit your post in the first 30 minutes (factory value; the menu says until what time)
 and delete it with a 10-second Undo. Without an account you see a sign-in wall with city numbers and what kind of things were
 posted, never names or texts; nothing from neighbors is indexed by search engines. Your post carries the center of your
 neighborhood, never your GPS or address. Posting from another city shows "Visitor · from {city}". If To'Latino hides your post,

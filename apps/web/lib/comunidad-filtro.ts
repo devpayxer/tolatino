@@ -16,8 +16,14 @@ export type Tipo = "pregunta" | "recomendacion" | "encuesta" | "publicacion";
 export const TIPOS: Tipo[] = ["pregunta", "recomendacion", "encuesta", "publicacion"];
 export const TEMAS: [string, string, string][] = [["comida", "Comida", "Food"], ["belleza", "Belleza", "Beauty"], ["autos", "Autos", "Cars"], ["hogar", "Hogar", "Home"],
   ["salud", "Salud", "Health"], ["tramites", "Trámites", "Paperwork"], ["fiestas", "Fiestas", "Parties"], ["ninos", "Niños", "Kids"], ["otro", "Otro", "Other"]];
-export const MIN_TEXTO = 10, MAX_TEXTO = 1000, MAX_FOTOS = 4, MAX_OPCION = 60, MAX_PARA = 40, DIAS_ENCUESTA = [1, 3, 7] as const;
-export const EDITAR_MIN = 30, DESHACER_S = 10, RANGO_ENCUESTA = 3;
+export const MIN_TEXTO = 10, MAX_TEXTO = 1000, MAX_FOTOS = 4, MAX_OPCION = 60, MAX_PARA = 40;
+export const DESHACER_S = 10, RANGO_ENCUESTA = 3;
+/* 5i · Cuánto dura una encuesta: las opciones 1 · 3 · 7 días hasta el máximo de Configuración (com_encuesta_dias_max), y el máximo
+   mismo si no es una de ellas. El servidor manda el máximo; el teléfono solo lo pinta. Editar (com_editar_min) y apelar
+   (com_apelar_dias) también viven en Configuración (lib/config.ts): aquí no hay copias. */
+export const OPCIONES_ENCUESTA = [1, 3, 7] as const;
+export const diasEncuesta = (max: number): number[] => [...new Set([...OPCIONES_ENCUESTA.filter((d) => d <= max), max])].sort((a, b) => a - b);
+const listaDias = (L: number[], es: boolean) => { const t = L.map(String); return t.length < 2 ? t.join("") : `${t.slice(0, -1).join(", ")} ${es ? "o" : "or"} ${t[t.length - 1]}`; };
 
 /* Líneas fijas (verbatim; nunca se suavizan). */
 export const LINEA_FIJA: Bi = { es: "Aquí nada se compra: el orden lo ponen los votos de los vecinos.", en: "Nothing here is bought: neighbors’ votes set the order." };
@@ -57,7 +63,7 @@ export const pareceEmergencia = (t: string) => EMERGENCIA.test(t);
 
 export type Borrador = { kind: Tipo; body: string; topic?: string | null; business?: string | null; para?: string[]; opts?: string[]; dias?: number; fotos?: string[]; noEsMio?: boolean };
 /* Todas las reglas de una publicación que no necesitan la base (la base: negocio activo y no propio, rango, límites, sanciones). */
-export function revisarPublicacion(p: Borrador): Falla | null {
+export function revisarPublicacion(p: Borrador, dias?: number[]): Falla | null {
   if (!TIPOS.includes(p.kind)) return falla("tipo", "Elige qué quieres publicar.", "Choose what you want to post.");
   const t = String(p.body ?? "").trim();
   if (p.kind === "recomendacion" && !p.business) return falla("negocio", "Elige el negocio que recomiendas.", "Pick the business you recommend.");
@@ -73,7 +79,7 @@ export function revisarPublicacion(p: Borrador): Falla | null {
     if (o.some((x) => x.length > MAX_OPCION)) return falla("opciones", `Cada opción, máximo ${MAX_OPCION} letras.`, `Each option, ${MAX_OPCION} characters at most.`);
     if (new Set(o.map((x) => x.toLowerCase())).size !== o.length) return falla("opciones", "Hay dos opciones iguales.", "Two options are the same.");
     for (const x of o) { const e = revisarTexto(x, "opciones"); if (e) return e; }
-    if (!DIAS_ENCUESTA.includes(Number(p.dias) as 1 | 3 | 7)) return falla("dias", "Elige cuánto dura: 1, 3 o 7 días.", "Choose how long it runs: 1, 3 or 7 days.");
+    if (dias && !dias.includes(Number(p.dias))) return falla("dias", `Elige cuánto dura: ${listaDias(dias, true)} días.`, `Choose how long it runs: ${listaDias(dias, false)} days.`);
     if ((p.fotos ?? []).length) return falla("fotos", "Las encuestas van sin fotos.", "Polls go without photos.");
   }
   if (p.kind === "recomendacion") {

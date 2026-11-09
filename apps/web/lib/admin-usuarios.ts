@@ -8,7 +8,7 @@ import { telefonoBonito } from "./panel";
    como Negocios; ver LAUNCH-CHECKLIST). Pestañas de la Fase 1: Resumen, Seguridad, Confianza, Privacidad (Actividad,
    Dinero y Comunidad llegan con sus módulos). */
 export const POR_PAGINA = 14;
-export type FiltrosUsr = { q: string; quien: string[]; est: string[]; mas: string[]; orden: string; pag: number };
+export type FiltrosUsr = { q: string; quien: string[]; est: string[]; mas: string[]; rk: number | null; orden: string; pag: number };
 
 export function leerFiltros(sp: Record<string, string | undefined>): FiltrosUsr {
   const lista = (v: string | undefined, ok: string[]) => (v ?? "").split(",").filter((x) => ok.includes(x));
@@ -16,7 +16,8 @@ export function leerFiltros(sp: Record<string, string | undefined>): FiltrosUsr 
     q: (sp.q ?? "").trim().slice(0, 80),
     quien: lista(sp.quien, ["own", "cli"]),
     est: lista(sp.est, ["ok", "adv", "mute", "susp", "ban", "del"]),
-    mas: lista(sp.mas, ["new", "act7", "inact", "mdev", "noemail"]),
+    mas: lista(sp.mas, ["new", "act7", "inact", "mdev", "noemail", "rep"]),
+    rk: [4, 7, 9].includes(Number(sp.rk)) ? Number(sp.rk) : null,
     orden: sp.orden === "new" ? "new" : "last",
     pag: Math.min(100, Math.max(1, Number(sp.pag) || 1)),
   };
@@ -49,6 +50,11 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
   if (f.mas.includes("inact")) w.push("coalesce(u.last_seen_at, u.created_at) < now() - interval '30 days'");
   if (f.mas.includes("mdev")) w.push("(select count(distinct coalesce(se.device::text, se.id::text)) from sessions se where se.user_id = u.id) > 1");
   if (f.mas.includes("noemail")) w.push("u.email is null");
+  // 5i · Comunidad: con reportes recibidos (a la persona o a lo que escribió en la Comunidad) y rango mínimo.
+  if (f.mas.includes("rep")) w.push(`exists (select 1 from content_reports x where (x.target_kind = 'user' and x.target_id = u.id::text)
+      or (x.target_kind = 'com_post' and x.target_id in (select p.id::text from com_posts p where p.author_user_id = u.id))
+      or (x.target_kind = 'com_comment' and x.target_id in (select c.id::text from com_comments c where c.author_user_id = u.id)))`);
+  if (f.rk) add("coalesce((select cp.rank_level from community_profiles cp where cp.user_id = u.id), 1) >= $1::int", f.rk);
   const where = w.length ? w.join(" and ") : "true";
   const orden = f.orden === "new" ? "u.created_at desc, u.id" : "u.last_seen_at desc nulls last, u.id";
   const cab = s.cities.length ? "u.home_city_id = any($1::text[])" : "cardinality($1::text[]) = 0";

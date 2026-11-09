@@ -83,8 +83,8 @@ export async function cambiarTelefono(u: Yo, entrada: string, codigo: string): P
 }
 
 /* ── Avisos: se guardan hoy; se aplican cuando salgan los avisos ── */
-export const AVISOS = ["ord", "cit", "emp", "hoy", "of", "mailR", "mailW", "quiet"] as const;
-export const AVISOS_DEF: Record<(typeof AVISOS)[number], boolean> = { ord: true, cit: true, emp: true, hoy: true, of: false, mailR: true, mailW: false, quiet: true };
+export const AVISOS = ["ord", "cit", "emp", "com", "dig", "msg", "hoy", "of", "mailR", "mailW", "quiet"] as const;
+export const AVISOS_DEF: Record<(typeof AVISOS)[number], boolean> = { ord: true, cit: true, emp: true, com: true, dig: false, msg: true, hoy: true, of: false, mailR: true, mailW: false, quiet: true };
 export async function avisosDe(userId: string) {
   const p = (await db().query<{ p: Record<string, boolean> }>(`select notif_prefs as p from users where id = $1`, [userId])).rows[0]?.p ?? {};
   return Object.fromEntries(AVISOS.map((k) => [k, typeof p[k] === "boolean" ? p[k] : AVISOS_DEF[k]])) as Record<(typeof AVISOS)[number], boolean>;

@@ -1,6 +1,7 @@
 import "server-only";
 import type { Pool, PoolClient } from "pg";
 import { db, tx } from "./db";
+import { cfgSql } from "./config";
 import { horasPrueba, retirarAnuncio } from "./visitas-inm";
 import type { Bi } from "./inscripciones-comun";
 import {
@@ -25,7 +26,7 @@ type R = { ok: true; id?: string; puerta?: Puerta } | { ok: false; es: string; e
 const err = (es: string, en: string): R => ({ ok: false, es, en });
 const ID = /^\d{1,18}$/, FOTO = /^(https?:\/\/|\/)[^\s"']{1,500}$/;
 const HOY_SQL = `(now() at time zone ci.timezone)::date`;
-const TOPE_KEY = "dealer_doc_fee_cap_cents";
+const TOPE_KEY = "dealer_doc_fee_cap_cents" as const; // 5i · valor de Configuración (lib/config.ts)
 const txt = (v: unknown, n: number) => (typeof v === "string" ? v.replace(/[\u0000-\u001F\u007F]/g, " ").replace(/\s+/g, " ").trim().slice(0, n) : "");
 const bi = (v: unknown, n: number): Bi => ({ es: txt((v as Bi | undefined)?.es, n), en: txt((v as Bi | undefined)?.en, n) });
 const entero = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? Math.round(n) : NaN; };
@@ -72,7 +73,7 @@ export async function herramientaAutos(negocio: string, c: Q = db()): Promise<He
             s.no_credit as nc, s.itin_down_cents as idown, s.apr_bp as apr, s.term_m as term, s.trade, s.home_test as casa, s.reports_credit as rep, s.warranty_default as gar,
             s.bhph_down_cents as bd, s.bhph_week_cents as bw, s.bhph_months as bm, s.lot_total as lot,
             coalesce((select plan = 'pro' from business_stats_cache x where x.business_id = b.id), false) as pro,
-            coalesce((select (value #>> '{}')::int from platform_config where key = '${TOPE_KEY}'), 0) as tope,
+            ${cfgSql(TOPE_KEY)} as tope,
             (select t.parts_bp from tax_rules t where t.city_id = b.city_id and t.category_id = 'NEG-DEALER' and t.effective_from <= now() order by t.effective_from desc, t.id desc limit 1) as tax,
             (select l.number from licenses l where l.business_id = b.id and l.kind = 'pa_dealer' and l.status = 'valid' order by l.verified_at desc nulls last limit 1) as lic,
             (select count(*)::int from vehicle_listings v where v.business_id = b.id and v.status = 'sold' and v.status_at > now() - interval '30 days') as v30,
@@ -420,20 +421,18 @@ export async function recalcularFiltrosAutos(c: Q, negocio: string) {
 
 /* ── El tope del cargo del dealer (solo el Super Admin, con auditoría en su acción): los cargos que pasan bajan al tope en la misma
    transacción; los totales de los carros se rehacen después por lotes (recalcularTodosPorLotes). ── */
-export async function cambiarTopeCargo(c: PoolClient, cents: number, actor: string): Promise<{ antes: number; bajados: string[] } | null> {
+export async function cambiarTopeCargo(c: PoolClient, cents: number): Promise<{ bajados: string[] } | null> {
+  // 5i · El valor lo escribe cambiarConfig (lib/config.ts: límites y auditoría); aquí solo lo que hace además: bajar a los que pasan.
   const v = entero(cents);
   if (!(v >= 0 && v <= 200000 && v % 100 === 0)) return null;
-  const antes = (await c.query<{ v: number }>(`select coalesce((select (value #>> '{}')::int from platform_config where key = '${TOPE_KEY}' for update), 0) as v`)).rows[0]!.v;
-  await c.query(`insert into platform_config (key, value, note, updated_by, updated_at) values ('${TOPE_KEY}', to_jsonb($1::int), 'Tope del cargo del dealer en PA (A VERIFICAR cada año).', $2, now())
-                 on conflict (key) do update set value = excluded.value, updated_by = excluded.updated_by, updated_at = now()`, [v, actor]);
   const bajados = (await c.query<{ id: string }>(`update dealer_settings set doc_fee_cents = $1, updated_at = now() where doc_fee_cents > $1 returning business_id as id`, [v])).rows.map((x) => x.id);
-  return { antes, bajados };
+  return { bajados };
 }
 
 /* La firma de lo que mueve los totales de todos: el tope y la última regla de impuesto de Autos. Si cambia, se recalcula todo por lotes. */
 async function firmaTotales(): Promise<string> {
   const x = (await db().query<{ tope: number; tax: string | null }>(
-    `select coalesce((select (value #>> '{}')::int from platform_config where key = '${TOPE_KEY}'), 0) as tope, (select max(id)::text from tax_rules where category_id = 'NEG-DEALER') as tax`)).rows[0]!;
+    `select ${cfgSql(TOPE_KEY)} as tope, (select max(id)::text from tax_rules where category_id = 'NEG-DEALER') as tax`)).rows[0]!;
   return `${x.tope}:${x.tax ?? "-"}`;
 }
 /* Por cursor (business_id), de 100 en 100, cada lote en su transacción corta: nadie queda bloqueado. Guarda dónde va en platform_config

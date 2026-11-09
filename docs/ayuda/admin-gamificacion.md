@@ -39,6 +39,13 @@ el rol Admin); «Cerrar el mes» y «Cambiar rango», solo Admin; ajustar puntos
   monedas** (Sumar / Restar, cantidad, motivo): Admin hasta **1,000** de una vez, otros roles que editan Usuarios hasta **500**. Nunca deja
   el saldo en negativo; nadie ajusta las suyas; la persona recibe el aviso con la cantidad y el motivo.
 
+## Configuración (5i, 8 nov)
+- El **tope de puntos del día** es un valor de **Sistema › Configuración** (10–1,000; de fábrica 100). Aquí se elige entre 50 · 100 · 150 ·
+  200; allá, cualquier entero dentro de sus límites. Es el mismo valor y la misma auditoría (antes → después). Settings (EN): the daily
+  points cap is a Settings value; both screens write the same value with the same audit.
+- La subpestaña **El Patio** no se construye (decisión G): los desbloqueos de El Patio dicen «Cuando abra El Patio». El rango del negocio
+  tampoco (LAUNCH-CHECKLIST).
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|

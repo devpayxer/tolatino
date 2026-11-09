@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { usd } from "./pro-comun";
@@ -87,7 +88,7 @@ export async function mandarTotal(negocio: string, numero: string, f: TotalIn, a
     await c.query(`update written_totals set status = 'superseded' where operation_id = $1::bigint and status = 'sent'`, [o.id]);
     await c.query(
       `insert into written_totals (operation_id, business_id, city_id, version, fee_cents, gov_cents, credit_cents, hours, extras, note, total_cents, valid_until, created_by)
-       values ($1::bigint, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, now() + interval '30 days', $12)`,
+       values ($1::bigint, $2, $3, $4, $5, $6, $7, $8, $9::jsonb, $10::jsonb, $11, now() + make_interval(days => ${cfgSql("sp_total_escrito_dias")}), $12)`,
       [o.id, o.biz, o.city, v, fee, gov, credit, hours, JSON.stringify(extras), nota ? JSON.stringify({ es: nota, en: nota }) : null, total, actorId]);
     await c.query(`update operations set status_detail = 'quote', updated_at = now() where id = $1::bigint`, [o.id]);
     await ev(c, o.id, "total_sent", "member", actorId, { es: `Mandó el total por escrito (versión ${v}): ${usd(total)}`, en: `Sent the written total (version ${v}): ${usd(total)}` });

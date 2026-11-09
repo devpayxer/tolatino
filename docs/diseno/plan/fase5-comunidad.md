@@ -462,22 +462,37 @@ Capturas teléfono + escritorio de cada pantalla compuesta (§1b) y su línea en
 
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 5 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
-- [ ] `To'Latino Comunidad.dc.html` en `docs/diseno/pantallas/` (o REVISION dice qué se compuso sin él).
+- [x] `To'Latino Comunidad.dc.html` en `docs/diseno/pantallas/` (o REVISION dice qué se compuso sin él).
+      _Comprobado (8 nov): el archivo está en docs/diseno/pantallas/ (traído en 3848f5e); lo compuesto sin diseño va en REVISION 5a–5i._
 - [ ] Migraciones 0097–0105 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semilla 0032 solo en pruebas (`semilla`).
-- [ ] Muro, publicar (4 tipos), publicación e hilo completos con cursor; filtro al escribir probado al revés; ubicación solo del barrio.
-- [ ] Votos ±, «Sumar mi voto», mejor respuesta «Me sirvió», encuestas desde Cabo; contadores y orden derivados, exactos con votos simultáneos.
-- [ ] Perfil, seguir, Siguiendo, silenciar, bloquear mutuo e invisible en todas las superficies; bienvenida 2au pasos 3–5 con 18+; Mensajes solo a quien te sigue.
-- [ ] Reportar, auto-moderación (6 reglas con interruptor), antiabuso, sanciones con efecto en la Comunidad y apelaciones con segunda revisión; Confianza y
+      _Local (8 nov): 0001–0105 en un PostGIS 16-3.5 nuevo, 0097–0105 dos veces más sin error y las semillas de pruebas en la base nueva; guardián `semilla` verde. Sin marcar: la CI no corrió con 0105 (el bloque no se subió todavía)._
+- [x] Muro, publicar (4 tipos), publicación e hilo completos con cursor; filtro al escribir probado al revés; ubicación solo del barrio.
+      _e2e `com5a` «OK com5a», `com5b` «OK com5b»; guardianes comunidadSinTelefonos, ubicacionDeBarrio, feedConCursor._
+- [x] Votos ±, «Sumar mi voto», mejor respuesta «Me sirvió», encuestas desde Cabo; contadores y orden derivados, exactos con votos simultáneos.
+      _e2e `com5b` «OK com5b»; guardianes votoUnico, saldoDerivado._
+- [x] Perfil, seguir, Siguiendo, silenciar, bloquear mutuo e invisible en todas las superficies; bienvenida 2au pasos 3–5 con 18+; Mensajes solo a quien te sigue.
+      _e2e `com5c` «OK com5c»; guardianes bloqueoMutuo, bloqueoTodasLasSuperficies, mensajeSoloAQuienTeSigue, sinFechaDeNacimiento._
+- [x] Reportar, auto-moderación (6 reglas con interruptor), antiabuso, sanciones con efecto en la Comunidad y apelaciones con segunda revisión; Confianza y
       seguridad deja de ser `pendiente`.
-- [ ] Hoy en el barrio (pestaña y pública) + Inicio + Negocios + Buscar › Vecinos y «Pregúntale al barrio»; cuenta oficial de las 5 ciudades con programar y fijar.
-- [ ] Puntos (libro, tope 100, reversos), 10 rangos con desbloqueos reales, insignias, Tabla del Barrio con cierre de mes; rango y +15 en la tarjeta de reseña.
-- [ ] Monedas (libro, sin valor en dinero) y cupones: panel crea y valida, admin aprueba, persona canjea; doble canje imposible (`monedasSinDinero` al revés).
+      _e2e `com5d` «OK com5d»; guardianes ocultarAvisaYApela, apelacionOtraPersona, reportesSinManada._
+- [x] Hoy en el barrio (pestaña y pública) + Inicio + Negocios + Buscar › Vecinos y «Pregúntale al barrio»; cuenta oficial de las 5 ciudades con programar y fijar.
+      _e2e `com5e` «OK com5e»; guardianes hoySoloEnVivo, oficialNoEsPersona, buscarVecinosConSesion._
+- [x] Puntos (libro, tope 100, reversos), 10 rangos con desbloqueos reales, insignias, Tabla del Barrio con cierre de mes; rango y +15 en la tarjeta de reseña.
+      _e2e `com5f` «com5f: todo bien»; guardianes topeDiario, libroSoloInsercion._
+- [x] Monedas (libro, sin valor en dinero) y cupones: panel crea y valida, admin aprueba, persona canjea; doble canje imposible (`monedasSinDinero` al revés).
+      _e2e `com5g` «com5g: todo bien»; guardianes monedasSinDinero (al revés en 5g), cuponUnaVez._
 - [ ] «Ver traducción» en publicaciones, comentarios, reseñas y respuestas con el traductor propio; nada sale a terceros.
-- [ ] Super Admin: Contenido (7 pestañas), Usuarios 360° › Comunidad, Gamification (sin El Patio), Colas `rep` · `repUsr` · `apel`, Configuración, Notificaciones,
+      _e2e `com5h` «com5h: todo bien» con un traductor de prueba que imita la API; guardián traduccionPropia. Sin marcar: el LibreTranslate real no corrió aquí (modelos bloqueados por la red de la sesión); verlo en el sandbox._
+- [x] Super Admin: Contenido (7 pestañas), Usuarios 360° › Comunidad, Gamification (sin El Patio), Colas `rep` · `repUsr` · `apel`, Configuración, Notificaciones,
       Analítica › Comunidad; cada acción con motivo, aviso, apelación y auditoría.
-- [ ] Avisos ES/EN en `notif_templates`, ninguno de la Comunidad por SMS (`avisoComunidadSinSms`).
+      _e2e `adm5i` «adm5i ✓ todo», `com5d` «OK com5d» (Configuración auditada y con límites, 7 pestañas, lote sin la oficial, hilo marcado, mover, 360°, Analítica = SQL); guardianes configConLimites, configDesdeUnLugar, analiticaSinPersonas, loteNoTocaOficial (26/26 al revés)._
+- [x] Avisos ES/EN en `notif_templates`, ninguno de la Comunidad por SMS (`avisoComunidadSinSms`).
+      _Guardián avisoComunidadSinSms verde; `adm5i` comprueba en la base que ninguna plantilla com_/gam_/dm_ tiene SMS y el resumen diario (una vez al día, sin lo de alguien bloqueado)._
 - [ ] Presupuesto de velocidad con 1 M publicaciones cumplido (cifras en PROGRESS); guardianes de §3 en `guardianes/run.mjs`, cada uno probado al revés; build +
       CI + punta a punta en 9 dispositivos verdes; Novedades, reseñas y Mensajes cliente ↔ negocio sin regresión.
-- [ ] `docs/ayuda/` completas (§5i); preguntas #1–#25 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con Sección 230, DMCA (agente: costo → fundador), NCMEC, acoso,
+      _Sin marcar: la base de carga de 1 M (`scripts/carga/comunidad-1m.mjs`) no se corrió; la CI no corre punta a punta ni 9 dispositivos (LAUNCH-CHECKLIST). Guardianes de §3 en run.mjs y probados al revés (5a–5i); regresiones `adm2i` «OK», `adm4ig` «OK adm4ig»._
+- [x] `docs/ayuda/` completas (§5i); preguntas #1–#25 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con Sección 230, DMCA (agente: costo → fundador), NCMEC, acoso,
       monedas y cupones, 18+, inmigración, calidad del traductor, rango del negocio, memoria del servidor.
-- [ ] `docs/PROGRESS.md` al día (Fase 5 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox.
+      _Comprobado (8 nov): las de la lista de §5i existen con nombre equivalente (comunidad-el-muro, comunidad-comentar-votar-y-encuestas, comunidad-vecinos-seguir-bloquear-y-mensajes, comunidad-reportar-y-apelar, comunidad-puntos-rangos-y-tabla, monedas-y-cupones, hoy-en-el-barrio, ver-traduccion, panel-cupones-por-monedas, novedades, admin-contenido, admin-confianza-y-seguridad, admin-gamificacion) + admin-configuracion.md nueva; #1–#25 en REVISION 5i; LAUNCH-CHECKLIST con Sección 230, DMCA, NCMEC, acoso, monedas, 18+, inmigración, traductor, rango del negocio y memoria._
+- [x] `docs/PROGRESS.md` al día (Fase 5 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox.
+      _PROGRESS dice «5i hecho» y «Fase 5 cerrada»; REVISION ### 5i trae el paso a paso de toda la fase._

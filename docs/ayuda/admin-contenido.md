@@ -48,6 +48,25 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 ### Cuenta oficial (5e, 7 nov)
 - Pestaña **Cuenta oficial**: escribir, programar y fijar como «To'Latino {Ciudad}». Detalle en `admin-cuenta-oficial.md`.
 
+### Contenido completo de la Fase 5 (5i, 8 nov)
+- **Pestañas** (como el prototipo): **Todo · Publicaciones · Comentarios · Hoy en el barrio · Reseñas · Auto-moderación · Cuenta oficial**.
+  Novedades, comentarios de novedades y vacantes siguen en **Todo** con el filtro **Tipo**.
+- **Filtros:** Tipo, **Ciudad**, **Se ven / Ocultos**, **Con reporte**, **Votos negativos**, **10+ votos**, **De invitados** (vive en otra
+  ciudad), **Rango del autor** (4, 7 o 9 o más) y **autor** (desde Usuarios 360° › Comunidad › «Ver todo en Contenido»). Búsqueda por texto,
+  autor o negocio. Lo reportado sale primero. **Páginas con cursor** (← →): nunca se salta ni se repite una fila aunque entren nuevas.
+- **Ver hilo:** la publicación como en la Comunidad (autor, rango, tema, fotos, encuesta con sus votos, el negocio recomendado, votos) y sus
+  comentarios, los más votados primero y cada respuesta debajo; lo oculto sale marcado con su motivo. Abierto desde un comentario, ese
+  comentario va **marcado y a la vista** («COMENTARIO DE ORIGEN»). Desde ahí: Ocultar / Restaurar con motivo, ir al autor o al reporte.
+- **Ocultar los N reportados** (escritorio, quien puede ocultar): oculta de una vez las publicaciones y comentarios de la Comunidad que se ven
+  y tienen un reporte abierto. Pide un motivo; muestra el **progreso** (N de M) y al final cuántos se ocultaron y **cuáles no y por qué**.
+  **La cuenta oficial nunca se oculta en lote** (sale como «no se pudo»: si hace falta, ocúltala sola desde su fila). Cada autor recibe el
+  motivo con «Apelar»; quienes reportaron, el resultado (sin nombres); los reportes y el caso de la cola Reportes quedan decididos; todo en la
+  auditoría (`com.publicacion.ocultar_lote`, `com.comentario.ocultar_lote`).
+- **Mover de ciudad** (Admin, Ciudad, Moderador; tus ciudades): una publicación que habla de otra ciudad pasa a su muro con sus comentarios;
+  la ubicación la vuelve a poner el sistema (centro del barrio o de la ciudad, nunca la de la persona) y se desfija. Una **recomendación** o
+  un hilo con negocios recomendados **no se mueve** (va con su negocio): se oculta con el motivo. Queda en la auditoría.
+- Las cifras y el tiempo de Contenido salen de la base; los plazos (minutos para editar, días para apelar) de **Sistema › Configuración**.
+
 ## Transacciones
 - **Qué es:** pedidos y reservaciones de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), pedidos terminados en 90 días
   (pagados en el local), los que no se dieron (cancelados, rechazados o sin respuesta) y reservaciones. Pestañas Todas, Pedidos
@@ -60,6 +79,13 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 ---
 
 ## English
+Phase 5 complete (5i): tabs All · Posts · Comments · Today nearby · Reviews · Auto-moderation · Official account (updates, update comments
+and job posts stay under All with the Type filter). Filters: type, city, visible/hidden, reported, downvoted, 10+ votes, from visitors, author
+rank and author; cursor pages (← →). "Ver hilo" shows the post as in the Community with all its comments (hidden ones marked) and the comment
+you came from highlighted. "Ocultar los N reportados" (desktop) hides every visible reported Community post and comment with one reason,
+shows progress and which ones failed and why; the official account is never hidden in bulk. Each author gets the reason with Appeal; reports
+and the queue case are closed; all audited. "Mover de ciudad" moves a post (not a recommendation) to another of your cities with its comments.
+
 Today nearby (5e): the "Hoy en el barrio" tab lists what is live in Today nearby in your cities (the same database rule people
 see: a Pro business's live, public update from the last 24 h), with its origin and hours left, plus what To'Latino took out in the
 last 24 h. "Retirar de Hoy" (Admin, Moderator) asks for a reason, keeps the update on the business page, notifies the business (no

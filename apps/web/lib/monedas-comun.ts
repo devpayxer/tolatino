@@ -34,4 +34,4 @@ export type CuponNegocio = {
   id: string; titulo: Bi; condiciones: Bi; costo: number | null; cupo: number; dias: number; estado: EstadoCupon; pausaPor: "business" | "admin" | null; motivo: string | null;
   mes: number; usados: number; vivos: number; creado: string;
 };
-export type CuponesPanel = { cupones: CuponNegocio[]; usados: { codigo: string; titulo: Bi; at: string }[] };
+export type CuponesPanel = { cupones: CuponNegocio[]; usados: { codigo: string; titulo: Bi; at: string }[]; diasDef: number };

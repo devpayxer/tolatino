@@ -55,6 +55,11 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
 - Nunca digas quién reportó. Nunca prometas el resultado de una apelación.
 - La apelación la decide otra persona del equipo, en 72 h, una vez.
 
+### Configuración (5i, 8 nov)
+- Los **límites del día** y **«Ver traducción» por hora** de Contenido › Auto-moderación son valores de **Sistema › Configuración**: se
+  cambian en cualquiera de las dos pantallas, siempre dentro de sus límites y con la auditoría antes → después. Los **días para apelar**
+  (14 de fábrica) también; Colas y Confianza dicen el valor vigente.
+
 ## English
 - **Trust & safety** (`/admin/confianza`): overview with queues and how it works, sanction catalog with the Community effect of each,
   sanctioned people, appeals, fraud (vote and follower rings from one device, review bursts, devices with 3+ accounts, blocked devices) and

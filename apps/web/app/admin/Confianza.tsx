@@ -36,12 +36,12 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
     B.push({ type: "timeline", k: "FLUJO", items: [
       { t: "Reporte o regla automática", s: "Entra a una cola con plazo. Lo reportado deja de verse solo para quien reporta; las reglas marcan y una persona decide. Solo se oculta solo con 5 reportes de personas y dispositivos distintos." },
       { t: "Una persona decide con motivo", s: "Plantillas de motivo; queda en la auditoría." },
-      { t: "Aviso a la persona + apelación 14 días", s: "El motivo se envía tal cual; «Apelar» está en el aviso." },
+      { t: `Aviso a la persona + apelación ${d.apelarDias} días`, s: "El motivo se envía tal cual; «Apelar» está en el aviso." },
       { t: "Otra persona revisa la apelación", s: "Nunca quien ocultó o sancionó (la base lo impide). Baneo, solo un Admin. Es final." },
     ] });
   }
   if (tab === "sanc") {
-    B.push({ type: "note", tone: "ink", icon: "scale", t: "Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → baneo (solo un Admin). La reincidencia sube un peldaño. Todas avisan con el motivo y se apelan 14 días." });
+    B.push({ type: "note", tone: "ink", icon: "scale", t: `Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → baneo (solo un Admin). La reincidencia sube un peldaño. Todas avisan con el motivo y se apelan ${d.apelarDias} días.` });
     B.push({ type: "rows", cols, items: d.catalogo.map((s) => ({ key: s.k, icon: s.k === "ban" ? "ban" : "users", t: s.es, s: `${s.dias ? `${s.dias} días · se levanta sola` : s.k === "ban" ? "Permanente · lo confirma un Admin" : "Hasta que una persona la levante"} · En la Comunidad: ${s.com.es}`, tag: s.m, tone: s.k === "ban" || s.k === "susp14" ? "danger" : "neutral" })) });
   }
   if (tab === "act") B.push(d.sanc.length ? { type: "rows", items: d.sanc.map((x) => ({ key: x.id, icon: "shield", t: x.quien, s: `${x.reason} · desde ${fecha(x.at)}${x.hasta ? ` · hasta ${fecha(x.hasta)}` : ""}${x.ciudad ? ` · ${x.ciudad}` : ""}${x.apelada ? ` · apelación ${x.apelada.replace("open", "en revisión").replace("upheld", "se mantiene").replace("lifted", "levantada")}` : ""}`,

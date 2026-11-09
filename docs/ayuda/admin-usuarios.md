@@ -23,6 +23,19 @@ _Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y es
     dispositivo que esta cuenta (el caso de red de cuentas se abre desde Reportes de usuario cuando llegue esa cola, 5d).
   - Abajo, el historial: quién del equipo hizo qué, antes → después y el motivo.
 
+### Usuarios 360° › Comunidad completo (5i, 8 nov)
+- **Arriba:** rango, puntos (y del mes), monedas (sin valor en dinero), votos recibidos (+ / −, mejores respuestas), publicaciones y
+  comentarios, seguidores y siguiendo, a cuántos bloqueó y silenció, conversaciones privadas (nunca su contenido), 18+ y bienvenida.
+- **Posible red:** si un seguidor entró desde el mismo dispositivo que esta cuenta, el aviso trae **«Abrir caso de red de cuentas»**: con
+  motivo, abre (o reúsa) el caso en **Colas › Reportes de usuario** con la marca «posible red»; lo decide una persona con la escalera de
+  sanciones. Queda en la auditoría.
+- **Sub-pestañas:** **Publicaciones** (con su estado y reportes; toca para ver el hilo; «Ver todo en Contenido») · **Comentarios** (abre el
+  hilo con el comentario marcado) · **Seguidores y siguiendo** (y bloqueados / silenciados; MISMO DISPOSITIVO) · **Puntos y monedas**
+  (movimientos y ajustes con tope por rol) · **Cupones y referidos** (cupones canjeados con su estado y el código tapado; su código de
+  invitación, a cuántos invitó y quién la invitó; sin dinero). Sin El Patio (decisión G).
+- **Lista de Usuarios › Más filtros:** **Con reportes** (a la persona o a lo que escribió en la Comunidad) y **Rango en la Comunidad**
+  (4, 7 o 9 o más).
+
 ## Acciones y lo que ve la persona
 | Acción | Permiso | Qué pasa |
 |---|---|---|
@@ -59,6 +72,10 @@ con sus módulos.
 ---
 
 ## English
+Community (5i): the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
+"possible network" notice with "Abrir caso de red de cuentas" (opens a User reports case, audited). Sub-tabs: Posts · Comments · Followers
+and following · Points and coins · Coupons and referrals (no El Patio). The users list adds "With reports" and "Community rank" filters.
+
 Users lists every account in your cities (search by name, phone, email or id; who, status, more filters, sort; 14 per
 page). The 360° has Overview (phone and verification, email, city, role, since, last seen, devices, internal notes,
 their businesses, actions), Security (devices and sessions: sign out one or all, block or unblock a device; accounts

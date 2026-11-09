@@ -1,7 +1,8 @@
 import "server-only";
 import { auditar, type Staff } from "./admin";
 import { db, tx } from "./db";
-import { pareceEmergencia, revisarPublicacion, DIAS_ENCUESTA, type Tipo } from "./comunidad-filtro";
+import { pareceEmergencia, revisarPublicacion, diasEncuesta, type Tipo } from "./comunidad-filtro";
+import { valor } from "./config";
 
 /* La cuenta oficial «To'Latino {Ciudad}» (Super Admin › Contenido › Cuenta oficial; fase5-comunidad.md §4 5e). No es una persona: no
    hay fila en users, no tiene teléfono, no gana puntos ni sale en la Tabla, no se sigue ni recibe mensajes (guardián oficialNoEsPersona).
@@ -21,11 +22,11 @@ export const puedeOficial = (s: Staff, ciudad?: string) =>
 
 export type FilaOficial = { id: string; city_id: string; kind: Tipo; topic: string | null; body: string; publish: string; prog: boolean; fijada: boolean; hasta: string | null;
   up: number; dn: number; cms: number; status: string; staff: string | null; votos: number | null };
-export type CuentaOficial = { cuentas: { city_id: string; ciudad: string; name: Bi; bio: Bi }[]; filas: FilaOficial[] };
+export type CuentaOficial = { cuentas: { city_id: string; ciudad: string; name: Bi; bio: Bi }[]; filas: FilaOficial[]; diasEnc: number[] };
 
 /* Las cuentas de las ciudades de quien mira y lo que publicaron (lo programado primero). */
 export async function cuentaOficial(s: Staff): Promise<CuentaOficial> {
-  const [c, f] = await Promise.all([
+  const [c, f, maxDias] = await Promise.all([
     db().query<{ city_id: string; ciudad: string; name: Bi; bio: Bi }>(
       `select oa.city_id, ci.name as ciudad, oa.name, oa.bio from city_official_accounts oa join cities ci on ci.id = oa.city_id
         where cardinality($1::text[]) = 0 or oa.city_id = any($1::text[]) order by (ci.status = 'on') desc, ci.name`, [s.cities]),
@@ -37,8 +38,9 @@ export async function cuentaOficial(s: Staff): Promise<CuentaOficial> {
          from com_posts p left join users u on u.id = p.staff_id
         where p.author_kind = 'official' and p.status <> 'deleted' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))
         order by (p.publish_at > now()) desc, p.publish_at desc, p.id desc limit 60`, [s.cities]),
+    valor("com_encuesta_dias_max"),
   ]);
-  return { cuentas: c.rows, filas: f.rows };
+  return { cuentas: c.rows, filas: f.rows, diasEnc: diasEncuesta(maxDias) };
 }
 
 export type EntradaOficial = { kind: string; body: string; topic?: string | null; opts?: string[]; dias?: number; lang?: string; sale?: string | null; fijar?: number };
@@ -51,9 +53,8 @@ export async function publicarOficial(s: Staff, ciudad: string, p: EntradaOficia
   const kind = (["pregunta", "encuesta", "publicacion"] as const).find((k) => k === p.kind);
   if (!kind) return no("La cuenta oficial publica preguntas, encuestas y avisos.");
   const dias = kind === "encuesta" ? Number(p.dias) : 1;
-  const f = revisarPublicacion({ kind, body: String(p.body ?? ""), topic: p.topic ?? null, opts: p.opts, dias, fotos: [] });
+  const f = revisarPublicacion({ kind, body: String(p.body ?? ""), topic: p.topic ?? null, opts: p.opts, dias, fotos: [] }, kind === "encuesta" ? diasEncuesta(await valor("com_encuesta_dias_max")) : undefined);
   if (f) return no(f.msg.es);
-  if (kind === "encuesta" && !DIAS_ENCUESTA.includes(dias as 1 | 3 | 7)) return no("Elige cuánto dura la encuesta: 1, 3 o 7 días.");
   const fijar = p.fijar == null ? 0 : Math.trunc(Number(p.fijar));
   if (!(fijar >= 0 && fijar <= MAX_DIAS_FIJADA)) return no(`Se fija de 1 a ${MAX_DIAS_FIJADA} días.`);
   // «Cuándo sale»: ahora, o una fecha y hora de la ciudad («2026-11-09T09:00»); la base la pasa a su zona horaria.

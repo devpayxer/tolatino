@@ -38,7 +38,7 @@ escritorio. Versión: Fase 5 · bloque 5d (7 nov 2026). Solo con cuenta._
 - **Ya lo había reportado:** no cuenta dos veces. A una persona sí la puedes volver a reportar si el caso anterior ya se cerró.
 - **Lo reportaron muchas cuentas del mismo teléfono:** cuenta como una persona; no se oculta por eso.
 - **Mi foto dice «espera revisión»:** el modelo la marcó o no pudo revisarla; una persona la mira (plazo 4 h). La publicación sí salió.
-- **Se me pasaron los 14 días:** ya no se puede apelar desde la app; escribe a Soporte.
+- **Se me pasaron los días para apelar** (14 de fábrica; el aviso dice hasta cuándo): ya no se puede apelar desde la app; escribe a Soporte.
 - **Me suspendieron y no puedo entrar:** la apelación de una suspensión o un baneo se pide hoy por Soporte (la pantalla de apelar pide
   entrar).
 - **Apelé y se mantiene:** la segunda revisión es final.

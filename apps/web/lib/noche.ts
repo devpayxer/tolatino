@@ -1,7 +1,8 @@
 import "server-only";
+import { cfgSql } from "./config";
 import type { Pool, PoolClient } from "pg";
 import { db } from "./db";
-import { etaNoche, filaTexto, FILA_VIVA_MIN, hNoche, LISTA_HORAS, MUSICA, POR_FECHA, type Bi, type EstaNoche, type FilaNoche, type HerrNoche, type KindNoche, type NocheDia, type NocheIn } from "./noche-comun";
+import { etaNoche, filaTexto, hNoche, LISTA_HORAS, MUSICA, POR_FECHA, type Bi, type EstaNoche, type FilaNoche, type HerrNoche, type KindNoche, type NocheDia, type NocheIn } from "./noche-comun";
 export type { NocheIn } from "./noche-comun";
 
 /* Noche (Fase 4 · bloque 4na). Plan: docs/diseno/plan/fase4-noche.md §2, §4na y §5. Diseño: neg-noche.js (nt), neg-noche-kind.js
@@ -45,7 +46,7 @@ export async function herramientaNoche(negocio: string, c: Q = db()): Promise<He
     list_on: boolean | null; list_until: number | null; list_cap: number | null; line_min: number | null; line_at: string | null; viva: boolean; f_noche: string | null; f_dow: number | null; f_hora: number | null;
     music: string[] | null; music_note: Bi | null; dress: Bi | null }>(
     `select ci.timezone as tz, ${NOCHE_SQL("now()", "ci.timezone")}::text as hoy, s.cover_cents as cover, s.after_min, s.after_cents, s.cover_by_dow as by_dow, s.min_age as edad,
-            s.list_on, s.list_until_min as list_until, s.list_cap, s.line_min, s.line_at::text, coalesce(s.line_at > now() - make_interval(mins => ${FILA_VIVA_MIN}), false) as viva,
+            s.list_on, s.list_until_min as list_until, s.list_cap, s.line_min, s.line_at::text, coalesce(s.line_at > now() - make_interval(mins => ${cfgSql("noche_fila_viva_min")}), false) as viva,
             ${NOCHE_SQL("s.line_at", "ci.timezone")}::text as f_noche, extract(dow from ${NOCHE_SQL("s.line_at", "ci.timezone")})::int as f_dow,
             (extract(epoch from (s.line_at at time zone ci.timezone) - (${NOCHE_SQL("s.line_at", "ci.timezone")} + time '12:00')) / 60)::int as f_hora,
             s.music, s.music_note, s.dress
@@ -187,7 +188,7 @@ export async function barrerNoche(): Promise<number> {
   const L = (await db().query<{ id: string }>(
     `select s.business_id as id from noche_settings s join businesses b on b.id = s.business_id join cities ci on ci.id = b.city_id
       where b.status = 'active' and (s.derived_night is distinct from ${NOCHE_SQL("now()", "ci.timezone")}
-         or (s.derived_line_live and s.line_at <= now() - make_interval(mins => ${FILA_VIVA_MIN})))
+         or (s.derived_line_live and s.line_at <= now() - make_interval(mins => ${cfgSql("noche_fila_viva_min")})))
       order by s.derived_night nulls first limit 500`)).rows;
   for (const x of L) await recalcularFiltrosNoche(db(), x.id);
   return L.length;

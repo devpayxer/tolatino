@@ -13,6 +13,13 @@ Super Admin › Notificaciones (ADM-NOTIF). Versión: Fase 2 · bloque 2j (6 nov
   reservación o la solicitud. Abrir la bandeja los marca como leídos.
 - Además del aviso en la app, casi todos salen como **mensaje de texto** al teléfono de la cuenta, en tu idioma.
 
+### Comunidad (5i, 8 nov)
+- En **Mi cuenta › Avisos › Comunidad**: **Respuestas y votos** (comentarios, respuestas, menciones, «Me sirvió», 10 votos, encuestas
+  cerradas, seguidores nuevos y tu rango) y **Mensajes de vecinos** se apagan: apagados, **no llegan** a la campana. **Un resumen al día en vez
+  de cada aviso**: lo de la Comunidad se guarda y llega **uno** a la hora de Configuración (7 PM de tu ciudad de fábrica), p. ej. «Hoy en la
+  Comunidad: 3 respuestas y 1 seguidor nuevo.» Una vez al día. Lo de alguien con quien hay un bloqueo no se cuenta.
+- Lo de moderación (ocultamos, sanción, apelación) y las monedas **siempre llegan**. Nada de la Comunidad va con SMS.
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
@@ -47,6 +54,10 @@ era de noche (horas de silencio).
 - Every notification stays in the **inbox** (the bell shows a dot when there is something new). Tap one to open the order,
   booking or application. Opening the inbox marks them read.
 - Most also go out as a **text message** to the account's phone, in your language.
+
+Community (5i): in My account › Notifications › Community, "Replies and votes" and "Messages from neighbors" can be turned off (they no
+longer arrive); "One daily digest instead of each alert" holds Community alerts and sends one a day at the Settings hour (7 PM local by
+default). Blocked people's activity is not counted. Moderation and coins always arrive. No Community alert is sent as SMS.
 
 ## What happens in each case
 | Case | What happens |

@@ -3,11 +3,11 @@
    Cabo), el negocio con buscador de la ciudad y «No es mi negocio y no trabajo ahí», «¿para qué lo recomiendas?», el texto, el tema
    (pregunta), las opciones y cuánto dura (encuesta), hasta 4 fotos, a quién le sale y las reglas. El error del filtro sale en la
    misma caja; si parece una emergencia, la línea del 911. En escritorio, la vista previa a la derecha. Editar: solo el texto, el tema,
-   «para…» y las fotos, en los primeros 30 minutos. */
+   «para…» y las fotos, en sus primeros minutos (Configuración · com_editar_min). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
-import { DIAS_ENCUESTA, EMERGENCIA911, MAX_FOTOS, MIN_TEXTO, RANGO_ENCUESTA, TEMAS, pareceEmergencia, reglas, revisarPublicacion, type Borrador, type Tipo } from "@/lib/comunidad-filtro";
+import { EMERGENCIA911, MAX_FOTOS, MIN_TEXTO, RANGO_ENCUESTA, TEMAS, pareceEmergencia, reglas, revisarPublicacion, type Borrador, type Tipo } from "@/lib/comunidad-filtro";
 import { TIPO, rango } from "@/lib/comunidad-comun";
 import { subirFoto } from "@/lib/subir-foto";
 import type { NegocioRec } from "@/lib/comunidad";
@@ -22,8 +22,8 @@ type Editar = { id: string; noEsta: true } | { id: string; kind: Tipo; body: str
 type Foto = { id: string; url: string };
 const K = (s: string) => ({ font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)", ...(s ? {} : {}) });
 
-export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }: {
-  es: boolean; yo: YoCom; ciudad: string; abierta: boolean; silenciado: { hasta: string | null; motivo: string | null } | null; k: Tipo; texto: string; editar: Editar | null;
+export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar, diasEnc }: {
+  es: boolean; yo: YoCom; ciudad: string; abierta: boolean; silenciado: { hasta: string | null; motivo: string | null } | null; k: Tipo; texto: string; editar: Editar | null; diasEnc: number[];
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useComUi(yo), D = useAncho() >= 1024;
@@ -35,7 +35,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
   const [noEsMio, setNoEsMio] = useState(!!ed);
   const [para, setPara] = useState<string | null>(ed?.para[0] ?? null);
   const [opts, setOpts] = useState<string[]>(ed?.opts ?? ["", ""]);
-  const [dias, setDias] = useState<number>(3);
+  const [dias, setDias] = useState<number>(diasEnc.includes(3) ? 3 : diasEnc[diasEnc.length - 1] ?? 1);
   const [fotos, setFotos] = useState<Foto[]>(ed?.fotos ?? []);
   const [subiendo, setSubiendo] = useState(false);
   const [err, setErr] = useState<Bi | null>(null), [busy, setBusy] = useState(false);
@@ -47,13 +47,13 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
   }, [buscar]);
   const bloqueada = kind === "encuesta" && yo.rango < RANGO_ENCUESTA && !ed;
   const borrador: Borrador = { kind, body, topic: topic || null, business: biz?.id ?? null, para: para ? [para] : [], opts, dias, fotos: fotos.map((f) => f.id), noEsMio };
-  const local = revisarPublicacion(ed ? { ...borrador, opts: ed.opts ?? undefined, dias: 1, noEsMio: true } : borrador);
+  const local = revisarPublicacion(ed ? { ...borrador, opts: ed.opts ?? undefined, dias: 1, noEsMio: true } : borrador, ed ? undefined : diasEnc);
   const emergencia = pareceEmergencia(body);
   const R = reglas(yo.ciudad);
 
   if (editar && (!ed || !ed.a_tiempo)) {
     const t = !ed ? E2("Esta publicación ya no está", "This post is no longer here") : E2("Ya no se puede editar", "It can no longer be edited");
-    const s = !ed ? E2("La borraste o ya no es tuya.", "You deleted it or it is not yours.") : E2("Pasaron 30 minutos desde que la publicaste. Puedes borrarla y publicar otra.", "30 minutes have passed since you posted it. You can delete it and post again.");
+    const s = !ed ? E2("La borraste o ya no es tuya.", "You deleted it or it is not yours.") : E2("Ya pasó el tiempo para editarla. Puedes borrarla y publicar otra.", "The time to edit it has passed. You can delete it and post again.");
     return (
       <Marco es={es} yo={yo} ui={ui} code="APP-COM-NUEVO" titulo={E2("Editar publicación", "Edit post")} sub={`${ciudad.toUpperCase()}`} back={`/comunidad/p/${editar.id}`}>
         <div data-screen-label="Publicar · ya no se edita" role="alert" style={{ margin: D ? 0 : "14px 16px", maxWidth: 720, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 18 }}>
@@ -203,7 +203,7 @@ export function Nuevo({ es, yo, ciudad, abierta, silenciado, k, texto, editar }:
                     {opts.length < 4 && !ed && <span role="button" onClick={() => setOpts([...opts, ""])} style={{ display: "inline-flex", alignItems: "center", gap: 6, font: "700 12.5px Manrope,sans-serif", color: "var(--tl-action)", cursor: "pointer" }}><Icon name="plus" size={15} color="var(--tl-action)" />{E2("Agregar opción", "Add option")}</span>}
                   </div>
                   {!ed && <><div style={{ ...K(""), marginTop: 14 }}>{E2("DURA", "RUNS FOR")}</div>
-                    <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{DIAS_ENCUESTA.map((d) => <Chip key={d} variant={dias === d ? "selected" : "filter"} onClick={() => setDias(d)}>{d === 1 ? E2("1 día", "1 day") : E2(`${d} días`, `${d} days`)}</Chip>)}</div></>}
+                    <div style={{ marginTop: 10, display: "flex", gap: 6, flexWrap: "wrap" }}>{diasEnc.map((d) => <Chip key={d} variant={dias === d ? "selected" : "filter"} onClick={() => setDias(d)}>{d === 1 ? E2("1 día", "1 day") : E2(`${d} días`, `${d} days`)}</Chip>)}</div></>}
                 </div>
               )}
               {kind !== "encuesta" && (

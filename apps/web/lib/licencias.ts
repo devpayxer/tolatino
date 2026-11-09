@@ -1,4 +1,5 @@
 import "server-only";
+import { cfgSql } from "./config";
 import { db } from "./db";
 import type { Lang } from "./idioma";
 
@@ -58,7 +59,7 @@ export async function barrerLicencias() {
     `insert into queue_items (queue, subject_kind, subject_id, business_id, city_id, priority)
      select 'lic', 'license', l.id::text, l.business_id, l.city_id, case when l.next_review < current_date then 'alta' else 'normal' end
        from licenses l join license_kinds k on k.key = l.kind join businesses b on b.id = l.business_id
-      where k.category_id = any($1::text[]) and l.status = 'valid' and l.next_review is not null and l.next_review <= current_date + 14 and b.status = 'active'
+      where k.category_id = any($1::text[]) and l.status = 'valid' and l.next_review is not null and l.next_review <= current_date + ${cfgSql("lic_aviso_dias")} and b.status = 'active'
      on conflict do nothing`, [CATS_LIC_4I]);
   return { abiertas: r.rowCount ?? 0 };
 }

@@ -40,14 +40,14 @@ export const textoRegla = (k: ReglaKey, p: Record<string, number>) => REGLAS[k].
 export const REGLA_L: Record<string, string> = { phone: "Teléfono", pii: "Dónde vive alguien", spam: "Repetido", hate: "Lenguaje discriminatorio", rev5: "Reseñas en ráfaga", img: "Foto", autohide: "Auto-ocultada", red: "Posible red de cuentas", estafa: "Posible estafa", migra: "Inmigración", autolesion: "Autolesión" };
 export const TIPOS_TERMINO: [string, string][] = [["odio", "Odio"], ["estafa", "Estafa"], ["migra", "Inmigración"], ["autolesion", "Autolesión"]];
 
-/* Límites del día (platform_config). */
+/* Límites del día: el valor vive en Configuración (config_keys + platform_config; lib/config.ts); aquí solo la clave y cómo se nombra. */
 export type Limite = "publicaciones" | "comentarios" | "votos" | "conversaciones" | "reportes";
-export const LIMITES: Record<Limite, { key: string; def: number; es: string; en: string }> = {
-  publicaciones: { key: "com_lim_publicaciones", def: 10, es: "publicaciones", en: "posts" },
-  comentarios: { key: "com_lim_comentarios", def: 100, es: "comentarios", en: "comments" },
-  votos: { key: "com_lim_votos", def: 500, es: "votos", en: "votes" },
-  conversaciones: { key: "com_lim_conversaciones", def: 10, es: "conversaciones nuevas", en: "new conversations" },
-  reportes: { key: "com_lim_reportes", def: 20, es: "reportes", en: "reports" },
+export const LIMITES: Record<Limite, { key: "com_lim_publicaciones" | "com_lim_comentarios" | "com_lim_votos" | "com_lim_conversaciones" | "com_lim_reportes"; es: string; en: string }> = {
+  publicaciones: { key: "com_lim_publicaciones", es: "publicaciones", en: "posts" },
+  comentarios: { key: "com_lim_comentarios", es: "comentarios", en: "comments" },
+  votos: { key: "com_lim_votos", es: "votos", en: "votes" },
+  conversaciones: { key: "com_lim_conversaciones", es: "conversaciones nuevas", en: "new conversations" },
+  reportes: { key: "com_lim_reportes", es: "reportes", en: "reports" },
 };
 export const ORDEN_LIMITES: Limite[] = ["publicaciones", "comentarios", "votos", "conversaciones", "reportes"];
 

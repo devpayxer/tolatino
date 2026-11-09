@@ -1,14 +1,15 @@
 "use client";
 /* USR-AVISOS (diseño «To'Latino Mi cuenta» · notifV): lo que siempre te llega, pedidos y reservas, empleos, negocios que
    guardas, correo y horas de silencio. Los avisos al teléfono todavía no salen: tus preferencias quedan guardadas y se
-   aplican desde el primero (anotado en LAUNCH-CHECKLIST). Sin comunidad ni boletos hasta que existan. */
+   aplican desde el primero (anotado en LAUNCH-CHECKLIST). Comunidad (5i): respuestas y votos, resumen diario y mensajes de vecinos. Sin boletos hasta que existan. */
 import { useState } from "react";
 import type { avisosDe } from "@/lib/perfil";
 import { avisoGuardar } from "../acciones-perfil";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 
+const hora12 = (h: number) => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
 type P = Awaited<ReturnType<typeof avisosDe>>;
-export function Avisos({ p, es, yo }: { p: P; es: boolean; yo: Yo }) {
+export function Avisos({ p, es, yo, horaResumen }: { p: P; es: boolean; yo: Yo; horaResumen: number }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const ui = useCuentaUi();
   const [v, setV] = useState(p);
@@ -19,6 +20,10 @@ export function Avisos({ p, es, yo }: { p: P; es: boolean; yo: Yo }) {
   };
   const G: [string, [keyof P, string, string][]][] = [
     [E2("PEDIDOS Y RESERVAS", "ORDERS AND BOOKINGS"), [["ord", E2("Cómo va tu pedido", "Order updates"), E2("ACEPTADO · EN CAMINO · LISTO", "ACCEPTED · ON THE WAY · READY")], ["cit", E2("Respuesta a tus reservaciones", "Booking replies"), E2("CONFIRMADA · OTRA HORA · NO PUDO", "CONFIRMED · NEW TIME · DECLINED")]]],
+    // 5i · Comunidad (prototipo notifV): respuestas y votos, un resumen al día (a la hora de Configuración) y mensajes de vecinos.
+    [E2("COMUNIDAD", "COMMUNITY"), [["com", E2("Respuestas y votos", "Replies and votes"), E2("LO QUE PUBLICAS", "ON WHAT YOU POST")],
+      ["dig", E2("Un resumen al día en vez de cada aviso", "One daily digest instead of each alert"), E2(`A LAS ${hora12(horaResumen)}`, `AT ${hora12(horaResumen)}`)],
+      ["msg", E2("Mensajes de vecinos", "Messages from neighbors"), E2("SOLO DE QUIEN TE SIGUE", "ONLY FROM PEOPLE WHO FOLLOW YOU")]]],
     [E2("EMPLEOS", "JOBS"), [["emp", E2("Respuesta a tus solicitudes", "Replies to your applications"), E2("VISTA · TE VAN A LLAMAR · ENTREVISTA", "SEEN · THEY WILL CALL · INTERVIEW")]]],
     [E2("NEGOCIOS QUE GUARDAS", "SAVED BUSINESSES"), [["hoy", E2("Lo que traen hoy", "What they have today"), E2("SUS NOVEDADES", "THEIR UPDATES")], ["of", E2("Ofertas", "Deals"), E2("MÁXIMO 1 AL DÍA", "AT MOST 1 A DAY")]]],
     [E2("CORREO", "EMAIL"), [["mailR", E2("Recibos", "Receipts"), E2("DE CADA PEDIDO Y RESERVACIÓN", "FOR EVERY ORDER AND BOOKING")], ["mailW", E2("Resumen semanal del barrio", "Weekly neighborhood digest"), E2("LOS LUNES", "MONDAYS")]]],

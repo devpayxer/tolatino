@@ -12,7 +12,7 @@ import type { Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
 type Acc = { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void };
-type Ctx = { setConf: (c: Confirmar) => void; run: (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => void; fuera: () => void; abrir: (h: string) => void; usuario: (id: string) => void };
+type Ctx = { setConf: (c: Confirmar) => void; run: (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => void; fuera: () => void; abrir: (h: string) => void; usuario: (id: string) => void; apelarDias: number };
 const fecha = (d: string) => new Date(d).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" });
 const hace = (d: string) => { const h = (Date.now() - new Date(d).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 export const PLANT_COM = {
@@ -49,7 +49,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     return { bloques: B, acts: [
       { l: "Ver en la Comunidad", icon: "search", onClick: () => x.abrir(`/comunidad/p/${c.post}`) },
       { l: auto ? "Vuelve a verse" : "Se queda", v: "action", icon: "check", onClick: () => x.setConf({ titulo: auto ? "¿Por qué vuelve a verse?" : "¿Por qué se queda?", sub: "Quienes lo reportaron reciben el resultado (sin nombres). Queda en la auditoría.", plantillas: PLANT_COM.queda, hacer: (m) => decidirRepCom(k.id, "mantener", m) }) },
-      { l: "Ocultar", v: "danger", icon: "ban", onClick: () => x.setConf({ titulo: `Ocultar ${c.kind === "com_post" ? "la publicación" : "el comentario"} de ${c.quien}`, sub: "Su autor recibe el motivo tal cual y puede apelar 14 días; la apelación la decide otra persona. Nada se borra.", peligro: true, plantillas: PLANT_COM.ocultar,
+      { l: "Ocultar", v: "danger", icon: "ban", onClick: () => x.setConf({ titulo: `Ocultar ${c.kind === "com_post" ? "la publicación" : "el comentario"} de ${c.quien}`, sub: `Su autor recibe el motivo tal cual y puede apelar ${x.apelarDias} días; la apelación la decide otra persona. Nada se borra.`, peligro: true, plantillas: PLANT_COM.ocultar,
         elegir: { label: "SANCIÓN (OPCIONAL)", items: sanciones("banea" in k && !!k.banea, true) }, hacer: (m, e) => decidirRepCom(k.id, "ocultar", m, e && e !== "ninguna" ? e : null) }) },
     ] };
   }
@@ -64,7 +64,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "note", tone: "info", t: "Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → banear (solo un Admin). Toda sanción avisa con el motivo y se puede apelar." });
     return { bloques: B, acts: p.staff ? [] : [
       { l: "Sin acción", icon: "check", onClick: () => x.setConf({ titulo: "¿Por qué no se hace nada?", plantillas: ["El reporte no trae evidencia", "No rompe las reglas del barrio", "Ya se resolvió"], hacer: (m) => decidirRepUsr(k.id, "sin_accion", m) }) },
-      { l: "Sancionar", v: "danger", icon: "shield", onClick: () => x.setConf({ titulo: `Sancionar a ${p.quien}`, sub: "La persona recibe el motivo tal cual y puede apelar 14 días; la apelación la decide otra persona.", peligro: true, plantillas: PLANT_COM.usr,
+      { l: "Sancionar", v: "danger", icon: "shield", onClick: () => x.setConf({ titulo: `Sancionar a ${p.quien}`, sub: `La persona recibe el motivo tal cual y puede apelar ${x.apelarDias} días; la apelación la decide otra persona.`, peligro: true, plantillas: PLANT_COM.usr,
         elegir: { label: "SANCIÓN", items: sanciones("banea" in k && !!k.banea, false) }, hacer: (m, e) => decidirRepUsr(k.id, "sancionar", m, e) }) },
     ] };
   }
@@ -95,7 +95,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     return { bloques: B, acts: [
       ...(f.post ? [{ l: "Ver la publicación", icon: "search", onClick: () => x.abrir(`/comunidad/p/${f.post}`) }] : []),
       { l: "Está bien", v: "action", icon: "check", onClick: () => x.run(() => decidirFotoCom(k.id, "mantener", ""), x.fuera) },
-      { l: "Quitar foto", v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: "¿Por qué se quita?", sub: "Su autor recibe el motivo y puede apelar 14 días.", peligro: true, plantillas: PLANT_COM.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
+      { l: "Quitar foto", v: "danger", icon: "trash", onClick: () => x.setConf({ titulo: "¿Por qué se quita?", sub: `Su autor recibe el motivo y puede apelar ${x.apelarDias} días.`, peligro: true, plantillas: PLANT_COM.foto, hacer: (m) => decidirFotoCom(k.id, "quitar", m) }) },
     ] };
   }
   return null;

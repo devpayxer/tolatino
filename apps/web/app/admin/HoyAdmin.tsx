@@ -61,7 +61,7 @@ export function OficialAdmin({ d, escribe, arriba }: { d: CuentaOficial; escribe
   const router = useRouter(), desk = useAncho() >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const [abierto, setAbierto] = useState(false), [err, setErr] = useState<string | null>(null), [pend, start] = useTransition();
-  const f0: Form = { ciudad: d.cuentas[0]?.city_id ?? "", kind: "pregunta", topic: "otro", body: "", opts: ["", ""], dias: 7, lang: "es", cuando: "ya", sale: "", fijar: 7 };
+  const f0: Form = { ciudad: d.cuentas[0]?.city_id ?? "", kind: "pregunta", topic: "otro", body: "", opts: ["", ""], dias: d.diasEnc[d.diasEnc.length - 1] ?? 1, lang: "es", cuando: "ya", sale: "", fijar: 7 };
   const [f, setF] = useState<Form>(f0);
   const pon = (p: Partial<Form>) => { setErr(null); setF((x) => ({ ...x, ...p })); };
   const nombre = (c: string) => d.cuentas.find((x) => x.city_id === c)?.name.es ?? "Cuenta oficial";
@@ -85,7 +85,7 @@ export function OficialAdmin({ d, escribe, arriba }: { d: CuentaOficial; escribe
     ...(f.kind === "encuesta" ? [
       ...f.opts.map((o, i) => ({ type: "field" as const, k: `OPCIÓN ${i + 1}`, val: o, max: 60, onChange: (v: string) => pon({ opts: f.opts.map((y, j) => (j === i ? v : y)) }) })),
       { type: "acts" as const, items: [...(f.opts.length < 4 ? [{ l: "Agregar opción", v: "secondary", icon: "plus", onClick: () => pon({ opts: [...f.opts, ""] }) }] : []), ...(f.opts.length > 2 ? [{ l: "Quitar la última", v: "secondary", onClick: () => pon({ opts: f.opts.slice(0, -1) }) }] : [])] },
-      { type: "chips" as const, k: "CUÁNTO DURA", items: [1, 3, 7].map((n) => ({ l: n === 1 ? "1 día" : `${n} días`, v: f.dias === n ? "selected" : "filter", onClick: () => pon({ dias: n }) })) },
+      { type: "chips" as const, k: "CUÁNTO DURA", items: d.diasEnc.map((n) => ({ l: n === 1 ? "1 día" : `${n} días`, v: f.dias === n ? "selected" : "filter", onClick: () => pon({ dias: n }) })) },
     ] : []),
     { type: "chips", k: "IDIOMA DEL TEXTO", items: ([["es", "Español"], ["en", "Inglés"]] as const).map(([k, l]) => ({ l, v: f.lang === k ? "selected" : "filter", onClick: () => pon({ lang: k }) })) },
     { type: "chips", k: "CUÁNDO SALE", items: ([["ya", "Ahora"], ["prog", "Programar"]] as const).map(([k, l]) => ({ l, v: f.cuando === k ? "selected" : "filter", onClick: () => pon({ cuando: k }) })) },

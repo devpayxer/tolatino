@@ -6,18 +6,20 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { DatosNotif, GrupoNotif, Plantilla } from "@/lib/admin-notif";
+
+const DE_COMUNIDAD = /^(com|gam|dm|mod|apel)_/;
 import { plantillaEditar, plantillaProbar } from "./acciones-notif";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
-const G: Record<GrupoNotif, string> = { crit: "CRÍTICO · SIEMPRE LLEGA", tx: "PEDIDOS, RESERVACIONES Y SOLICITUDES", mod: "MODERACIÓN", biz: "AL NEGOCIO", mkt: "CRECIMIENTO · RESPETA AVISOS Y SILENCIO" };
+const G: Record<GrupoNotif, string> = { crit: "CRÍTICO · SIEMPRE LLEGA", tx: "PEDIDOS, RESERVACIONES Y SOLICITUDES", community: "COMUNIDAD · SE APAGA O VA EN EL RESUMEN DIARIO", mod: "MODERACIÓN", biz: "AL NEGOCIO", mkt: "CRECIMIENTO · RESPETA AVISOS Y SILENCIO" };
 const SMS: Record<string, [string, string]> = { no: ["SOLO BANDEJA", "neutral"], pruebas: ["SMS EN PRUEBAS", "action"], pendiente: ["SMS PENDIENTE", "neutral"], enviado: ["SMS ENVIADO", "signal"], fallo: ["SMS FALLÓ", "danger"], silencio: ["HORAS DE SILENCIO", "neutral"], apagado: ["SMS APAGADO", "neutral"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
-const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", emp: "Empleos" };
+const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", emp: "Empleos", hoy: "Lo que traen hoy", com: "Respuestas y votos", msg: "Mensajes de vecinos" };
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 const MAIL: Record<string, [string, string]> = { pruebas: ["EN MODO PRUEBAS", "action"], pendiente: ["PENDIENTE", "neutral"], enviado: ["ENVIADO", "signal"], fallo: ["FALLÓ", "danger"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
 const MAIL_TPL: Record<string, string> = { verify: "Confirma tu correo", receipt_order: "Recibo de pedido", receipt_table: "Mesa confirmada", receipt_pro: "Recibo de Pro" };
-export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | "log" | "rules" | "mail"; puede: boolean }) {
+export function Notificaciones({ d, tab, puede, com = false }: { d: DatosNotif; tab: "tpl" | "log" | "rules" | "mail"; puede: boolean; com?: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [pend, start] = useTransition();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -47,8 +49,12 @@ export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | 
     ] },
     { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
   ];
+  // 5i · «Solo Comunidad»: com_*, gam_*, dm_*, mod_*, apel_* (todas sin SMS; guardián avisoComunidadSinSms) y el resumen diario.
+  if (tab === "tpl") B.push({ type: "chips", items: [{ l: "Todas", v: com ? "filter" : "selected", onClick: () => router.push("/admin/notificaciones") },
+    { l: `Solo Comunidad · ${d.plantillas.filter((p) => DE_COMUNIDAD.test(p.key)).length}`, v: com ? "selected" : "filter", onClick: () => router.push("/admin/notificaciones?com=1") }] });
+  if (tab === "tpl" && com) B.push({ type: "note", tone: "info", icon: "bell", t: "Los avisos de la Comunidad van sin SMS: solo la campana. En Mi cuenta › Avisos la persona apaga «Respuestas y votos» o «Mensajes de vecinos», o pide «Un resumen al día»: lo del grupo Comunidad se guarda y le llega uno a la hora de Sistema › Configuración. Lo de alguien bloqueado no se cuenta." });
   if (tab === "tpl") for (const g of Object.keys(G) as GrupoNotif[]) {
-    const L = d.plantillas.filter((p) => p.grp === g);
+    const L = d.plantillas.filter((p) => p.grp === g && (!com || DE_COMUNIDAD.test(p.key)));
     if (!L.length) continue;
     B.push({ type: "group", k: G[g] }, { type: "rows", cols: desk ? "repeat(auto-fill,minmax(380px,1fr))" : undefined, items: L.map((p) => ({
       key: p.key, icon: p.sms ? "phone" : "bell", t: p.title.es, s: p.body.es,
@@ -76,6 +82,7 @@ export function Notificaciones({ d, tab, puede }: { d: DatosNotif; tab: "tpl" | 
     { icon: "lock", t: "Lo crítico siempre llega", s: "El código para entrar sale siempre por SMS. No se apaga ni espera las horas de silencio." },
     { icon: "clock", t: "Horas de silencio", s: "De 10 PM a 7 AM, hora de la ciudad de la persona: el SMS que no es crítico no sale; el aviso queda en su bandeja. La persona puede desactivarlas en Mi cuenta › Avisos. La solicitud nueva al negocio no espera: solo llega mientras el negocio está recibiendo." },
     { icon: "bell", t: "La bandeja siempre", s: "Cada aviso queda en la campana de la app, aunque el SMS esté apagado. Abrir la bandeja lo marca como leído." },
+    { icon: "users", t: "Comunidad: se apaga o va en el resumen", s: "Respuestas y votos, y Mensajes de vecinos, se apagan en Mi cuenta › Avisos (no llegan a la campana). Con «Un resumen al día», se guardan y llega uno a la hora de Configuración (19 = 7 PM de fábrica), una vez al día; lo de alguien bloqueado no se cuenta. Sin SMS." },
     { icon: "users", t: "Lo decide cada persona", s: "En Mi cuenta › Avisos apaga el SMS de pedidos, de citas y reservas, o de empleos. Lo que no tiene interruptor (un pedido no aceptado, la respuesta a una ayuda) llega siempre." },
     { icon: "globe", t: "En su idioma", s: "Cada aviso sale en el idioma de la cuenta de la persona: español o inglés." },
     { icon: "info", t: "Correo", s: "Plantillas propias y envío por Amazon SES. Solo a correos confirmados (enlace de un solo uso, 24 horas). Recibos de pedidos, mesas confirmadas y cobros de Pro; cada uno se manda una vez. En el sandbox ningún correo sale: queda «en modo pruebas» y se ve en Correos." },
