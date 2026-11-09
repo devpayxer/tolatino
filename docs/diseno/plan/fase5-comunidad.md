@@ -464,7 +464,7 @@ Capturas teléfono + escritorio de cada pantalla compuesta (§1b) y su línea en
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
 - [x] `To'Latino Comunidad.dc.html` en `docs/diseno/pantallas/` (o REVISION dice qué se compuso sin él).
       _Comprobado (8 nov): el archivo está en docs/diseno/pantallas/ (traído en 3848f5e); lo compuesto sin diseño va en REVISION 5a–5i._
-- [ ] Migraciones 0097–0105 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semilla 0032 solo en pruebas (`semilla`).
+- [x] Migraciones 0097–0105 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semilla 0032 solo en pruebas (`semilla`). — CI run 166 (b3387ec) verde: migraciones dos veces + semilla, 9 nov.
       _Local (8 nov): 0001–0105 en un PostGIS 16-3.5 nuevo, 0097–0105 dos veces más sin error y las semillas de pruebas en la base nueva; guardián `semilla` verde. Sin marcar: la CI no corrió con 0105 (el bloque no se subió todavía)._
 - [x] Muro, publicar (4 tipos), publicación e hilo completos con cursor; filtro al escribir probado al revés; ubicación solo del barrio.
       _e2e `com5a` «OK com5a», `com5b` «OK com5b»; guardianes comunidadSinTelefonos, ubicacionDeBarrio, feedConCursor._
