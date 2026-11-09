@@ -1893,3 +1893,28 @@ la mitad el primer día · #22 referidos sin dinero · #23 rango del negocio no 
 
 **Capturas:** `g5i-config-d`, `g5i-config-fuera-d`, `g5i-config-m`, `g5i-editar-20-m`, `g5i-contenido-d`, `g5i-contenido-m`, `g5i-lote-d`,
 `g5i-hilo-d`, `g5i-hilo-m`, `g5i-u360-d`, `g5i-u360-m`, `g5i-analitica-d`, `g5i-analitica-m`, `g5i-notif-d`, `g5i-avisos-m`, `g5i-resumen-m`.
+
+### Fase 6 · Eventos — plan del grupo (9 nov)
+Plan en `docs/diseno/plan/fase6-eventos.md` (bloques 6a → 6j, migraciones 0106 → 0115). Se construye con el default de cada decisión (regla
+AB); si prefieres otra cosa, se cambia. **Decidí X; si prefieres Y, se cambia:**
+1. **Comisión de boletos:** 5 % + $1 (la regla de comisiones que ya existe), sale de lo del organizador; el vecino ve el precio total.
+   El diseño de «Publica tu evento» dice 8 % + $0.99 sumado al comprador: manda el panel y el Super Admin.
+2. **Cuándo cobra el organizador:** el cobro entra a la plataforma y se transfiere el martes después de cada fecha (así una cancelación
+   siempre devuelve el 100 %). Es distinto del resto de la app, donde el negocio cobra directo.
+3. **Revisión:** todo evento pasa por revisión (24 h) hasta que el admin marca al organizador como verificado.
+4. **Alcohol y hookah:** no se venden como extras (regla de Noche); la mesa con consumo mínimo sí.
+5. **Free:** publicar es gratis, pero el módulo Eventos (boletos, mesas, puerta) es Pro con prueba de 30 días.
+6. **Cancelar el comprador:** hasta 24 h antes, se devuelve todo menos el cargo de servicio; después solo transferir (hasta 2 h antes).
+7. **Avisos:** push y en la app; SMS solo lo crítico (cancelación, cambio de fecha u hora, transferencia, cortesía, lugar de la lista de espera).
+8. **Pago:** solo tarjeta (Wallet no existe en el código).
+9. **«Evento privado»:** es la solicitud de grupo a un restaurante (propuesta, depósito, cancelar gratis hasta 72 h). Eventos solo con
+   invitación no están diseñados y no se construyen.
+10. **QR:** fijo, firmado (Ed25519) y con versión; al transferir, el QR viejo deja de valer. El QR que cambia solo va a LAUNCH-CHECKLIST.
+11. **Porteros:** con su cuenta de To'Latino + código de invitación del negocio; nunca entran sin cuenta. La puerta **solo escanea (D1)**: no vende.
+12. **Código `TOLATINO5` de la plataforma:** no se hace; solo códigos del organizador.
+13. **Organizador nuevo:** su primer evento sobre $2,000 se retiene hasta que Confianza lo revisa.
+14. **Costo de la tarjeta si el organizador cancela:** lo absorbe To'Latino; si se repite, se abre un caso en Confianza.
+
+**Choques entre fuentes (se siguió PLAN y las decisiones):** puerta sin conexión ahora (PLAN fila 6 y decisión T #23), aunque
+`apps-delivery-checkin.md` la dejaba para v1.1; la puerta no vende (D1), aunque ese mismo documento describía «escanear + vender».
+Las pantallas de la app Puerta no existen en el prototipo: se componen con piezas del sistema de diseño y se anotan como hueco.
