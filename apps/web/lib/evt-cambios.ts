@@ -380,7 +380,7 @@ export async function avisarAsistentes(negocio: string, userId: string, eventoId
 /* ── Lo que ve el panel en la ficha del evento ── */
 export type CambiosPanel = {
   congelado: string | null; avisoMax: number; avisos: { t: string; n: number; at: string }[];
-  cambios: { kind: string; antes: string | null; ahora: string | null; motivo: string | null; by: string; at: string }[];
+  cambios: { kind: string; antes: string | null; ahora: string | null; motivo: string | null; by: string; at: string; que?: { es: string; en: string } | null; nota?: string | null }[];
   fechas: { id: string; dia: string; h0: number; h1: number; st: string; empezo: boolean; personas: number; monto: number; ordenes: number }[];
   cancelacion: { st: string; ordenes: number; devuelto: number; pendientes: number; motivo: string; at: string } | null;
   eleccion: { keep: number; refund: number; sin: number } | null; van: number; kind: string;
@@ -391,8 +391,8 @@ export async function cambiosPanel(negocio: string, eventoId: string): Promise<C
   if (!e) return null;
   const [A, C, F, X, cfg] = await Promise.all([
     db().query<{ t: string; n: number; at: string }>(`select text as t, sent_n as n, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from event_notices where event_id = $1::bigint order by at desc limit 6`, [eventoId]),
-    db().query<{ kind: string; b: { dia?: string; h0?: number } | null; a: { dia?: string; h0?: number } | null; reason: string | null; by: string; at: string }>(
-      `select kind, before as b, after as a, reason_key as reason, by_kind as by, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at from event_changes where event_id = $1::bigint order by at desc, id desc limit 12`, [eventoId]),
+    db().query<{ kind: string; b: { dia?: string; h0?: number } | null; a: { dia?: string; h0?: number; que?: { es: string; en: string } } | null; reason: string | null; by: string; at: string; note: string | null }>(
+      `select kind, before as b, after as a, reason_key as reason, by_kind as by, to_char(at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, note from event_changes where event_id = $1::bigint order by at desc, id desc limit 12`, [eventoId]),
     db().query<{ id: string; dia: string; h0: number; h1: number; st: string; empezo: boolean; personas: number; monto: number; ordenes: number }>(
       `select d.id::text, d.local_date::text as dia, (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
               (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h1,
@@ -420,7 +420,9 @@ export async function cambiosPanel(negocio: string, eventoId: string): Promise<C
   const fh = (x: { dia?: string; h0?: number } | null) => (x?.dia ? `${diaCorto(x.dia, true)} · ${hora(x.h0 ?? 0)}` : null);
   return {
     congelado: e.frozen, avisoMax: cfg.evt_aviso_max, avisos: A.rows, kind: e.kind,
-    cambios: C.rows.map((x) => ({ kind: x.kind, antes: fh(x.b), ahora: fh(x.a), motivo: x.reason ? MOTIVOS_CX[x.reason as MotivoCx]?.es ?? null : null, by: x.by, at: x.at })),
+    // 6j · Lo que ajustó To'Latino (cupo, venta extendida): qué y el motivo, para el panel y el Super Admin.
+    cambios: C.rows.map((x) => ({ kind: x.kind, antes: fh(x.b), ahora: fh(x.a), motivo: x.reason ? MOTIVOS_CX[x.reason as MotivoCx]?.es ?? null : null, by: x.by, at: x.at,
+      que: x.kind === "capacity_adjusted" || x.kind === "sales_extended" ? x.a?.que ?? null : null, nota: x.kind === "capacity_adjusted" || x.kind === "sales_extended" ? x.note : null })),
     fechas: F.rows, van: F.rows.filter((f) => f.st === "scheduled" && !f.empezo).reduce((s, f) => s + f.personas, 0),
     cancelacion: X.rows[0] ? { st: X.rows[0].st, ordenes: X.rows[0].ordenes, devuelto: X.rows[0].devuelto, pendientes: X.rows[0].pendientes, motivo: MOTIVOS_CX[X.rows[0].reason].es, at: X.rows[0].at } : null,
     eleccion: el ? { keep: el.keep, refund: el.refund, sin: Math.max(0, el.total - el.keep - el.refund) } : null,

@@ -87,3 +87,9 @@ automatically), ban (Admin only). "Delete data" goes to Sensitive changes and an
 cannot sign in and has 30 grace days; an Admin can restore it. Nobody sanctions or deletes themselves; team members
 must lose their role first. Every action asks for a reason and is audited. Activity, Money and Community tabs arrive
 with their modules; SMS notices arrive with notifications (Phase 2).
+
+## Actividad (6j, 10 nov 2026)
+**Usuarios 360° › Actividad:** pedidos, citas y reservaciones de los últimos 90 días, y **BOLETOS DE EVENTOS** (código, tipo, precio o cortesía,
+orden, si lo recibió o lo pasó por transferencia, a qué hora entró y su estado: VÁLIDO · USADO · DEVUELTO · ANULADO · TRANSFERIDO) y **RSVP**
+(personas, cuántos llegaron). Cada boleto abre Buscar boleto; cada RSVP, la ficha del evento. Nunca el teléfono de otra persona.
+**English:** Users 360° › Activity shows 90-day counts and the person's event tickets (status, comp, transfers, entry time) and RSVPs.

@@ -1,6 +1,7 @@
 import "server-only";
 import { avisar } from "./avisos";
 import { db, tx } from "./db";
+import { cfgSql } from "./config";
 import { bi, diaCorto, hora, type Bi } from "./evt-comun";
 
 /* 6b · RSVP de un evento gratis o con RSVP (fase6-eventos.md §2 0107 y §4 6b). La base decide el cupo: el trigger rsvps_antes bloquea la
@@ -123,9 +124,10 @@ export async function vencerRsvp() {
   return { vencidos: v.rowCount ?? 0, puertas: P.length };
 }
 
-/* El día antes (desde las 10 AM de la ciudad): «Mañana: …» a quien va y «Un evento que guardaste es mañana» a quien lo guardó y no va. */
+/* El día antes (desde la hora de Configuración, evt_recordatorio_hora, de la ciudad): «Mañana: …» a quien va y «Un evento que guardaste es
+   mañana» a quien lo guardó y no va. */
 export async function barrerRecordatoriosEvt() {
-  const MANANA = `d.local_date = (now() at time zone ci.timezone)::date + 1 and extract(hour from now() at time zone ci.timezone) >= 10`;
+  const MANANA = `d.local_date = (now() at time zone ci.timezone)::date + 1 and extract(hour from now() at time zone ci.timezone) >= ${cfgSql("evt_recordatorio_hora")}`;
   const R = (await db().query<{ user: string; fid: string; en: boolean }>(
     `update rsvps r set reminded_at = now() where r.id in (
        select x.id from rsvps x join event_dates d on d.id = x.event_date_id join cities ci on ci.id = d.city_id

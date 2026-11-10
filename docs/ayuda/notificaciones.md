@@ -71,3 +71,21 @@ default). Blocked people's activity is not counted. Moderation and coins always 
 ## FAQ
 **I didn't get the text.** Check the bell: it is there. Check My account › Notifications and whether it was quiet hours.
 **Can I delete a notification?** No; they stay in the inbox, newest first.
+
+## Eventos (6j, 10 nov 2026)
+- **Mi cuenta › Avisos › EVENTOS:** **Boletos y cambios** (avisos del organizador, cambio de programa, tu RSVP, la transferencia que recibieron,
+  el turno de la lista de espera que venció), **Recordatorios** («Mañana: …» y «¡Es hoy!», desde la hora de Configuración, 10 AM de fábrica) y
+  **Eventos que guardas** (un día antes). Apagado = no llega ni a la campana.
+- **Siempre te llega** (no tiene interruptor): tu boleto comprado, devuelto o anulado, el QR nuevo, el boleto que te mandan, una cortesía, el
+  lugar de la lista de espera, la devolución total, la propuesta y la confirmación de un evento privado; la **cancelación** y el **cambio de
+  fecha u hora** salen también de noche.
+- Por SMS solo lo crítico: cancelación, cambio de fecha u hora, el boleto que te mandan, una cortesía, el lugar de la lista de espera, la
+  invitación a la puerta y la propuesta y la confirmación de un evento privado.
+- **Al negocio:** «Tu evento casi se agota» (vendió el 90 % de una fecha, Configuración; una vez por fecha) y «To'Latino ajustó tu evento» (cupo
+  o venta extendida, con el motivo).
+- **Super Admin › Notificaciones › Solo Eventos:** las plantillas de Eventos con su interruptor (SE APAGA EN …).
+
+**English:** **My account › Notifications › EVENTS** has **Tickets and changes**, **Reminders** (the day before and «It's today!», from the
+configured hour) and **Events you save**. Turning them off means they don't arrive. Critical ones always arrive (your ticket, a ticket sent to
+you, a comp, a waitlist spot, a cancellation or a date/time change, the private event proposal and confirmation). Organizers get «Your event is
+almost sold out» (90 %, once per date) and «To'Latino adjusted your event».

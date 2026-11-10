@@ -63,3 +63,16 @@ verified until emails exist; change your phone number with a code sent to the ne
 applied when notifications launch), Settings (language, your city every 30 days and only open cities, privacy with your
 open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
 three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
+
+## Boletos y eventos (6j, 10 nov 2026)
+- **Tu semana** (Mi cuenta › Inicio): tus boletos de los próximos 7 días (cuántos y «Tu QR está en Boletos · funciona sin señal»), tus RSVP y tu
+  evento privado confirmado, en orden con lo demás.
+- **Boletos** en los accesos (teléfono) y en el menú: Próximos · Pasados, cada boleto con su QR (funciona sin señal).
+- **Guardados › Eventos**: los eventos que guardaste (corazón).
+- **Avisos › Eventos**: Boletos y cambios · Recordatorios · Eventos que guardas; lo crítico siempre llega (ver `notificaciones`).
+- **Pagos y movimientos**: la pantalla Pagos de Mi cuenta todavía no existe; el recibo de cada orden de boletos está en la orden (Recibo) y en
+  Mi cuenta › Boletos (LAUNCH-CHECKLIST).
+
+**English:** **Your week** shows your tickets for the next 7 days, your RSVPs and a confirmed private event. **Tickets** (upcoming and past, QR works
+offline), **Saved › Events** and **Notifications › Events** (tickets and changes, reminders, saved events; critical ones always arrive). A Payments
+screen in My account does not exist yet; each ticket order has its receipt.

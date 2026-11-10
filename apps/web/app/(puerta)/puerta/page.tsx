@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { misPuertas } from "@/lib/puerta";
+import { valor } from "@/lib/config";
 import { Inicio } from "./Inicio";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,6 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [u, lang] = await Promise.all([yo(), idioma()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/puerta")}`);
-  const m = await misPuertas(u.id);
-  return <Inicio es={lang === "es"} nombre={u.first_name} tel={u.phone} puertas={m.puertas} abiertas={m.abiertas} equipos={m.equipos} />;
+  const [m, ventanaH] = await Promise.all([misPuertas(u.id), valor("puerta_ventana_h")]);
+  return <Inicio es={lang === "es"} nombre={u.first_name} tel={u.phone} puertas={m.puertas} abiertas={m.abiertas} equipos={m.equipos} ventanaH={ventanaH} />;
 }

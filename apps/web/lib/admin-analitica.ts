@@ -357,3 +357,40 @@ export async function comunidadAnalitica(s: Staff, dias: number) {
   ]);
   return { t: tot.rows[0]!, ciudades: ciu.rows, rangos: rk.rows, negocios: neg.rows };
 }
+
+/* 6j · Analítica › Eventos (fase6-eventos.md §4 6j): vistas → guardados → RSVP / compras, bruto, comisión, devuelto, asistencia y no-show,
+   lista de espera convertida, incidencias por cada 1,000 entradas y el evento privado (pedidas → con propuesta → aceptadas, depósito,
+   canceladas a tiempo y tarde), por ciudad, formato y día. SOLO lee las vistas de 0115 (por ciudad, día local y formato, sin personas),
+   los nombres de los formatos y de las ciudades y, por organizador, evt_ventas_negocio_dia (un negocio no es una persona): guardián
+   analiticaSinPersonas. El período cuenta días locales completos desde hoy hacia atrás. */
+export async function eventosAnalitica(s: Staff, dias: number) {
+  const DESDE = `(now() at time zone 'America/New_York')::date - ($2::int - 1)`;
+  const SUM = `coalesce(sum(a.vistas), 0)::int as vistas, coalesce(sum(a.guardados), 0)::int as guardados, coalesce(sum(a.rsvp), 0)::int as rsvp, coalesce(sum(a.rsvp_personas), 0)::int as rsvp_personas,
+               coalesce(sum(a.ordenes), 0)::int as ordenes, coalesce(sum(a.boletos), 0)::int as boletos, coalesce(sum(a.cortesias), 0)::int as cortesias, coalesce(sum(a.bruto), 0)::float8 as bruto,
+               coalesce(sum(a.comision), 0)::float8 as comision, coalesce(sum(a.devuelto), 0)::float8 as devuelto, coalesce(sum(a.espera), 0)::int as espera,
+               coalesce(sum(a.espera_convertidos), 0)::int as espera_convertidos, coalesce(sum(a.incidencias), 0)::int as incidencias`;
+  type T = { vistas: number; guardados: number; rsvp: number; rsvp_personas: number; ordenes: number; boletos: number; cortesias: number; bruto: number; comision: number; devuelto: number; espera: number; espera_convertidos: number; incidencias: number };
+  const [tot, fmt, ciu, asi, neg, evp] = await Promise.all([
+    db().query<T>(`select ${SUM} from evt_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
+    db().query<T & { formato: string; label: string }>(
+      `select f.key as formato, f.label->>'es' as label, ${SUM} from event_formats f left join evt_analitica_dia a on a.format = f.key and a.dia >= ${DESDE} and ${scope("a.city_id")}
+        group by f.key, f.label, f.sort order by f.sort`, [s.cities, dias]),
+    db().query<T & { ciudad: string }>(
+      `select ci.name as ciudad, ${SUM} from cities ci left join evt_analitica_dia a on a.city_id = ci.id and a.dia >= ${DESDE}
+        where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.vistas), 0) + coalesce(sum(a.ordenes), 0) > 0 order by ci.name`, [s.cities, dias]),
+    db().query<{ fechas: number; esperados: number; entraron: number; rsvp_van: number; rsvp_llegaron: number; incidencias: number }>(
+      `select coalesce(sum(x.fechas), 0)::int as fechas, coalesce(sum(x.esperados), 0)::int as esperados, coalesce(sum(x.entraron), 0)::int as entraron,
+              coalesce(sum(x.rsvp_van), 0)::int as rsvp_van, coalesce(sum(x.rsvp_llegaron), 0)::int as rsvp_llegaron, coalesce(sum(x.incidencias), 0)::int as incidencias
+         from evt_asistencia_dia x where x.dia >= ${DESDE} and ${scope("x.city_id")}`, [s.cities, dias]),
+    db().query<{ negocio: string; ciudad: string; ordenes: number; bruto: number; comision: number; devuelto: number }>(
+      `select v.negocio, ci.name as ciudad, sum(v.ordenes)::int as ordenes, sum(v.bruto)::float8 as bruto, sum(v.comision)::float8 as comision, sum(v.devuelto)::float8 as devuelto
+         from evt_ventas_negocio_dia v join cities ci on ci.id = v.city_id where v.dia >= ${DESDE} and ${scope("v.city_id")}
+        group by v.business_id, v.negocio, ci.name order by 4 desc, 1 limit 15`, [s.cities, dias]),
+    db().query<{ pedidas: number; con_propuesta: number; sin_respuesta: number; aceptadas: number; deposito: number; a_tiempo: number; tarde: number; negocio: number }>(
+      `select coalesce(sum(x.pedidas), 0)::int as pedidas, coalesce(sum(x.con_propuesta), 0)::int as con_propuesta, coalesce(sum(x.sin_respuesta), 0)::int as sin_respuesta,
+              coalesce(sum(x.aceptadas), 0)::int as aceptadas, coalesce(sum(x.deposito), 0)::float8 as deposito, coalesce(sum(x.canceladas_a_tiempo), 0)::int as a_tiempo,
+              coalesce(sum(x.canceladas_tarde), 0)::int as tarde, coalesce(sum(x.canceladas_negocio), 0)::int as negocio
+         from evp_analitica_dia x where x.dia >= ${DESDE} and ${scope("x.city_id")}`, [s.cities, dias]),
+  ]);
+  return { t: tot.rows[0]!, formatos: fmt.rows, ciudades: ciu.rows, asistencia: asi.rows[0]!, negocios: neg.rows, evp: evp.rows[0]! };
+}

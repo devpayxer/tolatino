@@ -1,8 +1,8 @@
 "use client";
 /* ADM-USR · 360° (Super Admin.dc.html usrDetail): la persona como cuenta, lo que hizo y lo que hizo el equipo.
    Pestañas: Resumen, Seguridad, Confianza, Privacidad y (5c) Comunidad › Seguidores y siguiendo (bloqueó · silenció · «posible
-   red» por dispositivo; los mensajes privados nunca se leen aquí: solo con un reporte, en Colas). Actividad y Dinero llegan con sus
-   módulos. Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
+   red» por dispositivo; los mensajes privados nunca se leen aquí: solo con un reporte, en Colas). 6j: Actividad (cuántas operaciones en
+   90 días y BOLETOS DE EVENTOS con transferencias, devoluciones y entradas, RSVP); Dinero llega con su módulo. Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,8 @@ import { useState, useTransition, type ComponentType, type ReactNode } from "rea
 import type { Usuario360 } from "@/lib/admin-usuarios";
 import type { Comunidad360 } from "@/lib/admin-vecinos";
 import type { Monedas360, Puntos360 } from "@/lib/admin-gam";
+import type { Actividad360 } from "@/lib/evt-admin";
+import { diaCorto } from "@/lib/evt-comun";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
@@ -27,14 +29,14 @@ const VERBO: Record<string, string> = {
   "usuario.sesiones.cerrar": "cerró las sesiones de", "usuario.sesion.cerrar": "cerró una sesión de", "usuario.sesion.bloquear": "bloqueó un dispositivo de",
   "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.verificacion.restablecer": "restableció la verificación de",
   "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
-  "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de",
+  "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de", "usuario.evt.caso": "abrió un caso de Eventos de",
 };
 const CAMBIO_K: Record<string, string> = { phone: "Teléfono", city: "Ciudad", email: "Correo", name: "Nombre" };
 const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500 }: { u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null }: { u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -72,7 +74,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     {`Pedido de borrado en Cambios sensibles (#${pedido.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
 
   const alertas = u.compartidos.length + (u.phone_ok ? 0 : 1);
-  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"]] as [string, string, number?][])
+  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"]] as [string, string, number?][])
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
@@ -238,6 +240,23 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         <PanelBloques bloques={[subTabs]} />
         {parte}
       </>);
+  } else if (tab === "act" && act) {
+    // 6j · Actividad (prototipo usrDetail «act»): cuántas operaciones en 90 días y BOLETOS DE EVENTOS (estado, transferencias, devoluciones,
+    // entradas) y RSVP. Cada boleto abre Buscar boleto; el evento, su ficha. Nunca el teléfono de otra persona.
+    const ST: Record<string, [string, string]> = { valid: ["VÁLIDO", "signal"], used: ["USADO", "neutral"], refunded: ["DEVUELTO", "neutral"], void: ["ANULADO", "danger"], replaced: ["TRANSFERIDO", "neutral"] };
+    const RV: Record<string, string> = { going: "VA", cancelled: "YA NO VA", expired: "VENCIÓ", attended: "LLEGÓ" };
+    const k = act.kpi, usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+    cuerpo = <PanelBloques bloques={[
+      { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [{ k: "PEDIDOS · 90 D", v: String(k.pedidos) }, { k: "CITAS · 90 D", v: String(k.citas) }, { k: "RESERVACIONES · 90 D", v: String(k.reservas), s: k.privados ? `${k.privados} eventos privados` : undefined },
+        { k: "BOLETOS", v: String(k.boletos), s: `${k.rsvp} RSVP · devuelto ${usd(act.devuelto.devuelto)}` }] },
+      act.boletos.length ? { type: "rows", k: `BOLETOS DE EVENTOS · ${act.boletos.length}`, items: act.boletos.map((b) => ({ key: b.code, icon: "ticket", t: `${b.evento.es} · ${diaCorto(b.dia, true)}`,
+        s: [b.code, b.tipo?.es, b.kind === "comp" ? "cortesía" : b.precio ? usd(b.precio) : null, b.num, b.de ? "lo recibió por transferencia" : null, b.a ? (b.a === "transfiriendo" ? "transfiriendo" : "lo pasó a otra persona") : null, b.entro ? `entró ${b.entro}` : null].filter(Boolean).join(" · "),
+        tag: ST[b.st]?.[0] ?? b.st, tone: ST[b.st]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/eventos/boleto/${b.code}`) })) } as Bloque
+        : { type: "note", tone: "info", icon: "ticket", t: "Sin boletos." } as Bloque,
+      act.rsvp.length ? { type: "rows", k: `RSVP · ${act.rsvp.length}`, items: act.rsvp.map((r, i) => ({ key: `r${i}`, icon: "users", t: `${r.evento.es} · ${diaCorto(r.dia, true)}`, s: `${r.party} ${r.party === 1 ? "persona" : "personas"}${r.llegaron ? ` · llegaron ${r.llegaron}` : ""}`,
+        tag: RV[r.st] ?? r.st, tone: r.st === "going" ? "signal" : "neutral", chev: true, onClick: () => router.push(`/admin/eventos/${r.eid}`) })) } as Bloque
+        : { type: "note", tone: "info", icon: "users", t: "Sin RSVP." } as Bloque,
+    ]} />;
   } else if (tab === "privacidad") {
     cuerpo = (
       <>

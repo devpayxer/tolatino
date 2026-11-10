@@ -740,7 +740,10 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo
       sale 0 (0038 deja a Junior y Karla activos también sin equipo). 6h (10 nov): 0113 con migrar.sh dos veces y vuelta a correr a mano sin
       errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo sale 0 (6h no trae semilla). 6i (10 nov): 0114 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones
-      dos veces + semillas 0001–0039 + semillas cambiadas → todo sale 0 (0039 crea 7 solicitudes y no las repite). CI y 0115 pendientes._
+      dos veces + semillas 0001–0039 + semillas cambiadas → todo sale 0 (0039 crea 7 solicitudes y no las repite). 6j (10 nov): 0115 con migrar.sh dos
+      veces y vuelta a correr a mano sin errores; base nueva de PostGIS: migraciones 0001–0115 dos veces + semillas 0001–0039 + semillas marcadas
+      cambiadas y vueltas a aplicar → todo sale 0 (115 migraciones, 47 claves de Eventos). **Sin marcar solo por el CI**: el paso de migraciones del
+      CI corre al subir la rama (aquí no hay CI)._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -817,15 +820,40 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       (se queda) → el restaurante cancela (devolución completa) → propuesta vencida rechazada (pantalla y base) → otra fecha → no puedo → sin respuesta
       (barrido) → IDOR con otra cuenta, el dueño de otro negocio, un vecino y otro restaurante (El Fogón) → Mi cuenta, Super Admin › Transacciones,
       Configuración. `alreves6i` 40/40. Migración 0114 dos veces y vuelta a correr a mano; semilla 0039 en base nueva y vuelta a aplicar sin duplicar._
-- [ ] Super Admin: Eventos y boletos (4 pestañas), catálogo de formatos y géneros, Buscar boleto con reenviar / reemitir / anular, Modo puerta, Dinero,
+- [x] Super Admin: Eventos y boletos (4 pestañas), catálogo de formatos y géneros, Buscar boleto con reenviar / reemitir / anular, Modo puerta, Dinero,
       Usuarios y Negocios 360°, Confianza › señales, Configuración › Eventos, Notificaciones, Analítica › Eventos; cada acción con motivo, aviso, apelación y
-      auditoría.
-- [ ] Avisos ES/EN en `notif_templates`; SMS solo en la lista crítica (`avisoEventoSmsSoloCritico`); Mi cuenta › Avisos › Eventos.
+      auditoría. _6j (10 nov): e2e `adm6j` 63 ✓ (escritorio 1360 y teléfono 390): pestañas Eventos · Buscar boleto · Modo puerta · Organizadores (+
+      Liquidaciones y Catálogo), BRUTO BOLETOS con la comisión de `fee_rules`; la ficha con CUPOS de una fecha, **Ajustar cupo** (por debajo de lo
+      vendido: rechazado por la acción y por la base; ajustado: aviso al organizador, event_changes, auditoría, y el editor del organizador no lo
+      deshace) y **Extender ventas** (hasta el inicio; la base no deja pasar de ahí); **EVENTO CON SOBREVENTA** forzado con un boleto fuera de la
+      regla → sale en Eventos y en el Inicio y se va al anularlo; Catálogo (renombrar un género con vista previa y auditoría; apagar un formato para una
+      categoría → el panel ya no lo ofrece); Reemitir; Confianza › Fraude › EVENTOS Y BOLETOS con el umbral leído en la base y «Abrir caso» → Reportes
+      de usuario; Usuarios 360° › Actividad; Negocios 360° › Eventos con liquidaciones y cancelaciones; Configuración › Eventos (subgrupos, unidad,
+      límites, fuera de límites rechazado por la acción y la base, auditoría, SOLO LECTURA); Analítica › Eventos contra SQL y sin personas;
+      Notificaciones › Solo Eventos; un vecino no abre el catálogo. Modo puerta y Buscar boleto: `evt6g` 105 y `evt6c` 70 en la misma corrida.
+      Apelación: la de ocultar y bloquear (6a, `evt6a`); el ajuste de cupo y la venta extendida no se apelan (el organizador ve el motivo)._
+- [x] Avisos ES/EN en `notif_templates`; SMS solo en la lista crítica (`avisoEventoSmsSoloCritico`); Mi cuenta › Avisos › Eventos. _6j (10 nov): grupo
+      `events` (Boletos y cambios · Recordatorios · Eventos que guardas; lo crítico sin interruptor, guardián `eventosCriticoSiempreLlega`); `adm6j`:
+      «Mañana: …» una vez con dos barridos y el título lleno, apagar Recordatorios = no llega, con «Boletos y cambios» apagado el QR nuevo llega igual,
+      «Tu evento casi se agota» una vez; plantillas nuevas ES/EN sin SMS; `avisoEventoSmsSoloCritico` verde; bug de títulos con {variables} corregido
+      (guardián `avisoTituloLleno`)._
 - [ ] Presupuesto de velocidad con la base de carga cumplido (cifras en PROGRESS); guardianes de §3 en `guardianes/run.mjs`, cada uno probado al revés;
       build + CI + punta a punta en 9 dispositivos verdes; Pedidos, Reservaciones, Noche (lista y mesas), Cobros y Comunidad sin regresión.
-- [ ] `docs/ayuda/` completas (cada bloque + 6j); preguntas #1–#25 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con ley de reventa de PA, amusement tax,
+      _6j (10 nov): guardianes de §3 todos en `run.mjs` y probados al revés (alreves6a 26/26, 6b 30/31, 6c 42/42, 6d 41/42, 6e 38/38, 6f 22/22, 6g 31/33,
+      6h 45/45, 6i 40/40, 6j 29/29; los 4 que no cazan cambian textos que bloques posteriores ya reemplazaron — 0112/0107 redefinidas en 0113/0111,
+      Transacciones.tsx de 6i — y fallan igual con los guardianes de HEAD; anotado en LAUNCH); guardianes limpios (1435 archivos); `tsc` y build
+      verdes; corrida seguida de la fase: evt6a ✓, evt6b-6c ✗ (React #418 una vez; pasa sola dos veces), evt6c 70 ✓, evt6d 126 ✓, evt6e 96 ✓, evt6f 87 ✓,
+      evt6g 105 ✓, evt6h 88 ✓, evt6i ✗ (paso de 52 s con reloj real; pasa sola 74 ✓), adm6j 63 ✓, adm5i ✓ (Comunidad sin regresión). **Sin marcar
+      por:** la base de carga de 1 M de fechas / 5 M de boletos no corrió aquí (`scripts/carga/eventos-1m.mjs`, máquina aparte), el CI y la matriz de 9
+      dispositivos corren al subir la rama, y Pedidos / Reservaciones / Noche no se corrieron en esta sesión (sus suites viven en el CI)._
+- [x] `docs/ayuda/` completas (cada bloque + 6j); preguntas #1–#25 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con ley de reventa de PA, amusement tax,
       comerciante del cobro, Términos de devoluciones, QR rotativo y red entre teléfonos de la puerta, Apple/Google Wallet (Fase 8), promotores, Wallet.
-- [ ] `docs/PROGRESS.md` al día (Fase 6 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox (comprador, dueño y dos porteros).
+      _6j (10 nov): las 29 ayudas de 6a–6i existen y 6j suma Eventos a admin-eventos-y-boletos, admin-configuracion, notificaciones, admin-analitica,
+      mi-cuenta, admin-confianza-y-seguridad y admin-usuarios (ES/EN); #1–#25 en REVISION «### 6j»; LAUNCH con reventa de PA, amusement tax, comerciante
+      del cobro, Términos, QR rotativo, red entre teléfonos, Apple/Google Wallet, promotores y Wallet._
+- [x] `docs/PROGRESS.md` al día (Fase 6 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox (comprador, dueño y dos porteros).
+      _6j (10 nov): PROGRESS «6j hecho» y «Fase 6 completa»; REVISION «### 6j» con los 16 pasos de toda la fase (comprador, segundo comprador,
+      dueños, dos porteros y el Super Admin)._
 
 ## 9. Decisiones del fundador pendientes (resumen para `docs/REVISION.md`; se construye con el default, regla AB)
 | # | Qué decidir | Default que se construye (reversible) |

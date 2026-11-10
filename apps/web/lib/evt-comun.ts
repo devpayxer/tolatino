@@ -9,6 +9,8 @@ export type Entrada = "free" | "rsvp" | "tickets";
 export type EstadoEvt = "draft" | "review" | "changes" | "live" | "paused" | "cancelled" | "rejected" | "done";
 export type FormatoEvt = {
   key: FormatoKey; label: Bi; sub: Bi; icon: string; dark: boolean; ages: number[];
+  /* 6j · false = el Super Admin lo apagó (Catálogo): no se ofrece para crear, pero los eventos que ya lo tienen se siguen editando. */
+  ofrece?: boolean;
   f: {
     entry: Entrada; age0: number; mesas: boolean; adds: boolean; gen: boolean; dress: boolean; party: boolean; kids: "fam" | "care" | null; payAt: boolean;
     h0: number; len: number; dr: 0 | 30 | 60; luL: Bi; luWho: Bi; luRole: Bi; tkL: Bi; cntL: Bi; tk1: Bi; tixL: Bi; freeL: Bi; galL: Bi; cta: Bi; tk0: Bi; p0: number; c0: number; ph: Bi;
@@ -179,3 +181,11 @@ export const EVT_NO: { k: string; es: string; en: string }[] = [
   { k: "foto", es: "La foto no corresponde al evento", en: "The photo does not match the event" },
   { k: "otro", es: "Otro motivo", en: "Other reason" },
 ];
+
+/* 6j · Las señales de Eventos para Confianza › Fraude (evt_senales): cómo se nombran. */
+export const SENAL_L_UI: Record<string, { t: string; s: (n: number) => string }> = {
+  rafaga: { t: "Órdenes en ráfaga", s: (n) => `${n} ${n === 1 ? "orden" : "órdenes"} desde un dispositivo que compró muchas veces en minutos` },
+  cadena: { t: "Transferencias en cadena", s: (n) => `${n} ${n === 1 ? "boleto recibido y pasado" : "boletos recibidos y pasados"} a otra persona` },
+  duplicado: { t: "Entró dos veces", s: (n) => `${n} ${n === 1 ? "entrada duplicada" : "entradas duplicadas"} en la puerta (sin conexión)` },
+  contracargo: { t: "Contracargos de boletos", s: (n) => `${n} ${n === 1 ? "contracargo" : "contracargos"} en 90 días` },
+};

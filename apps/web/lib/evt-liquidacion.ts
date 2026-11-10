@@ -245,7 +245,8 @@ export async function liquidacionesPanel(negocio: string, eventoId: string | nul
       where e.business_id = $1 and ($2::bigint is null or e.id = $2::bigint) and e.entry = 'tickets'
         and (s.id is not null or (k.gross > 0 and d.ends_at > now() - interval '180 days'
              and ((d.status = 'scheduled' and e.status in ('live', 'paused')) or exists (select 1 from event_cancellations x where x.event_id = e.id and (x.event_date_id is null or x.event_date_id = d.id)))))
-      order by d.starts_at desc limit 60`, [negocio, eventoId])).rows;
+      -- 6j · Primero las fechas que ya pasaron (su dinero está en camino o pagado; la más reciente arriba) y después las próximas.
+      order by (d.starts_at > now()), d.starts_at desc limit 60`, [negocio, eventoId])).rows;
   const deuda = (await db().query<{ d: number }>(`select evt_liq_deuda($1) as d`, [negocio])).rows[0]?.d ?? 0;
   return {
     deuda,

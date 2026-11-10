@@ -16,6 +16,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const tab = TABS.has(sp.tab ?? "") && (sp.tab !== "din" || veDinero) ? sp.tab! : "resumen";
   const din = !veDinero ? undefined : tab === "din" ? await datosDinero(s, n.id) : null;
   // 6a · Contenido › Eventos (quien ve Eventos y boletos).
-  const evts = tab === "cont" && s.puede("evt", "ver") ? { ...(await (await import("@/lib/evt-revision")).eventosDeNegocioAdmin(n.id)), puede: { aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") } } : null;
+  // 6j · Más las liquidaciones (por estado) y las cancelaciones del organizador.
+  const evts = tab === "cont" && s.puede("evt", "ver") ? { ...(await (await import("@/lib/evt-revision")).eventosDeNegocioAdmin(n.id)), ...(await (await import("@/lib/evt-admin")).eventos360(n.id)), puede: { aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") } } : null;
   return <N360 n={n} tab={tab} din={din} evts={evts} />;
 }

@@ -2719,3 +2719,117 @@ cambio», «Cancelar el evento» con motivo), **«Pedir un cambio»** (hoja con 
 - **Libros:** propuestas, aceptaciones y cambios pedidos son de solo inserción (trigger; `libroSoloInsercion` ampliado); nada se borra (estados).
 - **Pendiente (LAUNCH):** contrato de Stripe en el CI, impuesto con el contador, saldo negativo de cuentas conectadas si el restaurante cancela,
   Términos, SMS reales.
+
+### 6j · Super Admin completo de Eventos, Configuración › Eventos, avisos de Eventos, analítica y Mi cuenta · FASE 6 COMPLETA (10 nov)
+**Qué mirar, paso a paso, toda la Fase 6 en el sandbox** (teléfono 390 y escritorio 1360; capturas `e6a-*` … `e6i-*` y `e6j-*`). Cuentas de
+prueba: comprador Marisol (570-555-0122), segundo comprador Yaritza (570-555-0299) y Héctor (570-555-0288), Lucía (570-555-0561, evento
+privado); dueños: La Terraza (570-555-0366), Sabor Dominicano (570-555-0133), Padre Luis · Parroquia (570-555-0422); porteros Junior y Karla
+(semilla 0038, o invítalos tú); Super Admin Ana (570-555-0199) y la segunda persona del equipo (570-555-0188). Tarjetas: 4242 4242 4242 4242
+aprueba, 4000 0000 0000 0002 rechaza.
+1. **Publicar** (6a): Panel de La Terraza › Eventos › Crear › Fiesta o show → sube el cartel, la fecha en el calendario, boletos, una mesa y un
+   extra (prueba «Botella»: no deja) → **Enviar a revisión**. Super Admin › Colas › **Eventos a revisar**: pide un cambio, que el dueño lo
+   reenvíe, apruébalo. **Publica tu evento** (`/eventos/publicar`) desde Sabor. La Parroquia es organizador verificado: publica al instante.
+2. **El módulo** (6b): pestaña **Eventos** sin entrar (Esta noche como historias, filtros, «Ver más»), la ficha oscura (La Terraza) y la clara
+   (Sancocho, con **Voy · 2**), el corazón, **Inicio › Esta semana**, **Buscar «sancocho»**, la pestaña Eventos de la página de La Terraza.
+3. **Comprar** (6c): Marisol en «Jueves de Bachata» → 2 generales + mesa + detalle, código **TERRAZA10**, **Continuar** («te guardamos boletos
+   y mesa por 8 minutos»), primero la 0002 (no se cobra), luego la 4242 → **¡Listo, vas!** con el QR de verdad, **Mi cuenta › Boletos**.
+4. **Después de comprar** (6d): **Transferir** un boleto al teléfono de Yaritza («EL QR ANTERIOR QUEDA ANULADO»); Yaritza lo recibe en Avisos;
+   **Cancelar mis boletos** (menos el cargo, hasta 24 h antes); el dueño da una **cortesía** y **Devuelve** una orden; con el evento agotado,
+   **Lista de espera** y «SE LIBERÓ UN LUGAR · TIENES 30 MIN».
+5. **Cambios y dinero** (6e): en el panel pausa la venta, manda un **aviso a los que van**, **cambia la hora** (les llega por SMS en modo pruebas;
+   uno elige «Me quedo» y otro «Devolución total») y **Cancela** una fecha («Devolvemos $X a N personas»). Panel › **Cobros › PAGOS DE EVENTOS**
+   (el martes después de cada fecha) y Super Admin › Eventos y boletos › **Liquidaciones**.
+6. **Series y varios días** (6f): Crear con **Se repite · Cada semana** y otro con **Varios días seguidos** (pase y boleto de un día); la ficha del
+   panel con FECHA QUE ESTÁS VIENDO, **Saltar** una fecha sin gente y «solo esta fecha» para el artista.
+7. **La Puerta** (6g, dos teléfonos de porteros): el panel › **Porteros** invita a Junior (código de 7 días), Junior entra en `/puerta`, abre la
+   puerta el día del evento (se activa unas horas antes: Configuración) y escanea el QR de Marisol → **VÁLIDO**; Karla escanea el mismo → **YA
+   ENTRÓ por Principal a las …**. Buscar por nombre, la Lista, Aforo, Mesas, Incidencias, Equipo y Cierre. Panel › **Abrir modo puerta** y el
+   Monitor. Super Admin › **Modo puerta** (solo lectura).
+8. **Sin conexión** (6h): pon los dos teléfonos en modo avión, escanea el mismo QR en los dos (los dos dicen VÁLIDO), quita el modo avión: uno
+   queda aceptado y el otro **duplicado** con su incidencia (lo ves en Equipo, en el Monitor y en Super Admin › Modo puerta › REPETIDOS). El
+   boleto de Marisol en su teléfono se abre sin señal.
+9. **Evento privado** (6i): Lucía en Sabor › Reservar 9+ → **Pedir evento privado**; el dueño **Manda la propuesta**; Lucía la **acepta y paga**
+   el depósito; cancela con 73 h (vuelve todo) y otra con 71 h (se queda el restaurante).
+10. **Super Admin › Eventos y boletos (nuevo en 6j):** arriba BRUTO BOLETOS con la comisión vigente («5 % + $1»). Abre un evento con boletos:
+    **CUPOS** de una fecha (vendidos / cupo, apartados, AGOTADO). **Ajustar cupo** del General por debajo de lo vendido (dice «No baja de lo
+    vendido y apartado») y luego a lo vendido: el dueño recibe «To'Latino ajustó tu evento» y su panel lo dice; si el dueño vuelve a guardar el
+    editor, el ajuste se queda. **Extender ventas** (si el organizador cierra un día antes o a las puertas): hasta las puertas o al empezar — nunca
+    después (en la puerta no se vende). Mira **CAMBIOS DEL EVENTO**.
+11. **Catálogo** (pestaña nueva): renombra un género y mira la vista previa de los filtros; apaga «Clase o taller» para «Vida Nocturna» → el
+    panel de La Terraza ya no lo ofrece en «Lo que puedes publicar» (los eventos que ya existen siguen). Vuelve a encenderlo.
+12. **Configuración › Eventos** (Sistema): los subgrupos (publicar, RSVP y venta, después de comprar, cambios y pago, avisos, la puerta, evento
+    privado, Confianza) con unidad, fábrica y límites. Cambia «Hora del recordatorio del día antes» con un motivo y mira la auditoría; prueba 21
+    («Entre 6 h y 20 h»). «Día de pago de eventos» está en SOLO LECTURA (los textos dicen «el martes»).
+13. **Mi cuenta › Avisos › EVENTOS** (Marisol): Boletos y cambios · Recordatorios · Eventos que guardas, y «Siempre te llega». Con un boleto para
+    mañana, desde la hora de Configuración llega **«Mañana: …»** (una vez); el día del evento, **«¡Es hoy!»**. Apaga Recordatorios: ya no llegan;
+    lo crítico (cancelación, cambio de fecha, QR nuevo) llega igual. **Mi cuenta › Inicio › Tu semana** muestra tus boletos, RSVP y el evento privado.
+14. **Al dueño:** cuando vende el 90 % de una fecha (Configuración), «Tu evento casi se agota» (una vez por fecha).
+15. **Confianza › Fraude › EVENTOS Y BOLETOS**: órdenes en ráfaga desde un dispositivo, transferencias en cadena, entradas duplicadas y
+    contracargos; **Abrir caso** → Colas › Reportes de usuario. **Usuarios › Marisol › Actividad**: sus boletos (cortesía, transferencias, a qué hora
+    entró) y RSVP. **Negocios › La Terraza › Contenido**: eventos con liquidaciones y cancelaciones.
+16. **Analítica › Eventos**: de ver a ir, dinero, la puerta (asistencia, no vinieron, incidencias por cada 1,000 entradas), evento privado, por
+    formato, ciudad y organizador — solo cifras, nunca personas. **Notificaciones › Solo Eventos**: el grupo y sus interruptores.
+
+**Decidí X; si prefieres Y, se cambia (6j):**
+- **Mi cuenta › Avisos › Eventos:** tres interruptores (Boletos y cambios · Recordatorios · Eventos que guardas); apagado = no llega ni a la
+  campana (como la Comunidad). **No se apagan:** boleto comprado / devuelto / anulado / QR nuevo, el boleto que te mandan, la cortesía, el lugar
+  de la lista de espera, la devolución total, la propuesta, otra fecha, «no pudo», «venció», confirmación y cancelación de un evento privado;
+  cancelación y cambio de fecha u hora siguen como críticos (salen también de noche). Las plantillas evp_* salieron del grupo de citas.
+- **Recordatorio de boletos:** a quien TIENE el boleto hoy (también si lo recibió por transferencia), uno por fecha, desde la hora de
+  Configuración (10 AM; el mismo valor que el recordatorio de RSVP y de guardados). «¡Es hoy!» a la misma hora, solo si todavía no empezó. Un pase
+  de varios días: «Mañana» antes del primer día y «¡Es hoy!» cada día.
+- **«Tu evento casi se agota»:** cuando lo VENDIDO (cortesías incluidas) llega al 90 % de lo que está a la venta en esa fecha; una vez por fecha
+  (si después se ajusta el cupo, no vuelve a salir). El aforo de la puerta (adentro) sigue con su propio aviso de 6g.
+- **Ajustar cupo:** por fecha (tipo, mesa o aforo del día), nunca por debajo de lo vendido + apartado; manda sobre el editor del organizador para
+  esa fecha. El RSVP (cupo de un evento gratis) no se ajusta desde aquí: lo cambia el organizador.
+- **Extender ventas:** solo hacia más tarde y como mucho hasta que empieza (D1). Congelar y Cancelar y devolver todo ya estaban (6e).
+- **Catálogo:** solo un Admin; nombres y descripciones ES/EN, encendido y qué categorías publican cada formato; los campos y palabras de cada
+  formato (FMT) no se editan (los fija el diseño). Apagar nunca borra ni deja a un organizador sin poder editar lo suyo.
+- **Señales de Eventos en Confianza:** ráfaga (4 órdenes en 10 min desde un dispositivo: Configuración), cadena (2 boletos recibidos y pasados en
+  30 días), duplicados en la puerta y contracargos (90 días). La señal no sanciona sola. **«Una tarjeta en varias cuentas» no se construyó**: un
+  pm_… de Stripe es de una sola cuenta; necesita la huella de la tarjeta (LAUNCH-CHECKLIST).
+- **Analítica › Eventos:** el bruto es lo cobrado el día del cobro (boletos, mesa y extras); los boletos que nacen de una transferencia no
+  cuentan como vendidos; la asistencia es de fechas que ya pasaron; el «% de las vistas» sale solo si tiene sentido (las vistas empezaron a
+  contarse con 6b).
+- **Día de pago de eventos en SOLO LECTURA:** los textos dicen «el martes»; se abre cuando lean el valor.
+- **Panel › Ajustes › Avisos** (venta, aforo 90 %, cancelaciones, pago al negocio) **no se construyó**: Panel › Ajustes no existe todavía (sale en
+  «Más» cuando llegue con sus bloques). Hoy al negocio le llega todo en la campana (LAUNCH-CHECKLIST).
+- **Mi cuenta › Pagos › movimientos de boletos no se construyó:** la pantalla Pagos y Wallet de Mi cuenta (USR-PAGOS) no existe; el recibo de
+  cada orden está en la orden (LAUNCH-CHECKLIST).
+
+**Encontrado y corregido en el cierre (clase nueva, guardián `avisoTituloLleno`):** los avisos con variables en el título («Tus boletos para
+{evento}», «Vas a {evento}», «Mañana: {evento}», «Mensaje de {negocio}») llegaban con la llave escrita: `avisar()` y `avisarMuchos()` llenaban el
+cuerpo pero no el título. Ahora los dos llenan el título (lo viejo en la bandeja queda como estaba). También: el texto «el modo puerta se activa 2
+horas antes» del panel y de `/puerta` estaba escrito a mano → lee `puerta_ventana_h` (guardián `configDesdeUnLugar` ampliado).
+**Segunda clase (guardián `listaConTopeLoQueImporta`):** con más de 200 eventos de un negocio (La Terraza ya tiene más de 240 en el sandbox por
+las pruebas), Panel › Eventos ordenaba por fecha ascendente con tope de 200 y dejaba fuera los PRÓXIMOS; y Cobros › PAGOS DE EVENTOS ponía las
+fechas futuras primero y escondía lo ya pagado. Ahora la lista pone primero lo vivo y próximo (el más cercano) y Cobros, las fechas que ya pasaron
+(la más reciente arriba). La lista del panel con cursor queda en LAUNCH-CHECKLIST.
+
+**Revisión de seguridad (6j: permisos, dinero y datos personales):**
+- **Ajustar cupo / Extender ventas:** `evt:editar` en el servidor, la fecha bloqueada (`for update`), las ciudades de quien decide, motivo,
+  `event_changes`, auditoría y aviso al dueño; el cupo nunca baja de lo vendido + apartado (acción, check de la tabla y trigger), el ajuste es
+  de solo inserción y la venta extendida nunca pasa del inicio (check en la base + `least()` en `bol_venta_hasta`). Guardián `ajusteAdminConRegla`.
+- **Catálogo:** `evt:retirar` (Admin), textos acotados y sin teléfonos, auditoría; apagar no borra; cada categoría publica al menos un formato.
+- **Señales:** solo quien ve Confianza las ve; «Abrir caso» pide `usr:editar` y que la señal siga viva en sus ciudades; nunca al equipo.
+- **Analítica:** solo vistas por ciudad, día y formato; los organizadores son negocios (guardián `analiticaSinPersonas` ampliado).
+- **Avisos:** lo crítico no tiene interruptor (guardián `eventosCriticoSiempreLlega`); `evt_avisos_enviados` es de solo inserción (una vez).
+
+**Preguntas #1–#25 del plan (§6), anotadas:** el default más seguro de cada una, como está en el plan y en «Fase 6 · Eventos — plan del grupo»
+y las notas de 6a–6i: #1 5 % + $1 de `fee_rules`, del organizador · #2 cobro en la plataforma, transferencia el martes después de cada fecha ·
+#3 todo se revisa hasta verificar al organizador · #4 sin alcohol ni hookah como extras · #5 publicar es gratis, el módulo es Pro (prueba de 30
+días) · #6 el comprador cancela hasta 24 h antes, menos el cargo · #7 avisos del organizador por push y en la app; SMS solo lo crítico · #8 solo
+tarjeta · #9 evento privado = solicitud de grupo a un restaurante · #10 QR fijo, firmado y con versión · #11 portero con cuenta + código · #12 en la
+puerta no se vende (D1) · #13 sin código de la plataforma · #14 sin fecha de nacimiento ni foto de ID; la línea de ID antes de pagar · #15
+«¿Cómo estuvo?» = reseña verificada del organizador · #16 primer evento sobre $2,000 retenido · #17 Apple/Google Wallet en Fase 8 · #18 sin
+promotores · #19 sin «Hacer cartel» (se sube la foto) · #20 «Traducir» con el traductor propio · #21 cambio de fecha: el comprador elige; sin
+respuesta, se queda · #22 10 por orden y 20 por persona y fecha · #23 la mesa trae sus entradas (un QR de grupo) · #24 el costo de la tarjeta lo
+absorbe To'Latino · #25 escaneos 13 meses (la tarea que los resume, LAUNCH), el paquete se borra al cerrar, sin exportar teléfonos. Si prefieres
+otra cosa en alguna, se cambia.
+
+**Para saber:** las pruebas usan datos `[a6j …]` que se cancelan al terminar; la configuración, los avisos de Marisol y el catálogo vuelven a como
+estaban.
+
+**Capturas:** `e6j-config-d`, `e6j-config-m`, `e6j-avisos-m`, `e6j-tu-semana-m`, `e6j-ficha-cupos-d`, `e6j-ficha-cupos-m`, `e6j-panel-ajuste-d`,
+`e6j-eventos-d`, `e6j-catalogo-d`, `e6j-catalogo-m`, `e6j-catalogo-genero-d`, `e6j-confianza-d`, `e6j-confianza-m`, `e6j-u360-act-d`,
+`e6j-analitica-d`, `e6j-analitica-m`, `e6j-notif-d`.

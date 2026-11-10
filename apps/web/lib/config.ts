@@ -30,6 +30,8 @@ export type ClaveConfig =
   | "bol_transferir_h" | "bol_cancelar_h" | "espera_oferta_min" | "evt_cortesias_max" | "bol_transferencias_dia_max"
   // 6e · cambios del evento y la liquidación del martes
   | "evt_aviso_max" | "evt_pago_dia" | "evt_retener_nuevo_cents" | "evt_cancelaciones_confianza" | "evt_cancelaciones_dias" | "evt_ajuste_dias" | "evt_cancelar_lote"
+  // 6j · recordatorios, aviso de vendido y señales de Confianza (0115)
+  | "evt_recordatorio_hora" | "evt_aforo_aviso_pct" | "evt_senal_ordenes_n" | "evt_senal_ordenes_min" | "evt_senal_cadena_n"
   // 6g · la puerta (0112)
   | "puerta_porteros_max" | "puerta_ventana_h" | "puerta_aforo_alerta_pct" | "puerta_buscar_min" | "puerta_invitar_dia_max"
   // 6h · la puerta sin conexión (0113)

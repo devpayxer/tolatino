@@ -2431,6 +2431,14 @@ const guardianes = {
         if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MP, 0, `${msg} (estados)`);
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_scans|door_searches|ticket_entries|door_counts)\b|\bdelete from (door_staff|door_sessions|door_incidents|door_table_numbers)\b/.test(q)) falla(G, x, 0, `la auditoría de la puerta no se cambia ni se borra: «${q.slice(0, 60)}»`);
     }
+    // 6j · Los avisos automáticos de Eventos que ya salieron y los ajustes de cupo del Super Admin son de solo inserción.
+    const MJ = "packages/db/migrations/0115_eventos_admin_config.sql";
+    if (existsSync(MJ)) {
+      const mj = readFileSync(MJ, "utf8");
+      if (!/create trigger evt_avisos_enviados_no_cambia before update or delete on evt_avisos_enviados/.test(mj)) falla(G, MJ, 0, "evt_avisos_enviados es de solo inserción (trigger)");
+      if (!/create trigger event_stock_overrides_no_cambia before update or delete on event_stock_overrides/.test(mj)) falla(G, MJ, 0, "event_stock_overrides es de solo inserción (trigger)");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (evt_avisos_enviados|event_stock_overrides)\b/.test(q)) falla(G, x, 0, "un aviso ya mandado o un ajuste de cupo no se cambian ni se borran");
+    }
     // 6i · Evento privado: las propuestas, las aceptaciones y los cambios pedidos son de solo inserción (el estado de una propuesta se deriva).
     for (const [fn, msg] of [["private_event_quotes_antes", "private_event_quotes es solo de inserción"], ["private_event_acceptances_antes", "private_event_acceptances es solo de inserción"], ["private_event_asks_antes", "private_event_asks es solo de inserción"]])
       if (!new RegExp(`if tg_op <> 'INSERT' then raise exception '${msg}'`).test(ultimaFn(fn))) falla(G, "packages/db/migrations/0114_evento_privado.sql", 0, `${msg} (trigger)`);
@@ -2804,12 +2812,15 @@ const guardianes = {
         if (CAT.test(q) || /key = (\$\d|any\()|key = '\$\{/.test(q)) falla(G, x, 0, "lee o escribe platform_config para una clave de Configuración: usa valor()/cfgSql()/cambiarConfig() de lib/config.ts");
       }
     }
-    const COM = (x) => /^apps\/web\/lib\/(comunidad[^/]*|moderacion[^/]*|apelaciones|traduccion|cupones|oficial|evt-publico|rsvp)\.ts$/.test(x) || /^apps\/web\/app\/\(app\)\/eventos\/(?!publicar\/)/.test(x) || /^apps\/web\/app\/\(app\)\/(comunidad|cuenta\/avisos|cuenta\/moderacion)\//.test(x)
+    const COM = (x) => /^apps\/web\/lib\/(comunidad[^/]*|moderacion[^/]*|apelaciones|traduccion|cupones|oficial|evt-publico|rsvp)\.ts$/.test(x) || /^apps\/web\/app\/\(puerta\)\//.test(x) || x === "apps/web/app/panel/EventosPuerta.tsx" || /^apps\/web\/app\/\(app\)\/eventos\/(?!publicar\/)/.test(x) || /^apps\/web\/app\/\(app\)\/(comunidad|cuenta\/avisos|cuenta\/moderacion)\//.test(x)
       || /^apps\/web\/app\/admin\/(ColasComunidad|Confianza|AutoModeracion|HoyAdmin|Contenido|Notificaciones)\.tsx$/.test(x) || x === "apps/web/app/panel/CuponesPanel.tsx";
     const COPIAS = [[/\b30 min(utos|utes)?\b/i, "los minutos para editar (com_editar_min)"], [/(apela[rn]?|apelaci[oó]n|appeal)[^"`\n]{0,24}\b14 (d[ií]as|days)/i, "los días para apelar (com_apelar_dias)"],
       [/\b60 (traducciones|translations)\b|de f[aá]brica: 60\b/i, "las traducciones por hora (com_traduccion_hora)"], [/A LAS 7 PM|AT 7 PM/, "la hora del resumen (com_resumen_hora)"],
       [/\bDIAS_ENCUESTA\b|\[1, 3, 7\]\.map|\bEDITAR_MIN\b|\bFILA_VIVA_MIN\b/, "una constante de un plazo de Configuración"], [/dias: 30\b|diasDef \?\? 30\b/, "los días del cupón (cup_dias_def)"],
-      [/\bdef: \d+/, "el valor de fábrica de un límite (vive en config_keys)"], [/\b(10|100|500|20) (publicaciones|comentarios|votos|reportes) al d[ií]a/i, "un límite del día (com_lim_*)"]];
+      [/\bdef: \d+/, "el valor de fábrica de un límite (vive en config_keys)"],
+      // 6j · la ventana de la puerta (puerta_ventana_h), el apartado (evt_apartado_min) y el recordatorio (evt_recordatorio_hora) que dice un texto.
+      [/(modo puerta|door mode)[^"`\n]{0,40}\b\d+ (horas?|hours?)\b/i, "las horas de la ventana de la puerta (puerta_ventana_h)"], [/\bpor \d+ minutos mientras pagas|for \d+ minutes while you pay/i, "los minutos del apartado (evt_apartado_min)"],
+      [/DESDE LAS \d+ (AM|PM)|desde las 10 AM/, "la hora del recordatorio (evt_recordatorio_hora)"], [/\b(10|100|500|20) (publicaciones|comentarios|votos|reportes) al d[ií]a/i, "un límite del día (com_lim_*)"]];
     for (const x of codigo) {
       if (!COM(x)) continue;
       sinComent(x).split("\n").forEach((l, i) => { for (const [re, que] of COPIAS) if (re.test(l)) falla(G, x, i + 1, `copia de ${que}: léelo de Configuración (lib/config.ts)`); });
@@ -2862,6 +2873,23 @@ const guardianes = {
     if (P.test(v) || P.test(d)) falla(G, K, 0, "una vista de la analítica de la Comunidad saca una columna de una persona");
     if (!/returns table \(rango smallint, activos integer\)/.test(m)) falla(G, K, 0, "com_activos_por_rango devuelve solo rango y cuántos");
     if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "com"'), j = u.indexOf("} else if", i + 10); if (i >= 0 && /admin\/usuarios|\.uid\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › Comunidad no lleva a personas"); }
+    // 6j · Analítica › Eventos: solo las vistas de 0115 (por ciudad, día local y formato), nombres de formatos y ciudades; un organizador es un
+    // negocio (evt_ventas_negocio_dia). Las vistas no sacan columnas de personas (evt_senales sí: es de Confianza y no se lee aquí).
+    const E = cuerpoFn(sinComent(A), "eventosAnalitica"), KE = "packages/db/migrations/0115_eventos_admin_config.sql";
+    if (!E) return falla(G, A, 0, "falta eventosAnalitica");
+    const OKE = new Set(["evt_analitica_dia", "evt_asistencia_dia", "evt_ventas_negocio_dia", "evp_analitica_dia", "event_formats", "cities"]);
+    for (const [, t] of E.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OKE.has(t)) falla(G, A, 0, `eventosAnalitica lee «${t}»: solo las vistas sin personas de 0115`);
+    if (P.test(E) || /\bholder_user_id\b|\bcomp_name\b|\buid\b/.test(E)) falla(G, A, 0, "eventosAnalitica pide una columna de una persona");
+    if (existsSync(KE)) {
+      const me = readFileSync(KE, "utf8");
+      for (const v of ["evt_analitica_dia", "evt_asistencia_dia", "evt_ventas_negocio_dia", "evp_analitica_dia"]) {
+        const b = new RegExp(`create or replace view ${v} as([\\s\\S]*?);\\n`).exec(me)?.[1] ?? "";
+        if (!b) { falla(G, KE, 0, `no encuentro la vista ${v}`); continue; }
+        const sel = b.slice(b.search(/\nselect /)), cols = sel.slice(0, sel.search(/\n\s*from /));
+        if (P.test(cols) || /\bholder_user_id\b|\bcomp_name\b/.test(cols)) falla(G, KE, 0, `la vista ${v} saca una columna de una persona`);
+      }
+    }
+    if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "evt"'), j = u.indexOf("} else if", i + 10); if (i < 0) falla(G, UI, 0, "falta Analítica › Eventos"); else if (/admin\/usuarios|\.uid\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › Eventos no lleva a personas"); }
   },
 
   /* 5i (MEM 651). «Ocultar los N reportados» nunca oculta la cuenta oficial: el lote pasa por loteOcultarUno, que lee author_kind y se
@@ -3584,6 +3612,71 @@ const guardianes = {
       if (!re.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}» acepta un teléfono en el texto`);
     const P = "apps/web/app/panel/EventoPrivado.tsx";
     if (existsSync(P) && /tel:|phone|telefono/.test(sinComent(P))) falla(G, P, 0, "el panel del evento privado no muestra ni llama al teléfono del cliente");
+  },
+
+  /* 6j (clase cazada en el cierre de la Fase 6). Un aviso con variables en el TÍTULO («Tus boletos para {evento}», «Mensaje de {negocio}»)
+     llegaba con la llave escrita: avisar() y avisarMuchos() llenaban el cuerpo pero no el título. Los dos pasan el título por llenar().
+     Al revés: volver a guardar el título tal cual → falla. */
+  avisoTituloLleno() {
+    const G = "avisoTituloLleno", A = "apps/web/lib/avisos.ts";
+    if (!existsSync(A)) return falla(G, A, 0, "falta lib/avisos.ts");
+    const t = sinComent(A), a = cuerpoFn(t, "avisar"), m = cuerpoFn(t, "avisarMuchos");
+    if (!/title = llenar\(es \? r\.title\.es : r\.title\.en, v\)/.test(a)) falla(G, A, 0, "avisar(): el título debe pasar por llenar() (las variables del título)");
+    if (!/llenar\(t\.title\.es, v\.es\)/.test(m) || !/llenar\(t\.title\.en, v\.en\)/.test(m)) falla(G, A, 0, "avisarMuchos(): el título debe pasar por llenar() en los dos idiomas");
+  },
+
+  /* 6j · Mi cuenta › Avisos › Eventos (fase6 §2 0115): lo crítico de Eventos no se apaga. Las plantillas del boleto (comprado, devuelto, anulado,
+     reemitido, el que te mandan, la cortesía), el lugar de la lista de espera, la devolución total, la propuesta y la confirmación del evento
+     privado quedan en el grupo `events` SIN pref (siempre llegan); cancelación y cambio de fecha u hora siguen en 'crit'. avisar() solo deja
+     de mandar lo apagado cuando la plantilla TIENE pref. Al revés: darle pref a una crítica o pasar una 'crit' a un interruptor → falla. */
+  eventosCriticoSiempreLlega() {
+    const G = "eventosCriticoSiempreLlega", M = "packages/db/migrations/0115_eventos_admin_config.sql", A = "apps/web/lib/avisos.ts", P = "apps/web/lib/perfil.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0115");
+    const m = readFileSync(M, "utf8");
+    const CRIT = ["bol_comprado", "bol_reemitido", "bol_anulado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "bol_cancelado", "bol_devuelto", "evt_devolucion_total", "evp_propuesta", "evp_ok", "evp_cancelado_negocio"];
+    const nulo = /update notif_templates set grp = 'events', pref = null\s+where key in \(([^)]*)\)/.exec(m)?.[1] ?? "";
+    for (const k of CRIT) if (!nulo.includes(`'${k}'`)) falla(G, M, 0, `«${k}» es crítica: va en el grupo events SIN interruptor (pref null)`);
+    const conPref = [...m.matchAll(/update notif_templates set grp = 'events', pref = '[a-zA-Z]+'\s+where key (?:in \(([^)]*)\)|= '([a-z0-9_]+)')/g)].map((x) => x[1] ?? `'${x[2]}'`).join(",");
+    for (const k of [...CRIT, "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio"]) if (conPref.includes(`'${k}'`)) falla(G, M, 0, `«${k}» es crítica y no puede tener interruptor`);
+    if (/update notif_templates set grp = '(?!crit)[a-z]+'[^;]*'evt_(cancelado|fecha_cancelada|movido|hora_cambio)'/.test(m)) falla(G, M, 0, "la cancelación y el cambio de fecha u hora siguen en 'crit' (salen también de noche)");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y > "0115")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+      for (const k of CRIT) if (new RegExp(`pref = '[a-zA-Z]+'[^;]*'${k}'`).test(t)) falla(G, `packages/db/migrations/${x}`, 0, `«${k}» es crítica y no puede tener interruptor`);
+    }
+    if (existsSync(A) && !/if \(\(r\.grp === "community" \|\| r\.grp === "events"\) && apagado\) return;/.test(cuerpoFn(sinComent(A), "avisar"))) falla(G, A, 0, "avisar(): lo apagado de Eventos no llega, y solo se apaga lo que tiene pref");
+    if (existsSync(A) && !/const apagado = r\.pref \? r\.prefs\?\.\[r\.pref\] === false : false/.test(cuerpoFn(sinComent(A), "avisar"))) falla(G, A, 0, "avisar(): «apagado» solo vale para una plantilla con pref");
+    if (existsSync(P) && !/export const AVISOS = \[[^\]]*"evt", "evtR", "evtG"/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "Mi cuenta › Avisos › Eventos: evt, evtR y evtG");
+  },
+
+  /* 6j · «Ajustar cupo» y «Extender ventas» del Super Admin (admin-dashboard L183–185) siguen las reglas de la fase: el cupo nunca baja de lo
+     vendido + apartado (la acción lo dice antes y la base lo impone: el último ajuste lo pone un trigger en ticket_stock, table_stock y
+     event_day_stock, y el check de cada tabla sigue); el ajuste es de solo inserción; la venta extendida nunca pasa del inicio (D1: en la puerta
+     no se vende) — check en la base y least() en bol_venta_hasta; las dos piden evt:editar, motivo, event_changes y auditoría. Y la alerta
+     viva «evento con sobreventa» existe y la miran el Inicio y Eventos del Super Admin. Al revés: quitar una de esas piezas → falla. */
+  ajusteAdminConRegla() {
+    const G = "ajusteAdminConRegla", M = "packages/db/migrations/0115_eventos_admin_config.sql", L = "apps/web/lib/evt-admin.ts", AC = "apps/web/app/admin/acciones-eventos.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0115");
+    const m = readFileSync(M, "utf8");
+    for (const t of ["ticket_stock", "table_stock", "event_day_stock"]) if (!new RegExp(`create trigger ${t}_cupo_admin before insert or update on ${t} for each row execute function evt_cupo_admin\\(\\)`).test(m)) falla(G, M, 0, `${t}: el ajuste de To'Latino lo pone la base (trigger evt_cupo_admin)`);
+    if (!/create trigger event_stock_overrides_no_cambia before update or delete on event_stock_overrides/.test(m)) falla(G, M, 0, "event_stock_overrides es de solo inserción");
+    if (!/check \(sales_extended_until is null or sales_extended_until <= starts_at\)/.test(m) || !/least\(d\.starts_at, greatest\(d\.sales_extended_until/.test(ultimaFn("bol_venta_hasta"))) falla(G, M, 0, "la venta extendida nunca pasa del inicio (D1)");
+    if (!/create or replace view evt_sobreventa as[\s\S]*?v\.n > s\.quantity[\s\S]*?v\.n > s\.quantity/.test(m)) falla(G, M, 0, "falta la alerta viva evt_sobreventa (boletos vivos contra la existencia de cada tipo y mesa)");
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/evt-admin.ts");
+    const t = sinComent(L), a = cuerpoFn(t, "ajustarCupo"), iB = a.search(/if \(n < x\.usado\) return no/), iI = a.search(/insert into event_stock_overrides/);
+    if (iB < 0 || iI < 0 || iB > iI) falla(G, L, 0, "ajustarCupo: rechazar por debajo de lo vendido + apartado ANTES de guardar el ajuste");
+    for (const fn of ["ajustarCupo", "extenderVenta"]) { const b = cuerpoFn(t, fn); if (!/m\.length < 4\) return no/.test(b) || !/insert into event_changes/.test(b) || !/await auditar\(c,/.test(b) || !/for update/.test(b + cuerpoFn(t, "fechaAdm"))) falla(G, L, 0, `${fn}: motivo, event_changes, auditoría y la fecha bloqueada`); }
+    if (existsSync(AC)) { const ac = sinComent(AC); for (const fn of ["evtCupo", "evtExtenderVenta"]) if (!/requerir\("evt", "editar"\)/.test(cuerpoFn(ac, fn))) falla(G, AC, 0, `${fn} pide evt:editar`); }
+    for (const f of ["apps/web/app/admin/page.tsx", "apps/web/app/admin/eventos/page.tsx"]) if (existsSync(f) && !/sobreventa\(s\)/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "la alerta «evento con sobreventa» sale aquí");
+  },
+
+  /* 6j (clase cazada en el cierre: con más de 200 eventos de un negocio, la lista del panel ordenaba por fecha ascendente con «limit 200» y
+     dejaba fuera los PRÓXIMOS; Cobros › PAGOS DE EVENTOS ponía las fechas futuras primero y escondía lo pagado). Una lista con tope del panel
+     de Eventos pone primero lo que importa: eventosDelNegocio lo vivo y próximo antes que lo pasado o cancelado; liquidacionesPanel las
+     fechas que ya pasaron antes que las próximas. Al revés: volver al orden por fecha a secas → falla. */
+  listaConTopeLoQueImporta() {
+    const G = "listaConTopeLoQueImporta", E = "apps/web/lib/evt.ts", L = "apps/web/lib/evt-liquidacion.ts";
+    if (existsSync(E)) { const b = cuerpoFn(sinComent(E), "eventosDelNegocio"); if (!/order by \(e\.status in \('cancelled', 'rejected', 'done'\)\) or \(e\.start_date \+ \(e\.span_days - 1\) </.test(b) || !/limit 200/.test(b)) falla(G, E, 0, "eventosDelNegocio: lo vivo y próximo primero antes del tope (con muchos eventos, el tope cortaba los próximos)"); }
+    if (existsSync(L)) { const b = cuerpoFn(sinComent(L), "liquidacionesPanel"); if (!/order by \(d\.starts_at > now\(\)\), d\.starts_at desc limit 60/.test(b)) falla(G, L, 0, "liquidacionesPanel: las fechas que ya pasaron (dinero en camino o pagado) antes que las próximas"); }
   },
 
   idioma() {

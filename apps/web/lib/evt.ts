@@ -26,12 +26,16 @@ const bi = (x: unknown, n: number): Bi => { const o = (x && typeof x === "object
 const ent = (x: unknown, a: number, b: number, d = a) => { const n = Math.round(Number(x)); return Number.isFinite(n) ? Math.max(a, Math.min(b, n)) : d; };
 
 /* ── Formatos ── */
-type FilaFmt = { key: FormatoKey; label: Bi; sub: Bi; icon: string; dark: boolean; ages: number[]; fields: FormatoEvt["f"] };
-export async function formatosDe(categoria: string): Promise<FormatoEvt[]> {
+type FilaFmt = { key: FormatoKey; label: Bi; sub: Bi; icon: string; dark: boolean; ages: number[]; fields: FormatoEvt["f"]; ofrece: boolean };
+/* 6j · Lo que se ofrece para CREAR sale del Catálogo del Super Admin (formato encendido y encendido para la categoría). Con `negocio`, también
+   los formatos de sus eventos que ya existen (ofrece = false): apagar un formato no deja a nadie sin poder editar lo suyo. */
+export async function formatosDe(categoria: string, negocio: string | null = null): Promise<FormatoEvt[]> {
   const r = await db().query<FilaFmt>(
-    `select f.key, f.label, f.sub, f.icon, f.dark, f.ages::int[] as ages, f.fields from event_format_categories c join event_formats f on f.key = c.format
-      where c.category_id = $1 and f.enabled order by c.sort, f.sort`, [categoria]);
-  return r.rows.map((x) => ({ key: x.key, label: x.label, sub: x.sub, icon: x.icon, dark: x.dark, ages: x.ages, f: x.fields }));
+    `select f.key, f.label, f.sub, f.icon, f.dark, f.ages::int[] as ages, f.fields, coalesce(c.enabled, false) and f.enabled as ofrece
+       from event_formats f left join event_format_categories c on c.format = f.key and c.category_id = $1
+      where (c.enabled and f.enabled) or ($2::text is not null and exists (select 1 from events e where e.business_id = $2 and e.format = f.key))
+      order by coalesce(c.sort, 99), f.sort`, [categoria, negocio]);
+  return r.rows.map((x) => ({ key: x.key, label: x.label, sub: x.sub, icon: x.icon, dark: x.dark, ages: x.ages, f: x.fields, ofrece: x.ofrece }));
 }
 export async function generos() {
   return (await db().query<{ key: string; label: Bi }>(`select key, label from event_genres where enabled order by sort`)).rows;
@@ -179,13 +183,13 @@ async function lineupYFotos(c: PoolClient, id: string, d: BorradorEvt, userId: s
   await c.query(`update media set status = 'removed', removed_reason = 'autor', removed_at = now() where owner_kind = 'event' and owner_id = $1 and status = 'visible' and not (id = any($2::uuid[]))`, [id, ids]);
 }
 
-async function contexto(negocio: string, fmt: unknown) {
+async function contexto(negocio: string, fmt: unknown, nuevo = true) {
   const b = (await db().query<{ cat: string; city: string; geo: string | null; hoy: string }>(
     `select b.category_id as cat, b.city_id as city, b.geo::text as geo, to_char(now() at time zone c.timezone, 'YYYY-MM-DD') as hoy
        from businesses b join cities c on c.id = b.city_id where b.id = $1`, [negocio])).rows[0];
   if (!b) return null;
-  const [Fs, G, cfg] = await Promise.all([formatosDe(b.cat), generos(), valores("evt_dias_adelante", "evt_fotos_max", "evt_revision_h", "evt_fechas_max", "evt_dias_seguidos_max")]);
-  const F = Fs.find((x) => x.key === fmt);
+  const [Fs, G, cfg] = await Promise.all([formatosDe(b.cat, negocio), generos(), valores("evt_dias_adelante", "evt_fotos_max", "evt_revision_h", "evt_fechas_max", "evt_dias_seguidos_max")]);
+  const F = Fs.find((x) => x.key === fmt && (!nuevo || x.ofrece));
   return { b, F, Fs, generos: G.map((g) => g.key), cfg };
 }
 
@@ -193,7 +197,7 @@ export type Envio = "borrador" | "guardado" | "revision" | "publicado" | "cambio
 /* Guardar desde el panel o desde Publica tu evento. `enviar`: mandarlo a revisión (o publicar si el organizador está verificado). */
 export async function guardarEvento(a: { userId: string; negocio: string }, id: string | null, raw: unknown, o: { enviar: boolean; origen?: "panel" | "publica" }): Promise<Res<{ id: string; envio: Envio }>> {
   if (id !== null && !ID.test(id)) return no("Ese evento no existe.", "That event does not exist.");
-  const x = await contexto(a.negocio, (raw as { fmt?: unknown })?.fmt);
+  const x = await contexto(a.negocio, (raw as { fmt?: unknown })?.fmt, id === null);
   if (!x) return no("Ese negocio no existe.", "That business does not exist.");
   if (!x.F) return no("Ese tipo de evento no está en tu categoría.", "That kind of event is not in your category.");
   const n = normalizar(raw, { F: x.F, generos: x.generos, hoy: x.b.hoy, diasAdelante: x.cfg.evt_dias_adelante, fotosMax: x.cfg.evt_fotos_max, fechasMax: x.cfg.evt_fechas_max, diasMax: Math.min(LIM.diasMax, x.cfg.evt_dias_seguidos_max) });
@@ -387,7 +391,11 @@ export async function eventosDelNegocio(negocio: string): Promise<FilaPanelEvt[]
             e.origin as origen, coalesce(e.hidden_reason, case when e.status in ('changes', 'rejected') then e.review_note end, case when e.pending_status in ('changes', 'rejected') then e.pending_note end) as nota,
             e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
               and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as pasado
-       from events e join cities c on c.id = e.city_id where e.business_id = $1 order by e.start_date, e.start_min, e.id limit 200`, [negocio])).rows;
+       from events e join cities c on c.id = e.city_id where e.business_id = $1
+      -- 6j · Lo vivo y próximo primero (el más cercano), luego lo pasado o cancelado (lo más reciente): con más de 200 eventos, el límite
+      -- cortaba los próximos.
+      order by (e.status in ('cancelled', 'rejected', 'done')) or (e.start_date + (e.span_days - 1) < (now() at time zone c.timezone)::date
+                and not exists (select 1 from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now())), abs(e.start_date - (now() at time zone c.timezone)::date), e.start_min, e.id limit 200`, [negocio])).rows;
 }
 export type EvtPanel = {
   id: string; slug: string; st: EstadoEvt; hidden: string | null; nota: string | null; razon: string | null; pending: "review" | "changes" | "rejected" | null; pendingNota: string | null;
@@ -439,7 +447,7 @@ export async function aplicarPendiente(c: PoolClient, id: string) {
   const e = await filaEvento(c, id, null, true);
   if (!e?.pending) return false;
   const b = (await c.query<{ cat: string; geo: string | null }>(`select category_id as cat, geo::text as geo from businesses where id = $1`, [e.business_id])).rows[0]!;
-  const F = (await formatosDe(b.cat)).find((x) => x.key === e.format);
+  const F = (await formatosDe(b.cat, e.business_id)).find((x) => x.key === e.format);
   if (!F) return false;
   const d = conPendiente(aBorrador(e, await lineasYFotos(c, id)), e.pending);
   await escribir(c, id, d, F, true, b.geo);

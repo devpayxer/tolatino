@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026._
+_Actualizado: 10 nov 2026 (6j · Fase 6 completa)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -296,7 +296,35 @@ detalle con la propuesta línea por línea, otra fecha, no puedo, el cambio y ca
 simulador; ver REVISION «### 6i») y regresión fie4v ✓, rsv2e ✓, evt6c 70 ✓, adm5i ✓; base nueva (migraciones dos veces + semillas + semillas cambiadas)
 sale 0. Ayuda: evento-privado y panel-evento-privado (nuevas, ES/EN); reservar-mesa, panel-reservaciones, ayuda-con-la-fiesta-y-el-viaje,
 admin-configuracion y admin-contenido al día. Revisar en el sandbox: `docs/REVISION.md` «### 6i» (con la revisión de seguridad).
-**Sigue 6j** (Super Admin completo de la fase, Configuración › Eventos, avisos `events`, analítica, Mi cuenta y ayuda; migración 0115).
+**6j hecho (10 nov)** — Super Admin completo de la fase, Configuración › Eventos, avisos de Eventos, analítica, Mi cuenta y ayuda: migración
+**0115** (`config_keys`: evt_recordatorio_hora 10, evt_aforo_aviso_pct 90, evt_senal_ordenes_n 4 / _min 10, evt_senal_cadena_n 2 — 47 claves de
+Eventos — y evt_pago_dia en SOLO LECTURA porque los textos dicen «el martes»; grupo de avisos **`events`** con prefs evt · evtR · evtG, lo crítico sin
+interruptor, las evp_* fuera de citas, plantillas nuevas bol_recordatorio, bol_es_hoy, evt_aforo90, evt_ajuste_admin; **`evt_avisos_enviados`** (solo
+inserción: cada aviso automático una vez); **`event_dates.sales_extended_until`** con check ≤ inicio y `bol_venta_hasta` redefinida; **`event_stock_overrides`**
+(solo inserción) + trigger `evt_cupo_admin` en ticket_stock / table_stock / event_day_stock (el ajuste de To'Latino manda sobre el editor; el check
+de cada tabla sigue); `event_changes` suma capacity_adjusted y sales_extended; `event_format_categories.enabled`; `mod_flags` regla `evt`; vistas
+**`evt_senales`** (ráfaga, cadena, duplicado, contracargo), **`evt_sobreventa`** (alerta viva), **`evt_analitica_dia`**, **`evt_asistencia_dia`**,
+**`evt_ventas_negocio_dia`**, **`evp_analitica_dia`** (por ciudad, día local y formato, sin personas)). Código: `lib/evt-admin.ts` (cupos de una fecha,
+ajustarCupo, extenderVenta, sobreventa, senalesEvt / abrirCasoEvt, actividadEventos, eventos360, catálogo), `lib/evt-avisos.ts` (barrido:
+bolRecordatorios y evtAforo), `lib/avisos.ts` (grupo events; **el título también se llena**), `lib/rsvp.ts` lee la hora de Configuración,
+`lib/evt.ts` (formatosDe con el catálogo: apagar no deja a nadie sin editar lo suyo; la lista del panel con lo próximo primero), `lib/mi-cuenta.ts`
+(Tu semana con boletos, RSVP y evento privado), `lib/admin-analitica.ts` (eventosAnalitica), la puerta lee `puerta_ventana_h`. Pantallas: Super Admin ›
+Eventos y boletos (KPI con la comisión, alerta de sobreventa, pestaña **Catálogo**, ficha con CUPOS · Ajustar cupo · Extender ventas), Inicio con la
+alerta, Configuración en subgrupos, Confianza › Fraude › EVENTOS Y BOLETOS con «Abrir caso», Usuarios 360° › **Actividad**, Negocios 360° ›
+Eventos (liquidaciones y cancelaciones), Analítica › **Eventos**, Notificaciones › **Solo Eventos**; Mi cuenta › Avisos › **Eventos** y Tu semana;
+el panel dice «To'Latino ajustó tu evento». Guardianes nuevos `avisoTituloLleno`, `eventosCriticoSiempreLlega`, `ajusteAdminConRegla`,
+`listaConTopeLoQueImporta`; ampliados `analiticaSinPersonas`, `libroSoloInsercion`, `configDesdeUnLugar` — `alreves6j` 29/29. e2e **`adm6j` 63 ✓**.
+Corrida seguida de la fase (una sola, 10 nov): `evt6a` evt6a OK · `evt6b-6c` ✗ (React #418 una vez; sola: evt6b OK dos veces) · `evt6c` 70 ✓ ·
+`evt6d` 126 ✓ · `evt6e` 96 ✓ · `evt6f` 87 ✓ · `evt6g` 105 ✓ · `evt6h` 88 ✓ · `evt6i` ✗ (paso de 52 s con reloj real; sola: 74 ✓) · `adm6j` 63 ✓ ·
+`adm5i` ✓ todo. Base nueva (migraciones dos veces + semillas + semillas cambiadas) sale 0. Ayuda al día: admin-eventos-y-boletos,
+admin-configuracion, notificaciones, admin-analitica, mi-cuenta, admin-confianza-y-seguridad, admin-usuarios. Revisar en el sandbox: `docs/REVISION.md`
+«### 6j» (el paso a paso de toda la Fase 6).
+**Fase 6 completa (10 nov):** Eventos — publicar y revisar, el módulo y la ficha, RSVP, boletos / mesas / extras / códigos con QR firmado, después
+de comprar (transferir, cancelar, cortesías, lista de espera, ayuda B-), cambios del evento y liquidación del martes, series y varios días, la Puerta
+en línea y sin conexión, evento privado, y el Super Admin, Configuración, avisos y analítica de todo — con cliente, panel y Super Admin. Lista de
+cierre §8 marcada salvo lo que dice su motivo (CI y 9 dispositivos, base de carga de 1 M, suites de Pedidos / Reservaciones / Noche en el CI). Falta
+el OK del fundador en el sandbox con las guías de `docs/REVISION.md` («### 6j» trae el paso a paso de toda la fase).
+Sigue **Fase 7 · El Compa** — plan del grupo.
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

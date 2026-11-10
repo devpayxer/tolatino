@@ -97,3 +97,18 @@ house and to sell a car, properties and cars live today by city, % of reviews sa
 visits, listings paused for a possible scam, texts blocked by the fair housing list, 62-and-over declarations to review, church dates and
 catechism requested and % answered within 48 h, and licenses of the three (valid, due within 14 days, past review, in review). Never people
 by religion and never credit data.
+
+## Eventos (6j, 10 nov 2026)
+- **De ver a ir:** vistas de eventos, guardados, RSVP (y personas), órdenes de boletos, boletos y cortesías, lista de espera y cuántos compraron.
+  El «% de las vistas» sale solo cuando tiene sentido (las vistas se cuentan desde que existe la ficha).
+- **Dinero de boletos:** bruto (cobrado: boletos, mesa y extras, cargos incluidos), comisión (regla «bol») y devuelto.
+- **En la puerta · fechas que ya pasaron:** asistencia (entraron / tenían boleto), no vinieron, RSVP que llegaron, incidencias por cada 1,000
+  entradas (de esas mismas fechas).
+- **Evento privado:** pedidas, con propuesta, sin respuesta, aceptadas, depósitos, canceladas a tiempo · tarde · por el restaurante.
+- **Por formato, por ciudad y por organizador** (un negocio, no una persona).
+- **Sin personas:** solo cifras por ciudad, día local y formato (vistas `evt_analitica_dia`, `evt_asistencia_dia`, `evt_ventas_negocio_dia`,
+  `evp_analitica_dia`); nunca quién compró, fue o entró. Guardián `analiticaSinPersonas`.
+
+**English:** **Events** analytics: from views to going (views, saves, RSVPs, ticket orders, comps, waitlist conversions), ticket money (gross, fee,
+refunded), at the door for past dates (attendance, no-shows, RSVPs that arrived, incidents per 1,000 entries), private events (requested, quoted,
+accepted, deposits, cancelled on time / late / by the restaurant), by format, city and organizer. Only figures by city, local day and format: never people.

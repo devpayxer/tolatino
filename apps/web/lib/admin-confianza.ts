@@ -99,8 +99,10 @@ export async function confianza(s: Staff) {
          from appeals a join users u on u.id = a.user_id where ${CIUDAD("a.city_id", 1)} order by (a.status = 'open') desc, a.created_at desc limit 40`, [c]),
   ]);
   const cola = Object.fromEntries(COLAS_CONF.map((k) => [k, Q.rows.find((x) => x.queue === k) ?? { queue: k, n: 0, tarde: 0 }]));
+  // 6j · Señales de Eventos (evt_senales: ráfaga de órdenes, transferencias en cadena, entradas duplicadas, contracargos) con su caso.
+  const { senalesEvt } = await import("./evt-admin");
   return {
-    cola, sanc: sanc.rows, fraude: fraude.rows, disp: disp.rows, bloqueados: bloq.rows[0]!.n, apel: apel.rows, apelarDias: await valor("com_apelar_dias"),
+    cola, sanc: sanc.rows, fraude: fraude.rows, disp: disp.rows, bloqueados: bloq.rows[0]!.n, apel: apel.rows, apelarDias: await valor("com_apelar_dias"), evt: await senalesEvt(s), abreCaso: s.puede("usr", "editar"),
     catalogo: (Object.keys(SANCIONES) as Sancion[]).map((k) => ({ k, ...SANCIONES[k] })),
   };
 }

@@ -70,26 +70,41 @@ export async function misReservas(userId: string, f: "up" | "past", antes: strin
 export type MisReservas = Awaited<ReturnType<typeof misReservas>>;
 
 /* ── Resumen (USR-HOME) ── */
-export type Agenda = { kind: "ped" | "mesa" | "iv"; at: string; tz: string; dia: number; t: string; biz: string; st: string; href: string; extra: number };
+/* 6j · «Tu semana» también con tus boletos (por fecha, cuántos tienes), tus RSVP y tu evento privado confirmado. `ten` = el nombre del evento
+   en inglés (el de lo demás es el del negocio). */
+export type Agenda = { kind: "ped" | "mesa" | "iv" | "bol" | "rsvp" | "evp"; at: string; tz: string; dia: number; t: string; ten: string | null; biz: string; st: string; href: string; extra: number };
 export async function resumen(userId: string) {
   await Promise.all([vencer({ userId }), vencerMesas({ userId })]);
   const q = db();
   const [ag, pend, mes, cnt] = await Promise.all([
     // Tu semana: pedidos en curso, reservaciones de los próximos 7 días y entrevistas.
     q.query<Agenda>(
-      `(select 'ped' as kind, ${ISO("o.sent_at")} as at, c.timezone as tz, 0 as dia, b.name as t, o.business_id as biz, ${EST_PED} as st, case when o.kind = 'market_order' then '/mercado/' else '/pedido/' end || o.number as href, 0 as extra
+      `(select 'ped' as kind, ${ISO("o.sent_at")} as at, c.timezone as tz, 0 as dia, b.name as t, null::text as ten, o.business_id as biz, ${EST_PED} as st, case when o.kind = 'market_order' then '/mercado/' else '/pedido/' end || o.number as href, 0 as extra
           from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
          where o.user_id = $1 and o.kind in ('order', 'market_order') and o.status in ('pending', 'confirmed') and coalesce(o.stage, '') not in ('delivered', 'picked_up') order by o.id desc limit 3)
        union all
-       (select 'mesa', ${ISO("o.scheduled_at")}, c.timezone, ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, o.business_id, ${EST_MESA},
+       (select 'mesa', ${ISO("o.scheduled_at")}, c.timezone, ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, null, o.business_id, ${EST_MESA},
                '/reserva/' || o.number, o.party_size
           from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
          where o.user_id = $1 and o.kind = 'table' and ${UP_MESA} and o.scheduled_at < now() + interval '8 days' order by o.scheduled_at limit 6)
        union all
-       (select 'iv', ${ISO("a.interview_at")}, c.timezone, ((a.interview_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, a.business_id,
+       (select 'iv', ${ISO("a.interview_at")}, c.timezone, ((a.interview_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, null, a.business_id,
                case when a.interview_confirmed then 'ok' else 'pend' end, '/solicitud/' || a.number, 0
           from job_applications a join businesses b on b.id = a.business_id join cities c on c.id = a.city_id
-         where a.user_id = $1 and a.status = 'interview' and a.interview_at > now() and a.interview_at < now() + interval '8 days' order by a.interview_at limit 3)`, [userId]),
+         where a.user_id = $1 and a.status = 'interview' and a.interview_at > now() and a.interview_at < now() + interval '8 days' order by a.interview_at limit 3)
+       union all
+       (select 'bol', ${ISO("d.starts_at")}, c.timezone, (d.local_date - (now() at time zone c.timezone)::date)::int, e.title->>'es', nullif(e.title->>'en', ''), e.business_id, 'ok', '/cuenta/boletos', count(*)::int
+          from tickets t join event_dates d on d.id = t.event_date_id join events e on e.id = t.event_id join cities c on c.id = d.city_id
+         where t.holder_user_id = $1 and t.status = 'valid' and d.status = 'scheduled' and d.ends_at > now() and d.starts_at < now() + interval '8 days'
+         group by d.id, d.starts_at, c.timezone, d.local_date, e.title, e.business_id order by d.starts_at limit 4)
+       union all
+       (select 'rsvp', ${ISO("d.starts_at")}, c.timezone, (d.local_date - (now() at time zone c.timezone)::date)::int, e.title->>'es', nullif(e.title->>'en', ''), e.business_id, 'ok', '/eventos/' || e.slug || '?fecha=' || d.id, r.party::int
+          from rsvps r join event_dates d on d.id = r.event_date_id join events e on e.id = r.event_id join cities c on c.id = d.city_id
+         where r.user_id = $1 and r.status = 'going' and d.status = 'scheduled' and d.ends_at > now() and d.starts_at < now() + interval '8 days' order by d.starts_at limit 3)
+       union all
+       (select 'evp', ${ISO("o.scheduled_at")}, c.timezone, ((o.scheduled_at at time zone c.timezone)::date - (now() at time zone c.timezone)::date)::int, b.name, null, o.business_id, 'ok', '/privado/' || o.number, o.party_size
+          from operations o join businesses b on b.id = o.business_id join cities c on c.id = o.city_id
+         where o.user_id = $1 and o.kind = 'private_event' and o.status = 'confirmed' and o.scheduled_at > now() and o.scheduled_at < now() + interval '8 days' order by o.scheduled_at limit 2)`, [userId]),
     // Pendiente de ti: respuestas que esperan a la persona y reseñas por escribir (lo terminado en 14 días, sin reseña).
     q.query<{ kind: "alt" | "iv" | "esp" | "rev" | "msg"; t: string; biz: string; href: string; at: string; tz: string; extra: string | null }>(
       `(select 'alt' as kind, b.name as t, o.business_id as biz, '/reserva/' || o.number as href, ${ISO("o.scheduled_at")} as at, c.timezone as tz, null::text as extra

@@ -8,9 +8,9 @@ import { EventoAdmin } from "../../EventosAdmin";
 
 /* ADM-EVT · la ficha de un evento: lo publicado, el cambio que espera (si hay), revisar, ocultar y el organizador. 6b: si sale al público
    (lo decide la base: listable) con su enlace, y los últimos RSVP (nombre + inicial, personas, estado; nunca teléfono). */
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ fecha?: string }> }) {
   const s = await requerir("evt", "ver");
-  const id = (await params).id;
+  const id = (await params).id, fecha = (await searchParams).fecha ?? null;
   const e = await eventoAdmin(s, id);
   if (!e) notFound();
   const [rsvp, pub, ventas] = await Promise.all([
@@ -24,6 +24,8 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const fechas = e.kind !== "single" ? await (await import("@/lib/evt")).fechasDe(db(), e.id) : [];
   const { repL, spanL } = await import("@/lib/evt-comun");
   const forma = e.kind === "series" ? { kind: "series", l: repL(e.d.dia, e.d.rep, true) } : e.kind === "span" ? { kind: "span", l: `${spanL(e.d.dia, e.d.span, true)} · ${e.d.span} días` } : null;
-  return <EventoAdmin e={e} rsvp={rsvp} ventas={ventas} cambios={cambios} liq={liq} fechas={fechas} forma={forma} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null}
+  // 6j · Cupos y venta de UNA fecha (la próxima, o ?fecha=): «Ajustar cupo» y «Extender ventas».
+  const cupos = e.d.entrada === "tickets" ? await (await import("@/lib/evt-admin")).cuposFecha(s, e.id, fecha && /^\d{1,18}$/.test(fecha) ? fecha : null) : null;
+  return <EventoAdmin e={e} rsvp={rsvp} ventas={ventas} cambios={cambios} liq={liq} fechas={fechas} forma={forma} cupos={cupos} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null}
     puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar"), editar: s.puede("evt", "editar"), dinero: s.puede("tx", "ver") }} />;
 }

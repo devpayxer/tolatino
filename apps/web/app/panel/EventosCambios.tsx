@@ -62,6 +62,9 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
   }
   if (K.congelado) out.push({ type: "note", tone: "danger", icon: "lock", t: E2(`To’Latino congeló la venta: ${K.congelado}. Los que compraron entran igual.`, `To’Latino froze sales: ${K.congelado}. Buyers still get in.`) });
   else if (e.st === "paused") out.push({ type: "note", tone: "warn", icon: "clock", t: E2("Venta pausada: la página dice «Venta pausada». Los que ya compraron entran igual.", "Sales paused: the page says “Sales paused”. Buyers still get in.") });
+  // 6j · Lo que ajustó To'Latino en este evento (Super Admin: «Ajustar cupo» y «Extender ventas»): qué cambió y el motivo.
+  for (const x of K.cambios.filter((y) => (y.kind === "capacity_adjusted" || y.kind === "sales_extended") && y.que).slice(0, 3))
+    out.push({ type: "note", tone: "info", icon: "shield", t: E2(`To’Latino ajustó tu evento: ${x.que!.es}. Motivo: ${x.nota ?? ""}`, `To’Latino adjusted your event: ${x.que!.en}. Reason: ${x.nota ?? ""}`) });
   const mov = K.cambios.find((x) => x.kind === "moved" || x.kind === "time_changed");
   if (mov && live && proxima && mov.antes) out.push({ type: "note", tone: "info", icon: "calendar", t: E2(`Cambiaste la fecha (antes: ${mov.antes}). Avisamos a los que van; quien no pueda ir pide devolución completa.${K.eleccion ? ` ${K.eleccion.keep} se quedan · ${K.eleccion.refund} pidieron devolución · ${K.eleccion.sin} sin responder (se quedan).` : ""}`,
     `You changed the date (was: ${mov.antes}). We told everyone going; anyone who cannot go gets a full refund.${K.eleccion ? ` ${K.eleccion.keep} keep it · ${K.eleccion.refund} asked for a refund · ${K.eleccion.sin} no answer (they keep it).` : ""}`) });

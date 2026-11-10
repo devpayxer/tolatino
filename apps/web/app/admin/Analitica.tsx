@@ -25,6 +25,7 @@ export type DatosAnalitica = {
   en?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").inscripcionesAnalitica>>;
   ia?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").feInmAutos>>;
   com?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").comunidadAnalitica>>;
+  evt?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").eventosAnalitica>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -33,7 +34,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -258,6 +259,41 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         { type: "rows", k: "POR CIUDAD", items: ciudades.map((x) => ({ key: x.ciudad, icon: "pin", t: x.ciudad, s: `${x.publicaciones} publicaciones · ${x.comentarios} comentarios · ${pct(x.resueltas, x.preguntas)} resueltas · ${x.reportes} reportes` })) },
         { type: "rows", k: "CANJES POR NEGOCIO", items: negocios.length ? negocios.map((x) => ({ key: x.negocio + x.ciudad, icon: "ticket", t: `${x.negocio} · ${x.ciudad}`, r: String(x.canjes), s: `${x.usados} usados · ${x.monedas.toLocaleString("en-US")} monedas · ${"▮".repeat(Math.max(1, Math.round((12 * x.canjes) / mxN)))}` })) : [{ key: "0", icon: "ticket", t: "Sin canjes en el período" }] },
         { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad y día: nunca quién publicó, votó o canjeó." },
+        ]} />
+      </>);
+  } else if (d.tab === "evt" && d.evt) {
+    // 6j · Eventos: por ciudad, formato y día, sin personas (solo las vistas de 0115; los organizadores son negocios).
+    const { t, formatos, ciudades, asistencia: a, negocios, evp } = d.evt, usd = (c: number) => `$${(c / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const noVinieron = Math.max(0, a.esperados - a.entraron), mxF = Math.max(1, ...formatos.map((x) => x.ordenes + x.rsvp));
+    // Una conversión «de las vistas» solo si tiene sentido (las vistas se cuentan desde que existe la ficha; lo de antes no tiene vista).
+    const deVistas = (x: number) => (t.vistas && x <= t.vistas ? ` · ${pct(x, t.vistas)} de las vistas` : "");
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "DE VER A IR" }, kpis([
+          { k: "VISTAS DE EVENTOS", v: t.vistas.toLocaleString("en-US"), s: `${t.guardados} guardados${t.guardados <= t.vistas ? ` · ${pct(t.guardados, t.vistas)}` : ""}` },
+          { k: "RSVP", v: String(t.rsvp), s: `${t.rsvp_personas} personas${deVistas(t.rsvp)}` },
+          { k: "ÓRDENES DE BOLETOS", v: String(t.ordenes), s: `${t.boletos} boletos · ${t.cortesias} cortesías${deVistas(t.ordenes)}`, dark: true },
+          { k: "LISTA DE ESPERA", v: String(t.espera), s: `${t.espera_convertidos} compraron · ${pct(t.espera_convertidos, t.espera)}` },
+        ]), { type: "group", k: "DINERO DE BOLETOS" }, kpis([
+          { k: "BRUTO", v: usd(t.bruto), s: "cobrado (boletos, mesa y extras; cargos incluidos)" },
+          { k: "COMISIÓN", v: usd(t.comision), s: "regla «bol» de Planes" },
+          { k: "DEVUELTO", v: usd(t.devuelto), s: `${pct(t.devuelto, t.bruto)} del bruto` },
+        ]), { type: "group", k: "EN LA PUERTA · FECHAS QUE YA PASARON" }, kpis([
+          { k: "ASISTENCIA", v: pct(a.entraron, a.esperados), s: `${a.entraron} de ${a.esperados} con boleto · ${a.fechas} fechas`, dark: true },
+          { k: "NO VINIERON", v: String(noVinieron), s: `${pct(noVinieron, a.esperados)} de los que tenían boleto` },
+          { k: "RSVP QUE LLEGARON", v: pct(a.rsvp_llegaron, a.rsvp_van), s: `${a.rsvp_llegaron} de ${a.rsvp_van} personas` },
+          { k: "INCIDENCIAS POR CADA 1,000 ENTRADAS", v: a.entraron ? (Math.round((10000 * a.incidencias) / a.entraron) / 10).toLocaleString("en-US") : "—", s: `${a.incidencias} incidencias en la puerta de esas fechas` },
+        ]), { type: "group", k: "EVENTO PRIVADO" }, kpis([
+          { k: "PEDIDAS", v: String(evp.pedidas), s: `${evp.con_propuesta} con propuesta · ${evp.sin_respuesta} sin respuesta` },
+          { k: "ACEPTADAS", v: String(evp.aceptadas), s: `${pct(evp.aceptadas, evp.pedidas)} de las pedidas` },
+          { k: "DEPÓSITOS", v: usd(evp.deposito), s: "cobrado al aceptar" },
+          { k: "CANCELADAS", v: String(evp.a_tiempo + evp.tarde + evp.negocio), s: `${evp.a_tiempo} a tiempo · ${evp.tarde} tarde · ${evp.negocio} el restaurante` },
+        ]),
+        { type: "rows", k: "POR FORMATO", items: formatos.map((x) => ({ key: x.formato, icon: "ticket", t: x.label, r: String(x.ordenes + x.rsvp),
+          s: `${x.vistas} vistas · ${x.rsvp} RSVP · ${x.ordenes} órdenes · ${usd(x.bruto)} · ${"▮".repeat(Math.max(1, Math.round((12 * (x.ordenes + x.rsvp)) / mxF)))}` })) },
+        { type: "rows", k: "POR CIUDAD", items: ciudades.map((x) => ({ key: x.ciudad, icon: "pin", t: x.ciudad, s: `${x.vistas} vistas · ${x.rsvp} RSVP · ${x.ordenes} órdenes · ${usd(x.bruto)} · devuelto ${usd(x.devuelto)}` })) },
+        { type: "rows", k: "POR ORGANIZADOR", items: negocios.length ? negocios.map((x) => ({ key: x.negocio + x.ciudad, icon: "store", t: `${x.negocio} · ${x.ciudad}`, r: usd(x.bruto), s: `${x.ordenes} órdenes · comisión ${usd(x.comision)} · devuelto ${usd(x.devuelto)}` })) : [{ key: "0", icon: "store", t: "Sin ventas en el período" }] },
+        { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad, formato y día: nunca quién compró, fue o entró." },
         ]} />
       </>);
   } else if (d.tab === "nosup" && d.nosup) {

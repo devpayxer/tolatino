@@ -257,7 +257,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 6g · door:{evento}@{fecha} = el modo puerta del panel y el Monitor de esa fecha.
     const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "").split("@") : ruta.det?.startsWith("door:") ? ruta.det.slice(5).split("@") : [""];
     const [lista, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
-      E.eventosDelNegocio(d.id), E.formatosDe(d.cat), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max"),
+      E.eventosDelNegocio(d.id), E.formatosDe(d.cat, d.id), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
       db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
       // 6b · El módulo Eventos: si su categoría lo admite, si está encendido y si To'Latino lo pausó (con el motivo).

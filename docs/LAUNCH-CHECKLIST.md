@@ -724,7 +724,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       locales. Verlos en el sandbox. (6a, 9 nov)
 - [ ] **6a · Eventos en los 9 dispositivos:** `evt6a` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6a, 9 nov)
 - [ ] **6a · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (los avisos y el panel sí ES/EN). (6a, 9 nov)
-- [ ] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** hoy vive en la base (0106) y se lee de ahí; el editor
+- [x] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** _hecho en 6j (10 nov): Super Admin › Eventos y boletos › Catálogo (formatos, categorías y géneros con vista previa, auditoría; apagar no borra)._ hoy vive en la base (0106) y se lee de ahí; el editor
       del catálogo llega en 6j. (6a, 9 nov)
 
 ## Fase 6 · 6b (el módulo Eventos del cliente)
@@ -736,7 +736,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6b · Recordatorio del día antes (`rsvp_recordatorio`):** construido en el barrido (desde las 10 AM, a quien hizo el RSVP hace más
       de 1 h); el e2e prueba el de «evento guardado» y el aviso al abrir puertas, no este (la hora de creación del RSVP no se puede mover en
       la base). Mirarlo en el sandbox con un RSVP de un evento de mañana. (6b, 10 nov)
-- [ ] **6b · Mi cuenta › Avisos › Eventos (grupo `events` en notif_prefs):** llega con 6j; hoy los avisos de RSVP y de evento guardado no
+- [x] **6b · Mi cuenta › Avisos › Eventos (grupo `events` en notif_prefs):** _hecho en 6j (10 nov): grupo `events` con Boletos y cambios · Recordatorios · Eventos que guardas; lo crítico no se apaga._ llega con 6j; hoy los avisos de RSVP y de evento guardado no
       se pueden apagar por grupo. (6b, 10 nov)
 - [ ] **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
       con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov)
@@ -757,14 +757,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
       para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov) _6h (10 nov): hecho —
       el boleto abierto una vez con señal se guarda cifrado en el teléfono y se ve sin señal (service worker de Mis boletos); falta probarlo en un
       iPhone (Safari puede borrar lo guardado de una web que no se abre en 7 días) y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._
-- [ ] **6c · QR rotativo y reventa:** QR fijo, firmado y con versión (§6 #10); el rotativo anti-captura y las señales de reventa (Confianza,
+- [ ] **6c · QR rotativo y reventa:** _6j (10 nov): las señales de reventa ya están en Confianza; queda el QR rotativo._ QR fijo, firmado y con versión (§6 #10); el rotativo anti-captura y las señales de reventa (Confianza,
       6j) quedan para después. (6c, 10 nov)
 - [ ] **6c · Contrato con Stripe de las llamadas nuevas** (`retenerPlataforma` con `transfer_group`, `capturarPlataforma` y la lectura del
       PaymentIntent): agregado a `scripts/contrato-stripe/prueba.cjs`; en local no corrió (Docker Hub 429 al bajar stripe-mock). Mirar el
       paso del CI. (6c, 10 nov)
-- [ ] **6c · Recordatorio del boleto («Mañana» / «¡Es hoy!», `bol_recordatorio`) y aviso de aforo 90 % (`evt_aforo90`):** no se
+- [x] **6c · Recordatorio del boleto («Mañana» / «¡Es hoy!», `bol_recordatorio`) y aviso de aforo 90 % (`evt_aforo90`):** _hecho en 6j (10 nov): `bol_recordatorio` y `bol_es_hoy` desde `evt_recordatorio_hora` y `evt_aforo90` al 90 % de lo vendido, una vez cada uno (adm6j)._ no se
       construyeron en 6c; llegan con 6j (avisos de Eventos). (6c, 10 nov)
-- [ ] **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** los boletos están en Mi cuenta › Boletos y en
+- [ ] **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** _6j (10 nov): «Tu semana» hecho (boletos, RSVP y evento privado); Pagos › movimientos sigue pendiente: ver «Fase 6 · 6j»._ los boletos están en Mi cuenta › Boletos y en
       Accesos; «Tu semana» llega con 6j. (6c, 10 nov)
 - [ ] **6c · Llave del QR de producción:** `deploy.sh` del sandbox la genera; el despliegue de producción (fase 9) debe generarla igual
       (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov)
@@ -790,13 +790,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vencer sin verse. Decidir si es crítica o si no se ofrece de noche (REVISION 6d). (6d, 10 nov)
 - [ ] **6d · Devolución que Stripe nunca hace** (tarjeta cerrada, cuenta con disputa): queda «pendiente» y el barrido la reintenta para
       siempre con su llave (`refunds.attempts`, `last_error`). Falta la alerta en Dinero / Confianza pasado N intentos y el camino manual. (6d, 10 nov)
-- [ ] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
+- [x] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
       Confianza llegan con 6j (`evt_senales`). (6d, 10 nov)
 - [x] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
       transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov) _6g (10 nov): en línea hecho (`puerta_entrada`: SE ESTÁ TRANSFIRIENDO; e2e). Falta el paquete (6h)._
       _6h (10 nov): hecho — el paquete marca «en transferencia» y trae los devueltos y anulados con su estado (para decir DEVUELTO / ANULADO sin señal);
       los cambios bajan cada 15 s._
-- [x] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov) _6g (10 nov): Buscar «rosa» → la cortesía por su nombre → entrada a mano con motivo (e2e evt6g)._
+- [x] **6d · Cortesías sin cuenta en la puerta:** _hecho en 6j (10 nov): Confianza › Fraude › EVENTOS Y BOLETOS (ráfaga, transferencias en cadena, duplicados, contracargos) con «Abrir caso»._ se buscan por nombre en `/puerta` (6g). (6d, 10 nov) _6g (10 nov): Buscar «rosa» → la cortesía por su nombre → entrada a mano con motivo (e2e evt6g)._
 - [x] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov) _6e (10 nov): corrido en local contra stripe-mock con todo el contrato (también transfers y reversals)._
 - [x] **6d · Liquidación (6e):** _hecho en 6e (10 nov): evt_liq_calc usa refunds y fee_waived_cents; lo devuelto después de pagar resta de la siguiente o revierte._ `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
       devolución después de pagado al organizador resta de la siguiente. (6d, 10 nov)
@@ -813,9 +813,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       alerta en Dinero y el camino manual (cobrarle al organizador). (6e, 10 nov)
 - [ ] **6e · Cambiar el lugar de un evento con ventas:** no se construyó (cancelar y publicar otro, o un cambio que revisa To'Latino). Las
       transferencias de boletos pendientes no se ajustan al mover la fecha (vencen a la hora de antes). (6e, 10 nov)
-- [ ] **6e · Super Admin «Extender ventas» y «Ajustar cupo»** (admin-dashboard L183–185): con 6j. «Congelar» y «Cancelar y devolver todo» sí. (6e, 10 nov)
-- [ ] **6e · Alerta «evento con sobreventa»** (admin-dashboard L74): con las existencias y sus checks no debería pasar; la alerta viva llega con 6j. (6e, 10 nov)
-- [ ] **6e · Costo de la tarjeta absorbido (§6 #24):** se guarda un estimado (2.9 % + 30 ¢ por orden devuelta) para Confianza; con Stripe real,
+- [x] **6e · Super Admin «Extender ventas» y «Ajustar cupo»** (admin-dashboard L183–185): con 6j. «Congelar» y «Cancelar y devolver todo» sí. (6e, 10 nov)
+- [x] **6e · Alerta «evento con sobreventa»** (admin-dashboard L74): con las existencias y sus checks no debería pasar; la alerta viva llega con 6j. (6e, 10 nov)
+- [ ] **6e · Costo de la tarjeta absorbido (§6 #24):** _hecho en 6j (10 nov): vista `evt_sobreventa`, alerta en Eventos y boletos y en el Inicio del Super Admin (adm6j la fuerza con un boleto fuera de la regla)._ _hecho en 6j (10 nov): en la ficha del evento, por fecha, con motivo, aviso, event_changes y auditoría; nunca bajo lo vendido ni después del inicio._ se guarda un estimado (2.9 % + 30 ¢ por orden devuelta) para Confianza; con Stripe real,
       leer el `balance_transaction.fee` de cada cobro. (6e, 10 nov)
 - [ ] **6e · Payouts de Stripe al banco del organizador:** la transferencia llega a su saldo de Stripe el martes; de ahí al banco con su
       calendario (semanal, martes). Con dinero real, confirmar que el calendario y la transferencia del mismo martes no atrasan una semana. (6e, 10 nov)
@@ -850,11 +850,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **6g → 6h · Sin conexión:** paquete firmado y cifrado, cola local, choques entre porteros. Gancho listo: cada escaneo trae el id del teléfono
       (`ticket_scans.id`), la hora del teléfono (`at_device`) y `puerta_entrada(..., p_offline)`; `door_sessions.clock_offset_ms` y `package_id`
       existen. Hoy, sin señal: «SIN SEÑAL · no se marcó» + **Reintentar** con el mismo id. (6g, 10 nov) _6h (10 nov): hecho (ver «Fase 6 · 6h»)._
-- [ ] **6g · REPETIDOS en Confianza › Fraude** («boletos duplicados»: el mismo QR que intenta entrar otra vez, `door_counts.dup_n` y
+- [x] **6g · REPETIDOS en Confianza › Fraude** («boletos duplicados»: el mismo QR que intenta entrar otra vez, `door_counts.dup_n` y
       `ticket_scans.result = 'already_used'`): la señal viva llega con 6h/6j (`evt_senales`). (6g, 10 nov)
 - [ ] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h — _hecho en 6h con el logo SVG_) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
       teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov)
-- [ ] **6g · Cámara en teléfonos reales:** probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
+- [ ] **6g · Cámara en teléfonos reales:** _hecho en 6j (10 nov): señal «Entró dos veces» por persona en Confianza › Fraude._ probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
       BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
 - [ ] **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov)
 - [ ] **6g · Velocidad con la base de carga:** escaneo en línea local p50 21 ms / p95 26 ms (40 boletos, sin carga); medir ≤ 150 ms ida y vuelta con
@@ -890,14 +890,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ≤ 50 ms en un Pixel emulado (`scripts/carga/eventos-1m.mjs`). Hoy medido solo con los datos del e2e (11 boletos). (6h, 10 nov)
 - [ ] **6h · Red entre teléfonos de la puerta sin internet** (LAN / Bluetooth) y **QR que cambia cada pocos segundos** (anti-captura): no se
       construyen (§6 #10). Sin señal, dos porteros no se ven: el duplicado se resuelve al subir. (6h, 10 nov)
-- [ ] **6h · Señales de duplicados en Confianza › Fraude** («boletos duplicados»): las incidencias automáticas «Entró dos veces (sin conexión)»
+- [x] **6h · Señales de duplicados en Confianza › Fraude** («boletos duplicados»): las incidencias automáticas «Entró dos veces (sin conexión)»
       ya existen (y `door_counts.dup_n`); la señal por comprador llega con 6j (`evt_senales`). (6h, 10 nov)
 - [ ] **6h · RSVP y «Contar en la puerta» sin señal** se suben con la puerta abierta; si la puerta se cerró (el panel o el barrido) antes de subir,
       esas marcas no cuentan (los boletos sí suben). La lista de la noche (Noche) es solo con señal. (6h, 10 nov)
 - [ ] **6h · Un teléfono revocado sin señal** sigue validando con su lista hasta recuperar la señal o hasta que venza (fin + 6 h); nada de lo que
       escanee después cuenta. Si se quiere menos ventana: vencer la lista antes (Configuración) o pedir un PIN al abrir la app sin señal. (6h, 10 nov)
 - [ ] **6h · Íconos PNG de To'Latino Puerta** (192 / 512, maskable) para instalar en todos los Android; hoy el logo SVG. (6h, 10 nov)
-- [ ] **6h · Cifrado en reposo en el navegador:** la llave no exportable vive en el perfil del navegador; con el teléfono desbloqueado alguien
+- [ ] **6h · Cifrado en reposo en el navegador:** _hecho en 6j (10 nov): `evt_senales` (duplicado) con «Abrir caso»._ la llave no exportable vive en el perfil del navegador; con el teléfono desbloqueado alguien
       podría usarla en ese navegador. Con la app de las tiendas (Fase 8): llave en el Keychain / Keystore del teléfono. (6h, 10 nov)
 
 ## Fase 6 · 6i (evento privado)
@@ -915,8 +915,38 @@ en el momento. Se marca solo cuando está hecho de verdad.
       restaurante; si cancela el restaurante, devolución completa) va en los Términos versionados (`LegalPage`), con el abogado. (6i, 10 nov)
 - [ ] **6i · El Fogón y Mariscos La Bahía** tienen Evento privado encendido en la semilla pero no tienen dueño ni Cobros: una solicitud a ellos solo
       puede vencer (sirven para «Otros que hacen eventos privados»). Al tener dueño, conectar Cobros. (6i, 10 nov)
-- [ ] **6i · Mi cuenta › Avisos › Eventos** (grupo `events`, apagar lo no crítico del evento privado) y la sección Eventos de Configuración con
+- [x] **6i · Mi cuenta › Avisos › Eventos** (grupo `events`, apagar lo no crítico del evento privado) y la sección Eventos de Configuración con
       etiquetas finales: con 6j. Hoy las plantillas `evp_*` van en el grupo de citas (`cit`). (6i, 10 nov)
-- [ ] **6i · Analítica › Eventos privados** (pedidas → propuestas → aceptadas, depósito, canceladas a tiempo / tarde, por ciudad): con 6j. (6i, 10 nov)
-- [ ] **6i · Un cambio de un evento confirmado nunca cobra más en la app:** si el nuevo total sube, la diferencia se paga en el local; si baja, nunca
+- [x] **6i · Analítica › Eventos privados** (pedidas → propuestas → aceptadas, depósito, canceladas a tiempo / tarde, por ciudad): con 6j. (6i, 10 nov)
+- [ ] **6i · Un cambio de un evento confirmado nunca cobra más en la app:** _hecho en 6j (10 nov): Analítica › Eventos › EVENTO PRIVADO (`evp_analitica_dia`)._ _hecho en 6j (10 nov): las evp_* del cliente pasaron al grupo `events` (lo no crítico en Boletos y cambios / Recordatorios; propuesta, confirmación y cancelación siempre); Configuración › Eventos › Evento privado._ si el nuevo total sube, la diferencia se paga en el local; si baja, nunca
       por debajo del depósito pagado (la base lo rechaza). Cobrar un depósito adicional por un cambio: si el fundador lo quiere. (6i, 10 nov)
+
+## Fase 6 · 6j (Super Admin completo, Configuración, avisos, analítica, Mi cuenta) · FASE 6 CERRADA
+- [ ] **6j · Panel › Ajustes › Avisos del negocio** (venta, aforo 90 %, cancelaciones, pago; plan §4 6j): Panel › Ajustes (DASH-AJUSTES, «LO QUE TE
+      AVISAMOS») no existe todavía. Hoy al negocio le llega todo en la campana (evt_venta, evt_aforo90, evt_ajuste_admin, evt_pago…). Con Ajustes. (6j, 10 nov)
+- [ ] **6j · Mi cuenta › Pagos y movimientos de boletos:** la pantalla Pagos y Wallet (USR-PAGOS) no existe; el recibo de cada orden B- está en la
+      orden. Con su fase (Pagos y Wallet). (6j, 10 nov)
+- [ ] **6j · Señal «la misma tarjeta en varias cuentas»:** necesita `card.fingerprint` de Stripe (un pm_… es de una sola cuenta); con Stripe real. (6j, 10 nov)
+- [ ] **6j · «Día de pago de eventos» (evt_pago_dia) en SOLO LECTURA:** el panel (Eventos, Cobros), Publica tu evento y la ayuda dicen «el martes».
+      Se abre cuando esos textos lean el valor. (6j, 10 nov)
+- [ ] **6j · Ajustar el cupo de un RSVP desde el Super Admin:** hoy solo boletos, mesas y aforo del día (el cupo del RSVP lo cambia el organizador). (6j, 10 nov)
+- [ ] **6j · Analítica › Eventos con la base de carga:** las vistas `evt_analitica_dia` / `evt_asistencia_dia` agregan en cada consulta; con 1 M de
+      fechas y 5 M de boletos medirlas y, si pasan del presupuesto, materializarlas por día (refresco en el barrido). (6j, 10 nov)
+- [ ] **6j · Super Admin de Eventos en los 9 dispositivos:** `adm6j` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de CI. (6j, 10 nov)
+- [ ] **6j · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (las etiquetas de Configuración y las plantillas sí ES/EN). (6j, 10 nov)
+- [ ] **6j · Avisos viejos con «{evento}» en el título:** se arregló al mandar (guardián avisoTituloLleno); lo que ya estaba en las bandejas del
+      sandbox queda como estaba (no se reescribe). En producción no hay avisos viejos. (6j, 10 nov)
+
+- [ ] **6j · Promotores de eventos** (§6 #18: vender cortesías o cobrar por promotor, MEM 208): no se construye; los promotores usan códigos de
+      descuento del organizador. Si el fundador lo quiere: un rol «promotor» con su código y su reporte. (6j, 10 nov)
+- [ ] **6j · Wallet como forma de pago** (§6 #8): solo tarjeta; el Wallet de To'Latino y Apple/Google Pay llegan con su fase. (6j, 10 nov)
+- [ ] **6j · Panel › Eventos con cursor:** la lista del panel trae hasta 200 eventos (ahora lo vivo y próximo primero); un organizador con cientos de
+      eventos necesita «Ver más» con cursor en Pasados y cancelados. (6j, 10 nov)
+- [ ] **6j · Pruebas que fallaron una vez en la corrida seguida de la fase y pasaron solas:** `evt6b-6c` (un aviso de React #418, texto distinto entre
+      servidor y navegador, en una de sus ~40 pantallas; dos corridas más, una con la URL de cada error, salieron limpias) y `evt6i` (el paso de la
+      propuesta que vence espera 52 s con el reloj real). Hacerlas deterministas: registrar la URL del error de hidratación y mover el reloj en la
+      base en vez de esperar. (6j, 10 nov)
+- [ ] **6j · Pruebas al revés viejas:** 4 casos ya no cazan porque cambian textos que un bloque posterior reemplazó (alreves6b `rsvpConCupo` sobre
+      0107 y alreves6g `escaneoIdempotente` / `libroSoloInsercion` sobre 0112: la función viva es la redefinida en 0111 / 0113; alreves6d
+      `devolverCoincide` sobre Transacciones.tsx de antes de 6i). Fallan igual con los guardianes de HEAD; apuntarlas a la última definición. (6j, 10 nov)
+

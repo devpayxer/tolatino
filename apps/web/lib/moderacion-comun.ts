@@ -37,7 +37,7 @@ export const PARAMS: Partial<Record<ReglaKey, [string, string, number, number][]
 export const textoRegla = (k: ReglaKey, p: Record<string, number>) => REGLAS[k].s.replace(/\{(\w+)\}/g, (_, x) => String(p[x] ?? ""));
 
 /* Cómo se nombra en el Super Admin lo que marcó cada regla (mod_flags.rule_key). */
-export const REGLA_L: Record<string, string> = { phone: "Teléfono", pii: "Dónde vive alguien", spam: "Repetido", hate: "Lenguaje discriminatorio", rev5: "Reseñas en ráfaga", img: "Foto", autohide: "Auto-ocultada", red: "Posible red de cuentas", estafa: "Posible estafa", migra: "Inmigración", autolesion: "Autolesión" };
+export const REGLA_L: Record<string, string> = { phone: "Teléfono", pii: "Dónde vive alguien", spam: "Repetido", hate: "Lenguaje discriminatorio", rev5: "Reseñas en ráfaga", img: "Foto", autohide: "Auto-ocultada", red: "Posible red de cuentas", estafa: "Posible estafa", migra: "Inmigración", autolesion: "Autolesión", evt: "Señal de Eventos" };
 export const TIPOS_TERMINO: [string, string][] = [["odio", "Odio"], ["estafa", "Estafa"], ["migra", "Inmigración"], ["autolesion", "Autolesión"]];
 
 /* Límites del día: el valor vive en Configuración (config_keys + platform_config; lib/config.ts); aquí solo la clave y cómo se nombra. */

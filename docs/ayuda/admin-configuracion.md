@@ -53,3 +53,18 @@ _Screen: **Super Admin › System › Settings**. View: System permission. Chang
 - **Each case:** out of bounds → refused («Between 5 min and 1,440 min»), the database also refuses it; not a whole number → refused;
   read only → says why; not Admin → view only. Other servers see the change within 15 seconds.
 - **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.
+
+## Eventos (6j, 10 nov 2026)
+La sección **Eventos** va en subgrupos: **Publicar y revisar** (revisión 24 h, fechas de una serie 52, días hacia adelante 180, fotos 6, días
+seguidos 30) · **RSVP y venta** (el RSVP guarda el lugar 30 min, boletos guardados mientras pagas 8 min, 10 por orden, 20 por persona y fecha,
+intentos de código, apartados a la vez) · **Después de comprar** (transferir hasta 2 h antes, cancelar con devolución hasta 24 h antes, 30 min para
+pagar el lugar de la lista de espera, 50 cortesías por fecha, 10 transferencias al día) · **Cambios y pago al organizador** (3 avisos por fecha,
+día de pago, retener el primer evento desde $2,000, cancelaciones que abren un caso y su plazo, ajuste, devoluciones al momento) · **Avisos y
+recordatorios** (hora del recordatorio del día antes, 10 AM; aviso de vendido al organizador, 90 %) · **La puerta** · **Evento privado** ·
+**Confianza** (órdenes desde un mismo dispositivo y en cuántos minutos; boletos recibidos y pasados a otro). Cada texto que ve la persona lee el
+valor (por ejemplo «te guardamos boletos y mesa por 8 minutos», «se activa 2 horas antes»). **Día de pago de eventos** está en **SOLO LECTURA**:
+el panel, Publica tu evento y la ayuda dicen «el martes después del evento»; se abre cuando esos textos lean el valor.
+
+**English:** the **Events** section is grouped (publish and review, RSVP and sales, after purchase, changes and organizer payouts, notices and
+reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** is read-only until the dashboard
+and help texts that say «Tuesday» read it.

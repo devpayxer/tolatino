@@ -19,10 +19,13 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   );
   const k = r.rows[0]!;
   const grupos = await gruposNav((x) => s.puede(x, "ver"));
+  // 6j · Alerta «evento con sobreventa» (admin-dashboard L74): la vista evt_sobreventa; con los checks de la base no debería salir nunca.
+  const sv = s.puede("evt", "ver") ? await (await import("@/lib/evt-admin")).sobreventa(s) : [];
   return (
     <>
       <Titulo eyebrow="SUPER ADMIN · INICIO" titulo={`Hola, ${s.first_name}`} sub="Todo lo de aquí sale de la base real del servidor de pruebas." />
       {sin && <AdminNote tone="warn">Tu rol no tiene permiso para eso ({sin.replace(":", " · ")}). Si lo necesitas, pídeselo a un Admin.</AdminNote>}
+      {sv.length ? <AdminNote tone="bad" icon="warning">{`EVENTO CON SOBREVENTA · ${sv.slice(0, 3).map((x) => `${x.titulo.es} · ${x.dia}: ${x.vivos} vivos de ${x.cantidad}`).join(" · ")}. Míralo en Eventos y boletos.`}</AdminNote> : null}
       <KpiRow
         columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))"
         items={[

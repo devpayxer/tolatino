@@ -12,7 +12,7 @@ import { Cabeza, Hoja } from "./Marco";
 import { limpiarSesiones, registrarSW } from "./sin-conexion/usePuertaLocal";
 
 type Bi = { es: string; en: string };
-export function Inicio({ es, nombre, tel, puertas, abiertas, equipos }: { es: boolean; nombre: string; tel: string; puertas: PuertaAsignada[]; abiertas: SesionAbierta[]; equipos: { id: string; negocio: string }[] }) {
+export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }: { es: boolean; nombre: string; tel: string; puertas: PuertaAsignada[]; abiertas: SesionAbierta[]; equipos: { id: string; negocio: string }[]; ventanaH: number }) {
   const E2 = (a: string, b: string) => (es ? a : b), bi = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [pend, start] = useTransition();
   const [cod, setCod] = useState(""), [sel, setSel] = useState<PuertaAsignada | null>(null), [pn, setPn] = useState(""), [err, setErr] = useState(""), [toast, setToast] = useState("");
@@ -44,7 +44,7 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos }: { es: bo
       tag: p.abrible ? E2("ABRIR", "OPEN") : p.hoy ? E2("HOY · MÁS TARDE", "TODAY · LATER") : E2("PRÓXIMO", "UPCOMING"), tone: p.abrible ? "action" : "neutral", chev: p.abrible, dim: !p.abrible,
       onClick: p.abrible ? () => { setSel(p); setPn(PUERTAS_SUGERIDAS[0] ? bi(PUERTAS_SUGERIDAS[0]) : ""); setErr(""); } : undefined });
     if (hoy.length) B.push({ type: "rows", k: E2("HOY", "TODAY"), items: hoy.map(fila) });
-    if (hoy.length && !hoy.some((p) => p.abrible)) B.push({ type: "note", tone: "info", icon: "clock", t: E2("El modo puerta se activa el día del evento, 2 horas antes de abrir las puertas.", "Door mode turns on the day of the event, 2 hours before doors open.") });
+    if (hoy.length && !hoy.some((p) => p.abrible)) B.push({ type: "note", tone: "info", icon: "clock", t: E2(`El modo puerta se activa el día del evento, ${ventanaH} ${ventanaH === 1 ? "hora" : "horas"} antes de abrir las puertas.`, `Door mode turns on the day of the event, ${ventanaH} ${ventanaH === 1 ? "hour" : "hours"} before doors open.`) });
     if (luego.length) B.push({ type: "rows", k: E2("PRÓXIMOS · 7 DÍAS", "UPCOMING · 7 DAYS"), items: luego.map(fila) });
     if (!puertas.length && !abiertas.length) B.push({ type: "empty", icon: "key", t: equipos.length ? E2("No tienes puertas esta semana", "No doors this week") : E2("Todavía no tienes puertas", "You have no doors yet"),
       s: equipos.length ? E2("Cuando el negocio tenga un evento, sale aquí. El modo puerta se activa el día del evento.", "When the business has an event, it shows here. Door mode turns on the day of the event.") : E2("Para escanear en una puerta, el negocio te invita con un código. Escríbelo abajo.", "To scan at a door, the business invites you with a code. Type it below.") });

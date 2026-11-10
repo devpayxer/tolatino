@@ -5,10 +5,14 @@
    (solo lectura). La pestaña «Reglas del sello» del prototipo vive en Colas › Sello. Solo bloques del sistema; el servidor decide. */
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
 import type { Confianza as D } from "@/lib/admin-confianza";
 import { COLAS } from "@/lib/colas";
 import { APELABLE, REGLA_L, type Apelable } from "@/lib/moderacion-comun";
-import { useAncho } from "./Colas";
+import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { evtCasoSenal } from "./acciones-eventos";
+import type { ResAdm } from "./acciones-colas";
+import { SENAL_L_UI } from "@/lib/evt-comun";
 
 type Tab = "res" | "sanc" | "act" | "apel" | "fraud" | "priv";
 const fecha = (d: string) => new Date(d).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric", timeZone: "America/New_York" });
@@ -16,6 +20,8 @@ const EST: Record<string, string> = { open: "EN REVISIÓN", upheld: "SE MANTIENE
 
 export function Confianza({ d, tab }: { d: D; tab: Tab }) {
   const router = useRouter(), path = usePathname(), desk = useAncho() >= 1024, cols = desk ? "repeat(auto-fill,minmax(320px,1fr))" : undefined;
+  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
+  const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
   const reportes = d.cola.rep!.n + d.cola.repUsr!.n + d.cola.chat!.n + d.cola.medios!.n, activas = d.sanc.length;
   const B: Bloque[] = [
     { type: "head", eye: "CONTROL", t: "Confianza y seguridad", s: "Reportes, catálogo de sanciones, apelaciones con segunda revisión, fraude y bloqueos, y privacidad. Toda acción sobre una persona avisa con el motivo y abre la apelación.", h1: desk ? 26 : 22 },
@@ -23,7 +29,7 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
       { k: "REPORTES ABIERTOS", v: String(reportes), s: d.cola.rep!.tarde + d.cola.repUsr!.tarde ? "hay fuera de plazo" : "al día", bg: reportes ? "var(--tl-ink)" : undefined, fg: reportes ? "var(--tl-white)" : undefined, onClick: () => router.push("/admin/colas?cola=rep") },
       { k: "APELACIONES", v: String(d.cola.apel!.n), s: "segunda persona revisa", onClick: () => router.push("/admin/colas?cola=apel") },
       { k: "SANCIONES ACTIVAS", v: String(activas), s: "personas", onClick: () => router.push(`${path}?tab=act`) },
-      { k: "FRAUDE · 30 D", v: String(d.fraude.length), s: "redes y ráfagas marcadas", onClick: () => router.push(`${path}?tab=fraud`) },
+      { k: "FRAUDE · 30 D", v: String(d.fraude.length + d.evt.length), s: d.evt.length ? `redes, ráfagas y ${d.evt.length} de Eventos` : "redes y ráfagas marcadas", onClick: () => router.push(`${path}?tab=fraud`) },
     ] },
     { type: "tabs", items: ([["res", "Resumen"], ["sanc", "Catálogo de sanciones"], ["act", "Sancionados"], ["apel", "Apelaciones"], ["fraud", "Fraude y bloqueos"], ["priv", "Privacidad"]] as [Tab, string][])
       .map(([k, l]) => ({ l, on: tab === k, onClick: () => router.push(k === "res" ? path : `${path}?tab=${k}`) })) },
@@ -55,6 +61,15 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
     B.push(d.fraude.length ? { type: "rows", items: d.fraude.map((f) => ({ key: f.id, icon: f.regla === "red" ? "users" : "star", t: `${REGLA_L[f.regla] ?? f.regla} · ${f.quien ?? "Vecino"}`, s: `${f.detalle} · ${fecha(f.at)}`,
       tag: f.abierto ? "CASO ABIERTO" : "REVISADO", tone: f.abierto ? "danger" : "neutral", chev: true, onClick: () => router.push(f.abierto && f.caso ? `/admin/colas?cola=repUsr&caso=${f.caso}` : `/admin/usuarios/${f.uid}`) })) }
       : { type: "empty", icon: "shield", t: "Nada marcado", s: "Votos o seguidores desde un mismo dispositivo y reseñas en ráfaga aparecen aquí (el barrido revisa cada minuto)." });
+    // 6j · Eventos (admin-dashboard L291 «boletos duplicados», hueco #9): la señal no sanciona sola; «Abrir caso» la manda a Reportes de usuario.
+    B.push({ type: "group", k: "EVENTOS Y BOLETOS · 30 DÍAS" });
+    B.push(d.evt.length ? { type: "rows", items: d.evt.map((x) => ({ key: `${x.kind}${x.uid}`, icon: "ticket", t: `${SENAL_L_UI[x.kind]?.t ?? x.kind} · ${x.quien}`, s: `${SENAL_L_UI[x.kind]?.s(x.n) ?? x.n} · ${x.ciudad ?? "Sin ciudad"} · ${fecha(x.at)}`,
+      tag: x.abierto ? "CASO ABIERTO" : x.caso ? "REVISADO" : null, tone: x.abierto ? "danger" : "neutral", chev: true,
+      onClick: () => router.push(x.abierto && x.caso ? `/admin/colas?cola=repUsr&caso=${x.caso}` : `/admin/usuarios/${x.uid}?tab=act`),
+      acts: !x.abierto && d.abreCaso ? [{ l: "Abrir caso", icon: "shield", onClick: () => setConf({ titulo: `Caso de Eventos · ${x.quien}`, cta: "Abrir caso",
+        sub: "Va a Colas › Reportes de usuario con la marca «Señal de Eventos». Lo decide una persona, con la escalera de sanciones y la apelación. Queda en la auditoría.",
+        plantillas: ["Posible reventa de boletos", "Compra con bots", "Entradas duplicadas en la puerta", "Contracargos repetidos"], hacer: (m) => evtCasoSenal(x.uid, x.kind, m) }) }] : undefined })) }
+      : { type: "empty", icon: "ticket", t: "Nada marcado en Eventos", s: "Órdenes en ráfaga desde un dispositivo, boletos recibidos y pasados a otro, entradas duplicadas y contracargos de boletos aparecen aquí." });
     B.push({ type: "group", k: "CUENTAS POR DISPOSITIVO · 3 O MÁS · 90 DÍAS" });
     B.push(d.disp.length ? { type: "rows", items: d.disp.map((x) => ({ key: x.device, icon: "phone", t: `${x.cuentas} cuentas en un dispositivo`, s: `${x.nombres.join(", ")} · última vez ${fecha(x.ultima)}`, tag: x.bloqueado ? "BLOQUEADO" : undefined, tone: "danger", chev: true, onClick: () => router.push(`/admin/usuarios/${x.uid}`) })) }
       : { type: "empty", icon: "check", t: "Ningún dispositivo con 3 cuentas o más", s: "Los votos entre cuentas de un mismo dispositivo ya no cuentan ni dan puntos." });
@@ -71,5 +86,6 @@ export function Confianza({ d, tab }: { d: D; tab: Tab }) {
       ["trash", "Borrado de cuenta", "30 días de gracia: la persona lo puede cancelar en Ajustes antes de esa fecha."],
     ].map(([ic, t, s]) => ({ key: t!, icon: ic!, t: t!, s: s! })) });
   }
-  return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /></div>;
+  if (conf) return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 760 }}><PanelBloques bloques={[B[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} /><Toast t={toast} desk={desk} /></div>;
+  return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }

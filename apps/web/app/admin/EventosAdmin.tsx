@@ -17,16 +17,17 @@ import { accionesEvt, accionesOrg, bloquesEvt, estadoEvt } from "./ColasEventos"
 import type { CambiosPanel } from "@/lib/evt-cambios";
 import type { FilaLiq } from "@/lib/evt-liquidacion";
 import type { FechaPanel } from "@/lib/evt";
-import { evtCancelarAdmin, evtCongelar } from "./acciones-eventos";
+import { evtCancelarAdmin, evtCongelar, evtCupo, evtExtenderVenta } from "./acciones-eventos";
+import type { CuposFecha, Sobreventa } from "@/lib/evt-admin";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon" | "AdminNote", ComponentType<any>>;
 type Org = { id: string; name: string; foto: string | null; eventos: number; tickets: number; verificado: boolean; bloqueado: string | null; ciudad: string };
 const ENT: Record<string, string> = { free: "Libre", rsvp: "RSVP", tickets: "Boletos" };
 
-export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede, bol = null, kb = null, liq = false }: {
+export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede, bol = null, kb = null, liq = false, sobreventa = [], fee = null }: {
   f: FiltrosEvt; filas: FilaEvtAdm[]; total: number; cab: { n: number; rev: number; semana: number }; siguiente: string | null; sla: number; orgs: Org[] | null; puede: { aprobar: boolean; retirar: boolean };
-  bol?: BusquedaBoleto | null; kb?: { emitidos: number; bruto: number } | null; liq?: boolean;
+  bol?: BusquedaBoleto | null; kb?: { emitidos: number; bruto: number } | null; liq?: boolean; sobreventa?: Sobreventa[]; fee?: { bp: number; fixed: number } | null;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
@@ -40,13 +41,15 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
       { k: "A REVISAR", v: String(cab.rev), s: cab.rev ? `plazo ${sla} h` : "al día", bg: cab.rev ? "var(--tl-ink)" : undefined, fg: cab.rev ? "var(--tl-white)" : undefined, onClick: cab.rev ? () => router.push("/admin/colas?cola=evt") : undefined },
       { k: "ORGANIZADORES", v: orgs ? String(orgs.length) : "—", s: "con eventos", onClick: () => ir({ tab: "org", f: null, q: null }) },
       { k: "BOLETOS EMITIDOS", v: String(kb?.emitidos ?? 0), s: "válidos y usados", onClick: () => ir({ tab: "bol", f: null, q: null }) },
-      { k: "BRUTO BOLETOS", v: `$${((kb?.bruto ?? 0) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`, s: "cobrado, menos devuelto" },
+      { k: "BRUTO BOLETOS", v: `$${((kb?.bruto ?? 0) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`, s: fee ? `cobrado, menos devuelto · comisión ${fee.bp / 100} % + $${(fee.fixed / 100).toFixed(2)}` : "cobrado, menos devuelto" },
     ] },
     { type: "tabs", items: [{ l: "Eventos", n: String(total || ""), on: f.tab === "list", onClick: () => ir({ tab: null, q: null }) }, { l: "Buscar boleto", on: f.tab === "bol", onClick: () => ir({ tab: "bol", f: null, q: null }) },
       // 6g · Modo puerta (solo lectura, para disputas de «me cobraron y no entré»).
       { l: "Modo puerta", on: false, onClick: () => router.push("/admin/eventos/puerta") }, { l: "Organizadores", on: f.tab === "org", onClick: () => ir({ tab: "org", f: null, q: null }) },
       // 6e · Liquidaciones de eventos (Finanzas): lo que se le paga a cada organizador por fecha.
-      ...(liq ? [{ l: "Liquidaciones", on: false, onClick: () => router.push("/admin/eventos/liquidaciones") }] : [])] },
+      ...(liq ? [{ l: "Liquidaciones", on: false, onClick: () => router.push("/admin/eventos/liquidaciones") }] : []),
+      // 6j · Catálogo de formatos y géneros (hueco #8).
+      { l: "Catálogo", on: false, onClick: () => router.push("/admin/eventos/catalogo") }] },
   ];
   if (conf) return <><PanelBloques bloques={[head[0]!]} h1={22} /><ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} /><Toast t={toast} desk={desk} /></>;
   const buscar = (
@@ -90,6 +93,7 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={head} h1={desk ? 26 : 22} />
+      <AlertaSobreventa L={sobreventa} />
       {buscar}
       <PanelBloques bloques={[chips]} />
       {!filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "ticket", t: "Sin eventos", s: "Nada coincide con ese filtro." }]} />
@@ -108,8 +112,8 @@ type RsvpAdm = { nombre: string; party: number; st: string; at: string; dia: str
 type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; devuelto: number; ordenes: number; cortesias: number; transferidos: number; espera: number; cancelados: number }; ordenes: { num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }[] };
 /* 6f · En la lista: «Cada jueves · 8 fechas» o «3 días». */
 const formaAdm = (e: FilaEvtAdm) => (e.kind === "series" && e.rep ? ` · ${repL(e.dia, e.rep, true)} · ${e.nf} por delante` : e.kind === "span" ? ` · ${e.span} días` : "");
-export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
-  cambios?: CambiosPanel | null; liq?: { filas: FilaLiq[]; deuda: number } | null }) {
+export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null, cupos = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
+  cambios?: CambiosPanel | null; liq?: { filas: FilaLiq[]; deuda: number } | null; cupos?: CuposFecha | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -142,6 +146,8 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
           t: `${forma.kind === "span" ? `Día ${f.idx + 1} · ` : ""}${diaCorto(f.dia, true)} · ${hora(f.h0)} – ${hora(f.h1)}${f.movida ? " · movida" : ""}`,
           s: `${e.d.entrada === "tickets" ? (forma.kind === "span" ? `${f.dia_n} con boleto o pase${f.cap ? ` · aforo ${f.cap}` : ""}` : `${f.vendidos} vendidos`) : `${f.rsvp} van`}${f.lu ? ` · artista solo esta fecha: ${f.lu[0]?.who ?? ""}` : ""}${f.motivo ? ` · ${f.motivo}` : ""}`,
           tag: f.st === "cancelled" ? "CANCELADA" : f.st === "skipped" ? "SALTADA" : f.st === "done" || f.pasada ? "PASÓ" : null, tone: f.st === "cancelled" ? "danger" : "neutral", compact: true, chev: false, dim: f.st === "skipped" })) } as Bloque] : []),
+        // 6j · Cupos y venta de UNA fecha: lo vendido de cada tipo, mesa y el aforo del día; «Ajustar cupo» y «Extender ventas».
+        ...cuposAdm(e, cupos, fechas, puede, setConf, (f) => router.push(`/admin/eventos/${e.id}?fecha=${f}`), desk),
         ...cambiosAdm(e, cambios, liq, puede, setConf),
         ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: "ORGANIZADOR" } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />
       <Toast t={toast} desk={desk} />
@@ -150,13 +156,13 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
 
 /* 6e · La ficha del evento en el Super Admin: lo que cambió y el dinero por fecha, y las dos acciones de To'Latino. */
 const LIQ_ST: Record<string, [string, string]> = { proxima: ["PRÓXIMA", "neutral"], pendiente: ["PENDIENTE", "action"], retenida: ["RETENIDA", "danger"], pagando: ["EN CAMINO", "action"], pagada: ["PAGADA", "signal"], revertida: ["AJUSTADA", "neutral"] };
-const CAMBIO_L: Record<string, string> = { paused: "Venta pausada", resumed: "Venta reanudada", moved: "Cambió de fecha", time_changed: "Cambió de hora", cancelled: "Evento cancelado", date_cancelled: "Fecha cancelada", frozen: "Venta congelada", unfrozen: "Venta descongelada" };
+const CAMBIO_L: Record<string, string> = { paused: "Venta pausada", resumed: "Venta reanudada", moved: "Cambió de fecha", time_changed: "Cambió de hora", cancelled: "Evento cancelado", date_cancelled: "Fecha cancelada", frozen: "Venta congelada", unfrozen: "Venta descongelada", capacity_adjusted: "Cupo ajustado", sales_extended: "Venta extendida" };
 function cambiosAdm(e: EvtAdm, K: CambiosPanel | null, L: { filas: FilaLiq[]; deuda: number } | null, puede: { retirar: boolean; editar?: boolean; dinero?: boolean }, setConf: (c: Confirmar) => void): Bloque[] {
   const B: Bloque[] = [], usd = (c: number) => `$${(c / 100).toFixed(2)}`;
   if (K?.cancelacion) B.push({ type: "note", tone: "danger", icon: "ban", t: `CANCELADO · ${K.cancelacion.motivo} · ${K.cancelacion.ordenes} órdenes devueltas (${usd(K.cancelacion.devuelto)})${K.cancelacion.st === "running" ? " · siguen las que faltan (barrido)" : ""}${K.cancelacion.pendientes ? ` · ${K.cancelacion.pendientes} devoluciones pendientes en Stripe` : ""}` });
   if (K?.congelado) B.push({ type: "note", tone: "danger", icon: "lock", t: `VENTA CONGELADA POR TO'LATINO · ${K.congelado}` });
   if (K?.cambios.length) B.push({ type: "timeline", k: "CAMBIOS DEL EVENTO", items: K.cambios.map((x) => ({ t: CAMBIO_L[x.kind] ?? x.kind,
-    s: `${x.by === "admin" ? "To'Latino" : "El organizador"} · ${new Date(x.at).toLocaleString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${x.antes ? ` · antes ${x.antes} → ${x.ahora}` : ""}${x.motivo ? ` · ${x.motivo}` : ""}` })) });
+    s: `${x.by === "admin" ? "To'Latino" : "El organizador"} · ${new Date(x.at).toLocaleString("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${x.antes ? ` · antes ${x.antes} → ${x.ahora}` : ""}${x.que ? ` · ${x.que.es}` : ""}${x.nota ? ` · ${x.nota}` : x.motivo ? ` · ${x.motivo}` : ""}` })) });
   if (L?.filas.length && puede.dinero) B.push({ type: "rows", k: "DINERO POR FECHA · LIQUIDACIÓN DEL MARTES", items: L.filas.map((x) => ({ key: x.fecha, icon: x.st === "retenida" ? "lock" : "dollar", t: `${diaCorto(x.dia, true)} · ${hora(x.h0)}${x.cancelada ? " · cancelada" : ""}`,
     s: `Se paga el ${diaCorto(x.payOn, true)} · bruto ${usd(x.bruto)} · comisión ${usd(x.comision)} · devuelto ${usd(x.devuelto)}${x.disputa ? ` · disputas ${usd(x.disputa)}` : ""}${x.motivo ? ` · ${x.motivo.es}` : ""}`, r: usd(x.neto), tag: LIQ_ST[x.st]?.[0], tone: LIQ_ST[x.st]?.[1], compact: true, chev: false })) });
   const vivo = e.st === "live" || e.st === "paused";
@@ -168,4 +174,39 @@ function cambiosAdm(e: EvtAdm, K: CambiosPanel | null, L: { filas: FilaLiq[]; de
     plantillas: ["El evento no va a pasar", "El lugar no tiene permiso", "Fraude del organizador"], cta: "Cancelar y devolver", hacer: (m) => evtCancelarAdmin(e.id, m) }) });
   if (A.length) B.push({ type: "acts", items: A });
   return B;
+}
+
+/* 6j · Cupos y venta de UNA fecha (admin-dashboard L183–185): lo de cada tipo, mesa y el aforo del día; «Ajustar cupo» (nunca por debajo de lo
+   vendido + apartado; lo vuelve a imponer la base) y «Extender ventas» (a las puertas o al empezar; nunca después: en la puerta no se vende). */
+const CORTE_L: Record<string, string> = { day_before: "un día antes", doors: "al abrir las puertas", start: "al empezar" };
+function cuposAdm(e: EvtAdm, C: CuposFecha | null, fechas: FechaPanel[], puede: { editar?: boolean }, setConf: (c: Confirmar) => void, irFecha: (f: string) => void, desk: boolean): Bloque[] {
+  if (!C) return [];
+  const B: Bloque[] = [], vivo = (e.st === "live" || e.st === "paused") && !C.empezo, pe = !!puede.editar && vivo;
+  const prox = fechas.filter((f) => f.st === "scheduled" && !f.empezo).slice(0, 8);
+  if (prox.length > 1) B.push({ type: "chips", k: "FECHA QUE ESTÁS VIENDO", items: prox.map((f) => ({ l: `${diaCorto(f.dia, true)} · ${hora(f.h0)}`, v: f.id === C.fecha ? "selected" : "filter", onClick: () => irFecha(f.id) })) });
+  B.push({ type: "rows", k: `CUPOS · ${diaCorto(C.dia, true).toUpperCase()} · ${hora(C.h0)}`, cols: desk ? "repeat(auto-fill,minmax(340px,1fr))" : undefined, items: C.filas.map((x) => {
+    const quedan = Math.max(0, x.cantidad - x.vendidos - x.apartados);
+    return { key: `${x.kind}${x.ref ?? ""}`, icon: x.kind === "mesa" ? "users" : x.kind === "dia" ? "calendar" : "ticket", t: x.nombre.es, r: `${x.vendidos} / ${x.cantidad}`,
+      s: `${x.apartados ? `${x.apartados} apartados · ` : ""}quedan ${quedan}${x.ajuste ? ` · ajustado por To'Latino: ${x.ajuste.motivo}` : ""}`, tag: quedan === 0 ? "AGOTADO" : null, tone: "neutral", compact: true, chev: false,
+      acts: pe ? [{ l: "Ajustar cupo", icon: "edit", onClick: () => setConf({ titulo: `Ajustar cupo · ${x.nombre.es}`, cta: "Ajustar",
+        sub: `Ahora ${x.cantidad} · vendidos ${x.vendidos} · apartados ${x.apartados}. No baja de ${x.vendidos + x.apartados}. Manda sobre lo que guarde el organizador para esta fecha; recibe el aviso con el motivo y queda en la auditoría.`,
+        valor: { k: "CUPO NUEVO", ini: String(x.cantidad), max: 6 }, plantillas: ["El lugar bajó su aforo", "Lo pidió el organizador", "Sobreventa o error de carga"],
+        hacer: (m, _e, v) => evtCupo(C.fecha, x.kind, x.ref, v, m) }) }] : undefined };
+  }) });
+  const opciones = C.extender;
+  B.push({ type: "note", tone: "ink", icon: "clock", t: `VENTA EN LÍNEA HASTA · ${C.ventaHastaH}${C.extendida ? " · extendida por To'Latino" : ` · el organizador la cierra ${CORTE_L[C.corte] ?? ""}`}. En la puerta no se venden boletos.`,
+    cta: pe && opciones.length ? "Extender ventas" : undefined,
+    onCta: pe && opciones.length ? () => setConf({ titulo: `Extender ventas · ${diaCorto(C.dia, true)}`, cta: "Extender",
+      sub: "La venta en línea de esta fecha cierra más tarde (nunca después de que empieza: en la puerta no se vende). El organizador recibe el aviso con el motivo; queda en la auditoría.",
+      elegir: { label: "HASTA", items: opciones.map((k) => ({ k, l: k === "doors" ? "Al abrir las puertas" : "Al empezar" })) }, plantillas: ["Lo pidió el organizador", "Mucha demanda el día del evento"],
+      hacer: (m, el) => evtExtenderVenta(C.fecha, el ?? "", m) }) : undefined } as Bloque);
+  return B;
+}
+
+/* 6j · Alerta viva «evento con sobreventa» (admin-dashboard L74): más boletos vivos que existencia en un tipo o una mesa de una fecha. */
+export function AlertaSobreventa({ L }: { L: Sobreventa[] }) {
+  const router = useRouter();
+  if (!L.length) return null;
+  return <A.AdminNote tone="bad" icon="warning" cta="Ver el evento" onCta={() => router.push(`/admin/eventos/${L[0]!.evento}`)}>
+    {`EVENTO CON SOBREVENTA · ${L.map((x) => `${x.titulo.es} · ${diaCorto(x.dia, true)} · ${x.nombre?.es ?? (x.kind === "mesa" ? "Mesa" : "Boleto")}: ${x.vivos} vivos de ${x.cantidad}`).slice(0, 3).join(" · ")}. La base no debería dejarlo: revisa la auditoría del evento.`}</A.AdminNote>;
 }

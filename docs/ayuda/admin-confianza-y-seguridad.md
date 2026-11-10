@@ -75,3 +75,12 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
   **always sees the original**: there is no «See translation» here (see `ver-traduccion.md`).
 - Five accounts on one phone count as one person for auto-hide. A photo is never published unchecked: if the model is down it waits for a
   person.
+
+## Eventos y boletos (6j, 10 nov 2026)
+**Fraude › EVENTOS Y BOLETOS · 30 DÍAS:** órdenes en ráfaga desde un mismo dispositivo (cuántas y en cuántos minutos: Configuración › Eventos ›
+Confianza), boletos recibidos por transferencia y pasados a otra persona (transferencias en cadena: posible reventa), entradas duplicadas en la
+puerta (dos porteros sin conexión) y contracargos de boletos (90 días). La señal no sanciona sola: **Abrir caso** (quien edita personas) lo manda a
+Colas › Reportes de usuario con la marca «Señal de Eventos»; lo decide una persona con la escalera de sanciones, el aviso y la apelación. La misma
+tarjeta en varias cuentas necesita la huella de la tarjeta de Stripe (LAUNCH-CHECKLIST).
+**English:** Fraud › EVENTS AND TICKETS lists burst orders from one device, chain transfers, duplicate door entries and ticket chargebacks; **Open
+case** sends it to Queues › User reports.

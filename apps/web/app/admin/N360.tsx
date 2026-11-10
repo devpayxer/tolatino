@@ -17,8 +17,9 @@ import { N360Dinero } from "./N360Dinero";
 import { accionesOrg, estadoEvt } from "./ColasEventos";
 import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
 
-/* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. */
-export type Evts360 = { filas: { id: string; t: Bi; st: string; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }[]; org: { verificado: boolean; bloqueado: string | null }; puede: { aprobar: boolean; retirar: boolean } };
+/* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. 6j: liquidaciones y cancelaciones. */
+const LIQ_N: Record<string, string> = { pending: "PENDIENTES", held: "RETENIDAS", paid: "PAGADAS", reversed: "AJUSTADAS", paying: "EN CAMINO" };
+export type Evts360 = { filas: { id: string; t: Bi; st: string; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }[]; org: { verificado: boolean; bloqueado: string | null }; puede: { aprobar: boolean; retirar: boolean }; liq: { st: string; n: number; neto: number }[]; cx: { evento: Bi; scope: string; reason: string; by: string; ordenes: number; devuelto: number; at: string }[] };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "HBars" | "Icon", ComponentType<any>>;
@@ -279,6 +280,10 @@ export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string;
           <A.AdminList label={`EVENTOS · ${evts.filas.length}${evts.org.bloqueado ? " · ORGANIZADOR BLOQUEADO" : evts.org.verificado ? " · ORGANIZADOR VERIFICADO" : ""}`} rows={evts.filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return {
             icon: "ticket", title: e.t.es, sub: `${diaCorto(e.dia, true)} · ${hora(e.h0)} · ${e.entrada === "tickets" ? "Boletos" : e.entrada === "rsvp" ? "RSVP" : "Libre"}`, tag, tone, chevron: true, onClick: () => router.push(`/admin/eventos/${e.id}`) }; })} />
           {!evts.filas.length ? <A.AdminNote tone="info" icon="ticket">Sin eventos enviados.</A.AdminNote> : null}
+          {/* 6j · Liquidaciones del martes (por estado) y cancelaciones del organizador. */}
+          {evts.liq.length ? <PanelBloques bloques={[{ type: "kv", cols: 3, items: evts.liq.map((x) => ({ k: `LIQUIDACIONES · ${LIQ_N[x.st] ?? x.st.toUpperCase()}`, v: `${x.n} · $${(x.neto / 100).toFixed(2)}` })) }]} /> : null}
+          {evts.cx.length ? <A.AdminList label={`CANCELACIONES · ${evts.cx.length}`} rows={evts.cx.map((x) => ({ icon: "ban", title: `${x.evento.es} · ${x.scope === "date" ? "una fecha" : "el evento"}`,
+            sub: `${x.by === "admin" ? "To’Latino" : "El organizador"} · ${new Date(x.at).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" })} · ${x.ordenes} órdenes · devuelto $${(x.devuelto / 100).toFixed(2)}` }))} /> : null}
           {evts.org.bloqueado ? <A.AdminNote tone="bad" icon="ban">{`Bloqueado para publicar eventos: ${evts.org.bloqueado}`}</A.AdminNote> : null}
           {(() => { const L = accionesOrg({ id: n.id, name: n.name, verificado: evts.org.verificado, bloqueado: evts.org.bloqueado }, { setConf, puede: evts.puede }); return L.length ? <PanelBloques bloques={[{ type: "acts", items: L }]} /> : null; })()}
           {/* 6b · Pausar el módulo Eventos de este negocio: ninguno de sus eventos sale; el dueño ve el motivo en su panel. */}

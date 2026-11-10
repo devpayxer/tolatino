@@ -14,6 +14,17 @@ import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Co
 const SECCION: Record<Seccion, string> = {
   comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS",
 };
+/* 6j · Configuración › Eventos: las ~50 claves de la Fase 6 en subgrupos (lo que cubre cada una). */
+const SUB_EVT: [string, RegExp][] = [
+  ["EVENTOS · PUBLICAR Y REVISAR", /^evt_(revision_h|fechas_max|dias_adelante|fotos_max|dias_seguidos_max)$/],
+  ["EVENTOS · RSVP Y VENTA", /^(rsvp_guarda_min|evt_apartado_min|evt_boletos_por_orden_max|evt_boletos_persona_fecha_max|evt_codigo_intentos_max|evt_apartados_vivos_max)$/],
+  ["EVENTOS · DESPUÉS DE COMPRAR", /^(bol_transferir_h|bol_cancelar_h|espera_oferta_min|evt_cortesias_max|bol_transferencias_dia_max)$/],
+  ["EVENTOS · CAMBIOS Y PAGO AL ORGANIZADOR", /^evt_(aviso_max|pago_dia|retener_nuevo_cents|cancelaciones_confianza|cancelaciones_dias|ajuste_dias|cancelar_lote)$/],
+  ["EVENTOS · AVISOS Y RECORDATORIOS", /^evt_(recordatorio_hora|aforo_aviso_pct)$/],
+  ["EVENTOS · LA PUERTA", /^puerta_/],
+  ["EVENTOS · EVENTO PRIVADO", /^evp_/],
+  ["EVENTOS · CONFIANZA", /^evt_senal_/],
+];
 const fmt = (f: { key: string; unidad: { es: string } }, v: number) => (f.key.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${f.unidad.es}`);
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
@@ -46,9 +57,15 @@ export function Configuracion({ filas, admin, autoOcultar }: { filas: FilaConfig
     { type: "note", tone: "info", icon: "info", t: `Moneda: USD · Hora: la de cada ciudad. ${admin ? "Toca un valor para cambiarlo." : "Solo un Admin cambia la configuración."}` },
   ];
   for (const sec of Object.keys(SECCION) as Seccion[]) {
-    const L = filas.filter((f) => f.seccion === sec);
+    const T = filas.filter((f) => f.seccion === sec);
+    if (!T.length) continue;
+    // 6j · Eventos va en subgrupos (y lo que no cae en uno, al final con el nombre de la sección).
+    const grupos: [string, FilaConfig[]][] = sec === "eventos"
+      ? [...SUB_EVT.map(([k, re]): [string, FilaConfig[]] => [k, T.filter((f) => re.test(f.key))]), [SECCION[sec], T.filter((f) => !SUB_EVT.some(([, re]) => re.test(f.key)))]]
+      : [[SECCION[sec], T]];
+    for (const [gk, L] of grupos) {
     if (!L.length) continue;
-    B.push({ type: "group", k: SECCION[sec] });
+    B.push({ type: "group", k: gk });
     const items: { key: string; icon: string; t: string; r: string; s: string; tag: string | null; tone: string; dim: boolean; chev: boolean; onClick: () => void }[] = L.map((f) => ({
       key: f.key as string, icon: f.editable ? "edit" : "lock", t: desk ? f.label.es : `${f.label.es} · ${fmt(f, f.v)}`, r: desk ? fmt(f, f.v) : "",
       s: [f.help?.es, f.editable ? `De fábrica ${fmt(f, f.def)} · de ${fmt(f, f.min)} a ${fmt(f, f.max)}` : `No se cambia todavía: ${f.bloqueo?.es ?? ""}`, f.editIn ? "Se cambia en su pantalla" : null,
@@ -59,6 +76,7 @@ export function Configuracion({ filas, admin, autoOcultar }: { filas: FilaConfig
     if (sec === "comunidad" && autoOcultar) items.push({ key: "autohide", icon: "shield", t: desk ? "Auto-ocultar por reportes" : `Auto-ocultar por reportes · ${autoOcultar.reportes} en ${autoOcultar.horas} h`, r: desk ? `${autoOcultar.reportes} en ${autoOcultar.horas} h` : "",
       s: "Es un parámetro de su regla: se cambia en Contenido › Auto-moderación, junto con el interruptor de la regla.", tag: null, tone: "neutral", dim: false, chev: true, onClick: () => router.push("/admin/contenido?tab=auto") });
     B.push({ type: "rows", cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items });
+    }
   }
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
 }

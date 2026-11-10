@@ -119,7 +119,7 @@ export function puertaDetalle(c: Ctx): Sec {
     }) } : { type: "empty", icon: "ticket", t: E2("No hay nadie con eso", "Nobody matches"), s: "" });
   } else if (P.abrible) {
     out.push({ type: "acts", items: [{ l: E2("Empezar a escanear", "Start scanning"), v: "primary", icon: "grid", off: c.pending, onClick: () => c.run(() => evtPuertaAbrir(c.d.id, P.fecha!, E2("Panel", "Panel")), E2("Modo puerta abierto.", "Door mode open.")) }] });
-  } else out.push({ type: "note", tone: "info", icon: "clock", t: E2("El modo puerta se activa el día del evento: 2 horas antes de abrir las puertas y hasta 2 horas después de terminar.", "Door mode turns on the day of the event: 2 hours before doors open until 2 hours after it ends.") });
+  } else out.push({ type: "note", tone: "info", icon: "clock", t: E2(`El modo puerta se activa el día del evento: ${P.ventanaH} ${P.ventanaH === 1 ? "hora" : "horas"} antes de abrir las puertas y hasta ${P.ventanaH} ${P.ventanaH === 1 ? "hora" : "horas"} después de terminar.`, `Door mode turns on the day of the event: ${P.ventanaH} ${P.ventanaH === 1 ? "hour" : "hours"} before doors open until ${P.ventanaH} ${P.ventanaH === 1 ? "hour" : "hours"} after it ends.`) });
   if (P.ultimos.length) out.push({ type: "rows", k: E2("ÚLTIMOS EN LA PUERTA", "LATEST AT THE DOOR"), items: P.ultimos.map((x): Fila => ({ key: x.id, icon: RESULTADO[x.res].tono === "bad" ? "warning" : "check", t: x.nombre,
     s: lineaUltimo(x, es), m: x.hora, compact: true, chev: false,
     ibg: RESULTADO[x.res].tono === "bad" ? "rgba(192,57,43,.1)" : "rgba(0,229,196,.18)", ifg: RESULTADO[x.res].tono === "bad" ? "var(--tl-danger)" : "var(--tl-open-text)" })) });

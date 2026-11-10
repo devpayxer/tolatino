@@ -25,11 +25,15 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
               extract(hour from now() at time zone coalesce(c.timezone, 'America/New_York')) not between 7 and 21 as silencio
          from notif_templates t, users u left join cities c on c.id = u.home_city_id where t.key = $1 and u.id = $2`, [tpl, userId])).rows[0];
     if (!r) return;
-    const es = r.lang !== "en", title = es ? r.title.es : r.title.en, body = llenar(es ? r.body.es : r.body.en, v).slice(0, 480);
+    // 6j · El título también lleva las variables («Tus boletos para {evento}» salía con la llave escrita): guardián avisoTituloLleno.
+    const es = r.lang !== "en", title = llenar(es ? r.title.es : r.title.en, v).slice(0, 120), body = llenar(es ? r.body.es : r.body.en, v).slice(0, 480);
     const apagado = r.pref ? r.prefs?.[r.pref] === false : false, quiet = r.grp !== "crit" && tpl !== "biz_req" && r.silencio && r.prefs?.quiet !== false;
     // 5i · Grupo Comunidad (Mi cuenta › Avisos): apagado = no llega (no tiene SMS); «Un resumen al día» = se guarda para el resumen
     // (no sale en la campana hasta el resumen de la hora de Configuración; lo arma resumenComunidad en el barrido).
-    if (r.grp === "community" && apagado) return;
+    // 6j · Grupo Eventos: lo que tiene interruptor (Boletos y cambios · Recordatorios · Eventos que guardas) apagado = no llega; lo que no
+    // lo tiene (boleto comprado o devuelto, el boleto que te mandan, cancelaciones y cambios de fecha) llega siempre (guardián
+    // eventosCriticoSiempreLlega).
+    if ((r.grp === "community" || r.grp === "events") && apagado) return;
     const guardado = r.grp === "community" && !!r.pref && r.prefs?.dig === true;
     const st = !r.sms ? "no" : apagado || o.sinSms ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
     const id = (await db().query<{ id: string }>(
@@ -76,13 +80,14 @@ export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en
     if (t.sms) { for (const id of L) await avisar(id, tpl, v.es, o); return; }
     for (let i = 0; i < L.length; i += 1000) {
       // 5i · Grupo Comunidad: lo apagado no llega; con «Un resumen al día», se guarda para el resumen (como avisar()).
-      const com = t.grp === "community" && !!t.pref;
+      // 6j · Grupo Eventos: lo apagado no llega (no hay resumen).
+      const com = (t.grp === "community" || t.grp === "events") && !!t.pref, dig = t.grp === "community";
       await db().query(
         `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id, held_digest)
          select u.id, u.home_city_id, $2, case when u.lang = 'en' then $4 else $3 end, case when u.lang = 'en' then $6 else $5 end, $7, $8, $9, 'no', null, $10::uuid,
-                $11 and coalesce(u.notif_prefs->>'dig', '') = 'true'
+                $11 and $13 and coalesce(u.notif_prefs->>'dig', '') = 'true'
            from users u where u.id = any($1::uuid[]) and not ($11 and coalesce(u.notif_prefs->>$12, '') = 'false')`,
-        [L.slice(i, i + 1000), tpl, t.title.es, t.title.en, llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, o.actor ?? null, com, t.pref ?? ""]);
+        [L.slice(i, i + 1000), tpl, llenar(t.title.es, v.es).slice(0, 120), llenar(t.title.en, v.en).slice(0, 120), llenar(t.body.es, v.es).slice(0, 480), llenar(t.body.en, v.en).slice(0, 480), o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, o.actor ?? null, com, t.pref ?? "", dig]);
     }
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }

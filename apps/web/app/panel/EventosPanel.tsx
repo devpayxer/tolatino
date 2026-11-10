@@ -50,7 +50,7 @@ const centavos = (v: string) => { const n = Number(String(v).replace(/[^\d.]/g, 
 const N = (v: string, max: number) => Math.max(0, Math.min(max, Number(String(v).replace(/\D/g, "")) || 0));
 const RUTA_APELAR = (id: string) => `/cuenta/moderacion?k=event&id=${id}`;
 
-const fmtDe = (c: Ctx, k: FormatoKey | string) => c.evt!.formatos.find((f) => f.key === k) ?? c.evt!.formatos[0]!;
+const fmtDe = (c: Ctx, k: FormatoKey | string) => c.evt!.formatos.find((f) => f.key === k) ?? c.evt!.formatos.find((f) => f.ofrece !== false) ?? c.evt!.formatos[0]!;
 const cuando = (c: Ctx, d: BorradorEvt) => d.span > 1 ? `${spanL(d.dia, d.span, c.es)} · ${d.span}${c.E2(" días", " days")}${d.dh ? c.E2(" · horario por día", " · hours by day") : ` · ${hora(d.h0)} – ${hora(d.h1)}`}`
   : `${diaCorto(d.dia, c.es)} · ${hora(d.h0)} – ${hora(d.h1)}${d.h1 >= 1440 ? c.E2(" (día siguiente)", " (next day)") : ""}${d.puertas ? c.E2(` · puertas ${hora(d.h0 - d.puertas)}`, ` · doors ${hora(d.h0 - d.puertas)}`) : ""}${d.rep.k !== "none" ? ` · ${repL(d.dia, d.rep, c.es)}` : ""}`;
 const donde = (c: Ctx, d: BorradorEvt) => (d.donde === "other" ? `${d.lugar}${d.dir ? ` · ${d.dir}` : ""}${d.cp ? ` ${d.cp}` : ""}` : `${c.d.name}${c.evt!.dir ? ` · ${c.evt!.dir}` : ""}`);
@@ -93,7 +93,7 @@ export function evtBloques(c: Ctx): Sec {
     : { type: "empty", icon: "ticket", t: tb === "up" ? E2("Sin eventos próximos", "No upcoming events") : E2("Nada aquí", "Nothing here"), s: tb === "up" ? E2("Crea uno abajo: cada tipo trae solo lo que necesitas.", "Create one below: each type comes with only what you need.") : "",
       cta: tb === "up" && !X.org.bloqueado ? E2("Crear evento", "Create event") : undefined, onCta: () => c.det("evt:new") });
   if (!X.org.bloqueado) out.push({ type: "rows", k: E2("LO QUE PUEDES PUBLICAR", "WHAT YOU CAN PUBLISH"), cols: c.desk && c.w >= 1100 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : undefined,
-    items: X.formatos.map((F): Fila => ({ key: F.key, icon: F.icon, t: bi(F.label, es), s: bi(F.sub, es), acts: [{ l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det(`evt:new:${F.key}`) }], onClick: () => c.det(`evt:new:${F.key}`) })) });
+    items: X.formatos.filter((F) => F.ofrece !== false).map((F): Fila => ({ key: F.key, icon: F.icon, t: bi(F.label, es), s: bi(F.sub, es), acts: [{ l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det(`evt:new:${F.key}`) }], onClick: () => c.det(`evt:new:${F.key}`) })) });
   return { blocks: out, ed: null };
 }
 

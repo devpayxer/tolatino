@@ -152,7 +152,7 @@ export async function reglasPuerta(negocio: string, eventoId: string, r: ReglasI
 export type PuertaPanel = {
   porteros: PorteroPanel[]; reglas: { reentrada: boolean; pideId: boolean; cierre: number | null; caps: Record<string, number> };
   fecha: string | null; abrible: boolean; r: Resumen | null; equipo: Awaited<ReturnType<typeof equipo>>; incidencias: Awaited<ReturnType<typeof incidencias>>; ultimos: Awaited<ReturnType<typeof ultimos>>;
-  miSesion: string | null; tz: string;
+  miSesion: string | null; tz: string; ventanaH: number;
 };
 export async function puertaPanel(negocio: string, eventoId: string, fecha: string | null, userId: string, es: boolean): Promise<PuertaPanel | null> {
   if (!ID.test(String(eventoId ?? ""))) return null;
@@ -165,8 +165,10 @@ export async function puertaPanel(negocio: string, eventoId: string, fecha: stri
     f ? db().query<{ id: string }>(`select id::text from door_sessions where event_date_id = $1::bigint and user_id = $2 and ended_at is null and puerta_acceso(id, $2)`, [f, userId]) : Promise.resolve({ rows: [] as { id: string }[] }),
     f ? db().query<{ ok: boolean }>(`select puerta_puede($1::bigint, $2, null) as ok`, [f, userId]) : Promise.resolve({ rows: [{ ok: false }] }),
   ]);
+  // 6j · El texto «se activa N horas antes» lee Configuración (puerta_ventana_h), nunca un número escrito.
+  const ventanaH = (await db().query<{ h: number }>(`select ${cfgSql("puerta_ventana_h")} as h`)).rows[0]!.h;
   return { porteros: porteros.filter((p) => p.todos || p.eventos.includes(eventoId)).concat(porteros.filter((p) => !p.todos && !p.eventos.includes(eventoId))),
-    reglas: { reentrada: e.reentrada, pideId: e.pideId, cierre: e.cierre, caps: e.caps ?? {} }, fecha: f, abrible: !!ab.rows[0]?.ok, r, equipo: eq, incidencias: inc, ultimos: ult, miSesion: s.rows[0]?.id ?? null, tz: e.tz };
+    reglas: { reentrada: e.reentrada, pideId: e.pideId, cierre: e.cierre, caps: e.caps ?? {} }, fecha: f, abrible: !!ab.rows[0]?.ok, r, equipo: eq, incidencias: inc, ultimos: ult, miSesion: s.rows[0]?.id ?? null, tz: e.tz, ventanaH };
 }
 /* Cerrar la sesión de un portero desde el panel (se le corta en la próxima acción). */
 export async function cerrarSesionPanel(negocio: string, sesion: string): Promise<R> {

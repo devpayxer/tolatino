@@ -124,3 +124,40 @@ event payouts**; new Event settings (notices per date, payout day, new-organizer
 - Pestaña **Modo puerta** (solo lectura): las puertas de hoy y de los últimos 7 días con adentro, faltan, rechazados y repetidos; de una fecha, por
   puerta, sesiones de portero, últimos en la puerta e incidencias. La ficha de un boleto suma **ESCANEOS EN LA PUERTA** (resultado, puerta, quién y
   hora). Detalle en `admin-puerta-auditoria`. · *Door mode tab (read-only) and DOOR SCANS on each ticket.*
+
+## 6j · Cierre de la fase: cupos, venta, sobreventa, catálogo y señales (10 nov 2026)
+- **Cifras:** BRUTO BOLETOS dice la comisión vigente (la regla «bol» de Planes, hoy 5 % + $1).
+- **La ficha del evento › CUPOS** (de UNA fecha: la próxima, o elige otra en «FECHA QUE ESTÁS VIENDO»): cada tipo de boleto, mesa y el aforo del día
+  con vendidos / cupo, apartados y lo que queda. **Ajustar cupo** (Eventos · editar): escribe el cupo nuevo y el motivo. **Nunca baja de lo vendido
+  + apartado** (lo dice antes de guardar y la base lo vuelve a imponer). Manda sobre lo que guarde el organizador para esa fecha (si vuelve a guardar
+  su editor, el ajuste de To'Latino se queda). El organizador recibe «To'Latino ajustó tu evento» con el motivo y su panel lo dice.
+- **VENTA EN LÍNEA HASTA** y **Extender ventas** (Eventos · editar): si el organizador cierra la venta un día antes o al abrir las puertas, puedes
+  dejarla abierta hasta las puertas o hasta que empieza. **Nunca después del inicio: en la puerta no se venden boletos (D1).** Con motivo, aviso al
+  organizador, CAMBIOS DEL EVENTO y auditoría.
+- **EVENTO CON SOBREVENTA** (alerta en Eventos y boletos y en el Inicio del Super Admin): sale si un tipo o una mesa de una fecha tiene más boletos
+  vivos que su existencia. Con las reglas de la base no debería pasar nunca: si sale, alguien se saltó la regla; abre el evento y revisa la auditoría.
+- **Catálogo** (pestaña; cambia solo un Admin): los **formatos** (nombre y descripción ES/EN, encender o apagar, qué categorías de negocio lo
+  publican) con la vista previa de «Lo que puedes publicar» y si la ficha sale oscura o clara; los **géneros de música** (agregar, nombre ES/EN,
+  encender o apagar, subir o bajar) con la vista previa de los filtros de Eventos. **Apagar no borra:** los eventos que ya lo tienen siguen igual y
+  el organizador los sigue editando; solo deja de ofrecerse para crear. Los campos de cada formato (boletos, mesas, line-up…) los fija el diseño.
+- **Confianza › Fraude › EVENTOS Y BOLETOS:** órdenes en ráfaga desde un dispositivo (umbral en Configuración), boletos recibidos y pasados a otra
+  persona (transferencias en cadena), entradas duplicadas en la puerta (sin conexión) y contracargos de boletos. **Abrir caso** lo manda a Colas ›
+  Reportes de usuario con la marca «Señal de Eventos»; lo decide una persona con la escalera de sanciones y la apelación.
+- **Usuarios 360° › Actividad:** cuántas operaciones en 90 días y sus **BOLETOS DE EVENTOS** (estado, cortesía, recibido o pasado por transferencia,
+  a qué hora entró) y **RSVP**. **Negocios 360° › Contenido › Eventos:** suma sus **liquidaciones** por estado y sus **cancelaciones**.
+
+| Caso | Qué pasa |
+|---|---|
+| Ajustas un cupo por debajo de lo vendido | «No baja de lo vendido y apartado: N.» Nada cambia. |
+| El organizador vuelve a guardar su editor con otro cupo | Se queda el ajuste de To'Latino para esa fecha. |
+| Extiendes la venta y ya cierra a esa hora | «La venta ya cierra a esa hora o más tarde.» |
+| Apagas un formato | Ya no se ofrece al crear; los eventos que lo tienen siguen igual. Cada categoría publica al menos uno. |
+
+**English (6j):** BOOKED/GROSS KPI shows the current ticket fee. The event page adds **CAPACITY** for one date (each ticket type, table and the day
+capacity: sold / capacity, held, left) with **Adjust capacity** (never below sold + held; the database enforces it; it overrides what the organizer
+saves for that date; the organizer is notified) and **Extend sales** (to doors or start, never after the start: no sales at the door). An **OVERSOLD
+EVENT** alert shows on Events and on the admin home if a ticket type or table has more live tickets than stock (it should never happen). The
+**Catalog** tab edits formats (name and description ES/EN, on/off, which business categories publish it) and music genres (add, rename, on/off,
+order), with previews; turning something off never deletes it. **Trust › Fraud › EVENTS AND TICKETS** lists burst orders from one device, chain
+transfers, duplicate entries and ticket chargebacks, with **Open case**. **Users 360° › Activity** shows a person's tickets and RSVPs; **Business 360°**
+adds payouts by status and cancellations.

@@ -113,3 +113,56 @@ export async function evtCasoCancela(caso: string, bloquear: boolean, motivo: st
   listo();
   return { ok: true, mensaje: bloquear ? "Bloqueado. El organizador recibe el motivo y puede apelar." : "Caso cerrado como revisado." };
 }
+
+/* 6j · La ficha del evento: «Ajustar cupo» (un tipo, una mesa o el aforo del día de UNA fecha; nunca por debajo de lo vendido) y «Extender
+   ventas» (la venta en línea de esa fecha cierra a las puertas o al empezar; nunca después: en la puerta no se vende). evt:editar, con
+   motivo, aviso al organizador, event_changes y auditoría (lib/evt-admin.ts). */
+export async function evtCupo(fecha: string, kind: string, ref: string | null, cantidad: string, motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", "editar");
+  if (kind !== "tipo" && kind !== "mesa" && kind !== "dia") return no("Ese cupo no existe.");
+  const r = await (await import("@/lib/evt-admin")).ajustarCupo(s, String(fecha), kind, ref == null ? null : String(ref), String(cantidad ?? ""), motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  listo();
+  return { ok: true, mensaje: r.msg };
+}
+export async function evtExtenderVenta(fecha: string, hasta: string, motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", "editar");
+  if (hasta !== "doors" && hasta !== "start") return no("Elige hasta cuándo.");
+  const r = await (await import("@/lib/evt-admin")).extenderVenta(s, String(fecha), hasta, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  listo();
+  return { ok: true, mensaje: r.msg };
+}
+
+/* 6j · Catálogo de formatos y géneros (hueco #8): solo un Admin (evt:retirar), con motivo y auditoría; nada se borra (se apaga). */
+export async function evtFormato(key: string, p: { es: string; en: string; subEs: string; subEn: string; on: boolean }, motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", "retirar");
+  const r = await (await import("@/lib/evt-admin")).formatoGuardar(s, String(key), { es: String(p?.es ?? ""), en: String(p?.en ?? ""), subEs: String(p?.subEs ?? ""), subEn: String(p?.subEn ?? ""), on: p?.on === true }, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  revalidatePath("/admin/eventos/catalogo");
+  return { ok: true, mensaje: r.msg };
+}
+export async function evtFormatoCategoria(key: string, cat: string, on: boolean, motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", "retirar");
+  const r = await (await import("@/lib/evt-admin")).formatoCategoria(s, String(key), String(cat), on === true, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  revalidatePath("/admin/eventos/catalogo");
+  return { ok: true, mensaje: r.msg };
+}
+export async function evtGenero(key: string | null, p: { es: string; en: string; on: boolean; mover?: number }, motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", "retirar");
+  const mover = p?.mover === -1 ? -1 : p?.mover === 1 ? 1 : 0;
+  const r = await (await import("@/lib/evt-admin")).generoGuardar(s, key == null ? null : String(key), { es: String(p?.es ?? ""), en: String(p?.en ?? ""), on: p?.on === true, mover }, motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  revalidatePath("/admin/eventos/catalogo");
+  return { ok: true, mensaje: r.msg };
+}
+
+/* 6j · Confianza › Fraude › señales de Eventos: «Abrir caso» → Colas › Reportes de usuario (regla evt). Quien edita personas (usr:editar). */
+export async function evtCasoSenal(userId: string, kind: string, motivo: string): Promise<ResAdm> {
+  const s = await requerir("usr", "editar");
+  const r = await (await import("@/lib/evt-admin")).abrirCasoEvt(s, String(userId), String(kind), motivoOk(motivo));
+  if (!r.ok) return no(r.msg);
+  revalidatePath("/admin/confianza"); revalidatePath("/admin/colas");
+  return { ok: true, mensaje: r.msg };
+}
