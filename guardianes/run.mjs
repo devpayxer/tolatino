@@ -3189,6 +3189,30 @@ const guardianes = {
     }
   },
 
+  /* El sistema de diseño portado (packages/ui/src/ds y los tokens puntuales) es lo que produce scripts/portar-sistema.mjs, nada más.
+     6c encontró que correr el script deshacía arreglos de accesibilidad hechos a mano en community/PostCard.js y Thread.js: el arreglo
+     tiene que vivir en el script (como un parche) o se pierde la próxima vez. Aquí se corre el script en una carpeta temporal y cada
+     archivo tiene que ser idéntico al del repo. Al revés: editar a mano un componente portado, o quitar un parche del script → falla. */
+  sistemaSincronizado() {
+    const G = "sistemaSincronizado";
+    const tmp = execSync("mktemp -d", { encoding: "utf8" }).trim();
+    try {
+      execSync("node scripts/portar-sistema.mjs", { stdio: ["ignore", "ignore", "pipe"], env: { ...process.env, PORTAR_DESTINO: join(tmp, "ds"), PORTAR_TOKENS: join(tmp, "tokens.css") } });
+      const lista = (d, base = d) => readdirSync(d).flatMap((n) => statSync(join(d, n)).isDirectory() ? lista(join(d, n), base) : [join(d, n).slice(base.length + 1)]);
+      const repo = new Set(lista("packages/ui/src/ds")), gen = new Set(lista(join(tmp, "ds")));
+      for (const f of gen) {
+        if (!repo.has(f)) falla(G, `packages/ui/src/ds/${f}`, 0, "el script lo genera pero no está en el repo: correr scripts/portar-sistema.mjs");
+        else if (readFileSync(join(tmp, "ds", f), "utf8") !== readFileSync(`packages/ui/src/ds/${f}`, "utf8"))
+          falla(G, `packages/ui/src/ds/${f}`, 0, "distinto de lo que produce scripts/portar-sistema.mjs: un arreglo a mano va como parche en el script");
+      }
+      for (const f of repo) if (!gen.has(f)) falla(G, `packages/ui/src/ds/${f}`, 0, "está en el repo pero el script no lo produce");
+      if (readFileSync(join(tmp, "tokens.css"), "utf8") !== readFileSync("packages/ui/src/tokens.css", "utf8"))
+        falla(G, "packages/ui/src/tokens.css", 0, "los tokens puntuales no son los que produce scripts/portar-sistema.mjs");
+    } catch (e) {
+      falla(G, "scripts/portar-sistema.mjs", 0, `el script falló: ${String(e.stderr ?? e.message).split("\n").find((l) => /Error/.test(l)) ?? "error"}`);
+    } finally { execSync(`rm -rf ${JSON.stringify(tmp)}`); }
+  },
+
   /* 6e. Cada llamada a Stripe de la pasarela está en la prueba de contrato (scripts/contrato-stripe/prueba.cjs corre contra stripe-mock en
      el CI): un método de `pasarela` que llama a stripe() y que la prueba no usa, nunca se validó contra la API. Al revés: quitar de la
      prueba transferir o revertirTransferencia → falla. */

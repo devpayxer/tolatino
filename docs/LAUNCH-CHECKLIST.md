@@ -773,9 +773,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov)
 - [ ] **6c · Abogado:** ley de reventa de boletos de PA, impuesto de diversiones (amusement tax) por ciudad, To'Latino como comerciante del
       cobro (1099-K del organizador), política de devoluciones en los Términos. (6c, 10 nov)
-- [ ] **6c · `scripts/portar-sistema.mjs` no es idéntico a lo que hay en el repo:** al correrlo para el parche de TicketQR también
+- [x] **6c · `scripts/portar-sistema.mjs` no es idéntico a lo que hay en el repo:** al correrlo para el parche de TicketQR también
       deshacía arreglos de accesibilidad hechos a mano en `community/PostCard.js` y `community/Thread.js` (se restauraron a mano). Pasar
-      esos arreglos al script. (6c, 10 nov)
+      esos arreglos al script. (6c, 10 nov) — _Hecho (10 nov): el «⋯» de PostCard y los dos de Thread son parches en el script; el script
+      ahora produce exactamente lo que hay en el repo (comprobado en una copia aparte, dos veces). Guardián nuevo `sistemaSincronizado`:
+      corre el script en una carpeta temporal y falla si un archivo portado o los tokens no son idénticos (probado al revés: un arreglo a
+      mano y un parche quitado fallan)._
 - [ ] **6c · `QtyStepper` del sistema sin rol ni teclado** (los «+» y «−» son `div`): lo usan el menú y la pantalla de boletos; parche
       de accesibilidad como el de Button. (6c, 10 nov)
 - [ ] **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov)

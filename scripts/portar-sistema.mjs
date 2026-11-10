@@ -14,8 +14,10 @@ import { join, relative, dirname } from "node:path";
 
 const RAIZ = new URL("..", import.meta.url).pathname;
 const ORIGEN = join(RAIZ, "docs/diseno/design-system/components-web/components");
-const DESTINO = join(RAIZ, "packages/ui/src/ds");
+// PORTAR_DESTINO / PORTAR_TOKENS: escribir en otra carpeta (el guardián sistemaSincronizado lo corre así y compara con el repo).
+const DESTINO = process.env.PORTAR_DESTINO || join(RAIZ, "packages/ui/src/ds");
 const TOKENS = join(RAIZ, "packages/ui/src/tokens.css");
+const TOKENS_SALIDA = process.env.PORTAR_TOKENS || TOKENS;
 
 const TOKEN_DE = {
   "0B0E12": "--tl-ink", "7B61FF": "--tl-brand", "4B37F5": "--tl-action", "2E1FD1": "--tl-action-hover",
@@ -135,7 +137,21 @@ for (const src of archivos) {
     t = t.replace("    onClick: onComments,\n", "    onClick: onComments,\n    ...btn(onComments, labels.comments),\n");
     t = t.replace("    onClick: onSave,\n", "    onClick: onSave,\n    ...btn(onSave, labels.save),\n");
     t = t.replace("    onClick: onShare,\n", "    onClick: onShare,\n    ...btn(onShare, labels.share),\n");
-    if (t === antes || (t.match(/\.\.\.btn\(/g) || []).length !== 5) throw new Error("parche PostCard: el origen cambió, revisar");
+    // El «⋯» de la publicación (6c, 10 nov): también botón accesible, con su nombre (`menuLabel`, ES por defecto).
+    t = t.replace("  onMenu,\n  chip,", "  onMenu,\n  menuLabel = 'Opciones',\n  chip,");
+    t = t.replace("    onClick: onMenu,\n", "    onClick: onMenu,\n    ...btn(onMenu, menuLabel),\n");
+    if (t === antes || (t.match(/\.\.\.btn\(/g) || []).length !== 6 || !t.includes("menuLabel = 'Opciones'")) throw new Error("parche PostCard: el origen cambió, revisar");
+  }
+
+  // Thread: el «⋯» de un comentario y de una respuesta era <span> con onClick, sin rol ni teclado (arreglado a mano en 5b; 6c
+  // encontró que correr este script lo deshacía). Aquí se vuelven botones accesibles con su nombre (`menuLabel`, ES por defecto).
+  if (rel.endsWith("community/Thread.js")) {
+    const antes = t;
+    const tecla = (fn) => `onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); ${fn}(e); } },`;
+    t = t.replace("  solve,\n  onMenu\n}) {", "  solve,\n  onMenu,\n  menuLabel = 'Opciones'\n}) {");
+    t = t.replace("    onClick: onMenu,\n", `    onClick: onMenu,\n    role: 'button',\n    tabIndex: 0,\n    'aria-label': menuLabel,\n    ${tecla("onMenu")}\n`);
+    t = t.replace("  onClick: r.onMenu,\n", `  onClick: r.onMenu,\n  role: 'button',\n  tabIndex: 0,\n  'aria-label': r.menuLabel || 'Opciones',\n  ${tecla("r.onMenu")}\n`);
+    if (t === antes || (t.match(/role: 'button'/g) || []).length < 2 || !t.includes("menuLabel = 'Opciones'")) throw new Error("parche Thread: el origen cambió, revisar");
   }
 
   // Reserva (Booking de citas y de mesas) y Chip: las opciones eran <div>/<span> con onClick, sin rol, sin foco y sin
@@ -281,6 +297,6 @@ const lineas = [...puntuales].sort().map(([n, v]) => `  ${n}: ${v};`).join("\n")
 tok = tok.trimEnd() + `\n\n/* ── Puntuales del sistema (generado por scripts/portar-sistema.mjs): colores que los componentes
    del sistema usan una o pocas veces y no tenían token. Se nombran por su valor; no se usan en pantallas nuevas. */
 :root {\n${lineas}\n}\n`;
-writeFileSync(TOKENS, tok);
+writeFileSync(TOKENS_SALIDA, tok);
 
 console.log(`portados ${modulos.length} módulos · ${unicos.length} exportaciones · ${puntuales.size} tokens puntuales`);
