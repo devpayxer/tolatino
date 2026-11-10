@@ -4,11 +4,13 @@
    VERDE entra · ÁMBAR revisar (grupo «entran N de M», pide ID, boleto transferido) · ROJO no entra (ya entró por … a las …, anulado,
    devuelto, QR anulado, de otro día, de otro evento, QR no válido). Un grupo o un evento que pide ID se confirma con «Entró» antes de
    marcar. Entrada libre: el contador (+1 / −1). Sin montos ni precios: la puerta no vende (D1). Lo decide el servidor
-   (/api/puerta/escanear, con el id del escaneo: repetir no cuenta dos veces). */
+   (/api/puerta/escanear, con el id del escaneo: repetir no cuenta dos veces). 6h: con `local` (To'Latino Puerta), sin señal decide el
+   teléfono con su paquete firmado y guarda el escaneo en la cola con el MISMO id (sin-conexion/usePuertaLocal.ts); la pantalla lo dice. */
 import { Button, Icon } from "@tolatino/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Escaner } from "./Escaner";
 import { QUE_HACER, RESULTADO, type Pregunta, type ResEscaneo, type VistaEscaneo } from "@/lib/puerta-comun";
+import type { PuertaLocal } from "./sin-conexion/usePuertaLocal";
 
 type Bi = { es: string; en: string };
 const TONO = { ok: ["var(--tl-signal)", "var(--tl-ink)"], warn: ["var(--tl-pro)", "var(--tl-ink)"], bad: ["var(--tl-danger)", "var(--tl-white)"] } as const;
@@ -24,14 +26,24 @@ function sonar(bien: boolean) {
   } catch { /* sin sonido no pasa nada */ }
 }
 export async function mandar(cuerpo: Record<string, unknown>): Promise<ResEscaneo | { ok: false; msg: Bi; red: true }> {
+  const ab = new AbortController(), t = setTimeout(() => ab.abort(), 6000);
   try {
-    const r = await fetch("/api/puerta/escanear", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpo) });
+    const r = await fetch("/api/puerta/escanear", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpo), signal: ab.signal });
     return (await r.json()) as ResEscaneo;
   } catch { return { ok: false, red: true, msg: { es: "Sin señal: no se marcó. Toca «Reintentar» cuando vuelva la señal.", en: "No signal: not marked. Tap “Retry” when the signal is back." } }; }
+  finally { clearTimeout(t); }
+}
+/* 6h · Con la puerta sin conexión: en línea primero; sin señal (o si la llamada no llega), decide el teléfono con su paquete (mismo id). */
+export async function mandarOLocal(cuerpo: Record<string, unknown>, local?: PuertaLocal | null): Promise<ResEscaneo | { ok: false; msg: Bi; red: true } | { ok: true; res: string; k: number }> {
+  if (local && local.listo && !local.enLinea) return local.escanear(cuerpo);
+  const r = await mandar(cuerpo);
+  if (!r.ok && "red" in r && local?.listo) return local.escanear(cuerpo);
+  if (local && r.ok) local.notar(cuerpo, r);
+  return r;
 }
 
-export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, onBuscar }: {
-  sesion: string; es: boolean; reentrada: boolean; libre: boolean; onCambio?: () => void; onCerrada?: () => void; onBuscar?: () => void;
+export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, onBuscar, local }: {
+  sesion: string; es: boolean; reentrada: boolean; libre: boolean; onCambio?: () => void; onCerrada?: () => void; onBuscar?: () => void; local?: PuertaLocal | null;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [v, setV] = useState<VistaEscaneo | null>(null), [preg, setPreg] = useState<{ p: Pregunta; qr: string; n: number } | null>(null);
@@ -41,7 +53,7 @@ export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, on
   const limpiar = useCallback(() => { if (t.current) clearTimeout(t.current); setV(null); setPreg(null); setErr(null); }, []);
   const resolver = useCallback(async (cuerpo: Record<string, unknown>, qr: string | null) => {
     setEnviando(true);
-    const r = await mandar(cuerpo);
+    const r = (await mandarOLocal(cuerpo, local)) as ResEscaneo | { ok: false; msg: Bi; red: true };
     setEnviando(false);
     if (!r.ok) {
       if ("cerrada" in r && r.cerrada) { onCerrada?.(); return; }
@@ -51,7 +63,7 @@ export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, on
     setPreg(null); setV(r.v); sonar(r.v.tono !== "bad"); onCambio?.();
     if (t.current) clearTimeout(t.current);
     if (r.v.tono === "ok") t.current = setTimeout(() => setV(null), 2600);
-  }, [onCambio, onCerrada]);
+  }, [onCambio, onCerrada, local]);
   const leido = useCallback((qr: string) => {
     if (enviando || v || preg || err) return;
     void resolver({ sesion, tipo: "qr", qr, id: uuid(), at: Date.now(), dir, previo: dir === "in" }, qr);
@@ -59,7 +71,7 @@ export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, on
   useEffect(() => () => { if (t.current) clearTimeout(t.current); }, []);
   const contar = async (d: "in" | "out") => {
     setEnviando(true);
-    const r = await mandar({ sesion, tipo: "contar", id: uuid(), at: Date.now(), dir: d, n: 1 });
+    const r = await mandarOLocal({ sesion, tipo: "contar", id: uuid(), at: Date.now(), dir: d, n: 1 }, local);
     setEnviando(false);
     if (!r.ok) { if ("cerrada" in r && r.cerrada) { onCerrada?.(); return; } setErr({ msg: r.msg }); return; }
     const x = r as unknown as { res: string; k: number };
@@ -84,6 +96,7 @@ export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, on
         {x.transferido && x.res === "valid" ? <span style={{ font: "700 15px/1.4 Manrope,sans-serif" }}>{E2("Boleto transferido: revisa que el QR esté en su teléfono.", "Transferred ticket: check the QR is on their phone.")}</span> : null}
         {x.edad > 0 && (x.res === "valid" || x.res === "manual") && x.dir === "in" ? <span style={{ font: "700 15px Manrope,sans-serif" }}>{E2(`Evento ${x.edad}+`, `${x.edad}+ event`)}</span> : null}
         {aqui ? <span style={{ font: "600 15px/1.45 Manrope,sans-serif" }}>{es ? aqui.es : aqui.en}</span> : null}
+        {x.sinSenal ? <span style={{ display: "flex", alignItems: "center", gap: 8, font: "800 13px/1.4 Manrope,sans-serif" }}><Icon name="wifi" size={16} color={fg} />{E2("SIN CONEXIÓN · lo decidió este teléfono; se sube al volver la señal.", "OFFLINE · decided on this phone; it uploads when the signal is back.")}</span> : null}
         <span style={{ flex: 1 }} />
         <Button variant={x.tono === "bad" ? "secondary" : "primary"} size="lg" block icon="grid" onClick={limpiar} style={btnGrande}>{E2("Siguiente", "Next")}</Button>
       </div>);
@@ -102,6 +115,7 @@ export function Escanear({ sesion, es, reentrada, libre, onCambio, onCerrada, on
           <Button variant="secondary" size="lg" icon="plus" onClick={() => setPreg({ ...q, n: Math.min(q.p.quedan, q.n + 1) })} style={{ width: 58, height: 58, padding: 0 }}>{""}</Button>
         </div>) : null}
       {q.p.entraron > 0 ? <span style={{ font: "700 14px Manrope,sans-serif" }}>{E2(`Ya entraron ${q.p.entraron} de ${q.p.de}.`, `${q.p.entraron} of ${q.p.de} already in.`)}</span> : null}
+      {q.p.fuera ? <span style={{ font: "600 15px/1.45 Manrope,sans-serif" }}>{E2("SIN CONEXIÓN · El QR es de To’Latino pero no está en la lista de este teléfono (se vendió hace poco). Si lo dejas entrar, se revisa al volver la señal.", "OFFLINE · The QR is To’Latino’s but it is not on this phone’s list (sold recently). If you let them in, it is checked when the signal is back.")}</span> : null}
       <span style={{ flex: 1 }} />
       <Button variant="primary" size="lg" block icon="check" onClick={() => void resolver({ sesion, tipo: "qr", qr: q.qr, id: q.p.id, at: Date.now(), dir: "in", n: q.n, previo: false }, q.qr)} style={btnGrande}>
         {q.p.quedan > 1 ? E2(`Entraron ${q.n}`, `${q.n} got in`) : E2("Entró", "Got in")}</Button>

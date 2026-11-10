@@ -2,7 +2,7 @@
 
 _Pantallas: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`: PUERTA, PORTEROS · ESCANEAN EN LA PUERTA, REGLAS DE
 PUERTA) y **el modo puerta** (`?det=door:{evento}@{fecha}`: escanear, buscar y el Monitor en vivo). Parte «Eventos» del equipo (el dueño siempre).
-Teléfono y escritorio. Versión: Fase 6 · bloque 6g (10 nov 2026)._
+Teléfono y escritorio. Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
 
 ## Qué hace
 - **PUERTA** en la ficha: **ADENTRO**, **ENTRARON** e **INCIDENCIAS** de la fecha que estás viendo, y **Abrir modo puerta**.
@@ -22,6 +22,11 @@ Teléfono y escritorio. Versión: Fase 6 · bloque 6g (10 nov 2026)._
   To'Latino Puerta** para la app completa. En un evento de varios días eliges el día.
 - **Monitor en vivo**: adentro, faltan, rechazados (y cuántos intentaron entrar otra vez), **ÚLTIMOS EN LA PUERTA**, **EN LA PUERTA** (cada portero,
   su puerta, desde qué hora y cuántos dejó entrar; **Cerrar su puerta**) e **INCIDENCIAS** (con **Cerrar**). Se pone al día solo.
+- **Sin señal (6h)**: cada puerta es un teléfono. El Monitor dice cuántos escaneos subió **sin conexión** y a qué hora, cuántos quedaron
+  **repetidos** y si su **reloj** está adelantado o atrasado. Los escaneos sin conexión salen marcados en ÚLTIMOS. Las incidencias **«Entró dos
+  veces (sin conexión)»** (con las dos puertas y horas) y **«Entró sin conexión con un boleto que ya no valía»** las abre To'Latino solas.
+- **Revocar este teléfono**: para un teléfono perdido o en malas manos. Se cierra su puerta, su lista se borra en la próxima señal y lo que no
+  haya subido **ya no cuenta**. **Cerrar su puerta**, en cambio, deja subir lo que escaneó sin señal antes del cierre.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -34,6 +39,8 @@ Teléfono y escritorio. Versión: Fase 6 · bloque 6g (10 nov 2026)._
 | Dos porteros escanean el mismo boleto a la vez | Entra una vez; el otro ve «Ya entró por … a las …». |
 | Un portero reporta una incidencia | Te llega un aviso y sale en el Monitor; la cierras cuando se resuelva. |
 | Cancelas el evento | Las puertas abiertas de ese evento se cierran solas. |
+| Dos porteros sin señal dejaron entrar el mismo boleto | Al volver la señal entra una sola vez: gana el primero por la hora; el otro queda REPETIDO con incidencia. |
+| Un portero perdió el teléfono | **Revocar este teléfono** (en el Monitor): su lista se borra y lo que no subió no cuenta. |
 
 ## Preguntas frecuentes
 - **¿Puede el portero vender boletos?** No (decisión D1). En la puerta no se vende: se escanea.
@@ -52,3 +59,5 @@ the day. **Remove** with a reason closes their door immediately. **DOOR RULES** 
 (none, 1, 2 or 3 h after start), capacity per door. **Door mode**: **Start scanning** opens your own door session; **Scan ticket** opens the
 full-screen camera with the same results as To'Latino Door; search by name or code and **Let in** with a reason. **Live monitor**: inside, to come,
 rejected, latest at the door, who is at each door (close their door) and incidents (close them). It updates on its own.
+
+**Offline (6h):** each door is a phone. The Monitor shows how many scans it uploaded offline (and when), how many were **repeated**, and whether its clock is ahead or behind; offline scans are marked in LATEST. The incidents “Got in twice (offline)” and “Got in offline with a ticket that was no longer valid” are opened automatically. **Revoke this phone** (lost or misused phone): its door closes, its list is wiped on the next signal and anything not uploaded no longer counts; **Close their door** still lets offline scans made before the close upload.

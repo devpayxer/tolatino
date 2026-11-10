@@ -248,8 +248,34 @@ del boleto, Mi cuenta «Usado · entraste a las …» / «VÁLIDO · OTRO DÍA»
 nueva (migraciones dos veces + semillas + semillas cambiadas) sale 0. Escaneo en línea local: p50 21 ms, p95 26 ms (sin base de carga). Ayuda:
 puerta-escanear, panel-porteros-y-modo-puerta, admin-puerta-auditoria; lista-y-mesa-de-noche, panel-mesas-y-lista, admin-eventos-y-boletos,
 mis-boletos-y-el-qr y panel-eventos-series-y-varios-dias al día. Revisar en el sandbox: `docs/REVISION.md` «### 6g» (con la revisión de seguridad).
-**Sigue 6h** (Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente — `puerta_entrada` ya recibe el id del teléfono, la
-hora del teléfono y `offline` —, choques entre porteros resueltos igual en cualquier orden, incidencias de duplicado, paquete que vence y se revoca).
+**6h hecho (10 nov)** — la Puerta sin conexión (decisión T #23; D1: solo escanea): migración 0113 (`door_packages` (el paquete de cada sesión SIN
+el contenido: huella, filas, vence a fin + `puerta_paquete_h`, revocado al cerrarse la sesión por trigger y por el barrido `puertaPaquetes`),
+`puerta_paquete_filas(fecha, desde)` (= door_delta: lo único que viaja; sin teléfonos, correos ni montos), `door_syncs` (solo inserción: cada
+subida con su desfase de reloj), `ticket_scans` suma la hora que cuenta (`at_eff`), desfase, reloj desviado, lo que decidió el teléfono y la
+subida, **`ticket_scan_fixes`** (solo inserción: las correcciones cuando al subir otra puerta cambia quién ganó) + vista **`ticket_scans_ef`**
+(la resolución vigente), **`puerta_offline` / `puerta_rehacer`** (idempotente por el id del teléfono, «ajeno» si es de otra puerta, la sesión de
+esa persona —cerrada por ella, el panel o el barrido sube hasta que vence; revocada o portero quitado no—, lo que valía al subir → rejected +
+incidencia «sin_valor», el primero por la hora corregida gana y el otro «duplicate» + incidencia «duplicado»), `door_sessions.ended_by 'revoked'`
+(«Revocar este teléfono», también después de cerrada), `door_incidents` automáticas, claves `puerta_paquete_h` 6, `puerta_sync_seg` 15,
+`puerta_offline_aviso_min` 10, `puerta_sync_lote` 200, `puerta_reloj_desvio_seg` 120). Código: `lib/puerta-paquete.ts` (armar firmado con la
+llave Ed25519 del QR, prefijo TLPK1, y cifrado AES-256-GCM con la llave derivada de la sesión + persona + teléfono; cambios desde un cursor),
+`lib/puerta-sync.ts` (`aplicarCola` por `/api/puerta/escanear` `{tipo:"cola"}`: desfase medido en cada subida, door_syncs, aviso al
+organizador), `/api/puerta/paquete`, `/api/puerta/llaves` (públicas), `lib/cifrado.llaveDerivada` (HKDF), `boletos-qr.firmarPaquete /
+llavesPublicas`; en el teléfono `app/(puerta)/puerta/sin-conexion/` (IndexedDB cifrado con llave no exportable, verificación Ed25519 con WebCrypto
+o @noble/ed25519 2.3.0 MIT vendida en `lib/ed25519/`, decidir con las reglas de `puerta_entrada`, cola cifrada, buscar sin señal,
+`usePuertaLocal`: preparar → poner al día cada 15 s → subir en orden → borrar al cerrar / revocar / vencer), la línea **EN LÍNEA / SIN
+CONEXIÓN · N POR SUBIR · lista de las …**, el aviso grande a los 10 min, la pantalla sin señal `/puerta/sin-conexion` (estática), el service
+worker propio `public/puerta/sw.js` (alcance /puerta: solo la cáscara y archivos con huella) y el manifiesto (instalable); el panel (Monitor:
+cada teléfono con lo subido sin conexión, repetidos, reloj, **Revocar este teléfono**; incidencias automáticas) y el Super Admin (sesiones,
+incidencias, ESCANEOS con SIN CONEXIÓN / REPETIDO / hora corregida / reloj desviado); **el QR del cliente sin señal** (`lib/boletos-sin-conexion.ts`:
+cifrado con la cookie `tl_bk` de la sesión, borrado al salir; `public/sw-boletos.js` + la cáscara estática `/cuenta/boletos/sin-conexion`).
+Guardianes nuevos `paqueteMinimo`, `choqueDePuertaDeterminista`, `sinConexionSinDatosAjenos`; ampliados `escaneoIdempotente` y `qrViejoNoEntra`
+(sin conexión) — 45/45 al revés (`alreves6h.cjs`). e2e `evt6h` 88 ✓ (teléfono 390; panel, Super Admin y Mi cuenta sin señal 1360; Playwright
+sin red y service worker; ver REVISION «### 6h») y regresión evt6g 105 ✓, evt6c 70 ✓, evt6d 126 ✓, adm5i ✓; base nueva (migraciones dos veces +
+semillas + semillas cambiadas) sale 0.
+Ayuda: puerta-sin-conexion (nueva, ES/EN); puerta-escanear, panel-porteros-y-modo-puerta, admin-puerta-auditoria y mis-boletos-y-el-qr al día.
+Revisar en el sandbox: `docs/REVISION.md` «### 6h» (con la revisión de seguridad y cómo probar sin señal en un teléfono de verdad).
+**Sigue 6i** (evento privado: solicitud, propuesta, depósito, cancelar; migración 0114, semilla 0039).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

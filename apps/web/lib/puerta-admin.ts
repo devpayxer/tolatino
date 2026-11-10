@@ -36,13 +36,17 @@ export async function puertaAdmin(s: Staff, fecha: string) {
     db().query<{ puerta: string; adentro: number; entraron: number; rechazados: number; repetidos: number }>(`select door_name as puerta, inside_n as adentro, entered_n as entraron, rejected_n as rechazados, dup_n as repetidos from door_counts where event_date_id = $1::bigint order by entered_n desc`, [fecha])]);
   return { ...x, h0: hora12(x.h0), r, ultimos: ult, equipo: eq, incidencias: inc, puertas: pu.rows };
 }
-/* Cada escaneo de un boleto (la ficha del boleto en el Super Admin): resultado, puerta, quién y cuándo. */
+/* Cada escaneo de un boleto (la ficha del boleto en el Super Admin): resultado VIGENTE, puerta, quién y cuándo. 6h: los de sin conexión con
+   la hora del teléfono corregida, cuándo llegaron al servidor, el desfase del reloj (marcado si es grande) y si una subida posterior los
+   corrigió (otro portero lo había dejado entrar antes: «repetido»). */
 export async function escaneosBoleto(s: Staff, code: string) {
   if (!/^TL-[A-HJ-NP-Z2-9]{3}-[2-9]{4}$/.test(String(code ?? ""))) return [];
-  return (await db().query<{ res: Resultado; dir: string; k: number; puerta: string; quien: string; hora: string; dia: string; motivo: string | null; offline: boolean }>(
+  return (await db().query<{ res: Resultado; dir: string; k: number; puerta: string; quien: string; hora: string; dia: string; motivo: string | null; offline: boolean;
+    resolucion: string; llego: string; desfase: number | null; desviado: boolean; corregido: boolean }>(
     `select x.result as res, x.direction as dir, x.admits_n as k, x.door_name as puerta, coalesce(f.display_name, nullif(u.first_name, ''), 'Equipo') as quien,
-            to_char(x.at_server at time zone c.timezone, 'HH24:MI') as hora, (x.at_server at time zone c.timezone)::date::text as dia, x.manual_reason as motivo, x.offline
-       from ticket_scans x join tickets t on t.id = x.ticket_id join cities c on c.id = x.city_id join door_sessions ss on ss.id = x.session_id
+            to_char(x.at_eff at time zone c.timezone, 'HH24:MI') as hora, (x.at_eff at time zone c.timezone)::date::text as dia, x.manual_reason as motivo, x.offline,
+            x.resolution as resolucion, to_char(x.at_server at time zone c.timezone, 'HH24:MI') as llego, x.clock_offset_ms as desfase, x.skew as desviado, x.corrected as corregido
+       from ticket_scans_ef x join tickets t on t.id = x.ticket_id join cities c on c.id = x.city_id join door_sessions ss on ss.id = x.session_id
        left join door_staff f on f.id = ss.door_staff_id left join users u on u.id = x.user_id
-      where t.code = $2 and (cardinality($1::text[]) = 0 or t.city_id = any($1::text[])) order by x.at_server limit 100`, [s.cities, code])).rows.map((z) => ({ ...z, hora: hora12(z.hora) }));
+      where t.code = $2 and (cardinality($1::text[]) = 0 or t.city_id = any($1::text[])) order by x.at_eff, x.at_server limit 100`, [s.cities, code])).rows.map((z) => ({ ...z, hora: hora12(z.hora), llego: hora12(z.llego) }));
 }

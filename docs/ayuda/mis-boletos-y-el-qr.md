@@ -1,7 +1,7 @@
 # Mis boletos y el QR · My tickets and the QR
 
 _Pantallas: **Mi cuenta › Boletos** (`/cuenta/boletos`), **el boleto** (`/cuenta/boletos/TL-…`) y **la orden** (`/eventos/orden/B-…`).
-Teléfono y escritorio. Versión: Fase 6 · bloques 6c y 6d (10 nov 2026)._
+Teléfono y escritorio. Versión: Fase 6 · bloques 6c, 6d y 6h (10 nov 2026)._
 
 ## Qué hace
 - **Mi cuenta › Boletos**: **Próximos** y **Pasados**, una fila por orden con la fecha, cuántos boletos y **CON QR** (o **USADO** ·
@@ -22,13 +22,15 @@ Teléfono y escritorio. Versión: Fase 6 · bloques 6c y 6d (10 nov 2026)._
 | Otra persona abre el enlace de tu boleto | No lo ve: cada boleto solo se abre con la cuenta que lo tiene. |
 | Te transfirieron un boleto | Sale en Mi cuenta › Boletos como **RECIBIDO · CON QR** y se abre el boleto (la orden es de quien pagó). |
 | Mandaste un boleto y nadie lo ha recibido | Sale como **ENVIADO**; sin QR hasta que lo reciban o lo deshagas. |
-| No hay señal en la puerta | El portero verifica la firma del QR sin conexión. Abre tu boleto antes de llegar. |
+| No hay señal en la puerta | El portero verifica la firma del QR sin conexión. Y tú lo ves sin señal: el boleto que abriste una vez con señal queda **guardado en este teléfono** (cifrado) y se abre igual. |
+| Sales de tu cuenta | Los boletos guardados en el teléfono se borran. Otra cuenta en el mismo teléfono no ve los tuyos. |
 
 ## Preguntas frecuentes
 - **¿Puedo mandarle un boleto a otra persona?** Sí: **Transferir** desde la orden o el boleto (hasta 2 h antes). El QR anterior queda anulado y
   la otra persona recibe el suyo. Ver «Transferir boletos».
 - **¿Una captura de pantalla sirve?** Sí, el QR es el mismo; pero si To'Latino lo reemite, la captura vieja ya no entra.
-- **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app.
+- **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app y, si lo abriste una vez con señal, se ve sin señal.
+- **¿Qué guarda el teléfono?** El QR, el código, el tipo y el evento, cifrados con la llave de tu sesión. Nada de lo que pagaste.
 
 ---
 
@@ -48,3 +50,5 @@ are not available yet.
   **VÁLIDO · OTRO DÍA**: muestra el mismo QR cada día (entra una vez por día). Si vas en grupo con una mesa, pueden entrar unos ahora y otros
   después con el mismo QR. Si no tienes el QR a mano, el portero te busca por tu nombre o los últimos 4 números del código. · *After the door scans
   your QR, your ticket says “Used · you got in at 10:42”; a multi-day pass stays valid for the other days.*
+
+**Offline (6h):** a ticket you opened once with signal is **saved on this phone** (encrypted with your session’s key) and opens without signal — the door verifies the QR signature offline too. Signing out erases it, and another account on the same phone never sees yours. Nothing about what you paid is stored.

@@ -1,0 +1,13 @@
+{
+  "name": "To'Latino Puerta",
+  "short_name": "Puerta",
+  "description": "Escanea los boletos en la puerta, con o sin señal.",
+  "lang": "es-US",
+  "start_url": "/puerta",
+  "scope": "/puerta",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0E12",
+  "theme_color": "#0B0E12",
+  "icons": [{ "src": "/assets/logo-tolatino.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

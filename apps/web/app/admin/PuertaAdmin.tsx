@@ -6,7 +6,7 @@ import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } fro
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { diaCorto } from "@/lib/evt-comun";
-import { INCIDENCIAS, RESULTADO } from "@/lib/puerta-comun";
+import { lineaUltimo, RESULTADO, textoIncidencia } from "@/lib/puerta-comun";
 import type { puertaAdmin, PuertaAdm } from "@/lib/puerta-admin";
 import { useAncho } from "./Colas";
 
@@ -25,11 +25,12 @@ export function PuertaAdmin({ lista, d }: { lista: { ahora: PuertaAdm[]; recient
       { k: "ADENTRO", v: String(d.r.adentro), s: d.r.aforo ? `de ${d.r.aforo} · ${d.r.pct} %` : "sin aforo", bg: "var(--tl-ink)", fg: "var(--tl-white)" }, { k: "FALTAN", v: String(d.r.faltan), s: `de ${d.r.esperados}` },
       { k: "RECHAZADOS", v: String(d.r.rechazados) }, { k: "REPETIDOS", v: String(d.r.repetidos), s: "ya habían entrado" }] });
     if (d.puertas.length) B.push({ type: "rows", k: "POR PUERTA", items: d.puertas.map((p, i): Fila => ({ key: `p${i}`, icon: "key", t: p.puerta, s: `adentro ${p.adentro} · rechazados ${p.rechazados} · repetidos ${p.repetidos}`, r: String(p.entraron), compact: true, chev: false })) });
-    B.push(d.equipo.length ? { type: "rows", k: "SESIONES DE PORTERO", items: d.equipo.map((x): Fila => ({ key: x.sesion, icon: "users", t: `${x.nombre}${x.miembro ? " · equipo del negocio" : ""}`, s: `Puerta ${x.puerta} · desde ${x.desde}${x.ultimo ? ` · último ${x.ultimo}` : ""} · ${x.rechazos} rechazos`, r: String(x.entradas),
-      tag: x.activa ? "ABIERTA" : "CERRADA", tone: x.activa ? "signal" : "neutral", compact: true, chev: false })) } : { type: "note", tone: "info", icon: "key", t: "Ninguna puerta abierta ahora." });
-    B.push(d.ultimos.length ? { type: "rows", k: "ÚLTIMOS EN LA PUERTA", items: d.ultimos.map((x): Fila => ({ key: x.id, icon: RESULTADO[x.res].tono === "bad" ? "warning" : "check", t: x.nombre, s: `${RESULTADO[x.res].t.es}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? " · salida" : ""} · ${x.puerta}`, m: x.hora, compact: true, chev: false,
+    B.push(d.equipo.length ? { type: "rows", k: "SESIONES DE PORTERO · CADA UNA ES UN TELÉFONO", items: d.equipo.map((x): Fila => ({ key: x.sesion, icon: "users", t: `${x.nombre}${x.miembro ? " · equipo del negocio" : ""}`,
+      s: `Puerta ${x.puerta} · desde ${x.desde}${x.ultimo ? ` · último ${x.ultimo}` : ""} · ${x.rechazos} rechazos${x.sinConexion ? ` · ${x.sinConexion} sin conexión (subió ${x.subio})` : ""}${x.repetidos ? ` · ${x.repetidos} repetidos` : ""}${x.desfase != null ? ` · reloj ${x.desfase > 0 ? "atrasado" : "adelantado"} ${Math.abs(Math.round(x.desfase / 1000))} s` : ""}`, r: String(x.entradas),
+      tag: x.activa ? "ABIERTA" : x.cerradaPor === "revoked" ? "REVOCADO" : "CERRADA", tone: x.activa ? "signal" : x.cerradaPor === "revoked" ? "danger" : "neutral", compact: true, chev: false })) } : { type: "note", tone: "info", icon: "key", t: "Ninguna puerta abierta ahora." });
+    B.push(d.ultimos.length ? { type: "rows", k: "ÚLTIMOS EN LA PUERTA", items: d.ultimos.map((x): Fila => ({ key: x.id, icon: RESULTADO[x.res].tono === "bad" ? "warning" : "check", t: x.nombre, s: lineaUltimo(x, true), m: x.hora, compact: true, chev: false,
       ibg: RESULTADO[x.res].tono === "bad" ? "rgba(192,57,43,.1)" : "rgba(0,229,196,.18)", ifg: RESULTADO[x.res].tono === "bad" ? "var(--tl-danger)" : "var(--tl-open-text)" })) } : { type: "empty", icon: "ticket", t: "Todavía nadie pasó por la puerta", s: "Aquí sale cada escaneo con su resultado, la puerta y la hora." });
-    if (d.incidencias.length) B.push({ type: "rows", k: "INCIDENCIAS", items: d.incidencias.map((x): Fila => ({ key: x.id, icon: INCIDENCIAS.find((o) => o.k === x.kind)?.icon ?? "info", t: INCIDENCIAS.find((o) => o.k === x.kind)?.l.es ?? x.kind, s: [x.nota, x.code, `${x.quien}${x.puerta ? ` · ${x.puerta}` : ""}`].filter(Boolean).join(" · "), m: x.hora,
+    if (d.incidencias.length) B.push({ type: "rows", k: "INCIDENCIAS", items: d.incidencias.map((x): Fila => ({ key: x.id, icon: textoIncidencia(x, true).icon, t: textoIncidencia(x, true).t, s: textoIncidencia(x, true).s, m: x.hora,
       tag: x.st === "open" ? "ABIERTA" : "CERRADA", tone: x.st === "open" ? "pro" : "neutral", compact: true, chev: false })) });
     B.push({ type: "note", tone: "info", icon: "ticket", t: "Para un boleto en particular: Buscar boleto → su ficha → ESCANEOS (quién lo escaneó, en qué puerta y a qué hora)." });
   } else {

@@ -754,7 +754,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
       Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov)
 - [ ] **6c · QR sin señal en el teléfono del cliente:** el QR verifica sin conexión en la puerta, pero la página del boleto necesita señal
-      para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov)
+      para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov) _6h (10 nov): hecho —
+      el boleto abierto una vez con señal se guarda cifrado en el teléfono y se ve sin señal (service worker de Mis boletos); falta probarlo en un
+      iPhone (Safari puede borrar lo guardado de una web que no se abre en 7 días) y que Mis boletos guarde todos los próximos sin abrirlos uno por uno._
 - [ ] **6c · QR rotativo y reventa:** QR fijo, firmado y con versión (§6 #10); el rotativo anti-captura y las señales de reventa (Confianza,
       6j) quedan para después. (6c, 10 nov)
 - [ ] **6c · Contrato con Stripe de las llamadas nuevas** (`retenerPlataforma` con `transfer_group`, `capturarPlataforma` y la lectura del
@@ -790,8 +792,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       siempre con su llave (`refunds.attempts`, `last_error`). Falta la alerta en Dinero / Confianza pasado N intentos y el camino manual. (6d, 10 nov)
 - [ ] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
       Confianza llegan con 6j (`evt_senales`). (6d, 10 nov)
-- [ ] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
+- [x] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
       transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov) _6g (10 nov): en línea hecho (`puerta_entrada`: SE ESTÁ TRANSFIRIENDO; e2e). Falta el paquete (6h)._
+      _6h (10 nov): hecho — el paquete marca «en transferencia» y trae los devueltos y anulados con su estado (para decir DEVUELTO / ANULADO sin señal);
+      los cambios bajan cada 15 s._
 - [x] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov) _6g (10 nov): Buscar «rosa» → la cortesía por su nombre → entrada a mano con motivo (e2e evt6g)._
 - [x] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov) _6e (10 nov): corrido en local contra stripe-mock con todo el contrato (también transfers y reversals)._
 - [x] **6d · Liquidación (6e):** _hecho en 6e (10 nov): evt_liq_calc usa refunds y fee_waived_cents; lo devuelto después de pagar resta de la siguiente o revierte._ `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
@@ -821,10 +825,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 
 ## Fase 6 · 6f (series y eventos de varios días)
-- [ ] **6f → 6g/6h · La puerta de varios días:** cada boleto guarda sus días (`tickets.valid_days`, lo pone la base) y `bol_fechas_validas(boleto)` /
+- [x] **6f → 6g/6h · La puerta de varios días:** cada boleto guarda sus días (`tickets.valid_days`, lo pone la base) y `bol_fechas_validas(boleto)` /
       `bol_vale_en(boleto, fecha)` dicen en qué fechas entra; el pase entra **una vez cada día** (las entradas por día van en `ticket_entries`
       de 6g). El paquete sin conexión (6h) debe llevar los días de cada boleto. (6f, 10 nov) _6g (10 nov): en línea hecho (ES DE OTRO DÍA con el día que vale;
       el pase una vez cada día en `ticket_entries`; e2e). Falta el paquete (6h)._
+      _6h (10 nov): hecho — el paquete trae los días de cada boleto (todos los del evento de varios días: ES DE OTRO DÍA sin señal; e2e)._
 - [ ] **6f · Una serie sin fin** («cada jueves, siempre»): no existe; «cuántas fechas» cuenta desde la primera y el tope es Configuración (52).
       Si se quiere, n = sin límite con el barrido creando hasta el horizonte. (6f, 10 nov)
 - [ ] **6f · Panel de una serie: CORTESÍAS, DEVOLUCIONES y AYUDA CON ÓRDENES** muestran todas las fechas juntas (cada fila dice su orden);
@@ -842,12 +847,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 
 ## Fase 6 · 6g (la Puerta en línea)
-- [ ] **6g → 6h · Sin conexión:** paquete firmado y cifrado, cola local, choques entre porteros. Gancho listo: cada escaneo trae el id del teléfono
+- [x] **6g → 6h · Sin conexión:** paquete firmado y cifrado, cola local, choques entre porteros. Gancho listo: cada escaneo trae el id del teléfono
       (`ticket_scans.id`), la hora del teléfono (`at_device`) y `puerta_entrada(..., p_offline)`; `door_sessions.clock_offset_ms` y `package_id`
-      existen. Hoy, sin señal: «SIN SEÑAL · no se marcó» + **Reintentar** con el mismo id. (6g, 10 nov)
+      existen. Hoy, sin señal: «SIN SEÑAL · no se marcó» + **Reintentar** con el mismo id. (6g, 10 nov) _6h (10 nov): hecho (ver «Fase 6 · 6h»)._
 - [ ] **6g · REPETIDOS en Confianza › Fraude** («boletos duplicados»: el mismo QR que intenta entrar otra vez, `door_counts.dup_n` y
       `ticket_scans.result = 'already_used'`): la señal viva llega con 6h/6j (`evt_senales`). (6g, 10 nov)
-- [ ] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
+- [ ] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h — _hecho en 6h con el logo SVG_) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
       teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov)
 - [ ] **6g · Cámara en teléfonos reales:** probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
       BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
@@ -870,3 +875,27 @@ en el momento. Se marca solo cuando está hecho de verdad.
       de la app (push con la app instalable). (6g, 10 nov)
 - [ ] **6g · Prueba noc4c dependiente del día:** su reloj movido (−2000 min) no alcanza cuando la próxima noche abierta está a 2 días (martes →
       jueves); con −9000 pasa. Cambiar la prueba para que mueva el reloj desde la noche de la reserva. (6g, 10 nov)
+
+
+## Fase 6 · 6h (la Puerta sin conexión)
+- [ ] **6h · Teléfonos de verdad sin señal:** probado con Chromium (Playwright `setOffline`, service worker, IndexedDB, WebCrypto Ed25519). Falta el
+      iPhone del fundador (Safari: Ed25519 en WebCrypto desde 17; antes, @noble/ed25519 dentro del repo) y un Android, en modo avión, con la app en la
+      pantalla de inicio y abriéndola en frío sin señal. (6h, 10 nov)
+- [ ] **6h · Safari borra lo guardado de una web que no se abre en 7 días** (ITP): la lista de la puerta dura una noche (no importa), pero el boleto
+      del cliente guardado hace más de 7 días puede no estar sin señal. Con la app de las tiendas (Fase 8) no pasa; hasta entonces, «abre tu boleto
+      antes de llegar». (6h, 10 nov)
+- [ ] **6h · Mis boletos guarda solo los boletos abiertos** una vez con señal; guardar todos los próximos al abrir Mis boletos (con su QR) queda
+      pendiente (pide firmar todos los QR al listar). (6h, 10 nov)
+- [ ] **6h · Velocidad con la base de carga:** paquete de 10 k boletos ≤ 1 s y ≤ 1 MB comprimido, subir 500 escaneos ≤ 2 s, validar sin conexión
+      ≤ 50 ms en un Pixel emulado (`scripts/carga/eventos-1m.mjs`). Hoy medido solo con los datos del e2e (11 boletos). (6h, 10 nov)
+- [ ] **6h · Red entre teléfonos de la puerta sin internet** (LAN / Bluetooth) y **QR que cambia cada pocos segundos** (anti-captura): no se
+      construyen (§6 #10). Sin señal, dos porteros no se ven: el duplicado se resuelve al subir. (6h, 10 nov)
+- [ ] **6h · Señales de duplicados en Confianza › Fraude** («boletos duplicados»): las incidencias automáticas «Entró dos veces (sin conexión)»
+      ya existen (y `door_counts.dup_n`); la señal por comprador llega con 6j (`evt_senales`). (6h, 10 nov)
+- [ ] **6h · RSVP y «Contar en la puerta» sin señal** se suben con la puerta abierta; si la puerta se cerró (el panel o el barrido) antes de subir,
+      esas marcas no cuentan (los boletos sí suben). La lista de la noche (Noche) es solo con señal. (6h, 10 nov)
+- [ ] **6h · Un teléfono revocado sin señal** sigue validando con su lista hasta recuperar la señal o hasta que venza (fin + 6 h); nada de lo que
+      escanee después cuenta. Si se quiere menos ventana: vencer la lista antes (Configuración) o pedir un PIN al abrir la app sin señal. (6h, 10 nov)
+- [ ] **6h · Íconos PNG de To'Latino Puerta** (192 / 512, maskable) para instalar en todos los Android; hoy el logo SVG. (6h, 10 nov)
+- [ ] **6h · Cifrado en reposo en el navegador:** la llave no exportable vive en el perfil del navegador; con el teléfono desbloqueado alguien
+      podría usarla en ese navegador. Con la app de las tiendas (Fase 8): llave en el Keychain / Keystore del teléfono. (6h, 10 nov)

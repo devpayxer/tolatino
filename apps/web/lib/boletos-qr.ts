@@ -64,6 +64,20 @@ export async function verificarFirma(texto: string): Promise<{ ok: true; d: Dato
   return bien ? { ok: true, kid, d: { id: m[2]!, fecha: m[3]!, ver: Number(m[4]), admits: Number(m[5]) } } : { ok: false, motivo: "firma" };
 }
 
+/* 6h · La firma del paquete sin conexión de la puerta: la misma llave Ed25519 del entorno, con otro prefijo («TLPK1» + salto de línea: nunca
+   se confunde con un QR, que empieza con «TL1.»). El teléfono la verifica con la llave PÚBLICA (llavesPublicas) antes de usar el paquete. */
+export async function firmarPaquete(texto: string): Promise<{ kid: string; firma: string }> {
+  await publicar();
+  const k = cargar();
+  return { kid: k.kid, firma: sign(null, Buffer.from(`TLPK1\n${texto}`, "utf8"), k.priv).toString("base64url") };
+}
+/* Las llaves públicas vigentes (kid → llave cruda en base64url): las baja la puerta para verificar QR y paquetes sin conexión. */
+export async function llavesPublicas(): Promise<Record<string, string>> {
+  await publicar();
+  const r = (await db().query<{ kid: string; pk: string }>(`select kid, public_key as pk from qr_keys where retired_at is null order by kid`)).rows;
+  return Object.fromEntries(r.map((x) => [x.kid, x.pk]));
+}
+
 /* La matriz del QR (true = módulo oscuro). Corrección de errores M: se lee bien en una pantalla con brillo bajo. */
 type Gen = { QrCode: { Ecc: { MEDIUM: unknown }; encodeText: (t: string, e: unknown) => { size: number; getModule: (x: number, y: number) => boolean } } };
 const qrcodegen = qrRaw as unknown as Gen;

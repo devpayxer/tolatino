@@ -8,10 +8,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { bi, diaCorto, hora } from "@/lib/evt-comun";
 import type { EvtPanel } from "@/lib/evt";
-import { INCIDENCIAS, MOTIVOS_MANUAL, QUE_HACER, RESULTADO, type FilaPuerta } from "@/lib/puerta-comun";
+import { lineaUltimo, MOTIVOS_MANUAL, QUE_HACER, RESULTADO, textoIncidencia, type FilaPuerta } from "@/lib/puerta-comun";
 import { puertaBuscar } from "../(puerta)/puerta/acciones";
 import { Escanear, mandar } from "../(puerta)/puerta/Escanear";
-import { evtIncidenciaCerrar, evtPorteroAsignar, evtPorteroDesasignar, evtPorteroInvitar, evtPorteroQuitar, evtPuertaAbrir, evtPuertaCerrarSesion, evtPuertaReglas } from "./acciones-puerta";
+import { evtIncidenciaCerrar, evtPorteroAsignar, evtPorteroDesasignar, evtPorteroInvitar, evtPorteroQuitar, evtPuertaAbrir, evtPuertaCerrarSesion, evtPuertaReglas, evtPuertaRevocar } from "./acciones-puerta";
 import type { Ctx, Sec } from "./Panel";
 
 type Bi = { es: string; en: string };
@@ -121,16 +121,22 @@ export function puertaDetalle(c: Ctx): Sec {
     out.push({ type: "acts", items: [{ l: E2("Empezar a escanear", "Start scanning"), v: "primary", icon: "grid", off: c.pending, onClick: () => c.run(() => evtPuertaAbrir(c.d.id, P.fecha!, E2("Panel", "Panel")), E2("Modo puerta abierto.", "Door mode open.")) }] });
   } else out.push({ type: "note", tone: "info", icon: "clock", t: E2("El modo puerta se activa el día del evento: 2 horas antes de abrir las puertas y hasta 2 horas después de terminar.", "Door mode turns on the day of the event: 2 hours before doors open until 2 hours after it ends.") });
   if (P.ultimos.length) out.push({ type: "rows", k: E2("ÚLTIMOS EN LA PUERTA", "LATEST AT THE DOOR"), items: P.ultimos.map((x): Fila => ({ key: x.id, icon: RESULTADO[x.res].tono === "bad" ? "warning" : "check", t: x.nombre,
-    s: `${bi(RESULTADO[x.res].t, es)}${x.k > 1 ? ` · ${x.k}` : ""} · ${x.puerta}`, m: x.hora, compact: true, chev: false,
+    s: lineaUltimo(x, es), m: x.hora, compact: true, chev: false,
     ibg: RESULTADO[x.res].tono === "bad" ? "rgba(192,57,43,.1)" : "rgba(0,229,196,.18)", ifg: RESULTADO[x.res].tono === "bad" ? "var(--tl-danger)" : "var(--tl-open-text)" })) });
   // MONITOR EN VIVO: por portero y puerta, incidencias.
   out.push({ type: "group", k: E2("MONITOR EN VIVO", "LIVE MONITOR") });
-  out.push(P.equipo.length ? { type: "rows", k: E2("EN LA PUERTA", "AT THE DOOR"), items: P.equipo.map((x): Fila => ({ key: x.sesion, icon: "key", t: `${x.nombre}${x.miembro ? E2(" · equipo", " · team") : ""}`, s: `${E2("Puerta", "Door")} ${x.puerta} · ${E2("desde", "since")} ${x.desde}${x.rechazos ? E2(` · ${x.rechazos} rechazos`, ` · ${x.rechazos} rejections`) : ""}`,
-    r: String(x.entradas), tag: x.activa ? E2("ABIERTA", "OPEN") : E2("CERRADA", "CLOSED"), tone: x.activa ? "signal" : "neutral", compact: true, chev: false,
-    acts: x.activa && x.sesion !== P.miSesion ? [{ l: E2("Cerrar su puerta", "Close their door"), v: "secondary", onClick: () => c.run(() => evtPuertaCerrarSesion(c.d.id, x.sesion), E2("Puerta cerrada.", "Door closed.")) }] : undefined })) }
+  // 6h · Cada puerta es un teléfono: lo que subió sin conexión, los repetidos, el reloj y «Revocar este teléfono» (lo que no subió ya no entra).
+  out.push(P.equipo.length ? { type: "rows", k: E2("EN LA PUERTA · CADA UNA ES UN TELÉFONO", "AT THE DOOR · EACH ONE IS A PHONE"), items: P.equipo.map((x): Fila => ({ key: x.sesion, icon: "key", t: `${x.nombre}${x.miembro ? E2(" · equipo", " · team") : ""}`,
+    s: [`${E2("Puerta", "Door")} ${x.puerta} · ${E2("desde", "since")} ${x.desde}`, x.rechazos ? E2(`${x.rechazos} rechazos`, `${x.rechazos} rejections`) : null, x.sinConexion ? E2(`${x.sinConexion} sin conexión (subió ${x.subio})`, `${x.sinConexion} offline (uploaded ${x.subio})`) : null,
+      x.repetidos ? E2(`${x.repetidos} repetidos`, `${x.repetidos} repeated`) : null, x.desfase != null && Math.abs(x.desfase) > 120000 ? (x.desfase < 0 ? E2(`reloj adelantado ${Math.round(-x.desfase / 60000)} min`, `clock ${Math.round(-x.desfase / 60000)} min ahead`) : E2(`reloj atrasado ${Math.round(x.desfase / 60000)} min`, `clock ${Math.round(x.desfase / 60000)} min behind`)) : null].filter(Boolean).join(" · "),
+    r: String(x.entradas), tag: x.activa ? E2("ABIERTA", "OPEN") : x.cerradaPor === "revoked" ? E2("REVOCADO", "REVOKED") : E2("CERRADA", "CLOSED"), tone: x.activa ? "signal" : x.cerradaPor === "revoked" ? "danger" : "neutral", compact: true, chev: false,
+    acts: x.sesion === P.miSesion ? undefined : [
+      ...(x.activa ? [{ l: E2("Cerrar su puerta", "Close their door"), v: "secondary", onClick: () => c.run(() => evtPuertaCerrarSesion(c.d.id, x.sesion), E2("Puerta cerrada. Lo que escaneó sin señal todavía sube.", "Door closed. What they scanned offline can still upload.")) }] : []),
+      ...(x.revocable ? [{ l: E2("Revocar este teléfono", "Revoke this phone"), v: "danger", onClick: () => { if (window.confirm(E2("¿Revocar este teléfono? Se borra su lista en la próxima señal y lo que no haya subido ya no cuenta.", "Revoke this phone? Its list is wiped on the next signal and anything not uploaded no longer counts."))) c.run(() => evtPuertaRevocar(c.d.id, x.sesion), E2("Teléfono revocado.", "Phone revoked.")); } }] : []),
+    ] })) }
     : { type: "note", tone: "info", icon: "key", t: E2("Ninguna puerta abierta todavía.", "No door open yet.") });
-  if (P.incidencias.length) out.push({ type: "rows", k: E2("INCIDENCIAS", "INCIDENTS"), items: P.incidencias.map((x): Fila => ({ key: x.id, icon: INCIDENCIAS.find((o) => o.k === x.kind)?.icon ?? "info",
-    t: bi(INCIDENCIAS.find((o) => o.k === x.kind)?.l ?? ({ es: x.kind, en: x.kind } as Bi), es), s: [x.nota, x.code, `${x.quien}${x.puerta ? ` · ${x.puerta}` : ""}`].filter(Boolean).join(" · "), m: x.hora, compact: true, chev: false,
+  if (P.incidencias.length) out.push({ type: "rows", k: E2("INCIDENCIAS", "INCIDENTS"), items: P.incidencias.map((x): Fila => ({ key: x.id, icon: textoIncidencia(x, es).icon,
+    t: textoIncidencia(x, es).t, s: textoIncidencia(x, es).s, m: x.hora, compact: true, chev: false,
     tag: x.st === "open" ? E2("ABIERTA", "OPEN") : E2("CERRADA", "CLOSED"), tone: x.st === "open" ? "pro" : "neutral",
     acts: x.st === "open" ? [{ l: E2("Cerrar", "Close"), v: "secondary", onClick: () => c.run(() => evtIncidenciaCerrar(c.d.id, x.id, ""), E2("Incidencia cerrada.", "Incident closed.")) }] : undefined })) });
   return { blocks: out, ed: null };

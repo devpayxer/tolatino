@@ -738,7 +738,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       (6e no trae semilla). 6f (10 nov): 0111 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces +
       semillas 0001–0037 + semillas cambiadas → todo sale 0 (0037 da su forma a la serie y al festival también sin equipo). 6g (10 nov): 0112 con
       migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo
-      sale 0 (0038 deja a Junior y Karla activos también sin equipo). CI y 0113–0115 pendientes._
+      sale 0 (0038 deja a Junior y Karla activos también sin equipo). 6h (10 nov): 0113 con migrar.sh dos veces y vuelta a correr a mano sin
+      errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo sale 0 (6h no trae semilla). CI y 0114–0115
+      pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -795,8 +797,18 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       sin recargar; incidencia con 911 y aviso; «Pedir ID»; modo puerta del dueño con el Monitor; quitar a un portero corta su puerta al momento; IDOR
       con el portero y el dueño de otro negocio y un vecino; ninguna respuesta con teléfonos ni dinero; cierre; Super Admin › Modo puerta y ESCANEOS;
       Mi cuenta «Usado · entraste a las …»; topes de Configuración (invitar, buscar) leídos en la base. `alreves6g` 33/33. Sin conexión: 6h._
-- [ ] Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente, choques resueltos igual en cualquier orden, incidencias de
-      duplicado, paquete que vence y se revoca.
+- [x] Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente, choques resueltos igual en cualquier orden, incidencias de
+      duplicado, paquete que vence y se revoca. _6h (10 nov): e2e `evt6h` 88 ✓ (teléfono 390; panel, Super Admin y Mi cuenta sin señal 1360; Playwright sin red y
+      service worker): paquete firmado (Ed25519, prefijo TLPK1) y cifrado (AES-256-GCM con la llave de la sesión + persona + teléfono; llave no
+      exportable; ilegible con la de otra sesión; otro portero u otro teléfono no la reciben); sin señal: VÁLIDO / YA ENTRÓ por su cola, QR alterado,
+      de otro entorno, versión vieja, devuelto, en transferencia, de otro día, de otro negocio y no-boleto → no entran; buscar por los últimos 4 y
+      entrada a mano; dos porteros dejan entrar el mismo boleto (uno con el reloj 7 min adelantado) → una entrada, un «duplicate» con incidencia y
+      el mismo ganador en los dos órdenes de subida (con y sin corrección); la misma cola otra vez → nada cambia; devuelto mientras no había
+      señal → rejected + incidencia; boletos de otro negocio u otro día metidos en la cola → rechazados; id de otra puerta → «ajeno» (y 409 en
+      línea); app abierta en frío sin señal → la cáscara del service worker; cerrar la puerta borra todo del teléfono y el paquete ya no sale;
+      «Revocar este teléfono» → lo que no subió no cuenta y el teléfono lo borra; el paquete vence (teléfono) y el barrido lo revoca; Mi cuenta:
+      el QR sin señal (leído con jsQR) y borrado al salir; otra cuenta no lo ve. `alreves6h` 45/45. Teléfonos de verdad y la base de carga:
+      LAUNCH._
 - [ ] Evento privado de punta a punta (pedir, proponer, otra fecha, no puedo, vence, aceptar con depósito, cancelar antes y después de 72 h).
 - [ ] Super Admin: Eventos y boletos (4 pestañas), catálogo de formatos y géneros, Buscar boleto con reenviar / reemitir / anular, Modo puerta, Dinero,
       Usuarios y Negocios 360°, Confianza › señales, Configuración › Eventos, Notificaciones, Analítica › Eventos; cada acción con motivo, aviso, apelación y

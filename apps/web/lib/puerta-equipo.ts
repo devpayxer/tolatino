@@ -174,6 +174,15 @@ export async function cerrarSesionPanel(negocio: string, sesion: string): Promis
   const r = await db().query(`update door_sessions set ended_at = now(), ended_by = 'business' where id = $1::bigint and business_id = $2 and ended_at is null`, [sesion, negocio]);
   return r.rowCount ? { ok: true } : no("Esa puerta ya está cerrada.", "That door is already closed.");
 }
+/* 6h · «Revocar este teléfono»: la sesión queda revocada (abierta o ya cerrada por el portero, el panel o el barrido): su paquete ya no se
+   da ni se pone al día, el teléfono lo borra en la próxima señal y lo que tenga sin subir YA NO ENTRA (a diferencia de «Cerrar su puerta»,
+   que deja subir lo escaneado sin señal antes del cierre). Para un teléfono perdido o en manos de quien no debe. */
+export async function revocarTelefono(negocio: string, sesion: string): Promise<R> {
+  if (!ID.test(String(sesion ?? ""))) return no("Esa puerta no existe.", "That door does not exist.");
+  const r = await db().query(`update door_sessions set ended_at = coalesce(ended_at, now()), ended_by = 'revoked'
+                               where id = $1::bigint and business_id = $2 and (ended_by is null or ended_by in ('self', 'business', 'system'))`, [sesion, negocio]);
+  return r.rowCount ? { ok: true } : no("Ese teléfono ya estaba revocado o el portero ya no está.", "That phone was already revoked or the door staffer is gone.");
+}
 export async function cerrarIncidencia(negocio: string, id: string, nota: string, actorId: string): Promise<R> {
   if (!ID.test(String(id ?? ""))) return no("Esa incidencia no existe.", "That incident does not exist.");
   const r = await db().query(`update door_incidents set status = 'closed', closed_at = now(), closed_by = $3, closed_note = nullif($4, '') where id = $1::bigint and business_id = $2 and status = 'open'`,

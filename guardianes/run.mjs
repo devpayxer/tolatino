@@ -3048,6 +3048,14 @@ const guardianes = {
     if (/to_phone_enc|descifrar/.test(cuerpoFn(d, "verTransferencia"))) falla(G, D, 0, "la pantalla de recibir nunca saca el teléfono");
     if (existsSync(B) && !/conQR && vale && !b\.envio/.test(cuerpoFn(sinComent(B), "vistaBoleto"))) falla(G, B, 0, "con una transferencia pendiente no se firma ningún QR del boleto");
     if (existsSync(A)) { const q = cuerpoFn(sinComent(A), "buscarBoletosAdmin"); if (!/bol_vigente\(t\.id\) as vig,/.test(q) || !/b\.ver === v\.d\.ver && b\.fid === v\.d\.fecha && b\.admits === v\.d\.admits && b\.vig;/.test(q)) falla(G, A, 0, "la verificación del QR pregunta la versión y bol_vigente (válido y sin transferencia pendiente)"); }
+    // 6h · Sin conexión igual: el teléfono rechaza la versión vieja y el «se está transfiriendo» con su paquete, y al subir la base lo
+    // vuelve a decidir (un QR viejo o en transferencia que entró sin señal queda rejected con incidencia).
+    const LO = "apps/web/app/(puerta)/puerta/sin-conexion/local.ts", M13 = "packages/db/migrations/0113_puerta_sin_conexion.sql";
+    if (existsSync(LO)) { const d6 = cuerpoFn(sinComent(LO), "decidir"); if (!/if \(st === "replaced" \|\| \(x\.ver != null && x\.ver !== fila\[1\]\)\) return vista\("replaced"\);/.test(d6) || !/if \(st === "pending"\) return vista\("pending_transfer"\);/.test(d6)) falla(G, LO, 0, "sin conexión: la versión vieja → QR ANULADO y en transferencia → no entra"); }
+    if (existsSync(M13)) {
+      if (!/elsif t\.status = 'replaced' or \(p_ver is not null and p_ver <> t\.qr_ver\) then r := 'replaced';/.test(ultimaFn("puerta_offline")) || !/z\.status = 'pending' and z\.kind = 'transfer'\) then r := 'pending_transfer';/.test(ultimaFn("puerta_offline"))) falla(G, M13, 0, "al subir la cola, la versión vieja y la transferencia pendiente no entran");
+      if (!/z\.status = 'pending' and z\.kind = 'transfer'\) then 'pending' else t\.status end/.test(ultimaFn("puerta_paquete_filas"))) falla(G, M13, 0, "el paquete marca el boleto en transferencia");
+    }
     if (existsSync(M)) {
       const m = readFileSync(M, "utf8");
       if (!/create or replace function bol_vigente[\s\S]*?status = 'valid' and not exists \(select 1 from ticket_transfers x where x\.ticket_id = t\.id and x\.status = 'pending'/.test(m)) falla(G, M, 0, "bol_vigente: válido y sin transferencia pendiente");
@@ -3411,6 +3419,12 @@ const guardianes = {
       const b = ultimaFn(fn), i = b.indexOf("sc := puerta_repetido(p_scan);\n  if sc.id is not null then return sc; end if;"), j = b.indexOf("puerta_sesion(");
       if (i < 0 || j < 0 || i > j) falla(G, M, 0, `${fn}: primero el escaneo repetido (mismo id), después todo lo demás`);
     }
+    // 6h · La cola sin conexión: el mismo id del teléfono (lo de la cola sube con su id: repetirla no cuenta dos veces); un id de OTRA
+    // puerta no devuelve nada; el teléfono solo saca de la cola lo que el servidor contestó.
+    const o = ultimaFn("puerta_offline"), oi = o.indexOf("sc := puerta_repetido(p_scan);"), oj = o.indexOf("puerta_sesion_cola(");
+    if (oi < 0 || oj < 0 || oi > oj || !/if sc\.session_id <> p_session then raise exception 'puerta_id_ajeno/.test(o)) falla(G, "packages/db/migrations/0113_puerta_sin_conexion.sql", 0, "puerta_offline: primero el escaneo repetido (y de ESTA puerta), después todo lo demás");
+    const HL = "apps/web/app/(puerta)/puerta/sin-conexion/usePuertaLocal.ts";
+    if (existsSync(HL)) { const h = sinComent(HL); if (!/const e = est\.current, id = String\(c\.id \?\? ""\)/.test(h) || (h.match(/L\.encolar\(sesion, \{/g) ?? []).length !== (h.match(/L\.encolar\(sesion, \{ id, at,/g) ?? []).length || !/await L\.quitarDeCola\(lote\.map\(\(x, i\) => \(hechos\[i\] \? x\.id : ""\)\)/.test(h)) falla(G, HL, 0, "la cola guarda el id del escaneo del teléfono y solo saca lo que el servidor contestó"); }
     if (!/select \* into t from tickets where id = p_ticket for update;/.test(ultimaFn("puerta_entrada")) || !/select \* into x from ticket_entries where ticket_id = t\.id and event_date_id = d\.id for update;/.test(ultimaFn("puerta_entrada"))) falla(G, M, 0, "puerta_entrada: la fila del boleto y la de su entrada del día se bloquean antes de decidir");
     if (!/select \* into v from rsvps where id = p_rsvp for update;/.test(ultimaFn("puerta_rsvp"))) falla(G, M, 0, "puerta_rsvp: la fila del RSVP se bloquea");
     if (!/constraint ticket_entries_una_vez check \(entered_n between 0 and admits\)/.test(m)) falla(G, M, 0, "ticket_entries: nadie entra más veces que las entradas del boleto (check)");
@@ -3420,6 +3434,96 @@ const guardianes = {
     if (!/select \(puerta_repetido\(\$1::uuid\)\)\.id::text as id/.test(cuerpoFn(l, "llegadaNoche"))) falla(G, L, 0, "la lista de la noche toma el candado del id antes de marcar");
     if (!/id: uuid\(\)/.test(sinComent(E)) || !/id: q\.p\.id/.test(sinComent(E))) falla(G, E, 0, "el teléfono genera el id del escaneo (y la confirmación reusa el de la pregunta)");
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) { const t = sinComent(x); if (/tl\.puerta/.test(t)) falla(G, x, 0, "la app no enciende la marca de la puerta"); for (const q of t.match(/`[^`]*`/g) ?? []) if (/\binsert into (ticket_scans|ticket_entries|door_counts)\b/.test(q)) falla(G, x, 0, "solo la base escribe escaneos, entradas y contadores"); }
+  },
+
+  /* 6h. El paquete sin conexión de la puerta trae SOLO lo que la validación necesita y nunca queda legible fuera de su sesión (fase6 §3 «Sin
+     conexión»): la base arma las filas (puerta_paquete_filas: id, versión, entradas, estado, nombre + inicial, últimos 4 y huella del código,
+     días, tipo, banderas, entraron / adentro / última puerta y hora; por RSVP id, personas, estado, nombre, llegaron) sin teléfonos, correos,
+     montos ni pagos; el servidor lo firma (Ed25519, firmarPaquete) y lo cifra con la llave derivada de ESA sesión (AES-256-GCM) solo para
+     una puerta abierta (accesoPuerta + door_packages exige puerta_acceso) y el teléfono que la abrió; el teléfono verifica la firma antes de
+     usarlo, lo guarda cifrado con una llave NO exportable, lo borra al vencer, al cerrarse o revocarse la sesión y al salir de la cuenta; el
+     paquete vence (expires_at = fin + puerta_paquete_h) y el barrido lo revoca. Al revés: un «phone» o un monto en las filas, la llave
+     exportable, guardar sin cifrar, no verificar la firma, servir el paquete sin accesoPuerta o sin revocar al cerrar → falla. */
+  paqueteMinimo() {
+    const G = "paqueteMinimo", M = "packages/db/migrations/0113_puerta_sin_conexion.sql", L = "apps/web/lib/puerta-paquete.ts", R = "apps/web/app/api/puerta/paquete/route.ts",
+      C = "apps/web/app/(puerta)/puerta/sin-conexion/local.ts", H = "apps/web/app/(puerta)/puerta/sin-conexion/usePuertaLocal.ts", BR = "apps/web/lib/barrido.ts";
+    for (const f of [M, L, R, C, H, BR]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo de la puerta sin conexión");
+    const m = readFileSync(M, "utf8"), filas = ultimaFn("puerta_paquete_filas");
+    const cols = /create or replace function puerta_paquete_filas\([^)]*\)\s*returns table \(([\s\S]*?)\)\s*language/.exec(m)?.[1]?.replace(/\s+/g, " ").trim();
+    if (cols !== "k text, id bigint, v integer, a smallint, st text, nom text, c4 text, ch text, dias smallint[], tipo jsonb, mesa boolean, comp boolean, tr boolean, e smallint, i smallint, ud text, uh text, cambio timestamptz")
+      falla(G, M, 0, `puerta_paquete_filas devuelve otras columnas (solo las de §3): «${cols?.slice(0, 80)}»`);
+    if (/\bphone|email|_cents\b|price|amount|payment|stripe|card|door_code|first_name as|last_name as/.test(filas.replace(/puerta_nombre\(u\.first_name, u\.last_name\)/g, ""))) falla(G, M, 0, "el paquete no trae teléfonos, correos, montos, pagos ni el código de la lista (solo nombre + inicial)");
+    if (!/new\.expires_at := d\.ends_at \+ make_interval\(hours => cfg_int\('puerta_paquete_h'\)\);/.test(ultimaFn("door_packages_antes")) || !/not puerta_acceso\(s\.id, s\.user_id\) then raise exception 'puerta_cerrada/.test(ultimaFn("door_packages_antes"))) falla(G, M, 0, "el paquete solo sale para una puerta abierta con acceso y vence al final de la fecha + puerta_paquete_h");
+    if (!/update door_packages set revoked_at = now\(\), revoked_reason = new\.ended_by where session_id = new\.id and revoked_at is null;/.test(ultimaFn("door_sessions_despues"))) falla(G, M, 0, "al cerrarse la sesión, su paquete queda revocado");
+    const l = sinComent(L);
+    if (!/from puerta_paquete_filas\(\$1::bigint/.test(l) || (l.match(/`[^`]*`/g) ?? []).some((q) => /\bselect\b[\s\S]*\bfrom\b/i.test(q) && /\b(phone|email|price_cents|fee_cents|total_cents|amount_cents|stripe)\b/.test(q))) falla(G, L, 0, "lib/puerta-paquete.ts arma las filas solo con puerta_paquete_filas y no lee teléfonos ni montos");
+    if (!/\{ kid, firma \} = await firmarPaquete\(j\);/.test(l) || !/createCipheriv\("aes-256-gcm", llave, iv\)/.test(l) || !/llaveDerivada\("puerta-paquete", `\$\{sesion\}\|\$\{userId\}\|\$\{device \?\? "-"\}`\)/.test(l)) falla(G, L, 0, "el paquete se firma (Ed25519) y se cifra (AES-256-GCM) con la llave de ESA sesión, persona y teléfono");
+    if (!/s\.user_id = \$2 and s\.ended_at is null/.test(cuerpoFn(l, "armarPaquete")) || !/device\.toLowerCase\(\) !== s\.device\.toLowerCase\(\)/.test(cuerpoFn(l, "armarPaquete"))) falla(G, L, 0, "el paquete solo para la sesión abierta de esa persona y el teléfono que la abrió");
+    const r = sinComent(R);
+    if (!/if \(!\(await mismoOrigen\(\)\)\)/.test(r) || !/const ctx = await accesoPuerta\(u\.id, String\(b\?\.sesion \?\? ""\)\);\s*if \(!ctx\) return NO\(/.test(r) || !/no-store/.test(r)) falla(G, R, 0, "/api/puerta/paquete: mismo origen, accesoPuerta y sin caché");
+    const c = sinComent(C);
+    if (!/importKey\("raw", b64\(raw\), \{ name: "AES-GCM" \}, false, \["encrypt", "decrypt"\]\)/.test(c)) falla(G, C, 0, "la llave de la sesión en el teléfono es NO exportable (importKey …, false, …)");
+    if (!/datos: await cifrar\(k, e\)/.test(cuerpoFn(c, "guardarEstado")) || !/datos: await cifrar\(k, x\)/.test(cuerpoFn(c, "encolar"))) falla(G, C, 0, "el paquete y la cola se guardan cifrados");
+    if (!/throw new Error\("paquete_firma"\)/.test(cuerpoFn(c, "abrirSobre")) || !/verificarEd\(pub, new TextEncoder\(\)\.encode\(`TLPK1\\n\$\{sobre\.j\}`\)/.test(cuerpoFn(c, "abrirSobre"))) falla(G, C, 0, "el teléfono verifica la firma del paquete antes de usarlo");
+    if (!/if \(Date\.parse\(f\.vence\) < Date\.now\(\)\) \{ await borrarSesion\(s\); return null; \}/.test(cuerpoFn(c, "leerEstado"))) falla(G, C, 0, "un paquete vencido se borra del teléfono");
+    for (const q of c.match(/put\(\{[^}]*\}\)/g) ?? []) if (!/datos|k\b|v\b/.test(q)) falla(G, C, 0, `algo se guarda sin cifrar: «${q.slice(0, 60)}»`);
+    const h = sinComent(H);
+    if ((h.match(/r\.j\.cerrada\) (\{ )?await olvidar\(/g) ?? []).length < 3 || !/await L\.borrarSesion\(sesion\)/.test(cuerpoFn(h, "usePuertaLocal"))) falla(G, H, 0, "cerrada, revocada o vencida (al bajar el paquete, al subir la cola y al bajar los cambios): el teléfono borra todo de esa puerta");
+    if (!/\["puertaPaquetes", \(\) => paq\.vencerPaquetes\(\)\]/.test(readFileSync(BR, "utf8"))) falla(G, BR, 0, "el barrido vence los paquetes");
+  },
+
+  /* 6h. Los choques entre porteros sin conexión se resuelven igual en cualquier orden de subida (fase6 §3 pasos 1–5): la hora que cuenta es
+     la del teléfono corregida con el desfase medido en esa subida (acotada a la sesión y nunca en el futuro); puerta_rehacer vuelve a decidir
+     TODOS los escaneos que dejaron entrar a ese boleto en esa fecha ordenados por (hora que cuenta, llegada al servidor, id), con la fila del
+     boleto y la de su entrada bloqueadas; lo que cambia queda como corrección de solo inserción (ticket_scan_fixes, el escaneo original no se
+     toca) y la resolución vigente sale de ticket_scans_ef; el que pierde es «duplicate» con incidencia; lo que ya no valía al subir es
+     rejected con incidencia. Las lecturas de la puerta, el panel y el Super Admin usan la resolución vigente. Al revés: ordenar por la
+     llegada, no bloquear el boleto, corregir con un update, leer ticket_scans para resultados o no corregir el reloj → falla. */
+  choqueDePuertaDeterminista() {
+    const G = "choqueDePuertaDeterminista", M = "packages/db/migrations/0113_puerta_sin_conexion.sql", Y = "apps/web/lib/puerta-sync.ts";
+    for (const f of [M, Y]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo de la puerta sin conexión");
+    const m = readFileSync(M, "utf8"), rh = ultimaFn("puerta_rehacer"), of = ultimaFn("puerta_offline");
+    if (!/\) q order by q\.eff, q\.srv, q\.id/.test(rh)) falla(G, M, 0, "puerta_rehacer decide por (hora que cuenta, llegada al servidor, id)");
+    if (!/\(not ef\.offline and ef\.orig_resolution = 'accepted'\) or \(ef\.offline and ef\.local_in/.test(rh)) falla(G, M, 0, "puerta_rehacer vuelve a decidir todos los que dejaron entrar (en línea aceptados y sin conexión que el teléfono dejó pasar)");
+    if (!/select \* into x from ticket_entries where ticket_id = t\.id and event_date_id = d\.id for update;/.test(rh) || !/select \* into t from tickets where id = p_ticket for update;/.test(of)) falla(G, M, 0, "el boleto y su entrada del día se bloquean antes de volver a decidir");
+    if (!/insert into ticket_scan_fixes/.test(rh) || /\bupdate ticket_scans\b/.test(m)) falla(G, M, 0, "lo que cambia queda como corrección (ticket_scan_fixes); ticket_scans no se toca");
+    if (!/if tg_op <> 'INSERT' then raise exception 'ticket_scan_fixes es solo de inserción'/.test(ultimaFn("ticket_scan_fixes_antes"))) falla(G, M, 0, "ticket_scan_fixes es de solo inserción");
+    if (!/order by x\.id desc limit 1\) f on true/.test(m)) falla(G, M, 0, "ticket_scans_ef: la resolución vigente es la última corrección");
+    if (!/insert into door_incidents [^;]*'duplicado'[^;]*on conflict \(scan_id, kind\) where auto do nothing/.test(rh)) falla(G, M, 0, "un duplicado abre su incidencia (una por escaneo)");
+    if (!/'sin_valor'/.test(of)) falla(G, M, 0, "lo que ya no valía al subir abre su incidencia");
+    if (!/eff := p_at_device \+ make_interval\(secs => coalesce\(p_offset_ms, 0\) \/ 1000\.0\);/.test(of) || !/eff := least\(greatest\(coalesce\(eff, now\(\)\), s\.started_at\), coalesce\(s\.ended_at, now\(\)\), now\(\)\);/.test(of)) falla(G, M, 0, "la hora que cuenta: la del teléfono + su desfase, dentro de la sesión y nunca en el futuro");
+    if (!/new\.at_eff := case when new\.offline and new\.at_eff is not null then least\(new\.at_eff, new\.at_server\) else new\.at_server end;/.test(ultimaFn("ticket_scans_antes"))) falla(G, M, 0, "en línea la hora que cuenta es la del servidor");
+    const y = sinComent(Y);
+    if (!/desfase = [^;]*Math\.round\(Date\.now\(\) - tel\)/.test(y)) falla(G, Y, 0, "el desfase se mide en cada subida (hora del servidor − hora del teléfono)");
+    for (const f of ["apps/web/lib/puerta.ts", "apps/web/lib/puerta-admin.ts", "apps/web/lib/puerta-equipo.ts", "apps/web/lib/puerta-sync.ts"]) {
+      if (!existsSync(f)) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/\bfrom ticket_scans\b(?!_ef)[^`]*\b(resolution|first_n|result)\b|\b(resolution|first_n)\b[^`]*\bfrom ticket_scans\b(?!_ef)/.test(q)) falla(G, f, 0, `los resultados de la puerta se leen con la resolución vigente (ticket_scans_ef): «${q.slice(0, 70)}»`);
+    }
+  },
+
+  /* 6h. El service worker de la Puerta y el de Mis boletos guardan solo su cáscara estática y archivos con huella: nunca /api/ ni el HTML de
+     una puerta o de un boleto (traen datos de la cuenta); las cáscaras son páginas estáticas sin cuenta. El QR del cliente se guarda cifrado
+     con la llave de la sesión (cookie tl_bk), sin precio, y salir de la cuenta borra la base y la cookie. Al revés: guardar /api/ o el HTML
+     de la navegación, una cáscara que lee la cuenta, guardar el boleto sin cifrar o no borrar al salir → falla. */
+  sinConexionSinDatosAjenos() {
+    const G = "sinConexionSinDatosAjenos", W = ["apps/web/public/puerta/sw.js", "apps/web/public/sw-boletos.js"], K = ["apps/web/app/(puerta)/puerta/sin-conexion/page.tsx", "apps/web/app/(sin-senal)/cuenta/boletos/sin-conexion/page.tsx"];
+    const BS = "apps/web/lib/boletos-sin-conexion.ts", CU = "apps/web/lib/cuenta.ts";
+    for (const f of [...W, ...K, BS, CU]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo del modo sin conexión");
+    for (const f of W) {
+      const t = sinComent(f);
+      try { execSync(`node --check ${JSON.stringify(f)}`, { stdio: ["ignore", "ignore", "pipe"] }); } catch { falla(G, f, 0, "el service worker no se puede leer (node --check)"); }
+      if (!/if \(url\.pathname\.indexOf\("\/api\/"\) === 0\) return;/.test(t)) falla(G, f, 0, "el service worker no toca /api/");
+      const nav = /if \(req\.mode === "navigate"\) \{([\s\S]*?)\n  \}\n/.exec(t)?.[1] ?? "";
+      if (!nav || /\.put\(|cache\.add|caches\.open/.test(nav)) falla(G, f, 0, "una navegación nunca se guarda (el HTML de una puerta o de un boleto trae datos de la cuenta)");
+      if (!/var ESTATICO = \/\^\\\/\(_next\\\/static\\\/\|fuentes\\\/\)\/;/.test(t)) falla(G, f, 0, "solo se guardan archivos con huella (/_next/static) y fuentes");
+      for (const m of t.matchAll(/c\.put\(([^,]+),/g)) if (!/^(u|CASCARA|req)$/.test(m[1].trim())) falla(G, f, 0, `se guarda algo que no es la cáscara ni un archivo estático: «${m[1]}»`);
+    }
+    for (const f of K) { const t = sinComent(f); if (!/export const dynamic = "force-static";/.test(t) || /\byo\(|cookies\(|headers\(|@\/lib\/(cuenta|db|boletos|puerta)\b/.test(t)) falla(G, f, 0, "la cáscara es estática y no lee la cuenta"); }
+    const b = sinComent(BS);
+    if (!/crypto\.subtle\.encrypt\(\{ name: "AES-GCM", iv \}, k,/.test(cuerpoFn(b, "guardarBoleto")) || /precio|price/.test(b)) falla(G, BS, 0, "el boleto se guarda cifrado y sin precio");
+    if (!/if \(!v\) \{ await pedir\(st\("readwrite"\)\.clear\(\)\); return; \}/.test(cuerpoFn(b, "guardarBoleto")) || !/x\.kid !== kid/.test(cuerpoFn(b, "leerBoletos"))) falla(G, BS, 0, "sin la llave de la sesión no se guarda nada y lo de otra cuenta se borra");
+    if (!/jar\.delete\(\{ name: COOKIE_BOLETOS, path: "\/cuenta\/boletos" \}\);/.test(cuerpoFn(sinComent(CU), "salir"))) falla(G, CU, 0, "salir de la cuenta borra la llave de los boletos sin señal");
+    for (const x of codigo) { if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue; const t = sinComent(x); if (/fetch\("\/api\/cuenta\/salir"/.test(t) && !/await olvidarSinConexion\(\); await fetch\("\/api\/cuenta\/salir"/.test(t)) falla(G, x, 0, "al salir de la cuenta, primero se borra lo guardado sin conexión (olvidarSinConexion)"); }
   },
 
   idioma() {

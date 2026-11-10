@@ -3,7 +3,7 @@ import { dispositivo, mismoOrigen, normalizarTelefono } from "@/lib/cuenta";
 import { db } from "@/lib/db";
 import { accesoPanel, type Acceso } from "@/lib/panel";
 import { abrirPuerta } from "@/lib/puerta";
-import { asignarPortero, avisarInvitacion, cerrarIncidencia, cerrarSesionPanel, desasignarPortero, invitarPortero, quitarPortero, reglasPuerta, type ReglasIn } from "@/lib/puerta-equipo";
+import { asignarPortero, avisarInvitacion, cerrarIncidencia, cerrarSesionPanel, desasignarPortero, invitarPortero, quitarPortero, reglasPuerta, revocarTelefono, type ReglasIn } from "@/lib/puerta-equipo";
 import type { Res } from "./acciones";
 
 /* 6g · Panel › Eventos › PUERTA (PORTEROS · ESCANEAN EN LA PUERTA, REGLAS DE PUERTA, «Abrir modo puerta» y el Monitor). Todo pide la parte
@@ -79,6 +79,15 @@ export async function evtPuertaCerrarSesion(negocio: string, sesion: string): Pr
   const r = await cerrarSesionPanel(a.negocio.id, String(sesion ?? ""));
   if (!r.ok) return { ok: false, mensaje: r.msg };
   await auditar(a, "puerta.cerrar_sesion", { sesion: String(sesion) });
+  return { ok: true };
+}
+/* 6h · «Revocar este teléfono» (Monitor: cada puerta es un teléfono). Con auditoría. */
+export async function evtPuertaRevocar(negocio: string, sesion: string): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await revocarTelefono(a.negocio.id, String(sesion ?? ""));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "puerta.revocar_telefono", { sesion: String(sesion) });
   return { ok: true };
 }
 export async function evtIncidenciaCerrar(negocio: string, id: string, nota: string): Promise<Res> {

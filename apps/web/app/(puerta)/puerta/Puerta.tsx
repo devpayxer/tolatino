@@ -2,25 +2,31 @@
 /* To'Latino Puerta · la puerta abierta (hueco #1 del plan: compuesta con los bloques del modo puerta del panel — doorDet — a pantalla completa
    y oscura, y la estructura de apps-delivery-checkin.md §2.3, sin CHK-PUERTA: D1, la puerta no vende). Escanear · Buscar · Lista · Aforo ·
    Más (Mesas · Incidencias · Equipo · Cierre) y, en Noche, la lista de la noche. Las cifras de arriba llegan en vivo (SSE de
-   /api/puerta/vivo; si se cae, se pregunta cada 5 s). Ninguna pantalla muestra montos, teléfonos ni correos. */
+   /api/puerta/vivo; si se cae, se pregunta cada 5 s). Ninguna pantalla muestra montos, teléfonos ni correos. 6h: la puerta baja su paquete
+   firmado y cifrado al abrir y sigue escaneando y buscando sin señal (sin-conexion/); arriba dice EN LÍNEA / SIN CONEXIÓN · N POR SUBIR ·
+   lista de las …; cerrar la puerta sube todo y borra lo guardado. */
 import { BottomNav, PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { diaCorto, hora } from "@/lib/evt-comun";
-import { hora12, INCIDENCIAS, MOTIVOS_MANUAL, QUE_HACER, RESULTADO, type FilaPuerta, type Resumen } from "@/lib/puerta-comun";
+import { hora12, INCIDENCIAS, lineaUltimo, MOTIVOS_MANUAL, QUE_HACER, RESULTADO, textoIncidencia, type FilaPuerta, type Resumen } from "@/lib/puerta-comun";
 import type { aforo as Aforo, cierre as Cierre, CtxPuerta, equipo as Equipo, incidencias as Incid, mesas as Mesas, ultimos as Ultimos } from "@/lib/puerta";
 import type { FilaListaPuerta } from "@/lib/noche-reservas";
 import { puertaBuscar, puertaCerrar, puertaIncidencia, puertaMesa, puertaNoche } from "./acciones";
-import { Escanear, mandar } from "./Escanear";
+import { Escanear, mandar, mandarOLocal } from "./Escanear";
 import { Cabeza, Hoja, kpiOscuro } from "./Marco";
+import { avisoSinSenal, EstadoPuerta } from "./sin-conexion/Estado";
+import { soltarSesion, usePuertaLocal } from "./sin-conexion/usePuertaLocal";
 
 type Bi = { es: string; en: string };
 type Tab = "escanear" | "buscar" | "lista" | "aforo" | "mas" | "mesas" | "incid" | "equipo" | "cierre" | "noche";
 type Ctx = Omit<CtxPuerta, "userId">;
 const uuid = () => crypto.randomUUID();
 
-export function PuertaCerrada({ es }: { es: boolean }) {
+export function PuertaCerrada({ es, sesion }: { es: boolean; sesion?: string }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();
+  // 6h · Sin acceso a esta puerta: lo que quedó sin subir se intenta subir y nada de ella queda en el teléfono.
+  useEffect(() => { if (sesion) void soltarSesion(sesion); }, [sesion]);
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <Cabeza eye="TO’LATINO PUERTA" t={E2("Ya no tienes acceso a esta puerta", "You no longer have access to this door")}
@@ -47,17 +53,24 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   const ultimo = useRef(0);
   useEffect(() => {
     let es1: EventSource | null = null, poll: ReturnType<typeof setInterval> | null = null;
-    const refrescar = () => { if (Date.now() - ultimo.current > 4000 && t !== "escanear" && t !== "buscar") { ultimo.current = Date.now(); router.refresh(); } };
+    const refrescar = () => { if (Date.now() - ultimo.current > 4000 && t !== "escanear" && t !== "buscar" && navigator.onLine !== false) { ultimo.current = Date.now(); router.refresh(); } };
+    const preguntar = () => { if (navigator.onLine !== false && enLinea.current) router.refresh(); };
     try {
       es1 = new EventSource(`/api/puerta/vivo?sesion=${ctx.sesion}`);
       es1.addEventListener("resumen", (ev) => { try { setR(JSON.parse((ev as MessageEvent).data) as Resumen); refrescar(); } catch { /* nada */ } });
       es1.addEventListener("cerrada", () => { es1?.close(); router.refresh(); });
-      es1.onerror = () => { if (!poll) poll = setInterval(() => router.refresh(), 5000); };
+      es1.onerror = () => { if (!poll) poll = setInterval(preguntar, 5000); };
       es1.onopen = () => { if (poll) { clearInterval(poll); poll = null; } };
-    } catch { poll = setInterval(() => router.refresh(), 5000); }
+    } catch { poll = setInterval(preguntar, 5000); }
     return () => { es1?.close(); if (poll) clearInterval(poll); };
   }, [ctx.sesion, t, router]);
   const cerrada = useCallback(() => router.refresh(), [router]);
+  // 6h · El paquete de la puerta, la cola y la puesta al día (con y sin señal).
+  const sc = usePuertaLocal(ctx.sesion, es, { puerta: ctx.puerta, onCerrada: cerrada });
+  const [ahora, setAhora] = useState(() => Date.now());
+  useEffect(() => { const x = setInterval(() => setAhora(Date.now()), 20000); return () => clearInterval(x); }, []);
+  const enLinea = useRef(true);
+  enLinea.current = sc.enLinea;
   const run = (f: () => Promise<{ ok: boolean; msg?: Bi; cerrada?: boolean }>, ok: string, luego?: () => void) => start(async () => {
     setErr("");
     const x = await f().catch(() => null);
@@ -70,9 +83,20 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
     if (t !== "buscar") return;
     const s = q.trim();
     if (s.length < 2) { setRes(null); return; }
-    const x = setTimeout(async () => { const z = await puertaBuscar(ctx.sesion, s).catch(() => null); if (!z) return; if (!z.ok) { if (z.cerrada) cerrada(); else setErr(bi(z.msg)); return; } setErr(""); setRes((z as unknown as { filas: FilaPuerta[] }).filas); }, 350);
+    const x = setTimeout(async () => {
+      const z = sc.enLinea || !sc.listo ? await puertaBuscar(ctx.sesion, s).catch(() => null) : null;
+      if (!z) { if (sc.listo) { setErr(""); setRes(filasLocales(await sc.buscar(s))); } return; }
+      if (!z.ok) { if (z.cerrada) cerrada(); else setErr(bi(z.msg)); return; }
+      setErr(""); setRes((z as unknown as { filas: FilaPuerta[] }).filas);
+    }, 350);
     return () => clearTimeout(x);
-  }, [q, t, ctx.sesion]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [q, t, ctx.sesion, sc.enLinea, sc.listo]); // eslint-disable-line react-hooks/exhaustive-deps
+  /* Sin señal: lo que encontró el paquete del teléfono, con la misma forma que la lista en línea. */
+  const filasLocales = (x: Awaited<ReturnType<typeof sc.buscar>>): FilaPuerta[] => [
+    ...x.b.map((b): FilaPuerta => ({ kind: "ticket", id: b[0], nombre: b[4], tipo: b[9] & 2 ? E2("Cortesía", "Comp") : sc.tipoDe(b[8]), code: b[5] ? `··${b[5]}` : null, de: b[2], entraron: b[10], adentro: b[11],
+      estado: (["valid", "used", "void", "refunded", "replaced", "pending"].includes(b[3]) ? b[3] : "void") as FilaPuerta["estado"], mesa: b[9] & 1 ? sc.tipoDe(b[8]) : null, cortesia: !!(b[9] & 2), otroDia: null })),
+    ...x.r.map((r): FilaPuerta => ({ kind: "rsvp", id: r[0], nombre: r[3], tipo: "RSVP", code: null, de: r[1], entraron: r[4], adentro: r[4], estado: (["going", "attended", "expired", "cancelled"].includes(r[2]) ? r[2] : "cancelled") as FilaPuerta["estado"], mesa: null, cortesia: false, otroDia: null })),
+  ];
   useEffect(() => {
     if (t !== "noche") return;
     const x = setTimeout(async () => { const z = await puertaNoche(ctx.sesion, nq.trim()).catch(() => null); if (z?.ok) setNFilas((z as unknown as { filas: FilaListaPuerta[] }).filas); }, 300);
@@ -82,15 +106,18 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   /* Entrada a mano (boleto encontrado por nombre o código, con motivo) o llegada de un RSVP: el servidor decide igual que con el QR. */
   const entrar = (x: FilaPuerta, n: number, motivo?: string) => start(async () => {
     setErr("");
-    const z = await mandar(x.kind === "rsvp" ? { sesion: ctx.sesion, tipo: "rsvp", rsvp: x.id, id: uuid(), at: Date.now(), n } : { sesion: ctx.sesion, tipo: "boleto", boleto: x.id, motivo, id: uuid(), at: Date.now(), n, previo: false });
+    const z = (await mandarOLocal(x.kind === "rsvp" ? { sesion: ctx.sesion, tipo: "rsvp", rsvp: x.id, id: uuid(), at: Date.now(), n } : { sesion: ctx.sesion, tipo: "boleto", boleto: x.id, motivo, id: uuid(), at: Date.now(), n, previo: false }, sc)) as Awaited<ReturnType<typeof mandar>>;
     if (!z.ok) { if ("cerrada" in z && z.cerrada) { cerrada(); return; } setErr(bi(z.msg)); return; }
     const resx = "v" in z ? z.v.res : (z as unknown as { res: keyof typeof RESULTADO }).res;
     const R = RESULTADO[resx];
     if (R.tono === "bad" || R.tono === "warn") { const h = QUE_HACER[resx]; setErr(`${bi(R.t)}${"v" in z && z.v.ya ? E2(` · entró por ${z.v.ya.puerta} a las ${z.v.ya.hora}`, ` · in through ${z.v.ya.puerta} at ${z.v.ya.hora}`) : ""}${h ? ` · ${bi(h)}` : ""}`); }
     else setToast(x.kind === "rsvp" ? E2(`${n > 1 ? `Llegaron ${n}` : "Llegó"}: ${x.nombre}`, `${n > 1 ? `${n} arrived` : "Arrived"}: ${x.nombre}`) : E2(`Entró: ${x.nombre}${n > 1 ? ` (${n})` : ""}`, `In: ${x.nombre}${n > 1 ? ` (${n})` : ""}`));
     setManual(null);
-    if (t === "buscar" && q.trim().length >= 2) { const s = await puertaBuscar(ctx.sesion, q.trim()).catch(() => null); if (s?.ok) setRes((s as unknown as { filas: FilaPuerta[] }).filas); }
-    router.refresh();
+    if (t === "buscar" && q.trim().length >= 2) {
+      const s = sc.enLinea ? await puertaBuscar(ctx.sesion, q.trim()).catch(() => null) : null;
+      if (s?.ok) setRes((s as unknown as { filas: FilaPuerta[] }).filas); else if (sc.listo) setRes(filasLocales(await sc.buscar(q.trim())));
+    }
+    if (sc.enLinea && navigator.onLine !== false) router.refresh();
   });
   const ST: Record<string, [string, string, string]> = {
     valid: ["FALTA", "MISSING", "neutral"], used: ["ADENTRO", "INSIDE", "signal"], void: ["ANULADO", "VOIDED", "danger"], refunded: ["DEVUELTO", "REFUNDED", "danger"], replaced: ["QR ANULADO", "QR VOIDED", "danger"],
@@ -118,7 +145,7 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
     ];
   };
 
-  const B: Bloque[] = [];
+  const B: Bloque[] = [...avisoSinSenal(sc, es, ahora)];
   if (err) B.push({ type: "note", tone: "danger", icon: "warning", t: err });
   if (toast) B.push({ type: "note", tone: "ok", icon: "check", t: toast });
   if (r.lleno) B.push({ type: "note", tone: "danger", icon: "users", t: E2(`Llegaste al aforo de hoy (${r.aforo}). Deja entrar solo a medida que salgan.`, `You reached today’s capacity (${r.aforo}). Only let people in as others leave.`) });
@@ -127,7 +154,7 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   else if (t === "escanear") {
     if (ctx.edad > 0) B.push({ type: "note", tone: "ink", icon: "shield", t: `${ctx.pideId ? E2(`Pide ID: ${ctx.edad}+.`, `Check ID: ${ctx.edad}+.`) : E2(`Evento ${ctx.edad}+.`, `${ctx.edad}+ event.`)} ${ctx.reentrada ? E2("Pueden salir y volver a entrar.", "Re-entry allowed.") : E2("Sin reentrada.", "No re-entry.")}` });
     if (ultimos?.length) B.push({ type: "rows", k: E2("ÚLTIMOS EN LA PUERTA", "LATEST AT THE DOOR"), items: ultimos.map((x): Fila => ({ key: x.id, icon: RESULTADO[x.res].tono === "bad" ? "warning" : "check", t: x.nombre,
-      s: `${bi(RESULTADO[x.res].t)}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? E2(" · salida", " · exit") : ""} · ${x.puerta}`, m: x.hora, compact: true, chev: false,
+      s: lineaUltimo(x, es), m: x.hora, compact: true, chev: false,
       ibg: RESULTADO[x.res].tono === "bad" ? "rgba(192,57,43,.1)" : "rgba(0,229,196,.18)", ifg: RESULTADO[x.res].tono === "bad" ? "var(--tl-danger)" : "var(--tl-open-text)" })) });
   } else if (t === "buscar") {
     B.push({ type: "search", val: q, ph: E2("Nombre, código, orden B- o últimos 4 del teléfono", "Name, code, B- order or last 4 of the phone"), onChange: (v: string) => setQ(v), onClear: () => setQ("") });
@@ -183,11 +210,11 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
     B.push({ type: "field", k: E2("CÓDIGO DEL BOLETO · OPCIONAL", "TICKET CODE · OPTIONAL"), val: inc.code, ph: "TL-ABC-2345", onChange: (v: string) => setInc({ ...inc, code: v.toUpperCase().slice(0, 11) }) });
     B.push({ type: "acts", items: [{ l: E2("Avisar al organizador", "Tell the organizer"), v: "primary", icon: "bell", off: pend || !inc.k, onClick: () => run(() => puertaIncidencia(ctx.sesion, inc.k, inc.nota, inc.code || null), E2("Listo: el organizador ya lo sabe.", "Done: the organizer knows."), () => setInc({ k: "", nota: "", code: "" })) }] });
     B.push({ type: "note", tone: "ink", icon: "lock", t: E2("No subas fotos de identificaciones: la puerta revisa el ID en persona y no lo guarda.", "Do not upload photos of IDs: the door checks ID in person and does not keep it.") });
-    if (incid?.length) B.push({ type: "rows", k: E2("DE ESTA FECHA", "FOR THIS DATE"), items: incid.map((x): Fila => ({ key: x.id, icon: INCIDENCIAS.find((o) => o.k === x.kind)?.icon ?? "info", t: bi(INCIDENCIAS.find((o) => o.k === x.kind)?.l ?? { es: x.kind, en: x.kind }),
-      s: [x.nota, x.code, `${x.quien} · ${x.puerta ?? ""}`].filter(Boolean).join(" · "), m: x.hora, tag: x.st === "open" ? E2("ABIERTA", "OPEN") : E2("CERRADA", "CLOSED"), tone: x.st === "open" ? "pro" : "neutral", compact: true, chev: false })) });
+    if (incid?.length) B.push({ type: "rows", k: E2("DE ESTA FECHA", "FOR THIS DATE"), items: incid.map((x): Fila => { const T = textoIncidencia(x, es); return { key: x.id, icon: T.icon, t: T.t,
+      s: T.s, m: x.hora, tag: x.st === "open" ? E2("ABIERTA", "OPEN") : E2("CERRADA", "CLOSED"), tone: x.st === "open" ? "pro" : "neutral", compact: true, chev: false }; }) });
   } else if (t === "equipo") {
     B.push({ type: "head", t: E2("Equipo", "Team"), s: E2("Quién está en cada puerta y cuántos dejó entrar.", "Who is at each door and how many they let in."), onBack: () => ir("?t=mas") });
-    B.push(equipo?.length ? { type: "rows", items: equipo.map((x): Fila => ({ key: x.sesion, icon: "key", t: `${x.nombre}${x.sesion === ctx.sesion ? E2(" (tú)", " (you)") : ""}`, s: `${E2("Puerta", "Door")} ${x.puerta} · ${E2("desde", "since")} ${x.desde}${x.ultimo ? E2(` · último ${x.ultimo}`, ` · last ${x.ultimo}`) : ""}`,
+    B.push(equipo?.length ? { type: "rows", items: equipo.map((x): Fila => ({ key: x.sesion, icon: "key", t: `${x.nombre}${x.sesion === ctx.sesion ? E2(" (tú)", " (you)") : ""}`, s: `${E2("Puerta", "Door")} ${x.puerta} · ${E2("desde", "since")} ${x.desde}${x.ultimo ? E2(` · último ${x.ultimo}`, ` · last ${x.ultimo}`) : ""}${x.sinConexion ? E2(` · ${x.sinConexion} sin conexión`, ` · ${x.sinConexion} offline`) : ""}${x.repetidos ? E2(` · ${x.repetidos} repetidos`, ` · ${x.repetidos} repeated`) : ""}`,
       r: String(x.entradas), tag: x.activa ? E2("EN LA PUERTA", "AT THE DOOR") : E2("CERRÓ", "CLOSED"), tone: x.activa ? "signal" : "neutral", compact: true, chev: false })) } : { type: "empty", icon: "users", t: E2("Solo tú", "Just you"), s: "" });
   } else if (t === "cierre" && cierre) {
     const C = cierre;
@@ -197,7 +224,15 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
       { key: "c", icon: "ticket", t: E2("Cortesías", "Comps"), r: String(C.cortesias), compact: true, chev: false }, { key: "r", icon: "users", t: "RSVP", r: String(C.rsvp), compact: true, chev: false },
       { key: "x", icon: "ban", t: E2("Rechazados", "Rejected"), r: String(C.rechazados), compact: true, chev: false }, { key: "d", icon: "warning", t: E2("Intentaron entrar otra vez", "Tried to get in again"), r: String(C.repetidos), compact: true, chev: false },
       { key: "i", icon: "info", t: E2("Incidencias", "Incidents"), r: String(C.incid), compact: true, chev: false, onClick: () => ir("?t=incid") }, { key: "a", icon: "key", t: E2("Puertas abiertas", "Doors open"), r: String(C.abiertas), compact: true, chev: false }] });
-    B.push({ type: "acts", items: [{ l: E2("Cerrar mi puerta", "Close my door"), v: "primary", icon: "check", off: pend, onClick: () => { if (window.confirm(E2("¿Cerrar tu puerta? Ya no podrás escanear en esta sesión.", "Close your door? You will not be able to scan in this session."))) run(() => puertaCerrar(ctx.sesion), E2("Cerraste tu puerta.", "You closed your door."), () => router.push("/puerta")); } }] });
+    if (sc.porSubir > 0) B.push({ type: "note", tone: "warn", icon: "wifi", t: E2(`Tienes ${sc.porSubir} escaneos sin subir. Al cerrar se suben primero; sin señal, la puerta no se cierra (se perderían).`, `You have ${sc.porSubir} scans not uploaded. Closing uploads them first; without signal the door does not close (they would be lost).`) });
+    B.push({ type: "acts", items: [{ l: E2("Cerrar mi puerta", "Close my door"), v: "primary", icon: "check", off: pend, onClick: () => {
+      if (!window.confirm(E2("¿Cerrar tu puerta? Ya no podrás escanear en esta sesión.", "Close your door? You will not be able to scan in this session."))) return;
+      run(async () => {
+        // 6h · Primero sube lo escaneado sin señal; después se cierra y no queda nada de esta puerta en el teléfono.
+        if (!(await sc.cerrar())) return { ok: false, msg: { es: "Sin señal: sube tus escaneos antes de cerrar. Busca señal y vuelve a tocar «Cerrar mi puerta».", en: "No signal: upload your scans before closing. Find signal and tap “Close my door” again." } };
+        return puertaCerrar(ctx.sesion);
+      }, E2("Cerraste tu puerta.", "You closed your door."), () => router.push("/puerta"));
+    } }] });
   }
   async function noch(numero: string, n: number) {
     setErr("");
@@ -216,7 +251,8 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <Cabeza eye={`${E2("PUERTA", "DOOR")} ${ctx.puerta.toUpperCase()} · ${ctx.negocioNombre.toUpperCase()}`} t={bi(ctx.titulo)}
         s={`${diaCorto(ctx.dia, es)} · ${hora(ctx.h0)} · ${E2("puertas", "doors")} ${hora12(ctx.puertas)}${ctx.cierre ? E2(` · la puerta cierra ${hora12(ctx.cierre)}`, ` · door closes ${hora12(ctx.cierre)}`) : ""}`} kpis={kp}>
-        {escanea ? <Escanear sesion={ctx.sesion} es={es} reentrada={ctx.reentrada} libre={libre} onCerrada={cerrada} onBuscar={() => ir("?t=buscar")} onCambio={() => { /* la cabecera llega por SSE */ }} /> : null}
+        <EstadoPuerta x={sc} es={es} />
+        {escanea ? <Escanear sesion={ctx.sesion} es={es} reentrada={ctx.reentrada} libre={libre} onCerrada={cerrada} onBuscar={() => ir("?t=buscar")} onCambio={() => { /* la cabecera llega por SSE */ }} local={sc} /> : null}
       </Cabeza>
       {B.length ? <Hoja pb={110}><PanelBloques bloques={B} h1={22} /></Hoja> : <span style={{ flex: 1, minHeight: 90 }} />}
       <div style={{ position: "fixed", insetInline: 0, bottom: 0, zIndex: 40 }}>

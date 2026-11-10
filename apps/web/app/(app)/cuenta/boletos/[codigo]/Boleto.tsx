@@ -1,9 +1,12 @@
 "use client";
 /* USR-BOLETO (diseño «To'Latino Mi cuenta» L398 «Toca el código para verlo grande. Sube el brillo», L561 «Si no hay señal, el código
-   funciona igual»): el boleto con su QR real, grande, el código humano y el estado. Usado, devuelto o anulado: el QR sale apagado. */
+   funciona igual»): el boleto con su QR real, grande, el código humano y el estado. Usado, devuelto o anulado: el QR sale apagado.
+   6h: con señal, el QR queda guardado CIFRADO en este teléfono para esta cuenta (lib/boletos-sin-conexion.ts); sin señal lo muestra la
+   cáscara /cuenta/boletos/sin-conexion. Si deja de valer (transferido, devuelto, anulado, pasado), se quita. */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, type ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
+import { filasDe, guardarBoleto, recordarIdioma, registrarSWBoletos } from "@/lib/boletos-sin-conexion";
 import type { BoletoVista, OrdenVista } from "@/lib/boletos";
 import { diaCorto, hora } from "@/lib/evt-comun";
 import type { Ventanas } from "@/lib/boletos";
@@ -26,6 +29,12 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
   const deshacer = async () => { const r = await bolDeshacer(x.b.code).catch(() => null); toast(r?.ok ? E2("Listo: el boleto vuelve a ti con un QR nuevo.", "Done: the ticket is yours again with a new QR.") : r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); router.refresh(); };
   const { b, evento: ev } = x, [t, bg, fg] = estadoBoleto(b, es);
   const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
+  const guardable = !!b.matriz && !b.envio && !ev.pasado && (b.estado === "valid" || !!b.sigue);
+  useEffect(() => {
+    registrarSWBoletos(); recordarIdioma(es);
+    void guardarBoleto(guardable && b.matriz ? { code: b.code, filas: filasDe(b.matriz), tipo: b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo,
+      nombre: (b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase(), estado: t, estadoBg: bg, estadoFg: fg, titulo: ev.title, cuando, lugar: ev.venue, dia: ev.dia } : null, b.code);
+  }, [b.code, guardable]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div data-pantalla="USR-BOLETO" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">
@@ -56,6 +65,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
         ) : <div className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2(`Ya no se transfiere ni cambia de nombre: era hasta ${V.horasTransferir} h antes del evento.`, `It can no longer be transferred or renamed: that was up to ${V.horasTransferir} h before the event.`)}</div>)}
         <div className="flex flex-col gap-2 rounded-[18px] border border-ink/[.07] bg-white p-4 text-[12.5px] font-medium leading-[1.5] text-ink/75">
           {[E2("Toca el código para verlo grande. Sube el brillo.", "Tap the code to see it big. Turn up the brightness."), E2("Si no hay señal, el código funciona igual.", "Without signal, the code still works."),
+            ...(guardable ? [E2("Guardado en este teléfono: se abre sin señal. Al salir de tu cuenta se borra.", "Saved on this phone: it opens without signal. Signing out erases it.")] : []),
             E2(`Si la persona de la puerta no puede leerlo, dile el código ${b.code}.`, `If the door staff cannot scan it, tell them the code ${b.code}.`)]
             .map((s) => <div key={s} className="flex items-start gap-2"><span className="grid flex-none pt-0.5"><Icon name="check" size={13} color="var(--tl-open-text)" /></span>{s}</div>)}
         </div>

@@ -2,7 +2,7 @@
 
 _Pantallas: **To'Latino Puerta** (`/puerta`: tus puertas, el código del negocio y abrir la puerta) y **la puerta abierta** (`/puerta/s/…`: Escanear ·
 Buscar · Lista · Aforo · Más → Mesas · Incidencias · Equipo · Cierre; en Noche, la Lista de la noche). Para porteros. Hecha para el teléfono.
-Versión: Fase 6 · bloque 6g (10 nov 2026)._
+Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
 
 ## Qué hace
 - **Solo escaneas.** En la puerta no se venden boletos ni se cobra nada: la puerta deja entrar a quien ya tiene su boleto, su RSVP o su lugar en
@@ -43,7 +43,7 @@ Versión: Fase 6 · bloque 6g (10 nov 2026)._
 | Caso | Qué pasa |
 |---|---|
 | Dos porteros escanean el mismo boleto al mismo tiempo | Entra una sola vez: uno ve VÁLIDO y el otro «Ya entró por … a las …». |
-| Se va la señal en medio de un escaneo | Sale «SIN SEÑAL · no se marcó» y **Reintentar**: el mismo escaneo no cuenta dos veces. (El modo sin conexión completo llega después.) |
+| Se va la señal | Sigues escaneando con la lista de tu teléfono (arriba: SIN CONEXIÓN · N POR SUBIR); al volver la señal se sube sola. Ver «To'Latino Puerta sin señal». |
 | El negocio te quita de sus porteros | Tu puerta se cierra al momento: «Ya no tienes acceso a esta puerta». |
 | Escaneas el boleto de otro evento o de otro negocio | NO ES DE ESTE EVENTO, sin ningún dato de esa persona. |
 | Un pase de varios días | Entra una vez cada día. El boleto de un solo día, solo ese día (si no, ES DE OTRO DÍA). |
@@ -74,5 +74,5 @@ INVALID QR / NOT FOUND**, **AT CAPACITY / DOOR IS CLOSED**. Flashlight, and ENTR
 of the code or phone, full code or B- order; comps show by name; **Let in** asks why and is logged. **List** with filters and RSVP arrivals;
 **Tonight’s list** for Night venues (by name or the 4-digit code). **Capacity** (alerts at 90 % and 100 %), **Tables** (give each group its table
 number, never twice), **Incidents** (security shows 911; the organizer is notified right away), **Team** and **Close the night**. The numbers at
-the top update live on every door phone. Two staff scanning the same ticket at once: it gets in once. Removed from the team: your door closes
+the top update live on every door phone. Without signal you keep scanning with the phone’s signed list (see “To'Latino Door without signal”). Two staff scanning the same ticket at once: it gets in once. Removed from the team: your door closes
 immediately.

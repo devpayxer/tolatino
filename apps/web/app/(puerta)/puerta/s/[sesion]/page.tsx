@@ -15,7 +15,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/puerta")}`);
   const es = lang === "es";
   const ctx = await accesoPuerta(u.id, sesion);
-  if (!ctx) return <PuertaCerrada es={es} />;
+  if (!ctx) return <PuertaCerrada es={es} sesion={sesion} />;
   const def: Tab = ctx.entry === "rsvp" ? "lista" : "escanear";
   const t: Tab = TABS.includes(sp.t as Tab) ? (sp.t as Tab) : def;
   const [r, data] = await Promise.all([resumenFecha(ctx.fecha), (async () => {

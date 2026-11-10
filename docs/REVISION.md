@@ -2514,3 +2514,110 @@ tokens y Icon/Button del sistema, la hoja con PanelBloques, BottomNav), **acepta
   un evento cancelado seguía «en la puerta ahora» en el panel → el panel pregunta el acceso y el barrido cierra toda sesión sin acceso; (4)
   cerrar una sesión no despertaba al SSE → NOTIFY también al cerrarla.
 - **Pendiente (LAUNCH):** modo sin conexión (6h), señales de duplicados en Confianza (6h/6j), velocidad del escaneo con la base de carga.
+
+### 6h · Eventos: la Puerta sin conexión — paquete firmado y cifrado, validación en el teléfono, cola de escaneos, choques entre porteros y el QR del cliente sin señal (10 nov)
+Qué mirar en el sandbox, paso a paso (dos teléfonos de porteros; el panel y el Super Admin también en escritorio). Como en 6g, la puerta se abre
+el día del evento: crea un evento de La Terraza que empiece en 1–2 horas y cómprale 3 boletos con una cuenta de cliente (o usa los de la semilla).
+1. **Teléfono A (Junior, 570-555-0511) › `/puerta` › el evento › Principal › Abrir la puerta.** Arriba, bajo las cifras, una línea nueva:
+   **PREPARANDO** («Preparando la puerta · N boletos») y en segundos **EN LÍNEA · Sincronizado · lista de las 10:42 · N en la lista**.
+2. **Teléfono B (Karla, 570-555-0512, o tú con «Eventos» del panel) › la misma fecha › VIP › Abrir la puerta.** Igual.
+3. **Cómo probar sin señal en un teléfono de verdad:** con la puerta abierta y «EN LÍNEA», pon el teléfono en **modo avión** (en iPhone también
+   apaga el Wi-Fi si queda prendido). Arriba cambia a **SIN CONEXIÓN** (rojo). Si quieres probar «abrir la app sin señal»: antes, con señal,
+   agrega To'Latino Puerta a la **pantalla de inicio** (Safari: Compartir › Agregar a inicio; Chrome: ⋮ › Instalar app), ciérrala, pon modo avión y
+   ábrela: sale **«Tus puertas en este teléfono»** con tu puerta.
+4. **Sin señal, en A:** escanea el QR de un boleto (Mi cuenta › Boletos del cliente, en otro teléfono) → **VÁLIDO** en verde con
+   **«SIN CONEXIÓN · lo decidió este teléfono; se sube al volver la señal.»** y arriba **1 POR SUBIR**. Escanéalo otra vez → **YA ENTRÓ** «por
+   Principal a las …».
+5. **Sin señal, en B:** escanea **el mismo QR** → también VÁLIDO (B no sabe lo de A). Esto es el «duplicado».
+6. **Sin señal:** un QR de captura vieja (antes de transferir) → **QR ANULADO**; un boleto que devolviste ANTES de abrir la puerta → **DEVUELTO**;
+   el QR de otro evento → **NO ES DE ESTE EVENTO**. **Buscar** por nombre o por los últimos 4 del código → **Dejar entrar** con motivo.
+7. Espera 10 minutos sin señal: sale el aviso grande «Llevas N min sin señal. La lista es de las …».
+8. **Quita el modo avión en B primero y después en A.** Cada uno sube su cola sola (arriba: «Sincronizado», sin «POR SUBIR»).
+9. **Panel de La Terraza › el evento › Abrir modo puerta**: en **MONITOR EN VIVO** cada teléfono dice **«N sin conexión (subió …)»** y
+   **«N repetidos»**; en **INCIDENCIAS**: **«Entró dos veces (sin conexión)» — «Entró por Principal a las …; ya había entrado por VIP a las …»**
+   (gana el que escaneó PRIMERO por la hora, aunque haya subido después). En ÚLTIMOS: **REPETIDO · … · sin conexión**.
+10. **Devuelto mientras no había señal:** con A sin señal, devuelve un boleto desde el panel o el admin y escanéalo en A → entra (A no lo sabe).
+    Al volver la señal: incidencia **«Entró sin conexión con un boleto que ya no valía»** y el escaneo queda rechazado.
+11. **Revocar este teléfono** (Monitor, en la fila de un portero): con A sin señal, escanea algo, revócalo desde el panel y quita el modo avión →
+    A dice «Esta puerta se cerró o se revocó: nada de ella quedó en este teléfono» y lo que tenía sin subir NO cuenta (tag **REVOCADO**).
+12. **Cerrar mi puerta** (Más › Cierre de la noche): primero sube todo; sin señal no deja cerrar («sube tus escaneos antes de cerrar»).
+13. **Super Admin (570-555-0199) › Eventos y boletos › Modo puerta › la fecha**: SESIONES DE PORTERO · CADA UNA ES UN TELÉFONO (sin conexión,
+    repetidos, reloj), incidencias. **Buscar boleto** → el boleto del duplicado → ESCANEOS: **VÁLIDO · SIN CONEXIÓN** en una puerta y **REPETIDO ·
+    SIN CONEXIÓN · HORA DEL TELÉFONO CORREGIDA · LLEGÓ … · DECIDIDO OTRA VEZ AL SUBIR OTRA PUERTA** en la otra.
+14. **El cliente:** con señal abre su boleto (Mi cuenta › Boletos › el boleto): dice **«Guardado en este teléfono: se abre sin señal. Al salir de tu
+    cuenta se borra.»** Pon modo avión y ábrelo otra vez: sale el QR con **SIN CONEXIÓN** arriba. Con señal, **Cerrar sesión**; sin señal ya no
+    se ve nada («No hay boletos guardados en este teléfono»).
+15. **Configuración › Eventos**: «El paquete sin conexión vence» (6 h después del final), «Cada cuánto se pone al día la puerta» (15 s), «Aviso
+    grande sin señal» (10 min), «Escaneos por subida» (200), «Reloj del teléfono desviado» (120 s).
+
+**Decidí X; si prefieres Y, se cambia (6h):**
+- **Lo que lleva el paquete:** por boleto el id, la versión del QR, entradas, estado (con «se está transfiriendo»), nombre + inicial (o el de la
+  cortesía), los **últimos 4 del código** y su huella, los días que vale, tipo o zona, mesa / cortesía / recibido y cuántos entraron (puerta y
+  hora); por RSVP id, personas, estado, nombre + inicial y llegaron. **Sin los últimos 4 del teléfono** (el plan los ponía): sin señal no se busca
+  por teléfono, solo por nombre o código. Nunca teléfonos, correos, montos ni pagos.
+- **Varios días:** el paquete trae todos los boletos del evento con sus días, para decir **ES DE OTRO DÍA** sin señal (si no, un «Día 2» habría
+  salido como «no está en tu lista»).
+- **Firma:** la misma llave Ed25519 del QR, con otro prefijo («TLPK1»: nunca se confunde con un QR). El teléfono verifica con la llave pública
+  (WebCrypto o @noble/ed25519 dentro del repo donde el navegador no trae Ed25519).
+- **Cifrado:** la llave la **deriva el servidor** para ESA sesión, persona y teléfono (HKDF de la llave del entorno) y la da una sola vez a la
+  puerta abierta; el teléfono la guarda como llave **no exportable**. El plan decía una llave creada en el teléfono: así el servidor puede negarla
+  cuando la sesión se cierra o se revoca, y otro portero u otro teléfono nunca la tienen.
+- **«Cerrar su puerta» vs «Revocar este teléfono»** (en el Monitor: cada puerta es un teléfono): cerrar deja subir lo que escaneó sin señal
+  antes del cierre (hasta que vence la lista); **revocar** lo descarta (teléfono perdido o en malas manos). Quitar a un portero = revocar.
+- **Choques:** cada escaneo queda como pasó (auditoría de solo inserción); si al subir uno anterior cambia quién ganó, la base escribe una
+  **corrección** aparte (`ticket_scan_fixes`) y mueve los contadores. Gana el primero por la hora del teléfono corregida con su reloj (medido en
+  cada subida); empate: el que llegó antes al servidor, después el id. El que pierde: REPETIDO + incidencia (no se deshace la entrada).
+- **Un escaneo que el teléfono dejó entrar con un boleto que ya no valía** (devuelto o transferido mientras no había señal): queda rechazado con
+  incidencia y **no** suma a ADENTRO (aunque la persona esté adentro): la incidencia lo dice.
+- **Un QR firmado que no está en la lista** (se vendió después de la última lista): la puerta pregunta (ámbar); si entra, el servidor lo revisa
+  al subir.
+- **Sin señal se puede:** Escanear, Buscar (por nombre o código), entrada a mano, RSVP que llega y «Contar en la puerta». Lista, Aforo, Mesas,
+  Incidencias, Equipo y Cierre necesitan señal (sin señal, tocar esas pestañas lleva a la pantalla sin señal con Escanear y Buscar). La **lista de
+  la noche** (Noche) es solo con señal. Un RSVP o un conteo marcado sin señal que se sube con la puerta ya cerrada no cuenta.
+- **Cerrar mi puerta** solo con todo subido (sin señal no cierra: se perdería).
+- **El QR del cliente sin señal:** se guarda el boleto que la persona **abrió una vez con señal** (no todos solos), cifrado con una llave de su
+  sesión (cookie `tl_bk`, solo bajo /cuenta/boletos); la pantalla sin señal es estática. Salir de la cuenta lo borra; otra cuenta no lo ve.
+- **La app Puerta instalable** con el logo SVG (los íconos PNG y la app de las tiendas llegan con la Fase 8).
+- **door_delta** es una función de la base (`puerta_paquete_filas(fecha, desde)`) y no una vista: necesita el cursor.
+
+Huecos compuestos con piezas del sistema (capturas locales `e6h-*`, teléfono 390; panel y Super Admin 1360): la **línea de estado** de la puerta
+(Icon + Tag + texto en la cabecera oscura), el **aviso grande sin señal** y la **pantalla sin señal** de la Puerta (Cabeza / Hoja / PanelBloques /
+BottomNav de la puerta, la misma cámara), el **resultado «SIN CONEXIÓN»** dentro del veredicto, **Revocar este teléfono** y lo de sin conexión en
+el Monitor (rows), las incidencias automáticas (rows), y **Mis boletos sin señal** (TicketQR / QrCode del sistema con la marca SIN CONEXIÓN).
+
+**Revisión de seguridad (6h: entrada sin conexión, datos guardados en el teléfono y material criptográfico):**
+- **El paquete no se lee fuera de su sesión (cifrado en reposo):** AES-256-GCM con una llave que deriva el servidor por sesión + persona +
+  teléfono; se guarda cifrado en IndexedDB y la llave es un CryptoKey **no exportable** (`exportKey` falla). Copiar la base del teléfono o el
+  paquete que viaja por la red no basta: la llave de otra sesión no lo abre (e2e) y el servidor solo da la llave a la puerta ABIERTA de esa persona
+  en el teléfono que la abrió (otro teléfono con la misma cuenta: «Esta puerta se abrió en otro teléfono»; otro portero: 403). **Límite honesto:**
+  en un navegador, la llave no exportable vive en el mismo perfil: alguien con el teléfono desbloqueado y el navegador abierto podría usarla ahí
+  mismo; por eso el paquete no trae teléfonos ni montos, vence y el negocio puede revocar el teléfono.
+- **No se puede falsificar:** el paquete viene firmado (Ed25519, prefijo TLPK1) y el teléfono lo verifica con la llave pública antes de usarlo;
+  y cada QR se verifica con su propia firma: aunque alguien cambiara el paquete en el teléfono, no puede fabricar un QR que pase (la puerta
+  nunca tiene la llave privada; no hay HMAC compartido).
+- **No sirve después de la sesión ni para otro portero:** cerrar, revocar, quitar al portero o pasar la ventana revoca el paquete en la base
+  (trigger) y el servidor deja de dar paquete, cambios y llave (403); el teléfono, al enterarse, borra paquete, llave y cola. Vence a
+  fin + 6 h (Configuración) y el teléfono lo borra solo aunque no tenga señal. **Ventana:** un teléfono revocado o de un portero quitado que no
+  recupera la señal sigue validando con su lista hasta que la recupere o venza; nada de lo que escanee después de revocado cuenta.
+- **QR falso, viejo, devuelto o transferido sin señal = igual que en línea:** firma mala → QR NO VÁLIDO; versión vieja → QR ANULADO; devuelto →
+  DEVUELTO; en transferencia → SE ESTÁ TRANSFIRIENDO; de otro día → ES DE OTRO DÍA; de otro evento → NO ES DE ESTE EVENTO (e2e cada uno). **Ventana
+  de frescura:** con señal la lista se pone al día cada 15 s; sin señal, lo que se devolvió o transfirió después de la última lista no lo sabe
+  ese teléfono (el aviso grande sale a los 10 min) y al subir queda rechazado con incidencia.
+- **Repetir la cola no crea entradas:** cada escaneo lleva el id que genera el teléfono; la base toma su candado y devuelve lo ya decidido
+  (e2e: las colas subidas otra vez → 21–35 «repetido» y ni una entrada, escaneo, corrección ni incidencia más). Un id de OTRA puerta → «ajeno»,
+  sin devolver nada (también en línea: 409; **encontrado y corregido en esta revisión**: en 6g un id ajeno en línea devolvía el resultado de allá).
+- **Un cliente malicioso no puede marcar un boleto de otro negocio o de otra fecha:** la sesión fija el evento y la fecha; la base revisa el
+  boleto con su fila bloqueada al subir (otro evento → wrong_event, sin el id del boleto; otro día → wrong_day) y el QR se vuelve a verificar en
+  el servidor. Una cola subida a la puerta de otra persona → no es suya (e2e). Un escaneo que el teléfono NO dejó entrar nunca queda como entrada.
+- **La hora del teléfono no manda sola:** se corrige con el desfase medido en cada subida, se acota a la sesión (no antes de abrir, no después de
+  cerrar, nunca en el futuro) y un reloj desviado más de 120 s se marca (e2e: reloj 7 min adelantado → el orden sale bien).
+- **El QR del cliente en un teléfono compartido:** cifrado con la llave de SU sesión (cookie que se renueva al entrar y se borra al salir);
+  salir borra la base y la cookie; otra cuenta en el mismo teléfono no lo descifra y se borra (e2e). Sin precio ni pagos.
+- **Los service workers no guardan nada de nadie:** solo la cáscara estática (sin cuenta) y archivos con huella; nunca `/api/` ni el HTML de una
+  puerta o de un boleto (guardián `sinConexionSinDatosAjenos`).
+- **D1:** nada de esto cobra, vende ni lee montos (`sinVentaEnLaPuerta` sigue verde).
+- **Encontrado y corregido en la revisión:** (1) un id de escaneo de otra puerta devolvía lo decidido allá → «ajeno» en la cola y 409 en línea;
+  (2) el «Día 2» de un evento de varios días salía sin señal como «no está en tu lista» → el paquete trae todos los boletos del evento con sus
+  días; (3) el aviso al organizador decía que el portero «reportó» un duplicado → lo dice To'Latino.
+- **Pendiente (LAUNCH):** teléfonos de verdad (iPhone Safari y Android) sin señal; Safari puede borrar lo guardado de una web que no se abre en
+  7 días (el boleto del cliente); velocidad con la base de carga; señales de duplicados en Confianza (6j); red entre teléfonos y QR rotativo.

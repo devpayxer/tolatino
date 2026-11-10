@@ -6,6 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type CSSProperties, type ReactNode } from "react";
+import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "NeighborCard" | "CompleteAccount" | "WeekAgenda" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,7 +88,7 @@ export function Marco({ es, code, t, s, back, act, blocks, rcards = [], bar, yo,
   const lay = M ? { cols: "minmax(0,1fr)", pad: "14px 16px 0", nav: false, cpad: "0", chips: false, rail: false, railCol: "1", railPad: "0", pb: home ? "110px" : bar ? "140px" : "40px" }
     : { cols: c3 ? "240px minmax(0,1fr) 320px" : c1 ? "minmax(0,1fr)" : "220px minmax(0,1fr)", pad: "0", nav: !c1, cpad: c1 ? "22px 24px 40px" : "26px 30px 40px", chips: c1, rail: rc.length > 0, railCol: c3 ? "3" : c1 ? "1" : "2", railPad: c3 ? "26px 24px 40px 0" : c1 ? "0 24px 40px" : "0 30px 40px", pb: "0" };
   const ir = (h: string) => router.push(h);
-  const salir = async () => { await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
+  const salir = async () => { await olvidarSinConexion(); await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
   const items = NAV.map((x) => x.length === 2 ? { isH: true, l: es ? x[0] : x[1] } : { isH: false, code: x[0], l: es ? x[1] : x[2], ic: x[3], href: x[4] });
   const B = blocks.filter((b): b is Bloque => !!b);
   if (M && B.some((b) => b.type === "chat")) lay.pb = "110px";

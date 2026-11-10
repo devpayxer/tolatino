@@ -10,6 +10,7 @@ import { tagMesa } from "./citas/Citas";
 import { diaRel, horaDe } from "./fechas";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "./Marco";
 import { tagPed } from "./pedidos/Pedidos";
+import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 
@@ -20,7 +21,7 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
   const dia = (d: string) => new Date(d).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });
-  const salir = async () => { await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
+  const salir = async () => { await olvidarSinConexion(); await fetch("/api/cuenta/salir", { method: "POST" }); router.replace("/entrar"); };
   const c = r.cnt, city = ciudad ?? "Hazleton";
   const B: Bloque[] = [];
   if (borrar) B.push({ type: "note", tone: "danger", ic: "warning", t: E2(`Tu cuenta se borra el ${dia(borrar)}`, `Your account will be deleted on ${dia(borrar)}`), s: E2("Si cambias de idea, cancélalo antes de esa fecha en Ajustes.", "If you change your mind, cancel before then in Settings."), a: E2("Ver", "View"), onA: () => ir("/cuenta/ajustes/borrar") });

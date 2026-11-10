@@ -41,6 +41,11 @@ export async function accesoPuerta(userId: string, sesion: string): Promise<CtxP
       where s.id = $1::bigint and s.user_id = $2 and puerta_acceso(s.id, $2)`, [sesion, userId])).rows[0];
   return r ?? null;
 }
+/* 6h · ¿Ese id de escaneo ya es de otra puerta? (un id repetido de ESTA puerta es idempotencia; de otra, nunca se devuelve lo de allá). */
+export async function idAjeno(id: string, sesion: string): Promise<boolean> {
+  if (!UUID.test(String(id ?? "")) || !ID.test(String(sesion ?? ""))) return false;
+  return !!(await db().query(`select 1 from ticket_scans where id = $1::uuid and session_id <> $2::bigint`, [id.toLowerCase(), sesion])).rowCount;
+}
 /* Un error de la base de la puerta → mensaje para la persona (sin detalles internos). */
 function errPuerta(e: unknown) {
   const m = String((e as { message?: string })?.message ?? "");
@@ -343,7 +348,7 @@ export async function aforo(ctx: CtxPuerta, es: boolean) {
     db().query<{ puerta: string; adentro: number; entraron: number; rechazados: number }>(
       `select door_name as puerta, inside_n as adentro, entered_n as entraron, rejected_n as rechazados from door_counts where event_date_id = $1::bigint order by entered_n desc`, [ctx.fecha]),
     db().query<{ h: string; n: number }>(
-      `select to_char(date_trunc('hour', s.at_server at time zone $2), 'HH24:MI') as h, sum(s.first_n)::int as n from ticket_scans s
+      `select to_char(date_trunc('hour', s.at_eff at time zone $2), 'HH24:MI') as h, sum(s.first_n)::int as n from ticket_scans_ef s
         where s.event_date_id = $1::bigint and s.resolution = 'accepted' and s.first_n > 0 group by 1 order by 1`, [ctx.fecha, ctx.tz]),
   ]);
   const caps = (await db().query<{ caps: Record<string, number> }>(`select door_caps as caps from events where id = $1::bigint`, [ctx.evento])).rows[0]?.caps ?? {};
@@ -404,33 +409,50 @@ export async function incidencia(ctx: CtxPuerta, kind: string, nota: string, cod
     { href: `/panel/${ctx.negocio}/eventos?det=door:${ctx.evento}@${ctx.fecha}`, ref: ["event_date", ctx.fecha] });
   return { ok: true };
 }
+/* 6h · Las automáticas (duplicado sin conexión, entró con un boleto que ya no valía) traen las dos puertas y horas: la del escaneo de más
+   (o sin valor) y la de quien ganó AHORA (la primera entrada vigente por la hora que cuenta). */
 export async function incidencias(fecha: string, tz: string) {
-  return (await db().query<{ id: string; kind: string; nota: string; st: string; hora: string; puerta: string | null; quien: string; code: string | null }>(
+  return (await db().query<{ id: string; kind: string; nota: string; st: string; hora: string; puerta: string | null; quien: string; code: string | null; auto: boolean;
+    aPuerta: string | null; aHora: string | null; gPuerta: string | null; gHora: string | null; res: Resultado | null }>(
     `select i.id::text, i.kind, i.note as nota, i.status as st, to_char(i.at at time zone $2, 'HH24:MI') as hora, s.door_name as puerta,
-            coalesce(nullif(u.first_name, ''), '—') as quien, t.code
+            coalesce(nullif(u.first_name, ''), '—') as quien, t.code, i.auto, a.door_name as "aPuerta", to_char(a.at_eff at time zone $2, 'HH24:MI') as "aHora", a.result as res,
+            g.door_name as "gPuerta", to_char(g.at_eff at time zone $2, 'HH24:MI') as "gHora"
        from door_incidents i left join door_sessions s on s.id = i.session_id left join users u on u.id = i.by_user left join tickets t on t.id = i.ticket_id
-      where i.event_date_id = $1::bigint order by i.at desc limit 50`, [fecha, tz])).rows.map((x) => ({ ...x, hora: hora12(x.hora) }));
+       left join ticket_scans_ef a on a.id = i.scan_id
+       left join lateral (select x.door_name, x.at_eff from ticket_scans_ef x where i.auto and i.kind = 'duplicado' and x.ticket_id = i.ticket_id and x.event_date_id = i.event_date_id
+                            and x.resolution = 'accepted' and x.direction = 'in' and x.first_n > 0 order by x.at_eff, x.at_server, x.id limit 1) g on true
+      where i.event_date_id = $1::bigint order by i.at desc limit 50`, [fecha, tz])).rows.map((x) => ({ ...x, hora: hora12(x.hora), aHora: hora12(x.aHora), gHora: hora12(x.gHora) }));
 }
 
 /* ── CHK-EQUIPO · quién está en la puerta, en cuál, y cuántos dejó entrar cada uno ── */
 export async function equipo(fecha: string, tz: string) {
-  return (await db().query<{ sesion: string; nombre: string; puerta: string; activa: boolean; desde: string; entradas: number; rechazos: number; ultimo: string | null; miembro: boolean }>(
+  // 6h · Por teléfono también: cuántos escaneos subió sin conexión, la última subida, el desfase de su reloj, si se cerró o se revocó y si
+  // todavía puede subir lo que tenga (cerrada por ella, el panel o el barrido, mientras no venza el paquete).
+  return (await db().query<{ sesion: string; nombre: string; puerta: string; activa: boolean; desde: string; entradas: number; rechazos: number; ultimo: string | null; miembro: boolean;
+    cerradaPor: string | null; sinConexion: number; repetidos: number; subio: string | null; desfase: number | null; revocable: boolean }>(
     `select s.id::text as sesion, coalesce(f.display_name, nullif(u.first_name, ''), 'Equipo') as nombre, s.door_name as puerta, s.ended_at is null as activa,
             to_char(s.started_at at time zone $2, 'HH24:MI') as desde, coalesce(k.e, 0) as entradas, coalesce(k.r, 0) as rechazos, to_char(k.u at time zone $2, 'HH24:MI') as ultimo,
-            s.member_user_id is not null as miembro
-       from door_sessions s left join door_staff f on f.id = s.door_staff_id left join users u on u.id = s.user_id
-       left join lateral (select sum(x.first_n)::int as e, count(*) filter (where x.resolution = 'rejected')::int as r, max(x.at_server) as u from ticket_scans x where x.session_id = s.id) k on true
-      where s.event_date_id = $1::bigint order by (s.ended_at is null) desc, s.started_at desc limit 40`, [fecha, tz])).rows.map((x) => ({ ...x, desde: hora12(x.desde), ultimo: hora12(x.ultimo) }));
+            s.member_user_id is not null as miembro, s.ended_by as "cerradaPor", coalesce(k.off, 0) as "sinConexion", coalesce(k.dup, 0) as repetidos,
+            to_char(y.sy at time zone $2, 'HH24:MI') as subio, s.clock_offset_ms as desfase,
+            (s.ended_by is null or s.ended_by in ('self', 'business', 'system')) and now() <= d.ends_at + make_interval(hours => cfg_int('puerta_paquete_h')) as revocable
+       from door_sessions s join event_dates d on d.id = s.event_date_id left join door_staff f on f.id = s.door_staff_id left join users u on u.id = s.user_id
+       left join lateral (select sum(x.first_n)::int as e, count(*) filter (where x.resolution = 'rejected')::int as r, max(x.at_server) as u, count(*) filter (where x.offline)::int as off,
+                                 count(*) filter (where x.resolution = 'duplicate')::int as dup from ticket_scans_ef x where x.session_id = s.id) k on true
+       left join lateral (select max(z.received_at) as sy from door_syncs z where z.session_id = s.id) y on true
+      where s.event_date_id = $1::bigint order by (s.ended_at is null) desc, s.started_at desc limit 40`, [fecha, tz])).rows.map((x) => ({ ...x, desde: hora12(x.desde), ultimo: hora12(x.ultimo), subio: hora12(x.subio) }));
 }
 /* Los últimos en la puerta (resultado, nombre + inicial o la cortesía, puerta y hora). */
 export async function ultimos(fecha: string, tz: string, es: boolean, limite = 12) {
-  return (await db().query<{ id: string; res: Resultado; k: number; dir: string; puerta: string; hora: string; kind: string; fn: string | null; ln: string | null; hn: string | null; cn: string | null; comp: boolean | null }>(
-    `select s.id::text, s.result as res, s.admits_n as k, s.direction as dir, s.door_name as puerta, to_char(s.at_server at time zone $2, 'HH24:MI') as hora, s.kind,
-            coalesce(u.first_name, ru.first_name) as fn, coalesce(u.last_name, ru.last_name) as ln, t.holder_name as hn, t.comp_name as cn, t.kind = 'comp' as comp
-       from ticket_scans s left join tickets t on t.id = s.ticket_id left join users u on u.id = t.holder_user_id
+  // 6h · La resolución vigente (ticket_scans_ef) y la hora que cuenta; los de sin conexión salen marcados (y los repetidos, como tales).
+  return (await db().query<{ id: string; res: Resultado; k: number; dir: string; puerta: string; hora: string; kind: string; fn: string | null; ln: string | null; hn: string | null; cn: string | null; comp: boolean | null;
+    offline: boolean; resolucion: string; desviado: boolean }>(
+    `select s.id::text, s.result as res, s.admits_n as k, s.direction as dir, s.door_name as puerta, to_char(s.at_eff at time zone $2, 'HH24:MI') as hora, s.kind,
+            coalesce(u.first_name, ru.first_name) as fn, coalesce(u.last_name, ru.last_name) as ln, t.holder_name as hn, t.comp_name as cn, t.kind = 'comp' as comp,
+            s.offline, s.resolution as resolucion, s.skew as desviado
+       from ticket_scans_ef s left join tickets t on t.id = s.ticket_id left join users u on u.id = t.holder_user_id
        left join rsvps v on v.id = s.rsvp_id left join users ru on ru.id = v.user_id
       where s.event_date_id = $1::bigint order by s.at_server desc limit $3`, [fecha, tz, limite])).rows.map((x) => ({
-    id: x.id, res: x.res, k: x.k, dir: x.dir, puerta: x.puerta, hora: hora12(x.hora), kind: x.kind,
+    id: x.id, res: x.res, k: x.k, dir: x.dir, puerta: x.puerta, hora: hora12(x.hora), kind: x.kind, offline: x.offline, repetido: x.resolucion === "duplicate", desviado: x.desviado,
     nombre: x.kind === "count" ? (es ? "Conteo" : "Count") : x.kind === "noche" ? (es ? "Lista de la noche" : "Tonight’s list") : x.comp ? String(x.cn ?? "—") : x.hn ? nombreCorto(x.hn) : x.fn ? nombreCorto(x.fn, x.ln) : "—" }));
 }
 

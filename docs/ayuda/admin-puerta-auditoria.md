@@ -22,11 +22,14 @@ del boleto** (ESCANEOS EN LA PUERTA). Permiso: Eventos (ver). Solo las ciudades 
 | Un boleto aparece YA ENTRÓ dos veces | El primero entró; los demás fueron intentos con el mismo QR (fotos o capturas). Revisa las puertas y las horas. |
 | Una entrada «a mano» | Dice el motivo (no trajo el QR, el QR no se lee…) y el portero que la marcó. |
 | La fecha es de una ciudad que no es tuya | No sale. |
+| Un boleto entró dos veces sin señal | En ESCANEOS: VÁLIDO en una puerta y REPETIDO · SIN CONEXIÓN en la otra; gana el primero por la hora (corregida). |
 
 ## Preguntas frecuentes
 - **¿Puedo marcar una entrada desde aquí?** No: es solo lectura. La puerta la marca el portero o el negocio.
 - **¿Cuánto se guardan los escaneos?** Quedan en la auditoría (solo inserción, no se borran ni se cambian).
-- **¿Y las entradas sin conexión?** Llegan con el modo sin conexión de la Puerta (siguiente bloque).
+- **¿Y las entradas sin conexión?** Salen marcadas **SIN CONEXIÓN**, con la hora del teléfono corregida, cuándo llegaron y si el reloj estaba
+  desviado. Si dos puertas dejaron entrar el mismo boleto sin señal, una queda **REPETIDO** («decidido otra vez al subir otra puerta») y hay una
+  incidencia. Las sesiones de portero dicen cuántos escaneos subieron sin conexión y si el teléfono se revocó.
 
 ---
 
@@ -35,3 +38,5 @@ Read-only door audit for disputes (“I paid and was not let in”). **NOW**: to
 **LAST 7 DAYS**: dates with scans. One date: **INSIDE · TO COME · REJECTED · REPEATED**, **BY DOOR**, **DOOR STAFF SESSIONS**, **LATEST AT THE DOOR**
 and **INCIDENTS**, refreshed every 10 seconds. A ticket’s page adds **DOOR SCANS**: every scan with result, door, who scanned it, date and time,
 and manual entries with their reason. No full phones or amounts anywhere. Limited to your team’s cities.
+
+**Offline entries (6h):** they show **OFFLINE**, with the phone time corrected, when they arrived and whether the clock was off. If two doors let the same ticket in offline, one shows **REPEATED** (re-decided when the other door uploaded) and there is an incident. Door sessions show how many scans came in offline and whether the phone was revoked.

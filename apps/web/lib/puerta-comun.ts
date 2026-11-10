@@ -53,8 +53,12 @@ export type VistaEscaneo = {
   /* ES DE OTRO DÍA: los días en que sí vale. */
   vale: string | null;
   reentrada: boolean;
+  /* 6h · Lo decidió el teléfono sin señal (se sube con la cola al volver la señal; el servidor tiene la última palabra). */
+  sinSenal?: boolean;
 };
-export type Pregunta = { id: string; quedan: number; de: number; entraron: number; nombre: string | null; tipo: string | null; mesa: string | null; edad: number; pideId: boolean; cortesia: boolean; transferido: boolean; reentrada: boolean };
+export type Pregunta = { id: string; quedan: number; de: number; entraron: number; nombre: string | null; tipo: string | null; mesa: string | null; edad: number; pideId: boolean; cortesia: boolean; transferido: boolean; reentrada: boolean;
+  /* 6h · Sin señal: un QR firmado por To'Latino que no está en la lista de este teléfono (se vendió después de la última lista). */
+  fuera?: boolean };
 export type ResEscaneo = { ok: true; v: VistaEscaneo } | { ok: true; pregunta: Pregunta } | { ok: false; msg: Bi; cerrada?: boolean };
 
 /* La cabecera viva (SSE): adentro, entraron, los que se esperan, rechazados y repetidos, aforo. */
@@ -68,6 +72,11 @@ export type FilaPuerta = {
   cursor?: string;
 };
 
+/* 6h · Las incidencias que abre sola la base al subir la cola sin conexión (no se eligen en la puerta). */
+export const INCIDENCIAS_AUTO: Record<"duplicado" | "sin_valor", { l: Bi; icon: string }> = {
+  duplicado: { l: { es: "Entró dos veces (sin conexión)", en: "Got in twice (offline)" }, icon: "ticket" },
+  sin_valor: { l: { es: "Entró sin conexión con un boleto que ya no valía", en: "Got in offline with a ticket that was no longer valid" }, icon: "ban" },
+};
 export const INCIDENCIAS: { k: "duplicado" | "edad" | "seguridad" | "devolucion" | "otro"; l: Bi; icon: string }[] = [
   { k: "duplicado", l: { es: "Boleto duplicado", en: "Duplicate ticket" }, icon: "ticket" },
   { k: "edad", l: { es: "Edad o identificación", en: "Age or ID" }, icon: "shield" },
@@ -95,4 +104,25 @@ export function nombreCorto(nombre: string | null | undefined, apellido?: string
   if (!p.length) return "—";
   const ap = apellido != null ? String(apellido).trim() : p.length > 1 ? p[p.length - 1]! : "";
   return ap ? `${p[0]} ${ap.slice(0, 1).toUpperCase()}.` : p[0]!;
+}
+
+/* 6h · Cómo se lee una incidencia en la puerta, el panel y el Super Admin (las automáticas con las dos puertas y horas). */
+export type IncidenciaVista = { kind: string; nota: string; code: string | null; quien: string; puerta: string | null; auto?: boolean; aPuerta?: string | null; aHora?: string | null; gPuerta?: string | null; gHora?: string | null; res?: Resultado | null };
+export function textoIncidencia(x: IncidenciaVista, es: boolean): { t: string; s: string; icon: string } {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  if (x.auto && (x.kind === "duplicado" || x.kind === "sin_valor")) {
+    const A = INCIDENCIAS_AUTO[x.kind];
+    const linea = x.kind === "duplicado"
+      ? E2(`Entró por ${x.aPuerta ?? "—"} a las ${x.aHora ?? "—"}; ya había entrado por ${x.gPuerta ?? "—"} a las ${x.gHora ?? "—"}.`, `Got in through ${x.aPuerta ?? "—"} at ${x.aHora ?? "—"}; already in through ${x.gPuerta ?? "—"} at ${x.gHora ?? "—"}.`)
+      : E2(`Entró por ${x.aPuerta ?? "—"} a las ${x.aHora ?? "—"} sin señal; al subir: ${x.res ? RESULTADO[x.res].t.es : "no valía"}.`, `Got in through ${x.aPuerta ?? "—"} at ${x.aHora ?? "—"} offline; on upload: ${x.res ? RESULTADO[x.res].t.en : "not valid"}.`);
+    return { t: es ? A.l.es : A.l.en, s: [linea, x.code].filter(Boolean).join(" · "), icon: A.icon };
+  }
+  const I = INCIDENCIAS.find((o) => o.k === x.kind);
+  return { t: I ? (es ? I.l.es : I.l.en) : x.kind, s: [x.nota, x.code, `${x.quien}${x.puerta ? ` · ${x.puerta}` : ""}`].filter(Boolean).join(" · "), icon: I?.icon ?? "info" };
+}
+/* Un escaneo en «últimos en la puerta»: el resultado vigente, y si fue sin conexión o quedó repetido. */
+export function lineaUltimo(x: { res: Resultado; k: number; dir: string; puerta: string; offline?: boolean; repetido?: boolean; desviado?: boolean }, es: boolean): string {
+  const E2 = (a: string, b: string) => (es ? a : b);
+  const r = x.repetido ? E2("REPETIDO", "REPEATED") : es ? RESULTADO[x.res].t.es : RESULTADO[x.res].t.en;
+  return `${r}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? E2(" · salida", " · exit") : ""} · ${x.puerta}${x.offline ? E2(" · sin conexión", " · offline") : ""}${x.desviado ? E2(" · reloj desviado", " · clock off") : ""}`;
 }

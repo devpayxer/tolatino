@@ -31,7 +31,9 @@ export type ClaveConfig =
   // 6e · cambios del evento y la liquidación del martes
   | "evt_aviso_max" | "evt_pago_dia" | "evt_retener_nuevo_cents" | "evt_cancelaciones_confianza" | "evt_cancelaciones_dias" | "evt_ajuste_dias" | "evt_cancelar_lote"
   // 6g · la puerta (0112)
-  | "puerta_porteros_max" | "puerta_ventana_h" | "puerta_aforo_alerta_pct" | "puerta_buscar_min" | "puerta_invitar_dia_max";
+  | "puerta_porteros_max" | "puerta_ventana_h" | "puerta_aforo_alerta_pct" | "puerta_buscar_min" | "puerta_invitar_dia_max"
+  // 6h · la puerta sin conexión (0113)
+  | "puerta_paquete_h" | "puerta_sync_seg" | "puerta_offline_aviso_min" | "puerta_sync_lote" | "puerta_reloj_desvio_seg";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

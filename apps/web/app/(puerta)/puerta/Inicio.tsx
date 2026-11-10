@@ -3,18 +3,22 @@
    del Repartidor). Arriba oscuro (la app de la puerta); abajo la hoja con los bloques del sistema. */
 import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { diaCorto, hora } from "@/lib/evt-comun";
 import { hora12, PUERTAS_SUGERIDAS } from "@/lib/puerta-comun";
 import type { PuertaAsignada, SesionAbierta } from "@/lib/puerta";
 import { puertaAbrir, puertaAceptar, puertaSalirEquipo } from "./acciones";
 import { Cabeza, Hoja } from "./Marco";
+import { limpiarSesiones, registrarSW } from "./sin-conexion/usePuertaLocal";
 
 type Bi = { es: string; en: string };
 export function Inicio({ es, nombre, tel, puertas, abiertas, equipos }: { es: boolean; nombre: string; tel: string; puertas: PuertaAsignada[]; abiertas: SesionAbierta[]; equipos: { id: string; negocio: string }[] }) {
   const E2 = (a: string, b: string) => (es ? a : b), bi = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [pend, start] = useTransition();
   const [cod, setCod] = useState(""), [sel, setSel] = useState<PuertaAsignada | null>(null), [pn, setPn] = useState(""), [err, setErr] = useState(""), [toast, setToast] = useState("");
+  // 6h · La app instalable (abre sin señal) y nada guardado de puertas que ya no están abiertas para esta persona.
+  const vivas = abiertas.map((a) => a.sesion).join(",");
+  useEffect(() => { registrarSW(); void limpiarSesiones(vivas ? vivas.split(",") : []); }, [vivas]);
   const run = (f: () => Promise<{ ok: boolean; msg?: Bi; sesion?: unknown; negocio?: unknown }>, ok: (r: { sesion?: unknown; negocio?: unknown }) => void) => start(async () => {
     setErr("");
     const r = await f().catch(() => null);

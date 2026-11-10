@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { mismoOrigen, yo } from "@/lib/cuenta";
+import { dispositivo, mismoOrigen, yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
-import { accesoPuerta, contar, entradaManual, escanearQR, llegadaNoche, marcarRsvp } from "@/lib/puerta";
+import { accesoPuerta, contar, entradaManual, escanearQR, idAjeno, llegadaNoche, marcarRsvp } from "@/lib/puerta";
+import { aplicarCola } from "@/lib/puerta-sync";
 
 /* 6g · POST /api/puerta/escanear: un escaneo de To'Latino Puerta (o del modo puerta del panel). Cada llamada trae el id del escaneo (uuid
    del teléfono = idempotencia) y la hora del teléfono (gancho del modo sin conexión, 6h). La persona tiene que tener acceso a ESA puerta
    en ESE momento (accesoPuerta → puerta_acceso de la base); si no, 403 y la pantalla dice que la puerta se cerró. La respuesta nunca
-   trae montos, teléfonos ni correos (D1: la puerta solo escanea). */
+   trae montos, teléfonos ni correos (D1: la puerta solo escanea). 6h: { tipo: "cola" } sube la cola sin conexión (lib/puerta-sync.ts). */
 export const dynamic = "force-dynamic";
 const NO = (es: string, en: string, status: number, cerrada = false) => NextResponse.json({ ok: false, msg: { es, en }, ...(cerrada ? { cerrada: true } : {}) }, { status, headers: { "cache-control": "no-store" } });
 
@@ -17,8 +18,16 @@ export async function POST(req: Request) {
   let b: Record<string, unknown>;
   try { b = (await req.json()) as Record<string, unknown>; } catch { return NO("Petición mal formada.", "Malformed request.", 400); }
   if (!b || typeof b !== "object") return NO("Petición mal formada.", "Malformed request.", 400);
+  // 6h · La cola sin conexión: la sesión puede estar cerrada (lo escaneado sin señal antes del cierre sube igual hasta que vence el
+  // paquete); la base decide con puerta_sesion_cola (de esa persona; revocada o portero quitado = nada sube).
+  if (b.tipo === "cola") {
+    const c = await aplicarCola(u.id, String(b.sesion ?? ""), await dispositivo(false), b.ahora, b.escaneos);
+    return NextResponse.json(c, { status: c.ok ? 200 : 403, headers: { "cache-control": "no-store" } });
+  }
   const ctx = await accesoPuerta(u.id, String(b.sesion ?? ""));
   if (!ctx) return NO("Ya no tienes acceso a esta puerta. Si es un error, habla con el negocio.", "You no longer have access to this door. If this is a mistake, talk to the business.", 403, true);
+  // 6h · Un id de escaneo que ya es de OTRA puerta no devuelve lo que se decidió allá (la misma clase que «ajeno» en la cola).
+  if (typeof b.id === "string" && (await idAjeno(b.id, ctx.sesion))) return NO("Ese escaneo es de otra puerta.", "That scan belongs to another door.", 409);
   const es = (await idioma()) === "es";
   const r = b.tipo === "qr" ? await escanearQR(ctx, String(b.qr ?? ""), b, es)
     : b.tipo === "boleto" ? await entradaManual(ctx, String(b.boleto ?? ""), String(b.motivo ?? ""), b, es)

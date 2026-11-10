@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, hkdfSync, randomBytes } from "node:crypto";
 
 /* Cifrado de columna para lo sensible (op_private.note_enc · fase4-salud-pro.md §3): AES-256-GCM con la llave de los secretos
    del entorno (DATOS_SECRET, la crea infra/pruebas/deploy.sh en el servidor; nunca pasa por el chat). Formato:
@@ -30,4 +30,10 @@ export function descifrar(b: Buffer | null | undefined): string | null {
    con la misma llave del entorno. Igual dato → igual huella; sin la llave no se puede adivinar. */
 export function huella(texto: string): string {
   return createHmac("sha256", llave()).update(`huella:${texto}`).digest("hex");
+}
+
+/* 6h · Una llave derivada para un propósito y un dueño (HKDF-SHA256 de la llave del entorno): la del paquete sin conexión de UNA sesión de
+   puerta. No se guarda en ningún lado: el servidor la vuelve a derivar cuando la sesión la pide, y solo se la da a esa sesión abierta. */
+export function llaveDerivada(proposito: string, dueno: string): Buffer {
+  return Buffer.from(hkdfSync("sha256", llave(), Buffer.from(`tl:${proposito}:v1`), Buffer.from(dueno), 32));
 }

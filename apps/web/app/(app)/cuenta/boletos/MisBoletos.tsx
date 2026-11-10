@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import type { GrupoMis, MisBoletos as MB } from "@/lib/boletos";
 import { diaCorto, hora, mesCorto } from "@/lib/evt-comun";
 import { Marco, useCuentaUi, type Bloque, type Fila, type Yo } from "../Marco";
+import { recordarIdioma, registrarSWBoletos } from "@/lib/boletos-sin-conexion";
+import { useEffect } from "react";
 
 export function MisBoletos({ d, f, es, yo }: { d: MB; f: "proximos" | "pasados"; es: boolean; yo: Yo }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
+  useEffect(() => { registrarSWBoletos(); recordarIdioma(es); }, [es]);   // 6h · los boletos que abras con señal se ven sin señal
   const fila = (g: GrupoMis, pasado: boolean): Fila => ({
     key: g.numero, t: g.title, s: `${diaCorto(g.dia, es).toUpperCase()} · ${hora(g.h0)} · ${g.venue}`.toUpperCase(),
     // 6d · Recibido de otra persona (o cortesía): se abre el boleto (la orden es de quien pagó). Enviados y transferidos se dicen.

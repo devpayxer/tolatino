@@ -9,6 +9,9 @@ import { MODO_SMS, secretoAuth } from "./entorno";
    comparación en tiempo constante; el servidor decide todo. */
 
 export const COOKIE = "tl_s";
+/* 6h · La llave de los boletos sin señal de la sesión (lib/boletos-sin-conexion.ts): legible por la app solo bajo /cuenta/boletos, no es una
+   credencial (no abre nada en el servidor). */
+export const COOKIE_BOLETOS = "tl_bk";
 const SESION_DIAS = 180;
 const CODIGO_MIN = 10;
 const MAX_INTENTOS = 5;
@@ -164,6 +167,8 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
     path: "/",
     maxAge: SESION_DIAS * 86400,
   });
+  // 6h · La llave de los boletos sin señal de ESTA sesión (nueva en cada entrada: lo guardado por otra cuenta en el teléfono no se lee).
+  (await cookies()).set(COOKIE_BOLETOS, randomBytes(32).toString("base64url"), { httpOnly: false, sameSite: "strict", secure: seguro, path: "/cuenta/boletos", maxAge: SESION_DIAS * 86400 });
   return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
 }
 
@@ -204,6 +209,8 @@ export async function salir(): Promise<void> {
   const t = jar.get(COOKIE)?.value;
   if (t) await db().query("update sessions set signed_out_at = now() where token_hash = $1 and signed_out_at is null", [huellaToken(t)]);
   jar.delete(COOKIE);
+  // 6h · Sin esta llave, los boletos guardados para verlos sin señal ya no se leen en el teléfono (además, la app borra la base al salir).
+  jar.delete({ name: COOKIE_BOLETOS, path: "/cuenta/boletos" });
 }
 
 /* Las rutas que cambian algo solo aceptan peticiones del mismo sitio (defensa CSRF además de SameSite). */
