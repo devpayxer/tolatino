@@ -1,7 +1,7 @@
 import "server-only";
 import { valor } from "./config";
 import { db } from "./db";
-import { bi, dinero, diaCorto, hora, mesCorto, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type Mesa } from "./evt-comun";
+import { bi, dinero, diaCorto, hora, mesCorto, repL, spanL, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type HorarioDia, type Mesa, type Repite } from "./evt-comun";
 import { centroSQL, DIRECCION_EVENTO, PUNTO_EVENTO, radioSQL, type Punto } from "./punto";
 import { ventaFicha, type VentaFicha } from "./boletos";
 
@@ -22,11 +22,14 @@ export type TagEvt = { t: string; k: "vas" | "hoy" | "gratis" | "quedan" };
 export type TarjetaEvt = {
   id: string; fecha: string; href: string; img: string | null; bm: string; bd: number; title: string; meta: string; price: string; tag: TagEvt | null; dark: boolean;
   saved: boolean; going: boolean; g: Grupo; cuando: string; venue: string; mi: number | null; edad: number; free: boolean; fmt: FormatoKey; van: number; desde: number | null;
+  /* 6f · Una serie sale UNA vez (su próxima fecha) con «CADA JUEVES · +7 FECHAS»; varios días, con su rango. */
+  serie: string | null;
 };
 
 type FilaT = {
   eid: string; fid: string; slug: string; title: Bi; fmt: FormatoKey; dark: boolean; entry: Entrada; edad: number; ldate: string; h0: number; h1: number; venue: string;
   img: string | null; desde: number | null; quedan: number | null; van: number; saved: boolean; going: boolean; mi: number | null; cur: string; genres: string[];
+  kind: "single" | "series" | "span"; rep: Repite | null; span: number; inicio: string; mas: number;
 };
 /* Hoy en la ciudad y el fin de semana (vie–dom; si hoy es viernes, sábado o domingo, desde hoy). */
 type Dias = { hoy: string; vie: string; dom: string };
@@ -50,21 +53,29 @@ const COLS_T = (centro: string | null) => `
   coalesce($1::uuid is not null and exists (select 1 from favorites v where v.user_id = $1::uuid and v.kind = 'event' and v.target_id = e.id::text), false) as saved,
   coalesce($1::uuid is not null and exists (select 1 from rsvps r where r.user_id = $1::uuid and r.event_date_id = d.id and r.status = 'going'), false) as going,
   ${centro ? `case when d.geom is null then null else round((st_distance(d.geom, ${centro}) / 1609.34)::numeric, 1)::float end` : "null::float"} as mi,
-  to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || d.id as cur`;
+  to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || d.id as cur,
+  e.kind, e.rep, e.span_days as span, e.start_date::text as inicio,
+  case when e.kind = 'series' then (select count(*)::int from event_dates q where q.event_id = e.id and q.listable and q.ends_at > now() and (q.starts_at, q.id) > (d.starts_at, d.id)) else 0 end as mas`;
 const DESDE_T = `from event_dates d join events e on e.id = d.event_id join businesses b on b.id = e.business_id join event_formats f on f.key = e.format join cities ci on ci.id = d.city_id`;
 /* Lo vivo: listable, que no haya terminado. El rango de starts_at usa el índice (city_id, starts_at, id) where listable. */
 const VIVO = `d.listable and d.starts_at > now() - interval '18 hours' and d.ends_at > now()`;
+/* 6f · Una serie o un evento de varios días sale UNA vez en las listas: su primera fecha viva (dentro del mismo filtro de fecha, si hay).
+   Una consulta: un anti-join por fila sobre (event_id, starts_at); el cursor (starts_at, id) sigue igual. */
+const PRIMERA = (filtroP = "") => `not exists (select 1 from event_dates p where p.event_id = d.event_id and p.listable and p.starts_at > now() - interval '18 hours' and p.ends_at > now()${filtroP ? ` and ${filtroP}` : ""}
+  and (p.starts_at, p.id) < (d.starts_at, d.id))`;
+const enP = (f: string | null) => (f ? f.replace(/\bd\.local_date\b/g, "p.local_date") : "");
 const EN_RADIO = (centro: string, rad: string) => `(d.geom is null or st_dwithin(d.geom, ${centro}, ${rad} * 1609.34))`;
 
 function tarjeta(x: FilaT, es: boolean, D: Dias): TarjetaEvt {
   const E2 = (a: string, b: string) => (es ? a : b), free = x.entry !== "tickets", g = grupo(x.ldate, D);
   const tag: TagEvt | null = x.going ? { t: E2("VAS", "GOING"), k: "vas" } : g === "hoy" ? { t: x.fmt === "noche" ? E2("ESTA NOCHE", "TONIGHT") : E2("HOY", "TODAY"), k: "hoy" }
     : x.quedan != null && x.quedan <= 20 ? { t: x.quedan === 0 ? E2("CUPO LLENO", "FULL") : E2(`QUEDAN ${x.quedan}`, `${x.quedan} LEFT`), k: "quedan" } : free ? { t: E2("GRATIS", "FREE"), k: "gratis" } : null;
-  const cuando = `${g === "hoy" ? E2("HOY", "TODAY") : diaCorto(x.ldate, es).toUpperCase()} · ${hora(x.h0)}`;
+  const cuando = x.kind === "span" ? `${spanL(x.inicio, x.span, es).toUpperCase()} · ${x.span} ${E2("DÍAS", "DAYS")}` : `${g === "hoy" ? E2("HOY", "TODAY") : diaCorto(x.ldate, es).toUpperCase()} · ${hora(x.h0)}`;
+  const serie = x.kind === "series" && x.rep ? `${repL(x.inicio, x.rep, es).toUpperCase()}${x.mas ? E2(` · +${x.mas} ${x.mas === 1 ? "FECHA" : "FECHAS"}`, ` · +${x.mas} ${x.mas === 1 ? "DATE" : "DATES"}`) : ""}` : null;
   return {
     id: x.eid, fecha: x.fid, href: `/eventos/${x.slug}?fecha=${x.fid}`, img: x.img, bm: mesCorto(x.ldate, es), bd: Number(x.ldate.slice(8, 10)), title: bi(x.title, es),
     meta: `${x.venue} · ${hora(x.h0)}`.toUpperCase(), price: free ? E2("Gratis", "Free") : x.desde != null ? `${E2("Desde ", "From ")}${dinero(x.desde)}` : E2("Con boletos", "Ticketed"),
-    tag, dark: x.dark, saved: x.saved, going: x.going, g, cuando, venue: x.venue, mi: x.mi, edad: x.edad, free, fmt: x.fmt, van: x.van, desde: x.desde,
+    tag, dark: x.dark, saved: x.saved, going: x.going, g, cuando, venue: x.venue, mi: x.mi, edad: x.edad, free, fmt: x.fmt, van: x.van, desde: x.desde, serie,
   };
 }
 
@@ -93,6 +104,7 @@ export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, 
   const ff = filtroFecha(f.d, D, v), ft = filtroTipo(f.t, G.map((g) => g.key), v);
   if (ff) w.push(ff);
   if (ft) w.push(ft);
+  w.push(PRIMERA(enP(ff)));
   const wc = [...w], vc = [...v];
   if (cursor && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,6})?Z\|\d{1,18}$/.test(cursor)) { const [a, b] = cursor.split("|"); v.push(a, b); w.push(`(d.starts_at, d.id) > ($${v.length - 1}::timestamptz, $${v.length}::bigint)`); }
   const [L, T] = await Promise.all([
@@ -107,7 +119,7 @@ export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, 
 export type HistoriaEvt = TarjetaEvt & { hora: string; lugar: string; precioT: string; ctaRsvp: boolean };
 export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n = 12): Promise<HistoriaEvt[]> {
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad), E2 = (a: string, b: string) => (es ? a : b);
-  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date = $3::date and ${EN_RADIO(centro, R)}
+  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date = $3::date and ${EN_RADIO(centro, R)} and ${PRIMERA("p.local_date = $3::date")}
                                      order by d.starts_at, d.id limit ${Math.max(1, Math.min(24, n))}`, [viewer, p.ciudad, D.hoy]);
   return r.rows.map((x) => {
     const t = tarjeta(x, es, D);
@@ -120,7 +132,7 @@ export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n 
 /* El destacado (EventPromo): la próxima fiesta o show con cartel en el radio; si no hay, el próximo evento con cartel. */
 export async function destacado(p: Punto, viewer: string | null, es: boolean): Promise<TarjetaEvt | null> {
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
-  const r = await db().query<FilaT>(`select * from (select ${COLS_T(centro)}, f.dark as d0 ${DESDE_T} where ${VIVO} and d.city_id = $2 and ${EN_RADIO(centro, R)}
+  const r = await db().query<FilaT>(`select * from (select ${COLS_T(centro)}, f.dark as d0 ${DESDE_T} where ${VIVO} and d.city_id = $2 and ${EN_RADIO(centro, R)} and ${PRIMERA()}
                                        order by d.starts_at, d.id limit 40) x where x.img is not null order by x.d0 desc, x.cur limit 1`, [viewer, p.ciudad]);
   return r.rows[0] ? tarjeta(r.rows[0], es, D) : null;
 }
@@ -134,14 +146,14 @@ export async function misRsvpN(userId: string | null) {
 /* Inicio › Esta semana: lo de los próximos 7 días en el radio (6 tarjetas). */
 export async function eventosSemana(p: Punto, viewer: string | null, es: boolean, n = 6): Promise<TarjetaEvt[]> {
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
-  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date <= $3::date and ${EN_RADIO(centro, R)}
+  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date <= $3::date and ${EN_RADIO(centro, R)} and ${PRIMERA()}
                                      order by d.starts_at, d.id limit ${Math.max(1, Math.min(12, n))}`, [viewer, p.ciudad, sumarDias(D.hoy, 6)]);
   return r.rows.map((x) => tarjeta(x, es, D));
 }
 
 /* Ficha del negocio › Eventos (solo réplica, MEM 1360): sus fechas vivas. */
 export async function eventosDelOrganizador(negocio: string, viewer: string | null, es: boolean): Promise<TarjetaEvt[]> {
-  const r = await db().query<FilaT & { city: string }>(`select ${COLS_T(null)}, d.city_id as city ${DESDE_T} where ${VIVO} and e.business_id = $2 order by d.starts_at, d.id limit 12`, [viewer, negocio]);
+  const r = await db().query<FilaT & { city: string }>(`select ${COLS_T(null)}, d.city_id as city ${DESDE_T} where ${VIVO} and e.business_id = $2 and ${PRIMERA()} order by d.starts_at, d.id limit 12`, [viewer, negocio]);
   if (!r.rows.length) return [];
   const D = await diasCiudad(r.rows[0]!.city);
   return r.rows.map((x) => tarjeta(x, es, D));
@@ -151,11 +163,14 @@ export async function eventosDelOrganizador(negocio: string, viewer: string | nu
 export async function buscarEventos(consulta: string, p: Punto, evF: "all" | "d0" | "wk" | "free", viewer: string | null, es: boolean, lim = 4): Promise<{ items: TarjetaEvt[]; total: number }> {
   if (!consulta) return { items: [], total: 0 };
   const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
-  const v: unknown[] = [viewer, p.ciudad, consulta], w = [VIVO, `d.city_id = $2`, `e.tsv @@ to_tsquery('simple', $3)`, EN_RADIO(centro, R)];
+  const v: unknown[] = [viewer, p.ciudad, consulta], w = [VIVO, `d.city_id = $2`, `e.tsv @@ to_tsquery('simple', $3)`, EN_RADIO(centro, R), PRIMERA()];
   const T = await db().query<{ n: number }>(`select count(*)::int as n from (select 1 ${DESDE_T} where ${w.join(" and ")} limit 100) x, (select $1::uuid as quien) q`, [...v]);
-  if (evF === "d0") { v.push(D.hoy); w.push(`d.local_date = $${v.length}::date`); }
-  if (evF === "wk") { v.push(D.vie, D.dom); w.push(`d.local_date between $${v.length - 1}::date and $${v.length}::date`); }
+  w.pop();
+  let fd: string | null = null;
+  if (evF === "d0") { v.push(D.hoy); fd = `d.local_date = $${v.length}::date`; w.push(fd); }
+  if (evF === "wk") { v.push(D.vie, D.dom); fd = `d.local_date between $${v.length - 1}::date and $${v.length}::date`; w.push(fd); }
   if (evF === "free") w.push(`e.entry <> 'tickets'`);
+  w.push(PRIMERA(enP(fd)));
   const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${w.join(" and ")} order by d.starts_at, d.id limit ${Math.max(1, Math.min(40, lim))}`, v);
   return { items: r.rows.map((x) => tarjeta(x, es, D)), total: T.rows[0]?.n ?? 0 };
 }
@@ -186,6 +201,8 @@ export type FichaEvt = {
   espera: { mia: import("./espera").MiEspera; max: number; min: number } | null;
   // 6e · La fecha cambió (antes …) y el último aviso del organizador (sale primero en «Antes de ir»).
   cambio: { antes: string | null; aviso: string | null };
+  // 6f · Serie («CADA JUEVES»: cada fecha tiene sus boletos) o varios días (rango, DÍAS Y HORARIO; la venta vive en el último día).
+  kind: "single" | "series" | "span"; serie: string | null; rango: string | null; dias: { id: string; l: string; s: string; on: boolean }[]; fechaVenta: string;
 };
 type FilaF = {
   eid: string; fid: string; slug: string; fmt: FormatoKey; status: "live" | "paused"; title: Bi; description: Bi; ldate: string; h0: number; h1: number; dmin: number; venue_mode: "own" | "other";
@@ -193,6 +210,7 @@ type FilaF = {
   comida: boolean; antes: Bi[]; genres: string[]; entry: Entrada; cupo: number; rsvp_n: number; going_n: number; party_max: number; tickets: Boleto[]; mesas: Mesa[];
   biz: string; bname: string; casa: boolean; verified: boolean; pro: boolean; hoyL: string; pasado: boolean; abierto: boolean; hasta_min: number; start: string; end: string;
   mia: number | null; saved: boolean; city: string; label: Bi; sub: Bi; icon: string; dark: boolean; ages: number[]; fields: FormatoEvt["f"];
+  kind: "single" | "series" | "span"; rep: Repite | null; span: number; inicio: string; luo: { h: number; who: string; role: Bi }[] | null; ancla: string | null;
 };
 const ID = /^\d{1,18}$/;
 /* `slug` = …-{id} (0106 lo arma así): se busca por id y se comprueba el slug. `fecha` = la fecha de una serie (si no, la próxima viva). */
@@ -217,7 +235,8 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
             to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as start, to_char(d.ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "end",
             (select r.party from rsvps r where r.user_id = $3::uuid and r.event_date_id = d.id and r.status = 'going') as mia,
             coalesce($3::uuid is not null and exists (select 1 from favorites v where v.user_id = $3::uuid and v.kind = 'event' and v.target_id = e.id::text), false) as saved,
-            d.city_id as city, f.label, f.sub, f.icon, f.dark, f.ages::int[] as ages, f.fields
+            d.city_id as city, f.label, f.sub, f.icon, f.dark, f.ages::int[] as ages, f.fields,
+            e.kind, e.rep, e.span_days as span, e.start_date::text as inicio, d.lineup_override as luo, evt_ancla(e.id)::text as ancla
        from events e join event_dates d on d.event_id = e.id join businesses b on b.id = e.business_id join cities ci on ci.id = d.city_id join event_formats f on f.key = e.format
        left join business_stats_cache s on s.business_id = b.id
       where e.id = $1::bigint and d.listable and ($2::bigint is null or d.id = $2::bigint)
@@ -225,20 +244,25 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
   if (!r || r.slug !== slug) return null;
   const E2 = (a: string, b: string) => (es ? a : b), nm = (x: Bi | null | undefined) => (x ? bi(x, es) : "");
   const [L, G, Fe, gen, rel] = await Promise.all([
-    db().query<{ h: number; who: string; role: Bi }>(`select at_min as h, who, role from event_lineup where event_id = $1::bigint and removed_at is null order by day_index, sort, at_min`, [eid]),
+    db().query<{ h: number; who: string; role: Bi; dy: number }>(`select at_min as h, who, role, day_index as dy from event_lineup where event_id = $1::bigint and removed_at is null order by day_index, sort, at_min`, [eid]),
     db().query<{ url: string }>(`select url from media where owner_kind = 'event' and owner_id = $1 and status = 'visible' order by sort, created_at limit 12`, [eid]),
-    db().query<{ id: string; ldate: string }>(`select d.id::text, d.local_date::text as ldate from event_dates d where d.event_id = $1::bigint and ${VIVO} order by d.starts_at limit 12`, [eid]),
+    db().query<{ id: string; ldate: string; h0: number; h1: number }>(`select d.id::text, d.local_date::text as ldate,
+       (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
+       (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h1
+       from event_dates d join cities ci on ci.id = d.city_id where d.event_id = $1::bigint and ${VIVO} order by d.starts_at limit ${r.kind === "span" ? 30 : 12}`, [eid]),
     db().query<{ key: string; label: Bi }>(`select key, label from event_genres where key = any($1::text[])`, [r.genres]),
     relacionados(r.city, r.eid, r.biz, r.fmt, viewer, centro, es),
   ]);
   const F: FormatoEvt = { key: r.fmt, label: r.label, sub: r.sub, icon: r.icon, dark: r.dark, ages: r.ages, f: r.fields };
-  const venta = r.entry === "tickets" ? await ventaFicha(r.fid, es) : null;
+  // 6f · Varios días: los boletos y la lista de espera viven en el ancla (el último día); el RSVP es de cada día.
+  const fv = r.kind === "span" && r.ancla ? r.ancla : r.fid;
+  const venta = r.entry === "tickets" ? await ventaFicha(fv, es) : null;
   // 6d · «Mis boletos»: la orden si la compró esta persona; si se lo transfirieron (o es una cortesía), el boleto.
   const mios = viewer && r.entry === "tickets" ? (await db().query<{ n: number; num: string | null; codigo: string | null }>(
     `select count(*)::int as n, max(o.number) filter (where o.user_id = $1 and o.pay_mode = 'app') as num, min(t.code) as codigo from tickets t join operations o on o.id = t.operation_id
-      where t.holder_user_id = $1 and t.event_date_id = $2::bigint and t.status in ('valid', 'used')`, [viewer, r.fid])).rows[0] : null;
+      where t.holder_user_id = $1 and t.event_date_id = $2::bigint and t.status in ('valid', 'used')`, [viewer, fv])).rows[0] : null;
   const cfgE = r.entry === "tickets" && venta ? await (await import("./config")).valores("evt_boletos_por_orden_max", "evt_boletos_persona_fecha_max", "espera_oferta_min") : null;
-  const espera = cfgE ? { mia: await (await import("./espera")).miEspera(viewer, r.fid), max: Math.min(10, cfgE.evt_boletos_por_orden_max, cfgE.evt_boletos_persona_fecha_max), min: cfgE.espera_oferta_min } : null;
+  const espera = cfgE ? { mia: await (await import("./espera")).miEspera(viewer, fv), max: Math.min(10, cfgE.evt_boletos_por_orden_max, cfgE.evt_boletos_persona_fecha_max), min: cfgE.espera_oferta_min } : null;
   const free = r.entry !== "tickets", quedan = free && r.cupo > 0 ? Math.max(0, r.cupo - r.rsvp_n) : null;
   const zona = r.venue_mode === "own" && r.casa ? E2(`Zona de ${r.ciudad} · la dirección exacta te la da el organizador`, `${r.ciudad} area · the organizer gives you the exact address`) : null;
   return {
@@ -250,18 +274,22 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
     entry: r.entry, free, cupo: r.cupo, quedan, partyMax: r.party_max, van: r.going_n,
     boletos: free ? [] : (r.tickets ?? []).filter((b) => !b.off).map((b) => ({ n: nm(b.n), s: nm(b.s), p: b.p })),
     mesas: free ? [] : (r.mesas ?? []).map((x) => ({ z: nm(x.z), seats: x.seats, min: x.min, dep: x.dep })),
-    lu: L.rows.map((l) => ({ t: hora(l.h), who: l.who, role: nm(l.role) })),
+    // 6f · El programa de ESTA fecha de la serie (si el organizador cambió el artista solo esta fecha) o, en varios días, el de cada día.
+    lu: (r.luo ?? L.rows).map((l) => ({ t: r.kind === "span" ? `${diaCorto(sumarDias(r.inicio, (l as { dy?: number }).dy ?? 0), es).toUpperCase()} · ${hora(l.h)}` : hora(l.h), who: l.who, role: nm(l.role) })),
     org: { id: r.biz, name: r.bname, ini: r.bname.split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ]/.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join(""), verified: r.verified, pro: r.pro },
     mio: { rsvp: r.mia != null ? { party: r.mia } : null, saved: r.saved },
     rsvpAbierto: r.abierto && !r.pasado && r.entry === "rsvp", lleno: quedan === 0, hasta: hora(r.hasta_min), guardaMin: guarda,
-    fechas: Fe.rows.map((x) => ({ id: x.id, l: diaCorto(x.ldate, es).toUpperCase(), on: x.id === r.fid })),
+    fechas: r.kind === "span" ? [] : Fe.rows.map((x) => ({ id: x.id, l: diaCorto(x.ldate, es).toUpperCase(), on: x.id === r.fid })),
     rel, seo: { start: r.start, end: r.end, addr: r.addr }, venta, mios: { n: mios?.n ?? 0, numero: mios?.num ?? null, codigo: mios?.codigo ?? null }, espera,
     cambio: await (await import("./evt-cambios")).cambioFicha(r.fid),
+    kind: r.kind, serie: r.kind === "series" && r.rep ? repL(r.inicio, r.rep, es) : null, fechaVenta: fv,
+    rango: r.kind === "span" ? `${spanL(r.inicio, r.span, es).toUpperCase()} · ${r.span} ${E2("DÍAS", "DAYS")}` : null,
+    dias: r.kind === "span" ? Fe.rows.map((x) => ({ id: x.id, l: `${E2("Día ", "Day ")}${Math.round((Date.parse(`${x.ldate}T12:00:00Z`) - Date.parse(`${r.inicio}T12:00:00Z`)) / 864e5) + 1} · ${diaCorto(x.ldate, es)}`, s: `${hora(x.h0)} – ${hora(x.h1)}`, on: x.id === r.fid })) : [],
   };
 }
 async function relacionados(ciudad: string, eid: string, biz: string, fmt: string, viewer: string | null, centro: string | null, es: boolean) {
   const D = await diasCiudad(ciudad);
-  const r = await db().query<FilaT>(`select distinct on (x.eid) * from (select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and e.id <> $3::bigint and (e.format = $4 or e.business_id = $5)
+  const r = await db().query<FilaT>(`select distinct on (x.eid) * from (select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and e.id <> $3::bigint and (e.format = $4 or e.business_id = $5) and ${PRIMERA()}
                                      order by d.starts_at, d.id limit 30) x order by x.eid, x.cur limit 4`, [viewer, ciudad, eid, fmt, biz]);
   return r.rows.sort((a, b) => a.cur.localeCompare(b.cur)).map((x) => tarjeta(x, es, D));
 }

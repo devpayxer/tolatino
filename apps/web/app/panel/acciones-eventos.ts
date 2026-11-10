@@ -193,3 +193,22 @@ export async function evtAvisar(negocio: string, eventoId: string, texto: string
   await auditar(a, "eventos.aviso", { evento: String(eventoId), personas: r.n });
   return { ok: true, n: r.n };
 }
+
+/* 6f · Series: saltar una fecha (o volver a ponerla) y cambiar el artista solo de una fecha. Parte «evt» de ESTE negocio; lib/evt-series.ts
+   vuelve a filtrar por el dueño del evento (IDOR) y decide si se puede (una fecha con gente no se salta: se cancela con devolución). */
+export async function evtSaltar(negocio: string, eventoId: string, fechaId: string, saltar: boolean): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/evt-series")).saltarFecha(a.negocio.id, a.yo.id, String(eventoId), String(fechaId), !!saltar);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, saltar ? "eventos.fecha.saltar" : "eventos.fecha.volver", { evento: String(eventoId), fecha: String(fechaId) });
+  return { ok: true };
+}
+export async function evtArtista(negocio: string, fechaId: string, quien: string | null): Promise<Res & { avisados?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/evt-series")).artistaDeFecha(a.negocio.id, a.yo.id, String(fechaId), quien == null ? null : String(quien));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.fecha.artista", { fecha: String(fechaId), artista: quien ?? "el de siempre", avisados: r.avisados });
+  return { ok: true, avisados: r.avisados };
+}

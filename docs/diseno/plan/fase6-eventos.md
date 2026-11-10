@@ -258,7 +258,9 @@ orden prefijo `B-` (`help_requests` de 0031). Plantillas `bol_transfer_in` (**SM
 **0111 `series_y_dias` (6f)** — `events.rep` validado (`k`, `days`, `n` ≤ `evt_fechas_max`, hasta `evt_dias_adelante`), función **`evt_generar_fechas(event_id)`**
 (idempotente: crea las `event_dates` que faltan y su `ticket_stock` / `table_stock`; nunca borra una fecha con ventas: la salta o la cancela),
 `event_days` (`event_id`, `day_index`, `start_min`, `end_min`: horario distinto por día, `dh` / `evDaysB`), único vivo de `event_lineup` por día; el día
-pasado de una serie pasa a `done` en el barrido.
+pasado de una serie pasa a `done` en el barrido. _Hecho en 6f (10 nov) con dos cambios: el horario por día vive en `events.day_hours` (como el resto
+de la configuración que revisa To'Latino) en vez de una tabla `event_days`, y el aforo por día se cuenta en `event_day_stock` (check + trigger
+`ticket_stock_dia`); la existencia de un evento de varios días vive en su último día (el ancla), así la liquidación sigue siendo por fecha._
 
 **0112 `puerta` (6g)**
 - **`door_staff`** (`id`, `business_id`, `user_id` (null hasta aceptar), `display_name`, `phone_enc` + `phone_hash`, `invite_code` + `invite_expires_at` (7
@@ -304,8 +306,8 @@ Confianza.
 `TLEvt.E` + `TLEvP.toPanel`: eventos cuyo `org.biz` existe en la semilla de negocios con sus fechas relativas a la semilla, series `rep`, el festival de
 3 días; los de organizadores sin negocio (`Barra Latina`, `El Coco Lounge`, `Salón Quisqueya`…) van a los negocios «To'Latino Demo» del rubro o no se
 siembran — nada de negocios inventados; extras de alcohol fuera), **`0036_boletos.sql`** (6c: órdenes `B-` de vecinos de prueba con pagos
-`simulated = true`, cortesías, códigos, una lista de espera), **`0037_puerta.sql`** (6g: porteros de prueba con teléfonos `+1570555…` y escaneos de una
-fecha pasada), **`0038_evento_privado.sql`** (6i: ajustes de Sabor 40 · Fogón 60 · Bahía 30 y una solicitud en cada estado).
+`simulated = true`, cortesías, códigos, una lista de espera), **`0037_series.sql`** (6f, hecha: la serie del sancocho y de la vigilia y el festival de 3 días en su forma, sin tocar 0035), **`0038_puerta.sql`** (6g: porteros de prueba con teléfonos `+1570555…` y escaneos de una
+fecha pasada), **`0039_evento_privado.sql`** (6i: ajustes de Sabor 40 · Fogón 60 · Bahía 30 y una solicitud en cada estado).
 
 ---
 
@@ -553,7 +555,7 @@ FECHA** (cambiar artista de una fecha), POR DÍA · CUÁNTOS VAN, VENDIDOS POR D
 **Ayuda:** `panel-eventos-series-y-varios-dias`.
 
 ### 6g · Puerta: porteros, `/puerta` en línea (escanear, buscar, lista, aforo, mesas, incidencias, equipo, cierre) y modo puerta del panel — **Opus/high**
-**Datos:** migración 0112; semilla `0037_puerta.sql`.
+**Datos:** migración 0112; semilla `0038_puerta.sql` (0037 la tomó 6f).
 **Pantallas:** **To'Latino Puerta** (`app/(puerta)/puerta`, solo teléfono, oscuro y alto contraste, una sola tarea; hueco #1): `CHK-ONB` (entrar con su
 cuenta → eventos asignados de hoy y próximos → elegir → nombre de la puerta → abrir), **`CHK-SCAN`** (cámara a pantalla completa, linterna, escaneo
 continuo; resultado grande en < 1 s **VERDE** VÁLIDO (nombre, tipo, mesa, edad mínima; «Entró»), **ÁMBAR** revisar (pide ID por edad, boleto transferido,
@@ -595,7 +597,7 @@ del teléfono 7 min adelantado → el orden sale bien; el paquete vence → se b
 **Ayuda:** `puerta-sin-conexion` (qué pasa sin señal, qué es un duplicado), `panel-porteros-y-modo-puerta` al día.
 
 ### 6i · Evento privado (solicitud, propuesta, depósito, cancelar) — **Opus/high** (dinero); pantallas Sonnet/medium
-**Datos:** migración 0114; semilla `0038_evento_privado.sql`.
+**Datos:** migración 0114; semilla `0039_evento_privado.sql` (0037 la tomó 6f).
 **Pantallas:** **`APP-NEG-EVENTO-PRIVADO`** (`/n/[id]/evento-privado`: desde Reservar cuando el grupo pasa del máximo, «Pedir evento privado»; móvil 3 pasos
 con StepHeader y barra fija — ¿Qué celebran? · ¿Cuántos son? · ¿Dónde los sientan? (+ «Todo el local» con su cargo) · ¿Qué día? (con 3 días o más) ·
 ¿Cuánto dura? · ¿Qué van a comer? · presupuesto por persona · también necesitan · algo más —, desktop en una página con columna de 372; «Nada se cobra
@@ -720,7 +722,7 @@ solo teléfono) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 6 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
-- [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0038 solo en pruebas (`semilla`).
+- [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0039 solo en pruebas (`semilla`).
       _6a (9 nov): 0106 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y el archivo vuelto a correr a mano sin errores; semilla 0035
       aplicada dos veces (13 eventos, no se repiten). 6b (10 nov): 0107 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y vuelta a
       correr a mano sin errores. 6c (10 nov): 0108 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva de PostGIS:
@@ -728,7 +730,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       códigos y no siembra órdenes). 6d (10 nov): 0109 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones
       dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (6d no trae semilla). 6e (10 nov): 0110 con
       migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas + semillas cambiadas → todo sale 0
-      (6e no trae semilla). CI y 0111–0115 pendientes._
+      (6e no trae semilla). 6f (10 nov): 0111 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces +
+      semillas 0001–0037 + semillas cambiadas → todo sale 0 (0037 da su forma a la serie y al festival también sin equipo). CI y 0112–0115
+      pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -766,7 +770,15 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       de la siguiente, primer evento sobre $2,000 retenido hasta que Finanzas lo suelta y, sin siguiente, la transferencia revertida; Confianza
       al cancelar seguido; Super Admin (Liquidaciones con CSV, Colas, cancelar y devolver todo); IDOR con otro negocio y un vecino en cada
       llamada nueva. «Ajustar cupo» y «Extender ventas» del admin, con 6j._
-- [ ] Series (semanal, cada 2 semanas, mensual «el último»), saltar y cancelar una fecha, artista de una fecha, varios días con pase y aforo por día.
+- [x] Series (semanal, cada 2 semanas, mensual «el último»), saltar y cancelar una fecha, artista de una fecha, varios días con pase y aforo por día.
+      _6f (10 nov): e2e `evt6f` (teléfono 390 y escritorio 1360, contra el simulador): el editor crea una serie semanal de dos días y 6 fechas
+      y la base las genera; cada 2 semanas y «el último viernes» comprobados con la regla calculada aparte; horizonte de 30 días → 5 de 12 y el
+      barrido llega a 12; tope de fechas de Configuración en la base; cada fecha con su existencia; la lista muestra la serie una vez con «+5
+      FECHAS»; saltar sin gente / con ventas rechazado / volver a ponerla; artista solo esta fecha con aviso sin SMS; mover una fecha (SMS y
+      elección; la regla no la devuelve); editar la serie sin verificar → revisión → las fechas sin gente se mueven y las vendidas no; verificado
+      al instante; RSVP por fecha con 3 a la vez por el último lugar; varios días con pase y boletos de un día, «Vale solo el…», aforo por día
+      lleno (pase y boleto de ese día AGOTADO) y 3 a la vez en la base → ninguno pasa; cancelar UNA fecha (solo sus órdenes al 100 %) y luego
+      la serie; liquidación por fecha y varios días en el último día; Super Admin; IDOR. `alreves6f` 22/22._
 - [ ] Puerta en línea: porteros con cuenta e invitación, escanear / buscar / lista / aforo / mesas / incidencias / equipo / cierre, modo puerta del panel,
       lista de Noche; dos porteros a la vez sin entradas dobles; nada se vende ni se ve de dinero (`sinVentaEnLaPuerta` al revés).
 - [ ] Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente, choques resueltos igual en cualquier orden, incidencias de

@@ -55,6 +55,7 @@ export function Cartel({ k, saved, onLike, desk, es }: { k: TarjetaEvt; saved: b
       <div role="link" onClick={abrir} className="mt-[9px] cursor-pointer">
         <div className="line-clamp-2 font-display font-extrabold leading-[1.25] tracking-[-0.02em]" style={{ fontSize: desk ? 15 : 14 }}>{k.title}</div>
         <div className="mt-1 truncate text-ink/50" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".06em" }}>{`${k.cuando} · ${k.venue}`.toUpperCase()}</div>
+        {k.serie ? <div className="mt-0.5 truncate text-action" style={{ font: `700 9px ${MONO}`, letterSpacing: ".06em" }}>{k.serie}</div> : null}
         <div className="mt-[7px] flex items-center justify-between gap-2">
           <span className="font-display font-extrabold tracking-[-0.02em]" style={{ fontSize: desk ? 13.5 : 13 }}>{k.price}</span>
           {k.van > 0 ? <span className="text-ink/50" style={{ font: `700 9.5px ${MONO}` }}>{es ? `${k.van} ${k.van === 1 ? "VA" : "VAN"}` : `${k.van} GOING`}</span> : null}

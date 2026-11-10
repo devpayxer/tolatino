@@ -2330,3 +2330,82 @@ Ingresos 2s), los casos de Colas **Organizadores que cancelan** y **Pagos de eve
 - **Pendiente (LAUNCH):** 3D Secure y huella de tarjeta (6c); el cargo de Stripe por disputa lo absorbe To'Latino; una devolución que Stripe
   nunca hace (alerta pasado N intentos, 6d); revertir con saldo insuficiente del organizador (Stripe lo rechaza: queda pendiente con intentos);
   el SMS de verdad; extender ventas / ajustar cupo del admin (6j); cambiar el lugar.
+
+### 6f · Eventos: series y eventos de varios días (10 nov)
+Qué mirar en el sandbox, paso a paso (teléfono y escritorio; tarjeta de prueba 4242 4242 4242 4242):
+1. **Panel de La Terraza (570-555-0366) › Eventos › Crear › Fiesta o show** → en **CUÁNDO**, **DURACIÓN · Se repite**: **Cada semana**, en
+   **QUÉ DÍAS** suma otro día (el de la primera fecha va siempre), **CUÁNTAS FECHAS · 6**. El calendario marca las fechas en morado y abajo dice
+   «Cada jueves y sábado · 6 fechas, hasta el …»; toca una para **saltarla** (queda tachada) y otra vez para ponerla. Prueba **Cada 2 semanas** y
+   **Cada mes** (dice «El segundo jueves de cada mes» o, si la primera fecha es la última de su mes, «El último viernes de cada mes»).
+2. Envíalo. Al aprobarlo (Super Admin 570-555-0199), **Eventos** lo muestra **una sola vez** (su próxima fecha) con **«CADA JUEVES Y SÁBADO ·
+   +5 FECHAS»**. En su página: **FECHAS · CADA JUEVES Y SÁBADO** con los chips de las fechas y **«Cada fecha tiene sus boletos.»**; compra en una
+   fecha y mira que las otras siguen con todos sus boletos.
+3. **Panel › la ficha del evento**: arriba **FECHA QUE ESTÁS VIENDO · 6 FECHAS** (toca otra: todo lo de abajo es de esa fecha). Más abajo:
+   **FECHAS · CADA …** con **Saltar** (solo en las fechas sin nadie) y **Volver a ponerla**; **QUIÉN SE PRESENTA · {fecha}** → **Cambiar artista
+   solo esta fecha** (la página de esa fecha lo muestra; las otras siguen con el de siempre; a los que van les llega un aviso en la app);
+   **VENDIDOS POR DÍA · {fecha} · 7 DÍAS**.
+4. **«Cambiar el {fecha}»** (solo esa fecha): como en 6e, avisa por SMS a los que van y quien compró elige **Me quedo** o **Devolución total**.
+   Las demás fechas no se mueven.
+5. **Editar** la serie y cambiarle la hora: como La Terraza no es organizador verificado, dice **CAMBIO EN REVISIÓN**; al aprobarlo, las fechas
+   **sin gente** pasan a la hora nueva y las que ya tienen boletos se quedan a la suya (se cambian una por una con «Cambiar el …»).
+6. **Cancelar una fecha o la serie** → **QUÉ CANCELAS · Solo el {fecha}** (devuelve el 100 % solo a quien compró esa fecha) o **Toda la serie**.
+7. **Crear › DURACIÓN · Varios días seguidos** → **CUÁNTOS DÍAS · 3**, **Horario distinto cada día** (día 2 y 3 con su hora), con boletos:
+   **Crear un boleto por cada día + pase** (un pase de los 3 días con 20 % menos y un boleto por día, cada uno con **VALE PARA**) y **Aforo por
+   día**. Ya no salen mesas (un evento de varios días no las vende).
+8. Publicado: la página dice **«VIE 20 NOV – DOM 22 NOV · 3 DÍAS»**, **DÍAS Y HORARIO**, y cada boleto **«Vale solo el sáb 21 nov»** o **«Vale los 3
+   días · entras una vez cada día»**. Con un aforo chico, llena un día: ese boleto y el pase salen **AGOTADO** y el de otro día sigue a la venta.
+   En el panel: **POR DÍA · CUÁNTOS VAN · AFORO N** con **LLENO**.
+9. Con RSVP: cada fecha de una serie (y cada día de varios días) tiene **su propio cupo**; eliges la fecha en la página.
+10. **Semilla**: el **Sancocho del domingo** (Sabor) ya es **cada domingo · 8 fechas**, la **Vigilia** (Parroquia) **cada mes · 6 fechas** y el
+    **Festival del Sancocho** (cambios pedidos) **3 días**.
+11. **Super Admin › Eventos y boletos**: la lista dice «Cada jueves · N por delante» o «3 días»; la ficha, **FECHAS** (movida, saltada,
+    cancelada, artista solo esa fecha) o **DÍAS** (con boleto o pase, aforo). **Configuración › Eventos**: «Fechas de una serie» (52), «Se publica
+    con anticipación de hasta» (180 días: hasta ahí se crean las fechas; el barrido sigue) y «Días seguidos de un evento» (30).
+
+**Decidí X; si prefieres Y, se cambia (6f):**
+- **Las fechas las crea la base** (`evt_generar_fechas`): hasta los días que se pueden publicar (Configuración, 180) y como mucho las fechas de
+  Configuración (52); las que faltan las crea el **barrido** cuando el horizonte avanza (`evtSeries`, una vez al día por serie). Una fecha que ya
+  pasó queda **«pasó» (done)** en el barrido (solo series).
+- **«Cuántas fechas» cuenta desde la primera** (como el prototipo): una serie de 8 tiene 8 fechas en total, no 8 «por delante». No hay series
+  sin fin.
+- **Cambiar «todas las fechas que vienen» = Editar**, con la revisión de 6a (sin verificar → a revisión; verificado → al guardar). Las fechas
+  **con gente** (boletos, RSVP, apartados o lista de espera) **no se mueven solas**: se quedan a su hora y se cambian una por una con aviso.
+  Un cambio que dejaría fuera de la serie una fecha con gente **no se guarda** (hay que cancelarla con devolución o moverla primero).
+- **Cambiar «solo esta fecha» no pasa por revisión** (como el cambio de fecha de 6e: avisa por SMS y quien compró elige quedarse o la devolución
+  total). La fecha movida **no vuelve** a la hora de la regla aunque se edite la serie.
+- **Saltar una fecha** (sin gente) **no pasa por revisión** (quita una fecha sin nadie); la primera fecha no se salta (se cambia en el editor).
+  Saltar y volver a poner quedan en `event_changes` (date_skipped).
+- **Cambiar el artista de una fecha** avisa a los que van **en la app** (sin SMS; el prototipo decía SMS: el SMS es solo para lo crítico, §6 #7).
+- **Varios días: la existencia y la orden viven en el ÚLTIMO día** (el «ancla»): así la liquidación se paga el **martes después del último día**
+  sin tocar la regla del martes de 6e, y la venta dura hasta el corte del último día. **El pase** se vende hasta el corte del **primer** día;
+  **un boleto de un día**, hasta el corte de **su** día. El **aforo por día** lo cuenta la base (`event_day_stock`): ninguna ruta (comprar,
+  cortesía, lista de espera) puede pasarse.
+- **Varios días no vende mesas** (una mesa es de una noche; el prototipo las dejaba). Si se quieren, se hace como serie.
+- **Varios días se cancela entero** (un pase vale todos los días: no se cancela un día suelto) y **sus días no se mueven solos**. Con boletos
+  vendidos, la duración y los días ya no cambian (la base lo impide).
+- **RSVP por fecha**: en una serie, cada fecha tiene su cupo; **en varios días, también cada día** (el prototipo decía «dice que va una vez»): se
+  elige el día en DÍAS Y HORARIO.
+- **En las listas, una serie sale una vez**: su primera fecha viva **dentro del filtro** (en «Hoy», la de hoy; en «Próximos», la primera
+  próxima). La cifra «N EVENTOS EN …» cuenta eventos, no fechas.
+- **Semilla 0037** (nueva; 0035 no se tocó): el Sancocho pasa a cada domingo (su primera fecha, al domingo siguiente), la Vigilia a cada mes y
+  el Festival a 3 días. Las semillas de la puerta y del evento privado del plan pasan a **0038** y **0039**.
+Huecos compuestos con piezas del sistema (capturas locales e6f-*, teléfono y escritorio): **DURACIÓN / SE REPITE / QUÉ DÍAS / CUÁNTAS FECHAS /
+CUÁNTOS DÍAS / Horario distinto cada día / VALE PARA / Aforo por día** (chips, step, rows, note, acts: copiados de evCalB / evDaysB / evEdit);
+**FECHA QUE ESTÁS VIENDO** (bloque `evhd` con `hasDates`, portado del Panel v2) y **VENDIDOS POR DÍA** (bloque `chart`, portado del Panel v2 a
+`packages/ui/src/panel/Bloques.tsx`); **FECHAS · QUIÉN SE PRESENTA · POR DÍA** (rows, field, acts); en el cliente **DÍAS Y HORARIO** y los chips
+de **FECHAS · CADA …** (como `lsVals` hasDays / hasSer); en el Super Admin, **FECHAS / DÍAS** de la ficha (rows).
+
+**Revisión de seguridad (6f, existencias y aforo):**
+- **Sin sobreventa por día:** el aforo de cada día lo cuenta la base (`event_day_stock`, check `capacity = 0 or sold_n + held_n <= capacity`),
+  sumado por el trigger `ticket_stock_dia` en la misma sentencia que aparta o vende: apartar, pagar, cortesía, lista de espera y devolver pasan por
+  ahí, aunque el código se equivoque. e2e: un día lleno → su boleto y el pase AGOTADO; tres a la vez en la base por días llenos → ninguno pasa; un
+  `update` sin la condición del código → la base lo rechaza (`event_day_stock_cupo`). Guardián `aforoPorDia`.
+- **Una serie nunca pierde una fecha con gente:** `evt_generar_fechas` solo salta o mueve fechas sin boletos, RSVP, apartados ni lista de espera
+  (`evt_fecha_con_gente`); el editor rechaza un cambio que dejaría fuera una fecha con gente; saltar desde el panel también. Con boletos vendidos,
+  la duración y los días de un evento de varios días no cambian (trigger `events_forma`). Guardián `fechasLasGeneraLaBase`.
+- **Topes de Configuración en la base, en el momento:** fechas de una serie y días seguidos (`cfg_int`), y el horizonte de publicación.
+- **Dinero:** sin cambios en la liquidación de 6e: un evento de varios días ancla su orden en el último día, así se paga el martes después de
+  todo el evento. Cancelar una fecha de una serie devuelve solo las órdenes de esa fecha (e2e: la de otra fecha sigue cobrada) y luego la serie
+  no devuelve dos veces.
+- **IDOR:** saltar, volver a poner y cambiar el artista filtran por el negocio dueño del evento (parte «evt»); e2e repitiendo las llamadas con
+  otro negocio y un vecino → sin acceso; el panel de un negocio no abre la serie de otro.

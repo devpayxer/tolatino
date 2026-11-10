@@ -65,7 +65,11 @@ export type Bloque =
   | { type: "cal"; month: string; onPrev?: Fn; prevOff?: boolean; onNext?: Fn; nextOff?: boolean; wd: string[]; days: { n: string; bg?: string; fg?: string; ring?: string; td?: string; fw?: number; dot?: string; off?: boolean; onClick?: Fn; label?: string }[]; leg?: { c: string; r: string; t: string }[]; s?: string }
   /* isEvhd (evView): volver, rótulo y etiqueta; cartel, título, cuándo y dónde; progreso; 3 cifras; botón principal y herramientas. */
   | { type: "evhd"; onBack?: Fn; eye: string; tag?: string; tone?: string; img?: string; t: string; when: string; where: string; progT?: string; progR?: string; pct?: string; barC?: string;
-      stats: { k: string; v: string; s?: string }[]; mainL?: string; mainIcon?: string; onMain?: Fn; tools: { l: string; icon: string; onClick?: Fn }[] };
+      stats: { k: string; v: string; s?: string }[]; mainL?: string; mainIcon?: string; onMain?: Fn; tools: { l: string; icon: string; onClick?: Fn }[];
+      /* hasDates (evView, 6f): FECHA QUE ESTÁS VIENDO · N FECHAS: chips de las fechas de una serie; la elegida, en tinta. */
+      datesK?: string; dates?: { l: string; on: boolean; onClick?: Fn; key?: string }[] }
+  /* isChart (evView · VENDIDOS POR DÍA): rótulo y cifra, barras (la marcada en Action, las demás al 35 %) con su letra y una nota. */
+  | { type: "chart"; k: string; v: string; bars: { h: string; on?: boolean; l?: string }[]; s?: string };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
 const bolita = (on: boolean): CSSProperties => ({ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", transform: `translateX(${on ? 18 : 0}px)`, transition: "transform .2s" });
@@ -410,6 +414,14 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
           <span style={{ flex: 1, minWidth: 0, font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.eye}</span>
           {b.tag ? <span style={{ flex: "none", display: "flex" }}><Tag tone={b.tone ?? "neutral"}>{b.tag}</Tag></span> : null}
         </div>
+        {b.dates && b.dates.length ? <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+          <span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".14em", color: "rgba(11,14,18,.5)" }}>{b.datesK}</span>
+          <div className="d2hs" role="group" aria-label={b.datesK} style={{ display: "flex", gap: 6, overflowX: "auto", margin: "0 -2px", padding: 2 }}>
+            {b.dates.map((x, i) => (
+              <button type="button" key={x.key ?? i} aria-pressed={x.on} onClick={x.onClick} style={{ flex: "none", height: 34, padding: "0 12px", borderRadius: 10, background: x.on ? "var(--tl-ink)" : "var(--tl-white)", color: x.on ? "var(--tl-white)" : "var(--tl-ink)",
+                border: x.on ? "1px solid var(--tl-ink)" : "1px solid rgba(11,14,18,.12)", display: "grid", placeItems: "center", font: "700 12px Manrope,sans-serif", cursor: "pointer", whiteSpace: "nowrap" }}>{x.l}</button>))}
+          </div>
+        </div> : null}
         <div style={{ padding: 14, borderRadius: 22, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", gap: 13 }}>
             <span style={{ width: 72, height: 96, flex: "none", borderRadius: 12, backgroundImage: b.img, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />
@@ -440,6 +452,18 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
               </button>))}
           </div> : null}
         </div>
+      </div>);
+    case "chart": return (
+      <div style={{ padding: 15, borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}><span style={K}>{b.k}</span><span style={{ font: "800 18px Sora,sans-serif", letterSpacing: "-.02em", color: "var(--tl-ink)" }}>{b.v}</span></div>
+        <div role="img" aria-label={`${b.k}: ${b.v}`} style={{ display: "flex", alignItems: "flex-end", gap: b.bars.length > 12 ? 2 : 6, height: 84 }}>
+          {b.bars.map((x, i) => (
+            <span key={i} style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", gap: 5, height: "100%", justifyContent: "flex-end" }}>
+              <span style={{ width: "100%", height: x.h, borderRadius: "5px 5px 2px 2px", background: x.on ? "var(--tl-action)" : "rgba(75,55,245,.35)" }} />
+              {x.l ? <span style={{ font: `700 8.5px ${MONO}`, color: "rgba(11,14,18,.45)" }}>{x.l}</span> : null}
+            </span>))}
+        </div>
+        {b.s ? <span style={{ font: "600 12px/1.4 Manrope,sans-serif", color: "rgba(11,14,18,.6)" }}>{b.s}</span> : null}
       </div>);
     case "utabs": return (
       <div className="d2hs" style={{ display: "flex", flexWrap: b.wrap ? "wrap" : "nowrap", columnGap: b.wrap ? 20 : 22, overflowX: "auto", borderBottom: "1px solid rgba(11,14,18,.08)" }}>

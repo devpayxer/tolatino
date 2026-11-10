@@ -7,7 +7,7 @@ import { valores } from "./config";
 import { dispositivo } from "./cuenta";
 import { db, tx } from "./db";
 import { ENTORNO } from "./entorno";
-import { bi, dinero, type Bi } from "./evt-comun";
+import { bi, diaCorto, dinero, sumarDias, valeL, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
 
 /* 6c · Boletos, mesas, extras y códigos: apartar, comprar en nuestra hoja, el boleto y Mis boletos (fase6-eventos.md §3 y §4 6c).
@@ -41,6 +41,7 @@ export type EstadoVenta = "abierta" | "pausada" | "cerrada" | "pasado" | "free" 
 type FilaVenta = {
   eid: string; slug: string; title: Bi; est: string; entry: string; biz: string; bname: string; mpp: number | null; edad: number; fid: string; ldate: string; city: string; tz: string;
   listable: boolean; dst: string; pasado: boolean; cerrada: boolean; pro: boolean; cuenta: string | null; h0: number; hasta: string; img: string | null; dark: boolean; venue: string;
+  kind: "single" | "series" | "span"; span: number; inicio: string;
 };
 export async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> {
   return (await q.query<FilaVenta>(
@@ -49,7 +50,7 @@ export async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> 
             coalesce(st.plan, 'free') = 'pro' as pro, (select a.stripe_account_id from stripe_accounts a where a.business_id = b.id and a.charges_enabled and not a.payouts_paused) as cuenta,
             (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
             to_char(bol_venta_hasta(e, d) at time zone ci.timezone, 'FMHH12:MI AM') as hasta, f.dark,
-            case when e.venue_mode = 'other' then e.venue_name else b.name end as venue,
+            case when e.venue_mode = 'other' then e.venue_name else b.name end as venue, e.kind, e.span_days as span, e.start_date::text as inicio,
             (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1) as img
        from event_dates d join events e on e.id = d.event_id join businesses b on b.id = e.business_id join cities ci on ci.id = d.city_id join event_formats f on f.key = e.format
        left join business_stats_cache st on st.business_id = b.id
@@ -59,6 +60,8 @@ export async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> 
    (simulada solo en el sandbox; real solo con la clave de Stripe). */
 export function estadoDe(v: FilaVenta): EstadoVenta | null {
   if (!v.listable || v.dst !== "scheduled" || v.entry !== "tickets") return null;
+  // 6f · Un evento de varios días vende en su ancla (el último día): las demás fechas no venden por sí solas.
+  if (v.kind === "span" && v.ldate !== sumarDias(v.inicio, v.span - 1)) return null;
   if (v.pasado) return "pasado";
   if (v.est === "paused") return "pausada";
   if (v.est !== "live") return null;
@@ -81,11 +84,16 @@ export function textoVenta(e: EstadoVenta, hasta: string, es: boolean): string {
 export type PantallaBoletos = {
   evento: { id: string; slug: string; title: string; dia: string; h0: number; venue: string; img: string | null; dark: boolean; edad: number; org: string };
   fecha: string; estado: EstadoVenta; aviso: string; apartadoMin: number; maxOrden: number; maxPersona: number; yaTengo: number; conCodigos: boolean;
-  tipos: { id: string; n: string; s: string; p: number; quedan: number }[];
+  tipos: { id: string; n: string; s: string; p: number; quedan: number; vale: string }[];
   mesas: { id: string; z: string; seats: number; min: number; dep: number; quedan: number }[];
   extras: { id: string; n: string; s: string; p: number; mesa: boolean; quedan: number | null }[];
   vivo: string | null; // un apartado vivo de esta persona para esta fecha (volver a pagar)
+  /* 6f · Varios días: «VIE 20 NOV – DOM 22 NOV · 3 DÍAS» (cada boleto dice para qué día vale). */
+  rango: string | null;
 };
+/* Lo que queda de un tipo: su existencia y, en varios días, el aforo libre del día más lleno de los días que vale (event_day_stock). */
+const QUEDAN_T = `greatest(0, least(s.quantity - s.sold_n - s.held_n, coalesce((select min(k.capacity - k.sold_n - k.held_n) from event_day_stock k join event_dates z on z.id = k.event_date_id
+                    where z.event_id = t.event_id and z.status = 'scheduled' and k.capacity > 0 and (t.valid_day is null or z.day_index = t.valid_day)), 2147483647)))::int`;
 export async function pantallaBoletos(fecha: string, userId: string | null, es: boolean): Promise<PantallaBoletos | null> {
   if (!ID.test(String(fecha))) return null;
   await vencerApartados({ fecha });
@@ -96,10 +104,10 @@ export async function pantallaBoletos(fecha: string, userId: string | null, es: 
   const cfg = await valores("evt_apartado_min", "evt_boletos_por_orden_max", "evt_boletos_persona_fecha_max");
   const dev = userId ? await dispositivo(false) : null;
   const [T, M, A, C, ya, vivo] = await Promise.all([
-    db().query<{ id: string; n: Bi; s: Bi; p: number; quedan: number }>(
-      `select t.id::text, t.name as n, t.note as s, t.price_cents as p, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
+    db().query<{ id: string; n: Bi; s: Bi; p: number; quedan: number; dy: number | null }>(
+      `select t.id::text, t.name as n, t.note as s, t.price_cents as p, ${QUEDAN_T} as quedan, t.valid_day as dy
          from ticket_types t join ticket_stock s on s.ticket_type_id = t.id and s.event_date_id = $2::bigint
-        where t.event_id = $1::bigint and not t.off and (t.sales_end_at is null or t.sales_end_at > now()) order by t.sort, t.id`, [v.eid, fecha]),
+        where t.event_id = $1::bigint and not t.off and (t.sales_end_at is null or t.sales_end_at > now()) and bol_tipo_hasta(t.id) > now() order by t.sort, t.id`, [v.eid, fecha]),
     db().query<{ id: string; z: Bi; seats: number; min: number; dep: number; quedan: number }>(
       `select t.id::text, t.zone as z, t.seats, t.min_spend_cents as min, t.deposit_cents as dep, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
          from event_tables t join table_stock s on s.table_id = t.id and s.event_date_id = $2::bigint where t.event_id = $1::bigint and not t.off order by t.sort, t.id`, [v.eid, fecha]),
@@ -115,15 +123,16 @@ export async function pantallaBoletos(fecha: string, userId: string | null, es: 
     evento: { id: v.eid, slug: v.slug, title: nm(v.title), dia: v.ldate, h0: v.h0, venue: v.venue, img: v.img, dark: v.dark, edad: v.edad, org: v.bname },
     fecha, estado, aviso: textoVenta(estado, v.hasta, es), apartadoMin: cfg.evt_apartado_min, maxOrden: cfg.evt_boletos_por_orden_max,
     maxPersona: Math.min(cfg.evt_boletos_persona_fecha_max, v.mpp ?? 1000), yaTengo: ya, conCodigos: (C.rows[0]?.n ?? 0) > 0,
-    tipos: T.rows.map((t) => ({ id: t.id, n: nm(t.n), s: nm(t.s), p: t.p, quedan: t.quedan })),
+    tipos: T.rows.map((t) => ({ id: t.id, n: nm(t.n), s: nm(t.s), p: t.p, quedan: t.quedan, vale: v.kind === "span" ? valeL(t.dy, v.inicio, v.span, es) : "" })),
     mesas: M.rows.map((m) => ({ id: m.id, z: nm(m.z), seats: m.seats, min: m.min, dep: m.dep, quedan: m.quedan })),
     extras: A.rows.map((a) => ({ id: a.id, n: nm(a.n), s: nm(a.s), p: a.p, mesa: a.mesa, quedan: a.quedan })),
     vivo: vivo.rows[0]?.id ?? null,
+    rango: v.kind === "span" ? `${diaCorto(v.inicio, es).toUpperCase()} – ${diaCorto(sumarDias(v.inicio, v.span - 1), es).toUpperCase()} · ${v.span} ${es ? "DÍAS" : "DAYS"}` : null,
   };
 }
 
 /* La ficha del evento: si se vende ahora, por qué no, y lo que queda de cada boleto y mesa. */
-export type VentaFicha = { estado: EstadoVenta; aviso: string; agotado: boolean; espera: number; pol: { cancelarH: number; transferirH: number }; tipos: { n: string; s: string; p: number; quedan: number }[]; mesas: { z: string; seats: number; min: number; dep: number; quedan: number }[] };
+export type VentaFicha = { estado: EstadoVenta; aviso: string; agotado: boolean; espera: number; pol: { cancelarH: number; transferirH: number }; tipos: { n: string; s: string; p: number; quedan: number; vale: string }[]; mesas: { z: string; seats: number; min: number; dep: number; quedan: number }[] };
 export async function ventaFicha(fecha: string, es: boolean): Promise<VentaFicha | null> {
   if (!ID.test(String(fecha))) return null;
   await vencerApartados({ fecha });
@@ -131,8 +140,8 @@ export async function ventaFicha(fecha: string, es: boolean): Promise<VentaFicha
   const v = await filaVenta(db(), fecha), estado = v ? estadoDe(v) : null;
   if (!v || !estado) return null;
   const [T, M, W, cfg] = await Promise.all([
-    db().query<{ n: Bi; s: Bi; p: number; quedan: number }>(
-      `select t.name as n, t.note as s, t.price_cents as p, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
+    db().query<{ n: Bi; s: Bi; p: number; quedan: number; dy: number | null; corte: boolean }>(
+      `select t.name as n, t.note as s, t.price_cents as p, ${QUEDAN_T} as quedan, t.valid_day as dy, bol_tipo_hasta(t.id) <= now() as corte
          from ticket_types t join ticket_stock s on s.ticket_type_id = t.id and s.event_date_id = $2::bigint where t.event_id = $1::bigint and not t.off order by t.sort, t.id`, [v.eid, fecha]),
     db().query<{ z: Bi; seats: number; min: number; dep: number; quedan: number }>(
       `select t.zone as z, t.seats, t.min_spend_cents as min, t.deposit_cents as dep, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
@@ -142,7 +151,8 @@ export async function ventaFicha(fecha: string, es: boolean): Promise<VentaFicha
   ]);
   // 6d · Agotado = no queda ningún boleto (la lista de espera se abre con eso; una mesa libre se sigue vendiendo).
   const agotado = T.rows.every((x) => x.quedan === 0) && M.rows.every((x) => x.quedan === 0);
-  return { estado, aviso: textoVenta(estado, v.hasta, es), agotado, espera: W.rows[0]?.n ?? 0, pol: { cancelarH: cfg.bol_cancelar_h, transferirH: cfg.bol_transferir_h }, tipos: T.rows.map((x) => ({ n: bi(x.n, es), s: bi(x.s, es), p: x.p, quedan: x.quedan })),
+  return { estado, aviso: textoVenta(estado, v.hasta, es), agotado, espera: W.rows[0]?.n ?? 0, pol: { cancelarH: cfg.bol_cancelar_h, transferirH: cfg.bol_transferir_h },
+    tipos: T.rows.map((x) => ({ n: bi(x.n, es), s: bi(x.s, es), p: x.p, quedan: x.corte ? 0 : x.quedan, vale: v.kind === "span" ? valeL(x.dy, v.inicio, v.span, es) : "" })),
     mesas: M.rows.map((x) => ({ z: bi(x.z, es), seats: x.seats, min: x.min, dep: x.dep, quedan: x.quedan })) };
 }
 
@@ -199,7 +209,7 @@ export async function apartar(userId: string, raw: BoletosIn): Promise<Res<{ apa
       for (const b of [...boletos].sort((x, y) => Number(x.id) - Number(y.id))) {
         const r = (await c.query<{ p: number; n: Bi }>(
           `update ticket_stock s set held_n = s.held_n + $3, updated_at = now() from ticket_types t
-            where s.ticket_type_id = t.id and t.id = $1::bigint and t.event_id = $4::bigint and not t.off and (t.sales_end_at is null or t.sales_end_at > now())
+            where s.ticket_type_id = t.id and t.id = $1::bigint and t.event_id = $4::bigint and not t.off and (t.sales_end_at is null or t.sales_end_at > now()) and bol_tipo_hasta(t.id) > now()
               and s.event_date_id = $2::bigint and s.sold_n + s.held_n + $3 <= s.quantity
           returning t.price_cents as p, t.name as n`, [b.id, fecha, b.q, v.eid])).rows[0];
         if (!r) {
@@ -248,6 +258,8 @@ export async function apartar(userId: string, raw: BoletosIn): Promise<Res<{ apa
     return { ok: true, apartado: id };
   } catch (e) {
     if (e instanceof NoBol) return { ok: false, msg: e.msg, ...(e.extra as object) };
+    // 6f · El aforo de un día (varios días) lo cuenta la base: si un día no alcanza, nada se aparta.
+    if ((e as { constraint?: string }).constraint === "event_day_stock_cupo") return { ok: false, msg: { es: "Un día de los que elegiste ya llegó a su aforo. Elige otro día o menos boletos.", en: "One of the days you picked reached its capacity. Pick another day or fewer tickets." }, agotado: true };
     throw e;
   }
 }
@@ -566,17 +578,21 @@ export type BoletoVista = {
   qr: string | null; matriz: boolean[][] | null;
   // 6d · Transferencia pendiente (a «••23», hasta cuándo se puede recibir): mientras tanto NO hay QR (el anterior quedó anulado).
   envio: { a: string; hasta: string } | null; cortesia: boolean;
+  /* 6f · Varios días: para qué días vale («Vale solo el sáb 21 nov» / «Vale los 3 días»). */
+  vale: string;
 };
-type FilaB = { id: string; code: string; fid: string; ver: number; admits: number; st: BoletoVista["estado"]; tn: Bi | null; mz: Bi | null; nombre: string | null; precio: number; envio: { a: string; hasta: string } | null; comp: boolean };
+type FilaB = { id: string; code: string; fid: string; ver: number; admits: number; st: BoletoVista["estado"]; tn: Bi | null; mz: Bi | null; nombre: string | null; precio: number; envio: { a: string; hasta: string } | null; comp: boolean;
+  vd: number[]; sp: { ini: string; n: number } | null };
 async function vistaBoleto(b: FilaB, es: boolean, conQR: boolean): Promise<BoletoVista> {
   const vale = b.st === "valid" || b.st === "used";
   // Con una transferencia pendiente no se firma ningún QR (guardián qrViejoNoEntra): nadie tiene uno vigente hasta que se reciba o se deshaga.
   const qr = conQR && vale && !b.envio ? await firmarQR({ id: b.id, fecha: b.fid, ver: b.ver, admits: b.admits }) : null;
   return { code: b.code, tipo: b.comp ? (es ? "Cortesía" : "Comp") : b.tn ? bi(b.tn, es) : b.mz ? bi(b.mz, es) : "", nombre: b.nombre, admits: b.admits, mesa: !!b.mz, estado: b.st, precio: b.precio, qr, matriz: qr ? matrizQR(qr) : null,
-    envio: b.envio, cortesia: b.comp };
+    envio: b.envio, cortesia: b.comp, vale: b.sp ? valeL(b.vd.length >= b.sp.n ? null : b.vd[0], b.sp.ini, b.sp.n, es) : "" };
 }
 const SEL_B = `select t.id::text, t.code, t.event_date_id::text as fid, t.qr_ver as ver, t.admits, t.status as st, tt.name as tn, et.zone as mz, coalesce(t.holder_name, t.comp_name) as nombre, t.price_cents as precio,
-                      t.kind = 'comp' as comp,
+                      t.kind = 'comp' as comp, t.valid_days::int[] as vd,
+                      (select case when e2.kind = 'span' then json_build_object('ini', e2.start_date::text, 'n', e2.span_days) end from events e2 where e2.id = t.event_id) as sp,
                       (select json_build_object('a', '••' || x.to_last2, 'hasta', to_char(x.expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) from ticket_transfers x
                         where x.ticket_id = t.id and x.status = 'pending' and x.kind = 'transfer') as envio
                  from tickets t left join ticket_types tt on tt.id = t.ticket_type_id left join event_tables et on et.id = t.table_id`;
@@ -594,7 +610,9 @@ async function ventanas(fid: string): Promise<Ventanas> {
 }
 
 export type OrdenVista = {
-  numero: string; estado: string; pago: string | null; at: string; evento: { tz: string; slug: string; fecha: string; title: string; dia: string; h0: number; h1: number; venue: string; addr: string | null; lat: number | null; lng: number | null; edad: number; dark: boolean; img: string | null; org: string; start: string; end: string; pasado: boolean; hoy: boolean };
+  numero: string; estado: string; pago: string | null; at: string; evento: { tz: string; slug: string; fecha: string; title: string; dia: string; h0: number; h1: number; venue: string; addr: string | null; lat: number | null; lng: number | null; edad: number; dark: boolean; img: string | null; org: string; start: string; end: string; pasado: boolean; hoy: boolean;
+    /* 6f · Varios días: «vie 20 nov – dom 22 nov · 3 días» (la orden vive en el último día). */
+    rango: string | null };
   boletos: BoletoVista[]; lineas: { n: string; q: number; unit: number }[]; subtotal: number; descuento: number; total: number; tarjeta: string | null; devuelto: number;
   // 6d · Ventanas, devoluciones de la orden (pendiente = en camino) y si tiene una ayuda abierta.
   ventanas: Ventanas; devoluciones: { monto: number; estado: string; por: string; at: string }[]; ayuda: string | null;
@@ -626,8 +644,8 @@ export async function ordenBoletos(userId: string, numero: string, es: boolean):
 }
 async function eventoDeFecha(fid: string, es: boolean): Promise<OrdenVista["evento"] | null> {
   const { DIRECCION_EVENTO, PUNTO_EVENTO } = await import("./punto");
-  const r = (await db().query<{ tz: string; slug: string; title: Bi; ldate: string; h0: number; h1: number; venue: string; addr: string | null; lat: number | null; lng: number | null; edad: number; dark: boolean; img: string | null; org: string; start: string; end: string; pasado: boolean; hoy: boolean }>(
-    `select ci.timezone as tz, e.slug, e.title, d.local_date::text as ldate,
+  const r = (await db().query<{ tz: string; slug: string; title: Bi; ldate: string; h0: number; h1: number; venue: string; addr: string | null; lat: number | null; lng: number | null; edad: number; dark: boolean; img: string | null; org: string; start: string; end: string; pasado: boolean; hoy: boolean; ini: string | null; sn: number }>(
+    `select ci.timezone as tz, e.slug, e.title, d.local_date::text as ldate, case when e.kind = 'span' then e.start_date::text end as ini, e.span_days as sn,
             (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
             (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h1,
             case when e.venue_mode = 'other' then e.venue_name else b.name end as venue, ${DIRECCION_EVENTO("e", "b")} as addr, ${PUNTO_EVENTO("e", "b")}, e.min_age as edad, f.dark,
@@ -636,7 +654,8 @@ async function eventoDeFecha(fid: string, es: boolean): Promise<OrdenVista["even
             d.ends_at <= now() as pasado, d.local_date = (now() at time zone ci.timezone)::date as hoy
        from event_dates d join events e on e.id = d.event_id join businesses b on b.id = e.business_id join cities ci on ci.id = d.city_id join event_formats f on f.key = e.format where d.id = $1::bigint`, [fid])).rows[0];
   if (!r) return null;
-  return { tz: r.tz, slug: r.slug, fecha: fid, title: bi(r.title, es), dia: r.ldate, h0: r.h0, h1: r.h1, venue: r.venue, addr: r.addr, lat: r.lat, lng: r.lng, edad: r.edad, dark: r.dark, img: r.img, org: r.org, start: r.start, end: r.end, pasado: r.pasado, hoy: r.hoy };
+  return { tz: r.tz, slug: r.slug, fecha: fid, title: bi(r.title, es), dia: r.ldate, h0: r.h0, h1: r.h1, venue: r.venue, addr: r.addr, lat: r.lat, lng: r.lng, edad: r.edad, dark: r.dark, img: r.img, org: r.org, start: r.start, end: r.end, pasado: r.pasado, hoy: r.hoy,
+    rango: r.ini ? `${diaCorto(r.ini, es)} – ${diaCorto(r.ldate, es)} · ${r.sn} ${es ? "días" : "days"}` : null };
 }
 
 /* Mi cuenta › Boletos: próximos y pasados (por fecha), con el estado de cada boleto. Sin QR en la lista (se abre cada uno). */
@@ -687,35 +706,40 @@ export type VentasPanel = {
   compradores: { quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string; vivos: number; devuelto: number }[];
   fecha: string | null;
 };
-export async function ventasPanel(negocio: string, eventoId: string): Promise<VentasPanel | null> {
+export async function ventasPanel(negocio: string, eventoId: string, fechaVer: string | null = null): Promise<VentasPanel | null> {
   if (!ID.test(eventoId)) return null;
-  const e = (await db().query<{ id: string }>(`select id::text from events where id = $1::bigint and business_id = $2 and entry = 'tickets'`, [eventoId, negocio])).rows[0];
+  const e = (await db().query<{ id: string; kind: string }>(`select id::text, kind from events where id = $1::bigint and business_id = $2 and entry = 'tickets'`, [eventoId, negocio])).rows[0];
   if (!e) return null;
-  const d = (await db().query<{ fid: string }>(`select id::text as fid from event_dates where event_id = $1::bigint order by (ends_at > now()) desc, starts_at limit 1`, [eventoId])).rows[0];
+  // 6f · En una serie, todo es de LA FECHA QUE ESTÁS VIENDO (la próxima, si no se elige otra); un evento de varios días vende en su ancla.
+  const d = (await db().query<{ fid: string }>(
+    `select id::text as fid from event_dates where event_id = $1::bigint and ($2::bigint is null or id = $2::bigint) and status <> 'skipped'
+        and ($3 <> 'span' or id = evt_ancla($1::bigint)) order by (ends_at > now()) desc, starts_at limit 1`, [eventoId, fechaVer && ID.test(fechaVer) ? fechaVer : null, e.kind])).rows[0];
+  const f = e.kind === "series" ? d?.fid ?? "0" : null;
   if (d) await vencerApartados({ fecha: d.fid });
   const v = d ? await filaVenta(db(), d.fid) : null, est = v ? estadoDe(v) : null;
   const [T, M, K, C] = await Promise.all([
     db().query<{ id: string; n: Bi; p: number; vendidos: number; quedan: number; cap: number }>(
       `select t.id::text as id, t.name as n, t.price_cents as p, coalesce(sum(s.sold_n), 0)::int as vendidos, coalesce(sum(greatest(0, s.quantity - s.sold_n - s.held_n)), 0)::int as quedan, coalesce(sum(s.quantity), 0)::int as cap
-         from ticket_types t left join ticket_stock s on s.ticket_type_id = t.id where t.event_id = $1::bigint and (not t.off or exists (select 1 from ticket_stock z where z.ticket_type_id = t.id and z.sold_n > 0))
-        group by t.id order by t.sort, t.id`, [eventoId]),
+         from ticket_types t left join ticket_stock s on s.ticket_type_id = t.id and ($2::bigint is null or s.event_date_id = $2::bigint) where t.event_id = $1::bigint and (not t.off or exists (select 1 from ticket_stock z where z.ticket_type_id = t.id and z.sold_n > 0))
+        group by t.id order by t.sort, t.id`, [eventoId, f]),
     db().query<{ n: Bi; quien: string; num: string }>(
       `select et.zone as n, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num
          from tickets t join event_tables et on et.id = t.table_id join operations o on o.id = t.operation_id join users u on u.id = o.user_id
-        where t.event_id = $1::bigint and t.status in ('valid', 'used') order by t.id limit 60`, [eventoId]),
+        where t.event_id = $1::bigint and t.status in ('valid', 'used') and ($2::bigint is null or t.event_date_id = $2::bigint) order by t.id limit 60`, [eventoId, f]),
     db().query<{ vendidos: number; capacidad: number; mesas: number; mesascap: number; ordenes: number; bruto: number; comision: number; descuentos: number; extras: number; depositos: number }>(
-      `select (select count(*)::int from tickets where event_id = $1::bigint and ticket_type_id is not null and status in ('valid', 'used') and kind = 'paid') as vendidos,
-              (select coalesce(sum(s.quantity), 0)::int from ticket_stock s join ticket_types t on t.id = s.ticket_type_id where t.event_id = $1::bigint and not t.off) as capacidad,
-              (select count(*)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used')) as mesas,
-              (select coalesce(sum(s.quantity), 0)::int from table_stock s join event_tables t on t.id = s.table_id where t.event_id = $1::bigint and not t.off) as mesascap,
+      `select (select count(*)::int from tickets where event_id = $1::bigint and ticket_type_id is not null and status in ('valid', 'used') and kind = 'paid' and ($3::bigint is null or event_date_id = $3::bigint)) as vendidos,
+              (select coalesce(sum(s.quantity), 0)::int from ticket_stock s join ticket_types t on t.id = s.ticket_type_id where t.event_id = $1::bigint and not t.off and ($3::bigint is null or s.event_date_id = $3::bigint)) as capacidad,
+              (select count(*)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used') and ($3::bigint is null or event_date_id = $3::bigint)) as mesas,
+              (select coalesce(sum(s.quantity), 0)::int from table_stock s join event_tables t on t.id = s.table_id where t.event_id = $1::bigint and not t.off and ($3::bigint is null or s.event_date_id = $3::bigint)) as mesascap,
               count(o.id)::int as ordenes, coalesce(sum(p.amount_cents - p.refunded_cents), 0)::int as bruto,
               -- 6d · La comisión que To'Latino cede cuando el organizador devuelve no se cuenta (ticket_refund_lines.fee_waived_cents).
               coalesce(sum(p.fee_cents - coalesce((select sum(l.fee_waived_cents) from ticket_refund_lines l where l.operation_id = o.id), 0)), 0)::int as comision,
               coalesce(sum(o.discount_cents), 0)::int as descuentos,
-              (select coalesce(sum(l.line_total_cents), 0)::int from operation_lines l join operations z on z.id = l.operation_id where z.kind = 'tickets' and z.status = 'confirmed' and (z.details->>'event_id')::bigint = $1::bigint and l.options->0->>'k' = 'a') as extras,
-              (select coalesce(sum(price_cents), 0)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used')) as depositos
+              (select coalesce(sum(l.line_total_cents), 0)::int from operation_lines l join operations z on z.id = l.operation_id where z.kind = 'tickets' and z.status = 'confirmed' and (z.details->>'event_id')::bigint = $1::bigint
+                  and ($3::bigint is null or (z.details->>'event_date_id')::bigint = $3::bigint) and l.options->0->>'k' = 'a') as extras,
+              (select coalesce(sum(price_cents), 0)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used') and ($3::bigint is null or event_date_id = $3::bigint)) as depositos
          from operations o join payments p on p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded')
-        where o.kind = 'tickets' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint`, [eventoId, negocio]),
+        where o.kind = 'tickets' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint and ($3::bigint is null or (o.details->>'event_date_id')::bigint = $3::bigint)`, [eventoId, negocio, f]),
     db().query<{ quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string; vivos: number; devuelto: number }>(
       `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num,
               (select count(*)::int from tickets t where t.operation_id = o.id and t.ticket_type_id is not null and t.status <> 'replaced') as boletos,
@@ -725,7 +749,8 @@ export async function ventasPanel(negocio: string, eventoId: string): Promise<Ve
               exists (select 1 from operation_lines l where l.operation_id = o.id and l.options->0->>'k' = 'a') as extras,
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from operations o join users u on u.id = o.user_id
-        where o.kind = 'tickets' and o.pay_mode = 'app' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint order by o.id desc limit 100`, [eventoId, negocio]),
+        where o.kind = 'tickets' and o.pay_mode = 'app' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint
+          and ($3::bigint is null or (o.details->>'event_date_id')::bigint = $3::bigint) order by o.id desc limit 100`, [eventoId, negocio, f]),
   ]);
   const k = K.rows[0]!;
   return {

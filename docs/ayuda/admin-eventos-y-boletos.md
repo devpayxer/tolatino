@@ -7,6 +7,7 @@ Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:a
 (evt:editar); Anular: Admin (evt:retirar). «Modo puerta» llega con la puerta (6g)._
 
 ## Qué hace
+- **6f · Series y varios días:** la lista dice «Cada jueves · N por delante» o «3 días»; la ficha muestra **FECHAS** (cada fecha con lo vendido, movida, saltada, cancelada o con artista solo esa fecha) o **DÍAS** (con boleto o pase y el aforo de cada día). El cambio de la regla de una serie de un organizador sin verificar llega a la cola como «LO QUE CAMBIA · Se repite».
 - **Cifras:** EVENTOS (y cuántos esta semana), **A REVISAR** (con el plazo de Configuración › Eventos, 24 h de fábrica; lleva a la cola),
   ORGANIZADORES.
 - **Eventos:** buscar por nombre, local u organizador; filtros En revisión · Hoy · Con boletos · Entrada libre · Ocultos / cancelados;
@@ -116,3 +117,5 @@ card (tickets stay valid).
 **6e (English):** the event page adds the change history, the cancellation progress and money by date; **Freeze sales** (organizer cannot reopen),
 **Cancel and refund everything** (100 % to every buyer); **Payouts** tab with hold/release and CSV; queues **Organizers who cancel** and **Held
 event payouts**; new Event settings (notices per date, payout day, new-organizer threshold, cancellations window, adjustment wait, refunds batch).
+
+**Recurring and multi-day (6f):** the list shows “Every Thursday · N ahead” or “3 days”; the event page shows DATES (sold, moved, skipped, cancelled, performer for one date) or DAYS (ticket or pass holders and the daily capacity). A rule change from an unverified organizer reaches the queue as “WHAT CHANGES · Repeats”.

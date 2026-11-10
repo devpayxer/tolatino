@@ -5,6 +5,7 @@ Versión: Fase 6 · bloque 6a (9 nov 2026). Plan **Pro** (en Free se ve el canda
 Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfono está en «Más»; en el escritorio, en el menú._
 
 ## Qué hace
+- **6f · Duración:** en CUÁNDO eliges **Un día**, **Varios días seguidos** o **Se repite** (cada semana, cada 2 semanas o cada mes). Ver «Panel › Eventos: series y eventos de varios días».
 - **Tus eventos:** Próximos · Borradores · Pasados y cancelados. Cada tarjeta: cartel con la fecha, tipo, estado (BORRADOR · EN REVISIÓN ·
   CAMBIOS PEDIDOS · PUBLICADO · CAMBIO EN REVISIÓN · NO APROBADO · OCULTO POR TO'LATINO), cuándo y la entrada.
 - **Lo que puedes publicar:** solo los tipos de tu categoría (Fiesta o show · Comida y música · Clase o taller · Culto, vigilia o retiro ·
@@ -70,3 +71,5 @@ Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfo
 6b: the **Events on To'Latino** switch turns all your events off or on; events somewhere else also ask for the **ZIP code** (to place
 them on the map); each RSVP event shows **WHO IS GOING** (people, capacity, who is no longer going). Capacity cannot go below the spots
 already held.
+
+**Duration (6f):** under WHEN pick One day, Several days in a row or Repeats (weekly, every 2 weeks or monthly). See “Recurring and multi-day events”.

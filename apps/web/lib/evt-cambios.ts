@@ -103,7 +103,8 @@ export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h
       if (!["live", "paused"].includes(d.st) || d.dst !== "scheduled") throw no("Solo se cambia una fecha publicada y en pie.", "Only a live date that is still on can change.");
       if (d.empezo) throw no("Esta fecha ya empezó: no se mueve.", "This date already started: it cannot move.");
       if (d.pend === "review") throw no("Tienes un cambio en revisión. Espera la respuesta de To'Latino y luego cambia la fecha.", "You have a change under review. Wait for To'Latino's answer, then change the date.");
-      if (d.kind !== "single") throw no("Las fechas de una serie se cambian una por una con la serie (llega con las series).", "Dates in a series change with the series (coming with series).");
+      // 6f · Una fecha de una serie se mueve sola («esta fecha»: las demás siguen la regla); un día de un evento de varios días, no.
+      if (d.kind === "span") throw no("Un día de un evento de varios días no se mueve solo. Cancela el evento con devolución y crea otro.", "A day of a multi-day event cannot move on its own. Cancel the event with refunds and create another.");
       if (dia === d.ldate && h0 === d.s0 && h1 === d.s1) throw no("No cambió nada.", "Nothing changed.");
       const t = (await c.query<{ s: string; f: string; p: string; futuro: boolean; dentro: boolean }>(
         `select ($1::date + make_interval(mins => $2))::timestamp at time zone $5 as s, ($1::date + make_interval(mins => $3))::timestamp at time zone $5 as f,
@@ -112,8 +113,8 @@ export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h
                 $1::date <= (now() at time zone $5)::date + ${cfgSql("evt_dias_adelante")} as dentro`, [dia, h0, h1, d.dmin, d.tz])).rows[0]!;
       if (!t.futuro) throw no("La nueva fecha tiene que ser al menos en una hora.", "The new date has to be at least an hour from now.");
       if (!t.dentro) throw no("Esa fecha está demasiado lejos.", "That date is too far ahead.");
-      await c.query(`update event_dates set starts_at = $2, ends_at = $3, doors_at = $4, local_date = $5::date where id = $1::bigint`, [fechaId, t.s, t.f, t.p, dia]);
-      if (d.idx === 0) await c.query(`update events set start_date = $2::date, start_min = $3, end_min = $4 where id = $1::bigint`, [d.eid, dia, h0, h1]);
+      await c.query(`update event_dates set starts_at = $2, ends_at = $3, doors_at = $4, local_date = $5::date, moved_at = case when $6 then now() else moved_at end where id = $1::bigint`, [fechaId, t.s, t.f, t.p, dia, d.kind === "series"]);
+      if (d.kind === "single" && d.idx === 0) await c.query(`update events set start_date = $2::date, start_min = $3, end_min = $4 where id = $1::bigint`, [d.eid, dia, h0, h1]);
       // El RSVP guarda el lugar hasta las puertas nuevas; el recordatorio del día antes vuelve a salir para la fecha nueva.
       await (await import("./rsvp")).moverRsvps(c, fechaId, t.p);
       const kind = dia === d.ldate ? "time_changed" : "moved";
@@ -208,10 +209,12 @@ export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date"
   let cx: string;
   try {
     cx = await tx(async (c) => {
-      const e = (await c.query<{ id: string; st: string; city: string; biz: string }>(
-        `select e.id::text, e.status as st, e.city_id as city, e.business_id as biz from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
+      const e = (await c.query<{ id: string; st: string; city: string; biz: string; kind: string }>(
+        `select e.id::text, e.status as st, e.city_id as city, e.business_id as biz, e.kind from events e where e.id = $1::bigint and ${DUENO(q)} for update`, [eventoId, arg(q)])).rows[0];
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se cancela un evento publicado.", "Only a live event can be cancelled.");
+      // 6f · Un evento de varios días se cancela entero (un pase vale todos los días: no se cancela un día suelto).
+      if (e.kind === "span" && alcance === "date") throw no("Un evento de varios días se cancela entero.", "A multi-day event is cancelled as a whole.");
       const F = (await c.query<{ id: string }>(`select id::text from event_dates where event_id = $1::bigint and status = 'scheduled' and ends_at > now() order by starts_at for update`, [eventoId])).rows.map((x) => x.id);
       if (!F.length) throw no("Este evento ya no tiene fechas por delante.", "This event has no dates ahead.");
       let scope = alcance;
@@ -400,7 +403,7 @@ export async function cambiosPanel(negocio: string, eventoId: string): Promise<C
                          where o.kind = 'tickets' and o.status = 'confirmed' and (o.details->>'event_date_id')::bigint = d.id), 0)::int as monto,
               (select count(*)::int from operations o where o.kind = 'tickets' and o.pay_mode = 'app' and o.status = 'confirmed' and (o.details->>'event_date_id')::bigint = d.id
                   and exists (select 1 from tickets t where t.operation_id = o.id and t.status in ('valid', 'used'))) as ordenes
-         from event_dates d join cities ci on ci.id = d.city_id where d.event_id = $1::bigint order by d.starts_at limit 60`, [eventoId]),
+         from event_dates d join cities ci on ci.id = d.city_id where d.event_id = $1::bigint and d.status <> 'skipped' order by d.starts_at limit 120`, [eventoId]),
     db().query<{ st: string; ordenes: number; devuelto: number; reason: MotivoCx | "admin"; at: string; pendientes: number }>(
       `select x.status as st, x.orders_n as ordenes, x.refunded_cents as devuelto, x.reason_key as reason, to_char(x.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
               (select count(*)::int from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id

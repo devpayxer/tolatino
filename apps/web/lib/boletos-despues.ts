@@ -30,7 +30,12 @@ type Res<T = object> = ({ ok: true } & T) | { ok: false; msg: Bi };
 class NoD extends Error { constructor(public msg: Bi) { super(msg.es); } }
 const no = (es: string, en: string) => new NoD({ es, en });
 const falla = (es: string, en: string): { ok: false; msg: Bi } => ({ ok: false, msg: { es, en } });
-const atrapa = <T>(e: unknown): Res<T> => { if (e instanceof NoD) return { ok: false, msg: e.msg }; throw e; };
+const atrapa = <T>(e: unknown): Res<T> => {
+  if (e instanceof NoD) return { ok: false, msg: e.msg };
+  // 6f · El aforo de un día (varios días) lo decide la base: una cortesía que lo pasaría no se da.
+  if ((e as { constraint?: string }).constraint === "event_day_stock_cupo") return { ok: false, msg: { es: "Ese día ya llegó a su aforo: no caben más cortesías.", en: "That day reached its capacity: no more comps fit." } };
+  throw e;
+};
 const sha = (t: string) => createHash("sha256").update(t).digest("hex");
 const QUIEN = (u: string) => `coalesce(nullif(trim(coalesce(${u}.first_name, '') || ' ' || left(coalesce(${u}.last_name, ''), 1)), ''), 'Vecino')`;
 const ISO = (x: string) => `to_char((${x}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;

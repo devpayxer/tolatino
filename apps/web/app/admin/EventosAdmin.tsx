@@ -10,12 +10,13 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { EvtAdm, FiltrosEvt, FilaEvtAdm } from "@/lib/evt-revision";
 import type { BusquedaBoleto } from "@/lib/boletos-admin";
-import { diaCorto, hora } from "@/lib/evt-comun";
+import { diaCorto, hora, repL } from "@/lib/evt-comun";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { accionesEvt, accionesOrg, bloquesEvt, estadoEvt } from "./ColasEventos";
 import type { CambiosPanel } from "@/lib/evt-cambios";
 import type { FilaLiq } from "@/lib/evt-liquidacion";
+import type { FechaPanel } from "@/lib/evt";
 import { evtCancelarAdmin, evtCongelar } from "./acciones-eventos";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -93,9 +94,9 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
         : desk ? <A.DenseTable columns="minmax(0,2.2fr) minmax(0,1.1fr) minmax(0,1.3fr) 90px 170px" head={[{ label: "EVENTO" }, { label: "CUÁNDO" }, { label: "ORGANIZA" }, { label: "ENTRADA" }, { label: "ESTADO" }]}
           rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return {
             opacity: e.hidden || e.st === "cancelled" || e.st === "rejected" ? 0.6 : 1, onClick: () => abrir(e.id),
-            cells: [{ image: e.foto ?? undefined, initials: e.foto ? undefined : e.t.es.slice(0, 1), text: e.t.es, bold: true, sub: `${e.venue} · ${e.ciudad}` }, { text: `${diaCorto(e.dia, true)} · ${hora(e.h0)}` }, { text: e.org }, { text: ENT[e.entrada] ?? e.entrada }, { tag, tone }],
+            cells: [{ image: e.foto ?? undefined, initials: e.foto ? undefined : e.t.es.slice(0, 1), text: e.t.es, bold: true, sub: `${e.venue} · ${e.ciudad}` }, { text: `${diaCorto(e.dia, true)} · ${hora(e.h0)}${formaAdm(e)}` }, { text: e.org }, { text: ENT[e.entrada] ?? e.entrada }, { tag, tone }],
           }; })} page={pager} />
-        : <><A.AdminList rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return { image: e.foto ?? undefined, initials: e.foto ? undefined : e.t.es.slice(0, 1), title: e.t.es, sub: `${diaCorto(e.dia, true)} · ${hora(e.h0)} · ${e.org}`, tag, tone, chevron: true, onClick: () => abrir(e.id) }; })} /><A.Pager {...pager} /></>}
+        : <><A.AdminList rows={filas.map((e) => { const [tag, tone] = estadoEvt(e.st, e.hidden, e.pending); return { image: e.foto ?? undefined, initials: e.foto ? undefined : e.t.es.slice(0, 1), title: e.t.es, sub: `${diaCorto(e.dia, true)} · ${hora(e.h0)}${formaAdm(e)} · ${e.org}`, tag, tone, chevron: true, onClick: () => abrir(e.id) }; })} /><A.Pager {...pager} /></>}
       <Toast t={toast} desk={desk} />
     </div>);
 }
@@ -103,7 +104,9 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
 /* La ficha de un evento (evtDetail): todo para decidir, ocultar con motivo y el organizador. */
 type RsvpAdm = { nombre: string; party: number; st: string; at: string; dia: string };
 type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; devuelto: number; ordenes: number; cortesias: number; transferidos: number; espera: number; cancelados: number }; ordenes: { num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }[] };
-export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null }: { e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
+/* 6f · En la lista: «Cada jueves · 8 fechas» o «3 días». */
+const formaAdm = (e: FilaEvtAdm) => (e.kind === "series" && e.rep ? ` · ${repL(e.dia, e.rep, true)} · ${e.nf} por delante` : e.kind === "span" ? ` · ${e.span} días` : "");
+export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null, cambios = null, liq = null, fechas = [], forma = null }: { fechas?: FechaPanel[]; forma?: { kind: string; l: string } | null; e: EvtAdm; puede: { aprobar: boolean; retirar: boolean; editar?: boolean; dinero?: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null;
   cambios?: CambiosPanel | null; liq?: { filas: FilaLiq[]; deuda: number } | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
@@ -132,6 +135,11 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
             compact: true, chev: true, onClick: () => router.push(`/admin/eventos/boleto/${o.code}`) })) } as Bloque : { type: "note", tone: "ink", icon: "ticket", t: "Todavía no hay órdenes." } as Bloque] : []),
         // 6e · Cambios del evento: cancelación (con su progreso), venta congelada, cambio de fecha; el dinero por fecha; «Cancelar y devolver
         // todo» (regla del módulo) y «Congelar ventas», con motivo, aviso y auditoría.
+        // 6f · Una serie o un evento de varios días: cada fecha (o día) con su estado y lo de cada una (una consulta).
+        ...(forma && fechas.length ? [{ type: "rows", k: `${forma.kind === "series" ? "FECHAS" : "DÍAS"} · ${forma.l.toUpperCase()}`, items: fechas.slice(0, 30).map((f) => ({ key: f.id, icon: f.st === "scheduled" ? "calendar" : "ban",
+          t: `${forma.kind === "span" ? `Día ${f.idx + 1} · ` : ""}${diaCorto(f.dia, true)} · ${hora(f.h0)} – ${hora(f.h1)}${f.movida ? " · movida" : ""}`,
+          s: `${e.d.entrada === "tickets" ? (forma.kind === "span" ? `${f.dia_n} con boleto o pase${f.cap ? ` · aforo ${f.cap}` : ""}` : `${f.vendidos} vendidos`) : `${f.rsvp} van`}${f.lu ? ` · artista solo esta fecha: ${f.lu[0]?.who ?? ""}` : ""}${f.motivo ? ` · ${f.motivo}` : ""}`,
+          tag: f.st === "cancelled" ? "CANCELADA" : f.st === "skipped" ? "SALTADA" : f.st === "done" || f.pasada ? "PASÓ" : null, tone: f.st === "cancelled" ? "danger" : "neutral", compact: true, chev: false, dim: f.st === "skipped" })) } as Bloque] : []),
         ...cambiosAdm(e, cambios, liq, puede, setConf),
         ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: "ORGANIZADOR" } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />
       <Toast t={toast} desk={desk} />

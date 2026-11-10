@@ -131,10 +131,12 @@ export async function salir(userId: string, fecha: string): Promise<Res> {
 /* ── El panel: LISTA DE ESPERA · N (nombre + inicial, cuántos, estado) y «Avisar a la lista» solo si hay lugar ── */
 export type EsperaPanel = { fecha: string | null; esperan: number; personas: number; ofertas: number; compraron: number; libres: number;
   filas: { quien: string; party: number; estado: string; pos: number | null; at: string }[] };
-export async function esperaPanel(negocio: string, eventoId: string): Promise<EsperaPanel | null> {
+export async function esperaPanel(negocio: string, eventoId: string, fechaVer: string | null = null): Promise<EsperaPanel | null> {
   if (!ID.test(eventoId)) return null;
+  // 6f · La fecha que se ve en una serie; en varios días, el ancla (la lista de espera vive donde vive la existencia).
   const d = (await db().query<{ fid: string; eid: string }>(`select d.id::text as fid, e.id::text as eid from events e join event_dates d on d.event_id = e.id where e.id = $1::bigint and e.business_id = $2 and e.entry = 'tickets'
-                                                              order by (d.ends_at > now()) desc, d.starts_at limit 1`, [eventoId, negocio])).rows[0];
+                                                              and d.status <> 'skipped' and (e.kind <> 'span' or d.id = evt_ancla(e.id))
+                                                              order by (d.id = $3::bigint) desc, (d.ends_at > now()) desc, d.starts_at limit 1`, [eventoId, negocio, fechaVer && ID.test(fechaVer) ? fechaVer : null])).rows[0];
   if (!d) return null;
   const [F, L] = await Promise.all([
     db().query<{ quien: string; party: number; estado: string; pos: number | null; at: string }>(

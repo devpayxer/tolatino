@@ -10,7 +10,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { subirFoto } from "@/lib/subir-foto";
 import {
-  EXTRA_KINDS, EXTRA_KIND_L, LIM, bi, diaCorto, dinero, esAlcohol, etiquetaEvt, faltaEvt, hora, mesCorto, nuevoBorrador, sumarDias,
+  EXTRA_KINDS, EXTRA_KIND_L, LIM, bi, diaCorto, dinero, dowDe, esAlcohol, etiquetaEvt, faltaEvt, fechasSerie, hora, mesCorto, nuevoBorrador, repL, spanL, sumarDias,
   type Bi, type BorradorEvt, type FormatoEvt, type FormatoKey,
 } from "@/lib/evt-comun";
 import type { EvtPanel, FilaPanelEvt } from "@/lib/evt";
@@ -21,12 +21,13 @@ import type { CodigoPanel } from "@/lib/codigos-evt";
 import type { CambiosPanel } from "@/lib/evt-cambios";
 import type { FilaLiq } from "@/lib/evt-liquidacion";
 import { cambiosBloques } from "./EventosCambios";
+import { chipsFechas, crearPorDia, duracionBloques, fechaVista, horarioBloques, modoDe, seriesBloques, valePara } from "./EventosSeries";
 import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 
 export type EvtData = {
   lista: FilaPanelEvt[]; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
-  det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
+  det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number; fechasMax: number; diasMax: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
   /* 6b · El módulo Eventos (interruptor del negocio y pausa de To'Latino) y QUIÉN VA del evento abierto (nombre + inicial). */
   mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
   /* 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). */
@@ -35,6 +36,8 @@ export type EvtData = {
   despues: DespuesPanel | null; espera: EsperaPanel | null;
   /* 6e · Cambios del evento (venta, fecha, cancelación, avisos) y su dinero por fecha (la liquidación del martes). */
   cambios: CambiosPanel | null; liq: { filas: FilaLiq[]; deuda: number } | null;
+  /* 6f · La FECHA QUE ESTÁS VIENDO de una serie (evt:{id}@{fecha}) y lo vendido (o apuntado) por día de esa fecha. */
+  fver: string | null; chart: { dias: string[]; n: number[] } | null;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -44,7 +47,8 @@ const N = (v: string, max: number) => Math.max(0, Math.min(max, Number(String(v)
 const RUTA_APELAR = (id: string) => `/cuenta/moderacion?k=event&id=${id}`;
 
 const fmtDe = (c: Ctx, k: FormatoKey | string) => c.evt!.formatos.find((f) => f.key === k) ?? c.evt!.formatos[0]!;
-const cuando = (c: Ctx, d: BorradorEvt) => `${diaCorto(d.dia, c.es)} · ${hora(d.h0)} – ${hora(d.h1)}${d.h1 >= 1440 ? c.E2(" (día siguiente)", " (next day)") : ""}${d.puertas ? c.E2(` · puertas ${hora(d.h0 - d.puertas)}`, ` · doors ${hora(d.h0 - d.puertas)}`) : ""}`;
+const cuando = (c: Ctx, d: BorradorEvt) => d.span > 1 ? `${spanL(d.dia, d.span, c.es)} · ${d.span}${c.E2(" días", " days")}${d.dh ? c.E2(" · horario por día", " · hours by day") : ` · ${hora(d.h0)} – ${hora(d.h1)}`}`
+  : `${diaCorto(d.dia, c.es)} · ${hora(d.h0)} – ${hora(d.h1)}${d.h1 >= 1440 ? c.E2(" (día siguiente)", " (next day)") : ""}${d.puertas ? c.E2(` · puertas ${hora(d.h0 - d.puertas)}`, ` · doors ${hora(d.h0 - d.puertas)}`) : ""}${d.rep.k !== "none" ? ` · ${repL(d.dia, d.rep, c.es)}` : ""}`;
 const donde = (c: Ctx, d: BorradorEvt) => (d.donde === "other" ? `${d.lugar}${d.dir ? ` · ${d.dir}` : ""}${d.cp ? ` ${d.cp}` : ""}` : `${c.d.name}${c.evt!.dir ? ` · ${c.evt!.dir}` : ""}`);
 const entradaL = (c: Ctx, F: FormatoEvt, e: BorradorEvt["entrada"]) => (e === "free" ? c.E2("Entrada libre · sin lista", "Free entry · no list") : e === "rsvp" ? bi(F.f.freeL, c.es) : bi(F.f.tixL, c.es));
 
@@ -73,8 +77,10 @@ export function evtBloques(c: Ctx): Sec {
   if (TB.length > 1) out.push({ type: "tabs", items: TB.map((x) => ({ l: x.l, n: String(x.n), on: tb === x.k, onClick: () => c.setUi({ evTab: x.k }) })) });
   const cards = X.lista.filter((e) => grp(e) === tb).map((e) => {
     const F = fmtDe(c, e.fmt), [tag, tone] = etiquetaEvt({ status: e.st, hidden: e.hidden, pending: e.pending, hoy: e.dia === X.hoy }, es), tix = e.entrada === "tickets";
-    return { key: e.id, img: e.foto ? `url("${e.foto}")` : undefined, bm: mesCorto(e.dia, es), bd: String(Number(e.dia.slice(8))), m: `${bi(F.label, es).toUpperCase()}${e.origen === "publica" ? E2(" · DESDE PUBLICA TU EVENTO", " · FROM PUBLISH YOUR EVENT") : ""}`, tag, tone,
-      t: bi(e.t, es) || E2("Sin nombre", "Untitled"), s: `${diaCorto(e.dia, es)} · ${hora(e.h0)}${e.nota && (e.hidden || e.st === "changes" || e.st === "rejected" || e.pending === "changes" || e.pending === "rejected") ? ` · ${e.nota}` : ""}`,
+    // 6f · Una serie: la próxima fecha y «CADA JUEVES · N FECHAS»; varios días: el rango.
+    const forma = e.kind === "series" && e.rep ? ` · ${repL(e.inicio, e.rep, es).toUpperCase()}` : e.kind === "span" ? ` · ${e.span}${E2(" DÍAS", " DAYS")}` : "";
+    return { key: e.id, img: e.foto ? `url("${e.foto}")` : undefined, bm: mesCorto(e.dia, es), bd: String(Number(e.dia.slice(8))), m: `${bi(F.label, es).toUpperCase()}${forma}${e.origen === "publica" ? E2(" · DESDE PUBLICA TU EVENTO", " · FROM PUBLISH YOUR EVENT") : ""}`, tag, tone,
+      t: bi(e.t, es) || E2("Sin nombre", "Untitled"), s: `${e.kind === "span" ? spanL(e.dia, e.span, es) : diaCorto(e.dia, es)} · ${hora(e.h0)}${e.kind === "series" && e.nf > 1 ? E2(` · ${e.nf} fechas por delante`, ` · ${e.nf} dates ahead`) : ""}${e.nota && (e.hidden || e.st === "changes" || e.st === "rejected" || e.pending === "changes" || e.pending === "rejected") ? ` · ${e.nota}` : ""}`,
       hasBar: tix && e.cap > 0, pct: `${Math.min(100, Math.round(((X.vendidos[e.id] ?? 0) * 100) / Math.max(1, e.cap)))}%`, barC: (X.vendidos[e.id] ?? 0) >= e.cap ? "var(--tl-danger)" : "var(--tl-signal)",
       l: tix ? E2(`${X.vendidos[e.id] ?? 0} de ${e.cap} ${F.f.cntL.es} vendidos`, `${X.vendidos[e.id] ?? 0} of ${e.cap} ${F.f.cntL.en} sold`) : e.entrada === "rsvp" ? (e.cupo ? E2(`Cupo de ${e.cupo}`, `${e.cupo} spots`) : E2("RSVP sin límite", "RSVP, no limit")) : E2("Sin lista", "No list"),
       r: tix && e.desde ? E2(`Desde ${dinero(e.desde)}`, `From ${dinero(e.desde)}`) : E2("Gratis", "Free"), op: tb === "done" ? 0.55 : 1, onClick: () => c.det(`evt:${e.id}`) };
@@ -89,7 +95,7 @@ export function evtBloques(c: Ctx): Sec {
 
 /* ── Detalle: la ficha o el editor ── */
 export function evtDetalle(c: Ctx): Sec {
-  const id = c.ruta.det!.slice(4), X = c.evt!, E2 = c.E2;
+  const id = c.ruta.det!.slice(4).split("@")[0]!, X = c.evt!, E2 = c.E2;
   const H = (o: { eye?: string; t: string; s?: string }): Bloque => ({ type: "head", ...o, onBack: () => c.closeDet() });
   if (!c.d.pro) return { blocks: [H({ t: E2("Eventos es parte de Pro", "Events is part of Pro") })], ed: null };
   if (id === "new" || id.startsWith("new:")) return editor(c, null, id.slice(4) || null);
@@ -108,8 +114,10 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   const v = e.pending ? e.vivo : d, tix = v.entrada === "tickets";
   const enviar = () => c.run(() => evtEnviar(c.d.id, e.id), (r) => (r.envio === "publicado" ? E2("Publicado. Ya sale en Eventos y en tu página.", "Published. It shows in Events and on your page now.") : E2(`Enviado. To’Latino lo revisa en ${X.cfg.revisionH} h.`, `Sent. To’Latino reviews it within ${X.cfg.revisionH} h.`)));
   const repetir = () => c.run(() => evtRepetir(c.d.id, e.id), E2("Copia lista como borrador, 7 días después. Revísala y envíala.", "Copy ready as a draft, 7 days later. Check it and send it."), (r) => r.id && c.det(`evt:edit:${r.id}`));
-  out.push({ type: "evhd", onBack: () => c.closeDet(), eye: `${bi(F.label, es).toUpperCase()}${e.version > 1 ? E2(` · VERSIÓN ${e.version}`, ` · VERSION ${e.version}`) : ""}`, tag, tone,
-    img: v.fotos[0] ? `url("${v.fotos[0].url}")` : undefined, t: bi(v.ti, es) || E2("Sin nombre", "Untitled"), when: cuando(c, v), where: donde(c, v),
+  // 6f · Serie: FECHA QUE ESTÁS VIENDO (todo lo de abajo es de esa fecha); varios días: el rango y N DÍAS.
+  const fx = e.kind === "series" ? fechaVista(c, e) : null;
+  out.push({ type: "evhd", onBack: () => c.closeDet(), eye: `${bi(F.label, es).toUpperCase()}${e.kind === "series" ? ` · ${repL(v.dia, v.rep, es).toUpperCase()}` : e.kind === "span" ? ` · ${v.span}${E2(" DÍAS", " DAYS")}` : ""}${e.version > 1 ? E2(` · VERSIÓN ${e.version}`, ` · VERSION ${e.version}`) : ""}`, tag, tone,
+    img: v.fotos[0] ? `url("${v.fotos[0].url}")` : undefined, t: bi(v.ti, es) || E2("Sin nombre", "Untitled"), when: fx ? `${diaCorto(fx.dia, es)} · ${hora(fx.h0)} – ${hora(fx.h1)}` : cuando(c, v), where: donde(c, v), ...chipsFechas(c, e),
     progT: tix && X.ventas ? E2(`${X.ventas.kpi.vendidos} de ${X.ventas.kpi.capacidad} ${F.f.cntL.es} vendidos`, `${X.ventas.kpi.vendidos} of ${X.ventas.kpi.capacidad} ${F.f.cntL.en} sold`) : tix ? E2(`${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.es} configurados`, `${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.en} set up`) : v.entrada === "rsvp" ? (v.cupo ? E2(`Cupo de ${v.cupo} personas`, `${v.cupo} spots`) : E2("RSVP sin límite", "RSVP with no limit")) : E2("Entrada libre, sin lista", "Free entry, no list"),
     progR: tix ? (X.ventas?.venta === "abierta" ? E2("VENDIENDO", "SELLING") : X.ventas?.venta === "pausada" ? E2("VENTA PAUSADA", "SALES PAUSED") : X.ventas?.venta === "cerrada" ? E2("VENTA CERRADA", "SALES CLOSED") : E2("SIN VENTA", "NOT SELLING")) : "",
     ...(tix && X.ventas ? { pct: `${Math.min(100, Math.round((X.ventas.kpi.vendidos * 100) / Math.max(1, X.ventas.kpi.capacidad)))}%`, barC: "var(--tl-signal)" } : {}),
@@ -131,6 +139,8 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   if (e.pending === "rejected") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Tu cambio no se aprobó: ${e.pendingNota ?? ""}. Sigue en vivo la versión anterior.`, `Your change was not approved: ${e.pendingNota ?? ""}. The previous version stays live.`) });
   if (e.st === "draft") out.push({ type: "note", tone: "ink", icon: "lock", t: E2("Borrador: solo tú lo ves. Envíalo cuando esté listo.", "Draft: only you see it. Send it when it is ready.") });
   if (tix) out.push(...ventaBloques(c, e));
+  // 6f · FECHAS de la serie, QUIÉN SE PRESENTA · SOLO ESTA FECHA, POR DÍA · CUÁNTOS VAN y VENDIDOS POR DÍA.
+  out.push(...seriesBloques(c, e, v, F));
   // 6e · Venta pausada / cambiar fecha u hora / cancelar con devolución total / avisos a los que van / el dinero por fecha.
   out.push(...cambiosBloques(c, e, v));
   out.push(asiLoVe(c, F, e.pending ? d : v));
@@ -272,7 +282,8 @@ function despuesBloques(c: Ctx, e: EvtPanel): Bloque[] {
   return out;
 }
 const DEC: Record<string, [string, string]> = { submitted: ["Enviado a revisión", "Sent for review"], resubmitted: ["Enviado otra vez", "Sent again"], approved: ["Publicado", "Published"], changes: ["To’Latino pidió un cambio", "To’Latino asked for a change"], rejected: ["No se aprobó", "Not approved"] };
-const CAMBIO_L: Record<string, Bi> = { dia: { es: "el día", en: "the day" }, h0: { es: "la hora", en: "the time" }, h1: { es: "la hora de terminar", en: "the end time" }, puertas: { es: "las puertas", en: "the doors" }, donde: { es: "el lugar", en: "the place" }, lugar: { es: "el lugar", en: "the place" }, dir: { es: "la dirección", en: "the address" }, cp: { es: "el código postal", en: "the ZIP code" }, edad: { es: "la edad", en: "the age" }, entrada: { es: "la entrada", en: "the entry" }, boletos: { es: "los boletos", en: "the tickets" }, mesas: { es: "las mesas", en: "the tables" }, extras: { es: "los extras", en: "the extras" } };
+const CAMBIO_L: Record<string, Bi> = { dia: { es: "el día", en: "the day" }, h0: { es: "la hora", en: "the time" }, h1: { es: "la hora de terminar", en: "the end time" }, puertas: { es: "las puertas", en: "the doors" }, donde: { es: "el lugar", en: "the place" }, lugar: { es: "el lugar", en: "the place" }, dir: { es: "la dirección", en: "the address" }, cp: { es: "el código postal", en: "the ZIP code" }, edad: { es: "la edad", en: "the age" }, entrada: { es: "la entrada", en: "the entry" }, boletos: { es: "los boletos", en: "the tickets" }, mesas: { es: "las mesas", en: "the tables" }, extras: { es: "los extras", en: "the extras" },
+  rep: { es: "cómo se repite", en: "how it repeats" }, span: { es: "los días seguidos", en: "the days in a row" }, dh: { es: "el horario de cada día", en: "each day’s hours" }, dcap: { es: "el aforo por día", en: "the daily capacity" } };
 const cambiosL = (c: Ctx, k: string[]) => [...new Set(k.map((x) => bi(CAMBIO_L[x] ?? { es: x, en: x }, c.es)))].join(", ") || c.E2("algo que importa", "something important");
 
 /* «Así lo ve el cliente» (pv del editor). */
@@ -308,7 +319,7 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
 
   out.push({ type: "head", eye: e0 ? bi(F.label, es).toUpperCase() : E2("EVENTO NUEVO", "NEW EVENT"), t: e0 ? E2("Editar evento", "Edit event") : E2("Crear evento", "Create event"), s: E2("Solo ves lo que sirve para este tipo de evento.", "You only see what fits this kind of event."),
     onBack: () => (e0 ? c.det(`evt:${e0.id}`) : c.closeDet()) });
-  if (vivo && !X.org.verificado) out.push({ type: "note", tone: "ink", icon: "shield", t: E2("Está publicado. Si cambias el día, la hora, las puertas, el lugar, la edad o la entrada, To’Latino revisa el cambio y mientras sigue en vivo la versión de ahora. Lo demás se aplica al guardar.", "It is live. If you change the day, time, doors, place, age or entry, To’Latino reviews the change and meanwhile the current version stays live. Everything else applies on save.") });
+  if (vivo && !X.org.verificado) out.push({ type: "note", tone: "ink", icon: "shield", t: E2("Está publicado. Si cambias el día, la hora, las puertas, el lugar, la edad, la entrada o cómo se repite, To’Latino revisa el cambio y mientras sigue en vivo la versión de ahora. Lo demás se aplica al guardar. Un cambio de hora de la serie no mueve las fechas que ya tienen gente: esas se cambian una por una, con aviso.", "It is live. If you change the day, time, doors, place, age, entry or how it repeats, To’Latino reviews the change and meanwhile the current version stays live. Everything else applies on save. A series time change does not move dates that already have people: those change one by one, with notice.") });
   if (e0?.st === "changes" && e0.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`To’Latino pide: ${e0.nota}`, `To’Latino asks: ${e0.nota}`) });
   if (e0?.pending === "changes" && e0.pendingNota) out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`To’Latino pide sobre tu cambio: ${e0.pendingNota}`, `To’Latino asks about your change: ${e0.pendingNota}`) });
   if (Fs.length > 1 && !vivo) out.push({ type: "chips", k: E2("QUÉ TIPO DE EVENTO", "WHAT KIND OF EVENT"), items: Fs.map((f) => ({ l: bi(f.label, es), v: d.fmt === f.key ? "selected" : "filter", onClick: () => {
@@ -350,10 +361,11 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
   if (d.desc.es.trim()) out.push(txt(E2("DESCRIPCIÓN EN INGLÉS", "DESCRIPTION IN ENGLISH"), d.desc.en, (v) => set({ desc: { ...d.desc, en: v } }), LIM.desc, { area: true, rows: 3 }));
 
   // Cuándo: calendario de los meses que se pueden publicar (Configuración), horas y puertas.
-  out.push({ type: "group", k: E2("CUÁNDO", "WHEN") }, calendario(c, Fm, e0));
+  out.push({ type: "group", k: E2("CUÁNDO", "WHEN") }, calendario(c, Fm, e0), ...duracionBloques(c, Fm, e0, X.cfg.fechasMax, X.cfg.diasMax));
   out.push(hstp(E2("Empieza", "Starts"), d.h0, (v) => set({ h0: v, h1: Math.max(v + 30, Math.min(v + 720, d.h1 + (v - d.h0))), lu: d.lu.map((l) => ({ ...l, h: l.h + (v - d.h0) })) }), 360, 1410),
     hstp(E2("Termina", "Ends"), d.h1, (v) => set({ h1: v }), d.h0 + 30, d.h0 + 720),
-    { type: "chips", k: E2("ABREN PUERTAS", "DOORS OPEN"), items: ([[0, E2("Al empezar", "At start")], [30, E2("30 min antes", "30 min before")], [60, E2("1 h antes", "1 h before")]] as const).map(([v, l]) => ({ l, v: d.puertas === v ? "selected" : "filter", onClick: () => set({ puertas: v }) })) });
+    { type: "chips", k: E2("ABREN PUERTAS", "DOORS OPEN"), items: ([[0, E2("Al empezar", "At start")], [30, E2("30 min antes", "30 min before")], [60, E2("1 h antes", "1 h before")]] as const).map(([v, l]) => ({ l, v: d.puertas === v ? "selected" : "filter", onClick: () => set({ puertas: v }) })) },
+    ...horarioBloques(c, Fm));
   { const [y, m, dd] = d.dia.split("-").map(Number), dow = new Date(Date.UTC(y!, m! - 1, dd!)).getUTCDay(), h = biz.horas[(dow + 6) % 7];
     if (d.donde === "own" && h && !h.on) out.push({ type: "note", tone: "info", icon: "clock", t: E2("Ese día tu horario dice cerrado. El evento sale igual en Eventos y en tu página.", "Your hours say you are closed that day. The event still shows in Events and on your page.") }); }
 
@@ -377,19 +389,25 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
   }
   if (tix) {
     out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Boletos, mesas y extras se guardan aquí. La venta en la app abre pronto: hasta entonces no se venden.", "Tickets, tables and extras are saved here. In-app sales open soon: until then they are not sold.") });
-    out.push({ type: "group", k: bi(F.f.tkL, es).toUpperCase(), link: d.boletos.length < LIM.boletos ? `+ ${bi(F.f.tk1, es)}` : undefined, onLink: () => set({ boletos: [...d.boletos, { id: `t${Date.now()}`, n: { es: "", en: "" }, s: { es: "", en: "" }, p: F.f.p0, cap: 20, off: false }] }) });
+    out.push({ type: "group", k: bi(F.f.tkL, es).toUpperCase(), link: d.boletos.length < (d.span > 1 ? LIM.boletosDias : LIM.boletos) ? `+ ${bi(F.f.tk1, es)}` : undefined, onLink: () => set({ boletos: [...d.boletos, { id: `t${Date.now()}`, n: { es: "", en: "" }, s: { es: "", en: "" }, p: F.f.p0, cap: 20, off: false, ...(d.span > 1 ? { dy: null } : {}) }] }) });
+    out.push(crearPorDia(c, Fm, F));
     d.boletos.forEach((t, i) => out.push(
       { type: "group", k: `${bi(F.f.tk1, es).toUpperCase()} ${i + 1}`, link: d.boletos.length > 1 ? E2("Quitar", "Remove") : undefined, onLink: () => delA("boletos", i) },
       txt(E2("NOMBRE", "NAME"), t.n.es, (v) => upA("boletos", i, { n: { ...t.n, es: v } }), LIM.boletoN, { ph: `${E2("Ej. ", "e.g. ")}${bi(F.f.tk0, es)}` }),
       txt(E2("QUÉ INCLUYE · OPCIONAL", "WHAT IT INCLUDES · OPTIONAL"), t.s.es, (v) => upA("boletos", i, { s: { ...t.s, es: v } }), LIM.boletoS, { ph: F.dark ? E2("Ej. Antes de las 11 PM", "e.g. Before 11 PM") : E2("Ej. Incluye almuerzo", "e.g. Lunch included") }),
       txt(E2("PRECIO · CARGOS INCLUIDOS", "PRICE · FEES INCLUDED"), usd(t.p), (v) => upA("boletos", i, { p: centavos(v) }), 7, { pre: "$", im: "decimal", help: E2("Lo que paga el cliente: el precio que ve es el que paga.", "What the client pays: the price they see is what they pay.") }),
-      txt(E2("CUÁNTOS", "HOW MANY"), String(t.cap), (v) => upA("boletos", i, { cap: N(v, 5000) }), 4, { im: "numeric" })));
+      txt(E2("CUÁNTOS", "HOW MANY"), String(t.cap), (v) => upA("boletos", i, { cap: N(v, 5000) }), 4, { im: "numeric" }),
+      valePara(c, Fm, i, (X.ventas?.tipos.find((z) => e0 && z.n === t.n.es)?.vendidos ?? 0) > 0)));
     { const pp = d.maxP, cus = pp > 0 && ![2, 4, 6].includes(pp);
       out.push({ type: "chips", k: E2("MÁXIMO POR PERSONA", "MAX PER PERSON"), help: pp ? E2(`NADIE COMPRA MÁS DE ${pp} EN UNA ORDEN`, `NO ONE BUYS MORE THAN ${pp} IN ONE ORDER`) : E2("CADA UNO COMPRA LOS QUE QUIERA", "EACH PERSON BUYS AS MANY AS THEY WANT"),
         items: [...([[0, E2("Sin límite", "No limit")], [2, "2"], [4, "4"], [6, "6"]] as [number, string][]).concat(cus ? [[pp, String(pp)]] : []).map(([n, l]) => ({ l, v: pp === n ? "selected" : "filter", onClick: () => set({ maxP: n }) })),
           { l: E2("Otro", "Other"), v: "filter", onClick: () => set({ maxP: pp >= 6 ? Math.min(50, pp + 1) : 8 }) }] }); }
     out.push({ type: "chips", k: E2("SE VENDE EN LÍNEA HASTA", "SOLD ONLINE UNTIL"), help: E2("EN LA PUERTA NO SE VENDE", "NO DOOR SALES"), items: ([["start", E2("Que empiece", "It starts")], ["doors", E2("Abran puertas", "Doors open")], ["day_before", E2("1 día antes", "1 day before")]] as const).map(([v, l]) => ({ l, v: d.hasta === v ? "selected" : "filter", onClick: () => set({ hasta: v }) })) });
-    if (F.f.mesas) {
+    // 6f · Aforo por día (varios días): pases y boletos de ese día juntos; la base no deja pasar de ahí.
+    if (d.span > 1) out.push({ type: "step", t: E2("Aforo por día", "Daily capacity"), s: E2("Máximo adentro cada día, sumando pases y boletos de ese día. 0 = sin límite.", "Max inside each day, counting passes and that day’s tickets. 0 = no limit."),
+      v: d.dcap ? E2(`${d.dcap} personas`, `${d.dcap} people`) : E2("Sin límite", "No limit"), onM: () => set({ dcap: Math.max(0, d.dcap - 50) }), onP: () => set({ dcap: Math.min(20000, d.dcap + 50) }) });
+    if (F.f.mesas && d.span > 1) out.push({ type: "note", tone: "info", icon: "drink", t: E2("Un evento de varios días no vende mesas: una mesa es de una noche. Si las necesitas, hazlo como serie.", "A multi-day event does not sell tables: a table is for one night. If you need them, make it a series.") });
+    if (F.f.mesas && d.span === 1) {
       out.push({ type: "group", k: E2("MESAS · CADA UNA SE VENDE UNA VEZ", "TABLES · EACH SOLD ONCE"), link: d.mesas.length < LIM.mesas ? E2("+ Mesa", "+ Table") : undefined, onLink: () => set({ mesas: [...d.mesas, { id: `m${Date.now()}`, z: { es: "", en: "" }, seats: 4, min: 12000, dep: 4000, cap: 4 }] }) });
       if (!d.mesas.length) out.push({ type: "note", tone: "info", icon: "drink", t: E2("Vende mesas con consumo mínimo: el depósito aparta la mesa y se descuenta esa noche.", "Sell tables with a minimum spend: the deposit holds it and is deducted that night.") });
       d.mesas.forEach((m, i) => out.push(
@@ -414,8 +432,9 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
   }
 
   // Line-up / programa.
-  out.push({ type: "group", k: `${bi(F.f.luL, es).toUpperCase()}${E2(" · OPCIONAL", " · OPTIONAL")}`, link: d.lu.length < LIM.lu ? E2("+ Agregar", "+ Add") : undefined, onLink: () => set({ lu: [...d.lu, { h: d.lu.length ? Math.min(d.h1, d.lu[d.lu.length - 1]!.h + 60) : d.h0, who: "", role: { es: "", en: "" } }] }) });
-  d.lu.forEach((l, i) => out.push(hstp(`${E2("Hora · ", "Time · ")}${l.who.trim() || bi(F.f.luWho, es)}`, l.h, (v) => upA("lu", i, { h: v }), Math.max(0, d.h0 - 60), d.h1),
+  out.push({ type: "group", k: `${bi(F.f.luL, es).toUpperCase()}${E2(" · OPCIONAL", " · OPTIONAL")}`, link: d.lu.length < (d.span > 1 ? LIM.luDias : LIM.lu) ? E2("+ Agregar", "+ Add") : undefined, onLink: () => set({ lu: [...d.lu, { h: d.lu.length ? Math.min(d.h1, d.lu[d.lu.length - 1]!.h + 60) : d.h0, who: "", role: { es: "", en: "" }, ...(d.span > 1 ? { dy: d.lu.at(-1)?.dy ?? 0 } : {}) }] }) });
+  d.lu.forEach((l, i) => out.push(...(d.span > 1 ? [{ type: "chips", k: E2("QUÉ DÍA", "WHICH DAY"), items: Array.from({ length: d.span }, (_, j) => ({ l: diaCorto(sumarDias(d.dia, j), es), v: (l.dy ?? 0) === j ? "selected" : "filter", onClick: () => upA("lu", i, { dy: j }) })) } as Bloque] : []),
+    hstp(`${E2("Hora · ", "Time · ")}${l.who.trim() || bi(F.f.luWho, es)}`, l.h, (v) => upA("lu", i, { h: v }), Math.max(0, d.h0 - 60), Math.max(d.h1, ...(d.dh ?? []).map((x) => x.h1))),
     txt(bi(F.f.luWho, es).toUpperCase(), l.who, (v) => upA("lu", i, { who: v }), LIM.quien),
     txt(E2("DETALLE · OPCIONAL", "DETAIL · OPTIONAL"), l.role.es, (v) => upA("lu", i, { role: { ...l.role, es: v } }), LIM.rol, { ph: bi(F.f.luRole, es) }),
     { type: "acts", items: [{ l: E2("Quitar", "Remove"), icon: "trash", v: "soft", onClick: () => delA("lu", i) }] }));
@@ -470,18 +489,40 @@ export function calendario(c: Ctx, Fm: Form<FormEvt>, e0: EvtPanel | null): Bloq
   const y = y0! + Math.floor((m0! - 1 + mo) / 12), m = (m0! - 1 + mo) % 12, dim = new Date(Date.UTC(y, m + 1, 0)).getUTCDate(), lead = (new Date(Date.UTC(y, m, 1)).getUTCDay() + 6) % 7;
   const otros = new Map<string, string>(); for (const z of X.lista) if (z.id !== e0?.id && !["cancelled", "rejected", "draft"].includes(z.st)) otros.set(z.dia, bi(z.t, es));
   let hayCerrado = false, hayOtro = false;
-  const days: { n: string; bg?: string; fg?: string; ring?: string; fw?: number; dot?: string; off?: boolean; onClick?: () => void; label?: string }[] = Array.from({ length: lead }, () => ({ n: "", off: true }));
+  // 6f · La serie (las fechas de la regla, tocar una la salta) y los días de un evento de varios días, marcados (evCalB).
+  const vivo = !!e0 && (e0.st === "live" || e0.st === "paused");
+  const regla = d.rep.k !== "none" && d.span === 1 ? fechasSerie(d.dia, { ...d.rep, skip: [] }, d.rep.n, fin) : [], enRegla = new Set(regla), salt = new Set(d.rep.skip);
+  const conGente = new Set((e0?.fechas ?? []).filter((f) => f.gente && f.serie).map((f) => f.serie!));
+  const diasSpan = new Set(d.span > 1 ? Array.from({ length: d.span - 1 }, (_, j) => sumarDias(d.dia, j + 1)) : []);
+  const days: { n: string; bg?: string; fg?: string; ring?: string; td?: string; fw?: number; dot?: string; off?: boolean; onClick?: () => void; label?: string }[] = Array.from({ length: lead }, () => ({ n: "", off: true }));
   for (let i = 1; i <= dim; i++) {
     const iso = `${y}-${String(m + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`, off = iso < hoy || iso > fin, on = iso === d.dia;
+    const oc = on ? null : enRegla.has(iso) ? (salt.has(iso) ? "skip" : "on") : diasSpan.has(iso) ? "on" : null;
     const dow = new Date(Date.UTC(y, m, i)).getUTCDay(), cerr = !off && d.donde === "own" && c.d.horas[(dow + 6) % 7]?.on === false, ot = !off && otros.has(iso);
     if (cerr) hayCerrado = true; if (ot) hayOtro = true;
-    days.push({ n: String(i), off, bg: on ? "var(--tl-ink)" : "transparent", fg: on ? "var(--tl-white)" : off ? "rgba(11,14,18,.22)" : cerr ? "rgba(11,14,18,.42)" : "var(--tl-ink)",
-      ring: iso === hoy && !on ? "inset 0 0 0 1.5px rgba(11,14,18,.55)" : "none", fw: on || iso === hoy ? 800 : 600, dot: ot ? "var(--tl-pro)" : "transparent", label: diaCorto(iso, es), onClick: () => Fm.set({ dia: iso }) });
+    const elegir = () => {
+      if (oc && enRegla.has(iso)) {
+        if (vivo) { c.toast(E2("Para saltar una fecha de una serie publicada, usa FECHAS en la ficha.", "To skip a date of a live series, use DATES on the event page.")); return; }
+        if (conGente.has(iso)) { c.toast(E2("Esa fecha ya tiene boletos vendidos: no se puede saltar.", "That date already has tickets sold: it cannot be skipped.")); return; }
+        Fm.set({ rep: { ...d.rep, skip: salt.has(iso) ? d.rep.skip.filter((z) => z !== iso) : [...d.rep.skip, iso] } });
+        c.toast(salt.has(iso) ? E2("Fecha puesta otra vez.", "Date added back.") : E2("Fecha saltada: no sale en Eventos.", "Date skipped: it will not show in Events."));
+        return;
+      }
+      // Cambiar la primera fecha: en una serie semanal, el día de la semana nuevo reemplaza al de antes.
+      const dw = dowDe(iso), ds = d.rep.days;
+      Fm.set({ dia: iso, rep: d.rep.k === "none" ? d.rep : { ...d.rep, skip: [], days: d.rep.k === "m" ? [] : ds.length <= 1 ? [dw] : [...new Set([...ds.filter((z) => z !== dowDe(d.dia)), dw])] } });
+    };
+    days.push({ n: String(i), off, bg: on ? "var(--tl-ink)" : oc === "on" ? "rgba(75,55,245,.12)" : "transparent", fg: on ? "var(--tl-white)" : off ? "rgba(11,14,18,.22)" : oc === "on" ? "var(--tl-action)" : oc === "skip" || cerr ? "rgba(11,14,18,.42)" : "var(--tl-ink)",
+      ring: oc === "skip" ? "inset 0 0 0 1.5px rgba(75,55,245,.4)" : iso === hoy && !on ? "inset 0 0 0 1.5px rgba(11,14,18,.55)" : "none", td: oc === "skip" ? "line-through" : undefined, fw: on || oc === "on" || iso === hoy ? 800 : 600,
+      dot: ot ? "var(--tl-pro)" : "transparent", label: `${diaCorto(iso, es)}${oc === "skip" ? E2(" · saltada", " · skipped") : oc === "on" ? E2(" · del evento", " · event date") : ""}`, onClick: elegir });
   }
   while (days.length % 7) days.push({ n: "", off: true });
-  const leg = [{ c: "var(--tl-ink)", r: "4px", t: E2("Fecha del evento", "Event date") }, ...(hayOtro ? [{ c: "var(--tl-pro)", r: "99px", t: E2("Otro evento tuyo", "Another event of yours") }] : []), ...(hayCerrado ? [{ c: "rgba(11,14,18,.14)", r: "4px", t: E2("Cerrado según tu horario", "Closed per your hours") }] : [])];
+  const leg = [{ c: "var(--tl-ink)", r: "4px", t: E2("Fecha del evento", "Event date") }, ...(regla.length > 1 ? [{ c: "rgba(75,55,245,.25)", r: "4px", t: E2("Se repite · toca una para saltarla", "Repeats · tap one to skip it") }] : []),
+    ...(diasSpan.size ? [{ c: "rgba(75,55,245,.25)", r: "4px", t: E2("Días del evento", "Event days") }] : []), ...(hayOtro ? [{ c: "var(--tl-pro)", r: "99px", t: E2("Otro evento tuyo", "Another event of yours") }] : []), ...(hayCerrado ? [{ c: "rgba(11,14,18,.14)", r: "4px", t: E2("Cerrado según tu horario", "Closed per your hours") }] : [])];
   const otro = otros.get(d.dia);
   return { type: "cal", month: `${bi(MES_L[m]!, es)} ${y}`, prevOff: mo <= 0, nextOff: mo >= mesesMax, onPrev: () => c.setUi({ evCalK: Fm.key, evCalM: mo - 1 }), onNext: () => c.setUi({ evCalK: Fm.key, evCalM: mo + 1 }),
     wd: es ? ["L", "M", "X", "J", "V", "S", "D"] : ["M", "T", "W", "T", "F", "S", "S"], days, leg,
-    s: d.dia ? `${diaCorto(d.dia, es)}${otro ? E2(` · ese día ya tienes «${otro}»`, ` · you already have “${otro}” that day`) : ""}` : E2("Elige el día.", "Pick the day.") };
+    s: !d.dia ? E2("Elige el día.", "Pick the day.") : d.span > 1 ? `${spanL(d.dia, d.span, es)} · ${d.span}${E2(" días seguidos", " days in a row")}`
+      : regla.length > 1 ? `${diaCorto(d.dia, es)} · ${repL(d.dia, d.rep, es)} · ${regla.length - d.rep.skip.filter((z) => enRegla.has(z)).length}${E2(" fechas, hasta el ", " dates, through ")}${diaCorto(regla.at(-1)!, es)}${d.rep.skip.length ? E2(` · ${d.rep.skip.length} saltada${d.rep.skip.length === 1 ? "" : "s"}`, ` · ${d.rep.skip.length} skipped`) : ""}${regla.length < d.rep.n ? E2(` · las demás se crean cuando lleguen`, ` · the rest are created as they come`) : ""}`
+      : `${diaCorto(d.dia, es)}${otro ? E2(` · ese día ya tienes «${otro}»`, ` · you already have “${otro}” that day`) : ""}` };
 }

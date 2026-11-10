@@ -52,7 +52,8 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
   const { E2, es, ui } = c, X = c.evt!, K = X.cambios, out: (Bloque | null)[] = [];
   if (!K) return out;
   const tix = v.entrada === "tickets", live = e.st === "live" || e.st === "paused";
-  const vivas = K.fechas.filter((f) => f.st === "scheduled" && !f.empezo), proxima = vivas[0];
+  // 6f · En una serie, «esta fecha» es la FECHA QUE ESTÁS VIENDO (cambiar u cancelar solo esa); en varios días, se cancela entero.
+  const vivas = K.fechas.filter((f) => f.st === "scheduled" && !f.empezo), proxima = vivas.find((f) => f.id === X.fver) ?? vivas[0];
   // Lo que pasó.
   if (K.cancelacion) {
     const x = K.cancelacion;
@@ -86,7 +87,7 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
 
   // Cambiar fecha u hora (una fecha que no empezó).
   if (ui.evMv === e.id && proxima) {
-    const Fm = c.form<BorradorEvt & { enviar: boolean }>(`det:evmv:${e.id}`, { ...v, dia: proxima.dia, h0: proxima.h0, h1: proxima.h1, enviar: false }), d = Fm.d;
+    const Fm = c.form<BorradorEvt & { enviar: boolean }>(`det:evmv:${e.id}`, { ...v, dia: proxima.dia, h0: proxima.h0, h1: proxima.h1, enviar: false, rep: { k: "none", days: [], n: 1, skip: [] }, span: 1, dh: null }), d = Fm.d;
     const step = (t: string, val: number, set: (x: number) => void, min: number, max: number): Bloque => ({ type: "step", t, v: `${hora(val)}${val >= 1440 ? E2(" · día siguiente", " · next day") : ""}`, onM: () => set(Math.max(min, val - 30)), onP: () => set(Math.min(max, val + 30)) });
     const igual = d.dia === proxima.dia && d.h0 === proxima.h0 && d.h1 === proxima.h1;
     out.push({ type: "group", k: E2("CAMBIAR FECHA U HORA", "CHANGE DATE OR TIME") }, calendario(c, Fm, e),
@@ -99,7 +100,7 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
   }
   // Cancelar (QUÉ CANCELAS si hay varias fechas · ¿POR QUÉ? · lo que se devuelve · confirmar).
   if (ui.evCx === e.id && vivas.length) {
-    const ser = vivas.length > 1, sc = (ui.evCxS as string) ?? (ser ? "date" : "event"), why = ui.evCxW as string | undefined;
+    const ser = vivas.length > 1 && K.kind !== "span", sc = (ui.evCxS as string) ?? (ser ? "date" : "event"), why = ui.evCxW as string | undefined;
     const sel = sc === "date" ? [proxima!] : vivas, nB = sel.reduce((s, f) => s + f.ordenes, 0), gB = sel.reduce((s, f) => s + f.monto, 0), nP = sel.reduce((s, f) => s + f.personas, 0);
     if (ser) out.push({ type: "chips", k: E2("QUÉ CANCELAS", "WHAT YOU CANCEL"), items: [["date", E2(`Solo el ${diaCorto(proxima!.dia, true)}`, `Only ${diaCorto(proxima!.dia, false)}`)], ["event", E2("Toda la serie", "The whole series")]].map(([k2, l]) => ({ l: l!, v: sc === k2 ? "selected" : "filter", onClick: () => c.setUi({ evCxS: k2 }) })) });
     out.push({ type: "chips", k: E2("¿POR QUÉ? LO VEN LOS QUE IBAN", "WHY? ATTENDEES SEE IT"), items: MOTIVOS.map(([k2, a, b]) => ({ l: E2(a, b), v: why === k2 ? "selected" : "filter", onClick: () => c.setUi({ evCxW: k2 }) })) },
@@ -111,8 +112,8 @@ export function cambiosBloques(c: Ctx, e: EvtPanel, v: BorradorEvt): (Bloque | n
     return out;
   }
   if (vivas.length) out.push({ type: "acts", items: [
-    ...(K.kind === "single" ? [{ l: E2("Cambiar fecha u hora", "Change date or time"), icon: "calendar", onClick: () => c.setUi({ evMv: e.id, evCx: null }) }] : []),
-    { l: vivas.length > 1 ? E2("Cancelar una fecha o la serie", "Cancel a date or the series") : E2("Cancelar evento", "Cancel event"), icon: "ban", onClick: () => c.setUi({ evCx: e.id, evMv: null }) }] });
+    ...(K.kind !== "span" ? [{ l: K.kind === "series" ? E2(`Cambiar el ${diaCorto(proxima!.dia, true)}`, `Change ${diaCorto(proxima!.dia, false)}`) : E2("Cambiar fecha u hora", "Change date or time"), icon: "calendar", onClick: () => c.setUi({ evMv: e.id, evCx: null }) }] : []),
+    { l: K.kind !== "span" && vivas.length > 1 ? E2("Cancelar una fecha o la serie", "Cancel a date or the series") : E2("Cancelar evento", "Cancel event"), icon: "ban", onClick: () => c.setUi({ evCx: e.id, evMv: null }) }] });
   return out;
 }
 

@@ -28,7 +28,7 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
       const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av, rsvp, bol, desp, espera] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
         import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos"), import("./rsvp"), import("./boletos"), import("./boletos-despues"), import("./espera")]);
-      const [cxs, liq] = await Promise.all([import("./evt-cambios"), import("./evt-liquidacion")]);
+      const [cxs, liq, ser] = await Promise.all([import("./evt-cambios"), import("./evt-liquidacion"), import("./evt-series")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -83,6 +83,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Cambios del evento y dinero del organizador (6e): las cancelaciones que quedaron a medias siguen (devolución total por orden, una vez)
         // con sus avisos; la liquidación del martes por fecha (retener o transferir; la base decide los montos); lo que quedó en camino se
         // reintenta con la misma llave; un ajuste sin liquidación siguiente revierte la transferencia.
+        // Series (6f): las fechas que el horizonte de Configuración ya alcanza se crean solas (evt_dias_adelante) y las que pasaron quedan 'done'.
+        ["evtSeries", () => ser.extenderSeries()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

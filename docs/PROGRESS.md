@@ -193,7 +193,37 @@ de cada acción, también cancelar) — 38/38 al revés (`alreves6e.cjs`; `alrev
 corrido en local contra stripe-mock (todas las llamadas). e2e `evt6e` 96 ✓ (teléfono y escritorio; ver REVISION) y regresión evt6d 126 ✓, evt6c 70 ✓,
 disp2r, ing2s y adm5i verdes; base nueva (migraciones dos veces + semillas + semillas cambiadas) sale 0. Ayuda: panel-eventos-cancelar-cambiar-y-avisar, panel-eventos-cobros, si-cambia-o-se-cancela-un-evento; disputas,
 admin-negocio-dinero y admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6e» (con la revisión de seguridad).
-**Sigue 6f** (series y eventos de varios días: «Se repite», saltar y cancelar una fecha de la serie con 6e, varios días con pase y aforo por día).
+**6f hecho (10 nov)** — series y eventos de varios días: migración 0111 (`events.rep` validado (`evt_rep_ok`: cada semana con sus días, cada
+2 semanas, cada mes / «el último»), `day_hours` (horario por día), `day_cap` (aforo por día), `dates_until`; check de la forma (una fecha ·
+serie · varios días, sin mesas en varios días) y trigger `events_forma` (topes de Configuración `evt_fechas_max` / `evt_dias_seguidos_max`
+leídos en el momento; con boletos vendidos la duración no cambia); `event_dates.serie_dia` (de qué día de la regla salió) y `moved_at`;
+**`evt_generar_fechas`** (la base genera las fechas de la regla hasta `evt_dias_adelante`, nunca salta ni mueve una fecha con gente:
+`evt_fecha_con_gente`; la movida a mano no vuelve a su hora; lo que sale de la regla queda «skipped»; nada se borra) y `evt_sincronizar_fechas`
+/ `evt_sincronizar_venta` reemplazadas (boletos «Vale para» un día: `ticket_types.valid_day`; la existencia de varios días vive en el ancla =
+el último día: `evt_ancla`); **`event_day_stock`** con check `capacity = 0 or sold_n + held_n <= capacity` y el trigger `ticket_stock_dia`
+(el pase cuenta en todos los días; ninguna ruta pasa del aforo de un día); `tickets_dias` (la base pone `valid_days` al emitir) y el gancho de
+la puerta `bol_fechas_validas` / `bol_vale_en`; `bol_tipo_hasta` (un boleto de un día se vende hasta el corte de su día, el pase hasta el del
+primero); `evt_extender_series` (barrido: crea las fechas que el horizonte alcanza y marca «done» las que pasaron); plantilla `evt_artista`
+(sin SMS); claves de Configuración al día), semilla **`0037_series.sql`** (el sancocho cada domingo, la vigilia cada mes, el festival de 3
+días; 0035 sin tocar; la puerta y el evento privado del plan pasan a 0038 y 0039). Código: `lib/evt-comun.ts` (Repite, `fechasSerie` / `repL` /
+`spanL` / `valeL`: la misma regla para mostrar), `lib/evt.ts` (normalizar y escribir la duración, `chequeoVenta` con las fechas con gente,
+`errorDeLaBase`, `fechasDe` en una consulta, lista y ficha del panel con la próxima fecha), `lib/evt-series.ts` (saltar / volver a poner,
+artista solo esta fecha con aviso, VENDIDOS POR DÍA, `extenderSeries`), `lib/evt-cambios.ts` (mover UNA fecha de una serie con `moved_at`;
+varios días se cancela entero), `lib/boletos.ts` (aforo por día en lo que queda, corte por día, ancla, «Vale solo el…», la ficha del panel
+de LA FECHA QUE ESTÁS VIENDO), `lib/espera.ts` (la fecha que se ve / el ancla), `lib/evt-publico.ts` (una serie sale UNA vez en cada lista con
+`PRIMERA` dentro del filtro y el cursor de siempre; «CADA JUEVES · +N FECHAS»; la ficha con FECHAS · CADA …, rango, DÍAS Y HORARIO, programa de
+esa fecha y la venta en el ancla); pantallas: editor (`app/panel/EventosSeries.tsx`: DURACIÓN · SE REPITE · QUÉ DÍAS · CUÁNTAS FECHAS · CUÁNTOS
+DÍAS · Horario distinto cada día · Crear un boleto por cada día + pase · VALE PARA · Aforo por día; el calendario marca la serie y salta),
+la ficha del panel (FECHA QUE ESTÁS VIENDO, FECHAS con Saltar / Volver a ponerla, QUIÉN SE PRESENTA · SOLO ESTA FECHA, POR DÍA · CUÁNTOS VAN,
+VENDIDOS POR DÍA, «Cambiar el {fecha}», QUÉ CANCELAS), cliente (lista, ficha, boletos, orden y boleto con el rango y «Vale…»), Super Admin
+(lista «Cada jueves · N por delante» / «3 días», ficha FECHAS / DÍAS, LO QUE CAMBIA · Se repite); bloques `evhd` (hasDates) y `chart`
+portados del Panel v2 a `packages/ui/src/panel/Bloques.tsx`; barrido `evtSeries`. Guardianes nuevos `fechasLasGeneraLaBase`, `aforoPorDia`,
+`serieUnaVezEnLista` — 22/22 al revés (`alreves6f.cjs`). e2e `evt6f` (teléfono 390 y escritorio 1360, contra el simulador; ver REVISION) y
+regresión evt6a 66 ✓, evt6b (la copia de 6c, evt6b-6c) 79 ✓, evt6c 71 ✓, evt6d 127 ✓, evt6e 97 ✓ y adm5i 56 ✓ (evt6b: la cifra «N EVENTOS» ahora cuenta eventos, no fechas: prueba al día); base nueva (migraciones dos veces +
+semillas + semillas cambiadas) sale 0. Ayuda: panel-eventos-series-y-varios-dias; eventos-buscar-y-ver, panel-eventos-crear y
+admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6f».
+**Sigue 6g** (Puerta en línea: porteros con cuenta e invitación, `/puerta` escanear · buscar · lista · aforo · mesas · incidencias · equipo ·
+cierre, modo puerta del panel; usa `bol_vigente` y `bol_fechas_validas` — un pase entra una vez cada día).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

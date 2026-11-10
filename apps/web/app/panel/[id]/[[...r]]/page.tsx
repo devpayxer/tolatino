@@ -37,7 +37,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}))$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?))$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -252,9 +252,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det?.startsWith("evt:") && !evtOk) ruta.det = null;
   const evt = evtOk && (ruta.sec === "evt" || ruta.det?.startsWith("evt:")) ? await (async () => {
     const E = await import("@/lib/evt"), { valores } = await import("@/lib/config");
-    const eid = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "") : "";
+    // 6f · evt:{evento}@{fecha} = la FECHA QUE ESTÁS VIENDO de una serie (todo lo de la ficha es de esa fecha).
+    const [eid = "", fver = null] = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "").split("@") : [""];
     const [lista, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
-      E.eventosDelNegocio(d.id), E.formatosDe(d.cat), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante"),
+      E.eventosDelNegocio(d.id), E.formatosDe(d.cat), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante", "evt_fechas_max", "evt_dias_seguidos_max"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
       db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
       // 6b · El módulo Eventos: si su categoría lo admite, si está encendido y si To'Latino lo pausó (con el motivo).
@@ -266,13 +267,17 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     ]);
     // 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). Solo de este negocio.
     const B6 = await import("@/lib/boletos"), C6 = await import("@/lib/codigos-evt");
-    const [ventas, codigos, vendidos] = await Promise.all([/^\d+$/.test(eid) ? B6.ventasPanel(d.id, eid) : Promise.resolve(null), /^\d+$/.test(eid) ? C6.codigosDelEvento(d.id, eid) : Promise.resolve([]), B6.vendidosPorEvento(d.id)]);
+    const [ventas, codigos, vendidos] = await Promise.all([/^\d+$/.test(eid) ? B6.ventasPanel(d.id, eid, fver) : Promise.resolve(null), /^\d+$/.test(eid) ? C6.codigosDelEvento(d.id, eid) : Promise.resolve([]), B6.vendidosPorEvento(d.id)]);
     // 6d · Después de comprar: cortesías, devoluciones, transferencias, ayuda con órdenes y la lista de espera (sin teléfonos).
     const D6 = await import("@/lib/boletos-despues"), W6 = await import("@/lib/espera");
-    const [despues, espera] = /^\d+$/.test(eid) && ventas ? await Promise.all([D6.despuesPanel(d.id, eid), W6.esperaPanel(d.id, eid)]) : [null, null];
+    const [despues, espera] = /^\d+$/.test(eid) && ventas ? await Promise.all([D6.despuesPanel(d.id, eid), W6.esperaPanel(d.id, eid, fver)]) : [null, null];
     // 6e · Los cambios del evento abierto y su dinero por fecha (solo de este negocio).
     const [cambios, liq] = /^\d+$/.test(eid) ? await Promise.all([(await import("@/lib/evt-cambios")).cambiosPanel(d.id, eid), (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, eid)]) : [null, null];
-    return { cambios, liq, lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
+    // 6f · VENDIDOS (o SE APUNTARON) POR DÍA de la fecha que se ve: una consulta.
+    const det6 = /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null;
+    const fv6 = det6 ? (det6.fechas.find((x) => x.id === fver) ?? det6.fechas.find((x) => x.st === "scheduled" && !x.pasada) ?? null)?.id ?? null : null;
+    const chart = det6 && fv6 ? await (await import("@/lib/evt-series")).ventasPorDia(d.id, det6.kind === "span" ? det6.fechas.filter((x) => x.st === "scheduled").at(-1)?.id ?? fv6 : fv6) : null;
+    return { cambios, liq, lista, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;

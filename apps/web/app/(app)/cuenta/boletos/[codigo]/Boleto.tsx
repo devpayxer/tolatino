@@ -25,7 +25,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
   const listo = (m: string) => { setHoja(null); toast(m); router.refresh(); };
   const deshacer = async () => { const r = await bolDeshacer(x.b.code).catch(() => null); toast(r?.ok ? E2("Listo: el boleto vuelve a ti con un QR nuevo.", "Done: the ticket is yours again with a new QR.") : r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); router.refresh(); };
   const { b, evento: ev } = x, [t, bg, fg] = estadoBoleto(b, es);
-  const cuando = `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
+  const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
   return (
     <div data-pantalla="USR-BOLETO" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">
@@ -36,7 +36,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
           <div className="mt-1.5 text-[13px] font-semibold text-ink/65">{ev.venue}</div>
         </div>
         <div role="button" tabIndex={0} aria-label={E2("Ver el código grande", "See the code big")} onClick={() => setGrande(true)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGrande(true); } }} className="cursor-pointer">
-          <TicketQR type={b.mesa ? `${b.tipo} · ${b.admits} ${E2("entradas", "entries")}` : b.tipo} name={(b.nombre || E2("A tu nombre", "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg}
+          <TicketQR type={b.mesa ? `${b.tipo} · ${b.admits} ${E2("entradas", "entries")}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo} name={(b.nombre || E2("A tu nombre", "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg}
             matrix={b.matriz} qrSize={b.matriz ? 260 : 96} qrLabel={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} used={b.estado !== "valid" || !!b.envio} code={b.code} when={cuando} />
         </div>
         {b.envio && (

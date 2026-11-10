@@ -6,7 +6,7 @@
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { Caso } from "@/lib/admin-colas";
 import type { EvtAdm } from "@/lib/evt-revision";
-import { EVT_NO, diaCorto, dinero, hora, type BorradorEvt } from "@/lib/evt-comun";
+import { EVT_NO, diaCorto, dinero, hora, type BorradorEvt, repL } from "@/lib/evt-comun";
 import { evtCasoCancela, evtDecidir, evtOcultar, evtOrganizador, liqRetener, liqSoltar } from "./acciones-eventos";
 import type { Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
@@ -15,9 +15,13 @@ type Acc = { l: string; v?: string; icon?: string; off?: boolean; onClick: () =>
 type Ctx = { setConf: (c: Confirmar) => void; abrir: (h: string) => void; negocio: (id: string) => void; puede: { aprobar: boolean; retirar: boolean } };
 const fecha = (d: string) => new Date(d).toLocaleString("es-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" });
 const ENTRADA: Record<string, string> = { free: "Entrada libre · sin lista", rsvp: "Gratis con RSVP", tickets: "Boletos" };
-const CAMPO: Record<string, string> = { dia: "Día", h0: "Empieza", h1: "Termina", puertas: "Puertas", donde: "Dónde", lugar: "Lugar", dir: "Dirección", edad: "Edad", entrada: "Entrada", boletos: "Boletos", mesas: "Mesas", extras: "Extras" };
+const CAMPO: Record<string, string> = { dia: "Día", h0: "Empieza", h1: "Termina", puertas: "Puertas", donde: "Dónde", lugar: "Lugar", dir: "Dirección", edad: "Edad", entrada: "Entrada", boletos: "Boletos", mesas: "Mesas", extras: "Extras",
+  rep: "Se repite", span: "Días seguidos", dh: "Horario por día", dcap: "Aforo por día" };
 const valorDe = (d: BorradorEvt, k: string): string => k === "dia" ? diaCorto(d.dia, true) : k === "h0" ? hora(d.h0) : k === "h1" ? hora(d.h1) : k === "puertas" ? (d.puertas ? `${d.puertas} min antes` : "Al empezar")
   : k === "donde" ? (d.donde === "own" ? "En su local" : "En otro lugar") : k === "lugar" ? d.lugar || "—" : k === "dir" ? d.dir || "—" : k === "edad" ? (d.edad ? `${d.edad}+` : "Todas") : k === "entrada" ? ENTRADA[d.entrada] ?? d.entrada
+  // 6f · La duración: la regla de la serie, los días seguidos, el horario de cada día y el aforo por día.
+  : k === "rep" ? (d.rep.k === "none" ? "Un día" : `${repL(d.dia, d.rep, true)} · ${d.rep.n} fechas`) : k === "span" ? (d.span > 1 ? `${d.span} días` : "Un día")
+  : k === "dh" ? (d.dh ? d.dh.map((x, i) => `día ${i + 1} ${hora(x.h0)}–${hora(x.h1)}`).join(" · ") : "El mismo cada día") : k === "dcap" ? (d.dcap ? `${d.dcap} personas` : "Sin límite")
   : k === "boletos" ? d.boletos.map((b) => `${b.n.es} ${dinero(b.p)} × ${b.cap}`).join(" · ") || "—" : k === "mesas" ? d.mesas.map((m) => `${m.z.es} (${m.seats}) ${dinero(m.dep)}`).join(" · ") || "—" : k === "extras" ? d.extras.map((a) => `${a.n.es} ${dinero(a.p)}`).join(" · ") || "—" : "";
 export const ST_EVT: Record<string, [string, string]> = { draft: ["BORRADOR", "neutral"], review: ["EN REVISIÓN", "action"], changes: ["CAMBIOS PEDIDOS", "neutral"], live: ["PUBLICADO", "signal"], paused: ["VENTA PAUSADA", "neutral"], cancelled: ["CANCELADO", "danger"], rejected: ["NO APROBADO", "danger"], done: ["TERMINÓ", "neutral"] };
 export const estadoEvt = (st: string, hidden: boolean, pending: string | null): [string, string] => (hidden ? ["OCULTO", "danger"] : pending === "review" ? ["CAMBIO EN REVISIÓN", "action"] : ST_EVT[st] ?? [st, "neutral"]);

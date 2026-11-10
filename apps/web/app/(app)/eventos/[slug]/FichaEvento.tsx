@@ -82,10 +82,11 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
 
   // ── Textos ──
   const horas = `${hora(f.h0)} – ${hora(f.h1)}`;
-  const when = `${f.hoy ? E2("HOY · ", "TODAY · ") : ""}${f.dia} · ${horas}`;
+  // 6f · Varios días: «VIE 20 NOV – DOM 22 NOV · 3 DÍAS» (lsVals when); una serie: la fecha que se ve.
+  const when = f.rango ?? `${f.hoy ? E2("HOY · ", "TODAY · ") : ""}${f.dia} · ${horas}`;
   const venueL = `${f.venue}${f.addr ? ` · ${f.addr}` : ""}`;
   const kidsT = f.kids === "care" ? E2("CUIDADO DE NIÑOS", "CHILDCARE") : f.kids === "fam" ? E2("PARA TODA LA FAMILIA", "FOR THE WHOLE FAMILY") : "";
-  const tags = [...(f.dark ? [] : [L(f.F.label).toUpperCase()]), ...(f.edad || f.F.ages.length > 1 ? [f.edad ? `${f.edad}+` : E2("TODAS LAS EDADES", "ALL AGES")] : []), ...f.generos.map((x) => x.toUpperCase()), ...(f.free ? [E2("GRATIS", "FREE")] : []), ...(kidsT ? [kidsT] : [])];
+  const tags = [...(f.dark ? [] : [L(f.F.label).toUpperCase()]), ...(f.serie ? [f.serie.toUpperCase()] : []), ...(f.kind === "span" && f.dias.length ? [f.rango!.split(" · ").pop()!] : []), ...(f.edad || f.F.ages.length > 1 ? [f.edad ? `${f.edad}+` : E2("TODAS LAS EDADES", "ALL AGES")] : []), ...f.generos.map((x) => x.toUpperCase()), ...(f.free ? [E2("GRATIS", "FREE")] : []), ...(kidsT ? [kidsT] : [])];
   const st = f.pasado ? { t: E2("Este evento ya terminó", "This event has ended"), s: E2("Mira lo que viene en Eventos.", "See what is coming up in Events."), bg: th.w[".08"], fg: th.fg }
     : pausado ? { t: tix ? E2("Venta pausada", "Sales paused") : E2("RSVP en pausa", "RSVP paused"), s: E2(`${f.org.name} lo pausó por ahora. Vuelve más tarde.`, `${f.org.name} paused it for now. Check back later.`), bg: "rgba(255,176,32,.16)", fg: th.warn }
     // 6e · Cambió de fecha (lsVals: «Antes era … Si ya no puedes ir, pide la devolución completa desde tu orden.»).
@@ -127,7 +128,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     : lista ? { p: E2("Agotado", "Sold out"), s: vt!.espera ? E2(`${vt!.espera} EN LISTA DE ESPERA`, `${vt!.espera} ON THE WAITLIST`) : E2("LISTA DE ESPERA ABIERTA", "WAITLIST OPEN"), cta: `${E2("Lista de espera", "Join the waitlist")}${pk > 1 ? ` · ${pk}` : ""}`, on: () => anotarLista(pk), activo: true }
     : tix ? { p: f.boletos.length ? `${E2("Desde ", "From ")}${dinero(Math.min(...f.boletos.map((b) => b.p)))}` : E2("Con boletos", "Ticketed"), s: f.mios.n ? E2(`TIENES ${f.mios.n} · CARGOS INCLUIDOS`, `YOU HAVE ${f.mios.n} · FEES INCLUDED`) : E2("CARGOS INCLUIDOS", "FEES INCLUDED"),
       cta: abierta ? L(f.F.f.cta) : vt?.estado === "abierta" ? E2("Agotado", "Sold out") : vt?.estado === "pausada" ? E2("Venta pausada", "Sales paused") : vt?.estado === "cerrada" ? E2("Venta cerrada", "Sales closed") : E2("Venta no disponible", "Not on sale"),
-      on: abierta ? () => router.push(`/eventos/${f.slug}/boletos?fecha=${f.fecha}`) : () => toast(vt?.estado === "abierta" ? E2("Se agotaron. Si alguien no termina de pagar, se liberan en unos minutos.", "Sold out. If someone does not finish paying, they free up in a few minutes.") : vt?.aviso || E2("Esta fecha no está a la venta.", "This date is not on sale.")),
+      on: abierta ? () => router.push(`/eventos/${f.slug}/boletos?fecha=${f.fechaVenta}`) : () => toast(vt?.estado === "abierta" ? E2("Se agotaron. Si alguien no termina de pagar, se liberan en unos minutos.", "Sold out. If someone does not finish paying, they free up in a few minutes.") : vt?.aviso || E2("Esta fecha no está a la venta.", "This date is not on sale.")),
       activo: abierta, alt: f.mios.n && (f.mios.numero || f.mios.codigo) ? { t: E2("Mis boletos", "My tickets"), on: () => router.push(f.mios.numero ? `/eventos/orden/${f.mios.numero}` : `/cuenta/boletos/${f.mios.codigo}`) } : undefined }
     : sinLista ? { p: E2("Gratis", "Free"), s: E2("ENTRADA LIBRE · SIN LISTA", "FREE ENTRY · NO LIST"), cta: E2("Invita", "Invite"), on: compartir, activo: true }
     : rv ? { p: E2("Vas a este evento", "You are going"), s: `RSVP${rv.party > 1 ? ` · ${rv.party} ${E2("PERSONAS", "PEOPLE")}` : ""}`, cta: E2("Ya no voy", "Not going"), on: yaNoVoy, activo: false, alt: { t: E2("Invita", "Invite"), on: compartir } }
@@ -182,22 +183,36 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     </div>
   );
   const fechas = f.fechas.length > 1 ? (
-    <div>
-      <div className="flex flex-wrap items-baseline justify-between gap-2.5"><K>{E2("FECHAS", "DATES")}</K><span className="text-[11.5px]" style={{ color: w[".55"] }}>{tix ? E2("Cada fecha tiene sus boletos.", "Each date has its own tickets.") : E2("Dices que vas a la fecha que elijas.", "You RSVP for the date you pick.")}</span></div>
+    <div data-screen-label="Ficha del evento · fechas">
+      <div className="flex flex-wrap items-baseline justify-between gap-2.5"><K>{f.serie ? `${E2("FECHAS · ", "DATES · ")}${f.serie.toUpperCase()}` : E2("FECHAS", "DATES")}</K><span className="text-[11.5px]" style={{ color: w[".55"] }}>{tix ? E2("Cada fecha tiene sus boletos.", "Each date has its own tickets.") : E2("Dices que vas a la fecha que elijas.", "You RSVP for the date you pick.")}</span></div>
       <div className="hs mt-2.5 flex gap-[7px] overflow-x-auto lg:flex-wrap">
         {f.fechas.map((x) => <button key={x.id} type="button" onClick={() => !x.on && router.push(`/eventos/${f.slug}?fecha=${x.id}`)} className="grid h-[38px] flex-none place-items-center whitespace-nowrap rounded-[11px] px-[13px]"
           style={{ border: `1.5px solid ${x.on ? th.chipBg : w[".14"]}`, background: x.on ? th.chipBg : "transparent", color: x.on ? th.chipFg : th.fg, font: `800 10.5px ${MONO}`, letterSpacing: ".06em" }}>{x.l}</button>)}
       </div>
     </div>
   ) : null;
-  const tiposV = vt ? vt.tipos : f.boletos.map((b) => ({ ...b, quedan: -1 }));
+  // 6f · DÍAS Y HORARIO de un evento de varios días (lsVals hasDays). Con RSVP, cada día tiene su lugar: se elige el día.
+  const dias = f.dias.length > 1 ? (
+    <div data-screen-label="Ficha del evento · días y horario">
+      <div className="flex flex-wrap items-baseline justify-between gap-2.5"><K>{E2("DÍAS Y HORARIO", "DAYS AND HOURS")}</K>{f.entry === "rsvp" && <span className="text-[11.5px]" style={{ color: w[".55"] }}>{E2("Dices que vas al día que elijas.", "You RSVP for the day you pick.")}</span>}</div>
+      <div className="mt-2.5 overflow-hidden rounded-2xl" style={{ background: th.card, border: `1px solid ${w[".09"]}` }}>
+        {f.dias.map((x) => (
+          <div key={x.id} role={f.entry === "rsvp" && !x.on ? "button" : undefined} onClick={f.entry === "rsvp" && !x.on ? () => router.push(`/eventos/${f.slug}?fecha=${x.id}`) : undefined}
+            className={`flex items-center justify-between gap-2.5 px-[15px] py-3 ${f.entry === "rsvp" && !x.on ? "cursor-pointer" : ""}`} style={{ borderBottom: `1px solid ${w[".07"]}`, background: f.entry === "rsvp" && x.on ? w[".07"] : undefined }}>
+            <span className="text-[13px] font-bold">{x.l}</span><span className="whitespace-nowrap" style={{ font: `600 11px ${MONO}`, color: w[".6"] }}>{x.s}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null;
+  const tiposV = vt ? vt.tipos : f.boletos.map((b) => ({ ...b, quedan: -1, vale: "" }));
   const boletos = (d: boolean) => (tix && tiposV.length ? (
     <div data-screen-label="Ficha del evento · boletos">
       {!d && <H2>{L(f.F.f.tkL)}</H2>}
       <div className={d ? "mt-3 flex flex-col" : "mt-3 overflow-hidden rounded-[18px]"} style={d ? undefined : { background: th.card, border: `1px solid ${w[".09"]}` }}>
         {tiposV.map((b) => (
           <div key={b.n} className="flex items-center gap-3" style={d ? { padding: "10px 0", borderTop: `1px solid ${w[".08"]}` } : { padding: "13px 15px", borderBottom: `1px solid ${w[".07"]}` }}>
-            <span className="min-w-0 flex-1"><span className={`block font-bold ${d ? "truncate text-[12.5px]" : "text-[13.5px]"}`}>{b.n}</span>{!d && b.s && <span className="mt-0.5 block text-[11.5px]" style={{ color: w[".55"] }}>{b.s}</span>}
+            <span className="min-w-0 flex-1"><span className={`block font-bold ${d ? "truncate text-[12.5px]" : "text-[13.5px]"}`}>{b.n}</span>{!d && (b.s || b.vale) && <span className="mt-0.5 block text-[11.5px]" style={{ color: w[".55"] }}>{b.s || b.vale}</span>}
               {b.quedan >= 0 && b.quedan <= 20 && <span className="mt-0.5 block" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: b.quedan ? th.warn : w[".45"] }}>{b.quedan ? E2(`QUEDAN ${b.quedan}`, `${b.quedan} LEFT`) : E2("AGOTADO", "SOLD OUT")}</span>}</span>
             <span className="font-display font-extrabold tracking-[-0.02em]" style={{ fontSize: d ? 13.5 : 15 }}>{dinero(b.p)}</span>
           </div>
@@ -311,6 +326,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
         <div className="mx-5 mt-4">{lineaB(false)}</div>
         <div className="mx-5 mt-3.5 overflow-hidden rounded-[18px]" style={{ background: th.card, border: `1px solid ${w[".09"]}` }}>{rows.map((r) => fila(r, false))}</div>
         {fechas && <div className="px-5 pt-[18px]">{fechas}</div>}
+        {dias && <div className="px-5 pt-[18px]">{dias}</div>}
         {boletos(false) && <div className="px-5 pt-[22px]">{boletos(false)}</div>}
         {mesas(false) && <div className="px-5 pt-[22px]">{mesas(false)}</div>}
         {gratis && <div className="mx-5 mt-[22px]">{gratis}</div>}
@@ -345,6 +361,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
               <div className="mt-5 grid overflow-hidden rounded-[18px]" style={{ background: th.card, border: `1px solid ${w[".09"]}`, gridTemplateColumns: `repeat(${Math.min(3, rows.length)},minmax(0,1fr))` }}>{rows.slice(0, 3).map((r) => fila(r, true))}</div>
               {rows[3] && <div className="mt-2.5 text-[12.5px]" style={{ color: w[".6"] }}>{`${rows[3].t}: ${rows[3].s}`}</div>}
               {fechas && <div className="mt-[22px]">{fechas}</div>}
+              {dias && <div className="mt-[22px]">{dias}</div>}
               {lineup(true) && <div className="mt-7">{lineup(true)}</div>}
               {vanB && <div className="mt-2">{vanB}</div>}
               {galeria(true) && <div className="mt-7">{galeria(true)}</div>}

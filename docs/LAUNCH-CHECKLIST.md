@@ -712,7 +712,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **6a → 6b · «Otro lugar» sin ubicar en el mapa:** _hecho en 6b (10 nov): pide el código postal y se ubica con `dir_ubicar` (calles
       del Censo); sin coincidencia sale con la dirección escrita y sin mapa._ un evento en otro lugar guarda nombre y dirección pero `geom` queda vacío (no hay
       geocodificador propio todavía); su ciudad es la del negocio. 6b lo ubica con el Nominatim propio para el radio y el mapa. (6a, 9 nov)
-- [ ] **6a → 6f · Series y varios días:** el editor publica un solo día (con «Repetir otro día»); «Se repite» y «Varios días seguidos» del
+- [x] **6a → 6f · Series y varios días:** _hecho en 6f (10 nov): «Se repite» (cada semana, cada 2 semanas, cada mes / «el último») y «Varios días seguidos» en el editor; la base genera las fechas (0111) y la semilla 0037 pasa el sancocho, la vigilia y el festival a su forma._ el editor publica un solo día (con «Repetir otro día»); «Se repite» y «Varios días seguidos» del
       calendario llegan en 6f. La semilla mete el sancocho de cada domingo, la vigilia de cada mes y el festival de 3 días como un solo día. (6a, 9 nov)
 - [ ] **6a → 6c/6g · Super Admin › Eventos y boletos: «Buscar boleto» y «Modo puerta»:** las dos pestañas llegan con la venta (6c) y la
       puerta (6g); hoy salen Eventos y Organizadores. KPI BOLETOS EMITIDOS · BRUTO BOLETOS, con 6c. (6a, 9 nov)
@@ -818,3 +818,23 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6e · Avisos del organizador sin moderación:** van tal cual a los que van (sin SMS); pasarlos por la auto-moderación (5d) antes de abrir. (6e, 10 nov)
 - [ ] **6e · Abogado:** To'Latino como comerciante del cobro y la transferencia al organizador (1099-K), la política de cancelación del
       organizador y del cambio de fecha en los Términos. (6e, 10 nov)
+
+
+## Fase 6 · 6f (series y eventos de varios días)
+- [ ] **6f → 6g/6h · La puerta de varios días:** cada boleto guarda sus días (`tickets.valid_days`, lo pone la base) y `bol_fechas_validas(boleto)` /
+      `bol_vale_en(boleto, fecha)` dicen en qué fechas entra; el pase entra **una vez cada día** (las entradas por día van en `ticket_entries`
+      de 6g). El paquete sin conexión (6h) debe llevar los días de cada boleto. (6f, 10 nov)
+- [ ] **6f · Una serie sin fin** («cada jueves, siempre»): no existe; «cuántas fechas» cuenta desde la primera y el tope es Configuración (52).
+      Si se quiere, n = sin límite con el barrido creando hasta el horizonte. (6f, 10 nov)
+- [ ] **6f · Panel de una serie: CORTESÍAS, DEVOLUCIONES y AYUDA CON ÓRDENES** muestran todas las fechas juntas (cada fila dice su orden);
+      lo vendido, compradores, lista de espera, cambiar y cancelar sí son de la FECHA QUE ESTÁS VIENDO. (6f, 10 nov)
+- [ ] **6f · Mesas en un evento de varios días:** no se venden (una mesa es de una noche; REVISION 6f). Si el fundador las quiere, mesa por día
+      con su existencia en cada día. (6f, 10 nov)
+- [ ] **6f · Cancelar o mover UN día de un evento de varios días:** no se puede (se cancela entero); con pases, devolver la parte de un día
+      necesita una regla de devolución parcial. (6f, 10 nov)
+- [ ] **6f · Cambio de artista de una fecha con SMS:** hoy va en la app (sin SMS, §6 #7); el prototipo decía SMS. (6f, 10 nov)
+- [ ] **6f · Velocidad con la base de carga:** la lista deduplica la serie con un anti-join por fila sobre (event_id, starts_at); medir p95 con
+      `scripts/carga/eventos-1m.mjs` (series de 52 fechas incluidas) junto con 6b. (6f, 10 nov)
+- [ ] **6f · Eventos en los 9 dispositivos:** `evt6f` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6f, 10 nov)
+- [ ] **6f · Texto viejo del editor:** «La venta en la app abre pronto» (6a) sigue en el editor de boletos aunque la venta ya existe (6c); lo
+      prueba `evt6a`: cambiar el texto y la prueba juntos. (6f, 10 nov)

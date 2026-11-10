@@ -30,7 +30,7 @@ export function estadoBoleto(b: Pick<BoletoVista, "estado" | "envio">, es: boole
 }
 export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVista; es: boolean; cuando: string; ancho?: number; onClick?: () => void }) {
   const [t, bg, fg] = estadoBoleto(b, es);
-  const tipo = b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.tipo;
+  const tipo = b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo;
   return (
     <div data-boleto={b.code} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(e) => { if (onClick && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onClick(); } }} className={onClick ? "cursor-pointer" : ""}>
       <TicketQR type={tipo} name={(b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg} matrix={b.matriz} qrSize={b.matriz ? (ancho ? 168 : 200) : 96}
@@ -47,7 +47,7 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   const [hoja, setHoja] = useState<"tr" | "ayuda" | "cx" | "nombre" | null>(null), { toast, el } = useToast();
   const listo = (m: string) => { setHoja(null); toast(m); router.refresh(); };
   const cancelada = o.estado === "cancelled", ev = o.evento;
-  const cuando = `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
+  const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
   const llegar = ev.lat != null && ev.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : ev.addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.addr)}` : null;
   const calendario = () => {
     const z = (s: string) => s.replace(/[-:]/g, "").replace(/\.\d+/, "");

@@ -57,7 +57,8 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
     if (r && !r.ok && r.agotado) router.refresh();
   };
   const volver = () => router.push(`/eventos/${p.evento.slug}?fecha=${p.fecha}`);
-  const cuando = `${diaCorto(p.evento.dia, es).toUpperCase()} · ${hora(p.evento.h0)}`;
+  // 6f · Varios días: el rango; cada boleto dice para qué día vale («Vale solo el sáb 21 nov» / «Vale los 3 días»).
+  const cuando = p.rango ?? `${diaCorto(p.evento.dia, es).toUpperCase()} · ${hora(p.evento.h0)}`;
 
   const cabeza = (
     <div className={`flex items-center gap-[13px] px-[15px] py-3.5 ${caja}`}>
@@ -80,6 +81,7 @@ export function Boletos({ p, es, yo, ini }: { p: PantallaBoletos; es: boolean; y
             <div className="min-w-0 flex-1">
               <div className="text-[14px] font-bold">{t.n}</div>
               {t.s && <div className="mt-0.5 text-[12px] font-medium text-ink/55">{t.s}</div>}
+              {t.vale && <div className="mt-0.5 font-mono text-[9.5px] font-bold tracking-[0.06em] text-action">{t.vale.toUpperCase()}</div>}
               <div className="mt-1 flex flex-wrap items-center gap-2"><span className="font-display text-[15px] font-extrabold">{dinero(t.p)}</span>
                 {t.quedan === 0 ? <span className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-danger">{E2("AGOTADO.", "SOLD OUT.")}</span>
                   : t.quedan <= 20 ? <span className="font-mono text-[9.5px] font-bold tracking-[0.08em] text-pro-ink">{E2(`SOLO QUEDAN ${t.quedan}.`, `ONLY ${t.quedan} LEFT.`)}</span> : null}</div>

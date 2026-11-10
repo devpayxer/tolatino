@@ -3222,6 +3222,74 @@ const guardianes = {
     }
   },
 
+  /* 6f. Las fechas de una serie y de un evento de varios días las genera la base (evt_generar_fechas): la app nunca inserta ni borra
+     fechas; el generador lee los topes de Configuración en el momento (cfg_int evt_fechas_max y evt_dias_adelante) y NUNCA salta ni mueve una
+     fecha con gente (cada «skipped» y cada cambio de hora del generador va con «not evt_fecha_con_gente»); una fecha movida a mano no vuelve
+     a su hora (moved_at); el barrido extiende las series (evtSeries); saltar desde el panel (lib/evt-series.ts) rechaza una fecha con gente.
+     Al revés: insertar una fecha desde la app, quitar un control de gente o un tope, o sacar evtSeries del barrido → falla. */
+  fechasLasGeneraLaBase() {
+    const G = "fechasLasGeneraLaBase", M = "packages/db/migrations/0111_series_y_dias.sql", S6 = "apps/web/lib/evt-series.ts", BA = "apps/web/lib/barrido.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0111 (series y varios días)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        if (/\binsert into event_dates\b/.test(q)) falla(G, x, 0, "las fechas de un evento las crea solo la base (evt_generar_fechas), nunca la app");
+        if (/\bdelete from event_dates\b/.test(q)) falla(G, x, 0, "una fecha no se borra: se salta o se cancela (estados)");
+      }
+    }
+    const g = ultimaFn("evt_generar_fechas");
+    if (!/cfg_int\('evt_fechas_max'\)/.test(g) || !/cfg_int\('evt_dias_adelante'\)/.test(g)) falla(G, M, 0, "evt_generar_fechas debe leer los topes de Configuración en el momento (evt_fechas_max, evt_dias_adelante)");
+    // Cada sentencia que salta una fecha (con su «if … then» delante) mira si tiene gente.
+    const sent = g.split(";");
+    sent.forEach((l) => {
+      if (/set status = 'skipped'/.test(l) && !/not evt_fecha_con_gente\(/.test(l)) falla(G, M, 0, `evt_generar_fechas salta una fecha sin mirar si tiene gente: «${l.trim().slice(0, 90)}»`);
+    });
+    if (!/d\.moved_at is null and d\.starts_at > now\(\) and not evt_fecha_con_gente\(d\.id\)/.test(g)) falla(G, M, 0, "evt_generar_fechas: una fecha movida a mano o con gente no vuelve a la hora de la regla");
+    if (/\bdelete from event_dates\b/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "una fecha no se borra");
+    if (!/sold_n > 0 or d\.rsvp_n > 0/.test(ultimaFn("evt_fecha_con_gente")) || !/ticket_holds h where h\.event_date_id = fid and h\.status = 'held'/.test(ultimaFn("evt_fecha_con_gente"))) falla(G, M, 0, "evt_fecha_con_gente: boletos vivos, RSVP y apartados cuentan como gente");
+    if (!existsSync(S6)) return falla(G, S6, 0, "falta lib/evt-series.ts");
+    const sf = cuerpoFn(sinComent(S6), "saltarFecha");
+    if (!/if \(d\.gente\) throw/.test(sf) || !/business_id = \$2 for update/.test(sf)) falla(G, S6, 0, "saltarFecha: solo una fecha sin gente, del evento de ESE negocio (IDOR)");
+    if (!existsSync(BA) || !/\["evtSeries", \(\) => ser\.extenderSeries\(\)\]/.test(readFileSync(BA, "utf8"))) falla(G, BA, 0, "el barrido extiende las series (evtSeries)");
+  },
+
+  /* 6f. Varios días: el aforo de cada día lo cuenta la base (event_day_stock con check capacity = 0 or sold_n + held_n <= capacity, sumado por el
+     trigger ticket_stock_dia desde la existencia del ancla: el pase en todos los días, el boleto de un día en el suyo); los días que vale un
+     boleto los pone la base al emitirlo (tickets_dias) y la puerta (6g/6h) los lee con bol_fechas_validas; un boleto de un día se vende hasta el
+     corte de su día (bol_tipo_hasta en apartar). Al revés: quitar el check, el trigger, el corte o el mensaje del aforo → falla. */
+  aforoPorDia() {
+    const G = "aforoPorDia", M = "packages/db/migrations/0111_series_y_dias.sql", L = "apps/web/lib/boletos.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0111");
+    const m = readFileSync(M, "utf8");
+    if (!/constraint event_day_stock_cupo check \(capacity = 0 or sold_n \+ held_n <= capacity\)/.test(m)) falla(G, M, 0, "event_day_stock sin el check del aforo por día");
+    if (!/create trigger ticket_stock_dia after update of held_n, sold_n on ticket_stock for each row execute function ticket_stock_dia\(\);/.test(m)) falla(G, M, 0, "el aforo por día se suma con el trigger ticket_stock_dia (toda ruta que aparte o venda)");
+    const t = ultimaFn("ticket_stock_dia");
+    if (!/set held_n = s\.held_n \+ dh, sold_n = s\.sold_n \+ ds/.test(t) || !/t\.valid_day is null or d\.day_index = t\.valid_day/.test(t)) falla(G, M, 0, "ticket_stock_dia: el pase cuenta en todos los días; el boleto de un día, en el suyo");
+    if (!/create trigger tickets_dias before insert on tickets/.test(m) || !/new\.valid_days := case when vd is null then array\(select generate_series\(0, n - 1\)\)::smallint\[\] else array\[vd\] end;/.test(ultimaFn("tickets_dias"))) falla(G, M, 0, "los días que vale un boleto los pone la base al emitirlo (tickets_dias)");
+    if (!/d\.day_index = any\(t\.valid_days\)/.test(ultimaFn("bol_fechas_validas"))) falla(G, M, 0, "bol_fechas_validas (gancho de la puerta) sale de valid_days");
+    if (!/kind <> 'span' or d\.id = ancla/.test(ultimaFn("evt_sincronizar_venta"))) falla(G, M, 0, "la existencia de un evento de varios días vive solo en su ancla");
+    if (!existsSync(L)) return;
+    const a = cuerpoFn(sinComent(L), "apartar");
+    if (!/and bol_tipo_hasta\(t\.id\) > now\(\)/.test(a)) falla(G, L, 0, "apartar: un boleto de un día se vende hasta el corte de su día (bol_tipo_hasta)");
+    if (!/constraint === "event_day_stock_cupo"/.test(a)) falla(G, L, 0, "apartar: el aforo de un día lleno se dice con palabras (event_day_stock_cupo)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\bupdate event_day_stock\b/.test(q) || /\binsert into event_day_stock\b/.test(q)) falla(G, x, 0, "el aforo por día lo lleva solo la base");
+    }
+  },
+
+  /* 6f. Una serie (o un evento de varios días) sale UNA vez en cada lista pública: su primera fecha viva dentro del mismo filtro (PRIMERA), con
+     el cursor (starts_at, id) de siempre; cada lista de lib/evt-publico.ts que lee fechas lo usa. Al revés: quitar PRIMERA de una lista → falla. */
+  serieUnaVezEnLista() {
+    const G = "serieUnaVezEnLista", L = "apps/web/lib/evt-publico.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L);
+    if (!/\(p\.starts_at, p\.id\) < \(d\.starts_at, d\.id\)/.test(t)) falla(G, L, 0, "PRIMERA: la primera fecha viva de cada evento por (starts_at, id)");
+    for (const fn of ["eventosCiudad", "estaNoche", "destacado", "eventosSemana", "eventosDelOrganizador", "buscarEventos", "relacionados"]) {
+      if (!/PRIMERA\(/.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}»: una serie sale una vez (PRIMERA)`);
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

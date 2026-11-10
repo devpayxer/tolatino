@@ -4,6 +4,7 @@ _Pantallas: **Eventos** (`/eventos`), **Esta noche** (`/eventos/esta-noche`) y *
 escritorio. Versión: Fase 6 · bloque 6b (10 nov 2026). Para cualquier vecino, con o sin cuenta (guardar y RSVP piden entrar)._
 
 ## Qué hace
+- **6f · Series y varios días:** un evento que se repite sale **una vez** en la lista (su próxima fecha) con «CADA JUEVES · +N FECHAS»; en su página eliges la fecha (FECHAS · …: «Cada fecha tiene sus boletos.»). Un evento de varios días dice «VIE 20 NOV – DOM 22 NOV · 3 DÍAS» y DÍAS Y HORARIO; cada boleto dice para qué día vale.
 - **Eventos** muestra los eventos de la ciudad que estás viendo, dentro de tu radio (el mismo que eliges en Ciudad para Negocios y Buscar):
   - **Mis boletos y RSVP**: si tienes RSVP a eventos que vienen, te lleva a Mi cuenta › Guardados › Eventos.
   - **Esta noche**: lo de hoy como historias (toca una o «Ver como historias»).
@@ -57,3 +58,5 @@ dates, tickets and tables (view only: in-app sales open soon), RSVP, line-up or 
 you go, policy and «You may also like». Hidden, under-review, blocked-organizer or switched-off events never show and their links do not
 open. Home-based organizers show only the area, never their address. Saved events are in **My account › Saved › Events**, and you get a
 reminder the day before.
+
+**Recurring and multi-day (6f):** a recurring event shows once in lists (its next date) with “EVERY THURSDAY · +N DATES”; on its page you pick the date (each date has its own tickets). A multi-day event shows its range, DAYS AND HOURS, and what day each ticket is valid for.

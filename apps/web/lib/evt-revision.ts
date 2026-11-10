@@ -126,7 +126,8 @@ export const CHIPS_EVT = ["rev", "hoy", "paid", "free", "hid"] as const;
 export function leerFiltrosEvt(sp: Record<string, string | undefined>): FiltrosEvt {
   return { tab: sp.tab === "org" ? "org" : sp.tab === "bol" ? "bol" : "list", q: String(sp.q ?? "").trim().slice(0, sp.tab === "bol" ? 200 : 60), chips: String(sp.f ?? "").split(",").filter((x) => (CHIPS_EVT as readonly string[]).includes(x)), antes: /^\d{1,18}$/.test(sp.antes ?? "") ? sp.antes! : null };
 }
-export type FilaEvtAdm = { id: string; t: Bi; fmt: FormatoKey; st: EstadoEvt; hidden: boolean; pending: string | null; dia: string; h0: number; venue: string; org: string; orgId: string; entrada: string; foto: string | null; ciudad: string };
+export type FilaEvtAdm = { id: string; t: Bi; fmt: FormatoKey; st: EstadoEvt; hidden: boolean; pending: string | null; dia: string; h0: number; venue: string; org: string; orgId: string; entrada: string; foto: string | null; ciudad: string;
+  kind: "single" | "series" | "span"; rep: import("./evt-comun").Repite | null; span: number; nf: number };
 export const POR_PAGINA_EVT = 20;
 export async function listaEventosAdmin(s: Staff, f: FiltrosEvt) {
   const w: string[] = ["(cardinality($1::text[]) = 0 or e.city_id = any($1::text[]))", "e.status <> 'draft'"], p: unknown[] = [s.cities];
@@ -142,7 +143,8 @@ export async function listaEventosAdmin(s: Staff, f: FiltrosEvt) {
   const [L, N, K] = await Promise.all([
     db().query<FilaEvtAdm>(
       `select e.id::text, e.title as t, e.format as fmt, e.status as st, e.hidden_at is not null as hidden, e.pending_status as pending, e.start_date::text as dia, e.start_min as h0,
-              coalesce(e.venue_name, b.name) as venue, b.name as org, b.id as "orgId", e.entry as entrada, c.name as ciudad,
+              coalesce(e.venue_name, b.name) as venue, b.name as org, b.id as "orgId", e.entry as entrada, c.name as ciudad, e.kind, e.rep, e.span_days as span,
+              (select count(*)::int from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.ends_at > now()) as nf,
               (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort limit 1) as foto
          from events e join businesses b on b.id = e.business_id join cities c on c.id = e.city_id where ${w.join(" and ")} order by e.id desc limit ${POR_PAGINA_EVT + 1}`, p),
     db().query<{ n: number }>(`select count(*)::int as n ${base}`, pc),
@@ -158,6 +160,7 @@ export type EvtAdm = {
   id: string; slug: string; st: EstadoEvt; t: Bi; desc: Bi; fmt: FormatoKey; fmtL: Bi; dark: boolean; org: { id: string; name: string; verificado: boolean; bloqueado: string | null; eventos: number; rechazados: number };
   ciudad: string; d: BorradorEvt; pendiente: BorradorEvt | null; cambios: string[]; hidden: string | null; nota: string | null; caso: string | null; enviado: string | null; esperaH: number | null; sla: number;
   log: { decision: string; by: string; quien: string | null; at: string; nota: string | null }[]; version: number; origen: string; generos: Bi[];
+  kind: "single" | "series" | "span";
 };
 /* Todo lo que hace falta para decidir (la cola y la ficha del admin): lo publicado y, si hay, el cambio que espera. */
 export async function eventoAdmin(s: Staff, id: string): Promise<EvtAdm | null> {
@@ -185,7 +188,7 @@ export async function eventoAdmin(s: Staff, id: string): Promise<EvtAdm | null> 
     id: e.id, slug: e.slug, st: e.status, t: e.title, desc: e.description, fmt: e.format, fmtL: extra.rows[0]!.label, dark: extra.rows[0]!.dark,
     org: { id: e.business_id, ...org.rows[0]! }, ciudad: extra.rows[0]!.ciudad, d: vivo, pendiente: e.pending_status === "review" ? pend : null, cambios: pend ? cambiosQueImportan(vivo, pend) : [],
     hidden: e.hidden_reason, nota: e.review_note ?? e.pending_note, caso: caso.rows[0]?.id ?? null, enviado: e.pending_at ?? e.submitted_at, esperaH: caso.rows[0] ? Math.floor(caso.rows[0].h) : null,
-    sla: extra.rows[0]!.sla, log: log.rows, version: e.version, origen: e.origin, generos: G.map((g) => g.label),
+    sla: extra.rows[0]!.sla, log: log.rows, version: e.version, origen: e.origin, generos: G.map((g) => g.label), kind: e.kind,
   };
 }
 /* Organizadores: quién publica eventos, cuántos, verificado o bloqueado. */
