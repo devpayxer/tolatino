@@ -36,7 +36,7 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
 /* Título de una ayuda según la operación (Colas y su caso). */
-export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", visit: "Ayuda con una visita", order: "Ayuda con un pedido" };
+export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", visit: "Ayuda con una visita", order: "Ayuda con un pedido", tickets: "Ayuda con una orden de boletos" };
 export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "salir", "grupo", "plantones", "vivienda", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "evt", "rep", "repUsr", "chat", "apel", "rec"];
 /* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg); «Me cobraron por
    ver», «Pidieron más para mudarme» y, en Iglesias, «Me pidieron dinero por la ayuda» van a «Posible estafa» (4if). */

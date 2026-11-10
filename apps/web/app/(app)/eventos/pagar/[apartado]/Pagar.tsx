@@ -24,7 +24,8 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
   const [seg, setSeg] = useState(p.estado === "held" ? p.segundos : 0);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago.tarjetas), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago.tarjetas.find((t) => t.def) ?? pago.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const [fin, setFin] = useState(p.estado === "released");
+  // 6d · Una oferta de la lista de espera vencida no se vuelve a apartar (ya pasó a la siguiente persona).
+  const [fin, setFin] = useState(p.estado === "released" || (p.espera && p.estado === "expired"));
   const nombresN = p.lineas.reduce((s, l) => s + (l.k === "a" ? 0 : l.k === "m" ? 1 : l.q), 0);
   const [nombres, setNombres] = useState<string[]>(() => Array.from({ length: nombresN }, () => ""));
   const t0 = useRef(Date.now());
@@ -49,14 +50,14 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
   const guardado = fin ? (
     <div role="alert" data-estado="vencido" className="rounded-[16px] bg-danger/[.08] px-4 py-3.5">
       <div className="font-mono text-[10px] font-bold tracking-[0.14em] text-danger">{E2("YA NO ESTÁN GUARDADOS", "NO LONGER HELD")}</div>
-      <div className="mt-1 text-[13px] font-semibold leading-[1.45]">{error ?? E2("Soltaste estos boletos. No se cobró nada.", "You let these tickets go. Nothing was charged.")}</div>
+      <div className="mt-1 text-[13px] font-semibold leading-[1.45]">{error ?? (p.espera && p.estado === "expired" ? E2("Tu turno venció y el lugar pasó a la siguiente persona. No se cobró nada.", "Your turn expired and the spot went to the next person. Nothing was charged.") : E2("Soltaste estos boletos. No se cobró nada.", "You let these tickets go. Nothing was charged."))}</div>
       <div className="mt-2.5"><Button variant="secondary" onClick={volverElegir}>{E2("Volver a elegir", "Pick again")}</Button></div>
     </div>
   ) : (
     <div data-screen-label="Pago · apartado" className="flex items-center gap-3 rounded-[16px] bg-ink px-4 py-3.5 text-white">
       <span className="grid size-[34px] flex-none place-items-center rounded-xl bg-white/10"><Icon name="clock" size={17} color="var(--tl-signal)" /></span>
-      <span className="min-w-0 flex-1"><span className="block font-mono text-[10px] font-bold tracking-[0.14em] text-signal">{E2("TUS BOLETOS ESTÁN GUARDADOS", "YOUR TICKETS ARE HELD")}</span>
-        <span className="mt-0.5 block text-[12.5px] font-semibold text-white/75">{seg > 0 ? E2(`Te quedan ${mmss} para pagar.`, `You have ${mmss} left to pay.`) : E2("Se acabó el tiempo: al pagar intentamos guardarlos otra vez.", "Time is up: when you pay we try to hold them again.")}</span></span>
+      <span className="min-w-0 flex-1"><span className="block font-mono text-[10px] font-bold tracking-[0.14em] text-signal">{p.espera ? E2("SE LIBERÓ UN LUGAR · ES TU TURNO", "A SPOT OPENED UP · IT IS YOUR TURN") : E2("TUS BOLETOS ESTÁN GUARDADOS", "YOUR TICKETS ARE HELD")}</span>
+        <span className="mt-0.5 block text-[12.5px] font-semibold text-white/75">{seg > 0 ? E2(`Te quedan ${mmss} para pagar.`, `You have ${mmss} left to pay.`) : p.espera ? E2("Se acabó tu turno: el lugar pasa a la siguiente persona de la lista.", "Your turn is over: the spot goes to the next person on the list.") : E2("Se acabó el tiempo: al pagar intentamos guardarlos otra vez.", "Time is up: when you pay we try to hold them again.")}</span></span>
       <button type="button" onClick={() => void cambiar()} className="flex-none text-[12px] font-bold text-white underline">{E2("Cambiar", "Change")}</button>
     </div>
   );

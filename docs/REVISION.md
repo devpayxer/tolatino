@@ -2107,3 +2107,113 @@ panel (note, kpis, rows, kv, field + chips, evbuy) y Mi cuenta › Boletos (marc
 - **Pendiente (LAUNCH):** 3D Secure (hoy se pide otra tarjeta, como el resto de la app); huella de la tarjeta de Stripe para el máximo por
   persona (hoy el `pm_…` guardado); reventa y QR rotativo (§6 #10); contrato con stripe-mock de las dos llamadas nuevas no corrió en local
   (Docker Hub respondió 429): corre en el CI.
+
+### 6d · Eventos: después de comprar — transferir, cancelar, cortesías, lista de espera y ayuda con la orden (10 nov)
+Qué mirar en el sandbox, paso a paso (dos teléfonos y escritorio; tarjeta de prueba 4242 4242 4242 4242):
+1. **Compra** 2 o 3 boletos de «Jueves de Bachata en Vivo» (La Terraza) con tu teléfono A. En **¡Listo, vas!** ahora salen **Transferir
+   boletos**, **Ayuda con esta orden** y **POLÍTICA DE ESTE EVENTO** con los plazos (transferir hasta 2 h antes; cancelar con devolución
+   hasta 24 h antes; Configuración › Eventos).
+2. **Transferir boletos** → elige un boleto → escribe el teléfono B → **Enviar boleto**. Dice «Boleto enviado a ••NN» y abajo
+   **ENVIADOS · ESPERANDO QUE LOS RECIBAN** con **Deshacer**: ese boleto ya no tiene QR (**EL QR ANTERIOR QUEDA ANULADO**). Prueba poner tu
+   propio teléfono: no deja.
+3. **Teléfono B**: en Avisos llega **«Te mandaron un boleto»** (el SMS sale cuando esté conectado el proveedor). Ábrelo: **«Este boleto es
+   para ti»** → **Recibir boleto** → el boleto queda en su **Mi cuenta › Boletos** como **RECIBIDO · CON QR**, con otro código y su propio QR.
+   En el teléfono A ese boleto ahora dice **TRANSFERIDO** y le llega «Ya recibieron tu boleto». Abre el mismo enlace con una tercera cuenta:
+   **«Este boleto se mandó a otro teléfono»** (no lo puede recibir; no ve ningún teléfono).
+4. Manda otro boleto y toca **Deshacer**: vuelve a ti con un QR nuevo. En el boleto también está **Cambiar el nombre**.
+5. **Ayuda con esta orden** → **¿Qué pasó?** (No veo mis boletos · Cambiar un nombre · Un problema con el pago · Cancelar mis boletos) →
+   **Cancelar mis boletos**: la hoja dice por cada boleto **Pagaste $15 · cargo $1.75 → $13.25**, **TE DEVOLVEMOS** y hasta cuándo. Desmarca
+   los que te quedas y **Cancelar y devolver $X**. La orden dice «Cancelaste boletos: te devolvemos $X» y el recibo lo resta.
+6. **Un problema con el pago** → «Me cobraron dos veces» con tu nota → **Enviar solicitud**: dice **LO REVISA TO’LATINO**. En el **Super Admin
+   (570-555-0199) › Colas › Ayuda con pedidos** sale **«Ayuda con una orden de boletos»** con la orden y el motivo → **Resolver y devolver** $1:
+   vuelve a la tarjeta y la persona ve la respuesta; sus boletos siguen valiendo.
+7. **Panel de La Terraza (570-555-0366) › Eventos › el evento**: **COMPRADORES** (cada orden dice lo devuelto) → abre una orden → **Devolver**:
+   eliges boletos (uno usado dice «USADO · NO SE DEVUELVE»), **Devolver $X** = el 100 %; la comisión de To'Latino de esos boletos no se cobra
+   (DINERO lo refleja). **CORTESÍAS · N DE 50**: **Dar cortesía** con nombre, teléfono opcional y cuántas → «Cortesía lista»; esa persona la
+   recibe con el enlace; **Quitar** devuelve el lugar. **DEVOLUCIONES**, **TRANSFERIDOS** y **AYUDA CON ÓRDENES** (solo ver).
+8. **Lista de espera**: cuando una fecha se agota, la ficha dice **Agotado · LISTA DE ESPERA ABIERTA**, eliges cuántos son y **Lista de
+   espera** → «En lista · #1». Con otra cuenta, «#2». Cancela un boleto desde la cuenta que compró: a la **primera** le llega **«Se liberó un
+   lugar»** y la ficha dice **«Es tu turno · SE LIBERÓ UN LUGAR · TIENES 30 MIN»** con **Pagar mi lugar** (la pantalla de pago: «SE LIBERÓ UN LUGAR · ES TU TURNO»);
+   la segunda sigue esperando y nadie más lo puede comprar. Si la primera no paga en 30 min, pasa a la segunda. En el panel, **LISTA DE
+   ESPERA · N** (nombre e inicial, cuántos, estado) y **Avisar a la lista** solo cuando hay lugar.
+9. **Super Admin › Eventos y boletos › Buscar boleto**: pega el QR de antes de transferir → «QR viejo: no entra». La ficha del boleto suma
+   **TRANSFERENCIAS** (a «••NN», sin teléfono), **DEVOLUCIÓN** (quién, cuánto, el cargo que se queda To'Latino) y el historial. La ficha del
+   evento suma **CORTESÍAS VIVAS · TRANSFERIDOS · EN LISTA DE ESPERA**.
+10. **Configuración › Eventos**: «Transferir hasta antes del evento» (2 h), «Cancelar con devolución hasta antes del evento» (24 h), «Tiempo para
+    pagar un lugar de la lista de espera» (30 min), «Cortesías por fecha» (50) y «Transferencias al día por persona» (10), con límites y auditoría.
+
+**Decidí X; si prefieres Y, se cambia (6d):**
+- **Transferir por teléfono, recibir con ESE teléfono.** El enlace del aviso solo lo recibe la cuenta con el número al que se mandó (se compara
+  la huella del teléfono); si el enlace se reenvía, no sirve. Quien lo recibe sin cuenta, la crea con ese teléfono. Nadie ve el teléfono del
+  otro: quien manda ve «••NN»; quien recibe ve el nombre e inicial de quien manda.
+- **El QR se anula al enviar, no al recibir:** mientras está pendiente ningún QR de ese boleto entra (ni capturas); **Deshacer** o el
+  vencimiento (2 h antes) lo devuelven con un QR nuevo. Al recibirlo nace otro boleto (otro código) y el original queda **TRANSFERIDO**.
+- **Quien recibe un boleto no lo cancela con devolución** (el dinero vuelve a la tarjeta de quien pagó): lo puede transferir otra vez. Quien
+  pagó tampoco cancela un boleto que ya transfirió.
+- **Cancelar:** se devuelve cada boleto menos su cargo de servicio (el 5 % + $1 que se copió al comprar; en una mesa, el de la mesa). Los extras
+  vuelven (menos su 5 %) solo si la orden queda sin boletos vivos (también los transferidos). Se puede cancelar parte de la orden.
+- **Devolver desde el panel = 100 %** de esos boletos y To'Latino no cobra su comisión (queda en `fee_waived_cents` para la liquidación de 6e).
+  Pide la parte **Cobros** del equipo (el dueño siempre), como devolver un pedido. Un boleto **usado** no se devuelve (ni el comprador ni el
+  organizador); un caso así va por **Ayuda con la orden**.
+- **Ayuda con la orden B-** («Un problema con el pago») va **directo a To'Latino** (el cobro de boletos es de la plataforma, no del
+  organizador), a la cola Soporte; el organizador solo la ve. «Resolver y devolver» devuelve dinero **sin tocar los boletos**. «No veo mis
+  boletos» manda un aviso a la cuenta (no SMS; los boletos viven en la app). Hasta 7 días después del evento.
+- **Cortesías:** salen de un tipo de boleto (toman lugar del cupo con la misma regla que una venta) y van en una orden B- sin cobro. Con
+  teléfono, la persona las recibe con el enlace (todas las de esa cortesía); sin teléfono, la puerta las busca por nombre (6g). Tope: 50 por
+  fecha (Configuración). **Quitar** una cortesía sin usar devuelve el lugar.
+- **Lista de espera: en orden de llegada, pero si tu grupo no cabe en lo que se liberó, sigues primero y el lugar pasa a la siguiente que
+  cabe.** La oferta es un apartado a tu nombre por 30 min (Configuración); vencida, no se vuelve a apartar. Mientras alguien de la fila puede
+  usar un lugar, nadie más lo compra. La lista es solo para fechas **con boletos**: un evento gratis con cupo libera lugares a las puertas +
+  30 min y no tiene lista (va a LAUNCH-CHECKLIST).
+- **Horas de silencio:** los avisos con SMS (te mandaron un boleto, cortesía, se liberó un lugar) respetan las horas de silencio de la
+  persona como el resto; de noche llegan en Avisos y el SMS espera. Una oferta de 30 min que cae de noche puede vencer sin que la vea: si
+  prefieres, se hace crítica (SMS a cualquier hora) o no se ofrece de noche.
+- **Textos:** «La persona recibe un SMS…» del diseño se dijo como «Le avisamos a ese teléfono con el enlace…» (guardián promesaSms: el SMS
+  sale cuando se conecte el proveedor; hoy en el sandbox queda en modo pruebas y, con cuenta, llega en Avisos).
+Huecos compuestos con piezas del sistema (capturas locales e6d-*, teléfono y escritorio): **recibir un boleto transferido** (`/eventos/recibir`,
+hueco #4: cartel + TicketQR sin QR todavía + el estado con su botón, como Entrar), **APP-EVT-AYUDA-PAGO** (hueco #3: la pantalla de Ayuda con
+la cita con los motivos de boletos), las hojas **Transferir · ¿Qué pasó? · Cancelar · Cambiar un nombre** (la hoja de la app con HelpReasonList
+y Chip), **ENVIADOS** en la orden (filas con Deshacer) y en el panel **Devolver · CORTESÍAS · DEVOLUCIONES · LISTA DE ESPERA · AYUDA CON
+ÓRDENES** (rows, note, field, step, chips, acts, kpis).
+
+**Revisión de seguridad (6d, dinero y cuentas):**
+- **Lo que se devuelve lo calcula el servidor, nunca de más:** la pantalla manda códigos de boleto y una llave; el servidor bloquea la orden, el
+  pago y los boletos y calcula de lo guardado (precio pagado − `fee_cents` de cada boleto; extras menos su parte de la comisión). La base no
+  deja que lo pendiente + lo hecho de un pago pase de lo cobrado (trigger `refunds_tope` con el pago bloqueado) y un boleto (o un extra) se
+  devuelve una sola vez (índice único en `ticket_refund_lines`). e2e: devoluciones exactas en la base, el pago y el simulador; un intento de
+  devolver de más en la base → rechazado; una segunda línea del mismo boleto → rechazada. Guardianes `devolucionUnaVez`, `dineroDelServidor`.
+- **Idempotente (doble toque, reintento, barrido):** dos pasos — (1) boletos 'refunded' + devolución 'pending' + líneas en una transacción;
+  (2) Stripe con la llave de esa devolución; 'done' una sola vez (`where status = 'pending'`). La misma llave de la pantalla = la misma
+  devolución (doble toque y repetir la llamada → una). Si Stripe falla, queda pendiente y el barrido reintenta con la MISMA llave; el
+  simulador también devuelve una vez por llave (`sim_refunds`, antes solo sumaba). e2e: doble toque → 1; repetir la llamada → 1; Stripe
+  caído → pendiente con intentos; dos barridos a la vez al volver → una vez; otro barrido → nada.
+- **El QR de un boleto cancelado o transferido nunca entra:** devuelto/anulado/reemplazado no se firma; al transferir sube `qr_ver` y mientras
+  está pendiente no se firma ningún QR (`bol_vigente` = válido y sin transferencia pendiente, lo usa la verificación del Super Admin y lo usará
+  la puerta); recibir crea otro boleto y el original queda 'replaced'. e2e: el QR de antes de transferir → «QR viejo: no entra»; el
+  enviado no muestra QR; el nuevo verifica con la llave pública. Guardián `qrViejoNoEntra`.
+- **Una transferencia no se recibe dos veces ni la recibe quien la manda:** fila bloqueada, solo desde 'pending' y antes de vencer (también lo
+  dice la base), `check (claimed_by <> from_user_id)`, una pendiente por boleto (índice único), la cuenta con la huella del teléfono al que se
+  mandó; el token es de un uso y se guarda su sha256. e2e: segunda vez → «ya se recibió»; quien la manda → no; otra cuenta → «otro teléfono».
+- **IDOR:** cada acción nueva va por la cuenta de quien llama (boleto por `holder_user_id`, orden por `user_id`, el panel por su negocio y la
+  parte «evt» — y «Cobros» para devolver). e2e repitiendo la llamada del servidor con la sesión de otra persona: transferir, deshacer, cambiar
+  el nombre, recibir, cancelar (y quien recibió un boleto), devolver desde el panel (vecino y dueño de otro negocio) y dar cortesía → nada
+  cambia; la orden, su ayuda, el boleto y la oferta de la lista de otra persona → 404.
+- **Cortesías:** sin dinero (check: precio, comisión y descuento en 0), solo en una orden sin cobro (la base lo exige), nunca se devuelven ni
+  entran a una devolución (triggers), tope por fecha con la fecha bloqueada (Configuración, leído por la base en el momento), toman existencia
+  con el update condicional. e2e: tope 4 → «Hasta 4 cortesías por fecha (ya diste 3)»; devolver, venderla en una orden cobrada o con precio →
+  la base lo rechaza. Guardián `cortesiaSinDinero`.
+- **La oferta de la lista de espera:** es un apartado a nombre de esa persona (`pantallaPago`/`pagarBoletos` filtran por su cuenta), con
+  candado por fecha y en orden de llegada (la base no deja cambiar `created_at`); vencida no se vuelve a apartar al pagar; lo liberado es
+  primero para la fila (antes de apartar y de mostrar). e2e: otra cuenta abre la oferta → 404; la vencida → «Tu turno venció», sin
+  autorización en el simulador; el público no ve el lugar. Guardián `listaDeEsperaEnOrden`.
+- **Teléfonos:** el de una transferencia o cortesía se guarda cifrado + huella (`lib/cifrado.ts`, nueva `huella`); el SMS a un número sin cuenta
+  queda en `phone_messages` cifrado. Quien manda ve «••NN»; quien recibe, nombre e inicial; el panel, nombre e inicial; el admin, «••NN». e2e:
+  ni la pantalla de recibir ni el panel muestran teléfonos; el SMS sin cuenta no guarda el número en claro.
+- **Encontrado y corregido en la revisión:** (1) el simulador de devoluciones sumaba otra vez con la misma llave (un reintento devolvía dos
+  veces en el sandbox) → `sim_refunds` por llave; (2) `devolverPago` (ayuda y Transacciones) mandaba `reverse_transfer` y
+  `refund_application_fee` también para un cobro de la plataforma (boletos), que Stripe rechaza → solo para cobros con destino; y no contaba
+  las devoluciones pendientes → las cuenta; (3) los topes de cortesías y transferencias se leían con la caché de 15 s de Configuración → los
+  decide la base en el momento (`cfg_int`); (4) una cortesía habría salido en Transacciones como una orden de $0 y en Compradores con el nombre
+  del dueño → excluidas (salen en CORTESÍAS).
+- **Pendiente (LAUNCH):** el SMS de verdad (proveedor); lista de espera de eventos gratis con cupo; que quien manda pueda compartir el enlace
+  por WhatsApp (sin diseño); disputas de boletos y la liquidación del martes con lo devuelto (6e).

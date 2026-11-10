@@ -42,7 +42,7 @@ type FilaVenta = {
   eid: string; slug: string; title: Bi; est: string; entry: string; biz: string; bname: string; mpp: number | null; edad: number; fid: string; ldate: string; city: string; tz: string;
   listable: boolean; dst: string; pasado: boolean; cerrada: boolean; pro: boolean; cuenta: string | null; h0: number; hasta: string; img: string | null; dark: boolean; venue: string;
 };
-async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> {
+export async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> {
   return (await q.query<FilaVenta>(
     `select e.id::text as eid, e.slug, e.title, e.status as est, e.entry, b.id as biz, b.name as bname, e.max_per_person as mpp, e.min_age as edad, d.id::text as fid,
             d.local_date::text as ldate, d.city_id as city, ci.timezone as tz, d.listable, d.status as dst, d.ends_at <= now() as pasado, bol_venta_hasta(e, d) <= now() as cerrada,
@@ -57,7 +57,7 @@ async function filaVenta(q: Q, fecha: string): Promise<FilaVenta | null> {
 }
 /* Free (§6 #5): el módulo Eventos con boletos es Pro. Cobros: cuenta de cobro habilitada y sin pagos retenidos, del modo que corre
    (simulada solo en el sandbox; real solo con la clave de Stripe). */
-function estadoDe(v: FilaVenta): EstadoVenta | null {
+export function estadoDe(v: FilaVenta): EstadoVenta | null {
   if (!v.listable || v.dst !== "scheduled" || v.entry !== "tickets") return null;
   if (v.pasado) return "pasado";
   if (v.est === "paused") return "pausada";
@@ -89,6 +89,7 @@ export type PantallaBoletos = {
 export async function pantallaBoletos(fecha: string, userId: string | null, es: boolean): Promise<PantallaBoletos | null> {
   if (!ID.test(String(fecha))) return null;
   await vencerApartados({ fecha });
+  await primeroLaFila(fecha);
   const v = await filaVenta(db(), fecha);
   const estado = v ? estadoDe(v) : null;
   if (!v || !estado) return null;
@@ -122,27 +123,31 @@ export async function pantallaBoletos(fecha: string, userId: string | null, es: 
 }
 
 /* La ficha del evento: si se vende ahora, por qué no, y lo que queda de cada boleto y mesa. */
-export type VentaFicha = { estado: EstadoVenta; aviso: string; agotado: boolean; tipos: { n: string; s: string; p: number; quedan: number }[]; mesas: { z: string; seats: number; min: number; dep: number; quedan: number }[] };
+export type VentaFicha = { estado: EstadoVenta; aviso: string; agotado: boolean; espera: number; pol: { cancelarH: number; transferirH: number }; tipos: { n: string; s: string; p: number; quedan: number }[]; mesas: { z: string; seats: number; min: number; dep: number; quedan: number }[] };
 export async function ventaFicha(fecha: string, es: boolean): Promise<VentaFicha | null> {
   if (!ID.test(String(fecha))) return null;
   await vencerApartados({ fecha });
+  await primeroLaFila(fecha);
   const v = await filaVenta(db(), fecha), estado = v ? estadoDe(v) : null;
   if (!v || !estado) return null;
-  const [T, M] = await Promise.all([
+  const [T, M, W, cfg] = await Promise.all([
     db().query<{ n: Bi; s: Bi; p: number; quedan: number }>(
       `select t.name as n, t.note as s, t.price_cents as p, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
          from ticket_types t join ticket_stock s on s.ticket_type_id = t.id and s.event_date_id = $2::bigint where t.event_id = $1::bigint and not t.off order by t.sort, t.id`, [v.eid, fecha]),
     db().query<{ z: Bi; seats: number; min: number; dep: number; quedan: number }>(
       `select t.zone as z, t.seats, t.min_spend_cents as min, t.deposit_cents as dep, greatest(0, s.quantity - s.sold_n - s.held_n)::int as quedan
          from event_tables t join table_stock s on s.table_id = t.id and s.event_date_id = $2::bigint where t.event_id = $1::bigint and not t.off order by t.sort, t.id`, [v.eid, fecha]),
+    db().query<{ n: number }>(`select count(*)::int as n from waitlist where event_date_id = $1::bigint and status = 'waiting'`, [fecha]),
+    valores("bol_cancelar_h", "bol_transferir_h"),
   ]);
+  // 6d · Agotado = no queda ningún boleto (la lista de espera se abre con eso; una mesa libre se sigue vendiendo).
   const agotado = T.rows.every((x) => x.quedan === 0) && M.rows.every((x) => x.quedan === 0);
-  return { estado, aviso: textoVenta(estado, v.hasta, es), agotado, tipos: T.rows.map((x) => ({ n: bi(x.n, es), s: bi(x.s, es), p: x.p, quedan: x.quedan })),
+  return { estado, aviso: textoVenta(estado, v.hasta, es), agotado, espera: W.rows[0]?.n ?? 0, pol: { cancelarH: cfg.bol_cancelar_h, transferirH: cfg.bol_transferir_h }, tipos: T.rows.map((x) => ({ n: bi(x.n, es), s: bi(x.s, es), p: x.p, quedan: x.quedan })),
     mesas: M.rows.map((x) => ({ z: bi(x.z, es), seats: x.seats, min: x.min, dep: x.dep, quedan: x.quedan })) };
 }
 
 /* Entradas de una persona para una fecha: boletos vivos (por cuenta, dispositivo o la misma tarjeta guardada) + apartados vivos. */
-async function entradasDe(q: Q, fecha: string, userId: string, dev: string | null, pm: string | null, sinApartado: string | null): Promise<number> {
+export async function entradasDe(q: Q, fecha: string, userId: string, dev: string | null, pm: string | null, sinApartado: string | null): Promise<number> {
   return (await q.query<{ n: number }>(
     `select (coalesce((select sum(t.admits) from tickets t join operations o on o.id = t.operation_id left join ticket_holds h on h.operation_id = o.id
                         where t.event_date_id = $1::bigint and t.status in ('valid', 'used') and t.kind = 'paid'
@@ -167,6 +172,8 @@ export async function apartar(userId: string, raw: BoletosIn): Promise<Res<{ apa
   const dev = await dispositivo(false);
   const cfg = await valores("evt_apartado_min", "evt_boletos_por_orden_max", "evt_boletos_persona_fecha_max", "evt_apartados_vivos_max");
   await vencerApartados({ fecha });
+  // 6d · Lo que se liberó es primero para la lista de espera (en orden); lo que nadie de la fila puede usar queda para todos.
+  await primeroLaFila(fecha);
   const v0 = await filaVenta(db(), fecha);
   if (!v0 || estadoDe(v0) == null) return { ok: false, msg: { es: "Esa fecha no está a la venta.", en: "That date is not on sale." } };
   let codigoId: string | null = null;
@@ -301,10 +308,20 @@ async function reapartarEn(c: Q, h: { id: string; fid: string; eid: string; line
 /* «Cambiar» en la pantalla de pago: soltar mi apartado (la existencia vuelve al momento). */
 export async function soltarApartado(userId: string, holdId: string): Promise<boolean> {
   if (!UUID.test(holdId)) return false;
-  return tx(async (c) => {
-    const ok = (await c.query(`select 1 from ticket_holds where id = $1::uuid and user_id = $2`, [holdId, userId])).rowCount;
-    return ok ? soltarEn(c, holdId, "released") : false;
+  const r = await tx(async (c) => {
+    const h = (await c.query<{ fid: string; wl: string | null }>(`select event_date_id::text as fid, waitlist_id::text as wl from ticket_holds where id = $1::uuid and user_id = $2`, [holdId, userId])).rows[0];
+    if (!h || !(await soltarEn(c, holdId, "released"))) return null;
+    // 6d · Soltar una oferta de la lista de espera = salir de la lista; el lugar pasa a la siguiente.
+    if (h.wl) await c.query(`update waitlist set status = 'left' where id = $1::bigint and status = 'offered'`, [h.wl]);
+    return h;
   });
+  if (r) await primeroLaFila(r.fid);
+  return !!r;
+}
+/* 6d · Antes de apartar o de mostrar lo que queda: si hay lista de espera, lo libre se le ofrece primero (lib/espera.ts). */
+async function primeroLaFila(fecha: string) {
+  const e = await import("./espera");
+  if (await e.hayFila(fecha)) await e.ofrecer(fecha).catch(() => 0);
 }
 
 /* Barrido (cada minuto, y al leer una fecha): suelta los apartados vencidos y libera la autorización que quedó sin orden. */
@@ -329,12 +346,13 @@ export type PantallaPago = {
   apartado: string; estado: "held" | "expired" | "released" | "converted"; numero: string | null; segundos: number; fecha: string;
   evento: { slug: string; title: string; dia: string; h0: number; venue: string; edad: number; org: string; img: string | null; dark: boolean };
   lineas: { k: "t" | "m" | "a"; n: string; q: number; unit: number; seats?: number }[]; subtotal: number; descuento: number; total: number; boletos: number;
+  espera: boolean; // 6d · una oferta de la lista de espera («SE LIBERÓ UN LUGAR»)
 };
 export async function pantallaPago(userId: string, holdId: string, es: boolean): Promise<PantallaPago | null> {
   if (!UUID.test(String(holdId))) return null;
-  const h = (await db().query<{ id: string; st: string; fid: string; lines: Linea[]; sub: number; desc: number; total: number; seg: number; num: string | null; tn: number }>(
+  const h = (await db().query<{ id: string; st: string; fid: string; lines: Linea[]; sub: number; desc: number; total: number; seg: number; num: string | null; tn: number; espera: boolean }>(
     `select h.id::text, h.status as st, h.event_date_id::text as fid, h.lines, h.subtotal_cents as sub, h.discount_cents as desc, h.total_cents as total,
-            greatest(0, extract(epoch from h.expires_at - now()))::int as seg, o.number as num, h.tickets_n as tn
+            greatest(0, extract(epoch from h.expires_at - now()))::int as seg, o.number as num, h.tickets_n as tn, h.waitlist_id is not null as espera
        from ticket_holds h left join operations o on o.id = h.operation_id where h.id = $1::uuid and h.user_id = $2`, [holdId, userId])).rows[0];
   if (!h) return null;
   const v = await filaVenta(db(), h.fid);
@@ -343,7 +361,7 @@ export async function pantallaPago(userId: string, holdId: string, es: boolean):
   return {
     apartado: h.id, estado: vencido ? "expired" : (h.st as PantallaPago["estado"]), numero: h.num, segundos: h.seg, fecha: h.fid,
     evento: { slug: v.slug, title: bi(v.title, es), dia: v.ldate, h0: v.h0, venue: v.venue, edad: v.edad, org: v.bname, img: v.img, dark: v.dark },
-    lineas: h.lines.map((l) => ({ k: l.k, n: bi(l.n, es), q: l.q, unit: l.unit, seats: l.seats })), subtotal: h.sub, descuento: h.desc, total: h.total, boletos: h.tn,
+    lineas: h.lines.map((l) => ({ k: l.k, n: bi(l.n, es), q: l.q, unit: l.unit, seats: l.seats })), subtotal: h.sub, descuento: h.desc, total: h.total, boletos: h.tn, espera: h.espera,
   };
 }
 
@@ -362,10 +380,10 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     await c.query("begin");
     // Candado del apartado: dos toques (o dos pestañas) = una sola orden. No bloquea la fila: la autorización se anota aparte.
     await c.query(`select pg_advisory_xact_lock(hashtext('bol:' || $1))`, [holdId]);
-    type H = { id: string; st: string; fid: string; eid: string; lines: Linea[]; code: string | null; sub: number; desc: number; total: number; vivo: boolean; num: string | null; admits: number; city: string; intento: number };
+    type H = { id: string; st: string; fid: string; eid: string; lines: Linea[]; code: string | null; sub: number; desc: number; total: number; vivo: boolean; num: string | null; admits: number; city: string; intento: number; wl: string | null };
     const leerH = async (lock: boolean) => (await c.query<H>(
       `select h.id::text, h.status as st, h.event_date_id::text as fid, h.event_id::text as eid, h.lines, h.code_id::text as code, h.subtotal_cents as sub, h.discount_cents as desc,
-              h.total_cents as total, h.expires_at > now() as vivo, o.number as num, h.admits_n as admits, h.city_id as city, h.pay_attempts as intento
+              h.total_cents as total, h.expires_at > now() as vivo, o.number as num, h.admits_n as admits, h.city_id as city, h.pay_attempts as intento, h.waitlist_id::text as wl
          from ticket_holds h left join operations o on o.id = h.operation_id where h.id = $1::uuid and h.user_id = $2 ${lock ? "for update of h" : ""}`, [holdId, userId])).rows[0];
     let h = await leerH(false);
     if (!h) throw no("Esa compra no existe.", "That purchase does not exist.");
@@ -378,8 +396,11 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
     }
     // Mientras paga, el apartado no vence (2 min de margen); el contador de la pantalla es solo pantalla.
     if (h.st === "held" && h.vivo) await db().query(`update ticket_holds set expires_at = greatest(expires_at, now() + interval '2 minutes') where id = $1::uuid and status = 'held' and expires_at > now()`, [holdId]);
-    // Vencido: se aparta otra vez (en su propia transacción); si ya no hay, no se cobra.
+    // 6d · Una oferta de la lista de espera vencida no se vuelve a apartar: ya pasó a la siguiente persona.
+    if (h.wl && (h.st === "expired" || !h.vivo)) throw no("Tu turno venció y el lugar pasó a la siguiente persona. No se cobró nada. Puedes anotarte otra vez.", "Your turn expired and the spot went to the next person. Nothing was charged. You can join again.", { vencido: true });
+    // Vencido: se aparta otra vez (en su propia transacción); si ya no hay, no se cobra. Antes, lo libre es de la lista de espera.
     if (h.st === "expired" || !h.vivo) {
+      await primeroLaFila(h.fid);
       const otra = await tx(async (x) => {
         if (h!.st === "held") await soltarEn(x, holdId, "expired");
         return reapartarEn(x, h!, cfg.evt_apartado_min);
@@ -446,6 +467,7 @@ export async function pagarBoletos(userId: string, holdId: string, pmRaw: unknow
       [op, userId, v.biz, h.city, pi, h.total, Math.min(fee, h.total), ret.marca, ret.ultimos4, pi.startsWith("pi_sim_"), pm, `evt-${h.eid}`]);
     await c.query(`update operations set pay_status = 'held' where id = $1::bigint`, [op]);
     await c.query(`update ticket_holds set status = 'converted', operation_id = $2::bigint where id = $1::uuid`, [holdId, op]);
+    if (h.wl) await c.query(`update waitlist set status = 'converted' where id = $1::bigint and status = 'offered'`, [h.wl]);
     await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind) select id, operation_id, city_id, 'emitido', $2, 'user' from tickets where operation_id = $1::bigint`, [op, userId]);
     await c.query(`insert into operation_events (operation_id, kind, actor, actor_id) values ($1::bigint, 'tickets_sold', 'user', $2)`, [op, userId]);
     await c.query("commit");
@@ -535,19 +557,40 @@ async function despuesDeVender(op: string) {
 export type BoletoVista = {
   code: string; tipo: string; nombre: string | null; admits: number; mesa: boolean; estado: "valid" | "used" | "void" | "refunded" | "replaced"; precio: number;
   qr: string | null; matriz: boolean[][] | null;
+  // 6d · Transferencia pendiente (a «••23», hasta cuándo se puede recibir): mientras tanto NO hay QR (el anterior quedó anulado).
+  envio: { a: string; hasta: string } | null; cortesia: boolean;
 };
-type FilaB = { id: string; code: string; fid: string; ver: number; admits: number; st: BoletoVista["estado"]; tn: Bi | null; mz: Bi | null; nombre: string | null; precio: number };
+type FilaB = { id: string; code: string; fid: string; ver: number; admits: number; st: BoletoVista["estado"]; tn: Bi | null; mz: Bi | null; nombre: string | null; precio: number; envio: { a: string; hasta: string } | null; comp: boolean };
 async function vistaBoleto(b: FilaB, es: boolean, conQR: boolean): Promise<BoletoVista> {
   const vale = b.st === "valid" || b.st === "used";
-  const qr = conQR && vale ? await firmarQR({ id: b.id, fecha: b.fid, ver: b.ver, admits: b.admits }) : null;
-  return { code: b.code, tipo: b.tn ? bi(b.tn, es) : b.mz ? bi(b.mz, es) : "", nombre: b.nombre, admits: b.admits, mesa: !!b.mz, estado: b.st, precio: b.precio, qr, matriz: qr ? matrizQR(qr) : null };
+  // Con una transferencia pendiente no se firma ningún QR (guardián qrViejoNoEntra): nadie tiene uno vigente hasta que se reciba o se deshaga.
+  const qr = conQR && vale && !b.envio ? await firmarQR({ id: b.id, fecha: b.fid, ver: b.ver, admits: b.admits }) : null;
+  return { code: b.code, tipo: b.comp ? (es ? "Cortesía" : "Comp") : b.tn ? bi(b.tn, es) : b.mz ? bi(b.mz, es) : "", nombre: b.nombre, admits: b.admits, mesa: !!b.mz, estado: b.st, precio: b.precio, qr, matriz: qr ? matrizQR(qr) : null,
+    envio: b.envio, cortesia: b.comp };
 }
-const SEL_B = `select t.id::text, t.code, t.event_date_id::text as fid, t.qr_ver as ver, t.admits, t.status as st, tt.name as tn, et.zone as mz, t.holder_name as nombre, t.price_cents as precio
+const SEL_B = `select t.id::text, t.code, t.event_date_id::text as fid, t.qr_ver as ver, t.admits, t.status as st, tt.name as tn, et.zone as mz, coalesce(t.holder_name, t.comp_name) as nombre, t.price_cents as precio,
+                      t.kind = 'comp' as comp,
+                      (select json_build_object('a', '••' || x.to_last2, 'hasta', to_char(x.expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) from ticket_transfers x
+                        where x.ticket_id = t.id and x.status = 'pending' and x.kind = 'transfer') as envio
                  from tickets t left join ticket_types tt on tt.id = t.ticket_type_id left join event_tables et on et.id = t.table_id`;
+/* 6d · Hasta cuándo se transfiere, se cancela y se cambia el nombre (Configuración), y si se puede ahora. */
+export type Ventanas = { transferir: boolean; transferirHasta: string; cancelar: boolean; cancelarHasta: string; horasCancelar: number; horasTransferir: number };
+async function ventanas(fid: string): Promise<Ventanas> {
+  const r = (await db().query<{ t: boolean; th: string; c: boolean; ch: string; hc: number; ht: number }>(
+    `select e.status in ('live', 'paused') and d.status = 'scheduled' and d.starts_at - make_interval(hours => cfg_int('bol_transferir_h')) > now() as t,
+            to_char((d.starts_at - make_interval(hours => cfg_int('bol_transferir_h'))) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as th,
+            e.status in ('live', 'paused') and d.status = 'scheduled' and d.starts_at - make_interval(hours => cfg_int('bol_cancelar_h')) > now() as c,
+            to_char((d.starts_at - make_interval(hours => cfg_int('bol_cancelar_h'))) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as ch,
+            cfg_int('bol_cancelar_h') as hc, cfg_int('bol_transferir_h') as ht
+       from event_dates d join events e on e.id = d.event_id where d.id = $1::bigint`, [fid])).rows[0]!;
+  return { transferir: r.t, transferirHasta: r.th, cancelar: r.c, cancelarHasta: r.ch, horasCancelar: r.hc, horasTransferir: r.ht };
+}
 
 export type OrdenVista = {
   numero: string; estado: string; pago: string | null; at: string; evento: { tz: string; slug: string; fecha: string; title: string; dia: string; h0: number; h1: number; venue: string; addr: string | null; lat: number | null; lng: number | null; edad: number; dark: boolean; img: string | null; org: string; start: string; end: string; pasado: boolean; hoy: boolean };
   boletos: BoletoVista[]; lineas: { n: string; q: number; unit: number }[]; subtotal: number; descuento: number; total: number; tarjeta: string | null; devuelto: number;
+  // 6d · Ventanas, devoluciones de la orden (pendiente = en camino) y si tiene una ayuda abierta.
+  ventanas: Ventanas; devoluciones: { monto: number; estado: string; por: string; at: string }[]; ayuda: string | null;
 };
 export async function ordenBoletos(userId: string, numero: string, es: boolean): Promise<OrdenVista | null> {
   if (!NUM_B.test(String(numero))) return null;
@@ -556,15 +599,22 @@ export async function ordenBoletos(userId: string, numero: string, es: boolean):
     `select o.id::text, o.status as st, o.pay_status as pay, to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, o.subtotal_cents as sub, o.discount_cents as desc, o.total_cents as total,
             o.details->>'event_date_id' as fid, (select coalesce(json_agg(json_build_object('name', l.name, 'qty', l.qty, 'unit', l.unit_price_cents) order by l.id), '[]') from operation_lines l where l.operation_id = o.id) as l,
             p.card_brand as brand, p.card_last4 as l4, coalesce(p.refunded_cents, 0) as dev
-       from operations o left join payments p on p.operation_id = o.id and p.kind = 'full' where o.number = $1 and o.kind = 'tickets' and o.user_id = $2`, [numero, userId])).rows[0];
+       from operations o left join payments p on p.operation_id = o.id and p.kind = 'full' where o.number = $1 and o.kind = 'tickets' and o.user_id = $2 and o.pay_mode = 'app'`, [numero, userId])).rows[0];
   if (!o) return null;
   const ev = await eventoDeFecha(o.fid, es);
   if (!ev) return null;
-  const B = (await db().query<FilaB>(`${SEL_B} where t.operation_id = $1::bigint and t.holder_user_id = $2 order by t.table_id nulls first, t.id`, [o.id, userId])).rows;
+  const [B, V, D, A] = await Promise.all([
+    db().query<FilaB>(`${SEL_B} where t.operation_id = $1::bigint and t.holder_user_id = $2 order by t.table_id nulls first, t.id`, [o.id, userId]),
+    ventanas(o.fid),
+    db().query<{ monto: number; estado: string; por: string; at: string }>(`select r.amount_cents as monto, r.status as estado, r.initiated_by as por, to_char(r.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
+                                                                             from refunds r join payments p on p.id = r.payment_id where p.operation_id = $1::bigint order by r.id`, [o.id]),
+    db().query<{ n: string }>(`select number as n from help_requests where operation_id = $1::bigint and user_id = $2`, [o.id, userId]),
+  ]);
   return {
-    numero, estado: o.st, pago: o.pay, at: o.at, evento: ev, boletos: await Promise.all(B.map((b) => vistaBoleto(b, es, !ev.pasado))),
+    numero, estado: o.st, pago: o.pay, at: o.at, evento: ev, boletos: await Promise.all(B.rows.map((b) => vistaBoleto(b, es, !ev.pasado))),
     lineas: o.l.map((l) => ({ n: bi(l.name, es), q: l.qty, unit: l.unit })), subtotal: o.sub, descuento: o.desc, total: o.total,
     tarjeta: o.brand && o.l4 ? `${o.brand.toUpperCase()} ·· ${o.l4}` : null, devuelto: o.dev,
+    ventanas: V, devoluciones: D.rows, ayuda: A.rows[0]?.n ?? null,
   };
 }
 async function eventoDeFecha(fid: string, es: boolean): Promise<OrdenVista["evento"] | null> {
@@ -584,43 +634,50 @@ async function eventoDeFecha(fid: string, es: boolean): Promise<OrdenVista["even
 
 /* Mi cuenta › Boletos: próximos y pasados (por fecha), con el estado de cada boleto. Sin QR en la lista (se abre cada uno). */
 export type MisBoletos = { proximos: GrupoMis[]; pasados: GrupoMis[] };
-export type GrupoMis = { numero: string; slug: string; fecha: string; title: string; dia: string; h0: number; venue: string; img: string | null; dark: boolean; n: number; mesa: boolean; vivos: number; devueltos: number; codigos: string[] };
+export type GrupoMis = { numero: string; slug: string; fecha: string; title: string; dia: string; h0: number; venue: string; img: string | null; dark: boolean; n: number; mesa: boolean; vivos: number; devueltos: number; codigos: string[];
+  /* 6d · Recibido de otra persona (transferencia o cortesía): se abre el boleto, no la orden (la orden es de quien pagó). Transferidos = los que diste. */
+  recibido: boolean; transferidos: number; enviando: number };
 export async function misBoletos(userId: string, es: boolean): Promise<MisBoletos> {
-  const r = (await db().query<{ num: string; slug: string; fid: string; title: Bi; ldate: string; h0: number; venue: string; img: string | null; dark: boolean; n: number; mesa: boolean; vivos: number; dev: number; codigos: string[]; pasado: boolean }>(
+  const r = (await db().query<{ num: string; slug: string; fid: string; title: Bi; ldate: string; h0: number; venue: string; img: string | null; dark: boolean; n: number; mesa: boolean; vivos: number; dev: number; codigos: string[]; pasado: boolean; recibido: boolean; transferidos: number; enviando: number }>(
     `select o.number as num, e.slug, d.id::text as fid, e.title, d.local_date::text as ldate,
             (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
             case when e.venue_mode = 'other' then e.venue_name else b.name end as venue, f.dark,
             (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1) as img,
             count(t.id)::int as n, bool_or(t.table_id is not null) as mesa, count(t.id) filter (where t.status in ('valid', 'used'))::int as vivos,
-            count(t.id) filter (where t.status = 'refunded')::int as dev, array_agg(t.code order by t.id) as codigos, d.ends_at <= now() as pasado
+            count(t.id) filter (where t.status = 'refunded')::int as dev, array_agg(t.code order by (t.status = 'valid') desc, t.id) as codigos, d.ends_at <= now() as pasado,
+            o.user_id <> $1 as recibido, count(t.id) filter (where t.status = 'replaced')::int as transferidos,
+            count(t.id) filter (where exists (select 1 from ticket_transfers x where x.ticket_id = t.id and x.status = 'pending' and x.kind = 'transfer'))::int as enviando
        from tickets t join operations o on o.id = t.operation_id join event_dates d on d.id = t.event_date_id join events e on e.id = d.event_id join businesses b on b.id = e.business_id
        join cities ci on ci.id = d.city_id join event_formats f on f.key = e.format
       where t.holder_user_id = $1 and o.status <> 'cancelled'
       group by o.id, e.id, d.id, b.name, ci.timezone, f.dark order by d.starts_at desc limit 100`, [userId])).rows;
-  const g = (x: (typeof r)[number]): GrupoMis => ({ numero: x.num, slug: x.slug, fecha: x.fid, title: bi(x.title, es), dia: x.ldate, h0: x.h0, venue: x.venue, img: x.img, dark: x.dark, n: x.n, mesa: x.mesa, vivos: x.vivos, devueltos: x.dev, codigos: x.codigos });
+  // Un grupo cuyos boletos están todos transferidos (o enviándose) no tiene QR vivo «tuyo», pero sigue en Próximos mientras se envía.
+  const g = (x: (typeof r)[number]): GrupoMis => ({ numero: x.num, slug: x.slug, fecha: x.fid, title: bi(x.title, es), dia: x.ldate, h0: x.h0, venue: x.venue, img: x.img, dark: x.dark, n: x.n, mesa: x.mesa, vivos: x.vivos, devueltos: x.dev, codigos: x.codigos,
+    recibido: x.recibido, transferidos: x.transferidos, enviando: x.enviando });
   // Próximos: lo que todavía entra; lo que ya pasó, o sin boletos vivos (devueltos o anulados), va a Pasados.
-  return { proximos: r.filter((x) => !x.pasado && x.vivos > 0).reverse().map(g), pasados: r.filter((x) => x.pasado || x.vivos === 0).map(g) };
+  return { proximos: r.filter((x) => !x.pasado && (x.vivos > 0 || x.enviando > 0)).reverse().map(g), pasados: r.filter((x) => x.pasado || (x.vivos === 0 && x.enviando === 0)).map(g) };
 }
 export async function misBoletosN(userId: string | null): Promise<number> {
   if (!userId) return 0;
   return (await db().query<{ n: number }>(`select count(*)::int as n from tickets t join event_dates d on d.id = t.event_date_id where t.holder_user_id = $1 and t.status = 'valid' and d.ends_at > now()`, [userId])).rows[0]?.n ?? 0;
 }
-export async function miBoleto(userId: string, code: string, es: boolean): Promise<{ b: BoletoVista; numero: string; evento: OrdenVista["evento"] } | null> {
+export async function miBoleto(userId: string, code: string, es: boolean): Promise<{ b: BoletoVista; numero: string; evento: OrdenVista["evento"]; mia: boolean; ventanas: Ventanas } | null> {
   if (!CODIGO_BOL.test(String(code))) return null;
-  const b = (await db().query<FilaB & { num: string }>(`${SEL_B.replace("select t.id::text", "select o.number as num, t.id::text")} join operations o on o.id = t.operation_id where t.code = $1 and t.holder_user_id = $2`, [code, userId])).rows[0];
+  const b = (await db().query<FilaB & { num: string; mia: boolean }>(`${SEL_B.replace("select t.id::text", "select o.number as num, o.user_id = $2 and o.pay_mode = 'app' as mia, t.id::text")} join operations o on o.id = t.operation_id where t.code = $1 and t.holder_user_id = $2`, [code, userId])).rows[0];
   if (!b) return null;
   const ev = await eventoDeFecha(b.fid, es);
   if (!ev) return null;
-  return { b: await vistaBoleto(b, es, !ev.pasado), numero: b.num, evento: ev };
+  // mia = la compró esta persona (vuelve a su orden); recibido de otra persona = vuelve a Mis boletos.
+  return { b: await vistaBoleto(b, es, !ev.pasado), numero: b.num, evento: ev, mia: b.mia, ventanas: await ventanas(b.fid) };
 }
 
 /* ── Panel › Eventos › la ficha: lo vendido (evView). Solo de su negocio; compradores con nombre + inicial (sin teléfono ni correo). ── */
 export type VentasPanel = {
   venta: EstadoVenta | null; aviso: string; pro: boolean; cobros: boolean;
   kpi: { vendidos: number; capacidad: number; mesas: number; mesasCap: number; ordenes: number; bruto: number; comision: number; descuentos: number; extras: number; depositos: number; neto: number };
-  tipos: { n: string; p: number; vendidos: number; quedan: number; cap: number }[];
+  tipos: { id: string; n: string; p: number; vendidos: number; quedan: number; cap: number }[];
   mesas: { n: string; quien: string; num: string }[];
-  compradores: { quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string }[];
+  compradores: { quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string; vivos: number; devuelto: number }[];
   fecha: string | null;
 };
 export async function ventasPanel(negocio: string, eventoId: string): Promise<VentasPanel | null> {
@@ -631,8 +688,8 @@ export async function ventasPanel(negocio: string, eventoId: string): Promise<Ve
   if (d) await vencerApartados({ fecha: d.fid });
   const v = d ? await filaVenta(db(), d.fid) : null, est = v ? estadoDe(v) : null;
   const [T, M, K, C] = await Promise.all([
-    db().query<{ n: Bi; p: number; vendidos: number; quedan: number; cap: number }>(
-      `select t.name as n, t.price_cents as p, coalesce(sum(s.sold_n), 0)::int as vendidos, coalesce(sum(greatest(0, s.quantity - s.sold_n - s.held_n)), 0)::int as quedan, coalesce(sum(s.quantity), 0)::int as cap
+    db().query<{ id: string; n: Bi; p: number; vendidos: number; quedan: number; cap: number }>(
+      `select t.id::text as id, t.name as n, t.price_cents as p, coalesce(sum(s.sold_n), 0)::int as vendidos, coalesce(sum(greatest(0, s.quantity - s.sold_n - s.held_n)), 0)::int as quedan, coalesce(sum(s.quantity), 0)::int as cap
          from ticket_types t left join ticket_stock s on s.ticket_type_id = t.id where t.event_id = $1::bigint and (not t.off or exists (select 1 from ticket_stock z where z.ticket_type_id = t.id and z.sold_n > 0))
         group by t.id order by t.sort, t.id`, [eventoId]),
     db().query<{ n: Bi; quien: string; num: string }>(
@@ -640,30 +697,34 @@ export async function ventasPanel(negocio: string, eventoId: string): Promise<Ve
          from tickets t join event_tables et on et.id = t.table_id join operations o on o.id = t.operation_id join users u on u.id = o.user_id
         where t.event_id = $1::bigint and t.status in ('valid', 'used') order by t.id limit 60`, [eventoId]),
     db().query<{ vendidos: number; capacidad: number; mesas: number; mesascap: number; ordenes: number; bruto: number; comision: number; descuentos: number; extras: number; depositos: number }>(
-      `select (select count(*)::int from tickets where event_id = $1::bigint and ticket_type_id is not null and status in ('valid', 'used')) as vendidos,
+      `select (select count(*)::int from tickets where event_id = $1::bigint and ticket_type_id is not null and status in ('valid', 'used') and kind = 'paid') as vendidos,
               (select coalesce(sum(s.quantity), 0)::int from ticket_stock s join ticket_types t on t.id = s.ticket_type_id where t.event_id = $1::bigint and not t.off) as capacidad,
               (select count(*)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used')) as mesas,
               (select coalesce(sum(s.quantity), 0)::int from table_stock s join event_tables t on t.id = s.table_id where t.event_id = $1::bigint and not t.off) as mesascap,
-              count(o.id)::int as ordenes, coalesce(sum(p.amount_cents - p.refunded_cents), 0)::int as bruto, coalesce(sum(p.fee_cents), 0)::int as comision,
+              count(o.id)::int as ordenes, coalesce(sum(p.amount_cents - p.refunded_cents), 0)::int as bruto,
+              -- 6d · La comisión que To'Latino cede cuando el organizador devuelve no se cuenta (ticket_refund_lines.fee_waived_cents).
+              coalesce(sum(p.fee_cents - coalesce((select sum(l.fee_waived_cents) from ticket_refund_lines l where l.operation_id = o.id), 0)), 0)::int as comision,
               coalesce(sum(o.discount_cents), 0)::int as descuentos,
               (select coalesce(sum(l.line_total_cents), 0)::int from operation_lines l join operations z on z.id = l.operation_id where z.kind = 'tickets' and z.status = 'confirmed' and (z.details->>'event_id')::bigint = $1::bigint and l.options->0->>'k' = 'a') as extras,
               (select coalesce(sum(price_cents), 0)::int from tickets where event_id = $1::bigint and table_id is not null and status in ('valid', 'used')) as depositos
          from operations o join payments p on p.operation_id = o.id and p.kind = 'full' and p.status in ('captured', 'partially_refunded')
         where o.kind = 'tickets' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint`, [eventoId, negocio]),
-    db().query<{ quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string }>(
+    db().query<{ quien: string; num: string; boletos: number; mesa: boolean; extras: boolean; at: string; vivos: number; devuelto: number }>(
       `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as quien, o.number as num,
-              (select count(*)::int from tickets t where t.operation_id = o.id and t.ticket_type_id is not null) as boletos,
+              (select count(*)::int from tickets t where t.operation_id = o.id and t.ticket_type_id is not null and t.status <> 'replaced') as boletos,
+              (select count(*)::int from tickets t where t.operation_id = o.id and t.status = 'valid') as vivos,
+              coalesce((select sum(r.amount_cents) from refunds r join payments p on p.id = r.payment_id where p.operation_id = o.id and r.status in ('pending', 'done')), 0)::int as devuelto,
               exists (select 1 from tickets t where t.operation_id = o.id and t.table_id is not null) as mesa,
               exists (select 1 from operation_lines l where l.operation_id = o.id and l.options->0->>'k' = 'a') as extras,
               to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from operations o join users u on u.id = o.user_id
-        where o.kind = 'tickets' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint order by o.id desc limit 100`, [eventoId, negocio]),
+        where o.kind = 'tickets' and o.pay_mode = 'app' and o.business_id = $2 and o.status = 'confirmed' and (o.details->>'event_id')::bigint = $1::bigint order by o.id desc limit 100`, [eventoId, negocio]),
   ]);
   const k = K.rows[0]!;
   return {
     venta: est, aviso: est ? textoVenta(est, v!.hasta, true) : "", pro: !!v?.pro, cobros: !!v?.cuenta, fecha: d?.fid ?? null,
     kpi: { vendidos: k.vendidos, capacidad: k.capacidad, mesas: k.mesas, mesasCap: k.mesascap, ordenes: k.ordenes, bruto: k.bruto, comision: k.comision, descuentos: k.descuentos, extras: k.extras, depositos: k.depositos, neto: Math.max(0, k.bruto - k.comision) },
-    tipos: T.rows.map((t) => ({ n: t.n.es, p: t.p, vendidos: t.vendidos, quedan: t.quedan, cap: t.cap })),
+    tipos: T.rows.map((t) => ({ id: t.id, n: t.n.es, p: t.p, vendidos: t.vendidos, quedan: t.quedan, cap: t.cap })),
     mesas: M.rows.map((m) => ({ n: m.n.es, quien: m.quien, num: m.num })),
     compradores: C.rows,
   };

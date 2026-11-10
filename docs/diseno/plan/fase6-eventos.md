@@ -725,7 +725,8 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       aplicada dos veces (13 eventos, no se repiten). 6b (10 nov): 0107 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y vuelta a
       correr a mano sin errores. 6c (10 nov): 0108 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva de PostGIS:
       migraciones dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (sin equipo, 0036 deja los
-      códigos y no siembra órdenes). CI y 0109–0115 pendientes._
+      códigos y no siembra órdenes). 6d (10 nov): 0109 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones
+      dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (6d no trae semilla). CI y 0110–0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -745,7 +746,14 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       acabaron mientras pagabas», 0002 → 4242, 3 a la vez por el último boleto → 1, 10 a la vez en la base → 1, agotado, código tope / una vez,
       tope por orden de Configuración, Cobros apagado y Free no venden, panel y Super Admin (Buscar boleto, QR alterado, Reemitir);
       `alreves6c` 42/42. Contrato con stripe-mock de las llamadas nuevas: pendiente del CI (no corrió en local)._
-- [ ] Transferir (QR viejo anulado), cancelar con su regla, cortesías, lista de espera en orden, ayuda `B-`.
+- [x] Transferir (QR viejo anulado), cancelar con su regla, cortesías, lista de espera en orden, ayuda `B-`. _6d (10 nov): e2e `evt6d`
+      (teléfono 390 y escritorio 1360): transferir → QR viejo «no entra», enviado sin QR, recibir solo con ese teléfono (otra cuenta y quien
+      lo manda no; dos veces no), deshacer y vencer con QR nuevo, a 2 h 3 min sí y a 1 h 59 min no, tope al día; cancelar a 24 h 5 min sí
+      (precio − cargo exacto en la base, el pago y el simulador; la base suelta el lugar) y a 23 h no; doble toque, la misma llave, Stripe
+      caído + dos barridos a la vez → una devolución; devolver desde el panel 100 % y un boleto usado no; cortesías con y sin teléfono y sin
+      cuenta, tope de Configuración, no se devuelven ni se venden (la base); lista de espera: dos personas y un lugar → una oferta, vence → la
+      siguiente, la vencida no paga, el público no se la salta; ayuda B- → Colas › Soporte → resolver y devolver; IDOR repitiendo cada llamada
+      nueva con otra cuenta; `alreves6d` 42/42._
 - [ ] Pausar, cambiar fecha (quedarse o devolución), cancelar fecha o serie con devolución total idempotente, avisos, liquidación del martes con retención
       por disputa y ajuste posterior; Cobros y Transacciones lo muestran.
 - [ ] Series (semanal, cada 2 semanas, mensual «el último»), saltar y cancelar una fecha, artista de una fecha, varios días con pase y aforo por día.

@@ -1,8 +1,9 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
-import { db } from "../db";
+import { db, tx } from "../db";
 import { ENTORNO } from "../entorno";
 import { ErrorStripe, stripe } from "./stripe";
+class SinSaldoSim extends Error {}
 
 /* La pasarela de pagos: Stripe de verdad (con STRIPE_SECRET_KEY) o el simulador propio del sandbox (sin clave). El resto
    de la app no sabe cuál corre. CANDADO: en producción el simulador no existe; sin clave, la tarjeta queda apagada. */
@@ -185,13 +186,23 @@ export const pasarela = {
   },
 
   /* Devolver (total o parcial) lo cobrado. La transferencia al negocio se revierte en proporción y la comisión también. */
-  async devolver(pi: string, centavos: number, idem: string): Promise<{ ok: boolean; id?: string; codigo?: string }> {
+  /* 6d · `plataforma`: un cobro que quedó en To'Latino (boletos, transfer_group): no hay transferencia ni comisión de destino que revertir.
+     El simulador devuelve una sola vez por llave (sim_refunds), como Stripe con la misma Idempotency-Key: reintentar no devuelve dos veces. */
+  async devolver(pi: string, centavos: number, idem: string, o: { plataforma?: boolean } = {}): Promise<{ ok: boolean; id?: string; codigo?: string }> {
     if (pi.startsWith("pi_sim_")) {
-      const r = await db().query(`update sim_intents set refunded_cents = refunded_cents + $2 where id = $1 and status = 'succeeded' and refunded_cents + $2 <= captured_cents`, [pi, centavos]);
-      return r.rowCount ? { ok: true, id: `re_sim_${idem}` } : { ok: false, codigo: "amount_too_large" };
+      const id = `re_sim_${idem}`.slice(0, 200);
+      // Primero la llave (on conflict: la segunda vez, o dos a la vez, no devuelve otra vez); luego el saldo, con su tope.
+      const r = await tx(async (c) => {
+        const nueva = (await c.query(`insert into sim_refunds (id, payment_intent, amount_cents) values ($1, $2, $3) on conflict (id) do nothing returning id`, [id, pi, centavos])).rowCount;
+        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_refunds where id = $1`, [id])).rows[0]?.amount_cents === centavos;
+        const u = await c.query(`update sim_intents set refunded_cents = refunded_cents + $2 where id = $1 and status = 'succeeded' and refunded_cents + $2 <= captured_cents`, [pi, centavos]);
+        if (!u.rowCount) throw new SinSaldoSim();
+        return true;
+      }).catch((e) => { if (e instanceof SinSaldoSim) return false; throw e; });
+      return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
     }
     try {
-      const r = await stripe<{ id: string }>("POST", "/v1/refunds", { payment_intent: pi, amount: centavos, reverse_transfer: true, refund_application_fee: true }, { idem: `dev-${idem}` });
+      const r = await stripe<{ id: string }>("POST", "/v1/refunds", o.plataforma ? { payment_intent: pi, amount: centavos } : { payment_intent: pi, amount: centavos, reverse_transfer: true, refund_application_fee: true }, { idem: `dev-${idem}` });
       return { ok: true, id: r.id };
     } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
   },

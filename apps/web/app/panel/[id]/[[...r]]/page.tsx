@@ -264,8 +264,11 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). Solo de este negocio.
     const B6 = await import("@/lib/boletos"), C6 = await import("@/lib/codigos-evt");
     const [ventas, codigos, vendidos] = await Promise.all([/^\d+$/.test(eid) ? B6.ventasPanel(d.id, eid) : Promise.resolve(null), /^\d+$/.test(eid) ? C6.codigosDelEvento(d.id, eid) : Promise.resolve([]), B6.vendidosPorEvento(d.id)]);
+    // 6d · Después de comprar: cortesías, devoluciones, transferencias, ayuda con órdenes y la lista de espera (sin teléfonos).
+    const D6 = await import("@/lib/boletos-despues"), W6 = await import("@/lib/espera");
+    const [despues, espera] = /^\d+$/.test(eid) && ventas ? await Promise.all([D6.despuesPanel(d.id, eid), W6.esperaPanel(d.id, eid)]) : [null, null];
     return { lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
-      fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos };
+      fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;
 }

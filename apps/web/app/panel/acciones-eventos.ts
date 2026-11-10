@@ -107,3 +107,47 @@ export async function evtReenviar(negocio: string, numero: string): Promise<Res>
   const ok = await (await import("@/lib/boletos")).reenviarDesdePanel(a.negocio.id, String(numero));
   return ok ? { ok: true } : no("Esa orden no existe.", "That order does not exist.");
 }
+
+/* 6d · Después de comprar (Panel › Eventos › la ficha): DAR CORTESÍA (evCompDet: nombre, teléfono opcional, cuántas; con tope por fecha de
+   Configuración; toman existencia; nunca se venden), quitar una cortesía, «Devolver» a un comprador (total o por boleto, 100 %: pide la
+   parte de Cobros, como devolver un pedido) y «Avisar a la lista» de espera (solo si hay lugar). El servidor decide y audita. */
+export async function evtCortesia(negocio: string, eventoId: string, x: { nombre: string; tel: string; q: number; tipo: string | null }): Promise<Res & { numero?: string }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
+  const r = await (await import("@/lib/boletos-despues")).darCortesia(a.negocio.id, a.yo.id, String(eventoId), x ?? {});
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.cortesia.dar", { evento: String(eventoId), orden: r.numero, entradas: Math.floor(Number(x?.q)) || 0, sms: r.sms ? "Sí" : "No" });
+  return { ok: true, numero: r.numero };
+}
+export async function evtQuitarCortesia(negocio: string, numero: string): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/boletos-despues")).quitarCortesia(a.negocio.id, a.yo.id, String(numero));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.cortesia.quitar", { orden: String(numero) });
+  return { ok: true };
+}
+export async function evtBoletosOrden(negocio: string, numero: string) {
+  const a = await entrar(negocio);
+  if (!a) return [];
+  return (await import("@/lib/boletos-despues")).boletosOrdenPanel(a.negocio.id, String(numero));
+}
+export async function evtDevolver(negocio: string, numero: string, codes: string[], clave: string): Promise<Res & { monto?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  // Devolver dinero pide la parte de Cobros (el dueño siempre), como devolver un pedido.
+  if (!(await accesoPanel(a.negocio.id, "pay"))) return no("Solo quien maneja Cobros puede devolver dinero.", "Only someone who manages Payouts can refund money.");
+  const r = await (await import("@/lib/boletos-despues")).devolverDesdePanel(a.negocio.id, a.yo.id, String(numero), Array.isArray(codes) ? codes : [], String(clave));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.devolver", { orden: String(numero), boletos: (Array.isArray(codes) ? codes : []).length, monto: (r.monto / 100).toFixed(2) });
+  return { ok: true, monto: r.monto };
+}
+export async function evtAvisarLista(negocio: string, eventoId: string): Promise<Res & { n?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/espera")).avisarLista(a.negocio.id, String(eventoId));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.espera.avisar", { evento: String(eventoId), ofertas: r.n });
+  return { ok: true, n: r.n };
+}

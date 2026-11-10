@@ -44,3 +44,18 @@ export async function cabezaAyudaVisita(userId: string, numero: string): Promise
     : o.precio != null ? { k: { es: "Precio que viste", en: "Price you saw" }, cents: o.precio } : null;
   return { numero: o.numero, negocio: { nombre: o.nombre, telefono: o.tel, foto: o.foto }, con: null, model: "biz" as CabezaAyuda["model"], svc: que, dep: 0, pro: null, total: 0, copia, que: o.que };
 }
+
+/* 6d · La cabeza de la ayuda con una orden de boletos (B-…, APP-EVT-AYUDA-PAGO): el organizador, el evento y su fecha, y lo pagado en la
+   app (el cobro es de To'Latino). Solo para quien compró; una cortesía (sin cobro) no tiene ayuda con el pago. */
+export async function cabezaAyudaBoletos(userId: string, numero: string): Promise<CabezaAyuda | null> {
+  if (!/^B-\d{1,10}$/.test(numero)) return null;
+  const o = (await db().query<{ numero: string; nombre: string; foto: string | null; total: number; app: number; title: { es: string; en: string } | null; dia: string; n: number }>(
+    `select o.number as numero, b.name as nombre, b.logo_url as foto, o.total_cents as total, o.details->'title' as title, to_char((o.details->>'local_date')::date, 'DD/MM') as dia,
+            coalesce((select sum(p.amount_cents - p.refunded_cents) from payments p where p.operation_id = o.id and p.status in ('captured', 'partially_refunded')), 0)::int as app,
+            (select count(*)::int from tickets t where t.operation_id = o.id and t.status <> 'replaced') as n
+       from operations o join businesses b on b.id = o.business_id where o.number = $1 and o.user_id = $2 and o.kind = 'tickets' and o.pay_mode = 'app'`, [numero, userId])).rows[0];
+  if (!o) return null;
+  const que = { es: `${o.title?.es ?? "Evento"} · ${o.dia} · ${o.n} ${o.n === 1 ? "boleto" : "boletos"}`, en: `${o.title?.en || o.title?.es || "Event"} · ${o.dia} · ${o.n} ${o.n === 1 ? "ticket" : "tickets"}` };
+  // Sin teléfono del negocio: la ayuda con el pago la lleva To'Latino (no hay «Llamar»).
+  return { numero: o.numero, negocio: { nombre: o.nombre, telefono: null, foto: o.foto }, con: null, model: "biz" as CabezaAyuda["model"], svc: que, dep: o.app, pro: null, total: o.app || o.total };
+}

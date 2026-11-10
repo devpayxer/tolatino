@@ -747,8 +747,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Fase 6 · 6c (boletos, mesas, extras y códigos)
 - [ ] **6c · Transferir al organizador:** el cobro de boletos queda en la plataforma (`transfer_group` del evento); la transferencia del martes
       después de la fecha, las retenciones y el ajuste por devoluciones llegan con 6e. Hasta entonces el dinero no sale solo. (6c, 10 nov)
-- [ ] **6c · Devoluciones de boletos:** cancelar el comprador, devolver desde el panel y devolución total al cancelar el evento llegan con
-      6d/6e; «Anular» del admin no devuelve dinero. La ficha ya dice «Devolución total si el evento se cancela». (6c, 10 nov)
+- [ ] **6c · Devoluciones de boletos:** _6d (10 nov): cancelar el comprador (menos el cargo, hasta 24 h antes) y devolver desde el panel
+      (100 %) hechos, idempotentes y con el reintento del barrido._ Falta la devolución total al cancelar el evento (6e); «Anular» del admin
+      no devuelve dinero. (6c, 10 nov)
 - [ ] **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov)
 - [ ] **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
       Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov)
@@ -774,4 +775,27 @@ en el momento. Se marca solo cuando está hecho de verdad.
       de accesibilidad como el de Button. (6c, 10 nov)
 - [ ] **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov)
 - [ ] **6c · Textos del Super Admin de boletos en inglés:** como el resto del admin, en español. (6c, 10 nov)
+
+## Fase 6 · 6d (después de comprar: transferir, cancelar, cortesías, lista de espera, ayuda B-)
+- [ ] **6d · SMS de verdad para «Te mandaron un boleto», «Tienes una cortesía» y «Se liberó un lugar»:** salen con la clave del proveedor
+      (Telnyx, decisión E2). Hoy: con cuenta llegan en Avisos; a un número sin cuenta solo queda el SMS (`phone_messages`, en el sandbox
+      en modo pruebas). Hasta conectarlo, quien recibe sin cuenta no se entera: los textos ya dicen «le avisamos a ese teléfono». (6d, 10 nov)
+- [ ] **6d · Compartir el enlace de una transferencia** (WhatsApp, copiar): sin diseño; el enlace solo lo recibe ese teléfono, así que
+      compartirlo es seguro. Útil mientras no haya SMS. (6d, 10 nov)
+- [ ] **6d · Lista de espera de eventos gratis con cupo («cupo lleno»):** no se construyó (el RSVP no aparta; libera a las puertas + 30 min).
+      Si se quiere, oferta de 30 min que guarda el RSVP. (6d, 10 nov)
+- [ ] **6d · Oferta de la lista de espera de noche:** respeta las horas de silencio (el SMS espera; el aviso llega en Avisos); 30 min pueden
+      vencer sin verse. Decidir si es crítica o si no se ofrece de noche (REVISION 6d). (6d, 10 nov)
+- [ ] **6d · Devolución que Stripe nunca hace** (tarjeta cerrada, cuenta con disputa): queda «pendiente» y el barrido la reintenta para
+      siempre con su llave (`refunds.attempts`, `last_error`). Falta la alerta en Dinero / Confianza pasado N intentos y el camino manual. (6d, 10 nov)
+- [ ] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
+      Confianza llegan con 6j (`evt_senales`). (6d, 10 nov)
+- [ ] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
+      transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov)
+- [ ] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov)
+- [ ] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov)
+- [ ] **6d · Liquidación (6e):** `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
+      devolución después de pagado al organizador resta de la siguiente. (6d, 10 nov)
+- [ ] **6d · Abogado:** política de cancelación del comprador (24 h, menos el cargo) y de transferencia (sin precio) en los Términos; ley de
+      reventa de PA. (6d, 10 nov)
 

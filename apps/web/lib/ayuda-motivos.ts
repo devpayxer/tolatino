@@ -32,6 +32,8 @@ const BASE: Record<string, L> = {
   idioma: ["No había servicio en español", "No service in Spanish"], ver: ["Le cobraron por ver la propiedad", "Charged to view the property"],
   mudar: ["Le pidieron más para mudarse de lo publicado", "Asked for more to move in than posted"], fotos: ["No era como en las fotos", "Not like the photos"],
   precio: ["El precio en la puerta fue más", "The out-the-door price was higher"], titulo: ["No le enseñaron el título", "Did not show the title"],
+  // Boletos de eventos (6d): «Un problema con el pago», lo revisa To'Latino
+  doble: ["Le cobraron dos veces", "Charged twice"], monto: ["El cobro no es el que vio", "The charge is not what they saw"], sinbol: ["Pagó y no tiene sus boletos", "Paid and has no tickets"],
 };
 const POR_RUBRO: Record<string, Record<string, L>> = {
   salud: { cobro: ["Le cobraron algo que no dijeron", "Charged something not mentioned"], espera: ["Esperó mucho más de lo que dijeron", "Waited much longer than stated"] },

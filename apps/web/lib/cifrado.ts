@@ -1,5 +1,5 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from "node:crypto";
 
 /* Cifrado de columna para lo sensible (op_private.note_enc · fase4-salud-pro.md §3): AES-256-GCM con la llave de los secretos
    del entorno (DATOS_SECRET, la crea infra/pruebas/deploy.sh en el servidor; nunca pasa por el chat). Formato:
@@ -24,4 +24,10 @@ export function descifrar(b: Buffer | null | undefined): string | null {
     d.setAuthTag(b.subarray(12, 28));
     return Buffer.concat([d.update(b.subarray(28)), d.final()]).toString("utf8");
   } catch { return null; } // llave cambiada o dato dañado: no se muestra nada (nunca el cifrado)
+}
+
+/* 6d · Huella de un dato sensible para buscarlo sin guardarlo en claro (el teléfono de una transferencia o una cortesía): HMAC-SHA256
+   con la misma llave del entorno. Igual dato → igual huella; sin la llave no se puede adivinar. */
+export function huella(texto: string): string {
+  return createHmac("sha256", llave()).update(`huella:${texto}`).digest("hex");
 }

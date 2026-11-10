@@ -25,7 +25,9 @@ export type ClaveConfig =
   // 6b · RSVP (0107)
   | "rsvp_guarda_min"
   // 6c · Boletos (0108)
-  | "evt_apartado_min" | "evt_boletos_por_orden_max" | "evt_boletos_persona_fecha_max" | "evt_codigo_intentos_max" | "evt_apartados_vivos_max";
+  | "evt_apartado_min" | "evt_boletos_por_orden_max" | "evt_boletos_persona_fecha_max" | "evt_codigo_intentos_max" | "evt_apartados_vivos_max"
+  // 6d · transferir, cancelar, lista de espera y cortesías
+  | "bol_transferir_h" | "bol_cancelar_h" | "espera_oferta_min" | "evt_cortesias_max" | "bol_transferencias_dia_max";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

@@ -35,7 +35,9 @@ _Pantallas: **la ficha del evento** (`/eventos/{evento}`) → **Boletos** (`/eve
 - **¿Hay cargos escondidos?** No. El precio que ves ya incluye los cargos; la comisión de To'Latino sale de lo del organizador.
 - **¿Puedo pagar en la puerta?** No. En la puerta no se venden boletos: el portero solo escanea.
 - **¿Puedo pagar con Wallet?** Por ahora solo con tarjeta de crédito o débito.
-- **¿Y si el evento se cancela?** Te devolvemos todo. (Cancelar tú, transferir y la lista de espera llegan pronto.)
+- **¿Y si el evento se cancela?** Te devolvemos todo. **Si cancelas tú** (hasta 24 h antes), se devuelve el boleto menos el cargo de servicio;
+  después, puedes **transferirlo** hasta 2 h antes. Si se agotó, anótate en la **lista de espera**. Ver «Transferir boletos», «Cancelar y
+  devoluciones de boletos» y «Lista de espera».
 
 ---
 
@@ -55,4 +57,4 @@ charge. Limits per order and per person (account, phone and card). Code used up 
 message. 18+/21+ → "If you do not show ID at the door, you do not get in." Paused / closed / organizer not selling → no checkout.
 
 ## FAQ (English)
-No hidden fees (To'Latino's fee comes out of the organizer's share). No sales at the door. Card only for now. Event cancelled → full refund.
+No hidden fees (To'Latino's fee comes out of the organizer's share). No sales at the door. Card only for now. Event cancelled → full refund. You cancel (up to 24 h before) → ticket minus the service fee; transfer up to 2 h before; sold out → waitlist.

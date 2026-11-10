@@ -140,8 +140,33 @@ Guardianes nuevos `boletosSinSobreventa`, `apartadoLoLlevaElServidor`, `nadaSeCo
 `qrSinDatosPersonales`, `boletosSoloSuyos`, `libroBoletos`; ampliados `dineroDelServidor`, `capturaMercado` — 42/42 al revés
 (`alreves6c.cjs`; `alreves6a` 26/26, `alreves6b` 31/31). e2e `evt6c` (teléfono y escritorio, contra el simulador; ver REVISION).
 Ayuda: comprar-boletos, mis-boletos-y-el-qr, panel-eventos-boletos-mesas-y-extras, panel-eventos-codigos; pagar-con-tarjeta y
-admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6c» (con la revisión de seguridad). **Sigue 6d**
-(transferir, cancelar el comprador, cortesías, lista de espera y ayuda con la orden B-).
+admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6c» (con la revisión de seguridad). **6d hecho (10 nov)** —
+después de comprar: migración 0109 (`ticket_transfers` (token de un uso guardado como sha256, teléfono cifrado + huella, «••NN», una
+pendiente por boleto, nunca la recibe quien la manda, solo desde pendiente y antes de vencer), cortesías en `tickets` (`comp_name`,
+`comp_phone_enc`, `comp_by`; check sin dinero; solo en una orden sin cobro; nunca devueltas), `tickets_antes` ampliado, `tickets_libera`
+(al devolver, la base suelta el lugar), `bol_vigente` (válido y sin transferencia pendiente), `refunds.initiated_by 'buyer'` + `attempts`
+/ `last_error` / `done_at` + trigger `refunds_tope` (pendiente + hecho ≤ cobrado, pago bloqueado), `ticket_refund_lines` (única por boleto y
+por extra; `fee_kept_cents` / `fee_waived_cents`; solo inserción), `sim_refunds` (el simulador devuelve una vez por llave), `waitlist` (FIFO por
+`created_at` inmutable) + `ticket_holds.waitlist_id`, `phone_messages` (SMS a un número sin cuenta, cifrado), motivos B- en `help_requests`,
+plantillas bol_transfer_in / bol_cortesia / espera_lugar (SMS) y bol_transfer_ok / bol_transfer_vuelve / espera_vence / bol_cancelado /
+bol_devuelto / evt_devolucion, claves bol_transferir_h · bol_cancelar_h · espera_oferta_min · evt_cortesias_max · bol_transferencias_dia_max).
+Código: `lib/boletos-despues.ts` (transferir, deshacer, vencer, ver y recibir, cambiar el nombre, previo y cancelar con devolución en dos
+pasos + `ejecutarDevolucion` + barrido `barrerDevolucionesBoletos`, devolver desde el panel, dar y quitar cortesías, lo del panel),
+`lib/espera.ts` (ofrecer en orden con candado por fecha, barrido `barrerEspera`, anotarse, salir, panel, avisar a la lista),
+`lib/boletos.ts` (la fila primero al apartar y al mostrar; la oferta vencida no se reaparta; el boleto enviado sin QR; ventanas; recibidos en
+Mis boletos), `pasarela.devolver` (cobro de la plataforma sin reverse_transfer; simulador por llave), `devolverPago` (cuenta lo pendiente),
+`avisarTelefono`, `huella` (cifrado), ayuda B- en `ayuda-cita.ts` (rubro «evt», directo a To'Latino) + `cabezaAyudaBoletos`; pantallas: la
+orden (Transferir boletos, Ayuda con esta orden, ENVIADOS con Deshacer, política, devolución), las hojas Transferir · ¿Qué pasó? · Cancelar
+· Cambiar un nombre (`app/(app)/eventos/Despues.tsx`), el boleto (Transferir este boleto, Deshacer, Cambiar el nombre), `/eventos/recibir/
+[token]` (hueco #4), `/eventos/orden/B-…/ayuda` (APP-EVT-AYUDA-PAGO, hueco #3), la ficha con la lista de espera, el pago «SE LIBERÓ UN
+LUGAR»; panel: Devolver, CORTESÍAS, DEVOLUCIONES, TRANSFERIDOS, LISTA DE ESPERA con Avisar a la lista, AYUDA CON ÓRDENES; Super Admin: el
+boleto con su historial (transferencias, devolución, cortesía), la ficha del evento con cortesías · transferidos · lista de espera, Colas ›
+Ayuda con una orden de boletos, Transacciones sin cortesías. Guardianes nuevos `qrViejoNoEntra`, `cortesiaSinDinero`, `listaDeEsperaEnOrden`,
+`devolucionUnaVez`; ampliados `devolverCoincide`, `dineroDelServidor`, `boletosSinSobreventa`, `libroBoletos` — 42/42 al revés
+(`alreves6d.cjs`). e2e `evt6d` (teléfono y escritorio, contra el simulador; ver REVISION). Ayuda: transferir-boletos,
+cancelar-y-devoluciones-de-boletos, lista-de-espera, ayuda-con-la-orden-de-boletos, panel-eventos-cortesias-y-devoluciones; comprar-boletos,
+mis-boletos-y-el-qr y admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6d» (con la revisión de seguridad).
+**Sigue 6e** (pausar, cambiar fecha, cancelar con devolución total, avisos, liquidación del martes y disputas).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

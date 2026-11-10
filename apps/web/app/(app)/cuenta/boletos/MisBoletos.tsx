@@ -11,10 +11,13 @@ export function MisBoletos({ d, f, es, yo }: { d: MB; f: "proximos" | "pasados";
   const router = useRouter(), ui = useCuentaUi();
   const fila = (g: GrupoMis, pasado: boolean): Fila => ({
     key: g.numero, t: g.title, s: `${diaCorto(g.dia, es).toUpperCase()} · ${hora(g.h0)} · ${g.venue}`.toUpperCase(),
-    x: `${g.n} ${g.n === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")}${g.mesa ? E2(" · con mesa", " · with table") : ""} · ${E2("orden", "order")} ${g.numero}`,
+    // 6d · Recibido de otra persona (o cortesía): se abre el boleto (la orden es de quien pagó). Enviados y transferidos se dicen.
+    x: g.recibido ? `${g.vivos} ${g.vivos === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")} · ${E2("te lo mandaron", "sent to you")}`
+      : `${g.n} ${g.n === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")}${g.mesa ? E2(" · con mesa", " · with table") : ""}${g.transferidos ? E2(` · ${g.transferidos} transferido${g.transferidos === 1 ? "" : "s"}`, ` · ${g.transferidos} transferred`) : ""}${g.enviando ? E2(` · ${g.enviando} en camino`, ` · ${g.enviando} on the way`) : ""} · ${E2("orden", "order")} ${g.numero}`,
     date: { dd: String(Number(g.dia.slice(8, 10))), mo: mesCorto(g.dia, es) }, dbg: g.dark ? "var(--tl-ink)" : undefined, dfg: g.dark ? "var(--tl-white)" : undefined,
-    tag: g.vivos === 0 ? (g.devueltos ? [E2("DEVUELTO", "REFUNDED"), "neutral"] : [E2("ANULADO", "VOID"), "danger"]) : pasado ? [E2("PASADO", "PAST"), "neutral"] : [E2("CON QR", "WITH QR"), "signal"],
-    chev: true, on: () => router.push(`/eventos/orden/${g.numero}`),
+    tag: g.vivos === 0 && g.enviando ? [E2("ENVIADO", "SENT"), "action"] : g.vivos === 0 ? (g.devueltos ? [E2("DEVUELTO", "REFUNDED"), "neutral"] : g.transferidos ? [E2("TRANSFERIDO", "TRANSFERRED"), "neutral"] : [E2("ANULADO", "VOID"), "danger"])
+      : pasado ? [E2("PASADO", "PAST"), "neutral"] : g.recibido ? [E2("RECIBIDO · CON QR", "RECEIVED · WITH QR"), "signal"] : [E2("CON QR", "WITH QR"), "signal"],
+    chev: true, on: () => router.push(g.recibido ? `/cuenta/boletos/${g.codigos[0]}` : `/eventos/orden/${g.numero}`),
   });
   const L = f === "proximos" ? d.proximos : d.pasados;
   const B: Bloque[] = [

@@ -42,7 +42,9 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   // Nunca la nota, la dirección de la casa del cliente ni datos de su licencia. Nada se cobra en la app.
   vis: { rub: string; que: string; item: string | null; dia: string; min: number; mudar: number | null; otd: number | null; precio: number | null; cierre: string | null; casa: boolean; linea: string | null } | null };
 function donde(s: Staff, f: FiltrosTx) {
-  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
+  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))",
+    // 6d · Una cortesía (orden de boletos sin cobro) no es dinero: no sale en Transacciones (sí en la ficha del evento y en Buscar boleto).
+    "not (o.kind = 'tickets' and o.pay_mode = 'none')"], v: unknown[] = [s.cities];
   if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
   else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip", noche: "night", insc: "enrollment", vis: "visit", bol: "tickets" } as const)[f.tab]}'`);
   if (f.st.length) { v.push(f.st); w.push(`(${EST}) = any($${v.length}::text[])`); }

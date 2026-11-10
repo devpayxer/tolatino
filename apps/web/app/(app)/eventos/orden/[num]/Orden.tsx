@@ -7,19 +7,24 @@ import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { BoletoVista, OrdenVista } from "@/lib/boletos";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
+import { useToast } from "../../comun";
+import { bolDeshacer } from "../../acciones-despues";
+import { fechaHora, HojaAyuda, HojaCancelar, HojaNombre, HojaTransferir } from "../../Despues";
 
 type N = "Icon" | "Button" | "TicketQR" | "OrderTracker" | "ReceiptCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TicketQR, OrderTracker, ReceiptCard } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 
-export function estadoBoleto(b: Pick<BoletoVista, "estado">, es: boolean): [string, string, string] {
+export function estadoBoleto(b: Pick<BoletoVista, "estado" | "envio">, es: boolean): [string, string, string] {
   const E2 = (a: string, z: string) => (es ? a : z);
   // La etiqueta va sobre la cabecera oscura del boleto (TicketQR): colores con contraste sobre tinta.
-  return b.estado === "valid" ? [E2("VÁLIDO", "VALID"), "rgba(0,229,196,.16)", "var(--tl-signal)"]
+  // 6d · Enviado (transferencia pendiente: el QR anterior quedó anulado y no hay otro hasta que lo reciban o lo deshagas) y transferido.
+  return b.envio ? [E2(`ENVIADO · ${b.envio.a}`, `SENT · ${b.envio.a}`), "rgba(255,176,32,.2)", "var(--tl-pro)"]
+    : b.estado === "replaced" ? [E2("TRANSFERIDO", "TRANSFERRED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
+    : b.estado === "valid" ? [E2("VÁLIDO", "VALID"), "rgba(0,229,196,.16)", "var(--tl-signal)"]
     : b.estado === "used" ? [E2("USADO", "USED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
     : b.estado === "refunded" ? [E2("DEVUELTO", "REFUNDED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
-    : b.estado === "replaced" ? [E2("REEMITIDO", "REISSUED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
     : [E2("ANULADO", "VOID"), "var(--tl-danger)", "var(--tl-white)"];
 }
 export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVista; es: boolean; cuando: string; ancho?: number; onClick?: () => void }) {
@@ -27,8 +32,8 @@ export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVist
   const tipo = b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.tipo;
   return (
     <div data-boleto={b.code} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(e) => { if (onClick && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onClick(); } }} className={onClick ? "cursor-pointer" : ""}>
-      <TicketQR type={tipo} name={(b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg} matrix={b.matriz} qrSize={ancho ? 168 : 200}
-        qrLabel={es ? `Código QR del boleto ${b.code}` : `QR code for ticket ${b.code}`} used={b.estado !== "valid"} code={b.code} when={cuando} width={ancho} />
+      <TicketQR type={tipo} name={(b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg} matrix={b.matriz} qrSize={b.matriz ? (ancho ? 168 : 200) : 96}
+        qrLabel={es ? `Código QR del boleto ${b.code}` : `QR code for ticket ${b.code}`} used={b.estado !== "valid" || !!b.envio} code={b.code} when={cuando} width={ancho} />
     </div>
   );
 }
@@ -37,6 +42,9 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [recibo, setRecibo] = useState(false);
+  // 6d · Las hojas de después de comprar y su aviso.
+  const [hoja, setHoja] = useState<"tr" | "ayuda" | "cx" | "nombre" | null>(null), { toast, el } = useToast();
+  const listo = (m: string) => { setHoja(null); toast(m); router.refresh(); };
   const cancelada = o.estado === "cancelled", ev = o.evento;
   const cuando = `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
   const llegar = ev.lat != null && ev.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : ev.addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.addr)}` : null;
@@ -46,7 +54,10 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
       `SUMMARY:${ev.title.replace(/[,;\n]/g, " ")}`, `LOCATION:${[ev.venue, ev.addr].filter(Boolean).join(" ").replace(/[,;\n]/g, " ")}`, "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([txt], { type: "text/calendar" })); a.download = `boletos-${o.numero}.ics`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   };
-  const vivos = o.boletos.filter((b) => b.estado === "valid").length;
+  const vivos = o.boletos.filter((b) => b.estado === "valid" && !b.envio).length;
+  const V = o.ventanas, libres = o.boletos.filter((b) => b.estado === "valid" && !b.envio), enviando = o.boletos.filter((b) => b.envio);
+  const devuelto = o.devoluciones.reduce((s, d) => s + d.monto, 0), enCamino = o.devoluciones.some((d) => d.estado === "pending");
+  const deshacer = async (code: string) => { const r = await bolDeshacer(code).catch(() => null); toast(r?.ok ? E2("Listo: el boleto vuelve a ti con un QR nuevo.", "Done: the ticket is yours again with a new QR.") : r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); router.refresh(); };
   const pasos = [
     { label: E2("Boletos listos", "Tickets ready"), time: o.numero, state: "done" },
     { label: E2("Día del evento", "Event day"), time: cuando, state: ev.pasado ? "done" : ev.hoy ? "current" : "next" },
@@ -58,6 +69,11 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
       <div className="font-mono text-[10.5px] font-bold tracking-[0.16em] text-ink/50">{`${E2("ORDEN", "ORDER")} ${o.numero}`}</div>
       <h1 className="m-0 mt-1.5 font-display font-extrabold leading-[1.05] tracking-[-0.045em]" style={{ fontSize: d ? 32 : 26 }}>{cancelada ? E2("No se completó", "Not completed") : E2("¡Listo, vas!", "You are going!")}</h1>
       <div className="mt-2 text-[13.5px] font-semibold text-ink/70">{`${ev.title} · ${cuando} · ${ev.venue}`}</div>
+      {devuelto > 0 && <div role="status" data-screen-label="Orden · devolución" className="mt-3 rounded-[14px] bg-signal/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-open-text">
+        {(() => { const de = (k: string) => o.devoluciones.filter((d) => d.por === k).reduce((x, d) => x + d.monto, 0), cx = de("buyer"), bz = de("business"), ot = devuelto - cx - bz;
+          return [cx ? E2(`Cancelaste boletos: te devolvemos ${dinero(cx)}.`, `You cancelled tickets: we refund ${dinero(cx)}.`) : "", bz ? E2(`${ev.org} te devolvió ${dinero(bz)}.`, `${ev.org} refunded you ${dinero(bz)}.`) : "",
+            ot ? E2(`To'Latino te devolvió ${dinero(ot)}.`, `To'Latino refunded you ${dinero(ot)}.`) : ""].filter(Boolean).join(" "); })()}
+        {` ${enCamino ? E2("Va en camino a tu tarjeta (3–5 días hábiles).", "It is on its way to your card (3–5 business days).") : E2("Ya salió a tu tarjeta (3–5 días hábiles en verse).", "It went out to your card (3–5 business days to show).")}`}</div>}
       {cancelada && <div role="alert" className="mt-3 rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{E2("Tu banco no completó el cobro. No se cobró nada y estos boletos no valen. Puedes comprar otra vez.", "Your bank did not complete the charge. Nothing was charged and these tickets are not valid. You can buy again.")}</div>}
     </div>
   );
@@ -65,19 +81,42 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
     <div data-screen-label="Orden · boletos">
       <div className={`flex items-baseline justify-between gap-2 ${d ? "" : "px-4"}`}>
         <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{ev.pasado ? E2("TUS BOLETOS", "YOUR TICKETS") : E2("MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO", "SHOW IT AT THE DOOR · TURN UP THE BRIGHTNESS")}</span>
-        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/45">{`${vivos}/${o.boletos.length}`}</span>
+        <span className="font-mono text-[10px] font-bold tracking-[0.1em] text-ink/45">{`${vivos}/${o.boletos.filter((b) => !b.envio).length}`}</span>
       </div>
       <div className={d ? "mt-3 grid grid-cols-2 gap-4" : "hs mt-3 flex gap-3 overflow-x-auto px-4 pb-1"}>
-        {o.boletos.map((b) => <TarjetaBoleto key={b.code} b={b} es={es} cuando={cuando} ancho={d ? undefined : 250} onClick={() => router.push(`/cuenta/boletos/${b.code}`)} />)}
+        {o.boletos.filter((b) => !b.envio).map((b) => <TarjetaBoleto key={b.code} b={b} es={es} cuando={cuando} ancho={d ? undefined : 250} onClick={() => router.push(`/cuenta/boletos/${b.code}`)} />)}
       </div>
       <div className={`mt-2.5 text-[11.5px] font-medium leading-[1.5] text-ink/55 ${d ? "" : "px-4"}`}>{E2("Tu QR es la entrada; no hace falta imprimir. Si no hay señal, el código funciona igual. Toca un boleto para verlo grande.", "Your QR is your entry; no need to print. Without signal, the code still works. Tap a ticket to see it big.")}</div>
+      {enviando.length > 0 && (
+        <div data-screen-label="Orden · enviados" className={`mt-3 flex flex-col gap-2 ${d ? "" : "px-4"}`}>
+          <div className="font-mono text-[10px] font-bold tracking-[0.2em] text-ink/[.42]">{E2("ENVIADOS · ESPERANDO QUE LOS RECIBAN", "SENT · WAITING TO BE RECEIVED")}</div>
+          {enviando.map((b) => (
+            <div key={b.code} data-enviado={b.code} className={`flex items-center gap-3 px-3.5 py-3 ${caja}`}>
+              <span className="grid size-9 flex-none place-items-center rounded-[11px] bg-pro/[.16]"><Icon name="share" size={16} color="var(--tl-pro-ink)" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">{`${b.tipo} · ${b.code}`}</span>
+                <span className="mt-0.5 block text-[11.5px] font-medium text-ink/55">{E2(`A ${b.envio!.a} · lo puede recibir hasta ${fechaHora(b.envio!.hasta, ev.tz, true)} · EL QR ANTERIOR QUEDA ANULADO`, `To ${b.envio!.a} · they can receive it until ${fechaHora(b.envio!.hasta, ev.tz, false)} · THE OLD QR IS VOIDED`)}</span></span>
+              <Button variant="secondary" size="md" onClick={() => void deshacer(b.code)}>{E2("Deshacer", "Undo")}</Button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   ));
   const acciones = (
     <div className="flex flex-wrap gap-2">
+      {!cancelada && !ev.pasado && V.transferir && libres.length > 0 && <Button variant="secondary" icon="share" onClick={() => setHoja("tr")}>{E2("Transferir boletos", "Transfer tickets")}</Button>}
+      {!cancelada && <Button variant="secondary" icon="help" onClick={() => setHoja("ayuda")}>{E2("Ayuda con esta orden", "Help with this order")}</Button>}
       <Button variant="secondary" onClick={calendario}>{E2("Calendario", "Calendar")}</Button>
       {llegar && <Button variant="secondary" onClick={() => window.open(llegar, "_blank", "noopener")}>{E2("Cómo llegar", "Directions")}</Button>}
       <Button variant="secondary" onClick={() => setRecibo(!recibo)}>{E2("Recibo", "Receipt")}</Button>
+    </div>
+  );
+  // 6d · Hasta cuándo (Configuración): transferir y cancelar con devolución.
+  const plazos = cancelada || ev.pasado ? null : (
+    <div data-screen-label="Orden · política" className="text-[11.5px] font-medium leading-[1.55] text-ink/60">
+      <span className="block font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("POLÍTICA DE ESTE EVENTO", "THIS EVENT’S POLICY")}</span>
+      {E2(`Transfieres hasta ${fechaHora(V.transferirHasta, ev.tz, true)} (${V.horasTransferir} h antes). Cancelas con devolución, menos el cargo de servicio, hasta ${fechaHora(V.cancelarHasta, ev.tz, true)} (${V.horasCancelar} h antes). Si el evento se cancela, te devolvemos todo.`,
+        `You can transfer until ${fechaHora(V.transferirHasta, ev.tz, false)} (${V.horasTransferir} h before). You can cancel with a refund, minus the service fee, until ${fechaHora(V.cancelarHasta, ev.tz, false)} (${V.horasCancelar} h before). If the event is cancelled, you get everything back.`)}
     </div>
   );
   const reciboB = (
@@ -97,16 +136,22 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
     <div data-pantalla="APP-EVT-ORDEN" className="min-h-[100dvh] bg-paper">
       <div data-screen-label="APP-EVT-ORDEN · móvil" className="flex flex-col gap-4 pb-10 lg:hidden">
         {cab(false)}{boletos(false)}
-        <div className="flex flex-col gap-3 px-4">{!cancelada && <OrderTracker steps={pasos} />}{acciones}{recibo && reciboB}
+        <div className="flex flex-col gap-3 px-4">{!cancelada && <OrderTracker steps={pasos} />}{acciones}{plazos}{recibo && reciboB}
           <button type="button" onClick={() => router.push("/cuenta/boletos")} className="self-start text-[13px] font-bold text-action">{E2("Mis boletos", "My tickets")}</button></div>
       </div>
       <div data-screen-label="APP-EVT-ORDEN · desktop" className="mx-auto hidden max-w-[1180px] px-[30px] pb-[60px] pt-[22px] lg:block">
         <button type="button" onClick={() => router.push("/cuenta/boletos")} className="inline-flex items-center gap-1.5 text-[13px] font-bold text-action"><Icon name="chevronLeft" size={16} strokeWidth={2} />{E2("Mis boletos", "My tickets")}</button>
         <div className="mt-3.5 grid grid-cols-[minmax(0,1fr)_400px] items-start gap-x-12">
           <div className="flex min-w-0 flex-col gap-5">{cab(true)}{boletos(true)}</div>
-          <aside className={`sticky top-[96px] flex flex-col gap-3 p-4 ${caja}`}>{!cancelada && <OrderTracker steps={pasos} />}{acciones}{reciboB}</aside>
+          <aside className={`sticky top-[96px] flex flex-col gap-3 p-4 ${caja}`}>{!cancelada && <OrderTracker steps={pasos} />}{acciones}{plazos}{reciboB}</aside>
         </div>
       </div>
+      {hoja === "tr" && <HojaTransferir es={es} boletos={libres.map((b) => ({ code: b.code, tipo: b.tipo }))} horas={V.horasTransferir} hasta={V.transferirHasta} tz={ev.tz} onClose={() => setHoja(null)} onDone={listo} />}
+      {hoja === "cx" && <HojaCancelar es={es} numero={o.numero} tz={ev.tz} onClose={() => setHoja(null)} onDone={listo} />}
+      {hoja === "nombre" && <HojaNombre es={es} horas={V.horasTransferir} boletos={libres.map((b) => ({ code: b.code, tipo: b.tipo, nombre: b.nombre }))} onClose={() => setHoja(null)} onDone={listo} />}
+      {hoja === "ayuda" && <HojaAyuda es={es} numero={o.numero} horas={V.horasTransferir} puedeCancelar={V.cancelar} devuelto={devuelto > 0 && !libres.length} onClose={() => setHoja(null)} onCancelar={() => setHoja("cx")}
+        onNombre={V.transferir && libres.length ? () => setHoja("nombre") : null} toast={toast} />}
+      {el}
     </div>
   );
 }

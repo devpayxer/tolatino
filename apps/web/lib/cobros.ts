@@ -60,6 +60,7 @@ const refDe = (kind: string, num: string) => kind === "appointment"
   : kind === "party" ? { num, href: `/fiesta/${num}`, ref: ["party", num] as [string, string] }
   : kind === "trip" ? { num, href: `/viaje/${num}`, ref: ["trip", num] as [string, string] }
   : kind === "night" ? { num, href: `/noche/${num}`, ref: ["night", num] as [string, string] }
+  : kind === "tickets" ? { num, href: `/eventos/orden/${num}`, ref: ["tickets", num] as [string, string] }
   : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
 /* Cobrar lo retenido de una operación (el negocio aceptó). */
@@ -118,9 +119,9 @@ export async function repararPagos(negocio: string) {
 /* Devolver dinero de un cobro (total o parcial). Lo hace el negocio (desde su pedido) o To'Latino (Soporte o
    Transacciones). Idempotente por `idem`. La comisión baja en proporción. */
 export async function devolverPago(x: { paymentId: string; centavos: number; por: "business" | "admin" | "policy"; actorId: string | null; motivo: string; idem: string }): Promise<{ ok: true } | { ok: false; msg: { es: string; en: string } }> {
-  const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string; kind: string }>(
-    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents as refunded, p.status, p.user_id::text as uid, o.number as num, o.kind,
-            p.card_brand as brand, p.card_last4 as l4, p.operation_id::text as op
+  const p = (await db().query<{ id: string; pi: string; amount: number; refunded: number; status: string; uid: string; num: string; brand: string | null; l4: string | null; op: string; kind: string; plataforma: boolean }>(
+    `select p.id::text, p.stripe_payment_intent as pi, p.amount_cents as amount, p.refunded_cents + coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status = 'pending'), 0)::int as refunded,
+            p.status, p.user_id::text as uid, o.number as num, o.kind, p.card_brand as brand, p.card_last4 as l4, p.operation_id::text as op, p.transfer_group is not null as plataforma
        from payments p join operations o on o.id = p.operation_id where p.id = $1::bigint`, [x.paymentId])).rows[0];
   if (!p) return { ok: false, msg: { es: "Ese cobro no existe.", en: "That charge does not exist." } };
   const ya = (await db().query(`select 1 from refunds where idem_key = $1`, [x.idem])).rowCount;
@@ -128,7 +129,9 @@ export async function devolverPago(x: { paymentId: string; centavos: number; por
   if (!["captured", "partially_refunded"].includes(p.status)) return { ok: false, msg: { es: "Solo se devuelve lo que ya se cobró.", en: "Only charged money can be refunded." } };
   const n = Math.round(x.centavos);
   if (!(n > 0) || n > p.amount - p.refunded) return { ok: false, msg: { es: `Puedes devolver hasta ${money(p.amount - p.refunded)}.`, en: `You can refund up to ${money(p.amount - p.refunded)}.` } };
-  const r = await pasarela.devolver(p.pi, n, x.idem);
+  // 6d · Lo pendiente de una devolución de boletos ya cuenta (refunded suma las pendientes); un cobro de la plataforma (boletos) no tiene
+  // transferencia ni comisión de destino que revertir.
+  const r = await pasarela.devolver(p.pi, n, x.idem, { plataforma: p.plataforma });
   if (!r.ok) return { ok: false, msg: { es: "Stripe no pudo hacer la devolución. Prueba de nuevo en un momento.", en: "Stripe could not make the refund. Try again in a moment." } };
   await tx(async (c) => {
     await c.query(`insert into refunds (payment_id, amount_cents, reason, initiated_by, actor_id, stripe_refund_id, status, idem_key) values ($1, $2, $3, $4, $5, $6, 'done', $7)`,

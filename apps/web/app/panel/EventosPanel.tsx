@@ -15,8 +15,10 @@ import {
 } from "@/lib/evt-comun";
 import type { EvtPanel, FilaPanelEvt } from "@/lib/evt";
 import type { VentasPanel } from "@/lib/boletos";
+import type { DespuesPanel } from "@/lib/boletos-despues";
+import type { EsperaPanel } from "@/lib/espera";
 import type { CodigoPanel } from "@/lib/codigos-evt";
-import { evtCodigoCambiar, evtCodigoCrear, evtEnviar, evtGuardar, evtModulo, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
+import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 
 export type EvtData = {
@@ -26,6 +28,8 @@ export type EvtData = {
   mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
   /* 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). */
   ventas: VentasPanel | null; codigos: CodigoPanel[]; vendidos: Record<string, number>;
+  /* 6d · Cortesías, devoluciones, transferencias, ayuda con órdenes y LISTA DE ESPERA del evento abierto. */
+  despues: DespuesPanel | null; espera: EsperaPanel | null;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -173,6 +177,10 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
   out.push({ type: "field", k: E2("USOS", "USES"), val: Fc.d.usos, onChange: (v) => Fc.set({ usos: v.replace(/\D/g, "").slice(0, 5) }) });
   out.push({ type: "acts", items: [{ l: E2("Crear código", "Create code"), icon: "plus", v: "primary", onClick: () => c.run(() => evtCodigoCrear(c.d.id, e.id, { code: Fc.d.code, kind: Fc.d.kind, value: Fc.d.kind === "pct" ? N(Fc.d.value, 100) : centavos(Fc.d.value), usos: N(Fc.d.usos, 10000) }), E2("Código creado.", "Code created."), () => Fc.set({ code: "" })) }] } as Bloque);
   // Compradores (nombre + inicial; nunca teléfono ni correo).
+  // 6d · «Devolver» (total o por boleto, 100 %; pide la parte de Cobros): se cargan los boletos de la orden y se confirma lo que vuelve.
+  const puedeDev = c.d.kind === "owner" || c.d.partes.includes("all") || c.d.partes.includes("pay");
+  const abrirDev = async (num: string) => { const L = await evtBoletosOrden(c.d.id, num).catch(() => []); const vivos = L.filter((x) => x.estado === "valid");
+    c.setUi({ evDev: { num, L, sel: vivos.map((x) => x.code), k: crypto.randomUUID() } }); };
   const fil = (c.ui.evBuy as string) ?? "all", q = String(c.ui.evBuyQ ?? "").toLowerCase();
   const L = V.compradores.filter((b) => (fil === "mesa" ? b.mesa : fil === "extras" ? b.extras : true) && (!q || b.quien.toLowerCase().includes(q) || b.num.toLowerCase().includes(q)));
   out.push({ type: "group", k: E2(`COMPRADORES · ${V.compradores.length}`, `BUYERS · ${V.compradores.length}`) });
@@ -180,10 +188,80 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
   if (V.compradores.length > 6) out.push({ type: "search", val: String(c.ui.evBuyQ ?? ""), ph: E2("Nombre u orden", "Name or order"), onChange: (v) => c.setUi({ evBuyQ: v }), onClear: () => c.setUi({ evBuyQ: "" }) });
   out.push(L.length ? { type: "evbuy", items: L.map((b) => ({ key: b.num, ini: b.quien.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), n: b.quien, m: b.num, open: c.ui.evBuyOpen === b.num,
     onClick: () => c.setUi({ evBuyOpen: c.ui.evBuyOpen === b.num ? null : b.num }),
-    lines: [{ icon: "ticket", l: `${b.boletos} ${b.boletos === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")}${b.mesa ? E2(" · con mesa", " · with table") : ""}${b.extras ? E2(" · con extras", " · with extras") : ""}` }],
+    lines: [{ icon: "ticket", l: `${b.boletos} ${b.boletos === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")}${b.mesa ? E2(" · con mesa", " · with table") : ""}${b.extras ? E2(" · con extras", " · with extras") : ""}` },
+      ...(b.devuelto ? [{ icon: "dollar", l: E2(`Devuelto ${dinero(b.devuelto)}${b.vivos ? "" : " · sin boletos vivos"}`, `Refunded ${dinero(b.devuelto)}${b.vivos ? "" : " · no live tickets"}`), tone: "pro" as const }] : [])],
+    tag: b.vivos ? undefined : E2("DEVUELTA", "REFUNDED"), tone: b.vivos ? undefined : "neutral", dim: !b.vivos,
     det: [{ l: E2("Orden", "Order"), v: b.num }, { l: E2("Compró", "Bought"), v: new Date(b.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) }],
-    acts: [{ l: E2("Reenviar boletos", "Resend tickets"), icon: "share", onClick: () => c.run(() => evtReenviar(c.d.id, b.num), E2("Le llegó un aviso con sus boletos.", "They got a notice with their tickets.")) }] })) }
+    acts: [{ l: E2("Reenviar boletos", "Resend tickets"), icon: "share", onClick: () => c.run(() => evtReenviar(c.d.id, b.num), E2("Le llegó un aviso con sus boletos.", "They got a notice with their tickets.")) },
+      ...(b.vivos && puedeDev ? [{ l: E2("Devolver", "Refund"), icon: "dollar", onClick: () => void abrirDev(b.num) }] : [])] })) }
     : { type: "empty", icon: "ticket", t: V.compradores.length ? E2("Nadie con ese filtro", "Nobody with that filter") : E2("Todavía nadie compra", "Nobody has bought yet"), s: E2("Cuando alguien compre en To'Latino, sale aquí con su nombre e inicial.", "When someone buys on To'Latino, they show here with their first name and initial.") });
+  out.push(...devolverBloques(c), ...despuesBloques(c, e));
+  return out;
+}
+
+/* 6d · «Devolver» a un comprador (con confirmación): qué boletos (los usados no), cuánto vuelve (el precio de cada uno; la comisión no se
+   cobra) y el aviso. El servidor lo vuelve a calcular y lo hace idempotente con la clave de este intento. */
+type DevUi = { num: string; L: { code: string; tipo: string; precio: number; estado: string; quien: string }[]; sel: string[]; k: string };
+function devolverBloques(c: Ctx): Bloque[] {
+  const { E2 } = c, D = c.ui.evDev as DevUi | undefined;
+  if (!D) return [];
+  const total = D.L.filter((x) => D.sel.includes(x.code)).reduce((s, x) => s + x.precio, 0);
+  const ST: Record<string, [string, string]> = { valid: ["VÁLIDO", "VALID"], used: ["USADO · NO SE DEVUELVE", "USED · NOT REFUNDABLE"], refunded: ["DEVUELTO", "REFUNDED"], void: ["ANULADO", "VOID"] };
+  return [
+    { type: "group", k: E2(`DEVOLVER · ORDEN ${D.num}`, `REFUND · ORDER ${D.num}`) },
+    { type: "rows", items: D.L.map((x) => ({ key: x.code, icon: "ticket", t: `${x.tipo} · ${x.code}`, s: `${dinero(x.precio)} · ${x.quien}`, tag: E2(...(ST[x.estado] ?? ["", ""])), tone: x.estado === "valid" ? "signal" : "neutral", compact: true, chev: false, dim: x.estado !== "valid",
+      sel: x.estado === "valid" ? { on: D.sel.includes(x.code), onClick: () => c.setUi({ evDev: { ...D, sel: D.sel.includes(x.code) ? D.sel.filter((y) => y !== x.code) : [...D.sel, x.code] } }) } : undefined })) },
+    { type: "note", tone: "warn", icon: "dollar", t: E2(`Le devolvemos ${dinero(total)} a su tarjeta (3–5 días hábiles) y esos boletos dejan de entrar. La comisión de To'Latino de esos boletos no se cobra. Si la orden queda sin boletos, también vuelven sus extras.`, `We refund ${dinero(total)} to their card (3–5 business days) and those tickets stop working. To'Latino's fee on those tickets is not charged. If the order has no tickets left, its extras are refunded too.`) },
+    { type: "acts", items: [{ l: total > 0 ? E2(`Devolver ${dinero(total)}`, `Refund ${dinero(total)}`) : E2("Elige qué boletos", "Pick which tickets"), v: "danger", icon: "check", off: c.pending || !D.sel.length,
+        onClick: () => c.run(() => evtDevolver(c.d.id, D.num, D.sel, D.k), E2("Devuelto. Le avisamos y los boletos ya no entran.", "Refunded. We let them know and the tickets no longer get in."), () => c.setUi({ evDev: null })) },
+      { l: E2("Cancelar", "Cancel"), v: "secondary", onClick: () => c.setUi({ evDev: null }) }] },
+  ];
+}
+
+/* 6d · Cortesías (evCompDet), LISTA DE ESPERA, devoluciones, transferencias y ayuda con órdenes del evento abierto. */
+function despuesBloques(c: Ctx, e: EvtPanel): Bloque[] {
+  const { E2, es } = c, X = c.evt!, D = X.despues, W = X.espera, V = X.ventas, out: Bloque[] = [];
+  if (!D || !V) return out;
+  const cuando2 = (at: string) => new Date(at).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  // LISTA DE ESPERA · N (nombre + inicial, cuántos, estado) y «Avisar a la lista» solo si hay lugar.
+  if (W && (W.filas.length || V.tipos.some((t) => t.quedan === 0))) {
+    out.push({ type: "group", k: E2(`LISTA DE ESPERA · ${W.esperan}`, `WAITLIST · ${W.esperan}`) });
+    out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [{ k: E2("ESPERAN", "WAITING"), v: String(W.esperan), s: E2(`${W.personas} personas`, `${W.personas} people`) },
+      { k: E2("CON LUGAR AHORA", "OFFERED NOW"), v: String(W.ofertas), s: E2("tienen su tiempo para pagar", "have their time to pay") }, { k: E2("COMPRARON", "BOUGHT"), v: String(W.compraron), s: E2("desde la lista", "from the list") }] });
+    const ST: Record<string, [string, string]> = { waiting: ["ESPERA", "WAITING"], offered: ["SE LE OFRECIÓ", "OFFERED"], converted: ["COMPRÓ", "BOUGHT"], left: ["SALIÓ", "LEFT"], expired: ["NO PAGÓ A TIEMPO", "DID NOT PAY IN TIME"] };
+    if (W.filas.length) out.push({ type: "rows", items: W.filas.slice(0, 30).map((x, i) => ({ key: `w${i}`, icon: "users", t: `${x.pos ? `#${x.pos} · ` : ""}${x.quien}`, s: `${x.party === 1 ? E2("1 persona", "1 person") : E2(`${x.party} personas`, `${x.party} people`)} · ${cuando2(x.at)}`,
+      tag: E2(...(ST[x.estado] ?? ["", ""])), tone: x.estado === "waiting" ? "pro" : x.estado === "offered" || x.estado === "converted" ? "signal" : "neutral", compact: true, chev: false, dim: !["waiting", "offered"].includes(x.estado) })) });
+    out.push(W.esperan && W.libres ? { type: "note", tone: "ok", icon: "bell", t: E2(`Hay ${W.libres} lugar(es) libre(s): avisa a la lista. Cada persona, en orden, tiene su tiempo para pagar (Configuración).`, `There are ${W.libres} free spot(s): notify the list. Each person, in order, gets their time to pay (Settings).`), cta: E2("Avisar a la lista", "Notify the list"),
+      onCta: () => c.run(() => evtAvisarLista(c.d.id, e.id), (r: { n?: number }) => E2(`Avisamos a ${r?.n ?? 0}. Si no pagan a tiempo, pasa a la siguiente.`, `We notified ${r?.n ?? 0}. If they do not pay in time, it goes to the next.`)) }
+      : { type: "note", tone: "info", icon: "info", t: W.esperan ? E2("Cuando se libere un lugar (alguien cancela, devuelves un boleto o subes la cantidad en el editor), se le ofrece solo a la siguiente de la lista.", "When a spot opens up (someone cancels, you refund a ticket or raise the quantity in the editor), it is offered automatically to the next on the list.")
+        : E2("Cuando se agota, la gente se anota aquí y, si se libera un lugar, se le ofrece en orden de llegada.", "When it sells out, people join here and, if a spot opens up, it is offered in order of arrival.") });
+  }
+  // DAR CORTESÍA (nombre, teléfono opcional, cuántas; el tipo del que salen).
+  const Fc = c.form<{ n: string; tel: string; q: number; tipo: string }>(`det:evcomp:${e.id}`, { n: "", tel: "", q: 1, tipo: "" });
+  out.push({ type: "group", k: E2(`CORTESÍAS · ${D.cortesiasDadas} DE ${D.cortesiasTope}`, `COMPS · ${D.cortesiasDadas} OF ${D.cortesiasTope}`) });
+  out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Entra gratis con su QR y en la puerta cuenta como un boleto. Con su teléfono, le avisamos con el enlace para recibirla en To'Latino; sin teléfono, la puerta la busca por nombre. Salen de tus boletos y nunca se venden.", "They get in free with their QR and it counts at the door like a ticket. With their phone, we send them the link to receive it on To'Latino; without a phone, the door finds it by name. Comps come out of your tickets and are never sold.") });
+  if (D.cortesias.length) out.push({ type: "rows", items: D.cortesias.map((x) => ({ key: x.num, icon: "ticket", t: `${x.nombre} · ${x.q} ${x.q === 1 ? E2("entrada", "entry") : E2("entradas", "entries")}`,
+    s: `${x.num} · ${x.sms === "recibida" ? E2("la recibió en su cuenta", "received in their account") : x.sms === "pendiente" ? E2("aviso enviado · esperando que la reciba", "notice sent · waiting to be received") : x.sms === "vencida" ? E2("no la recibió: la puerta la busca por nombre", "not received: the door finds it by name") : E2("sin teléfono: la puerta la busca por nombre", "no phone: the door finds it by name")}`,
+    tag: x.vivas ? E2("VÁLIDA", "VALID") : x.usadas ? E2("USADA", "USED") : E2("QUITADA", "REMOVED"), tone: x.vivas ? "signal" : "neutral", compact: true, chev: false, dim: !x.vivas,
+    acts: x.vivas ? [{ l: E2("Quitar", "Remove"), icon: "close", v: "secondary", onClick: () => c.run(() => evtQuitarCortesia(c.d.id, x.num), E2("Cortesía quitada. El lugar volvió a la venta.", "Comp removed. The spot went back on sale.")) }] : undefined })) });
+  out.push({ type: "field", k: E2("NOMBRE", "NAME"), val: Fc.d.n, onChange: (v) => Fc.set({ n: v.slice(0, 40) }), ph: E2("Ej. DJ Cri Cri + 1", "e.g. DJ Cri Cri + 1") });
+  out.push({ type: "field", k: E2("TELÉFONO · OPCIONAL", "PHONE · OPTIONAL"), val: Fc.d.tel, onChange: (v) => Fc.set({ tel: v.replace(/\D/g, "").slice(0, 10) }), ph: E2("10 dígitos", "10 digits") });
+  out.push({ type: "step", t: E2("Cuántas entradas", "How many"), v: String(Fc.d.q), onM: () => Fc.set({ q: Math.max(1, Fc.d.q - 1) }), onP: () => Fc.set({ q: Math.min(10, Fc.d.q + 1) }) });
+  if (V.tipos.length > 1) out.push({ type: "chips", k: E2("DE QUÉ BOLETO", "WHICH TICKET"), items: V.tipos.map((t, i) => ({ l: `${t.n}${t.quedan ? "" : E2(" · agotado", " · sold out")}`, v: (Fc.d.tipo || (i === 0 ? t.id : "")) === t.id ? "selected" : "filter", onClick: () => Fc.set({ tipo: t.id }) })) });
+  out.push({ type: "acts", items: [{ l: E2("Dar cortesía", "Give comp"), icon: "plus", v: "primary", off: c.pending || Fc.d.n.trim().length < 2,
+    onClick: () => c.run(() => evtCortesia(c.d.id, e.id, { nombre: Fc.d.n, tel: Fc.d.tel, q: Fc.d.q, tipo: Fc.d.tipo || null }), Fc.d.tel ? E2("Cortesía lista. Le avisamos a su teléfono para que la reciba en To'Latino.", "Comp ready. We notify their phone so they receive it on To'Latino.") : E2("Cortesía lista. En la puerta la buscan por nombre.", "Comp ready. At the door they find it by name."), () => Fc.set({ n: "", tel: "", q: 1 })) }] } as Bloque);
+  // DEVOLUCIONES (cancelaciones del comprador y las tuyas) y TRANSFERENCIAS.
+  out.push({ type: "group", k: E2(`DEVOLUCIONES · ${D.devoluciones.length}`, `REFUNDS · ${D.devoluciones.length}`) });
+  out.push(D.devoluciones.length ? { type: "rows", items: D.devoluciones.map((x, i) => ({ key: `d${i}`, icon: "dollar", t: `${x.quien} · ${x.num}`, s: `${x.por === "buyer" ? E2("Canceló", "Cancelled") : E2("Devolviste", "You refunded")} ${x.boletos} ${x.boletos === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")} · ${cuando2(x.at)}`,
+      r: dinero(x.monto), tag: x.estado === "done" ? E2("DEVUELTO", "REFUNDED") : x.estado === "pending" ? E2("EN CAMINO", "ON THE WAY") : E2("FALLÓ", "FAILED"), tone: x.estado === "done" ? "signal" : x.estado === "pending" ? "pro" : "danger", compact: true, chev: false })) }
+    : { type: "note", tone: "ink", icon: "dollar", t: E2("Nadie ha cancelado. Si alguien cancela (hasta el plazo de Configuración), se le devuelve lo pagado menos el cargo de servicio y el lugar vuelve a la venta.", "Nobody has cancelled. If someone cancels (within the Settings window), they get back what they paid minus the service fee and the spot goes back on sale.") });
+  out.push({ type: "kv", cols: 2, items: [{ k: E2("TRANSFERIDOS", "TRANSFERRED"), v: String(D.transferidos) }, { k: E2("EN CAMINO A OTRA PERSONA", "ON THE WAY TO SOMEONE"), v: String(D.pendientes) }] });
+  // AYUDA CON ÓRDENES (B-): la revisa To'Latino; aquí solo se ve.
+  if (D.ayudas.length) {
+    const MOT: Record<string, [string, string]> = { doble: ["Cobro doble", "Charged twice"], monto: ["El cobro no es el que vio", "Charge not what they saw"], sinbol: ["Pagó y no tiene boletos", "Paid, no tickets"], otro: ["Otra cosa del pago", "Other payment issue"] };
+    out.push({ type: "group", k: E2(`AYUDA CON ÓRDENES · ${D.ayudas.length}`, `ORDER HELP · ${D.ayudas.length}`) });
+    out.push({ type: "rows", items: D.ayudas.map((x) => ({ key: x.num, icon: "help", t: `${x.quien} · ${x.orden}`, s: `${E2(...(MOT[x.motivo] ?? ["", ""]))} · ${cuando2(x.at)}`, tag: x.estado === "resolved" ? E2("RESUELTA", "RESOLVED") : E2("LA REVISA TO'LATINO", "TO'LATINO REVIEWING"), tone: x.estado === "resolved" ? "signal" : "pro", compact: true, chev: false })) });
+  }
   return out;
 }
 const DEC: Record<string, [string, string]> = { submitted: ["Enviado a revisión", "Sent for review"], resubmitted: ["Enviado otra vez", "Sent again"], approved: ["Publicado", "Published"], changes: ["To’Latino pidió un cambio", "To’Latino asked for a change"], rejected: ["No se aprobó", "Not approved"] };

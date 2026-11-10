@@ -42,6 +42,29 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
   } catch { /* un aviso nunca rompe la acción que lo dispara */ }
 }
 
+/* 6d · Un aviso a un TELÉFONO (el boleto que te mandan o una cortesía): si el número ya tiene cuenta, es un aviso normal (bandeja + SMS
+   según la plantilla y sus horas de silencio); si todavía no tiene cuenta, solo el SMS, guardado en phone_messages con el teléfono
+   cifrado y su huella (nunca en claro). El silencio es el de la ciudad del evento. Nunca rompe la acción que lo dispara. */
+export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; city?: string | null; en?: boolean } = {}): Promise<void> {
+  try {
+    const u = (await db().query<{ id: string }>(`select id::text from users where phone = $1 and status <> 'deleted' limit 1`, [tel])).rows[0];
+    if (u) { await avisar(u.id, tpl, v, o); return; }
+    const t = (await db().query<{ grp: string; sms: boolean; body: { es: string; en: string }; silencio: boolean }>(
+      `select t.grp, t.sms, t.body, extract(hour from now() at time zone coalesce((select timezone from cities where id = $2), 'America/New_York')) not between 7 and 21 as silencio
+         from notif_templates t where t.key = $1`, [tpl, o.city ?? null])).rows[0];
+    if (!t?.sms) return;
+    const { cifrar, huella } = await import("./cifrado");
+    const body = llenar(o.en ? t.body.en : t.body.es, v).slice(0, 480);
+    const st = t.grp !== "crit" && t.silencio ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    const id = (await db().query<{ id: string }>(`insert into phone_messages (phone_enc, phone_hash, city_id, tpl, body, ref_kind, ref_id, sms_status) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id::text`,
+      [cifrar(tel), huella(tel), o.city ?? null, tpl, body, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st])).rows[0]!.id;
+    if (st === "pendiente") {
+      const res = await smsTelnyx(tel, `To'Latino: ${body}`);
+      await db().query(`update phone_messages set sms_status = $2, sms_at = now() where id = $1::bigint`, [id, res]);
+    }
+  } catch { /* un aviso nunca rompe la acción que lo dispara */ }
+}
+
 /* El mismo aviso a muchas personas en una sola escritura (p. ej. el resultado de una encuesta a quienes votaron). Solo plantillas
    sin SMS (las que llevan SMS van una por una con avisar()). Las variables pueden cambiar con el idioma de cada persona. */
 export async function avisarMuchos(ids: string[], tpl: string, v: { es: Vars; en: Vars }, o: { href?: string; ref?: [string, string]; actor?: string | null } = {}) {

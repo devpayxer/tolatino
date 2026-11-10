@@ -32,6 +32,8 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
   const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');
   const d = await pasarela.devolver(pi, 500, 'contrato-' + Date.now()); ok(d.ok && /^re_/.test(d.id), 'devolver: refunds con reverse_transfer y refund_application_fee');
+  // 6d · Boletos: devolver un cobro de la plataforma (sin transferencia ni comisión de destino que revertir).
+  const dp = await pasarela.devolver(rp.ok ? rp.pi : 'pi_123', 500, 'contrato-bol-' + Date.now(), { plataforma: true }); ok(dp.ok && /^re_/.test(dp.id), 'boletos: refunds de un cobro de la plataforma (sin reverse_transfer)');
   ok(await pasarela.disputaResponder('dp_123', { texto: 'Delivered as ordered.', producto: '1 x Mofongo', cliente: 'Marisol P', fecha: '2026-11-06', envio: '420 N Wyoming St, 18201' }), 'disputa: responder con evidencia (disputes, submit)');
   ok(await pasarela.disputaAceptar('dp_123'), 'disputa: aceptar (disputes/close)');
   const dp = await (await fetch(process.env.STRIPE_API_BASE + '/v1/disputes/dp_123', { headers: { authorization: 'Bearer sk_test_123' } })).json();

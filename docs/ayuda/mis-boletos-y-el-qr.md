@@ -1,7 +1,7 @@
 # Mis boletos y el QR · My tickets and the QR
 
 _Pantallas: **Mi cuenta › Boletos** (`/cuenta/boletos`), **el boleto** (`/cuenta/boletos/TL-…`) y **la orden** (`/eventos/orden/B-…`).
-Teléfono y escritorio. Versión: Fase 6 · bloque 6c (10 nov 2026)._
+Teléfono y escritorio. Versión: Fase 6 · bloques 6c y 6d (10 nov 2026)._
 
 ## Qué hace
 - **Mi cuenta › Boletos**: **Próximos** y **Pasados**, una fila por orden con la fecha, cuántos boletos y **CON QR** (o **USADO** ·
@@ -19,11 +19,14 @@ Teléfono y escritorio. Versión: Fase 6 · bloque 6c (10 nov 2026)._
 | To'Latino reemite tu boleto (perdiste el teléfono, lo compartiste por error) | Te llega un aviso; Mi cuenta muestra el QR nuevo. **El QR anterior deja de entrar.** |
 | Un boleto se anula | Te llega un aviso con el motivo; el QR sale apagado y no entra. |
 | El evento ya pasó | El boleto queda en **Pasados**, sin QR. |
-| Otra persona abre el enlace de tu boleto | No lo ve: cada boleto solo se abre con la cuenta que lo compró. |
+| Otra persona abre el enlace de tu boleto | No lo ve: cada boleto solo se abre con la cuenta que lo tiene. |
+| Te transfirieron un boleto | Sale en Mi cuenta › Boletos como **RECIBIDO · CON QR** y se abre el boleto (la orden es de quien pagó). |
+| Mandaste un boleto y nadie lo ha recibido | Sale como **ENVIADO**; sin QR hasta que lo reciban o lo deshagas. |
 | No hay señal en la puerta | El portero verifica la firma del QR sin conexión. Abre tu boleto antes de llegar. |
 
 ## Preguntas frecuentes
-- **¿Puedo mandarle un boleto a otra persona?** Transferir llega pronto (6d). Por ahora, va a tu nombre.
+- **¿Puedo mandarle un boleto a otra persona?** Sí: **Transferir** desde la orden o el boleto (hasta 2 h antes). El QR anterior queda anulado y
+  la otra persona recibe el suyo. Ver «Transferir boletos».
 - **¿Una captura de pantalla sirve?** Sí, el QR es el mismo; pero si To'Latino lo reemite, la captura vieja ya no entra.
 - **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app.
 
@@ -37,5 +40,5 @@ carries no name or phone. A **table** is one QR with its entries.
 
 ## Cases and FAQ (English)
 Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no
-QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers arrive soon (6d). Wallet passes
+QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers are available from the order or the ticket (up to 2 h before); received tickets show as RECEIVED. Wallet passes
 are not available yet.

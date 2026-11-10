@@ -12,6 +12,7 @@ import { useState, useTransition, type ComponentType } from "react";
 import { dinero, hora } from "@/lib/evt-comun";
 import type { FichaEvt } from "@/lib/evt-publico";
 import { evtCompartir, evtQuitarRsvp, evtRsvp } from "../acciones";
+import { esperaAnotar, esperaSalir } from "../acciones-despues";
 import { Icon, MONO, useGuardar, useToast } from "../comun";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,6 +52,20 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     toast(E2("Quitamos tu RSVP. Gracias por liberar el lugar.", "We removed your RSVP. Thanks for freeing the spot."));
     router.refresh();
   });
+  // 6d · Lista de espera (agotado): anotarse con cuántos son, salir, o pagar el lugar que se liberó (30 min, del servidor).
+  const anotarLista = (n: number) => start(async () => {
+    const r = await esperaAnotar(f.fecha, n).catch(() => null);
+    if (r && !r.ok && r.entrar) return entrar();
+    if (!r?.ok) { toast(r?.msg ? L(r.msg) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); router.refresh(); return; }
+    toast(E2(`Estás en la lista · #${r.pos}. Si se libera un lugar, te avisamos en Avisos y lo guardamos a tu nombre.`, `You are on the list · #${r.pos}. If a spot opens up, we notify you in Notifications and hold it in your name.`));
+    router.refresh();
+  });
+  const salirLista = () => start(async () => {
+    const r = await esperaSalir(f.fecha).catch(() => null);
+    if (!r?.ok) { toast(r?.msg ? L(r.msg) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); return; }
+    toast(E2("Saliste de la lista.", "You left the list."));
+    router.refresh();
+  });
   const compartir = async () => {
     void evtCompartir(f.id);
     const url = `${location.origin}/eventos/${f.slug}?fecha=${f.fecha}`;
@@ -77,7 +92,11 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const polGratis = E2(`Tu RSVP guarda tu lugar hasta ${f.guardaMin} min después de abrir puertas. Si ya no vas, quítalo para que otro vecino entre.`, `Your RSVP holds your spot until ${f.guardaMin} min after doors open. If you can no longer go, remove it so another neighbor can get in.`);
   // 6c · La venta la decide el servidor (lib/boletos.ts ventaFicha): abierta, agotada, pausada, cerrada o no disponible.
   const vt = f.venta, abierta = vt?.estado === "abierta" && !vt.agotado;
-  const pol = tix ? E2("El precio que ves es el que pagas: cargos incluidos. Devolución total si el evento se cancela. En la puerta no se venden boletos: el QR es tu entrada.", "The price you see is what you pay: fees included. Full refund if the event is cancelled. No tickets are sold at the door: your QR is your entry.")
+  const lista = tix && vt?.estado === "abierta" && vt.agotado && !f.pasado && !!f.espera, mw = f.espera?.mia ?? null;
+  // POL_PAGO (evt-data.js L7) con los plazos de Configuración (6d).
+  const pc = vt?.pol ?? { cancelarH: 24, transferirH: 2 };
+  const pol = tix ? E2(`El precio que ves es el que pagas: cargos incluidos. Devolución total si el evento se cancela o cambia de fecha y no puedes ir. Si cancelas tú (hasta ${pc.cancelarH} h antes): se devuelve el boleto menos el cargo de servicio. Puedes transferir tus boletos hasta ${pc.transferirH} h antes. En la puerta no se venden boletos: el QR es tu entrada.`,
+      `The price you see is what you pay: fees included. Full refund if the event is cancelled or changes date and you cannot go. If you cancel (up to ${pc.cancelarH} h before): the ticket is refunded minus the service fee. You can transfer your tickets up to ${pc.transferirH} h before. No tickets are sold at the door: your QR is your entry.`)
     : f.entry === "free" ? E2("Entrada libre y sin lista: no se cobra nada y no hace falta RSVP.", "Free entry, no list: nothing is charged and no RSVP is needed.") : polGratis;
   const rows: { ic: string; t: string; s: string; link?: string; on?: () => void }[] = [
     { ic: "calendar", t: `${f.dia} · ${horas}`, s: f.doors != null ? E2(`Puertas a las ${hora(f.doors)}`, `Doors at ${hora(f.doors)}`) : E2("Empieza a la hora", "Starts on time"), link: E2("CALENDARIO", "CALENDAR"), on: calendario },
@@ -90,8 +109,8 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const sinLista = f.entry === "free";
   const freeS = sinLista ? E2("Sin lista: llegas y entras. No hace falta RSVP y no se aparta lugar.", "No list: just show up. No RSVP needed and no spots are held.")
     : `${E2(`Tu RSVP le dice a ${f.org.name} cuántos van. `, `Your RSVP tells ${f.org.name} how many are coming. `)}${polGratis}`;
-  const conParty = f.entry === "rsvp" && f.partyMax > 1 && !f.pasado;
-  const party = Array.from({ length: Math.min(10, f.partyMax) }, (_, i) => i + 1);
+  const conParty = (f.entry === "rsvp" && f.partyMax > 1 && !f.pasado) || (lista && !mw);
+  const party = Array.from({ length: Math.min(10, lista ? f.espera!.max : f.partyMax) }, (_, i) => i + 1);
   const elegir = (n: number) => { setPk(n); if (rv && n !== rv.party && f.rsvpAbierto && !pausado) rsvp(n); };
   const antes = [...(f.comidaLocal ? [E2("La entrada es libre; lo que comas se paga en el local.", "Entry is free; what you eat is paid at the venue.")] : []), ...f.antes,
     ...(f.edad >= 18 ? [E2(`Es ${f.edad}+: si en la puerta no muestras ID, no entras.`, `It is ${f.edad}+: if you do not show ID at the door, you do not get in.`)] : [])];
@@ -100,10 +119,14 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   // ── La barra (lo que se puede hacer ahora) ──
   type Barra = { p: string; s: string; cta: string; on: (() => void) | null; activo: boolean; alt?: { t: string; on: () => void } };
   const barra: Barra = f.pasado ? { p: E2("Terminó", "Ended"), s: f.dia, cta: E2("Ver eventos", "See events"), on: () => router.push("/eventos"), activo: false }
+    : lista && mw?.estado === "offered" ? { p: E2("Es tu turno", "Your turn"), s: E2(`SE LIBERÓ UN LUGAR · TIENES ${Math.max(1, Math.ceil(mw.seg / 60))} MIN`, `A SPOT OPENED UP · ${Math.max(1, Math.ceil(mw.seg / 60))} MIN LEFT`), cta: E2("Pagar mi lugar", "Pay for my spot"),
+      on: () => router.push(`/eventos/pagar/${mw.apartado}`), activo: true }
+    : lista && mw ? { p: E2(`En lista · #${mw.pos}`, `On the list · #${mw.pos}`), s: E2(`${mw.party} ${mw.party === 1 ? "PERSONA" : "PERSONAS"} · TE AVISAMOS EN AVISOS`, `${mw.party} ${mw.party === 1 ? "PERSON" : "PEOPLE"} · WE NOTIFY YOU`), cta: E2("Salir de la lista", "Leave the list"), on: salirLista, activo: false }
+    : lista ? { p: E2("Agotado", "Sold out"), s: vt!.espera ? E2(`${vt!.espera} EN LISTA DE ESPERA`, `${vt!.espera} ON THE WAITLIST`) : E2("LISTA DE ESPERA ABIERTA", "WAITLIST OPEN"), cta: `${E2("Lista de espera", "Join the waitlist")}${pk > 1 ? ` · ${pk}` : ""}`, on: () => anotarLista(pk), activo: true }
     : tix ? { p: f.boletos.length ? `${E2("Desde ", "From ")}${dinero(Math.min(...f.boletos.map((b) => b.p)))}` : E2("Con boletos", "Ticketed"), s: f.mios.n ? E2(`TIENES ${f.mios.n} · CARGOS INCLUIDOS`, `YOU HAVE ${f.mios.n} · FEES INCLUDED`) : E2("CARGOS INCLUIDOS", "FEES INCLUDED"),
       cta: abierta ? L(f.F.f.cta) : vt?.estado === "abierta" ? E2("Agotado", "Sold out") : vt?.estado === "pausada" ? E2("Venta pausada", "Sales paused") : vt?.estado === "cerrada" ? E2("Venta cerrada", "Sales closed") : E2("Venta no disponible", "Not on sale"),
       on: abierta ? () => router.push(`/eventos/${f.slug}/boletos?fecha=${f.fecha}`) : () => toast(vt?.estado === "abierta" ? E2("Se agotaron. Si alguien no termina de pagar, se liberan en unos minutos.", "Sold out. If someone does not finish paying, they free up in a few minutes.") : vt?.aviso || E2("Esta fecha no está a la venta.", "This date is not on sale.")),
-      activo: abierta, alt: f.mios.n && f.mios.numero ? { t: E2("Mis boletos", "My tickets"), on: () => router.push(`/eventos/orden/${f.mios.numero}`) } : undefined }
+      activo: abierta, alt: f.mios.n && (f.mios.numero || f.mios.codigo) ? { t: E2("Mis boletos", "My tickets"), on: () => router.push(f.mios.numero ? `/eventos/orden/${f.mios.numero}` : `/cuenta/boletos/${f.mios.codigo}`) } : undefined }
     : sinLista ? { p: E2("Gratis", "Free"), s: E2("ENTRADA LIBRE · SIN LISTA", "FREE ENTRY · NO LIST"), cta: E2("Invita", "Invite"), on: compartir, activo: true }
     : rv ? { p: E2("Vas a este evento", "You are going"), s: `RSVP${rv.party > 1 ? ` · ${rv.party} ${E2("PERSONAS", "PEOPLE")}` : ""}`, cta: E2("Ya no voy", "Not going"), on: yaNoVoy, activo: false, alt: { t: E2("Invita", "Invite"), on: compartir } }
     : pausado ? { p: E2("Gratis", "Free"), s: E2("EN PAUSA", "PAUSED"), cta: E2("RSVP en pausa", "RSVP paused"), on: () => toast(E2("El organizador pausó el RSVP por ahora.", "The organizer paused RSVP for now.")), activo: false }
@@ -179,6 +202,8 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
         ))}
       </div>
       {!d && <div className="mt-2.5 text-[11.5px] leading-[1.5]" style={{ color: w[".5"] }}>{abierta ? E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.") : vt?.aviso || E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.")}</div>}
+      {lista && <div data-screen-label="Ficha del evento · lista de espera" className="mt-2.5 text-[11.5px] leading-[1.5]" style={{ color: w[".6"] }}>{mw?.estado === "offered" ? E2("SE LIBERÓ UN LUGAR: lo guardamos a tu nombre. Págalo antes de que se acabe tu tiempo o pasa a la siguiente persona.", "A SPOT OPENED UP: we hold it in your name. Pay before your time runs out or it goes to the next person.") : E2(`Se agotó. Anótate: si alguien cancela, el lugar es para la lista en orden de llegada y te lo guardamos ${f.espera!.min} min.`, `Sold out. Join the list: if someone cancels, the spot goes to the list in order and we hold it ${f.espera!.min} min for you.`)}</div>}
+      {lista && personas}
     </div>
   ) : null);
   const mesaNote = E2("El depósito aparta tu mesa y se descuenta de tu consumo esa noche.", "The deposit holds your table and is deducted from your spend that night.");
@@ -200,7 +225,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   ) : null);
   const personas = conParty ? (
     <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${w[".07"]}` }}>
-      <div className="flex flex-wrap justify-between gap-2.5"><K>{E2("¿CUÁNTOS VAN?", "HOW MANY ARE GOING?")}</K><span className="text-[11px]" style={{ color: w[".5"] }}>{rv ? E2("Puedes cambiarlo hasta el día del evento.", "You can change it until the day of the event.") : E2(`Hasta ${f.partyMax} por RSVP.`, `Up to ${f.partyMax} per RSVP.`)}</span></div>
+      <div className="flex flex-wrap justify-between gap-2.5"><K>{E2("¿CUÁNTOS VAN?", "HOW MANY ARE GOING?")}</K><span className="text-[11px]" style={{ color: w[".5"] }}>{lista ? E2(`Hasta ${party.length} por grupo en la lista de espera.`, `Up to ${party.length} per group on the waitlist.`) : rv ? E2("Puedes cambiarlo hasta el día del evento.", "You can change it until the day of the event.") : E2(`Hasta ${f.partyMax} por RSVP.`, `Up to ${f.partyMax} per RSVP.`)}</span></div>
       <div className="mt-[9px] flex flex-wrap gap-[7px]" role="group" aria-label={E2("Personas", "People")}>
         {party.map((n) => { const on = n === pk; return <button key={n} type="button" aria-pressed={on} disabled={pend} onClick={() => elegir(n)} className="grid h-[38px] min-w-10 place-items-center rounded-[11px] px-2.5 text-[13px] font-extrabold" style={{ border: `1.5px solid ${on ? th.fg : w[".14"]}`, background: on ? th.fg : "transparent", color: on ? th.bg : th.fg }}>{n}</button>; })}
       </div>

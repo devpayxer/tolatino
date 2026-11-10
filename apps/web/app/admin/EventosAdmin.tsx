@@ -97,7 +97,7 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
 
 /* La ficha de un evento (evtDetail): todo para decidir, ocultar con motivo y el organizador. */
 type RsvpAdm = { nombre: string; party: number; st: string; at: string; dia: string };
-type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; devuelto: number; ordenes: number }; ordenes: { num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }[] };
+type VentasAdm = { kpi: { vendidos: number; bruto: number; comision: number; devuelto: number; ordenes: number; cortesias: number; transferidos: number; espera: number; cancelados: number }; ordenes: { num: string; quien: string; total: number; at: string; n: number; code: string; tz: string }[] };
 export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null }: { e: EvtAdm; puede: { aprobar: boolean; retirar: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null; ventas?: VentasAdm | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
@@ -119,7 +119,9 @@ export function EventoAdmin({ e, puede, rsvp = [], publico = null, ventas = null
         // 6c · Lo vendido: VENDIDOS · BRUTO · COMISIÓN · DEVUELTOS y las últimas órdenes (abren el boleto).
         ...(ventas ? [{ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
           { k: "VENDIDOS", v: String(ventas.kpi.vendidos), s: `${ventas.kpi.ordenes} órdenes` }, { k: "BRUTO", v: `$${(ventas.kpi.bruto / 100).toFixed(2)}` },
-          { k: "COMISIÓN", v: `$${(ventas.kpi.comision / 100).toFixed(2)}`, s: "fee_rules «bol»" }, { k: "DEVUELTOS", v: `$${(ventas.kpi.devuelto / 100).toFixed(2)}` }] } as Bloque,
+          { k: "COMISIÓN", v: `$${(ventas.kpi.comision / 100).toFixed(2)}`, s: "fee_rules «bol»" }, { k: "DEVUELTOS", v: `$${(ventas.kpi.devuelto / 100).toFixed(2)}`, s: `${ventas.kpi.cancelados} boletos` }] } as Bloque,
+          // 6d · Después de comprar: cortesías, transferencias y lista de espera.
+          { type: "kv", cols: desk ? 3 : 1, items: [{ k: "CORTESÍAS VIVAS", v: String(ventas.kpi.cortesias) }, { k: "TRANSFERIDOS", v: String(ventas.kpi.transferidos) }, { k: "EN LISTA DE ESPERA", v: String(ventas.kpi.espera) }] } as Bloque,
           ventas.ordenes.length ? { type: "rows", k: `ÚLTIMAS ÓRDENES · ${ventas.ordenes.length}`, items: ventas.ordenes.map((o) => ({ key: o.num, icon: "ticket", t: `${o.num} · ${o.quien}`, s: `${o.n} ${o.n === 1 ? "boleto" : "boletos"} · $${(o.total / 100).toFixed(2)} · ${new Date(o.at).toLocaleString("es-US", { timeZone: o.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`,
             compact: true, chev: true, onClick: () => router.push(`/admin/eventos/boleto/${o.code}`) })) } as Bloque : { type: "note", tone: "ink", icon: "ticket", t: "Todavía no hay órdenes." } as Bloque] : []),
         ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: "ORGANIZADOR" } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />

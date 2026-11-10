@@ -417,7 +417,9 @@ const guardianes = {
     // 6c · Boletos: lo que manda el teléfono para apartar (BoletosIn) y las acciones de compra traen ids y cantidades, nunca montos.
     const B6 = "apps/web/lib/boletos.ts", A6 = "apps/web/app/(app)/eventos/acciones-boletos.ts";
     if (existsSync(B6)) { const m = /export type BoletosIn = \{([^\n]*)\};/.exec(readFileSync(B6, "utf8")); if (!m) falla("dineroDelServidor", B6, 0, "falta BoletosIn"); else if (/\b(cents|price|precio|total|tax|impuesto|subtotal|descuento|unit|monto)\w*\??:/i.test(m[1])) falla("dineroDelServidor", B6, 0, "BoletosIn trae un monto desde el teléfono; lo calcula el servidor"); }
-    if (existsSync(A6)) for (const m of readFileSync(A6, "utf8").matchAll(/export async function (\w+)\(([^)]*)\)/g)) if (/\b(cents|price|precio|total|monto|descuento)\w*\s*:/i.test(m[2])) falla("dineroDelServidor", A6, 0, `«${m[1]}» recibe un monto desde el teléfono`);
+    // 6d · Cancelar, devolver y las cortesías: el teléfono y el panel mandan códigos y números de orden, nunca cuánto se devuelve.
+    for (const A of [A6, "apps/web/app/(app)/eventos/acciones-despues.ts", "apps/web/app/panel/acciones-eventos.ts"])
+      if (existsSync(A)) for (const m of readFileSync(A, "utf8").matchAll(/export async function (\w+)\(([^)]*)\)/g)) if (/\b(cents|price|precio|total|monto|descuento|devuelve|refund)\w*\s*:/i.test(m[2])) falla("dineroDelServidor", A, 0, `«${m[1]}» recibe un monto desde el teléfono`);
     const f = "apps/web/lib/pedir.ts";
     if (!existsSync(f)) return;
     const t = readFileSync(f, "utf8");
@@ -980,6 +982,15 @@ const guardianes = {
     const b = new Set([...cuerpo.matchAll(/o\.kind (?:= '(\w+)'|in \(([^)]*)\))/g)].flatMap((x) => x[1] ? [x[1]] : [...x[2].matchAll(/'(\w+)'/g)].map((y) => y[1])));
     for (const k of a) if (!b.has(k)) falla("devolverCoincide", ui, 0, `la pantalla deja devolver «${k}» pero devolverTx no lo acepta`);
     for (const k of b) if (!a.has(k)) falla("devolverCoincide", srv, 0, `devolverTx acepta «${k}» pero la pantalla no muestra «Devolver»`);
+    // 6d · Boletos: devolver por monto desde Transacciones dejaría boletos vivos y la existencia sin volver. Los boletos se devuelven solo por
+    // lib/boletos-despues.ts (el comprador, el panel); lo de un caso de ayuda B- es dinero sin tocar los boletos (decidirSop).
+    if (a.has("tickets") || b.has("tickets")) falla("devolverCoincide", srv, 0, "Transacciones no devuelve boletos por monto: se devuelven por boleto (lib/boletos-despues.ts)");
+    const pe = "apps/web/app/panel/EventosPanel.tsx", ae = "apps/web/app/panel/acciones-eventos.ts";
+    if (existsSync(pe) && existsSync(ae)) {
+      const ui6 = readFileSync(pe, "utf8"), sv6 = readFileSync(ae, "utf8");
+      if (/evtDevolver\(/.test(ui6) !== /export async function evtDevolver[\s\S]*?devolverDesdePanel\(/.test(sv6)) falla("devolverCoincide", pe, 0, "«Devolver» del panel de eventos y su acción (devolverDesdePanel) tienen que ir juntos");
+      if (!/export async function evtDevolver[\s\S]*?accesoPanel\(a\.negocio\.id, "pay"\)/.test(sv6)) falla("devolverCoincide", ae, 0, "devolver boletos desde el panel pide la parte de Cobros");
+    }
   },
 
   /* Barrido central (0078). Los vencimientos solo corrían al abrir una página: una retención podía quedarse sin liberar si
@@ -2851,13 +2862,23 @@ const guardianes = {
     if (!/set held_n = s\.held_n \+ 1[\s\S]*?and s\.sold_n \+ s\.held_n \+ 1 <= s\.quantity/.test(a)) falla(G, L, 0, "apartar: la mesa se aparta con el update condicional");
     if (!/used_n \+ held_n < uses_max returning kind, value/.test(a)) falla(G, L, 0, "apartar: el uso del código se aparta con la condición del tope");
     if (!/sort\(\(x, y\) => Number\(x\.id\) - Number\(y\.id\)\)/.test(a)) falla(G, L, 0, "apartar: las filas se toman siempre en el mismo orden (por id)");
+    // 6d · Después de comprar: la lista de espera (lib/espera.ts) aparta y las cortesías (lib/boletos-despues.ts) toman existencia; las dos solo
+    // con el MISMO update condicional (sold_n + held_n + q <= quantity). Los boletos nuevos fuera de lib/boletos.ts: solo una cortesía (kind
+    // 'comp', sin dinero) o la copia de un boleto que se recibe (insert … select … from tickets). Bajar existencias fuera de la venta: nunca
+    // (al devolver, la suelta la base: trigger tickets_libera).
+    const D6 = new Set(["apps/web/lib/boletos-despues.ts", "apps/web/lib/espera.ts"]);
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === L) continue;
       for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
-        if (/\bupdate (ticket_stock|table_stock|event_addons|discount_codes)\b[^`]*\b(held_n|sold_n|used_n)\s*=/.test(q)) falla(G, x, 0, "las existencias y los usos los escribe solo lib/boletos.ts");
-        if (/\binsert into tickets\b/.test(q)) falla(G, x, 0, "los boletos los emite solo lib/boletos.ts");
+        const escribe = /\bupdate (ticket_stock|table_stock|event_addons|discount_codes)\b[^`]*\b(held_n|sold_n|used_n)\s*=/.test(q);
+        if (escribe && !(D6.has(x) && /\bupdate ticket_stock set (held_n = held_n|sold_n = sold_n) \+ \$\d\b[^`]*and sold_n \+ held_n \+ \$\d <= quantity/.test(q)))
+          falla(G, x, 0, D6.has(x) ? "la lista de espera y las cortesías solo suben existencias con el update condicional (sold_n + held_n + q <= quantity)" : "las existencias y los usos los escribe solo lib/boletos.ts");
+        if (/\binsert into tickets\b/.test(q) && !(x === "apps/web/lib/boletos-despues.ts" && (/'comp', 0, 0, 0/.test(q) || /\bselect event_date_id, event_id, city_id, valid_days, ticket_type_id[^`]*from tickets where id = \$1::bigint/.test(q))))
+          falla(G, x, 0, "los boletos los emite solo lib/boletos.ts (en 6d: una cortesía sin dinero o la copia de un boleto que se recibe)");
       }
     }
+    const DB = "packages/db/migrations/0109_boletos_comprador.sql";
+    if (existsSync(DB) && !/create trigger tickets_libera after update of status on tickets/.test(readFileSync(DB, "utf8"))) falla(G, DB, 0, "al devolver un boleto la existencia la suelta la base (trigger tickets_libera)");
   },
 
   /* 6c. El apartado lo lleva el servidor: vence a now() + evt_apartado_min (Configuración) y lo suelta el barrido (vencerApartados) o la lectura;
@@ -2968,7 +2989,107 @@ const guardianes = {
     if (!/create trigger ticket_log_no_cambia before update or delete on ticket_log/.test(m) || !/create trigger discount_attempts_no_cambia before update or delete on discount_attempts/.test(m)) falla(G, M, 0, "ticket_log y discount_attempts son de solo inserción (trigger)");
     if (!/raise exception 'un boleto no se borra/.test(ultimaFn("tickets_antes")) || !/raise exception 'lo comprado en un boleto no cambia'/.test(ultimaFn("tickets_antes"))) falla(G, M, 0, "un boleto no se borra y lo comprado no cambia");
     if (!/raise exception 'un apartado no se borra/.test(ultimaFn("ticket_holds_antes")) || !/raise exception 'lo apartado y su precio no cambian'/.test(ultimaFn("ticket_holds_antes"))) falla(G, M, 0, "un apartado no se borra y su precio no cambia");
-    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_log|discount_attempts)\b|\bdelete from (tickets|ticket_holds|discount_codes)\b/.test(q)) falla(G, x, 0, "un libro de boletos no se cambia y nada de los boletos se borra");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_log|discount_attempts|ticket_refund_lines)\b|\bdelete from (tickets|ticket_holds|discount_codes|ticket_transfers|waitlist|refunds)\b/.test(q)) falla(G, x, 0, "un libro de boletos no se cambia y nada de los boletos se borra");
+    // 6d · ticket_refund_lines es de solo inserción; una transferencia y un lugar en la lista de espera no se borran (estados).
+    const M6 = "packages/db/migrations/0109_boletos_comprador.sql";
+    if (existsSync(M6)) {
+      const t = readFileSync(M6, "utf8");
+      if (!/create trigger ticket_refund_lines_no_cambia before update or delete on ticket_refund_lines/.test(t)) falla(G, M6, 0, "ticket_refund_lines es de solo inserción (trigger)");
+      if (!/raise exception 'una transferencia no se borra/.test(ultimaFn("ticket_transfers_antes")) || !/raise exception 'la lista de espera no se borra/.test(ultimaFn("waitlist_antes"))) falla(G, M6, 0, "una transferencia y la lista de espera no se borran (estados)");
+    }
+  },
+
+  /* 6d. «EL QR ANTERIOR QUEDA ANULADO»: transferir (y deshacer o vencer) sube qr_ver; mientras la transferencia está pendiente NINGÚN QR de ese
+     boleto se firma (vistaBoleto) ni entra (bol_vigente); al recibirlo el original queda 'replaced' y nace otro boleto; la verificación del
+     Super Admin (y la puerta, 6g/6h) usa la versión y bol_vigente. Lo recibe solo la cuenta con ESE teléfono (huella), nunca quien lo mandó,
+     una sola vez y antes de vencer (la base también). Al revés: sin subir la versión, firmando con la transferencia pendiente, sin la
+     huella del teléfono o sin el check de quien lo manda → falla. */
+  qrViejoNoEntra() {
+    const G = "qrViejoNoEntra", D = "apps/web/lib/boletos-despues.ts", B = "apps/web/lib/boletos.ts", A = "apps/web/lib/boletos-admin.ts", M = "packages/db/migrations/0109_boletos_comprador.sql";
+    if (!existsSync(D)) return falla(G, D, 0, "falta lib/boletos-despues.ts");
+    const d = sinComent(D);
+    for (const fn of ["transferir", "cancelarTransferencia"]) if (!/update tickets set qr_ver = qr_ver \+ 1 where id = \$1::bigint/.test(cuerpoFn(d, fn))) falla(G, D, 0, `«${fn}» tiene que subir qr_ver (el QR anterior queda anulado)`);
+    if (!/update tickets set qr_ver = qr_ver \+ 1/.test(cuerpoFn(d, "vencerTransferencias"))) falla(G, D, 0, "lo que vence vuelve con un QR nuevo (qr_ver + 1)");
+    const rc = cuerpoFn(d, "reclamar");
+    if (!/set status = 'replaced', replaced_by = \$2::bigint/.test(rc)) falla(G, D, 0, "al recibirlo, el original queda 'replaced' (nace otro boleto)");
+    if (!/if \(huella\(yo\.phone\) !== x\.ph\) throw no\(/.test(rc)) falla(G, D, 0, "solo lo recibe la cuenta con el teléfono al que se mandó (huella)");
+    if (!/if \(x\.from === userId\) throw no\(/.test(rc)) falla(G, D, 0, "quien lo mandó no lo puede recibir");
+    if (!/for update/.test(rc) || !/x\.st !== "pending" \|\| x\.vence/.test(rc)) falla(G, D, 0, "se recibe una sola vez y antes de vencer, con la fila bloqueada");
+    if (!/claim_hash = \$1/.test(rc) || /claim_hash = \$1/.test(cuerpoFn(d, "transferir")) && !/sha\(token\)/.test(cuerpoFn(d, "transferir"))) falla(G, D, 0, "del token solo se guarda la huella (sha256)");
+    if (/to_phone_enc|descifrar/.test(cuerpoFn(d, "verTransferencia"))) falla(G, D, 0, "la pantalla de recibir nunca saca el teléfono");
+    if (existsSync(B) && !/conQR && vale && !b\.envio/.test(cuerpoFn(sinComent(B), "vistaBoleto"))) falla(G, B, 0, "con una transferencia pendiente no se firma ningún QR del boleto");
+    if (existsSync(A)) { const q = cuerpoFn(sinComent(A), "buscarBoletosAdmin"); if (!/bol_vigente\(t\.id\) as vig,/.test(q) || !/b\.ver === v\.d\.ver && b\.fid === v\.d\.fecha && b\.admits === v\.d\.admits && b\.vig;/.test(q)) falla(G, A, 0, "la verificación del QR pregunta la versión y bol_vigente (válido y sin transferencia pendiente)"); }
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/create or replace function bol_vigente[\s\S]*?status = 'valid' and not exists \(select 1 from ticket_transfers x where x\.ticket_id = t\.id and x\.status = 'pending'/.test(m)) falla(G, M, 0, "bol_vigente: válido y sin transferencia pendiente");
+      if (!/check \(claimed_by is null or claimed_by <> from_user_id\)/.test(m)) falla(G, M, 0, "la base no deja que quien lo manda lo reciba");
+      if (!/create unique index if not exists ticket_transfers_vivo_idx on ticket_transfers \(ticket_id\) where status = 'pending'/.test(m)) falla(G, M, 0, "una sola transferencia pendiente por boleto");
+      if (!/old\.status <> 'pending' then raise exception 'esa transferencia ya terminó'/.test(ultimaFn("ticket_transfers_antes")) || !/old\.expires_at <= now\(\) then raise exception 'esa transferencia ya venció'/.test(ultimaFn("ticket_transfers_antes"))) falla(G, M, 0, "la base no deja recibir dos veces ni después de vencer");
+    }
+  },
+
+  /* 6d. Una cortesía no es dinero: precio, comisión y descuento en 0 (check), va en una orden sin cobro (pay_mode 'none', la base lo exige),
+     nunca se devuelve (trigger) ni entra a una devolución; el panel la da con tope por fecha (Configuración, con la fecha bloqueada) y toma
+     existencia con el update condicional. Al revés: una cortesía con precio, en una orden cobrada, devuelta o sin tope → falla. */
+  cortesiaSinDinero() {
+    const G = "cortesiaSinDinero", D = "apps/web/lib/boletos-despues.ts", M = "packages/db/migrations/0109_boletos_comprador.sql";
+    if (!existsSync(M) || !existsSync(D)) return falla(G, M, 0, "faltan la migración 0109 o lib/boletos-despues.ts");
+    const m = readFileSync(M, "utf8");
+    if (!/add constraint tickets_cortesia_sin_dinero check \(kind <> 'comp' or \(price_cents = 0 and fee_cents = 0 and discount_cents = 0\)\)/.test(m)) falla(G, M, 0, "check: una cortesía tiene precio, comisión y descuento en 0");
+    const ta = ultimaFn("tickets_antes");
+    if (!/new\.kind = 'comp' and pm is distinct from 'none' then raise exception/.test(ta)) falla(G, M, 0, "una cortesía solo va en una orden sin cobro (pay_mode 'none')");
+    if (!/new\.status = 'refunded' and old\.kind = 'comp' then raise exception/.test(ta)) falla(G, M, 0, "una cortesía no se devuelve (se anula)");
+    if (!/raise exception 'cortesia_sin_dinero: una cortesía no se devuelve'/.test(ultimaFn("ticket_refund_lines_antes"))) falla(G, M, 0, "una cortesía no entra a una devolución");
+    const dc = cuerpoFn(sinComent(D), "darCortesia");
+    if (/pasarela|comision\(|payments/.test(dc)) falla(G, D, 0, "darCortesia no cobra ni calcula comisión");
+    if (!/'comp', 0, 0, 0/.test(dc) || !/0, 0, 'none'/.test(dc)) falla(G, D, 0, "darCortesia: boletos 'comp' en $0 y una orden sin cobro (pay_mode 'none')");
+    if (!/cfgSql\("evt_cortesias_max"\)/.test(dc) || !/if \(ya \+ q > k0\.max\) throw no\(/.test(dc) || !/from event_dates where id = \$1::bigint for update/.test(dc)) falla(G, D, 0, "darCortesia: tope por fecha de Configuración (lo lee la base) con la fecha bloqueada");
+    for (const fn of ["cancelarBoletos", "devolverDesdePanel"]) if (!/b\.kind !== "paid"/.test(cuerpoFn(sinComent(D), fn))) falla(G, D, 0, `«${fn}» solo devuelve boletos pagados`);
+  },
+
+  /* 6d. Lista de espera en orden: la fila es por created_at (la base no deja cambiarlo), una oferta = un apartado a nombre de esa persona con
+     el update condicional, con un candado por fecha (nadie se salta ni se ofrece dos veces), y lo que se libera es primero para la fila (antes
+     de apartar y de mostrar); una oferta vencida no se vuelve a apartar (pasa a la siguiente) y el barrido la cierra. Al revés: sin orden,
+     sin candado, apartar sin mirar la fila o pagar una oferta vencida → falla. */
+  listaDeEsperaEnOrden() {
+    const G = "listaDeEsperaEnOrden", E = "apps/web/lib/espera.ts", B = "apps/web/lib/boletos.ts", M = "packages/db/migrations/0109_boletos_comprador.sql", R = "apps/web/lib/barrido.ts";
+    if (!existsSync(E)) return falla(G, E, 0, "falta lib/espera.ts");
+    const of = cuerpoFn(sinComent(E), "ofrecer");
+    if (!/status = 'waiting' order by created_at, id/.test(of)) falla(G, E, 0, "ofrecer: en orden de llegada (created_at, id)");
+    if (!/pg_advisory_xact_lock\(hashtext\('espera:' \|\| \$1\)\)/.test(of)) falla(G, E, 0, "ofrecer: un candado por fecha");
+    if (!/sold_n \+ held_n \+ \$3 <= quantity/.test(of) || !/waitlist_id\)/.test(of)) falla(G, E, 0, "ofrecer: la oferta es un apartado (update condicional) con waitlist_id");
+    if (existsSync(M)) { const w = ultimaFn("waitlist_antes"); if (!/new\.created_at\) is distinct from \(old\.event_date_id, old\.event_id, old\.city_id, old\.user_id, old\.party, old\.created_at\)/.test(w) && !/old\.created_at\) then\s*raise exception 'el lugar en la lista de espera no cambia'/.test(w)) falla(G, M, 0, "la base no deja cambiar el lugar en la fila (created_at)"); }
+    if (existsSync(B)) {
+      const b = sinComent(B);
+      for (const fn of ["apartar", "pantallaBoletos", "ventaFicha"]) if (!/await primeroLaFila\(fecha\)/.test(cuerpoFn(b, fn))) falla(G, B, 0, `«${fn}»: lo que se libera es primero para la lista de espera`);
+      if (!/if \(h\.wl && \(h\.st === "expired" \|\| !h\.vivo\)\) throw/.test(cuerpoFn(b, "pagarBoletos"))) falla(G, B, 0, "una oferta vencida no se vuelve a apartar al pagar");
+      if (!/update waitlist set status = 'converted'/.test(cuerpoFn(b, "pagarBoletos"))) falla(G, B, 0, "al pagar la oferta, la persona sale de la fila (converted)");
+    }
+    if (existsSync(R) && !/espera\.barrerEspera\(\)/.test(readFileSync(R, "utf8"))) falla(G, R, 0, "las ofertas que vencen las cierra el barrido de cada minuto");
+  },
+
+  /* 6d. Una devolución de boletos se hace una vez y nunca de más: el servidor calcula de lo guardado (precio y cargo de cada boleto), en dos
+     pasos (boletos 'refunded' + devolución 'pending' en una transacción; Stripe con la llave; 'done' una sola vez); la base no deja que lo
+     pendiente + lo hecho pase de lo cobrado (trigger con el pago bloqueado) ni que un boleto se devuelva dos veces (índice único); el
+     simulador devuelve una vez por llave; el barrido reintenta con la misma llave. Al revés: sin el tope, sin el índice, marcar 'done' sin
+     la condición, o el simulador sin la llave → falla. */
+  devolucionUnaVez() {
+    const G = "devolucionUnaVez", D = "apps/web/lib/boletos-despues.ts", P = "apps/web/lib/pagos/pasarela.ts", M = "packages/db/migrations/0109_boletos_comprador.sql", R = "apps/web/lib/barrido.ts";
+    if (!existsSync(D) || !existsSync(M)) return falla(G, M, 0, "faltan la migración 0109 o lib/boletos-despues.ts");
+    const m = readFileSync(M, "utf8");
+    if (!/create unique index if not exists ticket_refund_lines_boleto_idx on ticket_refund_lines \(ticket_id\) where ticket_id is not null/.test(m)) falla(G, M, 0, "un boleto se devuelve una sola vez (índice único)");
+    const tp = ultimaFn("refunds_tope");
+    if (!/from payments where id = new\.payment_id for update/.test(tp) || !/status in \('pending', 'done'\)/.test(tp) || !/ya \+ new\.amount_cents > p\.amount_cents then raise exception/.test(tp)) falla(G, M, 0, "la base no deja que lo pendiente + lo hecho pase de lo cobrado");
+    const d = sinComent(D);
+    if (!/'pending', \$6, 'platform'/.test(cuerpoFn(d, "anotarDevolucion")) || !/update tickets set status = 'refunded' where id = any\(\$1::bigint\[\]\) and status = 'valid'/.test(cuerpoFn(d, "anotarDevolucion"))) falla(G, D, 0, "paso 1: los boletos devueltos y la devolución pendiente en la misma transacción");
+    const ej = cuerpoFn(d, "ejecutarDevolucion");
+    if (!/set status = 'done'[^`]*where id = \$1::bigint and status = 'pending'`/.test(ej) || !/if \(!u\.rowCount\) return;/.test(ej) || ej.indexOf("status = 'done'") > ej.indexOf("update payments set refunded_cents")) falla(G, D, 0, "paso 2: 'done' una sola vez (where status = 'pending') antes de sumar a lo devuelto");
+    if (!/pasarela\.devolver\(r\.pi, r\.amt, r\.idem/.test(ej)) falla(G, D, 0, "paso 2: Stripe con la llave guardada de la devolución (la misma en cada reintento)");
+    const ca = cuerpoFn(d, "calcular");
+    if (!/b\.precio - b\.cargo/.test(ca) || /monto\s*[:=]\s*x\./.test(ca)) falla(G, D, 0, "lo que vuelve se calcula de lo guardado (precio − cargo), nunca de lo que manda la pantalla");
+    for (const fn of ["cancelarBoletos"]) if (!/cfgSql\("bol_cancelar_h"\)/.test(cuerpoFn(d, fn))) falla(G, D, 0, "cancelar con devolución hasta bol_cancelar_h (Configuración), lo decide la base");
+    if (existsSync(P)) { const p = readFileSync(P, "utf8"), i = p.indexOf("insert into sim_refunds"), j = p.indexOf("update sim_intents set refunded_cents"); if (i < 0 || j < 0 || i > j || !/insert into sim_refunds[^`]*on conflict \(id\) do nothing/.test(p)) falla(G, P, 0, "el simulador devuelve una sola vez por llave (sim_refunds antes del saldo)"); }
+    if (existsSync(R) && !/desp\.barrerDevolucionesBoletos\(\)/.test(readFileSync(R, "utf8"))) falla(G, R, 0, "las devoluciones pendientes las reintenta el barrido");
   },
 
   idioma() {

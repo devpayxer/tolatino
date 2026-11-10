@@ -25,9 +25,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
     const ok = (await c.query<{ ok: boolean }>(`select pg_try_advisory_lock($1) as ok`, [LOCK])).rows[0]?.ok;
     if (!ok) return { corrio: false, ms: Date.now() - t0, tareas: [] };
     try {
-      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av, rsvp, bol] = await Promise.all([
+      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av, rsvp, bol, desp, espera] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
-        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos"), import("./rsvp"), import("./boletos")]);
+        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos"), import("./rsvp"), import("./boletos"), import("./boletos-despues"), import("./espera")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -76,6 +76,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Boletos (6c): el apartado vence a evt_apartado_min (la existencia vuelve y la autorización sin orden se libera); una compra
         // cortada entre la orden y la captura se captura o se anula (nada se cobra sin boleto).
         ["evtApartados", () => bol.vencerApartados()], ["boletosReparar", () => bol.repararBoletos()],
+        // Después de comprar (6d): lo que nadie recibió a tiempo vuelve a quien lo mandó (QR nuevo); las ofertas de la lista de espera
+        // que vencen pasan a la siguiente y lo libre se ofrece en orden; una devolución de boletos que Stripe no hizo se reintenta con su llave.
+        ["bolTransferencias", () => desp.vencerTransferencias()], ["espera", () => espera.barrerEspera()], ["bolDevoluciones", () => desp.barrerDevolucionesBoletos()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);
           await mercado.repararMercado(b).catch(() => undefined); await apartados.repararApartados(b).catch(() => undefined); await layaway.repararPlanes(b).catch(() => undefined);

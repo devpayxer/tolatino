@@ -1,7 +1,7 @@
 # Super Admin · Eventos y boletos · Super Admin · Events and tickets
 
 _Pantallas: **Super Admin › Eventos y boletos** (`/admin/eventos`: pestañas Eventos y Organizadores; ficha `/admin/eventos/{id}`),
-**Colas › Eventos a revisar** (`/admin/colas?cola=evt`) y **Negocios 360° › Contenido › Eventos**. Versión: Fase 6 · bloque 6a (9 nov 2026).
+**Colas › Eventos a revisar** (`/admin/colas?cola=evt`) y **Negocios 360° › Contenido › Eventos**. Versión: Fase 6 · bloques 6a–6d (9–10 nov 2026).
 Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar).
 6c (10 nov): pestaña **Buscar boleto** y la ficha del boleto (`/admin/eventos/boleto/{código}`); Reenviar y Reemitir: Admin y Ciudad
 (evt:editar); Anular: Admin (evt:retirar). «Modo puerta» llega con la puerta (6g)._
@@ -35,13 +35,23 @@ Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:a
 - **6c · Buscar boleto:** por código del boleto (**TL-XXX-0000**), orden (**B-…**), últimos dígitos del teléfono, nombre, o **pegando el texto
   del QR**: se verifica la firma con la llave pública y dice **FIRMA VÁLIDA** (y si es la versión vigente: entra) o **FIRMA NO VÁLIDA** (alterado
   o de otro entorno: no entra), o «QR viejo» si el boleto se reemitió. El teléfono solo sale con los últimos 4.
-- **6c · El boleto:** estado (**VÁLIDO · USADO · DEVUELTO · ANULADO · REEMITIDO**), la versión del QR, evento, tipo, entradas, a nombre de quién,
+- **6c · El boleto:** estado (**VÁLIDO · USADO · DEVUELTO · ANULADO · TRANSFERIDO**), la versión del QR, evento, tipo, entradas, a nombre de quién,
   lo que pagó, su comisión y descuento, el pago de la orden (cobrado / retenido / liberado, la tarjeta y **SIMULADO** en el sandbox), los
   boletos de la misma orden, la línea de tiempo de la orden y lo que pasó con el boleto. Acciones con motivo: **Reenviar** (aviso en su cuenta),
   **Reemitir** (QR nuevo; el anterior deja de entrar) y **Anular** (deja de entrar; no devuelve dinero: eso llega con 6d/6e). Todo queda en
   la auditoría y la persona recibe el aviso.
 - **6c · La ficha del evento** suma **VENDIDOS · BRUTO · COMISIÓN · DEVUELTOS** y las últimas órdenes (abren el boleto). **Transacciones ›
   Boletos** lista las órdenes B- con su cobro y comisión.
+- **6d · El boleto** suma su **historial** después de comprar: **TRANSFERIDO** (y a qué boleto pasó), **TRANSFERENCIAS** (de quién, a «••23»,
+  ESPERANDO · RECIBIDO · DESHECHO · VENCIÓ; nunca el teléfono), **SE ESTÁ TRANSFIRIENDO: ningún QR entra**, la **DEVOLUCIÓN** de ese boleto
+  (cuánto, quién: el comprador o el organizador, el cargo que se queda To'Latino o la comisión que no cobra, hecha o en camino) y si es
+  **CORTESÍA**. Pegar el QR de un boleto transferido o en transferencia dice que no entra. **Anular** un boleto deja caer su transferencia.
+- **6d · La ficha del evento** suma **CORTESÍAS VIVAS · TRANSFERIDOS · EN LISTA DE ESPERA** y cuántos boletos se devolvieron. **Transacciones ›
+  Boletos** muestra lo devuelto de cada orden; las cortesías (sin dinero) no salen ahí. Transacciones **no devuelve boletos por monto** (dejaría
+  boletos vivos): se devuelven desde la orden (el comprador) o el panel (el organizador).
+- **6d · Colas › Ayuda con pedidos:** «Ayuda con una orden de boletos» (B-: cobro doble, otro monto, pagó y no tiene boletos) llega directo, sin
+  esperar al organizador. **Resolver con un mensaje** o **Resolver y devolver** (hasta lo cobrado; vuelve a la tarjeta; los boletos siguen
+  valiendo). Lo decide quien aprueba dinero en Transacciones.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -52,7 +62,7 @@ Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:a
 | Un organizador bloqueado intenta enviar | La pantalla, el servidor y la base lo rechazan. |
 | 6c · Pegas un QR con la firma alterada | **FIRMA NO VÁLIDA**: no entra. |
 | 6c · Reemites un boleto | Sube la versión del QR: el anterior sale «QR viejo» y no entra (en línea y sin conexión). |
-| 6c · Anulas un boleto | Queda **ANULADO** con el motivo; el dinero no se devuelve solo (devoluciones: 6d/6e). |
+| 6c · Anulas un boleto | Queda **ANULADO** con el motivo; el dinero no se devuelve solo (devolver: el comprador cancela, el organizador devuelve o una ayuda B-; cancelar el evento: 6e). |
 | Alguien intenta publicar sin revisión | La base no deja un evento en vivo sin aprobación (ni sin persona que apruebe, salvo organizador verificado). |
 
 ## Preguntas frecuentes
@@ -78,3 +88,9 @@ owner sees the reason in the dashboard.
 VALID SIGNATURE / INVALID SIGNATURE / old QR after a reissue); the ticket page (status, QR version, payment, order timeline, ticket history) with
 **Resend**, **Reissue** (new QR; the old one stops working) and **Void** (no automatic refund), all with a reason, audit and a notice; KPIs
 **TICKETS ISSUED** and **TICKET GROSS**; the event page adds **SOLD · GROSS · FEE · REFUNDED** and the latest orders; **Transactions › Tickets**.
+
+6d: the ticket page adds its **history after purchase** — **TRANSFERRED** (and the new ticket), **TRANSFERS** (from whom, to «••23», status; never
+the phone), **BEING TRANSFERRED: no QR gets in**, its **REFUND** (amount, who, the fee To'Latino keeps or waives, done or on its way) and **COMP**. The
+event page adds **LIVE COMPS · TRANSFERRED · ON THE WAITLIST** and refunded tickets. Transactions never refunds tickets by amount (tickets are refunded
+by the buyer or the organizer). **Queues › Help with orders** gets «Help with a ticket order» (B-) directly; resolve with a message or refund to the
+card (tickets stay valid).

@@ -11,9 +11,15 @@ import { evtBoleto } from "./acciones-eventos";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
-const ST: Record<string, [string, string]> = { valid: ["VÁLIDO", "signal"], used: ["USADO", "neutral"], refunded: ["DEVUELTO", "neutral"], void: ["ANULADO", "danger"], replaced: ["REEMITIDO", "neutral"] };
-const LOG: Record<string, string> = { emitido: "Emitido al pagar", reenviado: "Reenviado a su cuenta", reemitido: "QR reemitido (el anterior ya no entra)", anulado: "Anulado", cobro_fallido: "El cobro no se completó: anulado" };
-const EV: Record<string, string> = { tickets_sold: "Orden pagada · boletos emitidos", payment_captured: "Cobrado en la tarjeta", payment_failed: "El cobro no se completó", refunded: "Devolución" };
+const ST: Record<string, [string, string]> = { valid: ["VÁLIDO", "signal"], used: ["USADO", "neutral"], refunded: ["DEVUELTO", "neutral"], void: ["ANULADO", "danger"], replaced: ["TRANSFERIDO", "neutral"] };
+const LOG: Record<string, string> = { emitido: "Emitido al pagar", reenviado: "Reenviado a su cuenta", reemitido: "QR reemitido (el anterior ya no entra)", anulado: "Anulado", cobro_fallido: "El cobro no se completó: anulado",
+  // 6d
+  transfer_enviado: "Enviado a otro teléfono (el QR anterior quedó anulado)", transfer_cancelado: "Transferencia deshecha (QR nuevo)", transfer_vencido: "Nadie lo recibió a tiempo: volvió con QR nuevo",
+  transferido: "Lo recibió otra persona (este boleto ya no entra)", recibido: "Recibido de otra persona", cancelado: "Cancelado por el comprador (devolución menos el cargo)", devuelto: "Devuelto por el organizador (100 %)",
+  cortesia: "Cortesía dada por el organizador", cortesia_recibida: "Cortesía recibida en su cuenta", nombre: "Cambió el nombre del boleto" };
+const EV: Record<string, string> = { tickets_sold: "Orden pagada · boletos emitidos", payment_captured: "Cobrado en la tarjeta", payment_failed: "El cobro no se completó", refunded: "Devolución",
+  tickets_cancelled: "El comprador canceló boletos", tickets_refunded: "El organizador devolvió boletos", comp_given: "Cortesía" };
+const XST: Record<string, string> = { pending: "ESPERANDO", claimed: "RECIBIDO", cancelled: "DESHECHO", expired: "VENCIÓ" };
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const cuando = (at: string, tz: string) => new Date(at).toLocaleString("es-US", { timeZone: tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
@@ -30,9 +36,14 @@ export function BoletoAdmin({ b, puede }: { b: BoletoAdm; puede: { editar: boole
     ...(puede.retirar && b.estado === "valid" ? [{ l: "Anular", v: "danger", icon: "ban", onClick: () => setConf({ titulo: `¿Por qué se anula ${b.code}?`, sub: "El boleto deja de entrar. No devuelve dinero (las devoluciones se hacen aparte). La persona recibe el motivo.", peligro: true, plantillas: ["Fraude confirmado por Confianza", "Contracargo del banco", "Boleto duplicado"], hacer: (m) => evtBoleto(b.code, "anular", m) }) }] : []),
   ];
   const bloques: Bloque[] = [head,
-    { type: "note", tone: tone === "signal" ? "ok" : tone === "danger" ? "danger" : "ink", icon: "ticket", t: `${tag}${b.motivo ? ` · ${b.motivo}` : ""} · QR versión ${b.ver}${b.ver > 1 ? " (los anteriores no entran)" : ""}` },
+    { type: "note", tone: tone === "signal" && b.vigente ? "ok" : tone === "danger" ? "danger" : "ink", icon: "ticket", t: `${b.kind === "comp" ? "CORTESÍA · " : ""}${tag}${b.motivo ? ` · ${b.motivo}` : ""} · QR versión ${b.ver}${b.ver > 1 ? " (los anteriores no entran)" : ""}${b.estado === "valid" && !b.vigente ? " · SE ESTÁ TRANSFIRIENDO: ningún QR entra" : ""}${b.reemplazo ? ` · ahora es ${b.reemplazo}` : ""}` },
+    ...(b.devolucion ? [{ type: "kv", cols: 2, items: [{ k: "DEVOLUCIÓN", v: `${usd(b.devolucion.monto)} · ${b.devolucion.estado === "done" ? "hecha" : b.devolucion.estado === "pending" ? "en camino (se reintenta sola)" : "falló"}` },
+      { k: "QUIÉN", v: b.devolucion.por === "buyer" ? "El comprador canceló" : b.devolucion.por === "business" ? "El organizador devolvió" : b.devolucion.por },
+      { k: "CARGO QUE SE QUEDA TO'LATINO", v: usd(b.devolucion.cargo) }, { k: "COMISIÓN QUE TO'LATINO NO COBRA", v: usd(b.devolucion.cede) }] } as Bloque] : []),
+    ...(b.transferencias.length ? [{ type: "rows", k: `TRANSFERENCIAS · ${b.transferencias.length}`, items: b.transferencias.map((x, i) => ({ key: `x${i}`, icon: "share", t: `${x.kind === "comp" ? "Cortesía a un teléfono" : `De ${x.de}`} → ${x.a}`, s: `${cuando(x.at, b.tz)}${x.nuevo ? ` · nuevo boleto ${x.nuevo}` : ""}`,
+      tag: XST[x.estado] ?? x.estado, tone: x.estado === "claimed" ? "signal" : x.estado === "pending" ? "pro" : "neutral", compact: true, chev: !!x.nuevo && x.nuevo !== b.code, onClick: x.nuevo && x.nuevo !== b.code ? () => router.push(`/admin/eventos/boleto/${x.nuevo}`) : undefined })) } as Bloque] : []),
     { type: "kv", cols: 2, items: [{ k: "EVENTO", v: b.evento.es }, { k: "FECHA", v: diaCorto(b.dia, true) }, { k: "TIPO", v: (b.tipo ?? b.mesa)?.es ?? "—" }, { k: "ENTRAN", v: String(b.admits) },
-      { k: "A NOMBRE DE", v: b.nombre || b.quien }, { k: "CUENTA", v: `${b.quien}${b.tel4 ? ` · tel. ${b.tel4}` : ""}` }, { k: "ORDEN", v: b.num }, { k: "PAGÓ POR ESTE BOLETO", v: usd(b.precio) },
+      { k: "A NOMBRE DE", v: b.nombre || b.quien }, { k: "CUENTA", v: b.tel4 ? `${b.quien} · tel. ${b.tel4}` : b.kind === "comp" ? "Sin cuenta todavía (cortesía)" : b.quien }, { k: "ORDEN", v: b.num }, { k: "PAGÓ POR ESTE BOLETO", v: usd(b.precio) },
       { k: "COMISIÓN DE ESTE BOLETO", v: usd(b.fee) }, { k: "DESCUENTO", v: b.descuento ? `−${usd(b.descuento)}` : "—" }] },
     ...(b.pago ? [{ type: "kv", cols: 2, items: [{ k: "PAGO", v: b.pago.estado === "captured" ? "Cobrado" : b.pago.estado === "held" ? "Retenido" : b.pago.estado === "released" ? "Liberado" : b.pago.estado === "refunded" ? "Devuelto" : b.pago.estado },
       { k: "TOTAL DE LA ORDEN", v: usd(b.pago.monto) }, { k: "COMISIÓN DE LA ORDEN", v: usd(b.pago.comision) }, { k: "TARJETA", v: `${b.pago.tarjeta ?? "—"}${b.pago.simulado ? " · SIMULADO" : ""}` }] } as Bloque] : []),
