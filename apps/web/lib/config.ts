@@ -41,7 +41,10 @@ export type ClaveConfig =
   // 7a · El Compa: la ayuda como base (0116; las lee El Compa desde 7c)
   | "ayuda_trozos_max" | "ayuda_umbral_rank"
   // 7b · Soporte (0117)
-  | "soporte_sla_h" | "soporte_dias" | "soporte_desde_h" | "soporte_hasta_h" | "soporte_casos_dia_max" | "soporte_devolver_max_cents" | "soporte_reabrir_dias";
+  | "soporte_sla_h" | "soporte_dias" | "soporte_desde_h" | "soporte_hasta_h" | "soporte_casos_dia_max" | "soporte_devolver_max_cents" | "soporte_reabrir_dias"
+  // 7c · El Compa: el motor, el tope y los límites (0118)
+  | "compa_tope_mes_cents" | "compa_alerta_pct" | "compa_espera_ms" | "compa_salida_tokens" | "compa_msgs_hora" | "compa_msgs_dia" | "compa_turnos_max"
+  | "compa_conv_cierra_h" | "compa_accion_min" | "compa_contexto_ops" | "compa_retener_meses";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

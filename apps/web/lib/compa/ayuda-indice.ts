@@ -73,6 +73,27 @@ export async function buscarAyuda(texto: string, lang: Lang, aud: Audiencia[], n
   return r.map(({ rank: _r, ...x }) => { void _r; return { ...x, snippet: resumen(x.snippet) }; });
 }
 
+/* 7c · Los trozos que recibe El Compa: ≤ n trozos COMPLETOS (≤ 1 800 caracteres) de artículos vivos de sus audiencias, en su idioma (o en el
+   otro si no hay nada). Misma consulta GIN y sinónimos que buscarAyuda. Un trozo que trae TODAS las palabras de la pregunta vale; uno que trae
+   solo algunas (la segunda vuelta) tiene que pasar el umbral (milésimas: ayuda_umbral_rank), porque ahí sale ruido («cancelar» coincide con
+   boletos cuando preguntan por una mesa). Lo que no pasa no se da: El Compa dice «No tengo ese dato». */
+export type Trozo = { slug: string; title: Bi; heading: string; body: string; lang: Lang; rank: number };
+export async function trozosCompa(texto: string, lang: Lang, aud: Audiencia[], n: number, umbralMilesimas: number): Promise<Trozo[]> {
+  const q = String(texto ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 120);
+  if (q.length < 2 || !aud.length) return [];
+  const una = async (l: Lang, modo: "and" | "or") => (await db().query<Trozo>(
+    `with q as (select ayuda_consulta($1, $2, $5) as tq)
+     select c.slug, a.title, c.heading, c.body, c.lang, ts_rank_cd(c.tsv, q.tq)::float8 as rank
+       from help_chunks c join help_articles a on a.slug = c.slug, q
+      where q.tq is not null and c.tsv @@ q.tq and c.lang = $2 and c.audience = any($3::text[]) and a.status = 'live' and a.audience = any($3::text[])
+        and ($5 = 'and' or ts_rank_cd(c.tsv, q.tq) >= $6::float8 / 1000)
+      order by rank desc, c.slug, c.ord limit $4`, [q, l, aud, Math.max(1, Math.min(n, 10)), modo, Math.max(0, umbralMilesimas)])).rows;
+  let r = await una(lang, "and");
+  if (!r.length) r = await una(lang, "or");
+  if (!r.length) r = await una(lang === "es" ? "en" : "es", "and");
+  return r;
+}
+
 /* Un artículo, solo si es de una audiencia de la persona. Pausado: el equipo lo ve con su motivo; los demás, solo que se está revisando
    (sin texto). Retirado o de otra audiencia: null (la página dice 404, igual que si no existiera). */
 export async function articulo(slug: string, aud: Audiencia[]): Promise<Articulo | null> {

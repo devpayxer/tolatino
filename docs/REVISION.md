@@ -2976,3 +2976,83 @@ traducir; el código de cupón se escribe (sin escáner). Se quitaron ~200 menci
 - **Datos que no se guardan:** `tapar()` (tarjeta con Luhn, código de seguridad, SSN, número A, códigos, contraseñas, cuentas) en todo mensaje de
   la persona y del equipo y en el resumen; la base rechaza tarjeta o SSN (`texto_con_secretos`). Guardián `compaTapaSecretos` con vectores.
 - **Límites:** 5 casos por persona al día (Configuración; seguridad nunca se frena), 30 mensajes por hora, «un toque = un caso» (clave única).
+
+### 7c · El motor de El Compa: modelo, tapado, verificador, acciones, tope e interruptores (+ Super Admin › El Compa) (10 nov)
+Todavía no hay pantallas de vecino (llegan en 7d): lo que se mira hoy es el Super Admin. El motor corre con el **simulador** del sandbox
+(no hay llave de Anthropic) y está probado de punta a punta con él (`compa7c`, 111 comprobaciones).
+
+**Qué mirar, paso a paso (sandbox):**
+1. Entra como **Admin** (5705550199) → **El Compa · IA** (en el menú, debajo de Soporte). Arriba, **Gastado este mes**: lo gastado de **$100.00**, la
+   barra, TOPE · AVISO 80 % · EN CURSO y **Cambiar el tope**. Abajo, la nota «Al tope, El Compa contesta con reglas fijas y ofrece «Con una
+   persona». Nada se rompe…».
+2. **POR NIVEL** (Vecinos, Panel del negocio, Respuestas automáticas, Copiloto) y **POR CANAL** (Chat de To'Latino, WhatsApp, SMS): toca
+   **Vecinos** → elige «Mantenimiento.» → **Poner en pausa**. Arriba sale «En pausa: Vecinos.» y en el HISTORIAL tu cambio con el motivo. Vuelve a
+   tocarlo → **Encender**.
+3. **POR CIUDAD** → **Pausar aquí** en Hazleton → «Todo El Compa» y un motivo. Sale EN PAUSA; **Levantar** lo devuelve. **POR NEGOCIO** →
+   **Pausar en un negocio** (escribe `sabor-dominicano`) → igual.
+4. **Cambiar el tope** → escribe 20000 → «Entre $0.00 y $10000.00» (rechazado). Escribe 150 → queda $150.00 y en el HISTORIAL «Cambió · Tope de
+   gasto de El Compa: $150.00». Déjalo otra vez en 100.
+5. **MODELO**: Claude Sonnet 5.5 para el copiloto, Claude Haiku 5.5 para lo demás (precio por millón, +10 % de EE. UU.) y **CONTESTA AHORA:
+   Simulador del sandbox (todavía sin llave de Anthropic)**. **REGLAS FIJAS (NO SE APAGAN)**: las cuatro del diseño.
+6. Pestaña **Conversaciones**: cifras de 7 días (CONVERSACIONES, RESOLVIÓ SOLO, A UNA PERSONA, ACCIONES CONFIRMADAS), chips DÓNDE y RESULTADO y la
+   lista CP-… **sin ningún texto** (las de las pruebas). **Siguientes →** pagina.
+7. Entra como **Dayana** (5705550677, Soporte): ve todo, pero un interruptor dice «Tu rol no cambia interruptores.» y no tiene «Cambiar el tope».
+8. **Super Admin › Inicio:** cuando el gasto pase el 80 % sale «EL COMPA VA EN EL N % DEL TOPE…»; al tope, en rojo «EL COMPA LLEGÓ AL TOPE…», y a los
+   Admin les llega un aviso (una vez al mes cada uno).
+9. **Paso para el teléfono (cuando quieras la IA de verdad):** abrir la cuenta de Anthropic (console.anthropic.com: términos y tarjeta, en persona) y
+   crear una llave. **La llave se pone con el formulario seguro del entorno, nunca en el chat.** Con la llave, «CONTESTA AHORA» dice Claude; las
+   pruebas siguen con el simulador.
+
+**Decidí X; si prefieres Y, se cambia:**
+1. **Sin SDK de Anthropic:** la API se llama con `fetch` desde un solo archivo (`lib/compa/modelo-claude.ts`), como Stripe (`lib/pagos/stripe.ts`):
+   versión de la API fija y ninguna dependencia nueva. El plan decía SDK; el resultado es el mismo y hay menos que mantener.
+2. **El simulador es «ingenuo» a propósito:** si un dato trae instrucciones («ignora tus reglas…», dentro del texto o de una ayuda), las obedece.
+   Así se prueba que la seguridad no depende del modelo: el servidor lo frena (acciones solo de la lista cerrada y contra la sesión; verificador).
+3. **Tope en la base, con reserva:** antes de cada llamada se reserva lo máximo que puede costar (entrada estimada por arriba + la salida máxima)
+   y después se cobra lo real. Un tiempo agotado cuenta lo reservado (no se sabe si el proveedor cobró). El mes es el de la costa este.
+4. **Al tope:** las reglas fijas contestan (con la ayuda y su fuente cuando la hay) y la persona tiene «Con una persona». No se crea un caso solo
+   por el tope.
+5. **Interruptores:** global por nivel y canal (como el diseño), y además **pausa por ciudad y por negocio** (todo o un nivel) con motivo; se
+   levanta, no se borra. «Apagar El Compa aquí» del negocio (respuestas automáticas) usará esta misma pausa.
+6. **Producción:** aunque los interruptores digan encendido, El Compa no contesta allí hasta que se ponga `TOLATINO_COMPA=encendido` (fase 9).
+7. **Antes del modelo, sin preguntarle:** emergencia (911), dinero (cobro doble, «quiero mi devolución», cargo que no reconozco), seguridad (alguien
+   entró a mi cuenta, acoso, estafa: caso con prioridad alta), cuenta (cambiar teléfono, ciudad, borrar: «Te abro Mi cuenta…») y «quiero una
+   persona». Una pregunta general sobre devoluciones («¿cómo funciona la devolución de boletos?») sí la contesta El Compa con la ayuda.
+8. **Qué puede preparar hoy:** cancelar una **mesa** o una **cita** que sigue pendiente y sin cobro (las dos funciones del cliente que ya existían),
+   abrir la pantalla de una operación o de Mi cuenta. Ampliar la lista (por ejemplo visitas o fiestas) es decisión tuya.
+9. **Qué ve el modelo de un vecino:** nombre de pila, idioma, ciudad y sus 10 operaciones más recientes como op1…op10 (número, negocio, estado,
+   total). Nunca Salud, Profesionales, inscripciones (niños) ni una operación con datos privados; nunca ids, teléfonos ni direcciones.
+10. **Ayuda que usa:** si un trozo trae todas las palabras de la pregunta, vale; si trae solo algunas, tiene que pasar el umbral de Configuración
+    (así «cancelar mi reservación» no contesta con boletos).
+11. **Conversaciones en el Super Admin sin texto:** el hilo con «cada lectura anotada» llega con el Super Admin completo de El Compa.
+12. **Pantalla del tope (hueco #3 del diseño):** compuesta con piezas del sistema (resumen con barra y tres cifras, filas con interruptor, kv del
+    modelo, historial). Capturas: `e7c-compa-390.png`, `e7c-compa-1360.png`, `e7c-conv-390.png`, `e7c-conv-1360.png`, `e7c-compa-pausa-390.png`.
+
+**Revisión de seguridad (regla 5):**
+- **Datos de otra persona (IDOR):** el contexto se arma solo con el id de la sesión; el modelo ve op1…op10 y una acción solo vale con una ref de ese
+  mapa (un número que diga el texto o el modelo no sirve, ni siquiera de una operación propia). Probado con dos vecinas: Yaritza no recibe nada de
+  Marisol (ni nombre ni números en lo que recibe el modelo), no puede seguir su conversación (CP-…) ni confirmar su acción (el id es de un uso y
+  de su dueña).
+- **Lo tapado nunca sale:** el texto se tapa antes de guardarse y antes del modelo; los trozos de ayuda y el historial también; la base rechaza
+  tarjeta o SSN en mensajes y resúmenes. La prueba revisa lo que **recibió el simulador**: «[tapado]», sin el código, el SSN ni la contraseña,
+  sin uuids, sin el id de la persona ni teléfonos.
+- **Inyección:** en el texto de la persona y en una **ayuda envenenada** (artículo temporal solo en la base local, borrado después): el
+  simulador obedeció; el servidor lo frenó (sin acción, sin el teléfono ni el «descuento»; contestaron las reglas). El sistema es fijo del
+  servidor y todo lo demás va en bloques marcados como DATOS (sin poder cerrar un bloque).
+- **Acciones:** nada se ejecuta en la petición del modelo; confirmar es otra petición con sesión y mismo origen (sin origen: 403; sin sesión:
+  401; otra persona: «no existe»), la toma una sola (dos a la vez = una cancelación), vuelve a leer la operación y vence si cambió («Ya cambió:
+  Sabor Dominicano ya respondió»), y cancela por `rsvCliente` / `citaCliente`, las mismas funciones y permisos de siempre. El Compa no importa
+  nada de dinero (guardián).
+- **Tope con llamadas a la vez:** 20 turnos simultáneos con lugar para unos pocos: 7 con IA, 13 con reglas, gasto final ≤ tope y ninguna reserva
+  colgada.
+- **Proveedor lento o caído:** a los 2 s (espera de Configuración en la prueba) contestan las reglas; error, rechazo y salida rota igual.
+- **Verificador de salida:** frena precios y porcentajes inventados, datos tapados y teléfonos, «ya cancelé», emoji, citas a artículos del
+  equipo y respuestas sin fuente.
+- **La llave:** solo `modelo-claude.ts` la lee; no aparece en el paquete del navegador ni en el registro del servidor (comprobado); la ruta de
+  pruebas no existe en producción y pide el token del barrido.
+
+**Nota de la sesión principal sobre 7c (10 nov):** revisé `lib/compa/modelo-claude.ts` contra la referencia de la API de Claude:
+`anthropic-version: 2026-10-21` es válido; la petición no manda `temperature` / `top_p` / `top_k` (esa versión los rechaza); la salida
+estructurada va en `output_config.format` y el esfuerzo en `output_config.effort`; `inference_geo: "us"` va arriba en la petición (+10 %);
+se maneja `stop_reason: "refusal"`. Anthropic recomienda su SDK oficial; aquí se usó `fetch` como en `lib/pagos/stripe.ts` (sin dependencia
+nueva). Si con la primera llamada real algo no cuadra, se cambia ese único archivo.

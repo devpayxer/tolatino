@@ -28,6 +28,10 @@ services:
       # 5h · Traductor propio («Ver traducción»): la única dirección de traducción de la app, por la red interna. Si no responde, la
       # pantalla dice «La traducción no está disponible ahora.» y sigue igual. El texto de los vecinos nunca va a un tercero.
       TRADUCTOR_URL: http://traductor:5000
+      # 7c · El Compa: la llave de Anthropic (Claude API, PLAN §8 «IA de El Compa (con tope)»). Vive solo en /etc/tolatino/pruebas.env, nunca en el
+      # repo. Sin ella contesta el simulador del sandbox. La app es el único servicio que sale al proveedor de IA (por la red «default»); el
+      # traductor y la moderación siguen sin salida. Solo lib/compa/modelo-claude.ts la lee (guardián compaSoloServidor).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
     networks: [default, interna]
     depends_on:
       db:

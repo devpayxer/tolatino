@@ -98,6 +98,11 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["bolRecordatorios", () => eav.barrerRecordatoriosBoletos()], ["evtAforo", () => eav.barrerAforoEvt()],
         // Soporte (7b): un caso que pasó su plazo (horas hábiles del equipo) sin respuesta sube a prioridad alta y se avisa a quien lo tiene.
         ["soporte", async () => (await import("./soporte-equipo")).barrerSoporte()],
+        // El Compa (7c): cerrar conversaciones sin mensajes (compa_conv_cierra_h), vencer acciones sin confirmar y soltar reservas del tope que
+        // nunca volvieron (proceso caído).
+        ["compaConversaciones", async () => (await import("./compa/conversacion")).cerrarConversaciones()],
+        ["compaAcciones", async () => (await import("./compa/acciones")).vencerAcciones()],
+        ["compaReservas", async () => { await db().query(`select compa_soltar_reservas(10)`); }],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

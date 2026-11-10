@@ -638,6 +638,11 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       (`alreves7b`). Sin correo entrante (§6 #16, LAUNCH). Falta la corrida de CI (la hace la sesión principal).
 - [ ] Motor: interfaz `Modelo` con `claude`, `reglas` y `simulador`; tapado, verificador de salida, lista cerrada de acciones confirmadas aparte, tope que no se
       pasa con llamadas a la vez, interruptores por nivel y canal; **sin El Compa nada se rompe** (regresión de Ayuda y Mensajes con todo apagado y al tope).
+      — 7c (10 nov): motor hecho y probado con el simulador (e2e `compa7c` 111 ✓: fuente, audiencia, tapado de lo que recibe el modelo, inyección en el
+      texto y en una ayuda envenenada, acción propuesta → confirmada aparte por `rsvCliente`, IDOR con dos vecinas, verificador, lento/error/rechazo,
+      20 a la vez contra el tope, interruptores nivel/canal/ciudad, límites); 0118 dos veces en local y en una base nueva; guardianes 66/66 al revés.
+      Sin marcar: la regresión «todo apagado» de Ayuda y Mensajes es de 7d/7f (hoy ninguna pantalla de vecino usa El Compa); el modelo real sin
+      probar (no hay llave); falta la corrida de CI (la hace la sesión principal).
 - [ ] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
       una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés).
 - [ ] Panel: asistente con la guía de las partes de esa persona; «Ir a …»; dinero y cuenta a Soporte.

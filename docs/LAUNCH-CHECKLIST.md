@@ -982,3 +982,22 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7b · Soporte en los 9 dispositivos:** `sop7b` corre en 390 y 1360 en local; falta la matriz de CI. (7b, 10 nov)
 - [ ] **7b · Asignar un caso a una persona concreta** (hoy: tomarlo uno mismo, «Tomar el siguiente caso» o «Pasar a Finanzas / un Admin», que lo
       deja sin asignar para ese rol). Elegir a quién desde la ficha, con la lista del equipo activo. (7b, 10 nov)
+
+## Fase 7 · 7c (el motor de El Compa)
+- [ ] **Cuenta de Anthropic** (el fundador, en persona: términos y facturación) y la llave `ANTHROPIC_API_KEY` con el formulario seguro del entorno
+      (nunca en el chat). Falta además el camino de la llave al servidor de pruebas (`/etc/tolatino/pruebas.env` → compose ya la pasa): el mismo
+      que tendrán `STRIPE_SECRET_KEY` y Telnyx (hoy ninguna llave de terceros llega sola al servidor).
+- [ ] **Retención cero (ZDR)** pedida a Anthropic para la cuenta de producción; si no la dan, decirlo en Privacidad (`privacidad-de-el-compa`).
+- [ ] **Primera llamada real** con la llave en el sandbox: revisar el formato exacto de la respuesta (esquema, `stop_reason`, `usage`) contra
+      `lib/compa/modelo-claude.ts` y que `inference_geo` y el esfuerzo bajo se acepten para Haiku 5.5; medir p95 (meta ≤ 4 s) y el costo real por turno.
+- [ ] **Batería del modelo real** (`scripts/compa/bateria/`, ≥ 150 preguntas ES/EN con revisión determinista, meta ≥ 95 %) — gasta dinero, dentro del
+      tope; con la llave.
+- [ ] **Encender en producción** (fase 9): poner `TOLATINO_COMPA=encendido` en el entorno de producción (candado de `lib/compa/interruptores.ts`).
+      Sin eso, El Compa queda apagado aunque los interruptores digan otra cosa. El simulador no existe allí.
+- [ ] **Purga por retención** (12 meses → solo cifras) y por cuenta borrada (D5, 30 días): la ayuda `privacidad-de-el-compa` ya lo promete; se
+      construye con el Super Admin completo de El Compa. `compa_retener_meses` queda bloqueada en Configuración hasta entonces.
+- [ ] **Abogado:** aviso de IA en Términos y Privacidad; el texto (tapado y mínimo) se procesa con Anthropic en EE. UU.; quién del equipo lee las
+      conversaciones y cuánto se guardan.
+- [ ] El copiloto, el panel y las respuestas automáticas usan el mismo motor (`turno` hoy solo acepta el uso «vecino»).
+- [ ] `go_to_panel` usa una lista cerrada mínima (hoy, mensajes, cobros, eventos, más) hasta que exista `compa_panel_guide`.
+

@@ -21,10 +21,17 @@ export default async function Inicio({ searchParams }: { searchParams: Promise<{
   const grupos = await gruposNav((x) => s.puede(x, "ver"));
   // 6j · Alerta «evento con sobreventa» (admin-dashboard L74): la vista evt_sobreventa; con los checks de la base no debería salir nunca.
   const sv = s.puede("evt", "ver") ? await (await import("@/lib/evt-admin")).sobreventa(s) : [];
+  // 7c · Alerta del tope de El Compa (decisión F): al pasar compa_alerta_pct y al llegar al tope.
+  const cg = s.puede("compa", "ver") ? await (await import("@/lib/compa/tope")).gastoDelMes() : null;
+  const cAl = cg && (cg.topeEn || cg.pct >= 100) ? "tope" : cg && cg.pct >= cg.alertaPct ? "aviso" : null;
+  const usd = (c: number) => "$" + (c / 100).toFixed(2);
   return (
     <>
       <Titulo eyebrow="SUPER ADMIN · INICIO" titulo={`Hola, ${s.first_name}`} sub="Todo lo de aquí sale de la base real del servidor de pruebas." />
       {sin && <AdminNote tone="warn">Tu rol no tiene permiso para eso ({sin.replace(":", " · ")}). Si lo necesitas, pídeselo a un Admin.</AdminNote>}
+      {cg && cAl ? <AdminNote tone={cAl === "tope" ? "bad" : "warn"} icon="warning">{cAl === "tope"
+        ? `EL COMPA LLEGÓ AL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Contesta con reglas fijas y ofrece «Con una persona». Sube el tope en El Compa · IA si hace falta.`
+        : `EL COMPA VA EN EL ${cg.pct} % DEL TOPE · ${usd(cg.gastado)} de ${usd(cg.tope)} este mes. Míralo en El Compa · IA.`}</AdminNote> : null}
       {sv.length ? <AdminNote tone="bad" icon="warning">{`EVENTO CON SOBREVENTA · ${sv.slice(0, 3).map((x) => `${x.titulo.es} · ${x.dia}: ${x.vivos} vivos de ${x.cantidad}`).join(" · ")}. Míralo en Eventos y boletos.`}</AdminNote> : null}
       <KpiRow
         columns="repeat(auto-fill, minmax(min(100%, 160px), 1fr))"

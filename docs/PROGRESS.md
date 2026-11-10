@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026 (7b · Soporte: casos con To'Latino)._
+_Actualizado: 10 nov 2026 (7c · El motor de El Compa)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -365,6 +365,32 @@ Colas › «Soporte · casos», Usuarios 360° y Negocios 360° › Soporte; los
 **`macroSinHtml`**, **`prefijoSoporte`**, **`soporteSoloInsercion`** (45/45 al revés, `alreves7b`); e2e **`sop7b` 104 ✓** (390 y 1360). Ayuda:
 `soporte`, `panel-ayuda-y-soporte`, `admin-soporte`; `mi-cuenta`, `centro-de-ayuda`, `admin-configuracion` al día. Sigue **7c** (el motor de El Compa:
 interfaz del modelo, tapado, verificador, acciones, tope e interruptores; migración 0118).
+**7c hecho (10 nov)** — El motor de El Compa (sin pantallas de vecino: llegan en 7d). Migración **0118** (`compa_conversations` CP-6101… con
+`outcome` y `turns_n` DERIVADOS por la base; `compa_messages` SOLO INSERCIÓN con rechazo de tarjeta/SSN; `compa_actions` lista cerrada
+`cancel_request · open_screen · go_to_panel`, id de un uso, proposed → confirming → confirmed/failed/expired una sola vez; `compa_handoffs`;
+`compa_models` (precios en microdólares + 10 % de EE. UU.; Haiku 5.5 cotidiano, Sonnet 5.5 copiloto, «simulador» con precio de Haiku);
+**el tope en la base**: `compa_spend_month` + `compa_reservations` + `compa_usage` (libro sin texto) con `compa_reservar` (reserva el máximo con la
+condición gastado + reservado + máximo ≤ tope en una sentencia), `compa_anotar` (liquida con los tokens reales, aviso al 80 %), `compa_marcar_tope`,
+`compa_soltar_reservas` (barrido); `compa_pauses` por ciudad/negocio; feature_flags `compa.use.*` y `compa.channel.*`; sección Super Admin
+`compa` (Admin todo, Soporte ver/editar, Lectura ver); plantillas `compa_tope_80/100`; Configuración › El Compa (11 claves nuevas; `ayuda_trozos_max`
+y `ayuda_umbral_rank` pasan a editables)). Código `lib/compa/`: `modelo.ts` (interfaz, esquema JSON, bloques de DATOS, `motorActivo`),
+`modelo-claude.ts` (Messages API por fetch, versión 2026-10-21, `output_config.format` + esfuerzo bajo, `inference_geo us`, caché del sistema,
+AbortSignal; ÚNICO que lee `ANTHROPIC_API_KEY`), `modelo-simulador.ts` (determinista e INGENUO: obedece inyecciones para probar al servidor; guarda
+lo que recibe; no existe en producción), `modelo-reglas.ts` (reglas fijas del prototipo con la ayuda), `reglas.ts` (emergencia, dinero, seguridad,
+cuenta y «quiero una persona» antes del modelo), `verificar.ts`, `tope.ts` (`gastar`, `anotarUso`, `gastoDelMes`, aviso al equipo Admin),
+`interruptores.ts` (nivel, canal, ciudad, negocio; candado de producción `TOLATINO_COMPA=encendido`), `contexto-vecino.ts` (solo la sesión, op1…op10,
+sin Salud/Profesionales/inscripciones/op_private), `acciones.ts` (`validarAccion`, `proponer`, `confirmar` en otra petición por `CANCELABLES` =
+`citaCliente`/`rsvCliente` «cancelar», `descartar`, `vencerAcciones`), `persona.ts` (`pasarAPersona` → `abrirCasoDesdeCompa`), `conversacion.ts`
+(`turno`, `cerrarConversaciones`), `admin-compa.ts`; `ayuda-indice.ts` suma `trozosCompa`. Ruta SOLO de pruebas `/api/interno/compa` (404 en
+producción, token del barrido, sesión y mismo origen). Barrido: `compaConversaciones`, `compaAcciones`, `compaReservas`. Super Admin › **El Compa · IA**
+(`/admin/compa`: gasto del mes con barra y tope, POR NIVEL, POR CANAL, POR CIUDAD, POR NEGOCIO, MODELO, REGLAS FIJAS, HISTORIAL; Conversaciones sin
+texto con cursor) y alerta del tope en Inicio. Compose pasa `ANTHROPIC_API_KEY` (vacía hasta que el fundador abra la cuenta). Guardianes
+**`compaSoloServidor`**, **`compaUnSoloProveedor`**, **`compaPorElTope`**, **`costosIA`** (parte IA de Costos), **`compaSinDinero`**,
+**`compaAccionConfirmada`**, **`compaSoloSusDatos`**, **`compaSinDatosSensibles`**, **`compaTapaEnElMotor`**, **`compaSalidaLimpia`**,
+**`compaInterruptores`**, **`compaSinRutaCritica`** + `compaAyudaPorAudiencia` y `libroSoloInsercion` ampliados (66/66 al revés, `alreves7c`); e2e
+**`compa7c` 111 ✓** (motor con el simulador + Super Admin 390 y 1360). Ayuda: `admin-el-compa`, `privacidad-de-el-compa`. Sin dependencia nueva.
+Sigue **7d** (El Compa para vecinos: hoja 2as en cada operación y pasos 2at en Soporte, `acciones-compa.ts` sobre `turno`/`confirmar`; migración 0119,
+semilla 0041).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
