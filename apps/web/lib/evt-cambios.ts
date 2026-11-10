@@ -50,7 +50,7 @@ export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean): 
       if (!e) throw no("Ese evento no existe.", "That event does not exist.");
       if (!["live", "paused"].includes(e.st)) throw no("Solo se pausa un evento publicado.", "Only a live event can be paused.");
       if (pausar === (e.st === "paused")) return;
-      if (!pausar && e.frozen) throw no(`To'Latino congeló la venta: ${e.frozen}. Escríbenos desde Ayuda.`, `To'Latino froze sales: ${e.frozen}. Write to us from Help.`);
+      if (!pausar && e.frozen) throw no(`To'Latino congeló la venta: ${e.frozen}. Escríbenos desde tu panel › Más › Ayuda y Soporte.`, `To'Latino froze sales: ${e.frozen}. Write to us from your dashboard › More › Help and Support.`);
       // Reanudar solo vuelve a vender un evento que ya estaba publicado y aprobado (pausado); nunca publica algo sin revisión.
       if (pausar) await c.query(`update events set status = 'paused' where id = $1::bigint and status = 'live'`, [eventoId]);
       else await c.query(`update events set status = 'live' where id = $1::bigint and status = 'paused' and approved_at is not null`, [eventoId]);

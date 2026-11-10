@@ -2,6 +2,7 @@
 /* ADM-NEG · 360° (Super Admin.dc.html negDetail): el negocio como lo ve el cliente, como lo edita el dueño y lo que
    hizo el equipo. Pestañas: Resumen, Ficha, Lo que vende, Dinero (2o), Equipo, Contenido y Confianza (Operación llega con
    Analítica). Cada acción pide motivo y queda en la auditoría. */
+import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -54,7 +55,7 @@ const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> })
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null }) {
+export function N360({ n, tab, din, evts = null, sop }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[] }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -82,7 +83,7 @@ export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string;
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"]].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -295,6 +296,8 @@ export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string;
           ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Jobs?", hacer: (m) => moduloPausar(n.id, "jobs", false, m) })}>{`Jobs en pausa: ${n.modsOff.jobs.reason}`}</A.AdminNote>
           : <A.AdminNote tone="info" icon="brief" cta="Pausar Jobs" onCta={() => setConf({ titulo: "Pausar Jobs", sub: "La pestaña Jobs deja de salir en la ficha y nadie aplica hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de vecinos", "Pide papeles o pago para aplicar", "Vacantes falsas"], hacer: (m) => moduloPausar(n.id, "jobs", true, m) })}>Jobs activo en su página.</A.AdminNote>) : null}
       </>);
+  } else if (tab === "soporte" && sop) {
+    cuerpo = <SoporteDe360 casos={sop} vacio="Este negocio no ha escrito a Soporte desde su panel." />;
   } else if (tab === "confianza") {
     const COL: Record<string, string> = { sello: "Sello de verificación", nuevo: "Negocios nuevos", medios: "Medios marcados", rec: "Recomendaciones", lic: "Licencias", cambio: "Reclamo (cambio sensible)" };
     const selloL = n.verified ? "Verificado" : n.sello?.status === "review" ? "En revisión" : n.sello?.status === "info" ? "Te falta un dato" : n.sello?.status === "no" ? "No aprobado" : "Sin sello";

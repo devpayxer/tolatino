@@ -538,7 +538,7 @@ function fotos(c: Ctx): (Bloque | null)[] {
     c.setUi({ orden: n, gSel: b });
     c.run(() => fotosOrden(d.id, n.map((z) => z.id)), b === 0 ? E2("Listo. Ya se ve en tu página.", "Done. It shows on your page now.") : undefined, () => c.setUi({ orden: null }));
   };
-  if (d.adm.fotos.length) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`To'Latino quitó ${d.adm.fotos.length === 1 ? "1 foto" : `${d.adm.fotos.length} fotos`} de tu página: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. Si crees que es un error, escríbenos desde Ayuda.`, `To'Latino removed ${d.adm.fotos.length === 1 ? "1 photo" : `${d.adm.fotos.length} photos`} from your page: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. If you think it is a mistake, write to us from Help.`) });
+  if (d.adm.fotos.length) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`To'Latino quitó ${d.adm.fotos.length === 1 ? "1 foto" : `${d.adm.fotos.length} fotos`} de tu página: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. Si crees que es un error, escríbenos.`, `To'Latino removed ${d.adm.fotos.length === 1 ? "1 photo" : `${d.adm.fotos.length} photos`} from your page: ${[...new Set(d.adm.fotos.filter(Boolean))].join(" · ")}. If you think it is a mistake, write to us.`), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}&nuevo=1&tema=cuenta`) });
   if (!d.pro && g.length > FOTOS_FREE) out.push({ type: "note", tone: "warn", icon: "image", t: E2(`Con Free tu página muestra las primeras ${FOTOS_FREE} fotos de tu galería. Las otras ${g.length - FOTOS_FREE} quedan guardadas y salen con Pro.`, `On Free your page shows the first ${FOTOS_FREE} photos of your gallery. The other ${g.length - FOTOS_FREE} stay saved and show with Pro.`) });
   out.push({ type: "rows", k: E2("PORTADA Y LOGO", "COVER AND LOGO"), cols: c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined, items: [
     { img: g[0] ? `url("${g[0].url}")` : undefined, imgIni: g[0] ? undefined : " ", imgW: "56px", t: E2("Portada", "Cover"), s: E2("Lo primero que ven. Es la primera foto de tu galería.", "The first thing people see. It is the first photo of your gallery."), acts: [{ l: E2("Elegir otra", "Choose another"), icon: "image", off: c.pending, onClick: () => subir(false, "cover") }] },
@@ -628,7 +628,7 @@ function avisosAdmin(c: Ctx, donde: "pag" | "hoy"): Bloque[] {
   else if (a.status === "suspended") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino suspendió tu página${motivo}. No sale en búsquedas ni en la categoría.`, `To’Latino suspended your page${motivo}. It doesn’t show in search or the category.`) });
   else if (a.status === "closed") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino cerró tu negocio en la app${motivo}.`, `To’Latino closed your business on the app${motivo}.`) });
   if (a.tempUntil) out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`To’Latino cerró tu página por unos días${a.tempReason ? `: ${a.tempReason}` : ""}. Los clientes la ven como «cerrado temporalmente».`, `To’Latino closed your page for a few days${a.tempReason ? `: ${a.tempReason}` : ""}. Clients see it as “temporarily closed”.`) });
-  if (a.reclamo) { const hasta = fechaCorta(new Date(new Date(a.reclamo).getTime() + 7 * 86_400_000).toISOString(), d.hoy.tz, c.es); out.push({ type: "note", tone: "warn", icon: "shield", t: E2(`Alguien pidió recuperar ${d.name} con un documento. Si no lo reconoces, escríbenos desde Ayuda antes del ${hasta}. Hasta entonces nada cambia.`, `Someone asked to recover ${d.name} with a document. If you don’t recognize it, write to us from Help before ${hasta}. Until then nothing changes.`) }); }
+  if (a.reclamo) { const hasta = fechaCorta(new Date(new Date(a.reclamo).getTime() + 7 * 86_400_000).toISOString(), d.hoy.tz, c.es); out.push({ type: "note", tone: "warn", icon: "shield", t: E2(`Alguien pidió recuperar ${d.name} con un documento. Si no lo reconoces, escríbenos antes del ${hasta}. Hasta entonces nada cambia.`, `Someone asked to recover ${d.name} with a document. If you don’t recognize it, write to us before ${hasta}. Until then nothing changes.`), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}&nuevo=1&tema=cuenta`) }); }
   if (donde === "pag" && a.nombre) out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`To’Latino corrigió tu nombre en la página: «${d.name}».`, `To’Latino corrected your name on the page: “${d.name}”.`) });
   if (donde === "pag" && d.ver.sello === "revoked") out.push({ type: "note", tone: "danger", icon: "shield", t: E2("To’Latino te quitó el sello Verificado. Puedes pedirlo otra vez cuando lo arregles.", "To’Latino removed your Verified badge. You can request it again once it is fixed."), cta: E2("Ver", "See"), onCta: () => c.go("pag", "ver") });
   return out;
@@ -696,8 +696,8 @@ function licencias(c: Ctx): Sec {
     apply: async (z: { nums: Record<string, string> }) => { for (const x of vivas) { const v = (z.nums[x.id] ?? "").trim(); if (v && v !== (x.number ?? "")) { const r = await licenciaNumero(d.id, x.id, v); if (!r.ok) return r; } } return { ok: true } as Res; } } };
 }
 
-/* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes, Entrega, Eventos y Cobros y plan. «También»: ver mi página como cliente y la
-   Ayuda del panel (7a: el Centro de ayuda con el tema «Tu panel»; El Compa llega en 7e). */
+/* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes, Entrega, Eventos y Cobros y plan. «También»: ver mi página como cliente, la
+   Ayuda del panel (7a: el Centro de ayuda con el tema «Tu panel») y Ayuda y Soporte (7b: los casos del negocio; El Compa llega en 7e). */
 function masBloques(c: Ctx): Bloque[] {
   const { E2, d } = c;
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
@@ -711,6 +711,8 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
-      { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") }] },
+      { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },
+      // 7b · Ayuda y Soporte (DASH-MAS L1298, hueco #8): los casos del negocio con To'Latino. El Compa se suma en 7e.
+      { icon: "chat", t: E2("Ayuda y Soporte", "Help and Support"), s: `${d.sop.abiertos ? `${d.sop.abiertos} ${d.sop.abiertos === 1 ? E2("caso abierto", "open case") : E2("casos abiertos", "open cases")} · ` : ""}${E2("Te contesta una persona del equipo: ", "A person on the team replies: ")}${d.sop.horario}.`, onClick: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}`) }] },
   ];
 }

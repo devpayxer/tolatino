@@ -59,7 +59,7 @@ export async function enviarReclamo(id: string, x: { rol: string; metodo: "codig
   const nota = typeof x?.nota === "string" ? x.nota.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 300) : "";
   const origen = x?.origen === "publica" ? "publica" : "directo";
   const veces = (await db().query<{ n: number }>(`select count(*)::int as n from claims where user_id = $1 and created_at > now() - interval '30 days'`, [a.me.id])).rows[0]!.n;
-  if (veces >= 5) return no("Ya mandaste varios reclamos este mes. Escríbenos desde Ayuda.", "You sent several claims this month. Write to us from Help.");
+  if (veces >= 5) return no("Ya mandaste varios reclamos este mes. Escríbenos en Mi cuenta › Ayuda y soporte.", "You sent several claims this month. Write to us in My account › Help and support.");
   const ip = await ipCliente();
   const r = await tx(async (c) => {
     let cols: Record<string, unknown>;

@@ -56,6 +56,6 @@ export function herramientaTransBloques(c: Ctx): Sec {
     lock(E2("Cancelar gratis hasta 24 h antes", "Free cancellation up to 24 h before"), E2("Después, se cobra la mitad.", "After that, half is charged.")),
     lock(E2("Si no sales, se devuelve todo", "If you do not run, everything is refunded"), E2("A cada pasajero, con aviso.", "To every passenger, with notice.")),
   ] });
-  if (h.forzado) out.push({ type: "note", tone: "info", icon: "info", t: E2("To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.", "To’Latino adjusted your business type. If it is wrong, write to us.") });
+  if (h.forzado) out.push({ type: "note", tone: "info", icon: "info", t: E2("To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.", "To’Latino adjusted your business type. If it is wrong, write to us."), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(c.d.id)}&nuevo=1&tema=cuenta`) });
   return { blocks: out, ed: null };
 }

@@ -445,7 +445,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
               <span className="grid size-14 place-items-center rounded-[16px] bg-paper"><Icon name="shield" size={24} /></span>
               <h1 className="font-display text-[26px] font-extrabold leading-[1.15] tracking-[-0.035em]">{E2("La Comunidad es para personas de 18 años o más", "The Community is for people 18 or older")}</h1>
               <p className="text-[14px] font-medium leading-normal text-text-2">{E2("Nos dijiste que tienes menos de 18 años, así que no verás la Comunidad ni los mensajes entre vecinos. Puedes seguir usando To'Latino para buscar negocios, pedir y reservar.", "You told us you are under 18, so you won't see the Community or messages between neighbors. You can keep using To'Latino to find businesses, order and book.")}</p>
-              <p className="text-[12.5px] font-medium leading-normal text-text-3">{E2("Si te equivocaste, escríbenos desde Ayuda en Mi cuenta.", "If you made a mistake, write to us from Help in My account.")}</p>
+              <p className="text-[12.5px] font-medium leading-normal text-text-3">{E2("Si te equivocaste, escríbenos en Mi cuenta › Ayuda y soporte.", "If you made a mistake, write to us in My account › Help and support.")}</p>
             </div>
           </div>
         )}

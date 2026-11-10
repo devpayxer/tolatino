@@ -631,8 +631,11 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       indexada por audiencia; `/ayuda` y `/ayuda/[slug]`; un artículo de equipo nunca llega a un vecino o dueño. — 7a (10 nov): 151 archivos con la
       forma; 0116 aplicada dos veces en local y en una base nueva; índice 2 veces (la segunda «0 nuevos · 0 cambiados»); guardianes 36/36 al revés;
       e2e `ayu7a` (vecino, dueña, portero, Admin; lista, búsqueda y enlace; pausar ↔ volver). Falta la corrida de CI (la hace la sesión principal).
-- [ ] Soporte: casos TK- con estados, SLA en horas hábiles, macros ES/EN, notas internas, «Resolver y devolver» con tope del rol, calificación; Mi cuenta y
-      Panel › Ayuda y Soporte; los «escríbenos» del producto llevan a Soporte.
+- [x] Soporte: casos TK- con estados, SLA en horas hábiles, macros ES/EN, notas internas, «Resolver y devolver» con tope del rol, calificación; Mi cuenta y
+      Panel › Ayuda y Soporte; los «escríbenos» del producto llevan a Soporte. — 7b (10 nov): 0117 aplicada dos veces en local y en una base nueva
+      (semillas dos veces, la segunda con las huellas cambiadas); e2e `sop7b` 104 ✓ (IDOR con otra vecina y otro dueño, nota interna fuera del HTML y del
+      RSC, Soporte $60 no / $40 sí, Admin $60 sí, la misma llave a la vez = una devolución, más de lo cobrado no); guardianes 8 nuevos, 45/45 al revés
+      (`alreves7b`). Sin correo entrante (§6 #16, LAUNCH). Falta la corrida de CI (la hace la sesión principal).
 - [ ] Motor: interfaz `Modelo` con `claude`, `reglas` y `simulador`; tapado, verificador de salida, lista cerrada de acciones confirmadas aparte, tope que no se
       pasa con llamadas a la vez, interruptores por nivel y canal; **sin El Compa nada se rompe** (regresión de Ayuda y Mensajes con todo apagado y al tope).
 - [ ] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a

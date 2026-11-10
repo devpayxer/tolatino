@@ -2909,3 +2909,70 @@ transferencia del martes; Booking de Doctores y de Auto/Hogar; cambiar o cancela
 lista y mesa de noche en la app; inscribirse en la app; monedas de bienvenida y puntos por votos; buscar eventos en Buscar; repartidores en Entrega
 y la app Repartidor; envíos y mudanzas en la app; apelar una sanción desde Mi cuenta; avisos del equipo al dueño (no por SMS); el menú sin botón de
 traducir; el código de cupón se escribe (sin escáner). Se quitaron ~200 menciones de fases y bloques.
+
+### 7b · Soporte: casos con To'Latino, Mi cuenta › Ayuda y soporte, el panel y Super Admin › Soporte (10 nov)
+**Qué mirar, paso a paso (sandbox):**
+1. Entra como **Marisol** (5705550122) → Mi cuenta → **Ayuda y soporte** («N CASOS ABIERTOS · EN ESPAÑOL · LUN–VIE 9 AM–6 PM»). Ves Escríbenos y
+   TUS CASOS (de la semilla: uno RECIBIDO, uno TE RESPONDIERON por un pedido de $85 en El Fogón y uno RESUELTO). En escritorio, los casos a la
+   izquierda y el caso a la derecha.
+2. **Escríbenos** → «Un pago o un cobro» → elige un pedido en ¿CUÁL? → escribe algo con un número de tarjeta (por ejemplo 4242 4242 4242 4242) y
+   agrega una foto → **Enviar**. El caso abre con RECIBIDO, «Una persona del equipo te responde hoy antes de las …» y la tarjeta sale «[tapado]».
+3. Entra como **Dayana** (5705550677, rol **Soporte**) → Super Admin › **Soporte**: cifras (ABIERTOS · fuera de plazo, MÍOS, 1.ª RESPUESTA,
+   RESUELTOS con «¿Se resolvió?»), la lista con «vence …» y el de seguridad de Yaritza en rojo («VENCIDO», ALTA). Abre el caso de Marisol:
+   contexto (persona, pedido, dispositivo), LO PAGADO EN LA APP y **TU TOPE EN ESTE CASO $50**. Toca la macro **Ya lo estoy viendo** →
+   **Enviar**. Cambia a **Nota interna** y escribe algo → **Guardar nota**.
+4. Vuelve a Marisol: ve la respuesta y TE RESPONDIERON; la nota interna **no aparece**. Contéstale; el caso vuelve a la cola.
+5. Como Dayana: **Resolver y devolver** $60 → «Tu rol devuelve hasta $50 por caso». Con $40 → «Resuelto y devueltos $40». Marisol ve «Te
+   devolvimos $40 a tu tarjeta» y «¿Se resolvió? Sí / No». Toca **No**: el caso vuelve a la cola (reabierto).
+6. Entra como **Admin** (5705550199): en ese caso, **Resolver y devolver** $60 → sí (Admin devuelve hasta lo cobrado). Prueba **Ligar a una
+   operación**, **Unir a otro caso** (de la misma persona), **Pasar a Finanzas** (sale en Escalados; **Omar**, 5705550688, rol Finanzas, lo ve y
+   devuelve) y la pestaña **Macros** (nueva, editar, apagar; con «<b>» se rechaza).
+7. Entra como **Yesenia** (5705550433) → Panel de Rentas Hazleton Latino › **Más** › **Ayuda y Soporte**: LOS CASOS DE TU NEGOCIO y Escríbenos con
+   cuatro temas (pago · cuenta · técnico · sugerencia). **Juan** (5705550444) no lo ve desde su negocio.
+8. Super Admin › **Usuarios** › Marisol › **Soporte** y **Negocios** › Rentas Hazleton Latino › **Soporte**: sus casos. Sistema › Configuración ›
+   **SOPORTE**: horas, días, horario, casos por día, tope de Soporte ($50) y días para reabrir.
+
+**Decidí X; si prefieres Y, se cambia:**
+1. **Soporte = conversación con To'Latino**, aparte de la «Ayuda con …» de cada operación (que sigue igual y sale arriba en «To'Latino está
+   revisando»). La cola de ayudas escaladas sigue en Colas › Ayuda con pedidos y citas; el menú «Soporte» lleva ahora a los casos.
+2. **Estados:** Recibido · Lo están viendo (alguien lo tomó o la persona volvió a escribir) · Te respondieron · Resuelto; además «Unido» para un
+   duplicado. La cola del equipo solo tiene los casos que le tocan al equipo (al responder, sale; al contestar la persona, entra con plazo nuevo).
+3. **Plazo en horas hábiles** (8, lunes a viernes 9–6, hora de la ciudad, sin feriados), de Configuración. El plan decía «viernes 5:30 PM → lunes
+   1:30 PM»; con 8 horas de 9 a 6 la cuenta da **lunes 4:30 PM** (media hora el viernes y siete y media el lunes): se construyó la cuenta correcta.
+   Un caso fuera de plazo sube a prioridad alta y avisa a quien lo tiene.
+4. **Tope de devolución:** Soporte **$50 por caso** sumando lo ya devuelto en ese caso; Finanzas y Admin (quien tiene Transacciones › aprobar)
+   hasta lo cobrado. Lo decide la base al momento de devolver con el valor de Configuración. **Finanzas ahora ve Soporte** (para «Pasar a
+   Finanzas»), solo si nadie había cambiado ese permiso.
+5. **Quién ve un caso de negocio:** quien lo abrió y el dueño (o quien tiene todo el panel); nadie más del equipo del negocio. Un caso de cobros
+   lo abre solo quien tiene Cobros.
+6. **«¿Se resolvió?» Sí / No:** «No» dentro de 7 días (Configuración) lo reabre; después, «Abrir otro caso» enlazado. Sin estrellas ni encuestas.
+7. **Una foto por mensaje**, privada como la de Ayuda (solo la persona, el dueño si es de su negocio y el equipo con Soporte, y cada vez que el
+   equipo la abre queda en la auditoría). El negocio del que habla un vecino nunca ve su caso.
+8. **Macros de fábrica** (6, ES/EN) en la migración, no en la semilla, para que producción no empiece vacía. Se editan y apagan en Super Admin ›
+   Soporte › Macros (Admin), con motivo y auditoría. Solo texto: sin etiquetas y sin otra llave que {nombre}.
+9. **Teléfonos en un caso:** no se tapan (un caso de cuenta los necesita: «cambié de número») porque lo lee solo el equipo; tarjeta, código de
+   seguridad, SSN, códigos, contraseñas y cuentas del banco sí, antes de guardar (y la base rechaza tarjeta o SSN aunque alguien se lo salte).
+10. **Avisos** en la campana de la app (sin SMS: no es crítico). El correo de respuesta y el correo entrante quedan en LAUNCH.
+11. **Equipo de prueba en la semilla:** Dayana (Soporte) y Omar (Finanzas), solo del sandbox, y Marisol si no existía. El pedido pagado de la
+    semilla es de El Fogón (no de Sabor Dominicano) para no cruzarse con las pruebas de Ayuda.
+12. **El Compa** (7c/7d) abrirá casos con la misma función (`abrirCasoDesdeCompa`: origen «compa», la referencia de su conversación y el resumen
+    tapado). «Pregúntale al Compa» no se muestra hasta 7d.
+
+**Revisión de seguridad (regla 5):**
+- **Cada quien sus casos (IDOR):** las acciones de la persona toman el id de la **sesión** (nunca uno del teléfono) y revisan el origen; cada número
+  TK- se busca con la regla «tuyo sin negocio, o del negocio del contexto si eres su dueño». Probado con otra vecina (Yaritza: página, foto, escribir,
+  cerrar, calificar → «Ese caso no existe» y nada cambia) y con otro dueño (Juan: el caso del panel de Yesenia no existe desde su negocio y el Soporte
+  del negocio ajeno dice «Sin acceso»). Un vecino que llama las acciones del equipo recibe «Entra con tu cuenta del equipo».
+- **Notas internas:** la persona lee su hilo con una sola consulta que deja fuera `internal`; la pantalla de la persona no conoce ese campo; la
+  prueba busca el texto de la nota en la pantalla, en el HTML y en la carga RSC: no está. Guardián `notaInternaNoSale` (7 inyecciones al revés).
+- **Dinero:** «Resolver y devolver» primero escribe una fila pendiente en `support_refunds`; el **trigger** lee el rol de `staff_members` (no de la
+  app), su tope con `soporte_tope_devolver` (matriz de permisos + Configuración), suma lo ya devuelto en el caso con candado y exige que el cobro sea
+  de la operación y de la persona del caso; si pasa, recién ahí se llama a `devolverPago` con la llave `tk-{intento}` (única). Dos toques a la vez =
+  una devolución (probado con dos llamadas simultáneas: una fila en refunds y una en la pasarela). Nunca más de lo cobrado (devolverPago y la
+  pasarela; probado $200 sobre $150). Todo con AuditEntry y aviso a la persona. Guardián `soporteDevolverConTope`.
+- **Fotos:** solo privadas (`private` exigido al ligarla al caso), servidas por la ruta de fotos de ayuda con permiso; 404 para cualquier otro.
+- **Macros:** texto plano; la base y el servidor rechazan etiquetas y llaves que no sean {nombre}; se pintan como texto de React (guardián
+  `macroSinHtml`).
+- **Datos que no se guardan:** `tapar()` (tarjeta con Luhn, código de seguridad, SSN, número A, códigos, contraseñas, cuentas) en todo mensaje de
+  la persona y del equipo y en el resumen; la base rechaza tarjeta o SSN (`texto_con_secretos`). Guardián `compaTapaSecretos` con vectores.
+- **Límites:** 5 casos por persona al día (Configuración; seguridad nunca se frena), 30 mensajes por hora, «un toque = un caso» (clave única).

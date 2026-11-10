@@ -10,6 +10,7 @@ import { APELABLE, MOTIVO_REP, REGLA_L, type Apelable } from "./moderacion-comun
 import { db } from "./db";
 import { MOTIVO, evidenciaDe } from "./disputas";
 import { telefonoBonito } from "./panel";
+import { TEMAS, type Tema } from "./soporte-comun";
 
 /* ADM-COLAS: lo que espera una decisión. El servidor decide qué ve cada persona: las colas de su rol (lib/colas.ts),
    la matriz (colas:ver) y sus ciudades (staff_members.cities; vacío = todas). La más vieja contra su plazo va primero. */
@@ -25,7 +26,7 @@ export async function slasColas(): Promise<Record<Cola, number>> {
 
 export type CasoLista = {
   id: string; queue: Cola; title: string; sub: string; who: { name: string; image?: string; initials?: string } | null;
-  assignee: string | null; mine: boolean; esp: ReturnType<typeof espera>; priority: string;
+  assignee: string | null; mine: boolean; esp: ReturnType<typeof espera>; priority: string; tk?: string;
 };
 
 export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boolean; sinAsignar?: boolean; vencidos?: boolean }) {
@@ -38,6 +39,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     subject_kind: string; sctype: string | null; sname: string | null; rpreason: string | null; rpn: number; rpbiz: boolean; chreason: string | null; chn: number; chbiz: boolean; dpnum: string | null; sopk: string | null; sopr: string | null; dpamt: number | null; dpreason: string | null; dpdue: string | null;
     lst: string | null; lnext: string | null; vjn: number; vjf: string | null; vji: string | null;
     ctext: string | null; cn: number; creason: string | null; cflag: string | null; uname: string | null; apel: string | null; mkind: string | null; evt: string | null; sla_h: number;
+    tk: string | null;
   }>(
     `select q.id::text, q.queue, q.opened_at, q.priority, q.assigned_to, u.first_name as assignee, q.subject_kind, sc.type as sctype,
             coalesce(nullif(trim(coalesce(su.first_name, '') || ' ' || coalesce(su.last_name, '')), ''), su.phone) as sname,
@@ -74,6 +76,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
             (select a.number || '|' || a.target_kind from appeals a where q.subject_kind = 'appeal' and a.id::text = q.subject_id) as apel,
             (select m.owner_kind from media m where q.queue = 'medios' and m.id::text = q.subject_id) as mkind,
             (select case when e.pending_status = 'review' then 'cambio' else 'nuevo' end || '|' || (e.title->>'es') from events e where q.queue = 'evt' and e.id::text = q.subject_id) as evt,
+            (select sc.number || '|' || sc.topic || '|' || coalesce((select left(m.body, 80) from support_messages m where m.case_id = sc.id and m.sender = 'user' and m.hidden_at is null order by m.at, m.id limit 1), '')
+               from support_cases sc where q.queue = 'ticket' and sc.id::text = q.subject_id) as tk,
             ${SLA_SQL} as sla_h
        from queue_items q
        left join businesses b on b.id = q.business_id
@@ -93,7 +97,9 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
     conteo[x.queue] = (conteo[x.queue] ?? 0) + 1;
     if (e.r >= 1) vencidos++;
     const b = x.bname ?? "";
-    const t = x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
+    const tk = (x.tk ?? "||").split("|");
+    const t = x.queue === "ticket" ? { title: `${tk[0]} · ${TEMAS[tk[1] as Tema]?.corto.es ?? "Soporte"}${b ? ` · ${b}` : ""}`, sub: tk.slice(2).join("|") || "Caso de Soporte" }
+      : x.queue === "sello" ? { title: `Sello · ${b}`, sub: "Pidió el sello de verificación" }
       : x.queue === "nuevo" ? { title: b, sub: "Publicado desde la app · revisión ligera" }
       : x.queue === "lic" ? { title: `Licencia · ${b}`, sub: `${x.ltitle ?? "Licencia"} · ${licEstado(x.lst, x.lnext)}` }
       : x.queue === "vivienda" && x.subject_kind === "listing" ? { title: `Vivienda para mayores · ${b}`, sub: `Declaración de 62 o más por revisar · «${x.vji ?? "Propiedad"}»` }
@@ -128,7 +134,7 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       id: x.id, queue: x.queue, ...t, priority: x.priority,
       who: x.subject_kind === "dm_thread" || x.subject_kind === "com_post" || x.subject_kind === "com_comment" || x.subject_kind === "appeal" || (x.queue === "medios" && x.mkind === "com_post") ? { name: "Comunidad", initials: "C" }
         : x.subject_kind === "user" ? { name: x.uname ?? "Vecino", initials: (x.uname ?? "V").slice(0, 1) } : x.queue === "rec" ? { name: x.rname ?? "", initials: (x.rname ?? "?").slice(0, 1) } : x.subject_kind === "sensitive_change" ? { name: x.sname ?? "", initials: (x.sname ?? "?").slice(0, 1) } : { name: b, image: x.cover ?? undefined, initials: b.slice(0, 1) },
-      assignee: x.assignee, mine: x.assigned_to === s.id, esp: e,
+      assignee: x.assignee, mine: x.assigned_to === s.id, esp: e, ...(x.queue === "ticket" && x.tk ? { tk: x.tk.split("|")[0] } : {}),
     };
   });
   const casos = todos.filter((c) => (!f.mios || c.mine) && (!f.sinAsignar || !c.assignee) && (!f.vencidos || c.esp.r >= 1));
@@ -172,6 +178,11 @@ export async function caso(s: Staff, id: string) {
   const sla = q.queue === "evt" ? await valor("evt_revision_h") : COLAS[q.queue].sla;
   const base = { ...q, esp: espera(q.opened_at, sla), sla, mine: q.assigned_to === s.id, puedeDecidir: s.puede("colas", "aprobar") };
   const negocio = q.business_id ? await negocioCorto(q.business_id) : null;
+  // 7b · Un caso de Soporte se trabaja en Super Admin › Soporte (su ficha con el hilo, macros y notas).
+  if (q.queue === "ticket") {
+    const tk = (await db().query<{ num: string }>(`select number as num from support_cases where id::text = $1`, [q.subject_id])).rows[0]?.num ?? null;
+    return { ...base, negocio, tk };
+  }
   if (q.queue === "sello") {
     const v = (await db().query<{ status: string; checks: Record<string, boolean>; note: string | null }>(`select status, checks, note from verification_requests where id = $1::bigint`, [q.subject_id])).rows[0];
     return { ...base, negocio, sello: v ?? null };

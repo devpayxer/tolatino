@@ -26,13 +26,14 @@ a todos, con o sin cuenta. Versión: 10 nov 2026. Audiencia: vecino. Tema: cuent
 | No encuentras nada | «No encontramos nada con eso»: prueba otra palabra o mira los temas. |
 | Un artículo se está revisando | Dice «Este artículo se está revisando» y te deja ver los demás del tema. |
 | Abres el enlace de un artículo que no es para ti | No existe para ti (la página no lo muestra). |
-| Tu problema es con un pedido, una cita o un boleto | Ábrelo y toca **Ayuda**: el negocio te responde y To'Latino lo revisa. El pie de cada artículo te lleva a Mi cuenta. |
+| Tu problema es con un pedido, una cita o un boleto | Ábrelo y toca **Ayuda**: el negocio te responde y To'Latino lo revisa. |
+| No encontraste lo que buscabas | El pie de cada artículo, **Escríbenos**, abre Soporte: te contesta una persona del equipo (`soporte.md`). |
 
 ## Preguntas frecuentes
 - **¿Tengo que entrar para leer la ayuda?** No. Entrar solo suma la ayuda de tu negocio o de la puerta, si te toca.
 - **¿Quién escribe la ayuda?** El equipo de To'Latino, con cada función de la app. Si algo ya no es cierto, el equipo puede pausar el artículo
   mientras lo corrige.
-- **¿Puedo hablar con una persona?** Si es sobre un pedido, una cita o un boleto, sí: desde su **Ayuda**.
+- **¿Puedo hablar con una persona?** Sí. Sobre un pedido, una cita o un boleto, desde su **Ayuda**; para lo demás, **Escríbenos** (Soporte).
 
 ## English
 
@@ -54,10 +55,10 @@ never shown to a neighbor or a business: not in the list, not in search, not by 
 ### What happens in each case
 Nothing found: try another word or browse the topics. An article being reviewed says so and shows the others in its topic. A link to an
 article that is not for you does not open. A problem with an order, booking or ticket: open it and tap **Help**; the business replies and
-To'Latino reviews it.
+To'Latino reviews it. Didn't find it: **Write to us** at the bottom of each article opens Support.
 
 ### FAQ
 - **Do I need to sign in?** No. Signing in only adds your business or door help, if it applies.
 - **Who writes the help?** The To'Latino team, with each app feature. If something is no longer true, the team can pause the article while
   it is fixed.
-- **Can I talk to a person?** About an order, booking or ticket, yes: from its **Help**.
+- **Can I talk to a person?** Yes. About an order, booking or ticket, from its **Help**; for anything else, **Write to us** (Support).

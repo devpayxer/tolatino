@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026 (7a · la ayuda como base y el Centro de ayuda)._
+_Actualizado: 10 nov 2026 (7b · Soporte: casos con To'Latino)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -348,6 +348,23 @@ To'Latino Puerta › Cómo funciona la puerta. De paso: 3 textos de pantalla vie
 eventos; «(Fase 2)» en Equipo). Guardianes **`ayudaConForma`**, **`ayudaSinFaseInterna`** (también textos de pantallas), **`compaAyudaPorAudiencia`**
 y `libroSoloInsercion` ampliado (36/36 al revés, `alreves7a`); e2e `ayu7a` 56 ✓ (vecino sin y con cuenta, dueña, portero, Admin; pausar ↔ volver;
 reindexar sin cambios). Sigue **7b** (Soporte: casos TK-, Mi cuenta › Ayuda y soporte, panel y Super Admin › Soporte; semilla 0040).
+**7b hecho (10 nov)** — Soporte: casos con To'Latino. Migración **0117** (`support_cases` TK-5201… de su secuencia, estados new · in_progress ·
+waiting · resolved · reopened · merged, prioridad, asignado, plazo `sla_due_at` en **horas hábiles** (`soporte_sla`: Configuración › Soporte, hora de
+la ciudad), «¿Se resolvió?», enlazado y unido, clave «un toque = un caso»; la **cola `ticket` la lleva la base** (trigger: entra cuando le toca al
+equipo, sale cuando le toca a la persona); `support_messages` SOLO INSERCIÓN con notas internas, foto privada y rechazo de tarjeta/SSN en la base;
+`support_macros` ES/EN sin HTML (6 de fábrica); `support_refunds` con **el tope del rol puesto por la base** (`soporte_tope_devolver`: Soporte $50 por
+caso sumando lo devuelto, Finanzas/Admin hasta lo cobrado) y llave tk- única; plantillas sop_*; Configuración › Soporte (7 claves); Finanzas ve
+Soporte). Semilla **0040** (Dayana Soporte, Omar Finanzas, Marisol; 7 casos en cada estado, uno de seguridad ALTA vencido, uno con pedido pagado de
+$85 en El Fogón, uno de un negocio). Código: `lib/soporte.ts` (la persona: `abrirCaso`, `misCasos`, `casoVecino`, `escribirCaso`, «Ya se resolvió»,
+`calificarCaso`, `abrirCasoDesdeCompa` para 7c/7d), `lib/soporte-equipo.ts` (el equipo: lista y cifras, ficha con contexto, tomar, responder con
+macro, nota interna, resolver, **resolver y devolver** por `devolverPago`, pasar a Finanzas, unir, ligar, reabrir, ocultar, macros, barrido de
+plazo), `lib/compa/tapar.ts`, `lib/soporte-comun.ts`; pantallas **`/soporte`** (APP-SOPORTE tal cual; `?negocio=` = Panel › Más › Ayuda y Soporte),
+Mi cuenta › **Ayuda y soporte** (y navegación), Super Admin › **Soporte** (`/admin/soporte`: Abiertos · Míos · Escalados · Resueltos · Macros, ficha),
+Colas › «Soporte · casos», Usuarios 360° y Negocios 360° › Soporte; los «escríbenos» del Centro de ayuda y del panel abren Soporte. Guardianes
+**`soporteCasoConSla`**, **`notaInternaNoSale`**, **`soporteDevolverConTope`**, **`compaTapaSecretos`** (Soporte, con vectores), **`soporteSoloSuyos`**,
+**`macroSinHtml`**, **`prefijoSoporte`**, **`soporteSoloInsercion`** (45/45 al revés, `alreves7b`); e2e **`sop7b` 104 ✓** (390 y 1360). Ayuda:
+`soporte`, `panel-ayuda-y-soporte`, `admin-soporte`; `mi-cuenta`, `centro-de-ayuda`, `admin-configuracion` al día. Sigue **7c** (el motor de El Compa:
+interfaz del modelo, tapado, verificador, acciones, tope e interruptores; migración 0118).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

@@ -96,6 +96,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // Avisos de Eventos (6j): «Mañana» y «¡Es hoy!» a quien tiene boletos (desde evt_recordatorio_hora) y «Tu evento casi se agota» al
         // organizador (evt_aforo_aviso_pct); cada uno una vez (evt_avisos_enviados).
         ["bolRecordatorios", () => eav.barrerRecordatoriosBoletos()], ["evtAforo", () => eav.barrerAforoEvt()],
+        // Soporte (7b): un caso que pasó su plazo (horas hábiles del equipo) sin respuesta sube a prioridad alta y se avisa a quien lo tiene.
+        ["soporte", async () => (await import("./soporte-equipo")).barrerSoporte()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

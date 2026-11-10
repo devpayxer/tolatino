@@ -49,7 +49,8 @@ export async function tomarCaso(id: string): Promise<ResAdm> {
   return { ok: true, mensaje: "Lo tomaste. Nadie más lo trabaja mientras tanto." };
 }
 
-/* Tomar siguiente: el primero sin asignar de MIS colas (la más vieja contra su plazo). */
+/* Tomar siguiente: el primero sin asignar de MIS colas (la más vieja contra su plazo). Un caso de Soporte (ticket) se toma en Super Admin ›
+   Soporte («Tomar siguiente» de ahí), que también lo asigna en el caso. */
 export async function tomarSiguiente(): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver las colas.");
@@ -58,7 +59,7 @@ export async function tomarSiguiente(): Promise<ResAdm> {
   const r = await tx(async (c) => {
     const q = (await c.query<{ id: string; city_id: string }>(
       `select q.id::text, q.city_id from queue_items q
-        where q.status = 'open' and q.assigned_to is null and q.queue = any($1::text[]) and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
+        where q.status = 'open' and q.assigned_to is null and q.queue = any($1::text[]) and q.queue <> 'ticket' and (cardinality($2::text[]) = 0 or q.city_id = any($2::text[]))
         order by extract(epoch from now() - q.opened_at) / (${sla} * 3600) desc limit 1 for update skip locked`, [vis, s.cities])).rows[0];
     if (!q) return null;
     await c.query(`update queue_items set assigned_to = $2, assigned_at = now() where id = $1`, [q.id, s.id]);

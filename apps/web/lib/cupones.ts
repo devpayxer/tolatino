@@ -197,7 +197,7 @@ export async function pasoCupon(negocio: string, id: string, paso: PasoCupon): P
       await c.query(`update coupons set status = 'paused', paused_by = 'business', paused_reason = null, paused_at = now() where id = $1::bigint`, [id]);
     } else if (paso === "reanudar") {
       if (x.status !== "paused") return no("Ese cupón no está pausado.", "That coupon is not paused.");
-      if (x.pb === "admin") return no("Lo pausó To’Latino: escríbenos para reanudarlo.", "To’Latino paused it: write to us to resume it.");
+      if (x.pb === "admin") return no("Lo pausó To’Latino: escríbenos desde Más › Ayuda y Soporte para reanudarlo.", "To’Latino paused it: write to us from More › Help and Support to resume it.");
       if (!x.pro) return no("Cupones por monedas es de Pro.", "Coupons for coins is a Pro feature.");
       await c.query(`update coupons set status = 'live', paused_by = null, paused_reason = null, paused_at = null where id = $1::bigint`, [id]);
     } else if (paso === "terminar") {

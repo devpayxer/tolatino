@@ -1,7 +1,7 @@
 "use client";
 /* 7a · El artículo (plantilla «To'Latino Página»): «Volver» al Centro de ayuda, rótulo del tema, título, versión y «Ver en inglés / en
-   español»; cada sección `##` en su tarjeta blanca (las `###` dentro); al pie, la tarjeta oscura «¿No es lo que buscabas?» (hasta que
-   exista Soporte, lleva a Mi cuenta: la ayuda de cada pedido, cita o boleto). En escritorio, la columna «Más en {tema}». El texto ya viene
+   español»; cada sección `##` en su tarjeta blanca (las `###` dentro); al pie, la tarjeta oscura «¿No es lo que buscabas?» (7b: «Escríbenos» abre
+   Soporte; la ayuda de cada pedido, cita o boleto sigue en su pantalla). En escritorio, la columna «Más en {tema}». El texto ya viene
    filtrado por audiencia; un artículo pausado solo dice que se está revisando (el equipo lo ve con su motivo). */
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -30,8 +30,8 @@ export function ArticuloAyuda({ es, ver, a, tema, mismos, vis, conSesion }: { es
   for (const s of secs) { if (s.nivel === 2 || !grupos.length) grupos.push([s]); else grupos[grupos.length - 1]!.push(s); }
   const otraVez = <div className="flex flex-col gap-2.5 rounded-[18px] bg-ink p-4 text-white" data-screen-label="Ayuda · ¿no es lo que buscabas?">
     <span className="font-display text-[16px] font-extrabold leading-[1.3] tracking-[-0.02em]">{E2("¿No es lo que buscabas?", "Not what you were looking for?")}</span>
-    <span className="text-[13px] font-medium leading-normal text-white/75">{E2("Si es sobre un pedido, una cita o un boleto, ábrelo y toca Ayuda: el negocio te responde y To’Latino lo revisa.", "If it’s about an order, a booking or a ticket, open it and tap Help: the business replies and To’Latino reviews it.")}</span>
-    <div className="flex"><Button variant="action" block onClick={() => router.push(conSesion ? "/cuenta" : "/entrar")}>{conSesion ? E2("Ir a Mi cuenta", "Go to My account") : E2("Entrar", "Sign in")}</Button></div>
+    <span className="text-[13px] font-medium leading-normal text-white/75">{E2("Si es sobre un pedido, una cita o un boleto, ábrelo y toca Ayuda: el negocio te responde y To’Latino lo revisa. Para lo demás, te contesta una persona del equipo.", "If it’s about an order, a booking or a ticket, open it and tap Help: the business replies and To’Latino reviews it. For anything else, a person on the team replies.")}</span>
+    <div className="flex"><Button variant="action" block onClick={() => router.push(conSesion ? "/soporte?nuevo=1" : "/soporte")}>{E2("Escríbenos", "Write to us")}</Button></div>
     <div role="link" tabIndex={0} onClick={() => router.push("/ayuda")} onKeyDown={(e) => { if (e.key === "Enter") router.push("/ayuda"); }}
       className="cursor-pointer self-center py-1 text-[13px] font-bold text-white/80">{E2("Buscar en la ayuda", "Search help")}</div>
   </div>;

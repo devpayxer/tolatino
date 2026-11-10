@@ -1,7 +1,7 @@
 # Super Admin: Configuración · Super Admin: Settings
 
 _Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
-escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 8 nov 2026. Audiencia: equipo. Tema: equipo._
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 10 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
@@ -39,6 +39,18 @@ escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 8 nov
 - **¿Bajar los minutos para editar afecta lo ya publicado?** Desde ese momento, solo se edita lo que esté dentro del plazo nuevo.
 - **¿Cómo vuelvo al valor de fábrica?** Escribe el valor de fábrica que dice la fila (motivo «Volver al de fábrica»).
 - **¿Por qué hay valores que no puedo cambiar?** Porque una pantalla le dice el número a la persona; cambiarlo aquí haría falso ese texto.
+
+## Soporte
+La sección **Soporte**: horas hábiles para la primera respuesta de un caso (8), días que atiende el equipo (5 = lunes a viernes; 6 hasta el
+sábado; 7 todos los días), hora en que empieza (9) y termina (18), casos que una persona abre al día (5; uno de seguridad nunca se frena),
+**tope de devolución del rol Soporte** por caso (5000 centavos = $50; más lo devuelven Finanzas o un Admin) y días para reabrir un caso resuelto
+(7). Las pantallas de Soporte, Mi cuenta y el panel dicen el horario con estos valores; el plazo de cada caso lo calcula la base con ellos, y el
+tope lo lee la base en el momento de devolver.
+
+**English:** the **Support** section: business hours to first reply (8), days the team works (5 = Mon–Fri), start (9) and end (18) hour, cases
+per person per day (5; safety cases are never blocked), the **Support role refund cap** per case (5000 cents = $50; Finance or an Admin refund
+more) and days to reopen a resolved case (7). Screens read the hours from here; the database computes each case deadline and reads the cap at
+refund time.
 
 ## Para El Compa
 <!-- solo-equipo -->

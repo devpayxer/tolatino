@@ -57,7 +57,7 @@ const NAV: ([string, string] | [string, string, string, string, string])[] = [
   ["USR-MENSAJES", "Mensajes", "Messages", "chat", "/cuenta/mensajes"], ["USR-VECINOS", "Vecinos", "Neighbors", "smile", "/cuenta/vecinos"],
   ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"], ["USR-SEGUROS", "Mis seguros", "My insurance", "insurance", "/cuenta/seguros"],
   ["USR-AVISOS", "Avisos", "Notifications", "bell", "/cuenta/avisos"], ["USR-AJUSTES", "Ajustes", "Settings", "shield", "/cuenta/ajustes"], ["USR-INVITAR", "Invita vecinos", "Invite neighbors", "share", "/cuenta/invitar"],
-  ["USR-AYUDA", "Ayuda", "Help", "help", "/ayuda"],
+  ["USR-AYUDA", "Ayuda", "Help", "help", "/ayuda"], ["APP-SOPORTE", "Ayuda y soporte", "Help and support", "chat", "/soporte"],
 ];
 
 export function useAnchoCuenta() {

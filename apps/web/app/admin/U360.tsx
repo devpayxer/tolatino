@@ -20,6 +20,7 @@ import {
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { EST_USR, haceUsr } from "./Usuarios";
+import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
@@ -36,7 +37,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null }: { u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop }: { sop?: CasoSop[]; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -74,7 +75,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     {`Pedido de borrado en Cambios sensibles (#${pedido.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
 
   const alertas = u.compartidos.length + (u.phone_ok ? 0 : 1);
-  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"]] as [string, string, number?][])
+  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"], ...(sop ? [["soporte", "Soporte"] as [string, string]] : [])] as [string, string, number?][])
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
@@ -257,6 +258,8 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         tag: RV[r.st] ?? r.st, tone: r.st === "going" ? "signal" : "neutral", chev: true, onClick: () => router.push(`/admin/eventos/${r.eid}`) })) } as Bloque
         : { type: "note", tone: "info", icon: "users", t: "Sin RSVP." } as Bloque,
     ]} />;
+  } else if (tab === "soporte" && sop) {
+    cuerpo = <SoporteDe360 casos={sop} vacio="Esta persona no ha escrito a Soporte." />;
   } else if (tab === "privacidad") {
     cuerpo = (
       <>

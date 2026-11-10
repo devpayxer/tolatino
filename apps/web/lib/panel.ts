@@ -170,6 +170,12 @@ export async function datosPanel(acc: Acceso, lang: Lang) {
     // Licencias de cada persona del equipo (Doctores y Profesionales, 4h-3): solo quien la tiene verificada atiende citas.
     licEq: b.cat === "NEG-SALUD" || b.cat === "NEG-PRO" ? { filas: licEq, catalogo: licCat.rows.map((k) => ({ key: k.key, l: k.title[lang] })) } : null,
     negocios: negocios.map((n) => ({ id: n.id, name: n.name, plan: n.plan, foto: n.foto, trial: prueba(n.until, n.days) })),
+    // 7b · Más › Ayuda y Soporte: el horario del equipo (Configuración) y los casos abiertos del negocio.
+    sop: await (async () => {
+      const [{ horario }, { horarioCorto }] = await Promise.all([import("./soporte"), import("./soporte-comun")]);
+      const [h, n] = await Promise.all([horario(), db().query<{ n: number }>(`select count(*)::int as n from support_cases where business_id = $1 and status not in ('resolved', 'merged')`, [id])]);
+      return { horario: horarioCorto(h, es), abiertos: n.rows[0]?.n ?? 0 };
+    })(),
   };
 }
 export type DatosPanel = NonNullable<Awaited<ReturnType<typeof datosPanel>>>;

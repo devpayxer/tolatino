@@ -39,7 +39,9 @@ export type ClaveConfig =
   // 6i · evento privado (0114)
   | "evp_deposito_pct" | "evp_cancelar_h" | "evp_responder_h" | "evp_propuesta_h" | "evp_anticipacion_dias" | "evp_dias_adelante" | "evp_pendientes_max" | "evp_propuestas_max" | "evp_cambios_max"
   // 7a · El Compa: la ayuda como base (0116; las lee El Compa desde 7c)
-  | "ayuda_trozos_max" | "ayuda_umbral_rank";
+  | "ayuda_trozos_max" | "ayuda_umbral_rank"
+  // 7b · Soporte (0117)
+  | "soporte_sla_h" | "soporte_dias" | "soporte_desde_h" | "soporte_hasta_h" | "soporte_casos_dia_max" | "soporte_devolver_max_cents" | "soporte_reabrir_dias";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -68,7 +70,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte";
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
   editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;

@@ -14,9 +14,10 @@ import { olvidarSinConexion } from "@/lib/boletos-sin-conexion";
 
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 
-export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sanciones, borrar, com }: {
+export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sanciones, borrar, com, soporte }: {
   es: boolean; yo: Yo; r: Resumen; dirs: number; ciudad: string | null; nick: string | null; nombre: string; negocio: { id: string; name: string } | null;
   sanciones: { kind: string; reason: string; hasta: string | null }[]; borrar: string | null; com: { rango: number; nombre: { es: string; en: string }; monedas: number } | null;
+  soporte: { abiertos: number; horario: string };
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi(), ir = (h: string) => router.push(h);
@@ -78,6 +79,8 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
     { ic: "shield", t: E2("Ajustes", "Settings"), s: E2("IDIOMA · MI CIUDAD · PRIVACIDAD", "LANGUAGE · MY CITY · PRIVACY"), chev: true, on: () => ir("/cuenta/ajustes") },
     { ic: "share", t: E2("Invita vecinos", "Invite neighbors"), s: E2("TU ENLACE PARA INVITAR", "YOUR INVITE LINK"), chev: true, on: () => ir("/cuenta/invitar") },
     { ic: "help", t: E2("Ayuda", "Help"), s: E2("CENTRO DE AYUDA · ES / EN", "HELP CENTER · ES / EN"), chev: true, on: () => ir("/ayuda") },
+    // 7b · Ayuda y soporte (MEM 850: «N CASOS ABIERTOS»): los casos con To'Latino; el horario sale de Configuración.
+    { ic: "chat", t: E2("Ayuda y soporte", "Help and support"), s: `${soporte.abiertos ? `${soporte.abiertos} ${soporte.abiertos === 1 ? E2("CASO ABIERTO", "OPEN CASE") : E2("CASOS ABIERTOS", "OPEN CASES")} · ` : ""}${E2("EN ESPAÑOL · ", "IN SPANISH · ")}${soporte.horario.toUpperCase()}`, chev: true, on: () => ir("/soporte") },
   ] }, { type: "rows", rows: [
     negocio ? { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: negocio.name, s: E2("TU NEGOCIO · ABRIR MI PANEL", "YOUR BUSINESS · OPEN MY DASHBOARD"), chev: true, on: () => ir(`/panel/${negocio.id}/hoy`) }
       : { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: E2("Publica tu negocio", "List your business"), s: E2("PRO 30 DÍAS GRATIS · SIN TARJETA", "PRO FREE FOR 30 DAYS · NO CARD"), chev: true, on: () => ir("/publica") },

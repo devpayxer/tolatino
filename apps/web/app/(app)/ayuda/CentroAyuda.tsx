@@ -23,8 +23,8 @@ export function CentroAyuda({ es, q, t, temas, lista, hallados, conSesion, equip
   const tarjeta = "rounded-[18px] border border-ink/[.07] bg-white p-[18px]";
   const otraVez = <div className="flex flex-col gap-2.5 rounded-[18px] bg-ink p-4 text-white">
     <span className="font-display text-[16px] font-extrabold leading-[1.3] tracking-[-0.02em]">{E2("¿No encontraste lo que buscas?", "Didn’t find what you need?")}</span>
-    <span className="text-[13px] font-medium leading-normal text-white/75">{E2("Si es sobre un pedido, una cita o un boleto, ábrelo y toca Ayuda: el negocio te responde y To’Latino lo revisa.", "If it’s about an order, a booking or a ticket, open it and tap Help: the business replies and To’Latino reviews it.")}</span>
-    <div className="flex"><Button variant="action" block onClick={() => router.push(conSesion ? "/cuenta" : "/entrar")}>{conSesion ? E2("Ir a Mi cuenta", "Go to My account") : E2("Entrar", "Sign in")}</Button></div>
+    <span className="text-[13px] font-medium leading-normal text-white/75">{E2("Si es sobre un pedido, una cita o un boleto, ábrelo y toca Ayuda: el negocio te responde y To’Latino lo revisa. Para lo demás, te contesta una persona del equipo.", "If it’s about an order, a booking or a ticket, open it and tap Help: the business replies and To’Latino reviews it. For anything else, a person on the team replies.")}</span>
+    <div className="flex"><Button variant="action" block onClick={() => router.push(conSesion ? "/soporte?nuevo=1" : "/soporte")}>{E2("Escríbenos", "Write to us")}</Button></div>
   </div>;
 
   const secciones = t ? temas.filter((x) => x.key === t) : temas;

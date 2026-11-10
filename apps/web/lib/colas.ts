@@ -1,8 +1,10 @@
 /* Colas del Super Admin (ADM-COLAS, adm-data.js QUEUES): las de la Fase 1. Plazo en horas (SLA) y roles que ven cada
    cola; además del rol, la matriz de permisos (colas:ver / colas:aprobar) decide. */
-export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones" | "estafa" | "vivienda" | "repUsr" | "apel" | "evt" | "evtcx" | "evtpago";
+export type Cola = "sello" | "nuevo" | "lic" | "medios" | "rec" | "cambio" | "rep" | "sop" | "chat" | "disputa" | "renta" | "mesa" | "noid" | "cuidado" | "salir" | "grupo" | "plantones" | "estafa" | "vivienda" | "repUsr" | "apel" | "evt" | "evtcx" | "evtpago" | "ticket";
 /* slaCfg: el plazo sale de Configuración (lib/config.ts); `sla` es solo el de fábrica para mostrar mientras llega. */
-export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; slaCfg?: "evt_revision_h"; roles: string[]; regla?: [string, string] }> = {
+/* slaSql (7b): el plazo sale de la fila misma (un caso de Soporte vence en horas HÁBILES: support_cases.sla_due_at); la lista mide la espera
+   contra ese vencimiento. Va con el alias q de queue_items. */
+export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: number; slaCfg?: "evt_revision_h"; slaSql?: string; roles: string[]; regla?: [string, string] }> = {
   sello: { es: "Sello de verificación", en: "Verification badge", icon: "shield", sla: 48, roles: ["admin", "verificador", "lectura"], regla: ["Nunca se piden documentos de identidad.", "Identity documents are never requested."] },
   nuevo: { es: "Negocios nuevos", en: "New businesses", icon: "store", sla: 24, roles: ["admin", "ciudad", "verificador", "lectura"] },
   lic: { es: "Licencias", en: "Licenses", icon: "law", sla: 72, roles: ["admin", "verificador", "lectura"], regla: ["Lo que decidas se ve en la ficha Licencia.", "Your decision shows on the License page."] },
@@ -36,11 +38,14 @@ export const COLAS: Record<Cola, { es: string; en: string; icon: string; sla: nu
   // 6e · Eventos: un organizador que cancela seguido con boletos vendidos (§6 #24) y el pago del primer evento grande de un organizador nuevo (§6 #16).
   evtcx: { es: "Organizadores que cancelan", en: "Organizers who cancel", icon: "ban", sla: 72, roles: ["admin", "soporte", "ciudad", "lectura"], regla: ["Canceló eventos con boletos vendidos en el plazo de Configuración. A cada comprador se le devolvió todo y To'Latino puso el costo de la tarjeta. Mira si promete eventos que no hace: bloquear la publicación avisa con el motivo y se puede apelar.", "They cancelled ticketed events within the Configuration window. Every buyer got a full refund and To'Latino covered the card cost. Check whether they promise events they do not hold: blocking publishing notifies with the reason and can be appealed."] },
   evtpago: { es: "Pagos de eventos retenidos", en: "Held event payouts", icon: "wallet", sla: 48, roles: ["admin", "finanzas", "lectura"], regla: ["El primer evento de un organizador nuevo vendió más que el tope de Configuración: el pago espera tu revisión. Soltar paga en el siguiente barrido y sus próximos eventos ya no se retienen por esto.", "A new organizer's first event sold more than the Configuration threshold: the payout waits for your review. Releasing pays on the next sweep and their next events are no longer held for this."] },
+  // 7b · Soporte: los casos de una persona o un negocio con To'Latino (support_cases). Se trabajan en Super Admin › Soporte.
+  ticket: { es: "Soporte · casos", en: "Support · cases", icon: "chat", sla: 8, slaSql: "(select greatest(extract(epoch from sc.sla_due_at - q.opened_at) / 3600.0, 0.1) from support_cases sc where sc.id::text = q.subject_id)",
+    roles: ["admin", "soporte", "finanzas"], regla: ["Primera respuesta en las horas hábiles de Configuración (8 de fábrica). Se contesta, se resuelve o se devuelve desde Soporte; las notas internas nunca le llegan a la persona.", "First reply within the business hours set in Configuration (8 by default). Reply, resolve or refund from Support; internal notes never reach the person."] },
   rec: { es: "Recomendaciones de vecinos", en: "Neighbor recommendations", icon: "like", sla: 168, roles: ["admin", "ciudad", "lectura"], regla: ["Semilla = negocio no reclamado que el dueño puede reclamar.", "Seed = unclaimed business the owner can claim."] },
 };
 /* Título de una ayuda según la operación (Colas y su caso). */
 export const AYUDA_DE: Record<string, string> = { appointment: "Ayuda con una cita", hold: "Ayuda con una compra", market_order: "Ayuda con un pedido del mercado", party: "Ayuda con una fiesta", trip: "Ayuda con un viaje", night: "Ayuda con la noche", enrollment: "Ayuda con una inscripción", visit: "Ayuda con una visita", order: "Ayuda con un pedido", tickets: "Ayuda con una orden de boletos" };
-export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "salir", "grupo", "plantones", "vivienda", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "evt", "evtpago", "evtcx", "rep", "repUsr", "chat", "apel", "rec"];
+export const ORDEN_COLAS: Cola[] = ["cuidado", "estafa", "disputa", "sop", "ticket", "salir", "grupo", "plantones", "vivienda", "renta", "mesa", "noid", "cambio", "sello", "nuevo", "lic", "medios", "evt", "evtpago", "evtcx", "rep", "repUsr", "chat", "apel", "rec"];
 /* La cola de una ayuda que pasa a To'Latino: «No cuidaron bien a mi niño» y «No me dejan cancelar» tienen la suya (4eg); «Me cobraron por
    ver», «Pidieron más para mudarme» y, en Iglesias, «Me pidieron dinero por la ayuda» van a «Posible estafa» (4if). */
 export const COLA_AYUDA_SQL = `(select case when h.reason in ('ver', 'mudar') or (h.reason = 'cobro' and b.category_id = 'NEG-FE') then 'estafa' when h.reason = 'cuidado' then 'cuidado' when h.reason = 'salir' then 'salir' else 'sop' end
@@ -48,7 +53,7 @@ export const COLA_AYUDA_SQL = `(select case when h.reason in ('ver', 'mudar') or
 /* Las colas que muestran una ayuda (help_request). */
 export const COLAS_AYUDA: Cola[] = ["sop", "cuidado", "salir", "estafa"];
 /* El plazo de cada cola en una consulta: el de Configuración cuando lo tiene (el servidor pasa su cfgSql). */
-export const slaCase = (cfg: (k: "evt_revision_h") => string) => `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.slaCfg ? cfg(v.slaCfg) : v.sla}`).join(" ")} else 24 end`;
+export const slaCase = (cfg: (k: "evt_revision_h") => string) => `case q.queue ${Object.entries(COLAS).map(([k, v]) => `when '${k}' then ${v.slaSql ?? (v.slaCfg ? cfg(v.slaCfg) : v.sla)}`).join(" ")} else 24 end`;
 export const colasDelRol = (rol: string) => ORDEN_COLAS.filter((k) => COLAS[k].roles.includes(rol));
 /* Envejecimiento contra el plazo (qCard / wait del prototipo). */
 export function espera(abierto: string | Date, sla: number, ahora = Date.now()) {

@@ -9,6 +9,7 @@ import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from ".
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
+import { createRequire } from "node:module";
 // Incluye los archivos nuevos que todavía no están en git (5 nov, 1l: corrían limpios en local y la CI los cazó).
 const archivos = execSync("git ls-files --cached --others --exclude-standard", { encoding: "utf8" }).split("\n").filter((f) => f && existsSync(f));
 // .github/ también: un flujo de CI podría apuntar la semilla o un secreto a producción (5 nov: no se revisaba).
@@ -3768,6 +3769,166 @@ const guardianes = {
       if (/^\s*["']use client["']/.test(readFileSync(x, "utf8")) && /import \{[^}]*\b(audienciasDe|buscarAyuda|articulo|listaAyuda|temasAyuda|titulosVisibles)\b[^}]*\} from "@\/lib\/compa\/ayuda-indice"/.test(c)) falla(G, x, 0, "una pantalla del cliente no llama al índice de la ayuda: lo hace la página del servidor");
       if (/\b(buscarAyuda|listaAyuda|articulo|temasAyuda|titulosVisibles)\([^)]*\[/.test(c)) falla(G, x, 0, "la audiencia no se escribe a mano: sale de audienciasDe(<sesión>)");
       if (/\b(buscarAyuda|listaAyuda|articulo|temasAyuda|titulosVisibles)\(/.test(c) && !/await audienciasDe\(u\?\.id \?\? null\)/.test(c) && !/^apps\/web\/app\/admin\//.test(x)) falla(G, x, 0, "la audiencia sale de audienciasDe(id de la sesión)");
+    }
+  },
+
+  /* ── Fase 7 · 7b Soporte ── */
+  /* 7b. Todo caso de Soporte entra a la cola «ticket» con su plazo en horas hábiles: lo pone la BASE (trigger), no la app. El plazo es not null
+     y se calcula con soporte_sla (Configuración: soporte_sla_h, soporte_dias, soporte_desde_h, soporte_hasta_h); la cola usa ese vencimiento
+     (slaSql), nunca 8 h de reloj. Solo lib/soporte.ts abre casos; nadie escribe la cola «ticket» a mano. */
+  soporteCasoConSla() {
+    const G = "soporteCasoConSla", M = "packages/db/migrations/0117_soporte.sql", C = "apps/web/lib/colas.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de Soporte");
+    const m = readFileSync(M, "utf8");
+    if (!/sla_due_at\s+timestamptz not null/.test(m)) falla(G, M, 0, "un caso sin plazo: sla_due_at es obligatorio");
+    if (!/create trigger support_cases_cola after insert or update on support_cases/.test(m)) falla(G, M, 0, "la base abre y cierra la cola «ticket» de cada caso (trigger support_cases_cola)");
+    const cola = ultimaFn("support_cases_cola"), antes = ultimaFn("support_cases_antes");
+    if (!/insert into queue_items[\s\S]*'ticket', 'support_case'/.test(cola)) falla(G, M, 0, "support_cases_cola mete el caso en la cola «ticket»");
+    if ((antes.match(/new\.sla_due_at := soporte_sla\(new\.city_id, now\(\), cfg_int\('soporte_sla_h'\)\)/g) ?? []).length < 2) falla(G, M, 0, "el plazo sale de soporte_sla con soporte_sla_h al abrir Y al volver al equipo (plazo nuevo)");
+    const sla = ultimaFn("soporte_sla");
+    for (const k of ["soporte_desde_h", "soporte_hasta_h", "soporte_dias"]) if (!sla.includes(`cfg_int('${k}')`)) falla(G, M, 0, `soporte_sla lee ${k} de Configuración`);
+    if (existsSync(C) && !/ticket: \{[^\n]*slaSql: "\(select greatest\(extract\(epoch from sc\.sla_due_at - q\.opened_at\)/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "la cola «ticket» mide la espera contra sla_due_at (horas hábiles), no contra 8 h de reloj");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/'ticket',\s*'support_case'/.test(t)) falla(G, x, 0, "la cola «ticket» la escribe la base (trigger), no la app");
+      if (/insert into support_cases\b/.test(t) && x !== "apps/web/lib/soporte.ts") falla(G, x, 0, "solo lib/soporte.ts (abrirCaso) abre casos de Soporte");
+    }
+  },
+
+  /* 7b. Las notas internas del equipo NUNCA llegan a la persona: la persona lee su hilo solo con HILO_VECINO_SQL (not m.internal); toda otra lectura
+     de support_messages fuera de lib/soporte-equipo.ts (el equipo) filtra internal; las pantallas de la persona no importan lib/soporte-equipo. */
+  notaInternaNoSale() {
+    const G = "notaInternaNoSale", L = "apps/web/lib/soporte.ts", E = "apps/web/lib/soporte-equipo.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/soporte.ts");
+    const l = readFileSync(L, "utf8"), h = /export const HILO_VECINO_SQL = `([^`]*)`/.exec(l);
+    if (!h || !/where m\.case_id = \$1 and not m\.internal/.test(h[1])) falla(G, L, 0, "HILO_VECINO_SQL deja fuera las notas internas (not m.internal)");
+    if (!/db\(\)\.query<MsjVecino>\(HILO_VECINO_SQL,/.test(l)) falla(G, L, 0, "el caso de la persona se lee con HILO_VECINO_SQL");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === E) continue;
+      const t = sinComent(x);
+      // Cada «from support_messages …» (hasta su order by / limit / paréntesis) deja fuera las internas o lee solo lo de la persona.
+      if (!/^apps\/web\/app\/admin\//.test(x)) for (const q of t.match(/`[^`]*`/g) ?? []) for (const seg of q.match(/\bfrom support_messages\b[\s\S]*?(?=order by|limit|\)|$)/g) ?? [])
+        if (!/not m\.internal|\binternal = false\b|\bsender = 'user'/.test(seg)) falla(G, x, 0, `lee support_messages sin dejar fuera las notas internas: «${seg.slice(0, 80)}»`);
+      if (/^apps\/web\/app\/\(app\)\//.test(x) && /@\/lib\/soporte-equipo/.test(t)) falla(G, x, 0, "una pantalla de la persona no usa lib/soporte-equipo (lee notas internas)");
+    }
+    const UI = "apps/web/app/(app)/soporte/Soporte.tsx";
+    if (existsSync(UI) && /\.internal\b/.test(sinComent(UI))) falla(G, UI, 0, "la pantalla de la persona no conoce el campo internal (nunca le llega)");
+  },
+
+  /* 7b. «Resolver y devolver» de un caso: el TOPE DEL ROL lo decide la BASE al insertar en support_refunds (soporte_tope_devolver: tx:aprobar =
+     hasta lo cobrado; sop:editar = soporte_devolver_max_cents por caso, sumando lo ya devuelto; nadie más), con candado por caso; solo después se llama a
+     devolverPago con la llave del intento (tk-…), que también es única en support_refunds (dos toques = una devolución). Ningún tope escrito en la app. */
+  soporteDevolverConTope() {
+    const G = "soporteDevolverConTope", M = "packages/db/migrations/0117_soporte.sql", E = "apps/web/lib/soporte-equipo.ts";
+    if (!existsSync(M) || !existsSync(E)) return falla(G, M, 0, "falta Soporte (migración o lib/soporte-equipo.ts)");
+    const tope = ultimaFn("soporte_tope_devolver"), antes = ultimaFn("support_refunds_antes");
+    if (!/section = 'tx' and action = 'aprobar' and allowed\) then null/.test(tope) || !/section = 'sop' and action = 'editar' and allowed\) then cfg_int\('soporte_devolver_max_cents'\)/.test(tope) || !/else 0 end/.test(tope))
+      falla(G, M, 0, "soporte_tope_devolver: Transacciones › aprobar = sin tope del rol; Soporte › editar = soporte_devolver_max_cents; los demás 0");
+    if (!/select role into rol from staff_members where user_id = new\.staff_id and status = 'active'/.test(antes) || !/tope := soporte_tope_devolver\(rol\)/.test(antes)) falla(G, M, 0, "el rol y su tope los lee la base al decidir (no los manda la app)");
+    if (!/for update;\s*-- una decisión a la vez por caso/.test(antes) || !/if ya \+ new\.amount_cents > tope then raise exception 'devolucion_sobre_tope/.test(antes)) falla(G, M, 0, "el tope suma lo ya devuelto en el caso, con candado");
+    if (!/p\.operation_id <> c\.operation_id or p\.user_id <> c\.user_id/.test(antes)) falla(G, M, 0, "solo se devuelve el cobro de la operación de ese caso y de esa persona");
+    if (!/idem_key\s+text not null unique check \(idem_key ~ '\^tk-/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "support_refunds.idem_key único (tk-…)");
+    const f = cuerpoFn(sinComent(E), "resolverYDevolver");
+    const iIns = f.indexOf("insert into support_refunds"), iDev = f.indexOf("devolverPago(");
+    if (iIns < 0 || iDev < 0 || iIns > iDev) falla(G, E, 0, "resolverYDevolver inserta la fila pendiente (tope de la base) ANTES de llamar a devolverPago");
+    if (!/idem = `tk-\$\{clave\}`/.test(f) || !/devolverPago\(\{ paymentId: fila\.pid, centavos: fila\.amount,[^}]*idem \}\)/.test(f)) falla(G, E, 0, "devolverPago con la llave del intento y el monto de la fila (no el del teléfono)");
+    if (/\b5000\b|\$50\b/.test(sinComent(E).replace(/money\([^)]*\)/g, ""))) falla(G, E, 0, "el tope de Soporte no se escribe en la app: sale de Configuración por la base");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== E && /`tk-\$\{/.test(sinComent(x))) falla(G, x, 0, "solo resolverYDevolver usa llaves tk- (devoluciones de un caso)");
+  },
+
+  /* 7b · compaTapaSecretos (parte de Soporte): todo lo que una persona o el equipo escribe en un caso pasa por tapar() antes de guardarse (tarjeta con
+     Luhn, código de seguridad, SSN, códigos, contraseñas, cuentas), y la base rechaza tarjeta o SSN aunque alguien se lo salte (texto_con_secretos). */
+  compaTapaSecretos() {
+    const G = "compaTapaSecretos", T = "apps/web/lib/compa/tapar.ts", M = "packages/db/migrations/0117_soporte.sql";
+    if (!existsSync(T)) return falla(G, T, 0, "falta lib/compa/tapar.ts");
+    const t = readFileSync(T, "utf8");
+    if (!/^import "server-only";/.test(t)) falla(G, T, 1, "tapar() es del servidor");
+    if (!/export function luhn\(/.test(t) || !/luhn\(m\.replace\(\/\\D\/g, ""\)\) \? TAPADO : m/.test(t)) falla(G, T, 0, "las tarjetas se tapan con Luhn");
+    for (const [re, que] of [[/\\d\{3\}\[- \]\\d\{2\}\[- \]\\d\{4\}/, "SSN"], [/cvv2\?\|cvc/, "código de seguridad"], [/contrase\[ñn\]a\|password/, "contraseñas"], [/routing/, "cuentas"]]) if (!re.test(t)) falla(G, T, 0, `tapar() no cubre ${que}`);
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/if texto_con_secretos\(new\.body\) then raise exception 'support_sin_secretos/.test(ultimaFn("support_messages_antes"))) falla(G, M, 0, "la base rechaza tarjeta o SSN en support_messages");
+      if (!/luhn_ok\(regexp_replace/.test(ultimaFn("texto_con_secretos"))) falla(G, M, 0, "texto_con_secretos revisa Luhn");
+      void m;
+    }
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const c = sinComent(x);
+      for (const mm of c.matchAll(/insert into support_messages \([^)]*\) values \([^)]*'(user|staff)'[^`]*`\s*,\s*\[([^\]]*)\]/g)) {
+        if (!/\btapar\(|\bt\.texto\b|\bt\b/.test(mm[2])) falla(G, x, 0, `un mensaje de ${mm[1] === "user" ? "la persona" : "el equipo"} se guarda sin tapar(): «${mm[2].slice(0, 60)}»`);
+      }
+      if (/insert into support_messages/.test(c) && !/from "\.\/compa\/tapar"|from "@\/lib\/compa\/tapar"/.test(c)) falla(G, x, 0, "escribe en support_messages sin importar tapar()");
+    }
+    // Vectores: lo que tapar() tiene que tapar (el archivo real, transpilado con typescript del repo).
+    try {
+      const ts = createRequire(import.meta.url)("typescript");
+      const js = ts.transpileModule(t.replace(/^import "server-only";\n/, ""), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+      const mod = { exports: {} }; new Function("module", "exports", js)(mod, mod.exports);
+      const { tapar } = mod.exports;
+      for (const v of ["4242 4242 4242 4242", "4000-0566-5566-5556", "123-45-6789", "cvv 123", "mi contraseña es Gato2025", "el código es 482913", "routing 021000021", "A-123456789"]) if (!tapar(v).tapado) falla(G, T, 0, `tapar() deja pasar «${v}»`);
+      for (const v of ["Pedido #1368 de $85", "Mi teléfono nuevo es 570-555-0199", "TK-5201"]) if (tapar(v).tapado) falla(G, T, 0, `tapar() tapa de más: «${v}»`);
+    } catch (e) { falla(G, T, 0, `no pude probar tapar(): ${String(e.message).slice(0, 80)}`); }
+  },
+
+  /* 7b. Lo que ve un caso: la persona solo los suyos y el dueño solo los de SU negocio. Las acciones de APP-SOPORTE toman a la persona de la sesión
+     (yo()) y revisan el origen; lib/soporte.ts busca cada número con VISIBLE (la persona o el dueño del negocio) — un número ajeno no existe. Las
+     fotos de un caso son privadas y su ruta las da solo a esa gente y al equipo (auditado). */
+  soporteSoloSuyos() {
+    const G = "soporteSoloSuyos", A = "apps/web/app/(app)/soporte/acciones.ts", L = "apps/web/lib/soporte.ts", F = "apps/web/app/api/ayuda/foto/[id]/route.ts";
+    if (!existsSync(A) || !existsSync(L)) return falla(G, L, 0, "falta Soporte");
+    const a = sinComent(A);
+    for (const p of a.split(/\nexport async function /).slice(1)) {
+      const nombre = p.slice(0, p.indexOf("("));
+      if (!/if \(!\(await mismoOrigen\(\)\)\) return SIN;\s*const u = await yo\(\);\s*if \(!u\) return SIN;/.test(p) || !/userId: u\.id/.test(p)) falla(G, A, 0, `«${nombre}»: la persona sale de la sesión (yo()) y del mismo origen`);
+    }
+    const l = sinComent(L);
+    const vis = /const VISIBLE = [\s\S]*?`;/.exec(l)?.[0] ?? "";
+    if (!/\(\(\$\{n\}::text is null and c\.business_id is null and c\.user_id = \$\{u\}\)/.test(vis) || !/and bm\.status = 'active' and \(bm\.kind = 'owner' or 'all' = any\(bm\.panel_access\)\)/.test(vis)) falla(G, L, 0, "VISIBLE: los suyos sin negocio, o los del negocio si es su dueño");
+    for (const fn of ["misCasos", "casoVecino", "miCaso"]) if (!/\$\{VISIBLE\("\$\d", "\$\d"\)\}/.test(cuerpoFn(l, fn))) falla(G, L, 0, `${fn}() busca el caso con VISIBLE`);
+    for (const q of l.match(/`[^`]*`/g) ?? []) if (/\bfrom support_cases c where c\.number = \$1\b/.test(q) && !/VISIBLE/.test(q)) falla(G, L, 0, `un caso por número sin VISIBLE: «${q.slice(0, 60)}»`);
+    for (const q of l.match(/`update media set owner_kind = 'support'[^`]*`/g) ?? ["`sin`"]) if (!/and private`$/.test(q)) falla(G, L, 0, "la foto de un caso tiene que ser privada (and private)");
+    if (existsSync(F) && !/m\.tk[\s\S]*me\.id === m\.tkuser[\s\S]*s\.puede\("sop", "ver"\)[\s\S]*soporte\.foto\.ver/.test(readFileSync(F, "utf8"))) falla(G, F, 0, "la foto de un caso: quien lo abrió, el dueño de su negocio o el equipo con Soporte (auditado)");
+  },
+
+  /* 7b. Una macro es texto: sin etiquetas HTML ni llaves que no sean {nombre}/{name} (la base lo impide y la app lo rechaza con su mensaje); se
+     muestra como texto de React, nunca con dangerouslySetInnerHTML. Solo sop:aprobar las cambia, con auditoría. */
+  macroSinHtml() {
+    const G = "macroSinHtml", M = "packages/db/migrations/0117_soporte.sql", E = "apps/web/lib/soporte-equipo.ts";
+    if (!existsSync(M) || !existsSync(E)) return;
+    const m = readFileSync(M, "utf8"), e = sinComent(E);
+    if (!/check \(\(\(title->>'es'\) \|\| \(title->>'en'\) \|\| \(body->>'es'\) \|\| \(body->>'en'\)\) !~ '<\[A-Za-z!\/\?\]'\)/.test(m)) falla(G, M, 0, "la base rechaza HTML en una macro");
+    if (!/check \(\(\(body->>'es'\) \|\| \(body->>'en'\)\) !~ '\\\{\(\?!nombre\\\}\|name\\\}\)'\)/.test(m)) falla(G, M, 0, "la base solo deja la llave {nombre}/{name}");
+    const g = cuerpoFn(e, "guardarMacro");
+    if (!/if \(!s\.puede\("sop", "aprobar"\)\)/.test(g) || !/SIN_HTML\.test\(v\)/.test(g) || !/LLAVES_MALAS\.test\(v\)/.test(g) || !/action: "soporte\.macro"/.test(g)) falla(G, E, 0, "guardarMacro: sop:aprobar, sin HTML, solo {nombre} y auditoría");
+    for (const x of codigo) if (/^apps\/web\/app\/(admin\/Soporte|\(app\)\/soporte\/)/.test(x) && /dangerouslySetInnerHTML/.test(readFileSync(x, "utf8"))) falla(G, x, 0, "Soporte nunca pinta HTML crudo");
+  },
+
+  /* 7b. Los casos son TK-… de su propia secuencia: ningún otro número de la app empieza con TK- y la ayuda de una operación (hrefAyuda) no lo toma. */
+  prefijoSoporte() {
+    const G = "prefijoSoporte", A = "apps/web/lib/ayuda-cita.ts";
+    if (existsSync(A) && /startsWith\("TK-"\)/.test(readFileSync(A, "utf8"))) falla(G, A, 0, "un caso de Soporte no es una «Ayuda con …»");
+    for (const x of archivos.filter((f) => /^(packages\/db\/migrations|infra\/pruebas\/semilla)\/.*\.sql$/.test(f) || /^apps\/web\/.*\.tsx?$/.test(f))) {
+      const t = readFileSync(x, "utf8");
+      for (const mm of t.matchAll(/'TK-' \|\| nextval\('([a-z_]+)'\)/g)) if (mm[1] !== "support_case_seq") falla(G, x, 0, "los TK- salen solo de support_case_seq");
+      if (/'(?!TK)[A-Z]{1,3}-' \|\| nextval\('support_case_seq'\)/.test(t)) falla(G, x, 0, "support_case_seq solo da números TK-");
+      if (/`TK-\$\{/.test(t)) falla(G, x, 0, "un número TK- no se arma en la app: lo da la base");
+    }
+  },
+
+  /* 7b. Los libros de Soporte no se borran: support_messages es de solo inserción (solo se oculta el texto, una vez, con motivo); support_refunds
+     solo pasa de pendiente a hecha o fallida; un caso y una macro no se borran (estados). */
+  soporteSoloInsercion() {
+    const G = "soporteSoloInsercion", M = "packages/db/migrations/0117_soporte.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger support_messages_antes before insert or update or delete on support_messages/.test(m) || !/raise exception 'support_messages es solo de inserción'/.test(ultimaFn("support_messages_antes"))) falla(G, M, 0, "support_messages es de solo inserción (trigger)");
+    if (!/raise exception 'support_refunds es solo de inserción'/.test(ultimaFn("support_refunds_antes"))) falla(G, M, 0, "support_refunds es de solo inserción (pendiente → hecha / fallida)");
+    if (!/raise exception 'un caso de soporte no se borra/.test(ultimaFn("support_cases_antes"))) falla(G, M, 0, "un caso de Soporte no se borra");
+    if (!/create trigger support_macros_no_borra before delete on support_macros/.test(m)) falla(G, M, 0, "una macro no se borra: se apaga");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+      if (/\bdelete from (support_messages|support_refunds|support_cases|support_macros)\b/.test(q)) falla(G, x, 0, `un libro de Soporte se borra: «${q.slice(0, 60)}»`);
+      if (/\bupdate support_messages set (?!hidden_at = now\(\), hidden_reason)/.test(q)) falla(G, x, 0, "de un mensaje de Soporte solo se oculta el texto");
     }
   },
 

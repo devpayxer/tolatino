@@ -8,19 +8,35 @@ import { accesoPanel } from "@/lib/panel";
 
 /* Ver una foto privada de una ayuda (Salud y Pro). La ven: quien la subió; el negocio de esa solicitud (con permiso de
    citas); el equipo de To'Latino que trabaja Soporte en esa ciudad, y cada vez queda en la auditoría («vidrio roto»).
+   7b · La foto de un caso de Soporte (owner_kind 'support'): quien la subió, quien abrió el caso, el dueño del negocio si el caso es de
+   su negocio, y el equipo con Soporte › ver en esa ciudad (auditado). El negocio de una operación NUNCA ve la foto de un caso con To'Latino.
    Nunca se cachea. Lo demás: 404 (no se dice si existe). */
 export const dynamic = "force-dynamic";
 const no = () => new NextResponse(null, { status: 404 });
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)) return no();
-  const m = (await db().query<{ url: string; uploaded_by: string | null; owner_kind: string; owner_id: string; biz: string | null; city: string | null; hnum: string | null }>(
-    `select m.url, m.uploaded_by::text, m.owner_kind, m.owner_id, h.business_id as biz, h.city_id as city, h.number as hnum
+  const m = (await db().query<{ url: string; uploaded_by: string | null; owner_kind: string; owner_id: string; biz: string | null; city: string | null; hnum: string | null;
+    tk: string | null; tkuser: string | null; tkbiz: string | null; tkcity: string | null }>(
+    `select m.url, m.uploaded_by::text, m.owner_kind, m.owner_id, h.business_id as biz, h.city_id as city, h.number as hnum,
+            sc.number as tk, sc.user_id::text as tkuser, sc.business_id as tkbiz, sc.city_id as tkcity
        from media m left join help_requests h on m.owner_kind = 'help' and h.id::text = m.owner_id
+       left join support_cases sc on m.owner_kind = 'support' and sc.id::text = m.owner_id
       where m.id = $1 and m.private and m.status = 'visible' and m.url like 'privado/a/%'`, [id])).rows[0];
   if (!m) return no();
   const me = await yo();
   let ok = !!me && me.id === m.uploaded_by;
+  if (!ok && m.tk) {
+    ok = !!me && me.id === m.tkuser;
+    if (!ok && me && m.tkbiz) ok = (await db().query(`select 1 from business_members where business_id = $1 and user_id = $2 and status = 'active' and (kind = 'owner' or 'all' = any(panel_access))`, [m.tkbiz, me.id])).rowCount === 1;
+    if (!ok) {
+      const s = await staff();
+      if (s && s.puede("sop", "ver") && (!s.cities.length || (m.tkcity && s.cities.includes(m.tkcity)))) {
+        await tx((c) => auditar(c, { actor: s.id, action: "soporte.foto.ver", targetKind: "support_case", targetId: m.tk, city: m.tkcity ?? undefined }));
+        ok = true;
+      }
+    }
+  }
   if (!ok && m.biz) ok = !!(await accesoPanel(m.biz, "ord"));
   if (!ok && m.biz) {
     const s = await staff();

@@ -2,7 +2,7 @@
 
 _Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`, `/cuenta/empleos`, `/cuenta/perfil` (y
 `/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes` (y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y
-`/cuenta/invitar`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 6 nov 2026. Audiencia: vecino. Tema:
+`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 10 nov 2026. Audiencia: vecino. Tema:
 cuenta._
 
 ## Qué hace
@@ -31,6 +31,8 @@ cuenta._
   o publícalo, cerrar sesión y **Borrar mi cuenta**.
 - **Invita vecinos:** WhatsApp, mensaje, copiar o compartir el enlace de To'Latino.
 - **Ayuda:** abre el Centro de ayuda (`centro-de-ayuda.md`), en español y en inglés; en escritorio está en la navegación.
+- **Ayuda y soporte:** tus casos con una persona del equipo de To'Latino (`soporte.md`): cuántos tienes abiertos y el horario del equipo
+  (lunes a viernes, de 9 AM a 6 PM, hora de tu ciudad). También en la navegación de escritorio.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -78,4 +80,5 @@ open sessions, your business, sign out, delete account) and Invite neighbors (sh
 three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
 
 ### Help
-My account › **Help** (also in the desktop navigation) opens the Help center, in Spanish and English.
+My account › **Help** (also in the desktop navigation) opens the Help center, in Spanish and English. **Help and support** opens your cases
+with a person on the To'Latino team, with how many are open and the team hours.

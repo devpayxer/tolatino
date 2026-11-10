@@ -77,6 +77,6 @@ export function herramientaNocheBloques(c: Ctx): Sec {
     lock(E2("El mínimo de mesa no es un cargo extra", "Table minimum is not an extra fee"), E2("Se consume en la noche.", "It is spent during the night.")),
     lock(E2("To’Latino no vende tragos ni cobra el cover", "To’Latino sells no drinks and charges no cover"), E2("Se paga en el local; la edad se revisa en la puerta.", "Paid at the venue; age is checked at the door.")),
   ] });
-  if (h.forzado) out.push({ type: "note", tone: "info", icon: "info", t: E2("To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.", "To’Latino adjusted your business type. If it is wrong, write to us.") });
+  if (h.forzado) out.push({ type: "note", tone: "info", icon: "info", t: E2("To’Latino ajustó el tipo de tu negocio. Si no es correcto, escríbenos.", "To’Latino adjusted your business type. If it is wrong, write to us."), cta: E2("Escribir a Soporte", "Write to Support"), onCta: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(c.d.id)}&nuevo=1&tema=cuenta`) });
   return { blocks: out, ed: null };
 }

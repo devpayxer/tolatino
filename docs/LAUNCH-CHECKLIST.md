@@ -166,7 +166,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Proveedor de SMS en producción** para el código del reclamo (R1). En el sandbox el código sale en pantalla;
   sin proveedor, producción responde «Los mensajes de texto todavía no están disponibles. Usa un documento».
 - [ ] **Borrar la foto del documento a los 90 días** de decidido el reclamo: necesita los trabajos programados.
-- [ ] **Botones de Soporte** del diseño (chat / llamar) ocultos hasta que exista Soporte.
+- [ ] **Botones de Soporte** del diseño (chat / llamar) ocultos hasta que exista Soporte. — 7b (10 nov): «chat» = Soporte (`/soporte`, casos con una
+  persona) ya existe y los avisos del panel traen «Escribir a Soporte»; **llamar** sigue sin construirse (no hay línea telefónica, R1).
 - [ ] **Admin Negocios › pestañas «Reclamos» y «Duplicados»** e **«Invitar a reclamar»** (SMS): con sus módulos.
 - [ ] **Entrada «¿Es tuyo?» desde la ficha** de un negocio: el diseño no la trae; hoy se llega desde Publica y semillas.
 - [ ] **Decisiones tomadas sin el diseño (confirmar con el fundador):** texto del aviso al dueño actual en su panel
@@ -324,7 +325,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Ayuda con el pedido y Soporte (bloque 2i, 6 nov 2026)
 - [ ] **Devolución a la tarjeta y reponer con un pedido nuevo sin costo**: con Stripe (2d) y el Repartidor.
-- [ ] **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones.
+- [ ] **Soporte completo**: tickets por WhatsApp y correo, macros ES/EN, primera respuesta y CSAT; ayuda con citas y reservaciones. — 7b (10 nov):
+  casos en la app, macros ES/EN, plazo de primera respuesta en horas hábiles y «¿Se resolvió?» hechos. Falta: **WhatsApp** (7h) y **correo
+  entrante** (§6 #16, sin fecha).
 - [ ] **Avisos** al negocio de una solicitud nueva y al cliente de la respuesta (SMS/push).
 - [ ] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero).
 
@@ -952,7 +955,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Fase 7 · 7a (la ayuda como base de conocimiento y el Centro de ayuda)
 - [ ] **7a · Soporte detrás de la ayuda:** el pie «¿No es lo que buscabas?» y los «escríbenos / escribe a Soporte» de varias ayudas llevan a Mi cuenta
-      hasta que exista Soporte (7b); 7b los cambia a `/soporte` y pone «Pregúntale al Compa» cuando llegue 7d. (7a, 10 nov)
+      hasta que exista Soporte (7b); 7b los cambia a `/soporte` y pone «Pregúntale al Compa» cuando llegue 7d. (7a, 10 nov) — 7b (10 nov): el pie
+      del Centro de ayuda y de cada artículo dice **Escríbenos** y abre `/soporte`; los avisos del panel (foto quitada, reclamo, tipo ajustado)
+      traen «Escribir a Soporte»; los textos de error dicen «Mi cuenta › Ayuda y soporte» o «Más › Ayuda y Soporte». Falta «Pregúntale al Compa» (7d).
 - [ ] **7a · Inglés de la ayuda:** el inglés es un resumen fiel; ~25 archivos tienen menos de una quinta parte del largo del español (p. ej.
       propiedades-y-visitas, inscribirse, cita-con-doctores, emergencia-24-7). Ampliarlos antes de abrir; El Compa en inglés depende de eso. (7a, 10 nov)
 - [ ] **7a · SMS de invitación al equipo del panel:** `app/panel/acciones-equipo.ts` `enviarInvitacion` no manda nada (la pantalla y la ayuda lo dicen).
@@ -962,3 +967,18 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7a · Editar la ayuda desde el Super Admin:** hoy el repo es la fuente y el Super Admin solo pausa (§6 #12); el editor llega con el CMS. (7a, 10 nov)
 - [ ] **7a · Centro de ayuda en los 9 dispositivos:** `ayu7a` corre en 390 y 1360 en local; falta la matriz de CI. (7a, 10 nov)
 
+## Fase 7 · 7b (Soporte: casos con To'Latino)
+- [ ] **7b · Correo entrante de Soporte** (§6 #16): no se construye en esta fase; los casos entran por la app (y por WhatsApp en 7h). Una cuenta
+      que no puede entrar (suspendida, baneada, dispositivo bloqueado) lee «Escríbele a Soporte» y hoy no tiene por dónde: definir el canal
+      (correo de soporte o una página pública de contacto con verificación) antes de abrir. (7b, 10 nov)
+- [ ] **7b · Aviso de respuesta por correo** (plan: «push + correo»): hoy sop_recibido, sop_respuesta y sop_resuelto llegan a la campana de la
+      app; el correo con plantilla propia (email_outbox) y el push llegan con el canal de push de las apps. (7b, 10 nov)
+- [ ] **7b · Feriados del equipo** (§6 #17): el plazo cuenta lunes a viernes 9–6 sin feriados; sumar un calendario de feriados cuando haya
+      equipo. (7b, 10 nov)
+- [ ] **7b · Copiloto en la ficha del caso** («Sugerir respuesta con El Compa», §4 7g) y «Pregúntale al Compa» en Soporte (7d): la ficha y la
+      pantalla ya tienen su lugar; se encienden con El Compa. (7b, 10 nov)
+- [ ] **7b · Analítica de Soporte** (`soporte_analitica_dia`: casos por tema, primera respuesta, SLA cumplido, «¿Se resolvió?») y Mi cuenta ›
+      Avisos › Soporte: en 7i. Hoy las cifras salen en Super Admin › Soporte. (7b, 10 nov)
+- [ ] **7b · Soporte en los 9 dispositivos:** `sop7b` corre en 390 y 1360 en local; falta la matriz de CI. (7b, 10 nov)
+- [ ] **7b · Asignar un caso a una persona concreta** (hoy: tomarlo uno mismo, «Tomar el siguiente caso» o «Pasar a Finanzas / un Admin», que lo
+      deja sin asignar para ese rol). Elegir a quién desde la ficha, con la lista del equipo activo. (7b, 10 nov)
