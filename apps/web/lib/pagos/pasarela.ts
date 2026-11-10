@@ -70,6 +70,53 @@ export const pasarela = {
     }
   },
 
+  /* 6c · Boletos: el cobro queda en la plataforma (sin destino ni comisión en el cargo) con `transfer_group` = el evento; al
+     organizador se le transfiere después de la fecha, neto de comisión (6e). Así cancelar siempre devuelve el 100 % (fase6 §3, §6 #2).
+     Retener (captura manual) y luego capturar, como el resto de la app; idempotente por `idem` (el apartado y la tarjeta). */
+  async retenerPlataforma(x: { centavos: number; pm: string; cliente?: string | null; idem: string; grupo: string; meta: Record<string, string> }): Promise<Retencion> {
+    if (modoPago() === "simulador") {
+      const m = SIM_PM.exec(x.pm);
+      if (!m) return { ok: false, codigo: "card_declined", mensaje: { es: "Esa tarjeta no es de prueba. En el sandbox usa 4242 4242 4242 4242.", en: "That is not a test card. In the sandbox use 4242 4242 4242 4242." } };
+      const id = `pi_sim_${x.idem}`;
+      const ya = (await db().query<{ status: string }>(`select status from sim_intents where id = $1`, [id])).rows[0];
+      if (ya) return ya.status === "failed" ? { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") } : { ok: true, pi: id, estado: "retenido", marca: m[1]!, ultimos4: m[2]! };
+      const r = simRechazo(m[2]!);
+      await db().query(`insert into sim_intents (id, amount_cents, fee_cents, destination, status, card) values ($1, $2, 0, 'tolatino', $3, $4) on conflict (id) do nothing`,
+        [id, x.centavos, r ? "failed" : "requires_capture", x.pm]);
+      return r ? { ok: false, codigo: r, mensaje: traducir(r) } : { ok: true, pi: id, estado: "retenido", marca: m[1]!, ultimos4: m[2]! };
+    }
+    if (modoPago() === "apagado") return { ok: false, codigo: "apagado", mensaje: { es: "El pago con tarjeta no está disponible.", en: "Card payment is not available." } };
+    try {
+      const pi = await stripe<{ id: string; status: string; client_secret: string; payment_method?: { card?: { brand?: string; last4?: string } } }>("POST", "/v1/payment_intents", {
+        amount: x.centavos, currency: "usd", capture_method: "manual", confirm: true, payment_method: x.pm, customer: x.cliente ?? undefined,
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" }, transfer_group: x.grupo, metadata: x.meta, expand: ["payment_method"],
+      }, { idem: `bol-${x.idem}` });
+      const card = pi.payment_method?.card;
+      if (pi.status === "requires_capture") return { ok: true, pi: pi.id, estado: "retenido", marca: card?.brand ?? null, ultimos4: card?.last4 ?? null };
+      if (pi.status === "requires_action") return { ok: true, pi: pi.id, estado: "accion", secreto: pi.client_secret, marca: card?.brand ?? null, ultimos4: card?.last4 ?? null };
+      return { ok: false, codigo: pi.status, mensaje: traducir(null) };
+    } catch (e) {
+      const err = e instanceof ErrorStripe ? e : null;
+      return { ok: false, codigo: err?.rechazo ?? err?.codigo ?? "error", mensaje: err?.tipo === "red" ? traducir("processing_error") : traducir(err?.rechazo ?? err?.codigo ?? null) };
+    }
+  },
+  /* Capturar lo retenido de un cobro de la plataforma (sin comisión en la captura: no hay destino). Idempotente. */
+  async capturarPlataforma(pi: string, centavos: number): Promise<{ ok: boolean; codigo?: string }> {
+    if (pi.startsWith("pi_sim_")) {
+      const r = await db().query(`update sim_intents set status = 'succeeded', captured_cents = $2 where id = $1 and status in ('requires_capture', 'succeeded')`, [pi, centavos]);
+      return { ok: !!r.rowCount };
+    }
+    try { await stripe("POST", `/v1/payment_intents/${encodeURIComponent(pi)}/capture`, { amount_to_capture: centavos }, { idem: `cap-${pi}` }); return { ok: true }; }
+    catch (e) {
+      // Ya capturado (repetido) = bien; cancelado o vencido = no se cobró (se mira el estado, nunca se supone).
+      if (e instanceof ErrorStripe && e.codigo === "payment_intent_unexpected_state") {
+        const x = await stripe<{ status: string }>("GET", `/v1/payment_intents/${encodeURIComponent(pi)}`).catch(() => null);
+        return x?.status === "succeeded" ? { ok: true } : { ok: false, codigo: x?.status ?? "unexpected_state" };
+      }
+      return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" };
+    }
+  },
+
   /* Cobro directo a To'Latino (suscripción Pro): sin negocio de destino, con la tarjeta guardada del que paga, fuera de
      sesión. Idempotente por `idem` (un cobro por período). */
   async cobrarDirecto(x: { centavos: number; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {

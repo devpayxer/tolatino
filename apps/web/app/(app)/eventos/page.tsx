@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { destacado, estaNoche, eventosCiudad, generosFiltro, misRsvpN, type FiltroFecha } from "@/lib/evt-publico";
+import { misBoletosN } from "@/lib/boletos";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
 import { Eventos } from "./Eventos";
@@ -21,9 +22,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ d
   const G = await generosFiltro();
   const d = FECHAS.find((x) => x === sp.d) ?? "todos";
   const t = sp.t === "gratis" || sp.t === "boleto" || sp.t === "comunidad" || G.some((g) => g.key === sp.t) ? String(sp.t) : "todo";
-  const [lista, noche, feat, mios] = await Promise.all([
-    eventosCiudad(loc, { d, t }, null, u?.id ?? null, es), estaNoche(loc, u?.id ?? null, es), d === "todos" && t === "todo" ? destacado(loc, u?.id ?? null, es) : Promise.resolve(null), misRsvpN(u?.id ?? null),
+  const [lista, noche, feat, misRsvp, misBol] = await Promise.all([
+    eventosCiudad(loc, { d, t }, null, u?.id ?? null, es), estaNoche(loc, u?.id ?? null, es), d === "todos" && t === "todo" ? destacado(loc, u?.id ?? null, es) : Promise.resolve(null), misRsvpN(u?.id ?? null), misBoletosN(u?.id ?? null),
   ]);
   return <Eventos es={es} ciudad={loc.c.name} estado={loc.c.state} d={d} t={t} generos={G.map((g) => ({ k: g.key, l: es ? g.label.es : g.label.en || g.label.es }))}
-    lista={lista} noche={noche} feat={feat} mios={mios} conSesion={!!u} />;
+    lista={lista} noche={noche} feat={feat} mios={misRsvp} bol={misBol} conSesion={!!u} />;
 }

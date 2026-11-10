@@ -19,6 +19,10 @@ Super Admin › Transacciones. Versión: Fase 2 · bloque 2d (6 nov 2026)._
 - **Devolver dinero:** el dueño, desde el pedido (total o parcial, con motivo); To'Latino, desde Transacciones. La
   comisión baja en proporción. El cliente recibe el aviso; llega a su tarjeta en 3 a 5 días hábiles.
 
+- **6c · Boletos de eventos:** el cobro se **autoriza y se captura al pagar** (no espera al negocio) y queda en To'Latino; al organizador se le
+  transfiere después de la fecha, neto de la comisión de boletos (5 % + $1 por boleto, de Planes › Comisiones). El precio que ve el cliente ya
+  incluye los cargos. Si la captura falla, los boletos se anulan y la autorización se libera. Ver `comprar-boletos`.
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|

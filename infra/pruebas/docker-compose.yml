@@ -17,6 +17,7 @@ services:
       DATABASE_URL: postgres://tolatino:${POSTGRES_PASSWORD}@db:5432/tolatino
       AUTH_SECRET: ${AUTH_SECRET}
       DATOS_SECRET: ${DATOS_SECRET:-}
+      QR_LLAVE_PRIVADA: ${QR_LLAVE_PRIVADA:-}
       TOLATINO_SMS_MODO: pruebas
       MEDIOS_S3_URL: http://medios:3900
       MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}

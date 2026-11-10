@@ -3,8 +3,10 @@
    TLEvP de dash2-evt.js). 6a: la lista (evrow), «Lo que puedes publicar» (los formatos de su categoría), el editor por formato (solo sus
    campos y sus palabras), «Así lo ve el cliente», «Para guardar falta», enviar a revisión (o publicar si el organizador está
    verificado), «Repetir otro día» y la ficha con el estado de la revisión (en revisión · cambios pedidos · no aprobado · oculto por
-   To'Latino · cambio en revisión con la versión anterior en vivo). Boletos, mesas y extras se editan pero no se venden hasta 6c.
-   Series y varios días llegan en 6f; lo vendido, compradores y la puerta, en 6c–6g. El servidor decide todo (lib/evt.ts). */
+   To'Latino · cambio en revisión con la versión anterior en vivo). 6c: lo vendido (evView: VENDIDO · MESAS · ÓRDENES, BOLETOS con QUEDAN,
+   MESAS · QUIÉN LAS TIENE, DINERO con la comisión de fee_rules y «Te llega · A tu banco el martes después del evento», CÓDIGOS DE DESCUENTO
+   y COMPRADORES con nombre + inicial y «Reenviar boletos»), y la barra de venta de cada evento en la lista. Series y varios días llegan en
+   6f; la puerta, en 6g. El servidor decide todo (lib/evt.ts, lib/boletos.ts). */
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { subirFoto } from "@/lib/subir-foto";
 import {
@@ -12,7 +14,9 @@ import {
   type Bi, type BorradorEvt, type FormatoEvt, type FormatoKey,
 } from "@/lib/evt-comun";
 import type { EvtPanel, FilaPanelEvt } from "@/lib/evt";
-import { evtEnviar, evtGuardar, evtModulo, evtRepetir, evtTraducir } from "./acciones-eventos";
+import type { VentasPanel } from "@/lib/boletos";
+import type { CodigoPanel } from "@/lib/codigos-evt";
+import { evtCodigoCambiar, evtCodigoCrear, evtEnviar, evtGuardar, evtModulo, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 
 export type EvtData = {
@@ -20,6 +24,8 @@ export type EvtData = {
   det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
   /* 6b · El módulo Eventos (interruptor del negocio y pausa de To'Latino) y QUIÉN VA del evento abierto (nombre + inicial). */
   mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
+  /* 6c · Lo vendido del evento abierto, sus códigos y lo vendido de cada evento (barra de la lista). */
+  ventas: VentasPanel | null; codigos: CodigoPanel[]; vendidos: Record<string, number>;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -60,7 +66,8 @@ export function evtBloques(c: Ctx): Sec {
     const F = fmtDe(c, e.fmt), [tag, tone] = etiquetaEvt({ status: e.st, hidden: e.hidden, pending: e.pending, hoy: e.dia === X.hoy }, es), tix = e.entrada === "tickets";
     return { key: e.id, img: e.foto ? `url("${e.foto}")` : undefined, bm: mesCorto(e.dia, es), bd: String(Number(e.dia.slice(8))), m: `${bi(F.label, es).toUpperCase()}${e.origen === "publica" ? E2(" · DESDE PUBLICA TU EVENTO", " · FROM PUBLISH YOUR EVENT") : ""}`, tag, tone,
       t: bi(e.t, es) || E2("Sin nombre", "Untitled"), s: `${diaCorto(e.dia, es)} · ${hora(e.h0)}${e.nota && (e.hidden || e.st === "changes" || e.st === "rejected" || e.pending === "changes" || e.pending === "rejected") ? ` · ${e.nota}` : ""}`,
-      hasBar: false, l: tix ? E2(`${e.cap} ${F.f.cntL.es} · venta pronto`, `${e.cap} ${F.f.cntL.en} · sales soon`) : e.entrada === "rsvp" ? (e.cupo ? E2(`Cupo de ${e.cupo}`, `${e.cupo} spots`) : E2("RSVP sin límite", "RSVP, no limit")) : E2("Sin lista", "No list"),
+      hasBar: tix && e.cap > 0, pct: `${Math.min(100, Math.round(((X.vendidos[e.id] ?? 0) * 100) / Math.max(1, e.cap)))}%`, barC: (X.vendidos[e.id] ?? 0) >= e.cap ? "var(--tl-danger)" : "var(--tl-signal)",
+      l: tix ? E2(`${X.vendidos[e.id] ?? 0} de ${e.cap} ${F.f.cntL.es} vendidos`, `${X.vendidos[e.id] ?? 0} of ${e.cap} ${F.f.cntL.en} sold`) : e.entrada === "rsvp" ? (e.cupo ? E2(`Cupo de ${e.cupo}`, `${e.cupo} spots`) : E2("RSVP sin límite", "RSVP, no limit")) : E2("Sin lista", "No list"),
       r: tix && e.desde ? E2(`Desde ${dinero(e.desde)}`, `From ${dinero(e.desde)}`) : E2("Gratis", "Free"), op: tb === "done" ? 0.55 : 1, onClick: () => c.det(`evt:${e.id}`) };
   });
   out.push(cards.length ? { type: "evrow", cols: c.desk && c.w >= 900 && !c.ruta.det ? "repeat(2,minmax(0,1fr))" : "minmax(0,1fr)", items: cards }
@@ -94,8 +101,9 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   const repetir = () => c.run(() => evtRepetir(c.d.id, e.id), E2("Copia lista como borrador, 7 días después. Revísala y envíala.", "Copy ready as a draft, 7 days later. Check it and send it."), (r) => r.id && c.det(`evt:edit:${r.id}`));
   out.push({ type: "evhd", onBack: () => c.closeDet(), eye: `${bi(F.label, es).toUpperCase()}${e.version > 1 ? E2(` · VERSIÓN ${e.version}`, ` · VERSION ${e.version}`) : ""}`, tag, tone,
     img: v.fotos[0] ? `url("${v.fotos[0].url}")` : undefined, t: bi(v.ti, es) || E2("Sin nombre", "Untitled"), when: cuando(c, v), where: donde(c, v),
-    progT: tix ? E2(`${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.es} configurados`, `${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.en} set up`) : v.entrada === "rsvp" ? (v.cupo ? E2(`Cupo de ${v.cupo} personas`, `${v.cupo} spots`) : E2("RSVP sin límite", "RSVP with no limit")) : E2("Entrada libre, sin lista", "Free entry, no list"),
-    progR: tix ? E2("LA VENTA ABRE PRONTO", "SALES OPEN SOON") : "",
+    progT: tix && X.ventas ? E2(`${X.ventas.kpi.vendidos} de ${X.ventas.kpi.capacidad} ${F.f.cntL.es} vendidos`, `${X.ventas.kpi.vendidos} of ${X.ventas.kpi.capacidad} ${F.f.cntL.en} sold`) : tix ? E2(`${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.es} configurados`, `${v.boletos.reduce((a, b) => a + b.cap, 0)} ${F.f.cntL.en} set up`) : v.entrada === "rsvp" ? (v.cupo ? E2(`Cupo de ${v.cupo} personas`, `${v.cupo} spots`) : E2("RSVP sin límite", "RSVP with no limit")) : E2("Entrada libre, sin lista", "Free entry, no list"),
+    progR: tix ? (X.ventas?.venta === "abierta" ? E2("VENDIENDO", "SELLING") : X.ventas?.venta === "pausada" ? E2("VENTA PAUSADA", "SALES PAUSED") : X.ventas?.venta === "cerrada" ? E2("VENTA CERRADA", "SALES CLOSED") : E2("SIN VENTA", "NOT SELLING")) : "",
+    ...(tix && X.ventas ? { pct: `${Math.min(100, Math.round((X.ventas.kpi.vendidos * 100) / Math.max(1, X.ventas.kpi.capacidad)))}%`, barC: "var(--tl-signal)" } : {}),
     stats: [{ k: E2("ENTRADA", "ENTRY"), v: tix ? E2("Boletos", "Tickets") : v.entrada === "rsvp" ? "RSVP" : E2("Libre", "Free"), s: tix && v.boletos.length ? E2(`desde ${dinero(Math.min(...v.boletos.map((b) => b.p)))}`, `from ${dinero(Math.min(...v.boletos.map((b) => b.p)))}`) : E2("gratis", "free") },
       { k: E2("EDAD", "AGE"), v: v.edad ? `${v.edad}+` : E2("Todas", "All"), s: v.edad ? E2("el portero pide ID", "ID checked at the door") : E2("familias", "families") },
       { k: E2("FOTOS", "PHOTOS"), v: String(v.fotos.length), s: E2(`de ${X.cfg.fotosMax}`, `of ${X.cfg.fotosMax}`) }],
@@ -113,7 +121,7 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   if (e.pending === "changes") out.push({ type: "note", tone: "warn", icon: "edit", t: E2(`Tu cambio necesita algo más: ${e.pendingNota ?? ""}. Sigue en vivo la versión anterior.`, `Your change needs something else: ${e.pendingNota ?? ""}. The previous version stays live.`), cta: E2("Editar", "Edit"), onCta: () => c.det(`evt:edit:${e.id}`) });
   if (e.pending === "rejected") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Tu cambio no se aprobó: ${e.pendingNota ?? ""}. Sigue en vivo la versión anterior.`, `Your change was not approved: ${e.pendingNota ?? ""}. The previous version stays live.`) });
   if (e.st === "draft") out.push({ type: "note", tone: "ink", icon: "lock", t: E2("Borrador: solo tú lo ves. Envíalo cuando esté listo.", "Draft: only you see it. Send it when it is ready.") });
-  if (tix) out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Tus boletos, mesas y extras están guardados. La venta en la app abre pronto: hoy todavía no se venden.", "Your tickets, tables and extras are saved. In-app sales open soon: they are not sold yet.") });
+  if (tix) out.push(...ventaBloques(c, e));
   out.push(asiLoVe(c, F, e.pending ? d : v));
   // 6b · QUIÉN VA (RSVP con personas; contar en la puerta llega con 6g). Nombre + inicial: nunca teléfono.
   if (v.entrada === "rsvp") {
@@ -129,6 +137,54 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   }
   if (e.log.length) out.push({ type: "timeline", k: E2("REVISIÓN", "REVIEW"), items: e.log.map((l) => ({ t: DEC[l.decision] ? E2(...DEC[l.decision]!) : l.decision, s: `${l.by === "staff" ? "TO’LATINO" : l.by === "auto" ? E2("AUTOMÁTICO · VERIFICADO", "AUTOMATIC · VERIFIED") : E2("TÚ", "YOU")} · ${new Date(l.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${l.nota ? ` · ${l.nota}` : ""}` })) });
   return { blocks: out, ed: null };
+}
+/* 6c · Lo vendido (evView): estado de la venta y por qué no vende, KPI, boletos, mesas, dinero, códigos y compradores. */
+function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
+  const { E2, es } = c, X = c.evt!, V = X.ventas, out: (Bloque | null)[] = [];
+  if (!V) return [{ type: "note", tone: "info", icon: "ticket", t: E2("Tus boletos, mesas y extras están guardados. Se venden cuando el evento esté publicado.", "Your tickets, tables and extras are saved. They go on sale once the event is live.") }];
+  const fee = X.fee, feeL = fee ? `${(fee.bp / 100).toLocaleString(es ? "es-US" : "en-US")} % + ${dinero(fee.fixed)}` : "";
+  if (V.venta === "abierta") out.push({ type: "note", tone: "ok", icon: "ticket", t: E2("VENDIENDO · El precio que pones es el que paga el cliente: cargos incluidos. En la puerta no se venden boletos.", "SELLING · The price you set is what the customer pays: fees included. No tickets are sold at the door.") });
+  else if (!V.pro) out.push({ type: "note", tone: "warn", icon: "lock", t: E2("La venta de boletos es parte de Pro. Con Free tu evento se ve, pero no se venden boletos.", "Ticket sales are part of Pro. On Free your event shows, but tickets are not sold."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
+  else if (!V.cobros) out.push({ type: "note", tone: "warn", icon: "card", t: E2("Para vender boletos, enciende Cobros: tu cuenta de cobro recibe lo vendido el martes después del evento.", "To sell tickets, turn on Payouts: your payout account receives sales the Tuesday after the event."), cta: E2("Ir a Cobros", "Go to Payouts"), onCta: () => c.go("pay") });
+  else if (V.aviso) out.push({ type: "note", tone: "ink", icon: "ticket", t: V.aviso });
+  const k = V.kpi;
+  out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
+    { k: E2("VENDIDO", "SOLD"), v: String(k.vendidos), s: E2(`de ${k.capacidad}`, `of ${k.capacidad}`) },
+    { k: E2("MESAS", "TABLES"), v: String(k.mesas), s: E2(`de ${k.mesasCap}`, `of ${k.mesasCap}`) },
+    { k: E2("ÓRDENES", "ORDERS"), v: String(k.ordenes), s: dinero(k.bruto) }] });
+  if (V.tipos.length) out.push({ type: "rows", k: E2("BOLETOS", "TICKETS"), items: V.tipos.map((x, i) => ({ key: `t${i}`, icon: "ticket", t: x.n, s: `${dinero(x.p)} · ${E2(`${x.vendidos} ${x.vendidos === 1 ? "vendido" : "vendidos"}`, `${x.vendidos} sold`)}`,
+    tag: x.quedan === 0 ? E2("AGOTADO", "SOLD OUT") : E2(`QUEDAN ${x.quedan}`, `${x.quedan} LEFT`), tone: x.quedan === 0 ? "danger" : x.quedan <= 10 ? "pro" : "neutral", compact: true, chev: false })) });
+  if (V.mesas.length || k.mesasCap) out.push(V.mesas.length ? { type: "rows", k: E2("MESAS · QUIÉN LAS TIENE", "TABLES · WHO HAS THEM"), items: V.mesas.map((m, i) => ({ key: `m${i}`, icon: "drink", t: m.n, s: `${m.quien} · ${m.num}`, compact: true, chev: false })) }
+    : { type: "note", tone: "ink", icon: "drink", t: E2("Todavía no se vende ninguna mesa.", "No table sold yet.") });
+  out.push({ type: "kv", cols: 2, items: [
+    { k: E2("BRUTO", "GROSS"), v: dinero(k.bruto) }, { k: E2("DEPÓSITOS DE MESA", "TABLE DEPOSITS"), v: dinero(k.depositos) }, { k: E2("EXTRAS", "EXTRAS"), v: dinero(k.extras) },
+    { k: E2("DESCUENTOS (CÓDIGOS)", "DISCOUNTS (CODES)"), v: k.descuentos ? `−${dinero(k.descuentos)}` : dinero(0) },
+    { k: E2(`COMISIÓN TO'LATINO ${feeL} POR BOLETO`, `TO'LATINO FEE ${feeL} PER TICKET`), v: `−${dinero(k.comision)}` },
+    { k: E2("TE LLEGA · A TU BANCO EL MARTES DESPUÉS DEL EVENTO", "YOU GET · TO YOUR BANK THE TUESDAY AFTER THE EVENT"), v: dinero(k.neto), fg: "var(--tl-open-text)" }] });
+  // Códigos de descuento.
+  const Fc = c.form<{ code: string; kind: "pct" | "amount"; value: string; usos: string }>(`det:evcod:${e.id}`, { code: "", kind: "pct", value: "10", usos: "20" });
+  out.push({ type: "group", k: E2("CÓDIGOS DE DESCUENTO", "DISCOUNT CODES") });
+  out.push({ type: "note", tone: "info", icon: "info", t: E2("El descuento sale de lo tuyo: baja el precio del boleto, no la comisión de To'Latino.", "The discount comes out of your share: it lowers the ticket price, not To'Latino's fee.") });
+  if (X.codigos.length) out.push({ type: "rows", items: X.codigos.map((x) => ({ key: x.id, icon: "hash", t: x.code, s: `${x.kind === "pct" ? `−${x.value} %` : `−${dinero(x.value)}`} · ${E2(`${x.usados} de ${x.usos} usos`, `${x.usados} of ${x.usos} uses`)}${x.apartados ? E2(` · ${x.apartados} en un pago`, ` · ${x.apartados} in checkout`) : ""}`,
+    chev: false, tgOn: x.on, onTg: () => c.run(() => evtCodigoCambiar(c.d.id, x.id, !x.on), x.on ? E2("Código apagado.", "Code off.") : E2("Código encendido.", "Code on.")) })) });
+  out.push({ type: "field", k: E2("CÓDIGO", "CODE"), val: Fc.d.code, onChange: (v) => Fc.set({ code: v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 16) }), ph: E2("Ej. AMIGOS10", "e.g. FRIENDS10") });
+  out.push({ type: "chips", items: [{ l: E2("Porcentaje", "Percent"), v: Fc.d.kind === "pct" ? "selected" : "filter", onClick: () => Fc.set({ kind: "pct", value: "10" }) }, { l: E2("Monto fijo", "Fixed amount"), v: Fc.d.kind === "amount" ? "selected" : "filter", onClick: () => Fc.set({ kind: "amount", value: "5" }) }] });
+  out.push({ type: "field", k: Fc.d.kind === "pct" ? E2("DESCUENTO · %", "DISCOUNT · %") : E2("DESCUENTO · $", "DISCOUNT · $"), val: Fc.d.value, onChange: (v) => Fc.set({ value: v.replace(/[^\d.]/g, "").slice(0, 6) }) });
+  out.push({ type: "field", k: E2("USOS", "USES"), val: Fc.d.usos, onChange: (v) => Fc.set({ usos: v.replace(/\D/g, "").slice(0, 5) }) });
+  out.push({ type: "acts", items: [{ l: E2("Crear código", "Create code"), icon: "plus", v: "primary", onClick: () => c.run(() => evtCodigoCrear(c.d.id, e.id, { code: Fc.d.code, kind: Fc.d.kind, value: Fc.d.kind === "pct" ? N(Fc.d.value, 100) : centavos(Fc.d.value), usos: N(Fc.d.usos, 10000) }), E2("Código creado.", "Code created."), () => Fc.set({ code: "" })) }] } as Bloque);
+  // Compradores (nombre + inicial; nunca teléfono ni correo).
+  const fil = (c.ui.evBuy as string) ?? "all", q = String(c.ui.evBuyQ ?? "").toLowerCase();
+  const L = V.compradores.filter((b) => (fil === "mesa" ? b.mesa : fil === "extras" ? b.extras : true) && (!q || b.quien.toLowerCase().includes(q) || b.num.toLowerCase().includes(q)));
+  out.push({ type: "group", k: E2(`COMPRADORES · ${V.compradores.length}`, `BUYERS · ${V.compradores.length}`) });
+  out.push({ type: "chips", items: ([["all", E2("Todos", "All")], ["mesa", E2("Con mesa", "With table")], ["extras", E2("Con extras", "With extras")]] as const).map(([kk, l]) => ({ l, v: fil === kk ? "selected" : "filter", onClick: () => c.setUi({ evBuy: kk }) })) });
+  if (V.compradores.length > 6) out.push({ type: "search", val: String(c.ui.evBuyQ ?? ""), ph: E2("Nombre u orden", "Name or order"), onChange: (v) => c.setUi({ evBuyQ: v }), onClear: () => c.setUi({ evBuyQ: "" }) });
+  out.push(L.length ? { type: "evbuy", items: L.map((b) => ({ key: b.num, ini: b.quien.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), n: b.quien, m: b.num, open: c.ui.evBuyOpen === b.num,
+    onClick: () => c.setUi({ evBuyOpen: c.ui.evBuyOpen === b.num ? null : b.num }),
+    lines: [{ icon: "ticket", l: `${b.boletos} ${b.boletos === 1 ? E2("boleto", "ticket") : E2("boletos", "tickets")}${b.mesa ? E2(" · con mesa", " · with table") : ""}${b.extras ? E2(" · con extras", " · with extras") : ""}` }],
+    det: [{ l: E2("Orden", "Order"), v: b.num }, { l: E2("Compró", "Bought"), v: new Date(b.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) }],
+    acts: [{ l: E2("Reenviar boletos", "Resend tickets"), icon: "share", onClick: () => c.run(() => evtReenviar(c.d.id, b.num), E2("Le llegó un aviso con sus boletos.", "They got a notice with their tickets.")) }] })) }
+    : { type: "empty", icon: "ticket", t: V.compradores.length ? E2("Nadie con ese filtro", "Nobody with that filter") : E2("Todavía nadie compra", "Nobody has bought yet"), s: E2("Cuando alguien compre en To'Latino, sale aquí con su nombre e inicial.", "When someone buys on To'Latino, they show here with their first name and initial.") });
+  return out;
 }
 const DEC: Record<string, [string, string]> = { submitted: ["Enviado a revisión", "Sent for review"], resubmitted: ["Enviado otra vez", "Sent again"], approved: ["Publicado", "Published"], changes: ["To’Latino pidió un cambio", "To’Latino asked for a change"], rejected: ["No se aprobó", "Not approved"] };
 const CAMBIO_L: Record<string, Bi> = { dia: { es: "el día", en: "the day" }, h0: { es: "la hora", en: "the time" }, h1: { es: "la hora de terminar", en: "the end time" }, puertas: { es: "las puertas", en: "the doors" }, donde: { es: "el lugar", en: "the place" }, lugar: { es: "el lugar", en: "the place" }, dir: { es: "la dirección", en: "the address" }, cp: { es: "el código postal", en: "the ZIP code" }, edad: { es: "la edad", en: "the age" }, entrada: { es: "la entrada", en: "the entry" }, boletos: { es: "los boletos", en: "the tickets" }, mesas: { es: "las mesas", en: "the tables" }, extras: { es: "los extras", en: "the extras" } };

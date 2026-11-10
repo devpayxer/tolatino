@@ -176,6 +176,8 @@ export async function guardarEvento(a: { userId: string; negocio: string }, id: 
     // Lo que se puede tocar: un borrador, en revisión, con cambios pedidos o publicado. Lo cancelado, no aprobado o terminado, no.
     if (e && ["cancelled", "rejected", "done"].includes(e.status)) return no("Este evento ya no se edita. Usa «Repetir otro día» para crear otro.", "This event can no longer be edited. Use «Repeat another day» to create another.");
     if (e && e.format !== d.fmt && vivo) return no("El tipo de un evento publicado no se cambia.", "The kind of a live event cannot change.");
+    // 6c · Con boletos vendidos o apartados: la entrada sigue con boletos y la cantidad de cada boleto o mesa no baja de ahí.
+    if (e) { const v = await chequeoVenta(c, e.id, d); if (v) return v; }
     const enviar = o.enviar || (vivo);
     const falta = faltaEvt(d, F, { enviar });
     if (falta.length) return no(`Para guardar falta: ${falta.map((m) => m.es).join(" · ")}.`, `To save, add: ${falta.map((m) => m.en).join(" · ")}.`);
@@ -223,6 +225,22 @@ export async function guardarEvento(a: { userId: string; negocio: string }, id: 
   if (!r.ok) return r;
   await avisoEnvio(a.negocio, r.id, r.envio, x.cfg.evt_revision_h);
   return { ok: true, id: r.id, envio: r.envio };
+}
+
+/* 6c · Lo vendido manda: lo que ya se vendió o está apartado no se puede quitar de la venta con un cambio del editor (la base lo
+   vuelve a imponer en evt_sincronizar_venta). Quitar un boleto con ventas lo apaga: lo vendido sigue valiendo. */
+async function chequeoVenta(c: Pick<PoolClient, "query">, id: string, d: BorradorEvt): Promise<{ ok: false; msg: Bi } | null> {
+  const L = (await c.query<{ k: string; tipo: "t" | "m"; n: number }>(
+    `select t.cfg_key as k, 't' as tipo, coalesce(sum(s.sold_n + s.held_n), 0)::int as n from ticket_types t join ticket_stock s on s.ticket_type_id = t.id where t.event_id = $1::bigint group by t.cfg_key
+     union all
+     select t.cfg_key, 'm', coalesce(sum(s.sold_n + s.held_n), 0)::int from event_tables t join table_stock s on s.table_id = t.id where t.event_id = $1::bigint group by t.cfg_key`, [id])).rows.filter((x) => x.n > 0);
+  if (!L.length) return null;
+  if (d.entrada !== "tickets") return no("Ya hay boletos vendidos: la entrada sigue con boletos. Para cancelar con devolución, usa Cancelar.", "Tickets are already sold: entry stays ticketed. To cancel with refunds, use Cancel.");
+  for (const x of L) {
+    const cfg = x.tipo === "t" ? d.boletos.find((b) => b.id === x.k) : d.mesas.find((m) => m.id === x.k);
+    if (cfg && cfg.cap < x.n) return no(`La cantidad no baja de lo vendido o apartado (${x.n}).`, `The quantity cannot go below what is sold or held (${x.n}).`);
+  }
+  return null;
 }
 
 /* Enviar lo guardado (desde la ficha del panel: «Enviar a revisión»). */

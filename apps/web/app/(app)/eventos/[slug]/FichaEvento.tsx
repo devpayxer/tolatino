@@ -1,8 +1,9 @@
 "use client";
 /* APP-EVT-LISTING · móvil y desktop (prototipo lsVals L1205 y sus dos plantillas). Oscura (tinta, acento Eventos) para fiesta o show; clara
    (blanco, acento Action) para comida, clase, fe y comunidad: lo decide el formato (event_formats.dark). Cuándo (Calendario), dónde (Cómo
-   llegar; quien organiza desde casa sale como zona, sin dirección), edad, vestimenta, etiquetas, fechas de una serie, boletos y mesas (en
-   6b solo se ven: la venta en la app llega con 6c), RSVP «Voy» con personas, «Ya no voy», «Cupo lleno», «Invita», galería, organizador,
+   llegar; quien organiza desde casa sale como zona, sin dirección), edad, vestimenta, etiquetas, fechas de una serie, boletos y mesas (6c:
+   «Boletos» lleva a la compra cuando el servidor dice que la venta está abierta; si no, Agotado · Venta pausada · Venta cerrada · Venta no
+   disponible), RSVP «Voy» con personas, «Ya no voy», «Cupo lleno», «Invita», galería, organizador,
    «Antes de ir», la política y «Te puede gustar». Teléfono: barra fija abajo; escritorio: la columna de 372 px. El cupo lo cuenta la base:
    la pantalla solo pide y muestra lo que contestó. */
 import * as UI from "@tolatino/ui";
@@ -74,13 +75,15 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
     : pausado ? { t: tix ? E2("Venta pausada", "Sales paused") : E2("RSVP en pausa", "RSVP paused"), s: E2(`${f.org.name} lo pausó por ahora. Vuelve más tarde.`, `${f.org.name} paused it for now. Check back later.`), bg: "rgba(255,176,32,.16)", fg: th.warn } : null;
   const linea = tix ? E2("EL PRECIO QUE VES ES EL QUE PAGAS: CARGOS INCLUIDOS.", "THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.") : f.entry === "free" ? E2("NO SE COBRA NADA: ENTRADA LIBRE, SIN LISTA.", "NOTHING IS CHARGED: FREE ENTRY, NO LIST.") : E2("NO SE COBRA NADA: TU RSVP SOLO GUARDA TU LUGAR.", "NOTHING IS CHARGED: YOUR RSVP ONLY HOLDS YOUR SPOT.");
   const polGratis = E2(`Tu RSVP guarda tu lugar hasta ${f.guardaMin} min después de abrir puertas. Si ya no vas, quítalo para que otro vecino entre.`, `Your RSVP holds your spot until ${f.guardaMin} min after doors open. If you can no longer go, remove it so another neighbor can get in.`);
-  const pol = tix ? E2("Los boletos se venderán aquí con el precio final: cargos incluidos. La venta en la app abre pronto.", "Tickets will be sold here at the final price: fees included. In-app sales open soon.")
+  // 6c · La venta la decide el servidor (lib/boletos.ts ventaFicha): abierta, agotada, pausada, cerrada o no disponible.
+  const vt = f.venta, abierta = vt?.estado === "abierta" && !vt.agotado;
+  const pol = tix ? E2("El precio que ves es el que pagas: cargos incluidos. Devolución total si el evento se cancela. En la puerta no se venden boletos: el QR es tu entrada.", "The price you see is what you pay: fees included. Full refund if the event is cancelled. No tickets are sold at the door: your QR is your entry.")
     : f.entry === "free" ? E2("Entrada libre y sin lista: no se cobra nada y no hace falta RSVP.", "Free entry, no list: nothing is charged and no RSVP is needed.") : polGratis;
   const rows: { ic: string; t: string; s: string; link?: string; on?: () => void }[] = [
     { ic: "calendar", t: `${f.dia} · ${horas}`, s: f.doors != null ? E2(`Puertas a las ${hora(f.doors)}`, `Doors at ${hora(f.doors)}`) : E2("Empieza a la hora", "Starts on time"), link: E2("CALENDARIO", "CALENDAR"), on: calendario },
     { ic: "pin", t: f.venue, s: f.zona ?? f.addr ?? `${f.ciudad}, ${f.estado}`, link: llegar ? E2("CÓMO LLEGAR", "DIRECTIONS") : undefined, on: llegar ? irMapa : undefined },
     { ic: "users", t: f.edad ? (f.pideId ? E2(`${f.edad}+ con ID`, `${f.edad}+ with ID`) : `${f.edad}+`) : E2("Todas las edades", "All ages"),
-      s: f.free ? (f.cupo ? E2(`Cupo de ${f.cupo} · quedan ${f.quedan ?? 0}`, `${f.cupo} spots · ${f.quedan ?? 0} left`) : E2("Entrada libre", "Free entry")) : E2("La venta en la app abre pronto.", "In-app sales open soon.") },
+      s: f.free ? (f.cupo ? E2(`Cupo de ${f.cupo} · quedan ${f.quedan ?? 0}`, `${f.cupo} spots · ${f.quedan ?? 0} left`) : E2("Entrada libre", "Free entry")) : abierta ? E2("Con boletos · cargos incluidos", "Ticketed · fees included") : vt?.agotado && vt.estado === "abierta" ? E2("Agotado", "Sold out") : vt?.aviso || E2("Con boletos", "Ticketed") },
     ...(f.vest ? [{ ic: "info", t: E2("Vestimenta", "Dress code"), s: f.vest }] : []),
   ];
   const freeT = f.fmt === "clase" ? E2("Clase gratis · cupo limitado", "Free class · limited spots") : f.fmt === "comunidad" ? E2("Evento gratuito para la comunidad", "Free community event") : `${E2("Entrada libre", "Free entry")}${f.comidaLocal ? E2(" · la comida se paga en el local", " · food is paid at the venue") : ""}`;
@@ -97,8 +100,10 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   // ── La barra (lo que se puede hacer ahora) ──
   type Barra = { p: string; s: string; cta: string; on: (() => void) | null; activo: boolean; alt?: { t: string; on: () => void } };
   const barra: Barra = f.pasado ? { p: E2("Terminó", "Ended"), s: f.dia, cta: E2("Ver eventos", "See events"), on: () => router.push("/eventos"), activo: false }
-    : tix ? { p: f.boletos.length ? `${E2("Desde ", "From ")}${dinero(Math.min(...f.boletos.map((b) => b.p)))}` : E2("Con boletos", "Ticketed"), s: E2("CARGOS INCLUIDOS", "FEES INCLUDED"),
-      cta: pausado ? E2("Venta pausada", "Sales paused") : E2("Venta pronto", "Sales soon"), on: () => toast(pausado ? E2("La venta está en pausa por ahora.", "Sales are paused for now.") : E2("La venta de boletos en la app abre pronto. El precio que ves es el que pagarás.", "In-app ticket sales open soon. The price you see is what you will pay.")), activo: false }
+    : tix ? { p: f.boletos.length ? `${E2("Desde ", "From ")}${dinero(Math.min(...f.boletos.map((b) => b.p)))}` : E2("Con boletos", "Ticketed"), s: f.mios.n ? E2(`TIENES ${f.mios.n} · CARGOS INCLUIDOS`, `YOU HAVE ${f.mios.n} · FEES INCLUDED`) : E2("CARGOS INCLUIDOS", "FEES INCLUDED"),
+      cta: abierta ? L(f.F.f.cta) : vt?.estado === "abierta" ? E2("Agotado", "Sold out") : vt?.estado === "pausada" ? E2("Venta pausada", "Sales paused") : vt?.estado === "cerrada" ? E2("Venta cerrada", "Sales closed") : E2("Venta no disponible", "Not on sale"),
+      on: abierta ? () => router.push(`/eventos/${f.slug}/boletos?fecha=${f.fecha}`) : () => toast(vt?.estado === "abierta" ? E2("Se agotaron. Si alguien no termina de pagar, se liberan en unos minutos.", "Sold out. If someone does not finish paying, they free up in a few minutes.") : vt?.aviso || E2("Esta fecha no está a la venta.", "This date is not on sale.")),
+      activo: abierta, alt: f.mios.n && f.mios.numero ? { t: E2("Mis boletos", "My tickets"), on: () => router.push(`/eventos/orden/${f.mios.numero}`) } : undefined }
     : sinLista ? { p: E2("Gratis", "Free"), s: E2("ENTRADA LIBRE · SIN LISTA", "FREE ENTRY · NO LIST"), cta: E2("Invita", "Invite"), on: compartir, activo: true }
     : rv ? { p: E2("Vas a este evento", "You are going"), s: `RSVP${rv.party > 1 ? ` · ${rv.party} ${E2("PERSONAS", "PEOPLE")}` : ""}`, cta: E2("Ya no voy", "Not going"), on: yaNoVoy, activo: false, alt: { t: E2("Invita", "Invite"), on: compartir } }
     : pausado ? { p: E2("Gratis", "Free"), s: E2("EN PAUSA", "PAUSED"), cta: E2("RSVP en pausa", "RSVP paused"), on: () => toast(E2("El organizador pausó el RSVP por ahora.", "The organizer paused RSVP for now.")), activo: false }
@@ -160,30 +165,33 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
       </div>
     </div>
   ) : null;
-  const boletos = (d: boolean) => (tix && f.boletos.length ? (
+  const tiposV = vt ? vt.tipos : f.boletos.map((b) => ({ ...b, quedan: -1 }));
+  const boletos = (d: boolean) => (tix && tiposV.length ? (
     <div data-screen-label="Ficha del evento · boletos">
       {!d && <H2>{L(f.F.f.tkL)}</H2>}
       <div className={d ? "mt-3 flex flex-col" : "mt-3 overflow-hidden rounded-[18px]"} style={d ? undefined : { background: th.card, border: `1px solid ${w[".09"]}` }}>
-        {f.boletos.map((b) => (
+        {tiposV.map((b) => (
           <div key={b.n} className="flex items-center gap-3" style={d ? { padding: "10px 0", borderTop: `1px solid ${w[".08"]}` } : { padding: "13px 15px", borderBottom: `1px solid ${w[".07"]}` }}>
-            <span className="min-w-0 flex-1"><span className={`block font-bold ${d ? "truncate text-[12.5px]" : "text-[13.5px]"}`}>{b.n}</span>{!d && b.s && <span className="mt-0.5 block text-[11.5px]" style={{ color: w[".55"] }}>{b.s}</span>}</span>
+            <span className="min-w-0 flex-1"><span className={`block font-bold ${d ? "truncate text-[12.5px]" : "text-[13.5px]"}`}>{b.n}</span>{!d && b.s && <span className="mt-0.5 block text-[11.5px]" style={{ color: w[".55"] }}>{b.s}</span>}
+              {b.quedan >= 0 && b.quedan <= 20 && <span className="mt-0.5 block" style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".08em", color: b.quedan ? th.warn : w[".45"] }}>{b.quedan ? E2(`QUEDAN ${b.quedan}`, `${b.quedan} LEFT`) : E2("AGOTADO", "SOLD OUT")}</span>}</span>
             <span className="font-display font-extrabold tracking-[-0.02em]" style={{ fontSize: d ? 13.5 : 15 }}>{dinero(b.p)}</span>
           </div>
         ))}
       </div>
-      {!d && <div className="mt-2.5 text-[11.5px] leading-[1.5]" style={{ color: w[".5"] }}>{E2("La venta en la app abre pronto.", "In-app sales open soon.")}</div>}
+      {!d && <div className="mt-2.5 text-[11.5px] leading-[1.5]" style={{ color: w[".5"] }}>{abierta ? E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.") : vt?.aviso || E2("El precio que ves es el que pagas: cargos incluidos.", "The price you see is what you pay: fees included.")}</div>}
     </div>
   ) : null);
   const mesaNote = E2("El depósito aparta tu mesa y se descuenta de tu consumo esa noche.", "The deposit holds your table and is deducted from your spend that night.");
-  const mesas = (d: boolean) => (f.mesas.length ? (
+  const mesasV = vt ? vt.mesas : f.mesas.map((m) => ({ ...m, quedan: -1 }));
+  const mesas = (d: boolean) => (mesasV.length ? (
     <div data-screen-label="Ficha del evento · mesas" style={d ? { borderRadius: 20, background: th.card, border: `1px solid ${w[".1"]}`, padding: "16px 18px" } : undefined}>
       {d ? <K>{E2("MESAS", "TABLES")}</K> : <div className="flex items-baseline justify-between gap-2.5"><H2>{E2("Mesas", "Tables")}</H2><span style={{ font: `600 10px ${MONO}`, letterSpacing: ".08em", color: w[".45"] }}>{E2("SE VENDEN UNA SOLA VEZ", "EACH SOLD ONLY ONCE")}</span></div>}
       <div className={d ? "mt-1.5 flex flex-col" : "mt-3 flex flex-col gap-[9px]"}>
-        {f.mesas.map((m) => (
+        {mesasV.map((m) => (
           <div key={m.z} className="flex items-center gap-3" style={d ? { padding: "10px 0", borderBottom: `1px solid ${w[".07"]}` } : { padding: "13px 15px", borderRadius: 16, background: th.card, border: `1px solid ${w[".09"]}` }}>
             {!d && <span className="grid size-[38px] flex-none place-items-center rounded-xl" style={{ background: th.acT, color: th.ac }}><Icon name="drink" size={18} /></span>}
             <span className="min-w-0 flex-1"><span className="block text-[13px] font-bold">{m.z}</span><span className="mt-0.5 block text-[11.5px]" style={{ color: w[".55"] }}>{E2(`${m.seats} personas · incluye sus entradas · consumo mínimo ${dinero(m.min)}`, `${m.seats} people · entry included · minimum spend ${dinero(m.min)}`)}</span></span>
-            <span className="text-right"><span className="block font-display text-[14px] font-extrabold">{dinero(m.dep)}</span><span className="mt-0.5 block" style={{ font: `600 9px ${MONO}`, letterSpacing: ".06em", color: w[".45"] }}>{E2("DEPÓSITO", "DEPOSIT")}</span></span>
+            <span className="text-right"><span className="block font-display text-[14px] font-extrabold">{dinero(m.dep)}</span><span className="mt-0.5 block" style={{ font: `600 9px ${MONO}`, letterSpacing: ".06em", color: m.quedan === 0 ? w[".45"] : w[".45"] }}>{m.quedan === 0 ? E2("AGOTADA", "SOLD OUT") : m.quedan > 0 ? E2(`DEPÓSITO · QUEDAN ${m.quedan}`, `DEPOSIT · ${m.quedan} LEFT`) : E2("DEPÓSITO", "DEPOSIT")}</span></span>
           </div>
         ))}
       </div>

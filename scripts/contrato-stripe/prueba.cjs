@@ -24,6 +24,10 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
   ok(rf.ok || /requires_/.test(rf.codigo), 'renovar fuera de sesión: off_session con captura manual (parámetros válidos)');
   const cf = await pasarela.cobrarFuera({ centavos: 14900, comision: 1192, destino: acct, pm: 'pm_card_visa', cliente: null, idem: 'contrato-plan-' + Date.now(), meta: { plan: 'PL-1', business_id: 'hermanos-diaz-multiservicios' } });
   ok(cf.ok || /requires_|succeeded/.test(cf.codigo), 'plan: cobro fuera de sesión con comisión y destino (parámetros válidos)');
+  // 6c · Boletos: cobro en la plataforma con transfer_group (sin destino ni comisión) y captura sin comisión.
+  const rp = await pasarela.retenerPlataforma({ centavos: 3000, pm: 'pm_card_visa', cliente: null, idem: 'contrato-bol-' + Date.now(), grupo: 'evt-2', meta: { order: 'B-9401', event_id: '2', business_id: 'la-terraza-night' } });
+  ok(rp.ok || /requires_/.test(rp.codigo), 'boletos: payment_intents con captura manual y transfer_group, sin destino (parámetros válidos)');
+  const cp = await pasarela.capturarPlataforma(rp.ok ? rp.pi : 'pi_123', 3000); ok(cp.ok, 'boletos: capture sin comisión');
   const pi = r.ok ? r.pi : 'pi_123';
   const c = await pasarela.cobrar(pi, 2500, 220); ok(c.ok, 'cobrar: capture con comisión');
   const l = await pasarela.liberar(pi); ok(l.ok, 'liberar: cancel');

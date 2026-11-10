@@ -2008,3 +2008,102 @@ Qué mirar en el sandbox, paso a paso (teléfono y escritorio):
 Huecos compuestos con piezas del sistema (capturas locales e6b-*, teléfono y escritorio): QUIÉN VA del panel (kpis + filas), el
 interruptor del módulo (fila con interruptor), «El evento al que lleva» de la noche especial y el botón «Evento» de Novedades (chips y
 filas), y en el Super Admin la nota «SALE EN EVENTOS» con los últimos RSVP.
+
+### 6c · Eventos: boletos, mesas, extras y códigos — apartar, comprar en nuestra hoja, QR firmado y Mis boletos (10 nov)
+Qué mirar en el sandbox, paso a paso (teléfono y escritorio; tarjetas de prueba: 4242 4242 4242 4242 aprueba, 4000 0000 0000 0002 rechaza):
+1. **Eventos › «Jueves de Bachata en Vivo»** (La Terraza): debajo de cada boleto y mesa dice lo que **queda** y el botón de abajo dice
+   **Boletos** (ya no «Venta pronto»).
+2. **Boletos**: suma 2 generales, elige **Mesa · Pista** y el **Detalle de cumpleaños** (sale «SOLO CON MESA»: sin mesa no se elige).
+   Escribe el código **TERRAZA10** y **Aplicar** → «CÓDIGO APLICADO · −$3». Abajo: «Al continuar te guardamos boletos y mesa por 8
+   minutos mientras pagas» (los 8 salen de Configuración › Eventos).
+3. **Continuar** → **Pago**: «TUS BOLETOS ESTÁN GUARDADOS · Te quedan 8:00», nombre en cada boleto (opcional), tu tarjeta, el resumen con
+   «Cargos de servicio · Incluidos», «CARGOS INCLUIDOS · NADA MÁS EN LA PUERTA» y, por ser 21+, «si en la puerta no muestras ID, no entras».
+   Prueba primero con la **0002**: «No se cobró nada y tus boletos siguen guardados.»; cambia a la **4242** y **Pagar**.
+4. **¡Listo, vas!**: los boletos con su **QR de verdad** (escanéalo con la cámara de tu teléfono: lee `TL1.…`), «MUÉSTRALO EN LA PUERTA ·
+   SUBE EL BRILLO», los pasos, **Calendario**, **Cómo llegar** y **Recibo** («Cargos de servicio · Incluidos»). Te llega el aviso en la app y,
+   con el correo confirmado, el recibo (en el sandbox queda en modo pruebas, en la bandeja de salida).
+5. **Mi cuenta › Boletos** (nuevo en el menú y en Accesos): Próximos con «CON QR»; toca uno → la orden; toca un boleto → el QR grande.
+   Arriba de **Eventos** sale «Mis boletos y RSVP · N BOLETOS».
+6. **Otro teléfono** (otra cuenta): abre el enlace de la orden o del boleto del primero → **no existe** (404).
+7. **Panel de La Terraza (570-555-0366) › Eventos › Jueves de Bachata**: «VENDIENDO», **VENDIDO · MESAS · ÓRDENES**, BOLETOS con «QUEDAN N»,
+   MESAS · QUIÉN LAS TIENE, DINERO (bruto, depósitos, extras, descuentos, «Comisión To'Latino 5 % + $1 por boleto», «Te llega · a tu banco el
+   martes después del evento»), **CÓDIGOS DE DESCUENTO** (crea uno; apágalo) y **COMPRADORES** (nombre e inicial, Con mesa · Con extras,
+   **Reenviar boletos**). En la lista, la barra «N de M boletos vendidos».
+8. **Sin Cobros / Free**: «Retiro de jóvenes» de la Parroquia tiene boletos pero la Parroquia no tiene cuenta de cobro: la ficha dice
+   **Venta no disponible** y su panel (570-555-0422) dice «Para vender boletos, enciende Cobros». Un negocio Free ve que la venta es Pro.
+9. **Super Admin (570-555-0199) › Eventos y boletos**: cifras **BOLETOS EMITIDOS · BRUTO BOLETOS**; pestaña **Buscar boleto**: busca por el
+   código TL-…, la orden B-…, el teléfono o el nombre, o **pega el texto del QR** (FIRMA VÁLIDA · entra). Cámbiale un número al texto →
+   **FIRMA NO VÁLIDA**. Abre el boleto: estado, pago (SIMULADO), línea de tiempo; **Reemitir** con motivo → al pegar el QR viejo dice «QR
+   viejo: no entra» y Mi cuenta muestra el nuevo. **Anular** (Admin) con motivo. La ficha del evento suma VENDIDOS · BRUTO · COMISIÓN ·
+   DEVUELTOS y las órdenes; **Transacciones › Boletos** lista las órdenes B-.
+10. **Configuración › Eventos**: «Boletos guardados mientras pagas» (8 min), «Boletos por orden» (10), «Entradas por persona y fecha» (20),
+    «Intentos de código en 15 minutos» (10) y «Apartados a la vez por persona» (3), con límites y auditoría.
+
+**Decidí X; si prefieres Y, se cambia (6c):**
+- **De la configuración a las tablas:** el editor del panel sigue guardando boletos, mesas y extras en el evento (lo que revisa To'Latino);
+  la base los pasa a `ticket_types` / `event_tables` / `event_addons` cada vez que el evento se pone al día (`evt_sincronizar_venta`). Lo que
+  se vende sale solo de las tablas. Quitar un boleto con ventas lo **apaga** (lo vendido sigue valiendo); la cantidad no baja de lo vendido
+  o apartado; con boletos vendidos la entrada no deja de ser «con boletos» (cancelar con devolución llega con 6e).
+- **El cobro se autoriza y se captura al pagar**, queda en To'Latino con `transfer_group` del evento y se transfiere al organizador después de
+  la fecha (6e). Hasta 6e, nada se transfiere solo: el dinero queda en la plataforma.
+- **Comisión** (5 % + $1 de `fee_rules` «bol»): por cada boleto sobre lo pagado (después del código), por cada mesa sobre su depósito y
+  solo el 5 % sobre los extras. Sale de lo del organizador.
+- **Códigos:** bajan solo los boletos (no la mesa ni los extras), un uso por persona y evento, 5–90 % o $1–$500, y nunca dejan un boleto
+  en menos de $2 (cubre la comisión). Con muchos códigos que no existen (10 en 15 min, Configuración) hay que esperar.
+- **Free:** el evento con boletos de un negocio Free se ve pero **no vende** (Venta no disponible). **Cobros:** hace falta la cuenta de
+  cobro habilitada y sin pagos retenidos por el Super Admin.
+- **Máximo por persona y fecha:** cuenta, dispositivo y la misma tarjeta guardada (las entradas de una mesa cuentan). Volver a elegir
+  suelta el apartado anterior de esa fecha; hasta 3 apartados vivos a la vez.
+- **El apartado:** si vence mientras pagas, al tocar «Pagar» se intenta apartar otra vez; mientras paga se le dan 2 min de margen.
+- **Reenviar** (panel y admin) = aviso en la cuenta de la persona; **sin SMS** (los boletos viven en la app).
+- **Anular** desde el admin no devuelve dinero (las devoluciones llegan con 6d/6e); **Reemitir** sube la versión del QR del mismo boleto.
+- **Política que se muestra hoy:** «El precio que ves es el que pagas: cargos incluidos. Devolución total si el evento se cancela. En la
+  puerta no se venden boletos.» Las líneas de cancelar tú y transferir hasta 2 h antes salen cuando existan (6d).
+- **El QR no se guarda en el teléfono todavía**: la página necesita señal para abrirse; la app instalable sin conexión llega con 6h.
+- Ruta del pago: `/eventos/pagar/{apartado}` (el plan decía `/eventos/pagar`).
+Huecos compuestos con piezas del sistema (capturas locales e6c-*, teléfono y escritorio): la ficha del boleto en el Super Admin (head, kv,
+filas, línea de tiempo, acciones con motivo), la pestaña Buscar boleto (buscador + nota de la firma + lista), la sección de venta del
+panel (note, kpis, rows, kv, field + chips, evbuy) y Mi cuenta › Boletos (marco de Mi cuenta con chips y filas con fecha).
+
+**Revisión de seguridad (6c, dinero):**
+- **Precio y comisión siempre del servidor:** el teléfono manda ids y cantidades (`BoletosIn`, acciones sin montos; guardián
+  `dineroDelServidor` ampliado); el precio sale de `ticket_types` en la transacción de apartar y queda fijo en el apartado (trigger: «lo
+  apartado y su precio no cambian»); lo cobrado es exactamente el total del apartado; la comisión sale de `fee_rules`. La suma de la barra
+  de la pantalla de boletos es solo vista. Guardianes `precioConCargos`, `dineroDelServidor`. e2e: total $102, comisión $8.11 comprobados
+  en la base y en el simulador.
+- **Sobreventa:** update condicional + check `sold_n + held_n <= quantity` (y en extras y códigos); filas tomadas siempre por id (sin
+  bloqueos cruzados). e2e: 3 cuentas a la vez por el último boleto → 1; 10 a la vez en la base → 1; sin la condición, el check rechaza.
+  Guardián `boletosSinSobreventa`.
+- **Vencimiento y doble gasto del apartado:** vence a `expires_at` del servidor (Configuración), lo suelta el barrido y cada lectura; soltar
+  por vencido exige `expires_at <= now()`; un apartado convertido o soltado no vuelve (trigger); el uso del código se aparta con la fila
+  bloqueada. e2e: reloj movido → barrido → existencia vuelve; «Se acabaron mientras pagabas» sin autorización. Guardián
+  `apartadoLoLlevaElServidor`.
+- **Confirmación idempotente:** candado por apartado (`pg_advisory_xact_lock`), `client_key` único = el apartado (una orden), clave de
+  Stripe = apartado + tarjeta + intento (una autorización liberada obliga a un intento nuevo, nunca reusa una cancelada), captura con
+  `cap-{pi}` y, si Stripe dice «estado inesperado», se lee el PaymentIntent: solo «succeeded» cuenta como cobrado. El webhook ya es
+  idempotente por `stripe_events.id` y aplica a `payments` por PaymentIntent. e2e: doble toque en Pagar → 1 orden.
+- **Nada se cobra sin boleto:** autorizar → boletos en la transacción → commit → capturar; si la captura falla, los boletos se anulan y la
+  existencia vuelve; si algo falla antes, se libera la autorización; una compra cortada la repara el barrido (`repararBoletos`) y la
+  autorización de un apartado que venció sin orden también se libera. `repararPagos` no toca boletos (capturaría con comisión de destino).
+  Guardián `nadaSeCobraSinBoleto`. e2e: el barrido captura una orden cortada.
+- **QR que no se falsifica ni se reusa:** Ed25519 del servidor (llave privada solo en el entorno: `QR_LLAVE_PRIVADA`, la genera `deploy.sh`
+  en el servidor; en producción sin ella no se firma; en el sandbox sin ella se deriva de AUTH_SECRET como `lib/cifrado.ts`); la base solo
+  guarda la pública (`qr_keys`); la verificación usa la pública; el texto lleva id, fecha, versión y entradas (sin datos personales);
+  reemitir sube `qr_ver`. e2e: jsQR lee el QR de la pantalla, la firma se verifica con la llave pública, un QR alterado sale «FIRMA NO
+  VÁLIDA», el viejo después de reemitir «no entra». Guardianes `qrFirmado`, `qrSinDatosPersonales`.
+- **Códigos:** límite de intentos fallidos por persona y dispositivo (Configuración), un uso por persona y evento, tope de usos con check.
+  e2e: código inexistente, tope, segundo uso de la misma persona.
+- **IDOR:** toda lectura y acción del cliente va por su cuenta (orden, boleto, pago, soltar); el panel por su negocio (acceso `evt`); el admin
+  por permiso y ciudades. e2e con una segunda cuenta: orden, boleto y página de pago → 404; Mis boletos no muestra lo del otro. Guardián
+  `boletosSoloSuyos`.
+- **Datos de tarjeta:** ninguno se guarda (solo marca, últimos 4 y el `pm_…`), el número no toca el servidor (guardián `tarjetaEnServidor`).
+- **Datos personales mínimos:** el panel ve nombre + inicial y el número de orden (nunca teléfono ni correo); el admin, los últimos 4 del
+  teléfono; el QR, nada personal. Libros de solo inserción: `ticket_log`, `discount_attempts`; nada de boletos se borra (guardián
+  `libroBoletos`).
+- **Encontrado y corregido en la revisión:** (1) una autorización liberada se habría reusado con la misma clave al volver a pagar el mismo
+  apartado → se suma el número de intento a la clave; (2) la captura trataba «estado inesperado» como cobrado → ahora se lee el estado real;
+  (3) `repararPagos` habría capturado boletos con comisión de destino → excluidos; (4) volver a correr 0108 fallaba si un evento cancelado
+  tenía la configuración por debajo de lo vendido → los cancelados / terminados ya no se sincronizan.
+- **Pendiente (LAUNCH):** 3D Secure (hoy se pide otra tarjeta, como el resto de la app); huella de la tarjeta de Stripe para el máximo por
+  persona (hoy el `pm_…` guardado); reventa y QR rotativo (§6 #10); contrato con stripe-mock de las dos llamadas nuevas no corrió en local
+  (Docker Hub respondió 429): corre en el CI.

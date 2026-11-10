@@ -37,3 +37,13 @@ export async function evtOrganizador(negocio: string, paso: "verificar" | "quita
   revalidatePath(`/admin/negocios/${negocio}`);
   return { ok: true, mensaje: paso === "verificar" ? "Verificado: sus eventos se publican al enviarlos." : paso === "quitar_verificado" ? "Sus eventos vuelven a pasar por revisión." : paso === "bloquear" ? "Bloqueado. El negocio recibe el motivo y puede apelar." : "Puede publicar otra vez." };
 }
+
+/* 6c · Buscar boleto: Reenviar (evt:editar) · Reemitir (evt:editar; sube la versión del QR) · Anular con motivo (evt:retirar). */
+export async function evtBoleto(code: string, paso: "reenviar" | "reemitir" | "anular", motivo: string): Promise<ResAdm> {
+  const s = await requerir("evt", paso === "anular" ? "retirar" : "editar");
+  if (!["reenviar", "reemitir", "anular"].includes(paso)) return no("Ese paso no existe.");
+  const r = await (await import("@/lib/boletos-admin")).accionBoletoAdmin(s, String(code), paso, motivoOk(motivo));
+  if (r.err) return no(r.err);
+  revalidatePath("/admin/eventos");
+  return { ok: true, mensaje: paso === "reenviar" ? "Le llegó un aviso con sus boletos." : paso === "reemitir" ? "QR nuevo. El anterior ya no entra; le avisamos." : "Boleto anulado. Le avisamos con el motivo." };
+}

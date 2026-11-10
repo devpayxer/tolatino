@@ -179,6 +179,51 @@ for (const src of archivos) {
     if (t === antes) throw new Error("parche Tag: el origen cambió, revisar");
   }
 
+  // TicketQR / QrCode (6c): el QR de muestra (dibujado al azar desde `seed`) se cambia por la matriz REAL que manda el servidor
+  // (lib/boletos-qr.ts: texto firmado Ed25519 → generador abierto de Project Nayuki). Sin matriz no se dibuja nada falso: solo el
+  // cuadro blanco. 4 módulos de margen (zona de silencio del estándar) y módulos sin separación para que cualquier lector lo lea.
+  if (rel.endsWith("cards/TicketQR.js")) {
+    const antes = t, i = t.indexOf("function QrCode({"), j = t.indexOf("finder(0, 0), finder(0, N - 7), finder(N - 7, 0));\n}", i);
+    if (i < 0 || j < 0) throw new Error("parche TicketQR: el origen cambió, revisar");
+    t = t.slice(0, i) + `function QrCode({
+  matrix,
+  size = 148,
+  faded,
+  label
+}) {
+  const N = matrix && matrix.length ? matrix.length : 21,
+    pad = 4,
+    sz = N + pad * 2,
+    d = [];
+  if (matrix) for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (matrix[r][c]) d.push('M' + (c + pad) + ' ' + (r + pad) + 'h1v1h-1z');
+  return /*#__PURE__*/React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: '0 0 ' + sz + ' ' + sz,
+    role: 'img',
+    'aria-label': label || 'QR',
+    shapeRendering: 'crispEdges',
+    style: {
+      display: 'block',
+      opacity: faded ? .28 : 1
+    }
+  }, /*#__PURE__*/React.createElement("rect", {
+    x: 0,
+    y: 0,
+    width: sz,
+    height: sz,
+    fill: "#FFFFFF"
+  }), d.length ? /*#__PURE__*/React.createElement("path", {
+    d: d.join(''),
+    fill: "#0B0E12"
+  }) : null);
+}` + t.slice(j + "finder(0, 0), finder(0, N - 7), finder(N - 7, 0));\n}".length);
+    t = t.replace("  seed,\n  used,", "  matrix,\n  qrSize,\n  qrLabel,\n  used,");
+    t = t.replace("React.createElement(QrCode, {\n    seed: seed,\n    faded: used\n  })", "React.createElement(QrCode, {\n    matrix: matrix,\n    size: qrSize,\n    label: qrLabel,\n    faded: used\n  })");
+    t = t.replace("El QR de muestra se dibuja desde seed (siempre el mismo para el mismo boleto).", "El QR es la matriz real que manda el servidor (texto firmado; 6c).");
+    if (t === antes || !t.includes("matrix: matrix") || !t.includes("  matrix,\n  qrSize,") || /seed/.test(t)) throw new Error("parche TicketQR: el origen cambió, revisar");
+  }
+
   // Hex → token.
   t = t.replace(/#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g, (m, h) => {
     const H = h.toUpperCase();

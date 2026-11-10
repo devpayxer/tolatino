@@ -703,7 +703,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ya traen ES/EN en `config_keys`. (5i, 8 nov)
 
 ## Fase 6 · 6a (base de eventos, panel, Publica tu evento, revisión)
-- [ ] **6a → 6c · Boletos, mesas y extras guardados como configuración:** hoy viven en `events.tickets_cfg / tables_cfg / addons_cfg`
+- [x] **6a → 6c · Boletos, mesas y extras guardados como configuración:** _hecho en 6c (10 nov): la base los pasa a ticket_types /
+      event_tables / event_addons con su existencia por fecha (evt_sincronizar_venta) y se venden desde ahí; el editor sigue guardando la
+      configuración que revisa To'Latino._ hoy viven en `events.tickets_cfg / tables_cfg / addons_cfg`
       (validados por el servidor y la base: sin alcohol, botellas ni hookah). 6c los pasa a `ticket_types`, `event_tables`, `event_addons`
       con existencias por fecha, y **antes de vender exige Cobros con tarjeta encendido** (`stripe_accounts.charges_enabled`) del
       organizador. Hasta entonces el editor y Publica tu evento dicen «La venta en la app abre pronto». (6a, 9 nov)
@@ -726,7 +728,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       del catálogo llega en 6j. (6a, 9 nov)
 
 ## Fase 6 · 6b (el módulo Eventos del cliente)
-- [ ] **6b → 6c · Comprar boletos:** la ficha muestra tipos, precios (cargos incluidos) y mesas con «Venta pronto»; «Mis boletos y RSVP»
+- [x] **6b → 6c · Comprar boletos:** _hecho en 6c (10 nov): «Boletos» abre la compra; QR real; Mis boletos en Mi cuenta._ la ficha muestra tipos, precios (cargos incluidos) y mesas con «Venta pronto»; «Mis boletos y RSVP»
       lleva a Mi cuenta › Guardados › Eventos hasta que exista Mi cuenta › Boletos. El **QR del enlace al compartir** (tarjeta con QR)
       llega con el generador de QR de código abierto de 6c. (6b, 10 nov)
 - [ ] **6b · «Otro lugar» fuera de las 5 ciudades:** no se bloquea; la ciudad del evento es la del negocio. Decidir si un evento fuera del
@@ -741,4 +743,35 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov)
 - [ ] **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov)
 - [ ] **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
+
+## Fase 6 · 6c (boletos, mesas, extras y códigos)
+- [ ] **6c · Transferir al organizador:** el cobro de boletos queda en la plataforma (`transfer_group` del evento); la transferencia del martes
+      después de la fecha, las retenciones y el ajuste por devoluciones llegan con 6e. Hasta entonces el dinero no sale solo. (6c, 10 nov)
+- [ ] **6c · Devoluciones de boletos:** cancelar el comprador, devolver desde el panel y devolución total al cancelar el evento llegan con
+      6d/6e; «Anular» del admin no devuelve dinero. La ficha ya dice «Devolución total si el evento se cancela». (6c, 10 nov)
+- [ ] **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov)
+- [ ] **6c · Máximo por persona con la huella de la tarjeta:** hoy cuenta cuenta + dispositivo + la misma tarjeta guardada (`pm_…`); con
+      Stripe real conviene la huella (`card.fingerprint`) para cazar la misma tarjeta en otra cuenta. (6c, 10 nov)
+- [ ] **6c · QR sin señal en el teléfono del cliente:** el QR verifica sin conexión en la puerta, pero la página del boleto necesita señal
+      para abrirse; la app instalable (service worker) llega con 6h. Apple / Google Wallet: Fase 8 (§6 #17). (6c, 10 nov)
+- [ ] **6c · QR rotativo y reventa:** QR fijo, firmado y con versión (§6 #10); el rotativo anti-captura y las señales de reventa (Confianza,
+      6j) quedan para después. (6c, 10 nov)
+- [ ] **6c · Contrato con Stripe de las llamadas nuevas** (`retenerPlataforma` con `transfer_group`, `capturarPlataforma` y la lectura del
+      PaymentIntent): agregado a `scripts/contrato-stripe/prueba.cjs`; en local no corrió (Docker Hub 429 al bajar stripe-mock). Mirar el
+      paso del CI. (6c, 10 nov)
+- [ ] **6c · Recordatorio del boleto («Mañana» / «¡Es hoy!», `bol_recordatorio`) y aviso de aforo 90 % (`evt_aforo90`):** no se
+      construyeron en 6c; llegan con 6j (avisos de Eventos). (6c, 10 nov)
+- [ ] **6c · Mi cuenta › Inicio «Tu semana» con el boleto y Pagos › movimientos:** los boletos están en Mi cuenta › Boletos y en
+      Accesos; «Tu semana» llega con 6j. (6c, 10 nov)
+- [ ] **6c · Llave del QR de producción:** `deploy.sh` del sandbox la genera; el despliegue de producción (fase 9) debe generarla igual
+      (una por entorno) y nunca copiar la del sandbox. Rotar = nueva llave + `qr_keys.retired_at` de la vieja. (6c, 10 nov)
+- [ ] **6c · Abogado:** ley de reventa de boletos de PA, impuesto de diversiones (amusement tax) por ciudad, To'Latino como comerciante del
+      cobro (1099-K del organizador), política de devoluciones en los Términos. (6c, 10 nov)
+- [ ] **6c · `scripts/portar-sistema.mjs` no es idéntico a lo que hay en el repo:** al correrlo para el parche de TicketQR también
+      deshacía arreglos de accesibilidad hechos a mano en `community/PostCard.js` y `community/Thread.js` (se restauraron a mano). Pasar
+      esos arreglos al script. (6c, 10 nov)
+- [ ] **6c · `QtyStepper` del sistema sin rol ni teclado** (los «+» y «−» son `div`): lo usan el menú y la pantalla de boletos; parche
+      de accesibilidad como el de Button. (6c, 10 nov)
+- [ ] **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov)
+- [ ] **6c · Textos del Super Admin de boletos en inglés:** como el resto del admin, en español. (6c, 10 nov)
 

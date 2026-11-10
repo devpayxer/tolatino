@@ -78,3 +78,8 @@ SMS · WhatsApp API · envío de correo (SES) · Stripe · tiendas Apple ($99/a�
   y las licencias de los modelos. Calidad menor que Claude o DeepL: comparar 200 textos reales antes de abrir (§6 #15); un traductor
   pago = decisión del fundador. Costo: $0 (límite de 1.5 GB y 1.5 CPU en el compose, junto a moderacion-img de 768 MB en el cx33).
   Sin proveedor pago; ningún texto sale de nuestros servidores (guardián `traduccionPropia`).
+- **10 nov 2026 · Generador de QR de los boletos (6c):** el **QR Code generator de Project Nayuki** (versión 1.8.0, empaquetada en npm como
+  `nayuki-qr-code-generator`), **licencia MIT**, copiado tal cual dentro del repo (`apps/web/lib/qr/qrcodegen.ts`, con su aviso de licencia;
+  una sola línea agregada para exportarlo). Sin CDN ni dependencia en tiempo de ejecución; lo usa solo `lib/boletos-qr.ts` para la matriz del
+  texto firmado (Ed25519 con `node:crypto`, sin librería). Verificado con jsQR (Apache-2.0, solo en las pruebas locales, no entra al repo).
+  Costo: $0. Sin proveedor pago.

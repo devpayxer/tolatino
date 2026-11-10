@@ -10,7 +10,7 @@ import { Inicio } from "./Inicio";
 import { yoMarco } from "./yo";
 
 /* USR-HOME · Mi cuenta (diseño homeV): tu tarjeta de vecino, completa tu cuenta, tu semana, lo que espera de ti, accesos,
-   tu apoyo al barrio y tu cuenta. Todo del servidor; lo que todavía no existe (Wallet, boletos) no se muestra. La tarjeta de vecino
+   tu apoyo al barrio y tu cuenta. Todo del servidor; lo que todavía no existe (Wallet) no se muestra; los boletos (6c) están en Accesos y en Mi cuenta › Boletos. La tarjeta de vecino
    lleva el rango y las monedas (5g; sin valor en dinero) como el prototipo, y las reseñas en lugar del Wallet. */
 export const metadata: Metadata = { title: "Mi cuenta · To'Latino" };
 export const dynamic = "force-dynamic";

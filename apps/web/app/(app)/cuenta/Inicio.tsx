@@ -54,8 +54,9 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
   // Accesos (teléfono).
   B.push({ type: "tel", b: [{ type: "tiles", cols: "repeat(3,minmax(0,1fr))", tiles: [
     { l: E2("Pedidos", "Orders"), ic: "bag", n: c.curso, on: () => ir("/cuenta/pedidos") }, { l: E2("Reservas", "Bookings"), ic: "calendar", n: c.proximas, on: () => ir("/cuenta/citas") },
-    { l: E2("Guardados", "Saved"), ic: "heart", on: () => ir("/cuenta/guardados") }, { l: E2("Reseñas", "Reviews"), ic: "star", on: () => ir("/cuenta/resenas") },
-    { l: E2("Empleos", "Jobs"), ic: "brief", n: c.solicitudes, on: () => ir("/cuenta/empleos") }, { l: E2("Direcciones", "Addresses"), ic: "home", on: () => ir("/cuenta/direcciones") },
+    { l: E2("Boletos", "Tickets"), ic: "ticket", on: () => ir("/cuenta/boletos") }, { l: E2("Guardados", "Saved"), ic: "heart", on: () => ir("/cuenta/guardados") },
+    { l: E2("Reseñas", "Reviews"), ic: "star", on: () => ir("/cuenta/resenas") }, { l: E2("Empleos", "Jobs"), ic: "brief", n: c.solicitudes, on: () => ir("/cuenta/empleos") },
+    { l: E2("Direcciones", "Addresses"), ic: "home", on: () => ir("/cuenta/direcciones") },
   ] }] });
   const m = r.mes;
   B.push({ type: "stats", k: E2("TU APOYO AL BARRIO · ESTE MES", "YOUR LOCAL SUPPORT · THIS MONTH"),

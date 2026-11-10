@@ -28,6 +28,9 @@ grep -q '^AUTH_SECRET=' "$ENV_FILE" || echo "AUTH_SECRET=$(openssl rand -hex 32)
 grep -q '^DATOS_SECRET=' "$ENV_FILE" || echo "DATOS_SECRET=$(openssl rand -hex 32)" >> "$ENV_FILE"
 # Barrido central (0078): el token que comparten la app y el servicio «barrido»; nunca sale del servidor.
 grep -q '^BARRIDO_TOKEN=' "$ENV_FILE" || echo "BARRIDO_TOKEN=$(openssl rand -hex 32)" >> "$ENV_FILE"
+# Llave Ed25519 que firma el QR de los boletos (6c): la privada vive solo aquí (PKCS8 DER en base64); la pública la publica la app en
+# qr_keys. Una por entorno: un QR del sandbox nunca vale en producción. Perderla anula los QR mostrados hasta que la app los vuelva a firmar.
+grep -q '^QR_LLAVE_PRIVADA=' "$ENV_FILE" || echo "QR_LLAVE_PRIVADA=$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)" >> "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 # 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar

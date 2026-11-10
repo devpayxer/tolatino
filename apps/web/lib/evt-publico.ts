@@ -3,6 +3,7 @@ import { valor } from "./config";
 import { db } from "./db";
 import { bi, dinero, diaCorto, hora, mesCorto, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type Mesa } from "./evt-comun";
 import { centroSQL, DIRECCION_EVENTO, PUNTO_EVENTO, radioSQL, type Punto } from "./punto";
+import { ventaFicha, type VentaFicha } from "./boletos";
 
 /* 6b · El módulo Eventos del cliente (fase6-eventos.md §4 6b; prototipo «To'Latino Eventos» bqVals / nvVals / lsVals). El servidor decide:
    - Solo sale lo que la base marca `listable` (evento publicado y aprobado, sin ocultar, fecha programada, negocio con el módulo Eventos
@@ -12,7 +13,7 @@ import { centroSQL, DIRECCION_EVENTO, PUNTO_EVENTO, radioSQL, type Punto } from 
      «desde», «guardado» y «vas» salen como subconsultas de la misma fila.
    - El radio es el de Ciudad (lo que ves en Negocios, Eventos y Buscar); el punto público de un evento sale de PUNTO_EVENTO (quien trabaja
      desde casa sale como zona; nunca su casa) y la dirección de DIRECCION_EVENTO (guardián puntoPublico).
-   - Boletos y mesas solo se ven: la venta en la app llega con 6c. Lo inventado del prototipo (caras, «van», vistas) no se copia: «van» es
+   - 6c · La venta de boletos y mesas la decide lib/boletos.ts (ventaFicha): abierta, pausada, cerrada, agotada o no disponible. Lo inventado del prototipo (caras, «van», vistas) no se copia: «van» es
      going_n de la base. */
 export const POR_PAGINA_EVT = 20;
 export type FiltroFecha = "todos" | "hoy" | "finde" | "prox";
@@ -179,6 +180,8 @@ export type FichaEvt = {
   rsvpAbierto: boolean; lleno: boolean; hasta: string; guardaMin: number; fechas: { id: string; l: string; on: boolean }[];
   rel: TarjetaEvt[];
   seo: { start: string; end: string; addr: string | null };
+  // 6c · La venta de esta fecha (lo decide el servidor) y los boletos que ya tiene quien mira.
+  venta: VentaFicha | null; mios: { n: number; numero: string | null };
 };
 type FilaF = {
   eid: string; fid: string; slug: string; fmt: FormatoKey; status: "live" | "paused"; title: Bi; description: Bi; ldate: string; h0: number; h1: number; dmin: number; venue_mode: "own" | "other";
@@ -225,6 +228,9 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
     relacionados(r.city, r.eid, r.biz, r.fmt, viewer, centro, es),
   ]);
   const F: FormatoEvt = { key: r.fmt, label: r.label, sub: r.sub, icon: r.icon, dark: r.dark, ages: r.ages, f: r.fields };
+  const venta = r.entry === "tickets" ? await ventaFicha(r.fid, es) : null;
+  const mios = viewer && r.entry === "tickets" ? (await db().query<{ n: number; num: string | null }>(
+    `select count(*)::int as n, max(o.number) as num from tickets t join operations o on o.id = t.operation_id where t.holder_user_id = $1 and t.event_date_id = $2::bigint and t.status in ('valid', 'used')`, [viewer, r.fid])).rows[0] : null;
   const free = r.entry !== "tickets", quedan = free && r.cupo > 0 ? Math.max(0, r.cupo - r.rsvp_n) : null;
   const zona = r.venue_mode === "own" && r.casa ? E2(`Zona de ${r.ciudad} · la dirección exacta te la da el organizador`, `${r.ciudad} area · the organizer gives you the exact address`) : null;
   return {
@@ -241,7 +247,7 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
     mio: { rsvp: r.mia != null ? { party: r.mia } : null, saved: r.saved },
     rsvpAbierto: r.abierto && !r.pasado && r.entry === "rsvp", lleno: quedan === 0, hasta: hora(r.hasta_min), guardaMin: guarda,
     fechas: Fe.rows.map((x) => ({ id: x.id, l: diaCorto(x.ldate, es).toUpperCase(), on: x.id === r.fid })),
-    rel, seo: { start: r.start, end: r.end, addr: r.addr },
+    rel, seo: { start: r.start, end: r.end, addr: r.addr }, venta, mios: { n: mios?.n ?? 0, numero: mios?.num ?? null },
   };
 }
 async function relacionados(ciudad: string, eid: string, biz: string, fmt: string, viewer: string | null, centro: string | null, es: boolean) {

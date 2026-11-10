@@ -723,7 +723,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
 - [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0038 solo en pruebas (`semilla`).
       _6a (9 nov): 0106 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y el archivo vuelto a correr a mano sin errores; semilla 0035
       aplicada dos veces (13 eventos, no se repiten). 6b (10 nov): 0107 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y vuelta a
-      correr a mano sin errores. CI y 0108–0115 pendientes._
+      correr a mano sin errores. 6c (10 nov): 0108 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva de PostGIS:
+      migraciones dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (sin equipo, 0036 deja los
+      códigos y no siembra órdenes). CI y 0109–0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -736,8 +738,13 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       bloqueado / módulo apagado / pausa del admin nunca salen (lista, ficha 404, Buscar); pestaña, Inicio, Buscar, Ciudad, noche especial,
       novedad → Hoy (y deja de salir con el evento oculto), QUIÉN VA, últimos RSVP, otro lugar geocodificado, en casa como zona, barrido;
       `alreves6b` 31/31._
-- [ ] Boletos, mesas, extras y códigos: apartado de 8 min del servidor, compra en nuestra hoja contra el simulador, QR firmado real, Mis boletos; sin
-      sobreventa en carrera (`boletosSinSobreventa`, `nadaSeCobraSinBoleto`, `qrFirmado` al revés).
+- [x] Boletos, mesas, extras y códigos: apartado de 8 min del servidor, compra en nuestra hoja contra el simulador, QR firmado real, Mis boletos; sin
+      sobreventa en carrera (`boletosSinSobreventa`, `nadaSeCobraSinBoleto`, `qrFirmado` al revés). _6c (10 nov): e2e `evt6c` (teléfono 390
+      y escritorio 1360): comprar 2 boletos + mesa + extra con código, doble toque = 1 orden, comisión y total en la base y el simulador, QR
+      leído con jsQR y firma Ed25519 verificada con la llave pública, Mis boletos, otra cuenta → 404, apartado vencido por el barrido, «Se
+      acabaron mientras pagabas», 0002 → 4242, 3 a la vez por el último boleto → 1, 10 a la vez en la base → 1, agotado, código tope / una vez,
+      tope por orden de Configuración, Cobros apagado y Free no venden, panel y Super Admin (Buscar boleto, QR alterado, Reemitir);
+      `alreves6c` 42/42. Contrato con stripe-mock de las llamadas nuevas: pendiente del CI (no corrió en local)._
 - [ ] Transferir (QR viejo anulado), cancelar con su regla, cortesías, lista de espera en orden, ayuda `B-`.
 - [ ] Pausar, cambiar fecha (quedarse o devolución), cancelar fecha o serie con devolución total idempotente, avisos, liquidación del martes con retención
       por disputa y ajuste posterior; Cobros y Transacciones lo muestran.

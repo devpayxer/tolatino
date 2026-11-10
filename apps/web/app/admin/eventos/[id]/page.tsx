@@ -3,6 +3,7 @@ import { requerir } from "@/lib/admin";
 import { db } from "@/lib/db";
 import { ultimosRsvp } from "@/lib/evt-publico";
 import { eventoAdmin } from "@/lib/evt-revision";
+import { ventasEventoAdmin } from "@/lib/boletos-admin";
 import { EventoAdmin } from "../../EventosAdmin";
 
 /* ADM-EVT · la ficha de un evento: lo publicado, el cambio que espera (si hay), revisar, ocultar y el organizador. 6b: si sale al público
@@ -12,9 +13,10 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const id = (await params).id;
   const e = await eventoAdmin(s, id);
   if (!e) notFound();
-  const [rsvp, pub] = await Promise.all([
+  const [rsvp, pub, ventas] = await Promise.all([
     ultimosRsvp(e.id, 20),
     db().query<{ fid: string; van: number }>(`select d.id::text as fid, d.going_n as van from event_dates d where d.event_id = $1::bigint and d.listable order by d.starts_at limit 1`, [e.id]),
+    e.d.entrada === "tickets" ? ventasEventoAdmin(e.id) : Promise.resolve(null),
   ]);
-  return <EventoAdmin e={e} rsvp={rsvp} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null} puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") }} />;
+  return <EventoAdmin e={e} rsvp={rsvp} ventas={ventas} publico={pub.rows[0] ? { href: `/eventos/${e.slug}?fecha=${pub.rows[0].fid}`, van: pub.rows[0].van } : null} puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") }} />;
 }

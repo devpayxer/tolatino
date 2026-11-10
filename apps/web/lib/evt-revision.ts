@@ -121,10 +121,10 @@ export async function organizadorPaso(s: Staff, negocio: string, paso: "verifica
 }
 
 /* ── Lo que ve el Super Admin ── */
-export type FiltrosEvt = { tab: "list" | "org"; q: string; chips: string[]; antes: string | null };
+export type FiltrosEvt = { tab: "list" | "org" | "bol"; q: string; chips: string[]; antes: string | null };
 export const CHIPS_EVT = ["rev", "hoy", "paid", "free", "hid"] as const;
 export function leerFiltrosEvt(sp: Record<string, string | undefined>): FiltrosEvt {
-  return { tab: sp.tab === "org" ? "org" : "list", q: String(sp.q ?? "").trim().slice(0, 60), chips: String(sp.f ?? "").split(",").filter((x) => (CHIPS_EVT as readonly string[]).includes(x)), antes: /^\d{1,18}$/.test(sp.antes ?? "") ? sp.antes! : null };
+  return { tab: sp.tab === "org" ? "org" : sp.tab === "bol" ? "bol" : "list", q: String(sp.q ?? "").trim().slice(0, sp.tab === "bol" ? 200 : 60), chips: String(sp.f ?? "").split(",").filter((x) => (CHIPS_EVT as readonly string[]).includes(x)), antes: /^\d{1,18}$/.test(sp.antes ?? "") ? sp.antes! : null };
 }
 export type FilaEvtAdm = { id: string; t: Bi; fmt: FormatoKey; st: EstadoEvt; hidden: boolean; pending: string | null; dia: string; h0: number; venue: string; org: string; orgId: string; entrada: string; foto: string | null; ciudad: string };
 export const POR_PAGINA_EVT = 20;

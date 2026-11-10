@@ -116,8 +116,32 @@ Guardianes nuevos `eventosSoloListables`, `eventosConCursor`, `rsvpConCupo`; amp
 `configDesdeUnLugar` — 31/31 al revés (`alreves6b.cjs`; `alreves6a` sigue 26/26). e2e `evt6b` (79 ✓, teléfono y escritorio, incluye 3 a la
 vez por los últimos lugares en la pantalla y 10 a la vez en la base) y regresión `evt6a`, `adm5i`, `com5e`, `noc4a`, `noc4b`. Ayuda:
 eventos-buscar-y-ver, rsvp-gratis, eventos-en-la-ficha; novedades, noche-en-la-ficha, panel-eventos-crear y admin-eventos-y-boletos al día.
-Revisar en el sandbox: `docs/REVISION.md` «### 6b». **Sigue 6c** (boletos, mesas, extras y códigos: apartar, comprar en nuestra hoja, QR
-firmado y Mis boletos).
+Revisar en el sandbox: `docs/REVISION.md` «### 6b». **6c hecho (10 nov)** — boletos, mesas, extras y códigos: migración 0108
+(`ticket_types` · `event_tables` · `event_addons` desde la configuración del evento con `evt_sincronizar_venta` (evt_sincronizar_fechas la
+llama; lo quitado se apaga, la cantidad no baja de lo vendido o apartado), existencia por fecha `ticket_stock` / `table_stock` con check
+`sold_n + held_n <= quantity`, `discount_codes` (tope con check) + `discount_attempts` (solo inserción), `ticket_holds` (el apartado; vence
+a `evt_apartado_min`), `tickets` (código TL-XXX-0000, `qr_ver`, estados; lo comprado no cambia; `sold_n` de la fecha por trigger),
+`ticket_log` (solo inserción), `qr_keys` (solo la llave pública), orden B-9401…, `payments.transfer_group`, recibo `receipt_tickets`,
+plantillas `bol_comprado` / `bol_reemitido` / `bol_anulado` / `bol_reenviado` / `evt_venta` (sin SMS), claves `evt_apartado_min`,
+`evt_boletos_por_orden_max`, `evt_boletos_persona_fecha_max`, `evt_codigo_intentos_max`, `evt_apartados_vivos_max`), semilla
+`0036_boletos.sql` (códigos TERRAZA10 y AMIGOS5 y dos órdenes pagadas con el simulador para el Jueves de Bachata; en una base nueva sin
+equipo solo los códigos). Código: `lib/boletos.ts` (apartar con update condicional, soltar, `vencerApartados` y `repararBoletos` en el
+barrido, `pagarBoletos` autorizar → boletos → capturar con candado por apartado, la orden, Mis boletos, el boleto, ventas del panel),
+`lib/boletos-qr.ts` (Ed25519 con la llave del entorno `QR_LLAVE_PRIVADA` — la genera `infra/pruebas/deploy.sh` —, verificación con la
+pública, matriz con el generador de Project Nayuki (MIT) dentro del repo `lib/qr/qrcodegen.ts`), `lib/codigos-evt.ts`,
+`lib/boletos-admin.ts`, `lib/pagos/pasarela.ts` `retenerPlataforma` / `capturarPlataforma` (+ simulador y contrato), recibo por correo;
+pantallas `/eventos/{evento}/boletos` (APP-EVT-BOLETOS), `/eventos/pagar/{apartado}` (APP-EVT-PAGO), `/eventos/orden/B-…` (APP-EVT-ORDEN),
+Mi cuenta › Boletos y el boleto (USR-BOLETOS / USR-BOLETO), la ficha con «Boletos» / Agotado / Venta pausada / cerrada / no disponible
+(Free y sin Cobros no venden); panel: barra de venta en la lista y la venta en la ficha (VENDIDO · MESAS · ÓRDENES, boletos, mesas · quién
+las tiene, dinero con la comisión, códigos, compradores con Reenviar); Super Admin: Buscar boleto (código, orden, teléfono, nombre o el
+texto del QR con su firma), la ficha del boleto con Reenviar · Reemitir · Anular, KPI BOLETOS EMITIDOS · BRUTO BOLETOS, la venta en la
+ficha del evento, Transacciones › Boletos. `TicketQR` del sistema de diseño dibuja la matriz real (parche en `scripts/portar-sistema.mjs`).
+Guardianes nuevos `boletosSinSobreventa`, `apartadoLoLlevaElServidor`, `nadaSeCobraSinBoleto`, `precioConCargos`, `qrFirmado`,
+`qrSinDatosPersonales`, `boletosSoloSuyos`, `libroBoletos`; ampliados `dineroDelServidor`, `capturaMercado` — 42/42 al revés
+(`alreves6c.cjs`; `alreves6a` 26/26, `alreves6b` 31/31). e2e `evt6c` (teléfono y escritorio, contra el simulador; ver REVISION).
+Ayuda: comprar-boletos, mis-boletos-y-el-qr, panel-eventos-boletos-mesas-y-extras, panel-eventos-codigos; pagar-con-tarjeta y
+admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6c» (con la revisión de seguridad). **Sigue 6d**
+(transferir, cancelar el comprador, cortesías, lista de espera y ayuda con la orden B-).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

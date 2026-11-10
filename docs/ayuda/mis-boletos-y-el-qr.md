@@ -1,0 +1,41 @@
+# Mis boletos y el QR · My tickets and the QR
+
+_Pantallas: **Mi cuenta › Boletos** (`/cuenta/boletos`), **el boleto** (`/cuenta/boletos/TL-…`) y **la orden** (`/eventos/orden/B-…`).
+Teléfono y escritorio. Versión: Fase 6 · bloque 6c (10 nov 2026)._
+
+## Qué hace
+- **Mi cuenta › Boletos**: **Próximos** y **Pasados**, una fila por orden con la fecha, cuántos boletos y **CON QR** (o **USADO** ·
+  **DEVUELTO** · **ANULADO**). Tocar abre la orden con todos los QR.
+- **El boleto**: el QR grande, el código humano (**TL-XXX-0000**), a nombre de quién y su estado. **Toca el código para verlo grande. Sube
+  el brillo.** Si el portero no puede leerlo, dile el código.
+- **Tu QR es la entrada; no hace falta imprimir.** El QR va **firmado por To'Latino**: la puerta lo verifica sin conexión y nadie puede
+  fabricar uno. No lleva tu nombre ni tu teléfono.
+- Una **mesa** es un solo QR con sus entradas («Mesa · Pista · 4 entradas»).
+- Arriba de **Eventos** sale **Mis boletos y RSVP** cuando tienes boletos o RSVP próximos.
+
+## Qué pasa en cada caso
+| Caso | Qué pasa |
+|---|---|
+| To'Latino reemite tu boleto (perdiste el teléfono, lo compartiste por error) | Te llega un aviso; Mi cuenta muestra el QR nuevo. **El QR anterior deja de entrar.** |
+| Un boleto se anula | Te llega un aviso con el motivo; el QR sale apagado y no entra. |
+| El evento ya pasó | El boleto queda en **Pasados**, sin QR. |
+| Otra persona abre el enlace de tu boleto | No lo ve: cada boleto solo se abre con la cuenta que lo compró. |
+| No hay señal en la puerta | El portero verifica la firma del QR sin conexión. Abre tu boleto antes de llegar. |
+
+## Preguntas frecuentes
+- **¿Puedo mandarle un boleto a otra persona?** Transferir llega pronto (6d). Por ahora, va a tu nombre.
+- **¿Una captura de pantalla sirve?** Sí, el QR es el mismo; pero si To'Latino lo reemite, la captura vieja ya no entra.
+- **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app.
+
+---
+
+## What it does (English)
+**My account › Tickets**: **Upcoming** and **Past**, one row per order with the date, how many tickets and **WITH QR** (or USED · REFUNDED ·
+VOID). **The ticket** page shows the big QR, the human code (**TL-XXX-0000**), the name and status. **Tap the code to see it big. Turn up the
+brightness.** Your QR is your entry; no need to print. It is **signed by To'Latino**: the door checks it offline and nobody can forge one. It
+carries no name or phone. A **table** is one QR with its entries.
+
+## Cases and FAQ (English)
+Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no
+QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers arrive soon (6d). Wallet passes
+are not available yet.

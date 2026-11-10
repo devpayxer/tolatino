@@ -102,7 +102,7 @@ export async function liberarOperacion(opId: string) {
 export async function repararPagos(negocio: string) {
   const L = (await db().query<{ op: string; st: string }>(
     `select p.operation_id::text as op, o.status as st from payments p join operations o on o.id = p.operation_id
-      where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold') limit 20`, [negocio])).rows;
+      where p.business_id = $1 and p.status = 'held' and o.status not in ('pending', 'change_proposed') and o.kind not in ('market_order', 'hold', 'tickets') limit 20`, [negocio])).rows;
   for (const x of L) {
     if (x.st === "confirmed" || x.st === "done") await cobrarOperacion(x.op);
     else await liberarOperacion(x.op);
@@ -172,7 +172,7 @@ export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
             w as (select date_trunc('week', now() at time zone c.tz) as ini from c)
        select count(*)::int as n, coalesce(sum(p.amount_cents), 0)::int as cobrado, coalesce(sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / p.amount_cents), 0)::int as comision,
               coalesce(sum(p.refunded_cents), 0)::int as devuelto, to_char((select ini from w) + interval '8 days', 'YYYY-MM-DD') as martes
-         from payments p, c, w where p.business_id = $1 and p.status in ('captured', 'partially_refunded', 'refunded') and p.captured_at at time zone c.tz >= w.ini`, [negocio]),
+         from payments p, c, w where p.business_id = $1 and p.status in ('captured', 'partially_refunded', 'refunded') and p.captured_at at time zone c.tz >= w.ini and p.transfer_group is null`, [negocio]),
     db().query<{ num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; brand: string | null; l4: string | null; disputa: string | null }>(
       `select o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), '—') as quien, p.amount_cents as monto, p.fee_cents as comision,
               p.refunded_cents as devuelto, p.status as estado, to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.card_brand as brand, p.card_last4 as l4,

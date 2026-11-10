@@ -6,52 +6,26 @@ import * as React from "react";
 import { __ds_scope } from "../scope.js";
 
 
-/* 2ac · Boleto con QR (Eventos → Mis boletos). Sacado de To'Latino Eventos.dc.html tal como se ve. El QR de muestra se dibuja desde seed (siempre el mismo para el mismo boleto). */
+/* 2ac · Boleto con QR (Eventos → Mis boletos). Sacado de To'Latino Eventos.dc.html tal como se ve. El QR es la matriz real que manda el servidor (texto firmado; 6c). */
 const mono = "'JetBrains Mono',monospace";
 function QrCode({
-  seed = '',
+  matrix,
   size = 148,
-  faded
+  faded,
+  label
 }) {
-  let h = 2166136261;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = h * 16777619 | 0;
-  }
-  const rnd = () => {
-    h ^= h << 13;
-    h ^= h >>> 17;
-    h ^= h << 5;
-    return (h >>> 0) / 4294967296;
-  };
-  const N = 21,
-    S = 6,
-    pad = 2,
-    sz = (N + pad * 2) * S,
-    cells = [];
-  const fixed = (r, c) => r < 7 && c < 7 || r < 7 && c >= N - 7 || r >= N - 7 && c < 7;
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (!fixed(r, c) && rnd() > .52) cells.push([r, c]);
-  const finder = (r, c) => [/*#__PURE__*/React.createElement("rect", {
-    key: 'f' + r + c,
-    x: (c + pad) * S,
-    y: (r + pad) * S,
-    width: 7 * S,
-    height: 7 * S,
-    fill: "none",
-    stroke: "var(--tl-ink)",
-    strokeWidth: S
-  }), /*#__PURE__*/React.createElement("rect", {
-    key: 'g' + r + c,
-    x: (c + pad + 2) * S,
-    y: (r + pad + 2) * S,
-    width: 3 * S,
-    height: 3 * S,
-    fill: "var(--tl-ink)"
-  })];
+  const N = matrix && matrix.length ? matrix.length : 21,
+    pad = 4,
+    sz = N + pad * 2,
+    d = [];
+  if (matrix) for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) if (matrix[r][c]) d.push('M' + (c + pad) + ' ' + (r + pad) + 'h1v1h-1z');
   return /*#__PURE__*/React.createElement("svg", {
     width: size,
     height: size,
     viewBox: '0 0 ' + sz + ' ' + sz,
+    role: 'img',
+    'aria-label': label || 'QR',
+    shapeRendering: 'crispEdges',
     style: {
       display: 'block',
       opacity: faded ? .28 : 1
@@ -62,14 +36,10 @@ function QrCode({
     width: sz,
     height: sz,
     fill: "var(--tl-white)"
-  }), cells.map(([r, c], i) => /*#__PURE__*/React.createElement("rect", {
-    key: i,
-    x: (c + pad) * S,
-    y: (r + pad) * S,
-    width: S,
-    height: S,
+  }), d.length ? /*#__PURE__*/React.createElement("path", {
+    d: d.join(''),
     fill: "var(--tl-ink)"
-  })), finder(0, 0), finder(0, N - 7), finder(N - 7, 0));
+  }) : null);
 }
 
 /* Tipo de entrada y a nombre de quién, estado (VÁLIDO · USADO · CANCELADO), QR grande, número y fecha. width = 250 en el carrusel móvil; sin width llena su celda (desktop). */
@@ -79,7 +49,9 @@ function TicketQR({
   status,
   statusBg = 'rgba(0,229,196,.16)',
   statusColor = 'var(--tl-signal)',
-  seed,
+  matrix,
+  qrSize,
+  qrLabel,
   used,
   code,
   when,
@@ -143,7 +115,9 @@ function TicketQR({
       background: 'var(--tl-white)'
     }
   }, /*#__PURE__*/React.createElement(QrCode, {
-    seed: seed,
+    matrix: matrix,
+    size: qrSize,
+    label: qrLabel,
     faded: used
   })), /*#__PURE__*/React.createElement("div", {
     style: {

@@ -414,6 +414,10 @@ const guardianes = {
   /* 3k. El dinero lo decide el servidor (6 nov, 2b): lo que manda el teléfono para un pedido (los tipos …In de
      lib/pedir.ts) nunca trae precios, impuestos ni totales; el servidor los calcula del menú al enviar. */
   dineroDelServidor() {
+    // 6c · Boletos: lo que manda el teléfono para apartar (BoletosIn) y las acciones de compra traen ids y cantidades, nunca montos.
+    const B6 = "apps/web/lib/boletos.ts", A6 = "apps/web/app/(app)/eventos/acciones-boletos.ts";
+    if (existsSync(B6)) { const m = /export type BoletosIn = \{([^\n]*)\};/.exec(readFileSync(B6, "utf8")); if (!m) falla("dineroDelServidor", B6, 0, "falta BoletosIn"); else if (/\b(cents|price|precio|total|tax|impuesto|subtotal|descuento|unit|monto)\w*\??:/i.test(m[1])) falla("dineroDelServidor", B6, 0, "BoletosIn trae un monto desde el teléfono; lo calcula el servidor"); }
+    if (existsSync(A6)) for (const m of readFileSync(A6, "utf8").matchAll(/export async function (\w+)\(([^)]*)\)/g)) if (/\b(cents|price|precio|total|monto|descuento)\w*\s*:/i.test(m[2])) falla("dineroDelServidor", A6, 0, `«${m[1]}» recibe un monto desde el teléfono`);
     const f = "apps/web/lib/pedir.ts";
     if (!existsSync(f)) return;
     const t = readFileSync(f, "utf8");
@@ -623,7 +627,7 @@ const guardianes = {
     if (!existsSync(C) || !existsSync(M)) return;
     const c = readFileSync(C, "utf8"), m = readFileSync(M, "utf8");
     // 4q-2: lo mismo para el envío de la tienda (apartado con tarjeta): se cobra lo que se envía (cobrarApartado), nunca todo lo retenido.
-    if (!/o\.status not in \('pending', 'change_proposed'\) and o\.kind not in \('market_order', 'hold'\)/.test(c)) falla("capturaMercado", C, 1, "repararPagos no puede capturar completo lo retenido de un pedido del mercado ni de un envío de la tienda");
+    if (!/o\.status not in \('pending', 'change_proposed'\) and o\.kind not in \('market_order', 'hold'(, 'tickets')?\)/.test(c)) falla("capturaMercado", C, 1, "repararPagos no puede capturar completo lo retenido de un pedido del mercado ni de un envío de la tienda");
     const A = existsSync("apps/web/lib/apartados.ts") ? readFileSync("apps/web/lib/apartados.ts", "utf8") : "";
     if (A && !/Math\.min\(p\.tot, p\.held\)/.test(A)) falla("capturaMercado", "apps/web/lib/apartados.ts", 1, "cobrarApartado cobra lo que se envía y nunca más de lo retenido (Math.min(p.tot, p.held))");
     A.split("\n").forEach((l, i) => { if (/cobrarOperacion\(/.test(l)) falla("capturaMercado", "apps/web/lib/apartados.ts", i + 1, "un envío de la tienda no usa cobrarOperacion (captura todo): usa cobrarApartado"); });
@@ -2826,6 +2830,145 @@ const guardianes = {
     if (!/where t\.id = \$1::bigint and \(cardinality\(\$2::text\[\]\) = 0 or t\.city_id = any\(\$2::text\[\]\)\) for update/.test(b)) falla(G, A, 0, "loteOcultarUno: ciudad de quien actúa y fila bloqueada");
     if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), e = /const enLote = \(\) => setConf\(\{([\s\S]*?)\n  \}\);/.exec(u)?.[1] ?? "";
       if (!/loteOcultarUno\(x\.k, x\.id, motivo\)/.test(e) || /pubOcultar|cmComOcultar/.test(e)) falla(G, UI, 0, "el lote manda cada uno a loteOcultarUno (nunca a pubOcultar)"); }
+  },
+
+  /* 6c. Boletos sin sobreventa (fase6 §3): la base trae el check (sold_n + held_n <= quantity) en ticket_stock y table_stock (y en extras y
+     códigos); apartar sube held_n SOLO con el update condicional (… where sold_n + held_n + q <= quantity) dentro de lib/boletos.ts; nadie más
+     escribe existencias, usos de códigos ni boletos. Al revés: quitar el check, la condición o escribir held_n / sold_n desde otro archivo → falla. */
+  boletosSinSobreventa() {
+    const G = "boletosSinSobreventa", M = "packages/db/migrations/0108_boletos_venta.sql", L = "apps/web/lib/boletos.ts";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8");
+    for (const tb of ["ticket_stock", "table_stock"]) {
+      const def = new RegExp(`create table if not exists ${tb} \\(([\\s\\S]*?)\\n\\);`).exec(m)?.[1] ?? "";
+      if (!/check \(sold_n \+ held_n <= quantity\)/.test(def)) falla(G, M, 0, `${tb} sin el check (sold_n + held_n <= quantity)`);
+    }
+    if (!/check \(quantity is null or sold_n \+ held_n <= quantity\)/.test(m)) falla(G, M, 0, "event_addons sin el check de su cantidad");
+    if (!/check \(used_n \+ held_n <= uses_max\)/.test(m)) falla(G, M, 0, "discount_codes sin el check del tope de usos");
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/boletos.ts");
+    const a = cuerpoFn(sinComent(L), "apartar");
+    if (!/set held_n = s\.held_n \+ \$3[\s\S]*?and s\.sold_n \+ s\.held_n \+ \$3 <= s\.quantity/.test(a)) falla(G, L, 0, "apartar: los boletos se apartan con el update condicional (sold_n + held_n + q <= quantity)");
+    if (!/set held_n = s\.held_n \+ 1[\s\S]*?and s\.sold_n \+ s\.held_n \+ 1 <= s\.quantity/.test(a)) falla(G, L, 0, "apartar: la mesa se aparta con el update condicional");
+    if (!/used_n \+ held_n < uses_max returning kind, value/.test(a)) falla(G, L, 0, "apartar: el uso del código se aparta con la condición del tope");
+    if (!/sort\(\(x, y\) => Number\(x\.id\) - Number\(y\.id\)\)/.test(a)) falla(G, L, 0, "apartar: las filas se toman siempre en el mismo orden (por id)");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === L) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        if (/\bupdate (ticket_stock|table_stock|event_addons|discount_codes)\b[^`]*\b(held_n|sold_n|used_n)\s*=/.test(q)) falla(G, x, 0, "las existencias y los usos los escribe solo lib/boletos.ts");
+        if (/\binsert into tickets\b/.test(q)) falla(G, x, 0, "los boletos los emite solo lib/boletos.ts");
+      }
+    }
+  },
+
+  /* 6c. El apartado lo lleva el servidor: vence a now() + evt_apartado_min (Configuración) y lo suelta el barrido (vencerApartados) o la lectura;
+     soltar por vencido exige que de verdad haya vencido (expires_at <= now()); la pantalla solo cuenta hacia atrás, nunca suelta ni vence por su
+     cuenta, y ningún texto del cliente escribe los minutos a mano. Al revés: vencer desde el teléfono, sin la clave o sin el barrido → falla. */
+  apartadoLoLlevaElServidor() {
+    const G = "apartadoLoLlevaElServidor", L = "apps/web/lib/boletos.ts", B = "apps/web/lib/barrido.ts", P = "apps/web/app/(app)/eventos/pagar/[apartado]/Pagar.tsx";
+    if (!existsSync(L)) return;
+    const t = sinComent(L);
+    if (!/expires_at\)\s*\n?\s*values \([^`]*now\(\) \+ make_interval\(mins => \$13::int\)/.test(cuerpoFn(t, "apartar")) || !/cfg\.evt_apartado_min\]\)\)\.rows\[0\]!\.id/.test(cuerpoFn(t, "apartar"))) falla(G, L, 0, "apartar: expires_at = now() + evt_apartado_min de Configuración");
+    if (!/\$\{estado === "expired" \? "and expires_at <= now\(\)" : ""\}/.test(cuerpoFn(t, "soltarEn"))) falla(G, L, 0, "soltarEn: vencer solo lo que de verdad venció (expires_at <= now())");
+    if (!existsSync(B) || !/bol\.vencerApartados\(\)/.test(readFileSync(B, "utf8"))) falla(G, B, 0, "el barrido central vence los apartados (vencerApartados)");
+    if (!/await vencerApartados\(\{ fecha \}\)/.test(cuerpoFn(t, "pantallaBoletos")) || !/await vencerApartados\(\{ fecha \}\)/.test(cuerpoFn(t, "ventaFicha"))) falla(G, L, 0, "una lectura nunca cuenta un apartado vencido (vencerApartados al leer)");
+    if (existsSync(P)) {
+      const p = sinComent(P), iv = /setInterval\(([^\n]*)\)/.exec(p)?.[1] ?? "";
+      if (/evt(Soltar|Pagar|Apartar)|router\./.test(iv)) falla(G, P, 0, "el contador de la pantalla de pago es solo pantalla: no suelta ni vence nada");
+    }
+    for (const x of codigo) {
+      if (!/^apps\/web\/app\/\(app\)\/(eventos|cuenta\/boletos)\/.*\.tsx?$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((l, i) => { if (/\b8 (min|minutos|minutes)\b/.test(l)) falla(G, x, i + 1, "los minutos del apartado salen de Configuración (evt_apartado_min), no se escriben a mano"); });
+    }
+  },
+
+  /* 6c. Nada se cobra sin boleto (y ningún boleto sin cobro): pagarBoletos autoriza, crea la orden y los boletos en la transacción, confirma y
+     SOLO entonces captura; si la captura falla, anula los boletos y libera; si algo falla antes, libera la autorización. Solo lib/boletos.ts
+     captura un cobro de la plataforma. Al revés: capturar antes de crear los boletos, o no liberar → falla. */
+  nadaSeCobraSinBoleto() {
+    const G = "nadaSeCobraSinBoleto", L = "apps/web/lib/boletos.ts";
+    if (!existsSync(L)) return;
+    const b = cuerpoFn(sinComent(L), "pagarBoletos");
+    const iR = b.search(/pasarela\.retenerPlataforma\(/), iT = b.search(/insert into tickets/), iC = b.search(/await c\.query\("commit"\);\s*\n\s*convertido = true;/), iK = b.search(/pasarela\.capturarPlataforma\(/);
+    if (iR < 0 || iT < 0 || iC < 0 || iK < 0 || !(iR < iT && iT < iC && iC < iK)) falla(G, L, 0, "pagarBoletos: autorizar → boletos en la transacción → commit → capturar, en ese orden");
+    if (!/if \(!cap\.ok\) \{\s*\n\s*await anularPorCobro\(op, pi,/.test(b)) falla(G, L, 0, "pagarBoletos: si la captura falla, se anulan los boletos y se libera");
+    if (!/if \(!convertido\) \{[\s\S]*?if \(pi\) await pasarela\.liberar\(pi\)/.test(b)) falla(G, L, 0, "pagarBoletos: si algo falla antes de convertir, se libera la autorización");
+    if (!/update tickets set status = 'void'/.test(cuerpoFn(sinComent(L), "anularPorCobro")) || !/pasarela\.liberar\(pi\)/.test(cuerpoFn(sinComent(L), "anularPorCobro"))) falla(G, L, 0, "anularPorCobro: anula los boletos y libera la tarjeta");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && /capturarPlataforma\(|retenerPlataforma\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts cobra boletos");
+    if (!/'tickets'\) limit 20/.test(readFileSync("apps/web/lib/cobros.ts", "utf8"))) falla(G, "apps/web/lib/cobros.ts", 0, "repararPagos no toca boletos (los repara repararBoletos, que captura sin comisión de destino)");
+  },
+
+  /* 6c. El precio que ves es el que pagas (§6 #1): lo cobrado = lo apartado (suma de precios − descuento, calculado en el servidor) y la
+     comisión sale de fee_rules «bol» y de lo del organizador; ninguna pantalla suma un «cargo de servicio» al total (dice «Incluidos»). Al revés:
+     sumar la comisión al total o mostrar un cargo con monto → falla. */
+  precioConCargos() {
+    const G = "precioConCargos", L = "apps/web/lib/boletos.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L), a = cuerpoFn(t, "apartar"), p = cuerpoFn(t, "pagarBoletos");
+    if (!/const sub = lineas\.reduce\(\(s, l\) => s \+ l\.unit \* l\.q, 0\), total = sub - desc;/.test(a)) falla(G, L, 0, "apartar: total = suma de precios − descuento (sin cargos encima)");
+    if (!/retenerPlataforma\(\{ centavos: h\.total,/.test(p) || !/capturarPlataforma\(pi, h\.total\)/.test(p)) falla(G, L, 0, "pagarBoletos cobra exactamente el total del apartado");
+    if (!/comision\(c, "bol", pagado, 1\)/.test(p)) falla(G, L, 0, "la comisión de cada boleto sale de fee_rules «bol» sobre el precio pagado");
+    if (/total[^\n]*\+ fee\b|h\.total \+/.test(p)) falla(G, L, 0, "la comisión no se suma al total: sale de lo del organizador");
+    for (const x of codigo) {
+      if (!/^apps\/web\/(app\/\(app\)\/(eventos|cuenta\/boletos)\/.*\.tsx?|lib\/correo\/recibos\.ts)$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((l, i) => { if (/(Cargos? de servicio|Service fees?)/.test(l) && !/Incluidos|Included/.test(l)) falla(G, x, i + 1, "«Cargos de servicio» se muestran «Incluidos», nunca como un monto que se suma"); });
+    }
+  },
+
+  /* 6c. El QR lo firma solo el servidor con Ed25519 (§3, §6 #10): la llave privada sale del entorno (QR_LLAVE_PRIVADA), la lee solo
+     lib/boletos-qr.ts, nunca va a la base (qr_keys guarda la pública), a un log, a una semilla ni al navegador; en producción sin la llave no se
+     firma; verificar usa la llave pública de la base. Nada de HMAC compartido con la puerta. Al revés: leer la llave en otro archivo, guardarla
+     en la base o firmar con HMAC → falla. */
+  qrFirmado() {
+    const G = "qrFirmado", Q = "apps/web/lib/boletos-qr.ts", M = "packages/db/migrations/0108_boletos_venta.sql";
+    if (!existsSync(Q)) return falla(G, Q, 0, "falta lib/boletos-qr.ts");
+    const q = sinComent(Q);
+    if (!/sign\(null, Buffer\.from\(msg\), k\.priv\)/.test(q)) falla(G, Q, 0, "el QR se firma con Ed25519 (sign(null, …, llave privada))");
+    if (!/if \(ENTORNO === "produccion"\) throw new Error\("Falta QR_LLAVE_PRIVADA/.test(q)) falla(G, Q, 0, "en producción, sin QR_LLAVE_PRIVADA no se firma nada");
+    if (!/verify\(null, Buffer\.from\(msg\), pub,/.test(q) || !/from qr_keys where kid = \$1 and retired_at is null/.test(q)) falla(G, Q, 0, "verificar usa la llave pública publicada en qr_keys");
+    if (/createHmac\([^)]*\)\.update\(msg|hmac[^\n]*firma/i.test(q)) falla(G, Q, 0, "el QR no se firma con HMAC (la puerta podría fabricar boletos)");
+    if (existsSync(M)) { const def = /create table if not exists qr_keys \(([\s\S]*?)\n\);/.exec(readFileSync(M, "utf8"))?.[1] ?? ""; if (!/public_key/.test(def) || /priv/i.test(def)) falla(G, M, 0, "qr_keys guarda solo la llave pública"); }
+    for (const x of archivos) {
+      if (/\.(png|jpe?g|gif|webp|svg|woff2?|ico|lock)$/.test(x) || x.startsWith("docs/diseno/")) continue;
+      const t = readFileSync(x, "utf8");
+      if (/MC4CAQAwBQYDK2VwBCIEI[A-Za-z0-9+/]{20,}/.test(t)) falla(G, x, 0, "una llave privada Ed25519 escrita en el repo");
+      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
+    }
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== Q && x !== "apps/web/lib/boletos.ts" && /\bfirmarQR\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts pide firmar un QR (servidor)");
+  },
+
+  /* 6c. El QR no lleva datos personales: solo kid, id del boleto, id de la fecha, versión y entradas (+ la firma). Al revés: meter el nombre o
+     el teléfono en el texto firmado → falla. */
+  qrSinDatosPersonales() {
+    const G = "qrSinDatosPersonales", Q = "apps/web/lib/boletos-qr.ts";
+    if (!existsSync(Q)) return;
+    const q = sinComent(Q);
+    if (!/const k = cargar\(\), msg = `TL1\.\$\{k\.kid\}\.\$\{t\.id\}\.\$\{t\.fecha\}\.\$\{t\.ver\}\.\$\{t\.admits\}`;/.test(q)) falla(G, Q, 0, "el texto del QR es TL1.kid.id.fecha.versión.entradas, nada más");
+    if (!/export type DatosQR = \{ id: string; fecha: string; ver: number; admits: number \};/.test(q)) falla(G, Q, 0, "DatosQR trae solo id, fecha, versión y entradas");
+  },
+
+  /* 6c. Nadie ve los boletos de otro (IDOR): cada lectura o acción del cliente en lib/boletos.ts filtra por la persona; el panel, por su
+     negocio. Al revés: quitar el filtro de una función → falla. */
+  boletosSoloSuyos() {
+    const G = "boletosSoloSuyos", L = "apps/web/lib/boletos.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L);
+    for (const [fn, re] of [["ordenBoletos", /o\.kind = 'tickets' and o\.user_id = \$2/], ["misBoletos", /where t\.holder_user_id = \$1/], ["miBoleto", /where t\.code = \$1 and t\.holder_user_id = \$2/],
+      ["pantallaPago", /where h\.id = \$1::uuid and h\.user_id = \$2/], ["pagarBoletos", /where h\.id = \$1::uuid and h\.user_id = \$2/], ["soltarApartado", /where id = \$1::uuid and user_id = \$2/],
+      ["ventasPanel", /where id = \$1::bigint and business_id = \$2 and entry = 'tickets'/], ["reenviarDesdePanel", /kind = 'tickets' and business_id = \$2/]])
+      if (!re.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}» no filtra por la persona o el negocio`);
+    const V = /select [^`]*\bphone\b/;
+    for (const fn of ["ventasPanel", "ordenBoletos", "misBoletos", "miBoleto"]) if (V.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}» no saca teléfonos`);
+  },
+
+  /* 6c. Libros de los boletos (solo inserción): ticket_log y discount_attempts; un boleto, un apartado y un código no se borran (estados). */
+  libroBoletos() {
+    const G = "libroBoletos", M = "packages/db/migrations/0108_boletos_venta.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger ticket_log_no_cambia before update or delete on ticket_log/.test(m) || !/create trigger discount_attempts_no_cambia before update or delete on discount_attempts/.test(m)) falla(G, M, 0, "ticket_log y discount_attempts son de solo inserción (trigger)");
+    if (!/raise exception 'un boleto no se borra/.test(ultimaFn("tickets_antes")) || !/raise exception 'lo comprado en un boleto no cambia'/.test(ultimaFn("tickets_antes"))) falla(G, M, 0, "un boleto no se borra y lo comprado no cambia");
+    if (!/raise exception 'un apartado no se borra/.test(ultimaFn("ticket_holds_antes")) || !/raise exception 'lo apartado y su precio no cambian'/.test(ultimaFn("ticket_holds_antes"))) falla(G, M, 0, "un apartado no se borra y su precio no cambia");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_log|discount_attempts)\b|\bdelete from (tickets|ticket_holds|discount_codes)\b/.test(q)) falla(G, x, 0, "un libro de boletos no se cambia y nada de los boletos se borra");
   },
 
   idioma() {

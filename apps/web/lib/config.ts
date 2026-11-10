@@ -23,7 +23,9 @@ export type ClaveConfig =
   // 6a · Eventos (0106)
   | "evt_revision_h" | "evt_fechas_max" | "evt_dias_adelante" | "evt_fotos_max" | "evt_dias_seguidos_max"
   // 6b · RSVP (0107)
-  | "rsvp_guarda_min";
+  | "rsvp_guarda_min"
+  // 6c · Boletos (0108)
+  | "evt_apartado_min" | "evt_boletos_por_orden_max" | "evt_boletos_persona_fecha_max" | "evt_codigo_intentos_max" | "evt_apartados_vivos_max";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

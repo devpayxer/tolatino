@@ -80,3 +80,30 @@ export async function evtModulo(negocio: string, on: boolean): Promise<Res> {
   if (r.rowCount) await auditar(a, on ? "eventos.encender" : "eventos.apagar", { modulo: "Eventos", estado: on ? "Encendido" : "Apagado" });
   return { ok: true };
 }
+
+/* 6c · CÓDIGOS DE DESCUENTO (evCodeDet): crear (porcentaje o monto fijo, usos) y apagar / encender. El descuento sale de lo del
+   organizador; la base no deja pasar del tope de usos. */
+export async function evtCodigoCrear(negocio: string, eventoId: string, x: { code: string; kind: "pct" | "amount"; value: number; usos: number }): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  if (!(await esPro(a.negocio.id))) return no("Eventos es parte de Pro.", "Events is part of Pro.");
+  const r = await (await import("@/lib/codigos-evt")).crearCodigo(a.negocio.id, a.yo.id, String(eventoId), x ?? {});
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.codigo.crear", { codigo: String(x?.code ?? "").toUpperCase().slice(0, 16), usos: Number(x?.usos) || 0 });
+  return { ok: true };
+}
+export async function evtCodigoCambiar(negocio: string, id: string, on: boolean): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/codigos-evt")).cambiarCodigo(a.negocio.id, String(id), !!on);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, on ? "eventos.codigo.encender" : "eventos.codigo.apagar", { codigo: String(id), estado: on ? "Encendido" : "Apagado" });
+  return { ok: true };
+}
+/* «Reenviar boletos» a quien compró (un aviso en su cuenta; el negocio nunca ve su teléfono ni su correo). */
+export async function evtReenviar(negocio: string, numero: string): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const ok = await (await import("@/lib/boletos")).reenviarDesdePanel(a.negocio.id, String(numero));
+  return ok ? { ok: true } : no("Esa orden no existe.", "That order does not exist.");
+}

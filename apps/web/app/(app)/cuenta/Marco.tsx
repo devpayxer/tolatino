@@ -51,7 +51,7 @@ export type Hoja = { title: string; sub?: string; yes: string; onYes: Fn; peligr
 const TONE = { info: ["rgba(75,55,245,.07)", "var(--tl-action-ink)"], ok: ["rgba(0,229,196,.12)", "var(--tl-open-text)"], warn: ["rgba(255,176,32,.14)", "var(--tl-pro-ink)"], danger: ["rgba(192,57,43,.08)", "var(--tl-danger)"] } as const;
 const NAV: ([string, string] | [string, string, string, string, string])[] = [
   ["MI ACTIVIDAD", "MY ACTIVITY"], ["USR-HOME", "Resumen", "Overview", "grid", "/cuenta"], ["USR-PEDIDOS", "Pedidos", "Orders", "bag", "/cuenta/pedidos"],
-  ["USR-CITAS", "Citas y reservas", "Bookings", "calendar", "/cuenta/citas"], ["USR-FAVORITOS", "Guardados", "Saved", "heart", "/cuenta/guardados"],
+  ["USR-CITAS", "Citas y reservas", "Bookings", "calendar", "/cuenta/citas"], ["USR-BOLETOS", "Boletos", "Tickets", "ticket", "/cuenta/boletos"], ["USR-FAVORITOS", "Guardados", "Saved", "heart", "/cuenta/guardados"],
   ["USR-RESENAS", "Reseñas", "Reviews", "star", "/cuenta/resenas"], ["USR-EMPLEOS", "Empleos", "Jobs", "brief", "/cuenta/empleos"],
   ["USR-MENSAJES", "Mensajes", "Messages", "chat", "/cuenta/mensajes"], ["USR-VECINOS", "Vecinos", "Neighbors", "smile", "/cuenta/vecinos"],
   ["MI CUENTA", "MY ACCOUNT"], ["USR-PERFIL", "Perfil", "Profile", "users", "/cuenta/perfil"], ["USR-DIRECCIONES", "Direcciones", "Addresses", "home", "/cuenta/direcciones"], ["USR-SEGUROS", "Mis seguros", "My insurance", "insurance", "/cuenta/seguros"],

@@ -17,10 +17,10 @@ const Button = UI.Button as ComponentType<any>;
 
 type Props = {
   es: boolean; ciudad: string; estado: string; d: FiltroFecha; t: string; generos: { k: string; l: string }[];
-  lista: { items: TarjetaEvt[]; mas: string | null; total: number }; noche: HistoriaEvt[]; feat: TarjetaEvt | null; mios: number; conSesion: boolean;
+  lista: { items: TarjetaEvt[]; mas: string | null; total: number }; noche: HistoriaEvt[]; feat: TarjetaEvt | null; mios: number; bol?: number; conSesion: boolean;
 };
 
-export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat, mios }: Props) {
+export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat, mios, bol = 0 }: Props) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), { toast, el } = useToast();
   const [items, setItems] = useState(lista.items), [mas, setMas] = useState(lista.mas), [cargando, setCargando] = useState(false);
@@ -70,12 +70,12 @@ export function Eventos({ es, ciudad, estado, d, t, generos, lista, noche, feat,
       <h1 className="sr-only">{E2(`Eventos en ${ciudad}, ${estado}`, `Events in ${ciudad}, ${estado}`)}</h1>
       {/* ── Teléfono ── */}
       <div data-screen-label="APP-EVT-BUSQ · móvil" className="pb-[110px] lg:hidden">
-        {mios > 0 && (
+        {mios + bol > 0 && (
           <div className="px-5 pt-3">
-            <div role="link" onClick={() => router.push("/cuenta/guardados?f=evt")} className="flex cursor-pointer items-center gap-[11px] rounded-2xl bg-ink px-3.5 py-3 text-white">
+            <div role="link" onClick={() => router.push(bol > 0 ? "/cuenta/boletos" : "/cuenta/guardados?f=evt")} className="flex cursor-pointer items-center gap-[11px] rounded-2xl bg-ink px-3.5 py-3 text-white">
               <span className="grid size-9 place-items-center rounded-[11px] bg-white/10"><Icon name="ticket" size={18} /></span>
               <span className="min-w-0 flex-1"><span className="block text-[13.5px] font-bold">{E2("Mis boletos y RSVP", "My tickets & RSVPs")}</span>
-                <span className="mt-0.5 block text-white/55" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".1em" }}>{`${mios} ${mios === 1 ? E2("EVENTO", "EVENT") : E2("EVENTOS", "EVENTS")}`}</span></span>
+                <span className="mt-0.5 block text-white/55" style={{ font: `600 9.5px ${MONO}`, letterSpacing: ".1em" }}>{[bol ? `${bol} ${bol === 1 ? E2("BOLETO", "TICKET") : E2("BOLETOS", "TICKETS")}` : "", mios ? `${mios} RSVP` : ""].filter(Boolean).join(" · ")}</span></span>
               <Icon name="chevronRight" size={16} />
             </div>
           </div>
