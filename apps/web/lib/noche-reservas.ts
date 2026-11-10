@@ -394,6 +394,39 @@ export async function marcarNoche(negocio: string, numero: string, que: MarcaMes
   });
 }
 
+/* ── 6g · La lista y las mesas de esta noche en To'Latino Puerta (fase4-noche L79: «en la Fase 6 la absorbe la app Puerta»). Este archivo
+   sigue siendo el ÚNICO que lee el código de la puerta (guardián codigoPuerta): la puerta busca por nombre o por las 4 cifras que dice
+   el cliente, y la respuesta nunca trae el código, el teléfono ni lo que se paga en el local (D1: la puerta no cobra). ── */
+export type FilaListaPuerta = { numero: string; nombre: string; k: string; svc: Bi; pax: number; entraron: number; llega: string };
+export async function listaEnLaPuerta(negocio: string, q: string): Promise<FilaListaPuerta[]> {
+  const x = await contexto(db(), negocio);
+  if (!x) return [];
+  const t = String(q ?? "").replace(/\s+/g, " ").trim().slice(0, 40), cod = /^\d{4}$/.test(t) ? t : null, nom = !cod && t.length >= 2 ? `%${t.toLowerCase().replace(/[%_\\]/g, "")}%` : null;
+  const r = (await db().query<{ numero: string; fn: string | null; ln: string | null; k: string; svc: Bi; pax: number; entraron: number; llega: number }>(
+    `select o.number as numero, u.first_name as fn, u.last_name as ln, o.details->>'k' as k, o.details->'svc' as svc, o.party_size as pax,
+            coalesce((o.details->>'in_n')::int, 0) as entraron, (o.details->>'arrive')::int as llega
+       from operations o join users u on u.id = o.user_id
+      where o.business_id = $1 and o.kind = 'night' and o.night_date = $2::date and o.status in ('confirmed', 'done') and coalesce(o.status_detail, '') not in ('nollegaron', 'noid')
+        and ($3::text is null or o.door_code = $3) and ($4::text is null or unaccent(lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, ''))) like unaccent($4))
+      order by (coalesce((o.details->>'in_n')::int, 0) >= o.party_size), (o.details->>'arrive')::int, o.id limit 60`, [negocio, x.hoy, cod, nom])).rows;
+  return r.map((z) => ({ numero: z.numero, nombre: [z.fn?.trim().split(" ")[0], z.ln ? `${z.ln.trim().slice(0, 1).toUpperCase()}.` : ""].filter(Boolean).join(" ") || "Cliente",
+    k: z.k, svc: z.svc, pax: z.pax, entraron: Math.min(z.entraron, z.pax), llega: hNoche(z.llega) }));
+}
+/* Entran k más de la lista o de la mesa (nunca más de los que son). Dentro de la transacción de la puerta (que registra el escaneo). */
+export async function marcarLlegada(c: PoolClient, negocio: string, numero: string, k: number, actorId: string): Promise<{ ok: true; op: string; k: number; entraron: number; de: number } | { ok: false; msg: Bi }> {
+  if (!NUM_N.test(numero)) return no("Esa reserva no existe.", "That booking does not exist.");
+  const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
+  if (!o || o.status !== "confirmed") return no("Esta reserva ya cambió o no es de esta noche.", "This booking changed or is not for tonight.");
+  if (o.night !== o.hoy) return no("Esta reserva es de otra noche.", "This booking is for another night.");
+  const ya = Math.min(Number(o.det.in_n ?? 0) || 0, o.pax), n = Math.max(0, Math.min(Math.floor(k), o.pax - ya));
+  if (n > 0) {
+    await c.query(`update operations set details = details || $2::jsonb, updated_at = now() where id = $1::bigint`,
+      [o.id, JSON.stringify({ in_n: ya + n, in_at: new Date().toISOString(), in_by: actorId, ...(o.det.k === "lista" ? {} : { llego: true }) })]);
+    await ev(c, o.id, "night_in", "member", actorId, { es: `Entraron ${ya + n} de ${o.pax} (puerta)`, en: `${ya + n} of ${o.pax} got in (door)` });
+  }
+  return { ok: true, op: o.id, k: n, entraron: ya + n, de: o.pax };
+}
+
 /* ── El barrido (cada minuto): vence las mesas sin respuesta, la otra hora sin respuesta, y cierra la noche a las 6 AM ── */
 export async function vencerNoche(f: { negocio?: string; userId?: string; numero?: string } = {}) {
   const w: string[] = [], a: unknown[] = [];

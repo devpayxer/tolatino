@@ -17,14 +17,16 @@ type N = "Icon" | "Button" | "TicketQR" | "OrderTracker" | "ReceiptCard";
 const { Icon, Button, TicketQR, OrderTracker, ReceiptCard } = UI as unknown as Record<N, ComponentType<any>>;
 const caja = "rounded-[18px] border border-ink/[.07] bg-white";
 
-export function estadoBoleto(b: Pick<BoletoVista, "estado" | "envio">, es: boolean): [string, string, string] {
+export function estadoBoleto(b: Pick<BoletoVista, "estado" | "envio"> & Partial<Pick<BoletoVista, "entro" | "sigue">>, es: boolean): [string, string, string] {
   const E2 = (a: string, z: string) => (es ? a : z);
   // La etiqueta va sobre la cabecera oscura del boleto (TicketQR): colores con contraste sobre tinta.
   // 6d · Enviado (transferencia pendiente: el QR anterior quedó anulado y no hay otro hasta que lo reciban o lo deshagas) y transferido.
   return b.envio ? [E2(`ENVIADO · ${b.envio.a}`, `SENT · ${b.envio.a}`), "rgba(255,176,32,.2)", "var(--tl-pro)"]
     : b.estado === "replaced" ? [E2("TRANSFERIDO", "TRANSFERRED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
     : b.estado === "valid" ? [E2("VÁLIDO", "VALID"), "rgba(0,229,196,.16)", "var(--tl-signal)"]
-    : b.estado === "used" ? [E2("USADO", "USED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
+    // 6g · Usado con la hora de la puerta; un pase de varios días que todavía entra otro día sigue en verde.
+    : b.estado === "used" && b.sigue ? [E2("VÁLIDO · OTRO DÍA", "VALID · ANOTHER DAY"), "rgba(0,229,196,.16)", "var(--tl-signal)"]
+    : b.estado === "used" ? [b.entro ? E2(`USADO · ${b.entro}`, `USED · ${b.entro}`) : E2("USADO", "USED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
     : b.estado === "refunded" ? [E2("DEVUELTO", "REFUNDED"), "rgba(255,255,255,.14)", "var(--tl-white)"]
     : [E2("ANULADO", "VOID"), "var(--tl-danger)", "var(--tl-white)"];
 }
@@ -34,7 +36,7 @@ export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVist
   return (
     <div data-boleto={b.code} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onClick={onClick} onKeyDown={(e) => { if (onClick && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); onClick(); } }} className={onClick ? "cursor-pointer" : ""}>
       <TicketQR type={tipo} name={(b.nombre || (es ? "A tu nombre" : "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg} matrix={b.matriz} qrSize={b.matriz ? (ancho ? 168 : 200) : 96}
-        qrLabel={es ? `Código QR del boleto ${b.code}` : `QR code for ticket ${b.code}`} used={b.estado !== "valid" || !!b.envio} code={b.code} when={cuando} width={ancho} />
+        qrLabel={es ? `Código QR del boleto ${b.code}` : `QR code for ticket ${b.code}`} used={(b.estado !== "valid" && !b.sigue) || !!b.envio} code={b.code} when={cuando} width={ancho} />
     </div>
   );
 }

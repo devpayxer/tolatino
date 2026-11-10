@@ -1279,6 +1279,19 @@ const guardianes = {
       if (!/^apps\/web\//.test(f) || f === L || /^apps\/web\/app\/panel\//.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, n) => { if (/door_code/.test(l)) falla("codigoPuerta", f, n + 1, "door_code solo lo leen lib/noche-reservas.ts y el panel"); });
     }
+    // 6g: la puerta (lib/puerta*, /puerta, /api/puerta) lee y marca la lista de la noche SOLO por lib/noche-reservas.ts; la lista que le da
+    // nunca trae el código, el teléfono ni lo que se paga en el local.
+    for (const f of codigo) {
+      if (!(/^apps\/web\/lib\/puerta[^/]*\.ts$/.test(f) || /^apps\/web\/app\/(\(puerta\)|api\/puerta)\//.test(f))) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) if (/kind = 'night'/.test(q) && !/^`select [^`]*from operations where id = p_op/.test(q)) falla("codigoPuerta", f, 0, "la puerta lee la lista de la noche solo por lib/noche-reservas.ts");
+    }
+    if (existsSync(L)) {
+      const t = sinComent(L), b = cuerpoFn(t, "listaEnLaPuerta");
+      if (!b || /door_code as|o\.door_code\s*,|\bphone\b|_cents/.test(b.replace(/o\.door_code = \$3/, ""))) falla("codigoPuerta", L, 0, "listaEnLaPuerta: busca por el código pero nunca lo devuelve (ni teléfono ni montos)");
+      if (!/marcarLlegada/.test(t)) falla("codigoPuerta", L, 0, "falta marcarLlegada (la puerta marca la lista por aquí)");
+    }
+    const PU = "apps/web/lib/puerta.ts";
+    if (existsSync(PU) && (!/import\("\.\/noche-reservas"\)\)\.listaEnLaPuerta\(/.test(readFileSync(PU, "utf8")) || !/const \{ marcarLlegada \} = await import\("\.\/noche-reservas"\);/.test(readFileSync(PU, "utf8")))) falla("codigoPuerta", PU, 0, "la puerta usa listaEnLaPuerta / marcarLlegada de lib/noche-reservas.ts");
   },
   sinImagenDeID() {
     for (const f of [...codigo, ...archivos.filter((x) => /^packages\/db\/migrations\/00(8[1-9]|9\d)_.*\.sql$/.test(x))]) {
@@ -2407,6 +2420,17 @@ const guardianes = {
     if (!/if tg_op = 'DELETE' then raise exception 'una apelación no se borra'/.test(m) || !/if old\.status <> 'open' then raise exception 'una apelación decidida no cambia'/.test(m)) falla(G, M, 0, "appeals: no se borra y, decidida, no cambia");
     if (!/create trigger mod_terms_no_borra before delete on mod_terms/.test(m)) falla(G, M, 0, "mod_terms: un término no se borra");
     if (!/create trigger com_edits_no_cambia before update or delete on com_edits/.test(readFileSync("packages/db/migrations/0097_comunidad_base.sql", "utf8"))) falla(G, "packages/db/migrations/0097_comunidad_base.sql", 0, "com_edits sin el trigger de solo inserción");
+    // 6g · La puerta: ticket_scans (auditoría de check-ins) y door_searches son de solo inserción; un portero, una sesión, una incidencia o
+    // un número de mesa no se borran (estados); la app no cambia ni borra escaneos, entradas, contadores ni búsquedas.
+    const MP = "packages/db/migrations/0112_puerta.sql";
+    if (existsSync(MP)) {
+      const mp = readFileSync(MP, "utf8");
+      if (!/create trigger ticket_scans_antes before insert or update or delete on ticket_scans/.test(mp) || !/raise exception 'ticket_scans es solo de inserción'/.test(ultimaFn("ticket_scans_antes"))) falla(G, MP, 0, "ticket_scans es de solo inserción (trigger)");
+      if (!/create trigger door_searches_no_cambia before update or delete on door_searches/.test(mp)) falla(G, MP, 0, "door_searches es de solo inserción (trigger)");
+      for (const [fn, msg] of [["door_staff_antes", "un portero no se borra"], ["door_sessions_antes", "una sesión de puerta no se borra"], ["door_incidents_antes", "una incidencia no se borra"], ["door_table_numbers_antes", "un número de mesa no se borra"], ["ticket_entries_antes", "una entrada no se borra"]])
+        if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MP, 0, `${msg} (estados)`);
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_scans|door_searches|ticket_entries|door_counts)\b|\bdelete from (door_staff|door_sessions|door_incidents|door_table_numbers)\b/.test(q)) falla(G, x, 0, `la auditoría de la puerta no se cambia ni se borra: «${q.slice(0, 60)}»`);
+    }
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
@@ -3191,7 +3215,8 @@ const guardianes = {
      push y en la app. Al revés: una plantilla evt_/bol_/rsvp_/puerta_/evp_/espera_ con SMS fuera de la lista → falla. */
   avisoEventoSmsSoloCritico() {
     const G = "avisoEventoSmsSoloCritico", dir = "packages/db/migrations";
-    const OK = new Set(["evt_aprobado", "evt_rechazado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio"]);
+    // 6g: puerta_invitado lleva el código para entrar a la puerta (§2 0112, como el Repartidor): sin él, el portero no entra.
+    const OK = new Set(["evt_aprobado", "evt_rechazado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio", "puerta_invitado"]);
     for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
       const t = readFileSync(`${dir}/${x}`, "utf8");
       for (const mm of t.matchAll(/\('((?:evt|bol|rsvp|puerta|evp|espera)_[a-z0-9_]+)', '[a-z]+', (?:null|'[a-z]+'), (true|false),/g)) if (mm[2] === "true" && !OK.has(mm[1])) falla(G, `${dir}/${x}`, 0, `la plantilla «${mm[1]}» manda SMS y no es crítica (§6 #7)`);
@@ -3288,6 +3313,113 @@ const guardianes = {
     for (const fn of ["eventosCiudad", "estaNoche", "destacado", "eventosSemana", "eventosDelOrganizador", "buscarEventos", "relacionados"]) {
       if (!/PRIMERA\(/.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}»: una serie sale una vez (PRIMERA)`);
     }
+  },
+
+  /* 6g. D1 · La puerta SOLO escanea (fase6 §3 «La puerta»): nada de /puerta, lib/puerta*, /api/puerta ni del modo puerta del panel importa
+     la pasarela, los cobros, la compra de boletos, los códigos, la lista de espera ni la liquidación; no crea órdenes, boletos, pagos ni
+     devoluciones; no lee montos. Los eventos no tienen entrada «door» y ninguna cadena de Eventos dice «pagar en la puerta» (el cover de
+     Noche sí se paga en el local: es otra cosa y no está aquí). Al revés: un import de lib/cobros, un «insert into operations» o un
+     «price_cents» en la puerta, o «pay at the door» en Eventos → falla. */
+  sinVentaEnLaPuerta() {
+    const G = "sinVentaEnLaPuerta";
+    const PUERTA = (f) => /^apps\/web\/lib\/puerta[^/]*\.ts$/.test(f) || /^apps\/web\/app\/\(puerta\)\//.test(f) || /^apps\/web\/app\/api\/puerta\//.test(f) || /^apps\/web\/app\/panel\/(EventosPuerta\.tsx|acciones-puerta\.ts)$/.test(f);
+    const PROHIBIDO = /(?:from\s+|import\()\s*["'](?:@\/lib\/|\.\.?\/(?:\.\.\/)*(?:lib\/)?)(pagos(\/[^"']*)?|cobros|boletos|boletos-despues|codigos-evt|espera|evt-liquidacion|tarjetas?|suscripcion|planes|apartados|pedir)["']/;
+    let n = 0;
+    for (const f of codigo) {
+      if (!PUERTA(f) || !/\.tsx?$/.test(f)) continue;
+      n++;
+      const t = sinComent(f);
+      t.split("\n").forEach((l, i) => { if (PROHIBIDO.test(l)) falla(G, f, i + 1, "la puerta no importa cobros, pagos ni la compra de boletos (D1: solo escanea)"); });
+      for (const q of t.match(/`[^`]*`/g) ?? []) {
+        if (/\b(insert into|update|delete from)\s+(operations|tickets|payments|refunds|ticket_holds|ticket_stock|table_stock|discount_codes)\b/.test(q)) falla(G, f, 0, `la puerta no crea ni cambia órdenes, boletos ni pagos: «${q.slice(0, 70)}»`);
+        if (/\b(price_cents|fee_cents|total_cents|amount_cents|subtotal_cents|deposit_cents|discount_cents|cash_collected|refunded_cents|door_cents|cover_cents)\b/.test(q)) falla(G, f, 0, "la puerta no lee montos");
+      }
+    }
+    if (!n) falla(G, "apps/web/lib/puerta.ts", 0, "no encuentro la puerta (lib/puerta*.ts, app/(puerta))");
+    const M = "packages/db/migrations/0112_puerta.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la puerta");
+    for (const fn of ["puerta_entrada", "puerta_rsvp", "puerta_contar", "puerta_noche", "puerta_registrar"]) {
+      const b = ultimaFn(fn);
+      if (!b) falla(G, M, 0, `falta ${fn}`);
+      if (/\b(insert into|update)\s+(operations|payments|refunds|ticket_holds|ticket_stock|table_stock)\b|insert into tickets\b|price_cents|total_cents|amount_cents/.test(b)) falla(G, M, 0, `${fn}: la puerta no vende ni toca dinero`);
+    }
+    if (!/entry\s+text not null check \(entry in \('free', 'rsvp', 'tickets'\)\)/.test(readFileSync("packages/db/migrations/0106_eventos_base.sql", "utf8"))) falla(G, "packages/db/migrations/0106_eventos_base.sql", 0, "events.entry sin «door» (D1)");
+    const EVT = (f) => /^apps\/web\/lib\/(evt[^/]*|boletos[^/]*|puerta[^/]*|codigos-evt|espera|rsvp)\.ts$/.test(f) || /^apps\/web\/app\/(\(app\)\/eventos|\(puerta\)|api\/puerta)\//.test(f) || /^apps\/web\/app\/panel\/(Eventos[^/]*|acciones-(eventos|puerta))\.tsx?$/.test(f) || /^apps\/web\/app\/admin\/(EventosAdmin|BoletoAdmin|PuertaAdmin|ColasEventos)\.tsx$/.test(f);
+    for (const f of codigo) {
+      if (!EVT(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/pag(ar|a|as|an|o)\s+en\s+la\s+puerta|pay(ing)?\s+at\s+the\s+door|venta\s+en\s+(la\s+)?puerta|(se\s+)?vend(e|en)\s+en\s+la\s+puerta(?!\s*:)|cobr(ar|a|amos)\s+en\s+la\s+puerta|door\s+sales?\b|sell(s|ing)?\s+at\s+the\s+door/i.test(l) && !/no se vend|no se venden|is not sold|are not sold|no tickets are sold|nadie vende|no vende|en la puerta no|no selling|EN LA PUERTA NO SE VENDE|NO SE VENDE/i.test(l)) falla(G, f, i + 1, "D1: en la puerta no se vende ni se paga (ninguna cadena de «pagar en la puerta»)"); });
+    }
+  },
+
+  /* 6g. Un portero solo ve y toca SU evento ese día (fase6 §3 «Porteros»): toda acción de /puerta pasa por accesoPuerta(persona, sesión) →
+     puerta_acceso() de la base (sesión abierta + portero activo con ESE evento, o miembro con «evt» + negocio activo + ventana del día de
+     Configuración) antes de leer o escribir; las funciones de la base vuelven a preguntar (puerta_sesion); toda lectura filtra por el
+     evento y la fecha de la sesión; ningún DTO de la puerta trae teléfono, correo ni montos. Al revés: una acción sin accesoPuerta, la
+     ventana o el alcance quitados de la base, una consulta sin el evento, o un «u.phone» en un select → falla. */
+  porteroSoloSuEvento() {
+    const G = "porteroSoloSuEvento", A = "apps/web/app/(puerta)/puerta/acciones.ts", R = "apps/web/app/api/puerta/escanear/route.ts", V = "apps/web/app/api/puerta/vivo/route.ts", P = "apps/web/app/(puerta)/puerta/s/[sesion]/page.tsx", L = "apps/web/lib/puerta.ts", M = "packages/db/migrations/0112_puerta.sql";
+    for (const f of [A, R, V, P, L, M]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo de la puerta");
+    const a = sinComent(A);
+    if (!/async function puerta\(sesion: unknown\)[^\n]*accesoPuerta\(u\.id, String\(sesion \?\? ""\)\)/.test(a)) falla(G, A, 0, "las acciones de una puerta preguntan accesoPuerta(persona, sesión)");
+    for (const p of a.split(/\nexport async function /).slice(1)) {
+      const nombre = p.slice(0, p.indexOf("(")), cuerpo = p.slice(0, p.indexOf("\n}"));
+      if (/\(sesion: string/.test(p.slice(0, 120)) && !/const c = await puerta\(sesion\);\s*if \(!c\) return CERRADA;/.test(cuerpo)) falla(G, A, 0, `«${nombre}» no revisa el acceso a la puerta antes de actuar`);
+      if (!/await (puerta|quien)\(/.test(cuerpo)) falla(G, A, 0, `«${nombre}» no revisa quién es (cuenta y mismo origen)`);
+    }
+    const r = sinComent(R);
+    if (!/if \(!\(await mismoOrigen\(\)\)\)/.test(r) || !/const ctx = await accesoPuerta\(u\.id, String\(b\.sesion \?\? ""\)\);\s*if \(!ctx\) return NO\(/.test(r)) falla(G, R, 0, "el escaneo pregunta mismo origen y accesoPuerta antes de todo");
+    const v = sinComent(V);
+    if (!/const ctx = await accesoPuerta\(u\.id, sesion\);\s*if \(!ctx\)/.test(v) || !/sigue = async \(\) => !!\(await accesoPuerta\(u\.id, sesion\)\)/.test(v) || !/accesoPanel\(negocio, "evt"\)/.test(v) || !/e\.business_id = \$2/.test(v)) falla(G, V, 0, "el SSE revisa el acceso al abrir y en cada cambio (puerta) o «evt» y la fecha de SU negocio (panel)");
+    if (!/const ctx = await accesoPuerta\(u\.id, sesion\);\s*if \(!ctx\) return <PuertaCerrada/.test(sinComent(P))) falla(G, P, 0, "la pantalla de la puerta pregunta accesoPuerta en cada carga");
+    const l = sinComent(L);
+    if (!/where s\.id = \$1::bigint and s\.user_id = \$2 and puerta_acceso\(s\.id, \$2\)/.test(cuerpoFn(l, "accesoPuerta"))) falla(G, L, 0, "accesoPuerta decide con puerta_acceso() de la base");
+    for (const [fn, re] of [["infoBoleto", /where t\.id = \$1::bigint and t\.event_id = \$2::bigint/], ["filas", /where t\.event_id = \$1::bigint/], ["filas", /where v\.event_id = \$1::bigint and v\.event_date_id = \$2::bigint/], ["darMesa", /event_id = \$2::bigint and event_date_id = \$3::bigint/], ["pregunta", /t\.event_id = \$2::bigint/]])
+      if (!re.test(cuerpoFn(l, fn))) falla(G, L, 0, `«${fn}» no filtra por el evento o la fecha de la sesión`);
+    const DTO = ["apps/web/lib/puerta.ts", "apps/web/lib/puerta-admin.ts", "apps/web/lib/puerta-comun.ts", "apps/web/app/api/puerta/escanear/route.ts"].concat(codigo.filter((f) => /^apps\/web\/app\/\(puerta\)\//.test(f)));
+    for (const f of DTO) {
+      if (!existsSync(f)) continue;
+      for (const q of sinComent(f).match(/`[^`]*`/g) ?? []) {
+        if (!/\bselect\b[\s\S]*\bfrom\b|\bupdate\b[\s\S]*\bset\b|\binsert into\b/i.test(q)) continue; // solo SQL
+        const sinWhere = q.replace(/right\(u\.phone, 4\) = \$\{?\w*\}?/g, "");
+        if (/\bphone\b|\bemail\b|phone_enc|phone_hash/.test(sinWhere)) falla(G, f, 0, `la puerta no saca teléfonos ni correos (solo compara los últimos 4): «${q.slice(0, 70)}»`);
+      }
+    }
+    const m = readFileSync(M, "utf8"), acc = ultimaFn("puerta_puede");
+    if (!/now\(\) between d\.doors_at - make_interval\(hours => cfg_int\('puerta_ventana_h'\)\) and d\.ends_at \+ make_interval\(hours => cfg_int\('puerta_ventana_h'\)\)/.test(acc)) falla(G, M, 0, "puerta_puede: solo el día (ventana de Configuración)");
+    if (!/f\.user_id = uid and f\.status = 'active' and f\.business_id = e\.business_id\s*and \(f\.scope = 'all' or e\.id = any\(f\.event_ids\)\)/.test(acc)) falla(G, M, 0, "puerta_puede: portero activo, de ese negocio y con ese evento");
+    if (!/m\.status = 'active'\s*and \(m\.kind = 'owner' or m\.panel_access && array\['all', 'evt'\]::text\[\]\)/.test(acc)) falla(G, M, 0, "puerta_puede: el miembro del negocio con «evt»");
+    if (!/s\.user_id = uid and s\.ended_at is null\s*and puerta_puede\(s\.event_date_id, uid, s\.door_staff_id\)/.test(ultimaFn("puerta_acceso"))) falla(G, M, 0, "puerta_acceso: la sesión abierta de esa persona y puerta_puede");
+    for (const fn of ["puerta_entrada", "puerta_rsvp", "puerta_contar", "puerta_noche"]) if (!/s := puerta_sesion\(p_session, p_user\);/.test(ultimaFn(fn))) falla(G, M, 0, `${fn}: la base vuelve a revisar la sesión y el acceso`);
+    if (!/if not puerta_acceso\(p_session, p_user\) then raise exception 'puerta_sin_acceso/.test(ultimaFn("puerta_sesion"))) falla(G, M, 0, "puerta_sesion: sin acceso = excepción");
+    if (!/if t\.event_id <> d\.event_id then r := 'wrong_event';/.test(ultimaFn("puerta_entrada"))) falla(G, M, 0, "puerta_entrada: un boleto de otro evento no entra");
+    if (!/update door_sessions set ended_at = now\(\), ended_by = 'removed' where door_staff_id = new\.id and ended_at is null;/.test(m)) falla(G, M, 0, "quitar a un portero cierra sus sesiones en el acto");
+    if (!/raise exception 'puerta_evento_ajeno/.test(ultimaFn("door_staff_antes"))) falla(G, M, 0, "un portero solo escanea eventos de su negocio");
+  },
+
+  /* 6g. Un escaneo cuenta una sola vez (fase6 §3): el id lo genera el teléfono (uuid, llave primaria de ticket_scans); cada función de la
+     puerta primero toma el candado de ese id y devuelve lo que ya se decidió (puerta_repetido) ANTES de mirar la sesión o el boleto; solo
+     puerta_registrar escribe en ticket_scans (marca tl.puerta) y la fila del boleto se bloquea (for update) antes de decidir; la entrada
+     no pasa de las entradas del boleto (check). Al revés: sin el candado, el id generado en el servidor, la fila sin bloquear o el
+     check quitado → falla. */
+  escaneoIdempotente() {
+    const G = "escaneoIdempotente", M = "packages/db/migrations/0112_puerta.sql", L = "apps/web/lib/puerta.ts", E = "apps/web/app/(puerta)/puerta/Escanear.tsx";
+    for (const f of [M, L, E]) if (!existsSync(f)) return falla(G, f, 0, "falta un archivo de la puerta");
+    const m = readFileSync(M, "utf8");
+    if (!/id\s+uuid primary key,\s+-- lo genera el teléfono/.test(m)) falla(G, M, 0, "ticket_scans.id es el uuid del teléfono (llave primaria)");
+    if (!/perform pg_advisory_xact_lock\(hashtextextended\('puerta:' \|\| p_scan::text, 0\)\);\s*select \* into sc from ticket_scans where id = p_scan;/.test(ultimaFn("puerta_repetido"))) falla(G, M, 0, "puerta_repetido: candado del id y lo que ya se decidió");
+    for (const fn of ["puerta_entrada", "puerta_rsvp", "puerta_contar", "puerta_noche"]) {
+      const b = ultimaFn(fn), i = b.indexOf("sc := puerta_repetido(p_scan);\n  if sc.id is not null then return sc; end if;"), j = b.indexOf("puerta_sesion(");
+      if (i < 0 || j < 0 || i > j) falla(G, M, 0, `${fn}: primero el escaneo repetido (mismo id), después todo lo demás`);
+    }
+    if (!/select \* into t from tickets where id = p_ticket for update;/.test(ultimaFn("puerta_entrada")) || !/select \* into x from ticket_entries where ticket_id = t\.id and event_date_id = d\.id for update;/.test(ultimaFn("puerta_entrada"))) falla(G, M, 0, "puerta_entrada: la fila del boleto y la de su entrada del día se bloquean antes de decidir");
+    if (!/select \* into v from rsvps where id = p_rsvp for update;/.test(ultimaFn("puerta_rsvp"))) falla(G, M, 0, "puerta_rsvp: la fila del RSVP se bloquea");
+    if (!/constraint ticket_entries_una_vez check \(entered_n between 0 and admits\)/.test(m)) falla(G, M, 0, "ticket_entries: nadie entra más veces que las entradas del boleto (check)");
+    if (!/if tg_op <> 'INSERT' then raise exception 'ticket_scans es solo de inserción'; end if;\s*if coalesce\(current_setting\('tl\.puerta', true\), ''\) <> 'si' then raise exception/.test(ultimaFn("ticket_scans_antes"))) falla(G, M, 0, "ticket_scans: solo inserción y solo desde puerta_registrar (marca)");
+    const l = sinComent(L);
+    if (!/const UUID = \/\^\[0-9a-f\]\{8\}-/.test(l) || !/if \(!UUID\.test\(id\)\) return null;/.test(cuerpoFn(l, "limpiarIn"))) falla(G, L, 0, "cada escaneo trae su id uuid (sin id no hay escaneo)");
+    if (!/select \(puerta_repetido\(\$1::uuid\)\)\.id::text as id/.test(cuerpoFn(l, "llegadaNoche"))) falla(G, L, 0, "la lista de la noche toma el candado del id antes de marcar");
+    if (!/id: uuid\(\)/.test(sinComent(E)) || !/id: q\.p\.id/.test(sinComent(E))) falla(G, E, 0, "el teléfono genera el id del escaneo (y la confirmación reusa el de la pregunta)");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) { const t = sinComent(x); if (/tl\.puerta/.test(t)) falla(G, x, 0, "la app no enciende la marca de la puerta"); for (const q of t.match(/`[^`]*`/g) ?? []) if (/\binsert into (ticket_scans|ticket_entries|door_counts)\b/.test(q)) falla(G, x, 0, "solo la base escribe escaneos, entradas y contadores"); }
   },
 
   idioma() {

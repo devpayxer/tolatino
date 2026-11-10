@@ -42,3 +42,9 @@ carries no name or phone. A **table** is one QR with its entries.
 Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no
 QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers are available from the order or the ticket (up to 2 h before); received tickets show as RECEIVED. Wallet passes
 are not available yet.
+
+## En la puerta (6g, 10 nov 2026)
+- El portero escanea tu QR con su teléfono. Después tu boleto dice **«Usado · entraste a las 10:42»**. Un **pase de varios días** sigue diciendo
+  **VÁLIDO · OTRO DÍA**: muestra el mismo QR cada día (entra una vez por día). Si vas en grupo con una mesa, pueden entrar unos ahora y otros
+  después con el mismo QR. Si no tienes el QR a mano, el portero te busca por tu nombre o los últimos 4 números del código. · *After the door scans
+  your QR, your ticket says “Used · you got in at 10:42”; a multi-day pass stays valid for the other days.*

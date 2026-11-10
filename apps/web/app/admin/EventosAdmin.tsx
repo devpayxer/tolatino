@@ -3,7 +3,7 @@
    pestañas Eventos (buscar, En revisión · Hoy · Con boletos · Entrada libre · Ocultos / cancelados, cursor) y Organizadores
    (VERIFICADO · BLOQUEADO, «Verificar», «Bloquear publicación» con motivo, aviso y apelación). 6c: «Buscar boleto» (código, orden,
    teléfono, nombre o el texto del QR con su firma verificada) → /admin/eventos/boleto/[código]; KPI BOLETOS EMITIDOS · BRUTO BOLETOS.
-   «Modo puerta» llega con la puerta (6g). La ficha del evento: /admin/eventos/[id]. El servidor filtra y decide. */
+   6g: «Modo puerta» → /admin/eventos/puerta (solo lectura). La ficha del evento: /admin/eventos/[id]. El servidor filtra y decide. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -42,7 +42,9 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
       { k: "BOLETOS EMITIDOS", v: String(kb?.emitidos ?? 0), s: "válidos y usados", onClick: () => ir({ tab: "bol", f: null, q: null }) },
       { k: "BRUTO BOLETOS", v: `$${((kb?.bruto ?? 0) / 100).toLocaleString("en-US", { maximumFractionDigits: 0 })}`, s: "cobrado, menos devuelto" },
     ] },
-    { type: "tabs", items: [{ l: "Eventos", n: String(total || ""), on: f.tab === "list", onClick: () => ir({ tab: null, q: null }) }, { l: "Buscar boleto", on: f.tab === "bol", onClick: () => ir({ tab: "bol", f: null, q: null }) }, { l: "Organizadores", on: f.tab === "org", onClick: () => ir({ tab: "org", f: null, q: null }) },
+    { type: "tabs", items: [{ l: "Eventos", n: String(total || ""), on: f.tab === "list", onClick: () => ir({ tab: null, q: null }) }, { l: "Buscar boleto", on: f.tab === "bol", onClick: () => ir({ tab: "bol", f: null, q: null }) },
+      // 6g · Modo puerta (solo lectura, para disputas de «me cobraron y no entré»).
+      { l: "Modo puerta", on: false, onClick: () => router.push("/admin/eventos/puerta") }, { l: "Organizadores", on: f.tab === "org", onClick: () => ir({ tab: "org", f: null, q: null }) },
       // 6e · Liquidaciones de eventos (Finanzas): lo que se le paga a cada organizador por fecha.
       ...(liq ? [{ l: "Liquidaciones", on: false, onClick: () => router.push("/admin/eventos/liquidaciones") }] : [])] },
   ];

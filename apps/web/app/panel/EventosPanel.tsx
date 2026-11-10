@@ -21,6 +21,8 @@ import type { CodigoPanel } from "@/lib/codigos-evt";
 import type { CambiosPanel } from "@/lib/evt-cambios";
 import type { FilaLiq } from "@/lib/evt-liquidacion";
 import { cambiosBloques } from "./EventosCambios";
+import { puertaFicha } from "./EventosPuerta";
+import type { PuertaPanel } from "@/lib/puerta-equipo";
 import { chipsFechas, crearPorDia, duracionBloques, fechaVista, horarioBloques, modoDe, seriesBloques, valePara } from "./EventosSeries";
 import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
@@ -38,6 +40,8 @@ export type EvtData = {
   cambios: CambiosPanel | null; liq: { filas: FilaLiq[]; deuda: number } | null;
   /* 6f · La FECHA QUE ESTÁS VIENDO de una serie (evt:{id}@{fecha}) y lo vendido (o apuntado) por día de esa fecha. */
   fver: string | null; chart: { dias: string[]; n: number[] } | null;
+  /* 6g · La puerta: porteros, reglas, la sesión del modo puerta de esta persona y el Monitor de la fecha. */
+  puerta: PuertaPanel | null;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -143,6 +147,8 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   out.push(...seriesBloques(c, e, v, F));
   // 6e · Venta pausada / cambiar fecha u hora / cancelar con devolución total / avisos a los que van / el dinero por fecha.
   out.push(...cambiosBloques(c, e, v));
+  // 6g · PUERTA: adentro y «Abrir modo puerta», PORTEROS · ESCANEAN EN LA PUERTA y REGLAS DE PUERTA.
+  out.push(...puertaFicha(c, e));
   out.push(asiLoVe(c, F, e.pending ? d : v));
   // 6b · QUIÉN VA (RSVP con personas; contar en la puerta llega con 6g). Nombre + inicial: nunca teléfono.
   if (v.entrada === "rsvp") {

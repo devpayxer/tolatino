@@ -714,7 +714,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       geocodificador propio todavía); su ciudad es la del negocio. 6b lo ubica con el Nominatim propio para el radio y el mapa. (6a, 9 nov)
 - [x] **6a → 6f · Series y varios días:** _hecho en 6f (10 nov): «Se repite» (cada semana, cada 2 semanas, cada mes / «el último») y «Varios días seguidos» en el editor; la base genera las fechas (0111) y la semilla 0037 pasa el sancocho, la vigilia y el festival a su forma._ el editor publica un solo día (con «Repetir otro día»); «Se repite» y «Varios días seguidos» del
       calendario llegan en 6f. La semilla mete el sancocho de cada domingo, la vigilia de cada mes y el festival de 3 días como un solo día. (6a, 9 nov)
-- [ ] **6a → 6c/6g · Super Admin › Eventos y boletos: «Buscar boleto» y «Modo puerta»:** las dos pestañas llegan con la venta (6c) y la
+- [x] **6a → 6c/6g · Super Admin › Eventos y boletos: «Buscar boleto» y «Modo puerta»:** _hecho: Buscar boleto en 6c; Modo puerta (solo lectura) y ESCANEOS del boleto en 6g (10 nov)._ las dos pestañas llegan con la venta (6c) y la
       puerta (6g); hoy salen Eventos y Organizadores. KPI BOLETOS EMITIDOS · BRUTO BOLETOS, con 6c. (6a, 9 nov)
 - [x] **6a → 6b · Encender / apagar el módulo Eventos en «Lo que vendes»:** _hecho en 6b (10 nov): interruptor en Panel › Eventos y fila
       en Lo que vendes; pausa en N360; la base lo exige en `listable`; Eventos sale en el panel solo donde la categoría lo admite._ el panel muestra Eventos a todo negocio con la parte «evt»
@@ -791,8 +791,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6d · Señales de reventa** (transferencias en cadena, muchas al día a distintos teléfonos): el tope diario existe; las señales para
       Confianza llegan con 6j (`evt_senales`). (6d, 10 nov)
 - [ ] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
-      transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov)
-- [ ] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov)
+      transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov) _6g (10 nov): en línea hecho (`puerta_entrada`: SE ESTÁ TRANSFIRIENDO; e2e). Falta el paquete (6h)._
+- [x] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov) _6g (10 nov): Buscar «rosa» → la cortesía por su nombre → entrada a mano con motivo (e2e evt6g)._
 - [x] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov) _6e (10 nov): corrido en local contra stripe-mock con todo el contrato (también transfers y reversals)._
 - [x] **6d · Liquidación (6e):** _hecho en 6e (10 nov): evt_liq_calc usa refunds y fee_waived_cents; lo devuelto después de pagar resta de la siguiente o revierte._ `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
       devolución después de pagado al organizador resta de la siguiente. (6d, 10 nov)
@@ -823,7 +823,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Fase 6 · 6f (series y eventos de varios días)
 - [ ] **6f → 6g/6h · La puerta de varios días:** cada boleto guarda sus días (`tickets.valid_days`, lo pone la base) y `bol_fechas_validas(boleto)` /
       `bol_vale_en(boleto, fecha)` dicen en qué fechas entra; el pase entra **una vez cada día** (las entradas por día van en `ticket_entries`
-      de 6g). El paquete sin conexión (6h) debe llevar los días de cada boleto. (6f, 10 nov)
+      de 6g). El paquete sin conexión (6h) debe llevar los días de cada boleto. (6f, 10 nov) _6g (10 nov): en línea hecho (ES DE OTRO DÍA con el día que vale;
+      el pase una vez cada día en `ticket_entries`; e2e). Falta el paquete (6h)._
 - [ ] **6f · Una serie sin fin** («cada jueves, siempre»): no existe; «cuántas fechas» cuenta desde la primera y el tope es Configuración (52).
       Si se quiere, n = sin límite con el barrido creando hasta el horizonte. (6f, 10 nov)
 - [ ] **6f · Panel de una serie: CORTESÍAS, DEVOLUCIONES y AYUDA CON ÓRDENES** muestran todas las fechas juntas (cada fila dice su orden);
@@ -838,3 +839,34 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6f · Eventos en los 9 dispositivos:** `evt6f` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6f, 10 nov)
 - [ ] **6f · Texto viejo del editor:** «La venta en la app abre pronto» (6a) sigue en el editor de boletos aunque la venta ya existe (6c); lo
       prueba `evt6a`: cambiar el texto y la prueba juntos. (6f, 10 nov)
+
+
+## Fase 6 · 6g (la Puerta en línea)
+- [ ] **6g → 6h · Sin conexión:** paquete firmado y cifrado, cola local, choques entre porteros. Gancho listo: cada escaneo trae el id del teléfono
+      (`ticket_scans.id`), la hora del teléfono (`at_device`) y `puerta_entrada(..., p_offline)`; `door_sessions.clock_offset_ms` y `package_id`
+      existen. Hoy, sin señal: «SIN SEÑAL · no se marcó» + **Reintentar** con el mismo id. (6g, 10 nov)
+- [ ] **6g · REPETIDOS en Confianza › Fraude** («boletos duplicados»: el mismo QR que intenta entrar otra vez, `door_counts.dup_n` y
+      `ticket_scans.result = 'already_used'`): la señal viva llega con 6h/6j (`evt_senales`). (6g, 10 nov)
+- [ ] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
+      teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov)
+- [ ] **6g · Cámara en teléfonos reales:** probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
+      BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
+- [ ] **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov)
+- [ ] **6g · Velocidad con la base de carga:** escaneo en línea local p50 21 ms / p95 26 ms (40 boletos, sin carga); medir ≤ 150 ms ida y vuelta con
+      50 k boletos en una fecha (`scripts/carga/eventos-1m.mjs`) y la búsqueda por nombre (hoy `like` dentro de la fecha, sin índice de trigramas). (6g, 10 nov)
+- [ ] **6g · Foto en una incidencia:** no se construyó (riesgo de fotos de identificaciones); si el fundador la quiere, foto privada como Ayuda con
+      un filtro de documentos. (6g, 10 nov)
+- [ ] **6g · Chat rápido entre porteros** («cerramos VIP», apps-delivery-checkin CHK-EQUIPO): no se construyó; Equipo muestra quién está en cada
+      puerta y el panel puede cerrar una. (6g, 10 nov)
+- [ ] **6g · Noche sin evento en `/puerta`:** la lista de la noche entra a la Puerta solo con una puerta abierta de un evento del local esa noche; una
+      noche sin evento se marca desde Panel › Hoy. Si se quiere, una «puerta de la noche» sin evento. (6g, 10 nov)
+- [ ] **6g · «Adentro» por puerta con reentrada:** si alguien entra por una puerta y sale por otra, el adentro de cada puerta es aproximado (nunca
+      negativo); el total de la fecha es exacto. (6g, 10 nov)
+- [ ] **6g · Retención de escaneos** (§6 #25: 13 meses y luego solo totales): hoy se guardan sin vencer (solo inserción). Falta la tarea que los
+      resume. (6g, 10 nov)
+- [ ] **6g · SMS de verdad para «Te invitaron a la puerta»** (`puerta_invitado`): sale con la clave del proveedor (Telnyx). Hoy en modo pruebas; el
+      código también se ve en el panel para dictarlo. (6g, 10 nov)
+- [ ] **6g · Push de verdad** para «Hoy escaneas en la puerta» (`puerta_abre`, una hora antes de las puertas) y «Tienes una puerta»: hoy en Avisos
+      de la app (push con la app instalable). (6g, 10 nov)
+- [ ] **6g · Prueba noc4c dependiente del día:** su reloj movido (−2000 min) no alcanza cuando la próxima noche abierta está a 2 días (martes →
+      jueves); con −9000 pasa. Cambiar la prueba para que mueva el reloj desde la noche de la reserva. (6g, 10 nov)

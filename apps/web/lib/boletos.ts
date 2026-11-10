@@ -580,19 +580,25 @@ export type BoletoVista = {
   envio: { a: string; hasta: string } | null; cortesia: boolean;
   /* 6f · Varios días: para qué días vale («Vale solo el sáb 21 nov» / «Vale los 3 días»). */
   vale: string;
+  /* 6g · La puerta: a qué hora entró (la primera entrada, hora de la ciudad) y si un pase usado todavía entra otro día. */
+  entro: string | null; sigue: boolean;
 };
 type FilaB = { id: string; code: string; fid: string; ver: number; admits: number; st: BoletoVista["estado"]; tn: Bi | null; mz: Bi | null; nombre: string | null; precio: number; envio: { a: string; hasta: string } | null; comp: boolean;
-  vd: number[]; sp: { ini: string; n: number } | null };
+  vd: number[]; sp: { ini: string; n: number } | null; entro: string | null; sigue: boolean };
 async function vistaBoleto(b: FilaB, es: boolean, conQR: boolean): Promise<BoletoVista> {
   const vale = b.st === "valid" || b.st === "used";
   // Con una transferencia pendiente no se firma ningún QR (guardián qrViejoNoEntra): nadie tiene uno vigente hasta que se reciba o se deshaga.
   const qr = conQR && vale && !b.envio ? await firmarQR({ id: b.id, fecha: b.fid, ver: b.ver, admits: b.admits }) : null;
   return { code: b.code, tipo: b.comp ? (es ? "Cortesía" : "Comp") : b.tn ? bi(b.tn, es) : b.mz ? bi(b.mz, es) : "", nombre: b.nombre, admits: b.admits, mesa: !!b.mz, estado: b.st, precio: b.precio, qr, matriz: qr ? matrizQR(qr) : null,
-    envio: b.envio, cortesia: b.comp, vale: b.sp ? valeL(b.vd.length >= b.sp.n ? null : b.vd[0], b.sp.ini, b.sp.n, es) : "" };
+    envio: b.envio, cortesia: b.comp, vale: b.sp ? valeL(b.vd.length >= b.sp.n ? null : b.vd[0], b.sp.ini, b.sp.n, es) : "",
+    entro: b.entro ? (() => { const [h = 0, m = 0] = b.entro.split(":").map(Number); return `${h % 12 || 12}:${String(m).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; })() : null, sigue: !!b.sigue };
 }
 const SEL_B = `select t.id::text, t.code, t.event_date_id::text as fid, t.qr_ver as ver, t.admits, t.status as st, tt.name as tn, et.zone as mz, coalesce(t.holder_name, t.comp_name) as nombre, t.price_cents as precio,
                       t.kind = 'comp' as comp, t.valid_days::int[] as vd,
                       (select case when e2.kind = 'span' then json_build_object('ini', e2.start_date::text, 'n', e2.span_days) end from events e2 where e2.id = t.event_id) as sp,
+                      (select to_char(min(x.first_at) at time zone (select timezone from cities where id = t.city_id), 'HH24:MI') from ticket_entries x where x.ticket_id = t.id) as entro,
+                      t.status = 'used' and exists (select 1 from event_dates z where z.id = any(bol_fechas_validas(t.id)) and z.ends_at > now()
+                        and not exists (select 1 from ticket_entries x where x.ticket_id = t.id and x.event_date_id = z.id and x.entered_n >= t.admits)) as sigue,
                       (select json_build_object('a', '••' || x.to_last2, 'hasta', to_char(x.expires_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')) from ticket_transfers x
                         where x.ticket_id = t.id and x.status = 'pending' and x.kind = 'transfer') as envio
                  from tickets t left join ticket_types tt on tt.id = t.ticket_type_id left join event_tables et on et.id = t.table_id`;

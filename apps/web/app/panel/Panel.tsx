@@ -60,6 +60,7 @@ import { cupBloques, cupDetalle, type CupData } from "./CuponesPanel";
 import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
 import { evtBloques, evtDetalle, type EvtData } from "./EventosPanel";
+import { PuertaCamaraPanel, PuertaVivo, puertaDetalle } from "./EventosPuerta";
 
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
@@ -307,6 +308,8 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
           </div>
         </div>
       ) : null}
+      {ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
+      {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
       {ui.planHoja && plan && plan.modo !== "apagado" ? (
         <MetodoPago es={es} tarjetas={plan.tarjetas} sel={plan.plan.tarjeta?.pm ?? null} declinada={null} modo={plan.modo} pk={plan.pk} guardarSiempre
@@ -396,6 +399,7 @@ function detalle(c: Ctx): Sec | null {
   if (id === "svm") return modeloDetalle(c);
   if (id.startsWith("nov:")) return novDetalle(c);
   if (id.startsWith("evt:") && c.evt) return evtDetalle(c);
+  if (id.startsWith("door:") && c.evt) return puertaDetalle(c);
   if (id.startsWith("cup:")) return cupDetalle(c);
   if (id.startsWith("vac:") || id.startsWith("vap:")) return jobsDetalle(c);
   return null;

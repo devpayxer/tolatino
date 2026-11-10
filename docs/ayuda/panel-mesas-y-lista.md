@@ -47,3 +47,12 @@ detail you answer, mark the door or cancel with a reason.
 SMS. «No-show» can be marked from 30 minutes after the booking time. Someone without ID does not get in: mark «No ID». The deposit
 is charged by card in the app and reaches you with To'Latino payouts minus the Night fee ($1 + 5%); cover, drinks and minimums
 are charged by you at the venue.
+
+## La lista en To'Latino Puerta (6g, 10 nov 2026)
+- Además de «La lista para la puerta» del panel, **tus porteros** (Panel › Eventos › PORTEROS) marcan la lista y las mesas de esta noche desde
+  **To'Latino Puerta › Lista de la noche**, mientras tienen una puerta abierta de un evento de tu local esa noche: buscan por nombre o por el
+  código de 4 cifras que dice el cliente y tocan **Entró 1** o **Entraron N**. Lo que marcan sale aquí igual (es la misma reserva) y cuenta en el
+  aforo de esa puerta. La pantalla del portero **nunca** muestra el código, el teléfono ni lo que se paga en el local. Una noche **sin evento**
+  publicado se sigue marcando desde este panel.
+- **EN.** Your door staff can check in tonight’s list and tables from **To'Latino Door › Tonight’s list** while a door of one of your events is
+  open that night; it is the same booking and shows here. Their screen never shows the code, phone or what is paid at the venue.

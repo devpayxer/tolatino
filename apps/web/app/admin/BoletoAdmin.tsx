@@ -1,4 +1,6 @@
 "use client";
+import { RESULTADO } from "@/lib/puerta-comun";
+import type { escaneosBoleto } from "@/lib/puerta-admin";
 /* 6c · ADM-EVT › Buscar boleto › el boleto (Super Admin.dc.html secEvt: VÁLIDO · USADO · DEVUELTO · ANULADO · REEMITIDO con Reenviar por SMS ·
    Reemitir · Anular con motivo). «Reenviar» manda un aviso a la cuenta (sin SMS: los boletos viven en la app, fase6 §2 0108). Compuesto con
    piezas del sistema (head, kv, rows, timeline, acts) como la ficha del evento. El servidor decide y audita. */
@@ -23,7 +25,7 @@ const XST: Record<string, string> = { pending: "ESPERANDO", claimed: "RECIBIDO",
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const cuando = (at: string, tz: string) => new Date(at).toLocaleString("es-US", { timeZone: tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export function BoletoAdmin({ b, puede }: { b: BoletoAdm; puede: { editar: boolean; retirar: boolean } }) {
+export function BoletoAdmin({ b, puede, escaneos = [] }: { b: BoletoAdm; puede: { editar: boolean; retirar: boolean }; escaneos?: Awaited<ReturnType<typeof escaneosBoleto>> }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -50,6 +52,8 @@ export function BoletoAdmin({ b, puede }: { b: BoletoAdm; puede: { editar: boole
     { type: "rows", k: `BOLETOS DE LA ORDEN · ${b.hermanos.length}`, items: b.hermanos.map((h) => ({ key: h.code, icon: "ticket", t: h.code, tag: ST[h.estado]?.[0] ?? h.estado, tone: ST[h.estado]?.[1] ?? "neutral", compact: true, chev: h.code !== b.code, onClick: h.code !== b.code ? () => router.push(`/admin/eventos/boleto/${h.code}`) : undefined })) },
     { type: "timeline", k: "LA ORDEN", items: b.orden.map((o) => ({ t: EV[o.kind] ?? o.kind, s: cuando(o.at, b.tz) })) },
     { type: "timeline", k: "EL BOLETO", items: b.log.map((l) => ({ t: LOG[l.kind] ?? l.kind, s: `${l.by === "staff" ? `TO’LATINO${l.quien ? ` · ${l.quien}` : ""}` : l.by === "business" ? "EL NEGOCIO" : l.by === "user" ? "LA PERSONA" : "SISTEMA"} · ${cuando(l.at, b.tz)}${l.reason ? ` · ${l.reason}` : ""}` })) },
+    // 6g · En la puerta: cada escaneo (resultado, puerta, quién y hora).
+    ...(escaneos.length ? [{ type: "timeline", k: "ESCANEOS EN LA PUERTA", items: escaneos.map((x) => ({ t: `${RESULTADO[x.res].t.es}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? " · salida" : ""}`, s: `${x.puerta.toUpperCase()} · ${x.quien.toUpperCase()} · ${x.dia} ${x.hora}${x.motivo ? ` · A MANO: ${x.motivo}` : ""}` })) } as Bloque] : [{ type: "note", tone: "info", icon: "key", t: "Este boleto no ha pasado por la puerta." } as Bloque]),
     { type: "note", tone: "ink", icon: "lock", t: "Lo que ve la puerta: nombre e inicial, tipo, entradas y estado. Nunca el teléfono completo ni montos." },
     ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []),
   ];

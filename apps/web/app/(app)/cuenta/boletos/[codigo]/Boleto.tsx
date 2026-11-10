@@ -37,7 +37,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
         </div>
         <div role="button" tabIndex={0} aria-label={E2("Ver el código grande", "See the code big")} onClick={() => setGrande(true)} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setGrande(true); } }} className="cursor-pointer">
           <TicketQR type={b.mesa ? `${b.tipo} · ${b.admits} ${E2("entradas", "entries")}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo} name={(b.nombre || E2("A tu nombre", "In your name")).toUpperCase()} status={t} statusBg={bg} statusColor={fg}
-            matrix={b.matriz} qrSize={b.matriz ? 260 : 96} qrLabel={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} used={b.estado !== "valid" || !!b.envio} code={b.code} when={cuando} />
+            matrix={b.matriz} qrSize={b.matriz ? 260 : 96} qrLabel={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} used={(b.estado !== "valid" && !b.sigue) || !!b.envio} code={b.code} when={cuando} />
         </div>
         {b.envio && (
           <div role="status" data-screen-label="Boleto · enviado" className="flex flex-col gap-2.5 rounded-[18px] bg-pro/[.14] p-4">
@@ -46,6 +46,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
             <div className="flex"><Button variant="secondary" onClick={() => void deshacer()}>{E2("Deshacer", "Undo")}</Button></div>
           </div>
         )}
+        {b.estado === "used" && b.entro && <div role="status" className="rounded-[18px] bg-ink/[.06] p-4 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{b.sigue ? E2(`Entraste a las ${b.entro}. Tu pase entra una vez cada día: muestra el mismo QR.`, `You got in at ${b.entro}. Your pass gets in once each day: show the same QR.`) : E2(`Usado · entraste a las ${b.entro}.`, `Used · you got in at ${b.entro}.`)}</div>}
         {b.estado === "replaced" && <div role="status" className="rounded-[18px] bg-ink/[.06] p-4 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{E2("Transferiste este boleto: ya es de otra persona y este QR no entra.", "You transferred this ticket: it belongs to someone else now and this QR does not get in.")}</div>}
         {b.estado === "valid" && !b.envio && !ev.pasado && (V.transferir ? (
           <div className="flex flex-wrap gap-2">
@@ -66,7 +67,7 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
       {grande && b.matriz && (
         <div role="dialog" aria-modal="true" aria-label={E2("Código QR grande", "Big QR code")} onClick={() => setGrande(false)} className="fixed inset-0 z-50 grid place-items-center bg-white p-6">
           <div className="flex flex-col items-center gap-4">
-            <QrCode matrix={b.matriz} size={Math.min(340, typeof window !== "undefined" ? window.innerWidth - 48 : 320)} label={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} faded={b.estado !== "valid"} />
+            <QrCode matrix={b.matriz} size={Math.min(340, typeof window !== "undefined" ? window.innerWidth - 48 : 320)} label={E2(`Código QR del boleto ${b.code}`, `QR code for ticket ${b.code}`)} faded={b.estado !== "valid" && !b.sigue} />
             <div className="font-mono text-[15px] font-bold tracking-[0.12em]">{b.code}</div>
             <div className="text-[12px] font-semibold text-ink/55">{E2("Toca para cerrar", "Tap to close")}</div>
           </div>

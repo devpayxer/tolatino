@@ -279,6 +279,11 @@ de la configuración que revisa To'Latino) en vez de una tabla `event_days`, y e
   opcional (`media` privada, como Ayuda), `ticket_id`, `status check in ('open','closed')`, `by`, `at`) → aviso al organizador; `seguridad` muestra el 911.
 - `events` suma `door_close_at_min` (hora de cerrar la puerta) y `door_caps jsonb` (aforo por puerta). Plantillas `puerta_invitado` (SMS con el código,
   como el Repartidor), `puerta_asignado` (push), `puerta_abre` (push). Claves `puerta_aforo_alerta_pct` 90, `puerta_porteros_max` 20.
+  _Hecho en 6g (10 nov) con estos cambios: `door_close_after_min` (minutos después de empezar) en vez de `door_close_at_min`; `ticket_entries` por
+  boleto y FECHA (`entered_n`, `inside_n`, primera y última puerta) en vez de `local_date`; `door_counts` por puerta (derivados); `door_table_numbers`
+  (número de mesa); `door_searches` (límite de búsquedas, solo inserción); `rsvps.arrived_n` (y rsvp_n cuenta a los que llegaron); `ticket_scans`
+  suma `kind`, `first_n`, `door_name`, `user_id` y los resultados `forged`, `pending_transfer`, `count`, `door_closed`, `not_inside`, `no_reentry`;
+  incidencias sin foto; plantilla `puerta_incidencia`; claves `puerta_ventana_h` 2, `puerta_buscar_min` 30, `puerta_invitar_dia_max` 15._
 
 **0113 `puerta_sin_conexion` (6h)** — **`door_packages`** (`id`, `session_id`, `event_date_id`, `built_at`, `expires_at` (= fin de la fecha +
 `puerta_paquete_h`), `rows_n`, `sha256`, `revoked_at`; el contenido se arma al pedirlo y **no se guarda**), **`door_syncs`** (**solo inserción**: `session_id`,
@@ -731,8 +736,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (6d no trae semilla). 6e (10 nov): 0110 con
       migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas + semillas cambiadas → todo sale 0
       (6e no trae semilla). 6f (10 nov): 0111 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces +
-      semillas 0001–0037 + semillas cambiadas → todo sale 0 (0037 da su forma a la serie y al festival también sin equipo). CI y 0112–0115
-      pendientes._
+      semillas 0001–0037 + semillas cambiadas → todo sale 0 (0037 da su forma a la serie y al festival también sin equipo). 6g (10 nov): 0112 con
+      migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo
+      sale 0 (0038 deja a Junior y Karla activos también sin equipo). CI y 0113–0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -779,8 +785,16 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       al instante; RSVP por fecha con 3 a la vez por el último lugar; varios días con pase y boletos de un día, «Vale solo el…», aforo por día
       lleno (pase y boleto de ese día AGOTADO) y 3 a la vez en la base → ninguno pasa; cancelar UNA fecha (solo sus órdenes al 100 %) y luego
       la serie; liquidación por fecha y varios días en el último día; Super Admin; IDOR. `alreves6f` 22/22._
-- [ ] Puerta en línea: porteros con cuenta e invitación, escanear / buscar / lista / aforo / mesas / incidencias / equipo / cierre, modo puerta del panel,
-      lista de Noche; dos porteros a la vez sin entradas dobles; nada se vende ni se ve de dinero (`sinVentaEnLaPuerta` al revés).
+- [x] Puerta en línea: porteros con cuenta e invitación, escanear / buscar / lista / aforo / mesas / incidencias / equipo / cierre, modo puerta del panel,
+      lista de Noche; dos porteros a la vez sin entradas dobles; nada se vende ni se ve de dinero (`sinVentaEnLaPuerta` al revés). _6g (10 nov): e2e
+      `evt6g` 105 ✓ (teléfono 390 y escritorio 1360; cámara falsa de Chromium con el QR real leído por jsQR en el Worker): invitar (código de 7 días por
+      SMS) → aceptar con su cuenta (otro teléfono no; código inventado no; intentos contados) → abrir la puerta → VÁLIDO con la cámara y YA ENTRÓ «por
+      Principal a las …» en la otra puerta; dos porteros a la vez → uno; 10 a la vez en la base → uno; el mismo id dos veces → una entrada; QR alterado,
+      de otro entorno, versión vieja, en transferencia, devuelto, de otro día y de otro evento no entran; mesa de 6 → 4 + 2 → YA ENTRÓ y número de mesa
+      sin repetir; cortesía por nombre con motivo; RSVP que llega sin liberar su lugar; lista de la noche por el código de 4 cifras; ADENTRO en vivo (SSE)
+      sin recargar; incidencia con 911 y aviso; «Pedir ID»; modo puerta del dueño con el Monitor; quitar a un portero corta su puerta al momento; IDOR
+      con el portero y el dueño de otro negocio y un vecino; ninguna respuesta con teléfonos ni dinero; cierre; Super Admin › Modo puerta y ESCANEOS;
+      Mi cuenta «Usado · entraste a las …»; topes de Configuración (invitar, buscar) leídos en la base. `alreves6g` 33/33. Sin conexión: 6h._
 - [ ] Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente, choques resueltos igual en cualquier orden, incidencias de
       duplicado, paquete que vence y se revoca.
 - [ ] Evento privado de punta a punta (pedir, proponer, otra fecha, no puedo, vence, aceptar con depósito, cancelar antes y después de 72 h).

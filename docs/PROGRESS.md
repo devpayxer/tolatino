@@ -222,8 +222,34 @@ portados del Panel v2 a `packages/ui/src/panel/Bloques.tsx`; barrido `evtSeries`
 regresión evt6a 66 ✓, evt6b (la copia de 6c, evt6b-6c) 79 ✓, evt6c 71 ✓, evt6d 127 ✓, evt6e 97 ✓ y adm5i 56 ✓ (evt6b: la cifra «N EVENTOS» ahora cuenta eventos, no fechas: prueba al día); base nueva (migraciones dos veces +
 semillas + semillas cambiadas) sale 0. Ayuda: panel-eventos-series-y-varios-dias; eventos-buscar-y-ver, panel-eventos-crear y
 admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6f».
-**Sigue 6g** (Puerta en línea: porteros con cuenta e invitación, `/puerta` escanear · buscar · lista · aforo · mesas · incidencias · equipo ·
-cierre, modo puerta del panel; usa `bol_vigente` y `bol_fechas_validas` — un pase entra una vez cada día).
+**6g hecho (10 nov)** — la Puerta en línea (D1: solo escanea): migración 0112 (`door_staff` (invitados por el negocio con nombre + teléfono cifrado +
+huella + «··1234», código de 7 días, alcance todos / algunos eventos del mismo negocio, `role 'scan'`, tope `puerta_porteros_max`; quitar = 'removed'
+y la base cierra sus sesiones en el acto), `door_sessions` (una puerta abierta por persona y fecha, de portero o de miembro con «evt»; NOTIFY al
+cerrarse), **`puerta_puede` / `puerta_acceso`** (portero activo con ESE evento o miembro con «evt», negocio activo, evento publicado, ventana del día
+`puerta_ventana_h`), **`ticket_scans`** (solo inserción; id uuid del teléfono = idempotencia; solo `puerta_registrar` escribe, con la marca tl.puerta;
+el trigger suma `door_counts` por puerta y `event_dates.entered_n` / `inside_n` y hace NOTIFY 'puerta'), **`ticket_entries`** (la fila que se bloquea
+por boleto y fecha; check entered_n ≤ admits; un pase entra una vez cada día), **`puerta_entrada`** (fila del boleto bloqueada: versión del QR,
+anulado, devuelto, reemplazado, transferencia pendiente = bol_vigente, otro día = bol_vale_en, otro evento, reentrada, hora de cerrar la puerta,
+aforo del día / RSVP / por puerta; primera entrada → 'used'), `puerta_rsvp` (entran N de M; `rsvps.arrived_n`; rsvp_n cuenta a los que llegaron),
+`puerta_contar` (entrada libre), `puerta_noche` (registra; marca noche-reservas), `door_table_numbers`, `door_incidents`, `door_searches`,
+`events.door_close_after_min` / `door_caps`, plantillas puerta_invitado (SMS) / puerta_asignado / puerta_abre / puerta_incidencia, claves
+puerta_*), semilla **`0038_puerta.sql`** (Junior y Karla activos en La Terraza). Código: `lib/puerta.ts` (accesoPuerta, misPuertas, abrirPuerta,
+escanearQR con la firma Ed25519 por la llave pública y la pregunta de grupo / ID, entradaManual, marcarRsvp, contar, lista / llegada de la noche,
+buscar con límite, lista con cursor, aforo, mesas, incidencias, equipo, últimos, cierre, barrido), `lib/puerta-equipo.ts` (invitar / aceptar /
+quitar / asignar porteros, REGLAS DE PUERTA, el panel), `lib/puerta-admin.ts`, `lib/puerta-vivo.ts` (LISTEN 'puerta' → SSE), `lib/puerta-comun.ts`,
+`noche-reservas.listaEnLaPuerta` / `marcarLlegada`; `/api/puerta/escanear` y `/api/puerta/vivo` (SSE); pantallas: **To'Latino Puerta**
+(`app/(puerta)/puerta`: tus puertas + código, Escanear con cámara (BarcodeDetector o jsQR 1.4.0 Apache-2.0 en un Worker, dentro del repo en
+`public/puerta/`), Buscar, Lista, Lista de la noche, Aforo, Mesas, Incidencias, Equipo, Cierre), el panel (`EventosPuerta.tsx`: PUERTA,
+PORTEROS, REGLAS DE PUERTA, modo puerta con la misma cámara y el Monitor en vivo), Super Admin › Modo puerta (`/admin/eventos/puerta`) y ESCANEOS
+del boleto, Mi cuenta «Usado · entraste a las …» / «VÁLIDO · OTRO DÍA». Guardianes nuevos `sinVentaEnLaPuerta`, `porteroSoloSuEvento`,
+`escaneoIdempotente`; ampliados `codigoPuerta`, `libroSoloInsercion`, `avisoEventoSmsSoloCritico` (puerta_invitado) — 33/33 al revés
+(`alreves6g.cjs`). e2e `evt6g` 105 ✓ (teléfono 390 y escritorio 1360; cámara falsa de Chromium con el QR real) y regresión evt6c 70 ✓, evt6d
+126 ✓, evt6e 96 ✓, evt6f 87 ✓, adm5i ✓, noc4c ✓ (con el reloj movido más: su −2000 min no alcanza cuando la noche abierta es en 2 días); base
+nueva (migraciones dos veces + semillas + semillas cambiadas) sale 0. Escaneo en línea local: p50 21 ms, p95 26 ms (sin base de carga). Ayuda:
+puerta-escanear, panel-porteros-y-modo-puerta, admin-puerta-auditoria; lista-y-mesa-de-noche, panel-mesas-y-lista, admin-eventos-y-boletos,
+mis-boletos-y-el-qr y panel-eventos-series-y-varios-dias al día. Revisar en el sandbox: `docs/REVISION.md` «### 6g» (con la revisión de seguridad).
+**Sigue 6h** (Puerta sin conexión: paquete firmado y cifrado, validación local, cola idempotente — `puerta_entrada` ya recibe el id del teléfono, la
+hora del teléfono y `offline` —, choques entre porteros resueltos igual en cualquier orden, incidencias de duplicado, paquete que vence y se revoca).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

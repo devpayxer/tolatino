@@ -51,7 +51,7 @@ pantalla de boletos. Teléfono y escritorio. Versión: Fase 6 · bloque 6f (10 n
   solas cuando llegan.
 - **¿El pase se vende hasta cuándo?** Hasta el corte del primer día (al empezar, al abrir puertas o un día antes, como elegiste). Cada boleto de
   un día, hasta el corte de su día.
-- **¿El portero sabe para qué día vale un boleto?** Sí: cada boleto guarda sus días; el pase entra una vez cada día (llega con la Puerta).
+- **¿El portero sabe para qué día vale un boleto?** Sí: cada boleto guarda sus días; el pase entra una vez cada día y un boleto de otro día sale «ES DE OTRO DÍA» con el día en que vale (To'Latino Puerta, 6g).
 - **¿Puedo cambiar el artista de una sola fecha?** Sí, en la ficha: «Cambiar artista solo esta fecha». Les avisamos en la app a los que van.
 
 ---

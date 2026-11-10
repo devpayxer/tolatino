@@ -4,7 +4,7 @@ _Pantallas: **Super Admin › Eventos y boletos** (`/admin/eventos`: pestañas E
 **Colas › Eventos a revisar** (`/admin/colas?cola=evt`) y **Negocios 360° › Contenido › Eventos**. Versión: Fase 6 · bloques 6a–6d (9–10 nov 2026).
 Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar).
 6c (10 nov): pestaña **Buscar boleto** y la ficha del boleto (`/admin/eventos/boleto/{código}`); Reenviar y Reemitir: Admin y Ciudad
-(evt:editar); Anular: Admin (evt:retirar). «Modo puerta» llega con la puerta (6g)._
+(evt:editar); Anular: Admin (evt:retirar). «Modo puerta»: ver `admin-puerta-auditoria`._
 
 ## Qué hace
 - **6f · Series y varios días:** la lista dice «Cada jueves · N por delante» o «3 días»; la ficha muestra **FECHAS** (cada fecha con lo vendido, movida, saltada, cancelada o con artista solo esa fecha) o **DÍAS** (con boleto o pase y el aforo de cada día). El cambio de la regla de una serie de un organizador sin verificar llega a la cola como «LO QUE CAMBIA · Se repite».
@@ -119,3 +119,8 @@ card (tickets stay valid).
 event payouts**; new Event settings (notices per date, payout day, new-organizer threshold, cancellations window, adjustment wait, refunds batch).
 
 **Recurring and multi-day (6f):** the list shows “Every Thursday · N ahead” or “3 days”; the event page shows DATES (sold, moved, skipped, cancelled, performer for one date) or DAYS (ticket or pass holders and the daily capacity). A rule change from an unverified organizer reaches the queue as “WHAT CHANGES · Repeats”.
+
+## Modo puerta y escaneos (6g, 10 nov 2026)
+- Pestaña **Modo puerta** (solo lectura): las puertas de hoy y de los últimos 7 días con adentro, faltan, rechazados y repetidos; de una fecha, por
+  puerta, sesiones de portero, últimos en la puerta e incidencias. La ficha de un boleto suma **ESCANEOS EN LA PUERTA** (resultado, puerta, quién y
+  hora). Detalle en `admin-puerta-auditoria`. · *Door mode tab (read-only) and DOOR SCANS on each ticket.*

@@ -2409,3 +2409,108 @@ de **FECHAS · CADA …** (como `lsVals` hasDays / hasSer); en el Super Admin, *
   no devuelve dos veces.
 - **IDOR:** saltar, volver a poner y cambiar el artista filtran por el negocio dueño del evento (parte «evt»); e2e repitiendo las llamadas con
   otro negocio y un vecino → sin acceso; el panel de un negocio no abre la serie de otro.
+
+### 6g · Eventos: la Puerta en línea — porteros, `/puerta` (escanear, buscar, lista, aforo, mesas, incidencias, equipo, cierre) y el modo puerta del panel (10 nov)
+Qué mirar en el sandbox, paso a paso (la Puerta en el teléfono; el panel y el Super Admin también en escritorio). La puerta se abre el día del
+evento, 2 h antes de las puertas: para probar ahora, crea un evento de La Terraza que empiece en 1–2 horas (o cambia la hora de uno).
+1. **Panel de La Terraza (570-555-0366) › Eventos › un evento de hoy**: abajo **PUERTA** (ADENTRO · ENTRARON · INCIDENCIAS y **Abrir modo
+   puerta**), **PORTEROS · ESCANEAN EN LA PUERTA** (la semilla trae a **Junior**, todos los eventos, y **Karla**, solo «Jueves de Bachata») y
+   **REGLAS DE PUERTA**.
+2. **Agregar**: nombre, un teléfono tuyo y **Solo este evento** → **Invitar**. Sale «Código XXXXXX: le llegó por SMS. Vale 7 días» (en el
+   sandbox el SMS queda en modo pruebas; la persona lo ve en Avisos si ya tiene cuenta).
+3. **En otro teléfono** entra a To'Latino con ESE teléfono → **`/puerta`** («Todavía no tienes puertas») → escribe el código → «Listo: ya eres
+   portero de La Terraza». Prueba un código inventado («no existe») y el código de otra persona («es para otro teléfono»).
+4. Toca el evento (**HOY · ABRIR**), elige **Principal** → **Abrir la puerta**. Arriba, oscuro: el evento, la puerta y **ADENTRO · FALTAN ·
+   RECHAZADOS** en vivo. Abajo: **ESCANEAR · BUSCAR · LISTA · AFORO · MÁS**.
+5. **Escanear**: apunta la cámara al QR de un boleto (Mi cuenta › Boletos de una cuenta que compró) → **VÁLIDO** en verde con el nombre y la
+   inicial y el tipo, con sonido. Escanéalo otra vez (u otro teléfono en la VIP) → **YA ENTRÓ** en rojo: «Ya entró por Principal a las …».
+6. Un boleto de **mesa** → **REVISA EL GRUPO**: «Entran 4 de 6» → **Entraron 4**; otra vez → quedan 2. **Más › Mesas** → toca el grupo → dale la
+   mesa 2 (otro grupo ya no puede tener la 2).
+7. **Buscar** «rosa» o los últimos 4 números del código o del teléfono → **Dejar entrar** → elige por qué (no trajo el QR…) → **Entró**. Una
+   **cortesía** sale por el nombre que puso el organizador.
+8. En el panel enciende **Pedir ID · 21+** (evento 21+): la puerta ahora dice **PIDE ID · 21+** antes de marcar (**Entró** / **No entra**).
+9. **Más › Incidencias › Seguridad**: sale el **911**; escribe una línea → **Avisar al organizador** → al dueño le llega el aviso y sale en el
+   Monitor (con **Cerrar**).
+10. **Panel › Abrir modo puerta**: **Empezar a escanear** (tu sesión como dueño), **Escanear boleto** (la misma cámara a pantalla completa), buscar
+    y **Dejar entrar**; abajo **MONITOR EN VIVO**: quién está en cada puerta y cuántos dejó entrar (**Cerrar su puerta**), las incidencias.
+11. **Quitar** al portero (con motivo): su pantalla dice sola «Ya no tienes acceso a esta puerta».
+12. Un evento con **RSVP** abre la puerta en **LISTA**: **Llegó 1** / **Llegaron 2**. En Noche, **Lista › Lista de la noche**: busca por el
+    código de 4 cifras → **Entró 1** / **Entraron 3** («ENTRARON 4 DE 4»).
+13. **Más › Cierre de la noche**: ENTRARON · BOLETOS · NO VINIERON, cortesías, RSVP, rechazados, incidencias → **Cerrar mi puerta**.
+14. **Super Admin (570-555-0199) › Eventos y boletos › Modo puerta**: AHORA y ÚLTIMOS 7 DÍAS; abre una fecha: ADENTRO · FALTAN · RECHAZADOS ·
+    REPETIDOS, por puerta, sesiones, últimos e incidencias. **Buscar boleto** → la ficha → **ESCANEOS EN LA PUERTA** (quién, dónde, cuándo).
+15. **Mi cuenta** del comprador: el boleto dice **«Usado · entraste a las …»**; un pase de varios días usado sigue **VÁLIDO · OTRO DÍA**.
+16. **Configuración › Eventos**: «Porteros por negocio» (20), «La puerta se abre antes y se cierra después» (2 h), «Aviso de aforo» (90 %),
+    «Búsquedas por minuto en la puerta» (30), «Invitaciones de porteros al día» (15).
+
+**Decidí X; si prefieres Y, se cambia (6g):**
+- **Portero = su cuenta + el código del negocio** (§6 #11; nada de «código de un uso sin cuenta» del prototipo). El código va **por SMS**
+  (`puerta_invitado`, la única plantilla de la puerta con SMS: se sumó a la lista crítica del guardián) y también se ve en el panel para dictarlo.
+  Vale 7 días, solo con el teléfono invitado (huella), y el teléfono del portero se guarda cifrado; el panel ve «··1234».
+- **Un boleto de 1 persona entra al escanearlo** (verde); **un grupo (mesa) o un evento con «Pedir ID»** pregunta antes de marcar (ámbar:
+  «Entran N de M», «PIDE ID · 21+» → **Entró** / **No entra**). Así nadie queda «usado» sin pasar el ID.
+- **El boleto queda «usado» en la primera entrada**; un **pase de varios días** entra **una vez cada día** (cada día tiene su fila de entradas) y en
+  Mi cuenta sigue «VÁLIDO · OTRO DÍA» con su QR. Un boleto usado ya no se transfiere ni se cancela (como dice 6d).
+- **Aforo**: la base frena (AFORO LLENO) solo con un tope que puso el organizador: el **aforo por día** de un evento de varios días, el **cupo del
+  RSVP** y el **aforo por puerta**. Con boletos, lo vendido ya es el tope (cada boleto entra una vez). La lista de la noche cuenta solo en el tope de
+  su puerta (tiene su propio cupo). Aviso al 90 % (Configuración) y «Llegaste al aforo de hoy» al 100 %.
+- **Un RSVP que llega sigue contando en el cupo** (antes, marcar «llegó» habría liberado su lugar para otro: corregido en 0112). Alguien que llega
+  después de que su RSVP venció entra aunque el cupo ya esté lleno (está en la puerta).
+- **REGLAS DE PUERTA no pasan por revisión** (reentrada, pedir ID, hora de cerrar la puerta, aforo por puerta): no cambian lo vendido ni el día.
+  Quedan en la auditoría del panel con el antes → después.
+- **La ventana del día**: 2 h antes de las puertas hasta 2 h después del final (Configuración). Fuera de ahí la puerta no abre y las sesiones
+  abiertas se cierran solas (barrido); también al cancelar el evento.
+- **Incidencias sin foto**: el plan pedía «foto privada opcional»; no se construyó para no recibir fotos de identificaciones (guardián
+  sinImagenDeID). La nota de una línea y el código del boleto bastan.
+- **La puerta es oscura arriba** (el evento, la puerta, las cifras en vivo, la cámara y el resultado a media pantalla con color + palabra + ícono)
+  **y la lista va en una hoja clara** con los bloques del sistema (legible de noche y de día), con la barra de abajo del sistema como el Repartidor.
+- **El dueño (o quien tenga «Eventos») también puede usar To'Latino Puerta** con su cuenta, y desde el panel abre su sesión «Panel».
+- **Noche sin evento**: la lista de la noche entra a `/puerta` cuando hay una puerta abierta de un evento del local esa noche; una noche sin evento
+  publicado se sigue marcando desde Panel › Hoy (como 4nc).
+- **Semilla 0038**: Junior y Karla ya activos (sus cuentas de prueba 570-555-0511 y 0512); **sin escaneos sembrados**: los eventos de la semilla
+  son de los próximos días y un escaneo inventado dejaría un boleto «usado» sin haber pasado por la puerta. El plan decía «escaneos de una fecha
+  pasada».
+- **Buscar**: desde 2 letras; 30 búsquedas por minuto por portero (Configuración); cada búsqueda queda contada, sin guardar lo que se buscó.
+- **QR NO VÁLIDO** separado de NO ENCONTRADO: un QR con forma de boleto pero firma mala o llave de otro entorno.
+- **Salidas** (con reentrada): «adentro» por puerta es aproximado si alguien entra por una puerta y sale por otra (nunca baja de 0); el total de
+  la fecha es exacto.
+Huecos compuestos con piezas del sistema (capturas locales e6g-*, teléfono 390; panel y Super Admin también 1360): **To'Latino Puerta** (CHK-ONB,
+CHK-SCAN, CHK-BUSCAR, CHK-LISTA, CHK-AFORO, CHK-MESAS, CHK-INCID, CHK-EQUIPO, CHK-CIERRE: cabecera oscura con kpis, resultado a media pantalla con
+tokens y Icon/Button del sistema, la hoja con PanelBloques, BottomNav), **aceptar la invitación** (como el Repartidor), el **modo puerta del panel**
+(doorDet: head, kpis, note, acts, search, rows) con el **Monitor**, **PORTEROS** y **REGLAS DE PUERTA** (rows, field, chips, interruptores) y el
+**Modo puerta** del Super Admin (kpis, rows, timeline).
+
+**Revisión de seguridad (6g, entrada, cuentas y permisos):**
+- **Un QR falso, viejo, transferido o devuelto nunca entra:** la firma Ed25519 se verifica con la llave PÚBLICA (lib/boletos-qr.ts); un QR
+  alterado o firmado con otra llave → QR NO VÁLIDO (solo queda la huella sha256 de lo escaneado); la versión del QR tiene que ser la del boleto
+  (reemitir o transferir la sube → QR ANULADO); con una transferencia pendiente no entra ni a mano (SE ESTÁ TRANSFIRIENDO, = `bol_vigente`);
+  anulado y devuelto no entran; de otro día de un evento de varios días → ES DE OTRO DÍA (`bol_vale_en`); de otro evento → NO ES DE ESTE EVENTO.
+  e2e: cada caso. Guardianes `sinVentaEnLaPuerta`, `qrViejoNoEntra`, `porteroSoloSuEvento`.
+- **Un boleto entra una vez aunque dos porteros escaneen a la vez:** `puerta_entrada` bloquea la fila del boleto y la de su entrada del día
+  (`ticket_entries`, check `entered_n between 0 and admits`) antes de decidir; el escaneo trae el id del teléfono y `puerta_repetido` toma su
+  candado y devuelve lo ya decidido (repetir no cuenta dos veces); solo `puerta_registrar` escribe en `ticket_scans` (marca de la base). e2e: dos
+  porteros a la vez por la API → uno VÁLIDO y otro «ya entró por … a las …»; 10 a la vez en la base → 1 y 9; el mismo id dos veces → una entrada.
+  Guardián `escaneoIdempotente`.
+- **Un portero del negocio A no ve nada del negocio B:** cada acción pregunta `accesoPuerta` → `puerta_acceso()` de la base (sesión abierta de
+  esa persona, portero ACTIVO de ese negocio con ESE evento o miembro con «evt», negocio activo, evento publicado, ventana del día) y las funciones
+  de la base vuelven a preguntar; toda lectura filtra por el evento y la fecha de la sesión; un QR de otro evento sale sin nombre ni código. e2e con
+  el portero y el dueño de la Parroquia y con un vecino: escanear, entrada a mano, buscar, abrir la puerta, la pantalla, el SSE (puerta y Monitor)
+  e invitar porteros a La Terraza → 403 / sin acceso; la base no deja abrir la puerta de otro negocio ni la de mañana.
+- **Quitar a un portero corta en el acto:** la base cierra sus sesiones abiertas (trigger) y avisa por NOTIFY: su pantalla abierta pasa sola a «Ya
+  no tienes acceso»; su siguiente escaneo → 403. Quitarle un evento cierra solo esa puerta. e2e.
+- **Lo que ve el portero:** nombre + inicial (o el nombre de la cortesía); nunca teléfono, correo ni montos: la búsqueda por los últimos 4 del
+  teléfono compara en la base y no los devuelve; la lista de la noche busca por el código y nunca lo devuelve (lo lee solo `noche-reservas.ts`,
+  guardián `codigoPuerta` ampliado). e2e: ninguna respuesta ni pantalla de la puerta trae teléfonos, precios ni totales. Guardián
+  `porteroSoloSuEvento` (ningún SELECT de la puerta trae `phone` ni `email`).
+- **Límites:** búsquedas por minuto (Configuración, leído en la base al decidir: e2e con 5 → la sexta frenada), códigos de invitación malos 8 por
+  hora por persona (e2e cuenta los intentos), invitaciones por día y porteros por negocio (la base los impone; e2e con el tope en 1).
+- **Auditoría de solo inserción:** `ticket_scans` (cada escaneo, entrada a mano con su motivo, llegada de un RSVP, de la lista o conteo, con
+  quién, puerta y hora) y `door_searches`; porteros, sesiones, incidencias y números de mesa no se borran (estados); invitar, quitar, asignar,
+  reglas y cerrar sesiones en `audit_entries`. Guardián `libroSoloInsercion` ampliado.
+- **D1:** nada de la puerta importa la pasarela, los cobros ni la compra de boletos; no crea órdenes ni boletos; ninguna cadena de Eventos dice
+  «pagar en la puerta». Guardián `sinVentaEnLaPuerta` (33/33 al revés junto con los otros, `alreves6g`).
+- **Encontrado y corregido en la revisión:** (1) marcar «llegó» un RSVP habría liberado su lugar (rsvp_n contaba solo «va») → ahora cuenta a los
+  que llegaron; (2) los topes de invitar y buscar se leían de la caché de 15 s de Configuración → se leen en la base al decidir; (3) una sesión de
+  un evento cancelado seguía «en la puerta ahora» en el panel → el panel pregunta el acceso y el barrido cierra toda sesión sin acceso; (4)
+  cerrar una sesión no despertaba al SSE → NOTIFY también al cerrarla.
+- **Pendiente (LAUNCH):** modo sin conexión (6h), señales de duplicados en Confianza (6h/6j), velocidad del escaneo con la base de carga.

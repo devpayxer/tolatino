@@ -31,3 +31,9 @@ drinks or the minimum.
   última a la vez, solo una la consigue. · *Only real tables are offered.*
 - **¿Puedo estar dos veces en la misma lista?** No: una lista por persona, local y noche.
 - **¿Piden fecha de nacimiento?** No. La edad la revisa la puerta con tu identificación; la app no guarda fotos de documentos.
+
+## En la puerta con To'Latino Puerta (6g, 10 nov 2026)
+- Los porteros del local también marcan tu llegada desde **To'Latino Puerta** (pestaña **Lista de la noche**): dices tu nombre o tu código de 4
+  cifras y marcan cuántos de tu grupo entraron («Entraron 3 de 4»). El portero ve tu nombre y la inicial, nunca tu teléfono ni el código en su
+  pantalla. Lo que se paga en el local (cover, tragos) lo cobra el local, no la app. · *Door staff can also check you in from To'Latino Door by
+  your name or 4-digit code; they see your first name and initial only.*
