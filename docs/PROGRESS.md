@@ -325,6 +325,7 @@ en línea y sin conexión, evento privado, y el Super Admin, Configuración, avi
 cierre §8 marcada salvo lo que dice su motivo (CI y 9 dispositivos, base de carga de 1 M, suites de Pedidos / Reservaciones / Noche en el CI). Falta
 el OK del fundador en el sandbox con las guías de `docs/REVISION.md` («### 6j» trae el paso a paso de toda la fase).
 Sigue **Fase 7 · El Compa** — plan del grupo.
+**Fase 7 · El Compa — plan escrito (10 nov):** `docs/diseno/plan/fase7-compa.md` (bloques 7a–7i, migraciones 0116–0124, semillas 0040–0042, preguntas #1–#18 con su default). Sigue **7a** (la ayuda como base de conocimiento y el Centro de ayuda).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

@@ -2833,3 +2833,32 @@ estaban.
 **Capturas:** `e6j-config-d`, `e6j-config-m`, `e6j-avisos-m`, `e6j-tu-semana-m`, `e6j-ficha-cupos-d`, `e6j-ficha-cupos-m`, `e6j-panel-ajuste-d`,
 `e6j-eventos-d`, `e6j-catalogo-d`, `e6j-catalogo-m`, `e6j-catalogo-genero-d`, `e6j-confianza-d`, `e6j-confianza-m`, `e6j-u360-act-d`,
 `e6j-analitica-d`, `e6j-analitica-m`, `e6j-notif-d`.
+
+### Fase 7 · El Compa — plan del grupo (10 nov)
+Plan en `docs/diseno/plan/fase7-compa.md` (bloques 7a → 7i, migraciones 0116 → 0124, semillas 0040 → 0042). Se construye con el default
+de cada decisión (regla AB); si prefieres otra cosa, se cambia. **Decidí X; si prefieres Y, se cambia:**
+1. **Modelo:** Claude (ya está en la lista de lo que se paga, PLAN §8 «IA de El Compa (con tope)», decisiones F y S): Haiku para vecinos,
+   panel y respuestas automáticas; Sonnet solo para el copiloto del equipo. No se autoaloja un modelo: ninguno que quepa en el servidor
+   actual responde bien en español a tiempo, y uno con GPU costaría más que Haiku a esta escala. Todo lo demás es propio (búsqueda en
+   Postgres, reglas, enmascarar datos, acciones, bitácora, tope, canales). Detrás de una interfaz que permite cambiar de proveedor.
+2. **Llave de Anthropic:** no existe todavía. Mientras tanto El Compa corre con el simulador (todas las pruebas) y las reglas fijas del
+   prototipo. **Paso para el teléfono:** abrir la cuenta de Anthropic; la llave se pone después con el formulario seguro del entorno (nunca
+   en el chat).
+3. **Tope mensual:** $100, aviso al 80 %; al llegar al tope, reglas fijas + «Con una persona».
+4. **Qué sale al proveedor:** lo mínimo, con teléfonos y datos enmascarados; nunca datos de salud ni de niños; región EE. UU.; pedir
+   retención cero; se dice en Privacidad. (La regla de la Fase 5 «el texto nunca sale de nuestros servidores» sigue para la traducción.)
+5. **Qué puede HACER El Compa:** solo cancelar una solicitud pendiente y gratis, abrir una pantalla e ir al panel, siempre confirmado por
+   la persona; nada con dinero. Pasar a una persona abre un caso de Soporte.
+6. **Soporte completo** (casos TK-, cola con 8 h, macros, «resolver y devolver» con tope de $50 para el rol Soporte) se construye en 7b;
+   el PLAN no lo nombraba pero el modelo de datos lo exige. Sin correo entrante.
+7. **Conversaciones:** se guardan 12 meses y luego solo cifras; cuenta borrada → se purgan a los 30 días.
+8. **Respuestas automáticas en Mensajes:** solo Pro, apagadas de fábrica, «fuera de tu horario».
+9. **«Traducir con El Compa»:** no; se queda «Traducir» con el traductor propio (decir El Compa sería falso).
+10. **Editar la ayuda desde el Super Admin:** el repo sigue siendo la fuente; el admin puede pausar un artículo; el editor completo llega
+    con el CMS de la Fase 9.
+11. **WhatsApp y SMS** se construyen y prueban contra simuladores; en la Fase 9 se enciende WhatsApp y SMS queda apagado.
+12. **Sin El Compa** en las apps Puerta y Repartidor.
+
+**Choques entre fuentes:** la base de ayuda (`docs/ayuda/`) no está lista como fuente: 4 formas distintas de la parte en inglés, 132
+archivos con lenguaje interno de fases, alguno desactualizado, y los `admin-*` con umbrales de fraude que nunca deben llegarle a un vecino.
+7a la arregla y deja guardianes. El prototipo llama a Claude desde el navegador y fija «Hazleton, PA» en el texto: nada de eso se copia.
