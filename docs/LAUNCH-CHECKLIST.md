@@ -1019,3 +1019,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7d · El Compa en los 9 dispositivos:** `compa7d` corre en 390 y 1360 en local; falta la matriz de CI. (7d, 10 nov)
 - [ ] **7d · Pantalla de un pedido sin hora de «listo» o de respuesta** (`lib/pedir.ts` `pedidoDe` falla con `ready_at` o `respond_by` nulos): la
       semilla 0041 repara el pedido de la 0040; pedidos de prueba hechos a mano siguen fallando. Hacer la pantalla tolerante. (7d, 10 nov)
+
+## Pedidos sin hora de listo o de respuesta (10 nov)
+- [x] **Un pedido con `ready_at` o `respond_by` vacíos tumbaba con un 500 la página del pedido del cliente y TODA la pantalla Hoy del panel**
+      (`hm2m(null)` en `lib/pedir.ts` y `lib/pedidos.ts`). Ahora esas horas son `string | null`: el cliente ve el pedido sin la hora («La
+      cocina ya lo tiene», «Te avisamos cuando esté listo») y el panel lo lista sin hora. Reproducido antes del arreglo (500 en las tres
+      pantallas) y probado después en el navegador (`pednull.cjs`, 15/15). Guardián `pedidoHorasOpcionales` (4/4 al revés). (10 nov)
+- [ ] **`pedidos2c.cjs` (prueba vieja de pedidos) espera «Nada pendiente» en Hoy**, pero desde 6i Hoy también cuenta las solicitudes de evento
+      privado abiertas (la semilla deja EP-4125 pendiente en Sabor Dominicano). El pedido vence bien (1378 · expired); hay que actualizar la
+      prueba para que limpie o ignore esas solicitudes. (10 nov)

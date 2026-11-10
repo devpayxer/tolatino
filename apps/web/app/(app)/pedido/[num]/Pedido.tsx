@@ -38,20 +38,20 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
   const fin = p.status === "done" || st >= last;
   const cerrado = p.sinRespuesta || ["declined", "expired", "cancelled"].includes(p.status);
   // La hora real de cada etapa (línea de tiempo); la última muestra a qué hora está listo mientras no llega.
-  const T = p.tiempos, horaDe = dl ? [T.sent ?? p.enviado, T.accepted ?? "", T.on_the_way ?? "", T.delivered ?? ""] : [T.sent ?? p.enviado, T.accepted ?? "", T.accepted ?? "", T.ready ?? "", T.picked_up ?? ""];
-  const steps = nombres.map((label, i) => ({ label, time: i <= st || fin ? horaDe[i]! : i === last ? (dl ? ENT?.llega ?? "" : p.programado ?? p.listo) : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
+  const T = p.tiempos, horaDe = dl ? [T.sent ?? p.enviado ?? "", T.accepted ?? "", T.on_the_way ?? "", T.delivered ?? ""] : [T.sent ?? p.enviado ?? "", T.accepted ?? "", T.accepted ?? "", T.ready ?? "", T.picked_up ?? ""];
+  const steps = nombres.map((label, i) => ({ label, time: i <= st || fin ? horaDe[i]! : i === last ? (dl ? ENT?.llega ?? "" : p.programado ?? p.listo ?? "") : "", state: i < st || fin ? "done" : i === st ? "current" : "next" }));
   const HD = [
-    [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
-    [E2("Preparando tu pedido", "Preparing your order"), E2(`${p.negocio.nombre} lo aceptó. Sale hacia tu casa a las ${p.listo}.`, `${p.negocio.nombre} accepted it. Leaves for your place at ${p.listo}.`)],
+    [E2("Pedido enviado", "Order sent"), (p.respondeHasta ? E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`) : E2(`${p.negocio.nombre} lo confirma en unos minutos.`, `${p.negocio.nombre} will confirm it in a few minutes.`))],
+    [E2("Preparando tu pedido", "Preparing your order"), (p.listo ? E2(`${p.negocio.nombre} lo aceptó. Sale hacia tu casa a las ${p.listo}.`, `${p.negocio.nombre} accepted it. Leaves for your place at ${p.listo}.`) : E2(`${p.negocio.nombre} lo aceptó y lo está preparando.`, `${p.negocio.nombre} accepted it and is preparing it.`))],
     [E2("En camino", "On the way"), ENT?.ext ? E2(`Lo lleva un repartidor de ${ENT.ext}.${ENT.seguimiento ? " Síguelo con el enlace." : ""}`, `A ${ENT.ext} driver has it.${ENT.seguimiento ? " Follow it with the link." : ""}`)
       : p.repartidor?.llego ? E2(`${p.repartidor.nombre} llegó con tu pedido.`, `${p.repartidor.nombre} is here with your order.`)
       : `${p.repartidor ? E2(`Te lo lleva ${p.repartidor.nombre}. `, `${p.repartidor.nombre} is bringing it. `) : ""}${ENT?.drop?.drop === "puerta" ? E2("Te lo dejan en tu puerta.", "It will be left at your door.") : E2("Te lo entregan en la mano.", "It will be handed to you.")}`],
     [E2("Entregado", "Delivered"), E2("Buen provecho.", "Enjoy your meal.")],
   ] as const;
   const H = dl ? HD : [
-    [E2("Pedido enviado", "Order sent"), E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`)],
+    [E2("Pedido enviado", "Order sent"), (p.respondeHasta ? E2(`${p.negocio.nombre} lo confirma antes de las ${p.respondeHasta}.`, `${p.negocio.nombre} confirms it before ${p.respondeHasta}.`) : E2(`${p.negocio.nombre} lo confirma en unos minutos.`, `${p.negocio.nombre} will confirm it in a few minutes.`))],
     [E2("Pedido aceptado", "Order accepted"), E2("La cocina ya lo tiene.", "The kitchen has it.")],
-    [E2("En la cocina", "In the kitchen"), E2(`Estará listo a las ${p.listo}.`, `It will be ready at ${p.listo}.`)],
+    [E2("En la cocina", "In the kitchen"), (p.listo ? E2(`Estará listo a las ${p.listo}.`, `It will be ready at ${p.listo}.`) : E2("Te avisamos cuando esté listo.", "We will let you know when it is ready."))],
     [E2("Listo para recoger", "Ready for pickup"), `${E2("Pasa por ", "Go to ")}${p.negocio.direccion ?? p.negocio.nombre}. ${p.pickupNote || E2("Di tu número de pedido.", "Give your order number.")}`],
     [E2("Recogido", "Picked up"), E2("Buen provecho.", "Enjoy your meal.")],
   ] as const;
@@ -64,7 +64,7 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
     : { eyebrow: st === 0 ? E2("GRACIAS POR TU PEDIDO", "THANKS FOR YOUR ORDER") : fin ? E2("LISTO", "DONE") : E2("EN CURSO", "IN PROGRESS"), title: H[st]![0], sub: H[st]![1],
         hero: st === 0 ? "bg-signal/[.16]" : "bg-ink/5", ic: fin || st === 0 ? "check" : st === 3 ? "bag" : "clock", fg: st === 0 || fin ? "var(--tl-open-text)" : "var(--tl-ink)", cxAt: "" };
   const etaK = cerrado ? (p.status === "cancelled" ? E2("CANCELADO A LAS", "CANCELLED AT") : "") : fin ? (dl ? E2("ENTREGADO", "DELIVERED") : E2("RECOGIDO", "PICKED UP")) : dl ? E2("LLEGA", "ARRIVES") : E2("LISTO A LAS", "READY AT");
-  const eta = cerrado ? V.cxAt : fin ? (dl ? p.tiempos.delivered : p.tiempos.picked_up) ?? p.listo : dl ? ENT?.llega ?? p.listo : p.programado ?? p.listo;
+  const eta = (cerrado ? V.cxAt : fin ? (dl ? p.tiempos.delivered : p.tiempos.picked_up) ?? p.listo : dl ? ENT?.llega ?? p.listo : p.programado ?? p.listo) ?? "";
   const g = p.pago, tj = g?.tarjeta ? ` · ${g.tarjeta.toUpperCase()}` : "";
   const money = g ? ({
     held: E2(`RETENIDO ${g.monto}${tj} · SE COBRA AL ACEPTAR`, `HELD ${g.monto}${tj} · CHARGED WHEN ACCEPTED`),

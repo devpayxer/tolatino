@@ -58,7 +58,7 @@ export const enCurso = (s: Est) => s === "ok" || s === "ready" || s === "out";
 export type Fila = { numero: string; who: string; modo: string; count: number; amt: number; st: Est; s: Bi; programado: string | null; responde: string | null };
 type FilaDb = {
   number: string; first_name: string | null; last_name: string | null; mode: string | null; n: number; total_cents: number; status: string; stage: string | null;
-  sent: string; mins: number; listo: string; programado: string | null; responde: string; hecho: string | null; cancelado: string | null; cancelled_by: string | null;
+  sent: string; mins: number; listo: string | null; programado: string | null; responde: string | null; hecho: string | null; cancelado: string | null; cancelled_by: string | null;
 };
 const estado = (x: { status: string; stage: string | null }): Est =>
   x.status === "pending" ? "pend" : x.status === "confirmed" ? (x.stage === "ready" ? "ready" : x.stage === "on_the_way" ? "out" : "ok") : x.status === "done" ? "done"
@@ -70,7 +70,8 @@ function sub(x: FilaDb, st: Est): Bi {
   const prog = x.programado ? { es: ` · para las ${hora(hm2m(x.programado))}`, en: ` · for ${hora(hm2m(x.programado))}` } : { es: "", en: "" };
   switch (st) {
     case "pend": return { es: `${art.es}${prog.es} · ${hace.es}`, en: `${art.en}${prog.en} · ${hace.en}` };
-    case "ok": return x.mode === "delivery" ? { es: `En cocina · sale ${hora(hm2m(x.listo))}`, en: `Cooking · leaves ${hora(hm2m(x.listo))}` } : { es: `En cocina · listo ${hora(hm2m(x.listo))}`, en: `Cooking · ready ${hora(hm2m(x.listo))}` };
+    case "ok": if (!x.listo) return { es: `En cocina · ${art.es}`, en: `Cooking · ${art.en}` };
+      return x.mode === "delivery" ? { es: `En cocina · sale ${hora(hm2m(x.listo))}`, en: `Cooking · leaves ${hora(hm2m(x.listo))}` } : { es: `En cocina · listo ${hora(hm2m(x.listo))}`, en: `Cooking · ready ${hora(hm2m(x.listo))}` };
     case "out": return { es: `En camino · ${art.es}`, en: `On the way · ${art.en}` };
     case "ready": return { es: `Listo para recoger · ${art.es}`, en: `Ready for pickup · ${art.en}` };
     case "done": return { es: `Entregado ${x.hecho ? hora(hm2m(x.hecho)) : ""}`.trim(), en: `Delivered ${x.hecho ? hora(hm2m(x.hecho)) : ""}`.trim() };
@@ -87,7 +88,7 @@ const COLS = `o.number, u.first_name, u.last_name, o.mode, (select coalesce(sum(
 const fila = (x: FilaDb): Fila => {
   const st = estado(x);
   return { numero: x.number, who: quien(x.first_name, x.last_name), modo: x.mode === "delivery" ? "Delivery" : "Pickup", count: x.n, amt: x.total_cents, st, s: sub(x, st),
-    programado: x.programado ? hora(hm2m(x.programado)) : null, responde: st === "pend" ? hora(hm2m(x.responde)) : null };
+    programado: x.programado ? hora(hm2m(x.programado)) : null, responde: st === "pend" && x.responde ? hora(hm2m(x.responde)) : null };
 };
 
 /* Panel › Hoy: los que esperan respuesta, la agenda de hoy (aceptados, listos y en camino) y lo vendido hoy. */
@@ -184,7 +185,7 @@ export async function pedidoNegocio(negocio: string, numero: string): Promise<De
     cancelled: () => ({ es: "Lo canceló el cliente", en: "Cancelled by the client" }),
   };
   return {
-    ...fila(o), nota: o.customer_note, listo: hora(hm2m(o.programado ?? o.listo)), sub: o.subtotal_cents, tax: o.tax_cents, envio: o.delivery_cents, propina: o.tip_cents,
+    ...fila(o), nota: o.customer_note, listo: (o.programado ?? o.listo) ? hora(hm2m((o.programado ?? o.listo)!)) : "—", sub: o.subtotal_cents, tax: o.tax_cents, envio: o.delivery_cents, propina: o.tip_cents,
     // El teléfono del cliente solo en delivery (para avisar al llegar).
     telCliente: o.mode === "delivery" ? o.phone : null,
     entrega: o.mode === "delivery" ? { to: o.details?.to ?? null, drop: o.details?.drop ?? null, ext: o.details?.ext ?? null, seguimiento: o.details?.tracking ?? null,

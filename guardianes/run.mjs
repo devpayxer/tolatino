@@ -3195,6 +3195,30 @@ const guardianes = {
     }
   },
 
+  /* En un pedido (kind 'order') la hora de listo (ready_at) y la de respuesta (respond_by) pueden venir vacías: un pedido viejo o de la
+     semilla sin ellas tumbaba con un 500 la página del pedido del cliente y TODA la pantalla Hoy del panel (hm2m(null)). Cada columna que
+     sale de esas dos horas en lib/pedir.ts y lib/pedidos.ts tiene que estar tipada `string | null`, así el compilador obliga a manejar el
+     vacío. Al revés: volver a tipar `listo: string` en la fila de pedidoDe → falla. */
+  pedidoHorasOpcionales() {
+    const G = "pedidoHorasOpcionales";
+    for (const f of ["apps/web/lib/pedir.ts", "apps/web/lib/pedidos.ts"]) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/to_char\(\s*(?:\w+\.)?(ready_at|respond_by)\b[^)]*\)\s+as\s+(\w+)/g)) {
+        // El tipo de la fila es el `query<{ … }>(` justo antes del SQL donde sale la columna.
+        const n = m[2], ini = t.lastIndexOf("query<{", m.index), fin = t.indexOf("}>(", ini);
+        // Si el SQL vive en una constante compartida (lib/pedidos.ts: COLS), la fila es el tipo con nombre que tiene las columnas de ese SQL
+        // (FilaDb), no otro tipo que por casualidad tenga un campo con el mismo nombre (la vista ya formateada).
+        const sql = t.slice(t.lastIndexOf("`", m.index), t.indexOf("`", m.index + 1));
+        const alias = [...sql.matchAll(/\bas\s+(\w+)/g)].map((x) => x[1]);
+        const conNombre = [...t.matchAll(/\btype \w+ = \{[\s\S]*?\};/g)].map((x) => x[0])
+          .map((b) => [alias.filter((a) => new RegExp(`[{;,]\\s*${a}\\s*:`).test(b)).length, b]).sort((x, y) => y[0] - x[0])[0]?.[1] ?? "";
+        const fila = ini >= 0 && fin > ini && fin < m.index && !t.slice(fin, m.index).includes(");") ? t.slice(ini, fin) : conNombre;
+        const tipos = [...fila.matchAll(new RegExp(`[{;,]\\s*${n}\\s*:\\s*([^;,}]+)`, "g"))].map((x) => x[1].trim());
+        if (!tipos.length || tipos.some((x) => !/\|\s*null\b/.test(x))) falla(G, f, t.slice(0, m.index).split("\n").length, `«${n}» sale de ${m[1]}, que puede venir vacía: típarla «string | null» y mostrar el pedido sin esa hora`);
+      }
+    }
+  },
+
   /* El sistema de diseño portado (packages/ui/src/ds y los tokens puntuales) es lo que produce scripts/portar-sistema.mjs, nada más.
      6c encontró que correr el script deshacía arreglos de accesibilidad hechos a mano en community/PostCard.js y Thread.js: el arreglo
      tiene que vivir en el script (como un parche) o se pierde la próxima vez. Aquí se corre el script en una carpeta temporal y cada

@@ -431,7 +431,7 @@ async function liberarSilencioso(pi: string) { await (await import("./pagos/pasa
 /* ── El pedido (APP-NEG-PEDIDO): solo lo ve quien lo hizo. ── */
 export type PedidoVista = {
   numero: string; negocio: { id: string; nombre: string; direccion: string | null; telefono: string | null; lat: number | null; lng: number | null };
-  status: string; stage: string | null; sinRespuesta: boolean; enviado: string; listo: string; programado: string | null; respondeHasta: string;
+  status: string; stage: string | null; sinRespuesta: boolean; enviado: string | null; listo: string | null; programado: string | null; respondeHasta: string | null;
   lineas: { q: number; name: string; sum: string; price: string; img: string | null }[]; nota: string | null; pickupNote: string;
   sub: string; tax: string; total: string; taxL: string; count: number; subC: number; taxC: number;
   tiempos: Record<string, string>; canceladoPor: string | null;
@@ -449,7 +449,7 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
   await vencer({ userId, numero });
   const r = await db().query<{
     id: string; number: string; business_id: string; name: string; address: string | null; phone: string | null; lat: number | null; lng: number | null;
-    status: string; stage: string | null; vencido: boolean; enviado: string; listo: string; programado: string | null; responde: string; customer_note: string | null;
+    status: string; stage: string | null; vencido: boolean; enviado: string | null; listo: string | null; programado: string | null; responde: string | null; customer_note: string | null;
     subtotal_cents: number; tax_cents: number; total_cents: number; pickup_note: Bi | null; cancelled_by: string | null;
     mode: string | null; delivery_cents: number; tip_cents: number; repartidor: string | null; llego: boolean; det: { to?: { label: string; street: string; apt: string | null; zip: string }; drop?: DropPref; ext?: string | null; tracking?: string | null; eta?: { d1: number; d2: number } } | null;
   }>(
@@ -465,6 +465,8 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
       where o.number = $1 and o.user_id = $2 and o.kind = 'order'`, [numero, userId]);
   const o = r.rows[0];
   if (!o) return null;
+  // Un pedido viejo o de la semilla puede no tener hora de listo o de respuesta (null en la base): la pantalla no se cae, muestra sin hora.
+  const horaO = (x: string | null) => (x ? hora(hm2m(x)) : null);
   const ls = await db().query<{ q: number; name: Bi; options: { g: Bi; o: Bi }[]; instructions: string | null; total: number; img: string | null; tax: number }>(
     `select l.qty as q, l.name, l.options, l.instructions, l.line_total_cents as total, (select i.photos[1] from items i where i.id = l.item_id) as img, l.tax_pct::float as tax
        from operation_lines l where l.operation_id = $1 order by l.id`, [o.id]);
@@ -482,8 +484,8 @@ export async function pedidoDe(userId: string, numero: string, lang: Lang): Prom
     repartidor: o.repartidor ? { nombre: o.repartidor, llego: o.llego } : null,
     pago: pg ? { estado: pg.st, monto: money(pg.amount), devuelto: pg.refunded ? money(pg.refunded) : null, tarjeta: pg.brand && pg.l4 ? `${MARCA[pg.brand] ?? pg.brand} ·· ${pg.l4}` : null } : null,
     numero: o.number, negocio: { id: o.business_id, nombre: o.name, direccion: o.address, telefono: o.phone, lat: o.lat, lng: o.lng },
-    status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: hora(hm2m(o.enviado)), listo: hora(hm2m(o.listo)), programado: o.programado ? hora(hm2m(o.programado)) : null,
-    respondeHasta: hora(hm2m(o.responde)),
+    status: o.status, stage: o.stage, sinRespuesta: o.vencido, enviado: horaO(o.enviado), listo: horaO(o.listo), programado: horaO(o.programado),
+    respondeHasta: horaO(o.responde),
     lineas: ls.rows.map((l) => ({
       q: l.q, name: tx(l.name, es), img: l.img, price: money(l.total),
       sum: [(Array.isArray(l.options) ? l.options : []).map((x) => tx(x.o, es)).join(" · "), l.instructions ? `“${l.instructions}”` : ""].filter(Boolean).join(" · "),
