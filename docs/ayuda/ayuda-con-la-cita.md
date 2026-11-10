@@ -2,9 +2,12 @@
 
 _Pantallas: la cita (`/cita/{n}`, botón **Ayuda con la cita** y aviso de la solicitud), `/cita/{n}/ayuda` (APP-NEG-CITA-AYUDA y su estado), Panel ›
 Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Admin › Colas › **Ayuda con pedidos y citas** y Super Admin › Transacciones
-› **Citas**. Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
+› **Citas**. Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 - **La persona** pide ayuda con una cita que ya pasó (hasta 7 días). Elige el motivo: *Cobraron más del precio publicado*,
   *No me atendió quien reservé*, *No quedó como lo pedí*, *Esperé mucho a pesar de la cita*, *No me devolvieron el
   depósito* u *Otra cosa*; cuenta qué pasó (15 letras o más), agrega fotos (obligatorias si es un cobro o si no quedó como
@@ -45,6 +48,11 @@ el local te lo devuelve el negocio en el local.
 con la cita.
 
 ## English
+
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 
 After a booking (up to 7 days), the client can ask for help: pick a reason, describe what happened (15+ characters), add
 photos (required for an overcharge or a bad result) and choose a fix (redo at no charge, a refund, or just let them know).

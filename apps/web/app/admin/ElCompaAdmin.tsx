@@ -7,7 +7,7 @@ import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
-import type { DatosCompaAdmin } from "@/lib/compa/admin-compa";
+import type { DatosCompaAdmin, FichaConv } from "@/lib/compa/admin-compa";
 import { compaInterruptor, compaLevantar, compaPausarEn, compaTope } from "./acciones-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -28,6 +28,8 @@ const CANAL: Record<string, [string, string, string]> = {
 const RESULTADO: Record<string, [string, string]> = { open: ["ABIERTA", "neutral"], self_resolved: ["RESOLVIÓ SOLO", "neutral"], action_done: ["ACCIÓN CONFIRMADA", "signal"], handed_off: ["A UNA PERSONA", "action"], to_owner: ["AL DUEÑO", "action"] };
 const MOTIVO: Record<string, string> = { money: "dinero", account: "cuenta", safety: "seguridad", asked_person: "lo pidió", unknown: "no supo", owner: "dueño" };
 const SUP: Record<string, string> = { support_page: "Soporte", help_sheet: "Hoja de ayuda", panel: "Panel", business_chat: "Chat del negocio", ticket: "Caso" };
+const ACC_T: Record<string, string> = { cancel_request: "Cancelar una solicitud", open_screen: "Abrir una pantalla", go_to_panel: "Ir al panel" };
+const ACC_E: Record<string, string> = { proposed: "propuesta", confirming: "confirmando", confirmed: "confirmada", dismissed: "la dejó", expired: "venció", failed: "falló" };
 const MOTOR: Record<string, string> = { claude: "Claude (con la llave del entorno)", simulador: "Simulador del sandbox (todavía sin llave de Anthropic)", reglas: "Reglas fijas (sin IA)" };
 const ACCION: Record<string, string> = { "compa.pausar": "Pausó", "compa.encender": "Encendió", "compa.pausar_en": "Pausó", "compa.levantar": "Levantó la pausa", "config.cambiar": "Cambió" };
 const plata = (c: number) => `$${(c / 100).toFixed(c > 0 && c < 1 ? 4 : 2)}`;
@@ -37,15 +39,44 @@ const pares = (o: Record<string, string> | null) => (o ? Object.entries(o).map((
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const mesL = (m: string) => { const [a, b] = m.split("-"); return `${MESES[Number(b) - 1] ?? b} de ${a}`; };
 
-export function ElCompaAdmin({ d, tab, uso, res, antes, cambiar }: { d: DatosCompaAdmin; tab: "ctl" | "conv"; uso: string | null; res: string | null; antes: string | null; cambiar: boolean }) {
+export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, antes, cambiar, cp = null, ficha = null, leer = false }: {
+  d: DatosCompaAdmin; tab: "ctl" | "conv"; uso: string | null; res: string | null; canal?: string | null; buscar?: string | null; antes: string | null; cambiar: boolean;
+  cp?: string | null; ficha?: FichaConv | null; leer?: boolean;
+}) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
-  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
+  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [q, setQ] = useState(buscar ?? "");
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo."); setConf(null); router.refresh(); };
-  const ir = (p: { tab?: string; uso?: string | null; res?: string | null; antes?: string | null }) => {
+  const ir = (p: { tab?: string; uso?: string | null; res?: string | null; canal?: string | null; buscar?: string | null; antes?: string | null; cp?: string | null }) => {
     const x = new URLSearchParams(), t = p.tab ?? tab, u = p.uso !== undefined ? p.uso : uso, r = p.res !== undefined ? p.res : res;
-    if (t !== "ctl") x.set("tab", t); if (t === "conv" && u) x.set("uso", u); if (t === "conv" && r) x.set("res", r); if (p.antes) x.set("antes", p.antes);
+    const ca = p.canal !== undefined ? p.canal : canal, bq = p.buscar !== undefined ? p.buscar : buscar;
+    if (t !== "ctl") x.set("tab", t); if (t === "conv" && u) x.set("uso", u); if (t === "conv" && r) x.set("res", r); if (t === "conv" && ca) x.set("canal", ca);
+    if (t === "conv" && bq) x.set("buscar", bq); if (p.antes) x.set("antes", p.antes); if (p.cp) x.set("cp", p.cp);
     router.push(x.size ? `/admin/compa?${x}` : "/admin/compa", { scroll: false });
   };
+  // 7d · La ficha de una conversación (compaDetail): solo con permiso de leer hilos; cada apertura ya quedó anotada en el servidor.
+  if (cp) {
+    const f = ficha, volver = () => ir({ cp: null });
+    const FB: Bloque[] = [{ type: "head", eye: "EL COMPA · CONVERSACIONES", t: f?.num ?? cp, s: f ? `${NIVEL[f.uso]?.[0] ?? f.uso} · ${cuando(f.at)}` : undefined, onBack: volver, h1: desk ? 26 : 22 }];
+    if (!leer) FB.push({ type: "note", tone: "warn", t: "Tu rol ve las cifras de El Compa, no lo que se habló. El hilo lo leen Admin y Soporte, y cada lectura queda anotada." });
+    else if (!f) FB.push({ type: "empty", icon: "chat", t: "Esa conversación no existe", s: "Revisa el número CP-." });
+    else {
+      FB.push({ type: "kv", cols: desk ? 3 : 2, items: [
+        { k: "QUIÉN", v: f.quien?.nombre ?? "—" }, { k: "NEGOCIO", v: f.negocio?.nombre ?? "—" }, { k: "CANAL", v: CANAL[f.canal === "web" ? "app" : f.canal]?.[0] ?? f.canal },
+        { k: "RESULTADO", v: RESULTADO[f.resultado]?.[0] ?? f.resultado, fg: f.resultado === "handed_off" ? "var(--tl-action)" : f.resultado === "action_done" ? "var(--tl-open-text)" : undefined },
+        ...(f.motivo ? [{ k: "MOTIVO", v: MOTIVO[f.motivo] ?? f.motivo }] : []), ...(f.caso ? [{ k: "CASO EN SOPORTE", v: f.caso, fg: "var(--tl-action)" }] : []),
+        { k: "DÓNDE", v: `${SUP[f.superficie] ?? f.superficie}${f.operacion ? ` · ${f.operacion}` : ""}` }, { k: "CIUDAD", v: f.ciudad }] });
+      if (!f.ai) FB.push({ type: "note", tone: "warn", t: "Contestó sin IA (reglas fijas) al menos una vez: un paso fijo de la hoja, el tope, la IA lenta o una respuesta que no pasó el verificador." });
+      FB.push({ type: "thread", items: f.msjs.map((m) => ({ t: m.t, mine: m.de === "compa", m: m.de === "user" ? (f.quien?.nombre ?? "Vecino") : m.de === "compa" ? `El Compa · ${m.motor === "reglas" ? "reglas fijas" : "IA"}${m.fuente ? ` · ${m.fuente}` : ""} · ${cuando(m.at)}` : "Sistema", soft: m.de === "system" })) });
+      FB.push({ type: "note", tone: "ink", icon: "shield", t: "El equipo solo lee lo que el vecino habló con El Compa para revisar la calidad; los chats privados entre vecinos no se leen." });
+      if (f.caso || f.quien) FB.push({ type: "acts", items: [...(f.caso ? [{ l: `Ver ${f.caso} en Soporte`, v: "secondary", onClick: () => router.push(`/admin/soporte?caso=${encodeURIComponent(f.caso!)}`) }] : []),
+        ...(f.quien ? [{ l: "Ver a la persona", v: "secondary", onClick: () => router.push(`/admin/usuarios/${f.quien!.id}`) }] : [])] });
+      FB.push({ type: "rows", k: "ACCIONES", items: f.acciones.length ? f.acciones.map((a, i) => ({ key: `a${i}`, icon: a.tipo === "cancel_request" ? "close" : "right", chev: false, compact: true,
+        t: `${ACC_T[a.tipo] ?? a.tipo} · ${ACC_E[a.estado] ?? a.estado}`, s: `${cuando(a.at)}${a.via ? ` · desde ${a.via === "link" ? "el enlace" : "la app"}` : ""}${a.motivo ? ` · ${a.motivo}` : ""}` }))
+        : [{ key: "x", icon: "folder", t: "Ninguna acción preparada", chev: false }] });
+      FB.push({ type: "rows", k: "QUIÉN LA LEYÓ", items: f.lecturas.map((r, i) => ({ key: `l${i}`, icon: "users", t: r.quien ?? "Alguien del equipo", s: cuando(r.at), chev: false, compact: true })) });
+    }
+    return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 820 }}><PanelBloques bloques={FB} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;
+  }
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
       <PanelBloques bloques={[{ type: "head", eye: "EL COMPA · INTERRUPTORES Y TOPE", t: conf.titulo, onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
@@ -125,6 +156,8 @@ export function ElCompaAdmin({ d, tab, uso, res, antes, cambiar }: { d: DatosCom
         { k: "ACCIONES CONFIRMADAS", v: String(k.action_done ?? 0), s: "la persona dijo que sí", onClick: () => ir({ res: "action_done" }) }] },
       { type: "chips", k: "DÓNDE", items: [["", "Todo"], ...Object.entries(NIVEL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (uso ?? "") === key ? "selected" : "filter", onClick: () => ir({ uso: key || null }) })) },
       { type: "chips", k: "RESULTADO", items: [["", "Todos"], ...Object.entries(RESULTADO).map(([key, v]) => [key, v[0].charAt(0) + v[0].slice(1).toLowerCase()])].map(([key, l]) => ({ l: l!, v: (res ?? "") === key ? "selected" : "filter", onClick: () => ir({ res: key || null }) })) },
+      { type: "chips", k: "CANAL", items: [["", "Todos"], ...Object.entries(CANAL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (canal ?? "") === key ? "selected" : "filter", onClick: () => ir({ canal: key || null }) })) },
+      { type: "search", val: q, ph: "Número CP-…", onChange: setQ, onClear: () => { setQ(""); ir({ buscar: null }); }, link: "Buscar", onLink: () => ir({ buscar: q.trim() || null }) },
     );
   }
   return (
@@ -132,12 +165,14 @@ export function ElCompaAdmin({ d, tab, uso, res, antes, cambiar }: { d: DatosCom
       <PanelBloques bloques={B} h1={desk ? 26 : 22} />
       {tab === "conv" ? (d.conv.filas.length
         ? <A.AdminList label={`${d.conv.filas.length}${d.conv.sig ? "+" : ""} CONVERSACIONES`} rows={d.conv.filas.map((x) => ({ icon: x.ai ? "chat" : "lock",
+            onClick: () => ir({ cp: x.num }), chevron: leer,
             title: `${x.num} · ${NIVEL[x.uso]?.[0] ?? x.uso}`, sub: `${SUP[x.superficie] ?? x.superficie} · ${CANAL[x.canal]?.[0] ?? x.canal} · ${x.turnos} ${x.turnos === 1 ? "mensaje" : "mensajes"} · ${x.ciudad} · ${cuando(x.at)}${x.motivo ? ` · motivo: ${MOTIVO[x.motivo] ?? x.motivo}` : ""}${x.ai ? "" : " · contestó sin IA (reglas fijas)"}`,
             tag: RESULTADO[x.resultado]?.[0] ?? x.resultado, tone: RESULTADO[x.resultado]?.[1] ?? "neutral" }))} />
-        : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Todavía no hay conversaciones", s: uso || res ? "Nada con ese filtro: quita uno." : "Cuando los vecinos le escriban al Compa, salen aquí." }]} />) : null}
+        : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Todavía no hay conversaciones", s: uso || res || canal || buscar ? "Nada con ese filtro: quita uno." : "Cuando los vecinos le escriban al Compa, salen aquí." }]} />) : null}
       {tab === "conv" ? <PanelBloques bloques={[
         ...(d.conv.sig || antes ? [{ type: "acts" as const, items: [...(antes ? [{ l: "← Desde el principio", v: "secondary", onClick: () => ir({ antes: null }) }] : []), ...(d.conv.sig ? [{ l: "Siguientes →", v: "secondary", onClick: () => ir({ antes: d.conv.sig }) }] : [])] }] : []),
-        { type: "note", tone: "info", t: "Aquí solo hay cifras, sin el texto. La ficha con lo que se habló la abre solo el equipo con permiso y cada lectura queda anotada (Super Admin completo de El Compa)." },
+        { type: "note", tone: "info", t: leer ? "La lista no muestra lo que se habló. Al abrir una conversación ves el hilo (tapado como se guardó) y tu lectura queda anotada."
+          : "Tu rol ve las cifras, sin el texto. El hilo lo leen Admin y Soporte, y cada lectura queda anotada." },
       ]} /> : null}
       <Toast t={toast} desk={desk} />
     </div>

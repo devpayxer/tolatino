@@ -10,6 +10,10 @@ claras? · ¿te sentiste seguro? · ¿la música fue la anunciada? · trato en l
 en la puerta» (visitante). La página del local muestra **«Lo que importa de noche»** con las noches de los últimos 90 días.
 
 ## Ayuda con la noche
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
+
 Desde «Tu noche» › **Ayuda con la noche** (hasta 7 días después). Motivos: cobraron más cover (foto) · no respetaron la lista · no
 respetaron la mesa · cobraron el mínimo aparte (foto) · me sentí inseguro · mal trato en la puerta · no me descontaron el depósito
 (foto del recibo) · otra cosa. Qué quieres: **que me devuelvan** o **solo avisar**.
@@ -26,6 +30,10 @@ respetaron la mesa · cobraron el mínimo aparte (foto) · me sentí inseguro ·
 ## English
 
 ### Review
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 If you got in with your To'Latino list or table, your review is **verified** with the booking facts (the night, how many went and what
 you paid in the app; not editable). Questions: did they charge the posted cover? · was the line what it said? · clear rules? · did you feel
 safe? · was the music as announced? · treatment at the door. Without a booking it is a visitor review («I went without booking · Paid at

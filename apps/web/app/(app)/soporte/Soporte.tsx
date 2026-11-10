@@ -26,10 +26,10 @@ function useAncho() {
 const corta = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t);
 const nuevaClave = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16).padStart(8, "0")}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, "0")}`);
 
-export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horario, caso, casoPedido, pre }: {
+export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horario, caso, casoPedido, pre, compa = false }: {
   es: boolean; conSesion: boolean; negocio: { id: string; name: string } | null; temas: Tema[]; casos: CasoFila[]; ops: OpSop[];
   revs: { hnum: string; num: string; t: Bi; href: string }[]; horario: { dias: number; desde: number; hasta: number };
-  caso: CasoVecino | null; casoPedido: string | null; pre: { tema: Tema | null; op: string | null; otro: string | null } | null;
+  caso: CasoVecino | null; casoPedido: string | null; pre: { tema: Tema | null; op: string | null; otro: string | null } | null; compa?: boolean;
 }) {
   const E2 = (a: string, b: string) => (es ? a : b), L = (x: Bi) => (es ? x.es : x.en);
   const router = useRouter(), path = usePathname();
@@ -77,7 +77,20 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
           <h1 className="m-0 font-display text-[28px] font-extrabold leading-[1.1] tracking-[-0.035em]">{titulo}</h1>
         </div>
       )}
-      <div className="flex flex-col gap-3 rounded-[18px] border border-ink/[.08] bg-white p-4">
+      {compa ? (
+        // 7d · Con El Compa encendido (diseño: intro «El Compa te ayuda al instante»). «Escríbenos» sigue a un toque, debajo.
+        <div className="flex flex-col gap-3 rounded-[18px] border border-ink/[.08] bg-white p-4" data-compa-intro>
+          <div className="flex items-start gap-3">
+            <span className="grid size-[42px] flex-none place-items-center rounded-[13px] bg-action/10"><C.Icon name="chat" size={19} color="var(--tl-action)" /></span>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <span className="font-display text-[15.5px] font-extrabold leading-[1.3] tracking-[-0.02em]">{E2("El Compa te ayuda al instante", "El Compa helps you right away")}</span>
+              <span className="text-[13px] font-medium leading-normal text-ink/65 [text-wrap:pretty]">{E2(`El Compa es el asistente de IA de To'Latino. Lo que mueve dinero o cambia tu cuenta pasa a una persona del equipo: ${hor}.`, `El Compa is To'Latino's AI assistant. Anything that moves money or changes your account goes to a person on the team: ${hor}.`)}</span>
+            </div>
+          </div>
+          <div className="flex"><C.Button size="md" block icon="edit" onClick={() => router.push("/soporte/compa")}>{E2("Pregúntale al Compa", "Ask El Compa")}</C.Button></div>
+          <div className="flex"><C.Button size="md" block variant="secondary" icon="chat" onClick={() => toNew()}>{E2("Escríbenos", "Write to us")}</C.Button></div>
+        </div>
+      ) : <div className="flex flex-col gap-3 rounded-[18px] border border-ink/[.08] bg-white p-4">
         <div className="flex items-start gap-3">
           <span className="grid size-[42px] flex-none place-items-center rounded-[13px] bg-action/10"><C.Icon name="chat" size={19} color="var(--tl-action)" /></span>
           <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -88,7 +101,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
           </div>
         </div>
         <div className="flex"><C.Button size="md" block icon="edit" onClick={() => toNew()}>{E2("Escríbenos", "Write to us")}</C.Button></div>
-      </div>
+      </div>}
       {revs.length ? (
         <div className="flex flex-col gap-2.5" data-screen-label="Soporte · en revisión">
           <span className={k10} style={{ fontFamily: MONO }}>{E2("TO'LATINO ESTÁ REVISANDO", "TO'LATINO IS REVIEWING")}</span>

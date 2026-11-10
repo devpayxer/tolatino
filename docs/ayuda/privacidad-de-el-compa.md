@@ -31,8 +31,12 @@ web. Versión: 10 nov 2026. Audiencia: vecino. Tema: cuenta._
 ## Preguntas frecuentes
 - **¿Adónde va lo que escribo?** El texto, ya tapado y solo lo necesario, se procesa con un proveedor de IA (Anthropic) en EE. UU. para
   contestarte. To'Latino no lo usa para anuncios.
-- **¿Quién lee mis conversaciones con El Compa?** Solo el equipo de To'Latino con permiso de El Compa, para revisar respuestas. El negocio nunca
-  las ve.
+- **¿Quién lee mis conversaciones con El Compa?** Solo el equipo de To'Latino con permiso de El Compa (Admin y Soporte), para revisar
+  respuestas, y **cada vez que alguien abre una queda anotado** quién y cuándo. El negocio nunca las ve.
+- **¿Dónde lo veo en la app?** En la ayuda de cada operación y en Soporte (el enlace **Qué ve y quién lo lee**), y en Mi cuenta › Ajustes ›
+  Privacidad › **El Compa**.
+- **Si le paso a una persona, ¿qué recibe el equipo?** Tu caso con un resumen de lo que escribiste (tapado), la operación de la que hablas y
+  el número de tu conversación. Nada más de tu cuenta.
 - **¿Cuánto se guardan?** 12 meses; después solo quedan cifras sin texto (por ejemplo, si te pasó a una persona). Si borras tu cuenta, se borran
   con ella.
 - **¿Me da consejo legal, médico o de inmigración?** No. Tampoco te pide tu estatus migratorio ni datos de salud.
@@ -58,6 +62,9 @@ always there. Emergencies: call 911.
 
 ### FAQ
 - **Where does my text go?** Covered and only what is needed, it is processed by an AI provider (Anthropic) in the U.S. to answer you.
-- **Who reads my conversations?** Only To'Latino team members with El Compa permission. The business never sees them.
+- **Who reads my conversations?** Only To'Latino team members with El Compa permission (Admin and Support), and every time someone opens one it
+  is logged. The business never sees them.
+- **What does the team get when it passes me to a person?** Your case with a covered summary of what you wrote, the item you asked about and
+  your conversation number. Nothing else from your account.
 - **How long are they kept?** 12 months; after that only numbers without text remain. If you delete your account, they go with it.
 - **Legal, medical or immigration advice?** No. It never asks for your immigration status or health data.

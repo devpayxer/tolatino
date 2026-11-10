@@ -232,7 +232,8 @@ export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resu
     if (/support_sin_secretos/.test(String((e as Error)?.message))) return no("No escribas números de tarjeta ni de seguro social. Nunca te los pedimos.", "Do not write card or social security numbers. We never ask for them.");
     throw e;
   }
-  if (r.ok && r.id) await avisarCaso(r.numero!, "sop_recibido");
+  // 7d · Si lo pasó El Compa, el aviso dice «Tu caso pasó a Soporte» (compa_caso); si no, el de siempre.
+  if (r.ok && r.id) await avisarCaso(r.numero!, origen === "compa" ? "compa_caso" : "sop_recibido");
   return r.ok ? { ok: true, numero: r.numero, mensaje: r.mensaje } : r;
 }
 class FotoPerdida extends Error {}
@@ -311,14 +312,14 @@ export async function calificarCaso(q: Quien, numero: string, si: boolean): Prom
 }
 
 /* Avisos del caso (en la app; sin SMS): recibido, respuesta del equipo y resuelto. */
-export async function avisarCaso(numero: string, tpl: "sop_recibido" | "sop_respuesta" | "sop_resuelto", quien?: string) {
+export async function avisarCaso(numero: string, tpl: "sop_recibido" | "sop_respuesta" | "sop_resuelto" | "compa_caso", quien?: string) {
   const { avisar } = await import("./avisos");
   const k = (await db().query<{ uid: string; due: string; tz: string; lang: string; neg: string | null }>(
     `select c.user_id::text as uid, ${ISO("c.sla_due_at")} as due, coalesce(ci.timezone, 'America/New_York') as tz, coalesce(u.lang, 'es') as lang, c.business_id as neg
        from support_cases c join users u on u.id = c.user_id left join cities ci on ci.id = c.city_id where c.number = $1`, [numero])).rows[0];
   if (!k) return;
   const href = `/soporte?caso=${encodeURIComponent(numero)}${k.neg ? `&negocio=${encodeURIComponent(k.neg)}` : ""}`;
-  if (tpl === "sop_recibido") await avisar(k.uid, tpl, { num: numero, cuando: prometido(k.due, k.tz, k.lang !== "en") }, { href, ref: ["support", numero] });
+  if (tpl === "sop_recibido" || tpl === "compa_caso") await avisar(k.uid, tpl, { num: numero, cuando: prometido(k.due, k.tz, k.lang !== "en") }, { href, ref: ["support", numero] });
   else if (tpl === "sop_respuesta") await avisar(k.uid, tpl, { num: numero, quien: quien || "Una persona" }, { href, ref: ["support", numero] });
   else await avisar(k.uid, tpl, { num: numero }, { href, ref: ["support", numero] });
 }

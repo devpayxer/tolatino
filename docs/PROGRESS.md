@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026 (7c · El motor de El Compa)._
+_Actualizado: 10 nov 2026 (7d · El Compa para vecinos)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -391,6 +391,26 @@ texto con cursor) y alerta del tope en Inicio. Compose pasa `ANTHROPIC_API_KEY` 
 **`compa7c` 111 ✓** (motor con el simulador + Super Admin 390 y 1360). Ayuda: `admin-el-compa`, `privacidad-de-el-compa`. Sin dependencia nueva.
 Sigue **7d** (El Compa para vecinos: hoja 2as en cada operación y pasos 2at en Soporte, `acciones-compa.ts` sobre `turno`/`confirmar`; migración 0119,
 semilla 0041).
+**7d hecho (10 nov)** — El Compa para vecinos. Migración **0119** (`operation_events.actor` suma «compa»; `help_requests.origin` form|compa DERIVADO
+por la base (El Compa abrió ese formulario en las 2 h anteriores, `step_key 'formulario'`); **`compa_reads`** solo inserción (se adelanta de 0124);
+plantilla `compa_caso`; analítica `compa_abrir · compa_mensaje · compa_accion · compa_persona`); semilla **0041** (una conversación por resultado:
+resolvió solo, acción confirmada con la reservación cancelada por «compa», a una persona por dinero / seguridad / lo pidió, cuenta, no sabe; y
+repara el pedido de la 0040 sin hora de listo). Código: `lib/compa/hoja.ts` (lectura barata y a prueba de fallas: `estadoVecino`,
+`vecinoDisponible` (nivel, canal, ciudad de la persona y de la operación, negocio, tope), `opVecino`, `hojaDe`, `opsVecino`, `razonesDe` por tipo y
+estado; nunca Salud/Pro/Niños/op_private); `conversacion.ts` suma `paso()` (los toques fijos sin modelo: preparar la cancelación por
+`validarAccion`, abrir la operación o el formulario, persona, Mi cuenta) y `turno()` acepta la operación de la hoja; `persona.ts` con tema;
+`citaCliente`/`rsvCliente` con `por: "compa"`; `tope.ts` `alTope`; `soporte.ts` avisa `compa_caso`; `admin-compa.ts` filtros canal/CP- y
+**`fichaConversacion`** (compa:editar, lectura anotada antes de leer). Pantallas: **hoja 2as** en las 11 páginas «Ayuda con …» (`hoja-ayuda.tsx`:
+antes del formulario, sobre la pantalla de la operación; `?de=compa` = el formulario; null/falla = lo de siempre), **2at** `/soporte/compa`,
+`CompaVecino.tsx` (CompaFrame sheet/page con el aviso de IA + «QUÉ VE Y QUIÉN LO LEE», «Con una persona», Así queda + barra de confirmar,
+Tu caso pasó a Soporte, fuente con enlace), acciones reales `acciones-compa.ts` (`compaTurno`, `compaPaso`, `compaConfirmar`, `compaDescartar`:
+mismo origen + sesión + límites), Soporte «El Compa te ayuda al instante» + «Escríbenos», Mi cuenta (fila y Privacidad › El Compa), Super Admin ›
+El Compa › Conversaciones (CANAL, CP-, ficha con hilo, acciones y QUIÉN LA LEYÓ). `next.config` sirve `/…/assets/x` (logo del avatar).
+Guardianes **`compaSiempreIA`**, **`compaHojaSinRomper`**, **`compaLecturaAnotada`** + `compaSinRutaCritica`, `compaAccionConfirmada`,
+`compaSoloSusDatos`, `compaInterruptores`, `compaSinDinero`, `libroSoloInsercion` ampliados (33/33 al revés `alreves7d`; 66/66 `alreves7c`); e2e
+**`compa7d` 140 ✓** (390 y 1360); `compa7c` 111 ✓, `sop7b` 104 ✓, `adm5i` ✓; `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` ✓ con El Compa apagado y (salvo
+`ayu4if`) al tope. Ayuda: **`el-compa`** nueva; las 9 `ayuda-con-*`/`resena-y-ayuda-*`, `soporte`, `privacidad-de-el-compa`, `mi-cuenta`,
+`admin-el-compa` al día. Sigue **7e** (El Compa en el panel: `DASH-COMPA`, guía del panel `compa_panel_guide`, `go_to_panel`; migración 0120).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

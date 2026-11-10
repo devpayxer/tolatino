@@ -435,7 +435,8 @@ export async function rsvDe(userId: string | null, numero: string, negocio?: str
 
 /* ── El cliente: cancelar, aceptar la hora propuesta, avisar que llega tarde ── */
 const CX = new Set(["planes", "otro", "hora", "grupo"]);
-export async function rsvCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "chgvisto", extra?: string | number): Promise<ResR> {
+/* 7d · `por`: «compa» = la cancelación la preparó El Compa y la persona la confirmó; el evento queda con actor 'compa'. Nada más cambia. */
+export async function rsvCliente(userId: string, numero: string, que: "cancelar" | "aceptar" | "nogracias" | "tarde" | "chgvisto", extra?: string | number, por: "user" | "compa" = "user"): Promise<ResR> {
   if (!/^R-\d{1,10}$/.test(numero)) return no("Esa reservación no existe.", "That reservation does not exist.");
   await vencerMesas({ numero });
   return tx(async (c) => {
@@ -455,8 +456,8 @@ export async function rsvCliente(userId: string, numero: string, que: "cancelar"
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1 and status = 'open'`, [o.id]);
       // Con menos aviso que el que pide el restaurante, cuenta como cancelación tardía (sin cargo).
       const tardia = o.status === "confirmed" && o.faltan < o.cxh * 60;
-      await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1, 'cancelled', 'user', $2, $3::jsonb)`,
-        [o.id, userId, tardia ? JSON.stringify({ es: "Cancelación tardía · sin cargo", en: "Late cancellation · no charge" }) : null]);
+      await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1, 'cancelled', $4, $2, $3::jsonb)`,
+        [o.id, userId, tardia ? JSON.stringify({ es: "Cancelación tardía · sin cargo", en: "Late cancellation · no charge" }) : null, por === "compa" ? "compa" : "user"]);
       return { ok: true };
     }
     if (que === "aceptar" || que === "nogracias") {

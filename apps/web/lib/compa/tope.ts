@@ -70,3 +70,11 @@ async function avisarTope(cual: "pct" | "cap") {
   for (const a of admins)
     await avisar(a.id, cual === "cap" ? "compa_tope_100" : "compa_tope_80", { pct: g.pct, gastado: dinero(g.gastado), tope: dinero(g.tope) }, { href: "/admin/compa", ref: ["compa", g.mes], sinSms: true });
 }
+
+/* 7d · ¿Llegó al tope? (lo gastado del mes ya alcanza el tope de Configuración, o el tope es 0). Lo usa la hoja de ayuda: al tope, la Ayuda
+   de cada operación va directo al formulario de siempre, como apagado (nada cambia para la persona). Una lectura barata; ante la duda, «sí». */
+export async function alTope(): Promise<boolean> {
+  const r = (await db().query<{ v: boolean }>(
+    `select coalesce((select s.spent_microusd from compa_spend_month s where s.month = compa_mes()), 0) >= cfg_int('compa_tope_mes_cents')::bigint * 10000 as v`)).rows[0];
+  return r?.v !== false;
+}

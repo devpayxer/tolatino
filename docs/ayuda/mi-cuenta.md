@@ -27,12 +27,14 @@ cuenta._
 - **Avisos:** qué te llega (pedidos, reservas, empleos, negocios que guardas, correo) y horas de silencio. Se guarda hoy y
   se aplica cuando salgan los avisos.
 - **Ajustes:** idioma (cambia la pantalla y el idioma de la cuenta), **Mi ciudad** (cada 30 días, solo a una ciudad
-  abierta), avisos, **Privacidad** (quién ve tu teléfono y tus sesiones abiertas, con «Cerrar» para las otras), tu negocio
+  abierta), avisos, **Privacidad** (quién ve tu teléfono y tus sesiones abiertas, con «Cerrar» para las otras, y **El Compa**: qué ve la IA de
+  la ayuda y quién lo lee, `privacidad-de-el-compa.md`), tu negocio
   o publícalo, cerrar sesión y **Borrar mi cuenta**.
 - **Invita vecinos:** WhatsApp, mensaje, copiar o compartir el enlace de To'Latino.
 - **Ayuda:** abre el Centro de ayuda (`centro-de-ayuda.md`), en español y en inglés; en escritorio está en la navegación.
 - **Ayuda y soporte:** tus casos con una persona del equipo de To'Latino (`soporte.md`): cuántos tienes abiertos y el horario del equipo
-  (lunes a viernes, de 9 AM a 6 PM, hora de tu ciudad). También en la navegación de escritorio.
+  (lunes a viernes, de 9 AM a 6 PM, hora de tu ciudad); con El Compa encendido dice también «El Compa · IA al instante» (`el-compa.md`). También
+  en la navegación de escritorio.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -69,6 +71,9 @@ offline), **Saved › Events** and **Notifications › Events** (tickets and cha
 screen in My account does not exist yet; each ticket order has its receipt.
 
 ## English
+
+Help and support also says «El Compa · AI right away» when El Compa is on, and Settings › Privacy has **El Compa** (what the help AI sees and who
+reads it).
 
 My account brings together everything that is yours: an overview (neighbor card, complete-your-account, your week of
 orders, bookings and interviews, things waiting on you, your local support this month), Orders (by month, with filters,

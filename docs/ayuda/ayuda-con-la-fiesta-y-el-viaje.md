@@ -5,6 +5,9 @@ _Pantallas: «Tu fiesta» (`/fiesta/{F-…}`) y «Tu viaje» (`/viaje/{V-…}`) 
 Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 Si algo salió mal en una fiesta o un viaje reservado por To'Latino, lo pides desde «Tu fiesta» o «Tu viaje» › **Ayuda**
 (hasta 7 días después). El negocio responde en 24 horas; si no responde o no estás de acuerdo, To'Latino lo revisa en 48 horas.
 
@@ -38,6 +41,10 @@ acepta, se devuelve solo a su tarjeta.
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 If something went wrong with a party or trip booked on To'Latino, ask from “Your party” / “Your trip” › **Help** (up to 7 days
 after). The business replies within 24 hours; otherwise, or if you disagree, To'Latino reviews it within 48 hours.
 

@@ -2,9 +2,12 @@
 
 _Pantallas: `/mercado/{M-…}/ayuda` (desde el pedido terminado o una reseña de 2 estrellas o menos), `/apartado/{A-…}/ayuda` (desde el apartado
 recogido o entregado), Panel › Hoy › «Ayuda que espera tu respuesta» y el detalle del pedido o apartado, Super Admin › Colas › Ayuda. Mismo motor que
-la ayuda con la cita. Versión: 7 nov 2026. Audiencia: vecino. Tema: pedidos._
+la ayuda con la cita. Versión: 10 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 Si algo salió mal con tu pedido del mercado o con lo que apartaste en una tienda, lo pides aquí. La reseña no devuelve dinero; la
 ayuda sí puede.
 1. **¿Qué pasó?**
@@ -44,6 +47,10 @@ puedo**. Solo quien tiene permiso de dinero devuelve a la tarjeta.
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 If something went wrong with your market order or a store hold, ask here (a review does not refund money). Pick what happened,
 tell us (15+ characters), add a photo when required (we compare market photos with the market's scale photo) and choose what you
 want: a refund, a replacement / exchange, or just letting them know. The business replies within 24 hours; if not, or if you

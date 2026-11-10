@@ -16,8 +16,12 @@ y tope (Admin de fábrica); Soporte y Solo lectura ven. Teléfono y escritorio. 
   ahora» dice si corre Claude (con la llave), el simulador del servidor de pruebas (sin llave) o las reglas fijas.
 - **Reglas fijas (no se apagan):** siempre dice que es IA, nunca mueve dinero ni cambia la cuenta, nunca pide tarjeta, contraseñas, SSN ni
   estatus, no da consejo legal, médico ni de inmigración y contesta en el idioma de la persona.
-- **Conversaciones:** cifras de 7 días (cuántas, resolvió solo, a una persona, acciones confirmadas) y la lista (número CP-, nivel, canal,
-  mensajes, ciudad, resultado, motivo y si contestó sin IA). **Sin el texto.**
+- **Conversaciones:** cifras de 7 días (cuántas, resolvió solo, a una persona, acciones confirmadas), filtros **DÓNDE · RESULTADO · CANAL**, la
+  búsqueda por número **CP-** y la lista (número, nivel, dónde —Soporte u hoja de ayuda—, canal, mensajes, ciudad, resultado, motivo y si
+  contestó sin IA), sin el texto. Al tocar una, **la ficha**: QUIÉN · NEGOCIO · CANAL · RESULTADO · MOTIVO · CASO EN SOPORTE · DÓNDE, el hilo tal
+  como se guardó (tapado), «Contestó sin IA (reglas fijas)» si pasó, las acciones que preparó y en qué quedaron, y **QUIÉN LA LEYÓ**. La ficha
+  la abren **Admin y Soporte**; **cada apertura queda anotada** (quién y cuándo) antes de mostrar el hilo y esa lista no se borra. Solo lectura
+  ve las cifras, no el hilo. «Marcar respuesta incorrecta» llega con el Super Admin completo de El Compa.
 
 ## Cómo se usa
 1. **Pausar un nivel o un canal:** toca su interruptor, elige o escribe el motivo y **Poner en pausa**. Para volver: el interruptor, motivo y
@@ -26,7 +30,8 @@ y tope (Admin de fábrica); Soporte y Solo lectura ven. Teléfono y escritorio. 
 3. **Pausar en un negocio:** **Pausar en un negocio**, escribe su id o su nombre exacto, elige qué se pausa y el motivo.
 4. **Cambiar el tope:** **Cambiar el tope**, el monto en dólares (entre $0 y $10,000; $0 = sin IA) y el motivo. Vale desde la llamada siguiente.
    También está en Configuración › El Compa, con el aviso, la espera máxima, los límites por persona y el vencimiento de las acciones.
-5. **Conversaciones:** filtra por DÓNDE y RESULTADO; **Siguientes** para ver más.
+5. **Conversaciones:** filtra por DÓNDE, RESULTADO y CANAL o busca un **CP-**; **Siguientes** para ver más. Toca una para abrir su ficha (tu
+   lectura queda anotada); desde ahí, **Ver TK-… en Soporte** y **Ver a la persona**.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -57,7 +62,9 @@ not fit under the cap, the AI is not called: the fixed rules answer and the pers
 the cap. **Switches BY LEVEL** (neighbors, business panel, auto-replies, copilot) and **BY CHANNEL** (To'Latino chat, WhatsApp, SMS): off means
 the usual path. **BY CITY** and **BY BUSINESS** pause all of El Compa or one level in one place. Models: Claude Haiku 5.5 for everyday use,
 Claude Sonnet 5.5 only for the team copilot; «Answers now» says whether Claude, the test-server simulator or the fixed rules are running. Fixed
-rules cannot be turned off. **Conversations** shows 7-day numbers and the list (CP- number, level, channel, messages, city, outcome, reason,
+rules cannot be turned off. **Conversations** (filters WHERE · OUTCOME · CHANNEL and a CP- search; tapping one opens its record with who,
+business, channel, outcome, reason, Support case, the stored (covered) thread, actions and **WHO READ IT** — only Admin and Support open it, and
+every opening is logged before the thread shows; Read-only sees numbers only) shows 7-day numbers and the list (CP- number, level, channel, messages, city, outcome, reason,
 answered without AI) without any text.
 
 ### How to use it

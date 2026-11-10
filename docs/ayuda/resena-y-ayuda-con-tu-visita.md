@@ -2,9 +2,12 @@
 
 _Pantallas: Tu visita (`/vis/D-…`) › estrellas y «Ayuda con la visita» / «Ayuda con el dealer» (`/vis/D-…/ayuda`); Tu lugar en la iglesia
 (`/insc/I-…`) › «Ayuda con la iglesia» (`/insc/I-…/ayuda`); la página del lugar › Reseñas («Lo que importa en Bienes Raíces / al comprar un carro / en
-una iglesia»). Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
+una iglesia»). Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 Cuando pasó tu visita, tu prueba de manejo o tu fecha en la iglesia (pedida por To'Latino) puedes dejar una **reseña verificada** con
 las preguntas que importan. Si algo no fue como se publicó, pides **Ayuda** hasta 7 días después: el negocio responde en 24 horas y, si no
 responde o no estás de acuerdo, To'Latino lo revisa en 48 horas. **En To'Latino no se cobra nada por ver, por la prueba ni por la ayuda de
@@ -47,6 +50,10 @@ una iglesia**: lo que te cobraron fuera de la app te lo devuelve el negocio dire
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 Once your visit, test drive or church date (booked on To'Latino) happens you can leave a verified review. If something was not as
 posted, ask for Help up to 7 days later: the business replies within 24 hours; otherwise To'Latino reviews it within 48 hours. Nothing is
 charged on To'Latino for viewing, test drives or church help: whatever you were charged outside the app, the business refunds you directly

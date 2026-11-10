@@ -2456,6 +2456,12 @@ const guardianes = {
         if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MC, 0, `${msg} (estados)`);
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (compa_messages|compa_usage|compa_handoffs)\b|\bdelete from (compa_conversations|compa_actions|compa_reservations|compa_pauses|compa_models|compa_spend_month)\b/.test(q)) falla(G, x, 0, `un libro de El Compa no se cambia ni se borra: «${q.slice(0, 60)}»`);
     }
+    // 7d · Las lecturas del equipo (compa_reads) son de solo inserción: quién abrió qué conversación queda para siempre.
+    const MD7 = "packages/db/migrations/0119_compa_vecinos.sql";
+    if (existsSync(MD7)) {
+      if (!/create trigger compa_reads_antes before insert or update or delete on compa_reads/.test(readFileSync(MD7, "utf8")) || !/raise exception 'compa_reads es solo de inserción'/.test(ultimaFn("compa_reads_antes"))) falla(G, MD7, 0, "compa_reads es de solo inserción (trigger)");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) compa_reads\b/.test(q)) falla(G, x, 0, "una lectura del equipo no se cambia ni se borra");
+    }
     // 7a · El libro de la ayuda (help_article_log): pausar, volver a usar, desplegar y retirar quedan para siempre.
     const MA = "packages/db/migrations/0116_ayuda_base.sql";
     if (existsSync(MA) && (!/create trigger help_article_log_no_cambia before update or delete on help_article_log/.test(readFileSync(MA, "utf8")) || !/raise exception 'help_article_log es solo de inserción'/.test(ultimaFn("help_article_log_inmutable")))) falla(G, MA, 0, "help_article_log es de solo inserción (trigger)");
@@ -4073,7 +4079,7 @@ const guardianes = {
     if (!existsSync(A)) return falla(G, A, 0, "falta lib/compa/acciones.ts");
     const a = sinComent(A), mapa = /const CANCELABLES[^\n]*\{\n([\s\S]*?)\n\};/.exec(a)?.[1] ?? "";
     if (!mapa) falla(G, A, 0, "falta el mapa CANCELABLES");
-    for (const l of mapa.split("\n").filter((x) => x.trim())) if (!/^\s+(appointment|table): async \(u, n\) => (citaCliente\(u, n, "cancelar"\)|rsvCliente\(u, n, "cancelar", "otro"\)),$/.test(l)) falla(G, A, 0, `CANCELABLES: solo la cancelación del cliente de una solicitud («${l.trim().slice(0, 60)}»)`);
+    for (const l of mapa.split("\n").filter((x) => x.trim())) if (!/^\s+(appointment|table): async \(u, n\) => (citaCliente\(u, n, "cancelar", undefined, "compa"\)|rsvCliente\(u, n, "cancelar", "otro", "compa"\)),$/.test(l)) falla(G, A, 0, `CANCELABLES: solo la cancelación del cliente de una solicitud («${l.trim().slice(0, 60)}»)`);
     if (!/o\.status !== "pending" \|\| o\.detail \|\| !\(o\.pago == null \|\| o\.pago === "held"\)/.test(cuerpoFn(a, "confirmar"))) falla(G, A, 0, "confirmar: solo una solicitud PENDIENTE y sin cobro");
   },
 
@@ -4093,6 +4099,11 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || /^apps\/web\/lib\/compa\//.test(x)) continue;
       const t = sinComent(x);
       if (/\.confirmar\(|\bconfirmar\(\{ userId/.test(t) && /lib\/compa\/acciones/.test(t) && !(/await mismoOrigen\(\)/.test(t) && /const u = await yo\(\);/.test(t) && /confirmar\(\{ userId: u\.id \}/.test(t))) falla(G, x, 0, "confirmar una acción de El Compa: mismo origen y la persona de la sesión");
+      // 7d · Y en CADA función que confirma (no basta con que otra función del archivo revise el origen).
+      if (/lib\/compa\/acciones/.test(t)) for (const m of t.matchAll(/\bconfirmar\(\{ userId/g)) {
+        const f = t.slice(t.lastIndexOf("export async function", m.index), m.index);
+        if (!/if \(!\(await mismoOrigen\(\)\)\) return/.test(f) || !/const u = await yo\(\);/.test(f) || !/^\{ userId: u\.id \}/.test(t.slice(m.index + 10))) falla(G, x, 0, "cada confirmación de El Compa revisa el mismo origen y toma a la persona de la sesión");
+      }
     }
   },
 
@@ -4108,7 +4119,8 @@ const guardianes = {
     const val = cuerpoFn(sinComent(A), "validarAccion");
     const gets = (val.match(/x\.refs\.get\(/g) ?? []).length, buenos = (val.match(/\/\^op\\d\{1,2\}\$\/\.test\(a\.ref\) \? x\.refs\.get\(a\.ref\) : undefined/g) ?? []).length;
     if (!gets || gets !== buenos || /query\(|refs\.values\(|refs\.entries\(|\.find\(/.test(val)) falla(G, A, 0, "validarAccion: solo una ref del mapa del servidor (op1…), sin buscar nada que diga el modelo");
-    if (existsSync(C) && !/where number = \$1 and user_id = \$2 and use = \$3 and closed_at is null/.test(sinComent(C))) falla(G, C, 0, "una conversación se sigue solo si es de esa persona");
+    if (existsSync(C)) { const c = sinComent(C), todas = (c.match(/from compa_conversations where number = \$1/g) ?? []).length, buenas = (c.match(/from compa_conversations where number = \$1 and user_id = \$2 and use = \$3 and closed_at is null/g) ?? []).length;
+      if (!buenas || todas !== buenas) falla(G, C, 0, "una conversación se sigue solo si es de esa persona (en el turno y en los pasos)"); }
     for (const x of codigo.filter((f) => /^apps\/web\/lib\/compa\/contexto-[a-z]+\.ts$/.test(f))) if (!/export async function contexto[A-Z][a-z]+\((userId|staffId|negocio): string/.test(sinComent(x))) falla(G, x, 0, "una función de contexto recibe solo el id de la sesión");
   },
 
@@ -4163,7 +4175,7 @@ const guardianes = {
     const i = sinComent(I), d = cuerpoFn(i, "disponible");
     if (!/if \(candadoProduccion\(\)\) return \{ ok: false, por: "produccion" \};/.test(d) || !/ENTORNO === "produccion" && process\.env\.TOLATINO_COMPA !== "encendido"/.test(i)) falla(G, I, 0, "candado: en producción El Compa no se enciende antes de la fase 9");
     if (!/if \(!r\?\.nivel\) return \{ ok: false, por: "nivel" \};/.test(d) || !/compa_pauses where scope = 'city'/.test(d) || !/compa_pauses where scope = 'business'/.test(d)) falla(G, I, 0, "disponible(): nivel, canal, ciudad y negocio (una bandera que falta = apagado)");
-    if (!/const d = await disponible\(/.test(sinComent(C))) falla(G, C, 0, "el turno revisa los interruptores antes de todo");
+    for (const fn of ["turno", "paso"]) { const b = cuerpoFn(sinComent(C), fn); if (b && (!/const d = await disponible\(/.test(b) || !/if \(!d\.ok \|\| !dOp\.ok\) return \{ ok: false, apagado: true/.test(b))) falla(G, C, 0, `${fn}(): revisa los interruptores (la persona y la operación) antes de todo`); }
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === I) continue;
       const t = sinComent(x);
@@ -4175,12 +4187,74 @@ const guardianes = {
      (conversación, modelo, tope, acciones, contexto). Solo lo usan lib/compa, su ruta de pruebas, el barrido y el Super Admin. */
   compaSinRutaCritica() {
     const G = "compaSinRutaCritica";
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|ElCompaAdmin\.tsx$))/;
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|ElCompaAdmin\.tsx$)|app\/\(app\)\/soporte\/compa\/)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
       for (const m of t.matchAll(/(?:from |import\()"(@\/lib\/compa\/|\.\.?\/(?:\.\.\/)*compa\/)(conversacion|modelo[a-z-]*|tope|acciones|persona|contexto-[a-z]+|interruptores|verificar|reglas|admin-compa)"/g)) falla(G, x, 0, `la ruta de ${x.split("/").slice(2, 4).join("/")} no espera a El Compa (importa ${m[2]})`);
+      // 7d · Fuera de su lugar solo se puede preguntar si El Compa está (lib/compa/hoja: lectura barata) y SIEMPRE con el camino de siempre si falla.
+      if (/from "@\/lib\/compa\/hoja"/.test(t)) for (const m of t.matchAll(/\b(estadoVecino|hojaDe|opsVecino|vecinoDisponible|opVecino)\(/g))
+        if (!/^[^;]*?\.catch\(\(\) =>/.test(t.slice(m.index))) falla(G, x, 0, `${m[1]}() fuera de El Compa sin .catch(() => …): si falla, la pantalla sigue como siempre`);
+      if (/hoja-ayuda/.test(t) && !/^apps\/web\/app\/\(app\)\/[a-z/]+\/\[num\]\/ayuda\/page\.tsx$/.test(x)) falla(G, x, 0, "la hoja de ayuda solo la abre la página «Ayuda con …» de una operación");
     }
+  },
+
+  /* ── Fase 7 · 7d El Compa para vecinos ── */
+  /* 7d. Siempre se sabe que es una IA y siempre hay una persona: la hoja (2as) y los pasos (2at) pasan por CompaVecino con el aviso fijo (ES/EN,
+     verbatim de §1c) y su línea de privacidad a /ayuda/privacidad-de-el-compa en `disclaimer`, «Con una persona» SIEMPRE (personLabel y
+     person2Label sin condición) y «EL COMPA LO PREPARÓ · CONFÍRMALO TÚ» en la barra de confirmar; las piezas Compa* del sistema solo se usan ahí. */
+  compaSiempreIA() {
+    const G = "compaSiempreIA", V = "apps/web/app/(app)/soporte/compa/CompaVecino.tsx", C = "apps/web/lib/compa/conversacion.ts";
+    if (!existsSync(V)) return falla(G, V, 0, "falta la pantalla de El Compa para vecinos");
+    const v = sinComent(V);
+    for (const [re, q] of [[/"EL COMPA ES UNA IA Y PUEDE EQUIVOCARSE\. LO QUE MUEVE DINERO O CAMBIA TU CUENTA LO REVISA UNA PERSONA\."/, "el aviso de IA en español (verbatim)"],
+      [/"EL COMPA IS AN AI AND CAN MAKE MISTAKES\. ANYTHING THAT MOVES MONEY OR CHANGES YOUR ACCOUNT IS REVIEWED BY A PERSON\."/, "el aviso de IA en inglés (verbatim)"],
+      [/href="\/ayuda\/privacidad-de-el-compa"/, "la línea de privacidad a /ayuda/privacidad-de-el-compa"], [/disclaimer=\{disc\}/, "el aviso en el marco (disclaimer)"],
+      [/personLabel=\{E2\("Con una persona", "Talk to a person"\)\}/, "«Con una persona» arriba, sin condición"], [/person2Label=\{E2\("Hablar con una persona", "Talk to a person"\)\}/, "«Hablar con una persona» en la hoja, sin condición"],
+      [/note: E2\("EL COMPA LO PREPARÓ · CONFÍRMALO TÚ", "EL COMPA PREPARED IT · YOU CONFIRM"\)/, "«EL COMPA LO PREPARÓ · CONFÍRMALO TÚ»"]])
+      if (!re.test(v)) falla(G, V, 0, `falta ${q}`);
+    if ((v.match(/<C\.CompaFrame\b/g) ?? []).length !== 1) falla(G, V, 0, "un solo marco CompaFrame (con el aviso y la persona)");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx$/.test(x) && x !== V && /\bCompaFrame\b/.test(sinComent(x))) falla(G, x, 0, "El Compa del vecino se pinta solo en CompaVecino.tsx (con el aviso de IA y «Con una persona»)");
+    if (existsSync(C) && !/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/.test(sinComent(C))) falla(G, C, 0, "el sistema del modelo dice que es una IA");
+  },
+
+  /* 7d. Sin El Compa nada se rompe (la regresión «todo apagado» hecha regla): cada página «Ayuda con …» de una operación pregunta PRIMERO por la
+     hoja con hojaAyuda() y, si vuelve null, sigue con lo de siempre (`if (hoja) return hoja;`); hojaAyuda envuelve todo en try/catch → null y
+     respeta ?de=compa; hojaDe() solo devuelve la hoja si vecinoDisponible() (interruptores de nivel, canal, ciudad y negocio, y el tope) y la
+     operación es de esa persona, del tipo de la ruta y sin solicitud de ayuda. Al revés: quitar el `if (hoja)`, el catch, el tope o el tipo → falla. */
+  compaHojaSinRomper() {
+    const G = "compaHojaSinRomper", H = "apps/web/app/(app)/soporte/compa/hoja-ayuda.tsx", L = "apps/web/lib/compa/hoja.ts";
+    const RUTA = { cita: "appointment", pedido: "order", mercado: "market_order", apartado: "hold", fiesta: "party", viaje: "trip", noche: "night", insc: "enrollment", vis: "visit", privado: "private_event", "eventos/orden": "tickets" };
+    const paginas = codigo.filter((f) => /^apps\/web\/app\/\(app\)\/[a-z/]+\/\[num\]\/ayuda\/page\.tsx$/.test(f));
+    for (const f of paginas) {
+      const t = sinComent(f), r = f.replace(/^apps\/web\/app\/\(app\)\//, "").replace(/\/\[num\]\/ayuda\/page\.tsx$/, "");
+      const k = RUTA[r];
+      if (!k) { falla(G, f, 0, `una página de ayuda nueva (${r}): súmala a la hoja de El Compa con su tipo`); continue; }
+      if (!new RegExp(`const hoja = await hojaAyuda\\(u, [^,]+, \\(await searchParams\\)\\.de, \\["${k}"\\], \\(\\) => <Operacion params=\\{params\\}[^>]*/>\\);\\n\\s*if \\(hoja\\) return hoja;`).test(t)) falla(G, f, 0, `la Ayuda pregunta primero por la hoja (tipo ${k}) y si no, sigue como siempre`);
+      if (!/import Operacion from "\.\.\/page";/.test(t)) falla(G, f, 0, "la hoja va sobre la pantalla de la operación de siempre");
+      const iH = t.indexOf("const hoja = await hojaAyuda("), iN = t.lastIndexOf("notFound();", iH);
+      if (iH < 0 || iN < 0) falla(G, f, 0, "la hoja va DESPUÉS de las revisiones de siempre de la página (si la Ayuda no existe para esa persona, 404 como antes)");
+    }
+    if (paginas.length < 11) falla(G, H, 0, `faltan páginas de ayuda con la hoja (${paginas.length} de 11)`);
+    if (!existsSync(H) || !existsSync(L)) return falla(G, H, 0, "falta la hoja de ayuda");
+    const h = sinComent(H), l = sinComent(L);
+    if (!/if \(de === "compa"\) return null;/.test(h) || !/try \{[\s\S]*const h = await hojaDe\(u\.id, num, kinds\);[\s\S]*\} catch \(e\) \{[\s\S]*return null;\s*\}/.test(h)) falla(G, H, 0, "hojaAyuda: ?de=compa y cualquier falla = el camino de siempre (null)");
+    const hd = cuerpoFn(l, "hojaDe"), vd = cuerpoFn(l, "vecinoDisponible"), ev = cuerpoFn(l, "estadoVecino");
+    if (!/if \(!op \|\| op\.ayuda \|\| !kinds\.includes\(op\.kind\)\) return null;/.test(hd) || !/if \(!\(await vecinoDisponible\(userId, op\.negocioId, op\.ciudad\)\)\) return null;/.test(hd)) falla(G, L, 0, "hojaDe: suya, del tipo de la ruta, sin solicitud y con El Compa disponible en ese negocio");
+    if (!/return e\.encendido && !e\.alTope;/.test(vd) || !/disponible\(\{ uso: "neighbor", canal: "app", ciudad, negocio: negocio \?\? null \}\)/.test(ev) || !/alTope\(\)/.test(ev)) falla(G, L, 0, "la hoja respeta nivel, canal, ciudad, negocio y el tope");
+    if (!/where o\.user_id = \$1/.test(l) || !/not exists \(select 1 from op_private p where p\.operation_id = o\.id\)/.test(l) || !/'NEG-SALUD', 'NEG-PRO'/.test(l) || !/b\.category_id = 'NEG-NINOS'/.test(l)) falla(G, L, 0, "la hoja solo toca operaciones de la persona y nunca Salud, Profesionales, Niños ni datos privados");
+  },
+
+  /* 7d. Lo que hablan los vecinos con El Compa lo lee solo el equipo con compa:editar y CADA apertura queda en compa_reads antes de leer el hilo;
+     fuera del motor (conversacion.ts) solo la ficha del Super Admin lee compa_messages. */
+  compaLecturaAnotada() {
+    const G = "compaLecturaAnotada", A = "apps/web/lib/compa/admin-compa.ts";
+    if (!existsSync(A)) return falla(G, A, 0, "falta el Super Admin de El Compa");
+    const f = cuerpoFn(sinComent(A), "fichaConversacion");
+    if (!/if \(!s\.puede\("compa", "editar"\)\) return null;/.test(f)) falla(G, A, 0, "la ficha con el hilo pide compa:editar");
+    const i = f.indexOf("insert into compa_reads"), j = f.indexOf("from compa_messages");
+    if (i < 0 || j < 0 || i > j) falla(G, A, 0, "cada lectura del hilo queda en compa_reads ANTES de leerlo");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && !/^apps\/web\/lib\/compa\/(conversacion|admin-compa)\.ts$/.test(x) && /\bfrom compa_messages\b/.test(sinComent(x))) falla(G, x, 0, "el hilo de El Compa solo lo leen el motor y la ficha anotada del Super Admin");
   },
 
   idioma() {

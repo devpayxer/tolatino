@@ -21,8 +21,8 @@ type Bi = { es: string; en: string };
 type ResModulo = { ok: true } | { ok: false; msg: Bi };
 /* Solicitudes pendientes y gratis: la función de cancelar DEL CLIENTE de cada módulo (la misma que llama su pantalla). */
 const CANCELABLES: Record<string, (userId: string, numero: string) => Promise<ResModulo>> = {
-  appointment: async (u, n) => citaCliente(u, n, "cancelar"),
-  table: async (u, n) => rsvCliente(u, n, "cancelar", "otro"),
+  appointment: async (u, n) => citaCliente(u, n, "cancelar", undefined, "compa"),
+  table: async (u, n) => rsvCliente(u, n, "cancelar", "otro", "compa"),
 };
 export const tiposCancelables = () => Object.keys(CANCELABLES);
 

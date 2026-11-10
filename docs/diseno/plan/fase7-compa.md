@@ -642,9 +642,17 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       texto y en una ayuda envenenada, acción propuesta → confirmada aparte por `rsvCliente`, IDOR con dos vecinas, verificador, lento/error/rechazo,
       20 a la vez contra el tope, interruptores nivel/canal/ciudad, límites); 0118 dos veces en local y en una base nueva; guardianes 66/66 al revés.
       Sin marcar: la regresión «todo apagado» de Ayuda y Mensajes es de 7d/7f (hoy ninguna pantalla de vecino usa El Compa); el modelo real sin
-      probar (no hay llave); falta la corrida de CI (la hace la sesión principal).
-- [ ] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
-      una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés).
+      probar (no hay llave); falta la corrida de CI (la hace la sesión principal). — 7d (10 nov): **la parte de Ayuda, hecha:** en las 11 familias
+      la pantalla con el nivel apagado, el canal apagado, la ciudad en pausa, el negocio en pausa y al tope es idéntica a la de antes (`compa7d`), y
+      `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` pasan con El Compa apagado (`ayuda2i`, `cit3e`, `ayu4z` también al tope); guardián `compaHojaSinRomper`.
+      Sigue sin marcar por Mensajes (7f), el modelo real y CI.
+- [x] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
+      una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés). — 7d (10 nov): 0119 dos veces en local y en una
+      base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7d` 140 ✓ (hoja en las 11 familias, fuente con enlace,
+      preparar → «No, dejarla» → confirmar = CANCELADA con actor compa, «Ya cambió», un uso, IDOR con dos vecinas repitiendo las acciones reales,
+      origen cruzado, inyección, caso TK- con solo lo permitido, dinero sin modelo, formulario con origin «compa», ficha del Super Admin con lectura
+      anotada, límite); guardianes 3 nuevos + 5 ampliados, 33/33 al revés (`alreves7d`) y 66/66 de 7c. Falta la corrida de CI (la hace la sesión
+      principal).
 - [ ] Panel: asistente con la guía de las partes de esa persona; «Ir a …»; dinero y cuenta a Soporte.
 - [ ] Respuestas automáticas Pro (cuándo, temas, nota, prueba, registro, pasar al dueño, apagar desde el admin) y «Sugerir respuesta».
 - [ ] Copiloto con el modelo mayor, solo borrador, con registro de uso.

@@ -4,6 +4,9 @@ _Pantallas: **la orden** (`/eventos/orden/B-…` › **Ayuda con esta orden**), 
 **Super Admin › Colas › Ayuda con pedidos**. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 - **Ayuda con esta orden** abre **¿Qué pasó?** con cuatro opciones:
   - **No veo mis boletos** → te mandamos un aviso a tu cuenta con tus boletos (también están en Mi cuenta › Boletos).
   - **Cambiar un nombre** → gratis hasta 2 h antes del evento.
@@ -28,6 +31,10 @@ _Pantallas: **la orden** (`/eventos/orden/B-…` › **Ayuda con esta orden**), 
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 **Help with this order** opens **What happened?**: I can't see my tickets (we send a notice to your account) · Change a name (free up to 2 h before)
 · **A payment problem** (request **B-**: charged twice, charge not what I saw, paid but no tickets, other) · Cancel my tickets. Payment problems go
 **straight to To'Latino** (it made the charge), queue «Help with orders»; To'Latino answers and may **refund to your card**. Your tickets stay valid

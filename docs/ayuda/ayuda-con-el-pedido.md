@@ -1,9 +1,12 @@
 # Ayuda con el pedido · Order help
 
 _Pantallas: `/pedido/{n}` (botón y estado), `/pedido/{n}/ayuda` (APP-NEG-PEDIDO-AYUDA), Panel › Hoy («Ayuda con pedidos») y el detalle del pedido, y
-Super Admin › Soporte (cola «Ayuda con pedidos y citas»). Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
+Super Admin › Soporte (cola «Ayuda con pedidos y citas»). Versión: 10 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 - **El cliente**, en un pedido ya recibido (hasta **7 días** después), toca **Ayuda con el pedido** y elige qué pasó: falta
   algo, llegó algo equivocado, frío o mal preparado, dañado o derramado; en delivery también llegó tarde o no llegó; problema
   con el pago u otro. Si es de platos, elige cuáles y cuántos. Luego qué le gustaría: **que se lo repongan** (delivery),
@@ -30,6 +33,11 @@ hacen (ver `pagar-con-tarjeta.md`). Si pagaste en el local, lo que acuerdes con 
 no responde.
 
 ## English
+
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 
 After receiving an order (up to 7 days), the customer opens an order-help request: what happened, which dishes, what they
 want (replacement on delivery, refund of those dishes settled with the business, or just letting them know) and details. The

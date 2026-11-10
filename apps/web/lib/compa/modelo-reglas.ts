@@ -8,7 +8,7 @@ import { LINEAS } from "./reglas";
 type OpCtx = { ref: string; negocio: string; cancelable_gratis: boolean };
 export type SalidaReglas = { respuesta: string; tipo: "respuesta" | "pregunta" | "no_se"; fuente: string; accion: { tipo: string; ref: string; pantalla: string }; persona: string; chips: string[] };
 
-const frases = (t: string, n: number) => t.replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
+const frases = (t: string, n: number) => t.replace(/(^|\n)\s*[-•]\s+/g, "$1").replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
   .split(/(?<=[.!?])\s+/).filter((x) => x.length > 3).slice(0, n).join(" ");
 
 export function responderConReglas(x: { texto: string; lang: Lang; ops: OpCtx[]; trozos: TrozoModelo[] }): SalidaReglas {

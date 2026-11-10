@@ -28,7 +28,9 @@ export function Privacidad({ s, es, yo }: { s: S; es: boolean; yo: Yo }) {
     { type: "rows", rows: s.map((x) => { const d = disp(x.ua, es); return { key: x.id, ic: d.tel ? "phone" : "globe", t: d.t, tag: x.esta ? [E2("ESTA", "THIS ONE"), "signal"] as [string, string] : null,
       s: `${E2("ÚLTIMA VEZ ", "LAST SEEN ")}${visto(x.visto).toUpperCase()}`, acts: x.esta ? undefined : [[E2("Cerrar", "Sign out"), "secondary", () => void cerrar(x.id)]] as [string, string, () => void][] }; }) },
     { type: "sec", t: E2("Tus datos", "Your data"), fs: "14px" },
-    { type: "rows", rows: [{ ic: "trash", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)", t: E2("Borrar mi cuenta", "Delete my account"), s: E2("TIENES 30 DÍAS PARA ARREPENTIRTE", "YOU HAVE 30 DAYS TO CHANGE YOUR MIND"), chev: true, on: () => router.push("/cuenta/ajustes/borrar") }] },
+    { type: "rows", rows: [{ ic: "trash", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)", t: E2("Borrar mi cuenta", "Delete my account"), s: E2("TIENES 30 DÍAS PARA ARREPENTIRTE", "YOU HAVE 30 DAYS TO CHANGE YOUR MIND"), chev: true, on: () => router.push("/cuenta/ajustes/borrar") },
+      // 7d · El Compa (la IA de la ayuda): qué ve, qué no, quién lee y cuánto se guarda.
+      { ic: "chat", t: E2("El Compa", "El Compa"), s: E2("LA IA DE LA AYUDA · QUÉ VE Y QUIÉN LO LEE", "THE HELP AI · WHAT IT SEES AND WHO READS IT"), chev: true, on: () => router.push("/ayuda/privacidad-de-el-compa") }] },
     { type: "note", tone: "info", ic: "shield", s: E2("No vendemos tus datos, ni a negocios ni a nadie.", "We never sell your data, not to businesses, not to anyone.") },
   ];
   return <Marco es={es} code="USR-PRIVACIDAD" back="/cuenta/ajustes" t={E2("Privacidad y seguridad", "Privacy and security")} s={E2("QUIÉN TE VE · SESIONES", "WHO SEES YOU · SESSIONS")} blocks={B} yo={yo} ui={ui} />;

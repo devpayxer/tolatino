@@ -1,10 +1,13 @@
 # Reseña y Ayuda con la inscripción · Enrollment review and help
 
 _Pantallas: Tu inscripción (`/insc/I-…`) › «Calificar» y «Ayuda con la inscripción» (`/insc/I-…/ayuda`); la página del lugar › Reseñas («Lo que
-importa en un curso / con los niños / en deporte»); Panel › Hoy («Ayuda que espera tu respuesta») y el detalle de la inscripción. Versión: 7 nov 2026.
+importa en un curso / con los niños / en deporte»); Panel › Hoy («Ayuda que espera tu respuesta») y el detalle de la inscripción. Versión: 10 nov 2026.
 Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 Cuando terminas un curso o programa (o tu membresía lleva 4 semanas activa) puedes dejar una **reseña verificada** con las
 preguntas que importan en cada caso. Si algo salió mal mientras estás inscrito o hasta 7 días después de terminar, pides **Ayuda**: el
 lugar responde en 24 horas y, si no responde o no estás de acuerdo, To'Latino lo revisa en 48 horas.
@@ -33,6 +36,10 @@ lugar responde en 24 horas y, si no responde o no estás de acuerdo, To'Latino l
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 When a course or program ends (or your membership has been active 4 weeks) you can leave a verified review. If something went
 wrong while enrolled or up to 7 days after it ends, ask for Help: the place replies within 24 hours; otherwise To'Latino reviews in 48 h.
 

@@ -329,7 +329,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
   casos en la app, macros ES/EN, plazo de primera respuesta en horas hábiles y «¿Se resolvió?» hechos. Falta: **WhatsApp** (7h) y **correo
   entrante** (§6 #16, sin fecha).
 - [ ] **Avisos** al negocio de una solicitud nueva y al cliente de la respuesta (SMS/push).
-- [ ] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero).
+- [x] **El Compa** antes de abrir la solicitud (el prototipo lo pone primero). — 7d (10 nov): la hoja 2as sale antes del formulario en las 11
+  páginas de «Ayuda con …»; apagada, al tope o con solicitud abierta, el formulario de siempre.
 
 ## Notificaciones (bloque 2j, 6 nov 2026)
 - [ ] **SMS de verdad:** con la clave de Telnyx (`TELNYX_API_KEY`, `TELNYX_FROM`) en los secretos del entorno de producción
@@ -1004,3 +1005,17 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] El copiloto, el panel y las respuestas automáticas usan el mismo motor (`turno` hoy solo acepta el uso «vecino»).
 - [ ] `go_to_panel` usa una lista cerrada mínima (hoy, mensajes, cobros, eventos, más) hasta que exista `compa_panel_guide`.
 
+## Fase 7 · 7d (El Compa para vecinos)
+- [ ] **7d · Botón «Ayuda» en operaciones vivas:** la hoja sale donde ya había «Ayuda con …» (casi siempre en operaciones terminadas). Para una
+      cita o mesa pendiente, El Compa la cancela desde Soporte › Pregúntale al Compa; el diseño pone «Ayuda» también en la cita por venir. Decidir
+      si se suma ese botón en cada pantalla de operación viva. (7d, 10 nov)
+- [ ] **7d · Ampliar lo que El Compa puede cancelar** (§6 #6): hoy solo citas y mesas pendientes y sin cobro (`CANCELABLES`); visitas, fiestas,
+      viajes o noches pendientes abren su pantalla. Decisión del fundador. (7d, 10 nov)
+- [ ] **7d · Pruebas viejas de Ayuda con El Compa encendido:** `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` pasan con El Compa apagado y al tope; encendido
+      la hoja sale antes del formulario (es el cambio) y esas pruebas deben entrar por «Algo no salió bien» o con `?de=compa`. Ajustarlas cuando
+      pasen a la matriz de CI. (7d, 10 nov)
+- [ ] **7d · Super Admin › Usuarios 360° › El Compa** (cifras por persona) y «Marcar respuesta incorrecta», Resumen y Negocios de `ADM-COMPA`:
+      con el Super Admin completo de El Compa (7i). La ficha con el hilo y las lecturas anotadas ya están (7d). (7d, 10 nov)
+- [ ] **7d · El Compa en los 9 dispositivos:** `compa7d` corre en 390 y 1360 en local; falta la matriz de CI. (7d, 10 nov)
+- [ ] **7d · Pantalla de un pedido sin hora de «listo» o de respuesta** (`lib/pedir.ts` `pedidoDe` falla con `ready_at` o `respond_by` nulos): la
+      semilla 0041 repara el pedido de la 0040; pedidos de prueba hechos a mano siguen fallando. Hacer la pantalla tolerante. (7d, 10 nov)

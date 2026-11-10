@@ -34,7 +34,7 @@ const SEL = `select o.id::text, o.number, o.status, o.status_detail as detail, o
 async function leer(c: Q, where: string, args: unknown[], lock = false): Promise<Op | null> {
   return (await c.query<Op>(`${SEL} where o.kind = 'appointment' and ${where}${lock ? " for update of o" : ""}`, args)).rows[0] ?? null;
 }
-const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system", actorId: string | null, note?: Bi) =>
+const ev = (c: Q, op: string, kind: string, actor: "user" | "member" | "system" | "compa", actorId: string | null, note?: Bi) =>
   c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`, [op, kind, actor, actorId, note ? JSON.stringify(note) : null]);
 
 /* ── Avisos ── */
@@ -289,7 +289,9 @@ export async function citaCambio(negocio: string, numero: string, que: "aceptar"
 
 /* ── El cliente ── */
 export type QueCliente = "cancelar" | "aceptar" | "nogracias" | "tarde" | "recibi" | "sinseguro";
-export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number): Promise<ResC> {
+/* 7d · `por`: «compa» cuando la cancelación la preparó El Compa y la persona la confirmó (lib/compa/acciones.ts confirmar): el evento de la
+   operación queda con actor 'compa' (MD L1521). Lo demás es idéntico: mismas reglas, plazo, aviso y dinero. */
+export async function citaCliente(userId: string, numero: string, que: QueCliente, extra?: number, por: "user" | "compa" = "user"): Promise<ResC> {
   if (!NUM.test(numero)) return no("Esa cita no existe.", "That booking does not exist.");
   await vencerCitas({ userId, numero });
   let despues: (() => Promise<void>) | null = null;
@@ -319,7 +321,7 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
       await c.query(`update operations set status = 'cancelled', cancelled_by = 'user', cancelled_at = now(), cancel_reason = $2, details = details || $3::jsonb, updated_at = now() where id = $1::bigint`,
         [o.id, conf ? (aTiempo ? "a_tiempo" : "tarde") : "solicitud", JSON.stringify({ perdio: pierde })]);
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where operation_id = $1::bigint and status = 'open'`, [o.id]);
-      await ev(c, o.id, "cancelled", "user", userId, pierde ? { es: `Canceló con menos de ${o.cxh} h: el depósito se queda`, en: `Cancelled less than ${o.cxh} h before: deposit kept` } : undefined);
+      await ev(c, o.id, "cancelled", por, userId, pierde ? { es: `Canceló con menos de ${o.cxh} h: el depósito se queda`, en: `Cancelled less than ${o.cxh} h before: deposit kept` } : undefined);
       despues = async () => {
         if (o.pay === "held") await liberarOperacion(o.id);
         else if (o.pay === "captured" && aTiempo && o.pid && o.amount) await devolverPago({ paymentId: o.pid, centavos: o.amount - (o.refunded ?? 0), por: "policy", actorId: userId, motivo: "Cancelación a tiempo", idem: `cx-${numero}` });

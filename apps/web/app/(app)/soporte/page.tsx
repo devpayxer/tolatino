@@ -3,6 +3,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { accesoPanel } from "@/lib/panel";
 import { casoVecino, datosSoporte, horario } from "@/lib/soporte";
+import { estadoVecino } from "@/lib/compa/hoja";
 import { TEMAS_NEGOCIO, TEMAS_VECINO, type Tema } from "@/lib/soporte-comun";
 import { Soporte } from "./Soporte";
 
@@ -31,13 +32,15 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ c
     negocio = { id: a.negocio.id, name: a.negocio.name };
   }
   const q = { userId: u?.id ?? "", negocio: negocio?.id ?? null };
-  const [datos, caso, h] = await Promise.all([
+  const [datos, caso, h, compa] = await Promise.all([
     u ? datosSoporte(q) : Promise.resolve(null),
     u && sp.caso ? casoVecino(q, String(sp.caso)) : Promise.resolve(null),
     horario(),
+    // 7d · «El Compa te ayuda al instante» → «Pregúntale al Compa» (vecinos; el panel no). Apagado o si falla: «Escríbenos» como siempre.
+    negocio ? Promise.resolve(false) : estadoVecino(u?.id ?? null).then((e) => e.encendido).catch(() => false),
   ]);
   const temas: Tema[] = negocio ? TEMAS_NEGOCIO : TEMAS_VECINO;
   const pre = sp.nuevo ? { tema: temas.includes(sp.tema as Tema) ? (sp.tema as Tema) : null, op: sp.op ? String(sp.op).slice(0, 20) : null, otro: sp.otro ? String(sp.otro).slice(0, 20) : null } : null;
   return <Soporte es={es} conSesion={!!u} negocio={negocio} temas={temas} casos={datos?.casos ?? []} ops={datos?.ops ?? []} revs={datos?.revs ?? []} horario={h}
-    caso={caso} casoPedido={sp.caso ? String(sp.caso).slice(0, 20) : null} pre={pre} />;
+    caso={caso} casoPedido={sp.caso ? String(sp.caso).slice(0, 20) : null} pre={pre} compa={compa} />;
 }

@@ -16,7 +16,7 @@ export function recibidos(): Recibido[] { return [...(G.__compaSim ?? [])]; }
 export function olvidarRecibidos() { G.__compaSim = []; }
 
 const dormir = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const frases = (t: string, n: number) => t.replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
+const frases = (t: string, n: number) => t.replace(/(^|\n)\s*[-•]\s+/g, "$1").replace(/[#*_`>|]/g, " ").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1").replace(/\s+/g, " ").trim()
   .split(/(?<=[.!?])\s+/).filter((x) => x.length > 3).slice(0, n).join(" ");
 type Op = { ref: string; numero: string; negocio: string; estado: string; cancelable_gratis: boolean };
 const INYECCION = /(ignor[ae]|olvida|ignore|forget|disregard).{0,40}(reglas|instrucciones|rules|instructions)|instrucciones para el asistente|instructions for the assistant|eres el due[ñn]o|you are the owner/i;

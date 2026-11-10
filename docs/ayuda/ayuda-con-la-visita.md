@@ -1,10 +1,13 @@
 # Ayuda con la visita (Hogar) y con la cita (Auto) · Visit and appointment help
 
 _Pantallas: Tu cita › «Ayuda con la visita» / «Ayuda con la cita» (`/cita/{C-…}/ayuda`), Panel › Hoy › Ayuda con citas y el detalle de la cita, Super
-Admin › Colas › Ayuda con pedidos y citas. Es la misma ayuda de las citas de Belleza con los motivos de cada rubro. Versión: 6 nov 2026.
+Admin › Colas › Ayuda con pedidos y citas. Es la misma ayuda de las citas de Belleza con los motivos de cada rubro. Versión: 10 nov 2026.
 Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+- **Primero El Compa:** al tocar **Ayuda** se abre la hoja de **El Compa** (el asistente de IA de To'Latino) sobre tu operación, con opciones
+  fijas; **Algo no salió bien** (en boletos, **Un problema con el pago**) te trae a este formulario de siempre. Si El Compa está apagado o en
+  pausa, si To'Latino llegó al tope del mes de la IA o si ya abriste una ayuda, llegas directo aquí. Ver `el-compa.md`.
 Hasta 7 días después de la visita o la cita terminada (o si no se dio y pagaste algo):
 1. **Qué pasó.** Hogar: no llegó en la franja · cobró más de lo aprobado · quedó mal o volvió a fallar · dañó algo de la
    casa · vino otra persona · no me devolvieron el depósito · otra cosa. Auto: cobraron más del estimado sin mi OK · no
@@ -30,6 +33,10 @@ devolver a su tarjeta. Tu respuesta la ve el cliente en su cita.
 ## English
 
 ### What it does
+**El Compa first:** tapping **Help** opens El Compa (To'Latino's AI assistant) over your item with fixed options; **Something went wrong** (on
+tickets, **A payment problem**) brings you to this usual form. If El Compa is off or paused, the monthly AI cap is reached, or you already opened
+a request, you come straight here.
+
 Up to 7 days after a finished visit or appointment, tell what happened (home or auto reasons), add photos when required,
 and choose: come back / check again at no charge (warranty), refund to your card, or just let them know. The business
 replies within 24 h; otherwise, or if you disagree, To'Latino reviews within 48 h. Refunds come only from what you paid by

@@ -12,6 +12,8 @@ escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 10 nov 20
 - Cada caso tiene un número (**TK-…**) y un estado: **Recibido** · **Lo están viendo** · **Te respondieron** · **Resuelto**.
 
 ## Cómo se usa
+0. Con El Compa encendido, arriba sale **El Compa te ayuda al instante** con **Pregúntale al Compa** (los pasos guiados, `el-compa.md`) y, debajo,
+   **Escríbenos** para ir directo a una persona. Si El Compa está apagado, solo sale Escríbenos.
 1. Toca **Escríbenos**. Elige **sobre qué es**; si es un pedido, una cita o un pago, elige **cuál** (o «Ninguno en especial»).
 2. Cuéntanos qué pasó (10 letras o más). Puedes **agregar una foto** (un recibo, una pantalla): solo la ven tú y el equipo.
 3. Toca **Enviar**. Te decimos para cuándo te responde una persona (por ejemplo, «hoy antes de las 4 PM» o «el lunes antes de las 11 AM»).
@@ -39,6 +41,8 @@ escritorio (tus casos a la izquierda, el caso a la derecha). Versión: 10 nov 20
 ## English
 
 ### What it does
+With El Compa on, the top card says **El Compa helps you right away** with **Ask El Compa** (guided steps) and **Write to us** below it to go
+straight to a person; a case El Compa passes on says «Your case went to Support» and comes with its summary.
 Support is your conversation with **a person on the To'Latino team** about things that are not about a single business: your account, a payment
 or a charge, the app, a business or a review, or an idea for To'Latino. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time). For
 an order, a booking or a ticket, open it and tap **Help** first: the business replies and, if not, To'Latino reviews it; those show at the top in

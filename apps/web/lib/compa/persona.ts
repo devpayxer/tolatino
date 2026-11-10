@@ -12,11 +12,11 @@ export type Motivo = "money" | "account" | "safety" | "asked_person" | "unknown"
 const TEMA: Record<Motivo, Tema> = { money: "pago", account: "cuenta", safety: "seguridad", asked_person: "tecnico", unknown: "tecnico" };
 
 export type ResPersona = { ok: true; caso: string; promesa: { es: string; en: string } } | { ok: false; msg: { es: string; en: string } };
-export async function pasarAPersona(x: { userId: string; conversacionId: number; motivo: Motivo; textos: string[]; operacion?: string | null; lang: Lang }): Promise<ResPersona> {
+export async function pasarAPersona(x: { userId: string; conversacionId: number; motivo: Motivo; textos: string[]; operacion?: string | null; lang: Lang; tema?: Tema }): Promise<ResPersona> {
   // El resumen: lo último que dijo la persona (≤ 4 frases, tapado). Así nadie le vuelve a preguntar.
   const resumen = tapar(x.textos.slice(-4).join(" ").replace(/\s+/g, " ").trim()).texto.slice(0, 440);
   const texto = (resumen.length >= 10 ? resumen : `${resumen} (desde El Compa)`).slice(0, 800);
-  const r = await abrirCasoDesdeCompa({ userId: x.userId, conversacion: x.conversacionId, tema: TEMA[x.motivo], texto, resumen, operacion: x.operacion ?? null,
+  const r = await abrirCasoDesdeCompa({ userId: x.userId, conversacion: x.conversacionId, tema: x.tema ?? TEMA[x.motivo], texto, resumen, operacion: x.operacion ?? null,
     prioridad: x.motivo === "safety" ? "alta" : null });
   if (!r.ok || !r.numero) return { ok: false, msg: r.ok ? { es: "Prueba de nuevo.", en: "Try again." } : r.msg };
   const k = (await db().query<{ id: string; due: string; tz: string }>(
