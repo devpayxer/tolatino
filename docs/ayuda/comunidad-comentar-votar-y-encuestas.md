@@ -1,7 +1,7 @@
-# Comunidad · comentar, votar y encuestas · Community · comments, votes and polls
+# Comunidad: comentar, votar y encuestas · Community: comments, votes and polls
 
-_Pantalla: **la publicación y su hilo** (`/comunidad/p/{id}`, APP-COM-POST). Teléfono y escritorio. Versión: Fase 5 · bloque 5b
-(7 nov 2026). Solo con cuenta; lo de los vecinos no sale en buscadores._
+_Pantallas: **la publicación y su hilo** (`/comunidad/p/{id}`, APP-COM-POST). Teléfono y escritorio. Solo con cuenta; lo de los vecinos no sale en
+buscadores. Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **El hilo:** debajo de la publicación están los comentarios, **20 a la vez** («Ver más comentarios» trae los siguientes),
@@ -68,13 +68,12 @@ Nunca te avisamos de lo tuyo, y nunca de alguien con quien hay un bloqueo (en cu
 
 **¿Puedo cambiar la respuesta que me sirvió?** Sí, en el menú de la otra respuesta: «Esta me sirvió más». Siempre hay una.
 
-**¿Los puntos?** Los votos y «Me sirvió» darán puntos cuando lleguen los rangos (bloque 5f). Hoy cuentan para el orden.
+**¿Los puntos?** Los votos y «Me sirvió» cuentan para el orden y dan puntos (ver `comunidad-puntos-rangos-y-tabla.md`).
 
 **¿Puedo cambiar mi voto de la encuesta?** No: un voto por persona y no se cambia.
 
----
-
 ## English
+
 Below each post is its thread: comments 20 at a time ("See more comments"), sorted by Top (or Newest). The answer the asker
 marked "Helped me" shows on top in green ("HELPED {name} · N VOTES"); otherwise the top comment with 5+ upvotes shows as "TOP
 VOTED". "Recommended in this thread" lists every business neighbors recommended in a comment with a % bar by votes (computed by
@@ -91,4 +90,4 @@ closes everyone sees the result and its author and voters get one notice with it
 post, reply to your comment, mention or reply with "@Name", your answer helped, 10 upvotes (once), poll closed — never about your
 own content and never from someone with a block between you. Phones, emails, SSN, cards and exact addresses are rejected, you
 can't recommend your own business, closed comments can't be answered, and blocked neighbors can't see, comment, vote or reply on
-each other's content. Points for votes and "Helped me" arrive with ranks (block 5f).
+each other's content. Points for votes and "Helped me" arrive with ranks.

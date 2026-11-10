@@ -1,26 +1,20 @@
-# Horarios y ayuda · La ayuda de hoy · Precios y repatriación (Iglesias) · Schedule and help · Today's help · Prices and repatriation (Churches)
+# Horarios y ayuda, la ayuda de hoy, precios y repatriación (Iglesias) · Schedule and help, today's help, prices and repatriation (Churches)
 
-_Pantallas: Panel › Lo que vendes › Servicios y › Tu herramienta («Horarios y ayuda» para parroquias, iglesias, grupos, sacramentos,
-consejería y oración; «La ayuda de hoy» para despensas y ayuda comunitaria; «Precios y repatriación» para funerarias); Panel › Tu página ›
-Tus licencias; Super Admin › Negocios 360°. Versión: Fase 4 · bloques 4ia–4ig (7 nov 2026). Las fechas, el catecismo y la consejería que
-piden por la app se responden en Lo que vendes › Fechas e inscripciones (`panel-visitas`); las licencias, en `licencias-inmuebles-y-autos`._
+_Pantallas: Panel › Lo que vendes › Servicios y › Tu herramienta («Horarios y ayuda» para parroquias, iglesias, grupos, sacramentos, consejería y
+oración; «La ayuda de hoy» para despensas y ayuda comunitaria; «Precios y repatriación» para funerarias); Panel › Tu página › Tus licencias; Super
+Admin › Negocios 360°. Las fechas, el catecismo y la consejería que piden por la app se responden en Lo que vendes › Fechas e inscripciones
+(`panel-visitas`); las licencias, en `licencias-inmuebles-y-autos`. Versión: 7 nov 2026. Audiencia: negocio. Tema: panel._
 
-## Qué hace · What it does
-**ES.** Lo que más preguntan en Iglesias: **¿hay servicio en español y me ayudan si lo necesito?** La iglesia dice **a qué hora es la misa
+## Qué hace
+Lo que más preguntan en Iglesias: **¿hay servicio en español y me ayudan si lo necesito?** La iglesia dice **a qué hora es la misa
 en español** o **sus cultos de la semana**, si también es **en inglés** y **qué ayuda da gratis** (despensa, ropa, transporte los días de
 servicio, grupo de jóvenes, escuela bíblica para niños, bodas y quinceañeras). La parroquia dice si el **catecismo** tiene inscripciones
 abiertas. La despensa dice si **hoy ya se acabó**, si pide papeles y **cada cuánto puede venir una familia**. La funeraria dice si atiende
 **las 24 horas**, el **precio total por escrito** de cada servicio, si hay **plan de pagos** y en **cuántos días** llega la repatriación a RD.
 Todo sale en su página, en la tarjeta del buscador («Misa en español: domingo 12 PM y sábado 6 PM») y en los filtros («Misa en español»,
 «Despensa», «Transporte», «Para jóvenes», «Sin papeles», «Repatriación», «24 horas»).
-**EN.** What people ask most: **is there a service in Spanish and will they help me if I need it?** The church states **when the Spanish
-mass** or **weekly services** are, whether they are **also in English** and **what free help it gives** (food pantry, clothing, rides on
-service days, youth group, kids Bible school, weddings and quinceañeras). The parish states whether **catechism** registration is open. The
-pantry states whether **food ran out today**, whether it asks for papers and **how often a family can come**. The funeral home states whether
-it is **open 24 hours**, the **written total price** of each service, whether there is a **payment plan** and **how many days** repatriation
-to the DR takes. It all shows on the page, the search card and the filters.
 
-## Cómo se usa · How to use it
+## Cómo se usa
 1. **Servicios › Agregar**: cada servicio con su forma: **Gratis** (misas, cultos, grupos, despensa, oración, consejería: llegan a la hora),
    **Donativo sugerido** (sacramentos y celebraciones: «si no puedes, no se cobra»), **Precio total por escrito** (solo funerarias, de $500 a
    $30,000) o **Curso con grupos** (catecismo, primera comunión: semanas; luego «Abrir un grupo» con fecha de inicio y cupo). Puedes decir
@@ -31,7 +25,7 @@ to the DR takes. It all shows on the page, the search card and the filters.
 3. **Tu página › Tus licencias**: la funeraria agrega su licencia de PA; un ministerio de ayuda al inmigrante agrega a su representante
    acreditado del DOJ; el 501(c)(3) es opcional. To'Latino las revisa con el registro público antes de mostrar el sello.
 
-## Qué pasa en cada caso · What happens
+## Qué pasa en cada caso
 - **Misa o culto**: siempre queda al menos un horario; si intentas quitar el último, la app te lo dice y no lo quita.
 - **La tarjeta del buscador** sale sola de tus horarios: «Misa en español: domingo 12 PM y sábado 6 PM» o «Culto: domingo 11 AM · Jóvenes:
   viernes 7 PM». Abajo dice «Catecismo: inscripciones abiertas» (si tienes el catecismo en Servicios), «Transporte gratis los domingos» o
@@ -47,7 +41,7 @@ to the DR takes. It all shows on the page, the search card and the filters.
   paga en la parroquia. No hay diezmo ni ofrenda en línea.
 - **Tiendas de artículos religiosos y botánicas** van por contacto: la gente llama o escribe.
 
-## Reglas que no se apagan · Rules that are always on
+## Reglas que no se apagan
 - **La ayuda es gratis.** El donativo siempre es sugerido; si no puedes, no se cobra.
 - **Nadie pregunta tu estatus.** Ni para la despensa ni para los sacramentos.
 - Funerarias: **el precio es el total** (por escrito antes de firmar; nada se agrega después) y **sin presión** (la familia decide con calma;
@@ -61,5 +55,16 @@ to the DR takes. It all shows on the page, the search card and the filters.
 - **¿Tengo que apagar «Se acabó por hoy» mañana?** No: se apaga solo a la medianoche de tu ciudad.
 - **¿Por qué no me sale «Precio total por escrito»?** Es solo para funerarias; una iglesia usa «Gratis» o «Donativo sugerido».
 
-**EN FAQ.** Donations and tithes are not taken through the app. A church always keeps at least one service time. «Out for today» turns off
+## English
+
+### What it does
+What people ask most: **is there a service in Spanish and will they help me if I need it?** The church states **when the Spanish
+mass** or **weekly services** are, whether they are **also in English** and **what free help it gives** (food pantry, clothing, rides on
+service days, youth group, kids Bible school, weddings and quinceañeras). The parish states whether **catechism** registration is open. The
+pantry states whether **food ran out today**, whether it asks for papers and **how often a family can come**. The funeral home states whether
+it is **open 24 hours**, the **written total price** of each service, whether there is a **payment plan** and **how many days** repatriation
+to the DR takes. It all shows on the page, the search card and the filters.
+
+### FAQ
+Donations and tithes are not taken through the app. A church always keeps at least one service time. «Out for today» turns off
 by itself at midnight in your city. «Written total price» is only for funeral homes; churches use «Free» or «Suggested donation».

@@ -1,6 +1,6 @@
 # Panel › Eventos: códigos de descuento · Dashboard › Events: discount codes
 
-_Pantalla: **Panel › Eventos › tu evento › CÓDIGOS DE DESCUENTO**. Teléfono y escritorio. Versión: Fase 6 · bloque 6c (10 nov 2026)._
+_Pantallas: **Panel › Eventos › tu evento › CÓDIGOS DE DESCUENTO**. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Crear código**: el código (3 a 16 letras o números, p. ej. AMIGOS10), **Porcentaje** (5 % a 90 %) o **Monto fijo** ($1 a $500) y
@@ -23,9 +23,9 @@ _Pantalla: **Panel › Eventos › tu evento › CÓDIGOS DE DESCUENTO**. Teléf
 - **¿To'Latino tiene sus propios códigos?** No: solo los del organizador.
 - **¿Puedo borrar un código?** Se apaga (nada se borra; queda el historial de usos).
 
----
+## English
 
-## What it does (English)
+### What it does
 **Create code**: 3–16 letters or numbers, **Percent** (5–90%) or **Fixed amount** ($1–$500) and how many **uses**; each code shows **N of M
 uses** and an on/off switch. **The discount comes out of your share**: it lowers ticket prices, not To'Latino's fee; tickets only, never below
 $2. Customers type it in **Have a code?** and see **CODE APPLIED · −$X**. Used up → "That code has been used up." One use per person per event.

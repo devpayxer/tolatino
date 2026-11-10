@@ -1,8 +1,8 @@
 # Reservar mesa · Booking a table
 
-_Pantallas: pestaña **Reservaciones** de la página del restaurante (`/n/{negocio}?tab=rsv`), la tarjeta **Reservar mesa**
-del Resumen, **Solicitud de mesa** (`/n/{negocio}/reservar`) y **Tu reservación** (`/reserva/{número}`), teléfono y
-escritorio. Versión: Fase 2 · bloque 2e (6 nov 2026). Solo restaurantes Pro con Reservaciones encendido._
+_Pantallas: pestaña **Reservaciones** de la página del restaurante (`/n/{negocio}?tab=rsv`), la tarjeta **Reservar mesa** del Resumen, **Solicitud de
+mesa** (`/n/{negocio}/reservar`) y **Tu reservación** (`/reserva/{número}`), teléfono y escritorio. Solo restaurantes Pro con Reservaciones encendido.
+Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **Reservar mesa:** primero cuántos son (1 a la mesa más grande, o «N+» para grupos grandes), luego el día (hasta 1
@@ -50,12 +50,11 @@ después de la hora.
 **¿Puedo cambiar una reservación ya confirmada?** Hoy no desde la app: cancélala (gratis) y reserva otra, o llama al
 restaurante. Una solicitud que todavía no contestan sí se cambia.
 
-**¿Me avisan por SMS?** Lo eliges al reservar; los avisos por SMS llegan con su bloque. Mientras, la pantalla de tu
-reservación se actualiza sola.
-
----
+**¿Me avisan por SMS?** Sí, si lo eliges al reservar: te llega cuando confirman, proponen otra hora o no pueden. La pantalla de tu
+reservación también se actualiza sola.
 
 ## English
+
 The **Reservations** tab: pick how many guests, the day, the area (if more than one) and a time per shift; only times
 with a free table for your group show. The Overview card shows the next 4 times for your group. We **hold the table
 for 5 minutes** while you add the name (or someone else's), occasion, needs, a note and SMS preference, then **Send

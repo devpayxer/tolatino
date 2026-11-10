@@ -1,7 +1,7 @@
 # Publica tu negocio · List your business
 
-_Pantallas: ONB-NEG-A1 (entrada), B1 tu negocio, C1 lo propio de tu categoría, D1 lo que vendes, E1 dónde y cuándo,
-F1 tu foto y tu página, H1 publicada. Versión: Fase 1 · bloque 1g-2 (5 nov 2026)._
+_Pantallas: ONB-NEG-A1 (entrada), B1 tu negocio, C1 lo propio de tu categoría, D1 lo que vendes, E1 dónde y cuándo, F1 tu foto y tu página, H1
+publicada. Versión: 5 nov 2026. Audiencia: vecino. Tema: negocios._
 
 ## Qué hace
 Publica un negocio en unos 5 minutos, gratis y con Pro 30 días gratis (sin tarjeta). Cada categoría trae sus propias
@@ -40,9 +40,8 @@ Todo se guarda solo: si sales, vuelves a /publica (también desde otro teléfono
 
 **¿Me cobran algo hoy?** No. No pedimos tarjeta.
 
----
-
 ## English
+
 List your business in about 5 minutes, free, with Pro free for 30 days (no card). Sign in with your phone and a 6-digit
 code, pick your category and what you do, answer your category's questions, check what you sell and set prices, add
 where and when, take or choose a cover photo and publish — it goes live right away. Everything saves automatically and

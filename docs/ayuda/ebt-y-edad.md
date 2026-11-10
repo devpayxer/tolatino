@@ -1,9 +1,9 @@
 # EBT y productos de 21+ · EBT and 21+ products
 
-_Pantallas: ficha del mercado (etiqueta «EBT»), `/n/{negocio}/mercado` (cómo pagas), Panel › Productos (EBT sí/no, 21+, solo en
-la tienda). Versión: Fase 4 · bloques 4n–4p (7 nov 2026)._
+_Pantallas: ficha del mercado (etiqueta «EBT»), `/n/{negocio}/mercado` (cómo pagas), Panel › Productos (EBT sí/no, 21+, solo en la tienda). Versión: 7
+nov 2026. Audiencia: vecino. Tema: pedidos._
 
-## Qué hace (ES)
+## Qué hace
 - **EBT:** el mercado marca en Tu herramienta si acepta EBT y, en cada producto, si se puede pagar con EBT. En la ficha ves la
   etiqueta. To'Latino **no cobra EBT en la app**: si pagas con EBT (o efectivo) eliges **pagar en el mercado**, que es solo
   **pickup**, y en la app no se retiene nada. El envío a tu casa se paga con tarjeta.
@@ -24,9 +24,9 @@ la tienda» para cualquier otro que no quieras vender por la app.
 ## FAQ
 - **¿To'Latino guarda mi tarjeta EBT?** No. EBT nunca pasa por To'Latino.
 
----
+## English
 
-## What it does (EN)
+### What it does
 Markets mark whether they take EBT and which products qualify; To'Latino never charges EBT in the app — choose **pay at the
 market** (pickup only). Delivery is paid by card. **21+ products** (liquor, beer and wine, tobacco, vape) show as «IN STORE ONLY ·
 21+»: they cannot be ordered or held in the app; you buy them in store with your ID.

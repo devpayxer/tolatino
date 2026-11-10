@@ -1,7 +1,7 @@
-# Super Admin · Negocios y Colas · Super Admin · Businesses and Queues
+# Super Admin: Negocios y Colas · Super Admin: Businesses and Queues
 
-_Pantallas: ADM-COLAS (`/admin/colas`) y ADM-NEG (`/admin/negocios`, `/admin/negocios/{id}`), teléfono y escritorio.
-Versión: Fase 1 · bloques 1i, 1k y 1j (5 nov 2026). Para el equipo de To'Latino (y El Compa como copiloto del equipo)._
+_Pantallas: ADM-COLAS (`/admin/colas`) y ADM-NEG (`/admin/negocios`, `/admin/negocios/{id}`), teléfono y escritorio. Para el equipo de To'Latino (y El
+Compa como copiloto del equipo). Versión: 5 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Colas:** todo lo que espera la decisión de una persona del equipo, la más vieja contra su plazo primero:
@@ -46,28 +46,27 @@ después, motivo y cuándo. Nada se borra.
 
 **¿«Tomar» bloquea al resto?** Es un bloqueo suave: avisa «Lo está viendo X»; otra persona puede tomarlo.
 
-**¿Le llega un SMS al dueño?** Todavía no: los avisos por SMS llegan con las notificaciones (Fase 2). Hoy el dueño ve
-todo en su panel.
+**¿Le llega un SMS al dueño?** No por lo que decide el equipo: el dueño lo ve en su panel y en la campana. Los avisos de su operación
+(pedidos, citas, reservas…) sí pueden salir por SMS si los tiene encendidos.
 
 **¿Dónde veo la foto del documento de un reclamo?** En el caso de Cambios sensibles. Es privada: no tiene enlace
 público y cada vez que se abre queda en la auditoría. Más en `recuperar-negocio.md` y `licencia.md`.
 
-### Lo que vende · Reservaciones (bloque 2e)
+### Lo que vende · Reservaciones
 En el 360° › **Lo que vende** de un restaurante sale **Reservaciones** con cuántas van este mes y cuántas esperan respuesta.
 **Pausar** (con motivo, permiso de retirar) quita la pestaña de su página; las reservaciones hechas siguen y el dueño ve el
 motivo en su panel. **Reanudar** la devuelve. Los pedidos del mes ya no cuentan las reservaciones.
 
----
-
 ## English
+
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
 businesses (24 h light review), Flagged media (4 h), Neighbor recommendations (7 days), Licenses (72 h) and Sensitive changes (48 h, business claims). You only see your role's
 queues in your cities; "Take next" assigns you the most urgent unassigned case; "Take" shows others "X is on it".
 Businesses: searchable list with category, plan, status, more filters and sorting; the 360° shows the business as
 clients see it, what the owner did and what the team did (Overview, Page, Team, Trust). Every action asks for a
 reason (approvals store a fixed one), writes the audit log, and the owner sees the result and reason in their
-dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Owner texts arrive with
-notifications (Phase 2). "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
+dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Team decisions are not texted: the owner
+sees them in the dashboard and the bell. "Create seed" lists a recommended business as unclaimed in its category; "Apply change"
 makes the claimant the owner (an already-owned business: Admin only, 7 days after the owner's notice); claim
 documents are private and every view is audited. In What it sells, Reservations shows this month's bookings and pending
 requests; Pause (with a reason) removes the tab from the page and the owner sees why.

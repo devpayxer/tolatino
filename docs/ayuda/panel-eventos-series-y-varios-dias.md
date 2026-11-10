@@ -1,8 +1,8 @@
 # Panel › Eventos: series y eventos de varios días · Recurring and multi-day events
 
 _Pantallas: **Panel › Eventos › Crear / Editar** (CUÁNDO · DURACIÓN) y **Panel › Eventos › la ficha** (`/panel/{negocio}/eventos?det=evt:…`), parte
-«Eventos» del equipo (cancelar con devolución pide también «Cobros»). Del lado del cliente: la lista de Eventos, la página del evento y la
-pantalla de boletos. Teléfono y escritorio. Versión: Fase 6 · bloque 6f (10 nov 2026)._
+«Eventos» del equipo (cancelar con devolución pide también «Cobros»). Del lado del cliente: la lista de Eventos, la página del evento y la pantalla de
+boletos. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **DURACIÓN** en el editor: **Un día** · **Varios días seguidos** · **Se repite**.
@@ -51,12 +51,12 @@ pantalla de boletos. Teléfono y escritorio. Versión: Fase 6 · bloque 6f (10 n
   solas cuando llegan.
 - **¿El pase se vende hasta cuándo?** Hasta el corte del primer día (al empezar, al abrir puertas o un día antes, como elegiste). Cada boleto de
   un día, hasta el corte de su día.
-- **¿El portero sabe para qué día vale un boleto?** Sí: cada boleto guarda sus días; el pase entra una vez cada día y un boleto de otro día sale «ES DE OTRO DÍA» con el día en que vale (To'Latino Puerta, 6g).
+- **¿El portero sabe para qué día vale un boleto?** Sí: cada boleto guarda sus días; el pase entra una vez cada día y un boleto de otro día sale «ES DE OTRO DÍA» con el día en que vale (To'Latino Puerta).
 - **¿Puedo cambiar el artista de una sola fecha?** Sí, en la ficha: «Cambiar artista solo esta fecha». Les avisamos en la app a los que van.
 
----
+## English
 
-## What it does (English)
+### What it does
 **DURATION** in the editor: **One day** · **Several days in a row** · **Repeats**. **Repeats**: every week (pick **WHICH DAYS**; the first date’s day
 is always on), every 2 weeks, or every month (the same weekday of the month, or **the last** one). **HOW MANY DATES** is capped by Settings (52
 today). To'Latino creates the dates up to the publishing window (180 days today) and the rest are created automatically as they come. **Each date

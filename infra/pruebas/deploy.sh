@@ -54,6 +54,13 @@ bash "$REPO/packages/db/migrar.sh" docker compose --env-file "$ENV_FILE" -f "$RE
 # 3c) Semilla del SANDBOX (decisión I: datos de ejemplo solo en pruebas). Se vuelve a aplicar si cambia.
 SEMILLA_DIR="$REPO/infra/pruebas/semilla" bash "$REPO/packages/db/migrar.sh" --semilla-pruebas docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml"
 
+# 3c-bis) Centro de ayuda (7a): docs/ayuda/ → help_articles / help_chunks. El repo es la fuente; el índice se rehace solo con lo que
+#     cambió (sha256: el mismo archivo otra vez no cambia nada) y lo que ya no está queda «retirado». Corre con el node de la imagen base
+#     (sin conexión a la base: imprime SQL que psql aplica en una transacción). Si falla, la app sigue arriba con el índice anterior.
+docker run --rm --network none -v "$REPO":/repo:ro -w /repo node:22-alpine node scripts/ayuda/indexar.mjs \
+  | docker compose --env-file "$ENV_FILE" -f "$REPO/infra/pruebas/docker-compose.yml" exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt \
+  || log "ayuda: no se pudo indexar docs/ayuda (el Centro de ayuda queda como estaba)"
+
 # 3d) Mapa: teselas propias de Pensilvania. Generarlas tarda minutos: si faltan, se hacen aparte (systemd-run) y al
 #     terminar se enciende el servidor de teselas. El despliegue de la app nunca espera por el mapa.
 MAPA=/var/lib/tolatino/mapa

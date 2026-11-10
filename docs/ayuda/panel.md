@@ -1,7 +1,7 @@
 # Panel del negocio · Business dashboard
 
-_Pantallas: DASH-PAGINA (Tu página y sus apartados Horario, Fotos y portada, Quiénes somos, Equipo) y DASH-HOY, en
-teléfono y escritorio. Versión: Fase 1 · bloque 1h (5 nov 2026)._
+_Pantallas: DASH-PAGINA (Tu página y sus apartados Horario, Fotos y portada, Quiénes somos, Equipo) y DASH-HOY, en teléfono y escritorio. Versión: 5
+nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 Es donde el dueño maneja su página de To'Latino. Todo lo que cambia aquí se ve en su página al momento:
@@ -35,7 +35,7 @@ críticas (+6, solo Pro), equipo (+4; quien trabaja a domicilio no lo necesita),
 | Negocio recién publicado | «LO QUE SIGUE · TU PÁGINA AL N %» con todas las tareas | Tocar una tarea lleva al apartado. |
 | En la prueba Pro (días 0–19) | «Estás construyendo con Pro · quedan N días de prueba. Termina el …» | Nada. |
 | Día 20 de la prueba | Lo que pasó en la prueba: vistas y contactos reales | — |
-| Quedan 5 días / último día | Aviso de que la página pasa a Free y lo que se duerme; nada se borra | Decidir (Cobros y plan, Fase 2). |
+| Quedan 5 días / último día | Aviso de que la página pasa a Free y lo que se duerme; nada se borra | Decidir en Cobros y plan. |
 | Free | «Con Free tu página es una sola… 3 fotos y 5 …» | — |
 | Cerrar por hoy | La página y las listas dicen «Cerrado hoy · abre mañana …»; al otro día abre sola | **Abrir de nuevo** lo deshace. |
 | Quitar la única foto | No deja: «Tu página necesita al menos una foto» | Subir otra primero. |
@@ -56,17 +56,20 @@ vez cada 10 minutos, para que nadie infle las cifras.
 
 **¿Por qué mi portada cambió?** La portada es siempre la primera foto de la galería. «Usar de portada» la pone primera.
 
-**¿Le llega el SMS a quien invito?** El SMS sale cuando se conecte el proveedor de SMS (Fase 2). Mientras tanto la
-invitación queda guardada y la pantalla lo dice.
+**¿Le llega el SMS a quien invito?** Por ahora no sale: la invitación queda guardada y la pantalla te lo dice. Avísale tú a
+la persona para que entre con su teléfono.
 
 **¿Puedo editar la foto de alguien de mi equipo?** No: la foto, las palabras y los idiomas los pone cada persona. Tú
 pones su rol, desde cuándo, sus especialidades y su horario.
 
 **¿Se borra algo?** No. Lo que se quita queda guardado con su estado; lo Pro se duerme y vuelve igual con Pro.
 
----
+## Ayuda del panel
+Panel › Más › **Ayuda** abre el Centro de ayuda en el tema **Tu panel**: cómo funciona cada parte, en español y en inglés. Solo lo ven
+quienes tienen un negocio en To'Latino (`centro-de-ayuda.md`).
 
 ## English
+
 The dashboard is where an owner manages their To'Latino page; every change shows on the page right away. **Your page**
 shows the business card (open/closed, real 7-day views and contacts, profile strength 30–100 computed by To'Latino),
 what is left to complete and the sections. **Today** (only if the business sells or books) shows what awaits a reply,
@@ -76,5 +79,9 @@ itself the next day). **Hours**: weekly schedule with templates in 30-minute ste
 remove it (the last photo can't be removed). Free shows 3 photos; the rest stay saved. **About us**: 300 characters in
 Spanish and optional English, plus what the place offers. **Team**: invite with name, phone and role; only people who
 accept show; each person sets their own photo, words and languages; the business sets role, since-year, specialties and
-schedule. Free shows only the owner. Invite texts go out once the SMS provider is connected (Phase 2). Nothing is ever
+schedule. Free shows only the owner. For now the invite text is not sent: the invite is saved and the screen says so; tell the person yourself. Nothing is ever
 deleted. Sign in at **/panel** with the phone you used to publish.
+
+### Dashboard help
+Dashboard › More › **Help** opens the Help center on **Your dashboard**: how each part works, in Spanish and English. Only people with a
+business on To'Latino see it.

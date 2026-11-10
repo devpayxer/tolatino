@@ -1,18 +1,15 @@
 # Rentar o comprar una casa · Renting or buying a home
 
-_Pantallas: la categoría Bienes raíces (`/c/bienes-raices`), Buscar, la página de un dueño, agente, prestamista o quien renta cuartos
-(`/n/…`), la hoja de cada propiedad, «Pedir visita» (`/n/…/ver`), Tu visita (`/vis/D-…`). Para el cliente. Versión: Fase 4 · bloques
-4ib–4ig (7 nov 2026). Lo del negocio está en `propiedades-y-visitas`, `vivienda-justa` y `panel-visitas`._
+_Pantallas: la categoría Bienes raíces (`/c/bienes-raices`), Buscar, la página de un dueño, agente, prestamista o quien renta cuartos (`/n/…`), la
+hoja de cada propiedad, «Pedir visita» (`/n/…/ver`), Tu visita (`/vis/D-…`). Para el cliente. Lo del negocio está en `propiedades-y-visitas`,
+`vivienda-justa` y `panel-visitas`. Versión: 7 nov 2026. Audiencia: vecino. Tema: explorar._
 
-## Qué hace · What it does
-**ES.** Encuentras dónde mudarte o qué casa comprar **con lo que de verdad vas a pagar**: en cada propiedad en renta, **«Para mudarte»** =
+## Qué hace
+Encuentras dónde mudarte o qué casa comprar **con lo que de verdad vas a pagar**: en cada propiedad en renta, **«Para mudarte»** =
 primer mes + depósito + lo obligatorio (si lo hay), calculado por To'Latino. Dice qué papeles aceptan («Sin seguro social», «Con ITIN»),
 qué incluye (luz, agua, internet, amueblado) y si aceptan mascotas. **Ver una propiedad es gratis** y pedir la visita por la app también.
-**EN.** Find where to move or what home to buy **with what you will actually pay**: each rental shows «To move in» = first month + deposit +
-anything required, calculated by To'Latino. It says which papers are accepted (no SSN, ITIN), what is included and whether pets are OK.
-**Viewing a property is free**, and so is requesting the visit in the app.
 
-## Cómo se usa · How to use it
+## Cómo se usa
 1. **Busca** en Bienes raíces: «Rentar», «Comprar casa», «Un cuarto» o «Local», y «Sin seguro social», «Con ITIN», «Utilidades incluidas»,
    «Aceptan mascotas».
 2. **Abre la propiedad:** fotos, «Para mudarte», lo que incluye, lo que piden (qué papeles llevar en persona), la **zona** (ciudad y código
@@ -23,7 +20,7 @@ anything required, calculated by To'Latino. It says which papers are accepted (n
 5. **Préstamos:** en la página del prestamista, «Pedir precalificación» = el día y la hora en que te llaman. Nadie puede garantizar la
    aprobación.
 
-## Qué pasa en cada caso · What happens
+## Qué pasa en cada caso
 - **Responden en 4 horas** del horario del negocio, nunca después de una hora antes de tu visita; si no, queda sin respuesta.
 - **Cuartos y vivienda compartida:** antes de confirmar ves solo la zona; **la dirección exacta te llega cuando confirman** tu visita.
 - **Se rentó o se vendió antes de tu visita:** se cancela sin culpa tuya y te avisamos.
@@ -44,7 +41,15 @@ anything required, calculated by To'Latino. It says which papers are accepted (n
   prestamista te da la cifra real.
 - **¿Por qué no veo la dirección del cuarto?** Para cuidar a quien lo renta en su casa: te llega al confirmar.
 
-**EN FAQ.** To'Latino never asks for your SSN. Search «ITIN» or «No SSN» to rent with ITIN, passport or a work letter. Deposits are at most
+## English
+
+### What it does
+Find where to move or what home to buy **with what you will actually pay**: each rental shows «To move in» = first month + deposit +
+anything required, calculated by To'Latino. It says which papers are accepted (no SSN, ITIN), what is included and whether pets are OK.
+**Viewing a property is free**, and so is requesting the visit in the app.
+
+### FAQ
+To'Latino never asks for your SSN. Search «ITIN» or «No SSN» to rent with ITIN, passport or a work letter. Deposits are at most
 2 months' rent on To'Latino. The estimated payment is an estimate, not a loan offer. Never pay a deposit before seeing the property and
 signing; if you were charged to view or asked for more than posted, report it in Help: it goes straight to To'Latino and the listing is
 paused while we review it.

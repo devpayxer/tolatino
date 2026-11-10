@@ -1,10 +1,10 @@
 # Renta de herramienta · Tool rental
 
-_Pantallas: ficha › pestaña **Tienda** (`/n/{negocio}?tab=shop`), `/n/{negocio}/rentar?a={artículo}`, tu renta
-`/renta/{T-…}`, Panel › Hoy › «Rentas» y su detalle, Panel › Lo que vendes › Tu herramienta › «Renta de herramienta», Super
-Admin › Colas › «Daños de rentas». Versión: Fase 4 · bloque 4f-2 (6 nov 2026)._
+_Pantallas: ficha › pestaña **Tienda** (`/n/{negocio}?tab=shop`), `/n/{negocio}/rentar?a={artículo}`, tu renta `/renta/{T-…}`, Panel › Hoy › «Rentas»
+y su detalle, Panel › Lo que vendes › Tu herramienta › «Renta de herramienta», Super Admin › Colas › «Daños de rentas». Versión: 6 nov 2026.
+Audiencia: vecino. Tema: pedidos._
 
-## Qué hace (ES)
+## Qué hace
 Algunos negocios del hogar rentan herramienta por día (culebra de drenaje, escalera, lavadora a presión, máquina de
 alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cuántas quedan.
 - **Apartar:** eliges cuántos días (1, 2, 3 o la semana, que **paga 5 días**), qué día pasas a recoger (hoy si sigue
@@ -42,9 +42,9 @@ alfombras). En la pestaña **Tienda** ves el precio por día, el depósito y cu�
 - **¿Puedo quedármela más días?** Sí: «Un día más» en tu renta, o llama al negocio.
 - **¿Quién decide si hubo daño?** Primero tú, viendo la foto. Si no estás de acuerdo, To'Latino lo revisa con los dos.
 
----
+## English
 
-## What it does (EN)
+### What it does
 Some home-service businesses rent tools by the day. The **Shop** tab shows the daily price, deposit and how many are left.
 - **Hold:** pick the days (1, 2, 3 or a week, which **pays 5 days**), the pickup day and your card. **Nothing is charged
   today**; it is held **48 hours** from the pickup day.

@@ -1,8 +1,8 @@
 # Novedades · Business updates
 
-_Pantallas: pestaña **Novedades** de la página de un negocio Pro (`/n/{negocio}?tab=nov`) y Tu página › **Novedades** en el
-panel (`/panel/{negocio}/pagina/nov`, el detalle `?det=nov:{id}` y el editor `?det=nov:new`). Teléfono y escritorio.
-Versión: Fase 2 · bloque 2g (6 nov 2026); botón «Evento» en la Fase 6 · bloque 6b (10 nov 2026). Solo Pro._
+_Pantallas: pestaña **Novedades** de la página de un negocio Pro (`/n/{negocio}?tab=nov`) y Tu página › **Novedades** en el panel
+(`/panel/{negocio}/pagina/nov`, el detalle `?det=nov:{id}` y el editor `?det=nov:new`). Teléfono y escritorio. Solo Pro. Versión: 10 nov 2026.
+Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 - **En la página (cliente):** «Sigue a {negocio}» (Seguir / Siguiendo), filtros por tipo (Todo, Ofertas, Hoy hay, Avisos,
@@ -49,11 +49,10 @@ precio. El «antes» es el precio del menú.
 
 **¿Mis seguidores reciben un aviso?** Sí, en la campana (sin SMS): «Hoy en un negocio que sigues» cuando tu novedad para todos
 sale en **Hoy en el barrio** (24 h, negocios Pro; la persona lo apaga en Mi cuenta › Avisos › «Lo que traen hoy»). Las publicaciones «solo
-para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`. (Al día con 5e–5i.)
-
----
+para seguidores» se ven en tu página, no en Hoy. Ver `hoy-en-el-barrio.md`.
 
 ## English
+
 Pro businesses post updates on their page: deals (a dish at a lower price that is actually charged in the menu, cart and
 order while live; the "before" price is always the menu price), "today" items with Add to order, hours notices, polls (2–4
 options, one vote each) and news with an optional button (a dish, the menu, call, or an https link). Clients follow the
@@ -64,5 +63,5 @@ reschedule, post again for 24 h, duplicate or remove. Posts can go out now or on
 3 PM, in 24 h, this week or never, and target everyone or followers only. To'Latino can hide a post or pause Updates: the
 tab and deal prices disappear and the owner sees the reason.
 
-Since 6b an update can also carry an **Event** button (one of the business's events): it reads **See event**, opens the event page and
+An update can also carry an **Event** button (one of the business's events): it reads **See event**, opens the event page and
 shows as «EVENT · SEE EVENT» in Today nearby — only while the event is live.

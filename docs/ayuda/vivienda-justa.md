@@ -1,22 +1,18 @@
 # Vivienda justa · Fair housing
 
-_Pantallas: Panel › Lo que vendes › Propiedades (al guardar); cada propiedad (pie «Igualdad de oportunidad en la vivienda»); Super Admin ›
-Catálogo › Vivienda justa, Colas › Vivienda justa y Negocios 360° › Lo que vende. Versión: Fase 4 · bloques 4ib y 4ig (7 nov 2026). Los textos legales y la lista están
-por revisar con un abogado (Fair Housing Act y Pennsylvania Human Relations Act)._
+_Pantallas: Panel › Lo que vendes › Propiedades (al guardar); cada propiedad (pie «Igualdad de oportunidad en la vivienda»); Super Admin › Catálogo ›
+Vivienda justa, Colas › Vivienda justa y Negocios 360° › Lo que vende. Los textos legales y la lista están por revisar con un abogado (Fair Housing
+Act y Pennsylvania Human Relations Act). Versión: 7 nov 2026. Audiencia: vecino. Tema: explorar._
 
-## Qué hace · What it does
-**ES.** To'Latino no deja publicar una propiedad que prefiera o excluya a alguien por **quién vive**: raza, color, religión, sexo,
+## Qué hace
+To'Latino no deja publicar una propiedad que prefiera o excluya a alguien por **quién vive**: raza, color, religión, sexo,
 orientación o identidad, discapacidad, **situación familiar** (niños), **origen nacional**, ascendencia o edad. Tampoco «No Section 8»:
 Section 8 es un requisito que se **acepta**, nunca uno que se excluye. Los filtros de Bienes Raíces son de **la propiedad** (recámaras,
 utilidades, mascotas, amueblado) y de **los papeles que se aceptan** («Sin seguro social», «Con ITIN»): dicen qué papeles aceptan, nunca a
 quién. Cada propiedad lleva al pie **«Igualdad de oportunidad en la vivienda»** y la nota **«Los animales de servicio y de apoyo no son
 mascotas: se aceptan siempre.»**
-**EN.** To'Latino does not allow a property listing that prefers or excludes anyone by **who lives there**: race, color, religion, sex,
-orientation or identity, disability, **familial status** (children), **national origin**, ancestry or age. No «No Section 8» either. Real
-Estate filters are about **the property** and **the papers accepted**, never about who. Every property carries **«Equal Housing
-Opportunity»** and the note **«Service and support animals are not pets: they are always accepted.»**
 
-## Cómo se usa · How to use it
+## Cómo se usa
 1. **El negocio** escribe su propiedad como siempre. Al guardar, To'Latino revisa el nombre, la descripción, lo que piden, el contrato y el
    otro pago obligatorio, en español y en inglés.
 2. Si una frase de la lista aparece (ej. «sin niños», «solo adultos», «ideal para pareja», «solo cristianos», «para hispanos», «no Section 8»,
@@ -24,7 +20,7 @@ Opportunity»** and the note **«Service and support animals are not pets: they 
 3. **El Super Admin** ve la lista en Catálogo › Vivienda justa. Solo un **Admin** agrega una frase («es: frase» o «en: frase») o apaga una
    agregada, siempre con motivo; las frases de fábrica no se apagan. Nada se borra.
 
-## Qué pasa en cada caso · What happens
+## Qué pasa en cada caso
 - **Una frase nueva** frena los anuncios desde el próximo guardado; los ya publicados se revisan cuando el dueño los vuelva a guardar o el
   equipo los oculte con motivo (Negocios 360° › Ocultar).
 - **Mayúsculas y acentos no importan**: «NO NIÑOS», «no ninos» y «No niños» son la misma frase.
@@ -45,7 +41,16 @@ Opportunity»** and the note **«Service and support animals are not pets: they 
   excluir a alguien, queda una advertencia en tu negocio y te avisamos.
 - **¿Quién decide la lista?** El equipo de To'Latino con un abogado; el Admin la mantiene en Catálogo con auditoría.
 
-**EN FAQ.** «Ideal for a couple» prefers a family type: describe the property instead. You cannot say you do not take Section 8. You cannot
+## English
+
+### What it does
+To'Latino does not allow a property listing that prefers or excludes anyone by **who lives there**: race, color, religion, sex,
+orientation or identity, disability, **familial status** (children), **national origin**, ancestry or age. No «No Section 8» either. Real
+Estate filters are about **the property** and **the papers accepted**, never about who. Every property carries **«Equal Housing
+Opportunity»** and the note **«Service and support animals are not pets: they are always accepted.»**
+
+### FAQ
+«Ideal for a couple» prefers a family type: describe the property instead. You cannot say you do not take Section 8. You cannot
 require tenants to speak English. To'Latino's team keeps the list with a lawyer; an Admin maintains it in Catalog with an audit trail. A
 blocked text is never published and opens (or joins) a case in Queues › Fair housing: the team closes it as reviewed or adds a warning to the
 business, with a notice. A 62-and-over declaration opens its own case; confirmed or not, the business gets a notice.

@@ -1,10 +1,9 @@
 # Jobs · Vacantes
 
-_Pantallas: pestaña **Jobs** de la página de un negocio Pro (`/n/{negocio}?tab=jobs`), la vacante
-(`/n/{negocio}/empleo/{id}`), **Aplicar** (`…/empleo/{id}/aplicar`) y **Tu solicitud** (`/solicitud/J-…`). En el panel:
-Lo que vendes › **Jobs** (`/panel/{negocio}/vendes/jobs`), la vacante (`?det=vac:{id}`), una solicitud (`?det=vap:{id}`),
-el editor (`?det=vac:new`) y «Solicitudes de empleo nuevas» en **Hoy**. Teléfono y escritorio. Versión: Fase 2 · bloque
-2g-3 (6 nov 2026). Solo Pro, cualquier categoría._
+_Pantallas: pestaña **Jobs** de la página de un negocio Pro (`/n/{negocio}?tab=jobs`), la vacante (`/n/{negocio}/empleo/{id}`), **Aplicar**
+(`…/empleo/{id}/aplicar`) y **Tu solicitud** (`/solicitud/J-…`). En el panel: Lo que vendes › **Jobs** (`/panel/{negocio}/vendes/jobs`), la vacante
+(`?det=vac:{id}`), una solicitud (`?det=vap:{id}`), el editor (`?det=vac:new`) y «Solicitudes de empleo nuevas» en **Hoy**. Teléfono y escritorio.
+Solo Pro, cualquier categoría. Versión: 6 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Reglas que no cambian
 - El **pago por hora se ve completo** (desde $7.25, el mínimo de Pensilvania; «hasta» mayor que «desde»; «+ propinas» si lleva).
@@ -63,9 +62,8 @@ pedir trabajo. Lo que necesitas saber se habla en la entrevista.
 
 **¿Quién ve mi teléfono?** Solo el negocio al que aplicaste y quien del equipo tenga acceso a «Lo que vendes».
 
----
-
 ## English
+
 Pro businesses (any category) post jobs with the full hourly pay (from $7.25, the Pennsylvania minimum; "+ tips" if any).
 People apply inside To'Latino without a resume: name, phone, experience, days available, languages and an optional note,
 and confirm the requirements. Immigration status, SSN, papers or a fee to apply are never asked: the editor warns and the

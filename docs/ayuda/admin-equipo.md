@@ -1,6 +1,6 @@
-# Super Admin · equipo, permisos y auditoría (ayuda interna)
+# Super Admin: equipo, permisos y auditoría · Super Admin: team, permissions and audit
 
-_Pantallas: ADM-HOME, ADM-USR, ADM-CIUD, ADM-CAT, ADM-SYS. Versión: Fase 0 (5 nov 2026). Solo para el equipo._
+_Pantallas: ADM-HOME, ADM-USR, ADM-CIUD, ADM-CAT, ADM-SYS. Solo para el equipo. Versión: 5 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 El Super Admin es el panel del equipo de To'Latino. Cada persona del equipo entra con **su misma cuenta de vecino**
@@ -26,6 +26,34 @@ Admin (todo) · Ciudad manager · Verificador · Moderador de contenido · Sopor
 | Se agrega un teléfono sin cuenta | «La persona tiene que crear su cuenta primero». |
 | Se cierra una sesión | La persona tiene que volver a entrar con su teléfono en ese dispositivo. |
 
-## Lo que todavía no está (y cuándo)
-Colas, Negocios y Analítica (Fase 1) · Transacciones, Soporte, Planes, Notificaciones, Contenido (Fase 2) ·
-Confianza y Gamification (Fase 5) · Eventos (Fase 6) · Crecimiento, Textos y abrir ciudades (Fase 9).
+## Lo que falta en el Super Admin
+<!-- solo-equipo -->
+Crecimiento y el resto de Textos y páginas (el editor de textos) llegan con la apertura; El Compa (IA) y los casos de Soporte, con
+El Compa. Textos y páginas › **Ayuda** ya está: ver `admin-ayuda.md`.
+
+## English
+
+### What it does
+The Super Admin is the To'Latino team's dashboard. Each team member signs in with **their own neighbor account** (their phone)
+and sees only the sections their **role** allows. Every action on another person asks for a **reason** and goes to the
+**audit log**, which nobody can edit or delete.
+
+### Roles (set in System › Permissions)
+Admin (everything) · City manager · Verifier · Content moderator · Support · Finance · Read only.
+
+### How to use it
+- **First Admin:** the very first time, with nobody on the team, `/admin` asks for the **bootstrap code**. It works once.
+- **Add someone:** System › Add to team → their phone (they must already have an account) + role + reason.
+- **Remove someone:** System › Remove from team → reason. They lose access at once; their neighbor account stays.
+- **Change a permission:** System › Permissions → pick the role → tap the box → reason. (The Admin cannot lose System, so it
+  can always be undone.)
+- **Close a user's sessions:** Users → the person → Sign out or Block device → reason.
+
+### What happens in each case
+Someone without a role opens `/admin`: «This area is for the To'Latino team». A role opens a section it has no permission for: back
+to the admin home with «Your role does not have permission for that». Adding a phone with no account: «The person has to create
+their account first». A closed session means the person signs in again with their phone on that device.
+
+### What is still missing in the Super Admin
+<!-- solo-equipo -->
+Growth and the rest of Texts and pages (the content editor) come with the launch; El Compa (AI) and Support cases come with El Compa.

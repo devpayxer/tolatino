@@ -1,10 +1,10 @@
 # Ayuda con el pedido del mercado y con la compra de la tienda · Order and purchase help
 
-_Pantallas: `/mercado/{M-…}/ayuda` (desde el pedido terminado o una reseña de 2 estrellas o menos), `/apartado/{A-…}/ayuda`
-(desde el apartado recogido o entregado), Panel › Hoy › «Ayuda que espera tu respuesta» y el detalle del pedido o apartado,
-Super Admin › Colas › Ayuda. Versión: Fase 4 · bloque 4s (7 nov 2026). Mismo motor que la ayuda con la cita._
+_Pantallas: `/mercado/{M-…}/ayuda` (desde el pedido terminado o una reseña de 2 estrellas o menos), `/apartado/{A-…}/ayuda` (desde el apartado
+recogido o entregado), Panel › Hoy › «Ayuda que espera tu respuesta» y el detalle del pedido o apartado, Super Admin › Colas › Ayuda. Mismo motor que
+la ayuda con la cita. Versión: 7 nov 2026. Audiencia: vecino. Tema: pedidos._
 
-## Qué hace (ES)
+## Qué hace
 Si algo salió mal con tu pedido del mercado o con lo que apartaste en una tienda, lo pides aquí. La reseña no devuelve dinero; la
 ayuda sí puede.
 1. **¿Qué pasó?**
@@ -41,9 +41,9 @@ puedo**. Solo quien tiene permiso de dinero devuelve a la tarjeta.
 - **¿La reseña me devuelve el dinero?** No. Para eso es la ayuda.
 - **¿Quién ve mis fotos?** El negocio y To'Latino.
 
----
+## English
 
-## What it does (EN)
+### What it does
 If something went wrong with your market order or a store hold, ask here (a review does not refund money). Pick what happened,
 tell us (15+ characters), add a photo when required (we compare market photos with the market's scale photo) and choose what you
 want: a refund, a replacement / exchange, or just letting them know. The business replies within 24 hours; if not, or if you

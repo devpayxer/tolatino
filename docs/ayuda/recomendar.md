@@ -1,6 +1,6 @@
 # Recomienda un negocio · Recommend a business
 
-_Pantalla: APP-NEG-RECOMENDAR (teléfono y escritorio). Versión: Fase 1 · bloque 1g-1 (5 nov 2026)._
+_Pantallas: APP-NEG-RECOMENDAR (teléfono y escritorio). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Si conoces un negocio que todavía no está en To'Latino, lo recomiendas: lo buscamos, revisamos que exista y, si
@@ -30,9 +30,8 @@ negocio diga que sí. Te avisamos cuando publique.
 
 **¿Cuándo sale el negocio?** Cuando el negocio publique y lo revisemos. Te avisamos.
 
----
-
 ## English
+
 Recommend a business that isn't on To'Latino yet: we look it up and, if you left their phone, text them once on your
 behalf so they can list for free. Nothing goes live until the business says yes; we tell you when it does. Fill in the
 name, category and where it is (or "no storefront"); optionally their phone or Instagram, why you recommend it and

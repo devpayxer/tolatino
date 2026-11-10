@@ -1,18 +1,15 @@
-# Panel · Mesas y lista de la noche · Dashboard · Tables and guest list
+# Panel: mesas y lista de la noche · Dashboard: tables and guest list
 
-_Pantallas: Panel › Hoy (bloques «Esperan tu respuesta», «Mesas de esta noche» y «La lista para la puerta») y el detalle de
-cada reserva (`/panel?det=noche:N-…`). Versión: Fase 4 · bloques 4nc–4ne (7 nov 2026). Para locales de Vida nocturna
-(NEG-NOCHE) con «Mesas y lista» encendido._
+_Pantallas: Panel › Hoy (bloques «Esperan tu respuesta», «Mesas de esta noche» y «La lista para la puerta») y el detalle de cada reserva
+(`/panel?det=noche:N-…`). Para locales de Vida nocturna (NEG-NOCHE) con «Mesas y lista» encendido. Versión: 7 nov 2026. Audiencia: negocio. Tema:
+panel._
 
-## Qué hace · What it does
-**ES.** Junta en **Hoy** todo lo de la noche: las mesas que esperan tu respuesta (tienes **60 minutos**, nunca después de 15
+## Qué hace
+Junta en **Hoy** todo lo de la noche: las mesas que esperan tu respuesta (tienes **60 minutos**, nunca después de 15
 minutos antes de la hora del cliente), las mesas confirmadas de esta noche y **la lista para la puerta** con búsqueda por nombre
 o código. Desde el detalle de cada reserva respondes, marcas la puerta o cancelas con motivo.
-**EN.** **Today** gathers the whole night: tables waiting for your answer (you have **60 minutes**, never later than 15 minutes
-before the customer's time), tonight's confirmed tables and **the door list** with search by name or code. From each booking's
-detail you answer, mark the door or cancel with a reason.
 
-## Cómo se usa · How to use it
+## Cómo se usa
 1. **Responder una mesa:** **Confirmar** (si pidió depósito, se cobra en ese momento y se descuenta de su cuenta), **Otra hora**
    (el cliente tiene 30 minutos para aceptar) o **No hay mesa** (se libera todo, no se cobra nada). Arriba ves cuántas mesas de
    ese tipo quedan si confirmas.
@@ -22,7 +19,7 @@ detail you answer, mark the door or cancel with a reason.
    la mesa); **No entró: sin identificación**.
 4. **Cancelar una mesa confirmada:** escribe el motivo (el cliente lo ve). **Siempre se devuelve todo el depósito.**
 
-## Qué pasa en cada caso · What happens
+## Qué pasa en cada caso
 - **Confirmas:** el depósito retenido se cobra y le llega el aviso con su código. **Otra hora aceptada:** se cobra; **rechazada o
   sin respuesta:** se libera completo.
 - **No contestas a tiempo:** la solicitud vence sola y se libera el depósito.
@@ -43,16 +40,26 @@ detail you answer, mark the door or cancel with a reason.
 - **¿Quién me paga el depósito?** Se cobra con tarjeta en la app y llega a tu cuenta con los pagos de To'Latino, menos la comisión
   de Noche ($1 + 5 %). El cover, los tragos y el mínimo los cobras tú en el local.
 
-**EN FAQ.** The code is visible on your door list and the booking detail while it is confirmed, never on the public page or in
-SMS. «No-show» can be marked from 30 minutes after the booking time. Someone without ID does not get in: mark «No ID». The deposit
-is charged by card in the app and reaches you with To'Latino payouts minus the Night fee ($1 + 5%); cover, drinks and minimums
-are charged by you at the venue.
-
-## La lista en To'Latino Puerta (6g, 10 nov 2026)
+## La lista en To'Latino Puerta
 - Además de «La lista para la puerta» del panel, **tus porteros** (Panel › Eventos › PORTEROS) marcan la lista y las mesas de esta noche desde
   **To'Latino Puerta › Lista de la noche**, mientras tienen una puerta abierta de un evento de tu local esa noche: buscan por nombre o por el
   código de 4 cifras que dice el cliente y tocan **Entró 1** o **Entraron N**. Lo que marcan sale aquí igual (es la misma reserva) y cuenta en el
   aforo de esa puerta. La pantalla del portero **nunca** muestra el código, el teléfono ni lo que se paga en el local. Una noche **sin evento**
   publicado se sigue marcando desde este panel.
-- **EN.** Your door staff can check in tonight’s list and tables from **To'Latino Door › Tonight’s list** while a door of one of your events is
+
+## English
+
+### What it does
+**Today** gathers the whole night: tables waiting for your answer (you have **60 minutes**, never later than 15 minutes
+before the customer's time), tonight's confirmed tables and **the door list** with search by name or code. From each booking's
+detail you answer, mark the door or cancel with a reason.
+
+### FAQ
+The code is visible on your door list and the booking detail while it is confirmed, never on the public page or in
+SMS. «No-show» can be marked from 30 minutes after the booking time. Someone without ID does not get in: mark «No ID». The deposit
+is charged by card in the app and reaches you with To'Latino payouts minus the Night fee ($1 + 5%); cover, drinks and minimums
+are charged by you at the venue.
+
+### The list in To'Latino Door
+Your door staff can check in tonight’s list and tables from **To'Latino Door › Tonight’s list** while a door of one of your events is
   open that night; it is the same booking and shows here. Their screen never shows the code, phone or what is paid at the venue.

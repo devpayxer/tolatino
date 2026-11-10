@@ -1,8 +1,8 @@
-# Comunidad · monedas y cupones del barrio · Community · coins and neighborhood coupons
+# Comunidad: monedas y cupones del barrio · Community: coins and neighborhood coupons
 
-_Pantallas: **Monedas** (`/comunidad/monedas`, desde «Mis monedas» en Tu rango, «Monedas» en la navegación de escritorio, la fila de
-monedas en Mi perfil o la celda MONEDAS de la tarjeta de vecino en Mi cuenta). Teléfono y escritorio. Versión: Fase 5 · bloque 5g
-(7 nov 2026). Solo con cuenta y con la bienvenida de la Comunidad hecha._
+_Pantallas: **Monedas** (`/comunidad/monedas`, desde «Mis monedas» en Tu rango, «Monedas» en la navegación de escritorio, la fila de monedas en Mi
+perfil o la celda MONEDAS de la tarjeta de vecino en Mi cuenta). Teléfono y escritorio. Solo con cuenta y con la bienvenida de la Comunidad hecha.
+Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **Las monedas se ganan, nunca se compran. Sin valor en dinero:** no se venden, no se pasan a otra persona, no se cambian por dinero ni
@@ -40,9 +40,9 @@ monedas en Mi perfil o la celda MONEDAS de la tarjeta de vecino en Mi cuenta). T
 - **¿To'Latino le paga al negocio por mi cupón?** No. El cupón es un descuento que el negocio decide dar en su local; nadie paga a nadie.
 - **¿Puntos y monedas son lo mismo?** No: los puntos suben tu rango; las monedas se cambian por cupones. Son dos cuentas separadas.
 
----
+## English
 
-## What it does (English)
+### What it does
 - **Coins are earned, never bought. No cash value:** they can’t be sold, passed to someone else or exchanged for money or credit, and they
   **don’t expire**.
 - **How to earn:** welcome, once **+100**; top 3 of the monthly Neighborhood Table **+200** (credited when the month closes). Being online,
@@ -54,7 +54,7 @@ monedas en Mi perfil o la celda MONEDAS de la tarjeta de vecino en Mi cuenta). T
   last one at the same time: only one gets it, the other keeps their coins); code expires unused → **coins returned**; coupon paused or
   ended → your code stays valid until it expires; another business can’t find your code.
 
-## FAQ (English)
+### FAQ (English)
 - **Can I buy coins or cash them out?** No. They have no cash value. **Can I send coins to someone?** No.
 - **Do they expire?** Coins don’t. A redeemed code does; if it expires unused, the coins come back.
 - **Does To’Latino pay the business for my coupon?** No. The coupon is a discount the business chooses to give in its store.

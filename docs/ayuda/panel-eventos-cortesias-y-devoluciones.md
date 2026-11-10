@@ -1,7 +1,7 @@
 # Panel › Eventos: cortesías, devoluciones y lista de espera · Comps, refunds and waitlist
 
-_Pantalla: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`), parte «Eventos» del equipo (devolver dinero pide
-también la parte «Cobros»). Teléfono y escritorio. Versión: Fase 6 · bloque 6d (10 nov 2026)._
+_Pantallas: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`), parte «Eventos» del equipo (devolver dinero pide también
+la parte «Cobros»). Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **CORTESÍAS · N DE M** (evCompDet): **Dar cortesía** con **nombre**, **teléfono (opcional)** y **cuántas entradas** (1–10); si tienes varios
@@ -31,9 +31,9 @@ también la parte «Cobros»). Teléfono y escritorio. Versión: Fase 6 · bloqu
 - **¿Puedo vender cortesías a promotores?** No: las cortesías no se venden. Para promotores, usa códigos de descuento.
 - **¿El comprador ve que fui yo quien devolvió?** Sí: le llega «{tu negocio} te devolvió $X».
 
----
+## English
 
-## What it does (English)
+### What it does
 **COMPS**: **Give comp** with name, optional phone and how many entries (1–10); they count at the door like a ticket, come out of your tickets and are
 never sold; up to **50 per date** (Settings); **Remove** an unused comp to free its spot. **BUYERS › Refund**: pick which tickets; **100 % of what
 they paid** goes back (plus extras if the order is left empty); To'Latino does not charge its fee on what you refund; used tickets are not

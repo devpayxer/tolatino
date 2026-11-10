@@ -1,8 +1,8 @@
-# Panel del negocio · Cupones por monedas · Business dashboard · Coupons for coins
+# Panel del negocio: cupones por monedas · Business dashboard: coupons for coins
 
-_Pantalla: **Panel › Tu página › Cupones por monedas** (`/panel/{negocio}/pagina/cup`; editor «Crear» / «Editar»). Teléfono y escritorio.
-Versión: Fase 5 · bloque 5g (7 nov 2026). Plan **Pro** (en Free se ve el candado «Ver Pro»). Crear, editar, pausar y terminar: quien tiene
-acceso a «Tu página»; validar un código: «Tu página» o «Hoy y pedidos»._
+_Pantallas: **Panel › Tu página › Cupones por monedas** (`/panel/{negocio}/pagina/cup`; editor «Crear» / «Editar»). Teléfono y escritorio. Plan
+**Pro** (en Free se ve el candado «Ver Pro»). Crear, editar, pausar y terminar: quien tiene acceso a «Tu página»; validar un código: «Tu página» o
+«Hoy y pedidos». Versión: 7 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Validar un código** (arriba): escribe el código que el vecino te muestra en su teléfono (TL-CQ- y 4 letras o números; da igual
@@ -32,12 +32,12 @@ acceso a «Tu página»; validar un código: «Tu página» o «Hoy y pedidos».
 ## Preguntas frecuentes
 - **¿Puedo poner el costo?** No: lo fija To'Latino para que sea parejo entre negocios.
 - **¿Me pagan por cada canje?** No. Nadie paga a nadie: es un descuento que tú decides dar.
-- **¿Puedo escanear el código?** Por ahora se escribe; el escáner llega después.
+- **¿Puedo escanear el código?** No: el código se escribe en «Validar un código».
 - **¿Un vecino puede canjear dos veces?** Uno por persona mientras su código esté vivo o usado.
 
----
+## English
 
-## What it does (English)
+### What it does
 - **Validate a code:** type the code the neighbor shows on their phone → **Validate** → it becomes **used**, once. Used, expired or
   another business’s code: a clear message, nothing changes.
 - **Create a coupon:** what you give (Spanish, optional English), terms, **how many a month** (1–500) and **days to use it** (7–90).
@@ -45,5 +45,5 @@ acceso a «Tu página»; validar un código: «Tu página» o «Hoy y pedidos».
   can change. **Pause / Resume / End**; up to 5 active or pending at once. Pro only.
 - **Coins have no cash value:** To’Latino neither pays nor charges you for redemptions. Redeemed codes stay valid if you pause or end.
 
-## FAQ (English)
-- **Can I set the cost?** No, To’Latino does. **Am I paid per redemption?** No. **Can I scan the code?** Typing it for now; scanning comes later.
+### FAQ (English)
+- **Can I set the cost?** No, To’Latino does. **Am I paid per redemption?** No. **Can I scan the code?** No: type it in «Validate a code».

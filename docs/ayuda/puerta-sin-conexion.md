@@ -2,7 +2,7 @@
 
 _Pantallas: **la puerta abierta** (`/puerta/s/…`: la línea **EN LÍNEA / SIN CONEXIÓN · N POR SUBIR · lista de las …** arriba) y **la puerta sin
 señal** (`/puerta/sin-conexion`: se abre sola si abres la app sin señal). Para porteros y para quien tiene «Eventos» en el negocio. Hecha para el
-teléfono. Versión: Fase 6 · bloque 6h (10 nov 2026)._
+teléfono. Versión: 10 nov 2026. Audiencia: portero. Tema: puerta._
 
 ## Qué hace
 - **Al abrir tu puerta con señal**, el teléfono baja **la lista de esa fecha** («Preparando la puerta · N boletos»): cada boleto con su versión, sus
@@ -54,9 +54,9 @@ teléfono. Versión: Fase 6 · bloque 6h (10 nov 2026)._
 - **¿Funciona entre teléfonos sin internet?** No: cada teléfono decide con su lista; al volver la señal se juntan. (La red entre teléfonos llega más
   adelante.)
 
----
+## English
 
-## What it does (English)
+### What it does
 **When you open your door with signal**, the phone downloads **that date’s list** (“Preparing the door · N tickets”): each ticket’s version, entries,
 status, first name and initial, last 4 of the code and valid days — **never** phones, emails or what anyone paid. It comes **signed by To'Latino** and
 is stored **encrypted** on the phone with a key only **your open door** has. **With signal**, every 15 seconds the phone uploads your scans and

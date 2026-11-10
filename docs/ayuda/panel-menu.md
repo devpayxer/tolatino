@@ -1,8 +1,7 @@
-# Panel · Lo que vendes › Menú · Dashboard · What you sell › Menu
+# Panel: Lo que vendes › Menú · Dashboard: What you sell › Menu
 
-_Pantallas: `/panel/{negocio}/vendes` y `/panel/{negocio}/vendes/menu` (Panel negocio v2 · DASH-MODULOS y Menú),
-teléfono y escritorio. Versión: Fase 2 · bloque 2b (6 nov 2026). Comida y Bebidas. Lo que ve el cliente y cómo pide:
-`docs/ayuda/pedir-comida.md`._
+_Pantallas: `/panel/{negocio}/vendes` y `/panel/{negocio}/vendes/menu` (Panel negocio v2 · DASH-MODULOS y Menú), teléfono y escritorio. Comida y
+Bebidas. Lo que ve el cliente y cómo pide: `docs/ayuda/pedir-comida.md`. Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 El dueño (o quien tenga acceso a «Lo que vendes») arma su carta:
@@ -33,7 +32,7 @@ El dueño (o quien tenga acceso a «Lo que vendes») arma su carta:
 | Free | Se ven 5 platos en la página y hasta 10 pedidos en línea al mes. |
 | Sin acceso a «Lo que vendes» | «Sin acceso a esta área». |
 | El Menú tiene platos y está encendido | El módulo dice «EN TU PÁGINA»: la pestaña Menú sale en tu página (Pro) o 5 platos en el Resumen (Free). |
-| Llega un pedido | Sale en **Hoy · Esperan tu respuesta** con el número, quién, cuántos artículos, total y «antes de las X». Aceptar y rechazar llegan en el bloque 2c; si nadie contesta en 10 min, queda SIN RESPUESTA y no se cobra nada. |
+| Llega un pedido | Sale en **Hoy · Esperan tu respuesta** con el número, quién, cuántos artículos, total y «antes de las X». Lo aceptas o lo rechazas desde ahí (ver `panel-pedidos.md`); si nadie contesta en 10 min, queda SIN RESPUESTA y no se cobra nada. |
 | Un pedido descuenta inventario | La cuenta del día o el stock bajan al enviar el pedido; en 0 el plato se agota solo. |
 
 Cada cambio queda en la auditoría.
@@ -43,12 +42,10 @@ Cada cambio queda en la auditoría.
 
 **¿Me llega el SMS de «quedan pocos»?** La preferencia queda guardada; el SMS llega con las notificaciones.
 
-**¿Y la traducción con El Compa?** Llega con El Compa (Fase 7). Mientras, escribe el inglés o déjalo vacío (se ve el
-español).
-
----
+**¿Hay un botón para traducir el menú?** No: escribe el inglés tú o déjalo vacío (en inglés se ve el español).
 
 ## English
+
 What you sell › Menu lets the owner build the menu: items (search, filters, available switch with "sold out today" or
 "until I turn it on", reorder, bulk select to sell out, turn on, move, change price, set delivery/pickup or remove),
 categories (order, show/hide, own hours, remove moving items to another), option groups (required or optional, how
@@ -58,5 +55,4 @@ time, last online order). Each item has a live preview, up to 5 photos, Spanish 
 category, price, tax (6% prepared food or exempt), options, availability, stock, max per order, delivery/pickup,
 allergens, extra kitchen time and "Pin to Popular". Nothing is deleted; past orders keep their copy; To'Latino can
 hide an item or pause the Menu or online orders with a reason the owner sees. The menu tab on the business page and
-ordering are described in pedir-comida.md. New orders show in Today › Awaiting your reply (accept and decline arrive in
-block 2c) and decrease daily counts or stock when sent.
+ordering are described in pedir-comida.md. New orders show in Today › Awaiting your reply (accept or decline them there) and decrease daily counts or stock when sent.

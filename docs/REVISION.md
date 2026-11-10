@@ -2862,3 +2862,50 @@ de cada decisión (regla AB); si prefieres otra cosa, se cambia. **Decidí X; si
 **Choques entre fuentes:** la base de ayuda (`docs/ayuda/`) no está lista como fuente: 4 formas distintas de la parte en inglés, 132
 archivos con lenguaje interno de fases, alguno desactualizado, y los `admin-*` con umbrales de fraude que nunca deben llegarle a un vecino.
 7a la arregla y deja guardianes. El prototipo llama a Claude desde el navegador y fija «Hazleton, PA» en el texto: nada de eso se copia.
+
+### 7a · La ayuda como base de conocimiento y el Centro de ayuda (10 nov)
+**Qué mirar, paso a paso (sandbox):**
+1. Sin entrar, abre **`/ayuda`** en el teléfono: «Centro de ayuda», el buscador, los chips de tema y una tarjeta por tema. Busca **devolución**: sale
+   «Cancelar y devoluciones de boletos» con la parte que contesta. Cambia la app a **EN** y busca **refund**: lo mismo en inglés.
+2. Abre **Pagar con tarjeta**: «Volver», el tema, el título, «ACTUALIZADO EL …» y **See in English** (cambia solo el artículo). Al pie, «¿No es lo que
+   buscabas?» lleva a Mi cuenta (hasta que exista Soporte, 7b). En escritorio, a la derecha «Más en Pedidos, compras y pagos».
+3. Prueba los enlaces de equipo como vecino: `/ayuda/admin-equipo`, `/ayuda/panel-pedidos` → no existen para ti (404). Busca **código de arranque**
+   (solo está en la ayuda del equipo): nada.
+4. Entra como **Yesenia** (5705550433) → Panel › Más › **Ayuda**: el tema «Tu panel» (37 artículos, «PARA TU NEGOCIO»). Entra como portero
+   (5705550511) → To'Latino Puerta › **Cómo funciona la puerta**: los 2 de la puerta. Mi cuenta › **Ayuda** (y en escritorio, en la navegación).
+5. Como **Admin** (5705550199): `/ayuda` también enseña «Super Admin» (SOLO EQUIPO) y, en un artículo de vecinos como «Entrar o crear tu cuenta», la
+   sección «Para El Compa» marcada SOLO EQUIPO. Super Admin › **Textos y páginas** › Ayuda: cifras, filtros, la lista con versión y sha, el historial.
+   **Pausar** «Pagar con tarjeta» con un motivo → como vecino ya no sale en la lista ni al buscar «tarjeta», y su enlace dice «Este artículo se está
+   revisando» (sin texto ni motivo). **Volver a usar** → vuelve.
+
+**Decidí X; si prefieres Y, se cambia:**
+1. **Forma única** de cada archivo de `docs/ayuda/`: título «Español · English», línea `_Pantallas … Versión … Audiencia … Tema_`, secciones en español
+   y una sola `## English` al final. El **slug es el nombre del archivo** (no se repite dentro). Se añadió **Tema** a la línea (el plan solo pedía
+   audiencia) porque el Centro de ayuda va por temas; los temas viven en la base (`help_topics`) con su nombre ES/EN.
+2. **Versión = la fecha** del último cambio (antes «Fase 2 · bloque 2i (6 nov)»): la fase era lenguaje interno.
+3. **El inglés** sigue siendo un resumen fiel (como lo era en ~110 archivos), no una traducción línea por línea. En 14 archivos no había inglés de
+   verdad (solo una línea de FAQ): se escribió. Mejorar los resúmenes más cortos queda en LAUNCH.
+4. **«Para El Compa»** (instrucciones dentro de 9 ayudas de vecinos) y lo interno de `admin-equipo` quedan como secciones `<!-- solo-equipo -->`: el
+   vecino no las lee y El Compa de vecinos no las recibe (el copiloto del equipo sí).
+5. **Audiencias**: por nombre (admin-* equipo, panel-* negocio, puerta-* portero) y además a «negocio» 17 herramientas del panel que no empiezan por
+   `panel-` (Tu herramienta, Productos, Servicios del panel, licencias del negocio…). Lo que explica una página al cliente sigue para vecinos.
+   Quién ve qué: sin cuenta y vecinos = vecino; miembro de un panel = + negocio; portero (o quien abre la puerta desde el panel) = + portero;
+   **todo el equipo de To'Latino** (cualquier rol activo) = + equipo.
+6. **Pausado** = no sale en la lista, la búsqueda ni el enlace (dice «se está revisando», no 404, porque el vecino puede llegar por un enlace viejo);
+   un artículo de otra audiencia = 404 (no se sabe que existe). Pausar pide **cms:editar** (Admin por defecto; la matriz de permisos no cambió).
+7. **Búsqueda**: Postgres full-text (spanish/english sin acentos) con prefijo y los sinónimos «query» del Catálogo; si no hay nada con todas las
+   palabras, con cualquiera; si no hay nada en tu idioma, en el otro. Sin servicio nuevo.
+8. **Indexar en el despliegue**: `deploy.sh` corre el indexador en `node:22-alpine` (la misma imagen base de la app, sin red) y lo aplica con psql;
+   si falla, la app sigue con el índice anterior. Un archivo que sale del repo queda «retirado», nada se borra.
+9. **Textos de pantalla viejos** encontrados de paso (misma clase de problema): «La venta en la app abre pronto» en Publica tu evento y en el editor
+   de eventos del panel, y «(Fase 2)» en la invitación de Equipo. Se dicen como son hoy; el guardián `ayudaSinFaseInterna` también mira las pantallas.
+10. **El SMS de invitación al equipo del panel no sale** (`acciones-equipo.ts` `enviarInvitacion` devuelve false desde 1h): la ayuda y la pantalla lo
+    dicen con la verdad («avísale tú a la persona»). Conectarlo es otro bloque (LAUNCH).
+
+**Hechos viejos corregidos en la ayuda** (contra el código): pedidos de comida ya aceptan tarjeta (pedir-comida, ayuda-con-el-pedido: «Todavía no hay
+pagos con tarjeta» era falso desde 2d) y las devoluciones vuelven a la tarjeta; Transacciones del Super Admin muestra retenido / cobrado / devuelto;
+boletos que «abren pronto» (eventos-buscar-y-ver, panel-eventos-crear, publica-tu-evento); series y varios días; cancelar con devolución total y la
+transferencia del martes; Booking de Doctores y de Auto/Hogar; cambiar o cancelar desde Tu cita; depósito de la silla rentada; SMS de citas y mesas;
+lista y mesa de noche en la app; inscribirse en la app; monedas de bienvenida y puntos por votos; buscar eventos en Buscar; repartidores en Entrega
+y la app Repartidor; envíos y mudanzas en la app; apelar una sanción desde Mi cuenta; avisos del equipo al dueño (no por SMS); el menú sin botón de
+traducir; el código de cupón se escribe (sin escáner). Se quitaron ~200 menciones de fases y bloques.

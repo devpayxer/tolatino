@@ -1,7 +1,7 @@
 # Planes del hogar · Home plans
 
-_Pantallas: la hoja de un servicio «plan» («Empezar el plan · $149/mes»), `/n/{negocio}/plan`, tu plan `/plan/{PL-…}` y
-Panel › Hoy › «Tus planes». Versión: Fase 4 · bloque 4f (6 nov 2026)._
+_Pantallas: la hoja de un servicio «plan» («Empezar el plan · $149/mes»), `/n/{negocio}/plan`, tu plan `/plan/{PL-…}` y Panel › Hoy › «Tus planes».
+Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 Un plan es una visita fija cada mes (mantenimiento de la casa, plan para landlords…) o en meses fijos (Plan de confort:
@@ -33,8 +33,9 @@ calefacción en octubre y aire en abril), cobrada cada mes con tu tarjeta.
 **¿Cuándo me cobran?** El día de tu primera visita y después cada mes ese mismo día del mes. **¿Cobran si no hay visita?**
 Si saltas o pausas, no. **¿Puedo cambiar el día?** Cancela y empieza otra vez con el día nuevo (o escríbele al negocio).
 
----
-## What it does (EN)
+## English
+
+### What it does
 A plan is a fixed monthly visit (same weekday each month, 2-hour window) charged monthly to your card. Nothing is charged
 today; the first charge is on your first visit day. Skip or pause a month (no visit, no charge) or cancel (next month is not
 charged). If the bank declines, we retry after 2 and 4 days; on the third decline the plan pauses until you change the card.

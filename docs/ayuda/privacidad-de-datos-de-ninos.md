@@ -1,9 +1,9 @@
 # Los datos de tu niño · Your child's data
 
-_Pantallas: inscribirse «Para mi hijo o hija», Tu inscripción, Panel › detalle de la inscripción, Super Admin › Colas › Cuidado de niños.
-Versión: Fase 4 · bloque 4eg (7 nov 2026)._
+_Pantallas: inscribirse «Para mi hijo o hija», Tu inscripción, Panel › detalle de la inscripción, Super Admin › Colas › Cuidado de niños. Versión: 7
+nov 2026. Audiencia: vecino. Tema: cuenta._
 
-## Qué guarda To'Latino (ES)
+## Qué guarda To'Latino
 To'Latino guarda **lo mínimo** para que el lugar sepa a quién espera, y lo guarda **cifrado**.
 
 | Dato | Se guarda | Quién lo ve |
@@ -23,7 +23,8 @@ To'Latino guarda **lo mínimo** para que el lugar sepa a quién espera, y lo gua
 - Las reseñas de lugares de niños no llevan fotos ni el nombre del niño (el servidor lo revisa).
 - Las fotos de una Ayuda de Niños (el recibo) son privadas.
 
-## EN
+## English
+
 To'Latino keeps the minimum, encrypted: first name, age or grade, school (only for pickup) and a short note. Never birth date, photos,
 birth certificate, vaccines, allergies, medicines, diagnoses, Medicaid or the pickup list (those are handed in person). It is deleted
 30 days after the enrollment ends. The place sees it in the enrollment detail (each view is logged); To'Latino only from a Child care case,

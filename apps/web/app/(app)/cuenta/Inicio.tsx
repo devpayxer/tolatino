@@ -77,6 +77,7 @@ export function Inicio({ es, yo, r, dirs, ciudad, nick, nombre, negocio, sancion
     { ic: "bell", t: E2("Avisos", "Notifications"), s: E2("QUÉ TE LLEGA Y CUÁNDO", "WHAT YOU GET AND WHEN"), chev: true, on: () => ir("/cuenta/avisos") },
     { ic: "shield", t: E2("Ajustes", "Settings"), s: E2("IDIOMA · MI CIUDAD · PRIVACIDAD", "LANGUAGE · MY CITY · PRIVACY"), chev: true, on: () => ir("/cuenta/ajustes") },
     { ic: "share", t: E2("Invita vecinos", "Invite neighbors"), s: E2("TU ENLACE PARA INVITAR", "YOUR INVITE LINK"), chev: true, on: () => ir("/cuenta/invitar") },
+    { ic: "help", t: E2("Ayuda", "Help"), s: E2("CENTRO DE AYUDA · ES / EN", "HELP CENTER · ES / EN"), chev: true, on: () => ir("/ayuda") },
   ] }, { type: "rows", rows: [
     negocio ? { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: negocio.name, s: E2("TU NEGOCIO · ABRIR MI PANEL", "YOUR BUSINESS · OPEN MY DASHBOARD"), chev: true, on: () => ir(`/panel/${negocio.id}/hoy`) }
       : { ic: "store", ibg: "rgba(0,229,196,.16)", ifg: "var(--tl-open-text)", t: E2("Publica tu negocio", "List your business"), s: E2("PRO 30 DÍAS GRATIS · SIN TARJETA", "PRO FREE FOR 30 DAYS · NO CARD"), chev: true, on: () => ir("/publica") },

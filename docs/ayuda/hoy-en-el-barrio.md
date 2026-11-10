@@ -1,8 +1,8 @@
 # Hoy en el barrio · Today nearby
 
-_Pantallas: **Comunidad › Hoy en el barrio** (`/comunidad/hoy`, APP-COM-HOY), y en carrusel en **Inicio**, **Negocios** y el muro de
-la Comunidad. Teléfono y escritorio. Versión: Fase 5 · bloque 5e (7 nov 2026). **Abierto a todos**, con o sin cuenta: solo sale lo
-que publican los negocios, nunca nada de un vecino._
+_Pantallas: **Comunidad › Hoy en el barrio** (`/comunidad/hoy`, APP-COM-HOY), y en carrusel en **Inicio**, **Negocios** y el muro de la Comunidad.
+Teléfono y escritorio. **Abierto a todos**, con o sin cuenta: solo sale lo que publican los negocios, nunca nada de un vecino. Versión: 7 nov 2026.
+Audiencia: vecino. Tema: comunidad._
 
 ## Qué es
 Lo que traen **hoy** los negocios de tu ciudad: ofertas, «hoy hay», avisos y novedades. Cada aviso sale **24 horas** y se va solo.
@@ -47,9 +47,8 @@ Lo que traen **hoy** los negocios de tu ciudad: ofertas, «hoy hay», avisos y n
 - **¿Necesito cuenta para ver Hoy?** No. Para la conversación de los vecinos, sí.
 - **¿Por qué no veo mi novedad?** Revisa que sea para todos, que ya haya salido, que no esté vencida ni detenida, y que tu plan sea Pro.
 
----
-
 ## English
+
 Today nearby (`/comunidad/hoy`) is open to everyone and shows only what businesses post. One card per business with up to 3
 notices from the last 24 hours (DEAL · NEW · JUST IN · NOTICE), with "N H LEFT" and the distance; tap right for the next, left for
 the previous; after the last one the business page opens. Category chips, "See more", and when there is nothing today it shows

@@ -1,7 +1,7 @@
 # Servicios de un taller o del hogar · Auto and home services
 
-_Pantallas: Panel › Lo que vendes › **Servicios**, **Taller y estimados** (Auto) o **Visitas, planes y renta** (Hogar) y
-**Citas**; Super Admin › Negocios › Lo que vende. Versión: Fase 4 · bloque 4a (6 nov 2026)._
+_Pantallas: Panel › Lo que vendes › **Servicios**, **Taller y estimados** (Auto) o **Visitas, planes y renta** (Hogar) y **Citas**; Super Admin ›
+Negocios › Lo que vende. Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Servicios:** cada servicio dice **cómo se cobra**, y eso es lo que el cliente ve:
@@ -40,12 +40,11 @@ _Pantallas: Panel › Lo que vendes › **Servicios**, **Taller y estimados** (A
 ## Preguntas frecuentes
 **¿Cambiar mi tarifa cambia los estimados que ya mandé?** No: cada estimado guarda la tarifa del día en que se mandó.
 **¿Puedo cambiar las opciones que el cliente elige (tipo de aceite, eje)?** Por ahora, escríbenos y lo hacemos.
-**¿Ya me pueden reservar en línea?** El Booking de Auto y Hogar llega con el bloque 4b; mientras, la página muestra tus
-servicios como antes.
-
----
+**¿Ya me pueden reservar en línea?** Sí: con plan Pro y tus horas puestas, tu página abre el Booking de Auto y Hogar
+(ver `booking-taller-hogar.md`).
 
 ## English
+
 Auto shops and home-service businesses list each service with how it is charged (fixed, from, quoted with a typical range,
 diagnosis, per tire, PA inspection, by car size, towing; visit, fixed, hourly, by size, at-home estimate, 24/7 emergency,
 plan), how long it takes, what is and is not included, extras and a photo, with a live "how clients see it" preview.

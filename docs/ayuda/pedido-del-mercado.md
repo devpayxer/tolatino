@@ -1,6 +1,9 @@
 # Pedido del mercado · Market order
 
-## Cómo funciona (ES)
+_Pantallas: la página de un mercado › Productos › «Tu pedido» (`/n/{negocio}/mercado`) y tu pedido (`/mercado/{M-…}`). Versión: 10 nov 2026.
+Audiencia: vecino. Tema: pedidos._
+
+## Cómo funciona
 1. Agregas productos en la página del mercado. Lo que va **por libra** es un estimado.
 2. **Tu pedido:** cómo lo recibes (pickup gratis o envío con su costo y mínimo), **si algo no hay** (Llámame · Uno parecido, con
    mi OK · No sustituir) y una nota.
@@ -26,7 +29,8 @@ total real pasa lo retenido no se puede mandar: corta menos) → **Está listo /
 - **¿Me pueden cobrar más de lo retenido?** No. Si pesa más, el mercado tiene que cortar menos.
 - **¿Y la comisión?** To'Latino cobra su comisión al mercado sobre lo vendido; a ti nunca se te suma nada.
 
-## EN
+## English
+
 Add products (by the pound is an estimate), choose pickup or delivery, what to do if something is out, and a time. With a card
 the estimate + 10% of by-weight items + delivery is held, not charged. EBT or cash: pay at the market (pickup only). Not
 accepted within 10 minutes → everything is released. They weigh in front of you with a scale photo per item; swaps need your OK

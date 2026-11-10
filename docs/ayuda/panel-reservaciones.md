@@ -1,8 +1,8 @@
-# Panel · Reservaciones · Dashboard · Reservations
+# Panel: Reservaciones · Dashboard: Reservations
 
-_Pantallas: `/panel/{negocio}/hoy` (Hoy), `?det=rsv:{número}` (detalle), `/panel/{negocio}/clientes?t=rsv` (Clientes ›
-Reservaciones) y `/panel/{negocio}/vendes/reservaciones` (Lo que vendes › Reservaciones). Teléfono y escritorio.
-Versión: Fase 2 · bloque 2e (6 nov 2026). Restaurantes Pro._
+_Pantallas: `/panel/{negocio}/hoy` (Hoy), `?det=rsv:{número}` (detalle), `/panel/{negocio}/clientes?t=rsv` (Clientes › Reservaciones) y
+`/panel/{negocio}/vendes/reservaciones` (Lo que vendes › Reservaciones). Teléfono y escritorio. Restaurantes Pro. Versión: 6 nov 2026. Audiencia:
+negocio. Tema: panel._
 
 ## Qué hace
 - **Hoy:** las solicitudes de mesa llegan a **Esperan tu respuesta** junto a los pedidos, con **Confirmar**, **Otra
@@ -18,7 +18,7 @@ Versión: Fase 2 · bloque 2e (6 nov 2026). Restaurantes Pro._
   - **Mesas por área** (Salón, Terraza, Barra): enciendes el área y pones cuántas mesas de 2, 4, 6 y 8. **Mesas que no
     se reservan** (para los que llegan sin reservación).
   - **Grupos:** «Juntamos mesas» y hasta cuántas personas; más que eso, el cliente pide un evento privado.
-  - **Evento privado** (6i): abre sus ajustes (encender, personas, anticipación, depósito, áreas, menús, extras). Ver «Evento privado en el panel».
+  - **Evento privado**: abre sus ajustes (encender, personas, anticipación, depósito, áreas, menús, extras). Ver «Evento privado en el panel».
   - **Cuándo:** días, turnos (Almuerzo y Cena con primera y última mesa) y cuánto dura cada reservación (1 h, 1 h 30,
     2 h). Avisa si tu horario cierra un día que marcaste, si la última mesa no cabe antes de cerrar o si los turnos se cruzan.
   - **Días sin reservaciones:** cierra un día, un turno o un área (evento privado, feriado, lluvia en la terraza). Se
@@ -53,9 +53,8 @@ ajustes, «Lo que vendes».
 **¿Se puede cambiar una reservación ya confirmada?** El cliente lo pide desde su reservación; tú lo aceptas o no desde el
 detalle. Si no puedes, todo queda como estaba.
 
----
-
 ## English
+
 Table requests arrive in **Today** next to orders with **Confirm**, **Other time** (suggests the nearest free time) and
 **No table**; today's bookings go to the agenda. The detail shows client, when, guests, area, note, occasion, needs,
 late notice and history, then **Arrived · seated** / **No-show** → **Left · table free**. **Clients › Reservations** has

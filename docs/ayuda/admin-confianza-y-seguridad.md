@@ -1,9 +1,9 @@
-# Super Admin · Confianza y seguridad, Auto-moderación y casos de la Comunidad · Trust & safety, auto-moderation and Community cases
+# Super Admin: Confianza y seguridad, Auto-moderación y casos de la Comunidad · Super Admin: Trust & safety, auto-moderation and Community cases
 
 _Pantallas: **Confianza y seguridad** (`/admin/confianza`: Resumen · Catálogo de sanciones · Sancionados · Apelaciones · Fraude y bloqueos ·
-Privacidad), **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`) y **Colas** (Reportes de contenido, Reportes de usuario,
-Mensajes reportados, Medios marcados, Apelaciones). Versión: Fase 5 · bloque 5d (7 nov 2026). Permisos: Colas pide colas:aprobar;
-Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admin._
+Privacidad), **Contenido › Auto-moderación** (`/admin/contenido?tab=auto`) y **Colas** (Reportes de contenido, Reportes de usuario, Mensajes
+reportados, Medios marcados, Apelaciones). Permisos: Colas pide colas:aprobar; Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo
+un Admin. Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Resumen:** reportes abiertos, apelaciones, sanciones activas y fraude de 30 días; lo que espera en cada cola (con lo que va fuera de
@@ -29,7 +29,7 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
   en 24 h, cuentas de más de 72 h). «Cambiar valores» edita sus números. **Listas de términos** ES/EN (Odio · Estafa · Inmigración ·
   Autolesión): agregar o apagar (no se borran). **Límites del día** (publicaciones, comentarios, votos, conversaciones nuevas, reportes).
   Todo con motivo y auditoría.
-- **Contenido › Auto-moderación › Ver traducción (traductor propio)** (5h): si el traductor propio (español ↔ inglés, en nuestro servidor)
+- **Contenido › Auto-moderación › Ver traducción (traductor propio)**: si el traductor propio (español ↔ inglés, en nuestro servidor)
   **responde** y en cuánto, o por qué no («no está configurado aquí», «no responde», o «dejó de llamarlo un minuto» tras varias fallas);
   y el **tope de traducciones por persona en una hora** (de fábrica 60; «Cambiar» con motivo y auditoría). El Super Admin **ve siempre el
   original**: aquí no hay «Ver traducción» (ver `ver-traduccion.md`).
@@ -52,15 +52,26 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
 - **¿Se puede borrar una marca o una apelación?** No: son de solo inserción.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Nunca digas quién reportó. Nunca prometas el resultado de una apelación.
 - La apelación la decide otra persona del equipo, en 72 h, una vez.
 
-### Configuración (5i, 8 nov)
+### Configuración
 - Los **límites del día** y **«Ver traducción» por hora** de Contenido › Auto-moderación son valores de **Sistema › Configuración**: se
   cambian en cualquiera de las dos pantallas, siempre dentro de sus límites y con la auditoría antes → después. Los **días para apelar**
   (14 de fábrica) también; Colas y Confianza dicen el valor vigente.
 
+## Eventos y boletos
+**Fraude › EVENTOS Y BOLETOS · 30 DÍAS:** órdenes en ráfaga desde un mismo dispositivo (cuántas y en cuántos minutos: Configuración › Eventos ›
+Confianza), boletos recibidos por transferencia y pasados a otra persona (transferencias en cadena: posible reventa), entradas duplicadas en la
+puerta (dos porteros sin conexión) y contracargos de boletos (90 días). La señal no sanciona sola: **Abrir caso** (quien edita personas) lo manda a
+Colas › Reportes de usuario con la marca «Señal de Eventos»; lo decide una persona con la escalera de sanciones, el aviso y la apelación. La misma
+tarjeta en varias cuentas necesita la huella de la tarjeta de Stripe (LAUNCH-CHECKLIST).
+**English:** Fraud › EVENTS AND TICKETS lists burst orders from one device, chain transfers, duplicate door entries and ticket chargebacks; **Open
+case** sends it to Queues › User reports.
+
 ## English
+
 - **Trust & safety** (`/admin/confianza`): overview with queues and how it works, sanction catalog with the Community effect of each,
   sanctioned people, appeals, fraud (vote and follower rings from one device, review bursts, devices with 3+ accounts, blocked devices) and
   privacy (read-only).
@@ -69,18 +80,9 @@ Auto-moderación pide cont:editar; Confianza pide conf:ver; banear, solo un Admi
   uphold; **if you hid or sanctioned it you cannot decide it** — the database enforces it too).
 - **Content › Auto-moderation:** rule toggles with their text and values (phones are always on), term lists ES/EN (turned off, never
   deleted), daily limits; everything with a reason and audit trail. The photo rule shows whether our own model responds.
-- **Content › Auto-moderation › See translation (our own translator)** (5h): whether our own translator (Spanish ↔ English, on our
+- **Content › Auto-moderation › See translation (our own translator)**: whether our own translator (Spanish ↔ English, on our
   server) **responds** and how fast, or why not («not configured here», «not responding», or «stopped calling it for a minute» after
   repeated failures); and the **per-person hourly translation limit** (default 60; «Change» with reason and audit). The Super Admin
   **always sees the original**: there is no «See translation» here (see `ver-traduccion.md`).
 - Five accounts on one phone count as one person for auto-hide. A photo is never published unchecked: if the model is down it waits for a
   person.
-
-## Eventos y boletos (6j, 10 nov 2026)
-**Fraude › EVENTOS Y BOLETOS · 30 DÍAS:** órdenes en ráfaga desde un mismo dispositivo (cuántas y en cuántos minutos: Configuración › Eventos ›
-Confianza), boletos recibidos por transferencia y pasados a otra persona (transferencias en cadena: posible reventa), entradas duplicadas en la
-puerta (dos porteros sin conexión) y contracargos de boletos (90 días). La señal no sanciona sola: **Abrir caso** (quien edita personas) lo manda a
-Colas › Reportes de usuario con la marca «Señal de Eventos»; lo decide una persona con la escalera de sanciones, el aviso y la apelación. La misma
-tarjeta en varias cuentas necesita la huella de la tarjeta de Stripe (LAUNCH-CHECKLIST).
-**English:** Fraud › EVENTS AND TICKETS lists burst orders from one device, chain transfers, duplicate door entries and ticket chargebacks; **Open
-case** sends it to Queues › User reports.

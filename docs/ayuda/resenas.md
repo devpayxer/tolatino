@@ -1,9 +1,8 @@
 # Reseñas · Reviews
 
-_Pantallas: bloque «Lo que dicen los vecinos» en el Resumen de cada negocio, pestaña **Reseñas** (`/n/{negocio}?tab=rev`,
-negocios Pro), **Escribir reseña** (`/n/{negocio}/resena`) y **Tu reseña** (`/n/{negocio}/resena/tuya`), teléfono y
-escritorio. Versión: Fase 2 · bloque 2g (6 nov 2026). Todas las categorías; «Lo que importa» y «¿Qué recomiendas?» son de
-Comida (las demás categorías traen sus preguntas en su fase)._
+_Pantallas: bloque «Lo que dicen los vecinos» en el Resumen de cada negocio, pestaña **Reseñas** (`/n/{negocio}?tab=rev`, negocios Pro), **Escribir
+reseña** (`/n/{negocio}/resena`) y **Tu reseña** (`/n/{negocio}/resena/tuya`), teléfono y escritorio. Todas las categorías; «Lo que importa» y «¿Qué
+recomiendas?» son de Comida (las demás categorías traen sus preguntas en su fase). Versión: 6 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 - **Lo que dicen los vecinos (Resumen):** con 5 reseñas o más, el promedio, las estrellas, cuántas son verificadas y «Lo que
@@ -54,23 +53,7 @@ tarde) lo pone To'Latino y no se edita.
 **¿La reseña me devuelve dinero?** No. Para un problema con un pedido, llama al negocio (Ayuda con el pedido llega más
 adelante).
 
----
-
-## English
-Every business page shows "What neighbors say": with 5+ reviews the average, stars, how many are verified and, for food,
-"What matters" (served hot, on time, worth the price, flavor) from rated orders in the last 90 days; with 1–4 only the
-count; with none, "No reviews yet". Pro pages also have a Reviews tab with star bars (tap to filter), most recommended
-dishes, filters (all, verified, with photos, replied, critical), sorting, "See more reviews" six at a time and "How reviews
-work". Each review shows the name and last initial, review count, stars, when (and EDITED), VERIFIED · DELIVERY / PICKUP /
-BOOKED or VISITOR, order facts that cannot be edited, text, photos, "Recommends", the business reply (Pro only), Helpful and
-Report. Write a review from the page or from a finished order: which visit (a finished order or booking in the last 30 days
-makes it verified; otherwise visitor), stars, what matters, what you recommend, 20–1000 characters without phones or
-emails, up to 6 photos. It posts instantly; you can edit it for 48 h and delete it any time. One review per business.
-Reporting needs a sign-in, a reason and an optional 300-character note; the review stays visible while a person at
-To'Latino reviews it (48 h). Businesses cannot delete or change reviews; To'Latino only hides those that break the rules,
-and the author sees the reason.
-
-## Reseñas de talleres y servicios del hogar (Fase 4 · 4g)
+## Reseñas de talleres y servicios del hogar
 - **Verificada** si la visita (Hogar) o la cita (Auto) se hizo por To'Latino y terminó.
 - **El dato de la visita** sale de To'Latino y no se edita: si llegó en la franja de 2 horas (Hogar, por «Llegué»), lo
   aprobado del estimado contra lo cobrado («lo cotizado» / «lo del estimado») y si hubo algo extra con tu OK.
@@ -81,14 +64,7 @@ and the author sees the reason.
   cita** (el negocio responde en 24 h).
 - En la ficha, cada reseña muestra esos datos como marcas (verde = bien, rojo = mal).
 
-### Auto and home reviews (EN)
-Verified when the visit or appointment was booked through To'Latino and finished. Arrival in the window, approved vs.
-charged and extra work with your OK come from the booking and cannot be edited. Home asks: right the first time, the
-booked person came, cleaned up, took care of your home, care. Auto asks: fixed the first time, asked your OK before extra
-work, showed the old part, car returned clean, care. With 1–2 stars, a review does not refund or request a return visit:
-use Visit/Appointment help.
-
-## Reseñas de doctores y profesionales (Fase 4 · 4m)
+## Reseñas de doctores y profesionales
 - **Verificada** si la cita (Doctores) o la consulta (Profesionales) se hizo por To'Latino y terminó.
 - **El dato de la cita** sale de To'Latino y no se edita. Doctores: el servicio, si **aceptaron tu seguro** (Aceptado / No
   lo aceptaron / Sin seguro), lo que pagaste y con quién. **Nunca** se guarda ni se publica el nombre de tu plan, el número
@@ -104,7 +80,29 @@ use Visit/Appointment help.
   la cita / con el trámite** (el negocio responde en 24 h).
 - En la ficha: «Lo que importa en Salud» / «Lo que importa en un trámite» (6 barras, % que contestó que sí en el último año).
 
-### Doctor and professional reviews (EN)
+## English
+
+Every business page shows "What neighbors say": with 5+ reviews the average, stars, how many are verified and, for food,
+"What matters" (served hot, on time, worth the price, flavor) from rated orders in the last 90 days; with 1–4 only the
+count; with none, "No reviews yet". Pro pages also have a Reviews tab with star bars (tap to filter), most recommended
+dishes, filters (all, verified, with photos, replied, critical), sorting, "See more reviews" six at a time and "How reviews
+work". Each review shows the name and last initial, review count, stars, when (and EDITED), VERIFIED · DELIVERY / PICKUP /
+BOOKED or VISITOR, order facts that cannot be edited, text, photos, "Recommends", the business reply (Pro only), Helpful and
+Report. Write a review from the page or from a finished order: which visit (a finished order or booking in the last 30 days
+makes it verified; otherwise visitor), stars, what matters, what you recommend, 20–1000 characters without phones or
+emails, up to 6 photos. It posts instantly; you can edit it for 48 h and delete it any time. One review per business.
+Reporting needs a sign-in, a reason and an optional 300-character note; the review stays visible while a person at
+To'Latino reviews it (48 h). Businesses cannot delete or change reviews; To'Latino only hides those that break the rules,
+and the author sees the reason.
+
+### Auto and home reviews
+Verified when the visit or appointment was booked through To'Latino and finished. Arrival in the window, approved vs.
+charged and extra work with your OK come from the booking and cannot be edited. Home asks: right the first time, the
+booked person came, cleaned up, took care of your home, care. Auto asks: fixed the first time, asked your OK before extra
+work, showed the old part, car returned clean, care. With 1–2 stars, a review does not refund or request a return visit:
+use Visit/Appointment help.
+
+### Doctor and professional reviews
 Verified when the appointment or consultation was booked through To'Latino and finished. From the booking (not editable):
 for doctors, whether your insurance was accepted and what you paid — never your plan name, card number or the reason for
 the visit; for professionals, the written total you accepted or "You did not hire". Reviews with diagnoses, medicines,

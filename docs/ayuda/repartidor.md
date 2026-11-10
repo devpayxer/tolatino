@@ -1,8 +1,7 @@
 # To'Latino Repartidor · Driver app
 
-_Pantallas: `/repartidor` (Inicio · Pedidos · Ganancias · Perfil y el detalle de cada entrega), Panel › Entrega › Tus
-repartidores y el cuadre de efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Versión: Fase 2 · bloque 2l
-(6 nov 2026). v1.0 = el repartidor del propio negocio; los repartidores de To'Latino llegan más adelante._
+_Pantallas: `/repartidor` (Inicio · Pedidos · Ganancias · Perfil y el detalle de cada entrega), Panel › Entrega › Tus repartidores y el cuadre de
+efectivo, y el detalle del pedido en el panel («¿Quién lo lleva?»). Repartidores del propio negocio. Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **El negocio** (Entrega, con «Mi equipo») toca **Invitar repartidor**: nombre y teléfono → To'Latino crea un **código de
@@ -36,9 +35,8 @@ repartidores y el cuadre de efectivo, y el detalle del pedido en el panel («¿Q
 **¿Necesito otra cuenta?** No: la misma cuenta de To'Latino; una persona puede ser cliente, negocio y repartidor.
 **¿To'Latino me paga?** No en la v1: el negocio paga a su repartidor. To'Latino no cobra comisión por el efectivo.
 
----
-
 ## English
+
 The business invites a driver from Delivery (name + phone → a 6-character code, valid 7 days). The driver opens
 `tolatino.com/repartidor`, signs in with that same phone, enters the code and picks a vehicle, then goes **Online**. The
 business assigns accepted deliveries from the order detail. The driver taps one big step at a time: **Picked up, on my

@@ -1,7 +1,7 @@
 # Super Admin · Contenido y Transacciones
 
-_Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Escritorio y teléfono. Versión: Fase 2 · bloque
-2i (6 nov 2026). Acotado a las ciudades de quien mira._
+_Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Escritorio y teléfono. Acotado a las ciudades de quien mira. Versión: 6
+nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Contenido
 - **Qué es:** todo lo que escriben vecinos y negocios y ya existe: **reseñas**, **novedades**, **comentarios** de novedades y
@@ -11,10 +11,10 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   motivo; la novedad y la vacante salen de la página y el dueño ve el motivo en su panel (la vacante deja de recibir
   solicitudes; las que tiene se quedan); el comentario sale de la novedad. Nada se borra; todo queda en la auditoría.
 - **Ver negocio** abre su 360 › Contenido. Permiso: ver con `cont:ver`; ocultar con `neg:retirar`.
-- Publicaciones de la Comunidad (5a), comentarios de vecinos (5b), auto-moderación (5d), «Hoy en el barrio» y cuenta oficial (5e)
+- Publicaciones de la Comunidad, comentarios de vecinos, auto-moderación, «Hoy en el barrio» y cuenta oficial
   están abajo y en `admin-cuenta-oficial.md`.
 
-### Publicaciones de la Comunidad (5a, 7 nov)
+### Publicaciones de la Comunidad
 - Pestaña **Publicaciones** (y en **Todo**): preguntas, recomendaciones, encuestas y publicaciones de los vecinos y de la cuenta
   oficial de la ciudad, con tipo, autor, el negocio recomendado, votos + / −, si está fijada o con comentarios bloqueados y, si
   está oculta, el motivo. Las que su autor borró no salen aquí (quedan en la base como borradas).
@@ -25,14 +25,14 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 - **Bloquear / Abrir comentarios**: con motivo; nadie más comenta ni responde en el hilo, lo que ya está se queda.
 - **Ver** abre la publicación como la ve un vecino. Todo queda en la auditoría (`com.publicacion.*`) con antes → después.
 
-### Comentarios de vecinos (5b, 7 nov)
+### Comentarios de vecinos
 - Pestaña **Comentarios de vecinos** (y en **Todo**): comentarios y respuestas del hilo de la Comunidad, con autor, el negocio
   que recomiendan, votos + / − y, si está oculto, el motivo. Los que su autor borró no salen aquí.
 - **Ocultar / Restaurar** (Admin y Moderador): con motivo. Sale del hilo para todos (si tenía respuestas, queda «Comentario oculto
   por las reglas del barrio») y deja de contar en «Recomendados en este hilo»; el autor recibe «Ocultamos tu comentario» con el
   motivo (sin SMS). Restaurar lo devuelve y le avisa. **Ver** abre la publicación en ese comentario. Auditoría `com.comentario.*`.
 
-### Hoy en el barrio (5e, 7 nov)
+### Hoy en el barrio
 - Pestaña **Hoy en el barrio** (la cifra «HOY EN EL BARRIO» de arriba también la abre): lo que sale **ahora** en Hoy en tus
   ciudades, con su **origen** (la novedad de qué negocio, quién la publicó en su panel, hace cuánto, cuántos lo siguen) y la
   etiqueta **EN HOY · QUEDAN N H**. Debajo, lo que To'Latino **retiró de Hoy** en las últimas 24 h, con quién y por qué.
@@ -45,10 +45,10 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   todavía está en sus 24 h. Para quitarla también de su página, se oculta desde **Novedades**. Auditoría `hoy.retirar` / `hoy.devolver`.
 - **Ver en su página** abre la ficha › Novedades; **Negocio 360** abre su contenido.
 
-### Cuenta oficial (5e, 7 nov)
+### Cuenta oficial
 - Pestaña **Cuenta oficial**: escribir, programar y fijar como «To'Latino {Ciudad}». Detalle en `admin-cuenta-oficial.md`.
 
-### Contenido completo de la Fase 5 (5i, 8 nov)
+### Pestañas, filtros y acciones de Contenido
 - **Pestañas** (como el prototipo): **Todo · Publicaciones · Comentarios · Hoy en el barrio · Reseñas · Auto-moderación · Cuenta oficial**.
   Novedades, comentarios de novedades y vacantes siguen en **Todo** con el filtro **Tipo**.
 - **Filtros:** Tipo, **Ciudad**, **Se ven / Ocultos**, **Con reporte**, **Votos negativos**, **10+ votos**, **De invitados** (vive en otra
@@ -68,39 +68,40 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
 - Las cifras y el tiempo de Contenido salen de la base; los plazos (minutos para editar, días para apelar) de **Sistema › Configuración**.
 
 ## Transacciones
-- **Qué es:** pedidos y reservaciones de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), pedidos terminados en 90 días
-  (pagados en el local), los que no se dieron (cancelados, rechazados o sin respuesta) y reservaciones. Pestañas Todas, Pedidos
+- **Qué es:** pedidos, reservaciones y citas de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), lo retenido ahora, pedidos
+  terminados en 90 días, los que no se dieron (cancelados, rechazados o sin respuesta) y reservaciones. Pestañas Todas, Pedidos
   y Reservaciones; estados Pendiente, En curso, Terminado, Cancelado y No se dio; búsqueda por número, negocio o cliente.
 - **Exportar** (permiso `tx:exportar`): CSV de lo filtrado (hasta 5,000 filas), con las celdas protegidas contra fórmulas; queda
   en la auditoría.
-- Hoy todo se paga en el local o al recibir: no hay retenido, cobro con tarjeta, devoluciones ni comisión (llegan con Stripe,
-  bloque 2d). Citas, boletos y apartados llegan con sus fases.
-- **Evento privado** (6i, pestaña «Evento privado»): cada solicitud EP-… con personas, para cuándo, cuántas propuestas, la versión aceptada, el
+- **Dinero:** pedidos, reservaciones y citas se pagan en el local, al recibir o **con tarjeta en la app**; cada cobro dice su estado
+  (**retenido · cobrado · liberado · devuelto**) y **Devolver** (con motivo) devuelve hasta lo cobrado. En citas, la tarjeta es el depósito y
+  la comisión (8 %) va sobre el depósito. Las disputas del banco tienen su cola (ver `disputas.md`).
+- **Evento privado** (pestaña «Evento privado»): cada solicitud EP-… con personas, para cuándo, cuántas propuestas, la versión aceptada, el
   total, el depósito y su estado (retenido · cobrado · devuelto), si se quedó con el restaurante, la comisión y cómo cerró. **Devolver** (permiso
   `tx:aprobar`) devuelve hasta lo cobrado menos lo devuelto, con motivo y auditoría. Las ayudas van a Colas › Soporte y las disputas del banco a
   Colas › Disputas, como el resto.
 
----
-
 ## English
-Phase 5 complete (5i): tabs All · Posts · Comments · Today nearby · Reviews · Auto-moderation · Official account (updates, update comments
+
+Tabs All · Posts · Comments · Today nearby · Reviews · Auto-moderation · Official account (updates, update comments
 and job posts stay under All with the Type filter). Filters: type, city, visible/hidden, reported, downvoted, 10+ votes, from visitors, author
 rank and author; cursor pages (← →). "Ver hilo" shows the post as in the Community with all its comments (hidden ones marked) and the comment
 you came from highlighted. "Ocultar los N reportados" (desktop) hides every visible reported Community post and comment with one reason,
 shows progress and which ones failed and why; the official account is never hidden in bulk. Each author gets the reason with Appeal; reports
 and the queue case are closed; all audited. "Mover de ciudad" moves a post (not a recommendation) to another of your cities with its comments.
 
-Today nearby (5e): the "Hoy en el barrio" tab lists what is live in Today nearby in your cities (the same database rule people
+Today nearby: the "Hoy en el barrio" tab lists what is live in Today nearby in your cities (the same database rule people
 see: a Pro business's live, public update from the last 24 h), with its origin and hours left, plus what To'Latino took out in the
 last 24 h. "Retirar de Hoy" (Admin, Moderator) asks for a reason, keeps the update on the business page, notifies the business (no
 SMS) and is audited; "Devolver a Hoy" undoes it within the 24 h. The "Cuenta oficial" tab is described in admin-cuenta-oficial.md.
-Neighbor comments (5b): the "Comentarios de vecinos" tab lists Community comments and replies; Admins and Moderators hide or
+Neighbor comments: the "Comentarios de vecinos" tab lists Community comments and replies; Admins and Moderators hide or
 restore them with a reason (the author gets a notice, no SMS; a hidden comment stops counting in the thread's recommended list),
-audited as com.comentario.*. Community posts (5a): the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or
+audited as com.comentario.*. Community posts: the Posts tab lists neighbors' and the official city account's posts; Admins and Moderators hide or
 restore them with a reason (the author still sees it with the reason and gets a notice, no SMS), and Admin, City and Moderator
 roles pin one per city for 7 days or lock comments, all audited.
 
 Content lists reviews, business updates, update comments and job posts in your cities, with search, type tabs and filters
 (reported, hidden, downvoted); hiding or showing asks for a reason the author or owner sees, and is audited. Transactions lists
 orders and table reservations from the last 90 days with daily and 90-day figures, tabs, status filters, search and a CSV export
-(formula-safe, audited). Card payments, holds, refunds and commission arrive with Stripe.
+(formula-safe, audited). Orders, reservations and appointments are paid at the store, on delivery or by card in the app; each charge
+shows its status (held · charged · released · refunded) and Refund (with a reason) returns up to what was charged.

@@ -1,9 +1,9 @@
 # Tu fecha y la página de un negocio de Fiestas · Your date and a Parties business page
 
-_Pantallas: la página del negocio (Resumen y Servicios), la hoja de cada servicio, la hoja «Tu fecha» y Buscar › Fiestas (fila
-«¿Está libre tu fecha?»). Versión: Fase 4 · bloque 4u (7 nov 2026)._
+_Pantallas: la página del negocio (Resumen y Servicios), la hoja de cada servicio, la hoja «Tu fecha» y Buscar › Fiestas (fila «¿Está libre tu
+fecha?»). Versión: 7 nov 2026. Audiencia: vecino. Tema: explorar._
 
-## Qué hace (ES)
+## Qué hace
 La pregunta de Fiestas es una sola: **¿esa fecha está libre?** Y la regla no cambia: **la fecha no es tuya hasta que te la
 confirmen.**
 - **Tu fecha:** dices qué celebras (opcional), qué día (los próximos sábados y domingos, o cualquier otra fecha), cuántos
@@ -39,9 +39,9 @@ confirmen.**
 - **¿Cuándo me cobran el depósito?** Cuando confirman. Al enviar solo se retiene.
 - **¿Puedo cambiar mi fecha?** Sí, cuando quieras, desde cualquier negocio de Fiestas.
 
----
+## English
 
-## What it does (EN)
+### What it does
 Parties answer one question: **is that date free?** The rule never changes: **the date is not yours until they confirm it.**
 **Your date** stores the day (next Saturdays and Sundays or any date), guests and, optionally, what you celebrate and where. Saving
 it holds nothing. With an account it is saved to your account and works on every Parties business and in Search; without one it

@@ -1,7 +1,8 @@
 # Transferir boletos · Transfer tickets
 
 _Pantallas: **la orden** (`/eventos/orden/B-…` › **Transferir boletos**), **el boleto** (`/cuenta/boletos/TL-…` › **Transferir este boleto**),
-**recibir** (`/eventos/recibir/…`, el enlace del aviso) y **Mi cuenta › Boletos**. Teléfono y escritorio. Versión: Fase 6 · bloque 6d (10 nov 2026)._
+**recibir** (`/eventos/recibir/…`, el enlace del aviso) y **Mi cuenta › Boletos**. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino.
+Tema: eventos._
 
 ## Qué hace
 - **Pasa un boleto a otra persona** con su teléfono: eliges cuál (si tienes varios), escribes el teléfono y **Enviar boleto**.
@@ -34,16 +35,16 @@ _Pantallas: **la orden** (`/eventos/orden/B-…` › **Transferir boletos**), **
 - **¿Quien recibe el boleto puede cancelarlo con devolución?** No: el dinero es de quien pagó. Lo puede transferir otra vez.
 - **¿La otra persona ve mi teléfono?** No. Ve tu nombre e inicial. Tú solo ves los últimos 2 números del suyo.
 
----
+## English
 
-## What it does (English)
+### What it does
 **Transfer** a ticket to someone else by phone: pick which, type the phone, **Send ticket**. **THE OLD QR IS VOIDED** right away: while it is
 pending no QR of that ticket gets in. **Undo** until someone receives it (it comes back with a new QR). They get a notice with a link (in
 To'Latino if they have an account; by text once the SMS provider is connected), **sign in with that phone** and tap **Get ticket**: it goes to
 their account with their own QR. **Only the account with that phone** can receive it — never the sender. **Change a name** for free. Deadlines
 come from Settings: up to **2 h before** the event; up to **10 transfers a day**.
 
-## Cases and FAQ (English)
+### Cases and FAQ (English)
 Received → you get «Your ticket was received» and it shows **TRANSFERRED**. Nobody receives it in time → it expires and comes back with a new QR.
 Less than 2 h → no transfers or name changes. Your own phone → refused. The link reaches someone else → they cannot receive it; the phone is never
 shown. No reselling in the app. The receiver cannot cancel for a refund (the money belongs to the payer); they can transfer it again.

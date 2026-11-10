@@ -1,7 +1,7 @@
 # Notificaciones · Notifications
 
-_Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cuenta › Avisos (qué llega por teléfono) y
-Super Admin › Notificaciones (ADM-NOTIF). Versión: Fase 2 · bloque 2j (6 nov 2026)._
+_Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cuenta › Avisos (qué llega por teléfono) y Super Admin › Notificaciones
+(ADM-NOTIF). Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Cuando pasa algo con lo tuyo, To'Latino te avisa: **el negocio aceptó o no tu pedido, está listo, va en camino; confirmó
@@ -13,7 +13,7 @@ Super Admin › Notificaciones (ADM-NOTIF). Versión: Fase 2 · bloque 2j (6 nov
   reservación o la solicitud. Abrir la bandeja los marca como leídos.
 - Además del aviso en la app, casi todos salen como **mensaje de texto** al teléfono de la cuenta, en tu idioma.
 
-### Comunidad (5i, 8 nov)
+### Comunidad
 - En **Mi cuenta › Avisos › Comunidad**: **Respuestas y votos** (comentarios, respuestas, menciones, «Me sirvió», 10 votos, encuestas
   cerradas, seguidores nuevos y tu rango) y **Mensajes de vecinos** se apagan: apagados, **no llegan** a la campana. **Un resumen al día en vez
   de cada aviso**: lo de la Comunidad se guarda y llega **uno** a la hora de Configuración (7 PM de tu ciudad de fábrica), p. ej. «Hoy en la
@@ -44,35 +44,7 @@ Super Admin › Notificaciones (ADM-NOTIF). Versión: Fase 2 · bloque 2j (6 nov
 era de noche (horas de silencio).
 **¿Puedo borrar un aviso?** No; quedan en la bandeja, los más nuevos arriba.
 
----
-
-## What it does (EN)
-- When something happens with your stuff, To'Latino lets you know: **your order was accepted or not, is ready, is on the
-  way; your table was confirmed, another time was proposed or no table was available; your job application got a reply;
-  your order help got a reply or was resolved; we hid something you wrote** (with the reason).
-- **Businesses** are told about: a new order or booking, a customer asking for help with an order, someone applying to a job.
-- Every notification stays in the **inbox** (the bell shows a dot when there is something new). Tap one to open the order,
-  booking or application. Opening the inbox marks them read.
-- Most also go out as a **text message** to the account's phone, in your language.
-
-Community (5i): in My account › Notifications › Community, "Replies and votes" and "Messages from neighbors" can be turned off (they no
-longer arrive); "One daily digest instead of each alert" holds Community alerts and sends one a day at the Settings hour (7 PM local by
-default). Blocked people's activity is not counted. Moderation and coins always arrive. No Community alert is sent as SMS.
-
-## What happens in each case
-| Case | What happens |
-|---|---|
-| You turned off Orders, Bookings or Jobs in My account › Notifications | It reaches your inbox, not your phone. |
-| Between 10 PM and 7 AM (your city's time) | No text goes out; it stays in the inbox. You can turn quiet hours off. |
-| An order not accepted, or a reply to your help request | No switch: always delivered. |
-| A business gets a new order at night | It still arrives: it only takes orders while open. |
-| Sandbox | No text message leaves: it shows as «test mode» in Super Admin › Notifications › Sends. |
-
-## FAQ
-**I didn't get the text.** Check the bell: it is there. Check My account › Notifications and whether it was quiet hours.
-**Can I delete a notification?** No; they stay in the inbox, newest first.
-
-## Eventos (6j, 10 nov 2026)
+## Eventos
 - **Mi cuenta › Avisos › EVENTOS:** **Boletos y cambios** (avisos del organizador, cambio de programa, tu RSVP, la transferencia que recibieron,
   el turno de la lista de espera que venció), **Recordatorios** («Mañana: …» y «¡Es hoy!», desde la hora de Configuración, 10 AM de fábrica) y
   **Eventos que guardas** (un día antes). Apagado = no llega ni a la campana.
@@ -89,3 +61,31 @@ default). Blocked people's activity is not counted. Moderation and coins always 
 configured hour) and **Events you save**. Turning them off means they don't arrive. Critical ones always arrive (your ticket, a ticket sent to
 you, a comp, a waitlist spot, a cancellation or a date/time change, the private event proposal and confirmation). Organizers get «Your event is
 almost sold out» (90 %, once per date) and «To'Latino adjusted your event».
+
+## English
+
+### What it does
+- When something happens with your stuff, To'Latino lets you know: **your order was accepted or not, is ready, is on the
+  way; your table was confirmed, another time was proposed or no table was available; your job application got a reply;
+  your order help got a reply or was resolved; we hid something you wrote** (with the reason).
+- **Businesses** are told about: a new order or booking, a customer asking for help with an order, someone applying to a job.
+- Every notification stays in the **inbox** (the bell shows a dot when there is something new). Tap one to open the order,
+  booking or application. Opening the inbox marks them read.
+- Most also go out as a **text message** to the account's phone, in your language.
+
+Community: in My account › Notifications › Community, "Replies and votes" and "Messages from neighbors" can be turned off (they no
+longer arrive); "One daily digest instead of each alert" holds Community alerts and sends one a day at the Settings hour (7 PM local by
+default). Blocked people's activity is not counted. Moderation and coins always arrive. No Community alert is sent as SMS.
+
+### What happens in each case
+| Case | What happens |
+|---|---|
+| You turned off Orders, Bookings or Jobs in My account › Notifications | It reaches your inbox, not your phone. |
+| Between 10 PM and 7 AM (your city's time) | No text goes out; it stays in the inbox. You can turn quiet hours off. |
+| An order not accepted, or a reply to your help request | No switch: always delivered. |
+| A business gets a new order at night | It still arrives: it only takes orders while open. |
+| Sandbox | No text message leaves: it shows as «test mode» in Super Admin › Notifications › Sends. |
+
+### FAQ
+**I didn't get the text.** Check the bell: it is there. Check My account › Notifications and whether it was quiet hours.
+**Can I delete a notification?** No; they stay in the inbox, newest first.

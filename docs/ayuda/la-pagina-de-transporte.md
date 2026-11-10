@@ -1,8 +1,8 @@
 # La página de un negocio de Transporte · A Transport business page
 
-_Pantallas: la página del negocio (Resumen y Servicios) y la hoja de cada servicio. Versión: Fase 4 · bloque 4x (7 nov 2026)._
+_Pantallas: la página del negocio (Resumen y Servicios) y la hoja de cada servicio. Versión: 7 nov 2026. Audiencia: vecino. Tema: explorar._
 
-## Qué hace (ES)
+## Qué hace
 **El precio del viaje es cerrado antes de salir.** Cada servicio dice su precio y lo que incluye:
 - **Por persona:** precio de adulto y de niño, las salidas de cada día y la próxima salida con los asientos que quedan.
 - **Vehículo completo:** hasta cuántas personas y la espera incluida.
@@ -28,9 +28,9 @@ llega.
 - **¿El precio puede cambiar?** No. Lo que pagas al reservar es todo.
 - **¿Y si cancelo?** Gratis hasta 24 horas antes. Después, se cobra la mitad. Si el negocio no sale, te devolvemos todo.
 
----
+## English
 
-## What it does (EN)
+### What it does
 **The trip price is fixed before you leave.** Each service shows its price and what it includes. Per-person services show the
 adult and child price, daily departures, and the next departure with the seats left. Whole-vehicle services show how many people
 fit and the included wait. Box or delivery services show the price per box or delivery. Fixed-price-from-photos services show

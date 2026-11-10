@@ -1,8 +1,8 @@
-# Comunidad · el muro · Community · the feed
+# Comunidad: el muro · Community: the feed
 
-_Pantallas: **Comunidad › Conversación** (`/comunidad`, APP-COM-FEED), **Publicar** (`/comunidad/nuevo`, APP-COM-NUEVO) y **la
-publicación** (`/comunidad/p/{id}`, APP-COM-POST). Teléfono y escritorio. Versión: Fase 5 · bloque 5a (7 nov 2026). Solo con
-cuenta; lo de los vecinos no sale en buscadores._
+_Pantallas: **Comunidad › Conversación** (`/comunidad`, APP-COM-FEED), **Publicar** (`/comunidad/nuevo`, APP-COM-NUEVO) y **la publicación**
+(`/comunidad/p/{id}`, APP-COM-POST). Teléfono y escritorio. Solo con cuenta; lo de los vecinos no sale en buscadores. Versión: 7 nov 2026. Audiencia:
+vecino. Tema: comunidad._
 
 ## Qué hace
 - **La línea fija:** «Aquí nada se compra: el orden lo ponen los votos de los vecinos.» Ningún negocio paga por salir arriba;
@@ -27,12 +27,12 @@ cuenta; lo de los vecinos no sale en buscadores._
   - Ves a quién le sale («Lo ven tus vecinos de Hazleton · sale con tu nombre y tu barrio, nunca tu dirección») y las reglas.
     En escritorio, la vista previa a la derecha.
 - **Tu publicación:** el menú (···) deja **Editar** en los primeros **30 minutos** (de fábrica; To'Latino lo ajusta en Configuración y el menú dice hasta qué hora) y **Borrar** (con **Deshacer** 10 segundos).
-- **5c · De otra persona:** el menú (···) también deja **ver su perfil**, **silenciarla** o **bloquearla** (con Deshacer); tocar su
+- **De otra persona:** el menú (···) también deja **ver su perfil**, **silenciarla** o **bloquearla** (con Deshacer); tocar su
   nombre abre su perfil. Arriba, **Mensajes** (con un punto si hay algo sin leer) y la pastilla de tu rango abren tus mensajes y tu
   perfil. Para entrar a la Comunidad hace falta la bienvenida con «Tengo 18 años o más». Detalle:
   `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
 - **Comentarios:** en la publicación está el hilo: comentar, responder con «@Nombre», recomendar un negocio en el comentario,
-  votar comentarios, «Me sirvió» y las encuestas. Todo en `comunidad-comentar-votar-y-encuestas.md` (bloque 5b).
+  votar comentarios, «Me sirvió» y las encuestas. Todo en `comunidad-comentar-votar-y-encuestas.md`.
 
 ## Las reglas del barrio
 1. Habla de tu ciudad y de lo que pasa aquí.
@@ -67,7 +67,7 @@ base de datos: no hay manera de saltárselo.
 | Votar lo tuyo | «Lo tuyo lo votan los demás.» |
 | Votar dos veces | El mismo toque quita tu voto; el otro lo cambia. Un voto por persona. |
 | Encuesta | Un voto, no se cambia; los % se ven después de votar; al cerrar ya no se vota, todos ven el resultado y llega un aviso a quien la publicó y a quienes votaron. |
-| Bloqueaste o te bloquearon | No ven nada el uno del otro (bloqueo mutuo e invisible). Bloquear y silenciar llegan en 5c; el muro ya los respeta. |
+| Bloqueaste o te bloquearon | No ven nada el uno del otro (bloqueo mutuo e invisible). |
 | To'Latino oculta tu publicación | Sale del muro para todos; tú la sigues viendo con el motivo y recibes un aviso (sin SMS). Si se restaura, vuelve y te avisamos. |
 | Ubicación | Tu publicación lleva el **centro de tu barrio** (o de la ciudad si no tienes barrio), nunca tu GPS ni tu dirección. La distancia se mide contra ese centro. |
 
@@ -83,11 +83,10 @@ precios. Así nadie publica el teléfono de una persona.
 
 **¿Quién ve lo que publico?** Solo vecinos con cuenta. Nada de la Comunidad sale en Google.
 
-**¿Puedo escribir en inglés?** Sí. «Ver traducción» llega en el bloque 5h.
-
----
+**¿Puedo escribir en inglés?** Sí. Quien lee en otro idioma toca «Ver traducción» (ver `ver-traduccion.md`).
 
 ## English
+
 The Community feed shows what neighbors post in the city you are viewing, 20 at a time ("See more" loads the next ones),
 with chips (All, Following, Questions, Recommendations, Polls, Posts) and a filter sheet: the whole city or within 5, 10 or
 30 miles of you, top voted or newest first. "Nothing here is bought: neighbors' votes set the order." Only the city's official

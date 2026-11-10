@@ -1,8 +1,9 @@
 # Evento privado · Private event
 
-_Pantallas: **Pedir evento privado** (`/n/{restaurante}/evento-privado`: en el teléfono 3 pasos — Tu evento · Fecha y hora · Menú y presupuesto —;
-en escritorio una sola página con la columna del restaurante) y **tu solicitud** (`/privado/EP-…`). Se llega desde **Reservar** de un restaurante
-cuando el grupo pasa de lo que reserva (el botón «9+», «13+»…) y el restaurante recibe eventos privados. Versión: Fase 6 · bloque 6i (10 nov 2026)._
+_Pantallas: **Pedir evento privado** (`/n/{restaurante}/evento-privado`: en el teléfono 3 pasos — Tu evento · Fecha y hora · Menú y presupuesto —; en
+escritorio una sola página con la columna del restaurante) y **tu solicitud** (`/privado/EP-…`). Se llega desde **Reservar** de un restaurante cuando
+el grupo pasa de lo que reserva (el botón «9+», «13+»…) y el restaurante recibe eventos privados. Versión: 10 nov 2026. Audiencia: vecino. Tema:
+eventos._
 
 ## Qué hace
 - **Pides** un evento privado a un restaurante: qué celebran, cuántos son (entre el mínimo y el máximo del restaurante), dónde los sientan (salón,
@@ -44,9 +45,9 @@ cuando el grupo pasa de lo que reserva (el botón «9+», «13+»…) y el resta
 - **¿Y si el restaurante no cumple lo acordado?** Usa **Ayuda con el evento**: el restaurante responde en 24 h; si no, To'Latino lo revisa.
 - **¿El restaurante ve mi teléfono?** No: ve tu nombre y la inicial de tu apellido. Hablan por Mensajes.
 
----
+## English
 
-## What it does (English)
+### What it does
 **Request** a private event from a restaurant: what you are celebrating, how many guests (between the restaurant’s minimum and maximum), where you sit
 (dining room, patio or “The whole place”, which has an extra cost), the day (with the restaurant’s notice; 3 days or more), time, length, what you
 will eat, budget per person, extras (cake, decorations, music…) and a note. **Nothing is charged when you ask.** The restaurant replies in time (24 h,

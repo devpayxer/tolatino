@@ -1,8 +1,8 @@
 # Super Admin › Eventos y boletos › Modo puerta · Door mode audit
 
-_Pantallas: **Super Admin › Eventos y boletos › Modo puerta** (`/admin/eventos/puerta`, y `?fecha=` para una puerta) y **Buscar boleto → la ficha
-del boleto** (ESCANEOS EN LA PUERTA). Permiso: Eventos (ver). Solo las ciudades de tu equipo. Escritorio y teléfono. Versión: Fase 6 · bloque 6g
-(10 nov 2026)._
+_Pantallas: **Super Admin › Eventos y boletos › Modo puerta** (`/admin/eventos/puerta`, y `?fecha=` para una puerta) y **Buscar boleto → la ficha del
+boleto** (ESCANEOS EN LA PUERTA). Permiso: Eventos (ver). Solo las ciudades de tu equipo. Escritorio y teléfono. Versión: 10 nov 2026. Audiencia:
+equipo. Tema: equipo._
 
 ## Qué hace
 - **Solo lectura**, para revisar un «me cobraron y no entré» o un problema en la puerta. Nadie vende en la puerta.
@@ -31,12 +31,12 @@ del boleto** (ESCANEOS EN LA PUERTA). Permiso: Eventos (ver). Solo las ciudades 
   desviado. Si dos puertas dejaron entrar el mismo boleto sin señal, una queda **REPETIDO** («decidido otra vez al subir otra puerta») y hay una
   incidencia. Las sesiones de portero dicen cuántos escaneos subieron sin conexión y si el teléfono se revocó.
 
----
+## English
 
-## What it does (English)
+### What it does
 Read-only door audit for disputes (“I paid and was not let in”). **NOW**: today’s doors with inside, to come, rejected, repeated and open doors;
 **LAST 7 DAYS**: dates with scans. One date: **INSIDE · TO COME · REJECTED · REPEATED**, **BY DOOR**, **DOOR STAFF SESSIONS**, **LATEST AT THE DOOR**
 and **INCIDENTS**, refreshed every 10 seconds. A ticket’s page adds **DOOR SCANS**: every scan with result, door, who scanned it, date and time,
 and manual entries with their reason. No full phones or amounts anywhere. Limited to your team’s cities.
 
-**Offline entries (6h):** they show **OFFLINE**, with the phone time corrected, when they arrived and whether the clock was off. If two doors let the same ticket in offline, one shows **REPEATED** (re-decided when the other door uploaded) and there is an incident. Door sessions show how many scans came in offline and whether the phone was revoked.
+**Offline entries:** they show **OFFLINE**, with the phone time corrected, when they arrived and whether the clock was off. If two doors let the same ticket in offline, one shows **REPEATED** (re-decided when the other door uploaded) and there is an incident. Door sessions show how many scans came in offline and whether the phone was revoked.

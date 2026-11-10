@@ -1,7 +1,7 @@
-# Super Admin · Negocio 360° › Dinero · Super Admin · Business 360° › Money
+# Super Admin: Negocio 360° › Dinero · Super Admin: Business 360° › Money
 
-_Pantalla: ADM-NEG › pestaña **Dinero** (`/admin/negocios/{id}?tab=din`), teléfono y escritorio. Versión: Fase 2 · bloque
-2o (6 nov 2026). Para el equipo de To'Latino (y El Compa como copiloto del equipo)._
+_Pantallas: ADM-NEG › pestaña **Dinero** (`/admin/negocios/{id}?tab=din`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como
+copiloto del equipo). Versión: 6 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Cifras de 90 días:** cobrado con tarjeta, retenido ahora (pedidos que el negocio todavía no acepta), devuelto y la
@@ -42,9 +42,15 @@ Solo negocios de tus ciudades. Todo pide motivo y queda en el Historial.
 **¿Pausar pagos detiene los cobros?** No. El cliente sigue pagando; el dinero espera en Stripe hasta reanudar.
 **¿Se borra algo al anular?** No. Lo Pro se duerme y vuelve igual si el negocio regresa a Pro.
 
----
+## Pagos de eventos
+- Los boletos se cobran en To'Latino y se pagan **por fecha, el martes después**, con una transferencia de Stripe a la cuenta del organizador
+  (Super Admin › Eventos y boletos › **Liquidaciones**). **Pausar pagos** aquí también retiene los pagos de eventos («RETENIDA · cuenta») hasta
+  reanudarlos. Ver «admin-eventos-y-boletos» (Liquidaciones).
+
+**English:** ticket sales are paid per date the Tuesday after through a Stripe transfer; pausing payouts here also holds event payouts until resumed.
 
 ## English
+
 Business 360° › **Money**: 90-day charged / held / refunded / To'Latino fee; Stripe account status, bank last 4 and weekly
 Tuesday payouts (SENT, NEXT, ON HOLD). **Pause payouts / Resume payouts** with a reason: charging continues but nothing goes
 to the bank until resumed (with real Stripe the payout schedule switches to manual); the owner gets a notice and sees it in
@@ -52,10 +58,3 @@ Payouts. **Plan & invoices**: courtesy Pro (30/60/90 days), end courtesy, extend
 subscription (paid Pro runs to period end; trial ends on its last day; failed charge → Free today). Last 12 card charges.
 Permissions: transactions·view to see, transactions·approve to pause, plans·edit/approve for plan actions. Everything is
 audited with its reason.
-
-## 6e · Pagos de eventos (10 nov 2026)
-- Los boletos se cobran en To'Latino y se pagan **por fecha, el martes después**, con una transferencia de Stripe a la cuenta del organizador
-  (Super Admin › Eventos y boletos › **Liquidaciones**). **Pausar pagos** aquí también retiene los pagos de eventos («RETENIDA · cuenta») hasta
-  reanudarlos. Ver «admin-eventos-y-boletos» (Liquidaciones).
-
-**English:** ticket sales are paid per date the Tuesday after through a Stripe transfer; pausing payouts here also holds event payouts until resumed.

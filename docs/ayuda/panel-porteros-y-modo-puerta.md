@@ -2,7 +2,7 @@
 
 _Pantallas: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`: PUERTA, PORTEROS · ESCANEAN EN LA PUERTA, REGLAS DE
 PUERTA) y **el modo puerta** (`?det=door:{evento}@{fecha}`: escanear, buscar y el Monitor en vivo). Parte «Eventos» del equipo (el dueño siempre).
-Teléfono y escritorio. Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
+Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **PUERTA** en la ficha: **ADENTRO**, **ENTRARON** e **INCIDENCIAS** de la fecha que estás viendo, y **Abrir modo puerta**.
@@ -22,7 +22,7 @@ Teléfono y escritorio. Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
   To'Latino Puerta** para la app completa. En un evento de varios días eliges el día.
 - **Monitor en vivo**: adentro, faltan, rechazados (y cuántos intentaron entrar otra vez), **ÚLTIMOS EN LA PUERTA**, **EN LA PUERTA** (cada portero,
   su puerta, desde qué hora y cuántos dejó entrar; **Cerrar su puerta**) e **INCIDENCIAS** (con **Cerrar**). Se pone al día solo.
-- **Sin señal (6h)**: cada puerta es un teléfono. El Monitor dice cuántos escaneos subió **sin conexión** y a qué hora, cuántos quedaron
+- **Sin señal**: cada puerta es un teléfono. El Monitor dice cuántos escaneos subió **sin conexión** y a qué hora, cuántos quedaron
   **repetidos** y si su **reloj** está adelantado o atrasado. Los escaneos sin conexión salen marcados en ÚLTIMOS. Las incidencias **«Entró dos
   veces (sin conexión)»** (con las dos puertas y horas) y **«Entró sin conexión con un boleto que ya no valía»** las abre To'Latino solas.
 - **Revocar este teléfono**: para un teléfono perdido o en malas manos. Se cierra su puerta, su lista se borra en la próxima señal y lo que no
@@ -49,9 +49,9 @@ Teléfono y escritorio. Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
 - **¿Puedo escanear yo?** Sí: **Abrir modo puerta** en la ficha del evento, o To'Latino Puerta con tu cuenta.
 - **¿Dónde veo quién entró?** En el Monitor (últimos en la puerta) y en la lista de compradores (ADENTRO).
 
----
+## English
 
-## What it does (English)
+### What it does
 On the event page: **DOOR** (inside, came in, incidents, **Open door mode**), **DOOR STAFF · SCAN AT THE DOOR** → **Add** (name, phone, this event or
 all your events) → they get a **7-day code by text** (also shown in the dashboard); they sign in with **their own To'Latino account** and that
 phone and type the code in To'Latino Door. Staff only scan: no selling, no phones or payment details, only your events assigned to them, only on
@@ -60,4 +60,4 @@ the day. **Remove** with a reason closes their door immediately. **DOOR RULES** 
 full-screen camera with the same results as To'Latino Door; search by name or code and **Let in** with a reason. **Live monitor**: inside, to come,
 rejected, latest at the door, who is at each door (close their door) and incidents (close them). It updates on its own.
 
-**Offline (6h):** each door is a phone. The Monitor shows how many scans it uploaded offline (and when), how many were **repeated**, and whether its clock is ahead or behind; offline scans are marked in LATEST. The incidents “Got in twice (offline)” and “Got in offline with a ticket that was no longer valid” are opened automatically. **Revoke this phone** (lost or misused phone): its door closes, its list is wiped on the next signal and anything not uploaded no longer counts; **Close their door** still lets offline scans made before the close upload.
+**Offline:** each door is a phone. The Monitor shows how many scans it uploaded offline (and when), how many were **repeated**, and whether its clock is ahead or behind; offline scans are marked in LATEST. The incidents “Got in twice (offline)” and “Got in offline with a ticket that was no longer valid” are opened automatically. **Revoke this phone** (lost or misused phone): its door closes, its list is wiped on the next signal and anything not uploaded no longer counts; **Close their door** still lets offline scans made before the close upload.

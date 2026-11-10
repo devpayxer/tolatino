@@ -1,8 +1,8 @@
-# Comunidad · reportar, lo que To'Latino oculta y apelar · Community · reporting, what To'Latino hides and appeals
+# Comunidad: reportar, lo que To'Latino oculta y apelar · Community: reporting, what To'Latino hides and appeals
 
-_Pantallas: **Reportar** (la hoja que sale desde ··· / ⌄ en una publicación, un comentario, el perfil de un vecino y una conversación),
-**Mi cuenta › Avisos de moderación** (`/cuenta/moderacion`; `?k=…&id=…` abre uno) y **Publicar** cuando tienes una sanción. Teléfono y
-escritorio. Versión: Fase 5 · bloque 5d (7 nov 2026). Solo con cuenta._
+_Pantallas: **Reportar** (la hoja que sale desde ··· / ⌄ en una publicación, un comentario, el perfil de un vecino y una conversación), **Mi cuenta ›
+Avisos de moderación** (`/cuenta/moderacion`; `?k=…&id=…` abre uno) y **Publicar** cuando tienes una sanción. Teléfono y escritorio. Solo con cuenta.
+Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **Reportar** (3 pasos): **¿Por qué lo reportas?** (Venta, spam o cadena · Datos de otra persona · Insulto o acoso · Información falsa ·
@@ -47,18 +47,16 @@ escritorio. Versión: Fase 5 · bloque 5d (7 nov 2026). Solo con cuenta._
 - **¿Sabe la persona que la reporté?** No. Nunca.
 - **¿Quién decide?** Una persona del equipo de To'Latino, con un motivo que queda guardado. La apelación, otra persona.
 - **¿Leen mis mensajes?** Solo si alguien reporta esa conversación (y solo mientras el caso está abierto), o el mensaje que tú apelaste.
-- **¿Me quitan puntos?** Cuando lleguen los puntos (otro bloque): lo oculto por las reglas resta sus puntos; si ganas la apelación, vuelven.
+- **¿Me quitan puntos?** Sí: lo que se oculta por las reglas resta los puntos que dio; si ganas la apelación, vuelven.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Reportar = ··· / ⌄ › Reportar. «Ya no lo ves. Lo revisamos en 48 h.» Nadie sabe quién reportó.
 - Apelar = el aviso o Mi cuenta › Avisos de moderación; 20–500 letras; una vez; 14 días; la decide otra persona; 72 h.
 - Si alguien habla de hacerse daño: 988 (llamada o texto). Emergencia: 911.
 - Nunca prometas el resultado de una apelación ni digas quién reportó.
 
 ## English
-
-_Screens: **Report** (the sheet from ··· / ⌄ on a post, a comment, a neighbor's profile and a conversation), **My account › Moderation
-notices** (`/cuenta/moderacion`) and **Post** when you have a sanction. Phone and desktop. Phase 5 · block 5d (Nov 7, 2026)._
 
 ### What it does
 - **Report** (3 steps): why (sales/spam/chain · someone else's personal info · insult or harassment · false information ·

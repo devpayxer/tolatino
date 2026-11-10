@@ -1,9 +1,7 @@
 # Pedir comida · Ordering food
 
-_Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu`), **Finalizar pedido**
-(`/n/{negocio}/pagar`) y **Tu pedido** (`/pedido/{número}`), teléfono y escritorio. Versión: Fase 2 · bloque 2b
-(6 nov 2026), con lo del 2c (estados reales, cancelar, volver a pedir) y el delivery del 2f. Comida y Bebidas. Pickup con
-pago en el local; delivery con efectivo al recibir; tarjeta (2d) y Ayuda con el pedido llegan en sus bloques._
+_Pantallas: pestaña **Menú** de la página del negocio (`/n/{negocio}?tab=menu`), **Finalizar pedido** (`/n/{negocio}/pagar`) y **Tu pedido**
+(`/pedido/{número}`), teléfono y escritorio. Comida y Bebidas. Pickup y delivery, con tarjeta o pago en el local según el negocio. Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **Menú (Pro):** pestaña con las categorías arriba (se pegan al bajar), **Populares**, y cada plato con foto, precio y
@@ -22,17 +20,17 @@ pago en el local; delivery con efectivo al recibir; tarjeta (2d) y Ayuda con el 
 - **Resumen de la página:** hasta 4 platos para pedir directo y la barra «Desde $X · Pedir». Con delivery, el riel dice
   «Pickup N min · Delivery $X».
 - **Finalizar pedido:** dónde recoges (dirección, nota del negocio y Cómo llegar), cuándo (lo antes posible o una hora de
-  hoy cada 30 minutos), cómo pagas (en el local) y el resumen. **Enviar pedido**.
+  hoy cada 30 minutos), cómo pagas (**Tarjeta** si el negocio la acepta en la app, o **Pagas en el local**) y el resumen. **Enviar pedido**.
 - **Finalizar pedido con delivery:** **Entrega** (tu dirección predeterminada de Mis direcciones; **Cambiar** te lleva a
   elegir otra o agregar una y vuelve al pago), cuándo llega, **Cómo te lo entregamos** (en la mano o dejar en la puerta),
   **Al llegar** (toca el timbre, no toques el timbre, llámame, escríbeme), instrucciones para el repartidor (200 letras),
   **Guardar para Casa** (la próxima vez sale igual), **Propina al repartidor** (15, 18, 20 % u otra; va completa a quien
-  entrega) y el resumen con envío y propina. Pagas en efectivo al recibir.
+  entrega) y el resumen con envío y propina. Pagas con tarjeta en la app o en efectivo al recibir, según lo que acepte el negocio.
 - **Tu pedido enviado:** número, estado (enviado → aceptado → en la cocina → listo → recogido, con la hora real de cada
-  paso), a qué hora está listo, cuánto pagas en el local, dónde recoges y lo que pediste. Llamar al negocio. Se
+  paso), a qué hora está listo, cuánto pagas (o si ya va con tarjeta: RETENIDO o PAGADO), dónde recoges y lo que pediste. Llamar al negocio. Se
   actualiza solo mientras está en curso.
 - **Tu pedido con delivery:** enviado → preparando → en camino → entregado, **LLEGA** entre tal y tal hora, «Pagas $X en
-  efectivo al recibir», a dónde se entrega y cómo, envío y propina. Si el negocio usa una app externa (DoorDash, Uber
+  efectivo al recibir» (o lo pagado con tarjeta), a dónde se entrega y cómo, envío y propina. Si el negocio usa una app externa (DoorDash, Uber
   Eats) y pega el enlace, sale **Seguir en DoorDash**.
 - **Cancelar pedido** (`/pedido/{número}/cancelar`): gratis mientras el negocio no lo acepta; eliges por qué (opcional).
 - **Volver a pedir:** al terminar o si no se pudo, pone los mismos platos con sus opciones en tu carrito.
@@ -64,7 +62,8 @@ pago en el local; delivery con efectivo al recibir; tarjeta (2d) y Ayuda con el 
 | Delivery: el negocio marca «Salió en camino» | Ves «En camino»; ya no se cancela desde la app (llama al negocio). |
 
 ## Preguntas frecuentes
-**¿Me cobran algo en la app?** No. Pagas en el local cuando recoges. El pago con tarjeta llega más adelante.
+**¿Me cobran algo en la app?** Solo si pagas con **tarjeta**: se retiene al enviar y se cobra cuando el negocio acepta (ver
+`pagar-con-tarjeta.md`). Si eliges pagar en el local, pagas cuando recoges.
 
 **¿Puedo cancelar?** Sí, gratis, mientras el negocio no lo acepte («Cancelar pedido» en tu pedido). Después, llama al
 negocio.
@@ -74,20 +73,19 @@ delivery de hoy o lo tiene en pausa. Pickup sigue disponible.
 
 **¿La propina es obligatoria?** No. Puedes elegir 15, 18, 20 % u otra cantidad, incluso $0. Va completa a quien entrega.
 
-**¿Cómo pago el delivery?** En efectivo al recibir. El pago con tarjeta llega más adelante.
+**¿Cómo pago el delivery?** Con tarjeta en la app o en efectivo al recibir, según lo que acepte el negocio.
 
 **¿Y si cambian el precio después de pedir?** Tu pedido guarda el precio con el que lo hiciste.
 
----
-
 ## English
+
 The **Menu** tab shows categories (sticky), Popular, and each dish with photo, price and tags (sold out today, in store
 only, only N left, popular, its own hours, takes N min). The + adds dishes without options directly and stretches into
 − qty +; dishes with options open a sheet that marks what is required, adds option prices and takes kitchen
 instructions. Tapping + again asks "same again or with changes"; − asks which one when you have several versions. Your
 order (bottom bar on phones, right card on desktop) lets you edit, change quantities and see subtotal, 6% tax and total;
 it is kept on your phone for 24 hours per business. **Checkout** shows where you pick up (address, the business's note,
-directions), when (as soon as possible or a time today every 30 minutes), how you pay (at the store) and the summary.
+directions), when (as soon as possible or a time today every 30 minutes), how you pay (**Card** if the business takes it in the app, or **Pay at the store**) and the summary.
 **Your order** shows its number and status (sent → accepted → in the kitchen → ready → picked up), ready time, what you
 pay at the store, pickup address and items, with Call the business; it refreshes while waiting. The server recalculates
 prices, options, stock, hours and the Free monthly cap on every order; a double tap creates only one order; with three
@@ -98,7 +96,7 @@ cart. **Delivery:** when the business delivers, choose Delivery or Pickup above 
 arrival window, PICKUP ONLY / DELIVERY ONLY tags, the delivery fee, the free-delivery bar and the delivery minimum.
 Checkout uses your default address from My addresses (Change goes there and back), when it arrives, hand it to me or
 leave at door, on-arrival options, driver notes, Save for this address, and a 15/18/20 % or custom tip that goes fully to
-the driver; you pay cash on delivery. Your order shows sent → preparing → on the way → delivered, the arrival window,
+the driver; you pay by card in the app or cash on delivery, depending on the business. Your order shows sent → preparing → on the way → delivered, the arrival window,
 where and how it is delivered, fee and tip, and Track on DoorDash when the business uses an external app and pastes the
-link. Out-of-zone addresses, minimums and fees are checked again by the server. Card payment and order help arrive in
-later blocks.
+link. Out-of-zone addresses, minimums and fees are checked again by the server. With a card, the total is held when you send and charged when the business accepts (see Paying by card). If something
+went wrong, open Order help from your order (see Order help).

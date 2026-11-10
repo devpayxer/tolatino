@@ -1,8 +1,7 @@
 # Tu cita y Panel › Citas · Your booking and Panel › Bookings
 
-_Pantallas: **Tu cita** (`/cita/C-xxxx`), Mi cuenta › **Citas y reservas**; Panel › **Hoy** (esperan tu respuesta y la
-agenda de hoy), el **detalle de la cita** y **Clientes** (todas las citas con filtros). Versión: Fase 3 · bloque 3c
-(6 nov 2026)._
+_Pantallas: **Tu cita** (`/cita/C-xxxx`), Mi cuenta › **Citas y reservas**; Panel › **Hoy** (esperan tu respuesta y la agenda de hoy), el **detalle de
+la cita** y **Clientes** (todas las citas con filtros). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **El negocio (o la silla) responde:** **Confirmar** (si hubo depósito, se cobra), **Otra hora** (el sistema propone la
@@ -15,7 +14,7 @@ agenda de hoy), el **detalle de la cita** y **Clientes** (todas las citas con fi
 - **El día de la cita (panel):** **Llegó · en atención** → **Terminada · cobrar**, o **No llegó**.
 - **Avisos:** al cliente (confirmada, otra hora, no pudo, venció, cambio sí/no, recordatorio 24 h y 2 h antes si lo
   pidió, se liberó una hora) y al negocio (nueva solicitud, canceló, llega tarde, pide cambio, aceptó la otra hora). Todo
-  llega a Avisos; el SMS sale cuando esté el proveedor.
+  llega a Avisos y, si lo tienes encendido, por SMS.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa con el depósito |
@@ -35,9 +34,8 @@ responda el cliente ve «Solicitud enviada».
 **¿Quién ve mi teléfono?** El negocio lo ve cuando la cita está confirmada.
 **¿Se borra algo?** No: cada paso queda en el historial de la cita y en la auditoría del negocio.
 
----
-
 ## English
+
 The business confirms (deposit charged), proposes another time (the system picks the next open slot; the client has 2 h
 to accept) or declines (deposit released). Unanswered requests expire after 2 h. Clients can accept or decline a new time,
 change (the deposit moves; a confirmed booking needs the business to accept unless it confirms instantly), cancel (free

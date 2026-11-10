@@ -1,9 +1,9 @@
 # Ver traducción · See translation
 
-_Pantallas: **la publicación y el muro de la Comunidad** (`/comunidad`, `/comunidad/p/{id}`, el perfil de un vecino), **los comentarios y
-respuestas del hilo**, **las reseñas de la ficha** (`/n/{id}?tab=rev`) con **la respuesta del negocio**, y **los comentarios de
-Novedades** (`/n/{id}?tab=nov`). Teléfono y escritorio. Versión: Fase 5 · bloque 5h (7 nov 2026). En la Comunidad, con cuenta; las
-reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-moderación muestra si el traductor responde y el tope._
+_Pantallas: **la publicación y el muro de la Comunidad** (`/comunidad`, `/comunidad/p/{id}`, el perfil de un vecino), **los comentarios y respuestas
+del hilo**, **las reseñas de la ficha** (`/n/{id}?tab=rev`) con **la respuesta del negocio**, y **los comentarios de Novedades** (`/n/{id}?tab=nov`).
+Teléfono y escritorio. En la Comunidad, con cuenta; las reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-moderación muestra si
+el traductor responde y el tope. Versión: 7 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Debajo de un texto escrito **en el otro idioma** que el de tu app (inglés si tienes la app en español, español si la tienes en inglés)
@@ -37,6 +37,7 @@ reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-mo
 - **¿El equipo de To'Latino ve la traducción?** No: el Super Admin ve siempre el original, para decidir sobre lo que la persona escribió.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - «Ver traducción» sale solo si el texto está en el otro idioma de la app y no es tuyo. Solo español ↔ inglés.
 - El traductor es propio; el texto no sale de To'Latino. Es automático: lo que vale es el original.
 - «La traducción no está disponible ahora.» = el traductor no respondió; lo demás sigue igual; «Reintentar» o más tarde.
@@ -44,12 +45,7 @@ reseñas y Novedades, también sin cuenta. Super Admin › Contenido › Auto-mo
 
 ## English
 
-_Screens: **Community posts and feed** (`/comunidad`, `/comunidad/p/{id}`, a neighbor's profile), **thread comments and replies**,
-**business page reviews** (`/n/{id}?tab=rev`) with **the business reply**, and **Updates comments** (`/n/{id}?tab=nov`). Phone and
-desktop. Version: Phase 5 · block 5h (Nov 7, 2026). Community needs an account; reviews and Updates work without one. Super Admin ›
-Content › Auto-moderation shows whether the translator responds and the limit._
-
-## What it does
+### What it does
 - Under text written **in the other language** from your app's (English if your app is in Spanish, Spanish if it is in English) you see
   **«See translation»**. Tap it: it says **«Translating…»** and the text changes to the translation, with **«See original · Machine
   translation from Spanish»** (or «from English»). **«See original»** goes back to what the person wrote.
@@ -64,7 +60,7 @@ Content › Auto-moderation shows whether the translator responds and the limit.
 - **Limit:** **60 translations per hour per person** (without an account, per phone or computer). To'Latino can change it.
 - **It's a machine translation:** it can have mistakes. What counts is what the person wrote («See original»).
 
-## What happens in each case
+### What happens in each case
 - **The translator doesn't respond or takes over 3 seconds:** it says **«Translation isn't available right now.»** with **«Try
   again»**. Everything else on the screen keeps working (voting, commenting, reading). Anything translated before still shows.
 - **It failed several times in a row:** the app stops asking for a minute and then tries again on its own; meanwhile it says it isn't
@@ -74,13 +70,14 @@ Content › Auto-moderation shows whether the translator responds and the limit.
 - **Your app is in Spanish:** the button says **«Ver traducción»** and shows on what is in English.
 - **I changed the app language:** reload the page; buttons follow the new language.
 
-## FAQ
+### FAQ
 - **Does the person know I translated their text?** No.
 - **Can I translate my private messages?** Not yet: messages between neighbors aren't translated.
 - **Other languages?** For now only Spanish ↔ English.
 - **Does the To'Latino team see the translation?** No: the Super Admin always sees the original, to decide on what the person wrote.
 
-## For El Compa
+### For El Compa
+<!-- solo-equipo -->
 - «See translation» only shows when the text is in the app's other language and isn't yours. Spanish ↔ English only.
 - The translator is our own; the text doesn't leave To'Latino. It's automatic: the original is what counts.
 - «Translation isn't available right now.» = the translator didn't respond; everything else works; «Try again» or later.

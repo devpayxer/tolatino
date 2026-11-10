@@ -1,8 +1,8 @@
 # Los eventos en la página del negocio y en el resto de la app · Events on the business page and around the app
 
-_Pantallas: **la página del negocio › Eventos** (`/n/{negocio}?tab=evt`), **Inicio › Esta semana**, **Buscar › Eventos**, **Ciudad**, la
-pestaña de **Noche** (la noche especial) y **Novedades / Hoy en el barrio** («Ver evento»). Teléfono y escritorio. Versión: Fase 6 ·
-bloque 6b (10 nov 2026). Para vecinos y dueños._
+_Pantallas: **la página del negocio › Eventos** (`/n/{negocio}?tab=evt`), **Inicio › Esta semana**, **Buscar › Eventos**, **Ciudad**, la pestaña de
+**Noche** (la noche especial) y **Novedades / Hoy en el barrio** («Ver evento»). Teléfono y escritorio. Para vecinos y dueños. Versión: 10 nov 2026.
+Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - **Página del negocio › Eventos** (solo negocios Pro, y solo si tienen eventos publicados que vienen): **Próximos eventos** con la misma
@@ -33,9 +33,9 @@ bloque 6b (10 nov 2026). Para vecinos y dueños._
 - **¿Por qué mi evento no sale?** Mira en Panel › Eventos: puede estar en revisión, oculto, con el módulo apagado o pausado por To'Latino.
 - **¿Puedo poner un botón a mi evento en una novedad?** Sí: en la novedad elige el botón **Evento** y el evento.
 
----
+## English
 
-## What it does (English)
+### What it does
 Pro businesses with upcoming live events get an **Events** tab on their page (a replica: each card opens the event page). **Home › This
 week** shows the next 7 days of events in your radius. **Search** has an **Events** section and tab (All · Today · This weekend · Free).
 **City** shows how many events are within the radius. A Nightlife **special night** service links to one of your events and shows only

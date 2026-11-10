@@ -1,6 +1,9 @@
 # La página de un mercado · A market's page
 
-## Qué hace (ES)
+_Pantallas: la página de un mercado (`/n/{negocio}`) › pestaña **Productos**, la hoja de cada producto y «Tu pedido». Versión: 10 nov 2026. Audiencia:
+vecino. Tema: explorar._
+
+## Qué hace
 - **Productos** por sección con su precio. Lo que va **por libra** dice «/lb · SE COBRA LO QUE PESE»; lo listo para llevar,
   «LISTO PARA LLEVAR». Lo que se acabó hoy sale atenuado («SE ACABÓ HOY»).
 - Al tocar un producto: **¿Cuánto? · estimado** (1, 2, 3, 5 o 10 lb) o **¿Cuántos?**, y si aplica **¿Cómo lo quieres?** (corte) o
@@ -17,7 +20,8 @@
 - **¿Y si algo no hay?** Te preguntan antes de cambiarlo; si no contestas en 10 minutos, lo quitan y no se cobra.
 - **¿Aceptan EBT?** Si el mercado lo marcó, en la tienda y al recoger. No cubre comida caliente, alcohol, tabaco ni el envío.
 
-## EN
+## English
+
 Products by section; by-the-pound items show "/lb · you pay what it weighs". The sheet asks how much (an estimate) and the cut or
 ripeness. Your order keeps one market at a time. 21+ and in-store-only items show with their price and Directions. Markets that
 don't take To'Latino orders say "Walk in".

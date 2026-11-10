@@ -696,8 +696,8 @@ function licencias(c: Ctx): Sec {
     apply: async (z: { nums: Record<string, string> }) => { for (const x of vivas) { const v = (z.nums[x.id] ?? "").trim(); if (v && v !== (x.number ?? "")) { const r = await licenciaNumero(d.id, x.id, v); if (!r.ok) return r; } } return { ok: true } as Res; } } };
 }
 
-/* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes y Entrega; El Compa, Moderadores, Cobros y plan y Ajustes llegan con
-   sus bloques. «También»: ver mi página como cliente. */
+/* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes, Entrega, Eventos y Cobros y plan. «También»: ver mi página como cliente y la
+   Ayuda del panel (7a: el Centro de ayuda con el tema «Tu panel»; El Compa llega en 7e). */
 function masBloques(c: Ctx): Bloque[] {
   const { E2, d } = c;
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
@@ -710,6 +710,7 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt")) ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: E2("Publica eventos: To’Latino los revisa antes de que salgan.", "Publish events: To’Latino reviews them before they go live."), onClick: () => c.go("evt") }] : []),
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
     ] },
-    { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") }] },
+    { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
+      { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") }] },
   ];
 }

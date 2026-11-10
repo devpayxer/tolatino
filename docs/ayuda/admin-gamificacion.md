@@ -1,8 +1,8 @@
-# Super Admin · Gamification (rangos, puntos, monedas, cupones y Tabla del Barrio) · Super Admin · Gamification (ranks, points, coins, coupons and Neighborhood Table)
+# Super Admin: Gamification (rangos, puntos, monedas, cupones y Tabla del Barrio) · Super Admin: Gamification (ranks, points, coins, coupons and Neighborhood Table)
 
-_Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas Rangos · Puntos · Monedas · Cupones · Tabla del Barrio) y
-**Usuarios › 360° › Comunidad › Puntos y rango · Monedas**. Teléfono y escritorio. Versión: Fase 5 · bloques 5f y 5g (7 nov 2026). Permiso: Gamification (ver/editar; hoy solo
-el rol Admin); «Cerrar el mes» y «Cambiar rango», solo Admin; ajustar puntos, quien edita Usuarios (con tope por rol)._
+_Pantallas: **Super Admin › Gamification** (`/admin/gamificacion`: pestañas Rangos · Puntos · Monedas · Cupones · Tabla del Barrio) y **Usuarios ›
+360° › Comunidad › Puntos y rango · Monedas**. Teléfono y escritorio. Permiso: Gamification (ver/editar; hoy solo el rol Admin); «Cerrar el mes» y
+«Cambiar rango», solo Admin; ajustar puntos, quien edita Usuarios (con tope por rol). Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Rangos:** los 10, con lo que piden, sus puntos mínimos, lo que desbloquean (lo de El Patio dice «Cuando abra El Patio») y cuántos
@@ -26,11 +26,11 @@ el rol Admin); «Cerrar el mes» y «Cambiar rango», solo Admin; ajustar puntos
   - **Cambiar rango** (solo Admin): dar **Coronel (9)** a quien modera con buen criterio, o bajar el piso por fraude. Con motivo y aviso.
     General del Barrio no se da a mano: sale del cierre de la Tabla.
 
-- **Monedas (5g):** **EN CIRCULACIÓN** (la suma de los saldos de tus ciudades) · **EMITIDAS ESTE MES** (bienvenida, premios y ajustes +) ·
+- **Monedas:** **EN CIRCULACIÓN** (la suma de los saldos de tus ciudades) · **EMITIDAS ESTE MES** (bienvenida, premios y ajustes +) ·
   **CANJEADAS** (monedas y códigos de cupones del mes, y las devueltas por códigos vencidos) · **VALOR «Sin valor en dinero»** (no se compran
   ni se cambian). Las reglas de ganancia (**Bienvenida, una vez** +100 y **premio del mes** +200) con su valor (0–1,000) y su interruptor:
   con motivo, cuenta desde ahora. Los últimos 20 movimientos (tocar uno abre el 360° de la persona).
-- **Cupones (5g):** por ciudad y estado (**Por aprobar · En la Comunidad · Pausados · Terminados**), con su negocio, cupo del mes, días,
+- **Cupones:** por ciudad y estado (**Por aprobar · En la Comunidad · Pausados · Terminados**), con su negocio, cupo del mes, días,
   canjes del mes, usados y códigos vivos. **Aprobar** con el costo (80–1,000 monedas; el negocio recibe el aviso con el costo) ·
   **Rechazar** con motivo · **Cambiar costo** (cuenta para los canjes de aquí en adelante) · **Pausar** con motivo (sale de la Comunidad al
   instante, los códigos ya canjeados siguen valiendo, el negocio recibe el aviso) · **Activar** lo que pausó el equipo. **Últimos canjes**
@@ -39,10 +39,9 @@ el rol Admin); «Cerrar el mes» y «Cambiar rango», solo Admin; ajustar puntos
   monedas** (Sumar / Restar, cantidad, motivo): Admin hasta **1,000** de una vez, otros roles que editan Usuarios hasta **500**. Nunca deja
   el saldo en negativo; nadie ajusta las suyas; la persona recibe el aviso con la cantidad y el motivo.
 
-## Configuración (5i, 8 nov)
+## Configuración
 - El **tope de puntos del día** es un valor de **Sistema › Configuración** (10–1,000; de fábrica 100). Aquí se elige entre 50 · 100 · 150 ·
-  200; allá, cualquier entero dentro de sus límites. Es el mismo valor y la misma auditoría (antes → después). Settings (EN): the daily
-  points cap is a Settings value; both screens write the same value with the same audit.
+  200; allá, cualquier entero dentro de sus límites. Es el mismo valor y la misma auditoría (antes → después).
 - La subpestaña **El Patio** no se construye (decisión G): los desbloqueos de El Patio dicen «Cuando abra El Patio». El rango del negocio
   tampoco (LAUNCH-CHECKLIST).
 
@@ -72,26 +71,25 @@ el rol Admin); «Cerrar el mes» y «Cambiar rango», solo Admin; ajustar puntos
 - **¿Por qué Altagracia (Coronel) no es General si quedó primera?** El Coronel lo da el equipo para moderar; las plazas de General son de
   los 3 primeros que ya son Comandante (decisión anotada en REVISION; se puede cambiar).
 
----
+## English
 
-## What it does (English)
+### What it does
 - **Ranks:** the 10 ranks with requirements, minimum points, unlocks (El Patio ones say «When El Patio opens») and how many neighbors hold
   each. **Rename** in Spanish and English with a **preview**; asks for a reason, is audited and shows in Community instantly.
 - **Points:** the **daily cap** per person (50 · 100 · 150 · 200; default 100) and each rule’s value (0–100) and switch. Applies from now on.
 - **Neighborhood Table:** per city and month (current or previous) with **PRIZE**, **NEIGHBORHOOD GENERAL** and **EXCLUDED** marks.
   **Exclude / Include again** with a reason (the person is notified). **Close the month** (Admin only, frozen previous month): 1 table fixed
-  · 2 excluded get no prize · 3 top 3 notified (badge; those already Commander take the General seats) · 4 coupon redemption report (0
-  until coupons ship in 5g). Cannot be undone; the sweep closes it on day 3 if nobody does.
+  · 2 excluded get no prize · 3 top 3 notified (badge; those already Commander take the General seats) · 4 coupon redemption report. Cannot be undone; the sweep closes it on day 3 if nobody does.
 - **User 360° › Community › Points and rank:** current rank, points, next requirement, rank floor and recent entries. **Adjust points**
   (Add / Subtract, amount, reason): Admin up to 5,000 at once, other roles that edit Users up to 500; never below zero; the person is
   notified. **Change rank** (Admin only): grant **Colonel (9)** or lower the floor for fraud, with a reason.
-- **Coins (5g):** IN CIRCULATION · ISSUED THIS MONTH · REDEEMED · VALUE «No cash value»; earning rules (welcome +100, monthly prize +200)
+- **Coins:** IN CIRCULATION · ISSUED THIS MONTH · REDEEMED · VALUE «No cash value»; earning rules (welcome +100, monthly prize +200)
   with value and switch; last movements. **User 360° › Community › Coins:** balance and **Adjust coins** (Admin up to 1,000, others 500;
   never below zero; the person is notified).
-- **Coupons (5g):** by city and status; **Approve** with the cost (80–1,000 coins; the business is notified), **Reject**, **Change cost**,
+- **Coupons:** by city and status; **Approve** with the cost (80–1,000 coins; the business is notified), **Reject**, **Change cost**,
   **Pause** with a reason (business notified; redeemed codes stay valid), **Activate**; last redemptions.
 
-## FAQ (English)
+### FAQ (English)
 - **Can points be deleted?** No. The points ledger is insert-only: every change is a new entry (reversal or adjustment) with its reason.
 - **Do coins have cash value?** No: never bought, sold, transferred or cashed out, and they don’t expire. **Does To’Latino pay businesses
   for redemptions?** No; the month close only reports them. El Patio after launch. Business rank is not built yet.

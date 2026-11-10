@@ -1,7 +1,7 @@
 # Pedir cita en un taller o un servicio del hogar · Booking for auto shops and home services
 
-_Pantallas: la ficha › **Servicios** (hoja del servicio, **Tu vehículo**, **Tu casa**) y el Booking
-(`/n/{negocio}/visita`: APP-NEG-AUTO-BOOKING y APP-NEG-HOGAR-BOOKING). Versión: Fase 4 · bloque 4b (6 nov 2026)._
+_Pantallas: la ficha › **Servicios** (hoja del servicio, **Tu vehículo**, **Tu casa**) y el Booking (`/n/{negocio}/visita`: APP-NEG-AUTO-BOOKING y
+APP-NEG-HOGAR-BOOKING). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **Tu vehículo (Auto):** marca, modelo, año, millaje y tipo (carro, SUV o pickup, van, moto, camión o diésel). Se guarda
@@ -11,8 +11,8 @@ _Pantallas: la ficha › **Servicios** (hoja del servicio, **Tu vehículo**, **T
   cuartos, baños, año (aviso de plomo en casas de antes de 1978), mascotas, calefacción, calentador y cómo entrar. La ficha
   te dice si **llegan hasta tu casa** (millas) y si trabajan con inquilinos.
 - **La hoja del servicio:** precio, qué incluye y qué no, tu vehículo o tu casa, las opciones, «¿esperas o lo dejas?»,
-  extras y el depósito si el negocio lo pide. La grúa, las emergencias y los planes se piden llamando al negocio (sus
-  flujos llegan en los bloques 4e y 4f); «solo sin cita» te lleva a Cómo llegar.
+  extras y el depósito si el negocio lo pide. La grúa y las emergencias tienen su propio pedido (ver `emergencia-24-7.md`) y los planes
+  se empiezan desde su hoja (ver `planes-del-hogar.md`); «solo sin cita» te lleva a Cómo llegar.
 - **El Booking (3 pasos):**
   - Auto: **Tu carro** (luces encendidas, qué le pasa, fotos) → **Día y hora** → **Revisa y envía** (cómo se cobra:
     hoy el depósito o nada, antes de tocar el carro el estimado, al recogerlo lo final; «Guárdame las piezas viejas»).
@@ -38,9 +38,8 @@ _Pantallas: la ficha › **Servicios** (hoja del servicio, **Tu vehículo**, **T
 **¿Quién ve mi dirección?** Solo el negocio de tu visita.
 **¿Puedo tener varios carros o casas?** Sí, hasta 10; eliges cuál usar en la hoja.
 
----
-
 ## English
+
 Save your vehicle (make, model, year, mileage, type) or your home (one of your addresses, type, owner or renter, rooms,
 year, heating, water heater, access) and each listing tells you right away whether the shop works on your vehicle or the
 business reaches your home. Book in three steps: your car or home, day and time (shops) or a 2-hour arrival window (home

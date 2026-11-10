@@ -1,6 +1,6 @@
 # Dónde buscas (ciudad, punto y distancia) · Where you're looking
 
-_Pantallas: APP-CIUDAD (hoja en el teléfono, ventana en escritorio) y APP-CIUDAD-PRONTO. Versión: Fase 1 · bloque 1f-2 (5 nov 2026)._
+_Pantallas: APP-CIUDAD (hoja en el teléfono, ventana en escritorio) y APP-CIUDAD-PRONTO. Versión: 5 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 Elige qué ves en Inicio, Negocios, las categorías y Buscar: **la ciudad**, **desde dónde medimos** (el centro, un
@@ -46,8 +46,6 @@ avisarte que abrió.
 
 **¿Se guarda lo que elegí si cambio de teléfono?** Sí, si entraste con tu cuenta: la ciudad, el barrio y la distancia te
 siguen.
-
----
 
 ## English
 

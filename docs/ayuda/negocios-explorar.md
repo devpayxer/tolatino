@@ -1,6 +1,6 @@
 # Encontrar negocios por categoría · Browse businesses by category
 
-_Pantallas: APP-NEG-HOME «Negocios», APP-NEG-CAT «página de categoría». Versión: Fase 1 · bloque 1d (5 nov 2026)._
+_Pantallas: APP-NEG-HOME «Negocios», APP-NEG-CAT «página de categoría». Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 **Negocios** muestra las 17 categorías de la ciudad con cuántos negocios tiene cada una, los **Destacados**
@@ -39,12 +39,12 @@ o menos del centro de la ciudad.
   **Recomienda un negocio**.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - No prometas que un negocio está abierto si la tarjeta dice «Cerrado»; repite lo que dice la tarjeta.
 - Los «Destacados» no se pueden comprar por fuera: son negocios Pro abiertos y rotan cada día.
 
----
+## English
 
-## In English
 **Businesses** lists the city's 17 categories with how many businesses each has, **Featured** (Pro businesses open
 right now; it rotates daily) and **New in the neighborhood** (joined in the last 60 days). Each **category page** has a
 cover, quick rows (e.g. «By country», «What do you need?», «Your insurance», «Car make»), themed tiles, filters and the

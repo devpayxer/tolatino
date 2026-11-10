@@ -5,6 +5,7 @@
 import { execSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from "../scripts/ayuda/forma.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
@@ -2443,6 +2444,10 @@ const guardianes = {
     for (const [fn, msg] of [["private_event_quotes_antes", "private_event_quotes es solo de inserción"], ["private_event_acceptances_antes", "private_event_acceptances es solo de inserción"], ["private_event_asks_antes", "private_event_asks es solo de inserción"]])
       if (!new RegExp(`if tg_op <> 'INSERT' then raise exception '${msg}'`).test(ultimaFn(fn))) falla(G, "packages/db/migrations/0114_evento_privado.sql", 0, `${msg} (trigger)`);
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) private_event_(quotes|acceptances|asks)\b/.test(q)) falla(G, x, 0, "una propuesta, una aceptación o un cambio pedido no se cambian ni se borran");
+    // 7a · El libro de la ayuda (help_article_log): pausar, volver a usar, desplegar y retirar quedan para siempre.
+    const MA = "packages/db/migrations/0116_ayuda_base.sql";
+    if (existsSync(MA) && (!/create trigger help_article_log_no_cambia before update or delete on help_article_log/.test(readFileSync(MA, "utf8")) || !/raise exception 'help_article_log es solo de inserción'/.test(ultimaFn("help_article_log_inmutable")))) falla(G, MA, 0, "help_article_log es de solo inserción (trigger)");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) help_article_log\b/.test(q)) falla(G, x, 0, "el libro de la ayuda no se cambia ni se borra");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
@@ -3677,6 +3682,93 @@ const guardianes = {
     const G = "listaConTopeLoQueImporta", E = "apps/web/lib/evt.ts", L = "apps/web/lib/evt-liquidacion.ts";
     if (existsSync(E)) { const b = cuerpoFn(sinComent(E), "eventosDelNegocio"); if (!/order by \(e\.status in \('cancelled', 'rejected', 'done'\)\) or \(e\.start_date \+ \(e\.span_days - 1\) </.test(b) || !/limit 200/.test(b)) falla(G, E, 0, "eventosDelNegocio: lo vivo y próximo primero antes del tope (con muchos eventos, el tope cortaba los próximos)"); }
     if (existsSync(L)) { const b = cuerpoFn(sinComent(L), "liquidacionesPanel"); if (!/order by \(d\.starts_at > now\(\)\), d\.starts_at desc limit 60/.test(b)) falla(G, L, 0, "liquidacionesPanel: las fechas que ya pasaron (dinero en camino o pagado) antes que las próximas"); }
+  },
+
+  /* 7a · La ayuda es un producto (fase7-compa.md §3 y §4 7a). Cada docs/ayuda/*.md tiene LA forma única (scripts/ayuda/forma.mjs, la misma
+     que lee el indexador): título «Español · English», «_Pantallas: … Versión: … Audiencia: … Tema: …_», secciones en español y una sola
+     «## English» al final con la ayuda en inglés. Una ayuda nueva sin forma no entra. Al revés: quitar «## English», el título en inglés o
+     la audiencia → falla. Los temas de forma.mjs son los de help_topics (0116). */
+  ayudaConForma() {
+    const G = "ayudaConForma", M = "packages/db/migrations/0116_ayuda_base.sql";
+    const docs = archivos.filter((f) => /^docs\/ayuda\/[^/]+$/.test(f));
+    if (docs.length < 100) return falla(G, "docs/ayuda", 0, "no encuentro la ayuda (docs/ayuda/*.md)");
+    for (const f of docs) {
+      if (!f.endsWith(".md")) { falla(G, f, 0, "en docs/ayuda/ solo van artículos .md"); continue; }
+      for (const [l, m] of leerAyuda(readFileSync(f, "utf8"), f).errores) falla(G, f, l, m);
+    }
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8"), temas = [...(/insert into help_topics[\s\S]*?on conflict/.exec(m)?.[0] ?? "").matchAll(/\('([a-z]+)', '([a-z]+)'/g)].map((x) => [x[1], x[2]]);
+      for (const [k, a] of Object.entries(TEMAS)) if (!temas.some(([x, y]) => x === k && y === a)) falla(G, M, 0, `help_topics no tiene el tema «${k}» de la audiencia «${a}» (scripts/ayuda/forma.mjs)`);
+      for (const [k] of temas) if (!(k in TEMAS)) falla(G, M, 0, `el tema «${k}» de help_topics no está en scripts/ayuda/forma.mjs`);
+    }
+    const D = "infra/pruebas/deploy.sh";
+    if (!/node scripts\/ayuda\/indexar\.mjs[\s\S]{0,400}\|\| log "ayuda: /.test(readFileSync(D, "utf8"))) falla(G, D, 0, "el despliegue indexa docs/ayuda (scripts/ayuda/indexar.mjs) aparte, con «|| log» para que un fallo no tumbe el sandbox");
+    const ci = readFileSync(".github/workflows/ci.yml", "utf8");
+    if ((ci.match(/node scripts\/ayuda\/indexar\.mjs \|/g) ?? []).length < 2 || !/grep -q " 0 nuevos · 0 cambiados"/.test(ci)) falla(G, ".github/workflows/ci.yml", 0, "el CI indexa docs/ayuda dos veces contra la base real y la segunda no cambia nada");
+  },
+
+  /* 7a · Lo que lee un vecino no habla de fases, bloques ni de lo que «llega con» una fase: eso es lenguaje del equipo. Fuera de una
+     sección marcada <!-- solo-equipo -->, ninguna ayuda dice «Fase N», «bloque 4j», «(6e)», «llega con el bloque…» (FASE_INTERNA de
+     forma.mjs), y ninguna pantalla de vecinos, negocios, porteros o repartidores lo dice en un texto. Al revés: «(llega con 6e)» en una
+     ayuda, o «(Fase 2)» en un texto del panel → falla. */
+  ayudaSinFaseInterna() {
+    const G = "ayudaSinFaseInterna";
+    for (const f of archivos.filter((x) => /^docs\/ayuda\/[^/]+\.md$/.test(x)))
+      for (const [l, que] of faseInterna(readFileSync(f, "utf8"), f)) falla(G, f, l, `lenguaje interno para quien lee la ayuda: ${que} (dilo como es hoy, o va en una sección <!-- solo-equipo -->)`);
+    const FASE = /\b[Ff]ase \d|\b[Pp]hase \d|\b[Bb]loque \d[a-z]|\b[Bb]lock \d[a-z]/;
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/(\(app\)|\(puerta\)|panel|repartidor|entrar|i)\/.*\.tsx$/.test(f)) continue;
+      sinComent(f).split("\n").forEach((l, i) => {
+        for (const m of l.matchAll(/E2\(\s*("(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)\s*,\s*("(?:[^"\\]|\\.)*"|`(?:[^`\\]|\\.)*`)/g))
+          if (FASE.test(m[1]) || FASE.test(m[2])) falla(G, f, i + 1, "un texto de la pantalla habla de fases o bloques: dilo como es hoy");
+      });
+    }
+  },
+
+  /* 7a · Un artículo del equipo nunca llega a un vecino o a un negocio (§3 «De dónde contesta», compaAyudaPorAudiencia). (1) La base: un
+     admin-* es «equipo», panel-* «negocio», puerta-* «portero» (checks de 0116), un trozo nunca es más abierto que su artículo (trigger) y
+     una sección solo-equipo se guarda como «equipo» (indexar.mjs → ayuda_indexar). (2) lib/compa/ayuda-indice.ts es el único lector de
+     help_articles / help_chunks fuera del Super Admin, y cada lectura pública filtra por audiencia (artículo y trozo) y por «live».
+     (3) La audiencia sale del servidor: las pantallas la piden con audienciasDe(<id de la sesión>) y nunca pasan una lista escrita a mano;
+     ningún archivo del cliente importa el índice. Al revés: quitar «c.audience = any(» de buscarAyuda, pasar ["equipo"] desde una
+     página, o dejar un admin-* como vecino → falla. */
+  compaAyudaPorAudiencia() {
+    const G = "compaAyudaPorAudiencia", M = "packages/db/migrations/0116_ayuda_base.sql", L = "apps/web/lib/compa/ayuda-indice.ts", X = "scripts/ayuda/indexar.mjs";
+    for (const f of archivos.filter((x) => /^docs\/ayuda\/[^/]+\.md$/.test(x))) {
+      const slug = f.replace(/^.*\//, "").replace(/\.md$/, ""), debe = audienciaPorNombre(slug), r = leerAyuda(readFileSync(f, "utf8"), f);
+      if (debe && r.meta && r.meta.audiencia !== debe) falla(G, f, 0, `un ${slug.split("-")[0]}-* es de la audiencia «${debe}»`);
+      if (r.meta && !AUDIENCIAS.includes(r.meta.audiencia)) falla(G, f, 0, "audiencia desconocida");
+    }
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del índice de la ayuda");
+    const m = readFileSync(M, "utf8");
+    for (const [re, que] of [[/check \(slug not like 'admin-%' or audience = 'equipo'\)/, "un admin-* es «equipo» (check)"], [/check \(slug not like 'panel-%' or audience = 'negocio'\)/, "un panel-* es «negocio» (check)"],
+      [/check \(slug not like 'puerta-%' or audience = 'portero'\)/, "un puerta-* es «portero» (check)"],
+      [/create trigger help_chunks_audiencia before insert or update on help_chunks/, "un trozo nunca es más abierto que su artículo (trigger help_chunks_audiencia)"]])
+      if (!re.test(m)) falla(G, M, 0, que);
+    if (!/case when coalesce\(\(c->>'equipo'\)::boolean, false\) then 'equipo' else a->>'audience' end/.test(ultimaFn("ayuda_indexar"))) falla(G, M, 0, "ayuda_indexar guarda una sección solo-equipo como «equipo»");
+    if (!existsSync(X) || !/equipo: c\.equipo/.test(readFileSync(X, "utf8"))) falla(G, X, 0, "el indexador manda la marca solo-equipo de cada trozo");
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/compa/ayuda-indice.ts (el único lector de la ayuda)");
+    const t = sinComent(L);
+    if (!/^import "server-only";/.test(readFileSync(L, "utf8"))) falla(G, L, 1, "el índice de la ayuda es solo del servidor");
+    for (const fn of ["temasAyuda", "listaAyuda", "buscarAyuda", "articulo", "titulosVisibles"]) {
+      const b = cuerpoFn(t, fn);
+      if (!b) { falla(G, L, 0, `falta ${fn}()`); continue; }
+      if (!/a\.audience = any\(\$\d::text\[\]\)|\baudience = any\(\$\d::text\[\]\)/.test(b)) falla(G, L, 0, `${fn}() no filtra por la audiencia de la persona`);
+      if (/help_chunks/.test(b) && !/c\.audience = any\(\$\d::text\[\]\)/.test(b)) falla(G, L, 0, `${fn}() lee trozos sin filtrar su audiencia (una sección solo-equipo se colaría)`);
+      if (!/status = 'live'|status in \('live', 'paused'\)/.test(b)) falla(G, L, 0, `${fn}() no deja fuera lo pausado o retirado`);
+    }
+    if (!/if \(a\.status === "paused" && !equipo\) return \{ \.\.\.a, paused_reason: null, secciones: \{ es: \[\], en: \[\] \} \};/.test(cuerpoFn(t, "articulo"))) falla(G, L, 0, "un artículo pausado no enseña su texto a quien no es del equipo");
+    if (!/if \(r\?\.staff\) return \[\.\.\.TODAS\];/.test(cuerpoFn(t, "audienciasDe")) || !/return \["vecino", \.\.\./.test(cuerpoFn(t, "audienciasDe"))) falla(G, L, 0, "audienciasDe: «equipo» solo para el equipo activo; los demás empiezan en «vecino»");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === L) continue;
+      const c = sinComent(x);
+      if (/\b(from|join)\s+help_(chunks|articles)\b/.test(c) && !/^apps\/web\/(app\/admin\/|lib\/admin)/.test(x)) falla(G, x, 0, "solo lib/compa/ayuda-indice.ts lee la ayuda indexada");
+      if (/\b(update|delete from|insert into)\s+help_(chunks|articles|topics)\b/.test(c)) falla(G, x, 0, "el índice de la ayuda lo escribe el despliegue (ayuda_indexar); la app solo pausa por lib/compa/ayuda-indice.ts");
+      if (!/@\/lib\/compa\/ayuda-indice/.test(c)) continue;
+      if (/^\s*["']use client["']/.test(readFileSync(x, "utf8")) && /import \{[^}]*\b(audienciasDe|buscarAyuda|articulo|listaAyuda|temasAyuda|titulosVisibles)\b[^}]*\} from "@\/lib\/compa\/ayuda-indice"/.test(c)) falla(G, x, 0, "una pantalla del cliente no llama al índice de la ayuda: lo hace la página del servidor");
+      if (/\b(buscarAyuda|listaAyuda|articulo|temasAyuda|titulosVisibles)\([^)]*\[/.test(c)) falla(G, x, 0, "la audiencia no se escribe a mano: sale de audienciasDe(<sesión>)");
+      if (/\b(buscarAyuda|listaAyuda|articulo|temasAyuda|titulosVisibles)\(/.test(c) && !/await audienciasDe\(u\?\.id \?\? null\)/.test(c) && !/^apps\/web\/app\/admin\//.test(x)) falla(G, x, 0, "la audiencia sale de audienciasDe(id de la sesión)");
+    }
   },
 
   idioma() {

@@ -1,9 +1,9 @@
-# Comunidad · vecinos: perfil, seguir, silenciar, bloquear y mensajes · Community · neighbors: profile, follow, mute, block and messages
+# Comunidad: vecinos, perfil, seguir, silenciar, bloquear y mensajes · Community: neighbors, profile, follow, mute, block and messages
 
-_Pantallas: **la bienvenida** (`/entrar`, pasos 3–5 = APP-COM-BIENVENIDA), **el perfil de un vecino** (`/comunidad/v/{id}`,
-APP-COM-VECINO; `/comunidad/v/yo` = mi perfil), **Mensajes** (`/comunidad/mensajes`, APP-COM-MENSAJES) y **la conversación**
-(`/comunidad/mensajes/{id}`, APP-COM-CHAT), y **Mi cuenta › Vecinos** (`/cuenta/vecinos`). Teléfono y escritorio. Versión: Fase 5 ·
-bloque 5c (7 nov 2026). Solo con cuenta; nada de vecinos sale en buscadores._
+_Pantallas: **la bienvenida** (`/entrar`, pasos 3–5 = APP-COM-BIENVENIDA), **el perfil de un vecino** (`/comunidad/v/{id}`, APP-COM-VECINO;
+`/comunidad/v/yo` = mi perfil), **Mensajes** (`/comunidad/mensajes`, APP-COM-MENSAJES) y **la conversación** (`/comunidad/mensajes/{id}`,
+APP-COM-CHAT), y **Mi cuenta › Vecinos** (`/cuenta/vecinos`). Teléfono y escritorio. Solo con cuenta; nada de vecinos sale en buscadores. Versión: 7
+nov 2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **La bienvenida (3 pasos, una vez):** la primera vez que entras a la Comunidad (o al crear tu cuenta desde Mi cuenta) haces:
@@ -12,8 +12,8 @@ bloque 5c (7 nov 2026). Solo con cuenta; nada de vecinos sale en buscadores._
   2. **Lo que te gusta:** categorías de negocios y lo que te interesa de la Comunidad. Se puede saltar.
   3. **El barrio:** las 6 reglas, «Empiezas como Recluta · ya puedes publicar, comentar y votar», vecinos que más ayudan para
      seguir (opcional) y dos casillas: **«Acepto las reglas del barrio»** y **«Tengo 18 años o más»**. Sin las dos no se entra.
-  Al final: «Fundadores · #n · Recluta» (o «N.º n · Recluta») y el saludo. Las **100 monedas de bienvenida** llegan cuando abran los
-  cupones del barrio (otro bloque); hoy no se acreditan.
+  Al final: «Fundadores · #n · Recluta» (o «N.º n · Recluta») y el saludo. Te llegan las **100 monedas de bienvenida** (ver
+  `monedas-y-cupones.md`).
 - **18 años o más:** es una **declaración** (sí o no) con su fecha. **Nunca pedimos ni guardamos tu fecha de nacimiento.** Quien dice
   que tiene menos de 18 no entra a la Comunidad ni a los mensajes entre vecinos; puede seguir usando To'Latino para buscar, pedir y
   reservar.
@@ -68,27 +68,21 @@ bloque 5c (7 nov 2026). Solo con cuenta; nada de vecinos sale en buscadores._
 - **¿Las cuentas de seguidores dan puntos o rango?** No. Los puntos salen de los votos de tus vecinos.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Bloquear: perfil › ⌄ › «Bloquear a …», o el menú (⋯) de una publicación o comentario, o la conversación › ⌄. Deshacer: el aviso
   de abajo o Mi cuenta › Vecinos › Bloqueados y silenciados › Desbloquear.
 - Si alguien dice «no encuentro a un vecino», puede ser que esa persona lo bloqueó: **nunca lo confirmes** (es invisible por diseño);
   di que puede que ya no esté en la Comunidad.
 - Si un menor declaró mal su edad, se pasa a Soporte; la declaración no se cambia desde la app.
 
----
-
 ## English
-
-_Screens: **welcome** (`/entrar`, steps 3–5 = APP-COM-BIENVENIDA), **a neighbor's profile** (`/comunidad/v/{id}`, APP-COM-VECINO;
-`/comunidad/v/yo` = my profile), **Messages** (`/comunidad/mensajes`, APP-COM-MENSAJES), **the conversation**
-(`/comunidad/mensajes/{id}`, APP-COM-CHAT) and **My account › Neighbors** (`/cuenta/vecinos`). Phone and desktop. Phase 5 · block 5c
-(Nov 7, 2026). Account only; nothing about neighbors shows in search engines._
 
 ### What it does
 - **Welcome (3 steps, once):** the first time you enter the Community (or when you create your account from My account): **Your
   area** (city, changes every 30 days, and area; posts show your area, never your address), **What you like** (business categories
   and Community interests; can be skipped), **The neighborhood** (the 6 rules, "You start as Recruit", neighbors to follow, and two
-  boxes: **"I accept the neighborhood rules"** and **"I am 18 or older"** — both required). The **100 welcome coins** arrive when
-  neighborhood coupons open (another block); they are not credited today.
+  boxes: **"I accept the neighborhood rules"** and **"I am 18 or older"** — both required). You get the **100 welcome coins** (see coins
+  and coupons).
 - **18 or older** is a **declaration** (yes or no) with its date. **We never ask for or store your date of birth.** Someone who says
   they are under 18 does not enter the Community or neighbor messages, and can keep using To'Latino to find, order and book.
 - **A neighbor's profile:** photo, name (last initial) and nickname, rank, intro, area and "in {city} since", founder, counts (each

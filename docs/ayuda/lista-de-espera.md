@@ -1,7 +1,7 @@
 # Lista de espera · Waitlist
 
-_Pantallas: **la ficha del evento** (`/eventos/…` cuando se agota), **pagar** (`/eventos/pagar/…`, «SE LIBERÓ UN LUGAR») y **Panel › Eventos ›
-la ficha › LISTA DE ESPERA**. Teléfono y escritorio. Versión: Fase 6 · bloque 6d (10 nov 2026)._
+_Pantallas: **la ficha del evento** (`/eventos/…` cuando se agota), **pagar** (`/eventos/pagar/…`, «SE LIBERÓ UN LUGAR») y **Panel › Eventos › la
+ficha › LISTA DE ESPERA**. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - Cuando una fecha **se agota**, la ficha dice **Agotado · LISTA DE ESPERA** y deja anotarte con **cuántos son** (hasta 10 por grupo).
@@ -30,15 +30,15 @@ la ficha › LISTA DE ESPERA**. Teléfono y escritorio. Versión: Fase 6 · bloq
 - **¿Puedo saltarme la fila?** No: el lugar en la fila es la hora en que te anotaste y nadie la cambia.
 - **¿Hay lista de espera para eventos gratis con cupo?** Todavía no: el lugar de un RSVP se libera solo a la hora de puertas + 30 min.
 
----
+## English
 
-## What it does (English)
+### What it does
 When a date **sells out**, the event page lets you **join the waitlist** with your group size and shows **«On the list · #N»**. **First come, first
 served**: when a spot opens up, the first person whose group fits gets **«A spot opened up»** and **the spot is held in their name for 30 min**
 (Settings). If they do not pay in time it goes to the next person (checked every minute). Freed spots go to the list first. The dashboard shows
 **WAITLIST · N** with first name + initial, group size and status, and **Notify the list** only when there is a free spot.
 
-## Cases and FAQ (English)
+### Cases and FAQ (English)
 Two people, one spot → one offer, to the first. Your group is bigger than what opened up → you stay first, the spot goes to whoever fits. Your time
 runs out → it goes to the next; you can join again. Nobody else can open your payment link. Joining is free. Waitlists for free RSVP events are not
 available yet.

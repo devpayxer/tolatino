@@ -1,9 +1,9 @@
 # Servicios de consultorios y de profesionales · Clinic and professional services
 
-_Pantalla: Panel › Lo que vendes › Servicios (el mismo editor de todos los servicios) para Doctores y Profesionales.
-Versión: Fase 4 · bloque 4h-1 (6 nov 2026)._
+_Pantallas: Panel › Lo que vendes › Servicios (el mismo editor de todos los servicios) para Doctores y Profesionales. Versión: 6 nov 2026. Audiencia:
+negocio. Tema: panel._
 
-## Qué hace (ES)
+## Qué hace
 Cada servicio dice **cómo lo cobras**, y la ficha lo muestra tal cual:
 - **Doctores:** Consulta (precio sin seguro; con seguro, lo que cubra) · Por video · Sin cita · **Gratis con tu seguro**
   (con seguro $0; sin seguro, el precio de la consulta) · Precio fijo. Puedes marcar **«Según tus ingresos»** (sale «Desde $X ·
@@ -28,8 +28,9 @@ Cada servicio dice **cómo lo cobras**, y la ficha lo muestra tal cual:
 - **¿To'Latino cobra por estos servicios?** No. Doctores y Profesionales no cobran en la app por ahora: se paga en el
   consultorio o la oficina.
 
----
-## What it does (EN)
+## English
+
+### What it does
 Each clinic or professional service says how it is charged: visit, video, walk-in, free with insurance, fixed price
 (clinics; optional sliding scale and an IMPORTANT line) or consultation, flat fee plus separate government fee (the page
 shows the total), hourly with estimated hours, % only if you win (1–50 %), walk-in, quoted (professionals; optional remote).

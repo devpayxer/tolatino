@@ -1,10 +1,10 @@
 # Salidas, asientos y servicios de Transporte · Transport departures, seats and services
 
-_Pantallas: Panel › Lo que vendes › Servicios (cómo lo vendes) y › Tu herramienta («Salidas y asientos», «Salidas de la caja» o
-«Disponibilidad y servicio», según el tipo de negocio); Super Admin › Negocios › 360 › Lo que vende (solo lectura). Versión: Fase 4 ·
-bloque 4w (7 nov 2026)._
+_Pantallas: Panel › Lo que vendes › Servicios (cómo lo vendes) y › Tu herramienta («Salidas y asientos», «Salidas de la caja» o «Disponibilidad y
+servicio», según el tipo de negocio); Super Admin › Negocios › 360 › Lo que vende (solo lectura). Versión: 7 nov 2026. Audiencia: negocio. Tema:
+panel._
 
-## Qué hace (ES)
+## Qué hace
 **El precio del viaje es cerrado antes de salir.**
 - **Servicios · cómo lo vendes:**
   - *Por asiento:* una ruta con sus salidas de cada día (las horas que marcas), cuántos asientos, a dónde va, cuánto dura y el
@@ -37,9 +37,9 @@ bloque 4w (7 nov 2026)._
 - **¿Por qué no puedo escribir «quedan 4»?** Porque se calcula solo con lo vendido; así nunca se vende un asiento que no existe.
 - **¿«Disponible hoy» se queda prendido?** No, vale solo ese día.
 
----
+## English
 
-## What it does (EN)
+### What it does
 **The trip price is fixed before leaving.** Services are sold per seat (a route with daily departure times, seats, destination,
 length and child price), as a whole vehicle (up to N people, included wait, destination), per box or delivery, or as a fixed price
 from photos («From $X»). Each lists what the price includes; nothing outside that list is charged later. Your tool shows the next

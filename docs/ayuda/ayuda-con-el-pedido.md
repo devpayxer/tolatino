@@ -1,7 +1,7 @@
 # Ayuda con el pedido · Order help
 
-_Pantallas: `/pedido/{n}` (botón y estado), `/pedido/{n}/ayuda` (APP-NEG-PEDIDO-AYUDA), Panel › Hoy («Ayuda con pedidos») y el
-detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos y citas»). Versión: Fase 2 · bloque 2i (6 nov 2026)._
+_Pantallas: `/pedido/{n}` (botón y estado), `/pedido/{n}/ayuda` (APP-NEG-PEDIDO-AYUDA), Panel › Hoy («Ayuda con pedidos») y el detalle del pedido, y
+Super Admin › Soporte (cola «Ayuda con pedidos y citas»). Versión: 6 nov 2026. Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **El cliente**, en un pedido ya recibido (hasta **7 días** después), toca **Ayuda con el pedido** y elige qué pasó: falta
@@ -13,7 +13,7 @@ detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos y citas�
 - **El negocio** la ve en **Hoy** («Ayuda con pedidos · responde en 24 h») y en el detalle del pedido, con qué pasó, los
   platos, qué quiere y su nota, y **Enviar respuesta** (500 letras).
 - **To'Latino** (Super Admin › Soporte = cola «Ayuda con pedidos y citas», plazo 24 h): el caso con la solicitud, la respuesta del
-  negocio y **Resolver con un mensaje** (plantillas). El cliente ve «Solicitud resuelta por To'Latino» en su pedido.
+  negocio y **Resolver con un mensaje** (plantillas) o, si se pagó con tarjeta, **Resolver y devolver**. El cliente ve «Solicitud resuelta por To'Latino» en su pedido.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -22,16 +22,16 @@ detalle del pedido, y Super Admin › Soporte (cola «Ayuda con pedidos y citas�
 | Ya hay una solicitud | Una por pedido: el pedido muestra su estado. |
 | Muchas solicitudes | Hasta 5 al día por persona. |
 | Pasan 24 h sin respuesta | Pasa a To'Latino (cola Ayuda con pedidos y citas). |
-| Devolución | Hoy se paga en el local o al recibir: la devolución se arregla con el negocio. Con Stripe será a la tarjeta. |
+| Devolución | Si pagaste con tarjeta, vuelve a esa tarjeta (la hace el negocio desde el pedido o To'Latino al resolver) y llega en 3 a 5 días hábiles. Si pagaste en el local o al recibir, se arregla con el negocio. |
 
 ## Preguntas frecuentes
-**¿Me devuelven el dinero solos?** Todavía no hay pagos con tarjeta en To'Latino: lo que acuerdes con el negocio se arregla
-en el local. To'Latino revisa si el negocio no responde.
-
----
+**¿Me devuelven el dinero solos?** Si pagaste con tarjeta, la devolución vuelve a esa tarjeta cuando el negocio o To'Latino la
+hacen (ver `pagar-con-tarjeta.md`). Si pagaste en el local, lo que acuerdes con el negocio se arregla ahí. To'Latino revisa si el negocio
+no responde.
 
 ## English
+
 After receiving an order (up to 7 days), the customer opens an order-help request: what happened, which dishes, what they
 want (replacement on delivery, refund of those dishes settled with the business, or just letting them know) and details. The
 business replies within 24 hours from Today or the order detail; otherwise, or if the customer asks after the reply, it goes to
-To'Latino's Order help queue, where staff resolve it with a message the customer sees on the order. Card refunds arrive with Stripe.
+To'Latino's Order help queue, where staff resolve it with a message the customer sees on the order (and, if the order was paid by card, a refund to that card).

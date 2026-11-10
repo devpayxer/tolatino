@@ -627,8 +627,10 @@ escritorio de cada pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 7 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
 - [ ] Migraciones 0116–0124 aplicadas dos veces en PostGIS real (idempotentes) y en CI; semillas 0040–0042 solo en pruebas (`semilla`).
-- [ ] `docs/ayuda/` con una sola forma (`ayudaConForma`), sin lenguaje interno para el vecino (`ayudaSinFaseInterna`), auditada contra lo construido,
-      indexada por audiencia; `/ayuda` y `/ayuda/[slug]`; un artículo de equipo nunca llega a un vecino o dueño.
+- [x] `docs/ayuda/` con una sola forma (`ayudaConForma`), sin lenguaje interno para el vecino (`ayudaSinFaseInterna`), auditada contra lo construido,
+      indexada por audiencia; `/ayuda` y `/ayuda/[slug]`; un artículo de equipo nunca llega a un vecino o dueño. — 7a (10 nov): 151 archivos con la
+      forma; 0116 aplicada dos veces en local y en una base nueva; índice 2 veces (la segunda «0 nuevos · 0 cambiados»); guardianes 36/36 al revés;
+      e2e `ayu7a` (vecino, dueña, portero, Admin; lista, búsqueda y enlace; pausar ↔ volver). Falta la corrida de CI (la hace la sesión principal).
 - [ ] Soporte: casos TK- con estados, SLA en horas hábiles, macros ES/EN, notas internas, «Resolver y devolver» con tope del rol, calificación; Mi cuenta y
       Panel › Ayuda y Soporte; los «escríbenos» del producto llevan a Soporte.
 - [ ] Motor: interfaz `Modelo` con `claude`, `reglas` y `simulador`; tapado, verificador de salida, lista cerrada de acciones confirmadas aparte, tope que no se

@@ -1,15 +1,15 @@
-# Super Admin · Configuración · Super Admin · Settings
+# Super Admin: Configuración · Super Admin: Settings
 
-_Pantalla: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono
-y escritorio. Versión: Fase 5 · bloque 5i (8 nov 2026). Ver: permiso de Sistema. Cambiar: **solo un Admin**._
+_Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 8 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
-- Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los que
-  quedaron pendientes de la Fase 4. Cada valor tiene **unidad**, **valor de fábrica**, **mínimo y máximo**, y quién lo cambió por última vez.
+- Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
+  Doctores, Profesionales, Noche, Educación, Niños, Deporte, Iglesias, Bienes Raíces y Autos. Cada valor tiene **unidad**, **valor de fábrica**, **mínimo y máximo**, y quién lo cambió por última vez.
 - Por sección: **Comunidad** (publicaciones, comentarios, votos, conversaciones nuevas y reportes por persona al día; minutos para editar una
   publicación; días para apelar; lo más que dura una encuesta; «Ver traducción» por hora; hora del resumen diario; días que se proponen para
   un cupón) · **Gamification** (tope de puntos al día) · **Doctores y Profesionales** · **Noche** · **Educación · Niños · Deporte** ·
-  **Iglesias · Bienes Raíces · Autos** · **Eventos** (6i · evento privado: depósito de fábrica 25 %, cancelar gratis 72 h, el restaurante responde
+  **Iglesias · Bienes Raíces · Autos** · **Eventos** (evento privado: depósito de fábrica 25 %, cancelar gratis 72 h, el restaurante responde
   en 24 h, una propuesta vale 24 h, anticipación mínima 3 días, hasta 180 días adelante, 3 solicitudes abiertas por persona, 10 propuestas y
   3 «pedir un cambio» por solicitud; el plazo para cancelar queda escrito en cada propuesta al mandarla).
 - **CAMBIADO**: el valor ya no es el de fábrica.
@@ -41,20 +41,10 @@ y escritorio. Versión: Fase 5 · bloque 5i (8 nov 2026). Ver: permiso de Sistem
 - **¿Por qué hay valores que no puedo cambiar?** Porque una pantalla le dice el número a la persona; cambiarlo aquí haría falso ese texto.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Explica qué hace cada valor y su valor actual (la pantalla lo dice); nunca cambies un valor por alguien: solo un Admin, con motivo.
 
-## English
-_Screen: **Super Admin › System › Settings**. View: System permission. Change: **Admin only**._
-- **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
-  poll, translations per hour, daily digest hour, proposed coupon days; points cap; the Phase 4 deadlines). Each has a unit, a factory value,
-  a minimum and a maximum, and who changed it last. **CHANGED** = not the factory value. **READ ONLY** = read from here but not editable yet
-  because a screen tells people the number. The dealer fee cap is changed in Catalog (it also lowers dealers above it).
-- **How to use:** tap the value → new whole number → reason → **Save**. Applies now in every city; logged before → after with the reason.
-- **Each case:** out of bounds → refused («Between 5 min and 1,440 min»), the database also refuses it; not a whole number → refused;
-  read only → says why; not Admin → view only. Other servers see the change within 15 seconds.
-- **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.
-
-## Eventos (6j, 10 nov 2026)
+## Eventos
 La sección **Eventos** va en subgrupos: **Publicar y revisar** (revisión 24 h, fechas de una serie 52, días hacia adelante 180, fotos 6, días
 seguidos 30) · **RSVP y venta** (el RSVP guarda el lugar 30 min, boletos guardados mientras pagas 8 min, 10 por orden, 20 por persona y fecha,
 intentos de código, apartados a la vez) · **Después de comprar** (transferir hasta 2 h antes, cancelar con devolución hasta 24 h antes, 30 min para
@@ -68,3 +58,14 @@ el panel, Publica tu evento y la ayuda dicen «el martes después del evento»; 
 **English:** the **Events** section is grouped (publish and review, RSVP and sales, after purchase, changes and organizer payouts, notices and
 reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** is read-only until the dashboard
 and help texts that say «Tuesday» read it.
+
+## English
+
+- **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest
+  poll, translations per hour, daily digest hour, proposed coupon days; points cap; the deadlines of clinics, professionals, nightlife, education, kids, sports, churches, real estate and cars). Each has a unit, a factory value,
+  a minimum and a maximum, and who changed it last. **CHANGED** = not the factory value. **READ ONLY** = read from here but not editable yet
+  because a screen tells people the number. The dealer fee cap is changed in Catalog (it also lowers dealers above it).
+- **How to use:** tap the value → new whole number → reason → **Save**. Applies now in every city; logged before → after with the reason.
+- **Each case:** out of bounds → refused («Between 5 min and 1,440 min»), the database also refuses it; not a whole number → refused;
+  read only → says why; not Admin → view only. Other servers see the change within 15 seconds.
+- **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.

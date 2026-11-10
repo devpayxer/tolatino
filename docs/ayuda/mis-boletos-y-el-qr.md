@@ -1,7 +1,7 @@
 # Mis boletos y el QR · My tickets and the QR
 
-_Pantallas: **Mi cuenta › Boletos** (`/cuenta/boletos`), **el boleto** (`/cuenta/boletos/TL-…`) y **la orden** (`/eventos/orden/B-…`).
-Teléfono y escritorio. Versión: Fase 6 · bloques 6c, 6d y 6h (10 nov 2026)._
+_Pantallas: **Mi cuenta › Boletos** (`/cuenta/boletos`), **el boleto** (`/cuenta/boletos/TL-…`) y **la orden** (`/eventos/orden/B-…`). Teléfono y
+escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - **Mi cuenta › Boletos**: **Próximos** y **Pasados**, una fila por orden con la fecha, cuántos boletos y **CON QR** (o **USADO** ·
@@ -32,23 +32,25 @@ Teléfono y escritorio. Versión: Fase 6 · bloques 6c, 6d y 6h (10 nov 2026)._
 - **¿Apple Wallet o Google Wallet?** Todavía no: tu QR vive en la app y, si lo abriste una vez con señal, se ve sin señal.
 - **¿Qué guarda el teléfono?** El QR, el código, el tipo y el evento, cifrados con la llave de tu sesión. Nada de lo que pagaste.
 
----
+## En la puerta
+- El portero escanea tu QR con su teléfono. Después tu boleto dice **«Usado · entraste a las 10:42»**. Un **pase de varios días** sigue diciendo
+  **VÁLIDO · OTRO DÍA**: muestra el mismo QR cada día (entra una vez por día). Si vas en grupo con una mesa, pueden entrar unos ahora y otros
+  después con el mismo QR. Si no tienes el QR a mano, el portero te busca por tu nombre o los últimos 4 números del código.
 
-## What it does (English)
+## English
+
+### What it does
 **My account › Tickets**: **Upcoming** and **Past**, one row per order with the date, how many tickets and **WITH QR** (or USED · REFUNDED ·
 VOID). **The ticket** page shows the big QR, the human code (**TL-XXX-0000**), the name and status. **Tap the code to see it big. Turn up the
 brightness.** Your QR is your entry; no need to print. It is **signed by To'Latino**: the door checks it offline and nobody can forge one. It
 carries no name or phone. A **table** is one QR with its entries.
 
-## Cases and FAQ (English)
+### Cases and FAQ (English)
 Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no
 QR. Only the buying account can open a ticket. Offline at the door: the signature is checked offline. Transfers are available from the order or the ticket (up to 2 h before); received tickets show as RECEIVED. Wallet passes
 are not available yet.
 
-## En la puerta (6g, 10 nov 2026)
-- El portero escanea tu QR con su teléfono. Después tu boleto dice **«Usado · entraste a las 10:42»**. Un **pase de varios días** sigue diciendo
-  **VÁLIDO · OTRO DÍA**: muestra el mismo QR cada día (entra una vez por día). Si vas en grupo con una mesa, pueden entrar unos ahora y otros
-  después con el mismo QR. Si no tienes el QR a mano, el portero te busca por tu nombre o los últimos 4 números del código. · *After the door scans
-  your QR, your ticket says “Used · you got in at 10:42”; a multi-day pass stays valid for the other days.*
-
-**Offline (6h):** a ticket you opened once with signal is **saved on this phone** (encrypted with your session’s key) and opens without signal — the door verifies the QR signature offline too. Signing out erases it, and another account on the same phone never sees yours. Nothing about what you paid is stored.
+### At the door
+The door scans your QR with their phone; then your ticket says «Used · you got in at 10:42». A **multi-day pass** keeps saying **VALID ·
+ANOTHER DAY**: show the same QR each day (one entry per day). A group with a table can enter some now and others later with the same QR. If
+you don't have the QR at hand, the door finds you by your name or the last 4 digits of the code. **Offline:** a ticket you opened once with signal is **saved on this phone** (encrypted with your session’s key) and opens without signal — the door verifies the QR signature offline too. Signing out erases it, and another account on the same phone never sees yours. Nothing about what you paid is stored.

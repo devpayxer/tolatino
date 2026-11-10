@@ -1,7 +1,7 @@
 # Licencia · License
 
-_Pantallas: APP-NEG-LICENCIA (`/n/{negocio}/licencia`), tarjeta «¿Puede hacerlo por ley?» de la ficha, «Tus licencias» del
-panel y la cola «Licencias» del Super Admin. Versión: Fase 1 · bloque 1k (5 nov 2026). Trámites y profesionales (NEG-PRO)._
+_Pantallas: APP-NEG-LICENCIA (`/n/{negocio}/licencia`), tarjeta «¿Puede hacerlo por ley?» de la ficha, «Tus licencias» del panel y la cola «Licencias»
+del Super Admin. Trámites y profesionales (NEG-PRO). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 - **Para el vecino:** muestra lo que la licencia del negocio le permite hacer por ley, lo que no puede hacer, quién la
@@ -35,9 +35,8 @@ dealers, vendedores, venta a plazos, funerarias, representante del DOJ, 501(c)(3
 «Licencias» 14 días antes de su fecha de revisión (y con prioridad si ya pasó); en las demás categorías ese aviso sigue
 pendiente (ver LAUNCH-CHECKLIST).
 
----
-
 ## English
+
 The License page shows what a business's license allows by law, what it cannot do, who issued it, its number, its real
 status and a link to the official registry to check it yourself ("No one can guarantee you a result" is always shown).
 Businesses declare licenses when listing and in their dashboard (Your page › Your licenses: add, number, "what you do

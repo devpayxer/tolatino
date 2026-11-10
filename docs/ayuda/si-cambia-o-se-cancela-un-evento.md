@@ -1,6 +1,7 @@
 # Si un evento cambia de fecha o se cancela · If an event changes date or is cancelled
 
-_Pantallas: **la orden** (`/eventos/orden/B-…`), **la página del evento** y **Mi cuenta › Boletos**. Versión: Fase 6 · bloque 6e (10 nov 2026)._
+_Pantallas: **la orden** (`/eventos/orden/B-…`), **la página del evento** y **Mi cuenta › Boletos**. Versión: 10 nov 2026. Audiencia: vecino. Tema:
+eventos._
 
 ## Qué hace
 - **Se cancela** (el organizador o To'Latino): te llega un **SMS** y un aviso en la app. **Te devolvemos todo lo que pagaste, cargos incluidos**,
@@ -25,9 +26,9 @@ _Pantallas: **la orden** (`/eventos/orden/B-…`), **la página del evento** y *
 - **¿Cuánto tarda la devolución?** 3–5 días hábiles en verse en tu tarjeta.
 - **¿Me cobran algo por la cancelación?** No. Te devolvemos todo.
 
----
+## English
 
-## What it does (English)
+### What it does
 **Cancelled**: you get a text and an in-app notice; **we refund everything you paid, fees included**, in 3–5 business days; nothing to do.
 **Date or time changed**: you get a text; on your order choose, until the new start, **Keep the new date** or **Full refund** (100 %); no answer
 means you keep it. **Sales paused**: if you bought, you still get in. Organizer notices show in the app, on your order and in “Before you go”.

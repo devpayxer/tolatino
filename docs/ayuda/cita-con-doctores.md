@@ -1,8 +1,8 @@
 # Pedir una cita con un doctor · Booking a clinic visit
 
-_Pantalla: la página de un consultorio › un servicio › «Elegir hora» (Booking de Doctores). Versión: Fase 4 · bloque 4j (6 nov 2026)._
+_Pantallas: la página de un consultorio › un servicio › «Elegir hora» (Booking de Doctores). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
-## Qué hace (ES)
+## Qué hace
 1. **Tu seguro** (obligatorio): eliges uno de tu cuenta o «No tengo seguro». Te decimos si lo aceptan; si no, puedes pedir la
    cita igual y pagar el precio sin seguro. **¿Para quién es?** (para mí, mi hijo o hija, otra persona) y, si quieres, **¿para qué
    es la cita?** y una **nota**.
@@ -35,8 +35,9 @@ _Pantalla: la página de un consultorio › un servicio › «Elegir hora» (Boo
 - **Confirmar · Otra hora · No puedo** y, si no aceptan ese seguro, **No aceptamos su seguro**: el paciente decide en 2 horas.
 - El día de la cita: **Llegó · en atención**, **Terminada** o **No llegó**.
 
----
-## What it does (EN)
+## English
+
+### What it does
 Pick your insurance (or “No insurance”), who it is for and optionally the reason and a note; choose the day, time and provider;
 review and send. You pay $0 today and the copay or uninsured price at the visit. The reason is seen only by the clinic, the note
 is encrypted and deleted 30 days after the visit, and alerts never name the clinic or the service.

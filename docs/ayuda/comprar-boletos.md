@@ -1,7 +1,7 @@
 # Comprar boletos · Buying tickets
 
-_Pantallas: **la ficha del evento** (`/eventos/{evento}`) → **Boletos** (`/eventos/{evento}/boletos`) → **Pago** (`/eventos/pagar/{apartado}`) →
-**la orden** (`/eventos/orden/B-…`). Teléfono y escritorio. Versión: Fase 6 · bloque 6c (10 nov 2026). Para vecinos con cuenta._
+_Pantallas: **la ficha del evento** (`/eventos/{evento}`) → **Boletos** (`/eventos/{evento}/boletos`) → **Pago** (`/eventos/pagar/{apartado}`) → **la
+orden** (`/eventos/orden/B-…`). Teléfono y escritorio. Para vecinos con cuenta. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - En un evento con boletos, **Boletos** abre la compra. Eliges cuántos de cada tipo (con **MÁX. N POR PERSONA**), **una mesa por orden**
@@ -39,9 +39,9 @@ _Pantallas: **la ficha del evento** (`/eventos/{evento}`) → **Boletos** (`/eve
   después, puedes **transferirlo** hasta 2 h antes. Si se agotó, anótate en la **lista de espera**. Ver «Transferir boletos», «Cancelar y
   devoluciones de boletos» y «Lista de espera».
 
----
+## English
 
-## What it does (English)
+### What it does
 On a ticketed event, **Tickets** opens checkout. Pick how many of each type (**MAX. N PER PERSON**), **one table per order** (it includes its
 entries; the deposit comes off your spend that night) and **extras** (some are **TABLE ONLY**). Each type says **Only N left.** or **Sold out.**
 **Have a code?** Type it and tap **Apply**: the server answers **CODE APPLIED · −$X** or why it does not work (codes lower ticket prices only).
@@ -50,11 +50,11 @@ optional names per ticket, your card, the summary and **Pay $X**. **The price yo
 door.** After paying: **You are going!** with your tickets and their **QR code**, an in-app notice and an email receipt (if your email is
 confirmed).
 
-## Cases (English)
+### Cases (English)
 Card declined → nothing charged, tickets still held. Time ran out → we try to hold them again; if they are gone: "They sold out while you were
 paying. Nothing was charged." Several people for the last ticket → only one gets it, never oversold. Double tap on Pay → one order, one
 charge. Limits per order and per person (account, phone and card). Code used up / already used by you / too many wrong codes → clear
 message. 18+/21+ → "If you do not show ID at the door, you do not get in." Paused / closed / organizer not selling → no checkout.
 
-## FAQ (English)
+### FAQ (English)
 No hidden fees (To'Latino's fee comes out of the organizer's share). No sales at the door. Card only for now. Event cancelled → full refund. You cancel (up to 24 h before) → ticket minus the service fee; transfer up to 2 h before; sold out → waitlist.

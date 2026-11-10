@@ -1,7 +1,7 @@
 # Plan Pro · Pro plan
 
-_Pantallas: Panel › Cobros y plan › **Tu plan** (`/panel/{negocio}/cobros/plan`), los avisos de la prueba en Tu página y
-Hoy, y cada «Ver Pro» del panel. Versión: Fase 2 · bloque 2m (6 nov 2026)._
+_Pantallas: Panel › Cobros y plan › **Tu plan** (`/panel/{negocio}/cobros/plan`), los avisos de la prueba en Tu página y Hoy, y cada «Ver Pro» del
+panel. Versión: 6 nov 2026. Audiencia: vecino. Tema: negocios._
 
 ## Qué hace
 - Al publicar el negocio empieza la **prueba Pro de 30 días** (60 con el código HZL30): todo Pro, sin tarjeta.
@@ -30,9 +30,8 @@ Hoy, y cada «Ver Pro» del panel. Versión: Fase 2 · bloque 2m (6 nov 2026)._
 **¿Se borra algo al pasar a Free?** No. Lo Pro (galería, equipo, módulos Pro) se duerme y vuelve igual.
 **¿Quién puede cambiar el plan?** Solo el dueño (Cobros y plan toca dinero).
 
----
-
 ## English
+
 Publishing starts a **30-day Pro trial** (60 with HZL30), no card. In **Your plan**: **Keep Pro** (pick or add a card —
 nothing is charged today, the first charge is on day 30; $14.99/month or $149.90/year) or **Don't keep Pro** (day 30
 switches to Free; nothing is deleted). Reminders on day 20, 25 and the last day. With Pro: next charge, change card,

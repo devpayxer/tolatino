@@ -1,7 +1,7 @@
-# Panel · Entrega · Dashboard · Delivery
+# Panel: Entrega · Dashboard: Delivery
 
-_Pantalla: `/panel/{negocio}/entrega` (Entrega; en el teléfono, desde **Más**). Teléfono y escritorio. Versión: Fase 2 ·
-bloque 2f (6 nov 2026). Comida y Bebidas con Pedidos en línea._
+_Pantallas: `/panel/{negocio}/entrega` (Entrega; en el teléfono, desde **Más**). Teléfono y escritorio. Comida y Bebidas con Pedidos en línea.
+Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Cómo entregas:** Delivery (lo llevas a la casa) y Pickup (lo recogen en tu local). Al menos una encendida.
@@ -28,15 +28,14 @@ bloque 2f (6 nov 2026). Comida y Bebidas con Pedidos en línea._
 | Pedidos en línea apagado | Se guarda igual; se aplica cuando lo enciendas. |
 
 ## Preguntas frecuentes
-**¿Dónde invito a mis repartidores?** Llega con la app To’Latino Repartidor. Mientras, los pedidos con delivery los marcas
-tú en el panel («Salió en camino» y «Entregado»).
-
----
+**¿Dónde invito a mis repartidores?** En **Entrega › Tus repartidores**: nombre y teléfono, y la persona entra con su código a
+To’Latino Repartidor (ver `repartidor.md`). Si no tienes repartidores, marcas tú los pedidos en el panel («Salió en camino» y «Entregado»).
 
 ## English
+
 Delivery settings: turn Delivery and/or Pickup on (at least one), add pickup instructions, delivery area (1–10 mi), fee,
 free-from amount, delivery minimum, travel time, last delivery time and who delivers (your team or an external app such as
 DoorDash or Uber Eats — external apps don't collect cash). "How the client sees it" summarizes it; every change is
 audited. Cash on delivery and asking for a tip live in Online orders. If To'Latino pauses your delivery, your page offers
-pickup only and you see the reason. Driver invites arrive with the To'Latino Driver app; meanwhile you mark delivery
+pickup only and you see the reason. Invite drivers in Delivery › Your drivers (they sign in to To'Latino Driver with their code); without drivers you mark delivery
 orders "Out for delivery" and "Delivered" in the dashboard.

@@ -1,7 +1,7 @@
 # El estimado línea por línea · The line-by-line estimate
 
-_Pantallas: **Tu cita** (`/cita/{número}`) para el cliente; Panel › Hoy › el detalle de la cita para el taller o el
-servicio del hogar. Versión: Fase 4 · bloque 4d (6 nov 2026)._
+_Pantallas: **Tu cita** (`/cita/{número}`) para el cliente; Panel › Hoy › el detalle de la cita para el taller o el servicio del hogar. Versión: 6 nov
+2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 En un taller (diagnóstico, «desde», se cotiza) o en un servicio del hogar (visita, presupuesto, por hora, por medida), el
@@ -52,9 +52,9 @@ resto se libera (puede tardar unos días en verse según tu banco).
 **¿Por qué el impuesto es solo sobre las piezas?** En Pennsylvania, la mano de obra de reparación no paga impuesto de
 ventas; las piezas y los materiales sí (6 %).
 
----
+## English
 
-## What it does (EN)
+### What it does
 For auto shops (diagnosis, "from", quote) and home services (visit, estimate, hourly, by measure), the business sends
 the **estimate** (Home: **full price**). **Nothing is done or charged without your OK.**
 - Each line shows what it is, why it is needed, the part or material, labor (hours × the business rate), tax and a photo,

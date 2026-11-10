@@ -1,9 +1,8 @@
 # Mensajes con los negocios · Messages with businesses
 
-_Pantallas: Mi cuenta › **Mensajes** (`/cuenta/mensajes`) y la conversación (`/cuenta/mensajes/{negocio}`); botón
-**Mensaje** en la página del negocio, **Escribir al negocio** en tu pedido y tu reservación; Panel › **Mensajes**
-(`/panel/{negocio}/mensajes`) y «Mensajes sin responder» en Hoy; Super Admin › Colas › **Mensajes reportados**.
-Versión: Fase 2 · bloque 2p (6 nov 2026)._
+_Pantallas: Mi cuenta › **Mensajes** (`/cuenta/mensajes`) y la conversación (`/cuenta/mensajes/{negocio}`); botón **Mensaje** en la página del
+negocio, **Escribir al negocio** en tu pedido y tu reservación; Panel › **Mensajes** (`/panel/{negocio}/mensajes`) y «Mensajes sin responder» en Hoy;
+Super Admin › Colas › **Mensajes reportados**. Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Vecino:** le escribes a cualquier negocio que ya está en To'Latino (tiene dueño). Una conversación por negocio; si
@@ -28,7 +27,7 @@ Versión: Fase 2 · bloque 2p (6 nov 2026)._
 | Avisos | Al negocio le llega un aviso con el primer mensaje sin leer (no uno por cada mensaje). A ti, cuando el negocio contesta. |
 | To'Latino oculta un mensaje | En la conversación sale «Mensaje oculto por To'Latino» y a quien lo escribió le llega el motivo. |
 
-## Mensajes entre vecinos y reportes (5c)
+## Mensajes entre vecinos y reportes
 - **Mi cuenta › Mensajes** lleva a **Comunidad › Mensajes** («Mensajes con vecinos · solo con quien te sigue»). Reglas y casos en
   `comunidad-vecinos-seguir-bloquear-y-mensajes.md`.
 - **Colas › Mensajes reportados** también recibe las conversaciones entre vecinos («Mensajes entre vecinos · Comunidad»): se leen
@@ -41,9 +40,8 @@ Versión: Fase 2 · bloque 2p (6 nov 2026)._
 **¿To'Latino lee mis mensajes?** No, salvo que tú o el negocio reporten la conversación.
 **¿Puedo escribirle a otro vecino?** Llega con Comunidad (solo a quien te sigue).
 
----
-
 ## English
+
 Write to any business already on To'Latino (with an owner) from its page, your order or your booking: one conversation
 per business, your number is never shared, replies arrive live while the chat is open and as a notification otherwise.
 No phone numbers in messages (the business shares theirs with a button). Limits: 20 messages per 10 minutes, 8 new

@@ -1,9 +1,9 @@
 # Mi cuenta · My account
 
-_Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`,
-`/cuenta/empleos`, `/cuenta/perfil` (y `/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes`
-(y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y `/cuenta/invitar`. Teléfono y escritorio (en escritorio,
-navegación a la izquierda). Versión: Fase 2 · bloque 2h (6 nov 2026). Pide haber entrado._
+_Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`, `/cuenta/empleos`, `/cuenta/perfil` (y
+`/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes` (y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y
+`/cuenta/invitar`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 6 nov 2026. Audiencia: vecino. Tema:
+cuenta._
 
 ## Qué hace
 - **Resumen:** tu tarjeta de vecino (nombre, número de vecino, **RANGO**, **MONEDAS** — sin valor en dinero, llevan a Monedas — y
@@ -30,6 +30,7 @@ navegación a la izquierda). Versión: Fase 2 · bloque 2h (6 nov 2026). Pide ha
   abierta), avisos, **Privacidad** (quién ve tu teléfono y tus sesiones abiertas, con «Cerrar» para las otras), tu negocio
   o publícalo, cerrar sesión y **Borrar mi cuenta**.
 - **Invita vecinos:** WhatsApp, mensaje, copiar o compartir el enlace de To'Latino.
+- **Ayuda:** abre el Centro de ayuda (`centro-de-ayuda.md`), en español y en inglés; en escritorio está en la navegación.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -52,19 +53,7 @@ en cada pedido, reservación o solicitud. Lo que elijas en Avisos se aplica desd
 **¿Qué se borra si borro la cuenta?** Tu perfil, direcciones, guardados, reseñas y comentarios; tus solicitudes de empleo
 se cierran y tus pedidos y reservaciones salen de tu cuenta. Tienes 30 días para arrepentirte.
 
----
-
-## English
-My account brings together everything that is yours: an overview (neighbor card, complete-your-account, your week of
-orders, bookings and interviews, things waiting on you, your local support this month), Orders (by month, with filters,
-"see more", order again and write a review), Bookings (upcoming and past), Saved (businesses you saved or follow, jobs and
-updates), Reviews (written and to write), Jobs (your applications), Profile (photo, name, nickname, email saved as not
-verified until emails exist; change your phone number with a code sent to the new number), Notifications (saved now,
-applied when notifications launch), Settings (language, your city every 30 days and only open cities, privacy with your
-open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
-three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
-
-## Boletos y eventos (6j, 10 nov 2026)
+## Boletos y eventos
 - **Tu semana** (Mi cuenta › Inicio): tus boletos de los próximos 7 días (cuántos y «Tu QR está en Boletos · funciona sin señal»), tus RSVP y tu
   evento privado confirmado, en orden con lo demás.
 - **Boletos** en los accesos (teléfono) y en el menú: Próximos · Pasados, cada boleto con su QR (funciona sin señal).
@@ -76,3 +65,17 @@ three steps with a code, is scheduled 30 days out and is canceled if you sign in
 **English:** **Your week** shows your tickets for the next 7 days, your RSVPs and a confirmed private event. **Tickets** (upcoming and past, QR works
 offline), **Saved › Events** and **Notifications › Events** (tickets and changes, reminders, saved events; critical ones always arrive). A Payments
 screen in My account does not exist yet; each ticket order has its receipt.
+
+## English
+
+My account brings together everything that is yours: an overview (neighbor card, complete-your-account, your week of
+orders, bookings and interviews, things waiting on you, your local support this month), Orders (by month, with filters,
+"see more", order again and write a review), Bookings (upcoming and past), Saved (businesses you saved or follow, jobs and
+updates), Reviews (written and to write), Jobs (your applications), Profile (photo, name, nickname, email saved as not
+verified until emails exist; change your phone number with a code sent to the new number), Notifications (saved now,
+applied when notifications launch), Settings (language, your city every 30 days and only open cities, privacy with your
+open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
+three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
+
+### Help
+My account › **Help** (also in the desktop navigation) opens the Help center, in Spanish and English.

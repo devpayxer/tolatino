@@ -1,6 +1,6 @@
 # La página de un negocio · A business page
 
-_Pantalla: APP-NEG-LISTING «ficha del negocio» (Pro y Free). Versión: Fase 1 · bloque 1e (5 nov 2026)._
+_Pantallas: APP-NEG-LISTING «ficha del negocio» (Pro y Free). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Muestra todo lo que necesitas saber de un negocio antes de ir o llamar: fotos, a qué se dedica, si está abierto
@@ -40,21 +40,20 @@ hasta 6 fotos.
 ## Preguntas frecuentes
 - **¿El horario es real?** Sí: es el que el negocio puso, con la hora de la ciudad. Los cambios por feriado
   salen en «Próximos cambios».
-- **¿Por qué no veo el menú o los servicios?** Llegan en las próximas fases (menú, pedidos y reseñas en la Fase 2,
-  citas en la Fase 3).
+- **¿Por qué no veo el menú o los servicios?** Cada negocio enseña lo que vende en su pestaña (Menú, Servicios, Tienda…). Si no sale,
+  ese negocio no lo ha puesto todavía o es Free con lo esencial.
 - **¿Qué significa «Relacionados»?** Que los dos negocios confirmaron que son sucursales o del mismo dueño.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Repite el estado tal como lo dice la página («Abierto hasta las 9 PM»); no adivines horarios.
 - Si alguien dice que un dato de un negocio está mal, sugiérele avisar a Soporte; el dueño lo corrige desde su panel.
 
----
+## English
 
-## In English
 The business page shows photos, what the business does, whether it is open now and until when, distance, how it
 serves today (delivery, pickup, dine-in), weekly hours, the address and, when available, FAQs and related
 businesses (branches or same owner, confirmed by both). Pro pages have a big cover, logo, full hours with upcoming
 changes and tabs; Free pages are simpler. Top actions: Call, Save (heart; signed-out users sign in and come back)
-and Share (phone share sheet, or the link is copied on a computer). «Open in maps» opens the phone's maps. Menu,
-services and reviews arrive in later phases. The photo gallery opens any photo full screen (arrows, swipe, ← → keys,
+and Share (phone share sheet, or the link is copied on a computer). «Open in maps» opens the phone's maps. Each business shows what it sells in its own tab (Menu, Services, Shop…). The photo gallery opens any photo full screen (arrows, swipe, ← → keys,
 Esc) and lets signed-in users report a photo once; it stays visible while To'Latino reviews it within 48 h.

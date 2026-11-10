@@ -1,7 +1,7 @@
 # Correo y recibos · Email and receipts
 
-_Pantallas: Mi cuenta › **Perfil** (correo y «Confirma tu correo»), el enlace `/cuenta/correo`, Mi cuenta › **Avisos** ›
-Correo › **Recibos**; Super Admin › Notificaciones › **Correos** (y ver un correo). Versión: Fase 2 · bloque 2q (6 nov 2026)._
+_Pantallas: Mi cuenta › **Perfil** (correo y «Confirma tu correo»), el enlace `/cuenta/correo`, Mi cuenta › **Avisos** › Correo › **Recibos**; Super
+Admin › Notificaciones › **Correos** (y ver un correo). Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **Confirmar el correo:** en Perfil escribes tu correo y lo guardas; sale «Confirma tu correo» → **Mandar el enlace**.
@@ -27,9 +27,8 @@ Correo › **Recibos**; Super Admin › Notificaciones › **Correos** (y ver un
 **¿Para qué sirve mi correo?** Para tus recibos y para recuperar tu cuenta. No mandamos publicidad por correo.
 **¿Puedo dejar de recibir recibos?** Sí: Mi cuenta › Avisos › Correo › Recibos.
 
----
-
 ## English
+
 In Profile, save your email and tap **Send the link**: the email has a button that works for 24 hours, once. With a
 confirmed email you get **receipts** (on by default; turn them off in Notifications): when your order is done, when a
 restaurant confirms your table and, for owners, each Pro charge — in your language, never twice. Every email is kept in

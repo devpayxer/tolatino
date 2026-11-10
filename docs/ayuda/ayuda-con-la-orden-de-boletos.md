@@ -1,7 +1,7 @@
 # Ayuda con la orden de boletos · Help with a ticket order
 
-_Pantallas: **la orden** (`/eventos/orden/B-…` › **Ayuda con esta orden**), **ayuda con el pago** (`/eventos/orden/B-…/ayuda`, APP-EVT-AYUDA-PAGO)
-y **Super Admin › Colas › Ayuda con pedidos**. Teléfono y escritorio. Versión: Fase 6 · bloque 6d (10 nov 2026)._
+_Pantallas: **la orden** (`/eventos/orden/B-…` › **Ayuda con esta orden**), **ayuda con el pago** (`/eventos/orden/B-…/ayuda`, APP-EVT-AYUDA-PAGO) y
+**Super Admin › Colas › Ayuda con pedidos**. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - **Ayuda con esta orden** abre **¿Qué pasó?** con cuatro opciones:
@@ -25,9 +25,9 @@ y **Super Admin › Colas › Ayuda con pedidos**. Teléfono y escritorio. Versi
 | Una cortesía | No tiene ayuda con el pago (no se cobró nada). |
 | Otra persona abre tu solicitud | No existe para ella. |
 
----
+## English
 
-## What it does (English)
+### What it does
 **Help with this order** opens **What happened?**: I can't see my tickets (we send a notice to your account) · Change a name (free up to 2 h before)
 · **A payment problem** (request **B-**: charged twice, charge not what I saw, paid but no tickets, other) · Cancel my tickets. Payment problems go
 **straight to To'Latino** (it made the charge), queue «Help with orders»; To'Latino answers and may **refund to your card**. Your tickets stay valid

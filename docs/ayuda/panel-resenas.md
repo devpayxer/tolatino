@@ -1,7 +1,7 @@
-# Panel · Reseñas · Dashboard · Reviews
+# Panel: Reseñas · Dashboard: Reviews
 
-_Pantallas: `/panel/{negocio}/pagina/resenas` (Tu página › Reseñas), `?det=rev:{id}` (detalle) y «Reseñas sin responder»
-en **Hoy**. Teléfono y escritorio. Versión: Fase 2 · bloque 2g (6 nov 2026). Acceso: «Tu página»._
+_Pantallas: `/panel/{negocio}/pagina/resenas` (Tu página › Reseñas), `?det=rev:{id}` (detalle) y «Reseñas sin responder» en **Hoy**. Teléfono y
+escritorio. Acceso: «Tu página». Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Cifras:** calificación (★ y cuántas), sin responder (en negro si hay alguna; con Free, «—»), cuántos recomiendan (4 o
@@ -33,9 +33,8 @@ calma; si rompe las reglas, pide revisión.
 
 **¿La respuesta se puede editar?** No en esta versión: piénsala antes de publicar.
 
----
-
 ## English
+
 Your page › Reviews shows your rating, unanswered count (Pro), share of 4–5★ and verified reviews, with filters (all,
 unanswered, 5★, ≤2★). The detail shows the review and your reply as a conversation, the visit type and the order facts
 (not editable). Pro businesses reply once (5–300 characters, public) with starter phrases; Free businesses see a Pro lock.

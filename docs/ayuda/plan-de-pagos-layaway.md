@@ -1,10 +1,9 @@
 # Plan de pagos (layaway) · Layaway
 
-_Pantallas: ficha › **Productos** (artículo con «ABONO 20 % · 4 PAGOS»), `/n/{negocio}/apartar` (Tu plan → El acuerdo y el
-abono → Revisa y envía), tu apartado `/apartado/{A-…}` («Tu plan»), Panel › Hoy › Apartados y su detalle. Versión: Fase 4 ·
-bloque 4r (7 nov 2026)._
+_Pantallas: ficha › **Productos** (artículo con «ABONO 20 % · 4 PAGOS»), `/n/{negocio}/apartar` (Tu plan → El acuerdo y el abono → Revisa y envía), tu
+apartado `/apartado/{A-…}` («Tu plan»), Panel › Hoy › Apartados y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: pedidos._
 
-## Qué hace (ES)
+## Qué hace
 Algunas tiendas (muebles, electrodomésticos, vestidos de quince o novia, joyería…) venden **en plan**: apartas el artículo con
 un **abono** y lo pagas en partes, **sin intereses**. Te lo entregan cuando terminas de pagar.
 1. En el artículo ves «ABONO 20 % · 4 PAGOS» (lo que diga la tienda). Lo que va en plan se aparta solo: si tenías otras cosas
@@ -47,9 +46,9 @@ un **abono** y lo pagas en partes, **sin intereses**. Te lo entregan cuando term
 - **¿Puedo pagar antes?** Sí: «Pagar $X» paga el que sigue; puedes pagar varios seguidos.
 - **¿Dónde está lo que acepté?** En tu apartado, «El acuerdo que aceptaste», con la fecha.
 
----
+## English
 
-## What it does (EN)
+### What it does
 Some stores sell **on layaway**: you hold the item with a **down payment** and pay the rest in parts, **no interest**; you get
 it when fully paid. Before sending you read **the agreement in writing** (total, down payment, payments, how often, what happens
 if you stop, that the item is kept for you) and check **“I read the agreement and accept it”**; we keep the exact text and time.

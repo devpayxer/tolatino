@@ -1,9 +1,8 @@
-# Panel · Pedidos · Dashboard · Orders
+# Panel: Pedidos · Dashboard: Orders
 
-_Pantallas: `/panel/{negocio}/hoy` (Hoy), `/panel/{negocio}/clientes` (Clientes), `?det=ped:{número}` (detalle de un
-pedido) y `/panel/{negocio}/vendes/pedidos` (Lo que vendes › Pedidos en línea). Teléfono y escritorio. Versión: Fase 2 ·
-bloque 2c (6 nov 2026), con el delivery del 2f. Comida y Bebidas: pickup con pago en el local y delivery con efectivo al
-entregar._
+_Pantallas: `/panel/{negocio}/hoy` (Hoy), `/panel/{negocio}/clientes` (Clientes), `?det=ped:{número}` (detalle de un pedido) y
+`/panel/{negocio}/vendes/pedidos` (Lo que vendes › Pedidos en línea). Teléfono y escritorio. Comida y Bebidas: pickup con pago en el local y delivery
+con efectivo al entregar. Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Hoy:** cuatro cifras (esperan tu respuesta — en negro cuando hay alguno —, hoy en tu agenda, vendido hoy, vistas
@@ -46,13 +45,12 @@ Cada paso queda en el historial del pedido y en la auditoría.
 **¿Me avisan cuando llega un pedido?** Hoy lo ves en Hoy (la página del pedido del cliente se actualiza sola). Los avisos
 por SMS y en el teléfono llegan con las notificaciones.
 
-**¿Puedo proponer un cambio si falta un plato?** Todavía no: rechaza o llama al cliente. Llega con su bloque.
+**¿Puedo proponer un cambio si falta un plato?** No en un pedido de comida: rechaza el pedido o llama al cliente.
 
 **¿Cuánto cobra To’Latino?** En los pedidos que pagan en tu local, nada.
 
----
-
 ## English
+
 Today shows four figures (awaiting your reply, today's agenda, sold today, views today), the Free plan notice, orders
 awaiting your reply with Accept and Decline, and today's agenda (accepted and ready). The order detail shows the client,
 promised time, payment (at the store), client note, each item with options and kitchen instructions, total, a history

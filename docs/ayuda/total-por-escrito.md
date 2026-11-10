@@ -1,6 +1,9 @@
 # El total, por escrito (Profesionales) · The total, in writing
 
-## Qué es (ES)
+_Pantallas: tu consulta con una oficina de Profesionales (`/cita/{C-…}`) y Panel › Hoy › la consulta. Versión: 10 nov 2026. Audiencia: vecino. Tema:
+citas._
+
+## Qué es
 Después de tu consulta, la oficina te manda **el total por escrito** en la app: su honorario, el crédito de la consulta (si
 se descuenta), la tarifa del gobierno **aparte** y los extras opcionales. Lo revisas con calma y decides.
 
@@ -26,7 +29,9 @@ el total por escrito». 3. Cuando contrata, al terminar: «Terminó el trámite�
 - **¿Puedo cambiar el total después de que lo aceptó?** No. Si algo cambia, le pides su OK y mandas una versión nueva antes.
 - **¿Se suma el gobierno a mi honorario?** Se muestra aparte y se paga a la agencia.
 
-## What it is (EN)
+## English
+
+### What it is
 After the consultation the office sends the **written total** in the app: fee, consultation credit, government fee
 (separate, paid to the agency) and optional extras. Accept and hire (your agreement is saved with time, version and origin,
 and cannot be changed), call to ask, or decline (consultation only). A new version replaces the old one; it expires in 30

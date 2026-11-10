@@ -1,6 +1,9 @@
 # Qué puede hacer cada licencia · What each license allows
 
-## Qué es (ES)
+_Pantallas: la página de un negocio de Profesionales › tarjeta «¿Puede hacerlo por ley?» y la ficha de sus licencias (`/n/{negocio}/licencia`).
+Versión: 10 nov 2026. Audiencia: vecino. Tema: explorar._
+
+## Qué es
 En la página de un profesional ves sus **licencias verificadas** (To'Latino las revisa contra el registro oficial) y, en
 cada servicio, **«¿Puede hacerlo por ley?»**. Así sabes si quien te ofrece un trámite puede hacerlo.
 
@@ -18,7 +21,9 @@ cada servicio, **«¿Puede hacerlo por ley?»**. Así sabes si quien te ofrece u
   por ley». To'Latino vuelve a revisar todas sus licencias con prioridad. También puedes reportarlo a la Fiscalía de
   Pennsylvania (Attorney General).
 
-## What it is (EN)
+## English
+
+### What it is
 A professional's page shows **verified licenses** (checked against the official registry) and, per service, "Can they do it
 by law?". In the US a **notary public is not a lawyer** and cannot give legal advice or handle immigration cases: only a
 licensed attorney or a DOJ-accredited representative can. If someone offered something they could not legally do, use Case

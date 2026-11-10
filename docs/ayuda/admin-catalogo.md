@@ -1,7 +1,7 @@
-# Super Admin · Catálogo · Super Admin · Catalog
+# Super Admin: Catálogo · Super Admin: Catalog
 
-_Pantalla: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Versión: Fase 1 · bloque 1m (6 nov 2026). Para el equipo
-de To'Latino (y El Compa como copiloto del equipo)._
+_Pantallas: ADM-CAT (`/admin/catalogo`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 6 nov
+2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Categorías:** las 17, con su clave, subcategorías, negocios, cuántos son Pro, el tipo de transacción y la línea fija
@@ -36,9 +36,8 @@ categoría, en Buscar y en el admin.
 
 **¿Por qué Buscar tarda hasta un minuto?** Guarda los sinónimos en memoria 60 segundos para responder rápido.
 
----
-
 ## English
+
 Catalog shows the 17 categories (key, subcategories, businesses, Pro, transaction type and fixed line). In a category:
 add a subcategory ("Spanish name / English name"; next code NEG-<CAT>-<NN>), remove it (asks for a reason and shows how
 many businesses it affects: they lose the label, not their page; it disappears from the category page, cards, page,

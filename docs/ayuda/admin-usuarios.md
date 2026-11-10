@@ -1,7 +1,7 @@
-# Super Admin · Usuarios · Super Admin · Users
+# Super Admin: Usuarios · Super Admin: Users
 
-_Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y escritorio. Versión: Fase 1 · bloque 1l
-(5 nov 2026). Para el equipo de To'Latino (y El Compa como copiloto del equipo)._
+_Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del
+equipo). Versión: 5 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Lista:** todas las cuentas de tus ciudades (Mi ciudad de la persona; una cuenta sin ciudad solo la ve quien
@@ -16,14 +16,14 @@ _Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y es
     ciudad con el historial y «Cambiar ciudad».
   - **Confianza:** su estado, cada sanción (vigente, terminó o levantada, con su motivo y quién) y las fotos que reportó.
   - **Privacidad:** exportar sus datos (archivo JSON, para un pedido de privacidad).
-  - **Comunidad (5c):** rango, publicaciones y comentarios, votos recibidos, mejores respuestas; seguidores, siguiendo, a quién
+  - **Comunidad:** rango, publicaciones y comentarios, votos recibidos, mejores respuestas; seguidores, siguiendo, a quién
     bloqueó y silenció (listas de 50, con «MISMO DISPOSITIVO» en rojo); cuántas conversaciones privadas tiene (**nunca su
     contenido**: solo se lee con un reporte abierto en Colas › Mensajes reportados); su declaración de 18 años o más (sí/no y
     cuándo; nunca una fecha de nacimiento) y su bienvenida. Aviso de **posible red**: seguidores que entraron desde el mismo
-    dispositivo que esta cuenta (el caso de red de cuentas se abre desde Reportes de usuario cuando llegue esa cola, 5d).
+    dispositivo que esta cuenta (el caso de red de cuentas se abre desde Colas › Reportes de usuario).
   - Abajo, el historial: quién del equipo hizo qué, antes → después y el motivo.
 
-### Usuarios 360° › Comunidad completo (5i, 8 nov)
+### Usuarios 360° › Comunidad completo
 - **Arriba:** rango, puntos (y del mes), monedas (sin valor en dinero), votos recibidos (+ / −, mejores respuestas), publicaciones y
   comentarios, seguidores y siguiendo, a cuántos bloqueó y silenció, conversaciones privadas (nunca su contenido), 18+ y bienvenida.
 - **Posible red:** si un seguidor entró desde el mismo dispositivo que esta cuenta, el aviso trae **«Abrir caso de red de cuentas»**: con
@@ -57,11 +57,11 @@ Nadie se sanciona ni se borra a sí mismo, y a alguien del equipo de To'Latino p
 Equipo). Toda acción pide motivo y queda en la auditoría. Nada se borra: estados.
 
 ## Preguntas frecuentes
-**¿Le llega un SMS cuando lo sancionan?** Todavía no: los avisos por SMS llegan con las notificaciones (Fase 2). Hoy lo
-ve al entrar y en Mi cuenta.
+**¿Le llega un SMS cuando lo sancionan?** No: los avisos de moderación no salen por SMS. Lo ve en la campana y en Mi cuenta ›
+Avisos de moderación.
 
-**¿Puede apelar?** La apelación desde Mi cuenta llega con Soporte; mientras tanto, escribe a Soporte y una persona
-distinta revisa la sanción.
+**¿Puede apelar?** Sí: el aviso de la sanción trae «Apelar» (Mi cuenta › Avisos de moderación) y la revisa una persona del
+equipo distinta de quien sancionó.
 
 **¿Qué es «comparte dispositivo»?** Que otra cuenta entró desde el mismo teléfono o navegador. Es una señal, no una
 prueba: una familia puede compartir teléfono. Si borra las cookies, el dispositivo cambia.
@@ -69,10 +69,15 @@ prueba: una familia puede compartir teléfono. Si borra las cookies, el disposit
 **¿Dónde están pedidos, citas, Wallet, rango y Comunidad?** En las pestañas Actividad, Dinero y Comunidad, que llegan
 con sus módulos.
 
----
+## Actividad
+**Usuarios 360° › Actividad:** pedidos, citas y reservaciones de los últimos 90 días, y **BOLETOS DE EVENTOS** (código, tipo, precio o cortesía,
+orden, si lo recibió o lo pasó por transferencia, a qué hora entró y su estado: VÁLIDO · USADO · DEVUELTO · ANULADO · TRANSFERIDO) y **RSVP**
+(personas, cuántos llegaron). Cada boleto abre Buscar boleto; cada RSVP, la ficha del evento. Nunca el teléfono de otra persona.
+**English:** Users 360° › Activity shows 90-day counts and the person's event tickets (status, comp, transfers, entry time) and RSVPs.
 
 ## English
-Community (5i): the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
+
+Community: the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
 "possible network" notice with "Abrir caso de red de cuentas" (opens a User reports case, audited). Sub-tabs: Posts · Comments · Followers
 and following · Points and coins · Coupons and referrals (no El Patio). The users list adds "With reports" and "Community rank" filters.
 
@@ -85,11 +90,5 @@ restriction, shown in My account), mute 7 days / block posting 30 days (cannot s
 automatically), suspend 14 days (sessions closed; sees "suspended until {date}" and the reason when signing in; lifts
 automatically), ban (Admin only). "Delete data" goes to Sensitive changes and another person applies it: the account
 cannot sign in and has 30 grace days; an Admin can restore it. Nobody sanctions or deletes themselves; team members
-must lose their role first. Every action asks for a reason and is audited. Activity, Money and Community tabs arrive
-with their modules; SMS notices arrive with notifications (Phase 2).
-
-## Actividad (6j, 10 nov 2026)
-**Usuarios 360° › Actividad:** pedidos, citas y reservaciones de los últimos 90 días, y **BOLETOS DE EVENTOS** (código, tipo, precio o cortesía,
-orden, si lo recibió o lo pasó por transferencia, a qué hora entró y su estado: VÁLIDO · USADO · DEVUELTO · ANULADO · TRANSFERIDO) y **RSVP**
-(personas, cuántos llegaron). Cada boleto abre Buscar boleto; cada RSVP, la ficha del evento. Nunca el teléfono de otra persona.
-**English:** Users 360° › Activity shows 90-day counts and the person's event tickets (status, comp, transfers, entry time) and RSVPs.
+must lose their role first. Every action asks for a reason and is audited. Moderation notices are not texted: the person
+sees them in the bell and in My account › Moderation notices, where they can appeal.

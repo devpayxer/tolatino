@@ -1,6 +1,8 @@
-# Tu herramienta · Mercados y Tiendas · Your tool for markets and shops
+# Tu herramienta (Mercados y Tiendas) · Your tool for markets and shops
 
-## Qué hace (ES)
+_Pantallas: Panel › Lo que vendes › **Tu herramienta** de un mercado o una tienda. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
+
+## Qué hace
 En **Panel › Lo que vendes › Tu herramienta** cada mercado o tienda pone lo que más le preguntan. Cada toque se guarda al
 momento, queda en el historial y cambia lo que dicen tu página y Buscar.
 
@@ -29,7 +31,8 @@ momento, queda en el historial y cambia lo que dicen tu página y Buscar.
   los marca a mano.
 - To'Latino ve tu herramienta en solo lectura y puede ocultar un producto o pausar Productos o Pedidos con motivo (lo ves en tu panel).
 
-## EN
+## English
+
 Panel › What you sell › Your tool. Markets: pickup/delivery, delivery fee and minimum, orders per time slot, what to do if
 something is out, EBT/SNAP and cash, weighed in front, price per pound and sold out today. Shops: hold for 24/48/72 h,
 layaway terms (down payment, payments, frequency, cancellation fee), returns with receipt, cash, and stock per size (a size

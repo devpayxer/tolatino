@@ -1,9 +1,9 @@
 # Pedir la fecha de tu fiesta · Requesting your party date
 
-_Pantallas: la hoja del servicio › «Pedir la fecha», el Booking de Fiestas (3 pasos), «Tu fiesta» (F-…), Panel › Hoy › Fiestas que
-esperan tu respuesta y su detalle. Versión: Fase 4 · bloque 4v (7 nov 2026)._
+_Pantallas: la hoja del servicio › «Pedir la fecha», el Booking de Fiestas (3 pasos), «Tu fiesta» (F-…), Panel › Hoy › Fiestas que esperan tu
+respuesta y su detalle. Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 
-## Qué hace (ES)
+## Qué hace
 **La fecha no es tuya hasta que te la confirmen.**
 1. **Tu fiesta:** qué celebras, cuántos invitados (si va por unidad, la app calcula cuántas hacen falta; si va por hora, eliges
    las horas), y una nota para el negocio.
@@ -38,9 +38,9 @@ esperan tu respuesta y su detalle. Versión: Fase 4 · bloque 4v (7 nov 2026)._
 - **¿Y el resto?** Se paga al negocio fuera de la app, como diga el acuerdo. To'Latino no cobra el resto.
 - **¿Puedo cambiar lo que incluye?** Lo extra se pide antes y por escrito. Lo que no está escrito, no está incluido.
 
----
+## English
 
-## What it does (EN)
+### What it does
 **The date is not yours until they confirm it.** Book in three steps: your party (what you celebrate, guests, hours or units, a
 note), date and start time on the business's real calendar (booked dates can't be picked; times another party asked for that
 day show as taken; if they come to you, pick your address or a venue within their miles), then review and send. The deposit is

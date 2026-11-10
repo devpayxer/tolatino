@@ -1,8 +1,8 @@
 # Evento privado en el panel · Private event in the dashboard
 
-_Pantallas: **Lo que vendes › Reservaciones › Evento privado** (los ajustes), **Hoy** («Eventos privados que esperan tu respuesta» y «Próximos
-eventos privados») y **el detalle de una solicitud** (`?det=evp:EP-…`). Para restaurantes con Reservaciones (Pro) y Cobros con tarjeta. Ajustes:
-quien tiene «Lo que vendes». Responder: quien tiene «Hoy y pedidos». Versión: Fase 6 · bloque 6i (10 nov 2026)._
+_Pantallas: **Lo que vendes › Reservaciones › Evento privado** (los ajustes), **Hoy** («Eventos privados que esperan tu respuesta» y «Próximos eventos
+privados») y **el detalle de una solicitud** (`?det=evp:EP-…`). Para restaurantes con Reservaciones (Pro) y Cobros con tarjeta. Ajustes: quien tiene
+«Lo que vendes». Responder: quien tiene «Hoy y pedidos». Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Encender Evento privado** (pide Cobros con tarjeta: el depósito se cobra en la app y llega a tu cuenta). Reglas: **grupos desde** y **hasta**
@@ -41,9 +41,9 @@ quien tiene «Lo que vendes». Responder: quien tiene «Hoy y pedidos». Versió
 - **¿Puedo cambiar el porcentaje del depósito?** Sí, en los ajustes; vale para las propuestas que mandes desde ese momento.
 - **¿Veo el teléfono del cliente?** No. Le escribes por Mensajes.
 
----
+## English
 
-## What it does (English)
+### What it does
 **Turn on Private event** (needs Card payouts: the deposit is charged in the app and goes to your account) and set **groups from / up to**, **days
 ahead** (never below To'Latino’s minimum, 3), **deposit on accept** (10%, 25% or 50% of your proposal total), how fast you usually reply, **areas**,
 **“The whole place”** with its charge, **menus** with a price per person (or “Let them suggest”) and **extras**. Your page’s large-group card then says

@@ -1,8 +1,8 @@
 # Pagar con tarjeta · Paying by card
 
-_Pantallas: Finalizar pedido (APP-NEG-CHECKOUT · PAGO y la hoja «Método de pago»), la página del pedido, Panel › Cobros
-(DASH-COBROS), Panel › Lo que vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y
-Super Admin › Transacciones. Versión: Fase 2 · bloque 2d (6 nov 2026)._
+_Pantallas: Finalizar pedido (APP-NEG-CHECKOUT · PAGO y la hoja «Método de pago»), la página del pedido, Panel › Cobros (DASH-COBROS), Panel › Lo que
+vendes › Pedidos (Tarjeta en la app), el detalle del pedido en el panel («Devolver dinero») y Super Admin › Transacciones. Versión: 6 nov 2026.
+Audiencia: vecino. Tema: pedidos._
 
 ## Qué hace
 - **El cliente** elige **Tarjeta** o **Pagas en el local / Efectivo al recibir**. Con tarjeta elige una guardada o agrega
@@ -19,7 +19,7 @@ Super Admin › Transacciones. Versión: Fase 2 · bloque 2d (6 nov 2026)._
 - **Devolver dinero:** el dueño, desde el pedido (total o parcial, con motivo); To'Latino, desde Transacciones. La
   comisión baja en proporción. El cliente recibe el aviso; llega a su tarjeta en 3 a 5 días hábiles.
 
-- **6c · Boletos de eventos:** el cobro se **autoriza y se captura al pagar** (no espera al negocio) y queda en To'Latino; al organizador se le
+- **Boletos de eventos:** el cobro se **autoriza y se captura al pagar** (no espera al negocio) y queda en To'Latino; al organizador se le
   transfiere después de la fecha, neto de la comisión de boletos (5 % + $1 por boleto, de Planes › Comisiones). El precio que ve el cliente ya
   incluye los cargos. Si la captura falla, los boletos se anulan y la autorización se libera. Ver `comprar-boletos`.
 
@@ -28,7 +28,7 @@ Super Admin › Transacciones. Versión: Fase 2 · bloque 2d (6 nov 2026)._
 |---|---|
 | El banco rechaza la tarjeta | «Tu banco la rechazó. Prueba con otra tarjeta.» No se crea el pedido. |
 | Sin fondos / vencida / código mal | El mensaje lo dice; no hay pedido ni cargo. |
-| El banco pide verificación extra (3D Secure) | Por ahora se pide otra tarjeta o pagar en el local (pendiente de lanzamiento). |
+| El banco pide verificación extra (3D Secure) | Esa tarjeta no sirve aquí: prueba otra o paga en el local. |
 | Se envía dos veces el mismo pedido (doble toque) | Una sola retención: cada intento tiene su clave. |
 | Cambias de tarjeta después de un rechazo | Es un intento nuevo con la otra tarjeta. |
 | El negocio no tiene cuenta de cobro o la apagó | No sale «Tarjeta»: solo pago en el local. |
@@ -43,9 +43,9 @@ quita en 1 a 5 días.
 **¿Dónde veo mis tarjetas?** En la hoja «Método de pago» al pagar; la última que pagó queda como predeterminada.
 **¿Cuándo le llega el dinero al negocio?** Cada martes, lo cobrado de lunes a domingo.
 
----
+## English
 
-## What it does (EN)
+### What it does
 - The customer picks **Card** or **Pay at the store / Cash on delivery**. With card: a saved one or a new one. To'Latino
   never sees the full number; only brand and last 4 are kept.
 - On send, **the total is held**. **It is charged when the business accepts**; if not accepted within 10 minutes,
@@ -55,6 +55,6 @@ quita en 1 a 5 días.
 - **Fee:** 10% of the subtotal on card orders; delivery fee and tip go in full; card processing comes out of the fee.
 - **Refunds:** the owner from the order, To'Latino from Transactions; the fee drops proportionally; 3–5 business days.
 
-## FAQ
+### FAQ
 **Why do I see a charge if the order did not happen?** It is a hold, not a charge: fully released, your bank removes it in
 1–5 days.

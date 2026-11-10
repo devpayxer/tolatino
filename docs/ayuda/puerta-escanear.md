@@ -1,8 +1,8 @@
 # To'Latino Puerta: escanear en la puerta · To'Latino Door: scanning at the door
 
 _Pantallas: **To'Latino Puerta** (`/puerta`: tus puertas, el código del negocio y abrir la puerta) y **la puerta abierta** (`/puerta/s/…`: Escanear ·
-Buscar · Lista · Aforo · Más → Mesas · Incidencias · Equipo · Cierre; en Noche, la Lista de la noche). Para porteros. Hecha para el teléfono.
-Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
+Buscar · Lista · Aforo · Más → Mesas · Incidencias · Equipo · Cierre; en Noche, la Lista de la noche). Para porteros. Hecha para el teléfono. Versión:
+10 nov 2026. Audiencia: portero. Tema: puerta._
 
 ## Qué hace
 - **Solo escaneas.** En la puerta no se venden boletos ni se cobra nada: la puerta deja entrar a quien ya tiene su boleto, su RSVP o su lugar en
@@ -60,9 +60,13 @@ Versión: Fase 6 · bloques 6g y 6h (10 nov 2026)._
 - **¿Tengo que tener cuenta?** Sí, tu cuenta de To'Latino con el teléfono que le diste al negocio.
 - **¿Dónde quedo registrado?** Cada escaneo guarda quién lo hizo, en qué puerta y a qué hora. El organizador y To'Latino lo pueden revisar.
 
----
+## Ayuda de la puerta
+En To'Latino Puerta, **Cómo funciona la puerta** abre el Centro de ayuda en el tema **La puerta** (solo para porteros y para quien abre la
+puerta desde el panel).
 
-## What it does (English)
+## English
+
+### What it does
 **You only scan:** no tickets are sold and nothing is charged at the door. You see each person’s **first name and initial** (or the name on a comp),
 the ticket type, the table and the minimum age — **never** phones, emails or what they paid. The business invites you with your name and phone; you
 get a **6-character code** (valid 7 days), sign in to To'Latino with **your own account** and that same phone, open **To'Latino Door** and type it.
@@ -76,3 +80,7 @@ of the code or phone, full code or B- order; comps show by name; **Let in** asks
 number, never twice), **Incidents** (security shows 911; the organizer is notified right away), **Team** and **Close the night**. The numbers at
 the top update live on every door phone. Without signal you keep scanning with the phone’s signed list (see “To'Latino Door without signal”). Two staff scanning the same ticket at once: it gets in once. Removed from the team: your door closes
 immediately.
+
+### Door help
+In To'Latino Door, **How the door works** opens the Help center on **The door** (only for door staff and whoever opens the door from the
+dashboard).

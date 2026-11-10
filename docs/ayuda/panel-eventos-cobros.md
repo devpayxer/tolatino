@@ -1,7 +1,7 @@
 # Panel › Cobros de eventos: lo que te llega el martes · Event payouts: what you get on Tuesday
 
-_Pantallas: **Panel › Cobros y plan › Cobros con tarjeta › PAGOS DE EVENTOS · POR FECHA** y **Panel › Eventos › la ficha › DINERO DEL EVENTO**.
-Solo el dueño o quien maneja Cobros. Versión: Fase 6 · bloque 6e (10 nov 2026)._
+_Pantallas: **Panel › Cobros y plan › Cobros con tarjeta › PAGOS DE EVENTOS · POR FECHA** y **Panel › Eventos › la ficha › DINERO DEL EVENTO**. Solo
+el dueño o quien maneja Cobros. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - Los boletos se cobran **en To'Latino** (no en tu cuenta) y se te **transfieren el martes después de cada fecha** (Configuración: día de pago).
@@ -28,9 +28,9 @@ Solo el dueño o quien maneja Cobros. Versión: Fase 6 · bloque 6e (10 nov 2026
 - **¿Me pueden pagar dos veces una fecha?** No: cada fecha tiene una sola transferencia.
 - **¿Y los extras y las mesas?** Entran igual (el depósito de mesa se transfiere el martes; lo descuentas de la cuenta esa noche).
 
----
+## English
 
-## What it does (English)
+### What it does
 Tickets are charged by To'Latino and transferred to you **the Tuesday after each date**: gross − To'Latino's fee (5 % + $1 per ticket) − refunds
 − lost disputes − earlier adjustment = what you get. Statuses: UPCOMING · PENDING · HELD (with the reason) · ON ITS WAY · PAID · ADJUSTED. A date
 with an open bank dispute is held until it closes; a new organizer's first event over $2,000 is held until To'Latino reviews it; an account that

@@ -1,7 +1,7 @@
 # La cita en el taller y la visita a tu casa · Auto shop booking and home visit in progress
 
-_Pantallas: **Tu cita** (`/cita/{número}`) para el cliente; Panel › **Hoy** y el detalle de la cita para el negocio.
-Versión: Fase 4 · bloque 4c (6 nov 2026)._
+_Pantallas: **Tu cita** (`/cita/{número}`) para el cliente; Panel › **Hoy** y el detalle de la cita para el negocio. Versión: 6 nov 2026. Audiencia:
+vecino. Tema: citas._
 
 ## Qué hace
 Cuando la cita de un taller o la visita de un servicio del hogar ya está confirmada, el negocio marca cada paso desde su
@@ -37,9 +37,9 @@ completo antes de empezar y, si algo cambia, te preguntan primero.
 
 **¿Dónde pago?** Pagas el resto en el taller al recoger tu carro, o al terminar la visita en tu casa.
 
----
+## English
 
-## What it does (EN)
+### What it does
 Once an auto shop booking or a home visit is confirmed, the business marks each step from its panel and the customer
 sees it right away in Your booking, with a notice in Notifications.
 

@@ -3,7 +3,7 @@
    negocio), el evento (nombre ≤ 70, tipo, cartel, de qué se trata ≤ 400), cuándo y dónde (14 días, horas, puertas, en el negocio o en
    otro lugar), la entrada (libre · gratis con RSVP · boletos en la app; nunca en la puerta, D1), edad, «Si algo cambia», «Te falta»,
    «Así lo ven los vecinos» y, enviado, «Tu evento está en revisión» con sus 3 pasos → el panel. Decisiones del grupo (§6 #1–#2, #5):
-   el precio que pones es el que paga el vecino (cargos incluidos, la comisión sale de lo tuyo); la venta abre pronto; Eventos es Pro.
+   el precio que pones es el que paga el vecino (cargos incluidos, la comisión sale de lo tuyo); la venta es en la app (nunca en la puerta); Eventos es Pro.
    El borrador vive en este teléfono hasta enviarlo. */
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
@@ -177,7 +177,7 @@ export function Publicar({ v }: { v: VistaPub }) {
               <span style={K}>{E2("ENTRADA", "ENTRY")}</span>
               <Opcion on={f.entrada === "free"} t={E2("Entrada libre", "Free entry")} s={E2("Sin lista. Llegas y entras.", "No list. Just show up.")} onClick={() => up({ entrada: "free" })} />
               <Opcion on={f.entrada === "rsvp"} t={E2("Gratis con RSVP", "Free with RSVP")} s={E2("Los vecinos apartan su lugar. Tú pones el cupo.", "Neighbors save a spot. You set the capacity.")} onClick={() => up({ entrada: "rsvp" })} />
-              <Opcion on={f.entrada === "tickets"} t={E2("Boletos en la app", "Tickets in the app")} s={E2("Pagan con tarjeta y entran con QR. La venta en la app abre pronto: hoy se guarda.", "They pay by card and get in with a QR. In-app sales open soon: for now it is saved.")} onClick={() => up({ entrada: "tickets" })} />
+              <Opcion on={f.entrada === "tickets"} t={E2("Boletos en la app", "Tickets in the app")} s={E2("Pagan con tarjeta en la app y entran con QR. En la puerta no se vende.", "They pay by card in the app and get in with a QR. No sales at the door.")} onClick={() => up({ entrada: "tickets" })} />
               {f.entrada === "rsvp" || f.entrada === "tickets" ? (
                 <div style={{ display: "grid", gridTemplateColumns: f.entrada === "rsvp" ? "minmax(0,1fr)" : "repeat(2,minmax(0,1fr))", gap: 8 }}>
                   {f.entrada === "tickets" ? <label style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}><span style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".12em", color: "rgba(11,14,18,.5)" }}>{E2("PRECIO", "PRICE")}</span>

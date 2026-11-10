@@ -1,4 +1,7 @@
-# Ayuda con la cita del médico (Doctores)
+# Ayuda con la cita del médico (Doctores) · Help with a doctor visit
+
+_Pantallas: Tu cita de un consultorio (`/cita/{C-…}`) › **Ayuda con la cita** (`/cita/{C-…}/ayuda`), Panel › Hoy del consultorio y Super Admin › Colas
+› Ayuda con pedidos y citas. Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué es
 Si algo salió mal en una cita de salud que hiciste por To'Latino, pides ayuda desde la cita: **Tu cita › Ayuda con la cita**.
@@ -36,9 +39,8 @@ Puedes poner cuánto te cobraron de más (opcional).
 - **¿Mi solicitud borra mi reseña?** No.
 - **¿Alguien más ve mi factura?** No. Solo el consultorio de esa cita y el equipo de To'Latino.
 
----
+## English
 
-# Help with a doctor visit (EN)
 From your appointment: **Appointment help**. The office replies within 24 h; otherwise or if you disagree, To'Latino
 reviews it within 48 h. Up to 7 days after a finished visit; one request per visit. Reasons: charged something not
 mentioned, billed my insurance for something I did not request, insurance not taken after confirming, no interpreter,

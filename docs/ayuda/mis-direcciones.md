@@ -1,7 +1,7 @@
 # Mis direcciones · My addresses
 
-_Pantallas: Mi cuenta › **Direcciones** (`/cuenta/direcciones`) y **Nueva / Editar dirección**
-(`/cuenta/direcciones/nueva`, `/cuenta/direcciones/{id}`), teléfono y escritorio. Versión: Fase 2 · bloque 2f (6 nov 2026)._
+_Pantallas: Mi cuenta › **Direcciones** (`/cuenta/direcciones`) y **Nueva / Editar dirección** (`/cuenta/direcciones/nueva`,
+`/cuenta/direcciones/{id}`), teléfono y escritorio. Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Guarda tus direcciones de entrega: **qué es** (Casa, Trabajo, Otra), **calle y número**, apartamento o piso, **código
@@ -28,9 +28,8 @@ _Pantallas: Mi cuenta › **Direcciones** (`/cuenta/direcciones`) y **Nueva / Ed
 **¿Se borra de verdad?** Deja de salir en tu cuenta y no se usa más; queda guardada como borrada por si hay un reclamo de
 un pedido viejo.
 
----
-
 ## English
+
 Save delivery addresses (Home, Work, Other) with street and number, apt, ZIP and notes for the driver; mark one as
 default (the first one is). When you save, To’Latino places the address on the map using the public US Census street
 data, without sending it to any other service, so we know whether a business can deliver there. Addresses outside the

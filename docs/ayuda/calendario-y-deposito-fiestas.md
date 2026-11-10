@@ -1,15 +1,14 @@
 # Calendario y depósito (Fiestas) · Calendar and deposit (Parties)
 
-_Pantallas: Panel › Lo que vendes › Servicios (cómo cobras) y › Calendario y depósito; Super Admin › Negocios › 360 › Lo que
-vende (solo lectura); Buscar › Fiestas (filtros «Libre este sábado / domingo / el sábado siguiente»). Versión: Fase 4 ·
-bloque 4t (7 nov 2026)._
+_Pantallas: Panel › Lo que vendes › Servicios (cómo cobras) y › Calendario y depósito; Super Admin › Negocios › 360 › Lo que vende (solo lectura);
+Buscar › Fiestas (filtros «Libre este sábado / domingo / el sábado siguiente»). Versión: 7 nov 2026. Audiencia: negocio. Tema: panel._
 
-## Qué hace (ES)
+## Qué hace
 Para salones, decoradores, DJ, mariachis, fotógrafos, renta de mesas y sillas, pasteles y todo lo de fiestas.
 - **Servicios · cómo lo cobras:** *Paquete* (con horas, cuántos invitados, si incluye montaje y la lista de lo que incluye: lo
-  que no está escrito, no está incluido) · *Por hora* (con mínimo) · *Por unidad* (juego, mantel, porción…; si dices cuántos
-  invitados cubre cada una, tu página le dice al cliente cuántas necesita) · *Precio fijo* · *Visita gratis* (para ver el
-  salón) · *Se cotiza* («Desde $X», el total va por escrito).
+  que no está escrito, no está incluido) (con mínimo) (juego, mantel, porción…; si dices cuántos
+  invitados cubre cada una, tu página le dice al cliente cuántas necesita) (para ver el
+  salón) («Desde $X», el total va por escrito).
 - **Calendario y depósito:**
   - **Depósito para apartar la fecha** (en pasos de $50): se retiene cuando te piden la fecha y se cobra cuando confirmas; si no
     confirmas, se libera completo.
@@ -34,9 +33,9 @@ Para salones, decoradores, DJ, mariachis, fotógrafos, renta de mesas y sillas, 
 - **¿Cuándo se cobra el depósito?** Cuando confirmas la fecha. Antes solo se retiene.
 - **¿Puedo tener dos fiestas el mismo día?** Sí: sube «Eventos el mismo día».
 
----
+## English
 
-## What it does (EN)
+### What it does
 Party businesses set how each service is charged (package with hours, guests, setup and what is included; hourly with a
 minimum; per unit with guests per unit; fixed; free venue visit; quoted «from $X» with the total in writing) and their
 **Calendar and deposit**: the deposit to hold a date (held when requested, charged when you confirm, released if not), maximum

@@ -1,9 +1,9 @@
-# Comunidad · puntos, rangos, insignias y la Tabla del Barrio · Community · points, ranks, badges and the Neighborhood Table
+# Comunidad: puntos, rangos, insignias y la Tabla del Barrio · Community: points, ranks, badges and the Neighborhood Table
 
-_Pantallas: **Tu rango** (`/comunidad/rango`, desde la pastilla del rango arriba a la derecha o «Tu rango» en la navegación),
-**Tabla del Barrio** (`/comunidad/tabla`, tercera pestaña de la Comunidad), **el perfil de un vecino** (insignias), **la tarjeta de una
-reseña** («SARGENTO · 23 RESEÑAS», «+15 PUNTOS») y **Mi cuenta › Invita vecinos** (`/cuenta/invitar`). Teléfono y escritorio. Versión:
-Fase 5 · bloque 5f (7 nov 2026). Solo con cuenta, salvo la tarjeta de reseña._
+_Pantallas: **Tu rango** (`/comunidad/rango`, desde la pastilla del rango arriba a la derecha o «Tu rango» en la navegación), **Tabla del Barrio**
+(`/comunidad/tabla`, tercera pestaña de la Comunidad), **el perfil de un vecino** (insignias), **la tarjeta de una reseña** («SARGENTO · 23 RESEÑAS»,
+«+15 PUNTOS») y **Mi cuenta › Invita vecinos** (`/cuenta/invitar`). Teléfono y escritorio. Solo con cuenta, salvo la tarjeta de reseña. Versión: 7 nov
+2026. Audiencia: vecino. Tema: comunidad._
 
 ## Qué hace
 - **Aquí nada se compra: los puntos salen de los votos de tus vecinos, nunca de estar conectado.**
@@ -75,9 +75,9 @@ Fase 5 · bloque 5f (7 nov 2026). Solo con cuenta, salvo la tarjeta de reseña._
 - **¿Se ve mi rango?** Desde Sargento (4) se ve en tus comentarios y en tus reseñas. Siempre se ve en tu perfil.
 - **¿Qué gano por invitar?** Solo cuenta para Capitán. No hay dinero ni regalos.
 
----
+## English
 
-## What it does (English)
+### What it does
 - **Nothing is bought here: points come from your neighbors’ votes, never from being online.**
 - **Points:** upvote on your post **+2**; on your comment **+1**; «Me too» / «Add my vote» on your recommendation **+3**; the asker marks
   **«Helped me»** **+10**; **verified review** **+15** (your review card says «+15 POINTS»); **first recommendation of a business** in your
@@ -98,7 +98,7 @@ Fase 5 · bloque 5f (7 nov 2026). Solo con cuenta, salvo la tarjeta de reseña._
 - **Invite neighbors:** your code (e.g. **RAMON-12**) and link `/i/{code}`. Invitees show as **JOINED** and count toward Captain once they
   **take part**. **No cash rewards.**
 
-## FAQ (English)
+### FAQ (English)
 - **Can I buy points?** No. **Do points expire?** No; the Table restarts each month, your total and rank stay.
 - **Why didn’t I move up?** Each rank also asks for something (e.g. a post with 5 upvotes); Your rank shows how far you are.
 - **Is my rank visible?** From Sergeant (4) on your comments and reviews; always on your profile.

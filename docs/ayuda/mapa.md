@@ -1,6 +1,6 @@
 # Mapa de negocios · Business map
 
-_Pantalla: APP-NEG-MAPA (teléfono y escritorio). Versión: Fase 1 · bloque 1f-3 (5 nov 2026)._
+_Pantallas: APP-NEG-MAPA (teléfono y escritorio). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Muestra en un mapa los negocios alrededor del punto que elegiste (centro, barrio o tu ubicación) y, al lado o debajo,
@@ -31,8 +31,6 @@ El mapa es nuestro (OpenStreetMap), no de Google.
 **¿Por qué un negocio sale en la lista y no en el mapa?** No tiene local: va a domicilio o atiende por teléfono.
 
 **¿«Cómo llegar» usa Google Maps?** Por ahora abre el mapa de tu teléfono para las indicaciones.
-
----
 
 ## English
 

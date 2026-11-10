@@ -1,8 +1,7 @@
 # Silla propia (quien renta una silla) · Renting a chair
 
-_Pantallas: la página de cada silla (`/n/{negocio}/silla/{n}`), **Por barbero › Ver su página**, Panel › Lo que vendes ›
-**Sillas** (cuenta de cobro de cada barbero) y **Tu cuenta de cobro** del barbero (`/cuenta/silla/{id}`). Versión:
-Fase 3 · bloque 3d (6 nov 2026)._
+_Pantallas: la página de cada silla (`/n/{negocio}/silla/{n}`), **Por barbero › Ver su página**, Panel › Lo que vendes › **Sillas** (cuenta de cobro
+de cada barbero) y **Tu cuenta de cobro** del barbero (`/cuenta/silla/{id}`). Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **La página de la silla:** el barbero como su propio negocio dentro del local: «Barbero · Silla 2 en Barbería El
@@ -28,9 +27,8 @@ Fase 3 · bloque 3d (6 nov 2026)._
 **¿El local ve el banco del barbero?** Solo los últimos 4 números, para saber que está conectada.
 **¿Cobra To'Latino comisión?** Sí, la de citas (8 %) sobre el depósito; el resto llega al barbero.
 
----
-
 ## English
+
 Each rented chair has its own page (the person's services and prices, how they confirm, deposit, next opening and their
 own verified reviews) and its own payout account: the owner asks the barber to connect it from Panel › Chairs, the barber
 connects it from their To'Latino account (bank details go to Stripe only), and from then on the chair's booking deposits go

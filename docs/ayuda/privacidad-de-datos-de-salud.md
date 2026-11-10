@@ -1,6 +1,9 @@
 # Tus datos de salud y de tu caso · Your health and case data
 
-## Qué guarda To'Latino (ES)
+_Pantallas: Doctores y Profesionales: Tu cita, la ayuda, Mis seguros y el panel del consultorio o la oficina. Versión: 10 nov 2026. Audiencia: vecino.
+Tema: cuenta._
+
+## Qué guarda To'Latino
 To'Latino **no es** un consultorio ni una oficina: no guarda historial médico, diagnósticos, medicinas, resultados, números
 de caso, A-number, documentos ni estatus migratorio.
 
@@ -21,7 +24,8 @@ de caso, A-number, documentos ni estatus migratorio.
 - Tu nota, tu motivo y tu seguro no salen en búsquedas, analítica, exportaciones ni en El Compa.
 - Nadie del equipo de To'Latino ve tu nota o tus fotos sin abrir un caso de Ayuda, y eso queda registrado.
 
-## EN
+## English
+
 To'Latino does not keep medical records, diagnoses, medicines, results, case numbers, A-numbers, documents or immigration
 status. Insurance: type, plan and last 4 only. Your note is encrypted and deleted 30 days after the visit ends. Help photos
 are private and deleted 90 days after closing. Reviews cannot include health or case details. Doctor alerts are neutral (no

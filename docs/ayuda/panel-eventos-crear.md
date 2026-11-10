@@ -1,11 +1,11 @@
-# Panel del negocio · Eventos: crear y editar · Business dashboard · Events: create and edit
+# Panel del negocio: eventos, crear y editar · Business dashboard: events, create and edit
 
-_Pantalla: **Panel › Eventos** (`/panel/{negocio}/eventos`; ficha `?det=evt:{id}`, editor «Crear» / «Editar»). Teléfono y escritorio.
-Versión: Fase 6 · bloque 6a (9 nov 2026). Plan **Pro** (en Free se ve el candado «Ver Pro»; la prueba de 30 días no pide tarjeta).
-Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfono está en «Más»; en el escritorio, en el menú._
+_Pantallas: **Panel › Eventos** (`/panel/{negocio}/eventos`; ficha `?det=evt:{id}`, editor «Crear» / «Editar»). Teléfono y escritorio. Plan **Pro**
+(en Free se ve el candado «Ver Pro»; la prueba de 30 días no pide tarjeta). Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el
+teléfono está en «Más»; en el escritorio, en el menú. Versión: 9 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
-- **6f · Duración:** en CUÁNDO eliges **Un día**, **Varios días seguidos** o **Se repite** (cada semana, cada 2 semanas o cada mes). Ver «Panel › Eventos: series y eventos de varios días».
+- **Duración:** en CUÁNDO eliges **Un día**, **Varios días seguidos** o **Se repite** (cada semana, cada 2 semanas o cada mes). Ver «Panel › Eventos: series y eventos de varios días».
 - **Tus eventos:** Próximos · Borradores · Pasados y cancelados. Cada tarjeta: cartel con la fecha, tipo, estado (BORRADOR · EN REVISIÓN ·
   CAMBIOS PEDIDOS · PUBLICADO · CAMBIO EN REVISIÓN · NO APROBADO · OCULTO POR TO'LATINO), cuándo y la entrada.
 - **Lo que puedes publicar:** solo los tipos de tu categoría (Fiesta o show · Comida y música · Clase o taller · Culto, vigilia o retiro ·
@@ -21,13 +21,13 @@ Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfo
   al instante.
 - **«Para guardar falta:»** dice exactamente qué falta (el nombre, el cartel, el lugar y la dirección, precio y cantidad de cada boleto…).
 - **Repetir otro día:** copia el evento como borrador 7 días después (las fotos también). Revísalo y envíalo.
-- **Boletos, mesas y extras se guardan, pero todavía no se venden:** la venta en la app abre pronto. El precio que pones es el que paga el
+- **Boletos, mesas y extras se venden en la app** cuando el evento sale publicado. El precio que pones es el que paga el
   cliente (cargos incluidos); la comisión de To'Latino por boleto sale de lo tuyo. En la puerta no se venden boletos.
 
-- **6b · Eventos en To'Latino** (interruptor arriba de la lista y en Lo que vendes › Eventos): apagado, ninguno de tus eventos sale; al
+- **Eventos en To'Latino** (interruptor arriba de la lista y en Lo que vendes › Eventos): apagado, ninguno de tus eventos sale; al
   encenderlo vuelven. Si To'Latino los pausó: «PAUSADO POR TO'LATINO» con el motivo.
-- **6b · En otro lugar** pide también el **código postal**: con la dirección, To'Latino lo ubica en el mapa («Cómo llegar» y distancia).
-- **6b · La ficha › QUIÉN VA** (eventos con RSVP): cuántos van, el cupo, quién ya no va y cada RSVP con personas (nombre e inicial).
+- **En otro lugar** pide también el **código postal**: con la dirección, To'Latino lo ubica en el mapa («Cómo llegar» y distancia).
+- **La ficha › QUIÉN VA** (eventos con RSVP): cuántos van, el cupo, quién ya no va y cada RSVP con personas (nombre e inicial).
   El cupo no se puede bajar de los lugares que ya se guardaron.
 
 ## Qué pasa en cada caso
@@ -48,28 +48,28 @@ Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfo
 - **¿Cuánto tarda la revisión?** Hasta 24 h (lo fija To'Latino en Configuración).
 - **¿Puedo cambiar el tipo de un evento publicado?** No: crea otro.
 - **¿Cómo dejo de pasar por revisión?** To'Latino marca a los organizadores verificados.
-- **¿Cuándo se venden los boletos?** La venta en la app abre pronto; hasta entonces tus boletos, mesas y extras quedan guardados.
-- **¿Se repite cada semana?** Series y eventos de varios días llegan pronto; por ahora usa «Repetir otro día».
+- **¿Cuándo se venden los boletos?** En cuanto To'Latino aprueba el evento y sale publicado, hasta el corte que elegiste.
+- **¿Se repite cada semana?** Sí: en CUÁNDO elige **Se repite** (ver `panel-eventos-series-y-varios-dias.md`). «Repetir otro día» copia uno solo.
 
----
+## English
 
-## What it does (English)
+### What it does
 - **Your events:** Upcoming · Drafts · Past and cancelled, with the status (DRAFT · UNDER REVIEW · CHANGES REQUESTED · LIVE · CHANGE UNDER
   REVIEW · NOT APPROVED · HIDDEN BY TO’LATINO). **What you can publish:** only your category’s kinds, each with only its fields.
 - **Editor:** poster and photos, name and description in Spanish and English (**Translate** with To’Latino’s own translator), the day on
   the calendar, times, doors, where, entry (free with no list, free with RSVP, or tickets with tables and extras), line-up or program,
   music, minimum age, dress code, families or childcare, «food is paid at the venue», «Before you go», **How the client sees it**.
 - **Send for review on save:** To’Latino reviews it within 24 h (set in Configuration). Off = draft. Verified organizers publish at once.
-- **Repeat another day:** a draft copy 7 days later. Tickets, tables and extras are saved but not sold yet; no door sales.
+- **Repeat another day:** a draft copy 7 days later. Tickets, tables and extras sell in the app once the event is live; no door sales.
 - An important change (day, time, doors, place, age, entry) to a live event of an unverified organizer goes back to review while the
   previous version stays live. Hidden or not approved: you get the reason and can appeal once. No alcohol, bottles or hookah as extras.
 
-## FAQ (English)
+### FAQ (English)
 - **How long is the review?** Up to 24 h. **Can I change the kind of a live event?** No. **How do I skip review?** To’Latino verifies
-  organizers. **When are tickets sold?** Soon; until then they are saved.
+  organizers. **When are tickets sold?** As soon as To'Latino approves the event and it goes live, until the cutoff you chose.
 
-6b: the **Events on To'Latino** switch turns all your events off or on; events somewhere else also ask for the **ZIP code** (to place
+The **Events on To'Latino** switch turns all your events off or on; events somewhere else also ask for the **ZIP code** (to place
 them on the map); each RSVP event shows **WHO IS GOING** (people, capacity, who is no longer going). Capacity cannot go below the spots
 already held.
 
-**Duration (6f):** under WHEN pick One day, Several days in a row or Repeats (weekly, every 2 weeks or monthly). See “Recurring and multi-day events”.
+**Duration:** under WHEN pick One day, Several days in a row or Repeats (weekly, every 2 weeks or monthly). See “Recurring and multi-day events”.

@@ -1,7 +1,7 @@
 # RSVP de un evento gratis · RSVP to a free event
 
-_Pantallas: **la ficha del evento** (`/eventos/{evento}`) y **Esta noche** (`/eventos/esta-noche`). Teléfono y escritorio. Versión: Fase 6 ·
-bloque 6b (10 nov 2026). Para vecinos con cuenta._
+_Pantallas: **la ficha del evento** (`/eventos/{evento}`) y **Esta noche** (`/eventos/esta-noche`). Teléfono y escritorio. Para vecinos con cuenta.
+Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 
 ## Qué hace
 - En un evento **Gratis con RSVP**, **Voy** guarda tu lugar. **¿Cuántos van?** eliges las personas (hasta lo que diga el organizador, máximo
@@ -31,9 +31,9 @@ bloque 6b (10 nov 2026). Para vecinos con cuenta._
 - **¿Y si no puedo ir?** Toca **Ya no voy**: el lugar queda libre para otro vecino.
 - **¿El organizador ve mi teléfono?** No. Ve tu nombre con la inicial del apellido y cuántas personas van.
 
----
+## English
 
-## What it does (English)
+### What it does
 On a **Free with RSVP** event, **I'm going** holds your spot. Pick **how many are going** (up to the organizer's limit, max 10). With a
 capacity the page shows **N SPOTS LEFT**; without one, **Optional RSVP**. Once going: **You are going · RSVP · N people**, **Not going**
 (frees the spot) and **Invite**. You can change the number until the day of the event (more people = the capacity is checked again).

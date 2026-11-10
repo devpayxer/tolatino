@@ -1,8 +1,8 @@
 # Servicios y reglas de citas · Services and booking rules
 
-_Pantallas: Panel › Lo que vendes › **Servicios** (`/panel/{negocio}/mod/servicios`), el editor de cada servicio,
-**Cómo trabaja tu negocio**, **Citas** (`/panel/{negocio}/mod/citas`) y **Sillas** (`/panel/{negocio}/mod/sillas`);
-Super Admin › Negocio 360° › **Lo que vende** (negocios de belleza). Versión: Fase 3 · bloque 3a (6 nov 2026)._
+_Pantallas: Panel › Lo que vendes › **Servicios** (`/panel/{negocio}/mod/servicios`), el editor de cada servicio, **Cómo trabaja tu negocio**,
+**Citas** (`/panel/{negocio}/mod/citas`) y **Sillas** (`/panel/{negocio}/mod/sillas`); Super Admin › Negocio 360° › **Lo que vende** (negocios de
+belleza). Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Servicios:** cada servicio tiene categoría (Cortes, Barba…), nombre y descripción (ES y EN opcional), foto,
@@ -37,9 +37,8 @@ Super Admin › Negocio 360° › **Lo que vende** (negocios de belleza). Versi�
 **¿Quién decide el depósito si rento sillas?** Cada silla. Las reglas del negocio valen para quien no tenga las suyas.
 **¿Puedo tener servicios y menú a la vez?** Lo que vendes se adapta a la categoría: belleza usa Servicios.
 
----
-
 ## English
+
 **Services** have a category, name and description (Spanish, optional English), photo, duration and clean-up time (kept
 free on the calendar, never shown to customers), price, "from · varies" and up to 3 option groups that change price and
 time; **Extras** can be added to any service. Reorder, hide (nothing is deleted) or remove. **How your business works**:

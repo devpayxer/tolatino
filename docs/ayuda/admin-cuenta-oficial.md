@@ -1,7 +1,7 @@
-# Super Admin · Cuenta oficial · Official account
+# Super Admin: Cuenta oficial · Super Admin: Official account
 
-_Pantalla: **Super Admin › Contenido › Cuenta oficial** (`/admin/contenido?tab=off`). Escritorio y teléfono. Versión: Fase 5 ·
-bloque 5e (7 nov 2026). Escriben **Admin** y **Ciudad manager** (en sus ciudades); los demás roles con acceso a Contenido solo ven._
+_Pantallas: **Super Admin › Contenido › Cuenta oficial** (`/admin/contenido?tab=off`). Escritorio y teléfono. Escriben **Admin** y **Ciudad manager**
+(en sus ciudades); los demás roles con acceso a Contenido solo ven. Versión: 7 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué es
 Cada ciudad tiene su cuenta **«To'Latino {Ciudad}»** (Hazleton, Allentown, Wilkes-Barre, Scranton, Reading). La escribe el equipo:
@@ -39,9 +39,8 @@ Todo queda en la auditoría: `com.oficial.publicar`, `com.oficial.programar`, `c
 - **¿La cuenta oficial compite en votos?** No. Se fija arriba y se ve como cuenta oficial; el orden del resto lo ponen los votos.
 - **¿Puede recomendar un negocio?** No. La cuenta oficial no recomienda negocios.
 
----
-
 ## English
+
 Each city has its "To'Latino {City}" account, written by the team (Admin and City manager roles, in their cities): question of
 the week, poll of the week and notices. It shows with the To'Latino seal and "Official account", and its pinned post also shows on
 Home › Community. It is not a person: no phone or user row, no points, never on the leaderboard, cannot be followed or messaged.

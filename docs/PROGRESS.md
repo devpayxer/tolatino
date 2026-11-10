@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026 (6j · Fase 6 completa)._
+_Actualizado: 10 nov 2026 (7a · la ayuda como base y el Centro de ayuda)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -325,7 +325,30 @@ en línea y sin conexión, evento privado, y el Super Admin, Configuración, avi
 cierre §8 marcada salvo lo que dice su motivo (CI y 9 dispositivos, base de carga de 1 M, suites de Pedidos / Reservaciones / Noche en el CI). Falta
 el OK del fundador en el sandbox con las guías de `docs/REVISION.md` («### 6j» trae el paso a paso de toda la fase).
 Sigue **Fase 7 · El Compa** — plan del grupo.
-**Fase 7 · El Compa — plan escrito (10 nov):** `docs/diseno/plan/fase7-compa.md` (bloques 7a–7i, migraciones 0116–0124, semillas 0040–0042, preguntas #1–#18 con su default). Sigue **7a** (la ayuda como base de conocimiento y el Centro de ayuda).
+**Fase 7 · El Compa — plan escrito (10 nov):** `docs/diseno/plan/fase7-compa.md` (bloques 7a–7i, migraciones 0116–0124, semillas 0040–0042, preguntas #1–#18 con su default). 
+**7a hecho (10 nov)** — La ayuda como base de conocimiento y el Centro de ayuda: migración **0116** (`help_topics` 10 temas con su audiencia,
+`help_articles` (slug = archivo, título ES/EN, audiencia vecino · negocio · portero · equipo con checks: admin-* = equipo, panel-* = negocio,
+puerta-* = portero; tema de su audiencia por trigger; live · paused · retired; `city_id` null = todas), `help_chunks` (≤ 1 800 letras, `tsv` GENERADO
+spanish/english sin acentos con pesos título/encabezado/cuerpo, GIN + (audience, lang), trigger: un trozo nunca más abierto que su artículo;
+solo-equipo = «equipo»), `help_article_log` SOLO INSERCIÓN, `ayuda_indexar()` idempotente por sha256, `ayuda_retirar()`, `ayuda_consulta()`
+(prefijo + sinónimos «query» del Catálogo, and/or), Configuración › **El Compa** (`ayuda_trozos_max` 4, `ayuda_umbral_rank` 50 ‰, solo lectura hasta 7c)).
+**docs/ayuda normalizada** (151 archivos: los 149 + `centro-de-ayuda`, `admin-ayuda`): forma única (`scripts/ayuda/forma.mjs`): título «ES · EN»,
+`_Pantallas … Versión … Audiencia … Tema_`, secciones en español y una sola `## English` (antes 4 formas y ~35 sin inglés de verdad: se escribió el
+inglés de 14 y se juntó el de los demás), sin «Fase N» / bloques / «llega con …» fuera de `<!-- solo-equipo -->` (los «Para El Compa» y lo
+interno de admin-equipo quedan solo-equipo), y hechos viejos corregidos contra el código (tarjeta en pedidos, devoluciones a la tarjeta, boletos
+que «abren pronto», series, Booking de Doctores y de Auto/Hogar, SMS de citas y mesas, monedas de bienvenida, puntos, Repartidor, Transacciones con
+dinero…; lista en REVISION 7a). `scripts/ayuda/indexar.mjs` (SQL a psql; `deploy.sh` 3c-bis con `node:22-alpine`, sin red, `|| log`; CI lo corre
+dos veces). Código: `lib/compa/ayuda-indice.ts` (`audienciasDe` con la sesión, `temasAyuda`, `listaAyuda`, `buscarAyuda` GIN con rango y caída a
+«cualquiera» y al otro idioma, `articulo`, `titulosVisibles`, `ayudaAdmin`, `pausarAyuda`); pantallas **`/ayuda`** (Centro de ayuda: buscador, chips
+de tema, tarjetas por tema; escritorio con Temas y «¿No encontraste lo que buscas?») y **`/ayuda/[slug]`** (artículo con «See in English / Ver en
+español», secciones en tarjetas, «Más en {tema}», 404 si no es de tu audiencia, «se está revisando» si está pausado), `md.tsx` (Markdown sin HTML
+crudo; «`otro.md`» → enlace solo si lo puedes leer); Super Admin › **Textos y páginas › Ayuda** (`/admin/textos`, cms: cifras, filtros, cursor,
+Pausar / Volver a usar con motivo, historial). Enlaces: Mi cuenta › Ayuda (y navegación de escritorio), Panel › Más › Ayuda (`/ayuda?t=panel`),
+To'Latino Puerta › Cómo funciona la puerta. De paso: 3 textos de pantalla viejos («la venta en la app abre pronto» en Publica tu evento y el editor de
+eventos; «(Fase 2)» en Equipo). Guardianes **`ayudaConForma`**, **`ayudaSinFaseInterna`** (también textos de pantallas), **`compaAyudaPorAudiencia`**
+y `libroSoloInsercion` ampliado (36/36 al revés, `alreves7a`); e2e `ayu7a` 56 ✓ (vecino sin y con cuenta, dueña, portero, Admin; pausar ↔ volver;
+reindexar sin cambios). Sigue **7b** (Soporte: casos TK-, Mi cuenta › Ayuda y soporte, panel y Super Admin › Soporte; semilla 0040).
+
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

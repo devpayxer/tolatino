@@ -1,9 +1,9 @@
 # Tu herramienta de Doctores y Profesionales · Clinic and professional tools
 
-_Pantalla: Panel › Lo que vendes › «Seguros e idiomas» (Doctores) o «Licencias y el total por escrito» (Profesionales).
-Versión: Fase 4 · bloque 4h-2 (6 nov 2026)._
+_Pantallas: Panel › Lo que vendes › «Seguros e idiomas» (Doctores) o «Licencias y el total por escrito» (Profesionales). Versión: 6 nov 2026.
+Audiencia: negocio. Tema: panel._
 
-## Qué hace (ES)
+## Qué hace
 Cada toque se guarda al momento y tu página y Buscar lo dicen enseguida.
 
 **Doctores · Seguros e idiomas**
@@ -36,14 +36,7 @@ Cada toque se guarda al momento y tu página y Buscar lo dicen enseguida.
 - **¿To'Latino ve el historial de mis pacientes?** No. El seguro del paciente solo se usa para decirle si lo aceptas y cuánto paga.
 - **¿Por qué no puedo poner los filtros a mano?** Salen de lo que marcas aquí y de tus servicios, para que Buscar diga siempre la verdad.
 
----
-## What it does (EN)
-Clinics set the insurers they take, the uninsured visit price, languages, video visits, interpreter, new patients, the
-walk-in wait and who can come (income-based, no papers). Professionals: legal ones manage licenses, what they do not do,
-payment plan, urgent cases and THE TOTAL, IN WRITING (fee + government fee per flat-fee service); others set delivery days,
-warranty, estimate first, or how many insurers they compare. Every tap saves; your page and Search update right away.
-
-## La licencia de cada profesional (4h-3) · Each professional's license
+## La licencia de cada profesional · Each professional's license
 - **Panel › Tu página › Equipo › (la persona) › SU LICENCIA:** eliges su licencia (Médico MD/DO, PA-C, enfermera
   practicante, dentista, abogado…), escribes el número y tocas **Mandar a verificar**. To'Latino la busca en el registro oficial
   del estado (en Pensilvania, PALS) en 72 h.
@@ -52,3 +45,11 @@ warranty, estimate first, or how many insurers they compare. Every tap saves; yo
 - Si la persona sale del equipo, su licencia se retira con ella.
 - EN: add each professional's license and number from their Team page; it shows only after To'Latino verifies it in the
   state registry. Only verified professionals can be picked when booking.
+
+## English
+
+### What it does
+Clinics set the insurers they take, the uninsured visit price, languages, video visits, interpreter, new patients, the
+walk-in wait and who can come (income-based, no papers). Professionals: legal ones manage licenses, what they do not do,
+payment plan, urgent cases and THE TOTAL, IN WRITING (fee + government fee per flat-fee service); others set delivery days,
+warranty, estimate first, or how many insurers they compare. Every tap saves; your page and Search update right away.

@@ -1,8 +1,8 @@
 # Ayuda con la cita · Appointment help
 
-_Pantallas: la cita (`/cita/{n}`, botón **Ayuda con la cita** y aviso de la solicitud), `/cita/{n}/ayuda`
-(APP-NEG-CITA-AYUDA y su estado), Panel › Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Admin ›
-Colas › **Ayuda con pedidos y citas** y Super Admin › Transacciones › **Citas**. Versión: Fase 3 · bloque 3e (6 nov 2026)._
+_Pantallas: la cita (`/cita/{n}`, botón **Ayuda con la cita** y aviso de la solicitud), `/cita/{n}/ayuda` (APP-NEG-CITA-AYUDA y su estado), Panel ›
+Hoy («Ayuda con citas · responde en 24 h») y el detalle de la cita, Super Admin › Colas › **Ayuda con pedidos y citas** y Super Admin › Transacciones
+› **Citas**. Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
 - **La persona** pide ayuda con una cita que ya pasó (hasta 7 días). Elige el motivo: *Cobraron más del precio publicado*,
@@ -44,9 +44,8 @@ el local te lo devuelve el negocio en el local.
 **¿La reseña sirve para pedir un reembolso?** No: la reseña cuenta tu experiencia; para arreglos y devoluciones está Ayuda
 con la cita.
 
----
-
 ## English
+
 After a booking (up to 7 days), the client can ask for help: pick a reason, describe what happened (15+ characters), add
 photos (required for an overcharge or a bad result) and choose a fix (redo at no charge, a refund, or just let them know).
 The business replies within 24 hours from Today or the booking detail: accept, propose a refund amount, or decline, always

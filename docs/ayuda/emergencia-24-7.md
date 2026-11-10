@@ -1,11 +1,11 @@
 # Emergencia 24/7 · 24/7 emergency
 
-_Pantallas: la hoja del servicio de emergencia (en negocios de Hogar con 24 h) › «Pedir ayuda ahora», `/emergencia`, el
-estado `/pre/{E-…}`, Panel › Hoy (arriba, en rojo) y el detalle de la emergencia. Versión: Fase 4 · bloque 4e (6 nov 2026)._
-
-> **Si huele a gas, hay chispas o humo, sal de la casa y llama al 911.** Esta línea sale siempre en la emergencia.
+_Pantallas: la hoja del servicio de emergencia (en negocios de Hogar con 24 h) › «Pedir ayuda ahora», `/emergencia`, el estado `/pre/{E-…}`, Panel ›
+Hoy (arriba, en rojo) y el detalle de la emergencia. Versión: 6 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué hace
+> **Si huele a gas, hay chispas o humo, sal de la casa y llama al 911.** Esta línea sale siempre en la emergencia.
+
 - Eliges **qué pasa** (fuga que no para, sin calefacción, chispas o sin luz, inodoro o drenaje desbordado, te quedaste
   afuera, daño por tormenta), tu casa, cómo entrar si no estás, fotos si puedes (hasta 3) y si es ahora o en 3 horas.
   Antes de mandar ves cuántos negocios llegan y el **rango de sus salidas con recargo**.
@@ -33,8 +33,9 @@ estado `/pre/{E-…}`, Panel › Hoy (arriba, en rojo) y el detalle de la emerge
 **¿Cuánto cuesta?** La salida que ves (con el recargo de emergencia incluido). Lo demás te lo cotizan antes de hacerlo.
 **¿Por qué no aparece un negocio?** Solo reciben emergencias los negocios Pro con 24 h que hacen ese trabajo y llegan a tu casa.
 
----
-## What it does (EN)
+## English
+
+### What it does
 Pick what is happening, your home and access notes; it goes to every Pro 24/7 business that does that job and reaches you.
 The first to accept comes: you see their name, arrival and call-out price, and it becomes an "on the way" visit. Nobody
 within 15 minutes → "Nobody available" (nothing charged). The 911 line is always shown.

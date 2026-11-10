@@ -1,10 +1,9 @@
 # Apartar productos · Hold products
 
-_Pantallas: ficha › pestaña **Tienda** (la hoja del artículo y la barra «Tu apartado»), `/n/{negocio}/apartar`, tu apartado
-`/apartado/{A-…}`, Panel › Hoy › «Apartados» y su detalle. Versión: Fase 4 · bloque 4f-3 (6 nov 2026); Tiendas con tallas
-y horas propias en el bloque 4q (7 nov 2026). En las Tiendas la pestaña se llama **Productos**._
+_Pantallas: ficha › pestaña **Tienda** (la hoja del artículo y la barra «Tu apartado»), `/n/{negocio}/apartar`, tu apartado `/apartado/{A-…}`, Panel ›
+Hoy › «Apartados» y su detalle. En las Tiendas la pestaña se llama **Productos**. Versión: 7 nov 2026. Audiencia: vecino. Tema: pedidos._
 
-## Qué hace (ES)
+## Qué hace
 En la Tienda de un taller o de un negocio del hogar (baterías, gomas, termostatos, calentadores…) puedes **apartar** lo que
 quieres y pagarlo en la caja cuando pases. **Apartar no cobra nada.** El precio que ves es el que pagas en la caja.
 1. Tocas **Apartar** en el artículo, eliges la **talla** o el **número** si lo tiene (una talla agotada no se puede elegir; si
@@ -62,9 +61,9 @@ en la caja) o *Envío a tu casa* (llega en los días que dice la tienda, con el 
 - **¿Cuándo me cobran el envío?** Cuando la tienda lo envía. Antes solo se retiene.
 - **¿Puedo apartar varias cosas?** Sí, hasta 10 artículos distintos y 3 de cada uno.
 
----
+## English
 
-## What it does (EN)
+### What it does
 In an auto shop's or home-service business's **Shop**, you can **hold** items and pay at the register when you come.
 **Holding costs nothing**; the price you see is the price you pay. Pick the size or number if it has one (a sold-out size cannot be picked), how many, review your hold, choose when you come
 (today, tomorrow or the day after, at an open hour) and send. The store confirms it has it and **keeps it the hours the store sets** (24, 48 or

@@ -1,8 +1,8 @@
 # Mis seguros · My insurance
 
-_Pantalla: Mi cuenta › Mis seguros. Versión: Fase 4 · bloque 4h-3 (6 nov 2026)._
+_Pantallas: Mi cuenta › Mis seguros. Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
 
-## Qué hace (ES)
+## Qué hace
 Guardas tu seguro (Medicaid, Medicare, CHIP, del trabajo o privado, o «No tengo seguro»), su plan, para quién es (para mí,
 para mi hijo o hija, para otra persona) y, si quieres, tu número de miembro. En cada consultorio te decimos si lo aceptan y
 cuánto pagas.
@@ -19,7 +19,8 @@ cuánto pagas.
 ## FAQ
 - **¿To'Latino ve mi historial médico?** No. Tu seguro solo se usa para decirte si lo aceptan y cuánto pagas.
 
----
-## What it does (EN)
+## English
+
+### What it does
 Save your insurance, plan, who it is for and optionally your member ID (we keep only the last 4). We tell you at every clinic
 whether they take it and what you pay. Pick your main one, remove any (visits already requested do not change).

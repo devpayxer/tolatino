@@ -1,6 +1,6 @@
 # Buscar · Search
 
-_Pantalla: APP-BUSCAR (explorar, sugerencias, resultados, sin resultados, voz). Versión: Fase 1 · bloque 1f (5 nov 2026)._
+_Pantallas: APP-BUSCAR (explorar, sugerencias, resultados, sin resultados, voz). Versión: 5 nov 2026. Audiencia: vecino. Tema: explorar._
 
 ## Qué hace
 Busca negocios en tu ciudad escribiendo como hablas. Entiende lo que importa y lo convierte en filtros: «abierto
@@ -30,13 +30,15 @@ ahora», «sin cita», «con delivery», «24 horas», «a domicilio», «que ac
 ## Preguntas frecuentes
 - **¿Dónde quedan mis búsquedas recientes?** Solo en tu teléfono o computadora. Puedes borrarlas con **Borrar** o la ×.
 - **¿«Lo más buscado» es real?** Sí: sale de las búsquedas de la semana en tu ciudad que encontraron algo.
-- **¿Puedo buscar platos, servicios o eventos?** Llegan con sus módulos (menú en la Fase 2, eventos en la Fase 6).
+- **¿Puedo buscar platos, servicios o eventos?** Los eventos sí: salen en «Todo» y en la pestaña Eventos. Los platos y los servicios
+  se ven dentro de la página de cada negocio; Buscar encuentra el negocio por su nombre, su categoría y lo que ofrece.
 
 ## Para El Compa
+<!-- solo-equipo -->
 - Si alguien no encuentra algo, sugiere quitar palabras o usar una categoría; si no existe, «Avísame cuando haya».
 - Las búsquedas sin resultados le dicen al equipo qué negocios faltan en la ciudad.
 
-## Vecinos y «Pregúntale al barrio» (Fase 5 · 5e, 7 nov)
+## Vecinos y «Pregúntale al barrio»
 - **Con tu cuenta**, los resultados traen **«Lo que dicen los vecinos»**: publicaciones de la Comunidad de tu ciudad que dicen lo
   que buscaste (la parte que encajó, en negrita), con sus votos y comentarios, ordenadas por **votos**, con la línea «Aquí nada se
   compra: el orden lo ponen los votos de los vecinos.». «Ver N» (o la pestaña **Vecinos** en escritorio) trae la lista completa,
@@ -45,15 +47,14 @@ ahora», «sin cita», «con delivery», «24 horas», «a domicilio», «que ac
 - **Pregúntale al barrio** (en «¿No encontraste lo que buscabas?», sin resultados y en Vecinos) abre **Publicar** como pregunta con lo
   que buscaste ya escrito. Sin sesión, primero entras y vuelves con el texto.
 
----
+## English
 
-## In English
 Search businesses in your city by typing like you talk. It turns phrases into filters (open now, walk-in, delivery,
 24 hours, comes to you, takes Medicaid/Medicare/CHIP, uninsured, no SSN, speaks Spanish, free, near me, top rated),
 understands English and Spanish and fixes typos. Suggestions appear while typing; results show «We understood» with
 removable filters, quick filters, sort (Pro first), the full list with pages, «None yet» with an alert, «Did you
 mean…?», and voice search when the browser supports it. Recent searches stay on your device; «Most searched» comes
 from this week's real searches in your city.
-Neighbors (5e): signed-in people also get "What neighbors say" (Community posts from their city matching the search, ordered by
+Neighbors: signed-in people also get "What neighbors say" (Community posts from their city matching the search, ordered by
 votes, without blocked or muted people) and a Neighbors tab; signed-out people see nothing from neighbors. "Ask the neighborhood"
 opens Post as a question with the search text already written.

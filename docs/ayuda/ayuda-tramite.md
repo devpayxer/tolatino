@@ -1,4 +1,7 @@
-# Ayuda con el trámite (Profesionales)
+# Ayuda con el trámite (Profesionales) · Help with a professional case
+
+_Pantallas: Tu consulta con una oficina de Profesionales (`/cita/{C-…}`) › **Ayuda con el trámite** (`/cita/{C-…}/ayuda`), Panel › Hoy de la oficina y
+Super Admin › Colas › Ayuda con pedidos y citas. Versión: 10 nov 2026. Audiencia: vecino. Tema: citas._
 
 ## Qué es
 Si algo salió mal con una oficina (abogado, contador, notario, gestor…) que contrataste por To'Latino, pides ayuda desde tu
@@ -32,9 +35,8 @@ documento · No me contesta · Mal trato · Otra cosa.
 - **¿Me garantizan un resultado?** Nadie puede garantizar un resultado; sí lo acordado en el total por escrito.
 - **¿La oficina ve mi nombre?** Sí: es tu caso con ellos. Nunca se publica de qué trata.
 
----
+## English
 
-# Case help (EN)
 From your consultation: **Case help**. Allowed while the office has your case (hired) and up to 7 days after it ends.
 Reasons: charged more than the written total, offered something they could not legally do, did not do what was agreed,
 missed a deadline or lost a document, does not answer, treated badly, something else. Photos are private and deleted 90 days

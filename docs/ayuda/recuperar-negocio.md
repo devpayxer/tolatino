@@ -1,8 +1,8 @@
 # Recuperar tu negocio · Recover your business
 
-_Pantallas: ONB-NEG-RECUPERAR (`/recuperar/{negocio}`), «¿Es tuyo? Reclámalo» de Publica tu negocio, las semillas
-«Sin reclamar» de la página de categoría, el aviso del panel del dueño y la cola «Cambios sensibles» del Super Admin.
-Versión: Fase 1 · bloque 1j (5 nov 2026). Decisiones R1 y R2 (`docs/DECISIONES.md`)._
+_Pantallas: ONB-NEG-RECUPERAR (`/recuperar/{negocio}`), «¿Es tuyo? Reclámalo» de Publica tu negocio, las semillas «Sin reclamar» de la página de
+categoría, el aviso del panel del dueño y la cola «Cambios sensibles» del Super Admin. Decisiones R1 y R2 (`docs/DECISIONES.md`). Versión: 5 nov 2026.
+Audiencia: vecino. Tema: negocios._
 
 ## Qué hace
 - **Para quien es dueño de un negocio que ya está en To'Latino** (lo puso un vecino, lo cargó el equipo o lo maneja
@@ -48,9 +48,8 @@ persona de To'Latino lo decida, nada cambia.
 **¿Qué ve el resto de la gente de la foto del documento?** Nada. La guarda To'Latino en privado; solo el equipo con
 permiso de la cola la abre.
 
----
-
 ## English
+
 Recover your business lets the owner of a business already on To'Latino take it over. They pick their role (owner,
 partner, manager) and how we check it: a 6-digit **code texted to the business phone** (decision R1; only when the
 business has no owner and has a phone, shown masked) or a **document** (business license, utility bill or IRS EIN

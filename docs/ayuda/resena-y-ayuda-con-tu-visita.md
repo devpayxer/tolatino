@@ -1,20 +1,16 @@
 # Reseña y Ayuda con tu visita, tu prueba de manejo o tu fecha · Review and help with your visit, test drive or date
 
 _Pantallas: Tu visita (`/vis/D-…`) › estrellas y «Ayuda con la visita» / «Ayuda con el dealer» (`/vis/D-…/ayuda`); Tu lugar en la iglesia
-(`/insc/I-…`) › «Ayuda con la iglesia» (`/insc/I-…/ayuda`); la página del lugar › Reseñas («Lo que importa en Bienes Raíces / al comprar un
-carro / en una iglesia»). Versión: Fase 4 · bloque 4if (7 nov 2026)._
+(`/insc/I-…`) › «Ayuda con la iglesia» (`/insc/I-…/ayuda`); la página del lugar › Reseñas («Lo que importa en Bienes Raíces / al comprar un carro / en
+una iglesia»). Versión: 7 nov 2026. Audiencia: vecino. Tema: citas._
 
-## Qué hace · What it does
-**ES.** Cuando pasó tu visita, tu prueba de manejo o tu fecha en la iglesia (pedida por To'Latino) puedes dejar una **reseña verificada** con
+## Qué hace
+Cuando pasó tu visita, tu prueba de manejo o tu fecha en la iglesia (pedida por To'Latino) puedes dejar una **reseña verificada** con
 las preguntas que importan. Si algo no fue como se publicó, pides **Ayuda** hasta 7 días después: el negocio responde en 24 horas y, si no
 responde o no estás de acuerdo, To'Latino lo revisa en 48 horas. **En To'Latino no se cobra nada por ver, por la prueba ni por la ayuda de
 una iglesia**: lo que te cobraron fuera de la app te lo devuelve el negocio directamente y tú confirmas «Me lo devolvieron».
-**EN.** Once your visit, test drive or church date (booked on To'Latino) happens you can leave a verified review. If something was not as
-posted, ask for Help up to 7 days later: the business replies within 24 hours; otherwise To'Latino reviews it within 48 hours. Nothing is
-charged on To'Latino for viewing, test drives or church help: whatever you were charged outside the app, the business refunds you directly
-and you confirm «They refunded me».
 
-## Cómo se usa · How to use it
+## Cómo se usa
 - **Reseña:** estrellas, las preguntas de tu caso y tu texto. Bienes Raíces: si lo de mudarte era lo que viste, si ver fue gratis, si era como
   en las fotos, si llegaron a la hora, si te dijeron claro lo que piden. Autos: si el precio en la puerta fue el que viste, si te enseñaron el
   título y el historial, si el carro era como en las fotos, si te atendieron a la hora, si te dejaron pensarlo sin presión. Iglesias: si la
@@ -25,7 +21,7 @@ and you confirm «They refunded me».
   (Iglesias) o solo avisar.
 - **Cuándo:** cuando pasó (o, confirmada, cuando ya llegó la hora: lo de «me cobraron por ver» pasa en la puerta) y hasta 7 días después.
 
-## Qué pasa en cada caso · What happens
+## Qué pasa en cada caso
 - **«Me cobraron por ver la propiedad»** y **«Pidieron más para mudarme de lo publicado»** (con foto) van **directo a To'Latino**, con
   prioridad, sin esperar al negocio. Mientras lo revisamos, **la propiedad no se ve en To'Latino**. Nunca pagues un depósito antes de ver la
   propiedad y firmar el contrato.
@@ -48,7 +44,16 @@ and you confirm «They refunded me».
 - **¿Qué pasa si el negocio no me devuelve?** Toca «No me lo devolvieron»: To'Latino lo revisa en 48 horas y decide.
 - **Si me marcaron «No vino» pero fui y no llegaron, ¿puedo pedir ayuda?** Sí: elige «No llegaron a la visita».
 
-**EN FAQ.** A review does not refund money; use Help. Reviews show as verified only if the visit, test drive or date was booked on To'Latino
+## English
+
+### What it does
+Once your visit, test drive or church date (booked on To'Latino) happens you can leave a verified review. If something was not as
+posted, ask for Help up to 7 days later: the business replies within 24 hours; otherwise To'Latino reviews it within 48 hours. Nothing is
+charged on To'Latino for viewing, test drives or church help: whatever you were charged outside the app, the business refunds you directly
+and you confirm «They refunded me».
+
+### FAQ
+A review does not refund money; use Help. Reviews show as verified only if the visit, test drive or date was booked on To'Latino
 and happened. If the business does not refund you, tap «They did not refund me» and To'Latino decides. If you were marked as a no-show but
 went and nobody came, choose «They did not show up for the visit». Charging to view, asking for more to move in than posted, or asking for
 money for church help goes straight to To'Latino and the listing is paused while we review.

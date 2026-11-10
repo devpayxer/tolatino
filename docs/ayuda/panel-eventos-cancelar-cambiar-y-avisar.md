@@ -1,7 +1,7 @@
 # Panel › Eventos: pausar, cambiar la fecha, cancelar y avisar · Pause, change the date, cancel and notify
 
-_Pantalla: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`), parte «Eventos» del equipo; **cancelar** pide
-también la parte «Cobros» (devuelve dinero). Teléfono y escritorio. Versión: Fase 6 · bloque 6e (10 nov 2026)._
+_Pantallas: **Panel › Eventos › la ficha del evento** (`/panel/{negocio}/eventos?det=evt:…`), parte «Eventos» del equipo; **cancelar** pide también la
+parte «Cobros» (devuelve dinero). Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **VENTA · Vendiendo / Venta pausada** (interruptor): páusala si se llenó el local o hay un problema. La página del evento dice «Venta
@@ -39,9 +39,9 @@ también la parte «Cobros» (devuelve dinero). Teléfono y escritorio. Versión
 - **¿Puedo avisar por SMS?** No: tus avisos van en la app. Por SMS solo salen los avisos que manda To'Latino cuando cambia o se cancela una fecha.
 - **¿Puedo cambiar el lugar?** Todavía no desde aquí: cancela y publica otro, o escríbenos.
 
----
+## English
 
-## What it does (English)
+### What it does
 **SALES · Selling / Sales paused** (toggle): buyers still get in; if To'Latino froze sales you cannot reopen them. **Change date or time** (a date
 that has not started): everyone going gets a text; buyers who bought before the change choose on their order, until the new start, **Keep the
 new date** or **Full refund** (100 %, fees included); no answer means they keep it. **Cancel event** (or a date): pick what and **why** (bad

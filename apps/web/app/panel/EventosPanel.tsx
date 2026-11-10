@@ -394,7 +394,7 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
     out.push(tog("check", E2("Contar en la puerta", "Count at the door"), E2("Para saber cuántos llegaron de verdad. Opcional.", "To know how many actually came. Optional."), d.contar, () => set({ contar: !d.contar })));
   }
   if (tix) {
-    out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Boletos, mesas y extras se guardan aquí. La venta en la app abre pronto: hasta entonces no se venden.", "Tickets, tables and extras are saved here. In-app sales open soon: until then they are not sold.") });
+    out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Boletos, mesas y extras se venden en la app cuando el evento sale publicado. El precio que pones es el que paga el cliente, cargos incluidos. En la puerta no se vende.", "Tickets, tables and extras sell in the app once the event is live. The price you set is what the customer pays, fees included. No sales at the door.") });
     out.push({ type: "group", k: bi(F.f.tkL, es).toUpperCase(), link: d.boletos.length < (d.span > 1 ? LIM.boletosDias : LIM.boletos) ? `+ ${bi(F.f.tk1, es)}` : undefined, onLink: () => set({ boletos: [...d.boletos, { id: `t${Date.now()}`, n: { es: "", en: "" }, s: { es: "", en: "" }, p: F.f.p0, cap: 20, off: false, ...(d.span > 1 ? { dy: null } : {}) }] }) });
     out.push(crearPorDia(c, Fm, F));
     d.boletos.forEach((t, i) => out.push(
