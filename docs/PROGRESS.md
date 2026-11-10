@@ -166,7 +166,34 @@ Ayuda con una orden de boletos, Transacciones sin cortesías. Guardianes nuevos 
 (`alreves6d.cjs`). e2e `evt6d` (teléfono y escritorio, contra el simulador; ver REVISION). Ayuda: transferir-boletos,
 cancelar-y-devoluciones-de-boletos, lista-de-espera, ayuda-con-la-orden-de-boletos, panel-eventos-cortesias-y-devoluciones; comprar-boletos,
 mis-boletos-y-el-qr y admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6d» (con la revisión de seguridad).
-**Sigue 6e** (pausar, cambiar fecha, cancelar con devolución total, avisos, liquidación del martes y disputas).
+**6e hecho (10 nov)** — cambios del evento y dinero del organizador: migración 0110 (`event_changes` / `event_notices` / `ticket_choices`
+de solo inserción; `event_cancellations` (una por fecha o evento, running → done); `event_settlements` por fecha con `pay_on` (el martes,
+`evt_pago_dia`) y el trigger que decide todo al pasar a 'paying' (fecha terminada, martes llegado, sin disputas abiertas, sin devoluciones
+pendientes ni cobros a medias, sin boletos vivos de una fecha cancelada, cuenta habilitada y sin pausar, sin la retención del organizador nuevo;
+montos de `evt_liq_calc` y deuda de `evt_liq_deuda` con candado por negocio; llave única `evt-liq-<fecha>`; fija una vez en camino);
+`event_settlement_reversals` (nunca más de lo transferido); `sim_transfers` / `sim_transfer_reversals`; `events.sales_frozen_*` (+ trigger
+`events_congelado`); `event_organizers.payout_cleared_*`; `refunds.initiated_by 'event_moved'`; colas `evtcx` y `evtpago`; plantillas
+evt_cancelado / evt_fecha_cancelada / evt_movido / evt_hora_cambio (SMS críticos), evt_aviso (sin SMS), evt_devolucion_total, evt_pago,
+evt_pago_retenido, evt_venta_congelada; claves evt_aviso_max, evt_pago_dia, evt_retener_nuevo_cents, evt_cancelaciones_confianza,
+evt_cancelaciones_dias, evt_ajuste_dias, evt_cancelar_lote; índices de la liquidación). Sin semilla. Código: `lib/evt-cambios.ts` (pausar /
+reanudar, congelar, mover con avisos, elegir «Me quedo» / «Devolución total», cancelar una fecha o el evento con devolución total en lote
+reanudable + avisos una vez + Confianza, avisos a los que van, lo del panel, la orden y la ficha), `lib/evt-liquidacion.ts` (crear, liquidar el
+martes, retener automático, pagar con la llave, reparar, revertir deudas, retener / soltar del admin, panel, admin y CSV),
+`boletos-despues.anotarDevolucionTotal`, `boletos.soltarApartadosDe`, `rsvp.moverRsvps`, `pasarela.transferir` / `revertirTransferencia`
+(+ simulador y contrato), evidencia de disputas de boletos; barrido evtCancelaciones · evtLiquidar · evtLiquidacionesReparar · evtAjustes.
+Pantallas: panel (`app/panel/EventosCambios.tsx`: VENTA, cambiar fecha u hora, cancelar con QUÉ CANCELAS · ¿POR QUÉ?, AVISOS A LOS QUE VAN,
+DINERO DEL EVENTO; Cobros › PAGOS DE EVENTOS, Cobros con tarjeta para organizadores), la orden (cambió de fecha con la elección, cancelado por
+el organizador, avisos), la ficha (Cambió de fecha, aviso en Antes de ir) y la página de un evento cancelado; Super Admin: la ficha del evento
+(cambios, dinero por fecha, Congelar ventas, Cancelar y devolver todo), `/admin/eventos/liquidaciones` (KPI, filtros, retener / soltar, CSV),
+Colas «Organizadores que cancelan» y «Pagos de eventos retenidos». Guardianes nuevos `scriptsSeLeen` (node --check a scripts/ e infra/: la
+falla del CI de 6d), `contratoCubreLaPasarela`, `devolucionTotalAlCancelar`, `pagoDespuesDelEvento`, `avisoEventoSmsSoloCritico`,
+`libroCambiosEvento`, `dineroSinDesbordar` (centavos × centavos en bigint: Transacciones, Ingresos, 360 › Dinero y Cobros se caían con un
+cobro de $2,250 — corregido en los 6 lugares); ampliados `revisionAntesDePublicar` (reanudar un pausado aprobado) y `devolverCoincide` (el cuerpo
+de cada acción, también cancelar) — 38/38 al revés (`alreves6e.cjs`; `alreves6a` 26/26, `alreves6b` 31/31, `alreves6c` 42/42, `alreves6d` 42/42). Contrato de Stripe
+corrido en local contra stripe-mock (todas las llamadas). e2e `evt6e` 96 ✓ (teléfono y escritorio; ver REVISION) y regresión evt6d 126 ✓, evt6c 70 ✓,
+disp2r, ing2s y adm5i verdes; base nueva (migraciones dos veces + semillas + semillas cambiadas) sale 0. Ayuda: panel-eventos-cancelar-cambiar-y-avisar, panel-eventos-cobros, si-cambia-o-se-cancela-un-evento; disputas,
+admin-negocio-dinero y admin-eventos-y-boletos al día. Revisar en el sandbox: `docs/REVISION.md` «### 6e» (con la revisión de seguridad).
+**Sigue 6f** (series y eventos de varios días: «Se repite», saltar y cancelar una fecha de la serie con 6e, varios días con pase y aforo por día).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

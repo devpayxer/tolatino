@@ -118,6 +118,44 @@ export const pasarela = {
     }
   },
 
+  /* 6e · La liquidación del martes: transferir lo del organizador desde el saldo de la plataforma a su cuenta conectada (Stripe Transfers),
+     con el `transfer_group` del evento. Idempotente por `idem` (la llave de la liquidación de esa fecha: una sola transferencia por fecha,
+     también en el simulador). El monto lo decide la base (event_settlements); aquí solo se manda. */
+  async transferir(x: { centavos: number; destino: string; grupo: string; idem: string; meta: Record<string, string> }): Promise<{ ok: boolean; id?: string; codigo?: string }> {
+    // Una cuenta simulada solo recibe del simulador, y el simulador solo paga a cuentas simuladas.
+    if ((modoPago() === "simulador") !== x.destino.startsWith("acct_sim_")) return { ok: false, codigo: "modo" };
+    if (modoPago() === "simulador") {
+      const id = `tr_sim_${x.idem}`.slice(0, 200);
+      await db().query(`insert into sim_transfers (id, destination, amount_cents, transfer_group) values ($1, $2, $3, $4) on conflict (id) do nothing`, [id, x.destino, x.centavos, x.grupo]);
+      const t = (await db().query<{ amount_cents: number; destination: string }>(`select amount_cents, destination from sim_transfers where id = $1`, [id])).rows[0];
+      // La misma llave con otro monto o destino es un error (como Stripe con Idempotency-Key).
+      return t && t.amount_cents === x.centavos && t.destination === x.destino ? { ok: true, id } : { ok: false, codigo: "idempotency_error" };
+    }
+    if (modoPago() === "apagado") return { ok: false, codigo: "apagado" };
+    try {
+      const t = await stripe<{ id: string }>("POST", "/v1/transfers", { amount: x.centavos, currency: "usd", destination: x.destino, transfer_group: x.grupo, metadata: x.meta }, { idem: x.idem });
+      return { ok: true, id: t.id };
+    } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
+  },
+  /* 6e · Revertir (parte de) una transferencia: un ajuste después de pagar que no tiene liquidación siguiente donde descontarse. */
+  async revertirTransferencia(transfer: string, centavos: number, idem: string): Promise<{ ok: boolean; id?: string; codigo?: string }> {
+    if (transfer.startsWith("tr_sim_")) {
+      const id = `trr_sim_${idem}`.slice(0, 200);
+      const r = await tx(async (c) => {
+        const nueva = (await c.query(`insert into sim_transfer_reversals (id, transfer_id, amount_cents) values ($1, $2, $3) on conflict (id) do nothing returning id`, [id, transfer, centavos])).rowCount;
+        if (!nueva) return (await c.query<{ amount_cents: number }>(`select amount_cents from sim_transfer_reversals where id = $1`, [id])).rows[0]?.amount_cents === centavos;
+        const u = await c.query(`update sim_transfers set reversed_cents = reversed_cents + $2 where id = $1 and reversed_cents + $2 <= amount_cents`, [transfer, centavos]);
+        if (!u.rowCount) throw new SinSaldoSim();
+        return true;
+      }).catch((e) => { if (e instanceof SinSaldoSim) return false; throw e; });
+      return r ? { ok: true, id } : { ok: false, codigo: "amount_too_large" };
+    }
+    try {
+      const r = await stripe<{ id: string }>("POST", `/v1/transfers/${encodeURIComponent(transfer)}/reversals`, { amount: centavos }, { idem });
+      return { ok: true, id: r.id };
+    } catch (e) { return { ok: false, codigo: e instanceof ErrorStripe ? e.codigo ?? e.tipo : "error" }; }
+  },
+
   /* Cobro directo a To'Latino (suscripción Pro): sin negocio de destino, con la tarjeta guardada del que paga, fuera de
      sesión. Idempotente por `idem` (un cobro por período). */
   async cobrarDirecto(x: { centavos: number; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {

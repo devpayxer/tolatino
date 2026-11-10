@@ -745,9 +745,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
 
 ## Fase 6 · 6c (boletos, mesas, extras y códigos)
-- [ ] **6c · Transferir al organizador:** el cobro de boletos queda en la plataforma (`transfer_group` del evento); la transferencia del martes
+- [x] **6c · Transferir al organizador:** _hecho en 6e (10 nov): la liquidación del martes por fecha (lib/evt-liquidacion.ts)._ el cobro de boletos queda en la plataforma (`transfer_group` del evento); la transferencia del martes
       después de la fecha, las retenciones y el ajuste por devoluciones llegan con 6e. Hasta entonces el dinero no sale solo. (6c, 10 nov)
-- [ ] **6c · Devoluciones de boletos:** _6d (10 nov): cancelar el comprador (menos el cargo, hasta 24 h antes) y devolver desde el panel
+- [x] **6c · Devoluciones de boletos:** _6e (10 nov): la devolución total al cancelar el evento o una fecha, en lote e idempotente, hecha._ _6d (10 nov): cancelar el comprador (menos el cargo, hasta 24 h antes) y devolver desde el panel
       (100 %) hechos, idempotentes y con el reintento del barrido._ Falta la devolución total al cancelar el evento (6e); «Anular» del admin
       no devuelve dinero. (6c, 10 nov)
 - [ ] **6c · 3D Secure:** si el banco pide verificación extra, se pide otra tarjeta (como el resto de la app). (6c, 10 nov)
@@ -793,9 +793,28 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6d · La puerta (6g/6h) usa `bol_vigente`** (válido y sin transferencia pendiente) y el paquete sin conexión excluye boletos en
       transferencia y cortesías quitadas; `door_delta` lleva transferidos y devueltos. (6d, 10 nov)
 - [ ] **6d · Cortesías sin cuenta en la puerta:** se buscan por nombre en `/puerta` (6g). (6d, 10 nov)
-- [ ] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov)
-- [ ] **6d · Liquidación (6e):** `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
+- [x] **6d · Contrato con Stripe de `POST /v1/refunds` sin `reverse_transfer`** (cobro de la plataforma): corre en el CI con stripe-mock. (6d, 10 nov) _6e (10 nov): corrido en local contra stripe-mock con todo el contrato (también transfers y reversals)._
+- [x] **6d · Liquidación (6e):** _hecho en 6e (10 nov): evt_liq_calc usa refunds y fee_waived_cents; lo devuelto después de pagar resta de la siguiente o revierte._ `ticket_refund_lines` (`fee_kept_cents`, `fee_waived_cents`) es la fuente de lo devuelto por fecha; una
       devolución después de pagado al organizador resta de la siguiente. (6d, 10 nov)
 - [ ] **6d · Abogado:** política de cancelación del comprador (24 h, menos el cargo) y de transferencia (sin precio) en los Términos; ley de
       reventa de PA. (6d, 10 nov)
 
+
+## Fase 6 · 6e (cambios del evento y dinero del organizador)
+- [ ] **6e · Contrato de `pasarela.cliente` (POST /v1/customers):** lee la base antes de llamar a Stripe y el contrato corre sin base; es la
+      única llamada a Stripe fuera de `scripts/contrato-stripe/prueba.cjs` (guardián `contratoCubreLaPasarela` la deja anotada). Darle un
+      doble de la base al contrato y probarla. (6e, 10 nov)
+- [ ] **6e · Cargo de Stripe por disputa ($15):** lo absorbe To'Latino; decidir si se le cobra al organizador. (6e, 10 nov)
+- [ ] **6e · Revertir una transferencia sin saldo del organizador:** Stripe la rechaza; queda pendiente y se reintenta con su llave. Falta la
+      alerta en Dinero y el camino manual (cobrarle al organizador). (6e, 10 nov)
+- [ ] **6e · Cambiar el lugar de un evento con ventas:** no se construyó (cancelar y publicar otro, o un cambio que revisa To'Latino). Las
+      transferencias de boletos pendientes no se ajustan al mover la fecha (vencen a la hora de antes). (6e, 10 nov)
+- [ ] **6e · Super Admin «Extender ventas» y «Ajustar cupo»** (admin-dashboard L183–185): con 6j. «Congelar» y «Cancelar y devolver todo» sí. (6e, 10 nov)
+- [ ] **6e · Alerta «evento con sobreventa»** (admin-dashboard L74): con las existencias y sus checks no debería pasar; la alerta viva llega con 6j. (6e, 10 nov)
+- [ ] **6e · Costo de la tarjeta absorbido (§6 #24):** se guarda un estimado (2.9 % + 30 ¢ por orden devuelta) para Confianza; con Stripe real,
+      leer el `balance_transaction.fee` de cada cobro. (6e, 10 nov)
+- [ ] **6e · Payouts de Stripe al banco del organizador:** la transferencia llega a su saldo de Stripe el martes; de ahí al banco con su
+      calendario (semanal, martes). Con dinero real, confirmar que el calendario y la transferencia del mismo martes no atrasan una semana. (6e, 10 nov)
+- [ ] **6e · Avisos del organizador sin moderación:** van tal cual a los que van (sin SMS); pasarlos por la auto-moderación (5d) antes de abrir. (6e, 10 nov)
+- [ ] **6e · Abogado:** To'Latino como comerciante del cobro y la transferencia al organizador (1099-K), la política de cancelación del
+      organizador y del cambio de fecha en los Términos. (6e, 10 nov)

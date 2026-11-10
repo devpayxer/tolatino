@@ -117,6 +117,8 @@ export async function listaCasos(s: Staff, f: { cola?: Cola | null; mios?: boole
       : x.queue === "repUsr" ? { title: `Vecino reportado · ${x.uname ?? "Vecino"}`, sub: subCom(x.cn, x.creason, x.cflag) }
       : x.queue === "apel" ? { title: `Apelación ${(x.apel ?? "").split("|")[0]} · ${APELABLE[(x.apel ?? "|sanction").split("|")[1] as Apelable]?.es ?? "contenido"}`, sub: "Segunda revisión · la decide otra persona" }
       // 6a · Eventos a revisar: un evento nuevo o un cambio que importa (la versión anterior sigue en vivo).
+      : x.queue === "evtcx" ? { title: `Organizador que cancela · ${b}`, sub: "Canceló eventos con boletos vendidos · a cada comprador se le devolvió todo" }
+      : x.queue === "evtpago" ? { title: `Pago de evento retenido · ${b}`, sub: "Primer evento grande de un organizador nuevo · revisa antes de pagar" }
       : x.queue === "evt" ? { title: `Evento · ${(x.evt ?? "|").split("|").slice(1).join("|")}`, sub: `${b}${(x.evt ?? "").startsWith("cambio") ? " · cambio que importa · sigue en vivo la versión anterior" : " · nuevo · nada se publica antes"}` }
       : x.queue === "medios" && x.mkind === "com_post" ? { title: "Foto de la Comunidad", sub: x.cflag ? x.cflag.split("|").slice(1).join("|") : "Espera revisión" }
       : x.queue === "rep" ? { title: `Reseña reportada · ${b}`, sub: `${x.rpbiz ? "El negocio pidió revisarla" : MOTIVO_RESENA[x.rpreason ?? "otro"] ?? "Otro motivo"}${x.rpn > 1 ? ` · ${x.rpn} reportes` : ""}` }
@@ -217,6 +219,16 @@ export async function caso(s: Staff, id: string) {
   if (q.queue === "repUsr") return { ...base, negocio: null, persona: await (await import("./admin-confianza")).casoPersona(q.subject_id), banea: s.role === "admin" };
   // 6a · Eventos a revisar: el evento (o el cambio que espera) con todo lo que hace falta para decidir.
   if (q.queue === "evt") return { ...base, negocio, evt: await (await import("./evt-revision")).eventoAdmin(s, q.subject_id), puedeEvt: s.puede("evt", "aprobar") };
+  // 6e · Organizadores que cancelan: sus cancelaciones del plazo (qué, cuándo, motivo, órdenes y lo devuelto, el costo de la tarjeta que
+  // puso To'Latino). Pagos de eventos retenidos: la liquidación y el historial del organizador. Nunca datos de compradores.
+  if (q.queue === "evtcx" && q.business_id) {
+    const L = (await db().query<{ t: string; eid: string; scope: string; motivo: string; at: string; ordenes: number; devuelto: number; costo: number }>(
+      `select e.title->>'es' as t, e.id::text as eid, x.scope, x.reason_key as motivo, to_char(x.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, x.orders_n as ordenes, x.refunded_cents as devuelto, x.card_cost_cents as costo
+         from event_cancellations x join events e on e.id = x.event_id where x.business_id = $1 and x.created_at > now() - make_interval(days => cfg_int('evt_cancelaciones_dias')) order by x.created_at desc limit 30`, [q.business_id])).rows;
+    const o = (await db().query<{ bloqueado: string | null }>(`select blocked_reason as bloqueado from event_organizers where business_id = $1`, [q.business_id])).rows[0];
+    return { ...base, negocio, evtcx: { L, bloqueado: o?.bloqueado ?? null, puedeBloquear: s.puede("evt", "retirar") } };
+  }
+  if (q.queue === "evtpago") return { ...base, negocio, evtpago: await (await import("./evt-liquidacion")).casoLiquidacion(q.subject_id), puedeSoltar: s.puede("tx", "aprobar") };
   if (q.queue === "apel") {
     const ap = q.status === "open" ? await (await import("./apelaciones")).apelacionDeCaso(q.subject_id) : null;
     return { ...base, negocio: null, apel: ap ? { ...ap, mia: ap.por === s.id } : null };

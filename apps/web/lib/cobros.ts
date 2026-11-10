@@ -164,6 +164,8 @@ export type CobrosPanel = {
   semana: { n: number; cobrado: number; comision: number; devuelto: number; neto: number; martes: string };
   cobros: { num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; tarjeta: string | null; disputa: string | null }[];
   tasa: number;
+  /* 6e · Los pagos de eventos por fecha (lib/evt-liquidacion.ts); los pone la página del panel. */
+  eventos?: { filas: import("./evt-liquidacion").FilaLiq[]; deuda: number };
 };
 export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
   await repararPagos(negocio).catch(() => undefined);
@@ -173,14 +175,15 @@ export async function cobrosPanel(negocio: string): Promise<CobrosPanel> {
     db().query<{ n: number; cobrado: number; comision: number; devuelto: number; martes: string }>(
       `with c as (select timezone as tz from cities where id = (select city_id from businesses where id = $1)),
             w as (select date_trunc('week', now() at time zone c.tz) as ini from c)
-       select count(*)::int as n, coalesce(sum(p.amount_cents), 0)::int as cobrado, coalesce(sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / p.amount_cents), 0)::int as comision,
+       select count(*)::int as n, coalesce(sum(p.amount_cents), 0)::int as cobrado, coalesce(sum(p.fee_cents::bigint * (p.amount_cents - p.refunded_cents) / p.amount_cents), 0)::int as comision,
               coalesce(sum(p.refunded_cents), 0)::int as devuelto, to_char((select ini from w) + interval '8 days', 'YYYY-MM-DD') as martes
          from payments p, c, w where p.business_id = $1 and p.status in ('captured', 'partially_refunded', 'refunded') and p.captured_at at time zone c.tz >= w.ini and p.transfer_group is null`, [negocio]),
     db().query<{ num: string; quien: string; monto: number; comision: number; devuelto: number; estado: string; at: string; brand: string | null; l4: string | null; disputa: string | null }>(
       `select o.number as num, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), '—') as quien, p.amount_cents as monto, p.fee_cents as comision,
               p.refunded_cents as devuelto, p.status as estado, to_char(p.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, p.card_brand as brand, p.card_last4 as l4,
               (select d.status from disputes d where d.payment_id = p.id order by d.id desc limit 1) as disputa
-         from payments p join operations o on o.id = p.operation_id join users u on u.id = p.user_id where p.business_id = $1 order by p.id desc limit 30`, [negocio]),
+         from payments p join operations o on o.id = p.operation_id join users u on u.id = p.user_id
+        where p.business_id = $1 and p.transfer_group is null order by p.id desc limit 30`, [negocio]), // 6e: los boletos (cobro de la plataforma) van en PAGOS DE EVENTOS
     db().query<{ r: number }>(`select rate_bp as r from fee_rules where kind = 'ped' and effective_from <= now() order by effective_from desc, id desc limit 1`),
   ]);
   const x = a.rows[0], k = s.rows[0]!;

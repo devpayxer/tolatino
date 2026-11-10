@@ -726,7 +726,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       correr a mano sin errores. 6c (10 nov): 0108 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva de PostGIS:
       migraciones dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (sin equipo, 0036 deja los
       códigos y no siembra órdenes). 6d (10 nov): 0109 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones
-      dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (6d no trae semilla). CI y 0110–0115 pendientes._
+      dos veces + semillas 0001–0036 + semillas marcadas cambiadas y vueltas a aplicar → todo sale 0 (6d no trae semilla). 6e (10 nov): 0110 con
+      migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas + semillas cambiadas → todo sale 0
+      (6e no trae semilla). CI y 0111–0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -754,8 +756,16 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       cuenta, tope de Configuración, no se devuelven ni se venden (la base); lista de espera: dos personas y un lugar → una oferta, vence → la
       siguiente, la vencida no paga, el público no se la salta; ayuda B- → Colas › Soporte → resolver y devolver; IDOR repitiendo cada llamada
       nueva con otra cuenta; `alreves6d` 42/42._
-- [ ] Pausar, cambiar fecha (quedarse o devolución), cancelar fecha o serie con devolución total idempotente, avisos, liquidación del martes con retención
-      por disputa y ajuste posterior; Cobros y Transacciones lo muestran.
+- [x] Pausar, cambiar fecha (quedarse o devolución), cancelar fecha o serie con devolución total idempotente, avisos, liquidación del martes con retención
+      por disputa y ajuste posterior; Cobros y Transacciones lo muestran. _6e (10 nov): e2e `evt6e` 96 ✓ (teléfono 390 y escritorio 1360, contra
+      el simulador): pausar / reanudar y congelar del admin (el organizador no reabre; la base tampoco), avisos sin SMS con el tope de
+      Configuración, cambiar la hora con SMS crítico a los 3 y la elección (uno se queda, otro 100 % de vuelta, repetir = una), cancelar UNA
+      fecha con Stripe caído en 2 y el lote cortado a 2 → el barrido anota el resto y al volver Stripe hace las pendientes con la misma llave
+      (5 devoluciones del 100 %, ni una de más; avisos una vez) y luego todo el evento; liquidación del martes con el reloj movido (neto exacto,
+      una transferencia, nunca antes, retenida con disputa abierta y con la cuenta pausada), disputa perdida después de pagar descontada una vez
+      de la siguiente, primer evento sobre $2,000 retenido hasta que Finanzas lo suelta y, sin siguiente, la transferencia revertida; Confianza
+      al cancelar seguido; Super Admin (Liquidaciones con CSV, Colas, cancelar y devolver todo); IDOR con otro negocio y un vecino en cada
+      llamada nueva. «Ajustar cupo» y «Extender ventas» del admin, con 6j._
 - [ ] Series (semanal, cada 2 semanas, mensual «el último»), saltar y cancelar una fecha, artista de una fecha, varios días con pase y aforo por día.
 - [ ] Puerta en línea: porteros con cuenta e invitación, escanear / buscar / lista / aforo / mesas / incidencias / equipo / cierre, modo puerta del panel,
       lista de Noche; dos porteros a la vez sin entradas dobles; nada se vende ni se ve de dinero (`sinVentaEnLaPuerta` al revés).

@@ -52,3 +52,10 @@ Payouts. **Plan & invoices**: courtesy Pro (30/60/90 days), end courtesy, extend
 subscription (paid Pro runs to period end; trial ends on its last day; failed charge → Free today). Last 12 card charges.
 Permissions: transactions·view to see, transactions·approve to pause, plans·edit/approve for plan actions. Everything is
 audited with its reason.
+
+## 6e · Pagos de eventos (10 nov 2026)
+- Los boletos se cobran en To'Latino y se pagan **por fecha, el martes después**, con una transferencia de Stripe a la cuenta del organizador
+  (Super Admin › Eventos y boletos › **Liquidaciones**). **Pausar pagos** aquí también retiene los pagos de eventos («RETENIDA · cuenta») hasta
+  reanudarlos. Ver «admin-eventos-y-boletos» (Liquidaciones).
+
+**English:** ticket sales are paid per date the Tuesday after through a Stripe transfer; pausing payouts here also holds event payouts until resumed.

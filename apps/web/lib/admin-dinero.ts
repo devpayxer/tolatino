@@ -13,7 +13,7 @@ export async function datosDinero(s: Staff, negocio: string) {
       `select coalesce(sum(amount_cents) filter (where status in ('captured', 'partially_refunded', 'refunded')), 0)::int as cobrado,
               coalesce(sum(amount_cents) filter (where status = 'held'), 0)::int as retenido,
               coalesce(sum(refunded_cents), 0)::int as devuelto,
-              coalesce(sum(fee_cents * (amount_cents - refunded_cents) / amount_cents) filter (where status in ('captured', 'partially_refunded')), 0)::int as comision,
+              coalesce(sum(fee_cents::bigint * (amount_cents - refunded_cents) / amount_cents) filter (where status in ('captured', 'partially_refunded')), 0)::int as comision,
               count(*)::int as n
          from payments where business_id = $1 and created_at > now() - interval '90 days'`, [negocio]),
     db().query<{ estado: string; banco: string | null; pide: string[]; pausado: boolean; motivo: string | null; desde: string | null; quien: string | null; sim: boolean }>(
@@ -27,7 +27,7 @@ export async function datosDinero(s: Staff, negocio: string) {
       `with c as (select timezone as tz from cities where id = (select city_id from businesses where id = $1))
        select to_char(date_trunc('week', p.captured_at at time zone c.tz), 'YYYY-MM-DD') as ini,
               to_char((date_trunc('week', p.captured_at at time zone c.tz) + interval '8 days') at time zone c.tz at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as martes,
-              sum(p.amount_cents - p.refunded_cents - p.fee_cents * (p.amount_cents - p.refunded_cents) / p.amount_cents)::int as neto, count(*)::int as n
+              sum(p.amount_cents - p.refunded_cents - p.fee_cents::bigint * (p.amount_cents - p.refunded_cents) / p.amount_cents)::int as neto, count(*)::int as n
          from payments p, c where p.business_id = $1 and p.status in ('captured', 'partially_refunded', 'refunded') and p.captured_at > now() - interval '50 days'
         group by 1, 2 order by 1 desc limit 7`, [negocio]),
     db().query<{ estado: string; ciclo: string; precio: number; fin: string | null; intentos: number; desde: string; usada: boolean }>(

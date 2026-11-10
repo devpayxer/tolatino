@@ -14,5 +14,7 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!u) redirect(`/entrar?volver=${encodeURIComponent(`/eventos/orden/${num}`)}`);
   const o = await ordenBoletos(u.id, decodeURIComponent(num), lang === "es");
   if (!o) notFound();
-  return <Orden o={o} es={lang === "es"} />;
+  // 6e · Cancelado por el organizador, cambió de fecha (y la elección) y sus avisos.
+  const cambio = await (await import("@/lib/evt-cambios")).cambioOrden(u.id, o.numero);
+  return <Orden o={o} es={lang === "es"} cambio={cambio} />;
 }

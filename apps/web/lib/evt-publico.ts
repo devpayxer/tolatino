@@ -184,6 +184,8 @@ export type FichaEvt = {
   venta: VentaFicha | null; mios: { n: number; numero: string | null; codigo: string | null };
   // 6d · Lista de espera: mi lugar (o mi oferta de 30 min) y hasta cuántos por grupo.
   espera: { mia: import("./espera").MiEspera; max: number; min: number } | null;
+  // 6e · La fecha cambió (antes …) y el último aviso del organizador (sale primero en «Antes de ir»).
+  cambio: { antes: string | null; aviso: string | null };
 };
 type FilaF = {
   eid: string; fid: string; slug: string; fmt: FormatoKey; status: "live" | "paused"; title: Bi; description: Bi; ldate: string; h0: number; h1: number; dmin: number; venue_mode: "own" | "other";
@@ -254,6 +256,7 @@ export async function fichaEvento(slug: string, fecha: string | null, viewer: st
     rsvpAbierto: r.abierto && !r.pasado && r.entry === "rsvp", lleno: quedan === 0, hasta: hora(r.hasta_min), guardaMin: guarda,
     fechas: Fe.rows.map((x) => ({ id: x.id, l: diaCorto(x.ldate, es).toUpperCase(), on: x.id === r.fid })),
     rel, seo: { start: r.start, end: r.end, addr: r.addr }, venta, mios: { n: mios?.n ?? 0, numero: mios?.num ?? null, codigo: mios?.codigo ?? null }, espera,
+    cambio: await (await import("./evt-cambios")).cambioFicha(r.fid),
   };
 }
 async function relacionados(ciudad: string, eid: string, biz: string, fmt: string, viewer: string | null, centro: string | null, es: boolean) {

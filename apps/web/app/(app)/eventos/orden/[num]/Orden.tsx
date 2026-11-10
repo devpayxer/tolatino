@@ -8,7 +8,8 @@ import { useState, type ComponentType } from "react";
 import type { BoletoVista, OrdenVista } from "@/lib/boletos";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { useToast } from "../../comun";
-import { bolDeshacer } from "../../acciones-despues";
+import { bolDeshacer, bolElegirCambio } from "../../acciones-despues";
+import type { CambioOrden } from "@/lib/evt-cambios";
 import { fechaHora, HojaAyuda, HojaCancelar, HojaNombre, HojaTransferir } from "../../Despues";
 
 type N = "Icon" | "Button" | "TicketQR" | "OrderTracker" | "ReceiptCard";
@@ -38,7 +39,7 @@ export function TarjetaBoleto({ b, es, cuando, ancho, onClick }: { b: BoletoVist
   );
 }
 
-export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
+export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; cambio?: CambioOrden | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [recibo, setRecibo] = useState(false);
@@ -57,6 +58,11 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
   const vivos = o.boletos.filter((b) => b.estado === "valid" && !b.envio).length;
   const V = o.ventanas, libres = o.boletos.filter((b) => b.estado === "valid" && !b.envio), enviando = o.boletos.filter((b) => b.envio);
   const devuelto = o.devoluciones.reduce((s, d) => s + d.monto, 0), enCamino = o.devoluciones.some((d) => d.estado === "pending");
+  // 6e · «Me quedo» / «Devolución total»: el servidor decide si todavía se puede y cuánto vuelve (el 100 %).
+  const [elige, setElige] = useState(false);
+  const elegir = async (x: "keep" | "refund") => { setElige(true); const r = await bolElegirCambio(o.numero, x).catch(() => null); setElige(false);
+    toast(r?.ok ? (x === "keep" ? E2("Listo: tus boletos valen para la nueva fecha.", "Done: your tickets are valid for the new date.") : E2(`Listo: te devolvemos ${dinero(r.monto)} completo en 3–5 días hábiles.`, `Done: we refund ${dinero(r.monto)} in full in 3–5 business days.`)) : r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again."));
+    router.refresh(); };
   const deshacer = async (code: string) => { const r = await bolDeshacer(code).catch(() => null); toast(r?.ok ? E2("Listo: el boleto vuelve a ti con un QR nuevo.", "Done: the ticket is yours again with a new QR.") : r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Prueba de nuevo.", "Could not do it. Try again.")); router.refresh(); };
   const pasos = [
     { label: E2("Boletos listos", "Tickets ready"), time: o.numero, state: "done" },
@@ -70,10 +76,28 @@ export function Orden({ o, es }: { o: OrdenVista; es: boolean }) {
       <h1 className="m-0 mt-1.5 font-display font-extrabold leading-[1.05] tracking-[-0.045em]" style={{ fontSize: d ? 32 : 26 }}>{cancelada ? E2("No se completó", "Not completed") : E2("¡Listo, vas!", "You are going!")}</h1>
       <div className="mt-2 text-[13.5px] font-semibold text-ink/70">{`${ev.title} · ${cuando} · ${ev.venue}`}</div>
       {devuelto > 0 && <div role="status" data-screen-label="Orden · devolución" className="mt-3 rounded-[14px] bg-signal/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-open-text">
-        {(() => { const de = (k: string) => o.devoluciones.filter((d) => d.por === k).reduce((x, d) => x + d.monto, 0), cx = de("buyer"), bz = de("business"), ot = devuelto - cx - bz;
+        {(() => { const de = (k: string) => o.devoluciones.filter((d) => d.por === k).reduce((x, d) => x + d.monto, 0), cx = de("buyer"), bz = de("business"), ec = de("event_cancelled"), em = de("event_moved"), ot = devuelto - cx - bz - ec - em;
           return [cx ? E2(`Cancelaste boletos: te devolvemos ${dinero(cx)}.`, `You cancelled tickets: we refund ${dinero(cx)}.`) : "", bz ? E2(`${ev.org} te devolvió ${dinero(bz)}.`, `${ev.org} refunded you ${dinero(bz)}.`) : "",
+            ec ? E2(`El evento se canceló: te devolvemos ${dinero(ec)}, cargos incluidos.`, `The event was cancelled: we refund ${dinero(ec)}, fees included.`) : "", em ? E2(`Pediste la devolución total por el cambio de fecha: ${dinero(em)}.`, `You asked for a full refund for the date change: ${dinero(em)}.`) : "",
             ot ? E2(`To'Latino te devolvió ${dinero(ot)}.`, `To'Latino refunded you ${dinero(ot)}.`) : ""].filter(Boolean).join(" "); })()}
         {` ${enCamino ? E2("Va en camino a tu tarjeta (3–5 días hábiles).", "It is on its way to your card (3–5 business days).") : E2("Ya salió a tu tarjeta (3–5 días hábiles en verse).", "It went out to your card (3–5 business days to show).")}`}</div>}
+      {cambio?.cancelada && <div role="alert" data-screen-label="Orden · cancelado por el organizador" className="mt-3 rounded-[14px] border border-danger/30 bg-danger/[.06] px-3.5 py-3">
+        <div className="text-[13.5px] font-extrabold text-danger">{E2("Este evento fue cancelado por el organizador", "This event was cancelled by the organizer")}</div>
+        <div className="mt-1 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{`${cambio.cancelada.motivo ? `${cambio.cancelada.motivo}. ` : ""}${cambio.cancelada.monto ? E2(`Se te devuelve todo: ${dinero(cambio.cancelada.monto)} a tu tarjeta en 3–5 días hábiles. No tienes que hacer nada.`, `You get everything back: ${dinero(cambio.cancelada.monto)} to your card in 3–5 business days. Nothing to do on your end.`)
+          : E2("Se te devuelve todo lo que pagaste a tu tarjeta en 3–5 días hábiles. No tienes que hacer nada.", "You get everything you paid back to your card in 3–5 business days. Nothing to do on your end.")}`}</div>
+      </div>}
+      {cambio?.movido && <div role="status" data-screen-label="Orden · cambió de fecha" className="mt-3 rounded-[14px] border border-pro/40 bg-pro/[.08] px-3.5 py-3">
+        <div className="text-[13.5px] font-extrabold text-pro-ink">{E2("El evento cambió de fecha", "The event changed its date")}</div>
+        <div className="mt-1 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{E2(`Nueva fecha: ${cambio.movido.ahora} (antes ${cambio.movido.antes}). Tus boletos valen igual, o te devolvemos todo.`, `New date: ${cambio.movido.ahora} (was ${cambio.movido.antes}). Your tickets still count, or we refund everything.`)}</div>
+        {cambio.movido.puede ? <div className="mt-2.5 flex flex-wrap gap-2">
+          <Button variant="primary" size="md" disabled={elige} onClick={() => void elegir("keep")}>{E2("Me quedo con la nueva fecha", "Keep the new date")}</Button>
+          <Button variant="secondary" size="md" disabled={elige} onClick={() => void elegir("refund")}>{E2("Devolución total", "Full refund")}</Button>
+        </div> : <div className="mt-2 font-mono text-[10.5px] font-bold tracking-[0.12em] text-ink/55">{cambio.movido.eleccion === "keep" ? E2("ELEGISTE QUEDARTE CON LA NUEVA FECHA", "YOU KEPT THE NEW DATE") : cambio.movido.eleccion === "refund" ? E2("PEDISTE LA DEVOLUCIÓN TOTAL", "YOU ASKED FOR A FULL REFUND") : E2("YA EMPEZÓ: TUS BOLETOS VALEN PARA LA NUEVA FECHA", "IT STARTED: YOUR TICKETS ARE FOR THE NEW DATE")}</div>}
+      </div>}
+      {cambio && cambio.avisos.length > 0 && <div data-screen-label="Orden · avisos del organizador" className={`mt-3 px-3.5 py-3 ${caja}`}>
+        <div className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-ink/45">{E2("AVISOS DEL ORGANIZADOR", "NOTICES FROM THE ORGANIZER")}</div>
+        {cambio.avisos.map((a, i) => <div key={i} className="mt-1.5 text-[12.5px] font-semibold leading-[1.5] text-ink/80">{a.t}</div>)}
+      </div>}
       {cancelada && <div role="alert" className="mt-3 rounded-[14px] bg-danger/[.08] px-3.5 py-3 text-[12.5px] font-semibold text-danger">{E2("Tu banco no completó el cobro. No se cobró nada y estos boletos no valen. Puedes comprar otra vez.", "Your bank did not complete the charge. Nothing was charged and these tickets are not valid. You can buy again.")}</div>}
     </div>
   );

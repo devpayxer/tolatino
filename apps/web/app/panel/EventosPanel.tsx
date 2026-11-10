@@ -18,6 +18,9 @@ import type { VentasPanel } from "@/lib/boletos";
 import type { DespuesPanel } from "@/lib/boletos-despues";
 import type { EsperaPanel } from "@/lib/espera";
 import type { CodigoPanel } from "@/lib/codigos-evt";
+import type { CambiosPanel } from "@/lib/evt-cambios";
+import type { FilaLiq } from "@/lib/evt-liquidacion";
+import { cambiosBloques } from "./EventosCambios";
 import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 
@@ -30,6 +33,8 @@ export type EvtData = {
   ventas: VentasPanel | null; codigos: CodigoPanel[]; vendidos: Record<string, number>;
   /* 6d · Cortesías, devoluciones, transferencias, ayuda con órdenes y LISTA DE ESPERA del evento abierto. */
   despues: DespuesPanel | null; espera: EsperaPanel | null;
+  /* 6e · Cambios del evento (venta, fecha, cancelación, avisos) y su dinero por fecha (la liquidación del martes). */
+  cambios: CambiosPanel | null; liq: { filas: FilaLiq[]; deuda: number } | null;
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -126,6 +131,8 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   if (e.pending === "rejected") out.push({ type: "note", tone: "danger", icon: "warning", t: E2(`Tu cambio no se aprobó: ${e.pendingNota ?? ""}. Sigue en vivo la versión anterior.`, `Your change was not approved: ${e.pendingNota ?? ""}. The previous version stays live.`) });
   if (e.st === "draft") out.push({ type: "note", tone: "ink", icon: "lock", t: E2("Borrador: solo tú lo ves. Envíalo cuando esté listo.", "Draft: only you see it. Send it when it is ready.") });
   if (tix) out.push(...ventaBloques(c, e));
+  // 6e · Venta pausada / cambiar fecha u hora / cancelar con devolución total / avisos a los que van / el dinero por fecha.
+  out.push(...cambiosBloques(c, e, v));
   out.push(asiLoVe(c, F, e.pending ? d : v));
   // 6b · QUIÉN VA (RSVP con personas; contar en la puerta llega con 6g). Nombre + inicial: nunca teléfono.
   if (v.entrada === "rsvp") {
@@ -455,7 +462,7 @@ const ENVIO: Record<string, (h: number) => [string, string]> = {
 
 /* Calendario (evCalB, 6a: un día): los meses que se pueden publicar, el día elegido, tus otros eventos (punto ámbar) y los días que
    tu horario dice cerrado (gris). Series y varios días llegan en 6f. */
-function calendario(c: Ctx, Fm: Form<FormEvt>, e0: EvtPanel | null): Bloque {
+export function calendario(c: Ctx, Fm: Form<FormEvt>, e0: EvtPanel | null): Bloque {
   const { E2, es, ui } = c, X = c.evt!, d = Fm.d, hoy = X.hoy, fin = sumarDias(hoy, X.cfg.diasAdelante);
   const [y0, m0] = hoy.split("-").map(Number), [ys, ms] = (d.dia || hoy).split("-").map(Number);
   const mesesMax = (Number(fin.slice(0, 4)) - y0!) * 12 + Number(fin.slice(5, 7)) - m0!;

@@ -7,7 +7,7 @@ import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { Caso } from "@/lib/admin-colas";
 import type { EvtAdm } from "@/lib/evt-revision";
 import { EVT_NO, diaCorto, dinero, hora, type BorradorEvt } from "@/lib/evt-comun";
-import { evtDecidir, evtOcultar, evtOrganizador } from "./acciones-eventos";
+import { evtCasoCancela, evtDecidir, evtOcultar, evtOrganizador, liqRetener, liqSoltar } from "./acciones-eventos";
 import type { Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
@@ -77,9 +77,43 @@ export function accionesOrg(o: { id: string; name: string; verificado: boolean; 
 /* En Colas: título y cuerpo del caso «evt». */
 export function tituloEventos(k: Caso): string | null {
   if (k.queue === "evt" && "evt" in k) return k.evt ? `${k.evt.pendiente ? "Cambio · " : ""}${k.evt.t.es}` : "Evento";
+  if (k.queue === "evtcx") return `Organizador que cancela · ${k.negocio?.name ?? ""}`;
+  if (k.queue === "evtpago") return `Pago de evento retenido · ${k.negocio?.name ?? ""}`;
   return null;
 }
 export function cuerpoEventos(k: Caso, x: Omit<Ctx, "puede">): { bloques: Bloque[]; acts: Acc[] } | null {
+  const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
+  // 6e · Organizadores que cancelan (§6 #24): cada cancelación del plazo con lo devuelto y el costo de la tarjeta que puso To'Latino.
+  if (k.queue === "evtcx" && "evtcx" in k && k.evtcx) {
+    const g = k.evtcx, MOT: Record<string, string> = { clima: "Mal tiempo", artista: "El artista no puede venir", local: "Problema en el local", planes: "Cambio de planes", admin: "To'Latino" };
+    const bloques: Bloque[] = [
+      { type: "kv", cols: 3, items: [{ k: "CANCELACIONES", v: String(g.L.length), fg: "var(--tl-pro-ink)" }, { k: "DEVUELTO", v: usd(g.L.reduce((a, c) => a + c.devuelto, 0)) }, { k: "COSTO DE TARJETA (TO'LATINO)", v: usd(g.L.reduce((a, c) => a + c.costo, 0)) }] },
+      { type: "rows", k: "CADA CANCELACIÓN", items: g.L.map((c, i) => ({ key: String(i), icon: "ban", t: `${c.t}${c.scope === "date" ? " · una fecha" : ""}`, s: `${fecha(c.at)} · ${MOT[c.motivo] ?? c.motivo} · ${c.ordenes} órdenes · devuelto ${usd(c.devuelto)}`, compact: true, chev: true, onClick: () => x.abrir(`/admin/eventos/${c.eid}`) })) },
+      ...(g.bloqueado ? [{ type: "note", tone: "danger", icon: "ban", t: `YA BLOQUEADO · ${g.bloqueado}` } as Bloque] : []),
+    ];
+    const acts: Acc[] = !k.puedeDecidir ? [] : [
+      ...(g.puedeBloquear && !g.bloqueado ? [{ l: "Bloquear publicación", v: "danger", icon: "ban", onClick: () => x.setConf({ titulo: "¿Por qué se bloquea?", sub: "No puede enviar ni publicar eventos. Recibe el motivo y puede apelar; la apelación la decide otra persona.", peligro: true, cta: "Bloquear",
+        plantillas: ["Cancela eventos seguidos: la gente compra y se queda sin evento.", "Anuncia eventos que no hace."], hacer: (m) => evtCasoCancela(k.id, true, m) }) }] : []),
+      { l: "Revisado, sin cambios", icon: "check", onClick: () => x.setConf({ titulo: "¿Qué encontraste?", sub: "El caso se cierra; si vuelve a cancelar en el plazo, se abre otro.", cta: "Cerrar el caso",
+        plantillas: ["Cada cancelación tiene una razón razonable (clima, el artista).", "Hablamos con el organizador.", "A todos se les devolvió completo."], hacer: (m) => evtCasoCancela(k.id, false, m) }) },
+    ];
+    return { bloques, acts };
+  }
+  // 6e · Pagos de eventos retenidos (§6 #16): la liquidación del primer evento grande y el historial del organizador.
+  if (k.queue === "evtpago" && "evtpago" in k) {
+    const p = k.evtpago;
+    if (!p) return { bloques: [{ type: "empty", icon: "wallet", t: "Esa liquidación ya no está", s: "Se soltó o se decidió." }], acts: [] };
+    const bloques: Bloque[] = [
+      { type: "kv", cols: 2, items: [{ k: "EVENTO", v: `${p.evento} · ${p.dia}` }, { k: "BRUTO", v: usd(p.bruto) }, { k: "LE TOCA AL ORGANIZADOR", v: usd(p.neto), fg: "var(--tl-open-text)" }, { k: "ÓRDENES", v: String(p.ordenes) },
+        { k: "DEVUELTO", v: usd(p.devuelto) }, { k: "DISPUTAS DEL EVENTO", v: String(p.disputas) }, { k: "EN TO'LATINO DESDE", v: p.desde }, { k: "EVENTOS ENVIADOS", v: `${p.eventos}${p.verificado ? " · verificado" : ""}` }] },
+      { type: "note", tone: "info", icon: "info", t: "Mira que el evento haya pasado (fotos, reseñas, que nadie reclame) antes de soltar. Retener deja el pago guardado con tu motivo: el organizador lo ve en Cobros." },
+    ];
+    const ok = "puedeSoltar" in k && !!k.puedeSoltar && p.st === "held";
+    const acts: Acc[] = [{ l: "Ficha del evento", icon: "search", onClick: () => x.abrir(`/admin/eventos/${p.eid}`) },
+      ...(ok ? [{ l: "Soltar el pago", v: "action", icon: "check", onClick: () => x.setConf({ titulo: `Soltar · ${p.negocio}`, sub: "Se paga en el siguiente barrido; sus próximos eventos ya no se retienen por ser nuevo.", cta: "Soltar", plantillas: ["El evento pasó sin problemas", "Organizador conocido de la ciudad"], hacer: (m) => liqSoltar(p.id, m) }) },
+        { l: "Mantener retenido", v: "danger", icon: "lock", onClick: () => x.setConf({ titulo: "¿Por qué sigue retenido?", sub: "Queda retenido por To'Latino con tu motivo; se suelta desde Liquidaciones.", peligro: true, cta: "Mantener", plantillas: ["Reclamos de compradores", "El evento no pasó como se anunció"], hacer: (m) => liqRetener(p.id, m) }) }] : [])];
+    return { bloques, acts };
+  }
   if (k.queue !== "evt" || !("evt" in k)) return null;
   const e = k.evt;
   if (!e) return { bloques: [{ type: "empty", icon: "ticket", t: "Ese evento ya no está", s: "Se decidió o el negocio lo retiró." }], acts: [] };

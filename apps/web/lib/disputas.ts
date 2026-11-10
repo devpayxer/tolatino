@@ -73,9 +73,9 @@ export async function cerrarDisputa(stripeId: string, status: string) {
 export type Evidencia = { lineas: string[]; resumen: string; producto: string; cliente: string; fecha: string; envio: string | null };
 export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
   const o = (await db().query<{ op: string; num: string; mode: string; total: number; cliente: string; negocio: string; enviado: string; dir: string | null; tz: string; tarjeta: string | null; devuelto: number }>(
-    `select o.id::text as op, o.number as num, o.mode, o.total_cents as total, b.name as negocio,
+    `select o.id::text as op, o.number as num, case when o.kind = 'tickets' then 'tickets_evt' else o.mode end as mode, o.total_cents as total, b.name as negocio,
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Cliente') as cliente,
-            to_char(o.sent_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as enviado, c.timezone as tz,
+            to_char(coalesce(o.sent_at, o.confirmed_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as enviado, c.timezone as tz,
             case when o.mode = 'delivery' then concat_ws(', ', o.details #>> '{to,street}', o.details #>> '{to,zip}') end as dir,
             case when p.card_last4 is null then null else upper(p.card_brand) || ' ·· ' || p.card_last4 end as tarjeta, coalesce(p.refunded_cents, 0) as devuelto
        from disputes d join operations o on o.id = d.operation_id join businesses b on b.id = o.business_id join users u on u.id = o.user_id
@@ -89,6 +89,25 @@ export async function evidenciaDe(disputa: string): Promise<Evidencia | null> {
   ]);
   const EV: Record<string, string> = { sent: "El cliente hizo el pedido", accepted: "El negocio lo aceptó", ready: "Listo para recoger", on_the_way: "Salió en camino", driver_picked: "El repartidor lo recogió",
     driver_arrived: "El repartidor llegó", delivered: "Entregado", picked_up: "El cliente lo recogió", cancelled: "Cancelado", declined: "Rechazado" };
+  // 6e · Boletos (DP-121): la evidencia sale del boleto: para qué evento y fecha, cada boleto con su estado y si entró por la puerta (la hora
+  // y la puerta del escaneo llegan con 6g; hoy, «usado»), transferencias y lo ya devuelto. Nunca el teléfono de nadie.
+  if (o.mode === "tickets_evt") {
+    const T = (await db().query<{ code: string; st: string; at: string | null }>(
+      `select t.code, t.status as st, (select to_char(l.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') from ticket_log l where l.ticket_id = t.id and l.kind in ('transferido', 'devuelto', 'cancelado', 'anulado') order by l.at desc limit 1) as at
+         from tickets t where t.operation_id = $1::bigint order by t.id`, [o.op])).rows;
+    const ev = (await db().query<{ t: string; dia: string; venue: string }>(
+      `select e.title->>'es' as t, d.local_date::text as dia, case when e.venue_mode = 'other' then e.venue_name else b.name end as venue from operations x join event_dates d on d.id = (x.details->>'event_date_id')::bigint
+         join events e on e.id = d.event_id join businesses b on b.id = e.business_id where x.id = $1::bigint`, [o.op])).rows[0];
+    const ST: Record<string, string> = { valid: "válido, sin usar", used: "usado en la puerta (entró)", refunded: "devuelto", void: "anulado", replaced: "transferido a otra persona" };
+    const lineasB = [
+      `Orden de boletos ${o.num} · ${money(o.total)}${o.tarjeta ? ` · ${o.tarjeta}` : ""}${ev ? ` · ${ev.t} · ${ev.dia} · ${ev.venue}` : ""}`,
+      `Comprada por ${o.cliente} desde su cuenta (teléfono verificado) el ${hora(o.enviado)}`,
+      ...T.map((t) => `Boleto ${t.code}: ${ST[t.st] ?? t.st}${t.at ? ` · ${hora(t.at)}` : ""}`),
+      ...(o.devuelto ? [`Ya se devolvió ${money(o.devuelto)}`] : []),
+      "Los boletos se entregan en la app (QR firmado); la política de devoluciones se muestra antes de pagar.",
+    ];
+    return { lineas: lineasB, resumen: lineasB.join("\n"), producto: `Boletos ${o.num}${ev ? ` · ${ev.t}` : ""}`, cliente: o.cliente, fecha: (ev?.dia ?? o.enviado.slice(0, 10)), envio: null };
+  }
   const lineas = [
     `Pedido #${o.num} en ${o.negocio} · ${money(o.total)}${o.tarjeta ? ` · ${o.tarjeta}` : ""}`,
     ...(L.rows.length ? [`Lo que pidió: ${L.rows.map((x) => `${x.q} × ${x.n}`).join(", ")}`] : []),

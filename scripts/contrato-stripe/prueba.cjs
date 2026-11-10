@@ -34,6 +34,12 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  鉁
   const d = await pasarela.devolver(pi, 500, 'contrato-' + Date.now()); ok(d.ok && /^re_/.test(d.id), 'devolver: refunds con reverse_transfer y refund_application_fee');
   // 6d 路 Boletos: devolver un cobro de la plataforma (sin transferencia ni comisi贸n de destino que revertir).
   const dvp = await pasarela.devolver(rp.ok ? rp.pi : 'pi_123', 500, 'contrato-bol-' + Date.now(), { plataforma: true }); ok(dvp.ok && /^re_/.test(dvp.id), 'boletos: refunds de un cobro de la plataforma (sin reverse_transfer)');
+  // 6e 路 La liquidaci贸n del martes: transferir lo del organizador a su cuenta conectada (transfers, con transfer_group e idempotencia)
+  // y revertir parte de una transferencia (transfers/{id}/reversals) cuando un ajuste no tiene liquidaci贸n siguiente.
+  const tr = await pasarela.transferir({ centavos: 6350, destino: acct, grupo: 'evt-2', idem: 'evt-liq-' + Date.now(), meta: { event_date_id: '1', business_id: 'la-terraza-night' } });
+  ok(tr.ok && /^tr_/.test(tr.id), 'liquidaci贸n: transfers con destino, transfer_group y metadatos');
+  const rv = await pasarela.revertirTransferencia(tr.ok ? tr.id : 'tr_123', 500, 'evt-rev-1-' + Date.now());
+  ok(rv.ok && /^trr_/.test(rv.id), 'liquidaci贸n: revertir parte de una transferencia (transfers/{id}/reversals)');
   ok(await pasarela.disputaResponder('dp_123', { texto: 'Delivered as ordered.', producto: '1 x Mofongo', cliente: 'Marisol P', fecha: '2026-11-06', envio: '420 N Wyoming St, 18201' }), 'disputa: responder con evidencia (disputes, submit)');
   ok(await pasarela.disputaAceptar('dp_123'), 'disputa: aceptar (disputes/close)');
   const dp = await (await fetch(process.env.STRIPE_API_BASE + '/v1/disputes/dp_123', { headers: { authorization: 'Bearer sk_test_123' } })).json();

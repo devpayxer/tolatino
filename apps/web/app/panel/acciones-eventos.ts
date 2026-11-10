@@ -151,3 +151,45 @@ export async function evtAvisarLista(negocio: string, eventoId: string): Promise
   await auditar(a, "eventos.espera.avisar", { evento: String(eventoId), ofertas: r.n });
   return { ok: true, n: r.n };
 }
+
+/* 6e · Cambios del evento (Panel › la ficha): VENTA (pausar / reanudar), cambiar fecha u hora (avisa por SMS; quien compró elige quedarse o la
+   devolución total), cancelar una fecha o el evento (devolución total en lote: pide también la parte de Cobros, como devolver) y AVISOS A
+   LOS QUE VAN (push y en la app). Todo pasa por la parte «evt» de ESTE negocio y lib/evt-cambios.ts vuelve a filtrar por el dueño del evento. */
+const yoNegocio = (a: Acceso) => ({ tipo: "business" as const, negocio: a.negocio.id, userId: a.yo.id });
+export async function evtPausar(negocio: string, eventoId: string, pausar: boolean): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/evt-cambios")).pausarVenta(yoNegocio(a), String(eventoId), !!pausar);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, pausar ? "eventos.venta.pausar" : "eventos.venta.reanudar", { evento: String(eventoId), venta: pausar ? "Pausada" : "Vendiendo" });
+  return { ok: true };
+}
+export async function evtMover(negocio: string, fechaId: string, x: { dia: string; h0: number; h1: number }): Promise<Res & { avisados?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/evt-cambios")).moverFecha(yoNegocio(a), String(fechaId), x ?? { dia: "", h0: -1, h1: -1 });
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.fecha.mover", { fecha: String(fechaId), dia: String(x?.dia ?? ""), avisados: r.avisados });
+  return { ok: true, avisados: r.avisados };
+}
+export async function evtCancelar(negocio: string, eventoId: string, alcance: "date" | "event", fechaId: string | null, motivo: string, nota: string): Promise<Res & { devueltas?: number; pendientes?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  // Cancelar devuelve el dinero de todos: pide la parte de Cobros (el dueño siempre), como «Devolver».
+  if (!(await accesoPanel(a.negocio.id, "pay"))) return no("Solo quien maneja Cobros puede cancelar con devolución.", "Only someone who manages Payouts can cancel with refunds.");
+  const M = ["clima", "artista", "local", "planes"] as const;
+  const m = M.find((x) => x === motivo);
+  if (!m) return no("Elige el motivo.", "Pick the reason.");
+  const r = await (await import("@/lib/evt-cambios")).cancelarEvento(yoNegocio(a), String(eventoId), alcance === "date" ? "date" : "event", fechaId ? String(fechaId) : null, m, String(nota ?? ""));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, alcance === "date" ? "eventos.fecha.cancelar" : "eventos.cancelar", { evento: String(eventoId), fecha: fechaId, motivo: m, devueltas: r.devueltas, pendientes: r.pendientes });
+  return { ok: true, devueltas: r.devueltas, pendientes: r.pendientes };
+}
+export async function evtAvisar(negocio: string, eventoId: string, texto: string): Promise<Res & { n?: number }> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await (await import("@/lib/evt-cambios")).avisarAsistentes(a.negocio.id, a.yo.id, String(eventoId), texto);
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  await auditar(a, "eventos.aviso", { evento: String(eventoId), personas: r.n });
+  return { ok: true, n: r.n };
+}

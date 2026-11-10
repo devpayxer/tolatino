@@ -305,6 +305,13 @@ async function reapartarEn(c: Q, h: { id: string; fid: string; eid: string; line
   return true;
 }
 
+/* 6e · Cancelar una fecha: todo lo apartado de esas fechas se suelta (la existencia vuelve) dentro de la transacción de la cancelación. */
+export async function soltarApartadosDe(c: Q, fechas: string[]): Promise<number> {
+  const L = (await c.query<{ id: string }>(`select id::text from ticket_holds where event_date_id = any($1::bigint[]) and status = 'held'`, [fechas])).rows;
+  let n = 0;
+  for (const h of L) if (await soltarEn(c, h.id, "released")) n++;
+  return n;
+}
 /* «Cambiar» en la pantalla de pago: soltar mi apartado (la existencia vuelve al momento). */
 export async function soltarApartado(userId: string, holdId: string): Promise<boolean> {
   if (!UUID.test(holdId)) return false;

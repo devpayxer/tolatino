@@ -71,8 +71,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   }
   const d = await datosPanel(acc, lang);
   if (!d) notFound();
-  // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan».
-  if (ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD") ruta.sub = "plan";
+  // Sin cobros con tarjeta (no es comida): Cobros y plan abre directo «Tu plan». 6e: un organizador de eventos (módulo Eventos encendido) sí
+  // ve Cobros con tarjeta: ahí conecta su cuenta y ve PAGOS DE EVENTOS (la liquidación del martes por fecha).
+  const organiza = ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD" ? !!(await db().query(`select 1 from businesses where id = $1 and 'eventos' = any(modules_on)`, [d.id])).rowCount : false;
+  if (ruta.sec === "pay" && !ruta.sub && d.cat !== "NEG-FOOD" && !organiza) ruta.sub = "plan";
   // Lo que vendes · Menú (Comida): el menú del negocio, calculado en el servidor.
   const menu = ruta.sec === "mod" && d.cat === "NEG-FOOD" ? await menuPanel(d.id) : ruta.sec === "mod" && (d.cat === "NEG-MERC" || d.cat === "NEG-TIENDA") ? await menuPanel(d.id, "shop") : undefined;
   // Pedidos (Comida): lo que pide cada sección, y el detalle solo con acceso a «Hoy y pedidos».
@@ -133,7 +135,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   if (ruta.det && /^va[cp]:/.test(ruta.det) && !cat) ruta.det = null;
   // Cobros (solo el dueño): al volver de Stripe se lee el estado real de la cuenta.
   if (ruta.sec === "pay" && sp.vuelta) await actualizarCuenta(d.id).catch(() => undefined);
-  const cob = ruta.sec === "pay" && ruta.sub !== "plan" ? await cobrosPanel(d.id) : undefined;
+  // 6e · Cobros también muestra los pagos de eventos por fecha (la liquidación del martes).
+  const cob = ruta.sec === "pay" && ruta.sub !== "plan" ? { ...(await cobrosPanel(d.id)), eventos: await (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, null) } : undefined;
   // Tu plan (Cobros y plan): el estado del plan, los recibos y las tarjetas guardadas del dueño.
   const plan = ruta.sec === "pay" && ruta.sub === "plan" ? await (async () => {
     const S = await import("@/lib/suscripcion"), { pasarela } = await import("@/lib/pagos/pasarela"), { misTarjetas } = await import("@/lib/cobros");
@@ -267,7 +270,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     // 6d · Después de comprar: cortesías, devoluciones, transferencias, ayuda con órdenes y la lista de espera (sin teléfonos).
     const D6 = await import("@/lib/boletos-despues"), W6 = await import("@/lib/espera");
     const [despues, espera] = /^\d+$/.test(eid) && ventas ? await Promise.all([D6.despuesPanel(d.id, eid), W6.esperaPanel(d.id, eid)]) : [null, null];
-    return { lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
+    // 6e · Los cambios del evento abierto y su dinero por fecha (solo de este negocio).
+    const [cambios, liq] = /^\d+$/.test(eid) ? await Promise.all([(await import("@/lib/evt-cambios")).cambiosPanel(d.id, eid), (await import("@/lib/evt-liquidacion")).liquidacionesPanel(d.id, eid)]) : [null, null];
+    return { cambios, liq, lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;

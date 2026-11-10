@@ -6,6 +6,7 @@ import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CobrosPanel } from "@/lib/cobros";
 import { cobrosActualizar, cobrosConectar, cobrosStripe } from "./acciones-cobros";
 import type { Ctx } from "./Panel";
+import { pagosEventosBloques } from "./EventosCambios";
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const MES: [string, string][] = [["ene", "Jan"], ["feb", "Feb"], ["mar", "Mar"], ["abr", "Apr"], ["may", "May"], ["jun", "Jun"], ["jul", "Jul"], ["ago", "Aug"], ["sep", "Sep"], ["oct", "Oct"], ["nov", "Nov"], ["dic", "Dec"]];
@@ -59,6 +60,7 @@ export function cobrosBloques(c: Ctx, x: CobrosPanel | undefined): Bloque[] {
       key: p.num, icon: "card", t: `${E2("Pedido", "Order")} #${p.num} · ${p.quien}`, s: `${cuando(c, p.at)}${p.tarjeta ? ` · ${p.tarjeta}` : ""}${p.estado === "captured" || p.estado === "partially_refunded" ? ` · ${E2("comisión", "fee")} ${money(Math.round(p.comision * (p.monto - p.devuelto) / p.monto))}` : ""}${p.devuelto ? ` · ${E2("devuelto", "refunded")} ${money(p.devuelto)}` : ""}`,
       r: money(p.monto), tag: p.disputa ? DSP(E2)[p.disputa]?.[0] ?? p.disputa : TG[p.estado]?.[0] ?? p.estado, tone: p.disputa ? DSP(E2)[p.disputa]?.[1] ?? "danger" : TG[p.estado]?.[1] ?? "neutral", chev: true, onClick: () => c.nav(`/panel/${d.id}/hoy?det=ped:${p.num}`) })) }
       : { type: "empty", icon: "card", t: E2("Todavía no hay cobros con tarjeta", "No card charges yet"), s: E2("Cuando alguien pague con tarjeta, lo ves aquí con su comisión.", "When someone pays by card, you see it here with its fee.") });
+    out.push(...pagosEventosBloques(c, x.eventos));
   } else if (st === "pending") {
     out.push({ type: "note", tone: "info", icon: "clock", t: E2("Revisando… te avisamos cuando esté lista. Mientras, sigues vendiendo en el local.", "Reviewing… we will let you know when it is ready. Meanwhile you keep selling in person.") });
     out.push({ type: "acts", items: [

@@ -144,3 +144,11 @@ export async function barrerRecordatoriosEvt() {
   }
   return { recordatorios: R.length, guardados: G.length };
 }
+
+/* 6e · La fecha cambió (lib/evt-cambios.ts moverFecha, dentro de su transacción): cada RSVP vivo guarda el lugar hasta las puertas nuevas +
+   rsvp_guarda_min y el recordatorio del día antes vuelve a salir para la fecha nueva. Solo este archivo escribe RSVP (guardián rsvpConCupo). */
+export async function moverRsvps(c: Pick<import("pg").PoolClient, "query">, fechaId: string, puertas: string): Promise<number> {
+  const r = await c.query(`update rsvps set hold_until = $2::timestamptz + make_interval(mins => cfg_int('rsvp_guarda_min')), reminded_at = null, doors_notified_at = null
+                            where event_date_id = $1::bigint and status = 'going'`, [fechaId, puertas]);
+  return r.rowCount ?? 0;
+}

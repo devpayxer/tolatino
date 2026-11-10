@@ -278,7 +278,8 @@ export async function previoCancelar(userId: string, numero: string, es: boolean
 
 /* Paso 1 de toda devolución de boletos (dentro de la transacción): boletos → 'refunded' (la base suelta su lugar), la devolución 'pending'
    (la base no deja pasar de lo cobrado) y sus líneas (únicas por boleto y por extra). Devuelve el id de la devolución. */
-async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string; k: Calc; por: "buyer" | "business"; actor: string; idem: string; motivo: string; logKind: "cancelado" | "devuelto"; byKind: "user" | "business" }): Promise<string> {
+async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string; k: Calc; por: "buyer" | "business" | "event_cancelled" | "event_moved"; actor: string | null; idem: string; motivo: string; logKind: "cancelado" | "devuelto"; byKind: "user" | "business" | "staff" | "system";
+  estados?: "valid" | "vivos" }): Promise<string> {
   const ids = x.k.boletos.map((b) => b.id);
   const rf = (await c.query<{ id: string }>(
     `insert into refunds (payment_id, amount_cents, reason, initiated_by, actor_id, status, idem_key, fee_absorbed_by) values ($1::bigint, $2, $3, $4, $5, 'pending', $6, 'platform') returning id::text`,
@@ -295,12 +296,14 @@ async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string
         [rf, x.op, l.id, x.city, comprador ? l.t - q : l.t, comprador ? q : 0, comprador ? 0 : q]);
     }
   }
-  const u = await c.query(`update tickets set status = 'refunded' where id = any($1::bigint[]) and status = 'valid'`, [ids]);
+  // 6e · Al cancelar el organizador también vuelve un boleto ya usado (se devuelve todo); en el resto, solo los válidos.
+  const u = x.estados === "vivos" ? await c.query(`update tickets set status = 'refunded' where id = any($1::bigint[]) and status in ('valid', 'used')`, [ids])
+    : await c.query(`update tickets set status = 'refunded' where id = any($1::bigint[]) and status = 'valid'`, [ids]);
   if (u.rowCount !== ids.length) throw no("Esos boletos cambiaron mientras tanto. Actualiza la pantalla.", "Those tickets changed meanwhile. Refresh the screen.");
   await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind, reason) select id, operation_id, city_id, $2, $3, $4, $5 from tickets where id = any($1::bigint[])`,
     [ids, x.logKind, x.actor, x.byKind, x.motivo.slice(0, 300)]);
   await c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, $3, $4, $5::jsonb)`,
-    [x.op, x.por === "buyer" ? "tickets_cancelled" : "tickets_refunded", x.por === "buyer" ? "user" : "business", x.actor,
+    [x.op, x.por === "buyer" ? "tickets_cancelled" : "tickets_refunded", x.por === "buyer" ? "user" : x.byKind === "staff" ? "admin" : x.byKind === "system" ? "system" : "business", x.actor,
       JSON.stringify({ es: `${ids.length} ${ids.length === 1 ? "boleto" : "boletos"} · se devuelven ${dinero(x.k.total)}`, en: `${ids.length} ${ids.length === 1 ? "ticket" : "tickets"} · ${dinero(x.k.total)} refunded` })]);
   return rf;
 }
@@ -336,6 +339,49 @@ export async function barrerDevolucionesBoletos(): Promise<number> {
   let n = 0;
   for (const r of L) if (await ejecutarDevolucion(r.id)) n++;
   return n;
+}
+
+/* 6e · Devolución TOTAL de una orden por un cambio del organizador (fase6 §3: cancelar la fecha o el evento → 100 % de cada boleto, mesa y
+   extra; la comisión no se cobra y el costo de la tarjeta lo absorbe To'Latino, §6 #24; «Devolución total» ante un cambio de fecha, §6 #21).
+   Va dentro de la transacción de quien llama, con la orden, el pago y los boletos bloqueados. Idempotente por `idem` (la misma llave = la
+   misma devolución) y por boleto (ticket_refund_lines única); nunca más de lo que queda del cobro (se recorta y la base lo vuelve a
+   impedir). Un cobro con disputa abierta o perdida no se devuelve aquí (el dinero ya va por el banco): sus boletos se anulan. */
+export type DevTotal = { rf: string | null; total: number; n: number; holders: string[]; uid: string | null; ya?: true; disputa?: true };
+export async function anotarDevolucionTotal(c: Q, x: { op: string; por: "event_cancelled" | "event_moved"; actor: string | null; byKind: "business" | "staff" | "system" | "user"; idem: string; motivo: string; usados: boolean; codes?: string[] }): Promise<DevTotal> {
+  const o = (await c.query<{ id: string; city: string; uid: string; pid: string | null; pst: string | null; fee: number; amt: number; ya: number; disp: boolean }>(
+    `select o.id::text, o.city_id as city, o.user_id::text as uid, p.id::text as pid, p.status as pst, coalesce(p.fee_cents, 0) as fee, coalesce(p.amount_cents, 0) as amt,
+            coalesce((select sum(r.amount_cents) from refunds r where r.payment_id = p.id and r.status in ('pending', 'done')), 0)::int as ya,
+            exists (select 1 from disputes d where d.payment_id = p.id and d.status in ('needs_response', 'under_review', 'lost', 'accepted')) as disp
+       from operations o left join payments p on p.operation_id = o.id and p.kind = 'full'
+      where o.id = $1::bigint and o.kind = 'tickets' and o.pay_mode = 'app' and o.status = 'confirmed' for update of o`, [x.op])).rows[0];
+  const nada: DevTotal = { rf: null, total: 0, n: 0, holders: [], uid: o?.uid ?? null };
+  if (!o) return nada;
+  const ya = (await c.query<{ amt: number }>(`select amount_cents as amt from refunds where idem_key = $1`, [x.idem])).rows[0];
+  if (ya) return { ...nada, total: ya.amt, ya: true };
+  if (o.pid) await c.query(`select 1 from payments where id = $1::bigint for update`, [o.pid]);
+  const sel = (await c.query<FilaDev>(`${SEL_DEV} where t.operation_id = $1::bigint and t.kind = 'paid' and t.status in (${x.usados ? "'valid', 'used'" : "'valid'"})
+                                       ${x.codes ? "and t.code = any($2::text[])" : ""} order by t.id for update of t`, x.codes ? [x.op, x.codes] : [x.op])).rows;
+  if (!sel.length) return nada;
+  const holders = [...new Set(sel.map((b) => b.holder).filter((h): h is string => !!h))];
+  // Una transferencia pendiente se cae: el boleto se devuelve a quien pagó.
+  await c.query(`update ticket_transfers set status = 'cancelled', ended_at = now() where ticket_id = any($1::bigint[]) and status = 'pending'`, [sel.map((b) => b.id)]);
+  const resto = Math.max(0, o.amt - o.ya);
+  if (!o.pid || !["captured", "partially_refunded"].includes(o.pst ?? "") || o.disp || resto <= 0) {
+    // Sin cobro que devolver (o el banco ya lo lleva): los boletos dejan de entrar, sin dinero.
+    await c.query(`update tickets set status = 'void', void_reason = $2 where id = any($1::bigint[]) and status in ('valid', 'used')`,
+      [sel.map((b) => b.id), o.disp ? "Evento cancelado · el cobro está en disputa con el banco" : x.motivo.slice(0, 300)]);
+    await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind, reason) select id, operation_id, city_id, 'anulado', $2, $3, $4 from tickets where id = any($1::bigint[])`,
+      [sel.map((b) => b.id), x.actor, x.byKind, x.motivo.slice(0, 300)]);
+    return { ...nada, n: sel.length, holders, ...(o.disp ? { disputa: true as const } : {}) };
+  }
+  const k = await calcular(c, o.id, o.fee, sel, "business");
+  // Nunca más de lo que queda del cobro (p. ej. To'Latino ya devolvió algo desde Ayuda): se recorta de lo último.
+  let sobra = k.total - resto;
+  if (sobra > 0 && k.extras) { const q = Math.min(sobra, k.extras.devuelve); k.extras.devuelve -= q; sobra -= q; }
+  for (let i = k.boletos.length - 1; sobra > 0 && i >= 0; i--) { const b = k.boletos[i]!, q = Math.min(sobra, b.devuelve); b.devuelve -= q; sobra -= q; }
+  k.total = Math.min(k.total, resto);
+  const rf = await anotarDevolucion(c, { op: o.id, pid: o.pid, city: o.city, k, por: x.por, actor: x.actor, idem: x.idem, motivo: x.motivo, logKind: "devuelto", byKind: x.byKind, estados: x.usados ? "vivos" : "valid" });
+  return { rf, total: k.total, n: sel.length, holders, uid: o.uid };
 }
 
 /* ── Cancelar mis boletos (el comprador) ── */

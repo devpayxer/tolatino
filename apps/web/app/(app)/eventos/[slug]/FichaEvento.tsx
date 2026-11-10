@@ -87,7 +87,9 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const kidsT = f.kids === "care" ? E2("CUIDADO DE NIÑOS", "CHILDCARE") : f.kids === "fam" ? E2("PARA TODA LA FAMILIA", "FOR THE WHOLE FAMILY") : "";
   const tags = [...(f.dark ? [] : [L(f.F.label).toUpperCase()]), ...(f.edad || f.F.ages.length > 1 ? [f.edad ? `${f.edad}+` : E2("TODAS LAS EDADES", "ALL AGES")] : []), ...f.generos.map((x) => x.toUpperCase()), ...(f.free ? [E2("GRATIS", "FREE")] : []), ...(kidsT ? [kidsT] : [])];
   const st = f.pasado ? { t: E2("Este evento ya terminó", "This event has ended"), s: E2("Mira lo que viene en Eventos.", "See what is coming up in Events."), bg: th.w[".08"], fg: th.fg }
-    : pausado ? { t: tix ? E2("Venta pausada", "Sales paused") : E2("RSVP en pausa", "RSVP paused"), s: E2(`${f.org.name} lo pausó por ahora. Vuelve más tarde.`, `${f.org.name} paused it for now. Check back later.`), bg: "rgba(255,176,32,.16)", fg: th.warn } : null;
+    : pausado ? { t: tix ? E2("Venta pausada", "Sales paused") : E2("RSVP en pausa", "RSVP paused"), s: E2(`${f.org.name} lo pausó por ahora. Vuelve más tarde.`, `${f.org.name} paused it for now. Check back later.`), bg: "rgba(255,176,32,.16)", fg: th.warn }
+    // 6e · Cambió de fecha (lsVals: «Antes era … Si ya no puedes ir, pide la devolución completa desde tu orden.»).
+    : f.cambio.antes ? { t: E2("Cambió de fecha", "New date"), s: tix ? E2(`Antes era ${f.cambio.antes}. Si ya no puedes ir, pide la devolución completa desde tu orden.`, `It was ${f.cambio.antes}. If you can no longer go, ask for a full refund from your order.`) : E2(`Antes era ${f.cambio.antes}.`, `It was ${f.cambio.antes}.`), bg: "rgba(75,55,245,.12)", fg: f.dark ? th.fg : "var(--tl-action)" } : null;
   const linea = tix ? E2("EL PRECIO QUE VES ES EL QUE PAGAS: CARGOS INCLUIDOS.", "THE PRICE YOU SEE IS WHAT YOU PAY: FEES INCLUDED.") : f.entry === "free" ? E2("NO SE COBRA NADA: ENTRADA LIBRE, SIN LISTA.", "NOTHING IS CHARGED: FREE ENTRY, NO LIST.") : E2("NO SE COBRA NADA: TU RSVP SOLO GUARDA TU LUGAR.", "NOTHING IS CHARGED: YOUR RSVP ONLY HOLDS YOUR SPOT.");
   const polGratis = E2(`Tu RSVP guarda tu lugar hasta ${f.guardaMin} min después de abrir puertas. Si ya no vas, quítalo para que otro vecino entre.`, `Your RSVP holds your spot until ${f.guardaMin} min after doors open. If you can no longer go, remove it so another neighbor can get in.`);
   // 6c · La venta la decide el servidor (lib/boletos.ts ventaFicha): abierta, agotada, pausada, cerrada o no disponible.
@@ -112,7 +114,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const conParty = (f.entry === "rsvp" && f.partyMax > 1 && !f.pasado) || (lista && !mw);
   const party = Array.from({ length: Math.min(10, lista ? f.espera!.max : f.partyMax) }, (_, i) => i + 1);
   const elegir = (n: number) => { setPk(n); if (rv && n !== rv.party && f.rsvpAbierto && !pausado) rsvp(n); };
-  const antes = [...(f.comidaLocal ? [E2("La entrada es libre; lo que comas se paga en el local.", "Entry is free; what you eat is paid at the venue.")] : []), ...f.antes,
+  const antes = [...(f.cambio.aviso ? [f.cambio.aviso] : []), ...(f.comidaLocal ? [E2("La entrada es libre; lo que comas se paga en el local.", "Entry is free; what you eat is paid at the venue.")] : []), ...f.antes,
     ...(f.edad >= 18 ? [E2(`Es ${f.edad}+: si en la puerta no muestras ID, no entras.`, `It is ${f.edad}+: if you do not show ID at the door, you do not get in.`)] : [])];
   const van = f.van > 0 ? (es ? `${f.van} ${f.van === 1 ? "vecino va" : "vecinos van"}` : `${f.van} ${f.van === 1 ? "neighbor going" : "neighbors going"}`) : null;
 

@@ -9,5 +9,5 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const s = await requerir("evt", "ver");
   const f = leerFiltrosEvt(await searchParams);
   const [r, orgs, bol, kb] = await Promise.all([listaEventosAdmin(s, f.tab === "bol" ? { ...f, q: "" } : f), organizadoresAdmin(s, f.tab === "org" ? f.q : ""), f.tab === "bol" ? buscarBoletosAdmin(s, f.q) : Promise.resolve(null), kpiBoletosAdmin(s)]);
-  return <EventosAdmin f={f} filas={r.filas} total={r.total} cab={r.cab} siguiente={r.siguiente} sla={r.sla} orgs={orgs} bol={bol} kb={kb} puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") }} />;
+  return <EventosAdmin f={f} filas={r.filas} total={r.total} cab={r.cab} siguiente={r.siguiente} sla={r.sla} orgs={orgs} bol={bol} kb={kb} liq={s.puede("tx", "ver")} puede={{ aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") }} />;
 }

@@ -57,3 +57,9 @@ export async function esperaSalir(fecha: string): Promise<R> {
   const u = await quien(); if (!u) return { ok: false, msg: RED, entrar: true };
   return (await import("@/lib/espera")).salir(u.id, String(fecha));
 }
+/* 6e · El evento cambió de fecha u hora: «Me quedo con la nueva fecha» o «Devolución total» (solo quien pagó la orden, hasta el nuevo
+   inicio). Lo que se devuelve (el 100 %) lo calcula el servidor; la pantalla solo dice qué eligió. */
+export async function bolElegirCambio(numero: string, eleccion: "keep" | "refund"): Promise<R<{ monto: number }>> {
+  const u = await quien(); if (!u) return { ok: false, msg: RED, entrar: true };
+  return (await import("@/lib/evt-cambios")).elegirCambio(u.id, String(numero), eleccion === "refund" ? "refund" : "keep");
+}

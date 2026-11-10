@@ -53,6 +53,24 @@ Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:a
   esperar al organizador. **Resolver con un mensaje** o **Resolver y devolver** (hasta lo cobrado; vuelve a la tarjeta; los boletos siguen
   valiendo). Lo decide quien aprueba dinero en Transacciones.
 
+## 6e · Cambios del evento y Liquidaciones (10 nov 2026)
+- **La ficha del evento** suma **CAMBIOS DEL EVENTO** (pausas, cambios de fecha u hora, cancelaciones, congelados; quién y cuándo), el aviso de
+  **CANCELADO** con su progreso (órdenes devueltas, lo que falta) y **DINERO POR FECHA · LIQUIDACIÓN DEL MARTES** (Finanzas).
+- **Congelar ventas** (Eventos · editar): la venta en línea se detiene, los que compraron entran igual y el organizador no la reabre; recibe el
+  motivo. **Descongelar** la abre otra vez.
+- **Cancelar y devolver todo** (Eventos · retirar, Admin): regla del módulo, cancela el evento → **devolución total** a cada comprador (boletos,
+  mesa y extras; la comisión no se cobra; el costo de la tarjeta lo pone To'Latino); avisa a cada persona por SMS. Con motivo; queda en la auditoría.
+- **Liquidaciones** (pestaña de Eventos y boletos; Transacciones · ver): lo que se le paga a cada organizador por fecha: POR PAGAR · RETENIDAS ·
+  PAGADO EN 30 DÍAS · POR DESCONTAR; filtros Pendientes · Retenidas · En camino · Pagadas · Ajustadas; **Retener** y **Soltar** con motivo
+  (Transacciones · aprobar); **Exportar CSV** (Transacciones · exportar, auditado). Una disputa abierta o una cuenta que no recibe pagos retiene
+  y suelta sola; el primer evento grande de un organizador nuevo y lo que retiene To'Latino lo suelta una persona.
+- **Colas**: **Organizadores que cancelan** (2 cancelaciones con boletos en 90 días, Configuración): cada cancelación con lo devuelto y el costo
+  de la tarjeta; **Bloquear publicación** o **Revisado, sin cambios**. **Pagos de eventos retenidos** (primer evento sobre $2,000): **Soltar el
+  pago** (el organizador queda revisado) o **Mantener retenido** con motivo.
+- **Configuración › Eventos**: avisos del organizador por fecha (3), día de pago (2 = martes), retener el primer evento desde ($2,000),
+  cancelaciones que abren un caso (2) y su plazo (90 días), esperar otra liquidación para un ajuste (14 días), devoluciones al momento al
+  cancelar (25 órdenes).
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
@@ -94,3 +112,7 @@ the phone), **BEING TRANSFERRED: no QR gets in**, its **REFUND** (amount, who, t
 event page adds **LIVE COMPS · TRANSFERRED · ON THE WAITLIST** and refunded tickets. Transactions never refunds tickets by amount (tickets are refunded
 by the buyer or the organizer). **Queues › Help with orders** gets «Help with a ticket order» (B-) directly; resolve with a message or refund to the
 card (tickets stay valid).
+
+**6e (English):** the event page adds the change history, the cancellation progress and money by date; **Freeze sales** (organizer cannot reopen),
+**Cancel and refund everything** (100 % to every buyer); **Payouts** tab with hold/release and CSV; queues **Organizers who cancel** and **Held
+event payouts**; new Event settings (notices per date, payout day, new-organizer threshold, cancellations window, adjustment wait, refunds batch).

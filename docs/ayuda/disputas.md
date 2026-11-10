@@ -41,3 +41,16 @@ When a customer disputes a To'Latino card charge with their bank, Stripe tells u
 refunds). **Respond with evidence** sends a summary plus that evidence; **Accept refund** closes it and returns the money.
 The business is notified, sees DISPUTED in Payouts and gets the result. In the sandbox, Transactions has "Simulate
 dispute" and the bank's result.
+
+## 6e · Disputas de boletos de eventos (10 nov 2026)
+- Un contracargo sobre un **cobro de boletos** (el cobro es de To'Latino) entra a la misma cola **Disputas con el banco**. La **evidencia** sale
+  del boleto: la orden B-…, el evento, la fecha y el lugar, cada boleto con su estado (válido · usado en la puerta · devuelto · transferido),
+  desde qué cuenta se compró y lo ya devuelto (la hora y la puerta del escaneo se suman con la Puerta, 6g). Nunca teléfonos.
+- **Mientras está abierta**, la liquidación de esa fecha queda **RETENIDA (disputa)** y no se le paga al organizador. Al cerrarse sale sola.
+- **Perdida o aceptada**: ese cobro no se le paga al organizador (y To'Latino no cobra su comisión de ese cobro). Si la fecha **ya se había
+  pagado**, lo que se le pagó de ese cobro se **descuenta una sola vez** de su siguiente liquidación; sin otra en 14 días (Configuración), se
+  revierte de la transferencia. El costo del contracargo de Stripe lo absorbe To'Latino (decisión reversible, REVISION 6e).
+
+**English · ticket disputes:** a chargeback on a ticket charge goes to the same queue with evidence from the tickets (order, event, each
+ticket's status, account, refunds). While open, that date's payout is held; lost or accepted, that charge is not paid to the organizer, and if
+already paid it is deducted once from the next payout (or reversed after 14 days without one).

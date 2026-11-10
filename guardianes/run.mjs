@@ -989,7 +989,8 @@ const guardianes = {
     if (existsSync(pe) && existsSync(ae)) {
       const ui6 = readFileSync(pe, "utf8"), sv6 = readFileSync(ae, "utf8");
       if (/evtDevolver\(/.test(ui6) !== /export async function evtDevolver[\s\S]*?devolverDesdePanel\(/.test(sv6)) falla("devolverCoincide", pe, 0, "«Devolver» del panel de eventos y su acción (devolverDesdePanel) tienen que ir juntos");
-      if (!/export async function evtDevolver[\s\S]*?accesoPanel\(a\.negocio\.id, "pay"\)/.test(sv6)) falla("devolverCoincide", ae, 0, "devolver boletos desde el panel pide la parte de Cobros");
+      // 6e: dentro del cuerpo de cada acción (otra acción más abajo que también pide «pay» no cuenta).
+      for (const fn of ["evtDevolver", "evtCancelar"]) if (/export async function evtCancelar/.test(sv6) || fn === "evtDevolver") if (!/if \(!\(await accesoPanel\(a\.negocio\.id, "pay"\)\)\) return no\(/.test(cuerpoFn(sinComent(ae), fn))) falla("devolverCoincide", ae, 0, `«${fn}» devuelve dinero: pide la parte de Cobros`);
     }
   },
 
@@ -2286,7 +2287,11 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
         if (/\bevent_dates\b/.test(q) && /\blistable\s*=/.test(q) && /\b(update|insert)\b/.test(q)) falla(G, x, 0, "listable de una fecha no se escribe desde la app (lo decide la base)");
-        if (/update events set[^`]*status = 'live'/.test(q)) {
+        // 6e · Reanudar la venta (lib/evt-cambios.ts) solo vuelve a 'live' un evento PAUSADO y ya aprobado: nunca publica algo sin revisión.
+        // Lo que se ASIGNA (antes del where): «… where status = 'live'» no pone nada en vivo.
+        const pone = /update events set[^`]*status = 'live'/.test(q.split(/\bwhere\b/)[0] ?? "");
+        if (pone && x === "apps/web/lib/evt-cambios.ts" && /where id = \$1::bigint and status = 'paused' and approved_at is not null/.test(q)) continue;
+        if (pone) {
           if (!OK.has(x)) falla(G, x, 0, "solo lib/evt.ts, lib/evt-revision.ts y la apelación ponen un evento en vivo");
           if (!/approved_at = now\(\)/.test(q)) falla(G, x, 0, "poner un evento en vivo pone approved_at en la misma sentencia");
         }
@@ -3090,6 +3095,131 @@ const guardianes = {
     for (const fn of ["cancelarBoletos"]) if (!/cfgSql\("bol_cancelar_h"\)/.test(cuerpoFn(d, fn))) falla(G, D, 0, "cancelar con devolución hasta bol_cancelar_h (Configuración), lo decide la base");
     if (existsSync(P)) { const p = readFileSync(P, "utf8"), i = p.indexOf("insert into sim_refunds"), j = p.indexOf("update sim_intents set refunded_cents"); if (i < 0 || j < 0 || i > j || !/insert into sim_refunds[^`]*on conflict \(id\) do nothing/.test(p)) falla(G, P, 0, "el simulador devuelve una sola vez por llave (sim_refunds antes del saldo)"); }
     if (existsSync(R) && !/desp\.barrerDevolucionesBoletos\(\)/.test(readFileSync(R, "utf8"))) falla(G, R, 0, "las devoluciones pendientes las reintenta el barrido");
+  },
+
+  /* 6e (y la falla del CI de 6d). Todo script de scripts/ e infra/ que corre en el CI o a mano se puede leer: `node --check` en cada .cjs y .mjs.
+     La prueba de contrato de Stripe tenía la misma variable declarada dos veces y no corrió nunca (nadie la ejecutó en local). Al revés:
+     una declaración repetida o una llave sin cerrar → falla. */
+  scriptsSeLeen() {
+    const G = "scriptsSeLeen";
+    for (const f of codigo.filter((x) => /^(scripts|infra)\/.*\.(cjs|mjs)$/.test(x))) {
+      try { execSync(`node --check ${JSON.stringify(f)}`, { stdio: ["ignore", "ignore", "pipe"] }); }
+      catch (e) { falla(G, f, 0, `no se puede leer (node --check): ${String(e.stderr ?? e.message).split("\n").find((l) => /Error/.test(l)) ?? "error de sintaxis"}`); }
+    }
+  },
+
+  /* 6e. Cada llamada a Stripe de la pasarela está en la prueba de contrato (scripts/contrato-stripe/prueba.cjs corre contra stripe-mock en
+     el CI): un método de `pasarela` que llama a stripe() y que la prueba no usa, nunca se validó contra la API. Al revés: quitar de la
+     prueba transferir o revertirTransferencia → falla. */
+  contratoCubreLaPasarela() {
+    const G = "contratoCubreLaPasarela", P = "apps/web/lib/pagos/pasarela.ts", T = "scripts/contrato-stripe/prueba.cjs";
+    if (!existsSync(P) || !existsSync(T)) return falla(G, T, 0, "falta la pasarela o su prueba de contrato");
+    const p = sinComent(P), t = readFileSync(T, "utf8"), i = p.indexOf("export const pasarela = {");
+    const cuerpo = p.slice(i);
+    const metodos = [...cuerpo.matchAll(/\n  (?:async )?(\w+)\(/g)].map((m) => m[1]);
+    // Lee la base antes de llamar a Stripe y el contrato corre sin base: queda anotado en LAUNCH-CHECKLIST (6e).
+    const SIN_CONTRATO = new Set(["cliente"]);
+    for (let k = 0; k < metodos.length; k++) {
+      const desde = cuerpo.search(new RegExp(`\\n  (?:async )?${metodos[k]}\\(`)), hasta = k + 1 < metodos.length ? cuerpo.search(new RegExp(`\\n  (?:async )?${metodos[k + 1]}\\(`)) : cuerpo.length;
+      if (!SIN_CONTRATO.has(metodos[k]) && /\bstripe\s*(<|\()/.test(cuerpo.slice(desde, hasta)) && !new RegExp(`pasarela\\.${metodos[k]}\\(`).test(t)) falla(G, T, 0, `«pasarela.${metodos[k]}» llama a Stripe y la prueba de contrato no lo prueba`);
+    }
+  },
+
+  /* 6e. Cancelar (el organizador o To'Latino) devuelve el 100 % de cada orden: boletos (también los usados), mesa y extras, la comisión no
+     se cobra; idempotente por orden (`evtcx-<cancelación>-<orden>`) y por boleto (la base), nunca más de lo que queda del cobro, con la
+     devolución en dos pasos de 6d (la misma llave en cada reintento) y reanudable: el barrido sigue las cancelaciones a medias. Una orden
+     con el cobro a medias espera. Al revés: devolver como comprador (menos el cargo), sin la llave por orden, sin el tope, sin el barrido
+     o sin esperar el cobro a medias → falla. */
+  devolucionTotalAlCancelar() {
+    const G = "devolucionTotalAlCancelar", C = "apps/web/lib/evt-cambios.ts", D = "apps/web/lib/boletos-despues.ts", R = "apps/web/lib/barrido.ts", M = "packages/db/migrations/0110_eventos_cambios_dinero.sql";
+    if (!existsSync(C) || !existsSync(D) || !existsSync(M)) return falla(G, C, 0, "faltan lib/evt-cambios.ts, lib/boletos-despues.ts o la migración 0110");
+    const c = sinComent(C), d = sinComent(D), m = readFileSync(M, "utf8");
+    const pc = cuerpoFn(c, "procesarCancelacion");
+    if (!/anotarDevolucionTotal\(c, \{ op, por: "event_cancelled",[\s\S]*?idem: `evtcx-\$\{cx\.id\}-\$\{op\}`[\s\S]*?usados: true \}\)/.test(pc)) falla(G, C, 0, "procesarCancelacion: devolución total con la llave por orden (evtcx-<cancelación>-<orden>), también los boletos usados");
+    if (!/and not exists \(select 1 from payments p where p\.operation_id = o\.id and p\.status = 'held'\)/.test(pc) || !/await tx\(/.test(pc) || !/ejecutarDevolucion\(r\.rf\)/.test(pc)) falla(G, C, 0, "procesarCancelacion: una orden por transacción, espera el cobro a medias y hace la devolución con su llave");
+    if (!/procesarCancelacion\(cx, \{ ordenes: lote/.test(cuerpoFn(c, "cancelarEvento"))) falla(G, C, 0, "cancelarEvento: las devoluciones salen en el acto (evt_cancelar_lote) y el resto en el barrido");
+    const at = cuerpoFn(d, "anotarDevolucionTotal");
+    if (!/calcular\(c, o\.id, o\.fee, sel, "business"\)/.test(at)) falla(G, D, 0, "anotarDevolucionTotal: 100 % (calcular como el organizador: la comisión no se cobra)");
+    if (!/const resto = Math\.max\(0, o\.amt - o\.ya\)/.test(at) || !/k\.total = Math\.min\(k\.total, resto\)/.test(at)) falla(G, D, 0, "anotarDevolucionTotal: nunca más de lo que queda del cobro");
+    if (!/select amount_cents as amt from refunds where idem_key = \$1/.test(at)) falla(G, D, 0, "anotarDevolucionTotal: la misma llave = la misma devolución");
+    if (!/d\.status in \('needs_response', 'under_review', 'lost', 'accepted'\)/.test(at)) falla(G, D, 0, "anotarDevolucionTotal: un cobro en disputa no se devuelve otra vez (el banco ya lo lleva)");
+    if (existsSync(R) && !/cxs\.barrerCancelaciones\(\)/.test(readFileSync(R, "utf8"))) falla(G, R, 0, "las cancelaciones a medias las sigue el barrido de cada minuto");
+    if (!/create unique index if not exists event_cancellations_una_idx/.test(m)) falla(G, M, 0, "una cancelación por fecha (o por evento): índice único");
+    if (!/check \(initiated_by in \([^)]*'event_cancelled'/.test(m)) falla(G, M, 0, "refunds.initiated_by admite 'event_cancelled'");
+  },
+
+  /* 6e. Al organizador se le paga después de la fecha y solo lo que dice el libro: la base calcula los montos al pasar a 'paying'
+     (evt_liq_calc + evt_liq_deuda) y solo deja pasar una fecha terminada, con su martes llegado, sin disputas abiertas, sin devoluciones
+     pendientes, sin la retención del organizador nuevo y con la cuenta habilitada; una vez en camino, nada cambia. Una transferencia por
+     fecha (llave única); solo pagarUna transfiere, con el monto y la llave guardados. Al revés: quitar una de esas reglas, mandar otra llave
+     o un monto de otro lado, o que la app escriba los montos → falla. */
+  pagoDespuesDelEvento() {
+    const G = "pagoDespuesDelEvento", M = "packages/db/migrations/0110_eventos_cambios_dinero.sql", L = "apps/web/lib/evt-liquidacion.ts", R = "apps/web/lib/barrido.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, M, 0, "faltan la migración 0110 o lib/evt-liquidacion.ts");
+    const t = ultimaFn("event_settlements_antes");
+    const reglas = [
+      [/if d\.ends_at > now\(\) then raise exception 'evt_liq_antes/, "la fecha tiene que haber terminado"],
+      [/\(now\(\) at time zone tz\)::date < old\.pay_on then raise exception 'evt_liq_antes/, "no antes de su martes"],
+      [/if k\.abiertas > 0 then raise exception 'evt_liq_disputa/, "sin disputas abiertas"],
+      [/if k\.pendientes > 0 then raise exception 'evt_liq_devolucion/, "sin devoluciones pendientes"],
+      [/if k\.vivos_cx > 0 then raise exception/, "una fecha cancelada, solo con todo devuelto"],
+      [/if evt_liq_retener_nuevo\(new\.event_id, new\.business_id\) then raise exception 'evt_liq_nuevo/, "la retención del organizador nuevo"],
+      [/a\.payouts_paused then raise exception 'evt_liq_cuenta/, "la cuenta de cobro habilitada y sin retener"],
+      [/new\.base_cents := k\.base;/, "los montos los pone la base (evt_liq_calc)"],
+      [/deuda := evt_liq_deuda\(new\.business_id, new\.id\);/, "la deuda de ajustes la calcula la base"],
+      [/raise exception 'evt_liq_fija: lo que se transfiere ya quedó fijo'/, "en camino o pagada, lo calculado no cambia"],
+      [/pg_advisory_xact_lock\(hashtext\('evt-liq:' \|\| new\.business_id\)\)/, "candado por negocio al descontar la deuda"],
+    ];
+    for (const [re, que] of reglas) if (!re.test(t)) falla(G, M, 0, `event_settlements_antes: ${que}`);
+    const m = readFileSync(M, "utf8");
+    if (!/idem_key       text not null unique check \(idem_key ~ '\^evt-liq-\\d\{1,18\}\$'\)/.test(m) || !/new\.idem_key := 'evt-liq-' \|\| new\.event_date_id;/.test(t)) falla(G, M, 0, "una llave por fecha (evt-liq-<fecha>, única), la pone la base");
+    if (!/event_date_id  bigint not null unique references event_dates/.test(m)) falla(G, M, 0, "una liquidación por fecha");
+    const l = sinComent(L), pu = cuerpoFn(l, "pagarUna");
+    if (!/pasarela\.transferir\(\{ centavos: s\.net, destino: s\.dest, grupo: `evt-\$\{s\.eid\}`, idem: s\.idem,/.test(pu)) falla(G, L, 0, "pagarUna: el monto, el destino y la llave guardados por la base");
+    if (!/if \(!s \|\| s\.st !== "paying"\) return/.test(pu) || !/set status = 'paid'[^`]*where id = \$1::bigint and status = 'paying'`/.test(pu)) falla(G, L, 0, "pagarUna: solo desde 'paying' y 'paid' una vez");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const tx = sinComent(x);
+      if (x !== L && x !== "apps/web/lib/pagos/pasarela.ts" && /pasarela\.transferir\(|revertirTransferencia\(/.test(tx)) falla(G, x, 0, "solo lib/evt-liquidacion.ts transfiere al organizador");
+      for (const q of tx.match(/`[^`]*`/g) ?? []) if (/update event_settlements set[^`]*\b(gross_cents|fee_cents|refunded_cents|disputed_cents|base_cents|carry_cents|net_cents|destination)\s*=/.test(q)) falla(G, x, 0, "los montos de una liquidación los pone la base, nunca la app");
+    }
+    if (existsSync(R) && !/liq\.liquidar\(\)/.test(readFileSync(R, "utf8"))) falla(G, R, 0, "la liquidación del martes corre en el barrido");
+  },
+
+  /* 6e (§6 #7). Los avisos de Eventos con SMS son SOLO los críticos de la plataforma: cancelación, cambio de fecha u hora, el boleto que te
+     mandan, la cortesía, el lugar de la lista de espera (y el sí / no de la revisión al negocio, 6a). Los avisos del organizador van por
+     push y en la app. Al revés: una plantilla evt_/bol_/rsvp_/puerta_/evp_/espera_ con SMS fuera de la lista → falla. */
+  avisoEventoSmsSoloCritico() {
+    const G = "avisoEventoSmsSoloCritico", dir = "packages/db/migrations";
+    const OK = new Set(["evt_aprobado", "evt_rechazado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio"]);
+    for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
+      const t = readFileSync(`${dir}/${x}`, "utf8");
+      for (const mm of t.matchAll(/\('((?:evt|bol|rsvp|puerta|evp|espera)_[a-z0-9_]+)', '[a-z]+', (?:null|'[a-z]+'), (true|false),/g)) if (mm[2] === "true" && !OK.has(mm[1])) falla(G, `${dir}/${x}`, 0, `la plantilla «${mm[1]}» manda SMS y no es crítica (§6 #7)`);
+    }
+    const C = "apps/web/lib/evt-cambios.ts";
+    if (existsSync(C) && !/avisarMuchos\(r\.L, "evt_aviso"/.test(cuerpoFn(sinComent(C), "avisarAsistentes"))) falla(G, C, 0, "los avisos del organizador van con evt_aviso (sin SMS)");
+  },
+
+  /* 6e. Libros de los cambios del evento: event_changes, event_notices, ticket_choices son de solo inserción y una liquidación, una
+     cancelación o una reversión no se borran (estados). Al revés: sin su trigger o con un update / delete desde la app → falla. */
+  libroCambiosEvento() {
+    const G = "libroCambiosEvento", M = "packages/db/migrations/0110_eventos_cambios_dinero.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0110");
+    const m = readFileSync(M, "utf8");
+    if (!/create trigger event_changes_no_cambia before update or delete on event_changes/.test(m) || !/create trigger ticket_choices_no_cambia before update or delete on ticket_choices/.test(m)) falla(G, M, 0, "event_changes y ticket_choices son de solo inserción (trigger)");
+    if (!/if tg_op <> 'INSERT' then raise exception 'event_notices es solo de inserción'/.test(ultimaFn("event_notices_antes"))) falla(G, M, 0, "event_notices es de solo inserción");
+    for (const [fn, msg] of [["event_settlements_antes", "una liquidación no se borra"], ["event_cancellations_antes", "una cancelación no se borra"], ["event_settlement_reversals_antes", "una reversión no se borra"]]) if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, M, 0, `${msg} (estados)`);
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (event_changes|event_notices|ticket_choices)\b|\bdelete from (event_settlements|event_cancellations|event_settlement_reversals)\b/.test(q)) falla(G, x, 0, "un libro de los cambios del evento no se cambia y el dinero no se borra");
+  },
+
+  /* 6e. Dinero que no se desborda: en SQL, centavos × centavos (p. ej. la comisión × lo que queda del cobro) pasa de integer con un cobro
+     de $2,250 (11 750 × 225 000 > 2 147 483 647) y la página se cae. Se multiplica en bigint (::bigint). Al revés: quitar el cast → falla. */
+  dineroSinDesbordar() {
+    const G = "dineroSinDesbordar";
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) for (const m of q.matchAll(/\b[\w.]*_cents(::\w+)?\s*\*\s*\(?\s*[\w.]*_cents/g)) if (!/::(bigint|numeric|int8|float8)/.test(m[0])) falla(G, x, 0, `«${m[0].slice(0, 60)}»: centavos × centavos en integer se desborda; multiplica en bigint`);
+    }
   },
 
   idioma() {

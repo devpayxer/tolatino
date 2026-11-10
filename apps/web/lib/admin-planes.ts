@@ -44,7 +44,7 @@ export async function ingresos(s: Staff) {
     db().query<{ ini: string; fee: number; n: number }>(
       `with s as (select generate_series(date_trunc('week', now() at time zone 'America/New_York') - interval '7 weeks', date_trunc('week', now() at time zone 'America/New_York'), interval '1 week') as ini)
        select to_char(s.ini, 'YYYY-MM-DD') as ini,
-              coalesce(sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0)), 0)::int as fee, count(p.id)::int as n
+              coalesce(sum(p.fee_cents::bigint * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0)), 0)::int as fee, count(p.id)::int as n
          from s left join (payments p join businesses b on b.id = p.business_id and ${C})
            on p.status in ('captured', 'partially_refunded') and date_trunc('week', p.captured_at at time zone 'America/New_York') = s.ini
         group by s.ini order by s.ini`, [s.cities]),
@@ -55,7 +55,7 @@ export async function ingresos(s: Staff) {
            on e.kind = 'charged' and date_trunc('week', e.at at time zone 'America/New_York') = s.ini
         group by s.ini order by s.ini`, [s.cities]),
     db().query<{ cat: string; fee: number }>(
-      `select coalesce(c.name ->> 'es', b.category_id) as cat, sum(p.fee_cents * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0))::int as fee
+      `select coalesce(c.name ->> 'es', b.category_id) as cat, sum(p.fee_cents::bigint * (p.amount_cents - p.refunded_cents) / nullif(p.amount_cents, 0))::int as fee
          from payments p join businesses b on b.id = p.business_id left join categories c on c.id = b.category_id
         where ${C} and p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days'
         group by 1 having sum(p.fee_cents) > 0 order by 2 desc limit 8`, [s.cities]),

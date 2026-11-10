@@ -2217,3 +2217,116 @@ y Chip), **ENVIADOS** en la orden (filas con Deshacer) y en el panel **Devolver 
   del dueño → excluidas (salen en CORTESÍAS).
 - **Pendiente (LAUNCH):** el SMS de verdad (proveedor); lista de espera de eventos gratis con cupo; que quien manda pueda compartir el enlace
   por WhatsApp (sin diseño); disputas de boletos y la liquidación del martes con lo devuelto (6e).
+
+### 6e · Eventos: cambios del evento y dinero del organizador — pausar, cambiar fecha, cancelar con devolución total, avisos, liquidación del martes y disputas (10 nov)
+Qué mirar en el sandbox, paso a paso (dos teléfonos, el panel de La Terraza y el Super Admin; tarjeta 4242 4242 4242 4242):
+1. **Compra** 1 o 2 boletos de un evento de La Terraza con el teléfono A (y otro con el teléfono B).
+2. **Panel de La Terraza (570-555-0366) › Eventos › el evento**: abajo, **VENTA · Vendiendo** con su interruptor. Apágalo: dice «Venta pausada:
+   la página dice «Venta pausada». Los que ya compraron entran igual.». En el teléfono, la página del evento dice **Venta pausada**. Vuelve a
+   encenderlo.
+3. **AVISOS A LOS QUE VAN · 0 DE 3** › **Escribir aviso** → toca una **IDEA** («Estacionamiento gratis detrás del local.») → **Enviar a N
+   personas**. En los teléfonos llega en Avisos (sin SMS) y sale primero en **Antes de ir** de la página del evento y en **AVISOS DEL
+   ORGANIZADOR** de la orden.
+4. **Cambiar fecha u hora**: el calendario y **Empieza / Termina**; dice «Antes: … Les avisamos a las N personas que van…» → **Cambiar la
+   fecha**. Llega el SMS «Tu evento cambió de hora / de fecha» (en el sandbox, modo pruebas; en Avisos sí se ve). En la orden del teléfono A sale
+   **El evento cambió de fecha** con **Me quedo con la nueva fecha** / **Devolución total**. Toca «Devolución total» en el teléfono B: le
+   devolvemos el 100 % (cargos incluidos). En el panel: «Cambiaste la fecha (antes: …) · 1 se quedan · 1 pidieron devolución · N sin responder».
+5. **Cancelar evento**: **¿POR QUÉ? LO VEN LOS QUE IBAN** (Mal tiempo · El artista no puede venir · Problema en el local · Cambio de planes);
+   la nota roja dice «Devolvemos $X completo a los N que compraron… No se puede deshacer.» → **Sí, cancelar el evento**. Cada comprador recibe
+   el 100 % (también lo ya usado), las cortesías se anulan y todos reciben el SMS «Se canceló un evento». La orden dice **Este evento fue
+   cancelado por el organizador · Se te devuelve todo**; el enlace del evento dice **Evento cancelado** con el motivo. El panel muestra el
+   progreso (órdenes devueltas).
+6. **Panel › Cobros y plan › Cobros con tarjeta** (La Terraza ahora lo ve por tener Eventos): **PAGOS DE EVENTOS · POR FECHA** con PRÓXIMA ·
+   PENDIENTE · RETENIDA (motivo) · EN CAMINO · PAGADA y la cuenta «Bruto − comisión − devuelto − disputas − ajuste». La misma cuenta está en la
+   ficha del evento (**DINERO DEL EVENTO · POR FECHA**). El pago sale el **martes después de cada fecha**: en el sandbox se ve el martes
+   siguiente al evento (o pídenos mover la fecha).
+7. **Super Admin (570-555-0199) › Eventos y boletos › Liquidaciones**: POR PAGAR · RETENIDAS · PAGADO 30 DÍAS · POR DESCONTAR, filtros,
+   **Retener / Soltar** con motivo y **Exportar CSV**. **Colas › Pagos de eventos retenidos** (primer evento de un organizador nuevo sobre
+   $2,000: **Soltar el pago** / **Mantener retenido**) y **Organizadores que cancelan** (2 cancelaciones con boletos en 90 días).
+8. **Super Admin › la ficha de un evento**: **CAMBIOS DEL EVENTO**, el dinero por fecha, **Congelar ventas** (el organizador ya no puede
+   reabrirla) y **Cancelar y devolver todo**.
+9. **Configuración › Eventos**: avisos del organizador por fecha (3), día de pago (2 = martes), retener el primer evento desde ($2,000),
+   cancelaciones que abren un caso (2) y su plazo (90 días), esperar otra liquidación para un ajuste (14 días), devoluciones al momento al
+   cancelar (25 órdenes).
+
+**Decidí X; si prefieres Y, se cambia (6e):**
+- **Cuánto se le paga al organizador por fecha** = cobrado − devuelto − perdido en disputas − comisión (la copiada al comprar, menos la que
+  To'Latino cedió). Si el organizador cancela o el comprador pide la devolución total por un cambio de fecha, la comisión no se cobra. Si
+  **To'Latino devuelve algo desde Ayuda** (sin tocar boletos), **lo pone el organizador** (es el vendedor) y la comisión se mantiene (nunca más
+  que lo que queda del cobro). Con una **disputa perdida**, ese cobro no se le paga y To'Latino tampoco cobra su comisión de ese cobro; **el cargo
+  de Stripe por la disputa ($15) lo absorbe To'Latino** (si prefieres, se le cobra al organizador).
+- **Martes = el primer martes estrictamente después del día local en que termina la fecha** (una fecha que termina el martes a la 1 AM cobra el
+  martes siguiente). A partir de las 00:00 de ese martes. Sale a la cuenta de Stripe del organizador; de ahí a su banco con su calendario.
+- **Disputa abierta = toda esa fecha espera** (no solo el monto en disputa), como dice el guardián del plan («ni con disputa abierta»). Sale sola al
+  cerrarse. Una disputa que llega **después** de pagar no retiene nada: si se pierde, se descuenta de la siguiente.
+- **Ajuste después de pagar**: resta de la siguiente liquidación del organizador; si en **14 días** (Configuración) no tiene otra ni fechas por
+  delante con ventas, se **revierte** la transferencia (Stripe Transfer Reversal), nunca más de lo transferido.
+- **Organizador nuevo** = nunca se le ha pagado otro evento y Confianza no lo ha revisado. Su primer evento con bruto **sobre $2,000** (todas sus
+  fechas) se retiene con un caso en Colas; **soltarlo** lo marca revisado (sus siguientes eventos no se retienen por eso). Ser «verificado» para
+  publicar no lo exime (es otra revisión).
+- **Cancelar desde el panel pide la parte «Cobros»** del equipo (devuelve dinero), como «Devolver». Pausar, cambiar la fecha y avisar piden solo «Eventos».
+- **Cancelar devuelve también los boletos ya usados** (el evento se canceló, aunque hubiera empezado a entrar gente). Un cobro con **disputa
+  abierta o perdida no se devuelve** al cancelar (el banco ya lo lleva): sus boletos se anulan.
+- **Devoluciones en lote**: 25 órdenes en el acto (Configuración) y el resto en el barrido de cada minuto; cada orden en su propia transacción;
+  una orden con el cobro a medias espera. Nada se devuelve dos veces (llave por orden + boleto único en la base).
+- **Avisos de cancelación y de cambio de fecha u hora = SMS crítico** (salen también de noche: un evento de esta noche no puede esperar a las 7 AM).
+  Uno por persona y cambio, aunque el barrido corra varias veces.
+- **Cambio de fecha**: solo una fecha que no empezó, de un evento de una fecha (las series, con 6f); no con un cambio en revisión; hasta 12 h de
+  duración y dentro de los días hacia adelante de Configuración. **El lugar no se cambia aquí** (se cancela y se publica otro, o se hace con
+  un cambio que revisa To'Latino). Quien **compró después** del cambio no tiene elección. Las transferencias pendientes no se tocan.
+- **Admin «Congelar ventas»** = el evento queda pausado y el organizador no lo reabre (la base lo impide); **«Extender ventas» y «Ajustar cupo»
+  del admin no se hicieron** (6j).
+- **Cobros con tarjeta** del panel ahora lo ve también un negocio con el módulo Eventos encendido (antes solo Comida); los cobros de boletos ya
+  no salen en «ÚLTIMOS COBROS CON TARJETA» (no son cobros del negocio: van en PAGOS DE EVENTOS).
+Huecos compuestos con piezas del sistema (capturas locales e6e-*, teléfono y escritorio): **Cambiar fecha u hora** del panel (el diseño manda al
+editor; con ventas es una hoja propia con el calendario `cal` y `step`), **DINERO DEL EVENTO / PAGOS DE EVENTOS** (rows + note), el aviso de la
+orden **El evento cambió de fecha** con sus dos botones y **cancelado por el organizador** (como el resto de la orden), **la página de un evento
+cancelado** (cartel, título tachado, aviso), **Super Admin › Liquidaciones** (head, kpis, chips, buscador, AdminList, ConfirmarMotivo, CSV como
+Ingresos 2s), los casos de Colas **Organizadores que cancelan** y **Pagos de eventos retenidos** (kv, rows, note, acciones con motivo).
+
+**Revisión de seguridad (6e, dinero):**
+- **El monto de la liquidación lo calcula solo la base, del libro:** al pasar a 'paying' el trigger `event_settlements_antes` pone bruto,
+  comisión, devuelto, disputas, base, descuento por deuda, neto y destino con `evt_liq_calc` (payments, refunds, ticket_refund_lines, disputes) y
+  `evt_liq_deuda`; la app solo pide «pagar». Ya en camino o pagada, nada de eso cambia (`evt_liq_fija`). Guardián `pagoDespuesDelEvento` (la app
+  no escribe montos de una liquidación; solo `lib/evt-liquidacion.ts` transfiere). e2e: neto exacto calculado aparte de los boletos ($39.75; $26.50
+  − $13.25; $2,132.50); intentar subir el monto a mano → la base lo rechaza.
+- **Una fecha no se paga dos veces:** una liquidación por fecha (único), llave de Stripe `evt-liq-<fecha>` (única) y la misma en cada reintento,
+  'paid' una sola vez (`where status = 'paying'`), el simulador transfiere una vez por llave (`sim_transfers`). e2e: otro barrido → una
+  transferencia; volver a 'paying' una pagada → rechazado.
+- **Nunca antes del martes ni con lo que impide pagar:** la base exige la fecha terminada, su martes llegado (en la zona de la ciudad), sin
+  disputas abiertas, sin devoluciones pendientes, sin cobros a medias, sin boletos vivos de una fecha cancelada, la cuenta de cobro habilitada y
+  sin pausar, y sin la retención del organizador nuevo (`evt_liq_retener_nuevo`), con un candado por negocio al descontar la deuda. e2e: fecha
+  terminada hace 1 h → pendiente y el `update … 'paying'` a mano → «evt_liq_antes»; disputa abierta → RETENIDA y a mano → «evt_liq_disputa»;
+  cuenta pausada → RETENIDA (cuenta); organizador nuevo → RETENIDA (nuevo) y a mano → «evt_liq_nuevo».
+- **Los organizadores retenidos no cobran:** retención automática (disputa, cuenta) que sale sola; la del organizador nuevo y la de To'Latino solo
+  la suelta una persona con `tx:aprobar`, con motivo y auditoría. e2e: soltar desde Colas → se paga; un vecino que repite «Soltar» → nada.
+- **Las devoluciones de una cancelación son completas, idempotentes, reanudables y nunca pasan de lo cobrado:** 100 % de cada boleto (también
+  usado), mesa y extra; llave por orden `evtcx-<cancelación>-<orden>`; boleto único en `ticket_refund_lines`; la base no deja pasar de lo cobrado
+  (`refunds_tope` de 6d) y además se recorta a lo que queda; cada orden en su transacción; la cancelación queda 'running' hasta que no quede
+  nada vivo y el barrido la sigue. e2e: 5 órdenes, Stripe caído en 2 y el lote cortado a 2 → el barrido anota las otras 3, las 2 caídas quedan
+  pendientes con intentos y al volver Stripe se hacen con la MISMA llave: 5 devoluciones (base y simulador), cada una el 100 %, ni una de más;
+  repetir la cancelación → «ya se canceló». Guardián `devolucionTotalAlCancelar`.
+- **IDOR:** cada acción nueva va por la cuenta, el negocio (parte «evt»; cancelar además «pay») o el permiso del staff, y la consulta filtra por
+  el dueño del evento. e2e repitiendo la llamada del servidor: pausar, avisar, mover y cancelar con la sesión de otro negocio (Juan) y de un
+  vecino → sin acceso; con su propio negocio y el evento de otro → «no existe»; la elección de otra persona → «no tiene un cambio»; «Soltar»
+  con un vecino → nada.
+- **Una disputa no se descuenta dos veces:** lo perdido sale del libro (derivado), la deuda = lo pagado − lo que hoy dice el libro − lo ya
+  descontado − lo revertido; el webhook repetido no cambia nada. e2e: disputa perdida después de pagar → deuda $13.25 → la siguiente
+  liquidación la descuenta una vez → deuda 0; otro barrido no descuenta más; sin siguiente → se revierte una vez (y la base no deja revertir más
+  de lo transferido).
+- **Auditoría de solo inserción:** cada liquidación pagada, retenida, soltada o revertida, cada cancelación y congelado del admin y el CSV dejan
+  AuditEntry; `event_changes`, `event_notices`, `ticket_choices` son de solo inserción y liquidaciones, cancelaciones y reversiones no se borran
+  (triggers; guardián `libroCambiosEvento`).
+- **Encontrado y corregido en la revisión:** (1) el mensaje del tope de avisos y el lote de devoluciones leían la caché de 15 s → los lee la base en
+  el momento; (2) Panel › Cobros mostraba los cobros de boletos como «pedidos» del negocio → fuera (van en PAGOS DE EVENTOS); (3) un negocio de
+  eventos (no Comida) no podía abrir Cobros con tarjeta → ahora sí; (4) **CI de 6d:** la prueba de contrato de Stripe tenía `const dp` dos veces y
+  no corría (lo corrigió la sesión principal; guardián nuevo `scriptsSeLeen` que hace `node --check` a todo script) y **`pasarela.cliente` nunca
+  estuvo en el contrato** (lee la base primero; guardián nuevo `contratoCubreLaPasarela`, que exige cada llamada a Stripe en el contrato salvo esa,
+  anotada en LAUNCH). El contrato corrió en local contra stripe-mock: todas las llamadas, también `transfers` y `transfers/{id}/reversals`;
+  (5) **desbordamiento de enteros (bug de 2d/2o/2s, cazado por 6e):** «comisión × lo que queda del cobro» en integer pasaba de 2,147,483,647
+  con un cobro de $2,250 y se caían Transacciones, Ingresos, 360 › Dinero y Cobros → se multiplica en bigint en los 6 lugares; guardián nuevo
+  `dineroSinDesbordar`; (6) el guardián `devolverCoincide` daba por buena la parte «Cobros» de `evtDevolver` aunque solo la tuviera la acción
+  siguiente → ahora mira el cuerpo de cada acción (también `evtCancelar`).
+- **Pendiente (LAUNCH):** 3D Secure y huella de tarjeta (6c); el cargo de Stripe por disputa lo absorbe To'Latino; una devolución que Stripe
+  nunca hace (alerta pasado N intentos, 6d); revertir con saldo insuficiente del organizador (Stripe lo rechaza: queda pendiente con intentos);
+  el SMS de verdad; extender ventas / ajustar cupo del admin (6j); cambiar el lugar.
