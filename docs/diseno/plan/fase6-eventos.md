@@ -727,7 +727,7 @@ solo teléfono) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 6 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
-- [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0039 solo en pruebas (`semilla`).
+- [x] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0039 solo en pruebas (`semilla`). — CI run 180 (896b068) verde: migraciones 0106–0115 dos veces en base real + semillas 0035–0039 aplicadas y re-aplicadas, 10 nov.
       _6a (9 nov): 0106 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y el archivo vuelto a correr a mano sin errores; semilla 0035
       aplicada dos veces (13 eventos, no se repiten). 6b (10 nov): 0107 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y vuelta a
       correr a mano sin errores. 6c (10 nov): 0108 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva de PostGIS:
