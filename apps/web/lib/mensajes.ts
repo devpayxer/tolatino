@@ -88,7 +88,7 @@ async function contextoDe(userId: string, negocio: string, num: string): Promise
   const o = (await db().query<{ id: string; kind: string; number: string }>(
     `select id::text, kind, number from operations where number = $1 and user_id = $2 and business_id = $3 order by id desc limit 1`, [String(num).slice(0, 20), userId, negocio])).rows[0];
   if (!o) return null;
-  return { op: o.id, ctx: o.kind === "table" ? { es: `Reservación #${o.number}`, en: `Reservation #${o.number}` } : o.kind === "appointment" ? { es: `Cita #${o.number}`, en: `Booking #${o.number}` } : { es: `Pedido #${o.number}`, en: `Order #${o.number}` } };
+  return { op: o.id, ctx: o.kind === "private_event" ? { es: `Evento privado #${o.number}`, en: `Private event #${o.number}` } : o.kind === "table" ? { es: `Reservación #${o.number}`, en: `Reservation #${o.number}` } : o.kind === "appointment" ? { es: `Cita #${o.number}`, en: `Booking #${o.number}` } : { es: `Pedido #${o.number}`, en: `Order #${o.number}` } };
 }
 
 /* El vecino escribe. */

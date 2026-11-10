@@ -739,8 +739,8 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       semillas 0001–0037 + semillas cambiadas → todo sale 0 (0037 da su forma a la serie y al festival también sin equipo). 6g (10 nov): 0112 con
       migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo
       sale 0 (0038 deja a Junior y Karla activos también sin equipo). 6h (10 nov): 0113 con migrar.sh dos veces y vuelta a correr a mano sin
-      errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo sale 0 (6h no trae semilla). CI y 0114–0115
-      pendientes._
+      errores; base nueva: migraciones dos veces + semillas 0001–0038 + semillas cambiadas → todo sale 0 (6h no trae semilla). 6i (10 nov): 0114 con migrar.sh dos veces y vuelta a correr a mano sin errores; base nueva: migraciones
+      dos veces + semillas 0001–0039 + semillas cambiadas → todo sale 0 (0039 crea 7 solicitudes y no las repite). CI y 0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
@@ -809,7 +809,14 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       «Revocar este teléfono» → lo que no subió no cuenta y el teléfono lo borra; el paquete vence (teléfono) y el barrido lo revoca; Mi cuenta:
       el QR sin señal (leído con jsQR) y borrado al salir; otra cuenta no lo ve. `alreves6h` 45/45. Teléfonos de verdad y la base de carga:
       LAUNCH._
-- [ ] Evento privado de punta a punta (pedir, proponer, otra fecha, no puedo, vence, aceptar con depósito, cancelar antes y después de 72 h).
+- [x] Evento privado de punta a punta (pedir, proponer, otra fecha, no puedo, vence, aceptar con depósito, cancelar antes y después de 72 h).
+      _6i (10 nov): e2e `evt6i` 74 ✓ (teléfono 390 y escritorio 1360, contra el simulador): ajustes del panel; Reservar 9+ → Pedir evento privado (nota
+      con teléfono rechazada; nada se cobra) → propuesta calculada por la base (líneas, 6 %, total, depósito 25 %) → pedir un cambio (a Mensajes con el
+      número) → v2 (la v1 ya no se acepta: pantalla y base) → 0002 sin cobro → 4242 con doble toque en dos pestañas (un pago, una aceptación, al
+      restaurante con comisión) → cambio de un evento confirmado sin cobro → cancelar a 73 h (devolución completa, una sola tras dos barridos) y a 71 h
+      (se queda) → el restaurante cancela (devolución completa) → propuesta vencida rechazada (pantalla y base) → otra fecha → no puedo → sin respuesta
+      (barrido) → IDOR con otra cuenta, el dueño de otro negocio, un vecino y otro restaurante (El Fogón) → Mi cuenta, Super Admin › Transacciones,
+      Configuración. `alreves6i` 40/40. Migración 0114 dos veces y vuelta a correr a mano; semilla 0039 en base nueva y vuelta a aplicar sin duplicar._
 - [ ] Super Admin: Eventos y boletos (4 pestañas), catálogo de formatos y géneros, Buscar boleto con reenviar / reemitir / anular, Modo puerta, Dinero,
       Usuarios y Negocios 360°, Confianza › señales, Configuración › Eventos, Notificaciones, Analítica › Eventos; cada acción con motivo, aviso, apelación y
       auditoría.

@@ -6,6 +6,14 @@
 **EN.** If something went wrong with a party or trip booked on To'Latino, ask from “Your party” / “Your trip” › **Help** (up to 7 days
 after). The business replies within 24 hours; otherwise, or if you disagree, To'Latino reviews it within 48 hours.
 
+## Evento privado · Private event (6i)
+**ES.** Desde «Tu evento privado» (`/privado/EP-…`) › **Ayuda con el evento**, cuando ya pasó (hasta 7 días). Motivos: no fue como lo acordado (foto) ·
+faltó algo de lo acordado (foto) · cobraron más de lo acordado (foto) · mal trato · no me descontaron el depósito (foto) · otra cosa. Qué quieres:
+**Que me devuelvan** · **Un descuento** · **Solo quiero avisar**. El restaurante responde en 24 h; si no, To'Latino lo revisa (Colas › Soporte).
+Lo devuelto a la tarjeta sale del depósito cobrado en la app (nunca más de lo cobrado).
+**EN.** From “Your private event” › **Event help**, after the event (up to 7 days). Same flow: the restaurant replies within 24 h, otherwise
+To'Latino reviews it; card refunds come from the deposit charged in the app (never more than was charged).
+
 ## Fiesta · Party
 Motivos: no llegaron · llegaron tarde · no quedó como lo acordado (foto) · faltó algo del paquete (foto) · cobraron más del paquete
 (foto) · dañaron algo o no recogieron (foto) · otra cosa. Qué quieres: **Que me devuelvan** (lo que faltó o se cobró de más) · **Un

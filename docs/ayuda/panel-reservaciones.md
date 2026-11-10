@@ -18,6 +18,7 @@ Versión: Fase 2 · bloque 2e (6 nov 2026). Restaurantes Pro._
   - **Mesas por área** (Salón, Terraza, Barra): enciendes el área y pones cuántas mesas de 2, 4, 6 y 8. **Mesas que no
     se reservan** (para los que llegan sin reservación).
   - **Grupos:** «Juntamos mesas» y hasta cuántas personas; más que eso, el cliente pide un evento privado.
+  - **Evento privado** (6i): abre sus ajustes (encender, personas, anticipación, depósito, áreas, menús, extras). Ver «Evento privado en el panel».
   - **Cuándo:** días, turnos (Almuerzo y Cena con primera y última mesa) y cuánto dura cada reservación (1 h, 1 h 30,
     2 h). Avisa si tu horario cierra un día que marcaste, si la última mesa no cabe antes de cerrar o si los turnos se cruzan.
   - **Días sin reservaciones:** cierra un día, un turno o un área (evento privado, feriado, lluvia en la terraza). Se

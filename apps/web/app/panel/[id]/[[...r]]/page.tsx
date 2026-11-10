@@ -37,7 +37,7 @@ import { herramientaRetail, rubroRetail } from "@/lib/retail";
 /* /panel/{negocio} = Tu página · /panel/{negocio}/hoy = Hoy · /panel/{negocio}/pagina/{apartado} = un apartado de
    Tu página · ?det= abre el detalle (columna en escritorio, pantalla en el teléfono). El servidor decide quién entra. */
 const SUBS = new Set(["hor", "fotos", "about", "equipo", "ver", "lic", "resenas", "nov", "cup"]);
-const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
+const DET = /^(stf:(new|[0-9a-f-]{36})|(item|mcat|mgrp):(new|\d{1,18})|ped:\d{1,12}|rsv:R-\d{1,10}|rev:\d{1,18}|nov:(new|(edit|dup):\d{1,18}|\d{1,18})|cup:(new|edit:\d{1,18})|vac:(new|(edit|dup):\d{1,18}|\d{1,18})|vap:\d{1,18}|msg:\d{1,18}|svc:(new|new:extra|\d{1,18})|svm|of:(new|new:\d{1,18}|\d{1,18})|cita:C-\d{1,10}|noche:N-\d{1,10}|insc:I-\d{1,10}|vis:D-\d{1,10}|grp:(new|list):\d{1,18}|fe:hor:new|inm:(new|\d{1,18})|auto:(new|\d{1,18})|sol:[PQE]-\d{1,10}|renta:T-\d{1,10}|apt:A-\d{1,10}|merc:M-\d{1,10}|fiesta:F-\d{1,10}|evp:(aj|EP-\d{1,10})|viaje:V-\d{1,10}|salida:\d{1,18}|evt:(new(:[a-z]{2,12})?|edit:\d{1,18}|\d{1,18}(@\d{1,18})?)|door:\d{1,18}@\d{1,18})$/;
 const FILTROS = new Set(["all", "pend", "cur", "done", "no"]);
 
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string; r?: string[] }>; searchParams: Promise<{ det?: string; f?: string; q?: string; antes?: string; t?: string; vuelta?: string }> }) {
@@ -202,7 +202,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const aptOk = oficio || d.cat === "NEG-TIENDA";
   // Mercados y Tiendas (4s): la ayuda con el pedido / la compra usa el mismo motor y bloque que la ayuda con la cita.
   const compra = d.cat === "NEG-MERC" || d.cat === "NEG-TIENDA";
-  const citas = (conCitas || compra) && ord ? {
+  // 6i · Restaurantes: la ayuda con un evento privado (EP-…) usa el mismo motor y bloque que la ayuda con la cita.
+  const citas = (conCitas || compra || food) && ord ? {
     vivas: conCitas && ruta.sec === "hoy" ? await citasVivas(d.id) : undefined,
     // 4e: pre-estimados y presupuestos que esperan su rango (Hoy) y su detalle.
     sol: oficio && ruta.sec === "hoy" ? await solicitudesPanel(d.id) : undefined,
@@ -219,8 +220,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     emDet: oficio && /^sol:E-/.test(ruta.det ?? "") ? (await emergenciasPanel(d.id, ruta.det!.slice(4)))[0] ?? null : undefined,
     lista: conCitas && ruta.sec === "cli" ? await citasLista(d.id, fC, q, typeof sp.antes === "string" ? sp.antes : null) : undefined, f: fC, q,
     det: conCitas && ruta.det?.startsWith("cita:") ? await citaPanel(d.id, ruta.det.slice(5)) : undefined,
-    ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : compra && /^(merc|apt):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(merc|apt):/, "")) : /^(fiesta|viaje|noche|insc|vis):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(fiesta|viaje|noche|insc|vis):/, "")) : undefined,
-    ayudas: (conCitas || compra) && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
+    ayuda: conCitas && ruta.det?.startsWith("cita:") ? await ayudaCitaPanel(d.id, ruta.det.slice(5)) : compra && /^(merc|apt):/.test(ruta.det ?? "") ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(merc|apt):/, "")) : /^(fiesta|viaje|noche|insc|vis|evp):/.test(ruta.det ?? "") && ruta.det !== "evp:aj" ? await ayudaCitaPanel(d.id, ruta.det!.replace(/^(fiesta|viaje|noche|insc|vis|evp):/, "")) : undefined,
+    ayudas: (conCitas || compra || food) && ruta.sec === "hoy" ? await ayudasCitasNegocio(d.id) : undefined,
   } : undefined;
   // Noche (4nc): mesas que esperan, mesas de esta noche, la lista para la puerta y el detalle. Responder pide «Hoy y pedidos».
   const nocOk = d.cat === "NEG-NOCHE" && ord;
@@ -283,5 +284,17 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     return { puerta, cambios, liq, lista, formatos, generos, org, det: det6, fver: fv6, chart, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante, fechasMax: cfg.evt_fechas_max, diasMax: cfg.evt_dias_seguidos_max },
       fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien, ventas, codigos, vendidos, despues, espera };
   })() : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;
+  // 6i · Evento privado (restaurantes): las solicitudes en Hoy y su detalle piden «Hoy y pedidos»; los ajustes (Reservaciones › Evento privado),
+  // «Lo que vendes». Solo de este negocio (evpPanel filtra por negocio).
+  if (ruta.det?.startsWith("evp:") && !(food && (ruta.det === "evp:aj" ? catOk : ord))) ruta.det = null;
+  const evp = food ? await (async () => {
+    const E = await import("@/lib/evento-privado"), { valores } = await import("@/lib/config"), { tarjetaDe } = await import("@/lib/cobros");
+    const ajOn = catOk && ((ruta.sec === "mod" && ruta.sub === "reservaciones") || ruta.det === "evp:aj");
+    return {
+      hoy: ruta.sec === "hoy" && ord ? await E.evpHoy(d.id) : undefined,
+      det: ord && ruta.det?.startsWith("evp:EP-") ? await E.evpPanel(d.id, ruta.det.slice(4)) : undefined,
+      aj: ajOn ? { ...(await E.ajustesEvp(d.id)), min: (await valores("evp_anticipacion_dias")).evp_anticipacion_dias, tarjeta: !!(await tarjetaDe(d.id)).cuenta } : undefined,
+    };
+  })() : undefined;
+  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
 }

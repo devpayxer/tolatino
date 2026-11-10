@@ -26,7 +26,7 @@ export function Citas({ d, f, es, yo, pagina, otros = [] }: { d: MisReservas; f:
     const svc = c.svc ? (es ? c.svc.es : c.svc.en || c.svc.es) : "";
     return {
       key: c.num, date: cajaFecha(c.at, c.tz, es), dbg: c.up ? "var(--tl-ink)" : undefined, dfg: c.up ? "var(--tl-white)" : undefined, t: c.bname, tag: tagMesa(c.st, es),
-      s: `${c.cita ? `${svc}${c.con ? ` ${E2("con", "with")} ${c.con}` : ""}` : `${E2("Mesa para ", "Table for ")}${c.p}`} · ${diaRel(c.dia, c.at, c.tz, es)} · ${horaDe(c.at, c.tz, es)}`.toUpperCase(), x, chev: true, on: () => router.push(c.noche ? `/noche/${c.num}` : c.viaje ? `/viaje/${c.num}` : c.fiesta ? `/fiesta/${c.num}` : c.cita ? `/cita/${c.num}` : `/reserva/${c.num}`),
+      s: `${c.cita ? `${svc}${c.con ? ` ${E2("con", "with")} ${c.con}` : ""}` : `${E2("Mesa para ", "Table for ")}${c.p}`} · ${diaRel(c.dia, c.at, c.tz, es)} · ${horaDe(c.at, c.tz, es)}`.toUpperCase(), x, chev: true, on: () => router.push(c.privado ? `/privado/${c.num}` : c.noche ? `/noche/${c.num}` : c.viaje ? `/viaje/${c.num}` : c.fiesta ? `/fiesta/${c.num}` : c.cita ? `/cita/${c.num}` : `/reserva/${c.num}`),
       acts: c.st === "done" ? [[E2("Volver a reservar", "Book again"), "secondary", () => router.push(`/n/${c.biz}?tab=${c.cita ? "svc" : "rsv"}`)], ...(!c.rev ? [[E2("Escribir reseña", "Write review"), "primary", () => router.push(`/n/${c.biz}/resena?pedido=${c.num}`)] as [string, string, () => void]] : [])] : undefined,
     };
   }) } : { type: "empty", ic: "calendar", t: f === "up" ? E2("No tienes reservaciones próximas", "No upcoming bookings") : E2("Todavía no hay reservaciones pasadas", "No past bookings yet"),

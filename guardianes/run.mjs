@@ -784,7 +784,7 @@ const guardianes = {
     const a = "apps/web/lib/ayuda-cita.ts", p = "apps/web/app/panel/Citas.tsx";
     if (!existsSync(a) || !existsSync(p)) return;
     const h = readFileSync(a, "utf8").split("\n").find((l) => /export const hrefAyuda/.test(l)) ?? "";
-    const pref = [...h.matchAll(/startsWith\("([A-Z])-"\)/g)].map((m) => m[1]);
+    const pref = [...h.matchAll(/startsWith\("([A-Z]{1,3})-"\)/g)].map((m) => m[1]); // 6i: prefijos de más de una letra (EP-)
     const P = readFileSync(p, "utf8"), tipo = P.split("\n").find((l) => /const tipo = \(n: string\)/.test(l)) ?? "", rub = P.split("\n").find((l) => /const rub = c\.citas\?\.det\?\.prof/.test(l)) ?? "";
     for (const x of pref) {
       if (!tipo.includes(`n.startsWith("${x}-")`)) falla("prefijosAyuda", p, 0, `la lista de ayudas de Hoy no reconoce los números ${x}- (llevan a «Cita»)`);
@@ -2431,6 +2431,10 @@ const guardianes = {
         if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MP, 0, `${msg} (estados)`);
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ticket_scans|door_searches|ticket_entries|door_counts)\b|\bdelete from (door_staff|door_sessions|door_incidents|door_table_numbers)\b/.test(q)) falla(G, x, 0, `la auditoría de la puerta no se cambia ni se borra: «${q.slice(0, 60)}»`);
     }
+    // 6i · Evento privado: las propuestas, las aceptaciones y los cambios pedidos son de solo inserción (el estado de una propuesta se deriva).
+    for (const [fn, msg] of [["private_event_quotes_antes", "private_event_quotes es solo de inserción"], ["private_event_acceptances_antes", "private_event_acceptances es solo de inserción"], ["private_event_asks_antes", "private_event_asks es solo de inserción"]])
+      if (!new RegExp(`if tg_op <> 'INSERT' then raise exception '${msg}'`).test(ultimaFn(fn))) falla(G, "packages/db/migrations/0114_evento_privado.sql", 0, `${msg} (trigger)`);
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) private_event_(quotes|acceptances|asks)\b/.test(q)) falla(G, x, 0, "una propuesta, una aceptación o un cambio pedido no se cambian ni se borran");
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
       const t = sinComent(x);
@@ -3224,7 +3228,10 @@ const guardianes = {
   avisoEventoSmsSoloCritico() {
     const G = "avisoEventoSmsSoloCritico", dir = "packages/db/migrations";
     // 6g: puerta_invitado lleva el código para entrar a la puerta (§2 0112, como el Repartidor): sin él, el portero no entra.
-    const OK = new Set(["evt_aprobado", "evt_rechazado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio", "puerta_invitado"]);
+    const OK = new Set(["evt_aprobado", "evt_rechazado", "bol_transfer_in", "bol_cortesia", "espera_lugar", "evt_cancelado", "evt_fecha_cancelada", "evt_movido", "evt_hora_cambio", "puerta_invitado",
+      // 6i: evento privado (§2 0114): la solicitud nueva al restaurante (si no responde a tiempo, vence), la propuesta (vence en evp_propuesta_h),
+      // la confirmación con el depósito cobrado y la cancelación del restaurante (dinero que vuelve).
+      "evp_nueva", "evp_propuesta", "evp_ok", "evp_cancelado_negocio"]);
     for (const x of readdirSync(dir).filter((y) => y.endsWith(".sql")).sort()) {
       const t = readFileSync(`${dir}/${x}`, "utf8");
       for (const mm of t.matchAll(/\('((?:evt|bol|rsvp|puerta|evp|espera)_[a-z0-9_]+)', '[a-z]+', (?:null|'[a-z]+'), (true|false),/g)) if (mm[2] === "true" && !OK.has(mm[1])) falla(G, `${dir}/${x}`, 0, `la plantilla «${mm[1]}» manda SMS y no es crítica (§6 #7)`);
@@ -3524,6 +3531,59 @@ const guardianes = {
     if (!/if \(!v\) \{ await pedir\(st\("readwrite"\)\.clear\(\)\); return; \}/.test(cuerpoFn(b, "guardarBoleto")) || !/x\.kid !== kid/.test(cuerpoFn(b, "leerBoletos"))) falla(G, BS, 0, "sin la llave de la sesión no se guarda nada y lo de otra cuenta se borra");
     if (!/jar\.delete\(\{ name: COOKIE_BOLETOS, path: "\/cuenta\/boletos" \}\);/.test(cuerpoFn(sinComent(CU), "salir"))) falla(G, CU, 0, "salir de la cuenta borra la llave de los boletos sin señal");
     for (const x of codigo) { if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue; const t = sinComent(x); if (/fetch\("\/api\/cuenta\/salir"/.test(t) && !/await olvidarSinConexion\(\); await fetch\("\/api\/cuenta\/salir"/.test(t)) falla(G, x, 0, "al salir de la cuenta, primero se borra lo guardado sin conexión (olvidarSinConexion)"); }
+  },
+
+  /* 6i. Evento privado: el depósito sale SOLO de la propuesta guardada (la base calcula líneas, subtotal, impuesto, total y depósito en el
+     trigger de private_event_quotes), ninguna acción del cliente ni el formulario traen un monto, y aceptar va en orden: retener → aceptación
+     (la base revisa última versión, vigencia y estado; una por solicitud) → commit → cobrar; si algo falla antes, se libera. Al revés: un monto
+     desde el teléfono, la base sin calcular, la aceptación sin revisar vencida o reemplazada, o cobrar antes de registrar → falla. */
+  depositoDeLaPropuesta() {
+    const G = "depositoDeLaPropuesta", M = "packages/db/migrations/0114_evento_privado.sql", L = "apps/web/lib/evento-privado.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, L, 0, "faltan 0114 o lib/evento-privado.ts");
+    const q = ultimaFn("private_event_quotes_antes"), a = ultimaFn("private_event_acceptances_antes");
+    if (!/new\.subtotal_cents := sub;/.test(q) || !/new\.total_cents := new\.subtotal_cents \+ new\.tax_cents;/.test(q) || !/from tax_rules t where t\.city_id = o\.city_id and t\.category_id = 'NEG-FOOD'/.test(q)) falla(G, M, 0, "la base calcula subtotal, impuesto de la ciudad y total de cada propuesta");
+    if (!/new\.deposit_cents := greatest\(100, round\(new\.total_cents \* new\.deposit_pct \/ 100\.0\)\);/.test(q) || !/new\.deposit_cents := paid;/.test(q)) falla(G, M, 0, "la base calcula el depósito (el % del negocio; en un cambio, lo ya pagado)");
+    if (!/raise exception 'evp: esa propuesta ya fue reemplazada'/.test(a) || !/raise exception 'evp: esa propuesta ya venció'/.test(a) || !/raise exception 'evp: solo acepta quien pidió'/.test(a)) falla(G, M, 0, "aceptar: solo la última versión, vigente y de quien pidió (en la base)");
+    if (!/create unique index if not exists private_event_acceptances_deposito_uq on private_event_acceptances \(operation_id\) where kind <> 'change'/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "una sola aceptación con depósito por solicitud (índice único)");
+    const t = sinComent(L), b = cuerpoFn(t, "aceptarEvp");
+    const iR = b.search(/pasarela\.retener\(\{ centavos: dep,/), iA = b.search(/insert into private_event_acceptances/), iC = b.search(/await c\.query\("commit"\);\s*\n\s*retenido = null;/), iK = b.search(/await cobrarOperacion\(opId\);/);
+    if (iR < 0 || iA < 0 || iC < 0 || iK < 0 || !(iR < iA && iA < iC && iC < iK)) falla(G, L, 0, "aceptarEvp: retener → aceptación en la transacción → commit → cobrar, en ese orden");
+    if (iC > 0 && /cobrarOperacion\(|pasarela\.cobrar\(/.test(b.slice(0, iC))) falla(G, L, 0, "aceptarEvp: nada se cobra antes de registrar la aceptación y hacer commit");
+    if (!/const dep = q\.dep,/.test(b) || !/const Q = await propuestas\(c, o\.id\), q = Q\[Q\.length - 1\];/.test(b)) falla(G, L, 0, "aceptarEvp: el depósito sale de la última propuesta guardada");
+    if (!/if \(retenido\) await pasarela\.liberar\(retenido\)/.test(b)) falla(G, L, 0, "aceptarEvp: si algo falla antes del commit, se libera la tarjeta");
+    for (const m of t.matchAll(/export type (EvpIn|CambioIn) = \{([^}]*)\}/g)) if (/\b(cents|price|precio|total|tax|impuesto|subtotal|deposit|dep|monto)\w*\??:/i.test(m[2])) falla(G, L, 0, `«${m[1]}» trae un monto desde el teléfono`);
+    if (/\b(total|deposit|dep|subtotal|tax)\w*\??:/i.test(/export type PropuestaIn = \{([^\n]*)\};/.exec(t)?.[1] ?? "x")) falla(G, L, 0, "PropuestaIn: el panel manda líneas (cantidad × precio), nunca un total ni un depósito");
+    for (const A of ["apps/web/app/(app)/privado/[num]/acciones.ts", "apps/web/app/(app)/n/[id]/evento-privado/acciones.ts", "apps/web/app/panel/acciones-evento-privado.ts"])
+      if (existsSync(A)) for (const m of readFileSync(A, "utf8").matchAll(/export async function (\w+)\(([^)]*)\)/g)) if (/\b(cents|price|precio|total|monto|deposit|dep|devuelve|refund)\w*\s*:/i.test(m[2])) falla(G, A, 0, `«${m[1]}» recibe un monto`);
+  },
+
+  /* 6i. Devolver un depósito de evento privado: lo calcula el servidor con la regla (a tiempo = todo lo cobrado; tarde = nada; el restaurante
+     cancela = todo), nunca más de lo cobrado menos lo devuelto, con una llave fija por solicitud (una sola devolución aunque se reintente) y el
+     barrido reintenta lo que Stripe no hizo. Al revés: sin tope, llave al azar, plazo leído del momento (no del acuerdo) o sin reintento → falla. */
+  devolucionEvpAcotada() {
+    const G = "devolucionEvpAcotada", L = "apps/web/lib/evento-privado.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L), m = cuerpoFn(t, "moverDinero"), cx = cuerpoFn(t, "cancelarEvp"), bx = cuerpoFn(t, "cancelarEvpNegocio"), v = cuerpoFn(t, "vencerEvp");
+    if (!/const cap = Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\);/.test(m) || !/const n = Math\.min\(dev, cap\);/.test(m)) falla(G, L, 0, "moverDinero: nunca más de lo cobrado menos lo devuelto");
+    if (!/if \(yaHecha\) return;/.test(m) || !/\^evp\(bx\|cx\)-EP-/.test(m)) falla(G, L, 0, "moverDinero: una sola devolución por su llave fija");
+    if (!/devIdem: `evpcx-\$\{numero\}`/.test(cx) || !/devIdem: `evpbx-\$\{numero\}`/.test(bx)) falla(G, L, 0, "la llave de la devolución es fija por solicitud (evpcx- / evpbx-)");
+    if (!/const ac = acuerdoDe\(await propuestas\(c, o\.id\)\), plazo = ac\?\.cancelH \?\? 72, aTiempo = o\.h_left >= plazo;/.test(cx) || !/const dev = aTiempo \? cobrado : 0/.test(cx)) falla(G, L, 0, "cancelar: el plazo es el de la propuesta aceptada y a tiempo se devuelve lo cobrado; tarde, nada");
+    if (!/const dev = o\.pst === "captured" \|\| o\.pst === "partially_refunded" \? Math\.max\(0, \(o\.amount \?\? 0\) - \(o\.refunded \?\? 0\)\) : 0;/.test(bx)) falla(G, L, 0, "el restaurante cancela: se devuelve todo lo cobrado");
+    if (!/for \(const v of debe\) await moverDinero\(v\.num\)/.test(v)) falla(G, L, 0, "el barrido reintenta las devoluciones que quedaron a medias");
+  },
+
+  /* 6i. Sin teléfonos entre las partes: el panel ve nombre + inicial (nunca users.phone), y la nota, el cambio, la propuesta y los motivos no
+     admiten un teléfono; hablar es por Mensajes (2p). Al revés: leer el teléfono del cliente o quitar el filtro → falla. */
+  evpSinTelefonos() {
+    const G = "evpSinTelefonos", L = "apps/web/lib/evento-privado.ts";
+    if (!existsSync(L)) return;
+    const t = sinComent(L);
+    for (const fn of ["evpHoy", "evpPanel", "leer"]) if (/u\.phone|users\.phone/.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}» lee el teléfono del cliente`);
+    if (!/const SEL = `[^`]*left\(nullif\(u\.last_name, ''\), 1\)/.test(t)) falla(G, L, 0, "el restaurante ve nombre + inicial del cliente");
+    for (const [fn, re] of [["pedirEvp", /if \(TEL\.test\(nota\)\)/], ["pedirCambioEvp", /if \(TEL\.test\(nota\)\)/], ["proponerEvp", /if \(TEL\.test\(incluye\) \|\| TEL\.test\(nota\)\)/], ["noPuedoEvp", /if \(TEL\.test\(mot\)\)/], ["cancelarEvpNegocio", /if \(TEL\.test\(mot\)\)/]])
+      if (!re.test(cuerpoFn(t, fn))) falla(G, L, 0, `«${fn}» acepta un teléfono en el texto`);
+    const P = "apps/web/app/panel/EventoPrivado.tsx";
+    if (existsSync(P) && /tel:|phone|telefono/.test(sinComent(P))) falla(G, P, 0, "el panel del evento privado no muestra ni llama al teléfono del cliente");
   },
 
   idioma() {

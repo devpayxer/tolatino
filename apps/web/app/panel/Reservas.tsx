@@ -5,6 +5,7 @@
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FiltroMesa, FilaMesa, mesaDetalle, mesasPanel, rsvAjustes } from "@/lib/reservas";
 import { mesaCambio, mesaPaso, reservasAjustes, reservasBloqueo, reservasModulo } from "./acciones-reservas";
+import { evpEnReservaciones } from "./EventoPrivado";
 import type { Ctx, Editor } from "./Panel";
 
 export type RsvPanel = {
@@ -251,6 +252,8 @@ export function reservasModBloques(c: Ctx): Sec {
   if (v.join) out.push({ type: "step", t: E2("Grupos de hasta", "Groups up to"), s: E2(`Para ${mx + 1} o más, el cliente pide un evento privado.`, `For ${mx + 1} or more, the client requests a private event.`), v: `${v.joinMax} ${E2("personas", "guests")}`,
     onM: () => F.set({ joinMax: Math.max(Math.max(2, big), v.joinMax - 1) }), onP: () => F.set({ joinMax: Math.min(20, v.joinMax + 1) }) });
 
+  // 6i · Evento privado: para los grupos que pasan del máximo (abre sus ajustes).
+  out.push(...evpEnReservaciones(c));
   // Cuándo se reserva: días y turnos.
   out.push({ type: "group", k: E2("CUÁNDO SE RESERVA", "WHEN PEOPLE CAN BOOK") }, { type: "chips", k: E2("DÍAS", "DAYS"), items: [1, 2, 3, 4, 5, 6, 0].map((z) => {
     const on = v.days.includes(z); return { l: es ? MDAY[z]![0] : MDAY[z]![1], v: on ? "selected" : "filter", onClick: () => F.set({ days: on ? v.days.filter((y) => y !== z) : [...v.days, z].sort() }) }; }) });

@@ -9,7 +9,9 @@ y escritorio. Versión: Fase 5 · bloque 5i (8 nov 2026). Ver: permiso de Sistem
 - Por sección: **Comunidad** (publicaciones, comentarios, votos, conversaciones nuevas y reportes por persona al día; minutos para editar una
   publicación; días para apelar; lo más que dura una encuesta; «Ver traducción» por hora; hora del resumen diario; días que se proponen para
   un cupón) · **Gamification** (tope de puntos al día) · **Doctores y Profesionales** · **Noche** · **Educación · Niños · Deporte** ·
-  **Iglesias · Bienes Raíces · Autos**.
+  **Iglesias · Bienes Raíces · Autos** · **Eventos** (6i · evento privado: depósito de fábrica 25 %, cancelar gratis 72 h, el restaurante responde
+  en 24 h, una propuesta vale 24 h, anticipación mínima 3 días, hasta 180 días adelante, 3 solicitudes abiertas por persona, 10 propuestas y
+  3 «pedir un cambio» por solicitud; el plazo para cancelar queda escrito en cada propuesta al mandarla).
 - **CAMBIADO**: el valor ya no es el de fábrica.
 - **SOLO LECTURA**: el valor ya se lee de aquí, pero todavía no se cambia porque algún texto que ve la persona dice el número (por ejemplo
   «24 h»). La fila dice cuál. Se abre cuando ese texto lea el valor (anotado en LAUNCH-CHECKLIST).

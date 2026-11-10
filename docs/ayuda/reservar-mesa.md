@@ -36,7 +36,7 @@ escritorio. Versión: Fase 2 · bloque 2e (6 nov 2026). Solo restaurantes Pro co
 | Nadie responde en 30 minutos (o llega la hora) | **SIN RESPUESTA**: se cierra la solicitud, sin cargo. |
 | Cancelas con menos aviso del que pide el restaurante | Se puede igual; el restaurante lo ve como cancelación tardía. **Nunca hay cargo.** |
 | Llegas y te sientan | **EN TU MESA**. Al irte: **TERMINADA**. Si no llegas: **NO LLEGASTE** (queda en tu historial, sin cargo). |
-| Grupo más grande que lo que el restaurante reserva | Se ofrece como evento privado: Llamar al restaurante. |
+| Grupo más grande que lo que el restaurante reserva | Se ofrece como evento privado: **Pedir evento privado** si el restaurante lo recibe en la app (nada se cobra hasta que aceptes su propuesta; ver «Evento privado»), o Llamar al restaurante. |
 | Tres solicitudes esperando respuesta | No deja enviar otra hasta que contesten. |
 | Día cerrado, turno cerrado o área cerrada por el restaurante | No sale para reservar; se ofrecen los días que sí tienen mesa. |
 | Restaurante Free, o To’Latino pausó sus Reservaciones | No hay pestaña Reservaciones. |
@@ -64,4 +64,4 @@ Calendar, Share, Directions, Call. You can **change a request** while the restau
 optional reason; late cancellations are allowed and never charged) and, on the day, say you're **running late** (5, 10 or
 15 min). If the restaurant suggests another time you can accept it, look for another or decline; with no table you see
 the times that day that have one; with no reply in 30 minutes the request closes. No deposit or charge, ever. Groups
-larger than the restaurant books are offered as a private event (call). Free restaurants and paused ones have no tab.
+larger than the restaurant books are offered as a private event: **Request private event** when the restaurant takes them in the app (nothing is charged until you accept its proposal; see “Private event”), or call. Free restaurants and paused ones have no tab.

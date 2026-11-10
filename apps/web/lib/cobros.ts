@@ -12,7 +12,7 @@ import { pasarela, type Retencion } from "./pagos/pasarela";
      vuelve a intentar la próxima vez que alguien mira ese negocio (y el guardián del dinero lo reporta). */
 type Q = PoolClient | ReturnType<typeof db>;
 
-export async function comision(c: Q, kind: "ped" | "cita" | "bol" | "apt" | "rsv" | "plan" | "renta" | "merc" | "fiesta" | "viaje" | "noche" | "insc", subtotal: number, n = 1): Promise<number> {
+export async function comision(c: Q, kind: "ped" | "cita" | "bol" | "apt" | "rsv" | "plan" | "renta" | "merc" | "fiesta" | "viaje" | "noche" | "insc" | "evp", subtotal: number, n = 1): Promise<number> {
   const r = (await c.query<{ rate_bp: number; fixed_cents: number }>(
     `select rate_bp, fixed_cents from fee_rules where kind = $1 and effective_from <= now() order by effective_from desc, id desc limit 1`, [kind])).rows[0];
   if (!r) return 0;
@@ -61,6 +61,7 @@ const refDe = (kind: string, num: string) => kind === "appointment"
   : kind === "trip" ? { num, href: `/viaje/${num}`, ref: ["trip", num] as [string, string] }
   : kind === "night" ? { num, href: `/noche/${num}`, ref: ["night", num] as [string, string] }
   : kind === "tickets" ? { num, href: `/eventos/orden/${num}`, ref: ["tickets", num] as [string, string] }
+  : kind === "private_event" ? { num, href: `/privado/${num}`, ref: ["private_event", num] as [string, string] }
   : { num: `#${num}`, href: `/pedido/${num}`, ref: ["order", num] as [string, string] };
 
 /* Cobrar lo retenido de una operación (el negocio aceptó). */

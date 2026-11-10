@@ -275,7 +275,28 @@ sin red y service worker; ver REVISION «### 6h») y regresión evt6g 105 ✓, e
 semillas + semillas cambiadas) sale 0.
 Ayuda: puerta-sin-conexion (nueva, ES/EN); puerta-escanear, panel-porteros-y-modo-puerta, admin-puerta-auditoria y mis-boletos-y-el-qr al día.
 Revisar en el sandbox: `docs/REVISION.md` «### 6h» (con la revisión de seguridad y cómo probar sin señal en un teléfono de verdad).
-**Sigue 6i** (evento privado: solicitud, propuesta, depósito, cancelar; migración 0114, semilla 0039).
+**6i hecho (10 nov)** — el evento privado (la solicitud de un grupo grande a un restaurante, §6 #9): migración 0114 (`private_event_settings` (el
+interruptor y sus reglas: personas mín./máx., días de anticipación, % de depósito 10–50, áreas + «Todo el local» con su cargo, menús con precio por
+persona o «que me propongan», extras), operación `private_event` con número **EP-4101…** (`private_event_seq`; el prefijo no choca), **`private_event_quotes`**
+(SOLO INSERCIÓN; el trigger calcula cada línea, subtotal, impuesto de la ciudad (`tax_rules` NEG-FOOD 6 %), total, depósito (% del negocio; en un cambio,
+lo ya pagado), el plazo de cancelar escrito en la propuesta y hasta cuándo vale), **`private_event_acceptances`** (solo inserción; la base revisa última
+versión, vigencia, estado y dueño; una con depósito por solicitud), **`private_event_asks`** (solo inserción: «pedir un cambio»), vista
+`private_event_quotes_ef` (estado derivado), comisión `evp` 8 %, 9 claves evp_* y 20 plantillas evp_*), semilla **`0039_evento_privado.sql`** (Sabor 40 ·
+Fogón 60 · Bahía 30 y una solicitud en cada estado de Lucía Paredes, +15705550561). Patrón seguido: la mudanza de 4y-2 (propuesta versionada, aceptar la
+versión exacta, retener y cobrar en la misma pasada con destino al restaurante) + cancelar de Fiestas/Noche. Código: `lib/evento-privado.ts` (ajustes,
+pedir sin dinero, proponer / otra fecha / cambio, no puedo, aceptar y pagar, pedir un cambio, aceptar o rechazar un cambio, no gracias, cancelar con la
+regla del acuerdo, el restaurante cancela con devolución completa, `vencerEvp` en el barrido: sin respuesta, propuesta y cambio que vencen, recordatorio
+del día antes, «Pasó el evento», devoluciones a medias con la misma llave), `lib/evento-privado-comun.ts`; pantallas: **Pedir evento privado**
+(`/n/[id]/evento-privado`, 3 pasos / una página), **tu solicitud** (`/privado/[num]`, 7 estados, la propuesta, la tarjeta del depósito, pedir un cambio,
+cancelar) y `/privado/[num]/ayuda`; Reservar «9+» → «Pedir evento privado»; panel (`EventoPrivado.tsx`: Reservaciones › Evento privado, Hoy, el
+detalle con la propuesta línea por línea, otra fecha, no puedo, el cambio y cancelar); Mensajes con el contexto «Evento privado #EP-…»; ayuda (rubro
+`evp`, motivos, Colas › Soporte); Mi cuenta › Citas y reservas; Super Admin › Transacciones › Evento privado (con Devolver). Guardianes nuevos
+`depositoDeLaPropuesta`, `devolucionEvpAcotada`, `evpSinTelefonos`; ampliados `libroSoloInsercion`, `prefijosAyuda` (prefijos de dos letras),
+`avisoEventoSmsSoloCritico` — 40/40 al revés (`alreves6i.cjs`). e2e `evt6i` 74 ✓ (teléfono 390; panel, cliente y Super Admin 1360; contra el
+simulador; ver REVISION «### 6i») y regresión fie4v ✓, rsv2e ✓, evt6c 70 ✓, adm5i ✓; base nueva (migraciones dos veces + semillas + semillas cambiadas)
+sale 0. Ayuda: evento-privado y panel-evento-privado (nuevas, ES/EN); reservar-mesa, panel-reservaciones, ayuda-con-la-fiesta-y-el-viaje,
+admin-configuracion y admin-contenido al día. Revisar en el sandbox: `docs/REVISION.md` «### 6i» (con la revisión de seguridad).
+**Sigue 6j** (Super Admin completo de la fase, Configuración › Eventos, avisos `events`, analítica, Mi cuenta y ayuda; migración 0115).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

@@ -83,6 +83,8 @@ export function useRsv(r: RsvPublica | null, es: boolean, sesion: boolean, edita
     r, es, E2, P, p, i, a, sel: selOk, big, dia, grupos, hasSlots, siguientes: G?.siguientes ?? [], cargando: p != null && !big && !G, error, ocupado, mine, pol,
     setP: (n: number) => { setP(n); setSel(null); }, setI: (n: number) => { setI(n); setSel(null); }, setA: (k: string) => { setA(k); setSel(null); }, setSel, continuar, areaL,
     editando: !!editar, onEditCancel: () => router.push(`/reserva/${editar}`),
+    // 6i · Grupo grande en un restaurante que recibe eventos privados.
+    onEvp: () => router.push(`/n/${r.negocio.id}/evento-privado${p ? `?p=${p}` : ""}`),
     // Cambiar una reservación ya confirmada (no una solicitud): la actual sigue en pie hasta que confirmen el cambio.
     editConf: !!editar && r.mia?.numero === editar && r.mia.st === "ok" ? r.mia : null,
     qp, setQp, Q,
@@ -152,7 +154,9 @@ export function RsvTab({ v, desk }: { v: Rsv; desk: boolean }) {
           <div className="min-w-0 flex-1">
             <div className="text-[14px] font-bold leading-[1.35]">{E2(`Para ${r.max + 1} o más personas`, `For ${r.max + 1} or more guests`)}</div>
             <div className="mt-1 text-pretty text-[12.5px] font-medium leading-[1.55] text-ink/[.62]">{E2(`${r.negocio.nombre} atiende los grupos grandes como evento privado: menú, horario y depósito se acuerdan con ellos.`, `${r.negocio.nombre} handles large groups as a private event: menu, time and deposit are agreed with them.`)}</div>
-            {r.negocio.telefono && <div className="mt-3 flex"><Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${r.negocio.telefono}`; }}>{E2(`Llamar a ${r.negocio.nombre}`, `Call ${r.negocio.nombre}`)}</Button></div>}
+            {r.evp ? <div className="mt-3 flex flex-wrap gap-2"><Button icon="party" onClick={v.onEvp}>{E2("Pedir evento privado", "Request private event")}</Button>
+              <span className="w-full text-[12px] font-medium leading-[1.45] text-ink/55">{E2("Nada se cobra hasta que aceptes su propuesta.", "Nothing is charged until you accept their proposal.")}</span></div>
+              : r.negocio.telefono && <div className="mt-3 flex"><Button variant="secondary" icon="phone" onClick={() => { location.href = `tel:${r.negocio.telefono}`; }}>{E2(`Llamar a ${r.negocio.nombre}`, `Call ${r.negocio.nombre}`)}</Button></div>}
           </div>
         </div>
       )}

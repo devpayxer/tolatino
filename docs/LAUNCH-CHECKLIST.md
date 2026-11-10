@@ -899,3 +899,24 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6h · Íconos PNG de To'Latino Puerta** (192 / 512, maskable) para instalar en todos los Android; hoy el logo SVG. (6h, 10 nov)
 - [ ] **6h · Cifrado en reposo en el navegador:** la llave no exportable vive en el perfil del navegador; con el teléfono desbloqueado alguien
       podría usarla en ese navegador. Con la app de las tiendas (Fase 8): llave en el Keychain / Keystore del teléfono. (6h, 10 nov)
+
+## Fase 6 · 6i (evento privado)
+- [ ] **6i · Contrato con stripe-mock:** el evento privado usa las llamadas que ya cubre `scripts/contrato-stripe/prueba.cjs` (retener con destino
+      y comisión, cobrar, liberar, devolver); no hay llamada nueva. Probado contra el simulador; falta correr el contrato en el CI. (6i, 10 nov)
+- [ ] **6i · Impuesto de la comida preparada (6 % PA, `tax_rules` NEG-FOOD):** sembrado igual en las 5 ciudades; validar con el contador si aplica
+      impuesto local y si el «Todo el local» o la decoración pagan impuesto (hoy todo el subtotal lo paga). (6i, 10 nov)
+- [ ] **6i · Comisión `evp` 8 % del depósito** (igual que Fiestas, Super Admin › Planes): decisión del fundador (REVISION «### 6i»). (6i, 10 nov)
+- [ ] **6i · El depósito llega directo al restaurante** (cobro con destino, como toda la app): si el restaurante cancela y su saldo en Stripe no
+      alcanza, la devolución depende de Stripe (la plataforma la cubre y la cobra al negocio). Revisar con Stripe el saldo negativo de cuentas
+      conectadas antes de abrir. (6i, 10 nov)
+- [ ] **6i · SMS del evento privado:** `evp_nueva` (al restaurante), `evp_propuesta`, `evp_ok` y `evp_cancelado_negocio` llevan SMS; salen de verdad
+      cuando haya proveedor (Telnyx, decisión E). Hoy quedan «en modo pruebas». (6i, 10 nov)
+- [ ] **6i · Términos y políticas:** la política de cancelar de un evento privado (gratis hasta 72 h; después el depósito se queda con el
+      restaurante; si cancela el restaurante, devolución completa) va en los Términos versionados (`LegalPage`), con el abogado. (6i, 10 nov)
+- [ ] **6i · El Fogón y Mariscos La Bahía** tienen Evento privado encendido en la semilla pero no tienen dueño ni Cobros: una solicitud a ellos solo
+      puede vencer (sirven para «Otros que hacen eventos privados»). Al tener dueño, conectar Cobros. (6i, 10 nov)
+- [ ] **6i · Mi cuenta › Avisos › Eventos** (grupo `events`, apagar lo no crítico del evento privado) y la sección Eventos de Configuración con
+      etiquetas finales: con 6j. Hoy las plantillas `evp_*` van en el grupo de citas (`cit`). (6i, 10 nov)
+- [ ] **6i · Analítica › Eventos privados** (pedidas → propuestas → aceptadas, depósito, canceladas a tiempo / tarde, por ciudad): con 6j. (6i, 10 nov)
+- [ ] **6i · Un cambio de un evento confirmado nunca cobra más en la app:** si el nuevo total sube, la diferencia se paga en el local; si baja, nunca
+      por debajo del depósito pagado (la base lo rechaza). Cobrar un depósito adicional por un cambio: si el fundador lo quiere. (6i, 10 nov)

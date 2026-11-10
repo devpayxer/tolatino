@@ -2621,3 +2621,101 @@ el Monitor (rows), las incidencias automáticas (rows), y **Mis boletos sin señ
   días; (3) el aviso al organizador decía que el portero «reportó» un duplicado → lo dice To'Latino.
 - **Pendiente (LAUNCH):** teléfonos de verdad (iPhone Safari y Android) sin señal; Safari puede borrar lo guardado de una web que no se abre en
   7 días (el boleto del cliente); velocidad con la base de carga; señales de duplicados en Confianza (6j); red entre teléfonos y QR rotativo.
+
+### 6i · Eventos: evento privado — pedir, propuesta, otra fecha, cambio, depósito, cancelar y el panel del restaurante (10 nov)
+Qué mirar en el sandbox, paso a paso (cliente en el teléfono; panel y Super Admin también en escritorio). «Evento privado» = la solicitud de un grupo
+grande a un restaurante (§6 #9); los eventos solo con invitación no se construyen.
+1. **Panel de Sabor Dominicano** (dueño 570-555-0133) › Lo que vendes › **Reservaciones** › al final de GRUPOS, **EVENTO PRIVADO · Encendido**. Tócalo:
+   «Recibir eventos privados», grupos desde / hasta, con cuántos días antes (mínimo 3), **depósito al aceptar 10 · 25 · 50 %**, «Sueles responder
+   en», áreas, «Todo el local» con su cargo, menús con precio por persona (o «Que me propongan»), extras y «Así lo ve el cliente». Guardar.
+2. **Como cliente** (570-555-0122) › Sabor Dominicano › Reservaciones › personas **9+**: la tarjeta dice **Pedir evento privado** («Nada se cobra hasta
+   que aceptes su propuesta»). Tres pasos: ¿Qué celebran? · ¿Cuántos son? · ¿Dónde los sientan? → ¿Qué día? (con 3 días o más; «Otra fecha» para más
+   adelante) · Almuerzo / Cena · ¿Cuánto dura? → ¿Qué van a comer? · presupuesto · también necesitan · algo más → **Enviar solicitud**. Prueba poner un
+   teléfono en la nota: no deja. En escritorio es una sola página con la columna del restaurante.
+3. Tu solicitud **EP-…: PENDIENTE** («No se cobra nada todavía»).
+4. **Panel › Hoy**: «EVENTOS PRIVADOS QUE ESPERAN TU RESPUESTA» (cuenta en ESPERAN TU RESPUESTA). Ábrela: lo que pidieron (nombre + inicial, sin
+   teléfono) y **Mandar propuesta**: las líneas salen de lo pedido (menú × personas, el área, los extras); cambia precios, agrega una línea, escribe
+   «qué incluye» y mira subtotal, impuesto 6 %, total, depósito y «te paga en el local». **Mandar al cliente**.
+5. **Cliente**: **TE MANDARON SU PROPUESTA** con cada línea, impuesto, total, **Depósito al aceptar**, «Lo pagas en el local el día del evento», **VÁLIDA
+   N H** y la política (gratis hasta 72 h). **Pedir un cambio** (más personas, otra fecha, nota): queda «PEDISTE UN CAMBIO» y la nota aparece en
+   **Mensajes** con «Evento privado #EP-…».
+6. **Panel**: «Pide un cambio a tu propuesta» → **Mandar otra propuesta** (v2). La v1 ya no se acepta (si dejaste la pantalla vieja abierta, dice
+   «mandó una propuesta nueva»).
+7. **Cliente**: elige tarjeta (en el sandbox, 4000 0000 0000 0002 = rechazada: «No se cobró nada; la propuesta sigue») y luego 4242 → **Aceptar y
+   pagar $…** → **CONFIRMADO** · «Depósito cobrado: $… · Visa ·· 4242» y «Lo que acordaron». Calendario, Cómo llegar, Mensaje, Pedir un cambio,
+   Cancelar el evento.
+8. **Cambio de un evento confirmado**: Pedir un cambio → Panel › **Mandar el cambio** → cliente: «El cambio que te manda…» con «Depósito ya
+   pagado» → **Aceptar el cambio** (no se cobra nada más) o **Seguir como estaba**.
+9. **Cancelar** (cliente): con 72 h o más, «te devolvemos $…» (devolución completa); con menos, «el depósito … se queda con …». El restaurante
+   **Cancelar el evento** (motivo): devolución completa siempre.
+10. **Proponer otra fecha** (panel): el cliente ve **TE PROPONEN UN CAMBIO** con el porqué y «Aceptar el sáb 28 nov y pagar …». **No puedo** (motivo):
+    NO PUDO con «Probar otra fecha», «Reservar mesas aparte» y **OTROS QUE HACEN EVENTOS PRIVADOS** (El Fogón, Mariscos La Bahía).
+11. **La semilla** trae una solicitud en cada estado en Sabor Dominicano, de **Lucía Paredes (570-555-0561)**: entra con su teléfono para ver
+    PENDIENTE, TE MANDARON SU PROPUESTA, TE PROPONEN UN CAMBIO, CONFIRMADO, NO PUDO, SIN RESPUESTA y CANCELADO (las propuestas vencen a las 24 h).
+12. **Mi cuenta › Citas y reservas**: «Evento privado» lleva a la solicitud. Pasado el evento: **Calificar** y **Ayuda con el evento** (el restaurante
+    responde en 24 h; si no, Colas › Soporte).
+13. **Super Admin (570-555-0199) › Transacciones › Evento privado**: personas, fecha, propuestas, versión aceptada, depósito (cobrado / devuelto / se
+    quedó), comisión y cómo cerró; **Devolver** con motivo. **Configuración › Eventos**: las claves evp_* (depósito de fábrica, cancelar gratis,
+    responde en, la propuesta vale, anticipación, días adelante, solicitudes abiertas, propuestas y cambios por solicitud).
+
+**Patrón seguido (pedido):** el de la **mudanza de 4y-2** (`lib/envios.ts` `aceptarPrecio`): el negocio manda una propuesta versionada que vence, el
+cliente acepta LA versión exacta y en la misma pasada se **retiene y se cobra** con **destino a la cuenta conectada del restaurante** (como toda la app,
+no como los boletos, que cobra la plataforma); y las reglas de cancelar de **Fiestas (4v) y Noche (4nc)** (gratis hasta el plazo; después se queda
+con el negocio; si cancela el negocio, devolución completa; `devolverPago` con llave fija). Se eligió la mudanza porque es el único flujo donde el
+precio lo pone el negocio DESPUÉS de la solicitud y el cliente paga al aceptar (en Fiestas y Noche el depósito se retiene al pedir, y aquí «nada
+se cobra hasta que aceptes»). Sin llamadas nuevas a Stripe (el contrato ya cubre retener/cobrar/liberar/devolver).
+
+**Decidí X; si prefieres Y, se cambia (6i):**
+- **Depósito:** cada restaurante elige **10 %, 25 % o 50 %** del total de su propuesta (de fábrica: `evp_deposito_pct` 25 %); el plan lo ponía fijo
+  de Configuración. La base lo calcula; nadie lo escribe.
+- **Comisión:** `evp` = **8 % del depósito** (igual que Fiestas), en Super Admin › Planes. Lo pagado en el local no lleva comisión.
+- **Impuesto:** 6 % de comida preparada de PA para las 5 ciudades (`tax_rules` NEG-FOOD), sobre todo el subtotal (LAUNCH: validar con el contador).
+- **El plazo para cancelar** (72 h) queda **escrito en cada propuesta** al mandarla: si cambias Configuración, las ya aceptadas siguen con su plazo.
+- **Encender Evento privado pide Cobros con tarjeta** (el depósito se cobra en la app). Un restaurante Free entra con su tope de solicitudes del mes
+  como Fiestas; Reservaciones (donde está el interruptor) es Pro.
+- **Una propuesta vale 24 h** y **nunca después del evento**; sin respuesta del restaurante en 24 h la solicitud vence.
+- **Pedir un cambio** a una propuesta deja la propuesta vigente (se puede aceptar mientras el restaurante responde). Un **cambio de un evento
+  confirmado** nunca cobra más en la app: el depósito ya pagado se descuenta y la diferencia se paga en el local; el nuevo total no puede ser menor
+  que el depósito. Hasta 3 «pedir un cambio» por solicitud.
+- **SMS:** al cliente solo la propuesta, la confirmación y **la cancelación del restaurante** (dinero que vuelve); al restaurante, **la solicitud
+  nueva** (si no responde, vence). Lo demás va en la app.
+- **Áreas** del evento privado: salón, terraza, barra + «Todo el local» (con su cargo o sin cargo). **Ocasiones y presupuestos**: la lista del
+  diseño (evp-flow.js), no por restaurante.
+- **Estado de cada propuesta derivado** (vista `private_event_quotes_ef`: aceptada · reemplazada · vencida · cerrada · enviada) en vez de guardado,
+  para que la tabla sea de solo inserción de verdad; aceptar y «pedir un cambio» también son tablas de solo inserción.
+- **El Fogón y Mariscos La Bahía** tienen Evento privado encendido en la semilla (sin dueño): salen en «Otros que hacen eventos privados».
+
+Huecos compuestos con piezas del sistema (capturas locales `e6i-*`, teléfono 390 y escritorio 1360): **el panel del evento privado** (hueco #5:
+ajustes con rows/step/chips/field; la propuesta línea por línea como Estimado.tsx con kv y note; «Proponer otra fecha», «No puedo», «Mandar el
+cambio», «Cancelar el evento» con motivo), **«Pedir un cambio»** (hoja con IconButton −/+, fecha, hora y nota), **el cambio de un evento confirmado**
+(la misma tarjeta de la propuesta), la tarjeta del depósito dentro de la propuesta (abre MetodoPago) y **Ayuda con el evento** (la de Fiestas).
+
+**Revisión de seguridad (6i: dinero, permisos y datos personales):**
+- **El depósito sale solo de la propuesta guardada:** `aceptarEvp` toma la última versión de `private_event_quotes` (dentro de la transacción con la
+  fila bloqueada) y retiene exactamente su `deposit_cents`; el trigger de la base calcula cada línea (cantidad × precio), el subtotal, el impuesto de
+  la ciudad, el total y el depósito (% del negocio en ese momento; en un cambio, lo ya pagado). Ninguna acción del cliente ni el formulario traen un
+  monto (guardián `depositoDeLaPropuesta`; e2e: total $911.60 → depósito $227.90 en la base, el pago y el simulador).
+- **Un pago por propuesta / por solicitud (idempotente):** la llave de Stripe es la propuesta + la tarjeta; la fila de la solicitud se bloquea; la
+  aceptación tiene índice único por propuesta y por solicitud (con depósito), y `payments` (operación, tipo, seq) es único. e2e: dos pestañas tocan
+  «Aceptar y pagar» a la vez → UN pago, UNA aceptación; la base rechaza aceptar la misma propuesta otra vez.
+- **No se acepta una propuesta vencida ni reemplazada:** lo revisa el servidor (versión exacta, estado derivado) y otra vez la base al insertar la
+  aceptación (`evp: esa propuesta ya fue reemplazada` / `ya venció` / `solo acepta quien pidió`). e2e: pantalla vieja con la v1 → «mandó una propuesta
+  nueva», sin cobro; propuesta vencida → «ya venció», sin cobro; las dos también directo en la base → error.
+- **Orden del dinero:** retener → aceptación en la transacción → commit → cobrar; si algo falla antes del commit, se libera la tarjeta; si cobrar
+  falla, `repararPagos` cobra lo retenido de una solicitud confirmada (barrido «dinero»). Tarjeta rechazada: nada se cobra y la propuesta sigue.
+- **Devoluciones calculadas en el servidor y con tope:** a tiempo (≥ el plazo escrito en la propuesta aceptada) = lo cobrado menos lo devuelto;
+  tarde = nada (se queda con el restaurante); el restaurante cancela = todo lo cobrado. `moverDinero` nunca pasa de lo cobrado menos lo devuelto
+  (y `devolverPago` lo vuelve a acotar), con **llave fija** por solicitud (`evpcx-` / `evpbx-`); si Stripe falla, el barrido reintenta con la misma
+  llave. e2e: 73 h → una devolución de $227.90; dos barridos después sigue una; 71 h → nada; el restaurante a 20 h → todo (guardián
+  `devolucionEvpAcotada`). Admin › Devolver usa `devolverPago` (tope y auditoría).
+- **IDOR:** todo lo del cliente filtra por su cuenta en SQL (`o.user_id`), todo lo del panel por el negocio (`o.business_id`) después de
+  `accesoPanel` (ord para responder y cancelar; cat para ajustes) y `mismoOrigen`. e2e: otra cuenta → 404 en la solicitud y su ayuda; C2 repite
+  «Aceptar y pagar», «Pedir un cambio» y «Cancelar» con la solicitud de C1 → nada; el dueño de otro negocio repite «Mandar propuesta», «No puedo»,
+  «Cancelar» y «Guardar ajustes» → sin acceso; un vecino repite la propuesta del panel → sin acceso; **otro restaurante** (El Fogón): Sabor no abre
+  su solicitud y repetir con su número → «no existe», con su negocio → sin acceso.
+- **Sin teléfonos entre las partes:** el restaurante ve nombre + inicial (el panel nunca lee `users.phone`); la nota, el cambio, lo que incluye, la
+  nota de la propuesta y los motivos rechazan teléfonos; hablar es por Mensajes (2p, con su propio filtro). El cliente ve su propio teléfono como
+  «··0122» y el del restaurante (público) solo en su ficha (guardián `evpSinTelefonos`; e2e: Hoy y el detalle sin el teléfono).
+- **Libros:** propuestas, aceptaciones y cambios pedidos son de solo inserción (trigger; `libroSoloInsercion` ampliado); nada se borra (estados).
+- **Pendiente (LAUNCH):** contrato de Stripe en el CI, impuesto con el contador, saldo negativo de cuentas conectadas si el restaurante cancela,
+  Términos, SMS reales.

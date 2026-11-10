@@ -28,7 +28,7 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
       const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av, rsvp, bol, desp, espera] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
         import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos"), import("./rsvp"), import("./boletos"), import("./boletos-despues"), import("./espera")]);
-      const [cxs, liq, ser, pta, paq] = await Promise.all([import("./evt-cambios"), import("./evt-liquidacion"), import("./evt-series"), import("./puerta"), import("./puerta-paquete")]);
+      const [cxs, liq, ser, pta, paq, evp] = await Promise.all([import("./evt-cambios"), import("./evt-liquidacion"), import("./evt-series"), import("./puerta"), import("./puerta-paquete"), import("./evento-privado")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -90,6 +90,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["puertaSesiones", () => pta.vencerSesionesPuerta()], ["puertaAbre", () => pta.barrerPuertaAbre()],
         // Sin conexión (6h): el paquete de una puerta vence al final de la fecha + puerta_paquete_h (queda revocado; el teléfono lo borra).
         ["puertaPaquetes", () => paq.vencerPaquetes()],
+        // Evento privado (6i): sin respuesta a tiempo, propuesta o cambio que vencen, el recordatorio del día antes, «Pasó el evento» y las
+        // devoluciones que Stripe no hizo (con la misma llave: una sola).
+        ["eventoPrivado", () => evp.vencerEvp({})],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

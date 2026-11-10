@@ -47,6 +47,8 @@ const POR_RUBRO: Record<string, Record<string, L>> = {
   fe: { cobro: ["Le pidieron dinero por la ayuda", "Asked for money for the help"], horario: ["Cambiaron la hora sin avisar", "Changed the time without notice"], trato: ["Lo trataron mal", "Treated badly"] },
   inm: { nollego: ["No llegaron a la visita", "Did not show up for the visit"] },
   dealer: { nollego: ["El carro no estaba el día de la prueba", "The car was not there for the test drive"], fotos: ["El carro no era como en las fotos", "The car was not like the photos"] },
+  // 6i · Evento privado
+  evp: { nocomo: ["No fue como lo acordado", "Not as agreed"], falto: ["Faltó algo de lo acordado", "Something agreed was missing"], cobro: ["Cobraron más de lo acordado", "Charged more than agreed"], dep: ["No le descontaron el depósito", "Deposit not taken off the bill"] },
   trans: { cobro: ["Cobró más del precio cerrado", "Charged more than the fixed price"], tarde: ["Salió o llegó muy tarde", "Left or arrived very late"], nollego: ["No pasó a recogerlo", "Did not pick them up"] },
 };
 export const motivoAyuda = (k: string, rubro?: string | null): L => POR_RUBRO[rubro ?? ""]?.[k] ?? BASE[k] ?? BASE.otro!;

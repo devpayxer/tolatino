@@ -5,20 +5,20 @@ import { db } from "./db";
 /* ADM-TX · Transacciones (Super Admin.dc.html secTx / txRow): pedidos, reservaciones y citas (3e: el depósito con
    tarjeta y la comisión de citas sobre el depósito) de los últimos 90 días de tus ciudades. Hoy todo se paga en el local o al recibir: no hay retenido, cobro con tarjeta, devoluciones ni comisión
    (llegan con Stripe, bloque 2d). Estados: pendiente · en curso · terminado · cancelado · no se dio (no lo aceptaron / sin respuesta). */
-export type TabTx = "all" | "ped" | "merc" | "rsv" | "cita" | "sal" | "pro" | "plan" | "renta" | "apt" | "fiesta" | "viaje" | "noche" | "insc" | "vis" | "bol";
+export type TabTx = "all" | "ped" | "merc" | "rsv" | "cita" | "sal" | "pro" | "plan" | "renta" | "apt" | "fiesta" | "viaje" | "noche" | "insc" | "vis" | "bol" | "evp";
 export type EstTx = "pend" | "curso" | "done" | "cx" | "no";
 export type FiltrosTx = { tab: TabTx; q: string; st: EstTx[]; pag: number };
 export const POR_PAGINA_TX = 20;
 const ESTS = new Set<EstTx>(["pend", "curso", "done", "cx", "no"]);
 export function leerFiltrosTx(sp: Record<string, string | undefined>): FiltrosTx {
-  const tab = (["all", "ped", "merc", "rsv", "cita", "sal", "pro", "plan", "renta", "apt", "fiesta", "viaje", "noche", "insc", "vis", "bol"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
+  const tab = (["all", "ped", "merc", "rsv", "cita", "sal", "pro", "plan", "renta", "apt", "fiesta", "viaje", "noche", "insc", "vis", "bol", "evp"].includes(sp.tab ?? "") ? sp.tab : "all") as TabTx;
   const st = String(sp.st ?? "").split(",").filter((x): x is EstTx => ESTS.has(x as EstTx));
   return { tab, q: String(sp.q ?? "").trim().slice(0, 60), st, pag: Math.max(1, Math.min(500, Number(sp.pag) || 1)) };
 }
 const EST = `case when o.status in ('pending', 'change_proposed') then 'pend'
   when o.status = 'confirmed' and (o.kind <> 'order' or coalesce(o.stage, '') not in ('delivered', 'picked_up')) then 'curso'
   when o.status = 'done' or o.stage in ('delivered', 'picked_up') then 'done' when o.status = 'cancelled' then 'cx' else 'no' end`;
-export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
+export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan" | "rental" | "hold" | "market_order" | "party" | "trip" | "night" | "enrollment" | "visit" | "tickets" | "private_event"; svc: string | null; dep: number; biz: string; bname: string; uid: string; quien: string; at: string; total: number; p: number | null; mode: string | null; st: EstTx; detalle: string | null;
   pago: string | null; devuelto: number; comision: number; tarjeta: string | null; pid: string | null; disputa: string | null;
   // 4d: estimado de Auto y Hogar (versiones, aprobado, cobrado en la app y retenciones que no se pudieron renovar).
   estV: number; estAp: number; estCob: number; estFallo: number;
@@ -40,18 +40,20 @@ export type FilaTx = { num: string; k: "order" | "table" | "appointment" | "plan
   ins: { rub: string; k: string; grupo: string | null; inicio: string | null; plan: number; cert: boolean; cierre: string | null; perdio: boolean; para: string } | null;
   // 4ie: visita o prueba de manejo (rubro, qué, la propiedad o el carro, el día, la COPIA del total al enviar, cómo cerró y la línea de tiempo).
   // Nunca la nota, la dirección de la casa del cliente ni datos de su licencia. Nada se cobra en la app.
-  vis: { rub: string; que: string; item: string | null; dia: string; min: number; mudar: number | null; otd: number | null; precio: number | null; cierre: string | null; casa: boolean; linea: string | null } | null };
+  vis: { rub: string; que: string; item: string | null; dia: string; min: number; mudar: number | null; otd: number | null; precio: number | null; cierre: string | null; casa: boolean; linea: string | null } | null;
+  // 6i: evento privado (día, personas, versión aceptada, cuántas propuestas, cómo cerró, si el depósito se quedó y si hay un cambio abierto). Nunca la nota.
+  ep: { dia: string; pax: number; v: number | null; n: number; cierre: string | null; perdio: boolean; det: string | null } | null };
 function donde(s: Staff, f: FiltrosTx) {
-  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))",
+  const w = ["o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event')", "o.sent_at > now() - interval '90 days'", "(cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))",
     // 6d · Una cortesía (orden de boletos sin cobro) no es dinero: no sale en Transacciones (sí en la ficha del evento y en Buscar boleto).
     "not (o.kind = 'tickets' and o.pay_mode = 'none')"], v: unknown[] = [s.cities];
   if (f.tab === "sal" || f.tab === "pro") w.push(`o.kind = 'appointment' and o.details->>'rubro' = '${f.tab === "sal" ? "salud" : "pro"}'`);
-  else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip", noche: "night", insc: "enrollment", vis: "visit", bol: "tickets" } as const)[f.tab]}'`);
+  else if (f.tab !== "all") w.push(`o.kind = '${({ ped: "order", merc: "market_order", cita: "appointment", rsv: "table", plan: "plan", renta: "rental", apt: "hold", fiesta: "party", viaje: "trip", noche: "night", insc: "enrollment", vis: "visit", bol: "tickets", evp: "private_event" } as const)[f.tab]}'`);
   if (f.st.length) { v.push(f.st); w.push(`(${EST}) = any($${v.length}::text[])`); }
   if (f.q) { v.push(`%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`); w.push(`(o.number ilike $${v.length} or b.name ilike $${v.length} or o.business_id ilike $${v.length} or u.phone ilike $${v.length} or coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '') ilike $${v.length})`); }
   return { w: w.join(" and "), v };
 }
-const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets') join users u on u.id = o.user_id`;
+const DESDE = `from operations o join businesses b on b.id = o.business_id and o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') join users u on u.id = o.user_id`;
 export async function listaTx(s: Staff, f: FiltrosTx) {
   const { w, v } = donde(s, f);
   const [L, n, k] = await Promise.all([
@@ -80,6 +82,9 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               case when o.kind = 'visit' then jsonb_build_object('rub', o.details->>'rubro', 'que', o.details->>'what', 'item', o.details->'item'->>'es', 'dia', o.details->>'dia', 'min', (o.details->>'min')::int,
                 'mudar', (o.details->>'move_in_cents')::int, 'otd', (o.details->>'otd_cents')::int, 'precio', (o.details->>'price_cents')::int, 'cierre', coalesce(o.status_detail, o.cancel_reason),
                 'casa', coalesce((o.details->>'at_home')::boolean, false), 'linea', (select string_agg(e.kind, ' > ' order by e.at, e.id) from operation_events e where e.operation_id = o.id)) end as vis,
+              case when o.kind = 'private_event' then jsonb_build_object('dia', to_char(o.scheduled_at at time zone 'America/New_York', 'YYYY-MM-DD HH24:MI'), 'pax', o.party_size,
+                'v', (select max(q.version) from private_event_quotes q join private_event_acceptances a on a.quote_id = q.id where q.operation_id = o.id), 'n', (select count(*)::int from private_event_quotes q where q.operation_id = o.id),
+                'cierre', coalesce(o.cancel_reason, o.status_detail), 'perdio', coalesce((o.details->>'perdio')::boolean, false), 'det', o.status_detail) end as ep,
               (select jsonb_build_object('st', lp.status, 'total', lp.total_cents, 'pagado', (select coalesce(sum(lpp.amount_cents), 0) from layaway_payments lpp where lpp.plan_id = lp.id and lpp.status in ('paid', 'waived'))) from layaway_plans lp where lp.operation_id = o.id) as lay,
               (select count(distinct l.estimate_id)::int from estimate_lines l where l.operation_id = o.id and not l.is_extra) as "estV",
               (select coalesce(sum(coalesce(l.final_cents, l.line_total_cents)), 0)::int from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') as "estAp",
@@ -99,7 +104,7 @@ export async function listaTx(s: Staff, f: FiltrosTx) {
               (select coalesce(sum(fee_cents::bigint * (amount_cents - refunded_cents) / amount_cents), 0)::int from payments p where p.status in ('captured', 'partially_refunded') and p.captured_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as com,
               (select coalesce(sum(refunded_cents), 0)::int from payments p where p.updated_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as dev,
               (select count(*)::int from operation_events ev join operations o2 on o2.id = ev.operation_id where ev.kind = 'hold_failed' and ev.at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o2.city_id = any($1::text[]))) as fallos
-         from operations o where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets') and o.sent_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))`, [s.cities]),
+         from operations o where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') and o.sent_at > now() - interval '90 days' and (cardinality($1::text[]) = 0 or o.city_id = any($1::text[]))`, [s.cities]),
   ]);
   return { filas: L.rows, total: n.rows[0]!.n, kpi: k.rows[0]! };
 }
@@ -113,5 +118,5 @@ export async function filasExportTx(s: Staff, f: FiltrosTx) {
             coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien, o.total_cents as total, ${EST} as st
        ${DESDE} where ${w} order by o.id desc limit 5000`, v);
   const ST: Record<string, string> = { pend: "Pendiente", curso: "En curso", done: "Terminado", cx: "Cancelado", no: "No se dio" };
-  return r.rows.map((x) => [x.num, x.at, ({ order: "Pedido", market_order: "Pedido del mercado", appointment: "Cita", table: "Reservación", plan: "Plan", rental: "Renta", hold: "Apartado", party: "Fiesta", trip: "Viaje", visit: "Visita", tickets: "Boletos" } as Record<string, string>)[x.k] ?? x.k, x.bname, x.quien, (x.total / 100).toFixed(2), ST[x.st] ?? x.st]);
+  return r.rows.map((x) => [x.num, x.at, ({ order: "Pedido", market_order: "Pedido del mercado", appointment: "Cita", table: "Reservación", plan: "Plan", rental: "Renta", hold: "Apartado", party: "Fiesta", trip: "Viaje", visit: "Visita", tickets: "Boletos", private_event: "Evento privado" } as Record<string, string>)[x.k] ?? x.k, x.bname, x.quien, (x.total / 100).toFixed(2), ST[x.st] ?? x.st]);
 }

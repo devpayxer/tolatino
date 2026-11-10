@@ -33,7 +33,9 @@ export type ClaveConfig =
   // 6g · la puerta (0112)
   | "puerta_porteros_max" | "puerta_ventana_h" | "puerta_aforo_alerta_pct" | "puerta_buscar_min" | "puerta_invitar_dia_max"
   // 6h · la puerta sin conexión (0113)
-  | "puerta_paquete_h" | "puerta_sync_seg" | "puerta_offline_aviso_min" | "puerta_sync_lote" | "puerta_reloj_desvio_seg";
+  | "puerta_paquete_h" | "puerta_sync_seg" | "puerta_offline_aviso_min" | "puerta_sync_lote" | "puerta_reloj_desvio_seg"
+  // 6i · evento privado (0114)
+  | "evp_deposito_pct" | "evp_cancelar_h" | "evp_responder_h" | "evp_propuesta_h" | "evp_anticipacion_dias" | "evp_dias_adelante" | "evp_pendientes_max" | "evp_propuestas_max" | "evp_cambios_max";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

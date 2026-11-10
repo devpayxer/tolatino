@@ -75,6 +75,10 @@ _Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Esc
   en la auditoría.
 - Hoy todo se paga en el local o al recibir: no hay retenido, cobro con tarjeta, devoluciones ni comisión (llegan con Stripe,
   bloque 2d). Citas, boletos y apartados llegan con sus fases.
+- **Evento privado** (6i, pestaña «Evento privado»): cada solicitud EP-… con personas, para cuándo, cuántas propuestas, la versión aceptada, el
+  total, el depósito y su estado (retenido · cobrado · devuelto), si se quedó con el restaurante, la comisión y cómo cerró. **Devolver** (permiso
+  `tx:aprobar`) devuelve hasta lo cobrado menos lo devuelto, con motivo y auditoría. Las ayudas van a Colas › Soporte y las disputas del banco a
+  Colas › Disputas, como el resto.
 
 ---
 

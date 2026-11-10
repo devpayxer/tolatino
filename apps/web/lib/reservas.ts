@@ -155,6 +155,8 @@ export type RsvPublica = {
   on: boolean; auto: boolean; reply: number; hold: number; cxH: number; dur: number; max: number;
   areas: { k: string; l: Bi }[]; dias: { i: number; ymd: string; dow: number; num: number; off: boolean }[]; turnos: { k: string; t: Bi; f: number; z: number }[];
   mia: { numero: string; st: string; at: string; dia: number; h: number; p: number; area: string } | null;
+  /* 6i · ¿Recibe eventos privados? (la tarjeta de grupo grande dice «Pedir evento privado» en vez de solo «Llamar»). */
+  evp: boolean;
 };
 /* La pestaña Reservaciones: null = no es un restaurante con Reservaciones encendido, o To'Latino las pausó. */
 export async function rsvPublica(negocio: string, userId: string | null): Promise<RsvPublica | null> {
@@ -176,7 +178,7 @@ export async function rsvPublica(negocio: string, userId: string | null): Promis
     areas: areasOn(x.s).map((k) => ({ k, l: AREAS[k]! })),
     dias: Array.from({ length: x.s.maxD }, (_, i) => { const d = dia(x, i); return { i, ymd: d.ymd, dow: d.dow, num: Number(d.ymd.slice(8)), off: !d.abierto }; }),
     turnos: Object.keys(TURNOS).filter((k) => x.s.periods[k]?.on).map((k) => ({ k, t: TURNOS[k]!, f: x.s.periods[k]!.f, z: x.s.periods[k]!.t })),
-    mia,
+    mia, evp: !!(await db().query(`select 1 from private_event_settings where business_id = $1 and is_on`, [x.id])).rowCount,
   };
 }
 
