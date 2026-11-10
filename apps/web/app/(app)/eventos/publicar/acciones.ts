@@ -9,7 +9,7 @@ import { accesoPanel } from "@/lib/panel";
 /* Publica tu evento (APP-EVT-EDITAR): el formulario corto → el mismo guardarEvento del panel, enviado a revisión (o publicado si el
    organizador está verificado). El servidor revisa quién maneja el negocio, Pro y todo lo del evento. */
 export type PubIn = { org: string; fmt: string; name: string; desc: string; foto: { id: string; url: string } | null; dia: string; h0: number; h1: number; puertas: number;
-  donde: "own" | "other"; lugar: string; dir: string; entrada: "free" | "rsvp" | "tickets"; precio: number; cupo: number; edad: number };
+  donde: "own" | "other"; lugar: string; dir: string; cp?: string; entrada: "free" | "rsvp" | "tickets"; precio: number; cupo: number; edad: number };
 export type PubRes = { ok: true; id: string; envio: string; org: string } | { ok: false; error: "entrar" | "pro" | "otro"; msg?: Bi };
 
 export async function publicarEvento(x: PubIn): Promise<PubRes> {
@@ -24,7 +24,7 @@ export async function publicarEvento(x: PubIn): Promise<PubRes> {
   const b = nuevoBorrador(F, hoy), precio = Math.round(Number(x.precio) || 0), cupo = Math.round(Number(x.cupo) || 0);
   const d = {
     ...b, fmt: F.key as FormatoKey, ti: { es: String(x.name ?? ""), en: "" }, desc: { es: String(x.desc ?? ""), en: "" }, fotos: x.foto ? [x.foto] : [], dia: String(x.dia ?? ""),
-    h0: Number(x.h0), h1: Number(x.h1), puertas: Number(x.puertas), donde: x.donde === "other" ? "other" : "own", lugar: String(x.lugar ?? ""), dir: String(x.dir ?? ""),
+    h0: Number(x.h0), h1: Number(x.h1), puertas: Number(x.puertas), donde: x.donde === "other" ? "other" : "own", lugar: String(x.lugar ?? ""), dir: String(x.dir ?? ""), cp: String(x.cp ?? ""),
     entrada: x.entrada, cupo: x.entrada === "rsvp" ? cupo : 0, edad: Number(x.edad), pideId: Number(x.edad) > 0,
     boletos: x.entrada === "tickets" ? [{ id: "t1", n: { ...F.f.tk0 }, s: { es: "", en: "" }, p: precio, cap: cupo, off: false }] : [],
   };

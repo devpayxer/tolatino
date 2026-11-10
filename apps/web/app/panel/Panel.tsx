@@ -195,8 +195,9 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
   const entrega = d.cat === "NEG-FOOD" && d.mods.includes("pedidos") && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("dlv"));
   // Mensajes (2p): el dueño o quien tenga Mensajes en el equipo.
   const msgs = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("msg");
-  // Eventos (DASH-EVENTOS, 6a): el dueño o quien tenga la parte «evt» del equipo; todas las categorías publican algún formato.
-  const evts = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt");
+  // Eventos (DASH-EVENTOS, 6a): el dueño o quien tenga la parte «evt» del equipo. 6b: solo donde el módulo aplica (su categoría admite
+  // Eventos en el Catálogo del Super Admin); el interruptor del negocio y la pausa de To'Latino deciden si sus eventos salen.
+  const evts = d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt"));
   const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(msgs ? [{ k: "msg", l: E2("Mensajes", "Messages"), icon: "chat" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : []), ...(evts && !(d.sells && vende) ? [{ k: "evt", l: E2("Eventos", "Events"), icon: "ticket" }] : [])];
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
@@ -698,7 +699,7 @@ function masBloques(c: Ctx): Bloque[] {
     { type: "rows", items: [
       ...(vende ? [{ icon: "grid", t: E2("Lo que vendes", "What you sell"), onClick: () => c.go("mod") }] : []),
       ...(entrega ? [{ icon: "truck", t: E2("Entrega", "Delivery"), onClick: () => c.go("dlv") }] : []),
-      ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt") ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: E2("Publica eventos: To’Latino los revisa antes de que salgan.", "Publish events: To’Latino reviews them before they go live."), onClick: () => c.go("evt") }] : []),
+      ...(d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt")) ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: E2("Publica eventos: To’Latino los revisa antes de que salgan.", "Publish events: To’Latino reviews them before they go live."), onClick: () => c.go("evt") }] : []),
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") }] },

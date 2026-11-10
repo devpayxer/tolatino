@@ -2,7 +2,7 @@
    de los chips (HOY L169–179) y la forma de una historia (una tarjeta por negocio con hasta 3 avisos de menos de 24 h). */
 type Bi = { es: string; en: string };
 
-export const HOY_T = { of: { es: "OFERTA", en: "DEAL" }, nv: { es: "NOVEDAD", en: "NEW" }, ll: { es: "LLEGÓ", en: "JUST IN" }, av: { es: "AVISO", en: "NOTICE" } } as const;
+export const HOY_T = { of: { es: "OFERTA", en: "DEAL" }, nv: { es: "NOVEDAD", en: "NEW" }, ll: { es: "LLEGÓ", en: "JUST IN" }, av: { es: "AVISO", en: "NOTICE" }, ev: { es: "EVENTO · VER EVENTO", en: "EVENT · SEE EVENT" } } as const;
 export type HoyT = keyof typeof HOY_T;
 /* Novedades → tipo de Hoy: la oferta es OFERTA; «Hoy hay / Llegó» es LLEGÓ; el aviso de horario es AVISO; la novedad y la encuesta
    salen como NOVEDAD (la encuesta se vota en la página del negocio). */
@@ -16,12 +16,16 @@ export const HOY_CATS: { k: string; cat: string | null; l: Bi }[] = [
 ];
 export const catHoy = (k: string | undefined | null) => HOY_CATS.find((c) => c.k === k) ?? HOY_CATS[0]!;
 
-export type AvisoHoy = { id: string; t: HoyT; texto: string; at: string; quedan: number; foto: string | null };
+/* 6b · `ev`: la novedad lleva a un evento en vivo (post_en_vivo lo exige); al final de la historia se abre la ficha del evento. */
+export type AvisoHoy = { id: string; t: HoyT; texto: string; at: string; quedan: number; foto: string | null; ev?: string | null };
 export type Historia = { id: string; nombre: string; logo: string | null; mi: number | null; domicilio: boolean; avisos: AvisoHoy[] };
 export type PaginaHoy = { historias: Historia[]; mas: string | null };
 
 /* «QUEDAN 22 H» / «22 H LEFT» (dash2-nov whenOf). */
 export const quedanH = (n: number, es: boolean) => (es ? `QUEDAN ${Math.max(1, n)} H` : `${Math.max(1, n)} H LEFT`);
+
+/* A dónde lleva el final de la historia: la ficha del evento si el último aviso es «Ver evento»; si no, la página del negocio. */
+export const finHoy = (h: Historia) => h.avisos.at(-1)?.ev ?? `/n/${h.id}?tab=nov`;
 
 /* Lo que la StoryCard del sistema recibe de una historia: lo que le queda a cada aviso en Hoy («QUEDAN 22 H») va arriba a la derecha en
    las tarjetas anchas (≥ 200 px) y junto al tipo en las angostas del teléfono (así el nombre del negocio no se corta); abajo, la

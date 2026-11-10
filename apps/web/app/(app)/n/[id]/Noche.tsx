@@ -16,7 +16,7 @@ const fondo = (u: string | null) => (u ? { backgroundImage: `url(${u})`, backgro
 const stop = (e?: MouseEvent) => e?.stopPropagation();
 const DOW = { es: ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"], en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] };
 
-type Acc = { llegar: () => void; escribir: () => void; llamar: () => void; reservar: (svc: string, pax: number) => void };
+type Acc = { llegar: () => void; escribir: () => void; llamar: () => void; reservar: (svc: string, pax: number) => void; ir: (href: string) => void };
 export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc: Acc) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const [hoja, setHoja] = useState<string | null>(null);
@@ -36,10 +36,10 @@ export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc
     }
     return nm(s.desc);
   };
-  const btn = (s: SvcNoche) => (s.k === "fecha" ? E2("Pedir fecha", "Ask for a date") : s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Anotarme", "Join the list") : E2("Reservar", "Reserve"));
+  const btn = (s: SvcNoche) => (s.k === "evento" ? E2("Ver evento", "See event") : s.k === "fecha" ? E2("Pedir fecha", "Ask for a date") : s.k === "cover" ? E2("Cómo llegar", "Directions") : s.k === "lista" ? E2("Anotarme", "Join the list") : E2("Reservar", "Reserve"));
   const item = (s: SvcNoche) => {
     const P = precioNoche(s, es), dias = s.dows.length ? `${E2("SOLO ", "ONLY ")}${s.dows.map((d) => DOW[es ? "es" : "en"][d]).join(" · ").toUpperCase()}` : "";
-    return { id: s.id, k: s.k, name: nm(s.name), desc: desc(s), foto: s.foto, price: P.l, meta: [P.s, s.dep ? E2(`DEPÓSITO ${usdN(s.dep)}`, `${usdN(s.dep)} DEPOSIT`) : "", dias].filter(Boolean).join(" · "), btn: btn(s) };
+    return { id: s.id, k: s.k, ev: s.ev, name: nm(s.name), desc: desc(s), foto: s.foto, price: P.l, meta: [P.s, s.dep ? E2(`DEPÓSITO ${usdN(s.dep)}`, `${usdN(s.dep)} DEPOSIT`) : "", dias].filter(Boolean).join(" · "), btn: btn(s) };
   };
   const secs = [...np.secciones.map((sc) => ({ title: nm(sc.name).toUpperCase(), items: np.servicios.filter((s) => s.sec === sc.id).map(item) })),
     { title: E2("OTROS", "OTHER"), items: np.servicios.filter((s) => !np.secciones.some((sc) => sc.id === s.sec)).map(item) }].filter((x) => x.items.length);
@@ -61,7 +61,7 @@ export function useNoche(np: NochePublica | null, es: boolean, pro: boolean, acc
   // La pestaña (tabL L143): «Esta noche» / «Mañana viernes» / «El sábado» / «Para tu fecha» / «Próximas noches».
   const tabL = np.porFecha ? (np.kind === "promo" ? E2("Próximas noches", "Upcoming nights") : E2("Para tu fecha", "For your date"))
     : !e || e.cuando === "hoy" ? E2("Esta noche", "Tonight") : e.cuando === "manana" ? E2(`Mañana ${diaNoche(e.dow, true)}`, `Tomorrow ${diaNoche(e.dow, false)}`) : E2(`El ${diaNoche(e.dow, true)}`, diaNoche(e.dow, false));
-  const hacer = (k: string, id?: string, ev?: MouseEvent) => { stop(ev); if (k === "fecha") return acc.escribir(); if (k === "cover") return acc.llegar(); if (id && pro) setHoja(id); };
+  const hacer = (k: string, id?: string, ev?: MouseEvent) => { stop(ev); const sv = id ? np.servicios.find((x) => x.id === id) : null; if (sv?.k === "evento" && sv.ev) return acc.ir(sv.ev); if (k === "fecha") return acc.escribir(); if (k === "cover") return acc.llegar(); if (id && pro) setHoja(id); };
   const cta = np.porFecha ? { l: E2("Pedir fecha", "Ask for a date"), icon: "bubble", go: acc.escribir }
     : (np.lista || np.mesas) && pro ? { l: E2("Lista y mesas", "List & tables"), icon: "drink", go: null } : pro ? { l: E2("Cómo llegar", "Directions"), icon: "pin", go: acc.llegar } : { l: E2("Llamar", "Call"), icon: "phone", go: acc.llamar };
   return { np, es, E2, nm, pro, secs, notes: notes.slice(0, 4), td, desde, linea, cuando, tabL, hoja, pax, setPax, acc, cta,

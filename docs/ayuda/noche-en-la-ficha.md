@@ -24,3 +24,7 @@ who plays, the dress code and **how the line is**, with the time the venue poste
 - **¿Y si en la puerta me cobran más?** Pide ayuda en To'Latino: miramos el cover que el local publicó esa noche y el local te
   devuelve la diferencia. · *If the door charges more, ask for help: we check what the venue posted that night.*
 - **¿El mínimo de mesa es un cargo extra?** No: es lo que se consume en la noche; el depósito se descuenta de tu cuenta.
+
+**6b · Noche especial:** el servicio «Noche especial» sale en la pestaña solo si está ligado a un evento publicado del local; su botón
+**Ver evento** abre la ficha del evento (boletos en la app desde 6c). · *Special night: shows only when linked to a live event of the venue;
+**See event** opens the event page.*

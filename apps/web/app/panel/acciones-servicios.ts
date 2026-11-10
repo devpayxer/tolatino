@@ -59,6 +59,8 @@ export async function servicioGuardar(negocio: string, itemId: string, p: Servic
       const v = rub === "fe" ? limpiarFe(p?.k, Math.round(Number(p?.price) * 100), p?.a, fun) : rub === "fiesta" ? limpiarFiesta(p?.k, cents, p?.a) : rub === "trans" ? limpiarTrans(p?.k, cents, p?.a) : rub === "noche" ? limpiarNoche(p?.k, cents, p?.a) : rub === "edu" || rub === "ninos" || rub === "dep" ? limpiarInsc(p?.k, cents, p?.a, rub) : limpiarSP(rub, p?.k, rub === "pro" && p?.k === "pct" ? Math.round(Number(p?.price) * 100) : cents, p?.a);
       if (!v.ok) return no(v.es, v.en);
       k = v.k; attrs = v.a; cents2 = v.cents;
+      // 6b · Noche especial: el evento tiene que ser de este negocio.
+      if (rub === "noche" && k === "evento" && attrs.event_id && !(await c.query(`select 1 from events where id = $1::bigint and business_id = $2`, [attrs.event_id, a.negocio.id])).rowCount) return no("Ese evento no es de tu negocio.", "That event is not from your business.");
       // Noche: la entrada sigue al cover de «Esta noche» (no tiene precio propio).
       if (rub === "noche" && k === "cover") cents2 = (await c.query<{ c: number }>(`select coalesce((select cover_cents from noche_settings where business_id = $1), 0) as c`, [a.negocio.id])).rows[0]!.c;
     } else if (cents < 0 || (!extra && cents === 0 && !Object.values(p?.hacen ?? {}).some((v) => (v ?? 0) > 0))) return no("Ponle precio.", "Set a price.");

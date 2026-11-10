@@ -68,3 +68,15 @@ export async function evtTraducir(negocio: string, textos: string[]): Promise<Re
     throw e;
   }
 }
+
+/* 6b · El interruptor del módulo Eventos (Lo que vendes / Panel › Eventos): apagado, ninguno de tus eventos sale al público (la base vuelve a
+   calcular `listable`); los eventos no cambian de estado y vuelven a salir al encenderlo. La pausa de To'Latino (modules_off) manda. */
+export async function evtModulo(negocio: string, on: boolean): Promise<Res> {
+  const a = await entrar(negocio);
+  if (!a) return SIN_ACCESO;
+  const r = await db().query(
+    `update businesses set modules_on = case when $2 then array(select distinct x from unnest(modules_on || array['eventos']) x) else array_remove(modules_on, 'eventos') end, updated_at = now()
+      where id = $1 and (('eventos' = any(modules_on)) <> $2)`, [a.negocio.id, !!on]);
+  if (r.rowCount) await auditar(a, on ? "eventos.encender" : "eventos.apagar", { modulo: "Eventos", estado: on ? "Encendido" : "Apagado" });
+  return { ok: true };
+}

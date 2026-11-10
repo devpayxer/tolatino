@@ -1367,6 +1367,19 @@ const guardianes = {
     if (!/when \$\{x\}\.works_from_home then round\(st_y/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "PUNTO_PUBLICO redondea el punto de quien trabaja desde casa");
     const I = "apps/web/lib/inmuebles.ts";
     if (existsSync(I) && !/update businesses b set works_from_home = true/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "quien renta en su propia dirección (propiedad con la dirección oculta) pasa a «trabaja desde casa»");
+    // 6b · El punto y la dirección de un evento en lo público: PUNTO_EVENTO (en el local de quien trabaja desde casa, la zona redondeada) y
+    // DIRECCION_EVENTO (sin dirección si trabaja desde casa). lib/evt-publico.ts no lee el punto ni la dirección por su cuenta.
+    const pt = readFileSync(P, "utf8");
+    if (!/export const PUNTO_EVENTO = [\s\S]*?when \$\{b\}\.works_from_home then round\(st_y\(/.test(pt) || !/export const DIRECCION_EVENTO = [\s\S]*?when \$\{b\}\.works_from_home then null/.test(pt)) falla(G, P, 0, "PUNTO_EVENTO redondea y DIRECCION_EVENTO calla la casa de quien trabaja desde casa");
+    const EP = "apps/web/lib/evt-publico.ts";
+    if (existsSync(EP)) {
+      const t = sinComent(EP);
+      t.split("\n").forEach((l, i) => {
+        if (/st_[xy]\(|st_astext|st_asgeojson/i.test(l)) falla(G, EP, i + 1, "el punto de un evento sale de PUNTO_EVENTO (lib/punto.ts)");
+        if (/\bb\.address\b|\be\.venue_address\b/.test(l)) falla(G, EP, i + 1, "la dirección de un evento sale de DIRECCION_EVENTO (lib/punto.ts)");
+      });
+      if (!/\$\{PUNTO_EVENTO\("e", "b"\)\}/.test(t) || !/\$\{DIRECCION_EVENTO\("e", "b"\)\} as addr/.test(t)) falla(G, EP, 0, "la ficha del evento usa PUNTO_EVENTO y DIRECCION_EVENTO");
+    }
   },
   /* 4ib. La dirección exacta de una propiedad (addr_line, geom) solo la lee lib/inmuebles.ts (el panel del negocio) y, en 4ie, lib/visitas-inm*.ts
      (al confirmar la visita). Ninguna consulta pública la ve; los cuartos y «solo la zona» muestran la zona (§3, §6 #15). */
@@ -2273,6 +2286,75 @@ const guardianes = {
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /\b(update|delete from) event_review_log\b/.test(sinComent(x))) falla(G, x, 0, "event_review_log es solo de inserción");
   },
 
+  /* 6b. Lo público de Eventos sale solo de lo `listable` (lo decide la base): evt_listable suma el módulo del negocio (encendido, sin pausa
+     de To'Latino, categoría que lo admite, negocio activo) y el organizador sin bloquear; la base vuelve a calcularlo cuando eso cambia
+     (triggers en businesses, event_organizers y categories); y toda lectura de fechas en lib/evt-publico.ts (salvo ultimosRsvp, que es del
+     panel y del admin) pasa por VIVO / listable. Al revés: quitar una condición, un trigger o el filtro de una consulta → falla. */
+  eventosSoloListables() {
+    const G = "eventosSoloListables", M = "packages/db/migrations/0107_eventos_publico.sql", L = "apps/web/lib/evt-publico.ts";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8"), ls = ultimaFn("evt_listable"), np = ultimaFn("evt_negocio_publico");
+    if (!/evt_negocio_publico\(e\.business_id\)/.test(ls)) falla(G, M, 0, "evt_listable debe exigir el módulo Eventos del negocio (evt_negocio_publico)");
+    for (const [re, que] of [[/b\.status = 'active'/, "negocio activo"], [/'eventos' = any\(b\.modules_on\)/, "módulo encendido por el negocio"], [/not \(coalesce\(b\.modules_off, '\{\}'::jsonb\) \? 'eventos'\)/, "sin pausa de To'Latino"],
+      [/allowed_modules, '\[\]'::jsonb\) \? 'eventos'/, "categoría que admite Eventos"], [/o\.blocked_at is not null/, "organizador sin bloquear"]])
+      if (!re.test(np)) falla(G, M, 0, `evt_negocio_publico sin «${que}»`);
+    for (const t of ["businesses_evt_relistar after update on businesses", "event_organizers_relistar after insert or update on event_organizers", "categories_evt_relistar after update on categories"])
+      if (!m.includes(`create trigger ${t}`)) falla(G, M, 0, `falta el trigger «${t.split(" ")[0]}» que vuelve a calcular listable`);
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/evt-publico.ts");
+    const t = sinComent(L);
+    if (!/const VIVO = `d\.listable and /.test(t)) falla(G, L, 0, "VIVO debe empezar por d.listable");
+    for (const fn of [...t.matchAll(/\n(?:export )?async function (\w+)\(/g)].map((x) => x[1])) {
+      if (fn === "ultimosRsvp" || fn === "diasCiudad" || fn === "generosFiltro") continue;
+      const b = cuerpoFn(t, fn);
+      if (/event_dates|DESDE_T/.test(b) && !/\$\{VIVO\}|VIVO, |\bd\.listable\b/.test(b)) falla(G, L, 0, `«${fn}» lee fechas de eventos sin VIVO / listable`);
+    }
+    // Lo demás que muestra eventos al público también pide listable (Noche, novedades, Mi cuenta, Hoy por post_en_vivo).
+    for (const [f, re] of [["apps/web/lib/noche-publico.ts", /d\.listable and d\.ends_at > now\(\)/], ["apps/web/lib/novedades.ts", /where e\.id = p\.event_id and d\.listable/], ["apps/web/lib/rsvp.ts", /f\.kind = 'event' and d\.listable/]])
+      if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "muestra un evento al público sin pedir listable");
+  },
+
+  /* 6b. Eventos pagina con cursor (starts_at, id), 20 por página y una de más, sin offset, sobre el índice (city_id, starts_at, id) where
+     listable. Al revés: offset, sin cursor o sin el índice → falla. */
+  eventosConCursor() {
+    const G = "eventosConCursor", L = "apps/web/lib/evt-publico.ts", M = "packages/db/migrations/0106_eventos_base.sql";
+    for (const x of codigo) {
+      if (!/^apps\/web\/(lib\/(evt-publico|rsvp)\.ts|app\/\(app\)\/eventos\/.*\.tsx?)$/.test(x)) continue;
+      sinComent(x).split("\n").forEach((l, i) => { if (/\boffset\b/i.test(l)) falla(G, x, i + 1, "Eventos no pagina con offset: usa el cursor (starts_at, id)"); });
+    }
+    if (!existsSync(L)) return;
+    const b = cuerpoFn(sinComent(L), "eventosCiudad");
+    if (!/\(d\.starts_at, d\.id\) > \(\$\$\{v\.length - 1\}::timestamptz, \$\$\{v\.length\}::bigint\)/.test(b) || !/order by d\.starts_at, d\.id limit \$\{POR_PAGINA_EVT \+ 1\}/.test(b)) falla(G, L, 0, "eventosCiudad debe seguir con cursor (starts_at, id), en ese orden, y pedir una de más");
+    if (!/export const POR_PAGINA_EVT = 20;/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "20 eventos por página");
+    if (existsSync(M) && !/create index if not exists event_dates_lista_idx on event_dates \(city_id, starts_at, id\) where listable;/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "falta el índice (city_id, starts_at, id) where listable");
+  },
+
+  /* 6b. El cupo del RSVP lo cuenta la base, sin sobreventa con personas a la vez: rsvps_antes bloquea la fila de la fecha (for update) ANTES
+     de contar y compara con el cupo; rsvps_despues lleva el contador y vuelve a mirar el cupo; los derivados de una fecha solo los escribe
+     un trigger con la marca tl.evt_derivado (la app no la enciende ni escribe rsvp_n / going_n); solo lib/rsvp.ts escribe rsvps; el cupo
+     no baja de lo guardado. Al revés: quitar el bloqueo, un control o escribir el contador desde la app → falla. */
+  rsvpConCupo() {
+    const G = "rsvpConCupo", M = "packages/db/migrations/0107_eventos_publico.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8"), a = ultimaFn("rsvps_antes"), d = ultimaFn("rsvps_despues"), ed = ultimaFn("event_dates_antes");
+    const iL = a.search(/select \* into d from event_dates where id = new\.event_date_id for update;/), iC = a.search(/if e\.rsvp_capacity > 0 and d\.rsvp_n - antes \+ new\.party > e\.rsvp_capacity then raise exception 'evt_cupo_lleno/);
+    if (iL < 0 || iC < 0 || iL > iC) falla(G, M, 0, "rsvps_antes: bloquear la fila de la fecha (for update) antes de contar el cupo");
+    if (!/select \* into e from events where id = d\.event_id for share;/.test(a)) falla(G, M, 0, "rsvps_antes: el cupo del evento se lee con «for share»");
+    if (!/if new\.party > e\.party_max then raise exception/.test(a) || !/if not d\.listable then raise exception/.test(a)) falla(G, M, 0, "rsvps_antes: personas por RSVP y solo fechas que salen al público");
+    if (!/if dh > 0 and cap > 0 and n > cap then raise exception 'evt_cupo_lleno/.test(d)) falla(G, M, 0, "rsvps_despues: último control del cupo después de sumar");
+    if (!/coalesce\(current_setting\('tl\.evt_derivado', true\), ''\) <> 'si' then\s*raise exception/.test(ed)) falla(G, M, 0, "event_dates_antes: los derivados solo con la marca de sus triggers");
+    if (!/create unique index if not exists rsvps_vivo on rsvps \(event_date_id, user_id\) where status = 'going';/.test(m)) falla(G, M, 0, "un RSVP vivo por persona y fecha");
+    if (!/create trigger rsvps_antes before insert or update or delete on rsvps/.test(m) || !/create trigger rsvps_despues after insert or update on rsvps/.test(m) || !/create trigger events_cupo before update of rsvp_capacity on events/.test(m)) falla(G, M, 0, "faltan los triggers del RSVP o del cupo");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (/tl\.evt_derivado/.test(t)) falla(G, x, 0, "la app no enciende la marca de los derivados de una fecha");
+      for (const q of t.match(/`[^`]*`/g) ?? []) {
+        if (/update event_dates[^`]*\b(rsvp_n|going_n|sold_n|inside_n|entered_n)\s*=/.test(q)) falla(G, x, 0, "los contadores de una fecha los lleva la base");
+        if (/\b(insert into|update|delete from) rsvps\b/.test(q) && x !== "apps/web/lib/rsvp.ts") falla(G, x, 0, "solo lib/rsvp.ts escribe RSVP");
+      }
+    }
+  },
+
   /* 5d. La apelación la decide otra persona: la base pone quién ocultó o sancionó (sanctioned_by, de la fuente) y rechaza que esa persona
      o quien apela la decida (trigger y check); decidirApelacion lo dice antes de tocar nada; solo lib/apelaciones.ts escribe appeals y
      nunca escribe sanctioned_by a mano. */
@@ -2437,7 +2519,9 @@ const guardianes = {
     for (const [re, que] of [[/post_en_vivo\(p\)/, "en vivo"], [/p\.audience = 'all'/, "para todos (no «solo seguidores»)"], [/p\.hoy_off_at is null/, "no retirada de Hoy"], [/p\.publish_at > now\(\) - interval '24 hours'/, "menos de 24 h"]])
       if (!re.test(hoy)) falla(G, "packages/db/migrations", 0, `post_en_hoy sin «${que}»`);
     for (const [re, que] of [[/p\.status = 'live'/, "no detenida"], [/p\.hidden_at is null/, "no oculta"], [/p\.publish_at <= now\(\)/, "ya publicada"], [/p\.ends_at is null or p\.ends_at > now\(\)/, "sin vencer"],
-      [/s\.plan = 'pro'/, "negocio Pro (no Free)"], [/b\.status = 'active'/, "negocio activo"], [/'nov' = any\(b\.modules_on\) and not \(b\.modules_off \? 'nov'\)/, "Novedades encendido y sin pausa de To'Latino"]])
+      [/s\.plan = 'pro'/, "negocio Pro (no Free)"], [/b\.status = 'active'/, "negocio activo"], [/'nov' = any\(b\.modules_on\) and not \(b\.modules_off \? 'nov'\)/, "Novedades encendido y sin pausa de To'Latino"],
+      // 6b: la novedad con enlace a un evento sale solo con el evento en vivo (una fecha listable que no terminó, del mismo negocio).
+      [/p\.link_kind <> 'event' or exists \(select 1 from event_dates d join events e on e\.id = d\.event_id\s+where d\.event_id = p\.event_id and e\.business_id = p\.business_id and d\.listable and d\.ends_at > now\(\)\)/, "evento en vivo (link_kind 'event')"]])
       if (!re.test(vivo)) falla(G, "packages/db/migrations", 0, `post_en_vivo sin «${que}»`);
     if (!existsSync(H)) return falla(G, H, 0, "falta lib/hoy.ts");
     const t = sinComent(H);
@@ -2672,7 +2756,7 @@ const guardianes = {
         if (CAT.test(q) || /key = (\$\d|any\()|key = '\$\{/.test(q)) falla(G, x, 0, "lee o escribe platform_config para una clave de Configuración: usa valor()/cfgSql()/cambiarConfig() de lib/config.ts");
       }
     }
-    const COM = (x) => /^apps\/web\/lib\/(comunidad[^/]*|moderacion[^/]*|apelaciones|traduccion|cupones|oficial)\.ts$/.test(x) || /^apps\/web\/app\/\(app\)\/(comunidad|cuenta\/avisos|cuenta\/moderacion)\//.test(x)
+    const COM = (x) => /^apps\/web\/lib\/(comunidad[^/]*|moderacion[^/]*|apelaciones|traduccion|cupones|oficial|evt-publico|rsvp)\.ts$/.test(x) || /^apps\/web\/app\/\(app\)\/eventos\/(?!publicar\/)/.test(x) || /^apps\/web\/app\/\(app\)\/(comunidad|cuenta\/avisos|cuenta\/moderacion)\//.test(x)
       || /^apps\/web\/app\/admin\/(ColasComunidad|Confianza|AutoModeracion|HoyAdmin|Contenido|Notificaciones)\.tsx$/.test(x) || x === "apps/web/app/panel/CuponesPanel.tsx";
     const COPIAS = [[/\b30 min(utos|utes)?\b/i, "los minutos para editar (com_editar_min)"], [/(apela[rn]?|apelaci[oó]n|appeal)[^"`\n]{0,24}\b14 (d[ií]as|days)/i, "los días para apelar (com_apelar_dias)"],
       [/\b60 (traducciones|translations)\b|de f[aá]brica: 60\b/i, "las traducciones por hora (com_traduccion_hora)"], [/A LAS 7 PM|AT 7 PM/, "la hora del resumen (com_resumen_hora)"],

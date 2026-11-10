@@ -23,6 +23,12 @@ Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfo
 - **Boletos, mesas y extras se guardan, pero todavía no se venden:** la venta en la app abre pronto. El precio que pones es el que paga el
   cliente (cargos incluidos); la comisión de To'Latino por boleto sale de lo tuyo. En la puerta no se venden boletos.
 
+- **6b · Eventos en To'Latino** (interruptor arriba de la lista y en Lo que vendes › Eventos): apagado, ninguno de tus eventos sale; al
+  encenderlo vuelven. Si To'Latino los pausó: «PAUSADO POR TO'LATINO» con el motivo.
+- **6b · En otro lugar** pide también el **código postal**: con la dirección, To'Latino lo ubica en el mapa («Cómo llegar» y distancia).
+- **6b · La ficha › QUIÉN VA** (eventos con RSVP): cuántos van, el cupo, quién ya no va y cada RSVP con personas (nombre e inicial).
+  El cupo no se puede bajar de los lugares que ya se guardaron.
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
@@ -60,3 +66,7 @@ Lo maneja el dueño o quien tenga la parte «Eventos» del equipo. En el teléfo
 ## FAQ (English)
 - **How long is the review?** Up to 24 h. **Can I change the kind of a live event?** No. **How do I skip review?** To’Latino verifies
   organizers. **When are tickets sold?** Soon; until then they are saved.
+
+6b: the **Events on To'Latino** switch turns all your events off or on; events somewhere else also ask for the **ZIP code** (to place
+them on the map); each RSVP event shows **WHO IS GOING** (people, capacity, who is no longer going). Capacity cannot go below the spots
+already held.

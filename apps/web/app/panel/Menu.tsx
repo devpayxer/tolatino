@@ -55,9 +55,13 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
   const jobs: Fila = { icon: "brief", t: "Jobs", s: !d.pro ? E2("Vacantes con pago real por hora · con Pro", "Openings with real hourly pay · with Pro") : nV ? E2(`${nV} ${nV === 1 ? "vacante abierta" : "vacantes abiertas"}${nP ? ` · ${nP} por responder` : ""}`, `${nV} ${nV === 1 ? "opening" : "openings"} live${nP ? ` · ${nP} to answer` : ""}`) : E2("Sin vacantes abiertas", "No openings live"),
     ...(J?.pausa ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
     lock: !d.pro, tag: !d.pro ? "PRO" : nP ? E2("POR RESPONDER", "TO ANSWER") : nV && J?.on && !J.pausa ? E2("EN TU PÁGINA", "LIVE") : null, tone: !d.pro ? "pro" : nP ? "action" : "signal", chev: true, onClick: () => c.go("mod", "jobs") };
+  // 6b · Eventos (donde el módulo aplica): encendido o apagado; se maneja en Eventos.
+  const evtOn = d.mods.includes("eventos"), puedeEvt = d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt"));
+  const evt: Fila[] = puedeEvt ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: evtOn ? E2("Encendido · tus eventos publicados salen en Eventos y en tu página", "On · your live events show in Events and on your page") : E2("Apagado · tus eventos no salen", "Off · your events do not show"),
+    tag: evtOn ? E2("ENCENDIDO", "ON") : E2("APAGADO", "OFF"), tone: evtOn ? "signal" : "neutral", chev: true, onClick: () => c.go("evt") }] : [];
   if (!permitido && (c.svc || c.ofi)) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
-    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [...(c.ofi ? vendesOficios(c) : vendesCitas(c)), jobs] },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [...(c.ofi ? vendesOficios(c) : vendesCitas(c)), jobs, ...evt] },
   ];
   // Mercados y Tiendas (4n): Productos y Tu herramienta.
   if (!permitido && c.ret) return [
@@ -66,11 +70,11 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
       { icon: "bag", t: E2("Productos", "Products"), s: tiene ? E2(`${nAll} productos · ${nOn} se piden o apartan${nAgo ? ` · ${nAgo} agotados` : ""}`, `${nAll} products · ${nOn} ordered or held${nAgo ? ` · ${nAgo} sold out` : ""}`) : E2("Activado · no sale hasta que agregues algo", "On · hidden until you add something"),
         ...(M?.off.menu ? { m: E2("PAUSADO POR TO’LATINO · NO SALE EN TU PÁGINA", "PAUSED BY TO’LATINO · NOT ON YOUR PAGE"), mFg: "var(--tl-danger)" } : {}),
         tag: tiene && !M?.off.menu ? E2("EN TU PÁGINA", "LIVE") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "productos") },
-      filaHerramientaRetail(c)!, jobs] },
+      filaHerramientaRetail(c)!, jobs, ...evt] },
   ];
   if (!permitido) return [
     { type: "head", t: E2("Lo que vendes", "What you sell"), s: E2("Cada módulo sale en tu página solo cuando tiene algo.", "Each module shows on your page only when it has something.") },
-    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [jobs] },
+    { type: "rows", k: E2("MÓDULOS", "MODULES"), items: [jobs, ...evt] },
     { type: "note", tone: "info", t: E2("Los demás módulos de tu categoría llegan en sus fases. Mientras, tu página muestra lo que pusiste al publicar.", "Your category’s other modules arrive in their phases. Meanwhile your page shows what you added when you published.") },
   ];
   return [
@@ -88,7 +92,7 @@ export function vendesBloques(c: Ctx): (Bloque | null)[] {
       { icon: "bag", t: E2("Pedidos en línea", "Online orders"), s: pedLine(c), tag: c.ped?.aj?.on && !c.ped.aj.admOff && c.ped.aj.cashP ? E2("ENCENDIDO", "ON") : null, tone: "signal", chev: true, onClick: () => c.go("mod", "pedidos") },
       // Reservaciones (Pro): mesas, turnos y reglas.
       ...(c.rsv?.aj ? [{ icon: "calendar", t: E2("Reservaciones", "Reservations"), s: rsvLine(c), lock: !c.rsv.aj.pro, tag: c.rsv.aj.pro && c.rsv.aj.on && !c.rsv.aj.admOff ? E2("ENCENDIDO", "ON") : !c.rsv.aj.pro ? "PRO" : null, tone: c.rsv.aj.pro ? "signal" : "pro", chev: true, onClick: () => c.go("mod", "reservaciones") }] : []),
-      jobs] },
+      jobs, ...evt] },
   ];
 }
 

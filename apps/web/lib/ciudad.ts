@@ -3,18 +3,19 @@ import { db } from "./db";
 import { millas, type LL } from "./mapa-geo";
 import { centroSQL, DENTRO, PUNTO_PUBLICO, radioSQL, type Punto } from "./punto";
 import { centroDe, ciudades, porDefecto, type Ciudad } from "./ubicacion";
+import { eventosEnRadio } from "./evt-publico";
 
 /* Datos de APP-CIUDAD: cuánto entra en el radio, qué pueblos, los puntos del mapa, la búsqueda de lugar y la lista
    de espera. Todo contado de verdad (las cifras del prototipo eran de ejemplo). */
 
-export type Medida = { biz: number; prev: number | null; towns: { n: string; d: number }[]; dots: { lat: number; lng: number; pro: boolean; dentro: boolean }[] };
+export type Medida = { biz: number; evt: number; prev: number | null; towns: { n: string; d: number }[]; dots: { lat: number; lng: number; pro: boolean; dentro: boolean }[] };
 
 /* Lo que se ve con un punto y un radio (la columna del mapa del selector). Una consulta para las cifras y otra para los
    puntos del recuadro del mapa (con tope: el mapa mide unos 350 px; más de 600 puntos no se distinguen). */
 export async function medir(p: Punto, c: Ciudad): Promise<Medida> {
   const idx = c.radios.indexOf(p.rad), prevR = idx > 0 ? c.radios[idx - 1]! : null;
   const centro = centroSQL(p), R = radioSQL(p);
-  const [n, d] = await Promise.all([
+  const [n, d, evt] = await Promise.all([
     db().query<{ biz: number; prev: number }>(
       `with c as (select ${centro} as center)
        select count(*) filter (where ${DENTRO(R)})::int as biz,
@@ -27,10 +28,12 @@ export async function medir(p: Punto, c: Ciudad): Promise<Medida> {
          from businesses b join business_stats_cache s on s.business_id = b.id, c
         where b.city_id = $1 and b.status = 'active' and b.geo is not null and st_dwithin(b.geo, c.center, ${R} * 2.6 * 1609.34)
         order by st_distance(b.geo, c.center) limit 600`, [p.ciudad]),
+    // 6b · «lo que ves en Negocios, Eventos y Buscar»: los eventos vivos en el radio (solo lo que sale al público).
+    eventosEnRadio(p),
   ]);
   const ll: LL = [p.lat, p.lng];
   const towns = c.towns.map((t) => ({ n: t.n, d: millas([t.lat, t.lng], ll) })).filter((t) => t.d <= p.rad + 0.3).sort((a, b) => a.d - b.d);
-  return { biz: n.rows[0]?.biz ?? 0, prev: prevR ? n.rows[0]?.prev ?? 0 : null, towns, dots: d.rows };
+  return { biz: n.rows[0]?.biz ?? 0, evt, prev: prevR ? n.rows[0]?.prev ?? 0 : null, towns, dots: d.rows };
 }
 
 /* Para la lista de ciudades: negocios de las abiertas (a 30 mi del centro) y lista de espera de las que vienen. */

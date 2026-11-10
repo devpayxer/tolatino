@@ -13,10 +13,12 @@ import { LINEA_FIJA } from "@/lib/comunidad-filtro";
 import { vecinosMas } from "./acciones";
 import type { FilaVecino } from "./vecinos";
 import { TarjetaNegocio } from "../TarjetaNegocio";
+import type { TarjetaEvt } from "@/lib/evt-publico";
+import { dinero } from "@/lib/evt-comun";
 
-type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard";
+type N = "Icon" | "Button" | "Chip" | "Tag" | "Tabs" | "SearchResultRow" | "UnderstoodBar" | "NotYetCard" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Chip, Tag, Tabs, SearchResultRow, UnderstoodBar, NotYetCard } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Chip, Tag, Tabs, SearchResultRow, UnderstoodBar, NotYetCard, EventCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 export type VistaBuscar = {
   lang: "es" | "en"; q: string; cat: { slug: string; label: string; name: string } | null; ciudad: string; conSesion: boolean;
@@ -25,7 +27,7 @@ export type VistaBuscar = {
     cats: { slug: string; l: string; full: string; icon: string }[]; subs: string[];
   };
   res: null | {
-    tab: "all" | "biz" | "vec"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
+    tab: "all" | "biz" | "vec" | "evt"; total: number; parcial: boolean; nada: boolean; pagina: number; paginas: number; orden: string;
     titulo: string; eb: string; palabras: string[]; mostrarEntendido: boolean;
     intenciones: { k: string; label: string; quitar: string }[]; rapidos: { k: string; l: string; on: boolean; href: string }[];
     top: { img: string | null; eb: string; t: string; meta: string; href: string } | null;
@@ -33,6 +35,8 @@ export type VistaBuscar = {
     tarjetas: Tarjeta[]; filas: { id: string; pro: boolean; parts: [string, string, string]; image: string | null; meta: string; status: string; statusColor: string }[];
     subsLado: { l: string; m: string; href: string }[]; probar: { l: string; slug: string }[]; catDominante: string | null;
     vecinos: { total: number; mas: string | null; items: FilaVecino[] } | null;
+    /* 6b · Eventos que encajan (solo lo que sale al público), con el filtro de la pestaña. */
+    eventos?: { total: number; f: "all" | "d0" | "wk" | "free"; items: TarjetaEvt[] } | null;
   };
 };
 type Fila = { seccion: string; parts: [string, string, string]; image: string | null; icon: string | null; meta: string; right: string | null; rightColor: string | null; href: string };
@@ -144,6 +148,21 @@ export function Buscar({ v }: { v: VistaBuscar }) {
     </div>
   );
 
+  // 6b · Eventos (prototipo Buscar evCard / ev): hasta 4 en «Todo» con «Ver los N»; la pestaña Eventos con Todos · Hoy · Este fin de semana · Gratis.
+  const evMeta = (x: TarjetaEvt) => `${x.cuando} · ${x.free ? E2("GRATIS", "FREE") : x.desde != null ? `${E2("DESDE ", "FROM ")}${dinero(x.desde)}` : E2("CON BOLETOS", "TICKETED")}`;
+  const evCard = (x: TarjetaEvt, ancho: string | number) => <div key={x.fecha} data-evento={x.id} className="grid flex-none"><EventCard title={x.title} meta={evMeta(x)} tag={x.g === "hoy" ? (x.fmt === "noche" ? E2("ESTA NOCHE", "TONIGHT") : E2("HOY", "TODAY")) : x.free ? E2("GRATIS", "FREE") : undefined} dark={x.dark} image={x.img} width={ancho} onClick={() => router.push(x.href)} /></div>;
+  const EV = R?.eventos ?? null;
+  const seccionEventos = EV && EV.items.length > 0 && (
+    <div data-screen-label="APP-BUSCAR · eventos" className="flex flex-col gap-2.5">
+      <div className="flex items-baseline justify-between gap-2.5">
+        <span className="font-display text-[18px] font-extrabold tracking-[-0.03em] lg:text-[20px]">{E2("Eventos", "Events")}</span>
+        {EV.total > 4 && <button type="button" onClick={() => ir({ tab: "evt", p: null })} className="whitespace-nowrap text-[12.5px] font-bold text-action">{E2(`Ver los ${EV.total >= 100 ? "100+" : EV.total}`, `See all ${EV.total >= 100 ? "100+" : EV.total}`)}</button>}
+      </div>
+      <div className="hs -mx-5 flex gap-3 overflow-x-auto px-5 lg:hidden">{EV.items.slice(0, 4).map((x) => evCard(x, 212))}</div>
+      <div className="hidden gap-3.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">{EV.items.slice(0, 4).map((x) => evCard(x, "100%"))}</div>
+    </div>
+  );
+
   /* ── Piezas ── */
   const caja = (desk: boolean) => (
     <div className={`flex min-w-0 flex-1 items-center gap-[9px] rounded-[14px] border-[1.5px] pl-[13px] pr-1.5 ${desk ? "h-[52px]" : "h-[46px]"} ${foco ? "border-ink bg-white" : "border-transparent bg-paper"}`}>
@@ -212,7 +231,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             <div className="sticky top-[96px] flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <span className="px-2.5 font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.resU}</span>
-                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
+                {[["all", t.todo, "search", null], ["biz", t.biz, "store", R.total], ...(R.eventos?.total ? [["evt", E2("Eventos", "Events"), "ticket", R.eventos.total >= 100 ? "100+" : R.eventos.total]] : []), ...(R.vecinos?.total ? [["vec", E2("Vecinos", "Neighbors"), "users", R.vecinos.total >= 100 ? "100+" : R.vecinos.total]] : [])].map(([id, l, ic, n]) => (
                   <button key={String(id)} type="button" onClick={() => ir({ tab: id === "all" ? null : String(id), p: null })}
                     className={`flex items-center gap-2.5 rounded-[11px] px-2.5 py-2 text-left text-[13.5px] font-bold ${R.tab === id ? "bg-ink/[.06] text-ink" : "text-ink/65"}`}>
                     <Icon name={String(ic)} size={17} /><span className="flex-1">{l}</span><span className="font-mono text-[11px] text-ink/45">{n ?? ""}</span>
@@ -263,7 +282,17 @@ export function Buscar({ v }: { v: VistaBuscar }) {
             ) : null}
             {R.parcial && <div className="mx-5 mt-4 rounded-[14px] bg-pro/[.14] px-3.5 py-3 text-[12.5px] font-semibold leading-[1.5] text-[var(--tl-pro-ink)] lg:mx-0">{t.partial}</div>}
 
-            {R.tab === "vec" && R.vecinos ? (
+            {R.tab === "evt" ? (
+              <div data-screen-label="APP-BUSCAR · pestaña eventos" className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
+                <div className="hs -mx-5 flex gap-1.5 overflow-x-auto px-5 lg:mx-0 lg:flex-wrap lg:px-0">
+                  {([["all", E2("Todos", "All")], ["d0", E2("Hoy", "Today")], ["wk", E2("Este fin de semana", "This weekend")], ["free", E2("Gratis", "Free")]] as const).map(([k, l]) => (
+                    <Chip key={k} variant={(EV?.f ?? "all") === k ? "selected" : "filter"} onClick={() => ir({ ef: k === "all" ? null : k })}>{l}</Chip>
+                  ))}
+                </div>
+                {EV && EV.items.length ? <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] lg:gap-4">{EV.items.map((x) => evCard(x, "100%"))}</div>
+                  : <div className="rounded-[18px] border border-line bg-white px-5 py-6 text-center text-[13.5px] font-semibold text-ink/60">{E2("No hay eventos con ese filtro.", "No events with that filter.")}</div>}
+              </div>
+            ) : R.tab === "vec" && R.vecinos ? (
               <div data-screen-label="APP-BUSCAR · vecinos" className="flex flex-col gap-3 px-5 pb-12 pt-4 lg:px-0">
                 <span className="font-mono text-[10.5px] font-bold tracking-[0.08em] text-ink/50">{E2(`${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} PUBLICACIONES DE VECINOS · ORDEN POR VOTOS`, `${R.vecinos.total >= 100 ? "100+" : R.vecinos.total} NEIGHBOR POSTS · ORDERED BY VOTES`)}</span>
                 <div className="flex flex-col gap-2.5 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(320px,1fr))]">{vecL.map((x) => fichaVecino(x, 4))}</div>
@@ -282,6 +311,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                   <div className="flex"><Button block variant="secondary" icon="store" onClick={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)}>{t.rec}</Button></div>
                   <div className="flex"><Button block variant="soft" icon="users" onClick={preguntar}>{E2("Pregúntale al barrio", "Ask the neighborhood")}</Button></div>
                 </div>
+                {seccionEventos && <div className="mt-3 w-full text-left">{seccionEventos}</div>}
                 {seccionVecinos && <div className="mt-3 w-full text-left">{seccionVecinos}</div>}
                 <div className="mt-3.5 flex w-full flex-col gap-2.5 text-left">
                   <span className="font-mono text-[10px] font-extrabold tracking-[0.14em] text-ink/45">{t.tryCats}</span>
@@ -328,6 +358,7 @@ export function Buscar({ v }: { v: VistaBuscar }) {
                     </div>
                   ))}
                 </div>
+                {seccionEventos}
                 {R.notYet && !R.notYet.primero && <div className="grid"><NotYetCard layout="row" kicker={t.notYet} title={R.notYet.t} body={t.notYetB} alertLabel={alerta ? t.alertaOn : t.alerta} alertVariant={alerta ? "secondary" : "primary"} onAlert={alerta ? undefined : pedirAlerta} recLabel={t.rec} onRec={() => router.push(`/recomendar?${new URLSearchParams(v.q ? { q: v.q } : {})}`)} /></div>}
                 {seccionVecinos}
                 <div className="flex flex-col gap-3 rounded-[20px] border border-line bg-white p-4">

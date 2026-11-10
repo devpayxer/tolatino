@@ -5,7 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
-import { tarjetaHoy, type Historia } from "@/lib/hoy-comun";
+import { finHoy, tarjetaHoy, type Historia } from "@/lib/hoy-comun";
 
 type N = "SectionHeader" | "IconButton" | "StoryCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,7 +16,7 @@ export function TarjetaHoy({ h, es, w, alto, flechas }: { h: Historia; es: boole
   const router = useRouter(), t = tarjetaHoy(h, es, w < 200);
   return (
     <div role="group" data-hoy={h.id} aria-label={`${h.nombre}: ${t.posts.map((p) => `${p.type}, ${p.text}`).join(" · ")}`} style={{ flex: "none", width: w, scrollSnapAlign: "start" }}>
-      <StoryCard name={t.name} logo={t.logo} distance={t.distance} posts={t.posts} width={w} height={alto} arrows={!!flechas} onEnd={() => router.push(`/n/${h.id}?tab=nov`)} />
+      <StoryCard name={t.name} logo={t.logo} distance={t.distance} posts={t.posts} width={w} height={alto} arrows={!!flechas} onEnd={() => router.push(finHoy(h))} />
     </div>
   );
 }

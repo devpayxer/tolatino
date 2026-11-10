@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 9 nov 2026._
+_Actualizado: 10 nov 2026._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -98,7 +98,26 @@ bloques `evrow`/`cal`/`evhd` portados a `packages/ui/src/panel/Bloques.tsx`. Gua
 `alcoholNoSeVende`, `colaConVista` (ColasEventos + plazo de Configuración, sin comentarios), `ocultarAvisaYApela`, `configDesdeUnLugar` /
 `configConLimites` (catálogo en varias migraciones) — 26/26 al revés (`alreves6a.cjs`; `alreves5i` sigue 26/26). e2e `evt6a` (66 ✓,
 teléfono y escritorio), `adm5i` y `adm4ig` verdes. Ayuda: panel-eventos-crear, publica-tu-evento, admin-eventos-y-boletos. Revisar en el
-sandbox: `docs/REVISION.md` «### 6a». **Sigue 6b** (el módulo Eventos del cliente: buscar, Esta noche, la ficha, guardar y RSVP).
+sandbox: `docs/REVISION.md` «### 6a». **6b hecho (10 nov)** — el módulo Eventos del cliente: migración 0107 (`evt_listable` suma el
+módulo Eventos del negocio — categoría que lo admite, interruptor `modules_on`, pausa `modules_off` del admin, negocio activo — y el
+organizador sin bloquear, recalculado por triggers en businesses / event_organizers / categories; `rsvps` con el cupo contado por la base:
+fila de la fecha `for update` antes de contar, contador `rsvp_n`/`going_n` por trigger y último control después de sumar; los derivados
+de una fecha solo con la marca `tl.evt_derivado`; el cupo no baja de lo guardado; `events.venue_zip`; novedad con `link_kind 'event'` y
+`post_en_vivo` que exige el evento en vivo; `app_events` + ver_evento/rsvp/guardar_evento/compartir_evento; plantillas rsvp_ok,
+rsvp_recordatorio, rsvp_vence, evt_guardado_cerca (sin SMS); clave `rsvp_guarda_min`; backfill del módulo a quien ya tiene eventos).
+Código: `lib/evt-publico.ts` (lista con cursor (starts_at, id) sobre el índice where listable, Esta noche, destacado, ficha, Ficha › Eventos,
+Inicio, Buscar, Ciudad, últimos RSVP), `lib/rsvp.ts` (RSVP, Ya no voy, Mis eventos, barrido `vencerRsvp` + `barrerRecordatoriosEvt`),
+`PUNTO_EVENTO`/`DIRECCION_EVENTO` en `lib/punto.ts`; pantallas `/eventos` (APP-EVT-BUSQ), `/eventos/esta-noche` (APP-EVT-NOCHE),
+`/eventos/[slug]` (APP-EVT-LISTING oscura/clara, JSON-LD schema.org/Event); Ficha › Eventos, Inicio › Esta semana, Buscar › Eventos,
+Ciudad (N eventos), Noche (la noche especial con `event_id` abre su evento), Novedades › botón Evento → Hoy en el barrio, Mi cuenta ›
+Guardados › Eventos; panel: interruptor del módulo (Eventos solo donde aplica), Lo que vendes › Eventos, QUIÉN VA, «otro lugar» con código
+postal ubicado con el geocodificador propio (`dir_ubicar`); Super Admin: ficha › sale al público + últimos RSVP, N360 › Pausar Eventos.
+Guardianes nuevos `eventosSoloListables`, `eventosConCursor`, `rsvpConCupo`; ampliados `hoySoloEnVivo`, `puntoPublico`,
+`configDesdeUnLugar` — 31/31 al revés (`alreves6b.cjs`; `alreves6a` sigue 26/26). e2e `evt6b` (79 ✓, teléfono y escritorio, incluye 3 a la
+vez por los últimos lugares en la pantalla y 10 a la vez en la base) y regresión `evt6a`, `adm5i`, `com5e`, `noc4a`, `noc4b`. Ayuda:
+eventos-buscar-y-ver, rsvp-gratis, eventos-en-la-ficha; novedades, noche-en-la-ficha, panel-eventos-crear y admin-eventos-y-boletos al día.
+Revisar en el sandbox: `docs/REVISION.md` «### 6b». **Sigue 6c** (boletos, mesas, extras y códigos: apartar, comprar en nuestra hoja, QR
+firmado y Mis boletos).
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
   confirmar / otra hora / no puedo / vence, «Aprobar al instante», staff con silla propia, ayuda con la cita; Panel ›

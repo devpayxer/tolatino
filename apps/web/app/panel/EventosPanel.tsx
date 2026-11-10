@@ -12,12 +12,14 @@ import {
   type Bi, type BorradorEvt, type FormatoEvt, type FormatoKey,
 } from "@/lib/evt-comun";
 import type { EvtPanel, FilaPanelEvt } from "@/lib/evt";
-import { evtEnviar, evtGuardar, evtRepetir, evtTraducir } from "./acciones-eventos";
+import { evtEnviar, evtGuardar, evtModulo, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
 
 export type EvtData = {
   lista: FilaPanelEvt[]; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
   det: EvtPanel | null; cfg: { revisionH: number; fotosMax: number; diasAdelante: number }; fee: { bp: number; fixed: number } | null; hoy: string; dir: string | null;
+  /* 6b · El módulo Eventos (interruptor del negocio y pausa de To'Latino) y QUIÉN VA del evento abierto (nombre + inicial). */
+  mod: { aplica: boolean; on: boolean; pausa: string | null }; quien: { nombre: string; party: number; st: string; at: string; dia: string }[];
 };
 type FormEvt = BorradorEvt & { enviar: boolean };
 const MES_L: Bi[] = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map((es, i) => ({ es, en: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][i]! }));
@@ -28,7 +30,7 @@ const RUTA_APELAR = (id: string) => `/cuenta/moderacion?k=event&id=${id}`;
 
 const fmtDe = (c: Ctx, k: FormatoKey | string) => c.evt!.formatos.find((f) => f.key === k) ?? c.evt!.formatos[0]!;
 const cuando = (c: Ctx, d: BorradorEvt) => `${diaCorto(d.dia, c.es)} · ${hora(d.h0)} – ${hora(d.h1)}${d.h1 >= 1440 ? c.E2(" (día siguiente)", " (next day)") : ""}${d.puertas ? c.E2(` · puertas ${hora(d.h0 - d.puertas)}`, ` · doors ${hora(d.h0 - d.puertas)}`) : ""}`;
-const donde = (c: Ctx, d: BorradorEvt) => (d.donde === "other" ? `${d.lugar}${d.dir ? ` · ${d.dir}` : ""}` : `${c.d.name}${c.evt!.dir ? ` · ${c.evt!.dir}` : ""}`);
+const donde = (c: Ctx, d: BorradorEvt) => (d.donde === "other" ? `${d.lugar}${d.dir ? ` · ${d.dir}` : ""}${d.cp ? ` ${d.cp}` : ""}` : `${c.d.name}${c.evt!.dir ? ` · ${c.evt!.dir}` : ""}`);
 const entradaL = (c: Ctx, F: FormatoEvt, e: BorradorEvt["entrada"]) => (e === "free" ? c.E2("Entrada libre · sin lista", "Free entry · no list") : e === "rsvp" ? bi(F.f.freeL, c.es) : bi(F.f.tixL, c.es));
 
 /* ── Lista (evtBlocks) ── */
@@ -40,6 +42,13 @@ export function evtBloques(c: Ctx): Sec {
     out.push({ type: "lock", t: E2("Publica eventos con boletos o gratis", "Publish ticketed or free events"), s: E2("Eventos es parte de Pro: publicar no cuesta, y la prueba de 30 días no pide tarjeta.", "Events is part of Pro: publishing is free, and the 30-day trial needs no card."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
     return { blocks: out, ed: null };
   }
+  // 6b · El interruptor del módulo: apagado, ninguno de tus eventos sale (no cambian de estado); la pausa de To'Latino manda.
+  out.push({ type: "rows", items: [{ key: "mod", icon: "ticket", t: E2("Eventos en To’Latino", "Events on To’Latino"),
+    s: X.mod.pausa ? E2("PAUSADO POR TO’LATINO · No salen en Eventos ni en tu página.", "PAUSED BY TO’LATINO · They do not show in Events or on your page.")
+      : X.mod.on ? E2("Encendido: tus eventos publicados salen en Eventos y en tu página.", "On: your live events show in Events and on your page.") : E2("Apagado: ninguno de tus eventos sale. Enciéndelo para que se vean.", "Off: none of your events show. Turn it on so they show."),
+    ...(X.mod.pausa ? { m: X.mod.pausa, mFg: "var(--tl-danger)" } : {}), chev: false, tgOn: X.mod.on,
+    onTg: () => c.run(() => evtModulo(d.id, !X.mod.on), X.mod.on ? E2("Eventos apagado. Tus eventos ya no salen.", "Events off. Your events no longer show.") : E2("Eventos encendido.", "Events on.")) }] });
+  if (X.mod.pausa) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino pausó tus eventos: no salen en Eventos ni en tu página. Motivo: ${X.mod.pausa}`, `To’Latino paused your events: they do not show in Events or on your page. Reason: ${X.mod.pausa}`) });
   if (X.org.bloqueado) out.push({ type: "note", tone: "danger", icon: "ban", t: E2(`To’Latino bloqueó tus eventos: no puedes enviar ni publicar. Motivo: ${X.org.bloqueado}`, `To’Latino blocked your events: you cannot send or publish. Reason: ${X.org.bloqueado}`), cta: E2("Apelar", "Appeal"), onCta: () => c.nav(`/cuenta/moderacion?k=evt_org&id=${d.id}`) });
   else if (X.org.verificado) out.push({ type: "note", tone: "ok", icon: "verified", t: E2("Eres organizador verificado: tus eventos se publican al enviarlos.", "You are a verified organizer: your events go live when you send them.") });
   const grp = (e: FilaPanelEvt) => (e.st === "draft" ? "draft" : e.st === "cancelled" || e.st === "rejected" || e.st === "done" || e.pasado ? "done" : "up");
@@ -106,11 +115,23 @@ function ficha(c: Ctx, e: EvtPanel): Sec {
   if (e.st === "draft") out.push({ type: "note", tone: "ink", icon: "lock", t: E2("Borrador: solo tú lo ves. Envíalo cuando esté listo.", "Draft: only you see it. Send it when it is ready.") });
   if (tix) out.push({ type: "note", tone: "info", icon: "ticket", t: E2("Tus boletos, mesas y extras están guardados. La venta en la app abre pronto: hoy todavía no se venden.", "Your tickets, tables and extras are saved. In-app sales open soon: they are not sold yet.") });
   out.push(asiLoVe(c, F, e.pending ? d : v));
+  // 6b · QUIÉN VA (RSVP con personas; contar en la puerta llega con 6g). Nombre + inicial: nunca teléfono.
+  if (v.entrada === "rsvp") {
+    const Q = X.quien, vivos = Q.filter((q) => q.st === "going"), pers = vivos.reduce((a, q) => a + q.party, 0);
+    out.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
+      { k: E2("VAN", "GOING"), v: String(pers), s: E2(`${vivos.length} RSVP`, `${vivos.length} RSVPs`) },
+      { k: E2("CUPO", "SPOTS"), v: v.cupo ? String(v.cupo) : "—", s: v.cupo ? E2(`quedan ${Math.max(0, v.cupo - pers)}`, `${Math.max(0, v.cupo - pers)} left`) : E2("sin límite", "no limit") },
+      { k: E2("YA NO VAN", "NOT GOING"), v: String(Q.filter((q) => q.st === "cancelled").length), s: E2("liberaron su lugar", "freed their spot") }] });
+    const ST: Record<string, [string, string]> = { going: ["VA", "GOING"], cancelled: ["YA NO VA", "NOT GOING"], expired: ["NO LLEGÓ A TIEMPO", "DID NOT ARRIVE IN TIME"], attended: ["LLEGÓ", "ARRIVED"] };
+    out.push(Q.length ? { type: "rows", k: E2(`QUIÉN VA · ${pers}`, `WHO IS GOING · ${pers}`), items: Q.map((q, i) => ({ key: `q${i}`, icon: "users", t: q.nombre, s: `${q.party === 1 ? E2("1 persona", "1 person") : E2(`${q.party} personas`, `${q.party} people`)} · ${diaCorto(q.dia, es)}`,
+      tag: E2(...(ST[q.st] ?? ["", ""])), tone: q.st === "going" ? "signal" : "neutral", compact: true, chev: false, dim: q.st !== "going" })) }
+      : { type: "empty", icon: "users", t: E2("Todavía nadie dice que va", "Nobody has RSVP’d yet"), s: E2("Cuando alguien toque «Voy» en tu evento, sale aquí con cuántas personas van.", "When someone taps “I’m going” on your event, they show here with how many are coming.") });
+  }
   if (e.log.length) out.push({ type: "timeline", k: E2("REVISIÓN", "REVIEW"), items: e.log.map((l) => ({ t: DEC[l.decision] ? E2(...DEC[l.decision]!) : l.decision, s: `${l.by === "staff" ? "TO’LATINO" : l.by === "auto" ? E2("AUTOMÁTICO · VERIFICADO", "AUTOMATIC · VERIFIED") : E2("TÚ", "YOU")} · ${new Date(l.at).toLocaleString(es ? "es-US" : "en-US", { timeZone: c.d.hoy.tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${l.nota ? ` · ${l.nota}` : ""}` })) });
   return { blocks: out, ed: null };
 }
 const DEC: Record<string, [string, string]> = { submitted: ["Enviado a revisión", "Sent for review"], resubmitted: ["Enviado otra vez", "Sent again"], approved: ["Publicado", "Published"], changes: ["To’Latino pidió un cambio", "To’Latino asked for a change"], rejected: ["No se aprobó", "Not approved"] };
-const CAMBIO_L: Record<string, Bi> = { dia: { es: "el día", en: "the day" }, h0: { es: "la hora", en: "the time" }, h1: { es: "la hora de terminar", en: "the end time" }, puertas: { es: "las puertas", en: "the doors" }, donde: { es: "el lugar", en: "the place" }, lugar: { es: "el lugar", en: "the place" }, dir: { es: "la dirección", en: "the address" }, edad: { es: "la edad", en: "the age" }, entrada: { es: "la entrada", en: "the entry" }, boletos: { es: "los boletos", en: "the tickets" }, mesas: { es: "las mesas", en: "the tables" }, extras: { es: "los extras", en: "the extras" } };
+const CAMBIO_L: Record<string, Bi> = { dia: { es: "el día", en: "the day" }, h0: { es: "la hora", en: "the time" }, h1: { es: "la hora de terminar", en: "the end time" }, puertas: { es: "las puertas", en: "the doors" }, donde: { es: "el lugar", en: "the place" }, lugar: { es: "el lugar", en: "the place" }, dir: { es: "la dirección", en: "the address" }, cp: { es: "el código postal", en: "the ZIP code" }, edad: { es: "la edad", en: "the age" }, entrada: { es: "la entrada", en: "the entry" }, boletos: { es: "los boletos", en: "the tickets" }, mesas: { es: "las mesas", en: "the tables" }, extras: { es: "los extras", en: "the extras" } };
 const cambiosL = (c: Ctx, k: string[]) => [...new Set(k.map((x) => bi(CAMBIO_L[x] ?? { es: x, en: x }, c.es)))].join(", ") || c.E2("algo que importa", "something important");
 
 /* «Así lo ve el cliente» (pv del editor). */
@@ -198,7 +219,9 @@ function editor(c: Ctx, e0: EvtPanel | null, fmt0: string | null): Sec {
   // Dónde.
   out.push({ type: "group", k: E2("DÓNDE", "WHERE") }, { type: "chips", items: ([["own", E2("En mi local", "At my place")], ["other", E2("En otro lugar", "Somewhere else")]] as const).map(([v, l]) => ({ l, v: d.donde === v ? "selected" : "filter", onClick: () => set({ donde: v }) })) });
   if (d.donde === "own") out.push({ type: "rows", items: [{ icon: "pin", t: biz.name, s: X.dir ?? biz.ciudad, chev: false, compact: true }] });
-  else out.push(txt(E2("LUGAR", "PLACE"), d.lugar, (v) => set({ lugar: v }), LIM.lugar, { ph: E2("Ej. Parque Memorial", "e.g. Memorial Park") }), txt(E2("DIRECCIÓN", "ADDRESS"), d.dir, (v) => set({ dir: v }), LIM.dir, { ph: E2("Calle, número y pueblo", "Street, number and town") }));
+  else out.push(txt(E2("LUGAR", "PLACE"), d.lugar, (v) => set({ lugar: v }), LIM.lugar, { ph: E2("Ej. Parque Memorial", "e.g. Memorial Park") }), txt(E2("DIRECCIÓN", "ADDRESS"), d.dir, (v) => set({ dir: v }), LIM.dir, { ph: E2("Calle y número", "Street and number") }),
+    txt(E2("CÓDIGO POSTAL", "ZIP CODE"), d.cp ?? "", (v) => set({ cp: v.replace(/\D/g, "").slice(0, 5) }), 5, { ph: "18201" }),
+    { type: "note", tone: "info", icon: "pin", t: E2("Con la dirección y el código postal lo ubicamos en el mapa para «Cómo llegar» y la distancia.", "With the address and ZIP we place it on the map for directions and distance.") });
 
   // Entrada (en la puerta no se vende: D1).
   out.push({ type: "group", k: E2("ENTRADA", "ENTRY") }, { type: "chips", items: (["rsvp", "tickets", "free"] as const).map((v) => ({ l: entradaL(c, F, v), v: d.entrada === v ? "selected" : "filter", onClick: () => {

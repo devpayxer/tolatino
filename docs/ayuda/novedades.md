@@ -2,7 +2,7 @@
 
 _Pantallas: pestaña **Novedades** de la página de un negocio Pro (`/n/{negocio}?tab=nov`) y Tu página › **Novedades** en el
 panel (`/panel/{negocio}/pagina/nov`, el detalle `?det=nov:{id}` y el editor `?det=nov:new`). Teléfono y escritorio.
-Versión: Fase 2 · bloque 2g (6 nov 2026). Solo Pro._
+Versión: Fase 2 · bloque 2g (6 nov 2026); botón «Evento» en la Fase 6 · bloque 6b (10 nov 2026). Solo Pro._
 
 ## Qué hace
 - **En la página (cliente):** «Sigue a {negocio}» (Seguir / Siguiendo), filtros por tipo (Todo, Ofertas, Hoy hay, Avisos,
@@ -12,7 +12,8 @@ Versión: Fase 2 · bloque 2g (6 nov 2026). Solo Pro._
   - **Hoy hay:** el plato y **Agregar al pedido**.
   - **Aviso de horario:** qué día y qué pasa (cerrado, abre más tarde, cierra más temprano, horario extendido) y **Ver horario**.
   - **Encuesta:** de 2 a 4 opciones; al votar se ven los porcentajes y «ya votaste». Un voto por persona.
-  - **Novedad:** texto, fotos y, si el negocio quiere, un botón (un plato, el menú, llamar o un enlace https).
+  - **Novedad:** texto, fotos y, si el negocio quiere, un botón (un plato, el menú, llamar, un enlace https o **uno de sus eventos**:
+    el botón dice **Ver evento** y abre la ficha del evento; en Hoy en el barrio sale como «EVENTO · VER EVENTO»).
   - Votos + y − (uno por persona), comentarios (300 letras) con «Útil», la **respuesta del negocio** (NEGOCIO) y «MÁS
     VOTADO»; guardar (ofertas) y compartir.
 - **En el panel (dueño):** las publicaciones con EN VIVO, PROGRAMADA, TERMINADA, FIJADA u OCULTA POR TO'LATINO, sus vistas
@@ -40,6 +41,7 @@ Versión: Fase 2 · bloque 2g (6 nov 2026). Solo Pro._
 | Cuenta silenciada | No comenta. |
 | Encuesta ya votada | No se vota dos veces. |
 | Enlace que no es https:// | No se guarda. |
+| Botón «Evento» con el evento sin publicar, oculto o terminado | La novedad no sale (ni en la página ni en Hoy en el barrio) hasta que el evento esté publicado. |
 
 ## Preguntas frecuentes
 **¿El precio de la oferta es de verdad?** Sí: mientras la oferta está en vivo, el menú, el carrito y el pedido cobran ese
@@ -61,3 +63,6 @@ To'Latino), views (one per person or device per day), saves and comments, and ca
 reschedule, post again for 24 h, duplicate or remove. Posts can go out now or on a day this week at a time, end today at
 3 PM, in 24 h, this week or never, and target everyone or followers only. To'Latino can hide a post or pause Updates: the
 tab and deal prices disappear and the owner sees the reason.
+
+Since 6b an update can also carry an **Event** button (one of the business's events): it reads **See event**, opens the event page and
+shows as «EVENT · SEE EVENT» in Today nearby — only while the event is live.

@@ -1,0 +1,263 @@
+import "server-only";
+import { valor } from "./config";
+import { db } from "./db";
+import { bi, dinero, diaCorto, hora, mesCorto, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type Mesa } from "./evt-comun";
+import { centroSQL, DIRECCION_EVENTO, PUNTO_EVENTO, radioSQL, type Punto } from "./punto";
+
+/* 6b · El módulo Eventos del cliente (fase6-eventos.md §4 6b; prototipo «To'Latino Eventos» bqVals / nvVals / lsVals). El servidor decide:
+   - Solo sale lo que la base marca `listable` (evento publicado y aprobado, sin ocultar, fecha programada, negocio con el módulo Eventos
+     encendido y sin pausa, organizador sin bloquear: evt_listable en 0107). Nada en revisión, oculto, pausado por To'Latino ni bloqueado.
+   - Una consulta por página sobre event_dates con el índice (city_id, starts_at, id) where listable, 20 por página con cursor
+     (starts_at, id) y una de más para saber si hay otra página; sin offset (guardián eventosConCursor). Sin N+1: el cartel, el precio
+     «desde», «guardado» y «vas» salen como subconsultas de la misma fila.
+   - El radio es el de Ciudad (lo que ves en Negocios, Eventos y Buscar); el punto público de un evento sale de PUNTO_EVENTO (quien trabaja
+     desde casa sale como zona; nunca su casa) y la dirección de DIRECCION_EVENTO (guardián puntoPublico).
+   - Boletos y mesas solo se ven: la venta en la app llega con 6c. Lo inventado del prototipo (caras, «van», vistas) no se copia: «van» es
+     going_n de la base. */
+export const POR_PAGINA_EVT = 20;
+export type FiltroFecha = "todos" | "hoy" | "finde" | "prox";
+export type Grupo = "hoy" | "semana" | "finde" | "despues";
+export type TagEvt = { t: string; k: "vas" | "hoy" | "gratis" | "quedan" };
+export type TarjetaEvt = {
+  id: string; fecha: string; href: string; img: string | null; bm: string; bd: number; title: string; meta: string; price: string; tag: TagEvt | null; dark: boolean;
+  saved: boolean; going: boolean; g: Grupo; cuando: string; venue: string; mi: number | null; edad: number; free: boolean; fmt: FormatoKey; van: number; desde: number | null;
+};
+
+type FilaT = {
+  eid: string; fid: string; slug: string; title: Bi; fmt: FormatoKey; dark: boolean; entry: Entrada; edad: number; ldate: string; h0: number; h1: number; venue: string;
+  img: string | null; desde: number | null; quedan: number | null; van: number; saved: boolean; going: boolean; mi: number | null; cur: string; genres: string[];
+};
+/* Hoy en la ciudad y el fin de semana (vie–dom; si hoy es viernes, sábado o domingo, desde hoy). */
+type Dias = { hoy: string; vie: string; dom: string };
+async function diasCiudad(ciudad: string): Promise<Dias> {
+  const r = (await db().query<{ hoy: string; dow: number }>(`select to_char(now() at time zone timezone, 'YYYY-MM-DD') as hoy, extract(dow from now() at time zone timezone)::int as dow from cities where id = $1`, [ciudad])).rows[0];
+  const hoy = r?.hoy ?? new Date().toISOString().slice(0, 10), dow = r?.dow ?? 0;
+  const dom = sumarDias(hoy, (7 - dow) % 7), vie = dow === 0 || dow >= 5 ? hoy : sumarDias(dom, -2);
+  return { hoy, vie, dom };
+}
+const grupo = (d: string, D: Dias): Grupo => (d === D.hoy ? "hoy" : d >= D.vie && d <= D.dom ? "finde" : d < D.vie ? "semana" : "despues");
+
+/* Las columnas de una tarjeta (una fila por fecha). `$1` = quien mira (o null). */
+const COLS_T = (centro: string | null) => `
+  e.id::text as eid, d.id::text as fid, e.slug, e.title, e.format as fmt, f.dark, e.entry, e.min_age as edad, d.local_date::text as ldate,
+  (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
+  (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h1,
+  case when e.venue_mode = 'other' then e.venue_name else b.name end as venue,
+  (select m.url from media m where m.owner_kind = 'event' and m.owner_id = e.id::text and m.status = 'visible' order by m.sort, m.created_at limit 1) as img,
+  case when e.entry = 'tickets' then (select min((x->>'p')::int) from jsonb_array_elements(e.tickets_cfg) x where not coalesce((x->>'off')::boolean, false)) end as desde,
+  case when e.entry <> 'tickets' and e.rsvp_capacity > 0 then greatest(0, e.rsvp_capacity - d.rsvp_n) end as quedan, d.going_n as van, e.genres,
+  coalesce($1::uuid is not null and exists (select 1 from favorites v where v.user_id = $1::uuid and v.kind = 'event' and v.target_id = e.id::text), false) as saved,
+  coalesce($1::uuid is not null and exists (select 1 from rsvps r where r.user_id = $1::uuid and r.event_date_id = d.id and r.status = 'going'), false) as going,
+  ${centro ? `case when d.geom is null then null else round((st_distance(d.geom, ${centro}) / 1609.34)::numeric, 1)::float end` : "null::float"} as mi,
+  to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || d.id as cur`;
+const DESDE_T = `from event_dates d join events e on e.id = d.event_id join businesses b on b.id = e.business_id join event_formats f on f.key = e.format join cities ci on ci.id = d.city_id`;
+/* Lo vivo: listable, que no haya terminado. El rango de starts_at usa el índice (city_id, starts_at, id) where listable. */
+const VIVO = `d.listable and d.starts_at > now() - interval '18 hours' and d.ends_at > now()`;
+const EN_RADIO = (centro: string, rad: string) => `(d.geom is null or st_dwithin(d.geom, ${centro}, ${rad} * 1609.34))`;
+
+function tarjeta(x: FilaT, es: boolean, D: Dias): TarjetaEvt {
+  const E2 = (a: string, b: string) => (es ? a : b), free = x.entry !== "tickets", g = grupo(x.ldate, D);
+  const tag: TagEvt | null = x.going ? { t: E2("VAS", "GOING"), k: "vas" } : g === "hoy" ? { t: x.fmt === "noche" ? E2("ESTA NOCHE", "TONIGHT") : E2("HOY", "TODAY"), k: "hoy" }
+    : x.quedan != null && x.quedan <= 20 ? { t: x.quedan === 0 ? E2("CUPO LLENO", "FULL") : E2(`QUEDAN ${x.quedan}`, `${x.quedan} LEFT`), k: "quedan" } : free ? { t: E2("GRATIS", "FREE"), k: "gratis" } : null;
+  const cuando = `${g === "hoy" ? E2("HOY", "TODAY") : diaCorto(x.ldate, es).toUpperCase()} · ${hora(x.h0)}`;
+  return {
+    id: x.eid, fecha: x.fid, href: `/eventos/${x.slug}?fecha=${x.fid}`, img: x.img, bm: mesCorto(x.ldate, es), bd: Number(x.ldate.slice(8, 10)), title: bi(x.title, es),
+    meta: `${x.venue} · ${hora(x.h0)}`.toUpperCase(), price: free ? E2("Gratis", "Free") : x.desde != null ? `${E2("Desde ", "From ")}${dinero(x.desde)}` : E2("Con boletos", "Ticketed"),
+    tag, dark: x.dark, saved: x.saved, going: x.going, g, cuando, venue: x.venue, mi: x.mi, edad: x.edad, free, fmt: x.fmt, van: x.van, desde: x.desde,
+  };
+}
+
+/* Filtros de tipo: Todo · Gratis · Con boleto · géneros · Comunidad (prototipo bqVals tOpts). */
+export async function generosFiltro() {
+  return (await db().query<{ key: string; label: Bi }>(`select key, label from event_genres where enabled order by sort`)).rows;
+}
+function filtroTipo(t: string, generos: string[], v: unknown[]) {
+  if (t === "gratis") return `e.entry <> 'tickets'`;
+  if (t === "boleto") return `e.entry = 'tickets'`;
+  if (t === "comunidad") return `e.format in ('comunidad', 'fe', 'comida', 'clase')`;
+  if (generos.includes(t)) { v.push(t); return `e.genres @> array[$${v.length}::text]`; }
+  return null;
+}
+function filtroFecha(d: FiltroFecha, D: Dias, v: unknown[]) {
+  if (d === "hoy") { v.push(D.hoy); return `d.local_date = $${v.length}::date`; }
+  if (d === "finde") { v.push(D.vie, D.dom); return `d.local_date between $${v.length - 1}::date and $${v.length}::date`; }
+  if (d === "prox") { v.push(D.dom); return `d.local_date > $${v.length}::date`; }
+  return null;
+}
+
+/* La lista del módulo (APP-EVT-BUSQ): una página de 20 con cursor. */
+export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, cursor: string | null, viewer: string | null, es: boolean): Promise<{ items: TarjetaEvt[]; mas: string | null; total: number }> {
+  const centro = centroSQL(p), R = radioSQL(p), [D, G] = await Promise.all([diasCiudad(p.ciudad), generosFiltro()]);
+  const v: unknown[] = [viewer, p.ciudad], w = [VIVO, `d.city_id = $2`, EN_RADIO(centro, R)];
+  const ff = filtroFecha(f.d, D, v), ft = filtroTipo(f.t, G.map((g) => g.key), v);
+  if (ff) w.push(ff);
+  if (ft) w.push(ft);
+  const wc = [...w], vc = [...v];
+  if (cursor && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,6})?Z\|\d{1,18}$/.test(cursor)) { const [a, b] = cursor.split("|"); v.push(a, b); w.push(`(d.starts_at, d.id) > ($${v.length - 1}::timestamptz, $${v.length}::bigint)`); }
+  const [L, T] = await Promise.all([
+    db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${w.join(" and ")} order by d.starts_at, d.id limit ${POR_PAGINA_EVT + 1}`, v),
+    cursor ? Promise.resolve(null) : db().query<{ n: number }>(`select count(*)::int as n from (select 1 ${DESDE_T} where ${wc.join(" and ")} limit 1000) x, (select $1::uuid as quien) q`, vc),
+  ]);
+  const filas = L.rows.slice(0, POR_PAGINA_EVT);
+  return { items: filas.map((x) => tarjeta(x, es, D)), mas: L.rows.length > POR_PAGINA_EVT ? filas.at(-1)!.cur : null, total: T?.rows[0]?.n ?? 0 };
+}
+
+/* «Esta noche» (historias y la pantalla APP-EVT-NOCHE): lo de hoy en la ciudad, en el radio. */
+export type HistoriaEvt = TarjetaEvt & { hora: string; lugar: string; precioT: string; ctaRsvp: boolean };
+export async function estaNoche(p: Punto, viewer: string | null, es: boolean, n = 12): Promise<HistoriaEvt[]> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad), E2 = (a: string, b: string) => (es ? a : b);
+  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date = $3::date and ${EN_RADIO(centro, R)}
+                                     order by d.starts_at, d.id limit ${Math.max(1, Math.min(24, n))}`, [viewer, p.ciudad, D.hoy]);
+  return r.rows.map((x) => {
+    const t = tarjeta(x, es, D);
+    return { ...t, hora: `${E2("HOY", "TONIGHT")} · ${hora(x.h0)} – ${hora(x.h1)}${x.edad ? ` · ${x.edad}+` : ""}`, lugar: `${x.venue}${x.mi != null ? ` · ${x.mi} MI` : ""}`,
+      precioT: x.entry === "free" ? E2("ENTRADA LIBRE · SIN LISTA", "FREE ENTRY · NO LIST") : x.entry === "rsvp" ? E2("GRATIS · CON RSVP", "FREE · WITH RSVP") : x.desde != null ? E2(`DESDE ${dinero(x.desde)} · CARGOS INCLUIDOS`, `FROM ${dinero(x.desde)} · FEES INCLUDED`) : E2("CON BOLETOS", "TICKETED"),
+      ctaRsvp: x.entry === "rsvp" };
+  });
+}
+
+/* El destacado (EventPromo): la próxima fiesta o show con cartel en el radio; si no hay, el próximo evento con cartel. */
+export async function destacado(p: Punto, viewer: string | null, es: boolean): Promise<TarjetaEvt | null> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  const r = await db().query<FilaT>(`select * from (select ${COLS_T(centro)}, f.dark as d0 ${DESDE_T} where ${VIVO} and d.city_id = $2 and ${EN_RADIO(centro, R)}
+                                       order by d.starts_at, d.id limit 40) x where x.img is not null order by x.d0 desc, x.cur limit 1`, [viewer, p.ciudad]);
+  return r.rows[0] ? tarjeta(r.rows[0], es, D) : null;
+}
+
+/* «Mis boletos y RSVP»: los RSVP vivos de la persona (los boletos llegan con 6c). */
+export async function misRsvpN(userId: string | null) {
+  if (!userId) return 0;
+  return (await db().query<{ n: number }>(`select count(*)::int as n from rsvps r join event_dates d on d.id = r.event_date_id where r.user_id = $1 and r.status = 'going' and d.listable and d.ends_at > now()`, [userId])).rows[0]?.n ?? 0;
+}
+
+/* Inicio › Esta semana: lo de los próximos 7 días en el radio (6 tarjetas). */
+export async function eventosSemana(p: Punto, viewer: string | null, es: boolean, n = 6): Promise<TarjetaEvt[]> {
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and d.local_date <= $3::date and ${EN_RADIO(centro, R)}
+                                     order by d.starts_at, d.id limit ${Math.max(1, Math.min(12, n))}`, [viewer, p.ciudad, sumarDias(D.hoy, 6)]);
+  return r.rows.map((x) => tarjeta(x, es, D));
+}
+
+/* Ficha del negocio › Eventos (solo réplica, MEM 1360): sus fechas vivas. */
+export async function eventosDelOrganizador(negocio: string, viewer: string | null, es: boolean): Promise<TarjetaEvt[]> {
+  const r = await db().query<FilaT & { city: string }>(`select ${COLS_T(null)}, d.city_id as city ${DESDE_T} where ${VIVO} and e.business_id = $2 order by d.starts_at, d.id limit 12`, [viewer, negocio]);
+  if (!r.rows.length) return [];
+  const D = await diasCiudad(r.rows[0]!.city);
+  return r.rows.map((x) => tarjeta(x, es, D));
+}
+
+/* Buscar › Eventos (GIN sobre events.tsv): los que encajan con la búsqueda, en el radio. */
+export async function buscarEventos(consulta: string, p: Punto, evF: "all" | "d0" | "wk" | "free", viewer: string | null, es: boolean, lim = 4): Promise<{ items: TarjetaEvt[]; total: number }> {
+  if (!consulta) return { items: [], total: 0 };
+  const centro = centroSQL(p), R = radioSQL(p), D = await diasCiudad(p.ciudad);
+  const v: unknown[] = [viewer, p.ciudad, consulta], w = [VIVO, `d.city_id = $2`, `e.tsv @@ to_tsquery('simple', $3)`, EN_RADIO(centro, R)];
+  const T = await db().query<{ n: number }>(`select count(*)::int as n from (select 1 ${DESDE_T} where ${w.join(" and ")} limit 100) x, (select $1::uuid as quien) q`, [...v]);
+  if (evF === "d0") { v.push(D.hoy); w.push(`d.local_date = $${v.length}::date`); }
+  if (evF === "wk") { v.push(D.vie, D.dom); w.push(`d.local_date between $${v.length - 1}::date and $${v.length}::date`); }
+  if (evF === "free") w.push(`e.entry <> 'tickets'`);
+  const r = await db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${w.join(" and ")} order by d.starts_at, d.id limit ${Math.max(1, Math.min(40, lim))}`, v);
+  return { items: r.rows.map((x) => tarjeta(x, es, D)), total: T.rows[0]?.n ?? 0 };
+}
+
+/* Ciudad: cuántos eventos hay en el radio (fechas vivas de eventos distintos). */
+export async function eventosEnRadio(p: Punto, rad?: number) {
+  const centro = centroSQL(p), R = radioSQL(rad ? { ...p, rad } : p);
+  return (await db().query<{ n: number }>(`select count(distinct d.event_id)::int as n from event_dates d where ${VIVO} and d.city_id = $1 and ${EN_RADIO(centro, R)}`, [p.ciudad])).rows[0]?.n ?? 0;
+}
+
+/* ── La ficha del evento (APP-EVT-LISTING) ── */
+export type FichaEvt = {
+  id: string; fecha: string; slug: string; href: string; fmt: FormatoKey; F: FormatoEvt; dark: boolean; status: "live" | "paused";
+  title: string; desc: string; img: string | null; gal: string[]; dia: string; ldate: string; h0: number; h1: number; doors: number | null; hoy: boolean; pasado: boolean;
+  venue: string; addr: string | null; zona: string | null; lat: number | null; lng: number | null; mi: number | null; ciudad: string; estado: string;
+  edad: number; pideId: boolean; vest: string; kids: "fam" | "care" | null; comidaLocal: boolean; antes: string[]; generos: string[];
+  entry: Entrada; free: boolean; cupo: number; quedan: number | null; partyMax: number; van: number;
+  boletos: { n: string; s: string; p: number }[]; mesas: { z: string; seats: number; min: number; dep: number }[];
+  lu: { t: string; who: string; role: string }[];
+  org: { id: string; name: string; ini: string; verified: boolean; pro: boolean };
+  mio: { rsvp: { party: number } | null; saved: boolean };
+  rsvpAbierto: boolean; lleno: boolean; hasta: string; guardaMin: number; fechas: { id: string; l: string; on: boolean }[];
+  rel: TarjetaEvt[];
+  seo: { start: string; end: string; addr: string | null };
+};
+type FilaF = {
+  eid: string; fid: string; slug: string; fmt: FormatoKey; status: "live" | "paused"; title: Bi; description: Bi; ldate: string; h0: number; h1: number; dmin: number; venue_mode: "own" | "other";
+  venue: string; addr: string | null; lat: number | null; lng: number | null; mi: number | null; ciudad: string; estado: string; edad: number; pide: boolean; vest: Bi | null; kids: "fam" | "care" | null;
+  comida: boolean; antes: Bi[]; genres: string[]; entry: Entrada; cupo: number; rsvp_n: number; going_n: number; party_max: number; tickets: Boleto[]; mesas: Mesa[];
+  biz: string; bname: string; casa: boolean; verified: boolean; pro: boolean; hoyL: string; pasado: boolean; abierto: boolean; hasta_min: number; start: string; end: string;
+  mia: number | null; saved: boolean; city: string; label: Bi; sub: Bi; icon: string; dark: boolean; ages: number[]; fields: FormatoEvt["f"];
+};
+const ID = /^\d{1,18}$/;
+/* `slug` = …-{id} (0106 lo arma así): se busca por id y se comprueba el slug. `fecha` = la fecha de una serie (si no, la próxima viva). */
+export async function fichaEvento(slug: string, fecha: string | null, viewer: string | null, p: Punto | null, es: boolean): Promise<FichaEvt | null> {
+  const m = /^[a-z0-9-]{1,80}-(\d{1,18})$/.exec(String(slug ?? ""));
+  if (!m) return null;
+  const eid = m[1]!, fid = fecha && ID.test(fecha) ? fecha : null, centro = p ? centroSQL(p) : null;
+  const guarda = await valor("rsvp_guarda_min");
+  const r = (await db().query<FilaF>(
+    `select e.id::text as eid, d.id::text as fid, e.slug, e.format as fmt, e.status, e.title, e.description, d.local_date::text as ldate,
+            (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h0,
+            (extract(epoch from d.ends_at - d.starts_at) / 60)::int + (extract(hour from d.starts_at at time zone ci.timezone) * 60 + extract(minute from d.starts_at at time zone ci.timezone))::int as h1,
+            (extract(epoch from d.starts_at - d.doors_at) / 60)::int as dmin, e.venue_mode,
+            case when e.venue_mode = 'other' then e.venue_name else b.name end as venue, ${DIRECCION_EVENTO("e", "b")} as addr, ${PUNTO_EVENTO("e", "b")},
+            ${centro ? `case when d.geom is null then null else round((st_distance(d.geom, ${centro}) / 1609.34)::numeric, 1)::float end` : "null::float"} as mi,
+            ci.name as ciudad, ci.state as estado, e.min_age as edad, e.id_required as pide, e.dress_code as vest, e.kids, e.food_paid_at_venue as comida, e.before_you_go as antes,
+            e.genres, e.entry, e.rsvp_capacity as cupo, d.rsvp_n, d.going_n, e.party_max, e.tickets_cfg as tickets, e.tables_cfg as mesas,
+            b.id as biz, b.name as bname, b.works_from_home as casa, coalesce(s.verified, false) as verified, coalesce(s.plan, 'free') = 'pro' as pro,
+            to_char(now() at time zone ci.timezone, 'YYYY-MM-DD') as "hoyL", d.ends_at <= now() as pasado,
+            now() < d.doors_at + make_interval(mins => $4::int) as abierto,
+            (extract(hour from (d.doors_at + make_interval(mins => $4::int)) at time zone ci.timezone) * 60 + extract(minute from (d.doors_at + make_interval(mins => $4::int)) at time zone ci.timezone))::int as hasta_min,
+            to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as start, to_char(d.ends_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as "end",
+            (select r.party from rsvps r where r.user_id = $3::uuid and r.event_date_id = d.id and r.status = 'going') as mia,
+            coalesce($3::uuid is not null and exists (select 1 from favorites v where v.user_id = $3::uuid and v.kind = 'event' and v.target_id = e.id::text), false) as saved,
+            d.city_id as city, f.label, f.sub, f.icon, f.dark, f.ages::int[] as ages, f.fields
+       from events e join event_dates d on d.event_id = e.id join businesses b on b.id = e.business_id join cities ci on ci.id = d.city_id join event_formats f on f.key = e.format
+       left join business_stats_cache s on s.business_id = b.id
+      where e.id = $1::bigint and d.listable and ($2::bigint is null or d.id = $2::bigint)
+      order by (d.ends_at > now()) desc, d.starts_at limit 1`, [eid, fid, viewer, guarda])).rows[0];
+  if (!r || r.slug !== slug) return null;
+  const E2 = (a: string, b: string) => (es ? a : b), nm = (x: Bi | null | undefined) => (x ? bi(x, es) : "");
+  const [L, G, Fe, gen, rel] = await Promise.all([
+    db().query<{ h: number; who: string; role: Bi }>(`select at_min as h, who, role from event_lineup where event_id = $1::bigint and removed_at is null order by day_index, sort, at_min`, [eid]),
+    db().query<{ url: string }>(`select url from media where owner_kind = 'event' and owner_id = $1 and status = 'visible' order by sort, created_at limit 12`, [eid]),
+    db().query<{ id: string; ldate: string }>(`select d.id::text, d.local_date::text as ldate from event_dates d where d.event_id = $1::bigint and ${VIVO} order by d.starts_at limit 12`, [eid]),
+    db().query<{ key: string; label: Bi }>(`select key, label from event_genres where key = any($1::text[])`, [r.genres]),
+    relacionados(r.city, r.eid, r.biz, r.fmt, viewer, centro, es),
+  ]);
+  const F: FormatoEvt = { key: r.fmt, label: r.label, sub: r.sub, icon: r.icon, dark: r.dark, ages: r.ages, f: r.fields };
+  const free = r.entry !== "tickets", quedan = free && r.cupo > 0 ? Math.max(0, r.cupo - r.rsvp_n) : null;
+  const zona = r.venue_mode === "own" && r.casa ? E2(`Zona de ${r.ciudad} · la dirección exacta te la da el organizador`, `${r.ciudad} area · the organizer gives you the exact address`) : null;
+  return {
+    id: r.eid, fecha: r.fid, slug: r.slug, href: `/eventos/${r.slug}?fecha=${r.fid}`, fmt: r.fmt, F, dark: r.dark, status: r.status,
+    title: nm(r.title), desc: nm(r.description), img: G.rows[0]?.url ?? null, gal: G.rows.slice(1).map((x) => x.url), dia: diaCorto(r.ldate, es).toUpperCase(), ldate: r.ldate,
+    h0: r.h0, h1: r.h1, doors: r.dmin > 0 ? r.h0 - r.dmin : null, hoy: r.ldate === r.hoyL, pasado: r.pasado,
+    venue: r.venue, addr: r.addr, zona, lat: r.lat, lng: r.lng, mi: r.mi, ciudad: r.ciudad, estado: r.estado,
+    edad: r.edad, pideId: r.pide, vest: nm(r.vest), kids: r.kids, comidaLocal: r.comida, antes: (r.antes ?? []).map(nm).filter(Boolean), generos: gen.rows.map((g) => nm(g.label)),
+    entry: r.entry, free, cupo: r.cupo, quedan, partyMax: r.party_max, van: r.going_n,
+    boletos: free ? [] : (r.tickets ?? []).filter((b) => !b.off).map((b) => ({ n: nm(b.n), s: nm(b.s), p: b.p })),
+    mesas: free ? [] : (r.mesas ?? []).map((x) => ({ z: nm(x.z), seats: x.seats, min: x.min, dep: x.dep })),
+    lu: L.rows.map((l) => ({ t: hora(l.h), who: l.who, role: nm(l.role) })),
+    org: { id: r.biz, name: r.bname, ini: r.bname.split(/\s+/).filter((w) => /^[A-Za-zÀ-ÿ]/.test(w)).slice(0, 2).map((w) => w[0]!.toUpperCase()).join(""), verified: r.verified, pro: r.pro },
+    mio: { rsvp: r.mia != null ? { party: r.mia } : null, saved: r.saved },
+    rsvpAbierto: r.abierto && !r.pasado && r.entry === "rsvp", lleno: quedan === 0, hasta: hora(r.hasta_min), guardaMin: guarda,
+    fechas: Fe.rows.map((x) => ({ id: x.id, l: diaCorto(x.ldate, es).toUpperCase(), on: x.id === r.fid })),
+    rel, seo: { start: r.start, end: r.end, addr: r.addr },
+  };
+}
+async function relacionados(ciudad: string, eid: string, biz: string, fmt: string, viewer: string | null, centro: string | null, es: boolean) {
+  const D = await diasCiudad(ciudad);
+  const r = await db().query<FilaT>(`select distinct on (x.eid) * from (select ${COLS_T(centro)} ${DESDE_T} where ${VIVO} and d.city_id = $2 and e.id <> $3::bigint and (e.format = $4 or e.business_id = $5)
+                                     order by d.starts_at, d.id limit 30) x order by x.eid, x.cur limit 4`, [viewer, ciudad, eid, fmt, biz]);
+  return r.rows.sort((a, b) => a.cur.localeCompare(b.cur)).map((x) => tarjeta(x, es, D));
+}
+
+/* Para el admin y el panel: los últimos RSVP de un evento (nombre + inicial; nunca teléfono). El panel pasa su negocio: solo los de sus eventos. */
+export async function ultimosRsvp(eventoId: string, n = 20, negocio: string | null = null) {
+  if (!ID.test(eventoId)) return [];
+  return (await db().query<{ nombre: string; party: number; st: string; at: string; dia: string }>(
+    `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || left(coalesce(u.last_name, ''), 1)), ''), 'Vecino') as nombre, r.party, r.status as st,
+            to_char(r.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, d.local_date::text as dia
+       from rsvps r join users u on u.id = r.user_id join event_dates d on d.id = r.event_date_id
+      where r.event_id = $1::bigint and ($3::text is null or exists (select 1 from events e where e.id = r.event_id and e.business_id = $3))
+      order by r.created_at desc, r.id desc limit $2`, [eventoId, Math.max(1, Math.min(100, n)), negocio])).rows;
+}

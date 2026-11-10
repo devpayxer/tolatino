@@ -26,3 +26,12 @@ export const ZONA_GRADOS = 0.005;
 export const PUNTO_PUBLICO = (x: string) =>
   `case when ${x}.geo is null then null when ${x}.works_from_home then round(st_y(${x}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_y(${x}.geo::geometry) end as lat,
    case when ${x}.geo is null then null when ${x}.works_from_home then round(st_x(${x}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_x(${x}.geo::geometry) end as lng`;
+
+/* 6b · El punto de un evento en lo público. «Otro lugar» (un salón, un parque) es un lugar público: su punto geocodificado. En el local
+   del organizador sale el punto público del negocio (PUNTO_PUBLICO): si trabaja desde casa, la zona redondeada; nunca su casa. */
+export const PUNTO_EVENTO = (e: string, b: string) =>
+  `case when ${e}.venue_mode = 'other' then st_y(${e}.geom::geometry) when ${b}.geo is null then null when ${b}.works_from_home then round(st_y(${b}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_y(${b}.geo::geometry) end as lat,
+   case when ${e}.venue_mode = 'other' then st_x(${e}.geom::geometry) when ${b}.geo is null then null when ${b}.works_from_home then round(st_x(${b}.geo::geometry) / ${ZONA_GRADOS}) * ${ZONA_GRADOS} else st_x(${b}.geo::geometry) end as lng`;
+/* La dirección de un evento en lo público: la del otro lugar, o la del negocio salvo que trabaje desde casa (entonces ninguna). */
+export const DIRECCION_EVENTO = (e: string, b: string) =>
+  `case when ${e}.venue_mode = 'other' then ${e}.venue_address when ${b}.works_from_home then null else ${b}.address end`;

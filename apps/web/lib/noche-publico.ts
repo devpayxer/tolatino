@@ -6,9 +6,10 @@ import { POR_FECHA, type Bi, type EstaNoche, type FilaNoche, type KindNoche, typ
 /* La ficha de un negocio de Noche (4nb · fase4-noche.md §4nb · neg-noche-listing.js listingAdd L118–157, tonight L114–117, liveIt
    L101–106, priceFor L108–113, resAdd L172–177 y neg-noche-kind.js post). Tesis: ¿cuánto es el cover y cómo está la fila? Todo sale de
    «Esta noche» (noche_settings) y de los servicios; la fila con su hora real (nunca «hace 4 min» inventado). La Entrada sigue al cover
-   y la Lista a la hora de la lista; las noches especiales con boleto no salen hasta que abra Eventos (Fase 6). El servidor decide. */
+   y la Lista a la hora de la lista; la noche especial (k evento) sale solo si su evento de To'Latino está en vivo (listable) y abre la
+   ficha del evento (6b). El servidor decide. */
 export type SvcNoche = { id: string; sec: string | null; name: Bi; desc: Bi; cents: number; k: string; until: number | null; pax: number | null; tables: number | null; hr: boolean;
-  dep: number; dows: number[]; inc: Bi[]; foto: string | null };
+  dep: number; dows: number[]; inc: Bi[]; foto: string | null; ev: string | null };
 export type NochePublica = {
   negocio: { id: string; nombre: string; telefono: string | null; foto: string | null };
   kind: KindNoche; porFecha: boolean; secciones: { id: string; name: Bi }[]; servicios: SvcNoche[];
@@ -38,11 +39,14 @@ export async function nochePublica(negocio: string): Promise<NochePublica | null
     `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, i.svc_kind as k,
             (i.svc_attrs->>'until')::int as until, (i.svc_attrs->>'pax')::int as pax, (i.svc_attrs->>'tables')::int as tables, coalesce((i.svc_attrs->>'hr')::boolean, false) as hr,
             coalesce(i.deposit_cents, 0) as dep, coalesce((select array_agg(x::int order by x::int) from jsonb_array_elements_text(coalesce(i.svc_attrs->'dows', '[]'::jsonb)) x), '{}') as dows,
-            coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto
+            coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, i.photos[1] as foto,
+            case when i.svc_kind = 'evento' then (select '/eventos/' || e.slug from events e where e.id::text = i.svc_attrs->>'event_id' and e.business_id = i.business_id
+                                                    and exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now())) end as ev
        from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra
-        and i.svc_kind in ('cover', 'lista', 'mesa', 'vip', 'fecha') order by i.sort, i.id`, [negocio]);
+        and i.svc_kind in ('cover', 'lista', 'mesa', 'vip', 'fecha', 'evento') order by i.sort, i.id`, [negocio]);
   // La Lista sigue a «Esta noche»: sin lista esa noche, no sale; la hora es la de la herramienta.
-  const servicios = I.rows.filter((s) => s.k !== "lista" || h.lista).map((s) => (s.k === "lista" && h.listaHasta != null ? { ...s, until: h.listaHasta } : s));
+  // La noche especial sale solo con su evento en vivo (6b).
+  const servicios = I.rows.filter((s) => (s.k !== "lista" || h.lista) && (s.k !== "evento" || !!s.ev)).map((s) => (s.k === "lista" && h.listaHasta != null ? { ...s, until: h.listaHasta } : s));
   const usados = new Set(servicios.map((x) => x.sec));
   const lic = (await db().query(`select 1 from licenses where business_id = $1 and kind = 'pa_plcb' and status = 'valid' and member_id is null limit 1`, [negocio])).rowCount! > 0;
   // Hoy (la fecha de la noche, corte 6 AM): ¿abrió, abre más tarde o no abre?

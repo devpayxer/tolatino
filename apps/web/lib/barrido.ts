@@ -25,9 +25,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
     const ok = (await c.query<{ ok: boolean }>(`select pg_try_advisory_lock($1) as ok`, [LOCK])).rows[0]?.ok;
     if (!ok) return { corrio: false, ms: Date.now() - t0, tareas: [] };
     try {
-      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av] = await Promise.all([
+      const [citas, mesas, pedidos, mercado, apartados, layaway, planes, rentas, fiestas, viajes, solicitudes, totales, ayuda, cobros, estimados, noche, nocheR, edu, ninos, ninosP, dep, insc, fe, inm, autos, lic, vis, com, mod, hoy, tab, inv, cup, av, rsvp] = await Promise.all([
         import("./citas-flujo"), import("./reservas"), import("./pedidos"), import("./mercado"), import("./apartados"), import("./layaway"), import("./planes"), import("./rentas"),
-        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos")]);
+        import("./fiestas-reservas"), import("./viajes"), import("./solicitudes"), import("./total-escrito"), import("./ayuda"), import("./cobros"), import("./estimados"), import("./noche"), import("./noche-reservas"), import("./edu"), import("./ninos"), import("./ninos-privado"), import("./deporte"), import("./inscripciones"), import("./fe"), import("./inmuebles"), import("./autos"), import("./licencias"), import("./visitas-inm"), import("./comunidad-hilo"), import("./moderacion"), import("./hoy"), import("./tabla"), import("./invitar"), import("./cupones"), import("./avisos"), import("./rsvp")]);
       const T: Tarea[] = [
         ["citas", () => citas.vencerCitas({})], ["mesas", () => mesas.vencerMesas({})], ["pedidos", () => pedidos.vencer({})], ["mercado", () => mercado.vencerMercado({})],
         ["apartados", () => apartados.barrerApartados({})], ["layaway", () => layaway.barrerPlanes({})], ["planes", () => planes.barrerPlanes({})], ["rentas", () => rentas.barrerRentas({})],
@@ -70,6 +70,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["tablaCongelar", () => tab.congelarMeses()], ["tablaCerrar", () => tab.cerrarPendientes()], ["referidos", () => inv.referidosActivos()],
         // Cupones por monedas (5g): los códigos que vencieron sin usarse pasan a vencidos y sus monedas vuelven (asiento inverso), con aviso.
         ["vencerCupones", () => cup.vencerCupones()], ["resumenComunidad", () => av.resumenComunidad()],
+        // Eventos (6b): el RSVP guarda el lugar hasta las puertas + rsvp_guarda_min (después vence y el lugar se libera); al abrir puertas,
+        // el aviso de hasta cuándo se guarda; el día antes, el recordatorio a quien va y a quien guardó el evento (una vez por fecha).
+        ["rsvpVencer", () => rsvp.vencerRsvp()], ["evtRecordatorios", () => rsvp.barrerRecordatoriosEvt()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);
           await mercado.repararMercado(b).catch(() => undefined); await apartados.repararApartados(b).catch(() => undefined); await layaway.repararPlanes(b).catch(() => undefined);

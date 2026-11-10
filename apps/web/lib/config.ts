@@ -21,7 +21,9 @@ export type ClaveConfig =
   | "insc_responder_h" | "insc_oferta_h" | "insc_baja_h" | "ninos_purga_dias" | "insc_grupos_n" | "insc_grupos_dias"
   | "fe_responder_h" | "vis_responder_h" | "vis_paso_h" | "vis_purga_dias" | "lic_aviso_dias" | "dealer_doc_fee_cap_cents"
   // 6a · Eventos (0106)
-  | "evt_revision_h" | "evt_fechas_max" | "evt_dias_adelante" | "evt_fotos_max" | "evt_dias_seguidos_max";
+  | "evt_revision_h" | "evt_fechas_max" | "evt_dias_adelante" | "evt_fotos_max" | "evt_dias_seguidos_max"
+  // 6b · RSVP (0107)
+  | "rsvp_guarda_min";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

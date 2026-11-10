@@ -20,8 +20,8 @@ export type VistaPub = {
   orgs: { id: string; name: string; cat: string; addr: string | null; foto: string | null; pro: boolean; hoy: string; ciudad: string; formatos: FormatoEvt[]; bloqueado: string | null }[];
 };
 type F = { org: string | null; fmt: string | null; name: string; desc: string; foto: { id: string; url: string } | null; dia: number; h0: number; h1: number; puertas: 0 | 30 | 60;
-  donde: "own" | "other"; lugar: string; dir: string; entrada: "free" | "rsvp" | "tickets" | null; precio: string; cupo: string; edad: number };
-const F0: F = { org: null, fmt: null, name: "", desc: "", foto: null, dia: 2, h0: 1260, h1: 1500, puertas: 0, donde: "own", lugar: "", dir: "", entrada: null, precio: "", cupo: "", edad: 0 };
+  donde: "own" | "other"; lugar: string; dir: string; cp: string; entrada: "free" | "rsvp" | "tickets" | null; precio: string; cupo: string; edad: number };
+const F0: F = { org: null, fmt: null, name: "", desc: "", foto: null, dia: 2, h0: 1260, h1: 1500, puertas: 0, donde: "own", lugar: "", dir: "", cp: "", entrada: null, precio: "", cupo: "", edad: 0 };
 const DK = "tl-evt-publica-borrador";
 const MONO = "'JetBrains Mono',monospace";
 const K: CSSProperties = { font: `700 10px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.42)" };
@@ -63,6 +63,7 @@ export function Publicar({ v }: { v: VistaPub }) {
     if (!F) m.push(E2("Elige el tipo", "Pick the type"));
     if (!f.foto) m.push(E2("Sube el cartel", "Upload the poster"));
     if (f.donde === "other" && (f.lugar.trim().length < 2 || f.dir.trim().length < 4)) m.push(E2("Escribe el lugar y la dirección", "Enter the place and address"));
+    if (f.donde === "other" && !/^\d{5}$/.test(f.cp)) m.push(E2("Escribe el código postal del lugar", "Enter the venue ZIP code"));
     if (!f.entrada) m.push(E2("Elige cómo se entra", "Pick how people get in"));
     if (f.entrada === "tickets" && !(Number(f.precio) >= 1)) m.push(E2("Pon el precio de la entrada", "Set the ticket price"));
     if ((f.entrada === "rsvp" || f.entrada === "tickets") && !(Number(f.cupo) > 0)) m.push(E2("Pon cuántos caben", "Set the capacity"));
@@ -75,7 +76,7 @@ export function Publicar({ v }: { v: VistaPub }) {
     if (O?.bloqueado) { setError(E2(`No puedes publicar eventos: ${O.bloqueado}`, `You cannot publish events: ${O.bloqueado}`)); return; }
     if (faltan().length) { setTried(true); return; }
     setEnviando(true); setError(null);
-    const r = await publicarEvento({ org: f.org!, fmt: f.fmt!, name: f.name, desc: f.desc, foto: f.foto, dia, h0: f.h0, h1: f.h1, puertas: f.puertas, donde: f.donde, lugar: f.lugar, dir: f.dir,
+    const r = await publicarEvento({ org: f.org!, fmt: f.fmt!, name: f.name, desc: f.desc, foto: f.foto, dia, h0: f.h0, h1: f.h1, puertas: f.puertas, donde: f.donde, lugar: f.lugar, dir: f.dir, cp: f.cp,
       entrada: f.entrada!, precio: Math.round(Number(f.precio) * 100), cupo: Number(f.cupo) || 0, edad: f.edad }).catch(() => ({ ok: false as const, error: "otro" as const, msg: undefined }));
     setEnviando(false);
     if (r.ok) {
@@ -167,7 +168,8 @@ export function Publicar({ v }: { v: VistaPub }) {
                 <Opcion on={f.donde === "own"} t={O ? E2(`En ${O.name}`, `At ${O.name}`) : E2("En tu negocio", "At your business")} s={O ? O.addr ?? O.ciudad : E2("La dirección de tu página", "Your page address")} onClick={() => up({ donde: "own" })} />
                 <Opcion on={f.donde === "other"} t={E2("En otro lugar", "Somewhere else")} s={E2("Salón, parque, iglesia…", "Hall, park, church…")} onClick={() => up({ donde: "other" })} />
                 {f.donde === "other" ? <><input value={f.lugar} onChange={(e) => up({ lugar: e.target.value.slice(0, 60) })} placeholder={E2("Nombre del lugar", "Venue name")} aria-label={E2("Nombre del lugar", "Venue name")} style={entrada} />
-                  <input value={f.dir} onChange={(e) => up({ dir: e.target.value.slice(0, 100) })} placeholder={E2("Dirección", "Address")} aria-label={E2("Dirección", "Address")} style={entrada} /></> : null}
+                  <input value={f.dir} onChange={(e) => up({ dir: e.target.value.slice(0, 100) })} placeholder={E2("Dirección", "Address")} aria-label={E2("Dirección", "Address")} style={entrada} />
+                  <input value={f.cp} inputMode="numeric" onChange={(e) => up({ cp: e.target.value.replace(/\D/g, "").slice(0, 5) })} placeholder={E2("Código postal", "ZIP code")} aria-label={E2("Código postal", "ZIP code")} style={entrada} /></> : null}
               </div>
             </div>
 

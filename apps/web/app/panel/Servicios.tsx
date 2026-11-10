@@ -120,11 +120,11 @@ function filaNoche(c: Ctx, s: Servicio, j: number, n: number): Fila {
   const m = s.k === "cover" ? E2("ENTRADA · SIGUE A TU COVER DE «ESTA NOCHE» · SE PAGA EN LA PUERTA", "ENTRY · FOLLOWS YOUR “TONIGHT” COVER · PAID AT THE DOOR")
     : s.k === "lista" ? E2(`LISTA · HASTA LAS ${hNoche(a.until ?? 660)} · ANOTARSE ES GRATIS`, `LIST · UNTIL ${hNoche(a.until ?? 660)} · SIGNING UP IS FREE`)
     : s.k === "mesa" || s.k === "vip" ? `${s.k === "vip" ? "VIP · " : ""}${E2(`HASTA ${a.pax ?? 1} PERSONAS · TIENES ${a.tables ?? 1} ${(a.tables ?? 1) === 1 ? "ASÍ" : "ASÍ"}`, `UP TO ${a.pax ?? 1} PEOPLE · YOU HAVE ${a.tables ?? 1}`)}${a.dep ? E2(` · DEPÓSITO ${fp(a.dep)}`, ` · ${fp(a.dep)} DEPOSIT`) : E2(" · SIN DEPÓSITO", " · NO DEPOSIT")}`
-    : s.k === "evento" ? E2("NOCHE ESPECIAL · SE PUBLICA CUANDO ABRA EVENTOS", "SPECIAL NIGHT · PUBLISHED WHEN EVENTS OPENS") : E2("POR FECHA · TE PIDEN LA FECHA POR MENSAJE", "BY DATE · THEY ASK FOR THE DATE BY MESSAGE");
+    : s.k === "evento" ? (c.svc?.eventos?.find((x) => x.id === s.a?.event_id)?.vivo ? E2("NOCHE ESPECIAL · ABRE SU EVENTO", "SPECIAL NIGHT · OPENS ITS EVENT") : E2("NOCHE ESPECIAL · SALE CUANDO SU EVENTO ESTÉ PUBLICADO", "SPECIAL NIGHT · SHOWS ONCE ITS EVENT IS LIVE")) : E2("POR FECHA · TE PIDEN LA FECHA POR MENSAJE", "BY DATE · THEY ASK FOR THE DATE BY MESSAGE");
   const dias = a.dows?.length ? ` · ${a.dows.map((d) => DOW[d]).join(", ").toUpperCase()}` : "";
   return { key: s.id, img: s.foto ? `url("${s.foto}")` : undefined, imgIni: s.foto ? undefined : s.name.es.slice(0, 1), imgW: "52px", t: s.name.es, s: s.desc.es || undefined, m: m + dias, r,
-    tag: s.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : s.oculto ? E2("OCULTO", "HIDDEN") : s.k === "evento" ? E2("ESPERA A EVENTOS", "WAITS FOR EVENTS") : null,
-    tone: s.adm != null ? "danger" : "neutral", dim: s.oculto || s.adm != null || s.k === "evento", onClick: () => c.det(`svc:${s.id}`),
+    tag: s.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : s.oculto ? E2("OCULTO", "HIDDEN") : s.k === "evento" && !c.svc?.eventos?.find((x) => x.id === s.a?.event_id)?.vivo ? E2("SIN EVENTO PUBLICADO", "NO LIVE EVENT") : null,
+    tone: s.adm != null ? "danger" : "neutral", dim: s.oculto || s.adm != null || (s.k === "evento" && !c.svc?.eventos?.find((x) => x.id === s.a?.event_id)?.vivo), onClick: () => c.det(`svc:${s.id}`),
     acts: [...(j > 0 ? [{ l: E2("Subir", "Up"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, -1)) }] : []), ...(j < n - 1 ? [{ l: E2("Bajar", "Down"), v: "soft", onClick: () => c.run(() => servicioMover(c.d.id, s.id, 1)) }] : [])] };
 }
 
@@ -146,7 +146,7 @@ type FSvc = { k: string; esc: boolean; gov: string; cred: boolean; rem: boolean;
   // Transporte (4w): salidas, de dónde sale, a dónde va, cuánto dura, asientos o personas, precio de niño, espera.
   tsal: number[]; tfrom: string; tto: string; tdmin: number; tpax: number; tchild: string; twait: number;
   // Noche (4na): lista hasta, personas, cuántas mesas, por hora, depósito y noches en que vale.
-  nuntil: number; npax: number; ntables: number; nhr: boolean; ndep: string; ndows: number[];
+  nuntil: number; npax: number; ntables: number; nhr: boolean; ndep: string; ndows: number[]; nev: string;
   // Educación (4ea): semanas y horas del curso, matrícula, plan, certificado (oficial o constancia), primera clase gratis y lo que va aparte.
   esem: number; ehrs: string; edep: string; eplan: number; ecert: string; ecertBy: string; eof: boolean; eg1: boolean; eno: string; elvl: boolean; eteam: boolean;
   // Iglesias (4ia): cuándo y cuánto dura («Con cita · 1 hora»); la forma (gratis · donativo · total · curso) va en k.
@@ -162,7 +162,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
   const rub = X.rubro, sp0 = { k: s0?.k ?? (rub === "salud" ? "cons" : rub === "pro" ? "cons" : rub === "fiesta" ? "pack" : rub === "trans" ? "asiento" : rub === "noche" ? "mesa" : rub === "edu" ? "curso" : rub === "ninos" ? "semana" : rub === "dep" ? "mes" : ""),
     esem: s0?.a?.sem ?? 8, ehrs: s0?.a?.horas ? String(s0.a.horas) : "", edep: s0?.a?.dep ? String(s0.a.dep / 100) : "", eplan: s0?.a?.plan_n ?? 0, ecert: s0?.a?.cert?.es ?? "", ecertBy: s0?.a?.certBy?.es ?? "", eof: !!s0?.a?.oficial,
     eg1: !!s0?.a?.g1, eteam: s0?.a?.team ?? true, fdur: s0?.a?.dur?.es ?? "", eno: (s0?.a?.no ?? []).map((z) => z.es).join("\n"), elvl: !!s0?.a?.lvl,
-    nuntil: s0?.a?.until ?? 660, npax: s0?.a?.pax ?? 6, ntables: s0?.a?.tables ?? 1, nhr: !!s0?.a?.hr, ndep: s0?.a?.dep ? String(s0.a.dep / 100) : "", ndows: s0?.a?.dows ?? [],
+    nuntil: s0?.a?.until ?? 660, npax: s0?.a?.pax ?? 6, ntables: s0?.a?.tables ?? 1, nhr: !!s0?.a?.hr, ndep: s0?.a?.dep ? String(s0.a.dep / 100) : "", ndows: s0?.a?.dows ?? [], nev: s0?.a?.event_id ?? "",
     tsal: s0?.a?.sal ?? [], tfrom: s0?.a?.from?.es ?? "", tto: s0?.a?.to?.es ?? "", tdmin: s0?.a?.dmin ?? 120, tpax: s0?.a?.pax ?? (s0?.k === "priv" ? 4 : 14), tchild: s0?.a?.child ? String(s0.a.child / 100) : "", twait: s0?.a?.wait ?? 0,
     fh: s0?.a?.h ?? 4, fcap: s0?.a?.cap ? String(s0.a.cap) : "", fmont: !!s0?.a?.mont, finc: (s0?.a?.inc ?? []).map((z) => z.es).join("\n"), fu: s0?.a?.u?.es ?? "", fper: s0?.a?.per ? String(s0.a.per) : "", fmin: s0?.a?.min ?? 1, esc: !!s0?.a?.esc, gov: s0?.a?.gov ? String(s0.a.gov / 100) : "", cred: !!s0?.a?.cred, rem: !!s0?.a?.rem, hrs: s0?.a?.hrs ?? "", mes: !!s0?.a?.mes,
     unit: s0?.a?.unit ?? "caso", no: s0?.a?.no?.[0]?.es ?? "", noEn: s0?.a?.no?.[0]?.en ?? "" };
@@ -258,7 +258,15 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
     if (d.k === "vip" || d.k === "mesa" || d.k === "fecha") out.push({ type: "field", k: E2("LO QUE INCLUYE · UNO POR LÍNEA · OPCIONAL", "WHAT IS INCLUDED · ONE PER LINE · OPTIONAL"), val: d.finc, area: true, rows: 3, max: 360, ph: E2("Mesero propio\nMezcladores", "Own server\nMixers"),
       help: E2("Lo que no está escrito, no está incluido.", "What is not written is not included."), onChange: (v) => setF({ finc: v.slice(0, 360) }) });
     if (d.k === "fecha") out.push({ type: "step", t: E2("Personas · opcional", "People · optional"), s: E2("Para cuántos es (salón).", "How many it is for (hall)."), v: d.npax ? String(d.npax) : "—", onM: () => setF({ npax: Math.max(0, d.npax - 10) }), onP: () => setF({ npax: Math.min(2000, d.npax + 10) }) });
-    if (d.k === "evento") out.push({ type: "note", tone: "warn", icon: "calendar", t: E2("Se publica cuando abra Eventos: hasta entonces no sale en tu página. Si es una mesa con boletos incluidos, créala como Mesa y escríbelo en «Lo que incluye».", "Published when Events opens: until then it is not on your page. If it is a table with tickets included, create it as a Table and write it in “What is included”.") });
+    if (d.k === "evento") {
+      // 6b · La noche especial lleva a su evento de To'Latino: sale en tu página solo si el evento está publicado (y abre su ficha).
+      const L = c.svc?.eventos ?? [], sel = L.find((x) => x.id === d.nev);
+      out.push(L.length ? { type: "chips", k: E2("EL EVENTO AL QUE LLEVA", "THE EVENT IT LINKS TO"), help: E2("Elige uno de tus eventos. En tu página abre la ficha del evento.", "Pick one of your events. On your page it opens the event page."),
+        items: L.map((x) => ({ l: `${c.es ? x.t.es : x.t.en || x.t.es} · ${x.dia.slice(5).replace("-", "/")}`, v: d.nev === x.id ? "selected" : "filter", onClick: () => setF({ nev: d.nev === x.id ? "" : x.id }) })) }
+        : { type: "note", tone: "info", icon: "calendar", t: E2("Todavía no tienes eventos. Créalo en Eventos y aquí lo eliges.", "You have no events yet. Create it in Events and pick it here."), cta: E2("Ir a Eventos", "Go to Events"), onCta: () => c.go("evt") });
+      out.push({ type: "note", tone: sel?.vivo ? "info" : "warn", icon: "calendar", t: !d.nev ? E2("Sin evento elegido no sale en tu página.", "Without an event it does not show on your page.")
+        : sel?.vivo ? E2("Sale en tu página y abre la ficha del evento.", "It shows on your page and opens the event page.") : E2("Sale en tu página cuando el evento esté publicado.", "It shows on your page once the event is live.") });
+    }
     if (d.k !== "fecha" && d.k !== "cover") out.push({ type: "chips", k: E2("NOCHES EN QUE VALE", "NIGHTS IT IS VALID"), help: d.ndows.length ? undefined : E2("TODAS LAS QUE ABRES", "EVERY NIGHT YOU OPEN"),
       items: (c.es ? ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"] : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]).map((l, i) => ({ l, v: d.ndows.includes(i) ? "selected" : "filter", onClick: () => setF({ ndows: d.ndows.includes(i) ? d.ndows.filter((z) => z !== i) : [...d.ndows, i].sort((p, q) => p - q) }) })) });
   }
@@ -380,7 +388,7 @@ export function servicioDetalle(c: Ctx, id: string): Sec {
       : (rub === "edu" || rub === "ninos" || rub === "dep") && !ex ? { k: x.k, a: { team: rub === "dep" ? x.eteam : undefined, sem: x.esem, horas: parseInt(x.ehrs) || undefined, dep: Math.round((parseFloat(x.edep) || 0) * 100), plan_n: x.eplan, g1: x.eg1, lvl: x.elvl,
         cert: x.ecert.trim() ? { es: x.ecert.trim(), en: x.ecert.trim() } : undefined, certBy: x.ecertBy.trim() ? { es: x.ecertBy.trim(), en: x.ecertBy.trim() } : undefined, oficial: x.eof,
         inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 8).map((z) => ({ es: z, en: z })), no: x.eno.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
-      : rub === "noche" && !ex ? { k: x.k, a: { until: x.nuntil, pax: x.npax || undefined, tables: x.ntables, hr: x.nhr, dep: Math.round((parseFloat(x.ndep) || 0) * 100), dows: x.ndows,
+      : rub === "noche" && !ex ? { k: x.k, a: { until: x.nuntil, pax: x.npax || undefined, tables: x.ntables, hr: x.nhr, dep: Math.round((parseFloat(x.ndep) || 0) * 100), dows: x.ndows, event_id: x.nev || undefined,
         inc: x.finc.split("\n").map((z) => z.trim()).filter(Boolean).slice(0, 6).map((z) => ({ es: z, en: z })) } }
       : rub === "trans" && !ex ? { k: x.k, a: { sal: x.tsal, pax: x.tpax, dmin: x.tdmin, wait: x.twait, child: Math.round((parseFloat(x.tchild) || 0) * 100) || undefined,
         from: x.tfrom.trim() ? { es: x.tfrom.trim(), en: x.tfrom.trim() } : undefined, to: x.tto.trim() ? { es: x.tto.trim(), en: x.tto.trim() } : undefined,

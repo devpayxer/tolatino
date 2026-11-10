@@ -9,7 +9,7 @@ import { quedanEnHoy } from "./hoy";
    usan oferta_precio() mientras está en vivo. Votos, encuesta, guardar, comentarios y seguir piden sesión. */
 type Bi = { es: string; en: string };
 export type Tipo = "oferta" | "hoy" | "aviso" | "encuesta" | "novedad";
-export type Enlace = "none" | "item" | "menu" | "tel" | "web";
+export type Enlace = "none" | "item" | "menu" | "tel" | "web" | "event";
 export const TIPOS: Tipo[] = ["oferta", "hoy", "aviso", "encuesta", "novedad"];
 export const MAX_FOTOS_POST = 4;
 const nombreCorto = (f: string | null, l: string | null) => `${(f ?? "").trim()}${l ? ` ${l.trim().slice(0, 1).toUpperCase()}.` : ""}`.trim() || "Vecino";
@@ -23,6 +23,8 @@ export type Comentario = { id: string; name: string; ini: string; h: number; bod
 export type Post = {
   id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null;
   link: Enlace; item: { id: string; name: Bi; ph: string | null; cents: number } | null; url: string | null;
+  /* 6b · Una novedad con enlace a un evento: su próxima fecha en vivo (si no está en vivo, la novedad no sale: post_en_vivo). */
+  evento: { href: string; t: Bi; dia: string } | null;
   was: number | null; now: number | null; aviso: { day: string; hrs: string; hrsT: string } | null;
   poll: { opts: { l: string; n: number }[]; mine: number | null; total: number; closesH: number | null } | null;
   score: number; myVote: number; saved: boolean; cm: Comentario[];
@@ -41,7 +43,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
   const r = await db().query<{
     id: string; kind: Tipo; title: string; body: string; fotos: string[]; h: number; pinned: boolean; ends: string | null; link_kind: Enlace; url: string | null;
     was: number | null; now: number | null; aviso: Post["aviso"]; poll: string[] | null; poll_n: number[]; poll_mine: number | null; closes_h: number | null;
-    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null;
+    score: number; my_vote: number; saved: boolean; item_id: string | null; item_name: Bi | null; item_ph: string | null; item_cents: number | null; ev: { href: string; t: Bi; dia: string } | null;
   }>(
     `select p.id::text, p.kind, p.title, p.body, p.pinned, p.link_kind, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll,
             floor(extract(epoch from now() - p.publish_at) / 3600)::int as h, ${iso("p.ends_at")} as ends,
@@ -52,7 +54,9 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
             coalesce((select sum(v.v)::int from post_votes v where v.post_id = p.id), 0) as score,
             coalesce((select v.v from post_votes v where v.post_id = p.id and v.user_id = $2::uuid), 0) as my_vote,
             coalesce($2::uuid is not null and exists (select 1 from post_saves s where s.post_id = p.id and s.user_id = $2::uuid), false) as saved,
-            i.id::text as item_id, i.name as item_name, i.photos[1] as item_ph, coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as item_cents
+            i.id::text as item_id, i.name as item_name, i.photos[1] as item_ph, coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as item_cents,
+            case when p.link_kind = 'event' then (select json_build_object('href', '/eventos/' || e.slug || '?fecha=' || d.id, 't', e.title, 'dia', d.local_date::text) from events e join event_dates d on d.event_id = e.id
+                                                   where e.id = p.event_id and d.listable and d.ends_at > now() order by d.starts_at limit 1) end as ev
        from business_posts p left join items i on i.id = p.item_id and i.removed_at is null and i.status = 'live'
       where p.business_id = $1 and post_en_vivo(p)
         and (p.audience = 'all' or exists (select 1 from follows f where f.follower_user_id = $2::uuid and f.target_kind = 'business' and f.target_id = p.business_id))
@@ -66,7 +70,7 @@ export async function novedadesFicha(negocio: string, userId: string | null) {
        from post_comments c join users u on u.id = c.user_id where c.post_id = any($1::bigint[]) and c.status = 'visible' order by c.created_at limit 500`, [ids, userId])).rows : [];
   const posts: Post[] = r.rows.map((x) => ({
     id: x.id, kind: x.kind, title: x.title, body: x.body, fotos: x.fotos, h: Math.max(0, x.h), pinned: x.pinned, ends: x.ends, link: x.link_kind, url: x.url, was: x.was, now: x.now, aviso: x.aviso,
-    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null,
+    item: x.item_id && x.item_name ? { id: x.item_id, name: x.item_name, ph: x.item_ph, cents: x.item_cents ?? 0 } : null, evento: x.ev,
     poll: x.poll ? { opts: x.poll.map((l, i) => ({ l, n: x.poll_n[i] ?? 0 })), mine: x.poll_mine, total: x.poll_n.reduce((a, n) => a + n, 0), closesH: x.closes_h } : null,
     score: x.score, myVote: x.my_vote, saved: x.saved, hoy: enHoy.get(x.id) ?? null,
     cm: cms.filter((c) => c.post === x.id).map((c) => { const name = nombreCorto(c.first_name, c.last_name); return { id: c.id, name, ini: name.split(/\s+/).map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase(), h: Math.max(0, c.h), body: c.body, lang: c.lang, up: c.up, mine: c.mine, reply: c.reply, propio: c.propio }; }),
@@ -174,16 +178,22 @@ export async function novedadesPanel(negocio: string) {
   ]);
   return { filas: L.rows, on: m.rows[0]?.on ?? false, pausa: m.rows[0]?.off?.reason ?? null, seguidores: m.rows[0]?.seguidores ?? 0 };
 }
+/* 6b · El botón «Evento» del editor: los eventos del negocio que puede llevar una novedad (la novedad sale solo con el evento en vivo). */
+export async function eventosNovedad(negocio: string) {
+  return (await db().query<{ id: string; t: Bi; dia: string; vivo: boolean }>(
+    `select e.id::text, e.title as t, e.start_date::text as dia, exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now()) as vivo
+       from events e where e.business_id = $1 and e.status not in ('cancelled', 'rejected', 'done') order by e.start_date, e.id limit 40`, [negocio])).rows;
+}
 export type NovPanel = Awaited<ReturnType<typeof novedadesPanel>>;
 
 export type NovEdit = {
   id: string; kind: Tipo; title: string; body: string; link: Enlace; item: string | null; url: string; was: number | null; now: number | null;
-  aviso: { day: string; hrs: string; hrsT: string } | null; poll: string[]; audience: "all" | "fol"; fotos: { id: string; url: string }[];
+  aviso: { day: string; hrs: string; hrsT: string } | null; poll: string[]; audience: "all" | "fol"; fotos: { id: string; url: string }[]; evento: string | null;
 };
 export async function novedadPanel(negocio: string, id: string) {
   if (!/^\d{1,18}$/.test(id)) return null;
-  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; item_name: Bi | null; item_ph: string | null; item_cents: number | null }>(
-    `select ${FILA_NOV}, p.link_kind, p.item_id::text, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll, p.audience,
+  const p = (await db().query<FilaNov & { link_kind: Enlace; item_id: string | null; url: string | null; was: number | null; now: number | null; aviso: NovEdit["aviso"]; poll: string[] | null; audience: "all" | "fol"; item_name: Bi | null; item_ph: string | null; item_cents: number | null; event_id: string | null }>(
+    `select ${FILA_NOV}, p.link_kind, p.item_id::text, p.url, p.price_was_cents as was, p.price_now_cents as now, p.aviso, p.poll, p.audience, p.event_id::text as event_id,
             i.name as item_name, i.photos[1] as item_ph, i.price_cents as item_cents
        from business_posts p join cities ci on ci.id = p.city_id left join items i on i.id = p.item_id
       where p.business_id = $1 and p.id = $2::bigint and p.status <> 'removed'`, [negocio, id])).rows[0];
@@ -208,13 +218,14 @@ export type NovPanelDet = NonNullable<Awaited<ReturnType<typeof novedadPanel>>>;
 export type NovIn = {
   id?: string | null; kind: string; title: string; body?: string; link?: string; item?: string | null; url?: string; was?: number | null; now?: number | null;
   aviso?: { day?: string; hrs?: string; hrsT?: string } | null; poll?: string[]; audience?: string; ends?: string; prog?: { d: number; m: number } | null; fotos?: string[];
+  evento?: string | null;
 };
 export async function guardarNovedad(negocio: string, p: NovIn, actorId: string): Promise<{ ok: true; id: string } | { ok: false; msg: Bi }> {
   const kind = TIPOS.includes(p.kind as Tipo) ? (p.kind as Tipo) : null;
   if (!kind) return { ok: false, msg: { es: "Elige qué publicas.", en: "Pick what you post." } };
   const title = String(p.title ?? "").trim().slice(0, 60), body = String(p.body ?? "").trim().slice(0, 280);
   if (title.length < 3) return { ok: false, msg: { es: "Ponle un título de 3 letras o más.", en: "Give it a title of 3+ characters." } };
-  const linkOk: Enlace[] = kind === "oferta" ? ["item"] : kind === "hoy" || kind === "novedad" ? ["none", "item", "menu", "tel", "web"] : ["none"];
+  const linkOk: Enlace[] = kind === "oferta" ? ["item"] : kind === "hoy" || kind === "novedad" ? ["none", "item", "menu", "tel", "web", "event"] : ["none"];
   const link = (linkOk.includes(p.link as Enlace) ? p.link : linkOk[0]) as Enlace;
   const fotos = Array.isArray(p.fotos) ? [...new Set(p.fotos.filter((x): x is string => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x)))] : [];
   if (fotos.length > MAX_FOTOS_POST) return { ok: false, msg: { es: "Hasta 4 fotos.", en: "Up to 4 photos." } };
@@ -237,6 +248,12 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
       item = /^\d{1,18}$/.test(String(p.item ?? "")) ? (await c.query<{ id: string; cents: number }>(`select id::text, price_cents as cents from items where id = $1::bigint and business_id = $2 and removed_at is null`, [p.item, negocio])).rows[0] ?? null : null;
       if (!item) return { ok: false as const, msg: { es: "Elige qué está en oferta.", en: "Pick what is on sale." } };
     }
+    // 6b · «Ver evento»: un evento de este negocio que no esté cancelado, no aprobado ni terminado.
+    let evento: string | null = null;
+    if (link === "event") {
+      evento = /^\d{1,18}$/.test(String(p.evento ?? "")) ? (await c.query<{ id: string }>(`select id::text from events where id = $1::bigint and business_id = $2 and status not in ('cancelled', 'rejected', 'done')`, [p.evento, negocio])).rows[0]?.id ?? null : null;
+      if (!evento) return { ok: false as const, msg: { es: "Elige el evento del botón.", en: "Pick the event for the button." } };
+    }
     let was: number | null = null, now: number | null = null;
     if (kind === "oferta") {
       // El precio normal es siempre el del menú (nada de «antes» inventados); la oferta tiene que ser menor.
@@ -258,13 +275,13 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
                                   when 'semana' then (date_trunc('week', pub at time zone $3) + interval '6 days 23 hours 59 minutes') at time zone $3
                                   else null end)::text as fin from x`, [pub ? pub.toISOString() : null, ends, b.tz])).rows[0]!;
     if (t.fin && new Date(t.fin) <= new Date(t.pub)) return { ok: false as const, msg: { es: "Ya pasaron las 3 PM de ese día: elige otro vencimiento.", en: "3 PM has already passed that day: pick another end." } };
-    const vals = [kind, title, body, link, item?.id ?? null, url || null, was, now, aviso, kind === "encuesta" ? poll : null, audience, t.pub, t.fin];
+    const vals = [kind, title, body, link, item?.id ?? null, url || null, was, now, aviso, kind === "encuesta" ? poll : null, audience, t.pub, t.fin, evento];
     let id: string;
     if (p.id) {
       if (!/^\d{1,18}$/.test(String(p.id))) return { ok: false as const, msg: { es: "Esa publicación no existe.", en: "That post does not exist." } };
       const u = await c.query<{ id: string }>(
         `update business_posts set kind = $3, title = $4, body = $5, link_kind = $6, item_id = $7, url = $8, price_was_cents = $9, price_now_cents = $10, aviso = $11, poll = $12,
-                audience = $13, publish_at = $14, ends_at = $15, status = 'live', stopped_at = null, updated_at = now()
+                audience = $13, publish_at = $14, ends_at = $15, event_id = $16::bigint, status = 'live', stopped_at = null, updated_at = now()
           where id = $1::bigint and business_id = $2 and status <> 'removed' and hidden_at is null returning id::text`, [p.id, negocio, ...vals]);
       if (!u.rows[0]) return { ok: false as const, msg: { es: "Esa publicación ya no se puede editar.", en: "That post can no longer be edited." } };
       id = u.rows[0].id;
@@ -272,8 +289,8 @@ export async function guardarNovedad(negocio: string, p: NovIn, actorId: string)
       const n = (await c.query<{ n: number }>(`select count(*)::int as n from business_posts where business_id = $1 and created_at > now() - interval '1 day'`, [negocio])).rows[0]!.n;
       if (n >= 20) return { ok: false as const, msg: { es: "Publicaste muchas novedades hoy. Prueba mañana.", en: "You posted many updates today. Try tomorrow." } };
       id = (await c.query<{ id: string }>(
-        `insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, url, price_was_cents, price_now_cents, aviso, poll, audience, publish_at, ends_at, created_by)
-         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
+        `insert into business_posts (business_id, city_id, kind, title, body, link_kind, item_id, url, price_was_cents, price_now_cents, aviso, poll, audience, publish_at, ends_at, event_id, created_by)
+         values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16::bigint, $17) returning id::text`, [negocio, b.city_id, ...vals, actorId])).rows[0]!.id;
       // Publicar la primera enciende Novedades en la página (el dueño lo puede apagar).
       await c.query(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['nov']) x) where id = $1 and not ('nov' = any(modules_on))`, [negocio]);
     }

@@ -46,7 +46,7 @@ export async function medirBorrador(p: { c: string; z: string; r: number; g?: [n
   const cs = await ciudades();
   const g = p.g && ok(p.g[0]) && ok(p.g[1]) ? ([p.g[0], p.g[1]] as [number, number]) : undefined;
   const u = resolver(cs, { c: String(p.c ?? ""), z: String(p.z ?? ""), r: Number(p.r), g });
-  if (u.c.status !== "on") return { lat: u.lat, lng: u.lng, biz: 0, prev: null, towns: [], dots: [] };
+  if (u.c.status !== "on") return { lat: u.lat, lng: u.lng, biz: 0, evt: 0, prev: null, towns: [], dots: [] };
   return { lat: u.lat, lng: u.lng, ...(await medir(u, u.c)) };
 }
 

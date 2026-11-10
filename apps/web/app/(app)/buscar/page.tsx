@@ -11,6 +11,7 @@ import { Buscar, type VistaBuscar } from "./Buscar";
 import DATOS from "@/lib/busqueda-datos.json";
 import { ubicacion } from "@/lib/ubicacion";
 import { PantallaPronto } from "../PantallaPronto";
+import { buscarEventos } from "@/lib/evt-publico";
 import { contexto, evento } from "@/lib/eventos";
 import { after } from "next/server";
 
@@ -20,7 +21,7 @@ const FILTRABLES = new Set(["open", "near", "ver", "dlv", "pk", "walk", "casa", 
 // Filtros rápidos según la categoría dominante (prototipo QK).
 const RAPIDOS: Record<string, string[]> = { "NEG-FOOD": ["dlv", "pk"], "NEG-BELL": ["walk", "casa"], "NEG-SALUD": ["medicaid", "medicare", "sinseg", "esp"], "NEG-HOGAR": ["h24", "casa"], "NEG-AUTO": ["walk", "h24"], "NEG-NOCHE": ["free"], "NEG-PRO": ["esp"], "NEG-INMUEBLE": ["sinssn"], "NEG-MERC": ["dlv", "pk"] };
 
-type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string; vc?: string };
+type SP = { q?: string; cat?: string; f?: string; orden?: string; p?: string; tab?: string; vc?: string; ef?: string };
 
 /* Quita una frase de la búsqueda («barbería abierta ahora» − «abierta ahora»): así se quita una intención. */
 function sinFrase(q: string, frase: string) {
@@ -45,7 +46,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
   const orden = (["rel", "near", "best"] as const).find((o) => o === sp.orden);
   const pagina = Math.max(0, (parseInt(String(sp.p ?? "1"), 10) || 1) - 1);
   // 5e · «Vecinos» (lo que dicen los vecinos en la Comunidad) solo con cuenta: sin sesión la pestaña no existe y no se lee nada.
-  const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : "all";
+  const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : sp.tab === "evt" ? "evt" : "all";
+  // 6b · Eventos (prototipo Buscar EVF): Todos · Hoy · Este fin de semana · Gratis.
+  const ef = (["all", "d0", "wk", "free"] as const).find((x) => x === sp.ef) ?? "all";
   const base: Omit<VistaBuscar, "res"> = {
     lang, q, cat: catSel ? { slug: catSel.slug, label: catSel.label, name: catSel.name } : null, ciudad: nomCiudad,
     explorar: null, conSesion: !!u,
@@ -70,10 +73,11 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
     if (it) E.intenciones.push({ k, frase: "", label: it.label, tipo: it.tipo });
   }
   const limite = tab === "biz" ? 10 : 5;
-  const [r, C, V] = await Promise.all([
+  const [r, C, V, EV] = await Promise.all([
     negocios(E, { punto: loc, cat: catSel?.id ?? null, orden, pagina: tab === "biz" ? pagina : 0, limite }),
     sugerirCatalogo(E, CIUDAD, catSel?.id ?? null),
     u && E.grupos.length && !catSel ? buscarVecinos(u.id, CIUDAD, tsq(E.grupos, true), tab === "vec" ? String(sp.vc ?? "") || null : null, tab === "vec" ? 10 : 2) : null,
+    E.grupos.length && !catSel ? buscarEventos(tsq(E.grupos, true), loc, tab === "evt" ? ef : "all", u?.id ?? null, es, tab === "evt" ? 40 : 4) : null,
   ]);
   const vaciaPrimero = !!C.vacias[0] && (!C.subs[0] || C.vacias[0].score > C.subs[0].score);
   const dom = catSel?.id ?? dominante(r.items, C.subs, C.vacias, C.cats, vaciaPrimero);
@@ -132,6 +136,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<SP>
         probar: cats.slice(0, 8).map((c) => ({ l: c.label, slug: c.slug })),
         catDominante: dom,
         vecinos: V ? { total: V.total, mas: V.mas, items: V.items.map((x) => filaVecino(x, E, es)) } : null,
+        eventos: EV && EV.total ? { total: EV.total, f: ef, items: EV.items } : null,
       },
     }} />
   );

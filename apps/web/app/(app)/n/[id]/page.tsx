@@ -30,6 +30,7 @@ import { diaFiesta } from "@/lib/fiestas-comun";
 import { resumenResenas } from "@/lib/resenas";
 import { novedadesFicha } from "@/lib/novedades";
 import { vacantesFicha } from "@/lib/jobs";
+import { eventosDelOrganizador } from "@/lib/evt-publico";
 import { idioma } from "@/lib/idioma";
 import { T } from "@/lib/textos";
 import { ubicacion } from "@/lib/ubicacion";
@@ -51,7 +52,9 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const [ua, ctx] = [(await headers()).get("user-agent"), await contexto()];
   after(() => registrarVista(f.id, u?.id ?? null, ua).catch(() => undefined));
   after(() => evento("ver_ficha", { ref: f.id, ciudad: loc.c.id, userId: u?.id ?? null }, ctx));
-  const [fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl] = await Promise.all([
+  const [evts, fav, menu, rsv, res, nov, jobs, svc, ofi, tienda, salud, prof, merc, fiesta, trans, noche, insc, fe, inm, dl] = await Promise.all([
+    // 6b · Ficha › Eventos: solo réplica de sus fechas vivas, en Pro.
+    f.pro ? eventosDelOrganizador(f.id, u?.id ?? null, lang === "es") : Promise.resolve([]),
     guardados(u?.id ?? null, [f.id]),
     f.cat === "NEG-FOOD" ? menuPublico(f.id, lang, u?.id ?? null) : Promise.resolve(null),
     f.cat === "NEG-FOOD" ? rsvPublica(f.id, u?.id ?? null) : Promise.resolve(null),
@@ -197,6 +200,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       resenas={res}
       novedades={nov && nov.posts.length ? nov : null}
       jobs={jobs}
+      eventos={evts}
       rsvInicial={rsvInicial}
       sesion={!!u}
       es={lang === "es"}

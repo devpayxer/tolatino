@@ -29,6 +29,8 @@ export type AttrsSP = { esc?: boolean; gov?: number; cred?: boolean; rem?: boole
   // Noche (4na · neg-noche-listing.js): lista hasta (min desde las 12 PM), cuántas mesas de ese tipo hay, por hora (billar),
   // noches en que vale (0 = domingo; vacío = todas las que abre) y el depósito de la mesa (también en items.deposit_cents).
   until?: number; tables?: number; hr?: boolean; dows?: number[]; dep?: number;
+  // 6b · Noche especial (k evento): el evento de To'Latino al que lleva (la página del evento; sale solo si el evento está en vivo).
+  event_id?: string;
   // Inscripciones (4ea · neg-edu-listing.js): semanas y horas del curso, el certificado y quién lo da (oficial o constancia de la
   // escuela), el plan de pagos sin intereses (0, 3, 6 o 12), primera clase gratis (nunca en un curso) y si pide el nivel.
   sem?: number; horas?: number; cert?: Bi; certBy?: Bi; oficial?: boolean; plan_n?: number; g1?: boolean; lvl?: boolean;
@@ -140,6 +142,7 @@ export function limpiarNoche(k0: unknown, cents: number, a0: unknown): { ok: tru
     return { ok: true, k, a, cents };
   }
   if (k === "evento" && cents <= 0) return { ok: false, es: "Ponle el precio del boleto.", en: "Set the ticket price." };
+  if (k === "evento") { const e = typeof x.event_id === "string" && /^\d{1,18}$/.test(x.event_id) ? x.event_id : null; if (e) a.event_id = e; }
   if (k === "fecha") { const pax = n(x.pax, 1, 2000); if (pax) a.pax = pax; }
   return { ok: true, k, a, cents };
 }
@@ -253,6 +256,7 @@ export type SvcPanel = {
   feEdu: import("./inscripciones-comun").HerrEdu | null; // los grupos del catecismo (4ia)
   inm: import("./inmuebles-comun").HerrInm | null; // «Propiedades y visitas» y sus variantes (4ib)
   autos: import("./autos-comun").HerrAutos | null; // «Inventario del lote» (4ic)
+  eventos?: { id: string; t: Bi; dia: string; vivo: boolean }[]; // 6b · Noche especial → su evento
 };
 export const POL_DEF: Politica = { auto: false, resp: 30, dep: 0, cxh: 2, tol: 15, pick: true, exp: 2 };
 
@@ -288,6 +292,10 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
     autos: x.cat === "NEG-DEALER" ? await (await import("./autos")).herramientaAutos(negocio) : null, model: x.model, rent: x.rent, comm: x.comm, secciones: S.rows,
     servicios: I.rows.map((s) => ({ ...s, hacen: H.rows.filter((h) => h.item === s.id).map((h) => ({ id: h.member, cents: h.cents })) })),
     gente: G.rows, pol: P.rows[0] ?? POL_DEF, on: (x.mods ?? []).includes("citas"),
+    // 6b · Noche especial: los eventos del negocio a los que puede llevar (la página pública sale solo si están en vivo).
+    eventos: x.cat === "NEG-NOCHE" ? (await db().query<{ id: string; t: Bi; dia: string; vivo: boolean }>(
+      `select e.id::text, e.title as t, e.start_date::text as dia, exists (select 1 from event_dates d where d.event_id = e.id and d.listable) as vivo
+         from events e where e.business_id = $1 and e.status not in ('cancelled', 'rejected', 'done') order by e.start_date, e.id limit 60`, [negocio])).rows : [],
     off: { svc: off.svc ? off.svc.reason ?? "" : null, citas: off.citas ? off.citas.reason ?? "" : null },
   };
 }

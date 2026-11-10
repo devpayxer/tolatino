@@ -77,7 +77,8 @@ export function EventosAdmin({ f, filas, total, cab, siguiente, sla, orgs, puede
 }
 
 /* La ficha de un evento (evtDetail): todo para decidir, ocultar con motivo y el organizador. */
-export function EventoAdmin({ e, puede }: { e: EvtAdm; puede: { aprobar: boolean; retirar: boolean } }) {
+type RsvpAdm = { nombre: string; party: number; st: string; at: string; dia: string };
+export function EventoAdmin({ e, puede, rsvp = [], publico = null }: { e: EvtAdm; puede: { aprobar: boolean; retirar: boolean }; rsvp?: RsvpAdm[]; publico?: { href: string; van: number } | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -88,7 +89,14 @@ export function EventoAdmin({ e, puede }: { e: EvtAdm; puede: { aprobar: boolean
   const acts = accionesEvt(e, x), org = accionesOrg({ id: e.org.id, name: e.org.name, verificado: e.org.verificado, bloqueado: e.org.bloqueado }, x);
   return (
     <div style={{ maxWidth: 760, display: "flex", flexDirection: "column", gap: 14 }}>
-      <PanelBloques bloques={[head, ...bloquesEvt(e, x), ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: "ORGANIZADOR" } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />
+      <PanelBloques bloques={[head, ...bloquesEvt(e, x),
+        // 6b · Si sale al público (lo decide la base) y los últimos RSVP.
+        { type: "note", tone: publico ? "ok" : "ink", icon: publico ? "verified" : "lock", t: publico ? `SALE EN EVENTOS · ${publico.van} ${publico.van === 1 ? "persona va" : "personas van"}` : "NO SALE AL PÚBLICO · en revisión, oculto, pausado, bloqueado, con el módulo apagado o sin fechas próximas.",
+          cta: publico ? "Ver la página" : undefined, onCta: publico ? () => x.abrir(publico.href) : undefined } as Bloque,
+        ...(e.d.entrada === "rsvp" ? [rsvp.length ? { type: "rows", k: `ÚLTIMOS RSVP · ${rsvp.length}`, items: rsvp.map((r, i) => ({ key: `r${i}`, icon: "users", t: r.nombre, s: `${r.party} ${r.party === 1 ? "persona" : "personas"} · ${diaCorto(r.dia, true)} · ${new Date(r.at).toLocaleString("es-US", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}`,
+          tag: r.st === "going" ? "VA" : r.st === "cancelled" ? "YA NO VA" : r.st === "expired" ? "VENCIÓ" : "LLEGÓ", tone: r.st === "going" ? "signal" : "neutral", compact: true, chev: false })) } as Bloque
+          : { type: "note", tone: "ink", icon: "users", t: "Todavía nadie dijo que va." } as Bloque] : []),
+        ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []), ...(org.length ? [{ type: "group", k: "ORGANIZADOR" } as Bloque, { type: "acts", items: org } as Bloque] : [])]} h1={desk ? 26 : 22} />
       <Toast t={toast} desk={desk} />
     </div>);
 }

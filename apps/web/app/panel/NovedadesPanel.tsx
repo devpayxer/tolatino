@@ -7,7 +7,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { novGuardar, novModulo, novPaso, novResponder } from "./acciones-novedades";
 import type { Ctx, Editor } from "./Panel";
 
-export type NovData = { lista?: NovPanel; det?: NovPanelDet | null; items?: { id: string; name: string; cents: number; ph: string | null; sell: boolean }[] };
+export type NovData = { lista?: NovPanel; det?: NovPanelDet | null; items?: { id: string; name: string; cents: number; ph: string | null; sell: boolean }[]; eventos?: { id: string; t: { es: string; en: string }; dia: string; vivo: boolean }[] };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
 const money = (c: number) => `$${(c / 100).toFixed(2).replace(/\.00$/, "")}`;
 const NOVT = (c: Ctx): [Tipo, string, string][] => [
@@ -107,16 +107,16 @@ export function novDetalle(c: Ctx): Sec {
 /* Editor (nov:new · nov:edit:{id} · nov:dup:{id}). */
 type FN = {
   kind: Tipo; title: string; body: string; fotos: { id: string; url: string }[]; link: string; item: string | null; url: string; was: string; now: string;
-  day: string; hrs: string; hrsT: string; o1: string; o2: string; o3: string; o4: string; audience: "all" | "fol"; ends: string; when: "now" | "once"; sD: number; sM: number;
+  day: string; hrs: string; hrsT: string; o1: string; o2: string; o3: string; o4: string; audience: "all" | "fol"; ends: string; when: "now" | "once"; sD: number; sM: number; evento: string | null;
 };
 function editor(c: Ctx, id: string): Sec {
   const { E2, d } = c, ed = id.startsWith("edit:") ? c.nov?.det : id.startsWith("dup:") ? c.nov?.det : null, edita = id.startsWith("edit:") && !!ed;
-  const items = c.nov?.items ?? [];
+  const items = c.nov?.items ?? [], evts = c.nov?.eventos ?? [];
   const b0: FN = {
     kind: ed?.kind ?? "oferta", title: ed?.title ?? "", body: ed?.body ?? "", fotos: ed && edita ? ed.fotos : [], link: ed?.link_kind ?? (items.length ? "item" : "none"), item: ed?.item_id ?? null,
     url: ed?.url ?? "", was: ed?.was ? String(ed.was / 100) : "", now: ed?.now ? String(ed.now / 100) : "", day: ed?.aviso?.day ?? "", hrs: ed?.aviso?.hrs ?? "closed", hrsT: ed?.aviso?.hrsT ?? "",
     o1: ed?.poll?.[0] ?? "", o2: ed?.poll?.[1] ?? "", o3: ed?.poll?.[2] ?? "", o4: ed?.poll?.[3] ?? "", audience: ed?.audience ?? "all", ends: "24h",
-    when: edita && ed?.st === "prog" ? "once" : "now", sD: 1, sM: 660,
+    when: edita && ed?.st === "prog" ? "once" : "now", sD: 1, sM: 660, evento: ed?.event_id ?? null,
   };
   const F = c.form<FN>(`det:nov:${id}`, b0), x = F.d, ty = x.kind, out: (Bloque | null)[] = [], TT = NOVT(c), T = TT.find((t) => t[0] === ty) ?? TT[0]!;
   const TD: Record<Tipo, string> = { oferta: E2("Un precio especial en algo que vendes. Lo piden desde la novedad, y se cobra ese precio.", "A special price on something you sell. They order it from the update, at that price."), hoy: E2("Lo que hay hoy: el plato del día, algo que acaba de llegar.", "What you have today: the daily special, something that just arrived."), aviso: E2("Cierres, feriados o cambios de horario.", "Closures, holidays or hours changes."), encuesta: E2("Una pregunta corta. Votan en tu página.", "A short question. They vote on your page."), novedad: E2("Cualquier otra cosa que quieras contar.", "Anything else you want to share.") };
@@ -158,7 +158,8 @@ function editor(c: Ctx, id: string): Sec {
   const lkOn = ty === "oferta" || ty === "hoy" || ty === "novedad", lk = ty === "oferta" ? "item" : x.link, it = items.find((i) => i.id === x.item);
   if (lkOn) {
     const LO: [string, string][] = [...(ty !== "oferta" ? [["none", E2("Sin botón", "No button")] as [string, string]] : []), ...(items.length ? [["item", E2("Algo que vendes", "Something you sell")] as [string, string]] : []),
-      ...(ty !== "oferta" ? [["menu", E2("Menú", "Menu")], ["tel", E2("Llamar", "Call")], ["web", E2("Enlace web", "Web link")]] as [string, string][] : [])];
+      ...(ty !== "oferta" ? [["menu", E2("Menú", "Menu")], ["tel", E2("Llamar", "Call")], ["web", E2("Enlace web", "Web link")]] as [string, string][] : []),
+      ...(ty !== "oferta" && evts.length ? [["event", E2("Evento", "Event")] as [string, string]] : [])];
     out.push({ type: "group", k: ty === "oferta" ? E2("QUÉ ESTÁ EN OFERTA", "WHAT IS ON SALE") : E2("EL BOTÓN · LO QUE TOCA EL CLIENTE", "THE BUTTON · WHAT THE CLIENT TAPS") });
     if (ty !== "oferta") out.push({ type: "chips", items: LO.map(([v, l]) => ({ l, v: lk === v ? "selected" : "filter", onClick: () => F.set({ link: v }) })) });
     if (lk === "item") {
@@ -172,6 +173,14 @@ function editor(c: Ctx, id: string): Sec {
     }
     if (lk === "web") out.push({ type: "field", k: E2("ENLACE", "LINK"), val: x.url, max: 200, ph: "https://", help: E2("Solo https.", "https only."), onChange: (v) => F.set({ url: v.trim().slice(0, 200) }) });
     if (lk === "tel") out.push({ type: "note", tone: "info", icon: "phone", t: E2("El botón llama al teléfono de tu página.", "The button calls the phone on your page.") });
+    // 6b · «Ver evento»: la novedad lleva a la ficha de uno de tus eventos y sale en Hoy en el barrio solo mientras el evento esté publicado.
+    if (lk === "event") {
+      const ev = evts.find((e) => e.id === x.evento);
+      out.push({ type: "rows", k: E2("TUS EVENTOS", "YOUR EVENTS"), items: evts.map((e) => ({ icon: "ticket", t: c.es ? e.t.es : e.t.en || e.t.es, s: `${e.dia}${e.vivo ? "" : E2(" · aún no publicado", " · not live yet")}`, compact: true, chev: false,
+        onClick: () => F.set({ evento: e.id }), sel: { on: x.evento === e.id, onClick: () => F.set({ evento: e.id }) } })) });
+      out.push({ type: "note", tone: ev && !ev.vivo ? "warn" : "info", icon: "ticket", t: !ev ? E2("Elige el evento del botón.", "Pick the event for the button.") : ev.vivo ? E2("El botón dice «Ver evento» y abre su ficha. Sale en Hoy en el barrio mientras el evento esté publicado.", "The button says “See event” and opens its page. It shows in Today nearby while the event is live.")
+        : E2("Este evento aún no está publicado: la novedad sale cuando lo esté.", "This event is not live yet: the update shows once it is.") });
+    }
   }
   const bf = it ? it.cents : 0, nw = Math.round(Number(x.now) * 100);
   if (ty === "oferta") {
@@ -195,12 +204,12 @@ function editor(c: Ctx, id: string): Sec {
   out.push({ type: "nprev", k: E2("ASÍ SE VE", "HOW IT LOOKS"), name: d.name, logo: d.logo ?? undefined, tags: [{ label: T[1].toUpperCase(), tone: ty === "oferta" ? "ink" : ty === "hoy" ? "signal" : ty === "aviso" ? "danger" : ty === "encuesta" ? "action" : "neutral" }],
     body: x.title ? (x.body ? `${x.title}. ${x.body}` : x.title) : E2("Tu título sale aquí.", "Your title shows here."), photos: x.fotos.map((f) => f.url), foot: ty === "oferta" && it && nw > 0 ? `${it.name} · ${money(nw)}` : undefined });
   const poll = [x.o1, x.o2, x.o3, x.o4].map((o) => o.trim()).filter(Boolean);
-  const valid = x.title.trim().length >= 3 && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "web" || /^https:\/\//.test(x.url));
+  const valid = x.title.trim().length >= 3 && (ty !== "oferta" || (!!it && nw > 0 && nw < bf)) && (ty !== "encuesta" || poll.length >= 2) && (ty !== "aviso" || !!x.day.trim()) && (lk !== "item" || ty === "aviso" || ty === "encuesta" || !!x.item) && (lk !== "web" || /^https:\/\//.test(x.url)) && (lk !== "event" || !!x.evento);
   return { blocks: out, ed: {
     F, l: x.when === "once" ? E2("Programar", "Schedule") : edita ? E2("Guardar", "Save") : E2("Publicar", "Post"), valid, always: true,
     apply: (v: FN) => novGuardar(d.id, { id: edita ? ed!.id : null, kind: v.kind, title: v.title, body: v.body, link: v.kind === "oferta" ? "item" : v.kind === "aviso" || v.kind === "encuesta" ? "none" : v.link, item: v.item,
       url: v.url, was: v.was ? Number(v.was) : null, now: v.now ? Number(v.now) : null, aviso: v.kind === "aviso" ? { day: v.day, hrs: v.hrs, hrsT: v.hrsT } : null,
-      poll: [v.o1, v.o2, v.o3, v.o4].map((o) => o.trim()).filter(Boolean), audience: v.audience, ends: v.ends, prog: v.when === "once" ? { d: v.sD, m: v.sM } : null, fotos: v.fotos.map((f) => f.id) }),
+      poll: [v.o1, v.o2, v.o3, v.o4].map((o) => o.trim()).filter(Boolean), audience: v.audience, ends: v.ends, prog: v.when === "once" ? { d: v.sD, m: v.sM } : null, fotos: v.fotos.map((f) => f.id), evento: v.evento }),
     toast: x.when === "once" ? E2("Programada.", "Scheduled.") : E2("Publicada. Ya sale en tu página.", "Posted. It is on your page now."),
     onDone: () => c.go("pag", "nov"),
   } };

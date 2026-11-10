@@ -11,15 +11,17 @@ import type { Historia } from "@/lib/hoy-comun";
 import type { OficialPortada } from "@/lib/comunidad-portada";
 import { hace } from "@/lib/comunidad-comun";
 import { HoyCarrusel } from "./HoyCarrusel";
+import type { TarjetaEvt } from "@/lib/evt-publico";
+import { dinero } from "@/lib/evt-comun";
 
-type N = "ModuleTile" | "SectionHeader" | "BusinessRow" | "InfoCard" | "Button" | "Eyebrow" | "Icon" | "FeedPost";
+type N = "ModuleTile" | "SectionHeader" | "BusinessRow" | "InfoCard" | "Button" | "Eyebrow" | "Icon" | "FeedPost" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { ModuleTile, SectionHeader, BusinessRow, InfoCard, Button, Eyebrow, Icon, FeedPost } = UI as unknown as Record<N, ComponentType<any>>;
+const { ModuleTile, SectionHeader, BusinessRow, InfoCard, Button, Eyebrow, Icon, FeedPost, EventCard } = UI as unknown as Record<N, ComponentType<any>>;
 
 type Textos = { allCats: string; catsTitle: string; openNow: string; seeAll: string; forBiz: string; publishTitle: string; publishBody: string; publishCta: string };
 
-export function Inicio({ cats, inicio, abierto, t, es, hoy, oficial, conSesion, lugar }: {
-  cats: Cat[]; inicio: string[]; abierto: Fila[]; t: Textos; es: boolean; hoy: Historia[]; oficial: OficialPortada | null; conSesion: boolean; lugar: string;
+export function Inicio({ semana = [], cats, inicio, abierto, t, es, hoy, oficial, conSesion, lugar }: {
+  semana?: TarjetaEvt[]; cats: Cat[]; inicio: string[]; abierto: Fila[]; t: Textos; es: boolean; hoy: Historia[]; oficial: OficialPortada | null; conSesion: boolean; lugar: string;
 }) {
   const router = useRouter();
   const E2 = (a: string, b: string) => (es ? a : b);
@@ -65,6 +67,22 @@ export function Inicio({ cats, inicio, abierto, t, es, hoy, oficial, conSesion, 
                 {abierto.map((o, i) => (
                   <div key={o.id} className={i >= 3 ? "hidden lg:grid" : "grid"}>
                     <BusinessRow name={o.name} meta={o.meta} verified={o.verified} slot={o.slot} image={o.image} onClick={() => router.push(`/n/${o.id}`)} />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 6b · Esta semana (prototipo APP-HOME «Esta semana»): EventCard oscura para fiesta o show, con el día y la hora; abre la ficha
+              del evento. Solo con eventos vivos en el radio. */}
+          {semana.length > 0 && (
+            <section data-screen-label="APP-HOME · Esta semana" className="flex flex-col gap-3">
+              <div className="px-5 lg:px-0"><SectionHeader title={E2("Esta semana", "This week")} dot="var(--tl-mod-events)" action={t.seeAll} onAction={() => router.push("/eventos")} /></div>
+              <div className="hs flex gap-3 overflow-x-auto px-5 lg:grid lg:px-0" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))" }}>
+                {semana.map((x) => (
+                  <div key={x.fecha} data-evento={x.id} className="flex flex-none lg:grid">
+                    <div className="lg:hidden"><EventCard dark={x.dark} tag={x.cuando} title={x.title} meta={`${x.free ? E2("GRATIS", "FREE") : x.desde != null ? `${E2("DESDE ", "FROM ")}${dinero(x.desde)}` : E2("CON BOLETOS", "TICKETED")}${x.edad ? ` · ${x.edad}+` : ""}`} image={x.img} onClick={() => router.push(x.href)} /></div>
+                    <div className="hidden lg:grid"><EventCard dark={x.dark} width={null} tag={x.cuando} title={x.title} meta={`${x.free ? E2("GRATIS", "FREE") : x.desde != null ? `${E2("DESDE ", "FROM ")}${dinero(x.desde)}` : E2("CON BOLETOS", "TICKETED")}${x.edad ? ` · ${x.edad}+` : ""}`} image={x.img} onClick={() => router.push(x.href)} /></div>
                   </div>
                 ))}
               </div>

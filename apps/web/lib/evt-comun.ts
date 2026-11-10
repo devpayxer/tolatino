@@ -23,7 +23,7 @@ export type Foto = { id: string; url: string };
 export type BorradorEvt = {
   fmt: FormatoKey; ti: Bi; desc: Bi; fotos: Foto[];
   dia: string; h0: number; h1: number; puertas: 0 | 30 | 60;
-  donde: "own" | "other"; lugar: string; dir: string;
+  donde: "own" | "other"; lugar: string; dir: string; cp: string;
   entrada: Entrada; cupo: number; personas: number; contar: boolean;
   boletos: Boleto[]; mesas: Mesa[]; extras: Extra[]; maxP: number; hasta: "start" | "doors" | "day_before";
   lu: Linea[]; gen: string[]; edad: number; pideId: boolean; vest: Bi; ninos: boolean; comidaLocal: boolean; antes: Bi[];
@@ -37,7 +37,7 @@ export const EXTRA_KIND_L: Record<ExtraKind, Bi> = { detalle: { es: "Detalle", e
 export const ALCOHOL = /(botell|bottle|hookah|huka|cachimba|narguil|trago|shot|cerveza|beer|licor|liquor|whisk|vodka|tequila|ron |rum |brandy|champ[aá]n|champagne|vino|wine|alcohol|cubeta|bucket|open bar|barra libre)/;
 export const esAlcohol = (x: Extra) => ALCOHOL.test(`${x.n.es} ${x.n.en} ${x.s.es} ${x.s.en}`.toLowerCase());
 /* Lo que importa: cambiarlo en un evento publicado de un organizador sin verificar vuelve a revisión (la versión anterior sigue en vivo). */
-export const IMPORTA = ["dia", "h0", "h1", "puertas", "donde", "lugar", "dir", "edad", "entrada", "boletos", "mesas", "extras"] as const;
+export const IMPORTA = ["dia", "h0", "h1", "puertas", "donde", "lugar", "dir", "cp", "edad", "entrada", "boletos", "mesas", "extras"] as const;
 
 const t = (x: string | undefined | null) => (x ?? "").trim();
 export const bi = (x: Bi, es: boolean) => (es ? x.es : t(x.en) || x.es);
@@ -62,7 +62,7 @@ export const sumarDias = (iso: string, n: number) => { const [y, m, d] = iso.spl
 export function nuevoBorrador(F: FormatoEvt, hoyIso: string): BorradorEvt {
   return {
     fmt: F.key, ti: { es: "", en: "" }, desc: { es: "", en: "" }, fotos: [], dia: sumarDias(hoyIso, 2), h0: F.f.h0, h1: F.f.h0 + F.f.len, puertas: F.f.dr,
-    donde: "own", lugar: "", dir: "", entrada: F.f.entry, cupo: 0, personas: F.f.party ? 6 : 1, contar: false,
+    donde: "own", lugar: "", dir: "", cp: "", entrada: F.f.entry, cupo: 0, personas: F.f.party ? 6 : 1, contar: false,
     boletos: F.f.entry === "tickets" ? [{ id: "t1", n: { ...F.f.tk0 }, s: { es: "", en: "" }, p: F.f.p0, cap: F.f.c0, off: false }] : [], mesas: [], extras: [], maxP: 0, hasta: "start",
     lu: [], gen: [], edad: F.f.age0, pideId: F.f.age0 > 0, vest: { es: "", en: "" }, ninos: F.f.kids === "care", comidaLocal: F.f.payAt, antes: [],
   };
@@ -76,6 +76,8 @@ export function faltaEvt(d: BorradorEvt, F: FormatoEvt, o: { enviar: boolean }):
   if (!o.enviar) return m;
   if (!d.fotos.length) m.push({ es: "el cartel", en: "the poster" });
   if (d.donde === "other" && (t(d.lugar).length < 2 || t(d.dir).length < 4)) m.push({ es: "el lugar y la dirección", en: "the place and address" });
+  // 6b · El código postal del otro lugar: con él se ubica en el mapa (geocodificador propio) y se mide la distancia.
+  if (d.donde === "other" && !/^\d{5}$/.test(t(d.cp))) m.push({ es: "el código postal del lugar", en: "the venue ZIP code" });
   if (d.entrada === "tickets") {
     if (!d.boletos.length || d.boletos.some((b) => !t(b.n.es) || !(b.p >= 100) || !(b.cap > 0))) m.push({ es: `nombre, precio y cantidad de cada ${F.f.tk1.es.toLowerCase()}`, en: `name, price and quantity for each ${F.f.tk1.en.toLowerCase()}` });
     if (F.f.mesas && d.mesas.some((x) => !t(x.z.es))) m.push({ es: "la zona de cada mesa", en: "the area of each table" });

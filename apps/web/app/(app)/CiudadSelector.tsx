@@ -154,7 +154,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
     label: L.how, radius: on ? `${dr.r} mi` : undefined, scale: V.sc, tiles: teselas(ctrLL, V.z, W, H, V.sc).map(({ src, left, top }) => ({ src, left, top })), dots, circle: RP * 2,
     place: (on ? ctrName(dr.z) : city.n).toUpperCase(),
     radii: on ? city.radios.map((r) => ({ label: `${r} mi`, on: dr.r === r, onClick: () => set({ r }) })) : [],
-    count: on && m ? `${biz} ${biz === 1 ? E2("negocio", "business") : E2("negocios", "businesses")}` : undefined,
+    count: on && m ? `${biz} ${biz === 1 ? E2("negocio", "business") : E2("negocios", "businesses")} · ${m.evt} ${m.evt === 1 ? E2("evento", "event") : E2("eventos", "events")}` : undefined,
     towns: on && m ? E2(`Incluye ${twL}.`, `Includes ${twL}.`) : undefined,
     note: on && m && prevR != null && m.prev === biz ? E2(`Entre ${prevR} y ${dr.r} mi todavía no hay negocios en To’Latino. Se ven los mismos.`, `Between ${prevR} and ${dr.r} mi there are no businesses on To’Latino yet. You see the same ones.`) : undefined,
   };

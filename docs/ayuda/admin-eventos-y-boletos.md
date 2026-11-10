@@ -24,6 +24,12 @@ Ver: todos los roles con Eventos; **decidir y verificar**: Admin y Ciudad (evt:a
 - **Colas › Eventos a revisar:** cada evento nuevo o cambio que importa de un organizador sin verificar; «Tomar», el plazo y las mismas
   decisiones. Cada decisión cierra el caso y queda en la auditoría con antes → después y el motivo.
 
+- **6b · La ficha del evento** dice si **sale en Eventos** (lo decide la base: publicado y aprobado, sin ocultar, módulo Eventos del
+  negocio encendido y sin pausa, organizador sin bloquear) con **Ver la página**, y los **últimos RSVP** (nombre con inicial, personas,
+  estado; nunca teléfono).
+- **6b · Negocios 360° › Contenido › Pausar Eventos** (con motivo): ninguno de sus eventos sale (no cambian de estado); el dueño ve
+  «PAUSADO POR TO'LATINO» con el motivo en su panel. **Reanudar** con motivo. Todo queda en la auditoría.
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
@@ -47,3 +53,7 @@ with everything needed to decide and, for an important change, **what changes** 
 (the business sees «HIDDEN BY TO’LATINO» and can appeal). **Organizers:** verify (publish without prior review) or block publishing (with
 reason, notice and appeal). **Queues › Events to review** has the same decisions. Appeals are decided by another team member. Everything
 goes to the audit log.
+
+6b: the event page tells whether it **shows in Events** (with a link) and lists the **latest RSVPs** (first name and initial, people,
+status; never phones). Business 360° › Content › **Pause Events** (with a reason) hides all of a business's events until resumed; the
+owner sees the reason in the dashboard.

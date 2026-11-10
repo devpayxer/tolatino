@@ -722,14 +722,20 @@ solo teléfono) y su línea en `docs/REVISION.md`.
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
 - [ ] Migraciones 0106–0115 aplicadas dos veces en PostGIS real (idempotentes, sin borrar nada) y en CI; semillas 0035–0038 solo en pruebas (`semilla`).
       _6a (9 nov): 0106 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y el archivo vuelto a correr a mano sin errores; semilla 0035
-      aplicada dos veces (13 eventos, no se repiten). CI y 0107–0115 pendientes._
+      aplicada dos veces (13 eventos, no se repiten). 6b (10 nov): 0107 aplicada con migrar.sh (la 2.ª corrida no cambia nada) y vuelta a
+      correr a mano sin errores. CI y 0108–0115 pendientes._
 - [x] Crear y editar por formato en el Panel, Publica tu evento, revisión con la cola `evt` de 24 h, organizadores verificados y bloqueados; ningún evento
       público sin aprobar (`revisionAntesDePublicar` al revés). _6a (9 nov): e2e `evt6a` 66 ✓ (teléfono 390 y escritorio 1360: crear → pedir
       cambios → reenviar → aprobar → cambio que importa con la versión anterior en vivo → ocultar → apelar y levantar por otra persona;
       Publica tu evento → no aprobar; bloquear / permitir; verificado publica al instante; la base rechaza en vivo sin aprobar, bloqueado y
       botella); `alreves6a` 26/26._
-- [ ] Módulo Eventos (buscar, Esta noche, ficha clara/oscura), ficha › Eventos, Inicio, Buscar › Eventos, Ciudad, Noche `evento`, Novedad → Hoy; RSVP con
-      cupo exacto con personas a la vez.
+- [x] Módulo Eventos (buscar, Esta noche, ficha clara/oscura), ficha › Eventos, Inicio, Buscar › Eventos, Ciudad, Noche `evento`, Novedad → Hoy; RSVP con
+      cupo exacto con personas a la vez. _6b (10 nov): e2e `evt6b` 79 ✓ (teléfono 390 y escritorio 1360): lista con cursor (29 fechas, 20 +
+      «Ver más»), filtros, historias con RSVP, ficha oscura y clara con JSON-LD, guardar → Guardados, RSVP con personas / cambiar / Ya no voy,
+      3 a la vez por 3 lugares con 3 personas → entra 1 (la base 5 de 5), 10 a la vez en la base por 4 → 4; oculto / en revisión / organizador
+      bloqueado / módulo apagado / pausa del admin nunca salen (lista, ficha 404, Buscar); pestaña, Inicio, Buscar, Ciudad, noche especial,
+      novedad → Hoy (y deja de salir con el evento oculto), QUIÉN VA, últimos RSVP, otro lugar geocodificado, en casa como zona, barrido;
+      `alreves6b` 31/31._
 - [ ] Boletos, mesas, extras y códigos: apartado de 8 min del servidor, compra en nuestra hoja contra el simulador, QR firmado real, Mis boletos; sin
       sobreventa en carrera (`boletosSinSobreventa`, `nadaSeCobraSinBoleto`, `qrFirmado` al revés).
 - [ ] Transferir (QR viejo anulado), cancelar con su regla, cortesías, lista de espera en orden, ayuda `B-`.

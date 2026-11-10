@@ -74,7 +74,7 @@ function normalizar(raw: unknown, c: Ctx): { ok: true; d: BorradorEvt } | { ok: 
   if (fotos.length > c.fotosMax) return no(`Hasta ${c.fotosMax} fotos.`, `Up to ${c.fotosMax} photos.`);
   return { ok: true, d: {
     fmt: F.key, ti: bi(r.ti, LIM.titulo), desc: bi(r.desc, LIM.desc), fotos, dia, h0, h1, puertas, donde,
-    lugar: donde === "other" ? txt(r.lugar, LIM.lugar) : "", dir: donde === "other" ? txt(r.dir, LIM.dir) : "",
+    lugar: donde === "other" ? txt(r.lugar, LIM.lugar) : "", dir: donde === "other" ? txt(r.dir, LIM.dir) : "", cp: donde === "other" ? txt(r.cp, 5).replace(/\D/g, "") : "",
     entrada, cupo: entrada === "tickets" ? 0 : ent(r.cupo, 0, 20000, 0), personas: entrada !== "tickets" && F.f.party ? ent(r.personas, 1, 10, 6) : 1, contar: entrada !== "tickets" && !!r.contar,
     boletos, mesas, extras, maxP: tickets ? ent(r.maxP, 0, 50, 0) : 0, hasta: tickets && (r.hasta === "doors" || r.hasta === "day_before") ? r.hasta : "start",
     lu, gen, edad, pideId: edad > 0 ? true : !!r.pideId, vest: F.f.dress ? bi(r.vest, LIM.vest) : { es: "", en: "" }, ninos: !!F.f.kids && !!r.ninos,
@@ -85,7 +85,7 @@ function normalizar(raw: unknown, c: Ctx): { ok: true; d: BorradorEvt } | { ok: 
 /* ── Fila ↔ borrador ── */
 type Fila = {
   id: string; slug: string; business_id: string; city_id: string; format: FormatoKey; title: Bi; description: Bi; genres: string[]; min_age: number; id_required: boolean;
-  dress_code: Bi | null; kids: "fam" | "care" | null; food_paid_at_venue: boolean; before_you_go: Bi[]; venue_mode: "own" | "other"; venue_name: string | null; venue_address: string | null;
+  dress_code: Bi | null; kids: "fam" | "care" | null; food_paid_at_venue: boolean; before_you_go: Bi[]; venue_mode: "own" | "other"; venue_name: string | null; venue_address: string | null; venue_zip: string | null;
   start_date: string; start_min: number; end_min: number; doors_before_min: 0 | 30 | 60; entry: Entrada; rsvp_capacity: number; party_max: number; door_count: boolean;
   sales_until: "start" | "doors" | "day_before"; max_per_person: number | null; tickets_cfg: Boleto[]; tables_cfg: Mesa[]; addons_cfg: Extra[];
   status: EstadoEvt; hidden_at: string | null; hidden_reason: string | null; review_note: string | null; review_reason_key: string | null; reviewed_at: string | null;
@@ -93,7 +93,7 @@ type Fila = {
   submitted_at: string | null; approved_at: string | null; version: number; origin: "panel" | "publica"; cancel_reason: string | null; created_at: string;
 };
 const COLS = `e.id::text, e.slug, e.business_id, e.city_id, e.format, e.title, e.description, e.genres, e.min_age, e.id_required, e.dress_code, e.kids, e.food_paid_at_venue, e.before_you_go,
-  e.venue_mode, e.venue_name, e.venue_address, e.start_date::text, e.start_min, e.end_min, e.doors_before_min, e.entry, e.rsvp_capacity, e.party_max, e.door_count, e.sales_until,
+  e.venue_mode, e.venue_name, e.venue_address, e.venue_zip, e.start_date::text, e.start_min, e.end_min, e.doors_before_min, e.entry, e.rsvp_capacity, e.party_max, e.door_count, e.sales_until,
   e.max_per_person, e.tickets_cfg, e.tables_cfg, e.addons_cfg, e.status, e.hidden_at, e.hidden_reason, e.review_note, e.review_reason_key, e.reviewed_at, e.pending, e.pending_status,
   e.pending_note, e.pending_at, e.submitted_at, e.approved_at, e.version, e.origin, e.cancel_reason, e.created_at`;
 export async function filaEvento(q: Pick<PoolClient, "query">, id: string, negocio: string | null, lock = false) {
@@ -109,7 +109,7 @@ async function lineasYFotos(q: Pick<PoolClient, "query">, id: string) {
 export function aBorrador(e: Fila, x: { lu: Linea[]; fotos: { id: string; url: string }[] }): BorradorEvt {
   return {
     fmt: e.format, ti: { es: e.title.es ?? "", en: e.title.en ?? "" }, desc: { es: e.description.es ?? "", en: e.description.en ?? "" }, fotos: x.fotos,
-    dia: e.start_date, h0: e.start_min, h1: e.end_min, puertas: e.doors_before_min, donde: e.venue_mode, lugar: e.venue_name ?? "", dir: e.venue_address ?? "",
+    dia: e.start_date, h0: e.start_min, h1: e.end_min, puertas: e.doors_before_min, donde: e.venue_mode, lugar: e.venue_name ?? "", dir: e.venue_address ?? "", cp: e.venue_zip ?? "",
     entrada: e.entry, cupo: e.rsvp_capacity, personas: e.party_max, contar: e.door_count, boletos: e.tickets_cfg, mesas: e.tables_cfg, extras: e.addons_cfg,
     maxP: e.max_per_person ?? 0, hasta: e.sales_until, lu: x.lu, gen: e.genres, edad: e.min_age, pideId: e.id_required, vest: e.dress_code ?? { es: "", en: "" },
     ninos: !!e.kids, comidaLocal: e.food_paid_at_venue, antes: e.before_you_go,
@@ -125,9 +125,13 @@ async function escribir(c: PoolClient, id: string, d: BorradorEvt, F: FormatoEvt
   let set = `format = $2, title = $3::jsonb, description = $4::jsonb, genres = $5::text[], id_required = $6, dress_code = $7::jsonb, kids = $8, food_paid_at_venue = $9,
              before_you_go = $10::jsonb, rsvp_capacity = $11, party_max = $12, door_count = $13, sales_until = $14, max_per_person = $15`;
   if (todo) {
-    p.push(d.dia, d.h0, d.h1, d.puertas, d.donde, d.lugar || null, d.dir || null, d.edad, d.entrada, JSON.stringify(d.boletos), JSON.stringify(d.mesas), JSON.stringify(d.extras), geo);
+    p.push(d.dia, d.h0, d.h1, d.puertas, d.donde, d.lugar || null, d.dir || null, d.edad, d.entrada, JSON.stringify(d.boletos), JSON.stringify(d.mesas), JSON.stringify(d.extras), geo, d.donde === "other" && d.cp ? d.cp : null);
+    // 6b · «Otro lugar» se ubica con el geocodificador propio (calles del Censo, dir_ubicar de 0025) con la dirección y el código postal;
+    // si no se encuentra, queda sin punto (sale con la dirección escrita y sin mapa). En mi local: el punto del negocio.
     set += `, start_date = $16::date, start_min = $17, end_min = $18, doors_before_min = $19, venue_mode = $20, venue_name = $21, venue_address = $22, min_age = $23, entry = $24,
-             tickets_cfg = $25::jsonb, tables_cfg = $26::jsonb, addons_cfg = $27::jsonb, geom = case when $20 = 'own' then $28::geography else null end`;
+             tickets_cfg = $25::jsonb, tables_cfg = $26::jsonb, addons_cfg = $27::jsonb, venue_zip = $29,
+             geom = case when $20 = 'own' then $28::geography
+                         else (select st_setsrid(st_point(u.lng, u.lat), 4326)::geography from dir_ubicar(coalesce($22, ''), coalesce($29, '')) u limit 1) end`;
   }
   await c.query(`update events set ${set} where id = $1::bigint`, p);
 }
@@ -232,6 +236,9 @@ export async function enviarEvento(a: { userId: string; negocio: string }, id: s
 
 /* Revisión o, para un organizador verificado, publicado al instante (aprobado por el sistema: approved_by null). */
 async function enviarEn(c: PoolClient, id: string, userId: string, verificado: boolean, como: "submitted" | "resubmitted"): Promise<{ envio: Envio }> {
+  // 6b · Enviar a publicar enciende el módulo Eventos del negocio si estaba apagado (sin él, nada sale al público; el panel lo muestra).
+  await c.query(`update businesses b set modules_on = array(select distinct x from unnest(b.modules_on || array['eventos']) x), updated_at = now()
+                  from events e where e.id = $1::bigint and b.id = e.business_id and not ('eventos' = any(b.modules_on))`, [id]);
   if (verificado) {
     await c.query(`update events set status = 'live', submitted_at = now(), approved_at = now(), approved_by = null, review_note = null, review_reason_key = null where id = $1::bigint`, [id]);
     await registrar(c, id, como, "business", userId, null, null);

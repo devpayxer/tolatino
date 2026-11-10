@@ -281,6 +281,10 @@ export function N360({ n, tab, din, evts = null }: { n: Negocio360; tab: string;
           {!evts.filas.length ? <A.AdminNote tone="info" icon="ticket">Sin eventos enviados.</A.AdminNote> : null}
           {evts.org.bloqueado ? <A.AdminNote tone="bad" icon="ban">{`Bloqueado para publicar eventos: ${evts.org.bloqueado}`}</A.AdminNote> : null}
           {(() => { const L = accionesOrg({ id: n.id, name: n.name, verificado: evts.org.verificado, bloqueado: evts.org.bloqueado }, { setConf, puede: evts.puede }); return L.length ? <PanelBloques bloques={[{ type: "acts", items: L }]} /> : null; })()}
+          {/* 6b · Pausar el módulo Eventos de este negocio: ninguno de sus eventos sale; el dueño ve el motivo en su panel. */}
+          {P.retirar ? (n.modsOff.eventos
+            ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Eventos?", hacer: (m) => moduloPausar(n.id, "eventos", false, m) })}>{`Eventos en pausa: ${n.modsOff.eventos.reason}`}</A.AdminNote>
+            : <A.AdminNote tone="info" icon="ticket" cta="Pausar Eventos" onCta={() => setConf({ titulo: "Pausar Eventos", sub: "Sus eventos dejan de salir en Eventos y en su página hasta que lo reactives (no cambian de estado). El dueño ve el motivo en su panel.", peligro: true, plantillas: ["Eventos engañosos", "Reportes de vecinos", "Cancela seguido sin avisar"], hacer: (m) => moduloPausar(n.id, "eventos", true, m) })}>Eventos activo: sus eventos publicados salen al público.</A.AdminNote>) : null}
         </> : null}
         {P.retirar && n.plan === "pro" ? (n.modsOff.jobs
           ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Jobs?", hacer: (m) => moduloPausar(n.id, "jobs", false, m) })}>{`Jobs en pausa: ${n.modsOff.jobs.reason}`}</A.AdminNote>

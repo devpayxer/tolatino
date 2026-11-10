@@ -1957,3 +1957,54 @@ Qué mirar en el sandbox, paso a paso (teléfono y escritorio):
 Huecos compuestos con piezas del sistema (capturas locales e6a-*, teléfono y escritorio): la cola «Eventos a revisar» y la ficha del evento en el
 Super Admin (kv, fotos, filas, «Lo que cambia», línea de tiempo), Organizadores (lista con acciones) y la ficha del evento en el panel
 (bloque `evhd` portado del Panel v2).
+
+### 6b · Eventos: el módulo del cliente — buscar, Esta noche, la ficha, guardar y RSVP (+ ficha, Inicio, Buscar, Ciudad, Noche, Hoy) (10 nov)
+Qué mirar en el sandbox, paso a paso (teléfono y escritorio):
+1. **Eventos** (pestaña EVENTOS, sin entrar): arriba «Esta noche» como historias (solo si hay algo hoy), el destacado, la línea fija «El
+   precio que ves es el que pagas», los chips de fecha y de tipo, «N EVENTOS EN HAZLETON» y las secciones Esta noche · Esta semana · Este
+   fin de semana · Más adelante. Prueba «Con boleto», «Bachata» y «Hoy» con «Con boleto» (dice «Nada con esos filtros»). Con más de 20
+   eventos sale **Ver más**.
+2. **Ver como historias**: una por evento de hoy; «Voy · Gratis» (pide entrar) guarda tu RSVP. En escritorio, flechas.
+3. **La ficha**: «Jueves de Bachata» (La Terraza) es **oscura**, con line-up, boletos y mesas que solo se ven y el botón **Venta pronto**
+   (la venta llega con 6c). «Sancocho del domingo» (Sabor) es **clara**, con **¿Cuántos van?**: elige 2 y **Voy · 2**; luego cámbialo a 1
+   y toca **Ya no voy**. Prueba **Calendario** (baja el .ics), **Cómo llegar** y el corazón (te pide entrar y vuelve).
+4. **Cupo lleno**: con un evento de cupo chico, dos teléfonos a la vez por el último lugar: uno entra y el otro ve «Cupo lleno».
+5. **Mi cuenta › Guardados › Eventos**: «Vas» (con «Ya no voy») y «Guardados» (con «Quitar»). Arriba de Eventos, «Mis boletos y RSVP».
+6. **La página de La Terraza › Eventos** (pestaña nueva, solo Pro), **Inicio › Esta semana**, **Buscar «sancocho»** (sección Eventos y
+   pestaña Eventos con Todos · Hoy · Este fin de semana · Gratis) y **Ciudad** («N negocios · M eventos»).
+7. **Panel de La Terraza (570-555-0366) › Eventos**: el interruptor **Eventos en To'Latino**: apágalo y mira que sus eventos ya no salen
+   (ni la ficha abre); enciéndelo otra vez. En **Lo que vendes** sale «Eventos · ENCENDIDO».
+8. **Super Admin (570-555-0199) › Negocios 360° › La Terraza › Contenido › Pausar Eventos** con motivo: el panel dice «PAUSADO POR
+   TO'LATINO» con el motivo; **Reanudar**.
+9. **Panel de Sabor (570-555-0133) › Eventos › «Sancocho del domingo»**: **QUIÉN VA** con personas (nombre e inicial). En el Super Admin,
+   la ficha del evento dice «SALE EN EVENTOS» y los **últimos RSVP**.
+10. **Noche**: en el panel de La Terraza › Lo que vendes › Servicios, una «Noche especial» elige **El evento al que lleva**; en su página
+    la noche especial dice **Ver evento** y abre el evento.
+11. **Novedades** (Sabor): una novedad con el botón **Evento** → en su página «Ver evento» y en **Hoy en el barrio** «EVENTO · VER
+    EVENTO». Si el evento se oculta, la novedad deja de salir.
+12. **Otro lugar**: crea un evento «En otro lugar» con dirección y **código postal**: sale en el mapa con «Cómo llegar» y la distancia (en
+    el sandbox, con las calles del Censo cargadas por `infra/direcciones`).
+
+**Decidí X; si prefieres Y, se cambia (6b):**
+- **«Entrada libre · sin lista» no lleva RSVP** (el panel de 6a dice «No se aparta lugar»); el RSVP es solo de «Gratis con RSVP». El
+  prototipo mostraba «RSVP opcional» en lo gratis.
+- **El módulo Eventos decide si se ven:** la base exige el módulo encendido por el negocio, sin pausa del admin, la categoría que lo
+  admite (Catálogo) y el organizador sin bloquear. Al llegar 0107, los negocios que ya tenían eventos quedaron con el módulo encendido, y
+  **enviar un evento a revisión o publicarlo enciende el módulo** si estaba apagado (es pedir que salga); apagarlo después lo apaga todo.
+- **El RSVP guarda el lugar hasta las puertas + 30 min** (Configuración › Eventos › `rsvp_guarda_min`); después vence en el barrido y el
+  lugar se libera; «van» sigue contando a quien dijo que iba. El aviso «Abrieron las puertas» dice hasta qué hora; «Mañana: …» sale el día
+  antes desde las 10 AM a quien hizo el RSVP hace más de 1 h, y «Un evento que guardaste es mañana» a quien lo guardó y no va. Ninguno por SMS.
+- **Sección «Esta semana»** en la lista (entre Esta noche y Este fin de semana): el prototipo tenía solo Esta noche · Este fin de semana ·
+  Más adelante porque su «hoy» era jueves.
+- **Las caras de «quién va»** del prototipo no se copian (serían personas reales): sale «N vecinos van» solo con el número.
+- **Boletos**: en 6b la ficha muestra tipos, precios (cargos incluidos) y mesas, y el botón dice «Venta pronto»; la venta, el QR del enlace
+  para compartir y «Mis boletos» llegan con 6c. «Mis boletos y RSVP» lleva por ahora a Mi cuenta › Guardados › Eventos.
+- **Destacado**: la próxima fiesta o show con cartel en el radio (si no hay, el próximo evento con cartel); no se paga.
+- **Otro lugar sin ubicar**: si la dirección y el código postal no se encuentran en las calles del Censo, el evento sale con la dirección
+  escrita y sin mapa (no se bloquea). La ciudad del evento sigue siendo la del negocio.
+- **Quien trabaja desde casa** y hace un evento «en mi local»: sale «Zona de {ciudad} · la dirección exacta te la da el organizador», sin
+  dirección ni «Cómo llegar».
+- **Inicio › Esta semana** usa la tarjeta del sistema (EventCard) con día y hora arriba; oscura para fiesta o show.
+Huecos compuestos con piezas del sistema (capturas locales e6b-*, teléfono y escritorio): QUIÉN VA del panel (kpis + filas), el
+interruptor del módulo (fila con interruptor), «El evento al que lleva» de la noche especial y el botón «Evento» de Novedades (chips y
+filas), y en el Super Admin la nota «SALE EN EVENTOS» con los últimos RSVP.

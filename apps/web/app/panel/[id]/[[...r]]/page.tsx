@@ -19,7 +19,7 @@ import type { RsvPanel } from "../../Reservas";
 import { accesoPanel, datosPanel } from "@/lib/panel";
 import { resenaPanel, resenasPanel, resenasSinResponder, type FiltroPanel } from "@/lib/resenas";
 import type { ResPanel } from "../../ResenasPanel";
-import { itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
+import { eventosNovedad, itemsNovedad, novedadPanel, novedadesPanel } from "@/lib/novedades";
 import type { NovData } from "../../NovedadesPanel";
 import type { CupData } from "../../CuponesPanel";
 import { cuponesNegocio } from "@/lib/cupones";
@@ -110,6 +110,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
     lista: ruta.sec === "pag" && ruta.sub === "nov" ? await novedadesPanel(d.id) : undefined,
     det: nid && /^\d+$/.test(nid) ? await novedadPanel(d.id, nid) : undefined,
     items: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await itemsNovedad(d.id) : undefined,
+    eventos: nd && (nd === "new" || /^(edit|dup):/.test(nd)) ? await eventosNovedad(d.id) : undefined,
   };
   // Cupones por monedas (5g · Tu página › Cupones por monedas y su editor): piden acceso a «Tu página».
   const cup: CupData = { lista: pag && ((ruta.sec === "pag" && ruta.sub === "cup") || ruta.det?.startsWith("cup:")) ? await cuponesNegocio(d.id) : undefined };
@@ -244,18 +245,24 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   })() : undefined;
   // Eventos (6a · DASH-EVENTOS): la lista, los formatos de su categoría, el organizador (verificado / bloqueado) y la ficha o el editor.
   // Pide la parte «evt» del equipo (el dueño siempre).
-  const evtOk = acc.partes.includes("all") || acc.partes.includes("evt");
+  const evtOk = d.evtAplica && (acc.partes.includes("all") || acc.partes.includes("evt"));
   if (ruta.det?.startsWith("evt:") && !evtOk) ruta.det = null;
   const evt = evtOk && (ruta.sec === "evt" || ruta.det?.startsWith("evt:")) ? await (async () => {
     const E = await import("@/lib/evt"), { valores } = await import("@/lib/config");
     const eid = ruta.det?.startsWith("evt:") ? ruta.det.slice(4).replace(/^edit:/, "") : "";
-    const [lista, formatos, generos, org, cfg, fee, b] = await Promise.all([
+    const [lista, formatos, generos, org, cfg, fee, b, mod, quien] = await Promise.all([
       E.eventosDelNegocio(d.id), E.formatosDe(d.cat), E.generos(), E.organizadorDe(d.id), valores("evt_revision_h", "evt_fotos_max", "evt_dias_adelante"),
       db().query<{ bp: number; fixed: number }>(`select rate_bp as bp, fixed_cents as fixed from fee_rules where kind = 'bol' and effective_from <= now() order by effective_from desc, id desc limit 1`),
       db().query<{ dir: string | null }>(`select address as dir from businesses where id = $1`, [d.id]),
+      // 6b · El módulo Eventos: si su categoría lo admite, si está encendido y si To'Latino lo pausó (con el motivo).
+      db().query<{ aplica: boolean; on: boolean; pausa: string | null }>(
+        `select coalesce(c.allowed_modules, '[]'::jsonb) ? 'eventos' as aplica, 'eventos' = any(b.modules_on) as on, b.modules_off->'eventos'->>'reason' as pausa
+           from businesses b join categories c on c.id = b.category_id where b.id = $1`, [d.id]),
+      // 6b · QUIÉN VA: los RSVP del evento abierto (nombre + inicial; nunca teléfono).
+      /^\d+$/.test(eid) ? (await import("@/lib/evt-publico")).ultimosRsvp(eid, 100, d.id) : Promise.resolve([]),
     ]);
     return { lista, formatos, generos, org, det: /^\d+$/.test(eid) ? await E.eventoPanel(d.id, eid) : null, cfg: { revisionH: cfg.evt_revision_h, fotosMax: cfg.evt_fotos_max, diasAdelante: cfg.evt_dias_adelante },
-      fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null };
+      fee: fee.rows[0] ?? null, hoy: d.hoy.fecha, dir: b.rows[0]?.dir ?? null, mod: mod.rows[0] ?? { aplica: false, on: false, pausa: null }, quien };
   })() : undefined;
   return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} />;
 }

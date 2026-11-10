@@ -294,9 +294,10 @@ export async function tipoNoche(id: string, kind: string | null, motivo: string)
     return null;
   }, kind ? "Tipo ajustado. El dueño lo ve en su panel." : "Vuelve al tipo de sus subcategorías.");
 }
-export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs" | "svc" | "citas", pausar: boolean, motivo: string): Promise<ResAdm> {
-  if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs", "svc", "citas"].includes(modulo)) return no("Ese módulo no existe.");
-  const nombre = modulo === "svc" ? "Servicios" : modulo === "citas" ? "Citas" : modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
+export async function moduloPausar(id: string, modulo: "menu" | "pedidos" | "delivery" | "rsv" | "nov" | "jobs" | "svc" | "citas" | "eventos", pausar: boolean, motivo: string): Promise<ResAdm> {
+  if (!["menu", "pedidos", "delivery", "rsv", "nov", "jobs", "svc", "citas", "eventos"].includes(modulo)) return no("Ese módulo no existe.");
+  // 6b · Eventos: pausado, ninguno de sus eventos sale al público (la base vuelve a calcular `listable`); el panel dice el motivo.
+  const nombre = modulo === "eventos" ? "Eventos" : modulo === "svc" ? "Servicios" : modulo === "citas" ? "Citas" : modulo === "menu" ? "Menú" : modulo === "jobs" ? "Jobs" : modulo === "nov" ? "Novedades" : modulo === "rsv" ? "Reservaciones" : modulo === "delivery" ? "Delivery" : "Pedidos en línea";
   return hacer(id, "retirar", motivo, async (c, s, b, m) => {
     const cur = (await c.query<{ off: Record<string, unknown> }>(`select modules_off as off from businesses where id = $1`, [b.id])).rows[0]?.off ?? {};
     if (!!cur[modulo] === pausar) return pausar ? "Ya está pausado." : "No está pausado.";

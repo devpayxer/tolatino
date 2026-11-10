@@ -707,13 +707,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (validados por el servidor y la base: sin alcohol, botellas ni hookah). 6c los pasa a `ticket_types`, `event_tables`, `event_addons`
       con existencias por fecha, y **antes de vender exige Cobros con tarjeta encendido** (`stripe_accounts.charges_enabled`) del
       organizador. Hasta entonces el editor y Publica tu evento dicen «La venta en la app abre pronto». (6a, 9 nov)
-- [ ] **6a → 6b · «Otro lugar» sin ubicar en el mapa:** un evento en otro lugar guarda nombre y dirección pero `geom` queda vacío (no hay
+- [x] **6a → 6b · «Otro lugar» sin ubicar en el mapa:** _hecho en 6b (10 nov): pide el código postal y se ubica con `dir_ubicar` (calles
+      del Censo); sin coincidencia sale con la dirección escrita y sin mapa._ un evento en otro lugar guarda nombre y dirección pero `geom` queda vacío (no hay
       geocodificador propio todavía); su ciudad es la del negocio. 6b lo ubica con el Nominatim propio para el radio y el mapa. (6a, 9 nov)
 - [ ] **6a → 6f · Series y varios días:** el editor publica un solo día (con «Repetir otro día»); «Se repite» y «Varios días seguidos» del
       calendario llegan en 6f. La semilla mete el sancocho de cada domingo, la vigilia de cada mes y el festival de 3 días como un solo día. (6a, 9 nov)
 - [ ] **6a → 6c/6g · Super Admin › Eventos y boletos: «Buscar boleto» y «Modo puerta»:** las dos pestañas llegan con la venta (6c) y la
       puerta (6g); hoy salen Eventos y Organizadores. KPI BOLETOS EMITIDOS · BRUTO BOLETOS, con 6c. (6a, 9 nov)
-- [ ] **6a → 6b · Encender / apagar el módulo Eventos en «Lo que vendes»:** el panel muestra Eventos a todo negocio con la parte «evt»
+- [x] **6a → 6b · Encender / apagar el módulo Eventos en «Lo que vendes»:** _hecho en 6b (10 nov): interruptor en Panel › Eventos y fila
+      en Lo que vendes; pausa en N360; la base lo exige en `listable`; Eventos sale en el panel solo donde la categoría lo admite._ el panel muestra Eventos a todo negocio con la parte «evt»
       (todas las categorías publican algún formato). El interruptor del módulo (`modules_on` «eventos») y la pausa del admin por módulo
       se conectan cuando haya página pública (6b). (6a, 9 nov)
 - [ ] **6a · Fotos locales:** en local `/medios/…` no se sirve (lo sirve Caddy en el sandbox): carteles y fotos salen grises en las capturas
@@ -722,3 +724,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **6a · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (los avisos y el panel sí ES/EN). (6a, 9 nov)
 - [ ] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** hoy vive en la base (0106) y se lee de ahí; el editor
       del catálogo llega en 6j. (6a, 9 nov)
+
+## Fase 6 · 6b (el módulo Eventos del cliente)
+- [ ] **6b → 6c · Comprar boletos:** la ficha muestra tipos, precios (cargos incluidos) y mesas con «Venta pronto»; «Mis boletos y RSVP»
+      lleva a Mi cuenta › Guardados › Eventos hasta que exista Mi cuenta › Boletos. El **QR del enlace al compartir** (tarjeta con QR)
+      llega con el generador de QR de código abierto de 6c. (6b, 10 nov)
+- [ ] **6b · «Otro lugar» fuera de las 5 ciudades:** no se bloquea; la ciudad del evento es la del negocio. Decidir si un evento fuera del
+      radio de su ciudad no se publica (plan §2 0106). (6b, 10 nov)
+- [ ] **6b · Recordatorio del día antes (`rsvp_recordatorio`):** construido en el barrido (desde las 10 AM, a quien hizo el RSVP hace más
+      de 1 h); el e2e prueba el de «evento guardado» y el aviso al abrir puertas, no este (la hora de creación del RSVP no se puede mover en
+      la base). Mirarlo en el sandbox con un RSVP de un evento de mañana. (6b, 10 nov)
+- [ ] **6b · Mi cuenta › Avisos › Eventos (grupo `events` en notif_prefs):** llega con 6j; hoy los avisos de RSVP y de evento guardado no
+      se pueden apagar por grupo. (6b, 10 nov)
+- [ ] **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
+      con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov)
+- [ ] **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov)
+- [ ] **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov)
+- [ ] **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
+

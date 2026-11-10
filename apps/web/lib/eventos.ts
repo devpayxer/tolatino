@@ -5,7 +5,7 @@ import { db } from "./db";
 
 /* Analítica propia (HERRAMIENTAS §1): eventos de la app y actividad por día, en nuestra base. Sin datos personales: quién
    (cuenta o dispositivo), qué (lista cerrada), sobre qué (ref) y la ciudad. Nunca rompe la pantalla: si falla, se calla. */
-export type Evento = "ver_categoria" | "ver_ficha" | "buscar" | "contactar" | "entrar" | "registrarse" | "publicar_negocio" | "recomendar" | "reclamar" | "reportar_foto" | "pedir_aviso" | "pedir";
+export type Evento = "ver_categoria" | "ver_ficha" | "buscar" | "contactar" | "entrar" | "registrarse" | "publicar_negocio" | "recomendar" | "reclamar" | "reportar_foto" | "pedir_aviso" | "pedir" | "ver_evento" | "rsvp" | "guardar_evento" | "compartir_evento";
 const ROBOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|whatsapp/i;
 const CIUDAD = /^[a-z]{3}$/;
 
