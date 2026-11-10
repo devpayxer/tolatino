@@ -85,6 +85,8 @@ begin
     if exists (select 1 from events e where e.business_id = b.id and e.title->>'es' = x->'ti'->>'es') then continue; end if;
     hoy := (now() at time zone b.timezone)::date;
     st := x->>'st';
+    -- Sin una persona del equipo que apruebe (base nueva, como en CI) nada se pone en vivo sin revisión: queda en la cola.
+    if adm is null and st in ('live', 'changes') and b.id <> 'parroquia-santa-maria' then st := 'review'; end if;
     insert into events (slug, city_id, business_id, format, title, description, genres, min_age, id_required, dress_code, kids, food_paid_at_venue, before_you_go, venue_mode, venue_name, venue_address, geom,
                         start_date, start_min, end_min, doors_before_min, entry, rsvp_capacity, party_max, tickets_cfg, tables_cfg, addons_cfg, status, submitted_at, approved_at, approved_by, reviewed_at, reviewed_by,
                         review_reason_key, review_note, created_by)
