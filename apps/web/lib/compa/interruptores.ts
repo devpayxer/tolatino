@@ -35,6 +35,13 @@ export async function disponible(x: { uso: Uso; canal: Canal; ciudad: string | n
   return { ok: true };
 }
 
+/* 7h · ¿Sale algo por este canal? (WhatsApp o SMS): el candado de producción y el interruptor POR CANAL. La salida (canales.ts) lo vuelve a
+   leer antes de CADA envío: canal apagado = nada sale, aunque el turno ya se haya hecho. */
+export async function canalEncendido(canal: "whatsapp" | "sms"): Promise<boolean> {
+  if (candadoProduccion()) return false;
+  return !!(await db().query<{ on: boolean }>(`select enabled as on from feature_flags where key = $1`, [flagCanal(canal)])).rows[0]?.on;
+}
+
 /* ── Super Admin › El Compa › Interruptores ── */
 export type EstadoInterruptores = {
   niveles: { uso: Uso; on: boolean; nota: string | null; at: string | null }[];

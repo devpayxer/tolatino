@@ -68,7 +68,7 @@ export async function compaPanelNuevo(id: string): Promise<ResCpa> {
 }
 
 const SIN_MSG: ResCpa = { ok: false, mensaje: { es: "Las respuestas automáticas las cambia el dueño o quien lleva Mensajes.", en: "Auto-replies are changed by the owner or whoever handles Messages." } };
-export async function compaAutoGuardar(id: string, cambios: { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string } }): Promise<ResCpa> {
+export async function compaAutoGuardar(id: string, cambios: { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string }; canales?: string[] }): Promise<ResCpa> {
   if (!(await mismoOrigen())) return SIN;
   const a = typeof id === "string" ? await accesoPanel(id, "msg") : null;
   if (!a) return SIN_MSG;
@@ -77,6 +77,7 @@ export async function compaAutoGuardar(id: string, cambios: { enabled?: boolean;
     enabled: typeof x.enabled === "boolean" ? x.enabled : undefined,
     temas: Array.isArray(x.temas) ? x.temas.slice(0, 4).map((t) => String(t).slice(0, 20)) : undefined,
     nota: x.nota && typeof x.nota === "object" ? { es: String(x.nota.es ?? "").slice(0, 2000), en: String(x.nota.en ?? "").slice(0, 2000) } : undefined,
+    canales: Array.isArray(x.canales) ? x.canales.slice(0, 3).map((t) => String(t).slice(0, 10)) : undefined,   // 7h
   });
   return r.ok ? { ok: true } : { ok: false, mensaje: r.msg };
 }

@@ -27,7 +27,7 @@ export async function datosNotif(s: Staff, tab: "tpl" | "log" | "rules" | "mail"
   const [k, T, L, M, K] = await Promise.all([
     db().query<{ hoy: number; sms: number; pruebas: number; frenados: number; fallos: number; leidos: number }>(
       `select count(*)::int as hoy, count(*) filter (where n.sms_status = 'enviado')::int as sms, count(*) filter (where n.sms_status in ('pruebas', 'pendiente'))::int as pruebas,
-              count(*) filter (where n.sms_status in ('apagado', 'silencio'))::int as frenados, count(*) filter (where n.sms_status in ('fallo', 'sin_proveedor'))::int as fallos,
+              count(*) filter (where n.sms_status in ('apagado', 'silencio', 'baja'))::int as frenados, count(*) filter (where n.sms_status in ('fallo', 'sin_proveedor'))::int as fallos,
               count(*) filter (where n.read_at is not null)::int as leidos
          from notifications n where n.created_at > now() - interval '1 day' and ${CIUD}`, [s.cities]),
     db().query<Plantilla>(

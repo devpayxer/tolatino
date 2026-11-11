@@ -80,7 +80,8 @@ function conTiempo<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<T>((_, no) => { t = setTimeout(() => no(new ErrorModelo("timeout", true, "tiempo agotado")), ms); })]).finally(() => clearTimeout(t));
 }
 
-export async function turno(q: { userId: string }, x: { conversacion?: string | null; texto: string; uso: Uso; canal: Canal; superficie: "support_page" | "help_sheet"; lang: Lang; operacion?: string | null }): Promise<Turno> {
+export async function turno(q: { userId: string }, x: { conversacion?: string | null; texto: string; uso: Uso; canal: Canal; superficie: "support_page" | "help_sheet" | "channel"; lang: Lang; operacion?: string | null;
+  accionMin?: number }): Promise<Turno> {   // 7h · por WhatsApp/SMS: superficie «channel» y la acción vive lo que su enlace (compa_link_min)
   const lang: Lang = x.lang === "en" ? "en" : "es", es = lang === "es";
   if (x.uso !== "neighbor") return { ok: false, msg: { es: "Ese uso de El Compa todavía no está.", en: "That El Compa use is not available yet." } };
   const crudo = limpio(x.texto, 800);
@@ -131,7 +132,7 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
       const m = (await c.query<{ id: string }>(
         `insert into compa_messages (conversation_id, city_id, sender, text, source_slug, source_label, chips, engine) values ($1, $2, 'compa', $3, $4, $5, $6, $7) returning id::text`,
         [conv.id, ciudad, tapar(r.texto).texto, slug, slug ? (es ? "SEGÚN EL CENTRO DE AYUDA" : "PER THE HELP CENTER") : null, chips, motor === "claude" ? "modelo" : motor])).rows[0]!;
-      return r.p ? { id: await proponer(c, { conversacion: conv.id, mensaje: Number(m.id), userId: q.userId, p: r.p }), tipo: r.p.type, target: r.p.target } : null;
+      return r.p ? { id: await proponer(c, { conversacion: conv.id, mensaje: Number(m.id), userId: q.userId, p: r.p, minutos: x.accionMin }), tipo: r.p.type, target: r.p.target } : null;
     });
     return { ok: true, conversacion: conv.number, motor, texto: r.texto, tipo: r.tipo, fuente: slug && r.titulo ? { slug, titulo: r.titulo, href: `/ayuda/${slug}` } : null,
       fuenteCuenta: r.fuente === "cuenta", chips, accion: acc, persona: r.persona ?? null, aviso, porque: r.porque ?? null };
@@ -196,7 +197,7 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
    máximo, y su salida SOLO después de verificar(). Recibe el sistema fijo del uso, los DATOS que armó el servidor para esa persona, los trozos
    ya tapados y la conversación (tapada). Si no hay modelo, no alcanza el tope, falla, tarda o no pasa el verificador: { ok: false } y quien
    llama contesta con las reglas fijas. */
-type Consulta = { uso: Uso; canal: Canal; ciudad: string; negocio?: string | null; userId: string; convId: number; lang: Lang; sistema: string; datos: Record<string, unknown>; trozos: TrozoModelo[]; vctx?: Contexto;
+type Consulta = { uso: Uso; canal: Canal; ciudad: string; negocio?: string | null; userId: string | null; convId: number; lang: Lang; sistema: string; datos: Record<string, unknown>; trozos: TrozoModelo[]; vctx?: Contexto;
   historial?: MensajeModelo[];   // 7f · la conversación de Mensajes (ya tapada) en vez de la de El Compa
   esquema?: Record<string, unknown> };   // 7g · el esquema de salida del uso (el copiloto); sin él, el de vecino, panel y respuestas
 type Consultado<T> = { ok: true; r: T; motor: Motor } | { ok: false; porque: string };
@@ -593,7 +594,7 @@ export const SISTEMA_BORRADOR = [
 const EN_P = /\b(the|you|your|do|does|what|when|where|how|open|close|hours|have|is|are|can|please|thanks|thank|hi|hello|today|tomorrow)\b/gi;
 const ES_P = /\b(el|la|los|las|que|qué|cuándo|cuando|dónde|donde|cómo|como|tienen|abren|hola|gracias|por|para|es|hay|mañana|hoy|tiene|cuánto|cuanto)\b/gi;
 /* El idioma del cliente: el de su mensaje; si no se sabe, el de su cuenta. */
-const idiomaDe = (t: string, def: Lang): Lang => { const e = (t.match(EN_P) ?? []).length, s = (t.match(ES_P) ?? []).length; return e > s ? "en" : s > e ? "es" : def; };
+export const idiomaDe = (t: string, def: Lang): Lang => { const e = (t.match(EN_P) ?? []).length, s = (t.match(ES_P) ?? []).length; return e > s ? "en" : s > e ? "es" : def; };
 type Auto = { texto: string; pasar: boolean; motor: Motor; fuente: { slug: string; titulo: Bi } | "pagina" | null; porque: string };
 type AjustesNeg = { temas: Tema[]; nota: Bi };
 async function ajustesNegocio(negocio: string): Promise<AjustesNeg> {
@@ -620,8 +621,8 @@ export async function debeContestarAuto(negocio: string, hilo: string | null, us
   return d.ok && !tope && !off && r.hoy < lim.compa_auto_dia_negocio && (n.rows[0]?.h ?? 0) < lim.compa_msgs_hora && (n.rows[0]?.d ?? 0) < lim.compa_msgs_dia;
 }
 
-async function respuestaAuto(q: { userId: string }, x: { borrador: boolean; convId: number; ciudad: string; negocio: { id: string; nombre: string }; lang: Lang; ultimo: string;
-  historial: MensajeModelo[] | null; ctx: ContextoNegocio }): Promise<Auto | { off: true; porque: string }> {
+async function respuestaAuto(q: { userId: string | null }, x: { borrador: boolean; convId: number; ciudad: string; negocio: { id: string; nombre: string }; lang: Lang; ultimo: string;
+  historial: MensajeModelo[] | null; ctx: ContextoNegocio; canal?: Canal }): Promise<Auto | { off: true; porque: string }> {
   const lang = x.lang, N = x.negocio.nombre;
   const pasar = (l: Bi, porque: string): Auto => (x.borrador ? { texto: LINEAS_AUTO.borradorRevisar[lang], pasar: false, motor: "reglas", fuente: null, porque: `borrador:${porque}` }
     : { texto: l[lang], pasar: true, motor: "reglas", fuente: null, porque });
@@ -644,7 +645,7 @@ async function respuestaAuto(q: { userId: string }, x: { borrador: boolean; conv
     return { texto: w.r.respuesta, pasar: false, motor: "reglas", fuente: "pagina", porque };
   };
   // ── El modelo (Haiku): por el tope, con tiempo máximo y verificado; y verificarAuto encima ──
-  const base = { canal: "app" as Canal, ciudad: x.ciudad, negocio: x.negocio.id, userId: q.userId, convId: x.convId, lang, trozos, vctx, historial: x.historial ?? undefined };
+  const base = { canal: x.canal ?? ("app" as Canal), ciudad: x.ciudad, negocio: x.negocio.id, userId: q.userId, convId: x.convId, lang, trozos, vctx, historial: x.historial ?? undefined };
   const q2 = x.borrador ? await consultar({ ...base, uso: "owner", sistema: SISTEMA_BORRADOR, datos: { ...x.ctx.datos, borrador: true } })
     : await consultar({ ...base, uso: "auto_reply", sistema: SISTEMA_AUTO, datos: x.ctx.datos });
   if (!q2.ok) return q2.porque === "tope" || q2.porque === "apagado" ? { off: true, porque: q2.porque } : reglas(q2.porque);
@@ -768,6 +769,75 @@ async function unaRespuestaAuto(t: HiloAuto): Promise<string> {
     for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: t.quien, texto: ultimo.slice(0, 80) }, { href: `/panel/${t.negocio}/mensajes?det=msg:${t.id}`, ref: ["chat", t.id] }).catch(() => undefined);
   }
   return otra ? "otra" : resp.pasar ? "paso" : "ok";
+}
+
+/* 7h · La respuesta automática de un negocio por WhatsApp o SMS (al número del negocio conectado a To'Latino). Quien llama (canales.ts) ya
+   decidió que toca contestar (debeContestarCanal: Pro, encendidas, ese canal en POR DÓNDE, cerrado, interruptores, tope, límites) y el
+   texto llega TAPADO. Igual que en Mensajes: el servidor antes del modelo, la página pública del negocio como DATOS, verificarAuto, la
+   presentación la primera vez y «Le paso tu mensaje…» al negocio (aviso compa_te_paso). Nunca datos de una cuenta: la conversación es del
+   CONTACTO (su teléfono como huella y cifrado), aunque ese teléfono tenga cuenta. null = nada de El Compa (el negocio contesta como siempre). */
+export async function respuestaAutoCanal(x: { negocio: { id: string; nombre: string; ciudad: string }; canal: "whatsapp" | "sms"; contacto: { hash: string; enc: string };
+  texto: string; lang: Lang; numero: string }): Promise<{ texto: string; pasar: boolean; conversacion: number; numero: string; motor: Motor } | null> {
+  const lim = await valores("compa_auto_hilo_max", "compa_turnos_max"), ultimo = tapar(x.texto).texto.slice(0, 800), lang = x.lang, ciudad = x.negocio.ciudad;
+  type Conv = { id: number; number: string; seguidas: number; primera: boolean };
+  const conv = await tx(async (c): Promise<Conv> => {
+    await c.query(`select pg_advisory_xact_lock(hashtextextended($1, 0))`, [`compa-canal:${x.contacto.hash}:${x.negocio.id}`]);
+    let v = (await c.query<{ id: number; number: string; turns: number }>(
+      `select id::int, number, turns_n as turns from compa_conversations where contact_phone_hash = $1 and business_id = $2 and channel = $3 and use = 'auto_reply' and closed_at is null
+        order by started_at desc limit 1 for update`, [x.contacto.hash, x.negocio.id, x.canal])).rows[0];
+    if (v && v.turns >= lim.compa_turnos_max) {
+      await c.query(`update compa_conversations set closed_at = now(), outcome = case when outcome = 'open' then 'self_resolved' else outcome end where id = $1`, [v.id]);
+      v = undefined;
+    }
+    v ??= (await c.query<{ id: number; number: string; turns: number }>(
+      `insert into compa_conversations (number, use, channel, surface, contact_phone_enc, contact_phone_hash, city_id, lang, business_id)
+       values ('CP-' || nextval('compa_conversation_seq'), 'auto_reply', $1, 'business_chat', $2, $3, $4, $5, $6) returning id::int, number, 0 as turns`,
+      [x.canal, x.contacto.enc, x.contacto.hash, x.negocio.ciudad, lang, x.negocio.id])).rows[0]!;
+    await c.query(`insert into compa_messages (conversation_id, city_id, sender, contact_phone_hash, text) values ($1, $2, 'user', $3, $4)`, [v.id, ciudad, x.contacto.hash, tapar(ultimo || "(sin texto)").texto]);
+    const s = (await c.query<{ n: number; primera: boolean }>(
+      `select count(*) filter (where sender = 'compa' and at > now() - interval '1 day')::int as n, not bool_or(sender = 'compa') as primera from compa_messages where conversation_id = $1`, [v.id])).rows[0]!;
+    return { id: v.id, number: v.number, seguidas: s.n, primera: s.primera !== false };
+  });
+  // Como en Mensajes: como mucho compa_auto_hilo_max seguidas en un día; la última ya es «Le paso tu mensaje…»; después, nada.
+  if (conv.seguidas >= lim.compa_auto_hilo_max) return null;
+  let a: Auto | { off: true; porque: string };
+  if (conv.seguidas >= lim.compa_auto_hilo_max - 1) a = { texto: LINEAS_AUTO.ultimo(x.negocio.nombre)[lang], pasar: true, motor: "reglas", fuente: null, porque: "limite_hilo" };
+  else {
+    const aj = await ajustesNegocio(x.negocio.id), ctx = await contextoNegocio(x.negocio.id, lang, aj.temas, aj.nota);
+    if (!ctx) return null;
+    a = await respuestaAuto({ userId: null }, { borrador: false, convId: conv.id, ciudad: x.negocio.ciudad, negocio: { id: x.negocio.id, nombre: x.negocio.nombre }, lang, ultimo, historial: null, ctx, canal: x.canal });
+  }
+  if ("off" in a) return null;
+  const resp = a, texto = `${conv.primera ? `${LINEAS_AUTO.presentacion(x.negocio.nombre)[lang]} ` : ""}${resp.texto}`.slice(0, 1000), label = etiquetaAuto(resp, x.negocio.nombre, lang === "es");
+  await tx(async (c) => {
+    await c.query(`insert into compa_messages (conversation_id, city_id, sender, text, source_slug, source_label, chips, engine) values ($1, $2, 'compa', $3, $4, $5, '{}', $6)`,
+      [conv.id, ciudad, tapar(texto).texto, resp.fuente && resp.fuente !== "pagina" ? resp.fuente.slug : null, label, resp.motor === "claude" ? "modelo" : resp.motor]);
+    if (resp.pasar) await c.query(`insert into compa_handoffs (conversation_id, "to", reason, summary) values ($1, 'owner', 'owner', $2)`, [conv.id, ultimo.slice(0, 500) || null]);
+  });
+  // Aviso al negocio (dueño y quien lleva Mensajes): uno por conversación al día. Sin el teléfono del cliente (lo ve en su WhatsApp o su teléfono).
+  if (resp.pasar) {
+    const ya = (await db().query(`select 1 from compa_handoffs where conversation_id = $1 and "to" = 'owner' and at > now() - interval '1 day' offset 1`, [conv.id])).rowCount;
+    if (!ya) {
+      const { avisar } = await import("../avisos");
+      const L = (await db().query<{ id: string }>(
+        `select distinct user_id::text as id from business_members where business_id = $1 and status = 'active' and user_id is not null and (kind = 'owner' or 'all' = any(panel_access) or 'msg' = any(panel_access))`, [x.negocio.id])).rows;
+      const quien = x.canal === "whatsapp" ? "un cliente en WhatsApp" : "un cliente en SMS";
+      for (const u of L) await avisar(u.id, "compa_te_paso", { cliente: quien, texto: ultimo.slice(0, 80) }, { href: `/panel/${x.negocio.id}/compa`, ref: ["compa", conv.number] }).catch(() => undefined);
+    }
+  }
+  return { texto: tapar(texto).texto, pasar: resp.pasar, conversacion: conv.id, numero: conv.number, motor: resp.motor };
+}
+
+/* 7h · Panel › El Compa › LO QUE CONTESTÓ EL COMPA: lo que contestó por WhatsApp o SMS al número del negocio (solo respuestas automáticas de ESE
+   negocio, 30 días, 8 filas), sin el teléfono del cliente. Quien llama (ajustesAuto) ya pidió quién lleva Mensajes. */
+export async function registroCanalNegocio(negocio: string): Promise<{ id: string; quien: string; canal: string; q: string; a: string; paso: boolean; at: string }[]> {
+  return (await db().query<{ id: string; quien: string; canal: string; q: string; a: string; paso: boolean; at: string }>(
+    `select 'c' || m.id::text as id, case when c.channel = 'whatsapp' then 'Cliente en WhatsApp' else 'Cliente en SMS' end as quien, c.channel as canal,
+            coalesce((select left(q.text, 140) from compa_messages q where q.conversation_id = m.conversation_id and q.sender = 'user' and q.id < m.id order by q.id desc limit 1), '') as q,
+            left(m.text, 220) as a, exists (select 1 from compa_handoffs h where h.conversation_id = m.conversation_id and h."to" = 'owner' and h.at between m.at - interval '5 seconds' and m.at + interval '5 seconds') as paso,
+            to_char(m.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
+       from compa_messages m join compa_conversations c on c.id = m.conversation_id
+      where c.business_id = $1 and c.use = 'auto_reply' and c.channel in ('whatsapp', 'sms') and m.sender = 'compa' and m.at > now() - interval '30 days' order by m.at desc, m.id desc limit 8`, [String(negocio ?? "")])).rows;
 }
 
 /* «Pruébalo como cliente» (Panel › El Compa): la misma respuesta con los ajustes de AHORA, sin escribir en Mensajes ni en el registro del

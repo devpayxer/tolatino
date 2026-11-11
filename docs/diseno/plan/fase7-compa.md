@@ -681,7 +681,13 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       apagado (nivel, canal, ciudad) y al tope = Soporte y la cola texto a texto; cifras), uso «copilot» con el modelo del papel «copiloto»
       (Sonnet) por el tope y el libro; guardián `copilotoSoloBorrador` + 5 ampliados, 43/43 al revés (`alreves7g`). Sin probar con el modelo
       real (no hay llave); falta la corrida de CI (la hace la sesión principal).
-- [ ] WhatsApp y SMS contra simuladores: firma, idempotencia, identidad por teléfono verificado, acciones solo por enlace de un uso.
+- [x] WhatsApp y SMS contra simuladores: firma, idempotencia, identidad por teléfono verificado, acciones solo por enlace de un uso. — 7h (11 nov):
+      0123 aplicada dos veces en local y en una base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7h` 224 ✓
+      (firma mala, de otro cuerpo, sin firma, hora vieja/futura, JSON roto, 70 KB → rechazado sin guardar; repetido = una respuesta; sin cuenta y
+      sin encender = la misma fija; enlace de un uso: sin sesión → Entrar, otra cuenta repitiendo la petición real → no, usado, vencido, «No,
+      dejarla»; STOP/START/HELP; WhatsApp + ventana de 24 h; canal apagado; horas de silencio; límite; respuestas automáticas de un negocio por
+      WhatsApp; Super Admin › Canales y simulador; barrido y purga); contrato con las especificaciones oficiales de Telnyx y Meta; guardián
+      `canalConFirma` + 6 ampliados, 50/50 al revés (`alreves7h`). Sin probar con los proveedores reales (no hay cuentas); falta la corrida de CI.
 - [ ] Super Admin: `ADM-COMPA` (Resumen, Conversaciones con «Marcar respuesta incorrecta» y lecturas anotadas, Negocios, Interruptores y tope), Soporte,
       Usuarios y Negocios 360°, Configuración › El Compa y Soporte, Notificaciones, Analítica sin personas; cada acción con motivo, aviso y auditoría.
 - [ ] Batería del modelo real ≥ 95 % (o sin marcar si no hay clave, con el motivo); presupuesto de velocidad con la base de carga (cifras en PROGRESS);

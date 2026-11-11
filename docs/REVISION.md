@@ -3406,3 +3406,100 @@ Usa el modelo mayor (Sonnet) por el mismo tope. En el sandbox contesta el **simu
 
 **Pruebas (local):** `compa7g` 92 ✓ (390 y 1360); `sop7b` 104 ✓, `compa7c` 111 ✓, `compa7f` 130 ✓, `adm5i` ✓; guardianes 43/43 al revés
 (`alreves7g`) y los de 7a–7f otra vez (36, 45, 66, 33, 36, 40). 0122 dos veces y en una base nueva (semillas dos veces). Falta la corrida de CI.
+
+### 7h · El Compa por WhatsApp y SMS con enlace de un uso (vecinos y respuestas automáticas) (11 nov)
+Ya se le puede escribir a El Compa por **WhatsApp** y por **SMS**. Contesta corto, con la ayuda y con tus operaciones, **solo** a una cuenta que lo
+encendió y **solo** a su teléfono verificado; por mensaje **nunca** se hace nada: lo que cambia algo llega como **enlace de un uso** que se confirma
+en la app después de entrar. Los negocios Pro con su número conectado tienen sus respuestas automáticas también ahí. En el sandbox no hay llaves
+de Telnyx ni de Meta: **nada sale**; lo que «sale» lo ves en el **simulador** del Super Admin. Probado de punta a punta (`compa7h`, 224
+comprobaciones, 390 y 1360) con webhooks firmados con llaves de prueba locales.
+
+**Qué mirar, paso a paso (sandbox):**
+1. Entra como **Admin** (5705550199) → **El Compa · IA** → pestaña **Canales**. Arriba: ENTRADAS, RECHAZADAS, RESPUESTAS, STOP y el modo de cada
+   canal («Simulador del sandbox (no sale nada)»). En **NÚMEROS QUE RECIBEN**, **Conectar un número**: elige «SMS · de prueba», escribe
+   `570 555 9001` y un motivo → **Conectar** (es el número de To'Latino). Otra vez con «WhatsApp · de prueba», `570 555 9002, sabor-dominicano`
+   (el de Sabor Dominicano).
+2. **SIMULADOR DEL SANDBOX:** elige «SMS · To'Latino», escribe desde `570 555 0122` (Marisol) «¿cómo reservo una mesa?» → **Mandar como ese
+   teléfono**. Contesta la respuesta fija («Para ayudarte con tus pedidos y citas, entra en To'Latino… enciende «El Compa por WhatsApp y SMS» en
+   Mi cuenta › Avisos.»): Marisol todavía no lo encendió. Prueba desde un número cualquiera: la misma respuesta (no se sabe si tiene cuenta).
+3. Entra como **Marisol** (5705550122) → Mi cuenta › **Avisos** → sección **EL COMPA** → enciende **Hablar con El Compa por WhatsApp y SMS**.
+4. Vuelve al simulador (Admin) con la misma pregunta: ahora contesta con la ayuda y «Más: …/ayuda/reservar-mesa». Haz una reservación pendiente
+   en Sabor Dominicano como Marisol y en el simulador escribe «cancela mi reservación»: contesta con un **enlace** («un solo uso, vence en 30 min»).
+5. Copia ese enlace y ábrelo: sin sesión te lleva a **Entrar**; como Yaritza (5705550299) dice «Este enlace es de otra cuenta»; como Marisol ves
+   la hoja de El Compa con **Así queda** y **Sí, cancelar la solicitud / No, dejarla**. Confirma: «CANCELASTE LA SOLICITUD EN SABOR DOMINICANO · NO
+   SE COBRÓ NADA». Ábrelo otra vez: «Ya usaste este enlace».
+6. En el simulador manda **STOP** desde 570 555 0122: «no te mandamos más mensajes…». Otra pregunta: no contesta nada. **START**: vuelve.
+   **HELP**: quiénes somos y cómo salir.
+7. Entra como el dueño de **Sabor Dominicano** (5705550133) → Panel › El Compa › **POR DÓNDE**: WhatsApp con su interruptor y SMS «Sin número».
+   Enciende WhatsApp. Con el negocio cerrado (después de las 9 PM, o «Cerrar por hoy»), en el simulador elige «WhatsApp · Sabor Dominicano» y
+   pregunta «¿A qué hora abren mañana?»: «Soy El Compa, el asistente de IA de Sabor Dominicano. Ahora estamos cerrados…». «¿Me hacen un
+   descuento?» → se lo pasa al negocio (aviso al dueño). En el panel, LO QUE CONTESTÓ EL COMPA dice «Cliente en WhatsApp», sin teléfono.
+8. **REGISTRO DE ENTRADA** (Admin, Canales): cada mensaje con una huella corta del teléfono, si era una cuenta, qué pasó y su CP-; **sin** el
+   texto ni el teléfono. Como **Dayana** (Soporte) ves el registro pero no conectas números ni usas el simulador.
+9. **Apágalo** (Interruptores › POR CANAL › SMS): por SMS no sale nada (ni la fija); la app sigue igual. Enciéndelo otra vez.
+
+**Pasos para el teléfono (cuando quieras encenderlo de verdad; nada se enciende en producción antes de la Fase 9):**
+1. **Telnyx (SMS):** abrir la cuenta en telnyx.com (términos y tarjeta), comprar el número de To'Latino y hacer el registro **10DLC** (marca y
+   campaña «atención al cliente / respuestas», con el texto de STOP/HELP). Crear la llave de la API. La llave, la **llave pública** de los webhooks
+   y el número van al formulario seguro del entorno (nunca al chat). Claude conecta el webhook a `/api/compa/entrada/telnyx`.
+2. **Meta (WhatsApp):** crear el **WhatsApp Business Account** en business.facebook.com (verificación del negocio con documento), la app en
+   developers.facebook.com y el número de WhatsApp de To'Latino. El **secreto de la app**, el **token** y un **token de verificación** van al
+   formulario seguro; Claude conecta el webhook `/api/compa/entrada/whatsapp`.
+3. Para cada negocio que quiera WhatsApp: el dueño conecta su número de WhatsApp Business (Meta lo pide en persona); después el Admin lo agrega
+   en Canales y el dueño lo enciende en POR DÓNDE.
+
+**Decidí X; si prefieres Y, se cambia:**
+1. **Proveedores:** SMS = **Telnyx** (decisión E2); WhatsApp = **WhatsApp Cloud API de Meta** directo (PLAN §9 «Meta WhatsApp Business»; el plan
+   nombra su firma). No hay decisión del fundador que falte: los dos ya están en la lista de lo que se paga (S). Todo está detrás de un solo
+   archivo (`canales-proveedor.ts`); cambiar de proveedor toca solo ese archivo.
+2. **El canal se ENCIENDE en Mi cuenta (apagado de fábrica):** un número reciclado por la compañía o un SMS con remitente falso no llegan a los
+   datos de nadie si la persona no lo encendió con su sesión. Sin encender, sin cuenta, suspendida o (imposible hoy: el teléfono es único) más
+   de una cuenta con ese número → **la misma** respuesta fija. Si prefieres encendido para todos, se cambia en una línea.
+3. **Números por canal en la base**, conectados desde el Super Admin: el de To'Latino (vecinos) y, opcional, el de cada negocio (sus respuestas
+   automáticas; el modelo de «tu número de WhatsApp Business conectado»: lo que El Compa no contesta, el dueño lo ve en su WhatsApp como
+   siempre). Los números de prueba («sim») solo fuera de producción.
+4. **Horas de silencio:** la respuesta a lo que la persona acaba de preguntar sale a cualquier hora (dentro de 5 min, Configuración); una tardía
+   (el barrido la retomó) no sale de 10 PM a 7 AM de su ciudad. STOP, START y HELP salen siempre (las exigen las compañías).
+5. **STOP también apaga los avisos por SMS** de To'Latino a ese número (quedan «baja»; el aviso sigue en la campana). STOP con el canal apagado
+   se anota igual, sin la confirmación (que la manda el proveedor; LAUNCH).
+6. **El registro de entrada guarda el texto TAPADO** (como pide el plan) para poder retomar una entrada colgada; a los 30 días (Configuración)
+   se vacían el texto y el teléfono cifrado. El Super Admin nunca muestra ni el texto ni el teléfono.
+7. **La ventana de 24 h de WhatsApp:** nada sale si la persona no escribió por WhatsApp a ese número en las últimas 24 h; un mensaje de WhatsApp
+   con más de 24 h (Meta reintenta hasta días después) no se contesta. Las plantillas de WhatsApp (para escribir primero) no se construyen.
+8. **El simulador** está en Super Admin › El Compa › **Canales** (no en Sistema, como decía el plan), junto a los números y el registro; muestra
+   el enlace real para poder abrirlo en el sandbox. Pantallas compuestas con piezas del sistema (hueco #6 del diseño y esta pestaña).
+9. **El enlace no se gasta al abrirlo** (las vistas previas de WhatsApp y de los teléfonos lo abren solas): se gasta al confirmar o dejarla.
+   Con otra cuenta no se gasta.
+10. **Límite:** 30 mensajes por teléfono al día (Configuración): al pasar, avisa una vez y calla. STOP siempre pasa.
+
+**Revisión de seguridad (regla 5):**
+- **La firma del proveedor es la frontera de confianza:** la ruta lee el cuerpo crudo y verifica la firma ANTES de leer el JSON; sin firma, con
+  firma mala, con la de otro cuerpo, con otro secreto → **401** y no se guarda nada (solo un contador por día y motivo). Telnyx: Ed25519 sobre
+  «hora|cuerpo» y la hora firmada dentro de 5 min (vieja o del futuro → 401). Meta: HMAC-SHA256 comparado en tiempo constante; su mensaje trae la
+  hora sin firmar: más de 24 h → no se contesta. Sin el secreto en el entorno, nada entra. JSON roto → 400; más de 64 KB → 413. El proveedor
+  «sim» no tiene ruta pública. Probado cada caso.
+- **Repetición:** una entrada es única por (proveedor, id del mensaje) en la base; el mismo mensaje dos o tres veces = una entrada y una
+  respuesta (probado en SMS y WhatsApp).
+- **Lo que la firma NO prueba:** quién escribe. Un SMS con remitente falsificado pasa la firma de Telnyx. Por eso: (1) la respuesta va SOLO a
+  ese teléfono (quien falsifica no la lee); (2) solo contesta con datos a una cuenta que encendió el canal con su sesión; (3) **nada se hace por
+  mensaje**: el enlace abre la confirmación en la app y pide entrar con el código de siempre. Lo que sí puede hacer un remitente falso: gastar
+  mensajes (límite por teléfono) o mandar STOP por otro (la persona lo deshace con START). En WhatsApp el remitente lo verifica Meta.
+- **Sin entrar solo:** la página del enlace no abre sesión nunca (sin sesión → Entrar y vuelve); el token (24 bytes al azar) solo viaja en el
+  mensaje, la base guarda su sha256, ni la salida guardada ni el registro lo tienen. Solo sirve a LA cuenta del enlace (otra cuenta repitiendo la
+  petición real → «es de otra cuenta», nada cambia), una vez (fila tomada: dos toques = uno), vencido no hace nada, y confirma por la misma
+  `confirmar()` de la app (`via 'link'`, el estado leído otra vez, mismo origen y sesión). Probado.
+- **STOP al instante y anotado** (`compa_canal_consent`, solo inserción): ni El Compa ni los avisos por SMS salen a ese número hasta START.
+- **Datos personales:** el teléfono se guarda como huella HMAC y cifrado (AES-GCM) solo para contestar, y se vacía a los 30 días; el texto
+  entra tapado (tarjeta → «[tapado]» y «No compartas eso aquí») y la base rechaza tarjeta o SSN en entrada y salida. El Super Admin muestra
+  una huella corta, nunca el teléfono ni el texto; el simulador anota solo los 4 últimos números. El registro del servidor no tiene teléfonos ni
+  textos (comprobado). Las respuestas automáticas de un negocio por WhatsApp nunca usan la cuenta del cliente.
+- **Canal apagado = nada sale** (lo vuelve a leer la salida antes de cada envío) y la app sigue igual (probado). En producción, además del
+  candado de El Compa (`TOLATINO_COMPA`), sin llaves no sale nada.
+
+**Capturas:** `e7h-admin-canales-1360.png`, `e7h-admin-canales-390.png`, `e7h-admin-simulador-1360.png`, `e7h-avisos-390.png`, `e7h-enlace-390.png`,
+`e7h-enlace-1360.png`, `e7h-enlace-hecho-390.png`, `e7h-enlace-usado-390.png`, `e7h-enlace-vencido-390.png`, `e7h-enlace-otra-390.png`,
+`e7h-panel-canales-1360.png`.
+
+**Pruebas (local):** `compa7h` 224 ✓ (390 y 1360); `compa7d` 140 ✓, `compa7f` 130 ✓, `adm5i` ✓; contrato de los canales ✓ (especificaciones
+oficiales de Telnyx y Meta); guardianes 50/50 al revés (`alreves7h`) y los de 7a–7g otra vez (36, 45, 66, 33, 36, 40, 43). 0123 dos veces y en una
+base nueva (semillas dos veces). Falta la corrida de CI.

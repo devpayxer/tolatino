@@ -18,6 +18,15 @@ async function smsTelnyx(to: string, texto: string): Promise<"enviado" | "fallo"
   } catch { return "fallo"; }
 }
 
+/* 7h · ¿Este teléfono pidió STOP al número de SMS de To'Latino? (compa_canal_consent; la última palabra manda). Ante la duda (la base falla), no se
+   manda: mejor un SMS de menos que uno a quien pidió que no. */
+async function enBajaSms(tel: string): Promise<boolean> {
+  try {
+    const { huella } = await import("./cifrado");
+    return !!(await db().query<{ v: boolean }>(`select compa_canal_en_baja($1, 'sms', null) as v`, [huella(tel)])).rows[0]?.v;
+  } catch { return true; }
+}
+
 export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: string; ref?: [string, string]; sinSms?: boolean; actor?: string | null } = {}) {
   try {
     const r = (await db().query<{ grp: string; pref: string | null; sms: boolean; title: { es: string; en: string }; body: { es: string; en: string }; lang: string; phone: string; prefs: Record<string, boolean>; city: string | null; tz: string; silencio: boolean }>(
@@ -35,7 +44,9 @@ export async function avisar(userId: string, tpl: string, v: Vars, o: { href?: s
     // eventosCriticoSiempreLlega).
     if ((r.grp === "community" || r.grp === "events") && apagado) return;
     const guardado = r.grp === "community" && !!r.pref && r.prefs?.dig === true;
-    const st = !r.sms ? "no" : apagado || o.sinSms ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    const st0 = !r.sms ? "no" : apagado || o.sinSms ? "apagado" : quiet ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    // 7h · Un teléfono que respondió STOP al número de To'Latino no recibe más SMS (queda «baja»; el aviso sigue en la campana).
+    const st = (st0 === "pendiente" || st0 === "pruebas") && (await enBajaSms(r.phone)) ? "baja" : st0;
     const id = (await db().query<{ id: string }>(
       `insert into notifications (user_id, city_id, tpl, title, body, href, ref_kind, ref_id, sms_status, sms_to, actor_user_id, held_digest) values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) returning id::text`,
       [userId, r.city, tpl, title, body, o.href ?? null, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st, r.sms ? r.phone : null, o.actor ?? null, guardado])).rows[0]!.id;
@@ -59,7 +70,8 @@ export async function avisarTelefono(tel: string, tpl: string, v: Vars, o: { hre
     if (!t?.sms) return;
     const { cifrar, huella } = await import("./cifrado");
     const body = llenar(o.en ? t.body.en : t.body.es, v).slice(0, 480);
-    const st = t.grp !== "crit" && t.silencio ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    const st0 = t.grp !== "crit" && t.silencio ? "silencio" : MODO_SMS === "pruebas" ? "pruebas" : "pendiente";
+    const st = st0 !== "silencio" && (await enBajaSms(tel)) ? "baja" : st0;   // 7h · STOP al número de To'Latino
     const id = (await db().query<{ id: string }>(`insert into phone_messages (phone_enc, phone_hash, city_id, tpl, body, ref_kind, ref_id, sms_status) values ($1, $2, $3, $4, $5, $6, $7, $8) returning id::text`,
       [cifrar(tel), huella(tel), o.city ?? null, tpl, body, o.ref?.[0] ?? null, o.ref?.[1] ?? null, st])).rows[0]!.id;
     if (st === "pendiente") {

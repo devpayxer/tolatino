@@ -32,6 +32,14 @@ services:
       # repo. Sin ella contesta el simulador del sandbox. La app es el único servicio que sale al proveedor de IA (por la red «default»); el
       # traductor y la moderación siguen sin salida. Solo lib/compa/modelo-claude.ts la lee (guardián compaSoloServidor).
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # 7h · El Compa por WhatsApp y SMS: la verificación de las firmas de entrada (la llave PÚBLICA de Telnyx y el secreto de la app de Meta),
+      # el token de verificación del webhook de Meta y el token para mandar por WhatsApp. Viven solo en /etc/tolatino/pruebas.env (formulario
+      # seguro del entorno), nunca en el repo. Sin ellos nada entra (401) y lo que «sale» queda en el simulador. Solo los lee
+      # lib/compa/canales-proveedor.ts (guardián canalConFirma).
+      TELNYX_PUBLIC_KEY: ${TELNYX_PUBLIC_KEY:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
     networks: [default, interna]
     depends_on:
       db:

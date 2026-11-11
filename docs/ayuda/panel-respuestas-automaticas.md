@@ -16,6 +16,10 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 - **Nunca te tapa:** el mensaje del cliente queda **sin leer** en tus Mensajes, como siempre. Tú lo ves y contestas cuando quieras.
 - **Con El Compa encendido no sale tu respuesta fija** («Gracias por escribir… te contestamos cuando abramos»). Si El Compa no puede contestar
   (To'Latino lo pausó, llegó al tope del mes, tu plan pasó a Free), sale tu respuesta fija de siempre, si la tienes encendida.
+- **Por dónde:** siempre el chat de To'Latino. Si To'Latino conectó **tu número de WhatsApp o de SMS** (lo pides por Soporte), también puedes
+  encender **WhatsApp** o **SMS**: cuando estás cerrado, El Compa contesta ahí con las mismas reglas. Lo que no contesta lo ves en tu WhatsApp o tu
+  teléfono, como siempre, y lo que te pasa te llega como aviso («un cliente en WhatsApp»), sin su teléfono. Sin número conectado, la fila dice
+  **Sin número**.
 - **Sugerir respuesta con El Compa** (Pro), dentro de cada conversación de Mensajes: escribe un **borrador** en tu campo con la conversación y
   tu página. **Nunca se envía solo**: lo lees, lo cambias si quieres y lo envías tú, con tu nombre.
 
@@ -28,8 +32,10 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
    sancocho desde las 12.». Puedes escribirlo en inglés o tocar **Traducir**. Toca **Guardar nota**. Sin teléfonos ni promesas: El Compa nunca
    promete, aunque la nota lo pida.
 5. **Pruébalo como cliente:** toca una pregunta o escribe la tuya y **Ver qué contesta**. La prueba no sale en Mensajes ni en tu registro.
-6. **Lo que contestó El Compa · N · Te pasó N:** las últimas respuestas a tus clientes y cuáles te pasó.
-7. En **Mensajes**, dentro de una conversación, toca **Sugerir respuesta con El Compa**, revisa el borrador y toca **Enviar**.
+6. **Por dónde:** el chat siempre; toca **WhatsApp** o **SMS** para encenderlo o apagarlo (solo con tu número conectado).
+7. **Lo que contestó El Compa · N · Te pasó N:** las últimas respuestas a tus clientes (también las de WhatsApp o SMS, como «Cliente en
+   WhatsApp», sin su teléfono) y cuáles te pasó.
+8. En **Mensajes**, dentro de una conversación, toca **Sugerir respuesta con El Compa**, revisa el borrador y toca **Enviar**.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -43,6 +49,9 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 | Tu plan pasa a Free | Deja de contestar; tus clientes reciben tu respuesta fija, si la tienes. |
 | To'Latino lo apagó en tu negocio | Ves «To'Latino apagó las respuestas automáticas de tu negocio» con el motivo y no lo puedes encender. Si crees que es un error, escríbele a Soporte. |
 | Un cliente reporta una respuesta de El Compa | To'Latino la revisa; puede apagar El Compa en esa conversación o en tu negocio. |
+| Un cliente te escribe por WhatsApp o SMS a tu número conectado y estás cerrado | Con ese canal encendido en Por dónde, contesta El Compa con tu página (la primera vez se presenta). Nunca usa la cuenta de To'Latino del cliente. |
+| Ese canal está apagado en Por dónde o estás abierto | El Compa no contesta: lo ves y contestas tú, como siempre. |
+| El cliente responde STOP | No le vuelve a escribir por ese número hasta que responda START. |
 | Eres del equipo sin la parte Mensajes | No ves ni cambias las respuestas automáticas ni Sugerir respuesta. |
 
 ## Preguntas frecuentes
@@ -51,6 +60,7 @@ Mensajes en el equipo. Teléfono y escritorio. Versión: 11 nov 2026. Audiencia:
 - **¿Qué ve la IA?** Solo tu página pública y la conversación con ese cliente (tapada). Nunca a otros clientes ni tus cobros.
 - **¿Cuesta algo?** Es parte de Pro.
 - **¿Sugerir respuesta envía algo?** No. Solo escribe el borrador en tu campo.
+- **¿Cómo conecto mi WhatsApp?** Escríbele a Soporte: To'Latino conecta tu número de WhatsApp Business. Después lo enciendes en Por dónde.
 
 ## English
 
@@ -63,13 +73,17 @@ there is room, no discounts or price changes, no refunds, no moving money, no sh
 to you** («{your business} decides that: I passed your message on…») and you get the notice **El Compa passed you a message from {client}**. The
 client's message stays **unread** in your Messages, as always. While El Compa is on, your fixed reply does not go out; if El Compa cannot reply
 (paused by To'Latino, monthly cap, your plan went Free), your usual fixed reply goes out if you have it on. **Suggest a reply with El Compa**
-(Pro) writes a **draft** into your message field; it **never sends by itself**.
+(Pro) writes a **draft** into your message field; it **never sends by itself**. **Where:** always the To'Latino chat; if To'Latino connected your
+**WhatsApp or SMS number** (ask Support), you can turn **WhatsApp** or **SMS** on and El Compa replies there while you are closed, with the same
+rules. What it does not answer you see on your WhatsApp or phone as always; what it passes to you arrives as a notice («a client on WhatsApp»),
+without their phone.
 
 ### How to use it
 Open **El Compa** and scroll to **AUTO-REPLIES**. Tap **El Compa replies for you** to turn it on or off (it replies when you are closed). Pick the
 topics (keep at least one). Write **What El Compa should know** (up to 400 characters; **Translate** for English) and tap **Save note**. **Try it
 as a client** shows what it would reply (the test does not show in Messages). **What El Compa answered · N · Passed to you N** lists the latest
-replies. In **Messages**, open a conversation, tap **Suggest a reply with El Compa**, check the draft and tap **Send**.
+replies (WhatsApp and SMS ones too, without the phone). **Where:** tap WhatsApp or SMS to turn it on or off (only with your number connected).
+In **Messages**, open a conversation, tap **Suggest a reply with El Compa**, check the draft and tap **Send**.
 
 ### What happens in each case
 Open: it does not reply. Hours, address, menu, how to order: it answers from your page. A discount, holding something, availability, a refund, or
@@ -84,3 +98,4 @@ off in that conversation or for your business. Team members without the Messages
 - **What does the AI see?** Only your public page and that client's conversation (covered). Never other clients or your payouts.
 - **Does it cost extra?** It is part of Pro.
 - **Does Suggest a reply send anything?** No. It only writes the draft in your field.
+- **How do I connect my WhatsApp?** Write to Support: To'Latino connects your WhatsApp Business number. Then turn it on in Where.

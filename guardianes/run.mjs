@@ -556,7 +556,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts"]); // 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts"]); // 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -1003,7 +1003,8 @@ const guardianes = {
     if (!existsSync(B)) return falla("barridoCompleto", B, 0, "falta el barrido central");
     const t = readFileSync(B, "utf8");
     for (const f of codigo) {
-      if (!/^apps\/web\/lib\/[^/]+\.ts$/.test(f) || f === B) continue;
+      // 7h · También lib/compa/ (las acciones que vencen, la retoma de WhatsApp/SMS).
+      if (!/^apps\/web\/lib\/(compa\/)?[^/]+\.ts$/.test(f) || f === B) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
         const m = /^export async function ((?:vencer|barrer|escalar)\w*)\(/.exec(l);
         if (m && !t.includes(`.${m[1]}(`)) falla("barridoCompleto", f, i + 1, `«${m[1]}» no corre en el barrido central (lib/barrido.ts): sin él, solo vence cuando alguien abre una página`);
@@ -2468,6 +2469,23 @@ const guardianes = {
       const f = ultimaFn("compa_drafts_antes");
       if (!/create trigger compa_drafts_antes before insert or update or delete on compa_drafts/.test(readFileSync(MD8, "utf8")) || !/raise exception 'compa_drafts es solo de inserción/.test(f) || !/if old\.used is not null then raise exception 'compa_borrador_usado/.test(f)) falla(G, MD8, 0, "compa_drafts es de solo inserción (se anota una vez si se usó)");
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\bdelete from compa_drafts\b|\bupdate compa_drafts set (?!used = )/.test(q)) falla(G, x, 0, "de un borrador del copiloto solo se anota si se usó");
+    }
+    // 7h · WhatsApp y SMS: la entrada (compa_inbound) y la salida (compa_outbound) son de solo inserción salvo su estado (que solo avanza) y la
+    // purga; las bajas y altas (compa_canal_consent) de solo inserción; un enlace de un uso se anota usado una vez; un número se retira.
+    const MH = "packages/db/migrations/0123_compa_canales.sql";
+    if (existsSync(MH)) {
+      const mh = readFileSync(MH, "utf8");
+      for (const [t, fn, msg] of [["compa_inbound", "compa_inbound_antes", "if tg_op = 'DELETE' then raise exception 'compa_inbound es solo de inserción'; end if;"], ["compa_outbound", "compa_outbound_antes", "if tg_op = 'DELETE' then raise exception 'compa_outbound es solo de inserción'; end if;"],
+        ["compa_canal_consent", "compa_canal_consent_antes", "if tg_op <> 'INSERT' then raise exception 'compa_canal_consent es solo de inserción'; end if;"], ["compa_links", "compa_links_antes", "if tg_op = 'DELETE' then raise exception 'un enlace de El Compa no se borra'; end if;"]])
+        if (!new RegExp(`create trigger ${fn} before insert or update or delete on ${t}`).test(mh) || !ultimaFn(fn).includes(msg)) falla(G, MH, 0, `${t}: no se borra ni se cambia fuera de su regla (trigger)`);
+      if (!/raise exception 'compa_enlace_usado: ese enlace ya se usó'/.test(ultimaFn("compa_links_antes"))) falla(G, MH, 0, "un enlace de un uso se anota usado una sola vez");
+      if (!/raise exception 'compa_inbound: el procesamiento solo avanza'/.test(ultimaFn("compa_inbound_antes"))) falla(G, MH, 0, "el procesamiento de una entrada solo avanza");
+      if (!/raise exception 'un número de El Compa no se borra: se retira'/.test(ultimaFn("compa_channel_numbers_antes"))) falla(G, MH, 0, "un número de El Compa no se borra: se retira");
+      // Sobre el archivo entero (no por plantilla: una plantilla con ${…} anidado corre el emparejado de las comillas).
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) { const q = sinComent(x);
+        if (/\bdelete from (compa_inbound|compa_outbound|compa_canal_consent|compa_links|compa_channel_numbers|compa_canal_rechazos)\b|\bupdate compa_canal_consent\b/.test(q)) falla(G, x, 0, "un registro de WhatsApp/SMS no se borra");
+        if (/\bupdate compa_links set (?!used_at = now\(\), used_result = )/.test(q)) falla(G, x, 0, "de un enlace de un uso solo se anota que se usó");
+      }
     } else falla(G, MD8, 0, "falta la migración del copiloto (compa_drafts)");
     // 7a · El libro de la ayuda (help_article_log): pausar, volver a usar, desplegar y retirar quedan para siempre.
     const MA = "packages/db/migrations/0116_ayuda_base.sql";
@@ -3933,6 +3951,9 @@ const guardianes = {
         if (!/\btapar\(|\bt\.texto\b|\bt\b/.test(mm[2])) falla(G, x, 0, `un mensaje de ${mm[1] === "user" ? "la persona" : "el equipo"} se guarda sin tapar(): «${mm[2].slice(0, 60)}»`);
       }
       if (/insert into support_messages/.test(c) && !/from "\.\/compa\/tapar"|from "@\/lib\/compa\/tapar"/.test(c)) falla(G, x, 0, "escribe en support_messages sin importar tapar()");
+      // 7h · Lo que entra y sale por WhatsApp o SMS se guarda tapado (y la base vuelve a rechazar tarjeta o SSN).
+      if (/insert into compa_inbound\b/.test(c) && !/const body = e\.texto\.trim\(\) \? tapar\(e\.texto\.slice\(0, 2000\)\)\.texto : null;/.test(c)) falla(G, x, 0, "la entrada de WhatsApp/SMS se guarda tapada");
+      if (/insert into compa_outbound\b/.test(c) && !/texto = plano\(tapar\(o\.texto\)\.texto, canal\), guardado = plano\(tapar\(o\.guardar \?\? o\.texto\)\.texto, canal\)/.test(c)) falla(G, x, 0, "la salida de WhatsApp/SMS se guarda y se manda tapada");
     }
     // Vectores: lo que tapar() tiene que tapar (el archivo real, transpilado con typescript del repo).
     try {
@@ -4219,6 +4240,9 @@ const guardianes = {
     if (nTrozos !== (c.match(/\.map\(\(h\) => \(\{ fuente: h\.slug, titulo: [^}]*texto: tapar\(h\.body\)\.texto \}\)\)/g) ?? []).length) falla(G, C, 0, "cada uso pasa sus trozos de ayuda por tapar() antes del modelo");
     for (const m of c.matchAll(/insert into compa_messages \(conversation_id, city_id, sender, user_id, text(?:, step_key)?\) values \(\$1, \$2, 'user', \$3, \$4(?:, \$5)?\)`, \[([^\]]*)\]/g))
       if (!/^conv\.id, ciudad, q\.userId, (t\.texto|tapar\()/.test(m[1])) falla(G, C, 0, "cada mensaje de la persona se guarda tapado");
+    // 7h · El mensaje de alguien SIN cuenta (WhatsApp/SMS a un negocio) también se guarda tapado.
+    for (const m of c.matchAll(/insert into compa_messages \(conversation_id, city_id, sender, contact_phone_hash, text\) values \(\$1, \$2, 'user', \$3, \$4\)`, \[([^\]]*)\]/g))
+      if (!/^v\.id, ciudad, x\.contacto\.hash, tapar\(/.test(m[1])) falla(G, C, 0, "cada mensaje de un contacto sin cuenta se guarda tapado");
     for (const m of c.matchAll(/insert into compa_messages \(conversation_id, city_id, sender, text,[^`]*'compa'[^`]*`,\s*\[([^\]]*)\]/g))
       if (!/^conv\.id, ciudad, tapar\(/.test(m[1])) falla(G, C, 0, "cada respuesta de El Compa se guarda tapada");
     if (existsSync(M)) {
@@ -4333,15 +4357,18 @@ const guardianes = {
   compaSiempreIA() {
     const G = "compaSiempreIA", V = "apps/web/app/(app)/soporte/compa/CompaVecino.tsx", C = "apps/web/lib/compa/conversacion.ts";
     if (!existsSync(V)) return falla(G, V, 0, "falta la pantalla de El Compa para vecinos");
-    const v = sinComent(V);
+    // 7h · El enlace de un uso de WhatsApp/SMS (la misma hoja con la acción preparada) cumple lo mismo: aviso de IA verbatim, privacidad,
+    // «Con una persona» sin condición y «EL COMPA LO PREPARÓ · CONFÍRMALO TÚ».
+    const EN = "apps/web/app/(app)/compa/e/[token]/EnlaceCompa.tsx";
+    for (const VV of [V, ...(existsSync(EN) ? [EN] : [])]) { const v = sinComent(VV), V = VV;
     for (const [re, q] of [[/"EL COMPA ES UNA IA Y PUEDE EQUIVOCARSE\. LO QUE MUEVE DINERO O CAMBIA TU CUENTA LO REVISA UNA PERSONA\."/, "el aviso de IA en español (verbatim)"],
       [/"EL COMPA IS AN AI AND CAN MAKE MISTAKES\. ANYTHING THAT MOVES MONEY OR CHANGES YOUR ACCOUNT IS REVIEWED BY A PERSON\."/, "el aviso de IA en inglés (verbatim)"],
       [/href="\/ayuda\/privacidad-de-el-compa"/, "la línea de privacidad a /ayuda/privacidad-de-el-compa"], [/disclaimer=\{disc\}/, "el aviso en el marco (disclaimer)"],
       [/personLabel=\{E2\("Con una persona", "Talk to a person"\)\}/, "«Con una persona» arriba, sin condición"], [/person2Label=\{E2\("Hablar con una persona", "Talk to a person"\)\}/, "«Hablar con una persona» en la hoja, sin condición"],
       [/note: E2\("EL COMPA LO PREPARÓ · CONFÍRMALO TÚ", "EL COMPA PREPARED IT · YOU CONFIRM"\)/, "«EL COMPA LO PREPARÓ · CONFÍRMALO TÚ»"]])
       if (!re.test(v)) falla(G, V, 0, `falta ${q}`);
-    if ((v.match(/<C\.CompaFrame\b/g) ?? []).length !== 1) falla(G, V, 0, "un solo marco CompaFrame (con el aviso y la persona)");
-    for (const x of codigo) if (/^apps\/web\/.*\.tsx$/.test(x) && x !== V && /\bCompaFrame\b/.test(sinComent(x))) falla(G, x, 0, "El Compa del vecino se pinta solo en CompaVecino.tsx (con el aviso de IA y «Con una persona»)");
+    if ((v.match(/<C\.CompaFrame\b/g) ?? []).length !== 1) falla(G, V, 0, "un solo marco CompaFrame (con el aviso y la persona)"); }
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx$/.test(x) && x !== V && x !== EN && /\bCompaFrame\b/.test(sinComent(x))) falla(G, x, 0, "El Compa del vecino se pinta solo en CompaVecino.tsx o en el enlace de WhatsApp/SMS (con el aviso de IA y «Con una persona»)");
     if (existsSync(C) && !/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/.test(sinComent(C))) falla(G, C, 0, "el sistema del modelo dice que es una IA");
     // 7e · El panel (DASH-COMPA): la nota fija de IA (verbatim de §1c) siempre que El Compa está, «Con una persona» sin condición, el rótulo
     // «EL COMPA · IA» en cada respuesta; y los DOS sistemas dicen que es una IA.
@@ -4561,6 +4588,61 @@ const guardianes = {
      texto), así que 100 va antes que 98 (cazado en 7f: la respuesta automática se saltaba el último mensaje del cliente). En lib/compa y en
      Mensajes, ninguna consulta ordena por un nombre que en su select es un ::text sin otro alias (se califica: «order by x.id»). La misma clase
      existe en otros módulos (LAUNCH «order by sobre id::text»): este guardián se amplía cuando se arreglen. */
+  /* ── Fase 7 · 7h WhatsApp y SMS con enlace ──
+     7h. canalConFirma: la entrada pública de WhatsApp y SMS solo cree lo FIRMADO y nunca hace nada por mensaje.
+     - La ruta verifica la firma del proveedor ANTES de leer el JSON (401 si no; sin secreto en el entorno = nada entra); Telnyx con su hora
+       firmada dentro de la ventana; Meta en tiempo constante; el proveedor «sim» no tiene ruta pública (solo el simulador con sesión).
+     - Una entrada una sola vez (único por proveedor e id; on conflict do nothing) y lo rechazado solo se cuenta.
+     - Identidad: solo el teléfono VERIFICADO de UNA cuenta activa que encendió el canal; si no, la respuesta fija.
+     - Ninguna acción por mensaje: canales.ts no confirma ni cancela nada; solo crea un enlace de un uso (enlace.ts) que guarda la HUELLA del
+       token, sirve solo a esa cuenta con su sesión (la página manda a Entrar; nunca abre una sesión) y se usa una vez.
+     - La salida vuelve a leer el canal, la baja (STOP), la ventana de 24 h de WhatsApp y las horas de silencio.
+     - Solo canales-proveedor.ts habla con Meta o Telnyx (además del SMS de avisos.ts) y lee sus secretos; nada de esto escribe en el registro. */
+  canalConFirma() {
+    const G = "canalConFirma", R = "apps/web/app/api/compa/entrada/[proveedor]/route.ts", P = "apps/web/lib/compa/canales-proveedor.ts", K = "apps/web/lib/compa/canales.ts",
+      E = "apps/web/lib/compa/enlace.ts", PG = "apps/web/app/(app)/compa/e/[token]/page.tsx", AC = "apps/web/app/(app)/compa/e/[token]/acciones.ts", M = "packages/db/migrations/0123_compa_canales.sql";
+    for (const f of [R, P, K, E, PG, AC]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de los canales de El Compa");
+    const r = sinComent(R), post = cuerpoFn(r, "POST");
+    const iF = post.search(/firmaTelnyx\(|firmaWhatsApp\(/), iJ = post.indexOf("JSON.parse("), iL = post.search(/leerTelnyx\(|leerWhatsApp\(|recibir\(/);
+    if (iF < 0 || iJ < 0 || iF > iJ || iL < iJ) falla(G, R, 0, "la firma se verifica antes de leer el JSON y antes de guardar nada");
+    if (!/if \(!f\.ok\) \{ await contarRechazo\(p, f\.motivo\); return no\(401\); \}/.test(post)) falla(G, R, 0, "firma mala = 401 (solo se cuenta el rechazo)");
+    if (/req\.(json|text|formData)\(\)/.test(post)) falla(G, R, 0, "el cuerpo se lee crudo (para la firma), nunca como JSON antes de verificar");
+    if (!/if \(p !== "telnyx" && p !== "whatsapp"\) return no\(404\);/.test(post) || /proveedor: "sim"|"sim"/.test(r)) falla(G, R, 0, "la ruta pública solo acepta Telnyx y WhatsApp (el simulador no tiene ruta)");
+    if (!/firmaTelnyx\(cuerpo, req\.headers\.get\("telnyx-signature-ed25519"\), req\.headers\.get\("telnyx-timestamp"\), Math\.floor\(Date\.now\(\) \/ 1000\), await valor\("compa_canal_firma_seg"\)\)/.test(post)) falla(G, R, 0, "Telnyx: firma con su hora y la ventana de Configuración");
+    if (!/Math\.abs\(Date\.now\(\) - m\.hora\.getTime\(\)\) > DIA_MS/.test(post)) falla(G, R, 0, "WhatsApp: un mensaje más viejo que 24 h (o del futuro) no se contesta");
+    const pp = sinComent(P);
+    if (!/if \(!llave\) return \{ ok: false, motivo: "sin_secreto" \};/.test(pp) || !/if \(!secreto\) return \{ ok: false, motivo: "sin_secreto" \};/.test(pp)) falla(G, P, 0, "sin el secreto en el entorno, nada entra");
+    if (!/verify\(null, Buffer\.concat\(\[Buffer\.from\(`\$\{hora\}\|`, "utf8"\), cuerpo\]\), k, sig\)/.test(pp) || !/if \(Math\.abs\(ahora - Number\(hora\)\) > ventana\) return \{ ok: false, motivo: "hora" \};/.test(pp)) falla(G, P, 0, "Telnyx: Ed25519 sobre «hora|cuerpo» y la hora dentro de la ventana");
+    if (!/a\.length === b\.length && timingSafeEqual\(a, b\) \? \{ ok: true \}/.test(cuerpoFn(pp, "firmaWhatsApp"))) falla(G, P, 0, "WhatsApp: HMAC comparado en tiempo constante");
+    if (!/timingSafeEqual\(a, b\) \? reto : null/.test(cuerpoFn(pp, "retoWhatsApp"))) falla(G, P, 0, "la verificación del webhook de Meta compara en tiempo constante");
+    const k = sinComent(K);
+    if (!/on conflict \(provider, provider_msg_id\) do nothing returning id::text/.test(cuerpoFn(k, "recibir"))) falla(G, K, 0, "una entrada se guarda una sola vez (idempotente por proveedor e id)");
+    if (existsSync(M) && !/unique \(provider, provider_msg_id\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "la base no deja dos entradas con el mismo id del proveedor");
+    const tv = cuerpoFn(k, "turnoVecino");
+    if (!/phone_verified_at is not null and cuenta_estado\(status, status_until\) in \('active', 'muted'\)/.test(tv) || !/coalesce\(notif_prefs->>'cpa', 'false'\) = 'true' limit 2/.test(tv) || !/if \(U\.length !== 1\) \{/.test(tv)) falla(G, K, 0, "identidad: solo el teléfono verificado de UNA cuenta activa que encendió el canal; si no, la respuesta fija");
+    if (/\b(confirmar|descartar|usarEnlace|citaCliente|rsvCliente|CANCELABLES)\b/.test(k.replace(/import \{[^}]*\} from "\.\/enlace";/, (x) => x.replace(/crearEnlace/, ""))) || !/import \{ crearEnlace \} from "\.\/enlace";/.test(k)) falla(G, K, 0, "por mensaje nunca se confirma nada: solo se manda un enlace de un uso");
+    const en = cuerpoFn(k, "enviar");
+    if (!/!\(await canalEncendido\(canal\)\)\) st = "apagado"/.test(en) || !/compa_canal_en_baja\(\$1, \$2, \$3\)/.test(en) || !/received_at > now\(\) - interval '24 hours'/.test(en) || !/\(await tarde\(o\)\)\) st = "silencio"/.test(en)) falla(G, K, 0, "la salida vuelve a leer el canal, la baja (STOP), la ventana de 24 h y las horas de silencio");
+    if (!/if \(ENTORNO === "produccion"\) return \{ ok: false, msg: "El simulador no existe en producción\." \};/.test(cuerpoFn(k, "simular"))) falla(G, K, 0, "el simulador no existe en producción");
+    const e = sinComent(E);
+    if (!/randomBytes\(24\)\.toString\("base64url"\)/.test(e) || !/values \(\$1, \$2::uuid, \$3::uuid/.test(e) || !/\[sha\(token\), x\.accion/.test(e)) falla(G, E, 0, "el enlace guarda la huella del token (nunca el token)");
+    const u = cuerpoFn(e, "usarEnlace");
+    if (!/for update`, \[h\]/.test(u) || !/if \(l\.user_id !== q\.userId\) return/.test(u) || !/if \(l\.usado\) return/.test(u) || !/if \(l\.vencido\) return/.test(u) || !/confirmar\(\{ userId: q\.userId \}, l\.action_id, "link"\)/.test(u)) falla(G, E, 0, "el enlace: tomado, solo de esa cuenta, una vez, sin vencer, y confirma por confirmar() con via «link»");
+    const pg = sinComent(PG);
+    if (!/if \(!u\?\.first_name\) redirect\(`\/entrar\?volver=/.test(pg) || /cookies\(\)|verificarCodigo|sessions/.test(pg)) falla(G, PG, 0, "el enlace nunca abre una sesión: sin sesión va a Entrar");
+    const ac = sinComent(AC);
+    if (!/if \(!\(await mismoOrigen\(\)\)\) return/.test(ac) || !/const u = await yo\(\);/.test(ac) || !/usarEnlace\(\{ userId: u\.id \}/.test(ac)) falla(G, AC, 0, "usar el enlace: mismo origen y la persona de la sesión");
+    for (const x of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(x)) continue;
+      const t = sinComent(x);
+      if (x !== P && /graph\.facebook\.com|WHATSAPP_(APP_SECRET|TOKEN|VERIFY_TOKEN)|TELNYX_PUBLIC_KEY/.test(t)) falla(G, x, 0, "solo canales-proveedor.ts habla con Meta y lee los secretos de los canales");
+      if (x !== P && x !== "apps/web/lib/avisos.ts" && /api\.telnyx\.com/.test(t)) falla(G, x, 0, "solo canales-proveedor.ts (y los avisos) hablan con Telnyx");
+      if ([R, P, K, E, AC].includes(x) && /console\.(log|info|warn|error)/.test(t)) falla(G, x, 0, "los canales no escriben en el registro del servidor (teléfono o texto)");
+      if (/insert into compa_links\b/.test(t) && x !== E) falla(G, x, 0, "solo enlace.ts crea enlaces de un uso");
+    }
+    if (existsSync(M)) for (const fn of ["compa_inbound_antes", "compa_outbound_antes"]) if (!/texto_con_secretos\(coalesce\(new\.body, ''\)\)/.test(ultimaFn(fn))) falla(G, M, 0, `${fn}: la base rechaza tarjeta o SSN`);
+  },
+
   ordenSinTexto() {
     const G = "ordenSinTexto";
     for (const x of codigo.filter((f) => /^apps\/web\/lib\/(compa\/[^/]+|mensajes)\.ts$/.test(f))) {

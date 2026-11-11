@@ -11,7 +11,9 @@ import { ENTORNO } from "@/lib/entorno";
    - confirmar  { accion }                        → lib/compa/acciones.ts confirmar() (otra petición, el id de un uso)
    - descartar  { accion }
    - simulador  {}                                → lo que recibió el simulador (para revisar que nada tapado ni ajeno sale)
-   - olvidar    {}                                → vacía lo que guardó el simulador */
+   - olvidar    {}                                → vacía lo que guardó el simulador
+   - canal_enviar { numero, telefono, texto }     → 7h · lib/compa/canales.ts enviar() (solo la salida: canal, baja, ventana de 24 h, silencio)
+   - canal_buzon  { entrada }                     → 7h · lo que «salió» simulado para esa entrada, con el enlace real (el teléfono de la prueba) */
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -33,6 +35,12 @@ export async function POST(req: Request) {
     if (op === "olvidar") { s.olvidarRecibidos(); return NextResponse.json({ ok: true }); }
     return NextResponse.json({ ok: true, recibidos: s.recibidos() });
   }
+  // 7h · La salida por un canal (ventana de 24 h de WhatsApp, baja, silencio, canal apagado), sin pasar por un turno.
+  if (op === "canal_enviar") {
+    const { enviarPrueba } = await import("@/lib/compa/canales");
+    return NextResponse.json({ ok: true, estado: await enviarPrueba(String(b.numero ?? ""), String(b.telefono ?? ""), String(b.texto ?? "")) });
+  }
+  if (op === "canal_buzon") return NextResponse.json({ ok: true, textos: (await import("@/lib/compa/canales")).buzonSimulado(String(b.entrada ?? "")) });
   if (!(await mismoOrigen())) return NextResponse.json({ ok: false, msg: "origen" }, { status: 403 });
   const u = await yo();
   if (!u) return NextResponse.json({ ok: false, msg: "sin_sesion" }, { status: 401 });

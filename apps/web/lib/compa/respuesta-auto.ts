@@ -38,11 +38,12 @@ export async function contestarPendientes(): Promise<number> {
 export type AutoPanel = {
   pro: boolean; puede: boolean; enabled: boolean; on: boolean; cuando: "closed"; temas: Tema[]; canales: string[]; nota: Bi;
   apagadoPor: { motivo: string; at: string } | null; nivelOn: boolean; fija: boolean;
-  registro: { id: string; quien: string; q: string; a: string; paso: boolean; at: string }[]; contesto: number; paso: number;
+  conectados: { whatsapp: boolean; sms: boolean };   // 7h · ¿hay un número del negocio conectado a To'Latino por ese canal?
+  registro: { id: string; quien: string; q: string; a: string; paso: boolean; at: string; canal?: string }[]; contesto: number; paso: number;
 };
 export async function ajustesAuto(negocio: string, partes: string[]): Promise<AutoPanel> {
   const puede = partes.includes("all") || partes.includes("msg");
-  const [S, P, pausa, R] = await Promise.all([
+  const [S, P, pausa, R, RC, NC] = await Promise.all([
     db().query<{ enabled: boolean; cuando: string; temas: Tema[]; canales: string[]; nota: Bi; fija: boolean; ciudad: string }>(
       `select coalesce(s.enabled, false) as enabled, coalesce(s."when", 'closed') as cuando, coalesce(s.topics, '{hours,menu,how_to_order,faq}') as temas,
               coalesce(s.channels, '{app}') as canales, coalesce(s.owner_note, '{"es":"","en":""}'::jsonb) as nota, b.chat_auto_reply as fija, b.city_id as ciudad
@@ -57,24 +58,29 @@ export async function ajustesAuto(negocio: string, partes: string[]): Promise<Au
               to_char(m.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from chat_messages m join chat_threads t on t.id = m.thread_id join users u on u.id = t.user_id
         where t.business_id = $1 and m.compa and m.hidden_at is null and m.created_at > now() - interval '30 days' order by m.id desc limit 8`, [negocio]) : null,
+    // 7h · Lo que contestó por WhatsApp o SMS (al número del negocio): lo lee el motor (conversacion.ts), sin el teléfono del cliente.
+    puede ? import("./conversacion").then((m) => m.registroCanalNegocio(negocio)) : null,
+    db().query<{ channel: string }>(`select distinct channel from compa_channel_numbers where business_id = $1 and status = 'active'`, [negocio]),
   ]);
-  const s = S.rows[0], k = puede ? await db().query<{ n: number; p: number }>(
+  const s = S.rows[0], k = puede ? await db().query<{ n: number; p: number; nc: number }>(
     `select (select count(*)::int from chat_messages m join chat_threads t on t.id = m.thread_id where t.business_id = $1 and m.compa and m.created_at > now() - interval '30 days') as n,
-            (select count(*)::int from compa_handoffs h join compa_conversations c on c.id = h.conversation_id where c.business_id = $1 and c.use = 'auto_reply' and c.chat_thread_id is not null and h."to" = 'owner' and h.at > now() - interval '30 days') as p`, [negocio]) : null;
+            (select count(*)::int from compa_handoffs h join compa_conversations c on c.id = h.conversation_id where c.business_id = $1 and c.use = 'auto_reply' and (c.chat_thread_id is not null or c.channel in ('whatsapp', 'sms')) and h."to" = 'owner' and h.at > now() - interval '30 days') as p,
+            (select count(*)::int from compa_outbound o where o.business_id = $1 and o.kind = 'auto' and o.created_at > now() - interval '30 days') as nc`, [negocio]) : null;
   const nivel = s ? await disponible({ uso: "auto_reply", canal: "app", ciudad: s.ciudad, negocio }) : { ok: false as const };
   // on = lo que pasa HOY si un cliente escribe fuera de tu horario (encendido por ti, con Pro, sin pausa de To'Latino y El Compa disponible).
   const pro = !!P.rows[0]?.pro, enabled = !!s?.enabled;
   return {
     pro, puede, enabled, on: enabled && pro && !pausa && nivel.ok, cuando: "closed", temas: (s?.temas ?? TEMAS).filter((t) => TEMAS.includes(t)), canales: s?.canales ?? ["app"],
     nota: s?.nota ?? { es: "", en: "" }, apagadoPor: pausa ? { motivo: pausa.motivo, at: pausa.at } : null, nivelOn: nivel.ok && !(await alTope()),
-    fija: !!s?.fija, registro: R?.rows ?? [], contesto: k?.rows[0]?.n ?? 0, paso: k?.rows[0]?.p ?? 0,
+    fija: !!s?.fija, registro: [...(R?.rows ?? []), ...(RC ?? [])].sort((x, y) => (x.at < y.at ? 1 : -1)).slice(0, 8), contesto: (k?.rows[0]?.n ?? 0) + (k?.rows[0]?.nc ?? 0), paso: k?.rows[0]?.p ?? 0,
+    conectados: { whatsapp: NC.rows.some((x) => x.channel === "whatsapp"), sms: NC.rows.some((x) => x.channel === "sms") },
   };
 }
 
 /* Guardar (el dueño o quien lleva Mensajes; lo revisa la acción con accesoPanel(negocio, "msg")). Encender pide Pro AHORA y que To'Latino no lo
    haya apagado ahí (la base vuelve a exigir Pro: compa_solo_pro). «Cuándo» solo «fuera de tu horario» en 7f; temas ≥ 1; la nota ≤ 400 por idioma.
    Queda en la auditoría del negocio (antes → después). */
-export type CambioAuto = { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string } };
+export type CambioAuto = { enabled?: boolean; temas?: string[]; nota?: { es?: string; en?: string }; canales?: string[] };
 export async function guardarAuto(userId: string, negocio: string, x: CambioAuto): Promise<{ ok: true } | { ok: false; msg: Bi }> {
   const no = (es: string, en: string) => ({ ok: false as const, msg: { es, en } });
   const [P, pausa] = await Promise.all([db().query<{ pro: boolean; ciudad: string }>(`select compa_negocio_pro(id) as pro, city_id as ciudad from businesses where id = $1`, [negocio]), pausaAuto(negocio)]);
@@ -87,6 +93,13 @@ export async function guardarAuto(userId: string, negocio: string, x: CambioAuto
     temas = [...new Set(x.temas.map(String))].filter((t): t is Tema => (TEMAS as string[]).includes(t));
     if (!temas.length) return no("Deja al menos un tema.", "Keep at least one topic.");
   }
+  // 7h · POR DÓNDE: el chat de To'Latino siempre; WhatsApp y SMS solo con un número del negocio conectado por ese canal.
+  let canales: string[] | null = null;
+  if (x.canales) {
+    canales = ["app", ...new Set(x.canales.map(String).filter((k) => k === "whatsapp" || k === "sms"))];
+    const N = (await db().query<{ channel: string }>(`select distinct channel from compa_channel_numbers where business_id = $1 and status = 'active'`, [negocio])).rows.map((r) => r.channel);
+    if (canales.some((k) => k !== "app" && !N.includes(k))) return no("Para eso hace falta tu número conectado a To’Latino. Escríbele a Soporte.", "That needs your number connected to To’Latino. Write to Support.");
+  }
   const limpia = (t: unknown) => String(t ?? "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, " ").replace(/[ \t]+/g, " ").trim();
   let nota: Bi | null = null;
   if (x.nota) {
@@ -96,15 +109,17 @@ export async function guardarAuto(userId: string, negocio: string, x: CambioAuto
   }
   try {
     await tx(async (c) => {
-      const a = (await c.query<{ enabled: boolean; topics: string[]; owner_note: Bi }>(`select enabled, topics, owner_note from compa_business_settings where business_id = $1 for update`, [negocio])).rows[0];
+      const a = (await c.query<{ enabled: boolean; topics: string[]; owner_note: Bi; channels: string[] }>(`select enabled, topics, owner_note, channels from compa_business_settings where business_id = $1 for update`, [negocio])).rows[0];
       await c.query(
-        `insert into compa_business_settings (business_id, city_id, enabled, topics, owner_note, updated_by) values ($1, $2, coalesce($3, false), coalesce($4::text[], '{hours,menu,how_to_order,faq}'), coalesce($5::jsonb, '{"es":"","en":""}'::jsonb), $6)
+        `insert into compa_business_settings (business_id, city_id, enabled, topics, owner_note, updated_by, channels) values ($1, $2, coalesce($3, false), coalesce($4::text[], '{hours,menu,how_to_order,faq}'), coalesce($5::jsonb, '{"es":"","en":""}'::jsonb), $6, coalesce($7::text[], '{app}'))
          on conflict (business_id) do update set enabled = coalesce($3, compa_business_settings.enabled), topics = coalesce($4::text[], compa_business_settings.topics),
-           owner_note = coalesce($5::jsonb, compa_business_settings.owner_note), updated_by = $6`,
-        [negocio, b.ciudad, x.enabled ?? null, temas, nota ? JSON.stringify(nota) : null, userId]);
+           owner_note = coalesce($5::jsonb, compa_business_settings.owner_note), updated_by = $6, channels = coalesce($7::text[], compa_business_settings.channels)`,
+        [negocio, b.ciudad, x.enabled ?? null, temas, nota ? JSON.stringify(nota) : null, userId, canales]);
       const antes: Record<string, string> = {}, despues: Record<string, string> = {};
       if (x.enabled !== undefined && (a?.enabled ?? false) !== x.enabled) { antes["El Compa contesta por ti"] = a?.enabled ? "encendido" : "apagado"; despues["El Compa contesta por ti"] = x.enabled ? "encendido" : "apagado"; }
       if (temas) { antes["Temas"] = (a?.topics ?? TEMAS).length + " temas"; despues["Temas"] = temas.length + " temas"; }
+      const CN = (L: string[]) => L.map((k) => (k === "app" ? "chat" : k === "whatsapp" ? "WhatsApp" : "SMS")).join(", ");
+      if (canales) { antes["Por dónde"] = CN(a?.channels ?? ["app"]); despues["Por dónde"] = CN(canales); }
       if (nota) { antes["Lo que El Compa debe saber"] = a?.owner_note?.es ? "con nota" : "sin nota"; despues["Lo que El Compa debe saber"] = nota.es ? "con nota" : "sin nota"; }
       await c.query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'compa.auto_ajustes', 'business', $2, $3, $4::jsonb, $5::jsonb)`,
         [userId, negocio, b.ciudad, JSON.stringify(antes), JSON.stringify(despues)]);

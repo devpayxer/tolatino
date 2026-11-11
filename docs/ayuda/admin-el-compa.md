@@ -1,6 +1,6 @@
 # Super Admin: El Compa · Super Admin: El Compa
 
-_Pantallas: **Super Admin › El Compa · IA** (`/admin/compa`: «Interruptores y tope» y «Conversaciones»), la alerta del tope en Super Admin ›
+_Pantallas: **Super Admin › El Compa · IA** (`/admin/compa`: «Interruptores y tope», «Conversaciones», «Negocios» y «Canales»), la alerta del tope en Super Admin ›
 Inicio y Sistema › Configuración › El Compa. Permisos (sección «El Compa · IA»): ver = la pantalla y las cifras; aprobar = interruptores, pausas
 y tope (Admin de fábrica); Soporte y Solo lectura ven. También Super Admin › Negocios › un negocio › **El Compa**. Teléfono y escritorio.
 Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
@@ -37,6 +37,12 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
   permitirlas**.
 - **Pestaña Negocios:** dónde están encendidas las respuestas automáticas y dónde las apagó To'Latino, con sus cifras de 30 días; cada fila lleva
   a la ficha del negocio. **DÓNDE › Respuestas automáticas** en Conversaciones muestra sus conversaciones (la ficha con el hilo, anotada).
+- **Pestaña Canales (WhatsApp y SMS):** cifras (ENTRADAS · 24 H con firma buena, RECHAZADAS · 24 H por firma, hora o tamaño, RESPUESTAS · 24 H,
+  STOP · 30 D y los enlaces de un uso de 7 días), el **modo** de cada canal (simulador del sandbox, proveedor real o apagado), los **NÚMEROS QUE
+  RECIBEN** (el de To'Latino = El Compa de los vecinos; el de un negocio = sus respuestas automáticas) con **Conectar un número** y **Retirar**
+  (Admin, con motivo y auditoría), el **REGISTRO DE ENTRADA** sin texto ni teléfono (una huella corta para ver que es el mismo teléfono, si era
+  una cuenta, a qué número, qué pasó, qué salió y la conversación CP-) y, solo en el sandbox, el **SIMULADOR** (manda un mensaje como un
+  teléfono y muestra lo que El Compa contestó, con el enlace real; queda en la auditoría con solo los 4 últimos números).
 - **Colas › Mensajes reportados:** si en la conversación contestó El Compa, sus mensajes salen marcados **EL COMPA** y el caso ofrece **Apagar El
   Compa aquí** (solo en esa conversación; el negocio la sigue viendo y contestando) y **El Compa en el negocio**.
 
@@ -47,7 +53,10 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 3. **Pausar en un negocio:** **Pausar en un negocio**, escribe su id o su nombre exacto, elige qué se pausa y el motivo.
 4. **Cambiar el tope:** **Cambiar el tope**, el monto en dólares (entre $0 y $10,000; $0 = sin IA) y el motivo. Vale desde la llamada siguiente.
    También está en Configuración › El Compa, con el aviso, la espera máxima, los límites por persona y el vencimiento de las acciones.
-5. **Conversaciones:** filtra por DÓNDE, RESULTADO y CANAL o busca un **CP-**; **Siguientes** para ver más. Toca una para abrir su ficha (tu
+5. **Canales › Conectar un número:** elige el canal (WhatsApp · Meta o SMS · Telnyx; en el sandbox también «de prueba»), escribe el número (SMS:
+   10 dígitos; WhatsApp: el phone_number_id de Meta) y, si es de un negocio, su id después de una coma («100200300401, sabor-dominicano»), y el
+   motivo. **Retirar** lo deja sin recibir (no se borra). El **simulador**: elige el número, el teléfono desde el que «escribes» y el mensaje.
+6. **Conversaciones:** filtra por DÓNDE, RESULTADO y CANAL o busca un **CP-**; **Siguientes** para ver más. Toca una para abrir su ficha (tu
    lectura queda anotada); desde ahí, **Ver TK-… en Soporte** y **Ver a la persona**.
 
 ## Qué pasa en cada caso
@@ -65,6 +74,10 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 | Apagas las respuestas automáticas de un negocio | Sus clientes vuelven a la respuesta fija de siempre (si el negocio la tiene); el dueño ve el motivo y no las puede encender. |
 | Un cliente reporta una respuesta de El Compa | Caso en Mensajes reportados con el motivo «Una respuesta de El Compa»; ahí se apaga en esa conversación o se va al negocio. |
 | Pausas «Respuestas automáticas», el canal, la ciudad o llega al tope | Mensajes funciona exactamente como antes: la respuesta fija de siempre, si el negocio la tiene. |
+| Pausas el canal WhatsApp o SMS | No sale nada por ese canal (ni la respuesta fija); un STOP se anota igual. La app sigue igual. |
+| Llega una entrada sin firma, con firma mala o con la hora fuera de la ventana | Se rechaza (401) sin guardar nada; solo se cuenta en RECHAZADAS. |
+| El mismo mensaje llega dos veces (el proveedor reintenta) | Una sola entrada y una sola respuesta. |
+| Escribe un número sin cuenta o una cuenta que no encendió el canal | La misma respuesta fija (cómo entrar y dónde encenderlo); nada de ninguna cuenta. |
 | Pausas «Copiloto», el canal o la ciudad, o llega al tope | En Soporte y en Colas › Ayuda con pedidos y citas no sale «Sugerir respuesta con El Compa»: todo como antes (macros, Enviar, Resolver). |
 
 ## Preguntas frecuentes
@@ -73,6 +86,9 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 - **¿Qué ve la IA?** Lo mínimo de esa persona, tapado: sus operaciones recientes y la ayuda de su audiencia. Nunca de otra persona, ni Salud,
   Profesionales, Niños, mensajes privados o algo del Super Admin.
 - **¿Se guarda lo que dijo la gente?** Las conversaciones se guardan tapadas; el libro de uso (tokens, costo, modelo, espera) no guarda texto.
+- **¿Qué prueba la firma del proveedor?** Que el mensaje lo mandó Meta o Telnyx, no quién lo escribió. Por eso El Compa solo contesta a ese
+  teléfono, solo a una cuenta que lo encendió en Mi cuenta › Avisos, y nunca hace nada por mensaje: manda un enlace de un uso que se confirma en
+  la app después de entrar con el código.
 - **¿Dónde se pone la llave de Anthropic?** En los secretos del servidor, nunca en el repo ni en el chat. Sin llave, corre el simulador en el
   servidor de pruebas y las reglas fijas en producción.
 
@@ -91,6 +107,11 @@ every opening is logged before the thread shows; Read-only sees numbers only) sh
 answered without AI) without any text; it also counts conversations per level (neighbors, business dashboard…). **WHERE › Business dashboard**
 are the dashboard assistant's conversations. Businesses › a business › **El Compa** shows that business's 30-day dashboard numbers (conversations,
 «Go to …» taps, cases passed to Support, answered without AI) and whether El Compa is paused there, without text or people.
+
+**Channels tab (WhatsApp and SMS):** counts (signed entries, rejected ones, replies, STOPs, one-use links), each channel's mode (sandbox simulator,
+real provider or off), the **receiving numbers** (To'Latino's = El Compa for neighbors; a business's = its auto-replies) with **Connect a number**
+and **Retire** (Admin, with reason and audit), the **inbound log** without text or phone (a short fingerprint, account yes/no, result, CP-) and,
+in the sandbox only, a **simulator** that sends a message as a phone and shows El Compa's reply.
 
 ### How to use it
 Tap a switch, pick or write a reason, then **Pause** or **Turn on**. **Pause here** on a city or **Pause in a business** (id or exact name),
@@ -118,5 +139,7 @@ auto-replies paused at any level or at the cap, Messages works exactly as before
 - **Where do I see the support copilot?** Conversations › SUPPORT COPILOT · 30 D: drafts requested by the team and whether they were sent as is,
   edited or discarded (no people, no text); its monthly spend is in BY LEVEL › Copilot. Pausing the Copilot level (or the channel, the city, or
   reaching the cap) removes «Suggest a reply with El Compa» from Support and the help queue; everything else stays as before.
+- **What does the provider signature prove?** That Meta or Telnyx sent the message, not who wrote it. So El Compa only replies to that phone,
+  only to an account that turned it on, and never acts by message: it sends a one-use link confirmed in the app after signing in.
 - **Where does the Anthropic key go?** In the server secrets, never in the repo or chat. Without it, the simulator runs on the test server and
   the fixed rules in production.

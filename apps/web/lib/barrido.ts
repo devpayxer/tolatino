@@ -108,6 +108,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["compaRespuestasAuto", async () => (await import("./compa/respuesta-auto")).contestarPendientes()],
         // 7g · Un borrador del copiloto que nadie envió en un día queda «descartado» (nada se borra; las cifras de El Compa lo cuentan).
         ["compaBorradores", async () => { await db().query(`update compa_drafts set used = 'discarded' where used is null and at < now() - interval '1 day'`); }],
+        // 7h · WhatsApp y SMS: una entrada que no se procesó (el proceso se cayó) se retoma (la respuesta tardía respeta las horas de silencio y
+        // la ventana de 24 h); pasada la retención se vacían el texto y el teléfono cifrado del registro de entrada y salida.
+        ["compaCanales", async () => (await import("./compa/canales")).barrerCanales()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

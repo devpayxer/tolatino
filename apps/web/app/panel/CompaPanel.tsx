@@ -103,7 +103,14 @@ function autoBloques(c: Ctx): Bloque[] {
         c.run(() => compaAutoGuardar(d.id, { temas: has ? a.temas.filter((x) => x !== k) : [...a.temas, k] }), E2("Guardado.", "Saved."));
       } };
     }) },
-    { type: "rows", k: E2("POR DÓNDE", "WHERE"), items: [{ key: "app", icon: "chat", t: E2("Chat de To’Latino", "To’Latino chat"), s: E2("En tu página y en Mensajes. WhatsApp y SMS llegan más adelante.", "On your page and in Messages. WhatsApp and SMS come later."), tag: E2("ENCENDIDO", "ON"), tone: "signal", chev: false }] },
+    // 7h · POR DÓNDE: el chat siempre; WhatsApp y SMS solo con el número del negocio conectado a To'Latino (lo conecta el equipo; sin número, apagados).
+    { type: "rows", k: E2("POR DÓNDE", "WHERE"), items: [{ key: "app", icon: "chat", t: E2("Chat de To’Latino", "To’Latino chat"), s: E2("En tu página y en Mensajes.", "On your page and in Messages."), tag: E2("ENCENDIDO", "ON"), tone: "signal", chev: false },
+      ...(["whatsapp", "sms"] as const).map((k) => { const on = a.canales.includes(k), con = a.conectados[k], L = k === "whatsapp" ? "WhatsApp" : "SMS";
+        return { key: k, icon: "phone", t: L, chev: false,
+          s: !con ? E2(`Sin tu número de ${L} conectado a To’Latino. Para conectarlo, escríbele a Soporte.`, `Your ${L} number is not connected to To’Latino. To connect it, write to Support.`)
+            : E2(`A tu número de ${L}. Lo que El Compa no contesta lo ves en tu ${k === "whatsapp" ? "WhatsApp" : "teléfono"}, como siempre.`, `To your ${L} number. What El Compa doesn’t answer you see on your ${k === "whatsapp" ? "WhatsApp" : "phone"}, as always.`),
+          ...(con ? { tgOn: on, onTg: () => c.run(() => compaAutoGuardar(d.id, { canales: on ? a.canales.filter((x) => x !== k) : [...a.canales, k] }), on ? E2(`${L} apagado.`, `${L} off.`) : E2(`${L} encendido.`, `${L} on.`)) }
+            : { tag: E2("SIN NÚMERO", "NO NUMBER"), tone: "neutral" }) }; })] },
     { type: "note", tone: "ink", icon: "shield", t: E2("Siempre dice que es IA. Nunca confirma citas ni pedidos, no da descuentos ni cambia precios, no mueve dinero y no comparte tu teléfono. Si se lo piden, te lo pasa y sale en Mensajes.",
       "It always says it’s AI. It never confirms bookings or orders, gives discounts, changes prices, moves money or shares your phone. If asked, it passes it to you and it shows in Messages.") },
   );

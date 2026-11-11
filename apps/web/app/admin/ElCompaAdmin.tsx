@@ -8,8 +8,9 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { DatosCompaAdmin, FichaConv } from "@/lib/compa/admin-compa";
+import type { DatosCanales, Simulado } from "@/lib/compa/canales";
 import type { AutoNegocio } from "@/lib/compa/respuesta-auto";
-import { compaInterruptor, compaLevantar, compaPausarEn, compaTope } from "./acciones-compa";
+import { compaInterruptor, compaLevantar, compaNumero, compaNumeroRetirar, compaPausarEn, compaSimular, compaTope } from "./acciones-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -28,11 +29,20 @@ const CANAL: Record<string, [string, string, string]> = {
 };
 const RESULTADO: Record<string, [string, string]> = { open: ["ABIERTA", "neutral"], self_resolved: ["RESOLVIÓ SOLO", "neutral"], action_done: ["ACCIÓN CONFIRMADA", "signal"], handed_off: ["A UNA PERSONA", "action"], to_owner: ["AL DUEÑO", "action"] };
 const MOTIVO: Record<string, string> = { money: "dinero", account: "cuenta", safety: "seguridad", asked_person: "lo pidió", unknown: "no supo", owner: "dueño" };
-const SUP: Record<string, string> = { support_page: "Soporte", help_sheet: "Hoja de ayuda", panel: "Panel", business_chat: "Chat del negocio", ticket: "Caso" };
+const SUP: Record<string, string> = { support_page: "Soporte", help_sheet: "Hoja de ayuda", panel: "Panel", business_chat: "Chat del negocio", ticket: "Caso", channel: "WhatsApp o SMS" };
+// 7h · Canales: lo que pasó con cada entrada y con cada salida (sin texto ni teléfono).
+const RES_E: Record<string, [string, string]> = { respuesta: ["CONTESTÓ", "signal"], enlace: ["MANDÓ UN ENLACE", "signal"], persona: ["A UNA PERSONA", "action"], fija: ["RESPUESTA FIJA", "neutral"],
+  baja: ["STOP", "danger"], alta: ["START", "signal"], ayuda: ["HELP", "neutral"], en_baja: ["DE BAJA · NADA", "neutral"], limite: ["LÍMITE DEL DÍA", "action"], apagado: ["APAGADO · NADA", "neutral"],
+  tope: ["AL TOPE · NADA", "action"], auto: ["RESPUESTA DEL NEGOCIO", "signal"], auto_paso: ["PASÓ AL NEGOCIO", "action"], auto_nada: ["EL NEGOCIO CONTESTA", "neutral"], sin_ruta: ["NO ES NUESTRO", "neutral"],
+  media: ["SOLO TEXTO", "neutral"], error: ["FALLÓ", "danger"] };
+const SAL: Record<string, string> = { simulado: "simulado (sandbox)", pendiente: "pendiente", enviado: "enviado", fallo: "falló", apagado: "no salió: canal apagado", baja: "no salió: pidió STOP",
+  silencio: "no salió: horas de silencio", ventana: "no salió: fuera de las 24 h de WhatsApp", sin_proveedor: "sin proveedor" };
+const MODO: Record<string, string> = { simulador: "Simulador del sandbox (no sale nada)", real: "Proveedor real", apagado: "Apagado: no sale nada" };
 const ACC_T: Record<string, string> = { cancel_request: "Cancelar una solicitud", open_screen: "Abrir una pantalla", go_to_panel: "Ir al panel" };
 const ACC_E: Record<string, string> = { proposed: "propuesta", confirming: "confirmando", confirmed: "confirmada", dismissed: "la dejó", expired: "venció", failed: "falló" };
 const MOTOR: Record<string, string> = { claude: "Claude (con la llave del entorno)", simulador: "Simulador del sandbox (todavía sin llave de Anthropic)", reglas: "Reglas fijas (sin IA)" };
-const ACCION: Record<string, string> = { "compa.pausar": "Pausó", "compa.encender": "Encendió", "compa.pausar_en": "Pausó", "compa.levantar": "Levantó la pausa", "config.cambiar": "Cambió" };
+const ACCION: Record<string, string> = { "compa.pausar": "Pausó", "compa.encender": "Encendió", "compa.pausar_en": "Pausó", "compa.levantar": "Levantó la pausa", "config.cambiar": "Cambió",
+  "compa.numero": "Conectó", "compa.numero_retirar": "Retiró", "compa.simular": "Probó" };
 const plata = (c: number) => `$${(c / 100).toFixed(c > 0 && c < 1 ? 4 : 2)}`;
 const cuando = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
 const valores = (o: Record<string, string> | null) => (o ? Object.values(o).join(" · ") : "");
@@ -40,17 +50,18 @@ const pares = (o: Record<string, string> | null) => (o ? Object.entries(o).map((
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const mesL = (m: string) => { const [a, b] = m.split("-"); return `${MESES[Number(b) - 1] ?? b} de ${a}`; };
 
-export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, antes, cambiar, cp = null, ficha = null, leer = false, negocios = [] }: {
-  d: DatosCompaAdmin; tab: "ctl" | "conv" | "neg"; uso: string | null; res: string | null; canal?: string | null; buscar?: string | null; antes: string | null; cambiar: boolean;
-  cp?: string | null; ficha?: FichaConv | null; leer?: boolean; negocios?: AutoNegocio[];
+export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, antes, cambiar, cp = null, ficha = null, leer = false, negocios = [], canales = null }: {
+  d: DatosCompaAdmin; tab: "ctl" | "conv" | "neg" | "can"; uso: string | null; res: string | null; canal?: string | null; buscar?: string | null; antes: string | null; cambiar: boolean;
+  cp?: string | null; ficha?: FichaConv | null; leer?: boolean; negocios?: AutoNegocio[]; canales?: DatosCanales | null;
 }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [q, setQ] = useState(buscar ?? "");
+  const [sim, setSim] = useState<{ num: string; tel: string; txt: string; res: Simulado | null; busy: boolean }>({ num: canales?.numeros[0]?.id ?? "", tel: "", txt: "", res: null, busy: false });
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo."); setConf(null); router.refresh(); };
   const ir = (p: { tab?: string; uso?: string | null; res?: string | null; canal?: string | null; buscar?: string | null; antes?: string | null; cp?: string | null }) => {
     const x = new URLSearchParams(), t = p.tab ?? tab, u = p.uso !== undefined ? p.uso : uso, r = p.res !== undefined ? p.res : res;
     const ca = p.canal !== undefined ? p.canal : canal, bq = p.buscar !== undefined ? p.buscar : buscar;
-    if (t !== "ctl") x.set("tab", t); if (t === "conv" && u) x.set("uso", u); if (t === "conv" && r) x.set("res", r); if (t === "conv" && ca) x.set("canal", ca);
+    if (t !== "ctl" && !(p.cp && t === "conv")) x.set("tab", t); if (t === "conv" && u) x.set("uso", u); if (t === "conv" && r) x.set("res", r); if (t === "conv" && ca) x.set("canal", ca);
     if (t === "conv" && bq) x.set("buscar", bq); if (p.antes) x.set("antes", p.antes); if (p.cp) x.set("cp", p.cp);
     router.push(x.size ? `/admin/compa?${x}` : "/admin/compa", { scroll: false });
   };
@@ -113,7 +124,8 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
     ...(pausados.length ? [{ type: "note" as const, tone: "warn" as const, t: `En pausa: ${pausados.join(" · ")}.` }] : []),
     { type: "tabs", items: [{ l: "Interruptores y tope", n: pausados.length ? String(pausados.length) : undefined, on: tab === "ctl", onClick: () => ir({ tab: "ctl" }) },
       { l: "Conversaciones", n: d.conv.total7d ? String(d.conv.total7d) : undefined, on: tab === "conv", onClick: () => ir({ tab: "conv" }) },
-      { l: "Negocios", on: tab === "neg", onClick: () => ir({ tab: "neg" }) }] },
+      { l: "Negocios", on: tab === "neg", onClick: () => ir({ tab: "neg" }) },
+      { l: "Canales", n: canales?.cifras.entradas24 ? String(canales.cifras.entradas24) : undefined, on: tab === "can", onClick: () => ir({ tab: "can" }) }] },
   ];
   if (tab === "ctl") {
     B.push(
@@ -148,6 +160,57 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
         t: `${ACCION[h.accion] ?? h.accion} · ${pares(h.despues) || h.objetivo}`, s: `${cuando(h.at)}${h.quien ? ` · ${h.quien}` : ""}${h.antes ? ` · antes: ${valores(h.antes)}` : ""}${h.motivo ? ` · ${h.motivo}` : ""}`, chev: false, compact: true }))
         : [{ key: "x", icon: "folder", t: "Sin cambios todavía", chev: false }] },
     );
+  } else if (tab === "can" && canales) {
+    // 7h · Canales: WhatsApp y SMS (secCompa POR CANAL + hueco de diseño: números, registro y simulador, compuestos con piezas del sistema).
+    const C2 = canales, k = C2.cifras;
+    const numero = () => !cambiar ? sinPermiso() : setConf({ titulo: "Conectar un número", cta: "Conectar", elegir: { label: "CANAL", items: [
+        { k: "whatsapp:whatsapp", l: "WhatsApp · Meta" }, { k: "sms:telnyx", l: "SMS · Telnyx" }, ...(C2.sandbox ? [{ k: "whatsapp:sim", l: "WhatsApp · de prueba" }, { k: "sms:sim", l: "SMS · de prueba" }] : [])] },
+      valor: { k: "NÚMERO (Y, SI ES DE UN NEGOCIO, SU ID DESPUÉS DE UNA COMA)", ini: "", max: 120 },
+      sub: "Sin negocio = el número de To'Latino (El Compa de los vecinos). Con negocio = sus respuestas automáticas por ese canal (el dueño las enciende en su panel). WhatsApp de Meta: el phone_number_id. Queda en la auditoría.",
+      plantillas: ["Número del sandbox para probar.", "Lo pidió el dueño por Soporte."], hacer: (m, e, v) => compaNumero(e ?? "", v, m) });
+    const retirar = (id: string, t: string) => !cambiar ? sinPermiso() : setConf({ titulo: `Retirar ${t}`, peligro: true, cta: "Retirar", sub: "Ese número deja de recibir: lo que llegue ahí no se contesta. Queda en la auditoría.",
+      plantillas: ["Ya no se usa.", "Lo pidió el dueño."], hacer: (m) => compaNumeroRetirar(id, m) });
+    const simular = async () => {
+      if (sim.busy || !sim.num || !sim.tel.trim() || !sim.txt.trim()) return;
+      setSim({ ...sim, busy: true });
+      const r = await compaSimular(sim.num, sim.tel, sim.txt).catch(() => ({ ok: false as const, msg: "No se pudo. Prueba otra vez." }));
+      setSim((x) => ({ ...x, busy: false, res: r, txt: r.ok ? "" : x.txt }));
+      router.refresh();
+    };
+    B.push(
+      { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+        { k: "ENTRADAS · 24 H", v: String(k.entradas24), s: "con firma buena", bg: "var(--tl-ink)", fg: "var(--tl-white)" },
+        { k: "RECHAZADAS · 24 H", v: String(k.rechazadas24), s: "firma, hora o tamaño" },
+        { k: "RESPUESTAS · 24 H", v: String(k.respuestas24), s: "enviadas o simuladas" },
+        { k: "STOP · 30 D", v: String(k.bajas30), s: `${k.enlaces7} enlaces en 7 d · ${k.usados7} confirmados` }] },
+      { type: "kv", cols: desk ? 2 : 1, items: [
+        { k: "WHATSAPP", v: `${MODO[C2.modo.whatsapp]}${C2.on.whatsapp ? "" : " · el interruptor POR CANAL está en pausa"}`, fg: C2.modo.whatsapp === "real" ? undefined : "var(--tl-pro-ink)" },
+        { k: "SMS", v: `${MODO[C2.modo.sms]}${C2.on.sms ? "" : " · el interruptor POR CANAL está en pausa"}`, fg: C2.modo.sms === "real" ? undefined : "var(--tl-pro-ink)" }] },
+      { type: "note", tone: "ink", icon: "shield", t: "La firma del proveedor prueba que el mensaje vino de Meta o de Telnyx, no quién lo escribe. Por eso El Compa solo contesta a ese mismo teléfono, solo a una cuenta que lo encendió en Mi cuenta › Avisos, y nunca hace nada por mensaje: manda un enlace de un uso que se confirma en la app después de entrar." },
+      { type: "group", k: "NÚMEROS QUE RECIBEN", ...(cambiar ? { link: "Conectar un número", onLink: numero } : {}) },
+      { type: "rows", items: C2.numeros.length ? C2.numeros.map((x) => ({ key: x.id, icon: x.canal === "whatsapp" ? "chat" : "phone", chev: false,
+        t: `${x.canal === "whatsapp" ? "WhatsApp" : "SMS"} · ${x.numero}`, s: `${x.negocio ? `${x.negocio.nombre} (respuestas automáticas)` : "To'Latino (El Compa de los vecinos)"} · ${x.ciudad} · ${x.motivo} · ${cuando(x.at)}`,
+        tag: x.proveedor === "sim" ? "DE PRUEBA" : x.proveedor === "telnyx" ? "TELNYX" : "META", tone: x.proveedor === "sim" ? "ink" : "neutral",
+        acts: cambiar ? [{ l: "Retirar", v: "secondary", onClick: () => retirar(x.id, `${x.canal === "whatsapp" ? "WhatsApp" : "SMS"} ${x.numero}`) }] : undefined }))
+        : [{ key: "x", icon: "phone", t: "Ningún número conectado", s: "Sin número, nada entra ni sale por WhatsApp o SMS.", chev: false }] },
+    );
+    if (C2.sandbox && cambiar) {
+      const SR = sim.res;
+      B.push(
+        { type: "group", k: "SIMULADOR DEL SANDBOX" },
+        { type: "note", tone: "info", icon: "info", t: "Manda un mensaje como si fueras un teléfono y mira qué contesta El Compa. Pasa por lo mismo que un mensaje de verdad (STOP, límite, identidad, el turno) y no sale nada. Queda en la auditoría." },
+        ...(C2.numeros.length ? [{ type: "chips" as const, k: "A QUÉ NÚMERO", items: C2.numeros.map((x) => ({ l: `${x.canal === "whatsapp" ? "WhatsApp" : "SMS"} · ${x.negocio ? x.negocio.nombre : "To'Latino"}`, v: sim.num === x.id ? "selected" : "filter", onClick: () => setSim({ ...sim, num: x.id, res: null }) })) }] : []),
+        { type: "field", k: "DESDE EL TELÉFONO", val: sim.tel, max: 20, ph: "570 555 0122", onChange: (v: string) => setSim({ ...sim, tel: v.slice(0, 20) }) },
+        { type: "field", k: "EL MENSAJE", val: sim.txt, area: true, rows: 2, max: 300, count: `${sim.txt.length}/300`, ph: "¿Cómo va mi reservación?", onChange: (v: string) => setSim({ ...sim, txt: v.slice(0, 300) }) },
+        { type: "acts", items: [{ l: sim.busy ? "Mandando…" : "Mandar como ese teléfono", v: "primary", icon: "chat", off: sim.busy || !sim.num || !sim.tel.trim() || !sim.txt.trim(), onClick: () => void simular() }] },
+      );
+      if (SR && !SR.ok) B.push({ type: "note", tone: "warn", t: SR.msg });
+      if (SR && SR.ok) B.push({ type: "thread", items: [
+        ...SR.salidas.map((o) => ({ t: o.texto ?? "(sin texto)", soft: true, m: `EL COMPA · ${o.tipo.toUpperCase()} · ${SAL[o.estado] ?? o.estado}` })),
+        ...(SR.salidas.length ? [] : [{ t: "No contestó nada.", soft: true, m: `RESULTADO · ${RES_E[SR.resultado]?.[0] ?? SR.resultado}` }])] },
+        { type: "kv", cols: desk ? 2 : 1, items: [{ k: "RESULTADO", v: RES_E[SR.resultado]?.[0] ?? SR.resultado }, ...(SR.cp ? [{ k: "CONVERSACIÓN", v: SR.cp, fg: "var(--tl-action)" }] : [])] });
+    }
+    B.push({ type: "group", k: "REGISTRO DE ENTRADA" });
   } else if (tab === "neg") {
     // 7f · Respuestas automáticas por negocio (secCompa · Negocios): cifras de 30 días, sin texto ni personas. «Apagar El Compa aquí» está en la
     // ficha del negocio (Negocios 360° › El Compa), con motivo y aviso al dueño.
@@ -177,6 +240,17 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={B} h1={desk ? 26 : 22} />
+      {tab === "can" && canales ? (canales.entradas.length
+        ? <A.AdminList label={`${canales.entradas.length}${canales.sig ? "+" : ""} ENTRADAS`} rows={canales.entradas.map((x) => ({ icon: x.canal === "whatsapp" ? "chat" : "phone",
+            onClick: x.cp && leer ? () => ir({ tab: "conv", cp: x.cp }) : undefined, chevron: !!(x.cp && leer),
+            title: `${x.canal === "whatsapp" ? "WhatsApp" : "SMS"} · teléfono #${x.tel} · ${x.cuenta ? "con cuenta" : "sin cuenta"} → ${x.destino}`,
+            sub: `${cuando(x.at)} · ${x.proveedor === "sim" ? "simulador" : x.proveedor === "telnyx" ? "Telnyx" : "Meta"}${x.tipo !== "text" ? ` · ${x.tipo.toUpperCase()}` : ""}${x.salida ? ` · salida: ${SAL[x.salida] ?? x.salida}` : ""}${x.cp ? ` · ${x.cp}` : ""}${x.estado !== "hecho" ? ` · ${x.estado}` : ""}`,
+            tag: RES_E[x.resultado ?? ""]?.[0] ?? (x.estado === "hecho" ? "—" : "EN CURSO"), tone: RES_E[x.resultado ?? ""]?.[1] ?? "neutral" }))} />
+        : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Todavía no entró nada", s: "Cuando alguien escriba por WhatsApp o SMS a un número conectado, sale aquí (sin el texto ni el teléfono)." }]} />) : null}
+      {tab === "can" && canales ? <PanelBloques bloques={[
+        ...(canales.sig || antes ? [{ type: "acts" as const, items: [...(antes ? [{ l: "← Desde el principio", v: "secondary", onClick: () => ir({ antes: null }) }] : []), ...(canales.sig ? [{ l: "Siguientes →", v: "secondary", onClick: () => ir({ antes: canales.sig }) }] : [])] }] : []),
+        { type: "note", tone: "info", t: "El registro no guarda ni muestra el teléfono ni el texto: una huella corta para ver que es el mismo teléfono, si era una cuenta, qué pasó y la conversación. El texto se vacía a los días de Configuración › El Compa." },
+      ]} /> : null}
       {tab === "neg" ? (negocios.length
         ? <A.AdminList label={`${negocios.length} NEGOCIOS`} rows={negocios.map((x) => ({ icon: x.pausa ? "ban" : "store", chevron: true, onClick: () => router.push(`/admin/negocios/${x.id}?tab=compa`),
             title: `${x.nombre} · ${x.ciudad}`, sub: `30 días: ${x.contesto30} respuestas · ${x.paso30} pasadas al negocio${x.reportes ? ` · ${x.reportes} reportes` : ""}${x.pausa ? ` · apagadas por To'Latino: ${x.pausa.motivo}` : ""}`,

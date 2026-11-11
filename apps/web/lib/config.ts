@@ -48,7 +48,9 @@ export type ClaveConfig =
   // 7f · Respuestas automáticas (0121)
   | "compa_auto_hilo_max" | "compa_auto_dia_negocio" | "compa_auto_espera_min"
   // 7g · El copiloto del equipo (0122)
-  | "compa_copiloto_dia_staff";
+  | "compa_copiloto_dia_staff"
+  // 7h · WhatsApp y SMS con enlace (0123)
+  | "compa_link_min" | "compa_canal_msgs_dia" | "compa_canal_respuesta_min" | "compa_canal_retener_dias" | "compa_canal_firma_seg";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

@@ -1045,7 +1045,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 ## Fase 7 · 7f (respuestas automáticas de El Compa y «Sugerir respuesta»)
 - [ ] **7f · «Si no contestas en 10 min» y «Siempre, al instante»** (CUÁNDO del diseño): hoy solo «Fuera de tu horario» (§6 #8). Se construyen con
       `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov)
-- [ ] **7f · WhatsApp y SMS en las respuestas automáticas** (POR DÓNDE): 7h. Hoy solo el chat de To'Latino (`channels` = {app}). (7f, 11 nov)
+- [x] **7f · WhatsApp y SMS en las respuestas automáticas** (POR DÓNDE): 7h. Hoy solo el chat de To'Latino (`channels` = {app}). (7f, 11 nov)
+      — 7h (11 nov): POR DÓNDE con WhatsApp y SMS, solo con el número del negocio conectado en Super Admin › El Compa › Canales (`compa7h`).
 - [ ] **7f · «order by» sobre `id::text`** (clase): en Postgres `select id::text … order by id` ordena el texto (100 antes que 98). Cazado en 7f
       (arreglado en lib/compa y lib/mensajes, guardián `ordenSinTexto` solo ahí); quedan ~45 consultas en otros módulos (p. ej. `change_proposals
       … order by id desc limit 1` en citas, fiestas, noche, inscripciones, visitas y viajes; listas de secciones e ítems; `payments` en ayuda-cita
@@ -1089,3 +1090,33 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **`pedidos2c.cjs` (prueba vieja de pedidos) espera «Nada pendiente» en Hoy**, pero desde 6i Hoy también cuenta las solicitudes de evento
       privado abiertas (la semilla deja EP-4125 pendiente en Sabor Dominicano). El pedido vence bien (1378 · expired); hay que actualizar la
       prueba para que limpie o ignore esas solicitudes. (10 nov)
+
+## Fase 7 · 7h (El Compa por WhatsApp y SMS con enlace)
+- [ ] **7h · Cuentas de los proveedores (el fundador, en persona):** Telnyx (número de To'Latino + registro **10DLC** de la marca y la campaña de
+      respuestas, con STOP/HELP) y Meta (WhatsApp Business Account verificado, la app y el número). Las llaves (`TELNYX_API_KEY`, la llave
+      pública `TELNYX_PUBLIC_KEY`, `WHATSAPP_APP_SECRET`, `WHATSAPP_TOKEN`, `WHATSAPP_VERIFY_TOKEN`) van al formulario seguro del entorno; el
+      compose ya las pasa (vacías). Falta el camino de las llaves a `/etc/tolatino/pruebas.env` (el mismo que Stripe y Anthropic). (7h, 11 nov)
+- [ ] **7h · Hosts de salida para el sandbox:** `api.telnyx.com` y `graph.facebook.com` cuando haya llaves (no se tocó la red). (7h, 11 nov)
+- [ ] **7h · Fase 9:** WhatsApp encendido y **SMS apagado** (§6 #14): poner `compa.channel.sms` en pausa en producción, además del candado
+      `TOLATINO_COMPA=encendido`. Conectar el número de To'Latino en Super Admin › El Compa › Canales. (7h, 11 nov)
+- [ ] **7h · Respuesta de STOP de los proveedores:** Telnyx y Meta pueden mandar su propia confirmación de STOP; El Compa ya manda una. Dejar una
+      sola (apagar la del perfil de Telnyx o la nuestra) al conectar. Con el canal en pausa, solo sale la del proveedor. (7h, 11 nov)
+- [ ] **7h · Plantillas de WhatsApp (escribir primero):** fuera de la ventana de 24 h no sale nada; los avisos por WhatsApp (código de entrada,
+      boletos, citas) necesitan plantillas aprobadas por Meta. No se construyó. (7h, 11 nov)
+- [ ] **7h · Bandeja de los negocios por SMS:** las respuestas automáticas por SMS a un número del negocio funcionan, pero el dueño no tiene
+      dónde leer ni contestar esos SMS en To'Latino (el de WhatsApp lo lee en su app de WhatsApp Business). Antes de encender SMS a negocios,
+      una bandeja en Mensajes o dejarlo solo en WhatsApp. (7h, 11 nov)
+- [ ] **7h · Estado de entrega** (los avisos `message.finalized` de Telnyx y los `statuses` de Meta): hoy se ignoran; anotarlos en
+      `compa_outbound` y en las cifras de Notificaciones (también los SMS de avisos). Sin reintentos de un envío que falló. (7h, 11 nov)
+- [ ] **7h · Especificaciones del contrato fijas:** `scripts/contrato-canales/correr.sh` baja la especificación de Telnyx (`master`) y la de Meta
+      (`main`, v23.0) en cada corrida; fijarlas a un commit para que un cambio del proveedor no rompa la CI sin aviso. (7h, 11 nov)
+- [ ] **7h · El simulador y los SMS de avisos:** los avisos por SMS (`lib/avisos.ts`, 6d transferencias/cortesías/lista de espera, 6g puerta,
+      7a invitación al equipo) siguen saliendo por su propio camino (Telnyx con `TELNYX_FROM`, modo pruebas en el sandbox); ahora respetan STOP
+      («baja»). Unificar su salida con `lib/compa/canales-proveedor.ts` cuando se conecte Telnyx. (7h, 11 nov)
+- [ ] **7h · Soporte por WhatsApp** (admin-dashboard L271): hoy WhatsApp habla con El Compa y «Con una persona» abre un caso TK-; el equipo
+      contesta en la app (la persona lo ve ahí), no por WhatsApp. Contestar el caso por WhatsApp = decisión del fundador (costo por mensaje). (7h, 11 nov)
+- [ ] **7h · Inundación de remitentes falsos:** el límite es por teléfono (30 al día); un ataque con muchos números falsos por SMS gastaría
+      mensajes. Agregar un tope global por minuto con alerta antes de encender SMS. (7h, 11 nov)
+- [ ] **7h · Para el abogado:** TCPA / 10DLC (consentimiento: el canal se enciende en Mi cuenta; STOP/HELP), política de WhatsApp Business
+      (ventana de 24 h, opt-in, IA que se presenta) y el aviso de que el texto pasa por Telnyx/Meta y por el proveedor de IA. (7h, 11 nov)
+- [ ] **7h · En los 9 dispositivos:** `compa7h` corre en 390 y 1360 en local; falta la matriz de CI. (7h, 11 nov)

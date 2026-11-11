@@ -27,6 +27,8 @@ web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
 | Le pides que haga algo con dinero | No lo hace: te pasa a una persona con el resumen. |
 | La IA no está disponible o tarda | Te contestan las reglas fijas de To'Latino y siempre tienes «Con una persona». |
 | Es una emergencia | Te dice que llames al 911. |
+| Le escribes por WhatsApp o SMS | Solo si encendiste «Hablar con El Compa por WhatsApp y SMS» en Mi cuenta › Avisos, y solo a tu teléfono verificado. Lo que cambia algo se confirma en la app con un enlace de un uso, después de entrar. El registro de mensajes no guarda tu teléfono (solo una huella) y su texto se borra a los 30 días. |
+| Respondes STOP | No te mandamos más mensajes por ese número (tampoco avisos por SMS) hasta que respondas START. Queda anotado. |
 
 ## Preguntas frecuentes
 - **¿Adónde va lo que escribo?** El texto, ya tapado y solo lo necesario, se procesa con un proveedor de IA (Anthropic) en EE. UU. para
@@ -62,6 +64,11 @@ tap; nothing happens without it. Money, account or safety questions go to **a pe
 Data that must not be shared is covered and you see «Don't share that here. We never ask for it.». Asking about someone else: «I don't have
 that information». Money requests go to a person. If the AI is unavailable or slow, To'Latino's fixed rules answer and «Talk to a person» is
 always there. Emergencies: call 911.
+
+### WhatsApp and SMS
+Only if you turned on «Talk to El Compa by WhatsApp and SMS» in My account › Notifications, and only to your verified phone. Anything that
+changes something is confirmed in the app through a one-use link after signing in. The message log keeps no phone number (only a fingerprint)
+and its text is erased after 30 days. Replying STOP stops all messages from that number (SMS notices too) until you reply START.
 
 ### FAQ
 - **Where does my text go?** Covered and only what is needed, it is processed by an AI provider (Anthropic) in the U.S. to answer you.

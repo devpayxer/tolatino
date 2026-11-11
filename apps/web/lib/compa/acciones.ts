@@ -63,8 +63,9 @@ export function validarAccion(x: { uso: Uso; accion: Respuesta["accion"]; refs: 
 }
 
 /* Guardar la propuesta (un uso; vence a los compa_accion_min). La pantalla recibe el id y la tarjeta «Así queda». */
-export async function proponer(c: import("pg").PoolClient, x: { conversacion: number; mensaje: number; userId: string; p: Propuesta }): Promise<string> {
-  const min = await valor("compa_accion_min");
+export async function proponer(c: import("pg").PoolClient, x: { conversacion: number; mensaje: number; userId: string; p: Propuesta; minutos?: number }): Promise<string> {
+  // 7h · Por WhatsApp o SMS la acción vive lo mismo que su enlace de un uso (compa_link_min): se confirma después de entrar en la app.
+  const min = x.minutos ?? await valor("compa_accion_min");
   return (await c.query<{ id: string }>(
     `insert into compa_actions (conversation_id, message_id, user_id, type, operation_id, op_status, target, expires_at)
      values ($1, $2, $3, $4, $5::bigint, $6, $7, now() + make_interval(mins => $8::int)) returning id::text`,

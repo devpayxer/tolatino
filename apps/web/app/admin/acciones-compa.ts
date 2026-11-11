@@ -66,3 +66,26 @@ export async function compaHilo(caso: string, encender: boolean, motivo: string)
   if (!q || (s.cities.length && (!q.city || !s.cities.includes(q.city)))) return { ok: false, mensaje: "Ese caso no existe o ya se decidió." };
   return res(await apagarEnHilo(s, q.hilo, !!encender, String(motivo ?? "")));
 }
+
+/* 7h · Canales (WhatsApp y SMS): conectar o retirar un número que recibe (de To'Latino o de un negocio) y el simulador del sandbox. Conectar y
+   retirar: compa:aprobar, motivo y auditoría. El simulador: compa:aprobar, nunca en producción (lo revisa lib/compa/canales.ts) y anotado. */
+export async function compaNumero(tipo: string, valor: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "aprobar")) return SIN;
+  const [canal, proveedor] = String(tipo ?? "").split(":");
+  const [numero, negocio] = String(valor ?? "").split(",").map((x) => x.trim());
+  const { agregarNumero } = await import("@/lib/compa/canales");
+  return res(await agregarNumero(s, { canal: canal ?? "", proveedor: proveedor ?? "", numero: numero ?? "", negocio: negocio ?? "" }, String(motivo ?? "")));
+}
+export async function compaNumeroRetirar(id: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "aprobar")) return SIN;
+  const { retirarNumero } = await import("@/lib/compa/canales");
+  return res(await retirarNumero(s, String(id ?? ""), String(motivo ?? "")));
+}
+export async function compaSimular(numero: string, telefono: string, texto: string): Promise<import("@/lib/compa/canales").Simulado> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "aprobar")) return { ok: false, msg: "Tu rol no usa el simulador." };
+  const { simular } = await import("@/lib/compa/canales");
+  return simular(s, { numero: String(numero ?? ""), telefono: String(telefono ?? "").slice(0, 20), texto: String(texto ?? "").slice(0, 1000) });
+}

@@ -13,7 +13,7 @@ import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Co
 import type { ResAdm } from "./acciones-colas";
 
 const G: Record<GrupoNotif, string> = { crit: "CRÍTICO · SIEMPRE LLEGA", tx: "PEDIDOS, RESERVACIONES Y SOLICITUDES", events: "EVENTOS · LO QUE NO ES CRÍTICO SE APAGA", community: "COMUNIDAD · SE APAGA O VA EN EL RESUMEN DIARIO", mod: "MODERACIÓN", biz: "AL NEGOCIO", mkt: "CRECIMIENTO · RESPETA AVISOS Y SILENCIO" };
-const SMS: Record<string, [string, string]> = { no: ["SOLO BANDEJA", "neutral"], pruebas: ["SMS EN PRUEBAS", "action"], pendiente: ["SMS PENDIENTE", "neutral"], enviado: ["SMS ENVIADO", "signal"], fallo: ["SMS FALLÓ", "danger"], silencio: ["HORAS DE SILENCIO", "neutral"], apagado: ["SMS APAGADO", "neutral"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
+const SMS: Record<string, [string, string]> = { no: ["SOLO BANDEJA", "neutral"], pruebas: ["SMS EN PRUEBAS", "action"], pendiente: ["SMS PENDIENTE", "neutral"], enviado: ["SMS ENVIADO", "signal"], fallo: ["SMS FALLÓ", "danger"], silencio: ["HORAS DE SILENCIO", "neutral"], apagado: ["SMS APAGADO", "neutral"], sin_proveedor: ["SIN PROVEEDOR", "danger"], baja: ["PIDIÓ STOP", "neutral"] };
 const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", emp: "Empleos", hoy: "Lo que traen hoy", com: "Respuestas y votos", msg: "Mensajes de vecinos", evt: "Boletos y cambios", evtR: "Recordatorios", evtG: "Eventos que guardas" };
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 

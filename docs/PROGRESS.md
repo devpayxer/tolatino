@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7g · el copiloto del equipo en Super Admin › Soporte y en las ayudas escaladas)._
+_Actualizado: 11 nov 2026 (7h · El Compa por WhatsApp y SMS con enlace de un uso)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -480,6 +480,35 @@ Ayuda con pedidos y citas** (la nota, el BORRADOR y «Resolver con un mensaje» 
 `alreves7g`; 45/45 `alreves7b` y 66/66 `alreves7c` con dos casos apuntados al código nuevo; 36/36 7a, 33/33 7d, 36/36 7e, 40/40 7f); e2e
 **`compa7g` 92 ✓** (390 y 1360); `sop7b` 104 ✓, `compa7c` 111 ✓, `compa7f` 130 ✓, `adm5i` ✓; 0122 dos veces en local y en una base nueva (semillas
 dos veces). Ayuda: `admin-soporte`, `admin-el-compa` al día (indexadas). Sigue **7h** (WhatsApp y SMS con enlace; migración 0123).
+**7h hecho (11 nov)** — El Compa por WhatsApp y SMS con enlace de un uso (vecinos y respuestas automáticas). Migración **0123**
+(`compa_channel_numbers` (los números que reciben: de To'Latino o de un negocio; Telnyx · Meta · «sim» de prueba; se retiran, no se borran);
+`compa_inbound` SOLO INSERCIÓN salvo su procesamiento, que solo avanza, y la purga (único por proveedor + id del mensaje; teléfono como huella
+HMAC y cifrado; texto TAPADO; la base rechaza tarjeta/SSN); `compa_canal_rechazos` (cuántos por día, proveedor y motivo, sin nada de lo que
+traían); `compa_outbound` (lo que salió o NO salió y por qué: simulado · enviado · fallo · apagado · baja · silencio · ventana · sin_proveedor;
+sin el token del enlace); `compa_links` (sha256 del token, una acción y una cuenta, vence a `compa_link_min`, se usa una vez);
+`compa_canal_consent` SOLO INSERCIÓN (STOP/START por teléfono y número; encender/apagar el canal en Mi cuenta por trigger sobre
+`users.notif_prefs.cpa`) + `compa_canal_en_baja()`; `compa_conversations.surface` suma «channel»; `compa_messages.contact_phone_hash` (alguien
+sin cuenta a un negocio); `sms_status` suma «baja» en avisos y `phone_messages`; claves `compa_link_min` 30, `compa_canal_msgs_dia` 30,
+`compa_canal_respuesta_min` 5, `compa_canal_retener_dias` 30, `compa_canal_firma_seg` 300; sin semilla). Código: `lib/compa/canales-proveedor.ts`
+(ÚNICO que habla con Telnyx/Meta y lee sus secretos: firma Ed25519 de Telnyx sobre «hora|cuerpo» con ventana, HMAC de Meta en tiempo constante,
+reto del webhook, lectura de las entradas, `mandar` texto plano), `lib/compa/canales.ts` (`recibir` idempotente → `procesar` aparte: STOP /
+START / HELP primero → límite por teléfono → el número decide: To'Latino = `turno` del vecino SOLO con teléfono verificado de UNA cuenta activa
+que encendió el canal (si no, la misma respuesta fija) · un negocio = `respuestaAutoCanal` (7f, sin datos de cuentas); acciones → enlace de un
+uso; `enviar` vuelve a leer canal, baja, ventana de 24 h de WhatsApp y horas de silencio; barrido `barrerCanales` (retoma y purga); Super Admin;
+simulador), `lib/compa/enlace.ts` (`crearEnlace`, `leerEnlace`, `usarEnlace` → `confirmar(…, "link")`), `conversacion.ts` (`turno` con superficie
+«channel» y la acción que vive lo que el enlace; `respuestaAutoCanal`; `registroCanalNegocio`), `interruptores.ts` (`canalEncendido`),
+`acciones.ts` (`proponer` con minutos), `avisos.ts` (STOP apaga también los SMS de avisos). Rutas: **`/api/compa/entrada/{telnyx|whatsapp}`**
+(firma antes de leer; 401/400/413; 200 al instante y el turno con `after()`), **`/compa/e/{token}`** (sin sesión → Entrar; otra cuenta → «es de
+otra cuenta»; con la cuenta → «Así queda» y confirmar; usado, vencido, inexistente). Pantallas: Mi cuenta › Avisos › **EL COMPA** «Hablar con El
+Compa por WhatsApp y SMS» (apagado de fábrica); Panel › El Compa › **POR DÓNDE** con WhatsApp y SMS (solo con número conectado) y el registro
+con «Cliente en WhatsApp»; Super Admin › El Compa › **Canales** (cifras, modo, números con Conectar/Retirar, REGISTRO DE ENTRADA sin texto ni
+teléfono, SIMULADOR del sandbox). `scripts/contrato-canales/` (la especificación oficial de Telnyx y de Meta valida las llamadas reales; en CI).
+Compose pasa `TELNYX_PUBLIC_KEY`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`, `WHATSAPP_TOKEN` (vacíos). Guardián **`canalConFirma`** (nuevo) +
+`libroSoloInsercion`, `compaTapaSecretos`, `compaTapaEnElMotor`, `compaSiempreIA`, `privacidadSalud`, `barridoCompleto` ampliados (50/50 al revés
+`alreves7h`; 36/45/66/33/36/40/43 de 7a–7g otra vez); e2e **`compa7h` 224 ✓** (390 y 1360); `compa7d` 140 ✓, `compa7f` 130 ✓, `adm5i` ✓; contrato
+de los canales ✓; 0123 dos veces en local y en una base nueva (semillas dos veces). Ayuda: **`el-compa-por-whatsapp-y-sms`** nueva;
+`panel-respuestas-automaticas`, `admin-el-compa`, `privacidad-de-el-compa` al día (indexadas). Sigue **7i** (Super Admin completo de El Compa y
+Soporte, Configuración, avisos, analítica, purga; migración 0124).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
