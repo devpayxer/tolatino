@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Solo lo que la cámara del WebView necesita para una foto (Capacitor la guarda en Pictures de la app) y la caché. Nada más del teléfono. -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <external-files-path name="fotos" path="Pictures" />
+    <cache-path name="cache" path="." />
+</paths>

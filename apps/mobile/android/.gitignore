@@ -1,0 +1,16 @@
+# Lo que se genera al compilar o al preparar un build (las islas, los íconos y el splash salen de scripts/generar.mjs --preparar).
+.gradle/
+build/
+app/build/
+local.properties
+app/src/*/assets/public/
+app/src/*/res/mipmap-*/
+app/src/*/res/drawable*/
+app/src/*/res/values/ic_launcher_background.xml
+*.apk
+*.aab
+# Llaves: nunca en el repo (guardián llavesFueraDelRepo). Viven cifradas en el llavero del servidor.
+*.jks
+*.keystore
+*.p12
+google-services.json

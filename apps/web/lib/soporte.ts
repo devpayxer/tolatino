@@ -1,5 +1,6 @@
 import "server-only";
 import { headers } from "next/headers";
+import { leerRotulo } from "./app-nativa-comun";
 import { tapar } from "./compa/tapar";
 import { valores } from "./config";
 import { hrefAyuda } from "./ayuda-cita";
@@ -56,8 +57,11 @@ async function dispositivo(): Promise<{ device: string; version: string }> {
   const h = await headers(), ua = h.get("user-agent") ?? "";
   const so = /iPhone|iPad/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "Mac" : /Linux/.test(ua) ? "Linux" : "Otro";
   const nav = /Edg\//.test(ua) ? "Edge" : /CriOS|Chrome\//.test(ua) ? "Chrome" : /FxiOS|Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Navegador";
-  const app = (h.get("x-tl-app") ?? "").replace(/[^A-Za-z0-9 ._-]/g, "").slice(0, 40);
-  return { device: `${so} · ${nav}`, version: app || "web" };
+  // 8a · La app y su versión salen del rótulo TLApp del user-agent (WKWebView no puede poner una cabecera propia en cada petición); solo
+  // informativo para el equipo, nunca decide nada.
+  const a = leerRotulo(ua), APP = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta" } as const;
+  if (a) return { device: `${a.plataforma === "ios" ? "iPhone" : "Android"} · app`, version: `${APP[a.app]} ${a.version} (${a.build})` };
+  return { device: `${so} · ${nav}`, version: "web" };
 }
 
 /* Las operaciones de la persona para «¿CUÁL?» (las del negocio, si es desde el panel: ninguna; el dueño habla de su negocio). */

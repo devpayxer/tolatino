@@ -4,12 +4,19 @@
    firma, la versión y si entra lo decide el servidor. El mismo QR seguido no se manda dos veces (3.5 s). Nada se guarda ni se sube aparte. */
 import { useEffect, useRef, useState } from "react";
 import { Button, Icon } from "@tolatino/ui";
+import { usePermiso } from "@/app/_cascara/HojaPermiso";
+import { esApp } from "@/lib/nativo/puente";
+import { mantenerEncendida } from "@/lib/nativo/pantalla";
+import { abrirAjustes } from "@/lib/nativo/permisos";
 type Det = { detect: (v: HTMLVideoElement) => Promise<{ rawValue?: string }[]> };
 
 export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo: boolean; onCodigo: (t: string) => void; linterna: boolean; es: boolean; onLinterna?: (puede: boolean) => void }) {
   const video = useRef<HTMLVideoElement>(null), act = useRef(activo), cb = useRef(onCodigo), pista = useRef<MediaStreamTrack | null>(null);
   const [estado, setEstado] = useState<"pidiendo" | "listo" | "sin_permiso" | "sin_camara">("pidiendo"), [intento, setIntento] = useState(0);
   act.current = activo; cb.current = onCodigo;
+  // 8a · En la app To'Latino Puerta: la hoja previa antes de que el sistema pida la cámara, y la pantalla encendida mientras escanea.
+  const { hoja, conPermiso } = usePermiso(es), permiso = useRef(conPermiso);
+  permiso.current = conPermiso;
   useEffect(() => {
     let parado = false, stream: MediaStream | null = null, worker: Worker | null = null, timer: ReturnType<typeof setInterval> | null = null, ocupado = false, n = 0;
     let ultimo = { t: "", at: 0 };
@@ -22,6 +29,8 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
     };
     (async () => {
       if (!navigator.mediaDevices?.getUserMedia) { setEstado("sin_camara"); return; }
+      if (!(await new Promise<boolean>((ok) => { void permiso.current("camara", () => ok(true), () => ok(false)); }))) { if (!parado) setEstado("sin_permiso"); return; }
+      if (parado) return;
       try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }); }
       catch (e) { setEstado((e as { name?: string }).name === "NotAllowedError" ? "sin_permiso" : "sin_camara"); return; }
       if (parado) { stream.getTracks().forEach((x) => x.stop()); return; }
@@ -32,6 +41,7 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
       const caps = (pista.current?.getCapabilities?.() ?? {}) as { torch?: boolean };
       onLinterna?.(!!caps.torch);
       setEstado("listo");
+      void mantenerEncendida(true);
       let det: Det | null = null;
       const BD = (window as unknown as { BarcodeDetector?: { new (o: { formats: string[] }): Det; getSupportedFormats?: () => Promise<string[]> } }).BarcodeDetector;
       if (BD) { try { const f = (await BD.getSupportedFormats?.()) ?? []; if (f.includes("qr_code")) det = new BD({ formats: ["qr_code"] }); } catch { det = null; } }
@@ -50,7 +60,7 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
         worker!.postMessage({ px, w, h, n: ++n }, [px.buffer]);
       }, 160);
     })();
-    return () => { parado = true; if (timer) clearInterval(timer); worker?.terminate(); stream?.getTracks().forEach((x) => x.stop()); pista.current = null; };
+    return () => { parado = true; if (timer) clearInterval(timer); worker?.terminate(); stream?.getTracks().forEach((x) => x.stop()); pista.current = null; void mantenerEncendida(false); };
   }, [intento]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const t = pista.current;
@@ -59,6 +69,8 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
     void t.applyConstraints({ advanced: [{ torch: linterna } as any] }).catch(() => undefined);
   }, [linterna, estado]);
   const E2 = (a: string, b: string) => (es ? a : b);
+  const [app, setApp] = useState(false);
+  useEffect(() => setApp(esApp()), []);
   return (
     <div style={{ position: "relative", width: "100%", aspectRatio: "3 / 4", maxHeight: "62dvh", borderRadius: 22, overflow: "hidden", background: "var(--tl-dark-2)" }}>
       <video ref={video} aria-label={E2("Cámara para escanear el QR", "Camera to scan the QR")} style={{ width: "100%", height: "100%", objectFit: "cover", display: estado === "listo" ? "block" : "none" }} />
@@ -69,11 +81,14 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
           <Icon name={estado === "pidiendo" ? "grid" : "warning"} size={34} color="var(--tl-white)" />
           <span style={{ font: "800 17px/1.3 Sora,sans-serif" }}>{estado === "pidiendo" ? E2("Abriendo la cámara…", "Opening the camera…") : estado === "sin_permiso" ? E2("La cámara está bloqueada", "The camera is blocked") : E2("No encontramos la cámara", "We could not find the camera")}</span>
           {estado !== "pidiendo" ? <>
-            <span style={{ font: "500 13.5px/1.5 Manrope,sans-serif", opacity: 0.75 }}>{E2("Permite la cámara para To’Latino en los ajustes del navegador. Mientras, busca a cada persona por nombre o código.", "Allow the camera for To’Latino in your browser settings. Meanwhile, search each person by name or code.")}</span>
+            <span style={{ font: "500 13.5px/1.5 Manrope,sans-serif", opacity: 0.75 }}>{app ? E2("Permite la cámara para To’Latino Puerta en los Ajustes del teléfono. Mientras, busca a cada persona por nombre o código.", "Allow the camera for To’Latino Puerta in your phone Settings. Meanwhile, search each person by name or code.")
+              : E2("Permite la cámara para To’Latino en los ajustes del navegador. Mientras, busca a cada persona por nombre o código.", "Allow the camera for To’Latino in your browser settings. Meanwhile, search each person by name or code.")}</span>
+            {app && estado === "sin_permiso" ? <Button variant="primary" size="md" onClick={() => { void abrirAjustes(); }}>{E2("Abrir Ajustes", "Open Settings")}</Button> : null}
             <Button variant="secondary" size="md" onClick={() => { setEstado("pidiendo"); setIntento((x) => x + 1); }}>{E2("Probar otra vez", "Try again")}</Button>
           </> : null}
         </div>
       )}
+      {hoja}
     </div>
   );
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json: los permisos de To'Latino Repartidor (solo los que usa). No editar a mano. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="false" />
+</manifest>

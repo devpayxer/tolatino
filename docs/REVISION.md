@@ -3580,3 +3580,64 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
   organización, proyecto de Firebase; 8-2 llaves y registros de las apps (unos 15 minutos); 8-3 declaraciones de privacidad de cada tienda.
   Costos: $99 al año (Apple) y $25 una vez (Google), ya en PLAN §8.
 - **Qué mirarás primero:** la web instalada en tu iPhone con avisos (8c) y luego TestFlight (8h).
+
+### 8a · Las cuatro cáscaras, el puente nativo, las islas sin señal y el llavero (+ Sistema › Apps e Integraciones) — sin el dominio (11 nov)
+Las cuatro apps (To'Latino, Negocios, Repartidor, Puerta) salen de **un solo archivo** (`apps/mobile/apps.json`): ids, entrada, alcance,
+permisos con su texto ES/EN, plugins e islas. De ahí se generan los proyectos nativos (Xcode con 4 targets por XcodeGen, Gradle con 4 sabores),
+la migración 0125 y lo que aplica el servidor. Cada app abre la web servida y **solo su alcance**: «/» y Mi cuenta van a su entrada; una ruta de
+otra app (o del Super Admin) va a «Esto se abre en …». El servidor decide «Actualiza la app», el aviso suave y «Esta app está en pausa»; la sesión
+guarda app, plataforma y versión (nunca da permisos). CSP propia en toda la web. Puerta, Mis boletos y el Repartidor guardan lo de sin señal por
+un almacén único (IndexedDB en la web, el llavero del teléfono en la app) y hay una isla nueva del Repartidor. El **llavero de las tiendas**
+guarda cifradas las llaves de Apple y Google (solo la huella se ve). Probado: `app8a` (110 comprobaciones, 390 y 1360), 11 guardianes nuevos
+(55/55 al revés) y la regresión (adm7i 113, compa7d 140, Puerta 6g 105 y 6h 88 con Mis boletos sin señal, Repartidor 2l 17).
+
+**Lo que sigue esperando tu Paquete 8-0 (dominio con HTTPS):** las cuatro apps apuntan a `https://pruebas.tolatino.com`. Hasta que ese dominio
+exista detrás de Cloudflare, al abrirlas muestran su página local **«Sin señal»** (con su isla: boletos, puerta o entregas). Nada del sandbox
+cambió (sigue HTTP en la IP; `deploy.sh` y nginx intactos). Cambiar al dominio es solo configuración: `TOLATINO_URL` al generar las apps.
+
+**Qué mirar, paso a paso (capturas de la sesión: `a8a-*.png` y `i8a-iconos.png`):**
+1. **Los cuatro íconos** (`i8a-iconos.png`): el logo sobre el color de cada app y, para Negocios, Repartidor y Puerta, un ícono del sistema
+   (tienda, camión, boleto). Decidí Negocios en tinta índigo (`--tl-action-ink`) para no confundirlo con Puerta (negra). Si los quieres de Claude
+   Design, se reemplazan.
+2. **Super Admin › Sistema › Apps** (Admin, 5705550199; `a8a-sistema-apps-1360.png` y `-390.png`): las cuatro apps con sus ids, el interruptor de
+   pausa, «iPhone · mínimo — · aviso —» por app y las sesiones por app y versión. Pon en Puerta · iPhone **Mínimo 10** con un motivo; prueba
+   **Aviso 8** (lo rechaza: tiene que ser mayor que el mínimo). Vuelve a 0 al terminar.
+3. **«Actualiza la app»** (`a8a-actualizar-390.png`): logo, «Hay una versión nueva de To'Latino Puerta. Actualízala para seguir.» y **Actualizar**.
+   El **aviso suave** (`a8a-aviso-suave-390.png`): la nota arriba con **Actualizar** y la ×.
+4. **«Esta app está en pausa»** (`a8a-pausa-390.png`): **Abrir en la web** y **Probar otra vez**. La web del mismo panel sigue igual.
+5. **«Esto se abre en To'Latino»** (`a8a-fuera-390.png`): desde Negocios, un pedido de vecino. **Abrir** / **Volver**.
+6. **«Sin señal»** de cada app (`a8a-sin-senal-puerta-390.png`, `a8a-sin-senal-negocios-390.png`) y la **isla del Repartidor**
+   (`a8a-isla-repartidor-390.png`: lo pendiente, «POR ENTREGAR» con dirección, indicaciones y cobro, «ENTREGADAS HOY»; sin teléfonos).
+7. **La hoja previa de permisos** (`a8a-hoja-permiso-390.png`): en la app To'Latino, «Usar mi ubicación» → «Tu ubicación» + el porqué de la tienda
+   + **Continuar** / **Ahora no**. En la web no sale (pregunta el navegador).
+8. **Sistema › Integraciones › Llaves de las tiendas** (`a8a-llavero-vacio-1360.png`, `a8a-llavero-1360.png`): ocho tipos «FALTA». **Subir
+   archivo** → **Mandar el código** (llega a tu teléfono) → el archivo → «Guardada · SHA-256 …». Cuando tengas las cuentas (Paquete 8-2), aquí
+   subes la llave de la API de App Store Connect, la de APNs y las cuentas de servicio de Google.
+9. **Usuarios 360° › Seguridad** (`a8a-u360-sesiones-1360.png`): cada dispositivo dice «Web» o «To'Latino Negocios 1.0.0 (5) · iOS 17.5».
+
+**Huecos del diseño compuestos con el sistema (§1b):** íconos (#1), hoja previa de permisos (#2), «Actualiza la app» y el aviso suave (#3),
+«Sin señal» y la isla del Repartidor (#4), Sistema › Apps e Integraciones (#7). Ninguna pieza nueva: Wordmark, Icon, Button, IconButton, la nota,
+filas, cifras y pestañas de PanelBloques, y la hoja de confirmación de Mi cuenta.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **La pausa de cada app es un interruptor** (`app.cascara.{app}`, con motivo y auditoría), no una columna de `app_clients`: una sola fuente.
+- **El máximo del splash va en `apps.json`** (3 s, lo usa el código nativo al compilar), no en Configuración: un valor del servidor no cambiaría
+  una app ya instalada sin otra versión.
+- **Plugins de Android en Java** (no Kotlin): mismo comportamiento, sin sumar el compilador de Kotlin al build.
+- **El proyecto de Xcode se genera con XcodeGen** (código abierto, MIT) en la Mac del CI desde `project.yml` (que sale de `apps.json`): no se
+  guarda un `.xcodeproj` hecho a mano.
+- **El filtro nativo de navegación es un plugin propio, `TLAlcance`** (iOS y Android), con la misma regla que el servidor.
+- **iOS · el puente solo para nuestro origen:** Capacitor deja que cualquier marco llame al puente; un portero propio (`TLBridgeViewController`)
+  descarta lo que no venga del marco principal de nuestro dominio o de las islas. **App-Bound Domains** queda declarado y **apagado** hasta
+  comprobar en el simulador que no rompe la hoja de Stripe y su 3-D Secure.
+- **El Repartidor no pide ubicación todavía** (llega con la ubicación en vivo); el texto ya está en `apps.json`.
+- **«Actualiza la app» también en Entrar**: una app vieja o en pausa no deja entrar (antes solo las entradas).
+- **Un cambio de versión o de pausa vale en 15 s como mucho** (como toda la Configuración).
+- **La isla de la Puerta en la app** no sube la cola por sí sola (vive en otro origen sin la sesión): con señal dice «Volver a la puerta» y la
+  puerta en línea sube lo escaneado (es la misma cola, en el llavero del teléfono). La **isla del Repartidor solo muestra**; los pasos se marcan
+  con señal.
+- **El llavero exige su llave en los secretos del entorno** (`LLAVERO_SECRET`, o `DATOS_SECRET` que el sandbox ya tiene); sin ella no guarda nada.
+
+**Lo que no pude compilar aquí (dicho tal cual):** Android y iOS no se compilan en esta máquina (el SDK de Android y Google Maven están bloqueados
+por la red; no hay Xcode). Los plugins de Android se compilaron con `javac` contra Android 16 (el `android-all` de Maven Central) con el API de
+Capacitor simulado; Swift no se compiló. La primera compilación de verdad la hacen los jobs `cascara-android` y `cascara-ios` del CI.

@@ -1,0 +1,23 @@
+// Proyecto Android de las cuatro cáscaras (fase8-apps.md §3.1). Versiones fijas; Capacitor y sus plugins vienen de node_modules (apps/mobile/package.json).
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+    }
+}
+
+apply from: "variables.gradle"
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
+}

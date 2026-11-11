@@ -1,7 +1,9 @@
 import "server-only";
+import { DEF_APPS } from "./app-nativa-comun";
 import type { Staff } from "./admin";
 import { db } from "./db";
 import { telefonoBonito } from "./panel";
+const APP_NOMBRE: Record<string, string> = Object.fromEntries(DEF_APPS.map((a) => [a.key, a.nombre.es]));
 
 /* ADM-USR · Usuarios: lista con filtros y el 360° de una persona. Acotado a las ciudades de quien mira (Mi ciudad de la
    cuenta; vacío = todas; una cuenta sin ciudad solo la ve quien trabaja todas). Paginado de a 14 (OFFSET con tope,
@@ -95,9 +97,11 @@ export async function usuario360(s: Staff, id: string) {
     db().query<{ text: string; at: string; quien: string | null }>(
       `select n.text, n.at, nullif(trim(coalesce(x.first_name, '') || ' ' || coalesce(x.last_name, '')), '') as quien
          from admin_notes n left join users x on x.id = n.by_staff where n.target_kind = 'user' and n.target_id = $1 order by n.at desc limit 20`, [id]),
-    db().query<{ device: string | null; sid: string; ua: string | null; app: string; ip: string | null; primera: string; ultima: string; abiertas: number; bloqueada: boolean; dev_bloq: boolean }>(
+    db().query<{ device: string | null; sid: string; ua: string | null; app: string; plat: string; ver: string | null; build: number | null; so: string | null; ip: string | null; primera: string; ultima: string; abiertas: number; bloqueada: boolean; dev_bloq: boolean }>(
       `select s.device::text as device, (array_agg(s.id::text order by s.last_seen_at desc))[1] as sid, (array_agg(s.user_agent order by s.last_seen_at desc))[1] as ua,
               (array_agg(s.app order by s.last_seen_at desc))[1] as app, (array_agg(host(s.ip) order by s.last_seen_at desc))[1] as ip,
+              (array_agg(s.platform order by s.last_seen_at desc))[1] as plat, (array_agg(s.app_version order by s.last_seen_at desc))[1] as ver,
+              (array_agg(s.app_build order by s.last_seen_at desc))[1] as build, (array_agg(s.os_version order by s.last_seen_at desc))[1] as so,
               min(s.created_at) as primera, max(s.last_seen_at) as ultima,
               count(*) filter (where s.signed_out_at is null and not s.blocked and s.expires_at > now())::int as abiertas, bool_or(s.blocked) as bloqueada,
               exists (select 1 from blocked_devices bd where bd.device = s.device and bd.lifted_at is null) as dev_bloq
@@ -140,7 +144,9 @@ export async function usuario360(s: Staff, id: string) {
     puede: { editar: s.puede("usr", "editar"), retirar: s.puede("usr", "retirar"), exportar: s.puede("usr", "exportar"), admin: s.role === "admin" },
     yoMismo: u.id === s.id,
     negocios: neg.rows, staff: staff.rows[0]?.role ?? null, notas: notas.rows,
-    dispositivos: ses.rows.map((d) => ({ ...d, nombre: UA(d.ua), nav: NAV(d.ua), app: d.app === "cliente" ? (d.ua && /To'?Latino/i.test(d.ua) ? "App" : "Web") : d.app })),
+    // 8a · Una sesión de una de las cuatro apps dice cuál y qué versión (rótulo TLApp, informativo): «To'Latino Puerta 1.0.0 (12) · iOS 17.5».
+    dispositivos: ses.rows.map((d) => ({ ...d, nombre: UA(d.ua), nav: d.plat === "web" ? NAV(d.ua) : null,
+      app: d.plat === "web" ? "Web" : `${APP_NOMBRE[d.app] ?? d.app}${d.ver ? ` ${d.ver} (${d.build ?? "?"})` : ""}${d.so ? ` · ${d.plat === "ios" ? "iOS" : "Android"} ${d.so}` : ""}` })),
     compartidos: compartidos.rows.map((x) => ({ ...x, phone: telefonoBonito(x.phone) })),
     cambios: cambios.rows, sanciones: sanc.rows, recomendaciones: rec.rows, reportes: reps.rows, reclamos: cl.rows, cambiosSensibles: cs.rows, historial: hist.rows, ciudades: ciudades.rows,
   };

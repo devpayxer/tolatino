@@ -6,6 +6,7 @@
 import * as UI from "@tolatino/ui";
 import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from "react";
 import { millas, punto, teselas, vista, type LL } from "@/lib/mapa-geo";
+import { usePermiso } from "@/app/_cascara/HojaPermiso";
 import { abrirSelector, dondeEstoy, elegirUbicacion, lugares, medirBorrador, pedirCiudad, quitarPedido, type DatosSelector } from "./ciudad/acciones";
 
 type N = "Icon" | "Button" | "Chip" | "Tag" | "RadiusMap";
@@ -27,6 +28,8 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   onClose: () => void; onAplicada: (abierta: boolean) => void;
 }) {
   const es = lang === "es", E2 = (a: string, b: string) => (es ? a : b);
+  // 8a · En la app To'Latino, la hoja previa antes de que el sistema pida la ubicación (en la web, el navegador pregunta solo).
+  const { hoja, conPermiso } = usePermiso(es);
   const [d, setD] = useState<DatosSelector | null>(null);
   const [dr, setDr] = useState<Dr | null>(null);
   const [m, setM] = useState<Medida | null>(null);
@@ -114,6 +117,9 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
   const pedirGps = () => {
     if (gps === "ok" && gi) { setDr({ c: gi.ciudad, z: "gps", r: dr.r, g: gi.g }); return; }
     if (!navigator.geolocation) { setGps("no"); return; }
+    void conPermiso("ubicacion", pedirGpsYa);
+  };
+  const pedirGpsYa = () => {
     setGps("loc");
     navigator.geolocation.getCurrentPosition(async (pos) => {
       const g: [number, number] = [Number(pos.coords.latitude.toFixed(4)), Number(pos.coords.longitude.toFixed(4))];
@@ -373,6 +379,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
         </div>
         <div style={{ flex: "none", padding: "12px 20px calc(22px + env(safe-area-inset-bottom))", borderTop: "1px solid rgba(11,14,18,.08)", background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", display: "flex", flexDirection: "column", gap: 8 }}>{pie}</div>
       </div>
+      {hoja}
     </div>
   );
 
@@ -411,6 +418,7 @@ export function CiudadSelector({ lang, modo, ancla, pedir, onClose, onAplicada }
           <span style={txt(`700 9.5px ${MONO}`, { letterSpacing: ".1em", color: "rgba(11,14,18,.42)" })}>{L.esc}</span>
         </div>
       </div>
+      {hoja}
     </>
   );
 }

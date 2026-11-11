@@ -1,27 +1,31 @@
 import "server-only";
 import { headers } from "next/headers";
+import { leerRotulo } from "./app-nativa-comun";
 import { dispositivo } from "./cuenta";
 import { db } from "./db";
 
 /* Analítica propia (HERRAMIENTAS §1): eventos de la app y actividad por día, en nuestra base. Sin datos personales: quién
    (cuenta o dispositivo), qué (lista cerrada), sobre qué (ref) y la ciudad. Nunca rompe la pantalla: si falla, se calla. */
-export type Evento = "ver_categoria" | "ver_ficha" | "buscar" | "contactar" | "entrar" | "registrarse" | "publicar_negocio" | "recomendar" | "reclamar" | "reportar_foto" | "pedir_aviso" | "pedir" | "ver_evento" | "rsvp" | "guardar_evento" | "compartir_evento" | "compa_abrir" | "compa_mensaje" | "compa_accion" | "compa_persona";
+export type Evento = "ver_categoria" | "ver_ficha" | "buscar" | "contactar" | "entrar" | "registrarse" | "publicar_negocio" | "recomendar" | "reclamar" | "reportar_foto" | "pedir_aviso" | "pedir" | "ver_evento" | "rsvp" | "guardar_evento" | "compartir_evento" | "compa_abrir" | "compa_mensaje" | "compa_accion" | "compa_persona"
+  | "app_abrir" | "app_actualizar" | "permiso_pedido" | "permiso_respuesta";
 const ROBOT = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|whatsapp/i;
 const CIUDAD = /^[a-z]{3}$/;
 
 /* Lo que se lee de la petición (robot y dispositivo). En una página va ANTES de after(): ahí ya no hay petición. */
-export async function contexto(): Promise<{ robot: boolean; dev: string | null }> {
+export async function contexto(): Promise<{ robot: boolean; dev: string | null; app?: string | null; plat?: string | null }> {
   const ua = (await headers()).get("user-agent");
-  return { robot: !ua || ROBOT.test(ua), dev: await dispositivo(false) };
+  // 8a · La app y la plataforma (rótulo TLApp; null = la web). Solo para contar, nunca para decidir.
+  const a = leerRotulo(ua);
+  return { robot: !ua || ROBOT.test(ua), dev: await dispositivo(false), app: a?.app ?? null, plat: a?.plataforma ?? null };
 }
 
-export async function evento(nombre: Evento, o: { ref?: string | null; ciudad?: string | null; userId?: string | null; props?: Record<string, string | number | boolean | null> } = {}, ctx?: { robot: boolean; dev: string | null }) {
+export async function evento(nombre: Evento, o: { ref?: string | null; ciudad?: string | null; userId?: string | null; props?: Record<string, string | number | boolean | null> } = {}, ctx?: { robot: boolean; dev: string | null; app?: string | null; plat?: string | null }) {
   try {
-    const { robot, dev } = ctx ?? (await contexto());
+    const { robot, dev, app = null, plat = null } = ctx ?? (await contexto());
     if (robot) return;
     await db().query(
-      `insert into app_events (name, ref, city_id, user_id, device, props) values ($1, $2, $3, $4::uuid, $5::uuid, $6::jsonb)`,
-      [nombre, o.ref ? String(o.ref).slice(0, 120) : null, o.ciudad && CIUDAD.test(o.ciudad) ? o.ciudad : null, o.userId ?? null, dev, JSON.stringify(o.props ?? {})]);
+      `insert into app_events (name, ref, city_id, user_id, device, props, app, plat) values ($1, $2, $3, $4::uuid, $5::uuid, $6::jsonb, $7, $8)`,
+      [nombre, o.ref ? String(o.ref).slice(0, 120) : null, o.ciudad && CIUDAD.test(o.ciudad) ? o.ciudad : null, o.userId ?? null, dev, JSON.stringify(o.props ?? {}), app, plat]);
   } catch (e) {
     console.error("[eventos]", nombre, e instanceof Error ? e.message : e);
   }

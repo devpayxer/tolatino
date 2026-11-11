@@ -1,0 +1,3 @@
+// Las cuatro cáscaras de Android: un proyecto, un módulo :app con cuatro sabores (app/sabores.gradle, generado desde apps.json).
+include ':app'
+apply from: 'capacitor.settings.gradle'

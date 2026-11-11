@@ -1,0 +1,45 @@
+// Módulo :app de las cuatro cáscaras. Los sabores (uno por app, con su id y solo sus plugins) salen de sabores.gradle, generado desde apps.json.
+apply plugin: 'com.android.application'
+
+def APPS = new groovy.json.JsonSlurper().parse(file('../../apps.json'))
+def BUILD = (System.getenv('TL_BUILD') ?: '1') as Integer
+
+android {
+    namespace = "com.tolatino.cascara"
+    compileSdk = rootProject.ext.compileSdkVersion
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode BUILD
+        versionName APPS.version
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            // Lo que no se empaqueta de las islas: archivos ocultos y de sistema.
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    buildFeatures {
+        resValues = true
+        buildConfig = true
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_21
+        targetCompatibility JavaVersion.VERSION_21
+    }
+}
+
+apply from: 'sabores.gradle'
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+}

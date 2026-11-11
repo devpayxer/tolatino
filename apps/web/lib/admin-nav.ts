@@ -3,7 +3,7 @@ import type { GrupoNav } from "@/app/admin/ui";
 import { db } from "./db";
 
 /* Lo que ya existe en la Fase 0; el resto se ve en el menú con su fase (nada de botones muertos). */
-export const HECHAS: Record<string, string> = { home: "/admin", cont: "/admin/contenido", tx: "/admin/transacciones", sop: "/admin/soporte", compa: "/admin/compa", colas: "/admin/colas", neg: "/admin/negocios", usr: "/admin/usuarios", analit: "/admin/analitica", ciud: "/admin/ciudades", cat: "/admin/catalogo", sys: "/admin/sistema", notif: "/admin/notificaciones", plan: "/admin/planes", conf: "/admin/confianza", gam: "/admin/gamificacion", evt: "/admin/eventos", cms: "/admin/textos" };
+export const HECHAS: Record<string, string> = { home: "/admin", cont: "/admin/contenido", tx: "/admin/transacciones", sop: "/admin/soporte", compa: "/admin/compa", colas: "/admin/colas", neg: "/admin/negocios", usr: "/admin/usuarios", analit: "/admin/analitica", ciud: "/admin/ciudades", cat: "/admin/catalogo", sys: "/admin/sistema", notif: "/admin/notificaciones", plan: "/admin/planes", conf: "/admin/confianza", gam: "/admin/gamificacion", evt: "/admin/eventos", cms: "/admin/textos", apps: "/admin/sistema/apps", integ: "/admin/sistema/integraciones" };
 export const FASE: Record<string, string> = {
   tx: "Fase 2", plan: "Fase 2", notif: "Fase 2",
   cont: "Fase 2", mkt: "Fase 9",

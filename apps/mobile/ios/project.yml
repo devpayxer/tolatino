@@ -1,0 +1,177 @@
+# Generado por apps/mobile/scripts/generar.mjs desde apps.json: un proyecto de Xcode con cuatro targets (decisión B). No editar a mano.
+# En la Mac del CI: xcodegen generate --spec apps/mobile/ios/project.yml
+name: ToLatino
+options:
+  bundleIdPrefix: com.tolatino
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: es
+packages:
+  Capacitor:
+    url: https://github.com/ionic-team/capacitor-swift-pm.git
+    exactVersion: 8.6.0
+  CapacitorApp:
+    path: ../node_modules/@capacitor/app
+  CapacitorAppLauncher:
+    path: ../node_modules/@capacitor/app-launcher
+  CapacitorSplashScreen:
+    path: ../node_modules/@capacitor/splash-screen
+  CapacitorStatusBar:
+    path: ../node_modules/@capacitor/status-bar
+settings:
+  base:
+    TARGETED_DEVICE_FAMILY: "1"
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: "YES"
+  configs:
+    Debug:
+      CAPACITOR_DEBUG: "true"
+    Release:
+      CAPACITOR_DEBUG: "false"
+targets:
+  ToLatino:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Targets/ToLatino
+        excludes:
+          - public
+          - Info.plist
+      - path: Targets/ToLatino/public
+        type: folder
+      - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-local/ios
+      - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-reporte/ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.app
+        PRODUCT_NAME: ToLatino
+        INFOPLIST_FILE: Targets/ToLatino/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: Capacitor
+        product: Capacitor
+      - package: Capacitor
+        product: Cordova
+      - package: CapacitorApp
+      - package: CapacitorAppLauncher
+      - package: CapacitorSplashScreen
+      - package: CapacitorStatusBar
+  ToLatinoNegocios:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Targets/ToLatinoNegocios
+        excludes:
+          - public
+          - Info.plist
+      - path: Targets/ToLatinoNegocios/public
+        type: folder
+      - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-reporte/ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.negocios
+        PRODUCT_NAME: ToLatinoNegocios
+        INFOPLIST_FILE: Targets/ToLatinoNegocios/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: Capacitor
+        product: Capacitor
+      - package: Capacitor
+        product: Cordova
+      - package: CapacitorApp
+      - package: CapacitorAppLauncher
+      - package: CapacitorSplashScreen
+      - package: CapacitorStatusBar
+  ToLatinoRepartidor:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Targets/ToLatinoRepartidor
+        excludes:
+          - public
+          - Info.plist
+      - path: Targets/ToLatinoRepartidor/public
+        type: folder
+      - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-local/ios
+      - path: ../plugins/tl-reporte/ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.repartidor
+        PRODUCT_NAME: ToLatinoRepartidor
+        INFOPLIST_FILE: Targets/ToLatinoRepartidor/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: Capacitor
+        product: Capacitor
+      - package: Capacitor
+        product: Cordova
+      - package: CapacitorApp
+      - package: CapacitorAppLauncher
+      - package: CapacitorSplashScreen
+      - package: CapacitorStatusBar
+  ToLatinoPuerta:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Targets/ToLatinoPuerta
+        excludes:
+          - public
+          - Info.plist
+      - path: Targets/ToLatinoPuerta/public
+        type: folder
+      - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-local/ios
+      - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-reporte/ios
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.puerta
+        PRODUCT_NAME: ToLatinoPuerta
+        INFOPLIST_FILE: Targets/ToLatinoPuerta/Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - package: Capacitor
+        product: Capacitor
+      - package: Capacitor
+        product: Cordova
+      - package: CapacitorApp
+      - package: CapacitorAppLauncher
+      - package: CapacitorSplashScreen
+      - package: CapacitorStatusBar
+schemes:
+  ToLatino:
+    build:
+      targets:
+        ToLatino: all
+    run:
+      config: Debug
+  ToLatinoNegocios:
+    build:
+      targets:
+        ToLatinoNegocios: all
+    run:
+      config: Debug
+  ToLatinoRepartidor:
+    build:
+      targets:
+        ToLatinoRepartidor: all
+    run:
+      config: Debug
+  ToLatinoPuerta:
+    build:
+      targets:
+        ToLatinoPuerta: all
+    run:
+      config: Debug

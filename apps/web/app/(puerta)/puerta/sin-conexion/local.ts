@@ -13,8 +13,10 @@ import { verifyAsync } from "@/lib/ed25519/noble";
 import type { FilaPaqB, FilaPaqR, Paquete } from "@/lib/puerta-paquete";
 import type { Pregunta, Resultado, Tono, VistaEscaneo } from "@/lib/puerta-comun";
 import { RESULTADO } from "@/lib/puerta-comun";
+import { PUERTA } from "@/lib/nativo/almacen";
 
-const DB = "tl-puerta", VER = 1;
+/* 8a · Dónde se guarda: lib/nativo/almacen.ts (IndexedDB «tl-puerta» en la web, TLLocal en la app To'Latino Puerta). La lógica no cambia. */
+const ALM = PUERTA();
 type Cifrado = { iv: Uint8Array<ArrayBuffer>; c: ArrayBuffer };
 type FilaPaq = { s: string; vence: string; emitido: string; cursor: string; n: number; datos: Cifrado };
 type FilaCola = { id: string; s: string; at: number; datos: Cifrado };
@@ -22,41 +24,9 @@ export type ItemCola = { id: string; at: number; tipo: "qr" | "boleto" | "rsvp" 
 
 const b64 = (s: string) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0)) as Uint8Array<ArrayBuffer>;
 const b64url = (s: string) => b64(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4));
-const pedir = <T,>(r: IDBRequest<T>) => new Promise<T>((ok, mal) => { r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error); });
-
-let dbp: Promise<IDBDatabase> | null = null;
-function abrir(): Promise<IDBDatabase> {
-  if (dbp) return dbp;
-  dbp = new Promise((ok, mal) => {
-    const r = indexedDB.open(DB, VER);
-    r.onupgradeneeded = () => {
-      const d = r.result;
-      if (!d.objectStoreNames.contains("llaves")) d.createObjectStore("llaves", { keyPath: "s" });
-      if (!d.objectStoreNames.contains("paquetes")) d.createObjectStore("paquetes", { keyPath: "s" });
-      if (!d.objectStoreNames.contains("cola")) d.createObjectStore("cola", { keyPath: "id" }).createIndex("s", "s");
-      if (!d.objectStoreNames.contains("meta")) d.createObjectStore("meta", { keyPath: "k" });
-    };
-    r.onsuccess = () => { r.result.onversionchange = () => { r.result.close(); dbp = null; }; ok(r.result); };
-    r.onerror = () => { dbp = null; mal(r.error); };
-  });
-  return dbp;
-}
-async function tienda(nombre: string, modo: IDBTransactionMode = "readonly") { return (await abrir()).transaction(nombre, modo).objectStore(nombre); }
-
 /* ── Llave de la sesión (no exportable) ── */
-const llaves = new Map<string, CryptoKey>();
-export async function guardarLlave(s: string, raw: string): Promise<CryptoKey> {
-  const k = await crypto.subtle.importKey("raw", b64(raw), { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
-  await pedir((await tienda("llaves", "readwrite")).put({ s, k }));
-  llaves.set(s, k);
-  return k;
-}
-export async function llaveDe(s: string): Promise<CryptoKey | null> {
-  if (llaves.has(s)) return llaves.get(s)!;
-  const x = (await pedir((await tienda("llaves")).get(s))) as { k: CryptoKey } | undefined;
-  if (x?.k) llaves.set(s, x.k);
-  return x?.k ?? null;
-}
+export async function guardarLlave(s: string, raw: string): Promise<CryptoKey> { return ALM.guardarLlave("llaves", s, b64(raw)); }
+export async function llaveDe(s: string): Promise<CryptoKey | null> { return ALM.llave("llaves", s); }
 async function cifrar(k: CryptoKey, o: unknown): Promise<Cifrado> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
   return { iv, c: await crypto.subtle.encrypt({ name: "AES-GCM", iv }, k, new TextEncoder().encode(JSON.stringify(o))) };
@@ -66,10 +36,10 @@ async function descifrar<T>(k: CryptoKey, x: Cifrado): Promise<T> {
 }
 
 /* ── Llaves públicas Ed25519 (no secretas) ── */
-export async function guardarPublicas(m: Record<string, string>) { await pedir((await tienda("meta", "readwrite")).put({ k: "pub", v: m })); }
-export async function publicas(): Promise<Record<string, string>> { return (((await pedir((await tienda("meta")).get("pub"))) as { v?: Record<string, string> } | undefined)?.v) ?? {}; }
-export async function guardarMeta(k: string, v: unknown) { await pedir((await tienda("meta", "readwrite")).put({ k, v })); }
-export async function meta<T>(k: string): Promise<T | null> { return (((await pedir((await tienda("meta")).get(k))) as { v?: T } | undefined)?.v) ?? null; }
+export async function guardarPublicas(m: Record<string, string>) { await ALM.poner("meta", { k: "pub", v: m }); }
+export async function publicas(): Promise<Record<string, string>> { return (await ALM.leer<{ v?: Record<string, string> }>("meta", "pub"))?.v ?? {}; }
+export async function guardarMeta(k: string, v: unknown) { await ALM.poner("meta", { k, v }); }
+export async function meta<T>(k: string): Promise<T | null> { return (await ALM.leer<{ v?: T }>("meta", k))?.v ?? null; }
 
 const llavesEd = new Map<string, CryptoKey | null>();
 async function verificarEd(pub: string, msg: Uint8Array<ArrayBuffer>, sig: Uint8Array<ArrayBuffer>): Promise<boolean> {
@@ -132,11 +102,11 @@ export async function guardarEstado(s: string, e: Estado) {
   const k = await llaveDe(s);
   if (!k) throw new Error("sin_llave");
   const fila: FilaPaq = { s, vence: e.vence, emitido: e.emitido, cursor: e.cursor, n: e.b.length + e.r.length, datos: await cifrar(k, e) };
-  await pedir((await tienda("paquetes", "readwrite")).put(fila));
+  await ALM.poner("paquetes", fila);
 }
 /* El paquete guardado de una sesión (null si no hay, no se puede leer o venció: entonces se borra todo de esa sesión). */
 export async function leerEstado(s: string): Promise<Estado | null> {
-  const f = (await pedir((await tienda("paquetes")).get(s))) as FilaPaq | undefined;
+  const f = await ALM.leer<FilaPaq>("paquetes", s);
   if (!f) return null;
   if (Date.parse(f.vence) < Date.now()) { await borrarSesion(s); return null; }
   const k = await llaveDe(s);
@@ -145,7 +115,7 @@ export async function leerEstado(s: string): Promise<Estado | null> {
 }
 /* Las sesiones guardadas en este teléfono (para la pantalla sin señal). */
 export async function sesionesGuardadas(): Promise<{ s: string; vence: string; emitido: string; n: number }[]> {
-  const L = (await pedir((await tienda("paquetes")).getAll())) as FilaPaq[];
+  const L = await ALM.todos<FilaPaq>("paquetes");
   const vivas = [];
   for (const f of L) { if (Date.parse(f.vence) < Date.now()) await borrarSesion(f.s); else vivas.push({ s: f.s, vence: f.vence, emitido: f.emitido, n: f.n }); }
   return vivas;
@@ -156,38 +126,29 @@ export async function encolar(s: string, x: ItemCola) {
   const k = await llaveDe(s);
   if (!k) throw new Error("sin_llave");
   const f: FilaCola = { id: x.id, s, at: x.at, datos: await cifrar(k, x) };
-  await pedir((await tienda("cola", "readwrite")).put(f));
+  await ALM.poner("cola", f);
 }
 export async function cola(s: string): Promise<ItemCola[]> {
   const k = await llaveDe(s);
   if (!k) return [];
-  const L = ((await pedir((await tienda("cola")).index("s").getAll(s))) as FilaCola[]).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
+  const L = (await ALM.porIndice<FilaCola>("cola", s)).sort((a, b) => a.at - b.at || a.id.localeCompare(b.id));
   const out: ItemCola[] = [];
   for (const f of L) { try { out.push(await descifrar<ItemCola>(k, f.datos)); } catch { /* dañada: no se manda */ } }
   return out;
 }
-export async function cuantosEnCola(s: string): Promise<number> { return pedir((await tienda("cola")).index("s").count(s)); }
+export async function cuantosEnCola(s: string): Promise<number> { return ALM.contar("cola", s); }
 export async function quitarDeCola(ids: string[]) {
-  const t = await tienda("cola", "readwrite");
-  await Promise.all(ids.map((id) => pedir(t.delete(id))));
+  for (const id of ids) await ALM.quitar("cola", id);
 }
 
 /* ── Borrar ── */
 export async function borrarSesion(s: string) {
-  const d = await abrir(), t = d.transaction(["llaves", "paquetes", "cola"], "readwrite");
-  t.objectStore("llaves").delete(s); t.objectStore("paquetes").delete(s);
-  const c = t.objectStore("cola").index("s");
-  await new Promise<void>((ok) => { const r = c.openKeyCursor(IDBKeyRange.only(s)); r.onsuccess = () => { const x = r.result; if (x) { t.objectStore("cola").delete(x.primaryKey); x.continue(); } else ok(); }; r.onerror = () => ok(); });
-  await new Promise<void>((ok) => { t.oncomplete = () => ok(); t.onerror = () => ok(); t.onabort = () => ok(); });
-  llaves.delete(s);
+  await ALM.quitar("llaves", s).catch(() => undefined);
+  await ALM.quitar("paquetes", s).catch(() => undefined);
+  for (const f of await ALM.porIndice<FilaCola>("cola", s).catch(() => [] as FilaCola[])) await ALM.quitar("cola", f.id).catch(() => undefined);
 }
 /* Salir de la cuenta: nada de la puerta queda en el teléfono. */
-export async function borrarTodo() {
-  llaves.clear();
-  try { (await dbp)?.close(); } catch { /* nada */ }
-  dbp = null;
-  await new Promise<void>((ok) => { const r = indexedDB.deleteDatabase(DB); r.onsuccess = r.onerror = r.onblocked = () => ok(); });
-}
+export async function borrarTodo() { await ALM.borrarTodo(); }
 
 /* ── Decidir sin señal (las mismas reglas que puerta_entrada) ── */
 export type LocalRes = { ok: true; v: VistaEscaneo; fila: string | null } | { ok: true; pregunta: Pregunta & { fuera?: boolean }; fila: string | null };

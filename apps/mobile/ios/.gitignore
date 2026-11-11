@@ -1,0 +1,13 @@
+# Lo que genera XcodeGen y el build, y lo que copia scripts/generar.mjs --preparar (islas, íconos y splash).
+*.xcodeproj/
+build/
+DerivedData/
+Targets/*/public/
+Targets/*/Assets.xcassets/
+# Llaves: nunca en el repo (guardián llavesFueraDelRepo).
+*.p8
+*.p12
+*.mobileprovision
+*.cer
+AuthKey_*
+GoogleService-Info.plist

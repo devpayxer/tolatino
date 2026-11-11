@@ -1,0 +1,86 @@
+{
+  "appId": "com.tolatino.app",
+  "appName": "To'Latino",
+  "webDir": "public",
+  "loggingBehavior": "debug",
+  "server": {
+    "url": "https://pruebas.tolatino.com",
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "iosScheme": "capacitor",
+    "errorPath": "index.html",
+    "allowNavigation": [
+      "pruebas.tolatino.com"
+    ],
+    "cleartext": false
+  },
+  "ios": {
+    "appendUserAgent": "TLApp/cliente/ios/1.0.0 (1)",
+    "contentInset": "never",
+    "scrollEnabled": true,
+    "allowsLinkPreview": false,
+    "webContentsDebuggingEnabled": true,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "android": {
+    "appendUserAgent": "TLApp/cliente/android/1.0.0 (1)",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": true,
+    "useLegacyBridge": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "backgroundColor": "#F7F6F3",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "TLAlcance": {
+      "host": "pruebas.tolatino.com",
+      "comunes": [
+        "/entrar",
+        "/recuperar",
+        "/cuenta/ajustes",
+        "/soporte",
+        "/ayuda",
+        "/privacidad",
+        "/terminos",
+        "/app",
+        "/api",
+        "/_next",
+        "/assets",
+        "/fuentes",
+        "/medios",
+        "/teselas",
+        "/.well-known",
+        "/favicon.ico"
+      ],
+      "inicio": [
+        "/",
+        "/cuenta"
+      ],
+      "propias": [
+        "/"
+      ],
+      "ajenas": [
+        "/panel",
+        "/repartidor",
+        "/puerta",
+        "/admin",
+        "/sistema"
+      ]
+    }
+  },
+  "packageClassList": [
+    "AppPlugin",
+    "AppLauncherPlugin",
+    "SplashScreenPlugin",
+    "StatusBarPlugin",
+    "TLAlcancePlugin",
+    "TLLocalPlugin",
+    "TLPantallaPlugin",
+    "TLReportePlugin"
+  ]
+}

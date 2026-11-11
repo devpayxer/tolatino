@@ -6,10 +6,13 @@ import { etiquetaCentro, ubicacion } from "@/lib/ubicacion";
 import { AppShell } from "./AppShell";
 import { actividad, contexto } from "@/lib/eventos";
 import { after } from "next/server";
+import { CompuertaApp } from "@/app/_cascara/Compuerta";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // 8a · Dentro de la app To'Latino: «Actualiza la app», la pausa o el aviso suave (en la web, nada).
+  const aviso = await CompuertaApp();
   const [lang, u] = await Promise.all([idioma(), yo().catch(() => null)]);
   const loc = await ubicacion(u);
   const ctx = await contexto();
@@ -30,7 +33,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const c = (s: string) => s.replace("{c}", loc.c.name);
   return (
     <AppShell lang={lang} t={{ searchIn: c(t.searchIn), searchDesk: c(t.searchDesk), nav: t.nav, tabs: t.tabs, login: t.login, publish: t.publish }} yo={u ? { iniciales, avisos: await noLeidos(u.id).catch(() => 0) } : null} ciudad={ciudad}>
-      {children}
+      {aviso}{children}
     </AppShell>
   );
 }

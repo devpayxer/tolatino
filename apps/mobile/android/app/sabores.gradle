@@ -1,0 +1,50 @@
+// Generado por apps/mobile/scripts/generar.mjs desde apps.json: un sabor por app (decisión B), con su id y SOLO sus plugins. No editar a mano.
+android {
+    flavorDimensions = ["app"]
+    productFlavors {
+        cliente {
+            dimension "app"
+            applicationId "com.tolatino.app"
+            resValue "string", "tl_rotulo", "TLApp/cliente/android/1.0.0 (1)"
+        }
+        negocios {
+            dimension "app"
+            applicationId "com.tolatino.negocios"
+            resValue "string", "tl_rotulo", "TLApp/negocio/android/1.0.0 (1)"
+        }
+        repartidor {
+            dimension "app"
+            applicationId "com.tolatino.repartidor"
+            resValue "string", "tl_rotulo", "TLApp/delivery/android/1.0.0 (1)"
+        }
+        puerta {
+            dimension "app"
+            applicationId "com.tolatino.puerta"
+            resValue "string", "tl_rotulo", "TLApp/checkin/android/1.0.0 (1)"
+        }
+    }
+    sourceSets {
+        cliente.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+        negocios.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+        repartidor.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-reporte/android']
+        puerta.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+    }
+}
+dependencies {
+    clienteImplementation project(':capacitor-app')
+    clienteImplementation project(':capacitor-app-launcher')
+    clienteImplementation project(':capacitor-splash-screen')
+    clienteImplementation project(':capacitor-status-bar')
+    negociosImplementation project(':capacitor-app')
+    negociosImplementation project(':capacitor-app-launcher')
+    negociosImplementation project(':capacitor-splash-screen')
+    negociosImplementation project(':capacitor-status-bar')
+    repartidorImplementation project(':capacitor-app')
+    repartidorImplementation project(':capacitor-app-launcher')
+    repartidorImplementation project(':capacitor-splash-screen')
+    repartidorImplementation project(':capacitor-status-bar')
+    puertaImplementation project(':capacitor-app')
+    puertaImplementation project(':capacitor-app-launcher')
+    puertaImplementation project(':capacitor-splash-screen')
+    puertaImplementation project(':capacitor-status-bar')
+}

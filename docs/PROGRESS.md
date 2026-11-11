@@ -1036,3 +1036,20 @@ cambiadas). Ayuda: `admin-el-compa`, `admin-configuracion`, `notificaciones`, `a
 de Cloudflare (Paquete 8-0; hoy el sandbox es HTTP en la IP). Pedir el Paquete 8-1 (D-U-N-S, Apple, Google, Firebase) al empezar 8a. Sin
 cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de ningún tipo, ni passkeys, ni colector de errores, ni
 `/privacidad` / `/terminos` públicas: el plan los construye.
+
+## Fase 8 · 8a hecho — sin el dominio (11 nov)
+- **Hecho:** migración **0125** (`app_clients` desde `apps/mobile/apps.json`, sesiones con app/plataforma/versión, `app_events` con app y
+  plataforma, el **llavero** `store_secrets` + `store_secret_reads` solo inserción, código `llavero`, secciones Apps e Integraciones, claves
+  `app_min_build_*` / `app_aviso_build_*`, interruptores `app.cascara.*`). `apps/mobile/` (apps.json, `scripts/generar.mjs` → configs de
+  Capacitor, Info.plist + InfoPlist.strings es/en + PrivacyInfo, manifiestos y strings de cada sabor, `ios/project.yml` (XcodeGen, 4 targets),
+  `android/` (4 sabores); plugins propios TLLocal, TLPantalla, TLReporte y TLAlcance en Swift y Java; `islas.mjs`, `iconos.mjs`, humo de CI).
+  Servidor: `lib/app-nativa*.ts` (rótulo TLApp, alcance, compuerta), middleware (cada app a su entrada; lo ajeno a `/app/fuera`), CSP, sesiones,
+  Soporte con la app y la versión. Puente `lib/nativo/*` (puente, almacén, externo, pantalla, permisos, reporte, inicio); Puerta, Mis boletos y
+  Repartidor por el almacén; isla nueva `/repartidor/sin-conexion`. Pantallas `/app/actualizar`, `/app/pausa`, `/app/fuera`, `/app/sin-senal`,
+  el aviso suave y la hoja previa de permisos. Super Admin › Sistema › **Apps** e **Integraciones** (llavero con código otra vez); Usuarios 360°
+  con app y versión. CI `.github/workflows/cascaras.yml`. Ayuda `apps-de-to-latino`, `admin-sistema-apps`, `admin-llaves-de-las-tiendas`.
+- **Probado:** `app8a` 110 comprobaciones (390 y 1360); 11 guardianes nuevos, 55/55 al revés (`alreves8a`); migraciones dos veces en la base
+  local y en una base nueva (+ semillas dos veces); regresión adm7i 113, compa7d 140, evt6g 105, evt6h 88, rep2l 17.
+- **Bloqueado / no hecho aquí:** el dominio (Paquete 8-0, del fundador). Android e iOS no se compilaron en esta máquina (red y sin Xcode): lo hace
+  el CI la primera vez. Todo en LAUNCH-CHECKLIST «Fase 8 · 8a».
+- **Sigue:** 8b (enlaces universales; necesita el dominio). Mientras, se puede adelantar 8c (Web Push) y 8f.

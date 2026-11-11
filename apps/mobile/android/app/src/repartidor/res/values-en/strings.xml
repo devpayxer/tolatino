@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json. No editar a mano. -->
+<resources>
+    <string name="app_name">To\'Latino Repartidor</string>
+    <string name="title_activity_main">To\'Latino Repartidor</string>
+    <string name="package_name">com.tolatino.repartidor</string>
+    <string name="custom_url_scheme">com.tolatino.repartidor</string>
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json. No editar a mano. -->
+<resources>
+    <string name="app_name">To\'Latino</string>
+    <string name="title_activity_main">To\'Latino</string>
+    <string name="package_name">com.tolatino.app</string>
+    <string name="custom_url_scheme">com.tolatino.app</string>
+    <string name="permiso_camara">To\'Latino usa la cámara solo cuando tú tomas una foto para tu reseña, tu publicación o tu caso de Soporte.</string>
+    <string name="permiso_ubicacion">To\'Latino usa tu ubicación solo cuando tocas «Usar mi ubicación», para mostrarte tu ciudad y lo que tienes cerca.</string>
+</resources>

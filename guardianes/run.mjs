@@ -3630,7 +3630,9 @@ const guardianes = {
     const r = sinComent(R);
     if (!/if \(!\(await mismoOrigen\(\)\)\)/.test(r) || !/const ctx = await accesoPuerta\(u\.id, String\(b\?\.sesion \?\? ""\)\);\s*if \(!ctx\) return NO\(/.test(r) || !/no-store/.test(r)) falla(G, R, 0, "/api/puerta/paquete: mismo origen, accesoPuerta y sin caché");
     const c = sinComent(C);
-    if (!/importKey\("raw", b64\(raw\), \{ name: "AES-GCM" \}, false, \["encrypt", "decrypt"\]\)/.test(c)) falla(G, C, 0, "la llave de la sesión en el teléfono es NO exportable (importKey …, false, …)");
+    // 8a · La llave pasa por lib/nativo/almacen.ts (IndexedDB en la web, TLLocal en la app): allí se importa NO exportable.
+    const AL = "apps/web/lib/nativo/almacen.ts";
+    if (!/return ALM\.guardarLlave\("llaves", s, b64\(raw\)\);/.test(c) || !existsSync(AL) || !/importKey\("raw", raw, \{ name: "AES-GCM" \}, false, \["encrypt", "decrypt"\]\)/.test(readFileSync(AL, "utf8"))) falla(G, C, 0, "la llave de la sesión en el teléfono es NO exportable (importKey …, false, …)");
     if (!/datos: await cifrar\(k, e\)/.test(cuerpoFn(c, "guardarEstado")) || !/datos: await cifrar\(k, x\)/.test(cuerpoFn(c, "encolar"))) falla(G, C, 0, "el paquete y la cola se guardan cifrados");
     if (!/throw new Error\("paquete_firma"\)/.test(cuerpoFn(c, "abrirSobre")) || !/verificarEd\(pub, new TextEncoder\(\)\.encode\(`TLPK1\\n\$\{sobre\.j\}`\)/.test(cuerpoFn(c, "abrirSobre"))) falla(G, C, 0, "el teléfono verifica la firma del paquete antes de usarlo");
     if (!/if \(Date\.parse\(f\.vence\) < Date\.now\(\)\) \{ await borrarSesion\(s\); return null; \}/.test(cuerpoFn(c, "leerEstado"))) falla(G, C, 0, "un paquete vencido se borra del teléfono");
@@ -3689,7 +3691,10 @@ const guardianes = {
     for (const f of K) { const t = sinComent(f); if (!/export const dynamic = "force-static";/.test(t) || /\byo\(|cookies\(|headers\(|@\/lib\/(cuenta|db|boletos|puerta)\b/.test(t)) falla(G, f, 0, "la cáscara es estática y no lee la cuenta"); }
     const b = sinComent(BS);
     if (!/crypto\.subtle\.encrypt\(\{ name: "AES-GCM", iv \}, k,/.test(cuerpoFn(b, "guardarBoleto")) || /precio|price/.test(b)) falla(G, BS, 0, "el boleto se guarda cifrado y sin precio");
-    if (!/if \(!v\) \{ await pedir\(st\("readwrite"\)\.clear\(\)\); return; \}/.test(cuerpoFn(b, "guardarBoleto")) || !/x\.kid !== kid/.test(cuerpoFn(b, "leerBoletos"))) falla(G, BS, 0, "sin la llave de la sesión no se guarda nada y lo de otra cuenta se borra");
+    // 8a · El almacén (lib/nativo/almacen.ts) reemplazó a IndexedDB directo: la regla es la misma (sin llave de sesión se vacía; lo de otra cuenta se borra).
+    if (!/if \(!v\) \{ await ALM\.vaciar\("b"\); return; \}/.test(cuerpoFn(b, "guardarBoleto")) || !/x\.kid !== kid/.test(cuerpoFn(b, "leerBoletos"))) falla(G, BS, 0, "sin la llave de la sesión no se guarda nada y lo de otra cuenta se borra");
+    // 8a · En la app, la copia de la llave de la sesión en el llavero del teléfono se cambia (y se vacía lo guardado) si la cookie cambió o ya no está.
+    if (!/if \(c !== m\) \{ await ALM\.vaciar\("b"\);/.test(cuerpoFn(b, "llaveSesion"))) falla(G, BS, 0, "en la app, otra cuenta (otra cookie) vacía lo guardado de la anterior");
     if (!/jar\.delete\(\{ name: COOKIE_BOLETOS, path: "\/cuenta\/boletos" \}\);/.test(cuerpoFn(sinComent(CU), "salir"))) falla(G, CU, 0, "salir de la cuenta borra la llave de los boletos sin señal");
     for (const x of codigo) { if (!/^apps\/web\/app\/.*\.tsx$/.test(x)) continue; const t = sinComent(x); if (/fetch\("\/api\/cuenta\/salir"/.test(t) && !/await olvidarSinConexion\(\); await fetch\("\/api\/cuenta\/salir"/.test(t)) falla(G, x, 0, "al salir de la cuenta, primero se borra lo guardado sin conexión (olvidarSinConexion)"); }
   },
@@ -4759,6 +4764,327 @@ const guardianes = {
       const t = readFileSync(AV, "utf8");
       if (!/E2\("SOPORTE", "SUPPORT"\)/.test(t) || !/Lo de tus casos siempre te llega/.test(t)) falla(G, AV, 0, "Mi cuenta › Avisos › Soporte dice que lo del caso siempre llega");
       if (/\["sop[A-Za-z]*",/.test(t)) falla(G, AV, 0, "Mi cuenta › Avisos no tiene interruptor de Soporte");
+    }
+  },
+
+  /* ── 8a · Las cuatro cáscaras (fase8-apps.md §4 8a). Cada guardián vigila una clase y se prueba al revés (alreves8a). ── */
+
+  /* 8a · Una sola fuente para las cuatro apps: apps/mobile/apps.json. Lo nativo generado (configs de Capacitor, Info.plist, textos, manifiestos,
+     sabores de Gradle, project.yml) es exactamente lo que sale de él (generar.mjs --verificar), la migración 0125 copia sus ids, entradas y
+     alcances, la base acepta sus claves, y nadie más escribe un id de tienda ni una entrada a mano. Al revés: cambiar un id en apps.json sin
+     regenerar, o escribir «com.tolatino.negocios» en la web → falla. */
+  appsUnaFuente() {
+    const G = "appsUnaFuente", J = "apps/mobile/apps.json", M = "packages/db/migrations/0125_apps_base.sql";
+    if (!existsSync(J)) return falla(G, J, 0, "falta la fuente de las apps");
+    const A = JSON.parse(readFileSync(J, "utf8"));
+    try { execSync("node apps/mobile/scripts/generar.mjs --verificar", { stdio: "pipe" }); }
+    catch (e) { falla(G, "apps/mobile/scripts/generar.mjs", 0, String(e.stderr || e.stdout).split("\n").find((l) => l.includes("✗")) || "lo generado no es lo que sale de apps.json"); }
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0125");
+    const m = readFileSync(M, "utf8");
+    for (const a of A.apps) {
+      const re = new RegExp(`\\('${a.key}', '\\{"es":"([^"]+)","en":"([^"]+)"\\}', '${a.ios.replace(/\./g, "\\.")}', '${a.android.replace(/\./g, "\\.")}', '${a.entrada}', '\\{${a.alcance.join(",")}\\}'`);
+      const x = re.exec(m);
+      if (!x) falla(G, M, 0, `app_clients no copia de apps.json la app «${a.key}» (ids, entrada o alcance)`);
+      else if (x[1].replace(/''/g, "'") !== a.nombre.es || x[2].replace(/''/g, "'") !== a.nombre.en) falla(G, M, 0, `el nombre de «${a.key}» no es el de apps.json`);
+      if (!m.includes(`('app.cascara.${a.key}', `)) falla(G, M, 0, `falta el interruptor app.cascara.${a.key}`);
+      for (const p of ["ios", "android"]) for (const t of ["min", "aviso"]) if (!m.includes(`('app_${t}_build_${a.key}_${p}', `)) falla(G, M, 0, `falta la clave app_${t}_build_${a.key}_${p}`);
+    }
+    const S6 = "packages/db/migrations/0006_cuenta.sql", ses = /app\s+text not null default 'cliente' check \(app in \(([^)]*)\)\)/.exec(existsSync(S6) ? readFileSync(S6, "utf8") : "")?.[1] ?? "";
+    for (const a of A.apps) if (!ses.includes(`'${a.key}'`)) falla(G, S6, 0, `sessions.app no acepta «${a.key}»`);
+    const ev = /alter table app_events add column if not exists app text check \(app in \(([^)]*)\)\)/.exec(m)?.[1] ?? "";
+    for (const a of A.apps) if (!ev.includes(`'${a.key}'`)) falla(G, M, 0, `app_events.app no acepta «${a.key}»`);
+    const C = "apps/web/lib/app-nativa-comun.ts";
+    if (!existsSync(C) || !/import APPS from "\.\.\/\.\.\/mobile\/apps\.json"/.test(readFileSync(C, "utf8"))) falla(G, C, 0, "el servidor lee las apps de apps/mobile/apps.json");
+    const generados = /^apps\/mobile\/(apps\.json|ios\/(Targets\/|project\.yml)|android\/app\/(src\/(cliente|negocios|repartidor|puerta)\/|sabores\.gradle))/;
+    for (const f of codigo) {
+      if (generados.test(f) || f === M || f.startsWith("guardianes/")) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/["'`]com\.tolatino\.(app|negocios|repartidor|puerta)["'`]/.test(l)) falla(G, f, i + 1, "un id de tienda escrito a mano: sale de apps/mobile/apps.json"); });
+    }
+  },
+
+  /* 8a · Cada cáscara abre SOLO su alcance, y la regla es la misma en los tres lugares (§3.1): el servidor (middleware → destinoEnApp de
+     app-nativa-comun.ts), el filtro nativo (TLAlcance en Swift y en Java, con la lista de su capacitor.config.json) y la navegación permitida
+     (allowNavigation = solo nuestro dominio). Se comparan las decisiones de los dos algoritmos sobre todas las rutas de la web. El Super Admin
+     no es de ninguna app. Al revés: quitar /panel de las «ajenas» de To'Latino, sumar un dominio a allowNavigation, escribir una ruta en el
+     filtro nativo o que el middleware deje de usar destinoEnApp → falla. */
+  cascaraSoloSuAlcance() {
+    const G = "cascaraSoloSuAlcance", J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8"));
+    const bajo = (r, p) => p === "/" || r === p || r.startsWith(p + "/");
+    // El servidor (la semántica de duenoDe en app-nativa-comun.ts).
+    const dueno = (r) => A.tecnico.some((p) => bajo(r, p)) ? "tecnico" : A.comun.some((p) => bajo(r, p)) ? "comun" : A.soloWeb.some((p) => bajo(r, p)) ? "web"
+      : (A.apps.find((a) => !a.alcance.includes("/") && a.alcance.some((p) => bajo(r, p))) ?? A.apps.find((a) => a.alcance.includes("/"))).key;
+    const servidor = (k, r) => { const d = dueno(r); return d === "tecnico" || d === "comun" || d === k; };
+    const C = "apps/web/lib/app-nativa-comun.ts";
+    const dc = existsSync(C) ? cuerpoFn(sinComent(C), "duenoDe") : "";
+    if (!/APPS\.tecnico[\s\S]*APPS\.comun[\s\S]*APPS\.soloWeb[\s\S]*DEF_APPS/.test(dc)) falla(G, C, 0, "duenoDe(): el orden es técnico → común → solo web → la app dueña (el mismo que el filtro nativo)");
+    // Todas las rutas de páginas de la web (sin grupos), con un ejemplo de cada segmento dinámico.
+    const rutas = new Set(["/", "/cuenta", "/admin", "/admin/sistema", "/panel", "/sistema"]);
+    for (const f of archivos) {
+      const m = /^apps\/web\/app\/(.*)page\.tsx$/.exec(f); if (!m) continue;
+      rutas.add("/" + m[1].split("/").filter((s) => s && !/^\(.*\)$/.test(s)).map((s) => s.replace(/^\[\[?\.{0,3}([^\]]+)\]\]?$/, "x1")).join("/"));
+    }
+    for (const a of A.apps) {
+      for (const T of [`apps/mobile/ios/Targets/${a.target}/capacitor.config.json`, `apps/mobile/android/app/src/${a.sabor}/assets/capacitor.config.json`]) {
+        if (!existsSync(T)) { falla(G, T, 0, "falta el capacitor.config.json de la app"); continue; }
+        const c = JSON.parse(readFileSync(T, "utf8")), host = new URL(c.server?.url ?? "http://x").host;
+        if (JSON.stringify(c.server?.allowNavigation) !== JSON.stringify([host])) falla(G, T, 0, "allowNavigation es solo nuestro dominio (lo ajeno abre fuera de la cáscara)");
+        const N = c.plugins?.TLAlcance;
+        if (!N || N.host !== host) { falla(G, T, 0, "TLAlcance sin su alcance o con otro dominio"); continue; }
+        if (!c.packageClassList?.includes("TLAlcancePlugin")) falla(G, T, 0, "la cáscara no carga su filtro nativo TLAlcance");
+        const nativo = (r) => N.comunes.some((p) => bajo(r, p)) || N.inicio.includes(r) || (!N.ajenas.some((p) => bajo(r, p)) && N.propias.some((p) => bajo(r, p)));
+        for (const r of rutas) if (nativo(r) !== servidor(a.key, r) && !(A.inicio.includes(r))) { falla(G, T, 0, `«${r}»: el filtro nativo de ${a.key} dice ${nativo(r) ? "abre" : "fuera"} y el servidor lo contrario`); break; }
+        if (N.ajenas.length === 0 && a.alcance.includes("/")) falla(G, T, 0, "To'Latino no excluye las rutas de las otras apps");
+      }
+      for (const p of A.soloWeb) if (a.alcance.some((x) => bajo(p, x) && x !== "/") || A.comun.some((x) => bajo(p, x))) falla(G, J, 0, `«${p}» es solo de la web: ninguna app lo abre`);
+    }
+    const prop = A.apps.flatMap((a) => a.alcance.filter((p) => p !== "/").map((p) => [a.key, p]));
+    for (const [k, p] of prop) for (const [k2, p2] of prop) if (k !== k2 && (bajo(p, p2) || bajo(p2, p))) falla(G, J, 0, `«${p}» (${k}) y «${p2}» (${k2}) se pisan`);
+    for (const f of ["apps/mobile/plugins/tl-alcance/ios/TLAlcancePlugin.swift", "apps/mobile/plugins/tl-alcance/android/com/tolatino/plugins/TLAlcancePlugin.java"]) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta el filtro nativo"); continue; }
+      const t = sinComent(f);
+      for (const k of ["comunes", "inicio", "propias", "ajenas", "host"]) if (!t.includes(`"${k}"`)) falla(G, f, 0, `el filtro nativo lee «${k}» de su configuración`);
+      if (/"\/(panel|repartidor|puerta|admin|cuenta|entrar|sistema)/.test(t)) falla(G, f, 0, "una ruta escrita en el filtro nativo: sale de apps.json");
+      if (!/shouldOverrideLoad/.test(t)) falla(G, f, 0, "el filtro nativo decide en shouldOverrideLoad");
+    }
+    const MW = "apps/web/middleware.ts";
+    if (!existsSync(MW) || !/destinoEnApp\(app\.app,/.test(sinComent(MW))) falla(G, MW, 0, "el middleware manda cada ruta de la cáscara con destinoEnApp() (la misma regla)");
+  },
+
+  /* 8a · @capacitor/* solo en el puente (lib/nativo/puente.ts): ninguna pantalla habla con lo nativo por su cuenta ni toca window.Capacitor.
+     Al revés: importar @capacitor/core en una pantalla → falla. */
+  capacitorSoloEnPuente() {
+    const G = "capacitorSoloEnPuente";
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?|mjs)$/.test(f) || f === "apps/web/lib/nativo/puente.ts") continue;
+      const t = sinComent(f);
+      if (/from ["']@capacitor\/|import\(["']@capacitor\/|require\(["']@capacitor\//.test(t)) falla(G, f, 0, "@capacitor/* solo se importa en lib/nativo/puente.ts");
+      if (/\bwindow\.Capacitor\b|\(window as[^)]*\)\.Capacitor|globalThis\.Capacitor/.test(t)) falla(G, f, 0, "el puente nativo se usa desde lib/nativo/ (nunca window.Capacitor)");
+    }
+    const P = "apps/web/lib/nativo/puente.ts";
+    if (!existsSync(P) || !/window\.self !== window\.top/.test(readFileSync(P, "utf8"))) falla(G, P, 0, "el puente no se entrega a un marco (iframe): solo al documento de arriba");
+  },
+
+  /* 8a · Todo lo nativo tiene su respaldo web (§3.1 «Puente»): en lib/nativo/*, cada plugin pedido se revisa (`if (!p)`) y la función hace lo
+     mismo (o lo más parecido) sin la cáscara. Y cada método que la web le pide a un plugin propio (TL*) existe en Swift (declarado en
+     pluginMethods) y en Java (@PluginMethod). Al revés: usar un plugin sin el `if (!p)`, o llamar un método que el nativo no tiene → falla. */
+  nativoConRespaldo() {
+    const G = "nativoConRespaldo", D = "apps/web/lib/nativo";
+    const fs8 = codigo.filter((f) => f.startsWith(D + "/") && f.endsWith(".ts") && !f.endsWith("/puente.ts"));
+    if (fs8.length < 5) falla(G, D, 0, "faltan las piezas del puente (almacen, externo, pantalla, permisos, reporte, inicio)");
+    const usos = new Map(); // plugin → métodos que la web le pide
+    for (const f of fs8) {
+      const t = sinComent(f);
+      for (const m of t.matchAll(/const (\w+) = (plugin<(\w+)>\("(\w+)"\)|nativo\(\))/g)) {
+        const resto = t.slice(m.index, m.index + 420);
+        if (!new RegExp(`if \\(!${m[1]}\\)`).test(resto)) falla(G, f, 0, `«${m[1]}» (${m[4] ?? "TLLocal"}) se usa sin su respaldo web (if (!${m[1]}) …)`);
+      }
+      for (const m of t.matchAll(/type (\w+) = \{([^}]*(?:\{[^}]*\}[^}]*)*)\};/g)) {
+        const nombre = m[1], cuerpo = m[2];
+        const plug = new RegExp(`plugin<${nombre}>\\("(TL\\w+)"\\)`).exec(t)?.[1] ?? (nombre === "TLLocal" ? "TLLocal" : null);
+        if (!plug) continue;
+        const L = usos.get(plug) ?? new Set();
+        for (const x of cuerpo.matchAll(/(\w+)\(/g)) L.add(x[1]);
+        usos.set(plug, L);
+      }
+    }
+    for (const [plug, L] of usos) {
+      const dir = { TLLocal: "tl-local", TLPantalla: "tl-pantalla", TLReporte: "tl-reporte", TLAlcance: "tl-alcance" }[plug];
+      if (!dir) { falla(G, D, 0, `«${plug}» no es un plugin propio de apps/mobile/plugins`); continue; }
+      const sw = `apps/mobile/plugins/${dir}/ios/${plug}Plugin.swift`, jv = `apps/mobile/plugins/${dir}/android/com/tolatino/plugins/${plug}Plugin.java`;
+      const s = existsSync(sw) ? readFileSync(sw, "utf8") : "", j = existsSync(jv) ? readFileSync(jv, "utf8") : "";
+      if (!s) falla(G, sw, 0, `falta ${plug} en iOS`); if (!j) falla(G, jv, 0, `falta ${plug} en Android`);
+      if (s && !s.includes(`jsName = "${plug}"`)) falla(G, sw, 0, `${plug}: jsName distinto`);
+      if (j && !j.includes(`@CapacitorPlugin(name = "${plug}")`)) falla(G, jv, 0, `${plug}: nombre distinto`);
+      for (const x of L) {
+        if (s && (!new RegExp(`@objc func ${x}\\(_ call: CAPPluginCall\\)`).test(s) || !s.includes(`CAPPluginMethod(name: "${x}"`))) falla(G, sw, 0, `${plug}.${x}() lo pide la web y no está en iOS`);
+        if (j && !new RegExp(`@PluginMethod\\s+public void ${x}\\(PluginCall call\\)`).test(j)) falla(G, jv, 0, `${plug}.${x}() lo pide la web y no está en Android`);
+      }
+    }
+  },
+
+  /* 8a · El rótulo TLApp dice qué app es; NUNCA da permisos ni cambia lo que se cobra o se ve (§1c). Solo lo leen los archivos de esta lista
+     (mandar a la entrada, «Actualiza la app», anotar la sesión y la analítica, el contexto de Soporte, la hoja de permisos); ninguno decide
+     acceso. La cabecera x-tl-app ya no se lee. El middleware solo redirige (no pone cabeceras de confianza). Al revés: leer el rótulo en el
+     panel o en lib/admin.ts, o volver a leer x-tl-app → falla. */
+  appNoAutoriza() {
+    const G = "appNoAutoriza";
+    const OK = new Set(["apps/web/lib/app-nativa.ts", "apps/web/lib/app-nativa-comun.ts", "apps/web/middleware.ts", "apps/web/lib/cuenta.ts", "apps/web/lib/soporte.ts", "apps/web/lib/eventos.ts",
+      "apps/web/app/_cascara/Compuerta.tsx", "apps/web/app/_cascara/HojaPermiso.tsx", "apps/web/app/(cascara)/app/actualizar/page.tsx", "apps/web/app/(cascara)/app/pausa/page.tsx",
+      "apps/web/app/(cascara)/app/fuera/page.tsx", "apps/web/app/(cascara)/app/Estados.tsx"]);
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (/\b(deLaApp|leerRotulo|compuerta)\(/.test(t) && !OK.has(f)) falla(G, f, 0, "el rótulo TLApp solo lo leen los archivos de la lista de appNoAutoriza (nunca decide permisos)");
+      if (/["']x-tl-app["']/.test(t)) falla(G, f, 0, "la cabecera x-tl-app no se lee: la app se sabe por el rótulo y nunca da permisos");
+      if (/TLApp\//.test(t) && !OK.has(f)) falla(G, f, 0, "el rótulo TLApp se lee solo en lib/app-nativa-comun.ts");
+    }
+    const AD = "apps/web/lib/admin.ts", CU = "apps/web/lib/cuenta.ts";
+    if (existsSync(AD) && /app-nativa|TLApp/.test(sinComent(AD))) falla(G, AD, 0, "los permisos del equipo no miran la app");
+    if (existsSync(CU)) {
+      const y = cuerpoFn(sinComent(CU), "yo");
+      if (/returning[^`]*\b(app|platform|app_build|app_version)\b/.test(y)) falla(G, CU, 0, "yo() no devuelve la app de la sesión (nadie decide con ella)");
+    }
+    const MW = "apps/web/middleware.ts";
+    if (existsSync(MW)) { const c = cuerpoFn(sinComent(MW), "cascara"); if (/headers\.set\(["']x-|cookies\.set|NextResponse\.next\(\{\s*request/.test(c)) falla(G, MW, 0, "cascara() solo redirige: no agrega cabeceras ni cookies"); }
+  },
+
+  /* 8a · Cada permiso que pide una app tiene su texto ES/EN (§1c): iOS (Info.plist e InfoPlist.strings es/en, iguales a apps.json) y Android
+     (strings.xml es/en). Ningún permiso sin texto ni texto inventado. Al revés: quitar un texto de apps.json o un NS…UsageDescription → falla. */
+  permisoConTexto() {
+    const G = "permisoConTexto", J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8")), IOS = { camara: "NSCameraUsageDescription", ubicacion: "NSLocationWhenInUseUsageDescription" };
+    const un = (s) => s.replace(/\\"/g, '"').replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/\\'/g, "'");
+    for (const a of A.apps) {
+      const ps = [...(a.permisos.camara ? ["camara"] : []), ...(a.permisos.ubicacion !== "no" ? ["ubicacion"] : [])];
+      const T = `apps/mobile/ios/Targets/${a.target}`, S = `apps/mobile/android/app/src/${a.sabor}/res`;
+      const plist = existsSync(`${T}/Info.plist`) ? readFileSync(`${T}/Info.plist`, "utf8") : "";
+      for (const k of plist.matchAll(/<key>(NS\w+UsageDescription)<\/key>/g)) if (!ps.some((p) => IOS[p] === k[1])) falla(G, `${T}/Info.plist`, 0, `${k[1]} sin permiso en apps.json`);
+      for (const p of ps) {
+        const t = A.textos?.[p]?.[a.key];
+        if (!t?.es || !t?.en || t.es.length < 30 || t.en.length < 30) { falla(G, J, 0, `${a.key}: el permiso ${p} sin su texto ES/EN (§1c)`); continue; }
+        if (!new RegExp(`<key>${IOS[p]}</key>\\s*<string>[^<]{30,}</string>`).test(plist)) falla(G, `${T}/Info.plist`, 0, `${IOS[p]} sin texto`);
+        for (const l of ["es", "en"]) {
+          const f = `${T}/${l}.lproj/InfoPlist.strings`, x = existsSync(f) ? new RegExp(`"${IOS[p]}" = "((?:[^"\\\\]|\\\\.)*)";`).exec(readFileSync(f, "utf8"))?.[1] : null;
+          if (!x || un(x) !== t[l]) falla(G, f, 0, `${IOS[p]} en ${l} no es el texto de apps.json`);
+          const fa = `${S}/${l === "es" ? "values" : "values-en"}/strings.xml`, y = existsSync(fa) ? new RegExp(`<string name="permiso_${p}">([^<]*)</string>`).exec(readFileSync(fa, "utf8"))?.[1] : null;
+          if (!y || un(y) !== t[l]) falla(G, fa, 0, `permiso_${p} en ${l} no es el texto de apps.json`);
+        }
+      }
+    }
+    const H = "apps/web/app/_cascara/HojaPermiso.tsx";
+    if (!existsSync(H) || !/APPS\.textos/.test(readFileSync(H, "utf8"))) falla(G, H, 0, "la hoja previa dice el porqué con el mismo texto de la tienda (apps.json)");
+  },
+
+  /* 8a · Permisos mínimos (§3.6): cada app pide solo lo que usa. Cámara solo donde hay foto o lector; ubicación «al usar» solo To'Latino (el
+     Repartidor la suma en 8e, «entrega», con modo de fondo solo él); nunca micrófono, galería entera, contactos, otras apps ni ubicación
+     «siempre». Al revés: sumar RECORD_AUDIO, CAMERA al Repartidor o NSMicrophoneUsageDescription → falla. */
+  permisosMinimos() {
+    const G = "permisosMinimos", J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8"));
+    const NUNCA = /android\.permission\.(RECORD_AUDIO|READ_MEDIA_IMAGES|READ_MEDIA_VIDEO|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES|SYSTEM_ALERT_WINDOW|ACCESS_BACKGROUND_LOCATION|READ_PHONE_STATE|READ_SMS)\b/;
+    const base = "apps/mobile/android/app/src/main/AndroidManifest.xml";
+    if (existsSync(base)) for (const m of readFileSync(base, "utf8").matchAll(/uses-permission android:name="([^"]+)"/g)) if (m[1] !== "android.permission.INTERNET") falla(G, base, 0, `la base común solo pide INTERNET (${m[1]} va en el sabor que lo usa)`);
+    for (const a of A.apps) {
+      if (a.permisos.ubicacion === "entrega" && a.key !== "delivery") falla(G, J, 0, `${a.key}: la ubicación de fondo es solo del Repartidor`);
+      if (a.permisos.ubicacion === "siempre") falla(G, J, 0, `${a.key}: nunca ubicación «siempre»`);
+      const mf = `apps/mobile/android/app/src/${a.sabor}/AndroidManifest.xml`, t = existsSync(mf) ? readFileSync(mf, "utf8") : "";
+      const ok = new Set([...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])]);
+      for (const m of t.matchAll(/uses-permission(?:-sdk-23)? android:name="([^"]+)"/g)) {
+        if (NUNCA.test(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no se pide (§3.6)`);
+        else if (!ok.has(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no lo usa esta app`);
+      }
+      const pl = `apps/mobile/ios/Targets/${a.target}/Info.plist`, p = existsSync(pl) ? readFileSync(pl, "utf8") : "";
+      if (/NSMicrophoneUsageDescription|NSPhotoLibraryUsageDescription|NSContactsUsageDescription|NSLocationAlwaysAndWhenInUseUsageDescription|NSLocationAlwaysUsageDescription|NSBluetooth/.test(p)) falla(G, pl, 0, `${a.key}: un permiso que ninguna app usa (micrófono, galería entera, contactos, ubicación siempre, Bluetooth)`);
+      if (/UIBackgroundModes/.test(p) && !(a.key === "delivery" && a.permisos.ubicacion === "entrega")) falla(G, pl, 0, `${a.key}: modo de fondo solo para el Repartidor con entrega (8e)`);
+      if (!a.permisos.camara && /NSCameraUsageDescription/.test(p)) falla(G, pl, 0, `${a.key}: cámara sin usarla`);
+    }
+  },
+
+  /* 8a · Sin rastreo (§3.6, ATT): ningún SDK de anuncios ni de analítica de terceros, nada de IDFA / AdSupport / AppTrackingTransparency ni del
+     id de anuncios de Android; cada target declara NSPrivacyTracking false y ningún dominio de rastreo. La web tampoco carga analítica ajena.
+     Al revés: sumar NSUserTrackingUsageDescription, AD_ID o un dominio de rastreo → falla. */
+  sinRastreo() {
+    const G = "sinRastreo";
+    const MAL = /NSUserTrackingUsageDescription|AppTrackingTransparency|ATTrackingManager|AdSupport|ASIdentifierManager|advertisingIdentifier|com\.google\.android\.gms\.permission\.AD_ID|play-services-ads|firebase-analytics|FirebaseAnalytics|FBSDK|facebook-android-sdk|googletagmanager|google-analytics\.com|connect\.facebook\.net|\bgtag\(|\bfbq\(/;
+    for (const f of archivos) {
+      if (!/^apps\/(mobile|web)\//.test(f) || /\.(png|jpe?g|webp|ico|jar|woff2?)$/.test(f) || f.includes("/node_modules/")) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (MAL.test(l) && !/^\s*(\/\/|\/\*|\*|#|<!--)/.test(l)) falla(G, f, i + 1, "rastreo o anuncios de terceros: To'Latino no rastrea (sin ATT porque no hay nada que pedir)"); });
+    }
+    const J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    for (const a of JSON.parse(readFileSync(J, "utf8")).apps) {
+      const f = `apps/mobile/ios/Targets/${a.target}/PrivacyInfo.xcprivacy`, t = existsSync(f) ? readFileSync(f, "utf8") : "";
+      if (!/<key>NSPrivacyTracking<\/key>\s*<false\/>/.test(t)) falla(G, f, 0, `${a.key}: NSPrivacyTracking false`);
+      if (!/<key>NSPrivacyTrackingDomains<\/key>\s*<array\/>/.test(t)) falla(G, f, 0, `${a.key}: ningún dominio de rastreo`);
+    }
+  },
+
+  /* 8a · Dentro de una cáscara no hay «Instala la app» ni «Agregar a la pantalla de inicio» (§3.1): toda pantalla que lo ofrezca lo esconde con
+     esApp() del puente. Al revés: un aviso de instalar sin esa revisión → falla. */
+  sinAvisoWebEnApp() {
+    const G = "sinAvisoWebEnApp";
+    const AVISO = /beforeinstallprompt|pantalla de inicio|instala(r)? (la )?app\b|add to home screen|install (the )?app\b/i;
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?)$/.test(f)) continue;
+      const t = sinComent(f);
+      if (AVISO.test(t) && !/\besApp\(\)/.test(t)) falla(G, f, 0, "un aviso para instalar la app se esconde dentro de la cáscara (if (esApp()) …)");
+    }
+  },
+
+  /* 8a · Las islas sin señal (§3.1): cada isla de apps.json (y la página local «Sin señal») es una página estática (force-static) que no toca el
+     servidor (ni la base, ni cookies ni cabeceras), guarda y lee SOLO por lib/nativo/almacen.ts (nadie más abre IndexedDB), vuelve al servidor
+     con irAlServidor() (desde la isla, «/» no es el servidor), se copia con scripts/islas.mjs (que lee la lista de apps.json) y el CI de las
+     cáscaras corre cuando cambia. Al revés: quitar force-static, abrir IndexedDB fuera del almacén o un `location.href = "/…"` en una isla → falla. */
+  islaCoherente() {
+    const G = "islaCoherente", J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8")), islas = ["/app/sin-senal", ...new Set(A.apps.flatMap((a) => a.islas))];
+    const pagina = (r) => archivos.find((f) => { const m = /^apps\/web\/app\/(.*)page\.tsx$/.exec(f); return m && "/" + m[1].split("/").filter((s) => s && !/^\(.*\)$/.test(s)).join("/") === r; });
+    const WF = ".github/workflows/cascaras.yml", wf = existsSync(WF) ? readFileSync(WF, "utf8") : "";
+    for (const r of islas) {
+      const p = pagina(r);
+      if (!p) { falla(G, J, 0, `la isla ${r} no tiene página`); continue; }
+      if (!/export const dynamic = "force-static";/.test(readFileSync(p, "utf8"))) falla(G, p, 0, `${r} es estática (force-static): abre sin servidor`);
+      const dir = p.slice(0, p.lastIndexOf("/"));
+      for (const f of archivos.filter((x) => x.startsWith(dir + "/") && /\.tsx?$/.test(x) && !x.slice(dir.length + 1).includes("/"))) {
+        const t = sinComent(f);
+        if (/from ["'](server-only|next\/headers|@\/lib\/db)["']|\bdb\(\)/.test(t)) falla(G, f, 0, `la isla ${r} no toca el servidor (ni la base ni cabeceras)`);
+        if (/location\.(href|assign|replace)\s*(=|\()\s*["'`]\/(?!.*\.html)/.test(t)) falla(G, f, 0, `desde la isla, «/…» no es el servidor: usa irAlServidor()`);
+      }
+      const ruta = `"apps/web/app/${dir.replace(/^apps\/web\/app\//, "")}/**"`, [push, pr] = wf.split(/\n  pull_request:\n/);
+      if (!push?.includes(ruta) || !pr?.split(/\n  workflow_dispatch:/)[0]?.includes(ruta)) falla(G, WF, 0, `el CI de las cáscaras corre cuando cambia la isla ${r} (en push y en pull_request)`);
+    }
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== "apps/web/lib/nativo/almacen.ts" && /\bindexedDB\./.test(sinComent(f))) falla(G, f, 0, "lo que se guarda para sin señal va por lib/nativo/almacen.ts (IndexedDB en la web, TLLocal en la app)");
+    const IS = "apps/mobile/scripts/islas.mjs";
+    if (!existsSync(IS) || !/A\.apps\.flatMap\(\(a\) => a\.islas\)/.test(readFileSync(IS, "utf8"))) falla(G, IS, 0, "las islas que se copian salen de apps.json");
+  },
+
+  /* 8a · Ninguna llave en el repo (es PÚBLICO) ni en GitHub (§3.5): ni archivos de llaves (.p8, .p12, .jks, .keystore, .mobileprovision,
+     AuthKey_*, google-services.json), ni JSON con private_key, ni `secrets.*` / pull_request_target en el flujo de las cáscaras. El llavero
+     guarda el sobre cifrado y solo lib/tiendas/llavero.ts lo toca; ninguna pantalla ni respuesta lleva el contenido; leer queda anotado
+     (store_secret_reads, solo inserción) y una llave no se borra. Al revés: subir un .p8 de prueba al repo, `select blob_enc` en una pantalla
+     o devolver el archivo en la respuesta → falla. */
+  llavesFueraDelRepo() {
+    const G = "llavesFueraDelRepo";
+    for (const f of archivos) {
+      if (/\.(p8|p12|jks|keystore|mobileprovision|pfx)$/i.test(f) || /(^|\/)(AuthKey_[A-Z0-9]+\.p8|google-services\.json|GoogleService-Info\.plist)$/.test(f)) falla(G, f, 0, "un archivo de llave en el repo (va cifrado en el llavero del servidor)");
+      if (/\.json$/.test(f) && !f.includes("node_modules")) { const t = readFileSync(f, "utf8"); if (/"private_key"\s*:\s*"-----BEGIN/.test(t)) falla(G, f, 0, "una cuenta de servicio con su llave privada en el repo"); }
+    }
+    for (const g of ["apps/mobile/.gitignore", "apps/mobile/android/.gitignore", "apps/mobile/ios/.gitignore"]) if (!existsSync(g)) falla(G, g, 0, "falta el .gitignore que deja fuera las llaves");
+    const gi = ["apps/mobile/android/.gitignore", "apps/mobile/ios/.gitignore"].map((g) => (existsSync(g) ? readFileSync(g, "utf8") : "")).join("\n");
+    for (const x of ["*.jks", "*.keystore", "*.p12", "*.p8", "google-services.json", "GoogleService-Info.plist", "*.mobileprovision"]) if (!gi.includes(x)) falla(G, "apps/mobile", 0, `el .gitignore deja fuera ${x}`);
+    for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (/pull_request_target/.test(t)) falla(G, f, 0, "pull_request_target le da secretos a un PR ajeno: no se usa");
+      if (/cascaras/.test(f) && /\$\{\{\s*secrets\./.test(t)) falla(G, f, 0, "las cáscaras no usan secretos de GitHub: las llaves viven en el llavero (OIDC, 8h)");
+    }
+    const LL = "apps/web/lib/tiendas/llavero.ts";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === LL) continue;
+      const t = sinComent(f);
+      if (/\bblob_enc\b/.test(t)) falla(G, f, 0, "el sobre de una llave solo lo toca lib/tiendas/llavero.ts");
+      if (/from ["']@\/lib\/tiendas\/llavero["']/.test(t) && /\bleer\b[,} ]/.test((/import \{([^}]*)\} from ["']@\/lib\/tiendas\/llavero["']/.exec(t) ?? [])[1] ?? "")) falla(G, f, 0, "leer() del llavero es solo del servidor de tiendas (8h), nunca de una pantalla");
+    }
+    if (existsSync(LL)) {
+      const t = sinComent(LL), l = cuerpoFn(t, "listar");
+      if (/\bs\.\*|\bblob_enc\b/.test(l)) falla(G, LL, 0, "listar() nombra sus columnas: el sobre nunca sale");
+      if (!/insert into store_secret_reads/.test(cuerpoFn(t, "leer"))) falla(G, LL, 0, "cada lectura de una llave queda anotada");
+      if (!/LLAVERO_SECRET|DATOS_SECRET/.test(t) || /randomBytes\(32\)\.toString\("hex"\)\s*;?\s*\/\/\s*llave/.test(t)) falla(G, LL, 0, "la llave del llavero sale de los secretos del entorno");
+    }
+    const R = "apps/web/app/api/admin/llavero/route.ts";
+    if (existsSync(R)) {
+      const t = sinComent(R);
+      if (/\b(b|archivo|contenido)\.toString\(|NextResponse\.json\([^)]*\b(b|contenido)\b/.test(t)) falla(G, R, 0, "la respuesta dice la huella, nunca el contenido del archivo");
+      if (!/s\.role !== "admin"/.test(t) || !/consumirCodigo\(c, s\.phone, "llavero"/.test(t)) falla(G, R, 0, "subir una llave: solo un Admin y con el código otra vez");
+    }
+    const M = "packages/db/migrations/0125_apps_base.sql";
+    if (existsSync(M)) {
+      if (!/raise exception 'store_secret_reads es solo de inserción'/.test(ultimaFn("store_secret_reads_antes"))) falla(G, M, 0, "store_secret_reads es de solo inserción (trigger)");
+      if (!/raise exception 'una llave del llavero no se borra/.test(ultimaFn("store_secrets_antes"))) falla(G, M, 0, "una llave no se borra: se retira");
     }
   },
 

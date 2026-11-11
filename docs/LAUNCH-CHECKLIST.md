@@ -1146,3 +1146,28 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] Enviar a revisión y lanzamiento por fases; beta real en Hazleton.
 - [ ] Apple Pay / Google Pay nativos; Smart App Banner; passkeys obligatorias para el equipo.
 - [ ] El día del envío: revisar de nuevo las reglas de compras externas en EE. UU. y el SDK mínimo que pide cada tienda.
+
+## Fase 8 · 8a (las cuatro cáscaras, el puente, las islas y el llavero; 11 nov)
+- [ ] **Paquete 8-0 (dominio) — bloqueado en el fundador:** `pruebas.tolatino.com` detrás de Cloudflare con HTTPS completo, Let's Encrypt en
+      `deploy.sh`, nginx en 443, `TOLATINO_URL` y cookies `secure`. Hasta entonces las cuatro apps (que apuntan a `https://pruebas.tolatino.com`)
+      abren su página local «Sin señal». Para probar Android contra la IP: `TOLATINO_URL=http://2.31.196.167 node apps/mobile/scripts/generar.mjs
+      --preparar` (la app permite HTTP solo si la URL es HTTP; iOS nunca). (8a, 11 nov)
+- [ ] **Primera corrida de `cascara-android` y `cascara-ios` en CI:** aquí no se compiló ninguna (SDK de Android y Google Maven bloqueados; sin
+      Xcode). Los plugins de Android pasaron `javac` contra Android 16 con el API de Capacitor simulado; Swift sin compilar. Revisar el humo del
+      emulador (DevTools del WebView: «Sin señal» sin red, la isla y el marco ajeno sin puente) y del simulador (abre y sigue viva). (8a, 11 nov)
+- [ ] **`nat8a` completo en emulador y simulador** cuando haya dominio: modo avión al abrir → isla de la Puerta con la lista firmada guardada en
+      TLLocal; otra cuenta en el mismo teléfono no ve nada; un iframe de otro origen (Stripe Elements) no alcanza el puente (en iOS, el portero
+      `TLBridgeViewController`). XCUITest mínimo en el job de iOS. (8a, 11 nov)
+- [ ] **App-Bound Domains en iOS** (`limitsNavigationsToAppBoundDomains`): declarado y apagado; encenderlo solo después de probar la hoja de Stripe
+      y su 3-D Secure en el simulador. (8a, 11 nov)
+- [ ] **Islas más livianas:** hoy se copia todo `/_next/static` (≈6 MB por app); copiar solo los trozos que usan las islas. (8a, 11 nov)
+- [ ] **La isla de la Puerta en la app sube la cola sola** (hoy la sube la puerta en línea, con la misma cola del llavero): necesitaría un token de
+      la sesión de puerta y CORS desde el origen local. (8a, 11 nov)
+- [ ] **Mi cuenta › Ajustes › Privacidad** con «Este iPhone · To'Latino 1.0 (12)» en cada sesión (hoy lo dice Usuarios 360°). (8a, 11 nov)
+- [ ] **«Abrir en la web» desde una app en pausa** cuando existan los enlaces universales: que no vuelva a abrir la misma app (excluir
+      `?web=1` en el AASA o abrir con la vista del navegador). (8a, 11 nov)
+- [ ] **El llavero:** lectura por el CI con OIDC y aviso de llaves que vencen (barrido) — tubería de las tiendas. (8a, 11 nov)
+- [ ] **Imagen del sandbox en local:** `docker build` no corrió aquí (corepack no sale a npm desde dentro de Docker en esta máquina); la
+      instalación congelada sin `apps/mobile` se probó aparte con pnpm. El CI la construye en cada push. (8a, 11 nov)
+- [ ] **Presupuesto de velocidad de las apps** (tocar el ícono → primer pintado ≤ 1.5 s; isla ≤ 400 ms): medir en emulador y simulador. (8a, 11 nov)
+- [ ] **En los 9 dispositivos:** `app8a` corre en 390 y 1360 en local; falta la matriz de CI. (8a, 11 nov)

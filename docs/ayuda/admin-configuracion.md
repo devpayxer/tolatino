@@ -88,6 +88,14 @@ el panel, Publica tu evento y la ayuda dicen «el martes después del evento»; 
 reminders, the door, private events, trust). Every customer-facing text reads the value. **Event payout day** is read-only until the dashboard
 and help texts that say «Tuesday» read it.
 
+## Apps
+La sección **Apps** muestra el build mínimo y el de aviso de cada app y plataforma (To'Latino, Negocios, Repartidor y Puerta, en iPhone y
+Android). Se cambian en **Sistema › Apps** (fila «Se cambia en su pantalla»), porque allí además se revisa que el aviso quede por encima del
+mínimo. Ver la ayuda «Super Admin: Apps».
+
+**English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
+checks that the notice build stays above the minimum.
+
 ## English
 
 - **What it does:** platform deadlines and limits in one place (Community limits per day, minutes to edit a post, days to appeal, longest

@@ -1,0 +1,25 @@
+{
+  "name": "@tolatino/mobile",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Las cuatro cáscaras de Capacitor (To'Latino, Negocios, Repartidor, Puerta). Fuente: apps.json. Ver docs/diseno/plan/fase8-apps.md §3.1.",
+  "scripts": {
+    "generar": "node scripts/generar.mjs",
+    "islas": "node scripts/islas.mjs",
+    "preparar": "node scripts/islas.mjs && node scripts/generar.mjs",
+    "verificar": "node scripts/generar.mjs --verificar"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/app-launcher": "8.0.1",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0",
+    "sharp": "0.35.5"
+  }
+}

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition, type ComponentType } from "react";
 import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
 import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
+import { guardarTurno, leerCola, guardarCola, type Cola } from "./sin-conexion/local";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -21,10 +22,6 @@ const VEH: [string, string, string][] = [["pie", "A pie", "On foot"], ["bici", "
 const MOT: [string, string, string][] = [["noresponde", "El cliente no responde", "Customer not answering"], ["direccion", "La dirección está mal", "Wrong address"], ["demora", "El negocio se está tardando", "The business is running late"],
   ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
 const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
-type Cola = { numero: string; paso: PasoRep; efectivo?: number; at: number }[];
-const COLA = "tl-rep-cola-v1";
-const leerCola = (): Cola => { try { return JSON.parse(localStorage.getItem(COLA) ?? "[]") as Cola; } catch { return []; } };
-const guardarCola = (c: Cola) => { try { localStorage.setItem(COLA, JSON.stringify(c)); } catch { /* sin almacenamiento */ } };
 
 export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s }: {
   es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null;
@@ -40,13 +37,15 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   useEffect(() => { setCobro(false); setProb(false); setErr(""); }, [p]);
   // Sin señal: lo pendiente se envía al volver la señal (y cada 15 s mientras quede algo).
   const enviarCola = useCallback(async () => {
-    const c = leerCola();
+    const c = await leerCola();
     if (!c.length || !navigator.onLine) { setCola(c); return; }
     const resto: Cola = [];
     for (const x of c) { try { await repPaso(x.numero, x.paso, x.efectivo); } catch { resto.push(x); } }
-    guardarCola(resto); setCola(resto);
+    await guardarCola(resto); setCola(resto);
     if (resto.length < c.length) router.refresh();
   }, [router]);
+  // 8a · En la app: lo pendiente y las entregas del turno quedan en el teléfono para abrir sin señal (/repartidor/sin-conexion).
+  useEffect(() => { void guardarTurno(entregas, es); }, [entregas, es]);
   useEffect(() => { void enviarCola(); const on = () => void enviarCola(); window.addEventListener("online", on); const i = setInterval(on, 15000); return () => { window.removeEventListener("online", on); clearInterval(i); }; }, [enviarCola]);
 
   const run = (f: () => Promise<{ ok: boolean; msg?: { es: string; en: string } }>, ok: string, luego?: () => void) => start(async () => {
@@ -57,7 +56,8 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     if (ok) setToast(ok); luego?.(); router.refresh();
   });
   const paso = (numero: string, ps: PasoRep, ok: string, efectivo?: number) => {
-    if (!navigator.onLine) { const c = [...leerCola(), { numero, paso: ps, efectivo, at: Date.now() }]; guardarCola(c); setCola(c); setToast(E2("Sin señal: se guardó y se envía solo.", "No signal: saved, it sends on its own.")); return; }
+    const guardar = async () => { const c = [...(await leerCola()), { numero, paso: ps, efectivo, at: Date.now() }]; await guardarCola(c); setCola(c); setToast(E2("Sin señal: se guardó y se envía solo.", "No signal: saved, it sends on its own.")); };
+    if (!navigator.onLine) { void guardar(); return; }
     start(async () => {
       setErr("");
       try {
@@ -65,8 +65,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
         if (!r.ok) { setErr(es ? r.msg.es : r.msg.en); return; }
         setToast(ok); setCobro(false); router.refresh();
       } catch {
-        const c = [...leerCola(), { numero, paso: ps, efectivo, at: Date.now() }]; guardarCola(c); setCola(c);
-        setToast(E2("Sin señal: se guardó y se envía solo.", "No signal: saved, it sends on its own."));
+        await guardar();
       }
     });
   };

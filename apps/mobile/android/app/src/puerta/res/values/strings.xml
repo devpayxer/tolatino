@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json. No editar a mano. -->
+<resources>
+    <string name="app_name">To\'Latino Puerta</string>
+    <string name="title_activity_main">To\'Latino Puerta</string>
+    <string name="package_name">com.tolatino.puerta</string>
+    <string name="custom_url_scheme">com.tolatino.puerta</string>
+    <string name="permiso_camara">To\'Latino Puerta usa la cámara para leer el QR de los boletos en la puerta. No guarda fotos ni video.</string>
+</resources>

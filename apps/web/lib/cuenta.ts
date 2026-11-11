@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash, createHmac, randomBytes, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { cookies, headers } from "next/headers";
+import { leerRotulo } from "./app-nativa-comun";
 import { db, tx } from "./db";
 import { MODO_SMS, secretoAuth } from "./entorno";
 
@@ -57,7 +58,7 @@ export async function ipCliente(): Promise<string | null> {
 }
 
 /* Paso 1: pedir el código. Devuelve el código solo en modo pruebas (sandbox). */
-export async function pedirCodigo(entrada: string, proposito: "login" | "phone_change" | "account_delete" = "login"): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
+export async function pedirCodigo(entrada: string, proposito: "login" | "phone_change" | "account_delete" | "llavero" = "login"): Promise<{ reenviarEn: number; codigoPrueba?: string }> {
   const tel = normalizarTelefono(entrada);
   if (!tel) throw new ErrorCuenta("telefono_invalido");
   const ip = await ipCliente();
@@ -84,7 +85,7 @@ export async function pedirCodigo(entrada: string, proposito: "login" | "phone_c
 
 /* Revisa un código (cambiar teléfono, borrar la cuenta) dentro de una transacción: el último vigente de ese propósito,
    con tope de intentos y comparación de tiempo constante. */
-export async function consumirCodigo(c: import("pg").PoolClient, tel: string, proposito: "phone_change" | "account_delete", codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
+export async function consumirCodigo(c: import("pg").PoolClient, tel: string, proposito: "phone_change" | "account_delete" | "llavero", codigo: string): Promise<"ok" | "codigo_incorrecto" | "codigo_vencido" | "demasiados"> {
   if (!/^\d{6}$/.test(codigo)) return "codigo_incorrecto";
   const f = (await c.query<{ id: number; code_hash: string; attempts: number }>(
     `select id, code_hash, attempts from otp_codes where phone = $1 and purpose = $2 and used_at is null and expires_at > now() order by created_at desc limit 1 for update`, [tel, proposito])).rows[0];
@@ -150,10 +151,13 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
     await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);
 
     const token = randomBytes(32).toString("base64url");
+    // 8a · La sesión de una cáscara dice qué app, qué plataforma y qué versión (rótulo TLApp; solo informativo: Usuarios 360° › Sesiones,
+    // Sistema › Apps). Sin rótulo: la web («cliente» / «web», como siempre).
+    const ap = appDeSesion(h.get("user-agent"));
     await c.query(
-      `insert into sessions (user_id, token_hash, ip, user_agent, expires_at, device)
-       values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid)`,
-      [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS, dev],
+      `insert into sessions (user_id, token_hash, ip, user_agent, expires_at, device, app, platform, app_version, app_build, os_version)
+       values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid, $7, $8, $9, $10, $11)`,
+      [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS, dev, ap.app, ap.platform, ap.version, ap.build, ap.os],
     );
     return { token, nuevo: user.nuevo, nombre: user.first_name, id: user.id };
   });
@@ -172,18 +176,32 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
   return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
 }
 
+/* 8a · App, plataforma y versión de la sesión desde el rótulo TLApp (informativo). La versión del sistema sale del user-agent del WebView. */
+function appDeSesion(ua: string | null): { app: string; platform: string; version: string | null; build: number | null; os: string | null } {
+  const a = leerRotulo(ua);
+  if (!a) return { app: "cliente", platform: "web", version: null, build: null, os: null };
+  const os = a.plataforma === "ios" ? /OS (\d{1,2})[_.](\d{1,2})/.exec(ua ?? "") : /Android (\d{1,2}(?:\.\d{1,2})?)/.exec(ua ?? "");
+  return { app: a.app, platform: a.plataforma, version: a.version, build: a.build, os: os ? (os[2] ? `${os[1]}.${os[2]}` : os[1]!) : null };
+}
+
 export type Yo = { id: string; phone: string; first_name: string | null; last_name: string | null; nick: string | null; lang: string; estado: string; hasta: string | null };
 
 export async function yo(): Promise<Yo | null> {
   const t = (await cookies()).get(COOKIE)?.value;
   if (!t || t.length > 100) return null;
+  // 8a · Si la cáscara se actualizó, la sesión anota la versión nueva (solo la versión: la app y la plataforma de una sesión no cambian).
+  let ua: string | null = null;
+  try { ua = (await headers()).get("user-agent"); } catch { /* fuera de una petición */ }
+  const ap = appDeSesion(ua);
   const r = await db().query<Yo>(
-    `update sessions s set last_seen_at = now()
+    `update sessions s set last_seen_at = now(),
+            app_version = case when $2::text is not null and s.app = $4 and s.platform = $5 then $2 else s.app_version end,
+            app_build = case when $3::int is not null and s.app = $4 and s.platform = $5 then $3 else s.app_build end
        from users u
       where s.token_hash = $1 and s.user_id = u.id and s.signed_out_at is null and not s.blocked
         and s.expires_at > now() and cuenta_estado(u.status, u.status_until) in ('active', 'muted')
       returning u.id, u.phone, u.first_name, u.last_name, u.nick, u.lang, cuenta_estado(u.status, u.status_until) as estado, u.status_until as hasta`,
-    [huellaToken(t)],
+    [huellaToken(t), ap.version, ap.build, ap.app, ap.platform],
   );
   return r.rows[0] ?? null;
 }

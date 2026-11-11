@@ -1,0 +1,124 @@
+name: Cáscaras
+# 8a · Las cuatro cáscaras de Capacitor (docs/diseno/plan/fase8-apps.md §4 8a). La web es servida: las apps solo se recompilan cuando cambia
+# lo nativo (apps/mobile/**), el puente (lib/nativo) o una isla sin señal (guardián islaCoherente), o a pedido.
+# Sin firma y sin llaves: los builds firmados y las subidas a TestFlight / Play interno son de 8h (OIDC + llavero; nunca secretos de GitHub).
+on:
+  push:
+    branches: [main, pruebas]
+    paths:
+      - "apps/mobile/**"
+      - "apps/web/lib/nativo/**"
+      - "apps/web/app/(cascara)/app/sin-senal/**"
+      - "apps/web/app/(puerta)/puerta/sin-conexion/**"
+      - "apps/web/app/(sin-senal)/cuenta/boletos/sin-conexion/**"
+      - "apps/web/app/repartidor/sin-conexion/**"
+      - ".github/workflows/cascaras.yml"
+  pull_request:
+    paths:
+      - "apps/mobile/**"
+      - "apps/web/lib/nativo/**"
+      - "apps/web/app/(cascara)/app/sin-senal/**"
+      - "apps/web/app/(puerta)/puerta/sin-conexion/**"
+      - "apps/web/app/(sin-senal)/cuenta/boletos/sin-conexion/**"
+      - "apps/web/app/repartidor/sin-conexion/**"
+      - ".github/workflows/cascaras.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cascaras-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cascara-android:
+    name: cáscaras · Android (4 sabores + emulador)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Lo nativo es lo que sale de apps.json
+        run: node apps/mobile/scripts/generar.mjs --verificar
+      - name: La web (las islas salen de su build)
+        run: pnpm --filter @tolatino/web build
+      - name: Islas, íconos y splash
+        env: { TL_BUILD: "${{ github.run_number }}" }
+        run: |
+          node apps/mobile/scripts/islas.mjs
+          node apps/mobile/scripts/generar.mjs --preparar
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - name: SDK de Android (plataforma 36)
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      - name: Build debug de los cuatro sabores (sin firma de tienda)
+        working-directory: apps/mobile/android
+        env: { TL_BUILD: "${{ github.run_number }}" }
+        run: ./gradlew --no-daemon assembleClienteDebug assembleNegociosDebug assembleRepartidorDebug assemblePuertaDebug
+      - name: Habilitar KVM (emulador)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emulador · cada app abre; sin red, la página local «Sin señal» y su isla
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash apps/mobile/scripts/humo-android.sh apps/mobile/android/app/build/outputs/apk capturas-android
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cascaras-android
+          path: |
+            apps/mobile/android/app/build/outputs/apk/*/debug/*.apk
+            capturas-android/
+          retention-days: 14
+
+  cascara-ios:
+    name: cáscaras · iOS (4 targets, simulador, sin firma)
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Lo nativo es lo que sale de apps.json
+        run: node apps/mobile/scripts/generar.mjs --verificar
+      - name: La web (las islas salen de su build)
+        run: pnpm --filter @tolatino/web build
+      - name: Islas, íconos y splash
+        env: { TL_BUILD: "${{ github.run_number }}" }
+        run: |
+          node apps/mobile/scripts/islas.mjs
+          node apps/mobile/scripts/generar.mjs --preparar
+      - name: Proyecto de Xcode con los cuatro targets (XcodeGen, MIT)
+        working-directory: apps/mobile/ios
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Build de simulador de los cuatro targets
+        working-directory: apps/mobile/ios
+        run: |
+          for t in ToLatino ToLatinoNegocios ToLatinoRepartidor ToLatinoPuerta; do
+            xcodebuild -project ToLatino.xcodeproj -scheme "$t" -sdk iphonesimulator -configuration Debug -derivedDataPath build \
+              -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build | tail -5
+            test -d "build/Build/Products/Debug-iphonesimulator/$t.app"
+          done
+      - name: Simulador · cada app abre (sin el dominio todavía, su página local «Sin señal»)
+        run: bash apps/mobile/scripts/humo-ios.sh apps/mobile/ios/build/Build/Products/Debug-iphonesimulator capturas-ios
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cascaras-ios
+          path: capturas-ios/
+          retention-days: 14

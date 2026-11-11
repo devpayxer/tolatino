@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Arranque } from "./_cascara/Arranque";
 
 /* Fuentes: @font-face en globals.css con los archivos de public/fuentes (nada de Google en el build). */
 const PRECARGA = ["sora-latin-800-normal", "manrope-latin-500-normal", "manrope-latin-700-normal"];
@@ -23,7 +24,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         {PRECARGA.map((f) => <link key={f} rel="preload" href={`/fuentes/${f}.woff2`} as="font" type="font/woff2" crossOrigin="anonymous" />)}
       </head>
-      <body>{children}</body>
+      {/* 8a · Dentro de una de las cuatro cáscaras: splash, botón «atrás» y registro técnico (en la web no hace nada). */}
+      <body>{children}<Arranque /></body>
     </html>
   );
 }

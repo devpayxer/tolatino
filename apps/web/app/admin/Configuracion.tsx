@@ -11,9 +11,10 @@ import { configCambiar, configModelo } from "./acciones-config";
 import type { ModeloPapel } from "@/lib/compa/admin-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
 
 const SECCION: Record<Seccion, string> = {
-  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE",
+  comunidad: "COMUNIDAD", gamificacion: "GAMIFICATION", salud_pro: "DOCTORES Y PROFESIONALES", noche: "NOCHE", edu: "EDUCACIÓN · NIÑOS · DEPORTE", fe_inm_autos: "IGLESIAS · BIENES RAÍCES · AUTOS", eventos: "EVENTOS", compa: "EL COMPA", soporte: "SOPORTE", apps: "APPS",
 };
 /* 6j · Configuración › Eventos: las ~50 claves de la Fase 6 en subgrupos (lo que cubre cada una). */
 const SUB_EVT: [string, RegExp][] = [
@@ -35,7 +36,7 @@ export function Configuracion({ filas, admin, autoOcultar, modelos = null, horar
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Guardado."); setConf(null); router.refresh(); };
-  const tabs: Bloque = { type: "tabs", items: [{ l: "Equipo y permisos", on: false, onClick: () => router.push("/admin/sistema") }, { l: "Configuración", on: true, onClick: () => undefined }] };
+  const tabs: Bloque = { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "cfg", onClick: () => (p.k === "cfg" ? undefined : router.push(p.href)) })) };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
       <PanelBloques bloques={[{ type: "head", eye: "SISTEMA", t: "Configuración", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />

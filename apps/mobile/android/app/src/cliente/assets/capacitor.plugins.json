@@ -1,0 +1,34 @@
+[
+  {
+    "pkg": "@capacitor/app",
+    "classpath": "com.capacitorjs.plugins.app.AppPlugin"
+  },
+  {
+    "pkg": "@capacitor/app-launcher",
+    "classpath": "com.capacitorjs.plugins.applauncher.AppLauncherPlugin"
+  },
+  {
+    "pkg": "@capacitor/splash-screen",
+    "classpath": "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin"
+  },
+  {
+    "pkg": "@capacitor/status-bar",
+    "classpath": "com.capacitorjs.plugins.statusbar.StatusBarPlugin"
+  },
+  {
+    "pkg": "tolatino/tl-alcance",
+    "classpath": "com.tolatino.plugins.TLAlcancePlugin"
+  },
+  {
+    "pkg": "tolatino/tl-local",
+    "classpath": "com.tolatino.plugins.TLLocalPlugin"
+  },
+  {
+    "pkg": "tolatino/tl-pantalla",
+    "classpath": "com.tolatino.plugins.TLPantallaPlugin"
+  },
+  {
+    "pkg": "tolatino/tl-reporte",
+    "classpath": "com.tolatino.plugins.TLReportePlugin"
+  }
+]

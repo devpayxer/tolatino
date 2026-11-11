@@ -50,7 +50,12 @@ export type ClaveConfig =
   // 7g · El copiloto del equipo (0122)
   | "compa_copiloto_dia_staff"
   // 7h · WhatsApp y SMS con enlace (0123)
-  | "compa_link_min" | "compa_canal_msgs_dia" | "compa_canal_respuesta_min" | "compa_canal_retener_dias" | "compa_canal_firma_seg";
+  | "compa_link_min" | "compa_canal_msgs_dia" | "compa_canal_respuesta_min" | "compa_canal_retener_dias" | "compa_canal_firma_seg"
+  // 8a · Las cuatro apps: build mínimo y de aviso por app y plataforma (0125; se cambian en Sistema › Apps)
+  | "app_min_build_cliente_ios" | "app_min_build_cliente_android" | "app_min_build_negocio_ios" | "app_min_build_negocio_android"
+  | "app_min_build_delivery_ios" | "app_min_build_delivery_android" | "app_min_build_checkin_ios" | "app_min_build_checkin_android"
+  | "app_aviso_build_cliente_ios" | "app_aviso_build_cliente_android" | "app_aviso_build_negocio_ios" | "app_aviso_build_negocio_android"
+  | "app_aviso_build_delivery_ios" | "app_aviso_build_delivery_android" | "app_aviso_build_checkin_ios" | "app_aviso_build_checkin_android";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
@@ -79,7 +84,7 @@ export async function valores<K extends ClaveConfig>(...ks: K[]): Promise<Record
 export const cfgSql = (k: ClaveConfig) => `cfg_int('${k}')`;
 
 /* ── Configuración (Super Admin › Sistema › Configuración) ── */
-export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte";
+export type Seccion = "comunidad" | "gamificacion" | "salud_pro" | "noche" | "edu" | "fe_inm_autos" | "eventos" | "compa" | "soporte" | "apps";
 export type FilaConfig = {
   key: ClaveConfig; seccion: Seccion; label: Bi; help: Bi | null; unidad: Bi; min: number; max: number; def: number; v: number; cambiado: boolean;
   editable: boolean; bloqueo: Bi | null; editIn: string | null; at: string | null; quien: string | null;

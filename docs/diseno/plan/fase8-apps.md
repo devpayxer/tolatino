@@ -453,6 +453,9 @@ QR rotativo y red entre teléfonos de la puerta (LAUNCH, 6h).
 ## 4. Bloques
 
 ### 8a · Dominio con HTTPS, las cuatro cáscaras, el puente nativo, las islas y el llavero (+ Super Admin › Sistema › Apps e Integraciones) — **Opus/high**
+**Estado (11 nov): hecho salvo el dominio.** El Paquete 8-0 sigue en el fundador; todo lo demás está construido y probado (`app8a` 110,
+`alreves8a` 55/55, regresión en verde) con `TOLATINO_URL` configurable. Android e iOS los compila el CI (`cascaras.yml`); aquí no se pudo (red y
+sin Xcode). Desvíos y lo diferido: `docs/REVISION.md` «8a» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8a».
 **Antes de nada (Paquete 8-0, §10):** `pruebas.tolatino.com` detrás de Cloudflare con HTTPS completo (DNS y modo «Full (strict)» por la API de Cloudflare
 con el token guardado por el formulario seguro; certificado del origen con Let's Encrypt HTTP-01 en el sandbox desde `deploy.sh`; nginx escucha 443;
 `TOLATINO_URL` y cookies `secure`). Sin esto no siguen 8b, 8d ni 8h. Si el dominio tarda, 8a sigue con las cáscaras en simuladores contra el sandbox por

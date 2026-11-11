@@ -5,6 +5,7 @@
 import * as UI from "@tolatino/ui";
 import { useEffect, useState, type ComponentType } from "react";
 import { idiomaGuardado, leerBoletos, matrizDe, type BoletoGuardado } from "@/lib/boletos-sin-conexion";
+import { irAlServidor } from "@/lib/nativo/puente";
 
 type N = "Icon" | "Button" | "TicketQR" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,7 +50,7 @@ export function BoletosSinSenal() {
           <div className="flex flex-col gap-3 rounded-[18px] border border-ink/[.07] bg-white p-5">
             <div className="font-display text-[20px] font-extrabold">{E2("No hay boletos guardados en este teléfono", "No tickets saved on this phone")}</div>
             <div className="text-[13px] font-medium leading-[1.5] text-ink/70">{E2("Abre tu boleto una vez con señal y queda guardado para verlo sin conexión. Si saliste de tu cuenta, se borró.", "Open your ticket once with signal and it is saved to view offline. If you signed out, it was erased.")}</div>
-            <div className="flex"><Button variant="secondary" onClick={() => { location.href = "/cuenta/boletos"; }}>{E2("Probar con señal", "Try with signal")}</Button></div>
+            <div className="flex"><Button variant="secondary" onClick={() => { void irAlServidor("/cuenta/boletos"); }}>{E2("Probar con señal", "Try with signal")}</Button></div>
           </div>
         )}
       </div>

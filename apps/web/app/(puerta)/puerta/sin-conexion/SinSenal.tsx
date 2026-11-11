@@ -11,6 +11,7 @@ import { Cabeza, Hoja } from "../Marco";
 import { avisoSinSenal, EstadoPuerta, horaLista } from "./Estado";
 import * as L from "./local";
 import { usePuertaLocal } from "./usePuertaLocal";
+import { enIsla, irAlServidor } from "@/lib/nativo/puente";
 
 type Guardada = { s: string; titulo: string; puerta: string; negocio: string; n: number; lista: string; tz: string; reentrada: boolean; libre: boolean };
 const uuid = () => crypto.randomUUID();
@@ -43,7 +44,7 @@ export function SinSenal() {
         {cerro ? <PanelBloques bloques={[{ type: "note", tone: "warn", icon: "key", t: E2("Esta puerta se cerró o se revocó: nada de ella quedó en este teléfono.", "This door was closed or revoked: nothing of it is left on this phone.") }]} /> : null}
         <PanelBloques bloques={G === null ? [] : G.length ? [{ type: "rows", items: G.map((x): Fila => ({ key: x.s, icon: "key", t: x.titulo, s: `${E2("Puerta", "Door")} ${x.puerta} · ${x.negocio} · ${E2(`lista de las ${horaLista(x.lista, x.tz)}`, `list from ${horaLista(x.lista, x.tz)}`)}`, chev: true, onClick: () => setSel(x.s) })) }]
           : [{ type: "empty", icon: "wifi", t: E2("Sin señal y sin puertas guardadas", "No signal and no saved doors"), s: E2("Abre tu puerta con señal: este teléfono baja la lista para seguir sin conexión.", "Open your door with signal: this phone downloads the list to keep going offline.") },
-            { type: "acts", items: [{ l: E2("Probar con señal", "Try with signal"), v: "primary", icon: "key", onClick: () => { location.href = "/puerta"; } }] }]} />
+            { type: "acts", items: [{ l: E2("Probar con señal", "Try with signal"), v: "primary", icon: "key", onClick: () => { void irAlServidor("/puerta"); } }] }]} />
       </Hoja>
     </div>);
 }
@@ -64,7 +65,9 @@ function PuertaGuardada({ g, es, onOtra, onCerrada }: { g: Guardada; es: boolean
     setRes(q.trim().length >= 2 ? await sc.buscar(q) : null);
   };
   const B: Bloque[] = [...avisoSinSenal(sc, es, ahora)];
-  if (sc.enLinea && sc.listo && sc.porSubir === 0 && sc.sincronizado) B.push({ type: "note", tone: "ok", icon: "check", t: E2("Volvió la señal y todo está subido.", "The signal is back and everything is uploaded."), cta: E2("Volver a la puerta", "Back to the door"), onCta: () => { location.href = `/puerta/s/${g.s}`; } });
+  if (sc.enLinea && sc.listo && sc.porSubir === 0 && sc.sincronizado) B.push({ type: "note", tone: "ok", icon: "check", t: E2("Volvió la señal y todo está subido.", "The signal is back and everything is uploaded."), cta: E2("Volver a la puerta", "Back to the door"), onCta: () => { void irAlServidor(`/puerta/s/${g.s}`); } });
+  // 8a · En la app, esta pantalla vive en el teléfono (isla): con señal, la puerta en línea sube la cola guardada (la misma del llavero).
+  else if (enIsla() && sc.enLinea) B.push({ type: "note", tone: "ok", icon: "wifi", t: E2("Hay señal. En la puerta en línea se sube lo que escaneaste sin conexión.", "There is signal. The online door uploads what you scanned offline."), cta: E2("Volver a la puerta", "Back to the door"), onCta: () => { void irAlServidor(`/puerta/s/${g.s}`); } });
   if (msg) B.push({ type: "note", tone: msg.ok ? "ok" : "danger", icon: msg.ok ? "check" : "warning", t: msg.t });
   if (man) {
     B.push({ type: "head", eye: E2("ENTRADA A MANO · SIN CONEXIÓN", "ENTRY BY HAND · OFFLINE"), t: man.nombre, onBack: () => setMan(null) });

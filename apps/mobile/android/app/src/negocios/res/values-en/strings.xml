@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json. No editar a mano. -->
+<resources>
+    <string name="app_name">To\'Latino Negocios</string>
+    <string name="title_activity_main">To\'Latino Negocios</string>
+    <string name="package_name">com.tolatino.negocios</string>
+    <string name="custom_url_scheme">com.tolatino.negocios</string>
+    <string name="permiso_camara">To\'Latino Negocios uses the camera for your page photos, to read a coupon code and to scan tickets in door mode.</string>
+</resources>

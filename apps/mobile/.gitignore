@@ -1,0 +1,3 @@
+# Las islas copiadas del build de Next (scripts/islas.mjs); se generan en cada build de las cáscaras.
+www/
+node_modules/
