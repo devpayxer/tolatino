@@ -24,7 +24,7 @@ export function jwtAsc(c: CredAsc, ahoraMs = Date.now()): string {
 }
 export const olvidarJwtAsc = () => { jwt = null; };
 
-export async function pedir(base: string, c: CredAsc, metodo: "GET" | "POST" | "DELETE", ruta: string, cuerpo?: unknown, timeoutMs = 15_000): Promise<Res> {
+export async function pedir(base: string, c: CredAsc, metodo: "GET" | "POST" | "PATCH" | "DELETE", ruta: string, cuerpo?: unknown, timeoutMs = 15_000): Promise<Res> {
   const r = await fetch(base.replace(/\/$/, "") + ruta, {
     method: metodo, signal: AbortSignal.timeout(timeoutMs),
     headers: { authorization: `Bearer ${jwtAsc(c)}`, accept: "application/json", ...(cuerpo ? { "content-type": "application/json" } : {}) },
@@ -83,3 +83,84 @@ export async function buildEnAsc(base: string, c: CredAsc, x: { appId: string; v
 }
 export const buildAlGrupo = (base: string, c: CredAsc, grupoId: string, buildId: string) =>
   pedir(base, c, "POST", `/v1/betaGroups/${encodeURIComponent(grupoId)}/relationships/builds`, { data: [{ type: "builds", id: buildId }] });
+
+/* ── 8i · La ficha como BORRADOR (fase8-apps.md §4 8i). Solo la versión que se prepara para enviar (PREPARE_FOR_SUBMISSION): nada de aquí la
+   manda a revisión (eso es de la Fase 9, con el OK del fundador). Si la tienda no tiene una versión en preparación, no se toca nada. ── */
+const enc = encodeURIComponent;
+export type FichaAsc = { locale: string; name: string; subtitle: string; privacyPolicyUrl: string; description: string; keywords: string; promotionalText: string; whatsNew: string; supportUrl: string };
+export async function versionEnPreparacion(base: string, c: CredAsc, appId: string): Promise<string | null | "error"> {
+  const r = await pedir(base, c, "GET", `/v1/apps/${enc(appId)}/appStoreVersions?${q("filter[appStoreState]", "PREPARE_FOR_SUBMISSION")}&${q("filter[platform]", "IOS")}&limit=1`);
+  return r.status !== 200 ? "error" : (datos(r)[0]?.id ?? null);
+}
+async function ponerLoc(base: string, c: CredAsc, lista: string, tipo: string, rel: string, relTipo: string, padre: string, locale: string, attrs: Record<string, string>): Promise<Res> {
+  const L = await pedir(base, c, "GET", `${lista}?limit=50`);
+  if (L.status !== 200) return L;
+  const ya = datos(L).find((d) => d.attributes?.locale === locale);
+  if (ya?.id) return pedir(base, c, "PATCH", `/v1/${tipo}/${enc(ya.id)}`, { data: { type: tipo, id: ya.id, attributes: attrs } });
+  return pedir(base, c, "POST", `/v1/${tipo}`, { data: { type: tipo, attributes: { locale, ...attrs }, relationships: { [rel]: { data: { type: relTipo, id: padre } } } } });
+}
+/* Lo de la versión (descripción, palabras clave, texto promocional, novedades, soporte) y lo de la app (nombre, subtítulo, privacidad). */
+export async function subirFichaAsc(base: string, c: CredAsc, x: { appId: string; versionId: string; ficha: FichaAsc }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const f = x.ficha;
+  const v = await ponerLoc(base, c, `/v1/appStoreVersions/${enc(x.versionId)}/appStoreVersionLocalizations`, "appStoreVersionLocalizations", "appStoreVersion", "appStoreVersions", x.versionId, f.locale,
+    { description: f.description, keywords: f.keywords, promotionalText: f.promotionalText, whatsNew: f.whatsNew, supportUrl: f.supportUrl });
+  if (v.status !== 200 && v.status !== 201) return { ok: false, error: `versión ${f.locale}: ${errorDe(v)}` };
+  const I = await pedir(base, c, "GET", `/v1/apps/${enc(x.appId)}/appInfos?limit=10`);
+  // La información de la app que se puede editar: la que no está ya publicada.
+  const info = datos(I).find((d) => !["READY_FOR_DISTRIBUTION", "READY_FOR_SALE"].includes(String(d.attributes?.state ?? d.attributes?.appStoreState ?? ""))) ?? datos(I)[0];
+  if (I.status !== 200 || !info?.id) return { ok: false, error: `appInfos: ${errorDe(I)}` };
+  const a = await ponerLoc(base, c, `/v1/appInfos/${enc(info.id)}/appInfoLocalizations`, "appInfoLocalizations", "appInfo", "appInfos", info.id, f.locale,
+    { name: f.name, subtitle: f.subtitle, privacyPolicyUrl: f.privacyPolicyUrl });
+  if (a.status !== 200 && a.status !== 201) return { ok: false, error: `app ${f.locale}: ${errorDe(a)}` };
+  return { ok: true };
+}
+/* La clasificación por edad: las respuestas del cuestionario de Apple, con la verdad (§6 #20). */
+export async function ponerEdadAsc(base: string, c: CredAsc, appId: string, respuestas: Record<string, string | boolean>): Promise<Res> {
+  const I = await pedir(base, c, "GET", `/v1/apps/${enc(appId)}/appInfos?limit=10`);
+  const info = datos(I)[0];
+  if (!info?.id) return I;
+  const D = await pedir(base, c, "GET", `/v1/appInfos/${enc(info.id)}/ageRatingDeclaration`);
+  const id = datos(D)[0]?.id;
+  if (!id) return D;
+  return pedir(base, c, "PATCH", `/v1/ageRatingDeclarations/${enc(id)}`, { data: { type: "ageRatingDeclarations", id, attributes: respuestas } });
+}
+/* Las notas para la revisión y la cuenta de revisión (el número y su código fijo van SOLO a Apple, por la API; nunca se muestran). */
+export async function ponerRevisionAsc(base: string, c: CredAsc, versionId: string, x: { notas: string; cuenta: string | null; codigo: string | null }): Promise<Res> {
+  const D = await pedir(base, c, "GET", `/v1/appStoreVersions/${enc(versionId)}/appStoreReviewDetail`);
+  const id = D.status === 200 ? datos(D)[0]?.id : undefined;
+  const attrs = { notes: x.notas.slice(0, 4000), demoAccountRequired: !!(x.cuenta && x.codigo), ...(x.cuenta && x.codigo ? { demoAccountName: x.cuenta, demoAccountPassword: x.codigo } : {}) };
+  if (id) return pedir(base, c, "PATCH", `/v1/appStoreReviewDetails/${enc(id)}`, { data: { type: "appStoreReviewDetails", id, attributes: attrs } });
+  return pedir(base, c, "POST", "/v1/appStoreReviewDetails", { data: { type: "appStoreReviewDetails", attributes: attrs, relationships: { appStoreVersion: { data: { type: "appStoreVersions", id: versionId } } } } });
+}
+/* Las capturas de un idioma y un tamaño: si ya están las mismas (por su checksum, en orden) no se toca nada; si no, se quitan las del borrador y
+   se suben estas (reservar → subir cada parte a la dirección que da Apple → confirmar con el MD5). Devuelve los ids de Apple. */
+export async function subirCapturasAsc(base: string, c: CredAsc, x: { versionId: string; locale: string; tipo: string; archivos: { nombre: string; datos: Buffer }[] }): Promise<{ ok: true; ids: string[]; igual: boolean } | { ok: false; error: string }> {
+  const L = await pedir(base, c, "GET", `/v1/appStoreVersions/${enc(x.versionId)}/appStoreVersionLocalizations?limit=50`);
+  const loc = datos(L).find((d) => d.attributes?.locale === x.locale)?.id;
+  if (!loc) return { ok: false, error: `sin la localización ${x.locale} (sube la ficha primero)` };
+  const S = await pedir(base, c, "GET", `/v1/appStoreVersionLocalizations/${enc(loc)}/appScreenshotSets?${q("filter[screenshotDisplayType]", x.tipo)}&limit=10`);
+  let set = datos(S)[0]?.id;
+  if (!set) {
+    const n = await pedir(base, c, "POST", "/v1/appScreenshotSets", { data: { type: "appScreenshotSets", attributes: { screenshotDisplayType: x.tipo }, relationships: { appStoreVersionLocalization: { data: { type: "appStoreVersionLocalizations", id: loc } } } } });
+    set = datos(n)[0]?.id;
+    if (n.status !== 201 || !set) return { ok: false, error: `appScreenshotSets: ${errorDe(n)}` };
+  }
+  const md5 = (b: Buffer) => createHash("md5").update(b).digest("hex");
+  const ya = datos(await pedir(base, c, "GET", `/v1/appScreenshotSets/${enc(set)}/appScreenshots?limit=10`));
+  if (ya.length === x.archivos.length && ya.every((d, i) => d.attributes?.sourceFileChecksum === md5(x.archivos[i]!.datos))) return { ok: true, ids: ya.map((d) => d.id!), igual: true };
+  for (const d of ya) { const r = await pedir(base, c, "DELETE", `/v1/appScreenshots/${enc(d.id!)}`); if (r.status !== 204 && r.status !== 404) return { ok: false, error: `quitar ${d.id}: ${errorDe(r)}` }; }
+  const ids: string[] = [];
+  for (const f of x.archivos) {
+    const r = await pedir(base, c, "POST", "/v1/appScreenshots", { data: { type: "appScreenshots", attributes: { fileName: f.nombre, fileSize: f.datos.length }, relationships: { appScreenshotSet: { data: { type: "appScreenshotSets", id: set } } } } });
+    const d = datos(r)[0], ops = (d?.attributes?.uploadOperations ?? []) as { method: string; url: string; offset: number; length: number; requestHeaders?: { name: string; value: string }[] }[];
+    if (r.status !== 201 || !d?.id || !ops.length) return { ok: false, error: `reservar ${f.nombre}: ${errorDe(r)}` };
+    for (const o of ops) {
+      const up = await fetch(o.url, { method: o.method, signal: AbortSignal.timeout(60_000), headers: Object.fromEntries((o.requestHeaders ?? []).map((h) => [h.name, h.value])), body: new Uint8Array(f.datos.subarray(o.offset, o.offset + o.length)) });
+      if (!up.ok) return { ok: false, error: `subir ${f.nombre}: ${up.status}` };
+    }
+    const k = await pedir(base, c, "PATCH", `/v1/appScreenshots/${enc(d.id)}`, { data: { type: "appScreenshots", id: d.id, attributes: { uploaded: true, sourceFileChecksum: md5(f.datos) } } });
+    if (k.status !== 200) return { ok: false, error: `confirmar ${f.nombre}: ${errorDe(k)}` };
+    ids.push(d.id);
+  }
+  return { ok: true, ids, igual: false };
+}

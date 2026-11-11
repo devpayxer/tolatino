@@ -102,6 +102,9 @@ Y la **tubería de las apps**: cuántas veces por hora el equipo puede **pedir u
 minuto** aguanta antes de contestar «espera» sin revisar más (10–1000, **60**) y el **tamaño máximo** de un archivo que sube el CI (10–500 MB,
 **200**). Ver «Super Admin: la tubería de las apps».
 
+Y las **fichas y cuentas de revisión**: cuántas veces por hora una cuenta de revisión puede pedir su código fijo (1–30, **10**) y cuántas veces por día
+se pueden subir las fichas como borrador a las tiendas (1–20, **6**). Ver «Super Admin: fichas de las tiendas y cuentas de revisión».
+
 **English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
 checks that the notice build stays above the minimum. Also in **Apps**: the **driver location during a delivery** (how often, minimum distance, **days kept** — 14 by default, max 90 —, whether the
 **customer sees the map** from pickup, the **impossible speed** and when a position is stale). A delivery route is opened in **Transactions ›

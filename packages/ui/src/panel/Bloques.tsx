@@ -29,7 +29,8 @@ export type Bloque =
   | { type: "group"; k: string; first?: boolean; link?: string; onLink?: Fn; link2?: string; onLink2?: Fn }
   | { type: "rows"; k?: string; link?: string; onLink?: Fn; cols?: string; gap?: string; items: Fila[] }
   | { type: "note"; t: string; tone?: "info" | "ok" | "warn" | "danger" | "ink"; icon?: string; cta?: string; onCta?: Fn }
-  | { type: "lock"; t: string; s: string; cta: string; onCta: Fn }
+  // 8i · Sin cta: el mismo aviso PRO, solo informativo (dentro de las apps de las tiendas no se ofrece comprar Pro).
+  | { type: "lock"; t: string; s: string; cta?: string; onCta?: Fn }
   | { type: "kv"; cols?: number; items: { k: string; v: string; fg?: string }[] }
   | { type: "field"; k: string; val: string; onChange: (v: string) => void; ph?: string; area?: boolean; rows?: number; count?: string; help?: string; lock?: boolean; pre?: string; suf?: string; im?: string; max?: number }
   | { type: "step"; t: string; s?: string; v: string; onM: Fn; onP: Fn }
@@ -222,7 +223,7 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
         <div style={{ display: "flex" }}><Chip variant="pro">PRO</Chip></div>
         <span style={{ font: "800 17px/1.3 Sora,sans-serif", letterSpacing: "-.02em" }}>{b.t}</span>
         <span style={{ font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.65)" }}>{b.s}</span>
-        <div style={{ display: "flex" }}><Button size="md" onClick={b.onCta}>{b.cta}</Button></div>
+        {b.cta ? <div style={{ display: "flex" }}><Button size="md" onClick={b.onCta}>{b.cta}</Button></div> : null}
       </div>);
     case "kv": return (
       <div style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", display: "grid", gridTemplateColumns: `repeat(${b.cols ?? 2},minmax(0,1fr))`, gap: "12px 14px" }}>

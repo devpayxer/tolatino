@@ -41,6 +41,9 @@ teléfono** (no se borran solas a los 7 días como en el navegador) y mantiene l
 - **¿To'Latino me rastrea entre apps o sitios?** No. No usamos publicidad ni el identificador de anuncios del teléfono, y no compartimos tus
   datos con nadie para anuncios. Por eso la app no te pide permiso para rastrear.
 - **¿Puedo usar la web en vez de la app?** Sí, todo está en la web.
+- **¿Dónde borro mi cuenta en la app?** To'Latino: Mi cuenta › Ajustes. Negocios: Más › Mi cuenta y ajustes (en escritorio, «Tu cuenta» en el menú).
+  Repartidor: Perfil › Idioma y cuenta. Puerta: Tu cuenta › Mi cuenta y ajustes. Ahí, **Borrar mi cuenta**.
+- **¿Puedo comprar Pro en To'Latino Negocios?** No: la app muestra el estado de tu plan; Pro se compra en el panel de la web.
 
 ## English
 ### What it does
@@ -73,3 +76,6 @@ opens **offline** what you saved on the phone (your tickets, the door list, toda
 - **Does the app see more or charge differently?** No. The server decides the same for the web and the apps.
 - **Does To'Latino track me across apps or sites?** No. No ads, no advertising identifier, no sharing for ads; that is why the app never asks
   to track you.
+- **Where do I delete my account in the app?** To'Latino: My account › Settings. Negocios: More › My account and settings. Repartidor: Profile ›
+  Language and account. Puerta: Your account › My account and settings. There, **Delete my account**.
+- **Can I buy Pro in To'Latino Negocios?** No: the app shows your plan status; Pro is bought in the web dashboard.

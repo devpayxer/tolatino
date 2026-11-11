@@ -2,6 +2,7 @@
 /* Reseñas en el panel (Panel v2 · sub 'resenas', det 'rev:' y «Reseñas sin responder» en Hoy). Las cifras y las listas
    llegan del servidor (reseñas visibles). Responder es de Pro; pedir revisión a To'Latino, de todos. Nada se borra ni se
    edita desde aquí. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { FilaPanel, ResenaPanelDet, ResenasPanel } from "@/lib/resenas";
 import { resenaResponder, resenaRevision } from "./acciones-resenas";
@@ -15,7 +16,6 @@ const cuando = (c: Ctx, d: number) => {
   return d <= 0 ? E2("hoy", "today") : d === 1 ? E2("ayer", "yesterday") : d < 7 ? E2(`hace ${d} días`, `${d} days ago`) : d < 30 ? E2(`hace ${Math.floor(d / 7)} sem.`, `${Math.floor(d / 7)} wk ago`) : E2(`hace ${Math.floor(d / 30)} meses`, `${Math.floor(d / 30)} mo ago`);
 };
 const VISITA = (c: Ctx): Record<FilaPanel["src"], string> => ({ dl: "Delivery", pk: "Pickup", rsv: c.E2("Reservó mesa", "Reserved a table"), cita: c.E2("Con cita", "Booked"), vis: c.E2("Visitante · sin pedido", "Visitor · no order") });
-const verPro = (c: Ctx) => c.go("pay", "plan");
 
 /* Fila de una reseña (lista y Hoy). */
 function fila(c: Ctx, x: FilaPanel, compact = false): Fila {
@@ -44,7 +44,7 @@ export function resenasBloques(c: Ctx): Sec {
   const cols2 = c.desk && c.w >= 1100 && !c.detCol ? "repeat(2,minmax(0,1fr))" : undefined;
   out.push(L.filas.length ? { type: "rows", cols: cols2, items: L.filas.map((x) => fila(c, x)) }
     : { type: "empty", icon: "star", t: k.n ? E2("Nada con ese filtro", "Nothing with that filter") : E2("Aún no tienes reseñas", "No reviews yet"), s: k.n ? "" : E2("Después de cada pedido, el cliente puede contar cómo le fue.", "After each order, the client can say how it went.") });
-  if (!pro) out.push({ type: "note", tone: "warn", t: E2("Con Free tus reseñas se ven, pero no las respondes.", "On Free your reviews show, but you cannot reply."), cta: "Pro", onCta: () => verPro(c) });
+  if (!pro) out.push({ type: "note", tone: "warn", t: E2("Con Free tus reseñas se ven, pero no las respondes.", "On Free your reviews show, but you cannot reply."), ...ctaPro(c, "Pro") });
   out.push({ type: "note", tone: "info", icon: "help", t: E2("Las reseñas no se borran ni se editan desde aquí. Si una viola las reglas, pídele revisión a To'Latino desde la reseña.", "Reviews cannot be deleted or edited here. If one breaks the rules, ask To'Latino to review it from the review.") });
   return { blocks: out, ed: null };
 }
@@ -57,7 +57,7 @@ export function resenaDetalle(c: Ctx): Sec {
     { type: "thread", items: [{ t: x.text }, ...(x.reply ? [{ t: x.reply, mine: true }] : [])] },
     { type: "kv", items: [{ k: E2("VISITA", "VISIT"), v: VISITA(c)[x.src] }, { k: E2("DATO DEL PEDIDO · NO SE EDITA", "ORDER DATA · NOT EDITABLE"), v: x.extra ? (es ? x.extra.es : x.extra.en) : "—" }] },
   ];
-  if (!d.pro) out.push({ type: "lock", t: E2("Responde tus reseñas", "Reply to your reviews"), s: E2("La respuesta se ve tanto como la reseña. Solo con Pro.", "The reply shows as much as the review. Pro only."), cta: E2("Ver Pro", "See Pro"), onCta: () => verPro(c) });
+  if (!d.pro) out.push({ type: "lock", t: E2("Responde tus reseñas", "Reply to your reviews"), s: E2("La respuesta se ve tanto como la reseña. Solo con Pro.", "The reply shows as much as the review. Pro only."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
   else if (!x.reply) {
     const key = `det:rev:${x.id}`, F = c.form(key, { txt: "" }), t = F.d.txt;
     out.push(

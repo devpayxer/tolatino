@@ -27,6 +27,7 @@ export type DatosAnalitica = {
   com?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").comunidadAnalitica>>;
   evt?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").eventosAnalitica>>;
   cpa?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").compaSoporteAnalitica>>;
+  apps?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").appsAnalitica>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -35,7 +36,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["cpa", "El Compa y Soporte"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["cpa", "El Compa y Soporte"], ["apps", "Apps"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -340,6 +341,26 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
           { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad, día, nivel, canal y tema: nunca quién habló con El Compa ni quién abrió un caso." },
         ]} />
       </>);
+  } else if (d.tab === "apps" && d.apps) {
+    // 8i · Las cuatro apps por app y plataforma, sin personas (sesiones, eventos y errores contados).
+    const X = d.apps, APPN: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta" }, PL: Record<string, string> = { ios: "iPhone", android: "Android" };
+    const nom = (a: string, p: string) => `${APPN[a] ?? a} · ${PL[p] ?? p}`, suma = (k: "n7" | "n30") => X.instalaciones.reduce((a, x) => a + x[k], 0);
+    const vacio = (t: string) => [{ key: "0", icon: "phone", t }];
+    cuerpo = (
+      <PanelBloques bloques={[periodo, kpis([
+        { k: "INSTALACIONES ACTIVAS · 7 D", v: String(suma("n7")), s: "teléfonos con una sesión de las apps", dark: true },
+        { k: "INSTALACIONES ACTIVAS · 30 D", v: String(suma("n30")) },
+        { k: "AVISOS ACEPTADOS", v: String(X.avisos.reduce((a, x) => a + x.vivos, 0)), s: `${X.avisos.reduce((a, x) => a + x.negados, 0)} negados · ${X.avisos.reduce((a, x) => a + x.ahora_no, 0)} «ahora no» en el período` },
+        { k: "ERRORES POR SESIÓN", v: (() => { const e = X.errores.reduce((a, x) => a + x.errores, 0), n = X.errores.reduce((a, x) => a + x.sesiones, 0); return n ? (e / n).toFixed(2) : "—"; })(), s: "errores ÷ sesiones del período" },
+      ]),
+        { type: "rows", k: "INSTALACIONES ACTIVAS POR APP Y PLATAFORMA", items: X.instalaciones.length ? X.instalaciones.map((x) => ({ key: `${x.app}-${x.plat}`, icon: "phone", t: nom(x.app, x.plat), r: String(x.n7), s: `${x.n7} en 7 días · ${x.n30} en 30 días` })) : vacio("Todavía no hay sesiones de las apps") },
+        { type: "rows", k: "VERSIONES EN USO", items: X.versiones.length ? X.versiones.map((x) => ({ key: `${x.app}-${x.plat}-${x.version}`, icon: "phone", t: `${nom(x.app, x.plat)} · ${x.version ?? "sin versión"}`, r: String(x.n), s: `${x.n} ${x.n === 1 ? "sesión" : "sesiones"} en el período` })) : vacio("Sin sesiones en el período") },
+        { type: "rows", k: "AVISOS: ACEPTADOS Y NEGADOS", items: X.avisos.length ? X.avisos.map((x) => ({ key: `${x.app}-${x.plat}`, icon: "bell", t: nom(x.app, x.plat), r: pct(x.vivos, x.vivos + x.negados), s: `${x.vivos} teléfonos con avisos · ${x.negados} negados · ${x.ahora_no} «ahora no»` })) : vacio("Sin respuestas a los avisos todavía") },
+        { type: "rows", k: "ERRORES POR SESIÓN", items: X.errores.length ? X.errores.map((x) => ({ key: `${x.app}-${x.plat}`, icon: "warning", t: nom(x.app, x.plat), r: x.sesiones ? (x.errores / x.sesiones).toFixed(2) : "—", s: `${x.errores} errores · ${x.sesiones} sesiones en el período` })) : vacio("Sin errores ni sesiones en el período") },
+        { type: "rows", k: "APERTURAS DE LA APP", items: X.aperturas.length ? X.aperturas.map((x) => ({ key: `${x.app}-${x.plat}`, icon: "phone", t: nom(x.app, x.plat), r: String(x.n), s: "veces que la app abrió su entrada" })) : vacio("Sin aperturas en el período") },
+        { type: "note", tone: "info", icon: "info", t: "Enlaces que abren la app o la web: llegan con los enlaces universales (8b, espera el dominio con HTTPS)." },
+        { type: "note", tone: "info", icon: "lock", t: "Solo cifras por app, plataforma y versión: nunca quién usa qué app." },
+      ]} />);
   } else if (d.tab === "nosup" && d.nosup) {
     const L = d.nosup;
     cuerpo = (

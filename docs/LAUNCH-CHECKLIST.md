@@ -1350,3 +1350,34 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Apps. (8h, 11 nov)
 - [ ] **Fase 9:** encender `app.tiendas.publico` con el OK del fundador, aceptar la rama produccion en el servidor de producción, el sabor de
       producción y los envíos a revisión pública (hoy la base los rechaza). (8h, 11 nov)
+
+## Fase 8 · 8i (fichas, capturas, privacidad, reglas de las tiendas, cuentas de revisión, «Lo que te toca»; 11 nov)
+- [ ] **Subir las fichas de verdad** (Sistema › Apps › Fichas y revisión › Subir como borrador) cuando estén la llave de la API de App Store Connect,
+      la cuenta de servicio de Play y las cuatro apps creadas con una versión en preparación (Paquetes 8-1/8-2). Hoy solo contra los simuladores. (8i, 11 nov)
+- [ ] **Capturas definitivas:** el job «capturas» de tiendas.yml (workflow_dispatch con capturas=si) las hace con la semilla en una base desechable del
+      CI; las fotos de la semilla viven en el almacén del sandbox, así que en el CI salen sin foto. Con el dominio con HTTPS, rehacerlas contra el sandbox
+      (o subir las fotos de la semilla al almacén del job) y revisarlas a ojo antes de la Fase 9; en la Fase 9, con negocios reales que den permiso (§6 #23). (8i, 11 nov)
+- [ ] **Capturas de iPhone en el simulador real** (`xcrun simctl io booted screenshot` navegando con XCUITest): hoy las de Apple salen de WebKit con
+      el rótulo de la app en 1320×2868; la cáscara de iOS solo se captura en su humo (Cáscaras). Hace falta XCUITest para navegar dentro de la app. (8i, 11 nov)
+- [ ] **Tamaños de captura del día del envío:** Apple pide hoy 6.9" (APP_IPHONE_67, 1320×2868) y Google teléfono (1080×2400 aquí); volver a leerlo. (8i, 11 nov)
+- [ ] **Data safety por la API:** Google tiene `applications.dataSafety` (el mismo CSV; probado contra el simulador del descubrimiento oficial). Es una
+      declaración legal del dueño: el servidor no la manda sola. Decidir con el fundador si la sube Claude (con su OK) o la importa él. Los ids
+      `PSL_…` del CSV, a verificar con la plantilla de Play Console del día. (8i, 11 nov)
+- [ ] **Apple App Privacy** no está en la API: el fundador la toca con la pantalla Declaraciones (Paquete 8-3). (8i, 11 nov)
+- [ ] **Clasificación por edad de Apple:** respuestas en `apps/mobile/tiendas/declaraciones.json` (con la escala de 2025: 13+/16+/18+); revisar el
+      resultado que calcule Apple y «advertising» (Destacados de Pro: ¿cuenta como publicidad?) el día del envío. (8i, 11 nov)
+- [ ] **Cuentas de revisión de producción (Fase 9):** crearlas a mano con el OK del fundador (número reservado, negocio de revisión oculto, portero
+      invitado desde ese negocio, un evento de revisión), los cuatro `REVISION_CODIGO_*` en los secretos de producción y encender `app.revision.cuentas`
+      (en producción además pide `app.tiendas.publico`). En el sandbox, deploy.sh crea los códigos al azar. (8i, 11 nov)
+- [ ] **Puerta de revisión:** la semilla no la hace portera (el teléfono del portero va cifrado con la llave del entorno): invitarla desde el panel
+      del negocio de revisión y darle un evento de revisión antes de mandar Puerta a revisión. (8i, 11 nov)
+- [ ] **Face ID en las fichas:** las fichas no lo mencionan porque las llaves de acceso en las apps esperan el dominio (8b). Agregarlo cuando funcione. (8i, 11 nov)
+- [ ] **«Pronto»** (`sinProntoEnTienda`): 7 pantallas usan Pronto (Buscar, la categoría, Eventos, Esta noche…). Antes de la revisión pública,
+      ninguna alcanzable dentro de las apps; con `TOLATINO_FASE=9` el guardián falla. (8i, 11 nov)
+- [ ] **Reglas de EE. UU. sobre enlaces a compras externas** (caso Epic, 2025): hoy Pro no se ofrece ni se enlaza en las apps (3.1.3(f)); volver a
+      leerlas el día del envío y decidir con el fundador. (8i, 11 nov)
+- [ ] **Novedades de Google:** van con cada lanzamiento (notas de la versión de la pista), no con la ficha; la tubería todavía no las manda en
+      `tracks.update`. (8i, 11 nov)
+- [ ] **/privacidad:** borrador versión 0 desde el inventario; el texto legal final, la revisión de abogado y la página de acceso anticipado en
+      tolatino.com, Fase 9 (§6 #26). /terminos no existe todavía. (8i, 11 nov)
+- [ ] **Analítica › Apps · enlaces que abren la app o la web:** espera los enlaces universales (8b). (8i, 11 nov)

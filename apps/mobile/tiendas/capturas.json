@@ -1,0 +1,36 @@
+{
+  "$fuente": "8i · Las capturas de las fichas (fase8-apps.md §4 8i, §6 #23): con la semilla del sandbox (los negocios «To'Latino Demo» y los de prueba), en ES y EN, de 5 a 8 por app, en los tamaños de cada tienda (Apple: iPhone 6.9\" 1320×2868; Google: teléfono 1080×2400). Las hace scripts/tiendas/capturas.mjs (Playwright, con el rótulo TLApp de cada app y plataforma) y, para Google, el emulador de Android con la cáscara real (adb exec-out screencap). Cada cuenta entra con el código del modo pruebas del sandbox (nunca en producción). En la Fase 9 se rehacen con negocios reales que den permiso.",
+  "cuentas": { "cliente": "+15705550201", "negocio": "+15705550133", "delivery": "+15705550144", "checkin": "+15705550511" },
+  "tomas": {
+    "cliente": [
+      { "ruta": "/", "nombre": "inicio" },
+      { "ruta": "/negocios", "nombre": "negocios" },
+      { "ruta": "/n/sabor-dominicano", "nombre": "ficha" },
+      { "ruta": "/eventos", "nombre": "eventos" },
+      { "ruta": "/cuenta/boletos", "nombre": "boletos" },
+      { "ruta": "/buscar?q=barberia", "nombre": "buscar" }
+    ],
+    "negocio": [
+      { "ruta": "/panel/sabor-dominicano/hoy", "nombre": "hoy" },
+      { "ruta": "/panel/sabor-dominicano", "nombre": "pagina" },
+      { "ruta": "/panel/sabor-dominicano/mensajes", "nombre": "mensajes" },
+      { "ruta": "/panel/sabor-dominicano/vendes", "nombre": "menu" },
+      { "ruta": "/panel/sabor-dominicano/clientes", "nombre": "clientes" },
+      { "ruta": "/panel/sabor-dominicano/mas", "nombre": "mas" }
+    ],
+    "delivery": [
+      { "ruta": "/repartidor", "nombre": "inicio" },
+      { "ruta": "/repartidor?t=pedidos", "nombre": "pedidos" },
+      { "ruta": "/repartidor?t=ganancias", "nombre": "ganancias" },
+      { "ruta": "/repartidor?t=perfil", "nombre": "perfil" },
+      { "ruta": "/repartidor/sin-conexion", "nombre": "sin-senal" }
+    ],
+    "checkin": [
+      { "ruta": "/puerta", "nombre": "inicio" },
+      { "ruta": "@puerta", "nombre": "escanear" },
+      { "ruta": "@puerta?t=lista", "nombre": "lista" },
+      { "ruta": "@puerta?t=aforo", "nombre": "aforo" },
+      { "ruta": "/puerta/sin-conexion", "nombre": "sin-senal" }
+    ]
+  }
+}

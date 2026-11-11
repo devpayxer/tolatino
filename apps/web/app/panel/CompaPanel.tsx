@@ -10,6 +10,7 @@
    To'Latino), las reglas fijas (verbatim), LO QUE EL COMPA DEBE SABER (≤ 400, con «Traducir» del traductor propio), PRUÉBALO COMO CLIENTE y
    LO QUE CONTESTÓ EL COMPA · N · TE PASÓ N. «To'Latino apagó las respuestas automáticas…» si el Super Admin lo apagó aquí. Las respuestas
    automáticas no dependen del asistente: salen aunque el asistente del panel esté en pausa. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque } from "@tolatino/ui";
 import type { CpaPanel } from "@/lib/compa/asistente-panel";
 import type { AutoPanel } from "@/lib/compa/respuesta-auto";
@@ -79,7 +80,7 @@ function autoBloques(c: Ctx): Bloque[] {
   if (!a.pro) {
     out.push({ type: "lock", t: E2("El Compa contesta a tus clientes cuando tú no puedes", "El Compa replies to your clients when you can’t"),
       s: E2("Horario, dirección, menú y cómo pedir, con los datos de tu página. Siempre dice que es IA y lo que no sabe te lo pasa.", "Hours, address, menu and how to order, from your page. It always says it’s AI and passes on what it doesn’t know."),
-      cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
+      ...ctaPro(c, E2("Ver Pro", "See Pro")) });
     return out;
   }
   const sop = `/soporte?negocio=${encodeURIComponent(d.id)}`;

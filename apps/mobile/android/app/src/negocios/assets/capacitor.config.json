@@ -16,7 +16,7 @@
     "cleartext": false
   },
   "ios": {
-    "appendUserAgent": "TLApp/negocio/ios/1.0.0 (1)",
+    "appendUserAgent": "TLApp/negocio/ios/1.0.1 (1)",
     "contentInset": "never",
     "scrollEnabled": true,
     "allowsLinkPreview": false,
@@ -24,7 +24,7 @@
     "limitsNavigationsToAppBoundDomains": false
   },
   "android": {
-    "appendUserAgent": "TLApp/negocio/android/1.0.0 (1)",
+    "appendUserAgent": "TLApp/negocio/android/1.0.1 (1)",
     "allowMixedContent": false,
     "captureInput": true,
     "webContentsDebuggingEnabled": true,

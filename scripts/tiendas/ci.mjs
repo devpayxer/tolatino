@@ -11,6 +11,7 @@
      node scripts/tiendas/ci.mjs llaves --job ios|android --app A --dir D
      node scripts/tiendas/ci.mjs build --app A --plataforma P --canal C --build N --estado compilando|subido|fallo [--motivo M] [--pedido N]
      node scripts/tiendas/ci.mjs archivo --app A --canal C --build N --tipo apk|aab|simbolos --ruta R
+     node scripts/tiendas/ci.mjs capturas --dir D       (8i: cada captura de D/manifiesto.json, con su app, tienda, idioma y orden)
    TIENDAS_URL: el servidor (por defecto el de pruebas de apps/mobile/apps.json). */
 import { createHash } from "node:crypto";
 import { appendFileSync, chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -100,4 +101,15 @@ if (cmd === "plan") {
   const { status, j } = await pedir(`/api/tiendas/archivo?${q}`, { method: "PUT", headers: { "content-type": "application/octet-stream", "x-tl-sha256": sha }, body: b, timeout: 600000 });
   if (status !== 200 || !j.ok) falla(`la tubería no guardó el archivo (${status} ${j.msg ?? j.motivo ?? ""})`);
   console.log(`✓ ${arg("tipo")} · ${(b.length / 1048576).toFixed(1)} MB · sha256 ${sha.slice(0, 12)}…${j.play ? ` · Play: ${j.play}` : ""}`);
-} else falla("plan | sondeo | llaves | build | archivo");
+} else if (cmd === "capturas") {
+  // 8i · Las capturas de las fichas (scripts/tiendas/capturas.mjs): cada una con su propio token, al almacén privado (store_screenshots).
+  const dir = arg("dir"), M = JSON.parse(readFileSync(join(dir, "manifiesto.json"), "utf8"));
+  if (M.fallos?.length) falla(`las capturas tienen fallos: ${M.fallos.slice(0, 3).join(" · ")}`);
+  for (const c of M.capturas) {
+    const b = readFileSync(join(dir, c.archivo)), sha = createHash("sha256").update(b).digest("hex");
+    const q = new URLSearchParams({ tipo: "captura", app: c.app, tienda: c.tienda, idioma: c.locale, orden: String(c.orden) });
+    const { status, j } = await pedir(`/api/tiendas/archivo?${q}`, { method: "PUT", headers: { "content-type": "application/octet-stream", "x-tl-sha256": sha }, body: b, timeout: 120000 });
+    if (status !== 200 || !j.ok) falla(`la tubería no guardó la captura ${c.archivo} (${status} ${j.msg ?? j.motivo ?? ""})`);
+  }
+  console.log(`✓ ${M.capturas.length} capturas guardadas`);
+} else falla("plan | sondeo | llaves | build | archivo | capturas");

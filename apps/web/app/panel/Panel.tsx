@@ -119,10 +119,13 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
+  /* 8i · ¿Se puede comprar Pro aquí? En la web sí; dentro de las apps de las tiendas, no (Apple 3.1.3(f), Pagos de Google; guardián
+     sinCompraDigitalEnApp): ningún botón ni enlace para comprarlo, solo el estado del plan. Lo decide el servidor (lib/tiendas/reglas.ts). */
+  compraPro: boolean;
   ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
 };
 
-export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
+export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; compraPro: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -165,7 +168,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
   // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
   const tel = useEsteTelefono(es, toast);
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto, tel };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, compraPro, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto, tel };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -293,6 +296,11 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv
                   {cpaIt}
                 </div>
               ) : null}
+              {/* 8i · Mi cuenta (también en escritorio y dentro de la app): Ajustes, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp). */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
+                <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU CUENTA", "YOUR ACCOUNT")}</span>
+                {navIt(false, "shield", E2("Mi cuenta y ajustes", "My account and settings"), () => router.push("/cuenta/ajustes"))}
+              </div>
             </div>
           </aside>
         ) : null}
@@ -335,7 +343,7 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv
       {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
-      {ui.planHoja && plan && plan.modo !== "apagado" ? (
+      {ui.planHoja && plan && plan.modo !== "apagado" && compraPro ? (
         <MetodoPago es={es} tarjetas={plan.tarjetas} sel={plan.plan.tarjeta?.pm ?? null} declinada={null} modo={plan.modo} pk={plan.pk} guardarSiempre
           nota={plan.plan.st === "trial" ? E2(`PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "ANUAL" : "MENSUAL"} · HOY NO SE COBRA`, `PRO · ${(ui.planHoja as { ciclo: string }).ciclo === "year" ? "YEARLY" : "MONTHLY"} · NOTHING CHARGED TODAY`) : E2("PRO · SE COBRA HOY", "PRO · CHARGED TODAY")}
           onClose={() => setUi({ planHoja: null })}
@@ -436,22 +444,24 @@ function detalle(c: Ctx): Sec | null {
 function avisosPrueba(c: Ctx, donde: "pag" | "hoy"): Bloque[] {
   const { d, E2, es } = c, t = d.trial;
   if (!t) return [];
-  const fin = fechaCorta(t.end, d.hoy.tz, es), plan = () => c.go("pay", "plan");
-  if (t.phase === "last") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Mañana termina tu prueba Pro. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends tomorrow. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), cta: E2("Decidir", "Decide"), onCta: plan } ];
-  if (t.phase === "d25") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Tu prueba Pro termina el ${fin}. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends ${fin}. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), cta: E2("Decidir", "Decide"), onCta: plan } ];
+  // 8i · En las apps, los avisos de la prueba solo informan: sin botón para decidir ni el precio (la compra de Pro es solo en la web).
+  const fin = fechaCorta(t.end, d.hoy.tz, es), plan = (l: string) => (c.compraPro ? { cta: l, onCta: () => c.go("pay", "plan") } : {});
+  if (t.phase === "last") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Mañana termina tu prueba Pro. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends tomorrow. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), ...plan(E2("Decidir", "Decide")) } ];
+  if (t.phase === "d25") return [{ type: "note", tone: "warn", icon: "clock", t: E2(`Tu prueba Pro termina el ${fin}. Ese día tu página pasa a Free: ${d.duerme}. Nada se borra.`, `Your Pro trial ends ${fin}. That day your page goes to Free: ${d.duerme}. Nothing is deleted.`), ...plan(E2("Decidir", "Decide")) } ];
   if (t.phase === "d20") {
-    if (donde === "hoy") return [{ type: "note", tone: "ink", icon: "bolt", t: E2(`En ${t.day} días con Pro: ${d.kpis.viewsTrial} vistas y ${d.kpis.contactsTrial} contactos.`, `In ${t.day} days with Pro: ${d.kpis.viewsTrial} views and ${d.kpis.contactsTrial} contacts.`), cta: E2("Ver", "See"), onCta: plan }];
+    if (donde === "hoy") return [{ type: "note", tone: "ink", icon: "bolt", t: E2(`En ${t.day} días con Pro: ${d.kpis.viewsTrial} vistas y ${d.kpis.contactsTrial} contactos.`, `In ${t.day} days with Pro: ${d.kpis.viewsTrial} views and ${d.kpis.contactsTrial} contacts.`), ...plan(E2("Ver", "See")) }];
     return [
       { type: "group", k: E2(`LO QUE PASÓ EN TU PRUEBA · ${t.day} DÍAS`, `WHAT HAPPENED IN YOUR TRIAL · ${t.day} DAYS`), first: true },
       { type: "kpis", cols: c.desk ? "repeat(4,minmax(0,1fr))" : undefined, items: [
         { k: E2("VISTAS", "VIEWS"), v: String(d.kpis.viewsTrial), s: E2("en Destacados y en tu página", "in Featured and on your page") },
         { k: E2("CONTACTOS", "CONTACTS"), v: String(d.kpis.contactsTrial), s: E2("llamadas, WhatsApp y mensajes", "calls, WhatsApp and messages") },
       ] },
-      { type: "note", tone: "info", icon: "star", t: E2(`Todo esto sigue por ${dinero(PRECIO_PRO)} al mes. Tu prueba termina el ${fin}.`, `All of this continues for ${dinero(PRECIO_PRO)} a month. Your trial ends ${fin}.`), cta: E2("Seguir con Pro", "Keep Pro"), onCta: plan },
+      c.compraPro ? { type: "note", tone: "info", icon: "star", t: E2(`Todo esto sigue por ${dinero(PRECIO_PRO)} al mes. Tu prueba termina el ${fin}.`, `All of this continues for ${dinero(PRECIO_PRO)} a month. Your trial ends ${fin}.`), ...plan(E2("Seguir con Pro", "Keep Pro")) }
+        : { type: "note", tone: "info", icon: "star", t: E2(`Tu prueba Pro termina el ${fin}.`, `Your Pro trial ends ${fin}.`) },
     ];
   }
   if (donde === "hoy") return [];
-  return [{ type: "note", tone: "info", icon: "star", t: E2(`Estás construyendo con Pro · quedan ${t.left} días de prueba. Termina el ${fin}.`, `You are building with Pro · ${t.left} trial days left. Ends ${fin}.`), cta: E2("Tu plan", "Your plan"), onCta: plan }];
+  return [{ type: "note", tone: "info", icon: "star", t: E2(`Estás construyendo con Pro · quedan ${t.left} días de prueba. Termina el ${fin}.`, `You are building with Pro · ${t.left} trial days left. Ends ${fin}.`), ...plan(E2("Tu plan", "Your plan")) }];
 }
 
 function resumen(c: Ctx, k: string) {
@@ -747,6 +757,8 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.evtAplica ? [{ icon: "ticket", t: "To'Latino Puerta", s: E2("Tus porteros entran con el código de la puerta de cada evento, en Eventos.", "Your door staff join with each event's door code, in Events."), onClick: () => c.go("evt") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
+      // 8i · Mi cuenta en las cuatro apps (Apple 5.1.1(v), Google Play): idioma, teléfono, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp).
+      { icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Tu teléfono, idioma, privacidad y borrar tu cuenta.", "Your phone, language, privacy and deleting your account."), onClick: () => c.nav("/cuenta/ajustes") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },
       // 7b · Ayuda y Soporte (DASH-MAS L1298, hueco #8): los casos del negocio con To'Latino.
       // 8f · Reportar un problema (algo no funciona en la app; hueco #5): el caso es del negocio, con la pantalla y lo que pasó.

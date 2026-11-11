@@ -78,3 +78,35 @@ export async function pushProbar(): Promise<ResAdm> {
   const r = await pushPrueba(s);
   return { ok: r.ok, mensaje: r.msg };
 }
+
+/* 8i · Fichas de las tiendas, cuentas de revisión y «Lo que te toca»: solo un Admin con apps:editar; motivo y auditoría en el servidor. */
+export async function fichasSubir(app: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("apps", "editar")) return { ok: false, mensaje: "Solo un Admin sube las fichas." };
+  const r = await (await import("@/lib/tiendas/fichas")).subirFichas(s, { app: String(app ?? ""), motivo: motivoOk(motivo) });
+  revalidatePath("/admin/sistema/apps");
+  const det = r.detalle.map((d) => `${d.tienda === "apple" ? "Apple" : "Google"} ${d.app}: ${d.estado === "borrador" ? "borrador" : d.estado === "sin_llave" ? "sin llave" : d.estado === "sin_version" ? "sin versión" : "error"}`).join(" · ");
+  return { ok: r.ok, mensaje: det ? `${r.msg} ${det}`.slice(0, 400) : r.msg };
+}
+export async function revisionCuenta(id: string, activar: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("apps", "editar")) return { ok: false, mensaje: "Solo un Admin cambia las cuentas de revisión." };
+  const r = await (await import("@/lib/tiendas/fichas")).cambiarCuentaRevision(s, String(id ?? ""), !!activar, motivoOk(motivo));
+  revalidatePath("/admin/sistema/apps");
+  return { ok: r.ok, mensaje: r.msg };
+}
+export async function revisionInterruptor(encender: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("apps", "editar")) return { ok: false, mensaje: "Solo un Admin enciende o apaga las cuentas de revisión." };
+  const r = await (await import("@/lib/tiendas/fichas")).cambiarInterruptorRevision(s, !!encender, motivoOk(motivo));
+  revalidatePath("/admin/sistema/apps");
+  return { ok: r.ok, mensaje: r.msg };
+}
+export async function pasoMarcar(k: string, hecho: boolean, nota: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("apps", "editar")) return { ok: false, mensaje: "Solo un Admin marca los pasos." };
+  if (!/^8-[0-3]\.[0-9]{1,2}$/.test(String(k ?? ""))) return { ok: false, mensaje: "Ese paso no existe." };
+  const r = await (await import("@/lib/tiendas/paquete")).marcarPaso(s, String(k), !!hecho, motivoOk(nota));
+  revalidatePath("/admin/sistema/apps");
+  return { ok: r.ok, mensaje: r.msg };
+}

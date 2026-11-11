@@ -29,6 +29,8 @@ panel. Versión: 6 nov 2026. Audiencia: vecino. Tema: negocios._
 ## Preguntas frecuentes
 **¿Se borra algo al pasar a Free?** No. Lo Pro (galería, equipo, módulos Pro) se duerme y vuelve igual.
 **¿Quién puede cambiar el plan?** Solo el dueño (Cobros y plan toca dinero).
+**¿Puedo comprar Pro desde la app To'Latino Negocios?** No: en la app ves el estado de tu plan (Pro, prueba o Free, y hasta cuándo); Pro se compra y se
+cambia en el panel de la web, con tu misma cuenta.
 
 ## English
 
@@ -37,3 +39,4 @@ nothing is charged today, the first charge is on day 30; $14.99/month or $149.90
 switches to Free; nothing is deleted). Reminders on day 20, 25 and the last day. With Pro: next charge, change card,
 switch to Free at the end of the paid period, receipts. With Free: **Back to Pro** charges that day (no second trial).
 Failed charges retry 3 times over 7 days, then Free. Never charged twice for the same period.
+In the To'Latino Negocios app you see your plan status only (Pro, trial or Free, and until when); Pro is bought and changed in the web dashboard, with the same account.

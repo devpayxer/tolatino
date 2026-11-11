@@ -16,7 +16,7 @@
     "cleartext": false
   },
   "ios": {
-    "appendUserAgent": "TLApp/delivery/ios/1.0.0 (1)",
+    "appendUserAgent": "TLApp/delivery/ios/1.0.1 (1)",
     "contentInset": "never",
     "scrollEnabled": true,
     "allowsLinkPreview": false,
@@ -24,7 +24,7 @@
     "limitsNavigationsToAppBoundDomains": false
   },
   "android": {
-    "appendUserAgent": "TLApp/delivery/android/1.0.0 (1)",
+    "appendUserAgent": "TLApp/delivery/android/1.0.1 (1)",
     "allowMixedContent": false,
     "captureInput": true,
     "webContentsDebuggingEnabled": true,
@@ -72,7 +72,7 @@
     },
     "TLRuta": {
       "servidor": "https://pruebas.tolatino.com",
-      "rotulo": "TLApp/delivery/android/1.0.0 (1)"
+      "rotulo": "TLApp/delivery/android/1.0.1 (1)"
     },
     "TLLlave": {
       "rpId": "pruebas.tolatino.com",

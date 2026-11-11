@@ -7,6 +7,7 @@
    MESAS · QUIÉN LAS TIENE, DINERO con la comisión de fee_rules y «Te llega · A tu banco el martes después del evento», CÓDIGOS DE DESCUENTO
    y COMPRADORES con nombre + inicial y «Reenviar boletos»), y la barra de venta de cada evento en la lista. Series y varios días llegan en
    6f; la puerta, en 6g. El servidor decide todo (lib/evt.ts, lib/boletos.ts). */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { subirFoto } from "@/lib/subir-foto";
 import {
@@ -63,7 +64,7 @@ export function evtBloques(c: Ctx): Sec {
   out.push({ type: "head", t: E2("Eventos", "Events"), s: E2("Lo que publicas aquí sale en el módulo Eventos y en la pestaña Eventos de tu página, después de que To’Latino lo revise.", "What you publish here shows in the Events module and on your page’s Events tab, after To’Latino reviews it."),
     act: d.pro && !X.org.bloqueado ? { l: E2("Crear", "Create"), icon: "plus", onClick: () => c.det("evt:new") } : undefined });
   if (!d.pro) {
-    out.push({ type: "lock", t: E2("Publica eventos con boletos o gratis", "Publish ticketed or free events"), s: E2("Eventos es parte de Pro: publicar no cuesta, y la prueba de 30 días no pide tarjeta.", "Events is part of Pro: publishing is free, and the 30-day trial needs no card."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
+    out.push({ type: "lock", t: E2("Publica eventos con boletos o gratis", "Publish ticketed or free events"), s: E2("Eventos es parte de Pro: publicar no cuesta, y la prueba de 30 días no pide tarjeta.", "Events is part of Pro: publishing is free, and the 30-day trial needs no card."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
     return { blocks: out, ed: null };
   }
   // 6b · El interruptor del módulo: apagado, ninguno de tus eventos sale (no cambian de estado); la pausa de To'Latino manda.
@@ -172,7 +173,7 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
   if (!V) return [{ type: "note", tone: "info", icon: "ticket", t: E2("Tus boletos, mesas y extras están guardados. Se venden cuando el evento esté publicado.", "Your tickets, tables and extras are saved. They go on sale once the event is live.") }];
   const fee = X.fee, feeL = fee ? `${(fee.bp / 100).toLocaleString(es ? "es-US" : "en-US")} % + ${dinero(fee.fixed)}` : "";
   if (V.venta === "abierta") out.push({ type: "note", tone: "ok", icon: "ticket", t: E2("VENDIENDO · El precio que pones es el que paga el cliente: cargos incluidos. En la puerta no se venden boletos.", "SELLING · The price you set is what the customer pays: fees included. No tickets are sold at the door.") });
-  else if (!V.pro) out.push({ type: "note", tone: "warn", icon: "lock", t: E2("La venta de boletos es parte de Pro. Con Free tu evento se ve, pero no se venden boletos.", "Ticket sales are part of Pro. On Free your event shows, but tickets are not sold."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
+  else if (!V.pro) out.push({ type: "note", tone: "warn", icon: "lock", t: E2("La venta de boletos es parte de Pro. Con Free tu evento se ve, pero no se venden boletos.", "Ticket sales are part of Pro. On Free your event shows, but tickets are not sold."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
   else if (!V.cobros) out.push({ type: "note", tone: "warn", icon: "card", t: E2("Para vender boletos, enciende Cobros: tu cuenta de cobro recibe lo vendido el martes después del evento.", "To sell tickets, turn on Payouts: your payout account receives sales the Tuesday after the event."), cta: E2("Ir a Cobros", "Go to Payouts"), onCta: () => c.go("pay") });
   else if (V.aviso) out.push({ type: "note", tone: "ink", icon: "ticket", t: V.aviso });
   const k = V.kpi;

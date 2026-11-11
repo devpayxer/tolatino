@@ -19,7 +19,8 @@ Audiencia: equipo. Tema: equipo._
 - **Cambiar un build:** en la fila de la plataforma, **Mínimo** o **Aviso**, escribe el número de build y el motivo, **Guardar**.
 - Los cambios valen en cada servidor **en 15 segundos como mucho** (como toda la Configuración) y la app los ve la próxima vez que abre una
   pantalla de su entrada.
-- **Las otras pestañas de Apps** (Versiones, Testers, Salud · errores y Reportes) se explican en «Errores, beta y reportes en el Super Admin».
+- **Las otras pestañas de Apps** (Versiones, Testers, Salud · errores y Reportes) se explican en «Errores, beta y reportes en el Super Admin»;
+  **Fichas y revisión**, **Lo que te toca** y **Declaraciones**, en «Super Admin: fichas de las tiendas y cuentas de revisión».
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |

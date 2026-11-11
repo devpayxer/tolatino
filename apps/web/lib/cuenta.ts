@@ -73,6 +73,19 @@ export async function pedirCodigo(entrada: string, proposito: "login" | "phone_c
   if (x?.ultimo != null && x.ultimo < REENVIO_SEG) throw new ErrorCuenta("espera", Math.ceil(REENVIO_SEG - x.ultimo));
   if ((x?.tel_hora ?? 0) >= MAX_POR_TELEFONO_HORA || (x?.ip_hora ?? 0) >= MAX_POR_IP_HORA) throw new ErrorCuenta("demasiados");
 
+  // 8i · Una cuenta de revisión de Apple o Google (activa, con su interruptor y su secreto): su código FIJO, sin SMS y sin mostrarlo nunca en
+  // pantalla (ni en el modo pruebas). Si no puede entrar ahora, sigue el camino normal (lib/tiendas/revision.ts; guardián revisionAcotada).
+  if (proposito === "login") {
+    const rev = await tx((c) => import("./tiendas/revision").then((m) => m.codigoParaPedir(c, tel, ip)));
+    if (rev === "tope") throw new ErrorCuenta("demasiados");
+    if (rev && rev !== "normal") {
+      await db().query(
+        `insert into otp_codes (phone, purpose, code_hash, ip, channel, expires_at) values ($1, 'login', $2, $3::inet, 'revision', now() + make_interval(mins => $4))`,
+        [tel, huellaCodigo(tel, rev.codigo), ip, CODIGO_MIN],
+      );
+      return { reenviarEn: REENVIO_SEG };
+    }
+  }
   const codigo = String(randomInt(0, 1_000_000)).padStart(6, "0");
   await db().query(
     `insert into otp_codes (phone, purpose, code_hash, ip, channel, expires_at)
@@ -106,8 +119,8 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
   const dev = await dispositivo(true);
 
   const res = await tx(async (c) => {
-    const o = await c.query<{ id: number; code_hash: string; attempts: number }>(
-      `select id, code_hash, attempts from otp_codes
+    const o = await c.query<{ id: number; code_hash: string; attempts: number; channel: string }>(
+      `select id, code_hash, attempts, channel from otp_codes
         where phone = $1 and purpose = 'login' and used_at is null and expires_at > now()
         order by created_at desc limit 1 for update`,
       [tel],
@@ -115,13 +128,21 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
     const fila = o.rows[0];
     if (!fila) throw new ErrorCuenta("codigo_vencido");
     if (fila.attempts >= MAX_INTENTOS) throw new ErrorCuenta("demasiados");
+    // 8i · El código fijo de una cuenta de revisión vale solo si la cuenta SIGUE activa y el interruptor SIGUE encendido.
+    const rev = fila.channel === "revision" ? await import("./tiendas/revision") : null;
+    if (rev && !(await rev.codigoSigueValiendo(c, tel, ip))) {
+      await c.query("update otp_codes set used_at = now() where id = $1", [fila.id]);
+      return { error: "codigo_vencido" as const };
+    }
     const a = Buffer.from(fila.code_hash, "hex");
     const b = Buffer.from(huellaCodigo(tel, codigo), "hex");
     if (a.length !== b.length || !timingSafeEqual(a, b)) {
       await c.query("update otp_codes set attempts = attempts + 1 where id = $1", [fila.id]);
+      if (rev) { const r = await rev.cuentaDeTelefono(c, tel); if (r) await rev.anotar(c, r.id, "rechazado", "código incorrecto", ip); }
       return { error: "codigo_incorrecto" as const };
     }
     await c.query("update otp_codes set used_at = now() where id = $1", [fila.id]);
+    if (rev) { const r = await rev.cuentaDeTelefono(c, tel); if (r) await rev.anotar(c, r.id, "entro", null, ip); }
     return abrirSesionEn(c, { dev: dev as string, ip, ua: h.get("user-agent"), via: "codigo" }, async () => (await c.query<EntradaCuenta>(
       `insert into users (phone, phone_verified_at) values ($1, now())
        on conflict (phone) do update set phone_verified_at = coalesce(users.phone_verified_at, now()), last_seen_at = now()

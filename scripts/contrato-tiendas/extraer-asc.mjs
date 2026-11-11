@@ -35,7 +35,8 @@ const resolver = (s, n = 0) => {
   if (s.$ref) return resolver(S.components.schemas[s.$ref.split("/").pop()], n + 1);
   if (Array.isArray(s)) return s.map((x) => resolver(x, n));
   const o = {};
-  for (const [k, v] of Object.entries(s)) if (!["description", "title", "example", "deprecated"].includes(k)) o[k] = resolver(v, n + 1);
+  // Se quitan las anotaciones (texto), no un CAMPO que se llame así (8i: «description» de una ficha es un campo de verdad).
+  for (const [k, v] of Object.entries(s)) if (!(["description", "title", "example", "deprecated"].includes(k) && (typeof v !== "object" || v === null))) o[k] = resolver(v, n + 1);
   return o;
 };
 const USADAS = [
@@ -43,6 +44,15 @@ const USADAS = [
   ["POST", "/v1/userInvitations"], ["DELETE", "/v1/userInvitations/{id}"], ["POST", "/v1/betaTesters"], ["DELETE", "/v1/betaTesters/{id}"],
   // 8h · Los builds que sube el CI: su estado de procesamiento y sumarlos al grupo interno.
   ["GET", "/v1/builds"], ["POST", "/v1/betaGroups/{id}/relationships/builds"],
+  // 8i · La ficha como BORRADOR (la versión que se prepara para enviar; nunca se envía a revisión desde aquí): sus localizaciones (descripción,
+  // palabras clave, texto promocional, novedades, soporte), las de la app (nombre, subtítulo, privacidad), la clasificación por edad, las notas
+  // para la revisión con la cuenta de revisión y las capturas (juego por tamaño → reservar → subir por partes → confirmar con el checksum).
+  ["GET", "/v1/apps/{id}/appStoreVersions"], ["GET", "/v1/appStoreVersions/{id}/appStoreVersionLocalizations"], ["POST", "/v1/appStoreVersionLocalizations"],
+  ["PATCH", "/v1/appStoreVersionLocalizations/{id}"], ["GET", "/v1/apps/{id}/appInfos"], ["GET", "/v1/appInfos/{id}/appInfoLocalizations"],
+  ["POST", "/v1/appInfoLocalizations"], ["PATCH", "/v1/appInfoLocalizations/{id}"], ["GET", "/v1/appInfos/{id}/ageRatingDeclaration"],
+  ["PATCH", "/v1/ageRatingDeclarations/{id}"], ["GET", "/v1/appStoreVersions/{id}/appStoreReviewDetail"], ["POST", "/v1/appStoreReviewDetails"],
+  ["PATCH", "/v1/appStoreReviewDetails/{id}"], ["GET", "/v1/appStoreVersionLocalizations/{id}/appScreenshotSets"], ["POST", "/v1/appScreenshotSets"],
+  ["GET", "/v1/appScreenshotSets/{id}/appScreenshots"], ["POST", "/v1/appScreenshots"], ["PATCH", "/v1/appScreenshots/{id}"], ["DELETE", "/v1/appScreenshots/{id}"],
 ];
 const rutas = {};
 for (const [m, p] of USADAS) {
@@ -69,6 +79,10 @@ const out = {
   estadosBuild: S.components.schemas.Build.properties.attributes.properties.processingState.enum,
   build: Object.keys(S.components.schemas.Build.properties.attributes.properties).sort(),
   feedback: Object.keys(S.paths).filter((p) => /betaFeedback(Screenshot|Crash)Submissions$/.test(p)).sort(),
+  // 8i · Los tamaños de captura, los estados de una versión y lo que dice cada declaración de la clasificación por edad.
+  pantallas: S.components.schemas.ScreenshotDisplayType.enum,
+  estadosVersion: S.components.schemas.AppStoreVersionState?.enum ?? S.components.schemas.AppStoreVersion.properties.attributes.properties.appStoreState?.enum ?? [],
+  edad: Object.keys(S.components.schemas.AgeRatingDeclarationUpdateRequest.properties.data.properties.attributes.properties).sort(),
   rutas,
 };
 falta(out.roles.includes("DEVELOPER") && out.betaGroup.includes("isInternalGroup"), "faltan roles o isInternalGroup");

@@ -2,6 +2,7 @@
 /* Jobs en el panel (Panel v2 · Lo que vendes › Jobs, prototipo jobBlocks / jobDet): las vacantes con su pago real por
    hora, las solicitudes de cada una (le vas a llamar, entrevista en un día que abres, no seleccionado), y el editor.
    Siempre igual: el pago se ve completo, se aplica sin CV y nunca se pide estatus, SSN ni pago para aplicar. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { AppPanel, VacPanel, VacPanelDet } from "@/lib/jobs";
 import { bi, DCORTO, diasL, EXP_L, haceL, horaL, horarioL, idiomasL, pagoLargo, PROHIBIDO, tipoL } from "@/lib/jobs-txt";
@@ -10,7 +11,6 @@ import type { Ctx, Sec } from "./Panel";
 
 export type JobsData = { lista?: VacPanel; det?: VacPanelDet | null; app?: string | null; hor?: { abre: number[]; a: number; z: number }; hoy?: { id: string; job: string; name: string; title: { es: string; en: string }; at: string }[] };
 const pl = (n: number, a: string, b: string) => `${n} ${n === 1 ? a : b}`;
-const verPro = (c: Ctx) => c.go("pay", "plan");
 const ST_V = (c: Ctx): Record<string, [string, string]> => ({
   draft: [c.E2("BORRADOR", "DRAFT"), "neutral"], live: [c.E2("ABIERTA", "LIVE"), "signal"], paused: [c.E2("PAUSADA", "PAUSED"), "neutral"], filled: [c.E2("CUBIERTA", "FILLED"), "neutral"], adm: [c.E2("OCULTA POR TO’LATINO", "HIDDEN BY TO’LATINO"), "danger"],
 });
@@ -27,7 +27,7 @@ export function jobsBloques(c: Ctx): Sec {
   const { E2, es, d } = c, J = c.jobs?.lista, out: (Bloque | null)[] = [];
   out.push({ type: "head", eye: E2("LO QUE VENDES", "WHAT YOU SELL"), t: "Jobs", onBack: () => c.go("mod"), act: d.pro ? { l: E2("Publicar", "Post"), icon: "plus", onClick: () => c.det("vac:new") } : undefined });
   if (!d.pro) {
-    out.push({ type: "lock", t: E2("Publica vacantes con pago real por hora", "Post jobs with real hourly pay"), s: E2("La gente aplica sin CV desde tu página y tú respondes aquí.", "People apply without a resume from your page and you reply here."), cta: E2("Ver Pro", "See Pro"), onCta: () => verPro(c) });
+    out.push({ type: "lock", t: E2("Publica vacantes con pago real por hora", "Post jobs with real hourly pay"), s: E2("La gente aplica sin CV desde tu página y tú respondes aquí.", "People apply without a resume from your page and you reply here."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
     return { blocks: out, ed: null };
   }
   if (!J) return { blocks: out, ed: null };
@@ -160,7 +160,7 @@ const BN: [string, string][] = [["Comida del turno gratis", "Free shift meal"], 
 function editor(c: Ctx, v: string): Sec {
   const { E2, es, d } = c, edita = v.startsWith("edit:"), j0 = edita || v.startsWith("dup:") ? c.jobs?.det ?? null : null;
   if ((edita || v.startsWith("dup:")) && !j0) return noEsta(c);
-  if (!d.pro) return { blocks: [{ type: "head", t: "Jobs", onBack: c.closeDet }, { type: "lock", t: E2("Jobs es de Pro", "Jobs is Pro"), s: E2("Con Pro publicas vacantes en tu página.", "With Pro you post openings on your page."), cta: E2("Ver Pro", "See Pro"), onCta: () => verPro(c) }], ed: null };
+  if (!d.pro) return { blocks: [{ type: "head", t: "Jobs", onBack: c.closeDet }, { type: "lock", t: E2("Jobs es de Pro", "Jobs is Pro"), s: E2("Con Pro publicas vacantes en tu página.", "With Pro you post openings on your page."), ...ctaPro(c, E2("Ver Pro", "See Pro")) }], ed: null };
   const H = c.jobs?.hor ?? { abre: [0, 1, 2, 3, 4], a: 540, z: 1020 };
   const b0: FV = j0 ? {
     t0: j0.title.es, t1: j0.title.en && j0.title.en !== j0.title.es ? j0.title.en : "", kind: j0.kind, lo: String(j0.payFrom / 100), hi: j0.payTo && j0.payTo !== j0.payFrom ? String(j0.payTo / 100) : "", tips: j0.tips,

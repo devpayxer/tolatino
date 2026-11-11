@@ -15,7 +15,7 @@
     "cleartext": false
   },
   "ios": {
-    "appendUserAgent": "TLApp/cliente/ios/1.0.0 (1)",
+    "appendUserAgent": "TLApp/cliente/ios/1.0.1 (1)",
     "contentInset": "never",
     "scrollEnabled": true,
     "allowsLinkPreview": false,
@@ -23,7 +23,7 @@
     "limitsNavigationsToAppBoundDomains": false
   },
   "android": {
-    "appendUserAgent": "TLApp/cliente/android/1.0.0 (1)",
+    "appendUserAgent": "TLApp/cliente/android/1.0.1 (1)",
     "allowMixedContent": false,
     "captureInput": true,
     "webContentsDebuggingEnabled": true,

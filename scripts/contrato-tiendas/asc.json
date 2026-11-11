@@ -74,6 +74,95 @@
   "/v1/apps/{id}/relationships/betaFeedbackCrashSubmissions",
   "/v1/apps/{id}/relationships/betaFeedbackScreenshotSubmissions"
  ],
+ "pantallas": [
+  "APP_IPHONE_67",
+  "APP_IPHONE_61",
+  "APP_IPHONE_65",
+  "APP_IPHONE_58",
+  "APP_IPHONE_55",
+  "APP_IPHONE_47",
+  "APP_IPHONE_40",
+  "APP_IPHONE_35",
+  "APP_IPAD_PRO_3GEN_129",
+  "APP_IPAD_PRO_3GEN_11",
+  "APP_IPAD_PRO_129",
+  "APP_IPAD_105",
+  "APP_IPAD_97",
+  "APP_DESKTOP",
+  "APP_WATCH_ULTRA",
+  "APP_WATCH_SERIES_10",
+  "APP_WATCH_SERIES_7",
+  "APP_WATCH_SERIES_4",
+  "APP_WATCH_SERIES_3",
+  "APP_APPLE_TV",
+  "APP_APPLE_VISION_PRO",
+  "IMESSAGE_APP_IPHONE_67",
+  "IMESSAGE_APP_IPHONE_61",
+  "IMESSAGE_APP_IPHONE_65",
+  "IMESSAGE_APP_IPHONE_58",
+  "IMESSAGE_APP_IPHONE_55",
+  "IMESSAGE_APP_IPHONE_47",
+  "IMESSAGE_APP_IPHONE_40",
+  "IMESSAGE_APP_IPAD_PRO_3GEN_129",
+  "IMESSAGE_APP_IPAD_PRO_3GEN_11",
+  "IMESSAGE_APP_IPAD_PRO_129",
+  "IMESSAGE_APP_IPAD_105",
+  "IMESSAGE_APP_IPAD_97"
+ ],
+ "estadosVersion": [
+  "ACCEPTED",
+  "DEVELOPER_REMOVED_FROM_SALE",
+  "DEVELOPER_REJECTED",
+  "IN_REVIEW",
+  "INVALID_BINARY",
+  "METADATA_REJECTED",
+  "PENDING_APPLE_RELEASE",
+  "PENDING_CONTRACT",
+  "PENDING_DEVELOPER_RELEASE",
+  "PREPARE_FOR_SUBMISSION",
+  "PREORDER_READY_FOR_SALE",
+  "PROCESSING_FOR_APP_STORE",
+  "READY_FOR_REVIEW",
+  "READY_FOR_SALE",
+  "REJECTED",
+  "REMOVED_FROM_SALE",
+  "WAITING_FOR_EXPORT_COMPLIANCE",
+  "WAITING_FOR_REVIEW",
+  "REPLACED_WITH_NEW_VERSION",
+  "NOT_APPLICABLE"
+ ],
+ "edad": [
+  "advertising",
+  "ageAssurance",
+  "ageRatingOverride",
+  "ageRatingOverrideV2",
+  "alcoholTobaccoOrDrugUseOrReferences",
+  "contests",
+  "developerAgeRatingInfoUrl",
+  "gambling",
+  "gamblingSimulated",
+  "gracRatingClassificationNumber",
+  "gunsOrOtherWeapons",
+  "healthOrWellnessTopics",
+  "horrorOrFearThemes",
+  "kidsAgeBand",
+  "koreaAgeRatingOverride",
+  "lootBox",
+  "matureOrSuggestiveThemes",
+  "medicalOrTreatmentInformation",
+  "messagingAndChat",
+  "parentalControls",
+  "profanityOrCrudeHumor",
+  "sexualContentGraphicAndNudity",
+  "sexualContentOrNudity",
+  "socialMedia",
+  "socialMediaAgeRestricted",
+  "unrestrictedWebAccess",
+  "userGeneratedContent",
+  "violenceCartoonOrFantasy",
+  "violenceRealistic",
+  "violenceRealisticProlongedGraphicOrSadistic"
+ ],
  "rutas": {
   "GET /v1/apps": {
    "consulta": [
@@ -511,6 +600,1269 @@
     "404",
     "409",
     "422",
+    "429"
+   ]
+  },
+  "GET /v1/apps/{id}/appStoreVersions": {
+   "consulta": [
+    "fields[alternativeDistributionPackages]",
+    "fields[appClipDefaultExperiences]",
+    "fields[appStoreReviewDetails]",
+    "fields[appStoreVersionExperiments]",
+    "fields[appStoreVersionLocalizations]",
+    "fields[appStoreVersionPhasedReleases]",
+    "fields[appStoreVersionSubmissions]",
+    "fields[appStoreVersions]",
+    "fields[apps]",
+    "fields[builds]",
+    "fields[gameCenterAppVersions]",
+    "fields[routingAppCoverages]",
+    "filter[appStoreState]",
+    "filter[appVersionState]",
+    "filter[id]",
+    "filter[platform]",
+    "filter[versionString]",
+    "include",
+    "limit",
+    "limit[appStoreVersionExperimentsV2]",
+    "limit[appStoreVersionExperiments]",
+    "limit[appStoreVersionLocalizations]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "GET /v1/appStoreVersions/{id}/appStoreVersionLocalizations": {
+   "consulta": [
+    "fields[appAssetLibraryPlacements]",
+    "fields[appKeywords]",
+    "fields[appPreviewSets]",
+    "fields[appScreenshotSets]",
+    "fields[appStoreVersionLocalizations]",
+    "fields[appStoreVersions]",
+    "filter[locale]",
+    "include",
+    "limit",
+    "limit[appPreviewSets]",
+    "limit[appScreenshotSets]",
+    "limit[placements]",
+    "limit[searchKeywords]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/appStoreVersionLocalizations": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appStoreVersionLocalizations"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "description": {
+          "type": "string",
+          "nullable": true
+         },
+         "locale": {
+          "type": "string"
+         },
+         "keywords": {
+          "type": "string",
+          "nullable": true
+         },
+         "marketingUrl": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true
+         },
+         "promotionalText": {
+          "type": "string",
+          "nullable": true
+         },
+         "supportUrl": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true
+         },
+         "whatsNew": {
+          "type": "string",
+          "nullable": true
+         }
+        },
+        "required": [
+         "locale"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "appStoreVersion": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appStoreVersions"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          },
+          "required": [
+           "data"
+          ]
+         },
+         "placements": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "type": {
+               "type": "string",
+               "enum": [
+                "appAssetLibraryPlacements"
+               ]
+              },
+              "id": {
+               "type": "string"
+              }
+             },
+             "required": [
+              "id",
+              "type"
+             ]
+            }
+           }
+          }
+         }
+        },
+        "required": [
+         "appStoreVersion"
+        ]
+       }
+      },
+      "required": [
+       "relationships",
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "PATCH /v1/appStoreVersionLocalizations/{id}": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appStoreVersionLocalizations"
+        ]
+       },
+       "id": {
+        "type": "string"
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "description": {
+          "type": "string",
+          "nullable": true
+         },
+         "keywords": {
+          "type": "string",
+          "nullable": true
+         },
+         "marketingUrl": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true
+         },
+         "promotionalText": {
+          "type": "string",
+          "nullable": true
+         },
+         "supportUrl": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true
+         },
+         "whatsNew": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "id",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "GET /v1/apps/{id}/appInfos": {
+   "consulta": [
+    "fields[ageRatingDeclarations]",
+    "fields[appCategories]",
+    "fields[appInfoLocalizations]",
+    "fields[appInfos]",
+    "fields[apps]",
+    "include",
+    "limit",
+    "limit[appInfoLocalizations]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "GET /v1/appInfos/{id}/appInfoLocalizations": {
+   "consulta": [
+    "fields[appInfoLocalizations]",
+    "fields[appInfos]",
+    "filter[locale]",
+    "include",
+    "limit"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/appInfoLocalizations": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appInfoLocalizations"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "locale": {
+          "type": "string"
+         },
+         "name": {
+          "type": "string"
+         },
+         "subtitle": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyPolicyUrl": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyChoicesUrl": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyPolicyText": {
+          "type": "string",
+          "nullable": true
+         }
+        },
+        "required": [
+         "name",
+         "locale"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "appInfo": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appInfos"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          },
+          "required": [
+           "data"
+          ]
+         }
+        },
+        "required": [
+         "appInfo"
+        ]
+       }
+      },
+      "required": [
+       "relationships",
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "PATCH /v1/appInfoLocalizations/{id}": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appInfoLocalizations"
+        ]
+       },
+       "id": {
+        "type": "string"
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "name": {
+          "type": "string",
+          "nullable": true
+         },
+         "subtitle": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyPolicyUrl": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyChoicesUrl": {
+          "type": "string",
+          "nullable": true
+         },
+         "privacyPolicyText": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "id",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "GET /v1/appInfos/{id}/ageRatingDeclaration": {
+   "consulta": [
+    "fields[ageRatingDeclarations]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "PATCH /v1/ageRatingDeclarations/{id}": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "ageRatingDeclarations"
+        ]
+       },
+       "id": {
+        "type": "string"
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "advertising": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "alcoholTobaccoOrDrugUseOrReferences": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "contests": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "gambling": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "gamblingSimulated": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "gunsOrOtherWeapons": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "healthOrWellnessTopics": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "kidsAgeBand": {
+          "nullable": true,
+          "$ref": "#/components/schemas/KidsAgeBand"
+         },
+         "lootBox": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "medicalOrTreatmentInformation": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "messagingAndChat": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "parentalControls": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "profanityOrCrudeHumor": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "ageAssurance": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "sexualContentGraphicAndNudity": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "sexualContentOrNudity": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "socialMedia": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "socialMediaAgeRestricted": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "horrorOrFearThemes": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "matureOrSuggestiveThemes": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "unrestrictedWebAccess": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "userGeneratedContent": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "violenceCartoonOrFantasy": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "violenceRealisticProlongedGraphicOrSadistic": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "violenceRealistic": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "INFREQUENT_OR_MILD",
+           "FREQUENT_OR_INTENSE",
+           "INFREQUENT",
+           "FREQUENT"
+          ]
+         },
+         "ageRatingOverride": {
+          "type": "string",
+          "deprecated": true,
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "NINE_PLUS",
+           "THIRTEEN_PLUS",
+           "SIXTEEN_PLUS",
+           "SEVENTEEN_PLUS",
+           "UNRATED"
+          ]
+         },
+         "ageRatingOverrideV2": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "NINE_PLUS",
+           "THIRTEEN_PLUS",
+           "SIXTEEN_PLUS",
+           "EIGHTEEN_PLUS",
+           "UNRATED"
+          ]
+         },
+         "koreaAgeRatingOverride": {
+          "type": "string",
+          "nullable": true,
+          "enum": [
+           "NONE",
+           "ALL",
+           "TWELVE_PLUS",
+           "FIFTEEN_PLUS",
+           "NINETEEN_PLUS"
+          ]
+         },
+         "gracRatingClassificationNumber": {
+          "type": "string",
+          "nullable": true
+         },
+         "developerAgeRatingInfoUrl": {
+          "type": "string",
+          "format": "uri",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "id",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "GET /v1/appStoreVersions/{id}/appStoreReviewDetail": {
+   "consulta": [
+    "fields[appStoreReviewAttachments]",
+    "fields[appStoreReviewDetails]",
+    "fields[appStoreVersions]",
+    "include",
+    "limit[appStoreReviewAttachments]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/appStoreReviewDetails": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appStoreReviewDetails"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "contactFirstName": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactLastName": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactPhone": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactEmail": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountName": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountPassword": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountRequired": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "notes": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "appStoreVersion": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appStoreVersions"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          },
+          "required": [
+           "data"
+          ]
+         }
+        },
+        "required": [
+         "appStoreVersion"
+        ]
+       }
+      },
+      "required": [
+       "relationships",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "PATCH /v1/appStoreReviewDetails/{id}": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appStoreReviewDetails"
+        ]
+       },
+       "id": {
+        "type": "string"
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "contactFirstName": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactLastName": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactPhone": {
+          "type": "string",
+          "nullable": true
+         },
+         "contactEmail": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountName": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountPassword": {
+          "type": "string",
+          "nullable": true
+         },
+         "demoAccountRequired": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "notes": {
+          "type": "string",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "id",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "GET /v1/appStoreVersionLocalizations/{id}/appScreenshotSets": {
+   "consulta": [
+    "fields[appCustomProductPageLocalizations]",
+    "fields[appScreenshotSets]",
+    "fields[appScreenshots]",
+    "fields[appStoreVersionExperimentTreatmentLocalizations]",
+    "fields[appStoreVersionLocalizations]",
+    "filter[appCustomProductPageLocalization]",
+    "filter[appStoreVersionExperimentTreatmentLocalization]",
+    "filter[screenshotDisplayType]",
+    "include",
+    "limit",
+    "limit[appScreenshots]"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/appScreenshotSets": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appScreenshotSets"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "screenshotDisplayType": {
+          "$ref": "#/components/schemas/ScreenshotDisplayType"
+         }
+        },
+        "required": [
+         "screenshotDisplayType"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "appStoreVersionLocalization": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appStoreVersionLocalizations"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          }
+         },
+         "appCustomProductPageLocalization": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appCustomProductPageLocalizations"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          }
+         },
+         "appStoreVersionExperimentTreatmentLocalization": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appStoreVersionExperimentTreatmentLocalizations"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          }
+         }
+        }
+       }
+      },
+      "required": [
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "GET /v1/appScreenshotSets/{id}/appScreenshots": {
+   "consulta": [
+    "fields[appScreenshotSets]",
+    "fields[appScreenshots]",
+    "include",
+    "limit"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/appScreenshots": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appScreenshots"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "fileSize": {
+          "type": "integer"
+         },
+         "fileName": {
+          "type": "string"
+         }
+        },
+        "required": [
+         "fileName",
+         "fileSize"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "appScreenshotSet": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "object",
+            "properties": {
+             "type": {
+              "type": "string",
+              "enum": [
+               "appScreenshotSets"
+              ]
+             },
+             "id": {
+              "type": "string"
+             }
+            },
+            "required": [
+             "id",
+             "type"
+            ]
+           }
+          },
+          "required": [
+           "data"
+          ]
+         }
+        },
+        "required": [
+         "appScreenshotSet"
+        ]
+       }
+      },
+      "required": [
+       "relationships",
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "PATCH /v1/appScreenshots/{id}": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "appScreenshots"
+        ]
+       },
+       "id": {
+        "type": "string"
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "sourceFileChecksum": {
+          "type": "string",
+          "nullable": true
+         },
+         "uploaded": {
+          "type": "boolean",
+          "nullable": true
+         }
+        }
+       }
+      },
+      "required": [
+       "id",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "DELETE /v1/appScreenshots/{id}": {
+   "consulta": [],
+   "respuestas": [
+    "204",
+    "400",
+    "401",
+    "403",
+    "404",
     "429"
    ]
   }

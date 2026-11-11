@@ -48,6 +48,12 @@ services:
       # sigue igual). Con el dominio y HTTPS, funcionan sin tocar nada. El de Android (android:apk-key-hash:…) se suma cuando 8h firme las apps.
       PASSKEY_RP_ID: ${PASSKEY_RP_ID:-pruebas.tolatino.com}
       PASSKEY_ORIGENES: ${PASSKEY_ORIGENES:-https://pruebas.tolatino.com}
+      # 8i · Las cuentas de revisión de Apple y Google: el código fijo de cada una (lo crea deploy.sh al azar). Solo los lee
+      # lib/tiendas/revision.ts por el nombre exacto (guardián revisionAcotada); sin ellos, ninguna cuenta de revisión entra.
+      REVISION_CODIGO_CLIENTE: ${REVISION_CODIGO_CLIENTE:-}
+      REVISION_CODIGO_NEGOCIO: ${REVISION_CODIGO_NEGOCIO:-}
+      REVISION_CODIGO_REPARTIDOR: ${REVISION_CODIGO_REPARTIDOR:-}
+      REVISION_CODIGO_PUERTA: ${REVISION_CODIGO_PUERTA:-}
     networks: [default, interna]
     depends_on:
       db:

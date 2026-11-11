@@ -1,6 +1,7 @@
 "use client";
 /* Novedades en el panel (Panel v2 · sub 'nov', det 'nov:{id}', editor 'nov:new' / 'nov:edit:{id}'). Las publicaciones y
    sus cifras llegan del servidor; el estado (en vivo, programada, terminada, oculta) se deriva de sus fechas. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { NovPanel, NovPanelDet, Tipo } from "@/lib/novedades";
 import { subirFoto } from "@/lib/subir-foto";
@@ -14,7 +15,6 @@ const NOVT = (c: Ctx): [Tipo, string, string][] => [
   ["oferta", c.E2("Oferta", "Deal"), "dollar"], ["hoy", c.E2("Hoy hay", "Today"), "hot"], ["aviso", c.E2("Aviso de horario", "Hours notice"), "clock"],
   ["encuesta", c.E2("Encuesta", "Poll"), "help"], ["novedad", c.E2("Novedad", "News"), "news"],
 ];
-const verPro = (c: Ctx) => c.go("pay", "plan");
 const horaL = (m: number) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}:${String(mm).padStart(2, "0")} ${h < 12 ? "AM" : "PM"}`; };
 
 /* «Cuándo»: ahora · quedan N h / programada para … / terminada. */
@@ -34,7 +34,7 @@ function cuando(c: Ctx, n: { st: string; publish: string; ends: string | null; t
 export function novBloques(c: Ctx): Sec {
   const { E2, d } = c, N = c.nov?.lista, out: (Bloque | null)[] = [];
   if (!d.pro) {
-    out.push({ type: "lock", t: E2("Publica ofertas y avisos", "Post deals and notices"), s: E2("Salen en tu página: ofertas que se piden desde la novedad, «Hoy hay», avisos de horario y encuestas.", "They show on your page: deals ordered from the update, “Today”, hours notices and polls."), cta: E2("Ver Pro", "See Pro"), onCta: () => verPro(c) });
+    out.push({ type: "lock", t: E2("Publica ofertas y avisos", "Post deals and notices"), s: E2("Salen en tu página: ofertas que se piden desde la novedad, «Hoy hay», avisos de horario y encuestas.", "They show on your page: deals ordered from the update, “Today”, hours notices and polls."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
     return { blocks: out, ed: null };
   }
   if (!N) return { blocks: out, ed: null };

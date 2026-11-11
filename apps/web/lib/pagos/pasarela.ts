@@ -3,6 +3,8 @@ import { randomBytes } from "node:crypto";
 import { db, tx } from "../db";
 import { ENTORNO } from "../entorno";
 import { ErrorStripe, stripe } from "./stripe";
+/* 8i · Una cuenta de revisión de Apple o Google no paga con tarjeta: cada cobro con la tarjeta de la persona lo pregunta primero (guardián revisionAcotada). */
+const pagoRevision = async () => (await import("../tiendas/revision")).pagoBloqueado();
 class SinSaldoSim extends Error {}
 
 /* La pasarela de pagos: Stripe de verdad (con STRIPE_SECRET_KEY) o el simulador propio del sandbox (sin clave). El resto
@@ -44,6 +46,7 @@ export const pasarela = {
   modo: modoPago,
 
   async retener(x: InRetener): Promise<Retencion> {
+    { const rv = await pagoRevision(); if (rv) return { ok: false, codigo: "revision", mensaje: rv }; }
     if (modoPago() === "simulador") {
       const m = SIM_PM.exec(x.pm);
       if (!m) return { ok: false, codigo: "card_declined", mensaje: { es: "Esa tarjeta no es de prueba. En el sandbox usa 4242 4242 4242 4242.", en: "That is not a test card. In the sandbox use 4242 4242 4242 4242." } };
@@ -75,6 +78,7 @@ export const pasarela = {
      organizador se le transfiere después de la fecha, neto de comisión (6e). Así cancelar siempre devuelve el 100 % (fase6 §3, §6 #2).
      Retener (captura manual) y luego capturar, como el resto de la app; idempotente por `idem` (el apartado y la tarjeta). */
   async retenerPlataforma(x: { centavos: number; pm: string; cliente?: string | null; idem: string; grupo: string; meta: Record<string, string> }): Promise<Retencion> {
+    { const rv = await pagoRevision(); if (rv) return { ok: false, codigo: "revision", mensaje: rv }; }
     if (modoPago() === "simulador") {
       const m = SIM_PM.exec(x.pm);
       if (!m) return { ok: false, codigo: "card_declined", mensaje: { es: "Esa tarjeta no es de prueba. En el sandbox usa 4242 4242 4242 4242.", en: "That is not a test card. In the sandbox use 4242 4242 4242 4242." } };
@@ -159,6 +163,7 @@ export const pasarela = {
   /* Cobro directo a To'Latino (suscripción Pro): sin negocio de destino, con la tarjeta guardada del que paga, fuera de
      sesión. Idempotente por `idem` (un cobro por período). */
   async cobrarDirecto(x: { centavos: number; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {
+    { const rv = await pagoRevision(); if (rv) return { ok: false, codigo: "revision", mensaje: rv }; }
     if (modoPago() === "simulador") {
       const m = SIM_PM.exec(x.pm);
       if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };
@@ -183,6 +188,7 @@ export const pasarela = {
   /* Cobro fuera de sesión para un negocio (el plan de cada mes): captura automática con la tarjeta guardada, la comisión
      de To'Latino y el resto al negocio. Idempotente por `idem` (un cobro por período). */
   async cobrarFuera(x: { centavos: number; comision: number; destino: string; pm: string; cliente?: string | null; idem: string; meta: Record<string, string> }): Promise<{ ok: true; id: string; marca: string | null; ultimos4: string | null } | { ok: false; codigo: string; mensaje: { es: string; en: string } }> {
+    { const rv = await pagoRevision(); if (rv) return { ok: false, codigo: "revision", mensaje: rv }; }
     if (modoPago() === "simulador") {
       const m = SIM_PM.exec(x.pm);
       if (!m) return { ok: false, codigo: "card_declined", mensaje: traducir("card_declined") };

@@ -5,22 +5,22 @@ android {
         cliente {
             dimension "app"
             applicationId "com.tolatino.app"
-            resValue "string", "tl_rotulo", "TLApp/cliente/android/1.0.0 (1)"
+            resValue "string", "tl_rotulo", "TLApp/cliente/android/1.0.1 (1)"
         }
         negocios {
             dimension "app"
             applicationId "com.tolatino.negocios"
-            resValue "string", "tl_rotulo", "TLApp/negocio/android/1.0.0 (1)"
+            resValue "string", "tl_rotulo", "TLApp/negocio/android/1.0.1 (1)"
         }
         repartidor {
             dimension "app"
             applicationId "com.tolatino.repartidor"
-            resValue "string", "tl_rotulo", "TLApp/delivery/android/1.0.0 (1)"
+            resValue "string", "tl_rotulo", "TLApp/delivery/android/1.0.1 (1)"
         }
         puerta {
             dimension "app"
             applicationId "com.tolatino.puerta"
-            resValue "string", "tl_rotulo", "TLApp/checkin/android/1.0.0 (1)"
+            resValue "string", "tl_rotulo", "TLApp/checkin/android/1.0.1 (1)"
         }
     }
     sourceSets {

@@ -1,0 +1,100 @@
+{
+  "$fuente": "Generado por apps/mobile/scripts/privacidad.mjs desde apps/mobile/inventario-datos.json. No editar a mano.",
+  "app": "checkin",
+  "version": "0",
+  "datosParaRastrearte": [],
+  "datosLigadosATi": [
+    {
+      "categoria": "Contact Info",
+      "tipo": "NSPrivacyCollectedDataTypePhoneNumber",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "telefono"
+      ]
+    },
+    {
+      "categoria": "Contact Info",
+      "tipo": "NSPrivacyCollectedDataTypeName",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "nombre"
+      ]
+    },
+    {
+      "categoria": "User Content",
+      "tipo": "NSPrivacyCollectedDataTypeCustomerSupport",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "soporte"
+      ]
+    },
+    {
+      "categoria": "Purchases",
+      "tipo": "NSPrivacyCollectedDataTypePurchaseHistory",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "compras"
+      ]
+    },
+    {
+      "categoria": "Identifiers",
+      "tipo": "NSPrivacyCollectedDataTypeUserID",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "id_cuenta"
+      ]
+    },
+    {
+      "categoria": "Identifiers",
+      "tipo": "NSPrivacyCollectedDataTypeDeviceID",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAnalytics",
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "id_dispositivo"
+      ]
+    },
+    {
+      "categoria": "Usage Data",
+      "tipo": "NSPrivacyCollectedDataTypeProductInteraction",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAnalytics"
+      ],
+      "de": [
+        "interaccion"
+      ]
+    },
+    {
+      "categoria": "Diagnostics",
+      "tipo": "NSPrivacyCollectedDataTypeCrashData",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "cierres"
+      ]
+    },
+    {
+      "categoria": "Diagnostics",
+      "tipo": "NSPrivacyCollectedDataTypeOtherDiagnosticData",
+      "propositos": [
+        "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+      ],
+      "de": [
+        "diagnostico"
+      ]
+    }
+  ],
+  "datosNoLigadosATi": []
+}

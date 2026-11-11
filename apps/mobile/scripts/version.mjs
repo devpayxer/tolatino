@@ -17,8 +17,10 @@ import { fileURLToPath } from "node:url";
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
 const REPO = join(RAIZ, "../..");
 export const HISTORIAL = "apps/mobile/versiones.json";
-/* Lo que NO es la app: las pruebas de humo y el cliente de CDP (corren en el CI, no van en el paquete) y el historial mismo. */
-const FUERA = [/^apps\/mobile\/scripts\/humo(\/|-)/, /^apps\/mobile\/scripts\/(cdp|version)\.mjs$/, /^apps\/mobile\/versiones\.json$/, /^apps\/mobile\/(www|node_modules)\//];
+/* Lo que NO es la app: las pruebas de humo y el cliente de CDP (corren en el CI, no van en el paquete) y el historial mismo. 8i: las fichas y
+   las capturas de las tiendas (apps/mobile/tiendas/), el inventario de datos y sus scripts (lo que entra al paquete de él, el
+   PrivacyInfo.xcprivacy de cada target, sí cuenta). */
+const FUERA = [/^apps\/mobile\/scripts\/humo(\/|-)/, /^apps\/mobile\/scripts\/(cdp|version)\.mjs$/, /^apps\/mobile\/versiones\.json$/, /^apps\/mobile\/(www|node_modules)\//, /^apps\/mobile\/tiendas\//, /^apps\/mobile\/inventario-datos\.json$/, /^apps\/mobile\/scripts\/(privacidad|fichas)\.mjs$/];
 export const SEMVER = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
 export const mayor = (a, b) => { const x = SEMVER.exec(a).slice(1).map(Number), y = SEMVER.exec(b).slice(1).map(Number); for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] > y[i]; return false; };
 

@@ -8,6 +8,7 @@
    - «Tu herramienta · Inventario del lote» (dash2-cat.js L429–443): cada toque se guarda, deja su línea en la auditoría y el servidor
      recalcula el total en la puerta y el pago de ejemplo de todos los carros. REGLAS que no se apagan.
    Cada vehículo que se pinta lleva sus notas (notasCarro): un título salvage dice siempre que no se maneja en la calle. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import {
   BODIES, BODY, BUYERS_GUIDE, DRIVE, ESTADO_CARRO, FUEL, GARANTIA, LINEA_AUTOS_SUB, MESES_BHPH, MESES_PAGO, NO_OBLIGATORIA, PARABRISAS, SALVAGE, SIN_GARANTIA, TITULO, TOPE_CARROS_FREE, TRANS,
@@ -63,7 +64,7 @@ export function inventarioBloques(c: Ctx): Sec {
     s: [millasL(x, es), es ? TITULO[x.title][0] : TITULO[x.title][1], x.title === "salvage" ? bi(SALVAGE, es) : ""].filter(Boolean).join(" · "),
     m: x.adm != null ? E2("OCULTO POR TO’LATINO", "HIDDEN BY TO’LATINO") : `${E2("EN LA PUERTA", "OUT THE DOOR")} ${usd(x.puerta.otd)}`,
     mFg: x.adm != null ? "var(--tl-danger)" : undefined, r: usd(x.puerta.price), tag: estL(x.status, es).toUpperCase(), tone: tone(x.status), chev: true, onClick: () => c.det(`auto:${x.id}`) })) });
-  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_CARROS_FREE} vehículos en tu página. Los vendidos u ocultos no cuentan.`, `On Free, ${TOPE_CARROS_FREE} vehicles show on your page. Sold or hidden ones do not count.`), cta: "Pro", onCta: () => c.go("pay", "plan") });
+  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_CARROS_FREE} vehículos en tu página. Los vendidos u ocultos no cuentan.`, `On Free, ${TOPE_CARROS_FREE} vehicles show on your page. Sold or hidden ones do not count.`), ...ctaPro(c, "Pro") });
   out.push({ type: "note", tone: "info", icon: "info", t: bi(LINEA_AUTOS_SUB, es) });
   return { blocks: out, ed: null };
 }
@@ -243,7 +244,7 @@ export function herramientaAutosBloques(c: Ctx): Sec {
     for (const t of L) out.push({ type: "note", tone: t === bi(SALVAGE, es) ? "danger" : "info", icon: t === bi(SALVAGE, es) ? "ban" : "dollar", t });
   }
   out.push({ type: "rows", k: E2("REGLAS · NO SE APAGAN", "RULES · ALWAYS ON"), cols: cols2, items: reglasAutos(h.kind, tax).map(([t, s]) => lock(bi(t, es), bi(s, es))) });
-  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_CARROS_FREE} vehículos en tu página.`, `On Free, ${TOPE_CARROS_FREE} vehicles show on your page.`), cta: "Pro", onCta: () => c.go("pay", "plan") });
+  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_CARROS_FREE} vehículos en tu página.`, `On Free, ${TOPE_CARROS_FREE} vehicles show on your page.`), ...ctaPro(c, "Pro") });
   return { blocks: out, ed: null };
 }
 

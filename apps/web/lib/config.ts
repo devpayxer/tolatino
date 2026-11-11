@@ -67,7 +67,9 @@ export type ClaveConfig =
   // 8d · Llaves de acceso (0130)
   | "passkey_max" | "passkey_reto_s" | "passkey_retos_hora" | "passkey_fallos_hora"
   // 8h · La tubería de las tiendas (0131)
-  | "tiendas_pedidos_hora" | "tiendas_oidc_fallos_min" | "tiendas_archivo_mb";
+  | "tiendas_pedidos_hora" | "tiendas_oidc_fallos_min" | "tiendas_archivo_mb"
+  // 8i · Cuentas de revisión y fichas de las tiendas (0132)
+  | "revision_intentos_hora" | "fichas_subidas_dia";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

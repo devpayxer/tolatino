@@ -36,6 +36,8 @@ function validar(d, s, v, ruta = '$', err = []) {
 
 async function arrancar(o) {
   const d = o.descubrimiento, R = rutas(d), registro = [], tokens = new Set(), ediciones = new Map(), confirmadas = [], prox = new Map();
+  // 8i · La ficha confirmada por paquete: idiomas y capturas de teléfono; y si la confirmación pidió no mandarla a revisión.
+  const fichas = new Map();
   const cuenta = o.cuenta, paquetes = new Set(o.paquetes ?? []);
   const HUELLA = crypto.createHash('sha256').update('firma de Google de prueba').digest('hex');
   let url = '';
@@ -68,7 +70,9 @@ async function arrancar(o) {
       if (extra.length) return err(400, 'INVALID_ARGUMENT', `Unknown parameter: ${extra.join(', ')}`);
       if (x.subida) {
         if (u.searchParams.get('uploadType') !== 'media') return err(400, 'INVALID_ARGUMENT', 'uploadType=media');
-        if (!(x.m.mediaUpload.accept ?? []).includes(req.headers['content-type'])) return err(400, 'INVALID_ARGUMENT', `content-type ${req.headers['content-type']}`);
+        // El tipo que acepta la ruta (8i: «image/*» para las capturas).
+        const ct = String(req.headers['content-type'] ?? '');
+        if (!(x.m.mediaUpload.accept ?? []).some((a) => a === ct || (a.endsWith('/*') && ct.startsWith(a.slice(0, -1))))) return err(400, 'INVALID_ARGUMENT', `content-type ${ct}`);
       } else if (x.m.request) {
         let j; try { j = JSON.parse(cuerpo.toString() || 'null'); } catch { return err(400, 'INVALID_ARGUMENT', 'JSON'); }
         const e = validar(d, x.m.request, j);
@@ -80,7 +84,26 @@ async function arrancar(o) {
       const ed = p.editId ? ediciones.get(p.editId) : null;
       if (p.editId && (!ed || ed.pkg !== p.packageName)) return err(404, 'NOT_FOUND', 'This Edit has been deleted.');
       switch (x.id) {
-        case 'edits.insert': { const id = `ed-${crypto.randomBytes(6).toString('hex')}`; ediciones.set(id, { pkg: p.packageName, bundles: [], pistas: {} }); return out(200, { id, expiryTimeSeconds: String(Math.floor(Date.now() / 1000) + 3600) }); }
+        case 'edits.insert': { const id = `ed-${crypto.randomBytes(6).toString('hex')}`; ediciones.set(id, { pkg: p.packageName, bundles: [], pistas: {}, listings: {}, imagenes: {} }); return out(200, { id, expiryTimeSeconds: String(Math.floor(Date.now() / 1000) + 3600) }); }
+        case 'applications.dataSafety': {
+          const csv = String(r.cuerpo.safetyLabels ?? '');
+          if (!/^Question ID \(machine readable\),Response ID \(machine readable\),Response value,Answer requirement,Human-friendly question label\n/.test(csv)) return err(400, 'INVALID_ARGUMENT', 'safetyLabels: not a Data safety CSV');
+          const f = fichas.get(p.packageName) ?? { listings: {}, imagenes: {}, sinRevision: [] }; f.dataSafety = csv; fichas.set(p.packageName, f);
+          return out(200, {});
+        }
+        case 'edits.listings.update': {
+          if (r.cuerpo.language && r.cuerpo.language !== p.language) return err(400, 'INVALID_ARGUMENT', 'language del cuerpo distinto al de la ruta');
+          if ([...(r.cuerpo.title ?? '')].length > 30 || [...(r.cuerpo.shortDescription ?? '')].length > 80 || [...(r.cuerpo.fullDescription ?? '')].length > 4000) return err(400, 'INVALID_ARGUMENT', 'Listing too long', 'título > 30, corta > 80 o completa > 4000');
+          ed.listings[p.language] = { ...r.cuerpo, language: p.language }; return out(200, ed.listings[p.language]);
+        }
+        case 'edits.images.deleteall': { if (p.imageType !== 'phoneScreenshots') return err(400, 'INVALID_ARGUMENT', 'imageType'); const k = `${p.language}:${p.imageType}`; const ya = ed.imagenes[k] ?? []; ed.imagenes[k] = []; return out(200, { deleted: ya }); }
+        case 'edits.images.upload': {
+          if (cuerpo.length < 8 || cuerpo.readUInt32BE(0) !== 0x89504e47) return err(400, 'INVALID_ARGUMENT', 'Image is not a PNG.');
+          const k = `${p.language}:${p.imageType}`, L = ed.imagenes[k] ?? (ed.imagenes[k] = []);
+          if (L.length >= 8) return err(400, 'INVALID_ARGUMENT', 'Too many screenshots (max 8).');
+          const im = { id: crypto.randomBytes(6).toString('hex'), sha256: crypto.createHash('sha256').update(cuerpo).digest('hex'), url: '' }; L.push(im);
+          return out(200, { image: im });
+        }
         case 'edits.bundles.upload': {
           if (cuerpo.length < 30 || cuerpo.readUInt32LE(0) !== 0x04034b50) return err(400, 'INVALID_ARGUMENT', 'The bundle is not a valid zip file.');
           const vc = prox.get(p.packageName) ?? 1; ed.bundles.push(vc);
@@ -91,7 +114,16 @@ async function arrancar(o) {
           for (const rel of r.cuerpo.releases ?? []) for (const v of rel.versionCodes ?? []) if (!ed.bundles.includes(Number(v))) return err(403, 'PERMISSION_DENIED', `Version ${v} of this app can not be downloaded by any devices as they will all receive APKs with higher version codes.`);
           ed.pistas[p.track] = r.cuerpo; return out(200, r.cuerpo);
         }
-        case 'edits.commit': { ediciones.delete(p.editId); for (const [pista, t] of Object.entries(ed.pistas)) confirmadas.push({ pkg: p.packageName, pista, versionCodes: t.releases.flatMap((z) => z.versionCodes), status: t.releases.map((z) => z.status) }); return out(200, { id: p.editId }); }
+        case 'edits.commit': {
+          ediciones.delete(p.editId);
+          for (const [pista, t] of Object.entries(ed.pistas)) confirmadas.push({ pkg: p.packageName, pista, versionCodes: t.releases.flatMap((z) => z.versionCodes), status: t.releases.map((z) => z.status) });
+          if (Object.keys(ed.listings).length || Object.keys(ed.imagenes).length) {
+            const f = fichas.get(p.packageName) ?? { listings: {}, imagenes: {}, sinRevision: [] };
+            Object.assign(f.listings, ed.listings); Object.assign(f.imagenes, ed.imagenes); f.sinRevision.push(u.searchParams.get('changesNotSentForReview') === 'true');
+            fichas.set(p.packageName, f);
+          }
+          return out(200, { id: p.editId });
+        }
         case 'generatedapks.list': {
           const hay = confirmadas.some((c) => c.pkg === p.packageName && c.versionCodes.includes(String(p.versionCode)));
           return out(200, hay ? { generatedApks: [{ certificateSha256Hash: HUELLA, generatedUniversalApk: { downloadId: 'u1' } }] } : {});
@@ -102,7 +134,7 @@ async function arrancar(o) {
   });
   await new Promise((ok) => server.listen(o.puerto ?? 0, '127.0.0.1', ok));
   url = `http://127.0.0.1:${server.address().port}`;
-  return { url, registro, confirmadas, HUELLA, proximo: (pkg, n) => prox.set(pkg, n), crear: (pkg) => paquetes.add(pkg), cerrar: () => new Promise((ok) => server.close(ok)) };
+  return { url, registro, confirmadas, fichas, HUELLA, proximo: (pkg, n) => prox.set(pkg, n), crear: (pkg) => paquetes.add(pkg), cerrar: () => new Promise((ok) => server.close(ok)) };
 }
 
 /* Una cuenta de servicio de PRUEBA (como el JSON que da Google), hecha en el momento: nunca en el repo. */

@@ -56,7 +56,9 @@ export function Privacidad({ s, es, yo, llaves = [], agregar = false }: { s: S; 
     { type: "sec", t: E2("Tus datos", "Your data"), fs: "14px" },
     { type: "rows", rows: [{ ic: "trash", ibg: "rgba(192,57,43,.08)", ifg: "var(--tl-danger)", t: E2("Borrar mi cuenta", "Delete my account"), s: E2("TIENES 30 DÍAS PARA ARREPENTIRTE", "YOU HAVE 30 DAYS TO CHANGE YOUR MIND"), chev: true, on: () => router.push("/cuenta/ajustes/borrar") },
       // 7d · El Compa (la IA de la ayuda): qué ve, qué no, quién lee y cuánto se guarda.
-      { ic: "chat", t: E2("El Compa", "El Compa"), s: E2("LA IA DE LA AYUDA · QUÉ VE Y QUIÉN LO LEE", "THE HELP AI · WHAT IT SEES AND WHO READS IT"), chev: true, on: () => router.push("/ayuda/privacidad-de-el-compa") }] },
+      { ic: "chat", t: E2("El Compa", "El Compa"), s: E2("LA IA DE LA AYUDA · QUÉ VE Y QUIÉN LO LEE", "THE HELP AI · WHAT IT SEES AND WHO READS IT"), chev: true, on: () => router.push("/ayuda/privacidad-de-el-compa") },
+      // 8i · Qué datos guarda To'Latino, para qué y cuánto (/privacidad, desde el inventario real; lo mismo que dicen las tiendas).
+      { ic: "shield", t: E2("Cómo usa To'Latino tus datos", "How To'Latino uses your data"), s: E2("QUÉ GUARDAMOS, PARA QUÉ Y CUÁNTO TIEMPO", "WHAT WE KEEP, WHY AND FOR HOW LONG"), chev: true, on: () => router.push("/privacidad") }] },
     { type: "note", tone: "info", ic: "shield", s: E2("No vendemos tus datos, ni a negocios ni a nadie.", "We never sell your data, not to businesses, not to anyone.") },
   ];
   return <Marco es={es} code="USR-PRIVACIDAD" back="/cuenta/ajustes" t={E2("Privacidad y seguridad", "Privacy and security")} s={E2("QUIÉN TE VE · LLAVES · SESIONES", "WHO SEES YOU · PASSKEYS · SESSIONS")} blocks={B} yo={yo} ui={ui} />;

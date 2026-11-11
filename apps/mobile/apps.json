@@ -1,6 +1,6 @@
 {
   "$fuente": "Fuente única de las cuatro apps (fase8-apps.md §3.1, decisión B). De aquí salen: los capacitor.config.json de cada sabor y target (scripts/generar.mjs), el proyecto de Xcode (ios/project.yml) y los sabores de Gradle, los textos de permiso, la migración 0125 (app_clients) y el alcance que aplica el servidor (apps/web/lib/app-nativa.ts lo importa). El guardián appsUnaFuente revisa que todo coincida.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "servidor": { "pruebas": "https://pruebas.tolatino.com", "produccion": "https://tolatino.com" },
   "minimos": { "ios": "16.0", "android": 26 },
   "splashMaxMs": 3000,

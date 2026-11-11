@@ -7,6 +7,7 @@
    - «Tu herramienta»: «Propiedades y visitas» (renta), «Casas en venta», «Préstamos y requisitos» y «Cuartos y lo que incluye»
      (dash2-cat.js L508–533), con sus REGLAS que no se apagan. Los montos que toca son los de la propiedad (una sola fuente).
    Cada propiedad que se pinta lleva el pie de igualdad de oportunidad y la nota de los animales de servicio (guardián viviendaJusta). */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import { DIA_FE, horaFe } from "@/lib/fe-comun";
 import {
@@ -68,7 +69,7 @@ export function propiedadesBloques(c: Ctx): Sec {
     s: [es ? PROP[p.kind].es : PROP[p.kind].en, cuartos(p, es)].filter(Boolean).join(" · "),
     m: p.adm != null ? E2("OCULTA POR TO’LATINO", "HIDDEN BY TO’LATINO") : p.moveIn != null ? `${E2("PARA MUDARTE", "TO MOVE IN")} ${usd(p.moveIn)}` : p.cuota != null ? cuotaTexto(p.cuota, p.downPct, es).toUpperCase() : undefined,
     mFg: p.adm != null ? "var(--tl-danger)" : undefined, r: precioL(p, es), tag: (es ? ESTADO[p.status][0] : ESTADO[p.status][1]).toUpperCase(), tone: tone(p.status), chev: true, onClick: () => c.det(`inm:${p.id}`) })) });
-  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_PROP_FREE} propiedades en tu página. Las rentadas, vendidas u ocultas no cuentan.`, `On Free, ${TOPE_PROP_FREE} properties show on your page. Rented, sold or hidden ones do not count.`), cta: "Pro", onCta: () => c.go("pay", "plan") });
+  if (!h.pro) out.push({ type: "note", tone: "warn", t: E2(`Con Free se ven ${TOPE_PROP_FREE} propiedades en tu página. Las rentadas, vendidas u ocultas no cuentan.`, `On Free, ${TOPE_PROP_FREE} properties show on your page. Rented, sold or hidden ones do not count.`), ...ctaPro(c, "Pro") });
   out.push({ type: "note", tone: "ink", icon: "home", t: `${bi(EHO, es)}. ${bi(ANIMALES_SERVICIO, es)}` });
   return { blocks: out, ed: null };
 }

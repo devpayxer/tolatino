@@ -21,8 +21,9 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
 
-export type VistaApps = "resumen" | "versiones" | "testers" | "salud" | "reportes";
-const SUB: [VistaApps, string][] = [["resumen", "Resumen"], ["versiones", "Versiones"], ["testers", "Testers"], ["salud", "Salud · errores"], ["reportes", "Reportes"]];
+export type VistaApps = "resumen" | "versiones" | "testers" | "salud" | "reportes" | "fichas" | "toca" | "declaraciones";
+// 8i · Fichas y revisión · Lo que te toca · Declaraciones (SistemaAppsTiendas).
+const SUB: [VistaApps, string][] = [["resumen", "Resumen"], ["versiones", "Versiones"], ["testers", "Testers"], ["salud", "Salud · errores"], ["reportes", "Reportes"], ["fichas", "Fichas y revisión"], ["toca", "Lo que te toca"], ["declaraciones", "Declaraciones"]];
 const APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
 const PLAT: Record<string, string> = { ios: "iPhone", android: "Android", web: "Navegador" };
 const CANAL: Record<string, string> = { testflight_interno: "TestFlight interno", play_interno: "Play interno", apk_propio: "APK propio", tienda: "Tienda", testflight: "TestFlight interno" };

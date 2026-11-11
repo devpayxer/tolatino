@@ -62,6 +62,8 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }
   B.push({ type: "rows", k: E2("AYUDA", "HELP"), items: [{ key: "ayuda", icon: "help", t: E2("Cómo funciona la puerta", "How the door works"), s: E2("Escanear, sin señal y qué hacer en cada caso.", "Scanning, offline and what to do in each case."), chev: true, onClick: () => router.push("/ayuda?t=puerta") },
     // 8f · Reportar un problema de la app (lo ve el equipo de To'Latino).
     { key: "reportar", icon: "warning", t: E2("Reportar un problema de la app", "Report an app problem"), s: E2("Algo no funciona: cuéntanos qué pasó.", "Something is not working: tell us what happened."), chev: true, onClick: () => router.push("/soporte/reportar") }] });
+  // 8i · Mi cuenta en las cuatro apps (Apple 5.1.1(v), Google Play): idioma, teléfono, privacidad y Borrar mi cuenta (guardián borrarCuentaEnCadaApp).
+  B.push({ type: "rows", k: E2("TU CUENTA", "YOUR ACCOUNT"), items: [{ key: "cuenta", icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Tu teléfono, idioma, privacidad y borrar tu cuenta.", "Your phone, language, privacy and deleting your account."), chev: true, onClick: () => router.push("/cuenta/ajustes") }] });
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <Cabeza eye="TO’LATINO PUERTA" t={E2(`Hola, ${nombre}`, `Hi, ${nombre}`)} s={E2("Escanea los boletos en la puerta. Solo escaneas: en la puerta no se venden boletos.", "Scan tickets at the door. You only scan: no tickets are sold at the door.")} />

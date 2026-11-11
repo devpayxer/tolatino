@@ -34,6 +34,11 @@ grep -q '^QR_LLAVE_PRIVADA=' "$ENV_FILE" || echo "QR_LLAVE_PRIVADA=$(openssl gen
 # 8c · Llave VAPID de Web Push (P-256, PKCS8 DER en base64): la privada vive solo aquí; la pública la entrega la app a cada navegador. Una por
 # entorno (las suscripciones del sandbox nunca valen en producción). Perderla deja las suscripciones sin uso: los navegadores se vuelven a suscribir.
 grep -q '^VAPID_PRIVADA=' "$ENV_FILE" || echo "VAPID_PRIVADA=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0)" >> "$ENV_FILE"
+# 8i · El código FIJO de cada cuenta de revisión de Apple y Google (6 dígitos al azar, uno por app): vive solo aquí; el servidor lo lee por su
+# nombre (review_accounts.code_ref) y lo manda a App Store Connect por la API con las notas para la revisión. Nunca en el repo ni en el chat.
+for a in CLIENTE NEGOCIO REPARTIDOR PUERTA; do
+  grep -q "^REVISION_CODIGO_$a=" "$ENV_FILE" || echo "REVISION_CODIGO_$a=$(printf '%06d' $(( $(od -An -N4 -tu4 /dev/urandom | tr -d ' ') % 1000000 )))" >> "$ENV_FILE"
+done
 chmod 600 "$ENV_FILE"
 
 # 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar

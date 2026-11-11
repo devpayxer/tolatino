@@ -22,6 +22,9 @@ const tarjL = (t: { marca: string; ultimos4: string } | null) => (t ? `${t.marca
 export function planBloques(c: Ctx, x: PlanPanel | undefined): Bloque[] {
   const { E2, es, d } = c;
   if (!x) return [];
+  // 8i · Dentro de las apps de las tiendas (Apple 3.1.3(f), Pagos de Google): solo el estado del plan y los recibos; ni precio, ni botón, ni
+  // enlace para comprar o cambiar Pro (guardián sinCompraDigitalEnApp). En la web, todo como siempre.
+  if (!c.compraPro) return estadoPlan(c, x);
   const p = x.plan, fin = fechaPlan(es, p.fin), mes = dinero(PRECIO_PRO), anual = money(Math.round(PRECIO_PRO * 100) * 10);
   const seguir = (ciclo: "month" | "year" = p.ciclo) => c.setUi({ planHoja: { ciclo } });
   const out: Bloque[] = [];
@@ -67,5 +70,18 @@ export function planBloques(c: Ctx, x: PlanPanel | undefined): Bloque[] {
   }
   if (x.recibos.length) out.push({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.map((r, i): Fila => ({ key: String(i), icon: "card", t: `Pro · ${money(r.monto)}`, s: fechaPlan(es, r.at), chev: false, compact: true })) });
   out.push({ type: "note", tone: "ink", icon: "shield", t: E2("Siempre igual: pasar a Free nunca borra nada; Pro se cobra al mes (o al año con 2 meses gratis) y lo cancelas cuando quieras.", "Always the same: switching to Free never deletes anything; Pro is charged monthly (or yearly with 2 months free) and you cancel anytime.") });
+  return out;
+}
+
+/* 8i · El plan dentro de las apps: qué plan tienes y hasta cuándo, sin comprar ni cambiar nada aquí. */
+function estadoPlan(c: Ctx, x: PlanPanel): Bloque[] {
+  const { E2, es } = c, p = x.plan, fin = fechaPlan(es, p.fin);
+  const fila: Fila = p.st === "trial" ? { icon: "star", t: E2(`Pro · prueba · quedan ${p.quedan} ${p.quedan === 1 ? "día" : "días"}`, `Pro · trial · ${p.quedan} ${p.quedan === 1 ? "day" : "days"} left`), s: E2(`Termina el ${fin}.`, `Ends ${fin}.`), tag: "PRO", tone: "action", chev: false }
+    : p.st === "courtesy" ? { icon: "star", t: E2("Pro de cortesía", "Courtesy Pro"), s: E2(`Hasta el ${fin}.`, `Until ${fin}.`), tag: "PRO", tone: "action", chev: false }
+    : p.st === "pro" ? { icon: "star", t: "Pro", s: p.phase === "leaving" ? E2(`Pasa a Free el ${fin}.`, `Switches to Free on ${fin}.`) : p.proximo ? E2(`Renueva el ${fechaPlan(es, p.proximo)}.`, `Renews ${fechaPlan(es, p.proximo)}.`) : E2("Activo.", "Active."), tag: "PRO", tone: "action", chev: false }
+    : { icon: "star", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.55)", t: "Free", s: p.desde ? E2(`Desde el ${fechaPlan(es, p.desde)}.`, `Since ${fechaPlan(es, p.desde)}.`) : E2("Una sola página.", "A single page."), tag: "FREE", tone: "neutral", chev: false };
+  const out: Bloque[] = [{ type: "rows", items: [fila] }];
+  if (x.recibos.length) out.push({ type: "rows", k: E2("RECIBOS", "RECEIPTS"), items: x.recibos.map((r, i): Fila => ({ key: String(i), icon: "card", t: `Pro · ${money(r.monto)}`, s: fechaPlan(es, r.at), chev: false, compact: true })) });
+  out.push({ type: "note", tone: "ink", icon: "shield", t: E2("Pasar a Free nunca borra nada: tu contenido Pro queda guardado.", "Switching to Free never deletes anything: your Pro content stays saved.") });
   return out;
 }

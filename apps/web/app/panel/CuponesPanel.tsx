@@ -4,6 +4,7 @@
    los cupones del negocio con su estado (Por aprobar · En la Comunidad · Pausado · Terminado), cuántos van este mes de su cupo, cuántos se
    usaron y cuántos códigos siguen vivos; pausar, reanudar, terminar y editar (cupo y días; la oferta solo mientras está por aprobar). El
    costo en monedas lo fija To'Latino. Pro, como Novedades. Todo del servidor. */
+import { ctaPro } from "./pro-cta";
 import type { PanelBloqueT as Bloque, PanelFila as Fila } from "@tolatino/ui";
 import type { CuponNegocio, CuponesPanel } from "@/lib/monedas-comun";
 import { cupGuardar, cupPaso, cupValidar } from "./acciones-cupones";
@@ -24,7 +25,7 @@ const ESTADO = (c: Ctx, x: CuponNegocio): [string, string, string] => {
 export function cupBloques(c: Ctx): Sec {
   const { E2, d } = c, L = c.cup?.lista, out: (Bloque | null)[] = [];
   if (!d.pro) {
-    out.push({ type: "lock", t: E2("Ofrece cupones por monedas", "Offer coupons for coins"), s: E2("Los vecinos de la Comunidad los canjean con las monedas que ganan y te muestran su código en el local.", "Community neighbors redeem them with the coins they earn and show you their code in store."), cta: E2("Ver Pro", "See Pro"), onCta: () => c.go("pay", "plan") });
+    out.push({ type: "lock", t: E2("Ofrece cupones por monedas", "Offer coupons for coins"), s: E2("Los vecinos de la Comunidad los canjean con las monedas que ganan y te muestran su código en el local.", "Community neighbors redeem them with the coins they earn and show you their code in store."), ...ctaPro(c, E2("Ver Pro", "See Pro")) });
     return { blocks: out, ed: null };
   }
   // Validar un código (lo primero: es lo que se hace con el vecino enfrente).

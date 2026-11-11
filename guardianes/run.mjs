@@ -6,6 +6,9 @@ import { execSync } from "node:child_process";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { AUDIENCIAS, TEMAS, audienciaPorNombre, faseInterna, leerAyuda } from "../scripts/ayuda/forma.mjs";
+// 8i · Las fichas y la privacidad: el guardián usa el MISMO código que genera las salidas (y fija aquí lo que no se puede aflojar).
+import { LIMITES as LIMITES_FICHAS, SUPERLATIVOS as SUPERLATIVOS_FICHA, salida as salidaFichas } from "../apps/mobile/scripts/fichas.mjs";
+import { problemas as problemasPrivacidad, salidas as salidasPrivacidad, xcprivacy as xcprivacyDe } from "../apps/mobile/scripts/privacidad.mjs";
 
 const solo = process.argv.includes("--solo") ? process.argv[process.argv.indexOf("--solo") + 1] : null;
 import { existsSync } from "node:fs";
@@ -16,6 +19,8 @@ const archivos = execSync("git ls-files --cached --others --exclude-standard", {
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
+// 8i · Avisos: lo que todavía no rompe el build (sinProntoEnTienda hasta la Fase 9). Se imprimen siempre.
+const avisos = [];
 
 /* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
 const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x) => x.replace(/[^\n]/g, " ")).replace(/(^|[^:])\/\/.*$/gm, "$1");
@@ -65,7 +70,8 @@ const guardianes = {
       if (/TOLATINO_ENTORNO\s*[:=]\s*["']?produccion/.test(t) && /seed|semilla/i.test(t)) falla("semilla", f, 0, "semilla configurada contra producción");
       // La semilla de pruebas solo la puede invocar el despliegue del sandbox (y la define migrar.sh). El CI la aplica en una
       // base desechable (proyecto «ci») para probar que se puede volver a aplicar.
-      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/ci\.yml$)/.test(f))
+      // 8i · Y el job «capturas» de tiendas.yml (también una base desechable del CI, para las capturas de las fichas).
+      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/(ci|tiendas)\.yml$)/.test(f))
         falla("semilla", f, 0, "la semilla de pruebas se llama desde fuera del sandbox");
     }
   },
@@ -1427,7 +1433,8 @@ const guardianes = {
       if (!/^(apps|services)\//.test(f) || OK.test(f)) continue;
       const s = readFileSync(f, "utf8");
       s.split("\n").forEach((l, i) => { if (/\baddr_line\b/.test(l)) falla(G, f, i + 1, "addr_line de una propiedad solo se lee en lib/inmuebles.ts (y al confirmar la visita, lib/visitas-inm*.ts)"); });
-      if (/property_listings/.test(s) && /\b(pl|property_listings)\.geom\b|\bgeom\b[^\n]*from property_listings|st_[xy]\(\s*(pl\.)?geom/.test(s)) falla(G, f, 0, "la ubicación exacta (geom) de una propiedad no se lee fuera de lib/inmuebles.ts");
+      // 8i · El inventario de datos NOMBRA la columna (para decir que no es personal); no la lee.
+      if (f !== "apps/mobile/inventario-datos.json" && /property_listings/.test(s) && /\b(pl|property_listings)\.geom\b|\bgeom\b[^\n]*from property_listings|st_[xy]\(\s*(pl\.)?geom/.test(s)) falla(G, f, 0, "la ubicación exacta (geom) de una propiedad no se lee fuera de lib/inmuebles.ts");
       // Lo público no importa la librería del panel (trae la dirección): solo inmuebles-comun o, en 4id, inmuebles-publico.
       if (/^apps\/web\/(lib\/([a-z-]*publico|ficha|categoria|buscar|mapa|directorio|ciudad)\.ts|app\/\(app\)\/)/.test(f) && /from "(\.\/|@\/lib\/)inmuebles"/.test(s)) falla(G, f, 0, "una pantalla o consulta pública importa lib/inmuebles.ts (la del panel, con la dirección exacta)");
     }
@@ -5057,7 +5064,9 @@ const guardianes = {
       "apps/web/app/_cascara/Compuerta.tsx", "apps/web/app/_cascara/HojaPermiso.tsx", "apps/web/app/(cascara)/app/actualizar/page.tsx", "apps/web/app/(cascara)/app/pausa/page.tsx",
       "apps/web/app/(cascara)/app/fuera/page.tsx", "apps/web/app/(cascara)/app/Estados.tsx",
       // 8f · Los errores se agrupan por app y plataforma y llevan su build (informativo; nunca decide nada).
-      "apps/web/lib/errores/ingesta.ts"]);
+      "apps/web/lib/errores/ingesta.ts",
+      // 8i · Las reglas de las tiendas: el rótulo SOLO QUITA (dentro de las apps no se vende Pro); nunca da nada.
+      "apps/web/lib/tiendas/reglas.ts"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
@@ -5314,9 +5323,10 @@ const guardianes = {
       const t = sinComent(f);
       if (/\bblob_enc\b/.test(t)) falla(G, f, 0, "el sobre de una llave solo lo toca lib/tiendas/llavero.ts");
       if (/from ["']@\/lib\/tiendas\/llavero["']/.test(t) && /\bleer\b[,} ]/.test((/import \{([^}]*)\} from ["']@\/lib\/tiendas\/llavero["']/.exec(t) ?? [])[1] ?? "")) falla(G, f, 0, "leer() del llavero es solo del servidor de tiendas (8h), nunca de una pantalla");
-      // 8h · Quién abre un sobre: el programa beta, la tubería, el push y Wallet (servidor). Ninguna ruta ni pantalla.
+      // 8h · Quién abre un sobre: el programa beta, la tubería, el push y Wallet (servidor). Ninguna ruta ni pantalla. 8i: las fichas (subir como
+      // borrador con la llave de la API de Apple y la cuenta de servicio de Play) y «Lo que te toca» (¿existen las apps en App Store Connect?).
       const imp = (/import \{([^}]*)\} from ["'](?:\.{1,2}\/)+(?:lib\/)?tiendas\/llavero["']|import \{([^}]*)\} from ["']\.\/llavero["']/.exec(t) ?? []);
-      if (/\bleer\b/.test((imp[1] ?? "") + (imp[2] ?? "")) && !/^apps\/web\/lib\/(beta|tiendas\/tuberia|push\/llaves|pases\/[a-z-]+)\.ts$/.test(f)) falla(G, f, 0, "leer() del llavero solo desde lib/beta, lib/tiendas/tuberia, lib/push/llaves y lib/pases");
+      if (/\bleer\b/.test((imp[1] ?? "") + (imp[2] ?? "")) && !/^apps\/web\/lib\/(beta|tiendas\/tuberia|tiendas\/fichas|tiendas\/paquete|push\/llaves|pases\/[a-z-]+)\.ts$/.test(f)) falla(G, f, 0, "leer() del llavero solo desde lib/beta, lib/tiendas/tuberia, lib/tiendas/fichas, lib/tiendas/paquete, lib/push/llaves y lib/pases");
     }
     if (existsSync(LL)) {
       const t = sinComent(LL), l = cuerpoFn(t, "listar");
@@ -6210,6 +6220,167 @@ const guardianes = {
     for (const f of codigo.filter((x) => x.startsWith(R + "/") && x.endsWith("/route.ts"))) if (!/await cuerpo\(req\)/.test(sinComent(f))) falla(G, f, 0, "las rutas de las llaves piden mismo origen y cuerpo acotado (cuerpo())");
   },
 
+  /* 8i · Las fichas de las tiendas dentro de sus límites y sobrias (fase8-apps.md §4 8i): cada .md (apps/mobile/tiendas/{app}/{es,en}.md) cumple
+     los topes de Apple y Google (fijados aquí: si alguien los afloja, falla), sin emoji ni superlativos, con sus fuentes de docs/ayuda; fichas.json
+     es lo que sale de los .md (el servidor sube ESO); la base también los exige (store_listings). Y NADA se manda a revisión: la ficha va a la
+     versión EN PREPARACIÓN de Apple y Google confirma con changesNotSentForReview=true; ninguna ruta de envío a revisión existe en el código.
+     Al revés: alargar un subtítulo, un emoji, «la mejor», aflojar un tope, fichas.json viejo, commit sin changesNotSentForReview, llamar a
+     appStoreVersionSubmissions → falla. */
+  fichaEnLimites() {
+    const G = "fichaEnLimites", { json, problemas: P } = salidaFichas(), L = LIMITES_FICHAS, F = "apps/mobile/scripts/fichas.mjs", J = "apps/mobile/tiendas/fichas.json";
+    for (const p of P) falla(G, p.split(":")[0], 0, p.replace(/^[^:]+: /, ""));
+    if (!existsSync(J) || readFileSync(J, "utf8") !== json) falla(G, J, 0, "fichas.json no es lo que sale de los .md (corre node apps/mobile/scripts/fichas.mjs)");
+    const fijos = { apple: { nombre: 30, subtitulo: 30, palabras: 100, promo: 170, descripcion: 4000, novedades: 4000 }, google: { nombre: 30, corta: 80, descripcion: 4000, novedades: 500 } };
+    for (const [t, x] of Object.entries(fijos)) for (const [k, v] of Object.entries(x)) if (!(L[t]?.[k] <= v)) falla(G, F, 0, `el tope de ${t}.${k} es ${v} (las tiendas no aceptan más)`);
+    if (!SUPERLATIVOS_FICHA.test("la mejor app") || !SUPERLATIVOS_FICHA.test("the best") || !SUPERLATIVOS_FICHA.test("#1")) falla(G, F, 0, "la lista de superlativos se aflojó");
+    const M = "packages/db/migrations/0132_tiendas_fichas.sql";
+    if (existsSync(M)) { const m = readFileSync(M, "utf8"); for (const re of [/title\s+text not null check \(char_length\(title\) between 2 and 30\)/, /subtitle\s+text check \(char_length\(subtitle\) <= 30\)/, /short_desc\s+text check \(char_length\(short_desc\) <= 80\)/, /keywords\s+text check \(octet_length\(keywords\) <= 100\)/, /promo\s+text check \(char_length\(promo\) <= 170\)/]) if (!re.test(m)) falla(G, M, 0, `la base no exige el tope: ${re.source.slice(0, 40)}…`); }
+    const FS = "apps/web/lib/tiendas/fichas.ts";
+    if (existsSync(FS) && (/readFileSync|\.md["'`]/.test(sinComent(FS)) || !/import FICHAS from "\.\.\/\.\.\/\.\.\/mobile\/tiendas\/fichas\.json"/.test(sinComent(FS)))) falla(G, FS, 0, "el servidor sube fichas.json (lo que revisó el guardián), no otra cosa");
+    const PL = "apps/web/lib/tiendas/play.ts", AS = "apps/web/lib/tiendas/asc.ts";
+    if (existsSync(PL) && !/`\$\{E\}:commit\?changesNotSentForReview=true`/.test(cuerpoFn(sinComent(PL), "subirFichasPlay"))) falla(G, PL, 0, "la ficha de Google se confirma con changesNotSentForReview=true (no se manda a revisión)");
+    if (existsSync(AS) && !/q\("filter\[appStoreState\]", "PREPARE_FOR_SUBMISSION"\)/.test(cuerpoFn(sinComent(AS), "versionEnPreparacion"))) falla(G, AS, 0, "la ficha de Apple solo toca la versión en preparación");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      if (/appStoreVersionSubmissions|reviewSubmissions|reviewSubmissionItems|changesNotSentForReview=false|sendChangesForReview/.test(sinComent(f))) falla(G, f, 0, "nada se envía a revisión desde el código (Fase 9, con el OK del fundador)");
+    }
+  },
+
+  /* 8i · La privacidad sale de UN inventario real y sus salidas coinciden (fase8-apps.md §3.6, §4 8i): cada columna que parece personal en las
+     migraciones (teléfono, correo, geom, nombre, dirección, fotos, mensajes…) está en una categoría del inventario o en «noPersonales» con su
+     porqué; lo que cita existe; rastreo siempre false; las etiquetas de Apple, el CSV de Google, salidas.json y la semilla data_inventory son lo
+     que sale del inventario; el PrivacyInfo.xcprivacy de cada target es xcprivacy(app); /privacidad lee el inventario (no texto a mano). El
+     patrón de columnas está fijado AQUÍ (si alguien lo afloja en el script, sigue cazando). Al revés: una columna «phone» nueva sin inventario,
+     un tipo de Apple que falta en el xcprivacy, rastreo true, el CSV viejo, /privacidad sin el inventario → falla. */
+  privacidadCoherente() {
+    const G = "privacidadCoherente", I = "apps/mobile/inventario-datos.json";
+    if (!existsSync(I)) return falla(G, I, 0, "falta el inventario de datos");
+    for (const p of problemasPrivacidad()) falla(G, I, 0, p);
+    const PAT = /^(phone|\w+_phone|phone_\w+|email|\w+_email|geom|\w+_geom|lat|lng|latitude|longitude|first_name|last_name|full_name|birth\w*|dob|address\w*|street\w*|photo\w*|\w+_photo\w*|body|message|selfie\w*|ssn|license\w*|plate)$/;
+    const inv = JSON.parse(readFileSync(I, "utf8")), citadas = new Set(inv.categorias.flatMap((c) => c.tablas)), libres = inv.noPersonales ?? {};
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8"), cols = [];
+      for (const m of t.matchAll(/create table if not exists (\w+)\s*\(([\s\S]*?)\n\);/g)) for (const l of m[2].split("\n")) { const c = l.trim().split(/\s+/)[0]; if (c && PAT.test(c)) cols.push(`${m[1]}.${c}`); }
+      for (const m of t.matchAll(/alter table (\w+) add column if not exists (\w+)/g)) if (PAT.test(m[2])) cols.push(`${m[1]}.${m[2]}`);
+      for (const c of cols) if (!citadas.has(c) && !(c in libres)) falla(G, `packages/db/migrations/${x}`, 0, `${c} parece un dato personal y no está en el inventario (apps/mobile/inventario-datos.json)`);
+    }
+    if (inv.rastreo !== false || inv.categorias.some((c) => c.rastreo === true)) falla(G, I, 0, "To'Latino no rastrea: rastreo false");
+    for (const [r, c] of salidasPrivacidad()) if (!existsSync(r) || readFileSync(r, "utf8") !== c) falla(G, r, 0, "no es lo que sale del inventario (corre node apps/mobile/scripts/privacidad.mjs)");
+    const A = JSON.parse(readFileSync("apps/mobile/apps.json", "utf8"));
+    for (const a of A.apps) { const f = `apps/mobile/ios/Targets/${a.target}/PrivacyInfo.xcprivacy`; if (!existsSync(f) || readFileSync(f, "utf8") !== xcprivacyDe(a.key)) falla(G, f, 0, `${a.key}: el PrivacyInfo.xcprivacy no es el del inventario (corre node apps/mobile/scripts/generar.mjs)`); }
+    if (!/poner\(`\$\{T\}\/PrivacyInfo\.xcprivacy`, xcprivacy\(a\.key\)\)/.test(sinComent("apps/mobile/scripts/generar.mjs"))) falla(G, "apps/mobile/scripts/generar.mjs", 0, "el xcprivacy sale de xcprivacy(app) del inventario");
+    const W = "apps/web/app/(app)/privacidad/page.tsx";
+    if (!existsSync(W)) falla(G, W, 0, "falta /privacidad (la piden Apple y Google)");
+    else { const w = sinComent(W); if (!/import INV from "\.\.\/\.\.\/\.\.\/\.\.\/mobile\/inventario-datos\.json"/.test(w) || !/I\.categorias\.map\(/.test(w)) falla(G, W, 0, "la sección de datos de /privacidad sale del inventario"); }
+    const M = "packages/db/migrations/0132_tiendas_fichas.sql";
+    if (existsSync(M) && !/tracking\s+boolean not null default false check \(tracking = false\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "data_inventory: rastreo siempre false");
+  },
+
+  /* 8i · Dentro de las apps de las tiendas no se compra Pro (Apple 3.1.3(f), Pagos de Google; fase8-apps.md §3.6, §6 #6): el panel no muestra
+     botón, enlace ni precio de Pro cuando el servidor dice que es la app (compraPro, por el rótulo TLApp; en la web sí). Cada «Ver Pro» pasa
+     por ctaPro; el plan dentro de la app es solo su estado; la hoja de compra pide compraPro; y el servidor rechaza comprar o volver a Pro
+     desde la app aunque alguien llame a la acción. Al revés: un onCta directo a Cobros y plan, estadoPlan con un botón, planSeguir sin la
+     compuerta, otra puerta a seguirConPro → falla. */
+  sinCompraDigitalEnApp() {
+    const G = "sinCompraDigitalEnApp", P = "apps/web/app/panel", R = "apps/web/lib/tiendas/reglas.ts";
+    if (!existsSync(R) || !/export async function compraDigitalAqui\(\): Promise<boolean> \{\s+return !\(await deLaApp\(\)\);\s+\}/.test(sinComent(R))) falla(G, R, 0, "compraDigitalAqui: no en la app (el rótulo solo quita)");
+    for (const f of codigo.filter((x) => x.startsWith(P + "/") && /\.tsx?$/.test(x))) {
+      const t = sinComent(f);
+      if (f === `${P}/pro-cta.ts`) { if (!/return c\.compraPro \? \{ cta: l, onCta: \(\) => c\.go\("pay", "plan"\) \} : \{\};/.test(t)) falla(G, f, 0, "ctaPro: el botón solo si compraPro"); continue; }
+      t.split("\n").forEach((l, i) => {
+        if (/onCta:\s*(\(\)\s*=>\s*)?(c\.)?(go|verPro|plan)\b/.test(l) && /"pay",\s*"plan"|verPro|onCta:\s*plan\b/.test(l) && !/c\.compraPro \? \{ cta: l, onCta: \(\) => c\.go\("pay", "plan"\) \} : \{\}/.test(l)) falla(G, f, i + 1, "«Ver Pro» con su botón directo: usa ctaPro(c, …) (dentro de las apps no se ofrece Pro)");
+        if (/"pay",\s*"plan"/.test(l) && !/navIt\(|type: "tabs"|c\.compraPro \? \{ cta: l, onCta: \(\) => c\.go\("pay", "plan"\)|go\("pay", d\.cat === "NEG-FOOD" \? null : "plan"\)|ruta = \{ sec: "pay", sub: "plan"|\["cobros", "plan"\]|r\[1\] === "plan"/.test(l)) falla(G, f, i + 1, "un camino a Cobros y plan › Tu plan que no es el menú ni ctaPro");
+      });
+    }
+    const PN = `${P}/Panel.tsx`, PLN = `${P}/Plan.tsx`, AC = `${P}/acciones-cobros.ts`, PG = `${P}/[id]/[[...r]]/page.tsx`;
+    if (!/\{ui\.planHoja && plan && plan\.modo !== "apagado" && compraPro \? \(/.test(sinComent(PN))) falla(G, PN, 0, "la hoja de compra de Pro solo con compraPro");
+    if (!/const fin = fechaCorta\(t\.end, d\.hoy\.tz, es\), plan = \(l: string\) => \(c\.compraPro \? \{ cta: l, onCta: \(\) => c\.go\("pay", "plan"\) \} : \{\}\);/.test(sinComent(PN))) falla(G, PN, 0, "los avisos de la prueba Pro sin botón dentro de la app");
+    const pl = sinComent(PLN);
+    if (!/if \(!c\.compraPro\) return estadoPlan\(c, x\);/.test(pl)) falla(G, PLN, 0, "dentro de la app, el plan es solo su estado (estadoPlan)");
+    if (/setUi|planHoja|seguir\(|planSeguir|planDeshacer|planFree|acts:|cta:|PRECIO_PRO|dinero\(/.test(cuerpoFn(pl, "estadoPlan"))) falla(G, PLN, 0, "estadoPlan no compra, no cambia ni dice el precio de Pro");
+    const ac = sinComent(AC);
+    for (const fn of ["planSeguir", "planDeshacer"]) if (!/if \(!\(await \(await import\("@\/lib\/tiendas\/reglas"\)\)\.compraDigitalAqui\(\)\)\) return no\(/.test(cuerpoFn(ac, fn))) falla(G, AC, 0, `${fn}: el servidor no deja comprar Pro desde la app`);
+    if (!/compraPro=\{await \(await import\("@\/lib\/tiendas\/reglas"\)\)\.compraDigitalAqui\(\)\}/.test(sinComent(PG))) falla(G, PG, 0, "el panel recibe compraPro del servidor");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== "apps/web/lib/suscripcion.ts" && f !== AC && /\b(seguirConPro|deshacerFree)\(/.test(sinComent(f))) falla(G, f, 0, "comprar o volver a Pro solo por acciones-cobros.ts (con la compuerta de las apps)");
+  },
+
+  /* 8i · «Borrar mi cuenta» alcanzable en las cuatro apps (Apple 5.1.1(v), Google Play): /cuenta/ajustes está en el alcance común de las
+     cuatro (apps.json), la pantalla de borrar existe, y cada app tiene su camino visible a Mi cuenta › Ajustes (To'Latino: Mi cuenta;
+     Negocios: Más y el menú de escritorio; Repartidor: Idioma y cuenta; Puerta: Tu cuenta, también desde la puerta abierta). Al revés: quitar
+     /cuenta/ajustes del alcance común, el enlace de la Puerta o el de Negocios → falla. */
+  borrarCuentaEnCadaApp() {
+    const G = "borrarCuentaEnCadaApp", A = JSON.parse(readFileSync("apps/mobile/apps.json", "utf8"));
+    if (!(A.comun ?? []).includes("/cuenta/ajustes")) falla(G, "apps/mobile/apps.json", 0, "/cuenta/ajustes tiene que estar en el alcance común de las cuatro apps");
+    if (!existsSync("apps/web/app/(app)/cuenta/ajustes/borrar/page.tsx")) falla(G, "apps/web/app/(app)/cuenta/ajustes/borrar/page.tsx", 0, "falta Borrar mi cuenta");
+    const CAMINO = {
+      cliente: [["apps/web/app/(app)/cuenta/ajustes/Ajustes.tsx", /\/cuenta\/ajustes\/borrar/], ["apps/web/app/(app)/cuenta/ajustes/privacidad/Privacidad.tsx", /router\.push\("\/cuenta\/ajustes\/borrar"\)/]],
+      negocio: [["apps/web/app/panel/Panel.tsx", /\{ icon: "shield", t: E2\("Mi cuenta y ajustes", "My account and settings"\)[^\n]*onClick: \(\) => c\.nav\("\/cuenta\/ajustes"\) \}/], ["apps/web/app/panel/Panel.tsx", /navIt\(false, "shield", E2\("Mi cuenta y ajustes", "My account and settings"\), \(\) => router\.push\("\/cuenta\/ajustes"\)\)/]],
+      delivery: [["apps/web/app/repartidor/Repartidor.tsx", /onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/]],
+      checkin: [["apps/web/app/(puerta)/puerta/Inicio.tsx", /key: "cuenta", icon: "shield"[^\n]*onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/], ["apps/web/app/(puerta)/puerta/Puerta.tsx", /key: "cuenta", icon: "shield"[^\n]*onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/]],
+    };
+    for (const a of A.apps) {
+      const L = CAMINO[a.key];
+      if (!L) { falla(G, "apps/mobile/apps.json", 0, `${a.key}: sin camino a Borrar mi cuenta en borrarCuentaEnCadaApp`); continue; }
+      for (const [f, re] of L) if (!existsSync(f) || !re.test(sinComent(f))) falla(G, f, 0, `${a.key}: falta el camino visible a Mi cuenta › Ajustes › Borrar mi cuenta`);
+    }
+  },
+
+  /* 8i · Ninguna pantalla «Pronto» alcanzable cuando las apps vayan a revisión pública (Apple 2.1, fase8-apps.md §3.6). En la Fase 8 SOLO AVISA
+     (cuenta y lista los archivos que las usan); con TOLATINO_FASE=9 (el CI de la Fase 9) falla. Al revés: con TOLATINO_FASE=9 falla con su mensaje. */
+  sinProntoEnTienda() {
+    const G = "sinProntoEnTienda", usos = [];
+    for (const f of codigo) {
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || /\/(Pronto|PantallaPronto)\.tsx$/.test(f)) continue;
+      if (/<(Pronto|PantallaPronto)\b|import \{[^}]*\b(Pronto|PantallaPronto)\b/.test(sinComent(f))) usos.push(f);
+    }
+    if (!usos.length) return;
+    const msg = `${usos.length} pantallas usan «Pronto» (${usos.slice(0, 4).join(", ")}${usos.length > 4 ? "…" : ""}): en la revisión pública no puede quedar ninguna alcanzable`;
+    if (process.env.TOLATINO_FASE === "9") falla(G, usos[0], 0, msg);
+    else avisos.push(`[${G}] ${msg} (solo aviso hasta la Fase 9)`);
+  },
+
+  /* 8i · Las cuentas de revisión, acotadas (fase8-apps.md §6 #24): es una entrada SIN SMS. El código fijo se lee del entorno SOLO por uno de los
+     cuatro nombres REVISION_CODIGO_{APP} (nunca otra variable), es de 6 dígitos, vale solo para el teléfono de una cuenta ACTIVA con el
+     interruptor encendido (en producción, además, app.tiendas.publico: Fase 9), se vuelve a revisar al verificar, tiene su tope por hora, se
+     anota, nunca sale en la pantalla del modo pruebas; la cuenta no paga con tarjeta (las cuatro maneras de cobrar de la pasarela lo
+     preguntan primero, guardar tarjeta también y la base lo rechaza), su negocio está oculto y solo la semilla del sandbox las crea.
+     Al revés: leer otra variable, saltarse el interruptor o la cuenta activa, mostrar el código, no revisar al verificar, una forma de cobrar
+     sin la pregunta, el trigger de tarjetas fuera, una cuenta de revisión en una semilla de producción → falla. */
+  revisionAcotada() {
+    const G = "revisionAcotada", R = "apps/web/lib/tiendas/revision.ts", C = "apps/web/lib/cuenta.ts", PA = "apps/web/lib/pagos/pasarela.ts", M = "packages/db/migrations/0132_tiendas_fichas.sql";
+    if (!existsSync(R)) return falla(G, R, 0, "falta lib/tiendas/revision.ts");
+    const r = sinComent(R);
+    if (!/export const CODE_REF = \/\^REVISION_CODIGO_\(CLIENTE\|NEGOCIO\|REPARTIDOR\|PUERTA\)\$\/;/.test(r)) falla(G, R, 0, "CODE_REF: solo los cuatro nombres REVISION_CODIGO_{APP}");
+    const cf = cuerpoFn(r, "codigoFijo");
+    if (!/if \(!CODE_REF\.test\(codeRef\)\) return null;\s+const v = process\.env\[codeRef\];\s+return v && \/\^\\d\{6\}\$\/\.test\(v\) \? v : null;/.test(cf)) falla(G, R, 0, "codigoFijo: el nombre pasa CODE_REF antes de leer el entorno y el código es de 6 dígitos");
+    if ((r.match(/process\.env\[/g) ?? []).length !== 1) falla(G, R, 0, "el entorno se lee en un solo lugar (codigoFijo)");
+    const re = cuerpoFn(r, "revisionEncendida");
+    if (!/if \(!on\(FLAG_REVISION\)\) return false;/.test(re) || !/if \(ENTORNO === "produccion" && !on\("app\.tiendas\.publico"\)\) return false;/.test(re)) falla(G, R, 0, "revisionEncendida: interruptor y, en producción, la Fase 9");
+    const cp = cuerpoFn(r, "codigoParaPedir");
+    if (!/if \(!r\.active\) \{[^}]*return "normal"; \}/.test(cp) || !/if \(!\(await revisionEncendida\(c\)\)\) \{[^}]*return "normal"; \}/.test(cp) || !/cfg_int\('revision_intentos_hora'\)/.test(cp) || !/await anotar\(c, r\.id, "codigo", null, ip\);/.test(cp)) falla(G, R, 0, "codigoParaPedir: cuenta activa, interruptor, tope por hora y anotado");
+    if (!/if \(!r\.active \|\| !\(await revisionEncendida\(c\)\) \|\| !codigoFijo\(r\.code_ref\)\)/.test(cuerpoFn(r, "codigoSigueValiendo"))) falla(G, R, 0, "codigoSigueValiendo: se vuelve a revisar al verificar");
+    for (const f of codigo) if (f !== R && /^apps\/web\/.*\.tsx?$/.test(f) && /REVISION_CODIGO_/.test(sinComent(f))) falla(G, f, 0, "los códigos de revisión solo los lee lib/tiendas/revision.ts");
+    const c = sinComent(C), pc = cuerpoFn(c, "pedirCodigo"), bloque = /if \(proposito === "login"\) \{([\s\S]*?)\n  \}\n/.exec(pc)?.[1] ?? "";
+    if (!/codigoParaPedir\(c, tel, ip\)/.test(bloque) || !/'revision'/.test(bloque) || /codigoPrueba/.test(bloque) || !/huellaCodigo\(tel, rev\.codigo\)/.test(bloque)) falla(G, C, 0, "pedirCodigo: el código fijo solo para login, guardado como huella de ESE teléfono y nunca en la pantalla del modo pruebas");
+    if (!/const rev = fila\.channel === "revision" \? await import\("\.\/tiendas\/revision"\) : null;\s+if \(rev && !\(await rev\.codigoSigueValiendo\(c, tel, ip\)\)\)/.test(cuerpoFn(c, "verificarCodigo"))) falla(G, C, 0, "verificarCodigo: el código de revisión se vuelve a revisar (cuenta activa e interruptor)");
+    const pa = sinComent(PA);
+    for (const fn of ["retener", "retenerPlataforma", "cobrarDirecto", "cobrarFuera"]) {
+      const i = pa.indexOf(`  async ${fn}(`), cab = i < 0 ? "" : pa.slice(i, pa.indexOf("\n", pa.indexOf("\n", i) + 1));
+      if (!/\{ const rv = await pagoRevision\(\); if \(rv\) return \{ ok: false, codigo: "revision", mensaje: rv \}; \}/.test(cab)) falla(G, PA, 0, `${fn}: una cuenta de revisión no paga con tarjeta (la primera línea lo pregunta)`);
+    }
+    if (!/esCuentaRevision\(u\.id\)\) return no\(/.test(sinComent("apps/web/app/(app)/pago/acciones.ts"))) falla(G, "apps/web/app/(app)/pago/acciones.ts", 0, "guardarTarjeta: una cuenta de revisión no guarda tarjetas");
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/create trigger payment_methods_revision before insert on payment_methods/.test(m)) falla(G, M, 0, "la base rechaza tarjetas de una cuenta de revisión");
+      if (!/'app\.revision\.cuentas', false,/.test(m)) falla(G, M, 0, "el interruptor app.revision.cuentas nace apagado");
+      if (!/raise exception 'revision_acotada: el negocio de una cuenta de revisión tiene que estar oculto'/.test(m)) falla(G, M, 0, "el negocio de revisión está oculto");
+      if (!/code_ref\s+text not null check \(code_ref ~ '\^REVISION_CODIGO_\(CLIENTE\|NEGOCIO\|REPARTIDOR\|PUERTA\)\$'\)/.test(m)) falla(G, M, 0, "code_ref: solo los cuatro nombres");
+    }
+    // Solo la semilla del sandbox crea cuentas de revisión (en producción, a mano en la Fase 9 con el OK del fundador).
+    for (const f of archivos) if (/\.sql$/.test(f) && !f.startsWith("infra/pruebas/semilla/") && f !== M && /insert into review_accounts/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "las cuentas de revisión solo las crea la semilla del sandbox (producción: Fase 9)");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== C && /'revision'/.test(sinComent(f)) && /otp_codes/.test(sinComent(f)) && /insert into otp_codes/.test(sinComent(f))) falla(G, f, 0, "solo pedirCodigo crea códigos del canal revision");
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
@@ -6223,6 +6394,7 @@ for (const [n, g] of Object.entries(lista)) {
   if (!g) { console.error(`guardián desconocido: ${n}`); process.exit(2); }
   g();
 }
+for (const a of avisos) console.warn(`⚠ ${a}`);
 if (fallos.length) {
   console.error(`\n✗ ${fallos.length} fallo(s) de guardianes:\n` + fallos.map((x) => "  " + x).join("\n") + "\n");
   process.exit(1);

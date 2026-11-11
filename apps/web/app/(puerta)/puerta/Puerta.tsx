@@ -202,6 +202,8 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
       { key: "equipo", icon: "users", t: E2("Equipo", "Team"), s: E2("Quién está en cada puerta", "Who is at each door"), chev: true, onClick: () => ir("?t=equipo") },
       { key: "cierre", icon: "check", t: E2("Cierre de la noche", "Close the night"), s: E2("Resumen y cerrar tu puerta", "Summary and close your door"), chev: true, onClick: () => ir("?t=cierre") },
       { key: "cambiar", icon: "key", t: E2("Cambiar de puerta", "Change door"), s: E2("Volver a tus puertas", "Back to your doors"), chev: true, onClick: () => router.push("/puerta") },
+      // 8i · Mi cuenta (Borrar mi cuenta incluido) también desde la puerta abierta.
+      { key: "cuenta", icon: "shield", t: E2("Mi cuenta y ajustes", "My account and settings"), s: E2("Tu teléfono, idioma, privacidad y borrar tu cuenta.", "Your phone, language, privacy and deleting your account."), chev: true, onClick: () => router.push("/cuenta/ajustes") },
     ] });
     // 8e · Fijar la Puerta en esta pantalla.
     if (fij === "pregunta") {

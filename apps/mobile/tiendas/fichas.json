@@ -1,0 +1,197 @@
+{
+  "$fuente": "Generado por apps/mobile/scripts/fichas.mjs desde apps/mobile/tiendas/{app}/{es,en}.md. No editar a mano.",
+  "limites": {
+    "apple": {
+      "nombre": 30,
+      "subtitulo": 30,
+      "palabras": 100,
+      "promo": 170,
+      "descripcion": 4000,
+      "novedades": 4000
+    },
+    "google": {
+      "nombre": 30,
+      "corta": 80,
+      "descripcion": 4000,
+      "novedades": 500
+    }
+  },
+  "fichas": [
+    {
+      "app": "cliente",
+      "idioma": "es",
+      "archivo": "apps/mobile/tiendas/cliente/es.md",
+      "sha256": "1d84398c4ca2f72fba2e58a0e281ad5bd9231c4e588ad032ebead140e4898ead",
+      "apple": {
+        "locale": "es-MX",
+        "name": "To'Latino",
+        "subtitle": "Negocios latinos de tu ciudad",
+        "keywords": "latino,hispano,negocios,pedidos,citas,eventos,boletos,comunidad,Hazleton,Allentown,Reading,español",
+        "promotionalText": "Pide, reserva y compra boletos en los negocios latinos de Hazleton, Allentown, Wilkes-Barre, Scranton y Reading. En español y en inglés.",
+        "description": "To'Latino reúne los negocios latinos de tu ciudad en una sola app: restaurantes, barberías y salones, doctores, talleres, iglesias, tiendas, eventos y más. Funciona en Hazleton, Allentown, Wilkes-Barre, Scranton y Reading, en español y en inglés.\n\nLo que haces en la app:\n- Buscar un negocio por lo que necesitas y ver su horario, sus fotos, sus reseñas y si está abierto ahora.\n- Pedir comida para recoger o a domicilio y seguir el pedido hasta tu puerta.\n- Reservar una cita o una mesa, con el aviso cuando el negocio la confirma.\n- Comprar boletos para eventos, guardarlos en Apple Wallet y abrirlos sin señal en la puerta.\n- Escribirle al negocio y recibir sus respuestas en la app.\n- La Comunidad de tu ciudad: avisos del barrio, preguntas, ofertas y lo que pasa hoy.\n- El Compa, el asistente que te ayuda con un pedido, una cita o una duda, y te lleva a la persona del equipo cuando hace falta.\n\nTu cuenta es tu teléfono: entras con un código que llega por texto. Pagas con tarjeta en la misma app cuando el negocio lo permite, o en el local.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta cuando quieras en Mi cuenta › Ajustes.\n\nAyuda y Soporte están dentro de la app y en tolatino.com.",
+        "whatsNew": "Primera versión de To'Latino para el teléfono: tus boletos sin señal y en Apple Wallet, y avisos de tus pedidos, citas y eventos."
+      },
+      "google": {
+        "language": "es-US",
+        "title": "To'Latino",
+        "shortDescription": "Negocios latinos, pedidos, citas, eventos y tu Comunidad, en español e inglés.",
+        "fullDescription": "To'Latino reúne los negocios latinos de tu ciudad en una sola app: restaurantes, barberías y salones, doctores, talleres, iglesias, tiendas, eventos y más. Funciona en Hazleton, Allentown, Wilkes-Barre, Scranton y Reading, en español y en inglés.\n\nLo que haces en la app:\n- Buscar un negocio por lo que necesitas y ver su horario, sus fotos, sus reseñas y si está abierto ahora.\n- Pedir comida para recoger o a domicilio y seguir el pedido hasta tu puerta.\n- Reservar una cita o una mesa, con el aviso cuando el negocio la confirma.\n- Comprar boletos para eventos, guardarlos en Apple Wallet y abrirlos sin señal en la puerta.\n- Escribirle al negocio y recibir sus respuestas en la app.\n- La Comunidad de tu ciudad: avisos del barrio, preguntas, ofertas y lo que pasa hoy.\n- El Compa, el asistente que te ayuda con un pedido, una cita o una duda, y te lleva a la persona del equipo cuando hace falta.\n\nTu cuenta es tu teléfono: entras con un código que llega por texto. Pagas con tarjeta en la misma app cuando el negocio lo permite, o en el local.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta cuando quieras en Mi cuenta › Ajustes.\n\nAyuda y Soporte están dentro de la app y en tolatino.com.",
+        "recentChanges": "Primera versión de To'Latino para el teléfono: tus boletos sin señal y en Apple Wallet, y avisos de tus pedidos, citas y eventos."
+      }
+    },
+    {
+      "app": "cliente",
+      "idioma": "en",
+      "archivo": "apps/mobile/tiendas/cliente/en.md",
+      "sha256": "e6f301eb3500432bdf4ab0895a53ef4765e7c3e5d7c21c635c024d046b9d40d7",
+      "apple": {
+        "locale": "en-US",
+        "name": "To'Latino",
+        "subtitle": "Latino businesses in your city",
+        "keywords": "latino,hispanic,business,order,booking,events,tickets,community,Hazleton,Allentown,Reading,spanish",
+        "promotionalText": "Order, book and buy tickets at the Latino businesses of Hazleton, Allentown, Wilkes-Barre, Scranton and Reading. In Spanish and English.",
+        "description": "To'Latino brings the Latino businesses of your city together in one app: restaurants, barbershops and salons, doctors, auto shops, churches, stores, events and more. It works in Hazleton, Allentown, Wilkes-Barre, Scranton and Reading, in Spanish and English.\n\nWhat you can do in the app:\n- Find a business by what you need and see its hours, photos, reviews and whether it is open now.\n- Order food for pickup or delivery and follow the order to your door.\n- Book an appointment or a table, with a notification when the business confirms it.\n- Buy event tickets, add them to Apple Wallet and open them offline at the door.\n- Message the business and get its replies in the app.\n- Your city's Community: neighborhood notices, questions, deals and what is happening today.\n- El Compa, the assistant that helps you with an order, an appointment or a question, and connects you with a person on the team when needed.\n\nYour account is your phone: sign in with a code sent by text. Pay by card in the app when the business allows it, or at the store.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account anytime in My account › Settings.\n\nHelp and Support are inside the app and at tolatino.com.",
+        "whatsNew": "First version of To'Latino for your phone: your tickets offline and in Apple Wallet, and notifications for your orders, appointments and events."
+      },
+      "google": {
+        "language": "en-US",
+        "title": "To'Latino",
+        "shortDescription": "Latino businesses, orders, bookings, events and Community. Spanish and English.",
+        "fullDescription": "To'Latino brings the Latino businesses of your city together in one app: restaurants, barbershops and salons, doctors, auto shops, churches, stores, events and more. It works in Hazleton, Allentown, Wilkes-Barre, Scranton and Reading, in Spanish and English.\n\nWhat you can do in the app:\n- Find a business by what you need and see its hours, photos, reviews and whether it is open now.\n- Order food for pickup or delivery and follow the order to your door.\n- Book an appointment or a table, with a notification when the business confirms it.\n- Buy event tickets, add them to Apple Wallet and open them offline at the door.\n- Message the business and get its replies in the app.\n- Your city's Community: neighborhood notices, questions, deals and what is happening today.\n- El Compa, the assistant that helps you with an order, an appointment or a question, and connects you with a person on the team when needed.\n\nYour account is your phone: sign in with a code sent by text. Pay by card in the app when the business allows it, or at the store.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account anytime in My account › Settings.\n\nHelp and Support are inside the app and at tolatino.com.",
+        "recentChanges": "First version of To'Latino for your phone: your tickets offline and in Apple Wallet, and notifications for your orders, appointments and events."
+      }
+    },
+    {
+      "app": "negocio",
+      "idioma": "es",
+      "archivo": "apps/mobile/tiendas/negocio/es.md",
+      "sha256": "e8e063b3321af81eebff92298eab0d984336b743e8b45c0bbf2094e06e3a98b2",
+      "apple": {
+        "locale": "es-MX",
+        "name": "To'Latino Negocios",
+        "subtitle": "El panel de tu negocio",
+        "keywords": "panel,negocio,pedidos,citas,reservas,menú,restaurante,barbería,salón,cupones,boletos,latino",
+        "promotionalText": "Contesta cada pedido, cita y mensaje de tu negocio al momento, con el aviso en tu teléfono.",
+        "description": "To'Latino Negocios es el panel de tu negocio en To'Latino, en el teléfono. Es la misma cuenta y el mismo panel que usas en la web.\n\nLo que haces en la app:\n- Recibir pedidos, citas, reservaciones y solicitudes con un aviso al momento, con sonido, y abrirlos desde el aviso.\n- Ver tu día en Hoy: lo que llega, lo que preparas y lo que ya salió.\n- Contestar los mensajes de tus clientes.\n- Cambiar tu menú, tus servicios, tus precios, tu horario y tus fotos.\n- Leer el código de un cupón o escanear boletos en la puerta de tu evento con la cámara.\n- Ver tus cobros con tarjeta y tu equipo.\n- Preguntarle a El Compa cómo funciona cada parte del panel.\n\nEntras con tu teléfono y un código que llega por texto. Tu plan se ve en Cobros y plan.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.\n\nAyuda y Soporte para negocios están dentro de la app.",
+        "whatsNew": "Primera versión del panel en el teléfono: avisos al momento de cada pedido, cita y mensaje, y la cámara para cupones y boletos."
+      },
+      "google": {
+        "language": "es-US",
+        "title": "To'Latino Negocios",
+        "shortDescription": "El panel de tu negocio en To'Latino: pedidos, citas, mensajes, menú y tu equipo.",
+        "fullDescription": "To'Latino Negocios es el panel de tu negocio en To'Latino, en el teléfono. Es la misma cuenta y el mismo panel que usas en la web.\n\nLo que haces en la app:\n- Recibir pedidos, citas, reservaciones y solicitudes con un aviso al momento, con sonido, y abrirlos desde el aviso.\n- Ver tu día en Hoy: lo que llega, lo que preparas y lo que ya salió.\n- Contestar los mensajes de tus clientes.\n- Cambiar tu menú, tus servicios, tus precios, tu horario y tus fotos.\n- Leer el código de un cupón o escanear boletos en la puerta de tu evento con la cámara.\n- Ver tus cobros con tarjeta y tu equipo.\n- Preguntarle a El Compa cómo funciona cada parte del panel.\n\nEntras con tu teléfono y un código que llega por texto. Tu plan se ve en Cobros y plan.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.\n\nAyuda y Soporte para negocios están dentro de la app.",
+        "recentChanges": "Primera versión del panel en el teléfono: avisos al momento de cada pedido, cita y mensaje, y la cámara para cupones y boletos."
+      }
+    },
+    {
+      "app": "negocio",
+      "idioma": "en",
+      "archivo": "apps/mobile/tiendas/negocio/en.md",
+      "sha256": "913a45acc254c4e05496d564da43ee90bbd807f0a1d1f4757bcfd841ae56f131",
+      "apple": {
+        "locale": "en-US",
+        "name": "To'Latino Negocios",
+        "subtitle": "Your business dashboard",
+        "keywords": "dashboard,business,orders,appointments,booking,menu,restaurant,barber,salon,coupons,tickets,latino",
+        "promotionalText": "Answer every order, appointment and message for your business right away, with a notification on your phone.",
+        "description": "To'Latino Negocios is your business dashboard on To'Latino, on your phone. It is the same account and the same dashboard you use on the web.\n\nWhat you can do in the app:\n- Receive orders, appointments, reservations and requests with an instant notification, with sound, and open them from the notification.\n- See your day in Today: what is coming in, what you are preparing and what already went out.\n- Answer your customers' messages.\n- Change your menu, services, prices, hours and photos.\n- Read a coupon code or scan tickets at your event door with the camera.\n- See your card payouts and your team.\n- Ask El Compa how each part of the dashboard works.\n\nSign in with your phone and a code sent by text. Your plan shows in Payouts and plan.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.\n\nHelp and Support for businesses are inside the app.",
+        "whatsNew": "First version of the dashboard for your phone: instant notifications for every order, appointment and message, and the camera for coupons and tickets."
+      },
+      "google": {
+        "language": "en-US",
+        "title": "To'Latino Negocios",
+        "shortDescription": "Your business dashboard: orders, bookings, messages, menu and your team.",
+        "fullDescription": "To'Latino Negocios is your business dashboard on To'Latino, on your phone. It is the same account and the same dashboard you use on the web.\n\nWhat you can do in the app:\n- Receive orders, appointments, reservations and requests with an instant notification, with sound, and open them from the notification.\n- See your day in Today: what is coming in, what you are preparing and what already went out.\n- Answer your customers' messages.\n- Change your menu, services, prices, hours and photos.\n- Read a coupon code or scan tickets at your event door with the camera.\n- See your card payouts and your team.\n- Ask El Compa how each part of the dashboard works.\n\nSign in with your phone and a code sent by text. Your plan shows in Payouts and plan.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.\n\nHelp and Support for businesses are inside the app.",
+        "recentChanges": "First version of the dashboard for your phone: instant notifications for every order, appointment and message, and the camera for coupons and tickets."
+      }
+    },
+    {
+      "app": "delivery",
+      "idioma": "es",
+      "archivo": "apps/mobile/tiendas/delivery/es.md",
+      "sha256": "92c235a4684cc328015ea02f11f68ccb8b4b0c43fcc78b4b84e5cc50e08bbd35",
+      "apple": {
+        "locale": "es-MX",
+        "name": "To'Latino Repartidor",
+        "subtitle": "Las entregas de tu negocio",
+        "keywords": "repartidor,delivery,entregas,pedidos,ruta,mapa,restaurante,latino,Hazleton,Allentown,Reading",
+        "promotionalText": "Ve tus entregas del día, abre la dirección en Mapas o Waze y marca cada una al entregarla.",
+        "description": "To'Latino Repartidor es para quien reparte los pedidos de un negocio de To'Latino. El negocio te invita con un código y tú entras con tu teléfono.\n\nLo que haces en la app:\n- Ver las entregas que el negocio te asigna, con lo que lleva cada pedido y cómo se paga.\n- Abrir la dirección en Mapas o Waze con un toque.\n- Marcar «Recogí» y «Entregado».\n- Recibir un aviso cuando te asignan una entrega.\n- Ver tus entregas del día aunque no tengas señal.\n\nTu ubicación: la app la comparte solo mientras tienes una entrega activa, también con la pantalla apagada, para que el cliente y el negocio vean por dónde va el pedido. Al marcar «Entregado» deja de compartirse. Nunca la pide «siempre».\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.",
+        "whatsNew": "Primera versión de To'Latino Repartidor: tus entregas del día, la ruta al cliente y la ubicación solo durante la entrega."
+      },
+      "google": {
+        "language": "es-US",
+        "title": "To'Latino Repartidor",
+        "shortDescription": "Las entregas del negocio para el que repartes: pedido, dirección y mapa.",
+        "fullDescription": "To'Latino Repartidor es para quien reparte los pedidos de un negocio de To'Latino. El negocio te invita con un código y tú entras con tu teléfono.\n\nLo que haces en la app:\n- Ver las entregas que el negocio te asigna, con lo que lleva cada pedido y cómo se paga.\n- Abrir la dirección en Mapas o Waze con un toque.\n- Marcar «Recogí» y «Entregado».\n- Recibir un aviso cuando te asignan una entrega.\n- Ver tus entregas del día aunque no tengas señal.\n\nTu ubicación: la app la comparte solo mientras tienes una entrega activa, también con la pantalla apagada, para que el cliente y el negocio vean por dónde va el pedido. Al marcar «Entregado» deja de compartirse. Nunca la pide «siempre».\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.",
+        "recentChanges": "Primera versión de To'Latino Repartidor: tus entregas del día, la ruta al cliente y la ubicación solo durante la entrega."
+      }
+    },
+    {
+      "app": "delivery",
+      "idioma": "en",
+      "archivo": "apps/mobile/tiendas/delivery/en.md",
+      "sha256": "5c4640c309f13d924a4aefa48ba1acef905f7dfd6bb74b66f3439f7c162d1927",
+      "apple": {
+        "locale": "en-US",
+        "name": "To'Latino Repartidor",
+        "subtitle": "Deliveries for your business",
+        "keywords": "driver,delivery,courier,orders,route,map,restaurant,latino,Hazleton,Allentown,Reading",
+        "promotionalText": "See your deliveries for the day, open the address in Maps or Waze and mark each one when you deliver it.",
+        "description": "To'Latino Repartidor is for people who deliver orders for a business on To'Latino. The business invites you with a code and you sign in with your phone.\n\nWhat you can do in the app:\n- See the deliveries the business assigns to you, with what each order has and how it is paid.\n- Open the address in Maps or Waze with one tap.\n- Mark \"Picked up\" and \"Delivered\".\n- Get a notification when a delivery is assigned to you.\n- See your deliveries for the day even without signal.\n\nYour location: the app shares it only while you have an active delivery, also with the screen off, so the customer and the business can see where the order is. It stops when you mark \"Delivered\". It never asks for \"always\".\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.",
+        "whatsNew": "First version of To'Latino Repartidor: your deliveries for the day, the route to the customer and location only during the delivery."
+      },
+      "google": {
+        "language": "en-US",
+        "title": "To'Latino Repartidor",
+        "shortDescription": "Deliveries for the business you drive for: the order, the address and the map.",
+        "fullDescription": "To'Latino Repartidor is for people who deliver orders for a business on To'Latino. The business invites you with a code and you sign in with your phone.\n\nWhat you can do in the app:\n- See the deliveries the business assigns to you, with what each order has and how it is paid.\n- Open the address in Maps or Waze with one tap.\n- Mark \"Picked up\" and \"Delivered\".\n- Get a notification when a delivery is assigned to you.\n- See your deliveries for the day even without signal.\n\nYour location: the app shares it only while you have an active delivery, also with the screen off, so the customer and the business can see where the order is. It stops when you mark \"Delivered\". It never asks for \"always\".\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.",
+        "recentChanges": "First version of To'Latino Repartidor: your deliveries for the day, the route to the customer and location only during the delivery."
+      }
+    },
+    {
+      "app": "checkin",
+      "idioma": "es",
+      "archivo": "apps/mobile/tiendas/checkin/es.md",
+      "sha256": "2c755b553ee8caadcfc1631f10f0ff52d7d6a13c15c1fc2117f5d0138afc92c4",
+      "apple": {
+        "locale": "es-MX",
+        "name": "To'Latino Puerta",
+        "subtitle": "Escanea boletos en la puerta",
+        "keywords": "puerta,boletos,escanear,QR,evento,entrada,lista,aforo,portero,latino",
+        "promotionalText": "Escanea boletos en la puerta con la pantalla encendida, aunque se caiga la señal del local.",
+        "description": "To'Latino Puerta es para quien recibe a la gente en la puerta de un evento de To'Latino. El organizador te invita con el código de la puerta y tú entras con tu teléfono.\n\nLo que haces en la app:\n- Escanear el QR de cada boleto con la cámara, con la pantalla siempre encendida.\n- Buscar a alguien por nombre o por número de orden.\n- Ver la lista, el aforo y quién entró por cada puerta.\n- Asignar mesas y anotar incidencias.\n- Seguir escaneando sin señal: la lista firmada queda en el teléfono y todo se sube al volver la red.\n- Fijar la pantalla en Android para que nadie salga de la Puerta.\n\nLa cámara solo lee el QR: no guarda fotos ni video.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.",
+        "whatsNew": "Primera versión de To'Latino Puerta: escanear en la puerta con la pantalla encendida y seguir sin señal."
+      },
+      "google": {
+        "language": "es-US",
+        "title": "To'Latino Puerta",
+        "shortDescription": "Escanea los boletos de To'Latino en la puerta de tu evento, también sin señal.",
+        "fullDescription": "To'Latino Puerta es para quien recibe a la gente en la puerta de un evento de To'Latino. El organizador te invita con el código de la puerta y tú entras con tu teléfono.\n\nLo que haces en la app:\n- Escanear el QR de cada boleto con la cámara, con la pantalla siempre encendida.\n- Buscar a alguien por nombre o por número de orden.\n- Ver la lista, el aforo y quién entró por cada puerta.\n- Asignar mesas y anotar incidencias.\n- Seguir escaneando sin señal: la lista firmada queda en el teléfono y todo se sube al volver la red.\n- Fijar la pantalla en Android para que nadie salga de la Puerta.\n\nLa cámara solo lee el QR: no guarda fotos ni video.\n\nTus datos: no usamos publicidad ni rastreamos lo que haces en otras apps. Borras tu cuenta en Mi cuenta › Ajustes.",
+        "recentChanges": "Primera versión de To'Latino Puerta: escanear en la puerta con la pantalla encendida y seguir sin señal."
+      }
+    },
+    {
+      "app": "checkin",
+      "idioma": "en",
+      "archivo": "apps/mobile/tiendas/checkin/en.md",
+      "sha256": "88298bf2dc5065a3ee7519f38d21b197d6921e59fdcc442f97c58b66835c3e30",
+      "apple": {
+        "locale": "en-US",
+        "name": "To'Latino Puerta",
+        "subtitle": "Scan tickets at the door",
+        "keywords": "door,tickets,scan,QR,event,entry,guest list,capacity,check-in,latino",
+        "promotionalText": "Scan tickets at the door with the screen on, even when the venue loses signal.",
+        "description": "To'Latino Puerta is for the people who welcome guests at the door of a To'Latino event. The organizer invites you with the door code and you sign in with your phone.\n\nWhat you can do in the app:\n- Scan each ticket's QR code with the camera, with the screen always on.\n- Find someone by name or order number.\n- See the list, the capacity and who came in through each door.\n- Assign tables and log incidents.\n- Keep scanning without signal: the signed list stays on the phone and everything uploads when the network is back.\n- Pin the screen on Android so nobody leaves the Door.\n\nThe camera only reads the QR code: it does not save photos or video.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.",
+        "whatsNew": "First version of To'Latino Puerta: scan at the door with the screen on and keep going without signal."
+      },
+      "google": {
+        "language": "en-US",
+        "title": "To'Latino Puerta",
+        "shortDescription": "Scan To'Latino tickets at your event door, even without signal.",
+        "fullDescription": "To'Latino Puerta is for the people who welcome guests at the door of a To'Latino event. The organizer invites you with the door code and you sign in with your phone.\n\nWhat you can do in the app:\n- Scan each ticket's QR code with the camera, with the screen always on.\n- Find someone by name or order number.\n- See the list, the capacity and who came in through each door.\n- Assign tables and log incidents.\n- Keep scanning without signal: the signed list stays on the phone and everything uploads when the network is back.\n- Pin the screen on Android so nobody leaves the Door.\n\nThe camera only reads the QR code: it does not save photos or video.\n\nYour data: we do not use advertising or track what you do in other apps. Delete your account in My account › Settings.",
+        "recentChanges": "First version of To'Latino Puerta: scan at the door with the screen on and keep going without signal."
+      }
+    }
+  ]
+}

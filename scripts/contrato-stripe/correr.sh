@@ -11,6 +11,9 @@ cp "$RAIZ/apps/web/lib/pagos/stripe.ts" "$RAIZ/apps/web/lib/pagos/pasarela.ts" "
 echo 'module.exports = {};' > "$T/node_modules/server-only/index.js"
 printf 'export const db = (): { query: (q: string, v?: unknown[]) => Promise<{ rows: any[]; rowCount: number }> } => { throw new Error("sin base en el contrato"); };\nexport const tx = db;\n' > "$T/src/db.ts"
 printf 'export const ENTORNO = "pruebas" as string;\n' > "$T/src/entorno.ts"
+# 8i · La pasarela pregunta antes de cobrar si quien paga es una cuenta de revisión (lib/tiendas/revision.ts, con la base y la sesión): en el
+# contrato no hay sesión, así que nadie lo es.
+mkdir -p "$T/src/tiendas" && printf 'export const pagoBloqueado = async (): Promise<{ es: string; en: string } | null> => null;\n' > "$T/src/tiendas/revision.ts"
 # tsc emite aunque los reemplazos no tipen perfecto; el código bajo prueba es el real.
 (cd "$RAIZ/apps/web" && npx tsc --outDir "$T/out" --module commonjs --target es2022 --moduleResolution node --esModuleInterop --skipLibCheck --types node --rootDir "$T/src" "$T/src/pagos/pasarela.ts" > /dev/null) || true
 test -f "$T/out/pagos/pasarela.js"

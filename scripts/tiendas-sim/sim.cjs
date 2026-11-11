@@ -64,6 +64,9 @@ async function arrancar(o = {}) {
   const registro = [], usuarios = new Map(), invitaciones = new Map(), testers = new Map();
   // 8h · Los builds que «subió» el CI (los pone la prueba con subirBuild / POST /_build) y los que se sumaron a un grupo.
   const builds = new Map(), enGrupo = [];
+  // 8i · La ficha: una versión en preparación por app (o ninguna con sinVersion), su información, las localizaciones, la clasificación por edad,
+  // el detalle para la revisión y las capturas (juegos, reservas, lo subido y lo confirmado).
+  const sinVersion = new Set(o.sinVersion ?? []), locV = new Map(), locI = new Map(), edad = new Map(), detalle = new Map(), juegos = new Map(), capturas = new Map(), subidas = new Map();
   let n = 1000;
   const err = (res, status, code, title, motivo, r) => { r.invalido = motivo ?? null; r.status = status; res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify({ errors: [{ status: String(status), code, title }] })); };
   const ok = (res, status, data, r) => { r.status = status; if (status === 204) { res.writeHead(204); res.end(); return; } res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(data)); };
@@ -84,13 +87,18 @@ async function arrancar(o = {}) {
     return b;
   };
   const server = http.createServer((req, res) => {
-    let cuerpo = '';
-    req.on('data', (c) => { cuerpo += c; if (cuerpo.length > 100000) req.destroy(); });
+    const partes = []; let largo = 0;
+    const subida = req.url.startsWith('/_subir/');
+    req.on('data', (c) => { partes.push(c); largo += c.length; if (largo > (subida ? 10 * 1024 * 1024 : 100000)) req.destroy(); });
     req.on('end', () => {
+      const bruto = Buffer.concat(partes), cuerpo = subida ? '' : bruto.toString('utf8');
       const u = new URL(req.url, 'http://x'), r = { metodo: req.method, ruta: u.pathname, consulta: Object.fromEntries(u.searchParams), cuerpo: json(cuerpo), at: Date.now() };
       registro.push(r);
+      // 8i · La dirección de subida que da Apple al reservar una captura (otro host en la real; aquí, /_subir/{id}).
+      if (subida && req.method === 'PUT') { r.control = true; const id = u.pathname.slice(8), c = capturas.get(id); if (!c) { res.writeHead(404); res.end(); return; } subidas.set(id, bruto); res.writeHead(200); res.end(); return; }
       if (u.pathname === '/_aceptar' && req.method === 'POST') { const ok2 = aceptar(String(r.cuerpo?.correo ?? '')); res.writeHead(ok2 ? 200 : 404); res.end(); r.control = true; return; }
-      if (u.pathname === '/_estado') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ usuarios: [...usuarios.values()], invitaciones: [...invitaciones.values()], testers: [...testers.values()], builds: [...builds.values()], enGrupo, registro })); r.control = true; return; }
+      if (u.pathname === '/_estado') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ usuarios: [...usuarios.values()], invitaciones: [...invitaciones.values()], testers: [...testers.values()], builds: [...builds.values()], enGrupo,
+        fichas: { version: [...locV.values()], app: [...locI.values()], edad: [...edad.entries()], detalle: [...detalle.values()], juegos: [...juegos.values()], capturas: [...capturas.values()] }, registro })); r.control = true; return; }
       if (u.pathname === '/_build' && req.method === 'POST') { const b = subirBuild(r.cuerpo ?? {}); res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(b)); r.control = true; return; }
       const auth = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')?.[1];
       const malJwt = publica ? verificarJwt(auth, publica, o) : 'sin llave pública en el simulador';
@@ -141,6 +149,74 @@ async function arrancar(o = {}) {
           for (const d of r.cuerpo.data) { const b = builds.get(d.id); if (!b) return err(res, 422, 'ENTITY_ERROR.RELATIONSHIP.INVALID', 'build', 'build que no existe', r); if (b.estado !== 'VALID') return err(res, 422, 'ENTITY_ERROR.RELATIONSHIP.INVALID', 'build', 'build sin procesar', r); enGrupo.push({ grupo: p.id, build: d.id }); }
           return ok(res, 204, null, r);
         }
+        // ── 8i · La ficha como borrador ──
+        case 'GET /v1/apps/{id}/appStoreVersions': {
+          if (![...apps.values()].some((a) => a.id === p.id)) return err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
+          const est = q('filter[appStoreState]');
+          if (est && !est.split(',').every((x) => ASC.estadosVersion.includes(x))) return err(res, 400, 'PARAMETER_ERROR.INVALID', 'A parameter has an invalid value', `filter[appStoreState] ${est}`, r);
+          const hay = !sinVersion.has(p.id) && (!est || est.split(',').includes('PREPARE_FOR_SUBMISSION'));
+          return ok(res, 200, { data: hay ? [{ type: 'appStoreVersions', id: `ver-${p.id}`, attributes: { versionString: '1.0.0', appStoreState: 'PREPARE_FOR_SUBMISSION', platform: 'IOS' } }] : [] }, r);
+        }
+        case 'GET /v1/appStoreVersions/{id}/appStoreVersionLocalizations': return ok(res, 200, { data: [...locV.values()].filter((x) => x.version === p.id).map((x) => ({ type: 'appStoreVersionLocalizations', id: x.id, attributes: x.attrs })) }, r);
+        case 'POST /v1/appStoreVersionLocalizations': {
+          const v = r.cuerpo.data.relationships.appStoreVersion.data.id, a = r.cuerpo.data.attributes;
+          if (!/^ver-/.test(v)) return err(res, 404, 'NOT_FOUND', 'version', null, r);
+          if ([...locV.values()].some((x) => x.version === v && x.attrs.locale === a.locale)) return err(res, 409, 'ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE', 'locale', null, r);
+          const id = `avl-${++n}`; locV.set(id, { id, version: v, attrs: a });
+          return ok(res, 201, { data: { type: 'appStoreVersionLocalizations', id, attributes: a } }, r);
+        }
+        case 'PATCH /v1/appStoreVersionLocalizations/{id}': case 'PATCH /v1/appInfoLocalizations/{id}': {
+          const M = p.k.includes('appInfo') ? locI : locV, x = M.get(p.id);
+          if (!x || r.cuerpo.data.id !== p.id) return err(res, x ? 409 : 404, x ? 'ENTITY_ERROR.ID.INVALID' : 'NOT_FOUND', 'id', null, r);
+          x.attrs = { ...x.attrs, ...r.cuerpo.data.attributes };
+          return ok(res, 200, { data: { type: r.cuerpo.data.type, id: p.id, attributes: x.attrs } }, r);
+        }
+        case 'GET /v1/apps/{id}/appInfos': {
+          if (![...apps.values()].some((a) => a.id === p.id)) return err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
+          return ok(res, 200, { data: [{ type: 'appInfos', id: `info-${p.id}`, attributes: { state: 'PREPARE_FOR_SUBMISSION' } }] }, r);
+        }
+        case 'GET /v1/appInfos/{id}/appInfoLocalizations': return ok(res, 200, { data: [...locI.values()].filter((x) => x.info === p.id).map((x) => ({ type: 'appInfoLocalizations', id: x.id, attributes: x.attrs })) }, r);
+        case 'POST /v1/appInfoLocalizations': {
+          const i = r.cuerpo.data.relationships.appInfo.data.id, a = r.cuerpo.data.attributes;
+          if ([...locI.values()].some((x) => x.info === i && x.attrs.locale === a.locale)) return err(res, 409, 'ENTITY_ERROR.ATTRIBUTE.INVALID.DUPLICATE', 'locale', null, r);
+          if ([...(a.name ?? '')].length > 30 || [...(a.subtitle ?? '')].length > 30) return err(res, 409, 'ENTITY_ERROR.ATTRIBUTE.INVALID.TOO_LONG', 'name/subtitle', 'más de 30', r);
+          const id = `ail-${++n}`; locI.set(id, { id, info: i, attrs: a });
+          return ok(res, 201, { data: { type: 'appInfoLocalizations', id, attributes: a } }, r);
+        }
+        case 'GET /v1/appInfos/{id}/ageRatingDeclaration': return ok(res, 200, { data: { type: 'ageRatingDeclarations', id: `edad-${p.id}`, attributes: edad.get(`edad-${p.id}`) ?? {} } }, r);
+        case 'PATCH /v1/ageRatingDeclarations/{id}': { edad.set(p.id, { ...(edad.get(p.id) ?? {}), ...r.cuerpo.data.attributes }); return ok(res, 200, { data: { type: 'ageRatingDeclarations', id: p.id, attributes: edad.get(p.id) } }, r); }
+        case 'GET /v1/appStoreVersions/{id}/appStoreReviewDetail': { const d = [...detalle.values()].find((x) => x.version === p.id); return d ? ok(res, 200, { data: { type: 'appStoreReviewDetails', id: d.id, attributes: d.attrs } }, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r); }
+        case 'POST /v1/appStoreReviewDetails': { const id = `rev-${++n}`; detalle.set(id, { id, version: r.cuerpo.data.relationships.appStoreVersion.data.id, attrs: r.cuerpo.data.attributes }); return ok(res, 201, { data: { type: 'appStoreReviewDetails', id, attributes: r.cuerpo.data.attributes } }, r); }
+        case 'PATCH /v1/appStoreReviewDetails/{id}': { const d = detalle.get(p.id); if (!d) return err(res, 404, 'NOT_FOUND', 'x', null, r); d.attrs = { ...d.attrs, ...r.cuerpo.data.attributes }; return ok(res, 200, { data: { type: 'appStoreReviewDetails', id: p.id, attributes: d.attrs } }, r); }
+        case 'GET /v1/appStoreVersionLocalizations/{id}/appScreenshotSets': {
+          const t = q('filter[screenshotDisplayType]');
+          if (t && !ASC.pantallas.includes(t)) return err(res, 400, 'PARAMETER_ERROR.INVALID', 'A parameter has an invalid value', `screenshotDisplayType ${t}`, r);
+          return ok(res, 200, { data: [...juegos.values()].filter((x) => x.loc === p.id && (!t || x.tipo === t)).map((x) => ({ type: 'appScreenshotSets', id: x.id, attributes: { screenshotDisplayType: x.tipo } })) }, r);
+        }
+        case 'POST /v1/appScreenshotSets': {
+          const t = r.cuerpo.data.attributes.screenshotDisplayType, loc = r.cuerpo.data.relationships?.appStoreVersionLocalization?.data?.id;
+          if (!ASC.pantallas.includes(t)) return err(res, 422, 'ENTITY_ERROR.ATTRIBUTE.INVALID', 'screenshotDisplayType', `tipo ${t}`, r);
+          if (!locV.has(loc)) return err(res, 404, 'NOT_FOUND', 'localization', null, r);
+          const id = `set-${++n}`; juegos.set(id, { id, loc, tipo: t });
+          return ok(res, 201, { data: { type: 'appScreenshotSets', id, attributes: { screenshotDisplayType: t } } }, r);
+        }
+        case 'GET /v1/appScreenshotSets/{id}/appScreenshots': return ok(res, 200, { data: [...capturas.values()].filter((x) => x.set === p.id && x.estado === 'COMPLETE').map((x) => ({ type: 'appScreenshots', id: x.id, attributes: { fileName: x.nombre, fileSize: x.tam, sourceFileChecksum: x.md5 } })) }, r);
+        case 'POST /v1/appScreenshots': {
+          const a = r.cuerpo.data.attributes, set = r.cuerpo.data.relationships.appScreenshotSet.data.id;
+          if (!juegos.has(set)) return err(res, 404, 'NOT_FOUND', 'set', null, r);
+          if ([...capturas.values()].filter((x) => x.set === set).length >= 10) return err(res, 409, 'ENTITY_ERROR', 'max 10', 'más de 10 capturas', r);
+          const id = `cap-${++n}`; capturas.set(id, { id, set, nombre: a.fileName, tam: a.fileSize, estado: 'AWAITING_UPLOAD', md5: null });
+          return ok(res, 201, { data: { type: 'appScreenshots', id, attributes: { fileName: a.fileName, fileSize: a.fileSize, uploadOperations: [{ method: 'PUT', url: `${base}/_subir/${id}`, length: a.fileSize, offset: 0, requestHeaders: [{ name: 'Content-Type', value: 'image/png' }] }] } } }, r);
+        }
+        case 'PATCH /v1/appScreenshots/{id}': {
+          const c = capturas.get(p.id), b = subidas.get(p.id), a = r.cuerpo.data.attributes;
+          if (!c) return err(res, 404, 'NOT_FOUND', 'x', null, r);
+          if (!b || b.length !== c.tam) return err(res, 409, 'STATE_ERROR', 'upload incomplete', 'no se subió todo', r);
+          if (a.uploaded !== true || a.sourceFileChecksum !== crypto.createHash('md5').update(b).digest('hex')) return err(res, 409, 'STATE_ERROR', 'checksum', 'el MD5 no coincide', r);
+          c.estado = 'COMPLETE'; c.md5 = a.sourceFileChecksum;
+          return ok(res, 200, { data: { type: 'appScreenshots', id: p.id, attributes: { sourceFileChecksum: c.md5, assetDeliveryState: { state: 'COMPLETE' } } } }, r);
+        }
+        case 'DELETE /v1/appScreenshots/{id}': return capturas.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
         case 'DELETE /v1/betaTesters/{id}': return testers.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
         case 'DELETE /v1/userInvitations/{id}': return invitaciones.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
         case 'DELETE /v1/users/{id}': return usuarios.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
@@ -148,8 +224,10 @@ async function arrancar(o = {}) {
       }
     });
   });
+  let base = '';
   await new Promise((ok2) => server.listen(o.puerto ?? 0, '127.0.0.1', ok2));
-  return { url: `http://127.0.0.1:${server.address().port}`, registro, usuarios, invitaciones, testers, builds, enGrupo, subirBuild, aceptar, cerrar: () => new Promise((ok2) => server.close(ok2)) };
+  base = `http://127.0.0.1:${server.address().port}`;
+  return { url: base, locV, locI, edad, detalle, juegos, capturas, registro, usuarios, invitaciones, testers, builds, enGrupo, subirBuild, aceptar, cerrar: () => new Promise((ok2) => server.close(ok2)) };
 }
 
 module.exports = { arrancar, validar, verificarJwt, ASC };

@@ -10,6 +10,9 @@ name: Tiendas
 # Reglas (guardianes llavesFueraDelRepo, oidcEstricto, versionCoherente y tiendaSoloProduccion): ningún secreto de GitHub, ningún disparador de
 # PR, id-token solo en los jobs del entorno «tiendas», solo push a pruebas con cambios nativos o workflow_dispatch, solo el sabor de pruebas
 # (el otro: Fase 9).
+# 8i · El job «capturas» (solo a pedido: workflow_dispatch con capturas=si, por el costo): una base DESECHABLE con la semilla del sandbox, la
+# web contra ella, las capturas de las fichas (Apple 6.9" con WebKit, Google 1080×2400 con Chromium, ES y EN) y la cáscara real de Android en el
+# emulador; las sube por la tubería (OIDC) solo si el servidor contesta por HTTPS. Nada se envía a revisión.
 on:
   push:
     branches: [pruebas]
@@ -38,6 +41,11 @@ on:
         description: "El pedido de Super Admin › Sistema › Apps (lo pone el servidor)"
         type: string
         default: ""
+      capturas:
+        description: "8i · Hacer las capturas de las fichas (semilla del sandbox, ES y EN)"
+        type: choice
+        options: ["no", "si"]
+        default: "no"
 
 permissions:
   contents: read
@@ -300,3 +308,89 @@ jobs:
         run: |
           if [ -f "$LLAVES/tl.keychain-db" ]; then security delete-keychain "$LLAVES/tl.keychain-db" || true; fi
           rm -rf -- "$LLAVES" && test ! -e "$LLAVES" && echo "✓ llaves borradas"
+
+  capturas:
+    name: tiendas · capturas de las fichas (semilla del sandbox, ES y EN)
+    needs: plan
+    if: inputs.capturas == 'si'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    environment: tiendas
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      POSTGRES_PASSWORD: ci
+      TOLATINO_COMMIT: ci
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Una base DESECHABLE con la semilla del sandbox (nunca la del sandbox ni la de producción)
+        run: |
+          C="docker compose -p ci -f infra/pruebas/docker-compose.yml"
+          $C up -d db
+          for i in $(seq 1 60); do $C exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
+          bash packages/db/migrar.sh $C
+          SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C
+          # La Puerta: una fecha de La Terraza abre sus puertas en 30 minutos (solo en esta base), para capturar el escáner.
+          $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "update event_dates set doors_at = now() + interval '30 minutes', starts_at = now() + interval '1 hour', ends_at = now() + interval '6 hours', local_date = (now() at time zone 'America/New_York')::date where id = (select d.id from event_dates d join events e on e.id = d.event_id where e.business_id = 'la-terraza-night' and e.status = 'live' and d.status = 'scheduled' order by d.starts_at limit 1)"
+      - name: La web contra esa base (código de entrada en modo pruebas; secretos de un uso hechos aquí; el QR se deriva de AUTH_SECRET)
+        run: |
+          pnpm --filter @tolatino/web build
+          cd apps/web && cp -r .next/static .next/standalone/apps/web/.next/ && cp -r public .next/standalone/apps/web/
+          export AUTH_SECRET="$(openssl rand -hex 32)" DATOS_SECRET="$(openssl rand -hex 32)"
+          PORT=3100 HOSTNAME=0.0.0.0 DATABASE_URL=postgres://tolatino:ci@127.0.0.1:5432/tolatino TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas \
+            nohup node .next/standalone/apps/web/server.js > "$RUNNER_TEMP/web.log" 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://127.0.0.1:3100/ && break; sleep 1; done
+          curl -sf -o /dev/null http://127.0.0.1:3100/privacidad
+      - name: Capturas de las fichas (Apple 6.9" con WebKit y Google 1080×2400 con Chromium; ES y EN)
+        run: |
+          npm install -g playwright@1.63.0 > /dev/null
+          npx -y playwright@1.63.0 install --with-deps chromium webkit > /dev/null
+          NODE_PATH="$(npm root -g)" node scripts/tiendas/capturas.mjs --base http://127.0.0.1:3100 --salida capturas-tiendas
+      - name: La cáscara real de Android contra el mismo servidor (las cuatro, debug, 10.0.2.2 solo aquí)
+        env: { TOLATINO_URL: "http://10.0.2.2:3100", TL_BUILD: "${{ github.run_number }}" }
+        run: |
+          node apps/mobile/scripts/islas.mjs
+          node apps/mobile/scripts/generar.mjs --preparar
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - name: Build debug de las cuatro
+        working-directory: apps/mobile/android
+        env: { TL_BUILD: "${{ github.run_number }}" }
+        run: |
+          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+          ./gradlew --no-daemon assembleClienteDebug assembleNegociosDebug assembleRepartidorDebug assemblePuertaDebug
+      - name: Habilitar KVM (emulador)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - name: Emulador (Pixel 6, 1080×2400) · adb exec-out screencap de cada app
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          script: bash scripts/tiendas/capturas-android.sh apps/mobile/android/app/build/outputs/apk capturas-android
+      - name: Sondeo · ¿el servidor contesta por HTTPS? (si no, ningún token sale del runner)
+        id: s
+        if: always()
+        run: node scripts/tiendas/ci.mjs sondeo
+      - name: Subir las capturas por la tubería (al almacén privado; nada a las tiendas)
+        if: steps.s.outputs.listo == 'si'
+        run: node scripts/tiendas/ci.mjs capturas --dir capturas-tiendas
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiendas-capturas
+          path: |
+            capturas-tiendas/
+            capturas-android/
+          retention-days: 14

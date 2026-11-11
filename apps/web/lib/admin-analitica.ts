@@ -434,3 +434,39 @@ export async function compaSoporteAnalitica(s: Staff, dias: number) {
   const sc = new Map(sopCiu.rows.map((x) => [x.id, x]));
   return { t: tot.rows[0]!, motivos: motivos.rows[0]!, usos: uso.rows, canales: canal.rows, ciudades: ciu.rows.map((x) => ({ ...x, ...(sc.get(x.id) ?? vacio) })), sop: sop.rows[0]!, temas: temas.rows };
 }
+
+/* 8i · Analítica › Apps (fase8-apps.md §4 8i): por app y plataforma, sin personas (solo cuentas de sesiones, eventos y errores).
+   - Instalaciones activas = teléfonos distintos (dispositivo de la sesión) con una sesión de esa app vista en 7 y en 30 días.
+   - Versiones: sesiones vistas en el período por versión.
+   - Avisos: tokens de push vivos (aceptaron) frente a las respuestas «negado» o «ahora no» de la hoja previa en el período.
+   - Errores por sesión: errores de la app en el período ÷ sesiones vistas en el período.
+   - Aperturas de la app (app_abrir). Enlaces que abren la app o la web: llegan con 8b (enlaces universales; espera el dominio).
+   Acotado a las ciudades de quien mira por la ciudad de la cuenta de la sesión (vacío = todas). */
+export async function appsAnalitica(s: Staff, dias: number) {
+  const [inst, vers, push, err, abre] = await Promise.all([
+    db().query<{ app: string; plat: string; n7: number; n30: number }>(
+      `select x.app, x.platform as plat, count(distinct x.device) filter (where x.last_seen_at > now() - interval '7 days')::int as n7, count(distinct x.device)::int as n30
+         from sessions x join users u on u.id = x.user_id
+        where x.platform in ('ios', 'android') and x.last_seen_at > now() - interval '30 days' and not u.is_test and ${scope("u.home_city_id")}
+        group by 1, 2 order by 1, 2`, [s.cities]),
+    db().query<{ app: string; plat: string; version: string | null; n: number }>(
+      `select x.app, x.platform as plat, x.app_version as version, count(*)::int as n from sessions x join users u on u.id = x.user_id
+        where x.platform in ('ios', 'android') and x.last_seen_at > now() - make_interval(days => $2) and not u.is_test and ${scope("u.home_city_id")}
+        group by 1, 2, 3 order by 1, 2, n desc`, [s.cities, dias]),
+    db().query<{ app: string; plat: string; vivos: number; negados: number; ahora_no: number }>(
+      `with t as (select p.app, p.platform as plat, count(*)::int as vivos from push_tokens p join users u on u.id = p.user_id
+                   where p.revoked_at is null and p.platform in ('ios', 'android') and not u.is_test and ${scope("u.home_city_id")} group by 1, 2),
+            r as (select e.app, e.plat, count(*) filter (where e.props->>'respuesta' = 'negado')::int as negados, count(*) filter (where e.props->>'respuesta' = 'ahora_no')::int as ahora_no
+                    from app_events e where e.name = 'permiso_respuesta' and e.props->>'permiso' = 'avisos' and e.app is not null and e.at > now() - make_interval(days => $2) and ${scope("e.city_id")} group by 1, 2)
+       select coalesce(t.app, r.app) as app, coalesce(t.plat, r.plat) as plat, coalesce(t.vivos, 0) as vivos, coalesce(r.negados, 0) as negados, coalesce(r.ahora_no, 0) as ahora_no
+         from t full join r on r.app = t.app and r.plat = t.plat order by 1, 2`, [s.cities, dias]),
+    db().query<{ app: string; plat: string; errores: number; sesiones: number }>(
+      `with e as (select g.app, g.platform as plat, count(*)::int as errores, count(distinct v.session_hash)::int as sesiones from app_error_events v join app_error_groups g on g.id = v.group_id
+                   where v.at > now() - make_interval(days => $1) and not v.is_test and g.platform in ('ios', 'android') group by 1, 2),
+            s as (select x.app, x.platform as plat, count(*)::int as n from sessions x where x.platform in ('ios', 'android') and x.last_seen_at > now() - make_interval(days => $1) group by 1, 2)
+       select coalesce(e.app, s.app) as app, coalesce(e.plat, s.plat) as plat, coalesce(e.errores, 0) as errores, coalesce(s.n, 0) as sesiones from e full join s on s.app = e.app and s.plat = e.plat order by 1, 2`, [dias]),
+    db().query<{ app: string; plat: string; n: number }>(
+      `select app, plat, count(*)::int as n from app_events where name = 'app_abrir' and app is not null and at > now() - make_interval(days => $2) and ${scope("city_id")} group by 1, 2 order by 1, 2`, [s.cities, dias]),
+  ]);
+  return { instalaciones: inst.rows, versiones: vers.rows, avisos: push.rows, errores: err.rows, aperturas: abre.rows };
+}

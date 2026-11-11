@@ -92,6 +92,40 @@ let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; c
     ok(rg.status === 204 && ultimo().valido && S.enGrupo.some((x) => x.grupo === grupo && x.build === 'bld-41'), 'POST /v1/betaGroups/{id}/relationships/builds → 204 (cuerpo válido): en el grupo INTERNO');
     ok(await A.buildEnAsc(S.url, cred, { appId, version: '1.0.1', build: 41 }) === null, 'otra versión con el mismo número → no es ese build');
 
+    console.log('8i · La ficha como BORRADOR en App Store Connect (nada se envía a revisión)');
+    {
+      const desde = S.registro.length, FJ = JSON.parse(fs.readFileSync(path.join(__dirname, '../../apps/mobile/tiendas/fichas.json'), 'utf8')), DE = JSON.parse(fs.readFileSync(path.join(__dirname, '../../apps/mobile/tiendas/declaraciones.json'), 'utf8'));
+      ok(ASC.pantallas.includes('APP_IPHONE_67'), 'el tamaño de captura APP_IPHONE_67 (iPhone 6.7"/6.9") existe en ScreenshotDisplayType');
+      ok(ASC.estadosVersion.includes('PREPARE_FOR_SUBMISSION'), 'PREPARE_FOR_SUBMISSION es un estado de versión de la especificación');
+      for (const [a, x] of Object.entries(DE.edadApple)) if (a[0] !== '$') ok(Object.keys(x).every((k) => ASC.edad.includes(k)), `clasificación de ${a}: cada respuesta es un campo de AgeRatingDeclarationUpdateRequest`);
+      const ver = await A.versionEnPreparacion(S.url, cred, appId);
+      ok(ver === `ver-${appId}` && ultimo().valido, 'GET /v1/apps/{id}/appStoreVersions?filter[appStoreState]=PREPARE_FOR_SUBMISSION&filter[platform]=IOS → la versión en preparación');
+      const f = FJ.fichas.find((x) => x.app === 'cliente' && x.idioma === 'es');
+      const ficha = { locale: 'es-MX', name: f.apple.name, subtitle: f.apple.subtitle, privacyPolicyUrl: 'https://pruebas.tolatino.com/privacidad', description: f.apple.description, keywords: f.apple.keywords, promotionalText: f.apple.promotionalText, whatsNew: f.apple.whatsNew, supportUrl: 'https://pruebas.tolatino.com/soporte' };
+      const r1 = await A.subirFichaAsc(S.url, cred, { appId, versionId: ver, ficha });
+      ok(r1.ok && [...S.locV.values()].some((x) => x.attrs.locale === 'es-MX' && x.attrs.description === f.apple.description) && [...S.locI.values()].some((x) => x.attrs.name === f.apple.name), 'la primera vez: POST appStoreVersionLocalizations y appInfoLocalizations (cuerpos válidos, con «description»)');
+      const r2 = await A.subirFichaAsc(S.url, cred, { appId, versionId: ver, ficha: { ...ficha, promotionalText: 'Otro texto' } });
+      ok(r2.ok && S.registro.some((x) => x.metodo === 'PATCH' && /appStoreVersionLocalizations/.test(x.ruta) && x.valido), 'la segunda: PATCH de la misma localización (no la duplica)');
+      ok((await A.ponerEdadAsc(S.url, cred, appId, DE.edadApple.cliente)).status === 200 && ultimo().valido, 'PATCH /v1/ageRatingDeclarations/{id} con las respuestas de declaraciones.json (cuerpo válido)');
+      const rv = await A.ponerRevisionAsc(S.url, cred, ver, { notas: DE.notas.cliente.en, cuenta: '4845550181', codigo: '123456' });
+      ok(rv.status === 201 && ultimo().valido && ultimo().cuerpo.data.attributes.demoAccountRequired === true, 'POST /v1/appStoreReviewDetails: notas y la cuenta de revisión');
+      ok((await A.ponerRevisionAsc(S.url, cred, ver, { notas: 'x', cuenta: null, codigo: null })).status === 200 && ultimo().cuerpo.data.attributes.demoAccountRequired === false, 'sin cuenta de revisión: PATCH con demoAccountRequired false y sin código');
+      const png = (n) => Buffer.concat([Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex'), crypto.randomBytes(200 + n)]);
+      const caps = [png(1), png(2), png(3)];
+      const c1 = await A.subirCapturasAsc(S.url, cred, { versionId: ver, locale: 'es-MX', tipo: 'APP_IPHONE_67', archivos: caps.map((d, i) => ({ nombre: `c${i}.png`, datos: d })) });
+      ok(c1.ok && !c1.igual && c1.ids.length === 3 && [...S.capturas.values()].filter((x) => x.estado === 'COMPLETE').length === 3, 'capturas: juego APP_IPHONE_67 → reservar → subir a la dirección de Apple → confirmar con el MD5 (3 COMPLETE)');
+      const c2 = await A.subirCapturasAsc(S.url, cred, { versionId: ver, locale: 'es-MX', tipo: 'APP_IPHONE_67', archivos: caps.map((d, i) => ({ nombre: `c${i}.png`, datos: d })) });
+      ok(c2.ok && c2.igual, 'las mismas capturas otra vez: no se toca nada (por el checksum)');
+      const c3 = await A.subirCapturasAsc(S.url, cred, { versionId: ver, locale: 'es-MX', tipo: 'APP_IPHONE_67', archivos: [{ nombre: 'n.png', datos: png(9) }] });
+      ok(c3.ok && !c3.igual && [...S.capturas.values()].length === 1, 'capturas nuevas: se quitan las del borrador (DELETE) y se suben estas');
+      ok(!(await A.subirCapturasAsc(S.url, cred, { versionId: ver, locale: 'en-US', tipo: 'APP_IPHONE_67', archivos: [] })).ok, 'sin la localización del idioma: no sube capturas');
+      const S2 = await sim.arrancar({ publica: publicKey, emisor: cred.emisor, kid: cred.idLlave, apps: [{ bundle: 'com.x', id: '777' }], sinVersion: ['777'] });
+      try { ok(await A.versionEnPreparacion(S2.url, cred, '777') === null, 'sin una versión en preparación → null (la ficha no se toca)'); } finally { await S2.cerrar(); }
+      ok(!S.registro.some((x) => /Submission/.test(x.ruta)), 'ninguna llamada de envío a revisión');
+      const malos2 = S.registro.slice(desde).filter((x) => !x.control && x.invalido && ![404, 409, 422].includes(x.status));
+      ok(malos2.length === 0, `ningún pedido de la ficha fuera de la especificación${malos2.length ? `: ${malos2.map((x) => x.invalido).join(' · ')}` : ''}`);
+    }
+
     console.log(`Google Play · Android Publisher v3 (descubrimiento ${PLAY.revision})`);
     {
       const PS = require(path.join(__dirname, '../tiendas-sim/play.cjs')), P = require(OUT + '/play.js'), cuenta = PS.cuentaDePrueba();
@@ -126,6 +160,21 @@ let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; c
         ok(campo.status === 400 && /Google no tiene este campo/.test(G.registro[G.registro.length - 1].invalido), 'un campo de más en el cuerpo → 400');
         ok(PLAY.resources.edits.resources.bundles.methods.upload.mediaUpload.protocols.simple.path === '/upload/androidpublisher/v3/applications/{packageName}/edits/{editId}/bundles', 'la ruta de subida simple es la del descubrimiento');
         ok(!Object.keys(PLAY.resources.applications?.methods ?? {}).some((m) => /^(create|insert)$/.test(m)), `applications solo tiene ${Object.keys(PLAY.resources.applications?.methods ?? {}).join(', ')}: CREAR una app es de Play Console (paso del fundador)`);
+        // 8i · La ficha de Google como borrador: idiomas y capturas en una edición, confirmada sin mandarla a revisión.
+        const FJ = JSON.parse(fs.readFileSync(path.join(__dirname, '../../apps/mobile/tiendas/fichas.json'), 'utf8'));
+        const fichas = FJ.fichas.filter((x) => x.app === 'cliente').map((x) => ({ language: x.google.language, title: x.google.title, shortDescription: x.google.shortDescription, fullDescription: x.google.fullDescription }));
+        const png = Buffer.concat([Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex'), crypto.randomBytes(300)]);
+        const fr = await P.subirFichasPlay(G.url, t2, { pkg, fichas, capturas: [{ language: 'es-US', archivos: [png, png] }, { language: 'en-US', archivos: [] }] });
+        const ff = G.fichas.get(pkg);
+        ok(fr.ok && ff && ff.listings['es-US']?.title === fichas[0].title && ff.listings['en-US'] && (ff.imagenes['es-US:phoneScreenshots'] ?? []).length === 2, 'edits.listings.update (es-US, en-US) → images.deleteall → images.upload (image/png) → edits.commit');
+        ok(ff.sinRevision.every(Boolean), 'edits.commit con changesNotSentForReview=true: Google NO lo manda a revisión');
+        const vf = G.registro.filter((x) => !x.control && /listings|images|commit/.test(x.id ?? ''));
+        ok(vf.length >= 5 && vf.every((x) => x.valido && x.status === 200), `cada pedido de la ficha en el descubrimiento oficial (${[...new Set(vf.map((x) => x.id))].join(', ')})`);
+        const largo = await P.subirFichasPlay(G.url, t2, { pkg, fichas: [{ ...fichas[0], shortDescription: 'x'.repeat(81) }], capturas: [] });
+        ok(!largo.ok && /listings\.update/.test(largo.error), 'una descripción corta de más de 80 → Google la rechaza');
+        const SAL = JSON.parse(fs.readFileSync(path.join(__dirname, '../../apps/mobile/tiendas/privacidad/salidas.json'), 'utf8'));
+        const ds = await P.subirDataSafety(G.url, t2, pkg, SAL.csv.cliente);
+        ok(ds.status === 200 && G.fichas.get(pkg).dataSafety === SAL.csv.cliente && G.registro[G.registro.length - 1].valido, 'applications.dataSafety existe: el CSV del inventario se puede subir por la API (cuerpo SafetyLabelsUpdateRequest válido; el servidor no lo manda solo)');
       } finally { await G.cerrar(); }
     }
     const T = PLAY.schemas.Testers;

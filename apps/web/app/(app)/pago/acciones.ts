@@ -15,6 +15,8 @@ export async function guardarTarjeta(pm: string, vence: string): Promise<{ ok: t
   if (!(await mismoOrigen())) return no("No se pudo. Recarga la página.", "Could not do it. Reload the page.");
   const u = await yo();
   if (!u) return no("Entra para guardar tu tarjeta.", "Sign in to save your card.");
+  // 8i · Una cuenta de revisión no guarda tarjetas (la base tampoco lo deja).
+  if (await (await import("@/lib/tiendas/revision")).esCuentaRevision(u.id)) return no("Esta es una cuenta de revisión: no guarda tarjetas ni paga con tarjeta.", "This is a review account: it does not save cards or pay by card.");
   const n = (await db().query<{ n: number }>(`select count(*)::int as n from payment_methods where user_id = $1 and status = 'active'`, [u.id])).rows[0]!.n;
   if (n >= 10) return no("Tienes 10 tarjetas guardadas. Quita una en Mi cuenta.", "You have 10 saved cards. Remove one in My account.");
   let t: { pm: string; marca: string; l4: string; vence: string; sim: boolean };

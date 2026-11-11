@@ -11,6 +11,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, write
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { token } from "./tokens.mjs";
+import { xcprivacy } from "./privacidad.mjs";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..");
 const A = JSON.parse(readFileSync(join(RAIZ, "apps.json"), "utf8"));
@@ -176,32 +177,9 @@ ${ps.map((p) => `	<key>${PERM_IOS[p]}</key>\n	<string>${esc(texto(p, a, "es"))}<
   for (const l of ["es", "en"]) poner(`${T}/${l}.lproj/InfoPlist.strings`, `/* Generado por apps/mobile/scripts/generar.mjs desde apps.json (textos de permiso de fase8-apps.md §1c). No editar a mano. */
 "CFBundleDisplayName" = "${escStr(a.nombre[l])}";
 ${ps.map((p) => `"${PERM_IOS[p]}" = "${escStr(texto(p, a, l))}";`).join("\n")}`);
-  // Sin rastreo (§3.6): ni dominios de rastreo ni datos para rastrear. Razones de las API: UserDefaults (CA92.1: datos de la propia app).
-  // Los tipos de datos recogidos salen del inventario real en 8i (apps/mobile/inventario-datos.json).
-  poner(`${T}/PrivacyInfo.xcprivacy`, `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Generado por apps/mobile/scripts/generar.mjs. No editar a mano. -->
-<plist version="1.0">
-<dict>
-	<key>NSPrivacyTracking</key>
-	<false/>
-	<key>NSPrivacyTrackingDomains</key>
-	<array/>
-	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
-	<key>NSPrivacyAccessedAPITypes</key>
-	<array>
-		<dict>
-			<key>NSPrivacyAccessedAPIType</key>
-			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
-			<key>NSPrivacyAccessedAPITypeReasons</key>
-			<array>
-				<string>CA92.1</string>
-			</array>
-		</dict>
-	</array>
-</dict>
-</plist>`);
+  // Sin rastreo (§3.6): ni dominios de rastreo ni datos para rastrear. 8i · Los tipos de datos recogidos salen del inventario real
+  // (apps/mobile/inventario-datos.json) y las API de razón requerida, de lo que de verdad usa este target (privacidad.mjs; guardián privacidadCoherente).
+  poner(`${T}/PrivacyInfo.xcprivacy`, xcprivacy(a.key));
   /* Android */
   poner(`${S}/assets/capacitor.config.json`, cfgA);
   poner(`${S}/assets/capacitor.plugins.json`, JSON.stringify(a.plugins.map((p) => ({ pkg: PLUGINS[p].npm ?? `tolatino/${PLUGINS[p].dir}`, classpath: PLUGINS[p].android })), null, 2));

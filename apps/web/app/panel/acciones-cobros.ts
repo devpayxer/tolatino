@@ -68,6 +68,8 @@ export async function cobrosStripe(id: string): Promise<Res & { url?: string }> 
 export async function planSeguir(id: string, pm: string, ciclo: "month" | "year"): Promise<Res & { cobrado?: boolean }> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
+  // 8i · Pro no se compra dentro de las apps de las tiendas (lo decide el servidor; guardián sinCompraDigitalEnApp).
+  if (!(await (await import("@/lib/tiendas/reglas")).compraDigitalAqui())) return no("Esto no está disponible en la app.", "This is not available in the app.");
   const { seguirConPro } = await import("@/lib/suscripcion");
   const r = await seguirConPro(a.negocio.id, a.yo.id, String(pm ?? ""), ciclo === "year" ? "year" : "month");
   if (!r.ok) return { ok: false, mensaje: r.msg };
@@ -86,6 +88,8 @@ export async function planFree(id: string): Promise<Res> {
 export async function planDeshacer(id: string): Promise<Res> {
   const a = await entrar(id);
   if (!a) return SIN_ACCESO;
+  // 8i · Pro no se compra dentro de las apps de las tiendas (lo decide el servidor; guardián sinCompraDigitalEnApp).
+  if (!(await (await import("@/lib/tiendas/reglas")).compraDigitalAqui())) return no("Esto no está disponible en la app.", "This is not available in the app.");
   const { deshacerFree } = await import("@/lib/suscripcion");
   const r = await deshacerFree(a.negocio.id, a.yo.id);
   if (!r.ok) return { ok: false, mensaje: r.msg };
