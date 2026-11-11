@@ -1152,9 +1152,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `deploy.sh`, nginx en 443, `TOLATINO_URL` y cookies `secure`. Hasta entonces las cuatro apps (que apuntan a `https://pruebas.tolatino.com`)
       abren su página local «Sin señal». Para probar Android contra la IP: `TOLATINO_URL=http://2.31.196.167 node apps/mobile/scripts/generar.mjs
       --preparar` (la app permite HTTP solo si la URL es HTTP; iOS nunca). (8a, 11 nov)
-- [ ] **Primera corrida de `cascara-android` y `cascara-ios` en CI:** aquí no se compiló ninguna (SDK de Android y Google Maven bloqueados; sin
-      Xcode). Los plugins de Android pasaron `javac` contra Android 16 con el API de Capacitor simulado; Swift sin compilar. Revisar el humo del
-      emulador (DevTools del WebView: «Sin señal» sin red, la isla y el marco ajeno sin puente) y del simulador (abre y sigue viva). (8a, 11 nov)
+- [x] **Primera corrida de `cascara-android` y `cascara-ios` en CI** (11 nov): compilan los 8; el humo cazó cuatro defectos, ya corregidos con
+      su guardián: (1) **seguridad**: en Negocios, Repartidor y Puerta un iframe de otro origen alcanzaba el puente (`server.url` con ruta →
+      Capacitor caía a `addJavascriptInterface`), y en las cuatro `CapacitorCookiesAndroidInterface.setCookie` estaba abierto a todo marco
+      (`puenteSoloNuestroOrigen`); (2) las cuatro de iOS se cerraban al abrir (SplashScreen pide `LaunchScreen.storyboard`; `cascaraArrancaIos`);
+      (3) en Android la página local no se hidrataba y la isla no abría ni tenía TLLocal (con `server.url`, Capacitor no sirve el origen local:
+      lo sirve `MainActivity`; `islaCoherente`); (4) el humo daba por buena la isla en cualquier página. (8a, 11 nov)
+- [ ] **El JS de Capacitor en el origen local de Android** se toma por reflexión de `Bridge.getJSInjector()` (privado; Capacitor 8.6.0 fijo).
+      Al subir Capacitor, revisar que siga: si falta, las islas caen a su respaldo web y el humo lo dice («tllocal»: false). (8a, 11 nov)
+- [ ] **Humo de iOS más hondo:** hoy solo «abre y sigue viva» (y lo que escribe Capacitor). Falta en el simulador: la isla, TLLocal y el marco
+      ajeno sin puente (el portero `TLBridgeViewController` solo lo vigila el guardián). Va con el XCUITest de `nat8a`. (8a, 11 nov)
 - [ ] **`nat8a` completo en emulador y simulador** cuando haya dominio: modo avión al abrir → isla de la Puerta con la lista firmada guardada en
       TLLocal; otra cuenta en el mismo teléfono no ve nada; un iframe de otro origen (Stripe Elements) no alcanza el puente (en iOS, el portero
       `TLBridgeViewController`). XCUITest mínimo en el job de iOS. (8a, 11 nov)

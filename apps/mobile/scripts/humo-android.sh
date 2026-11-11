@@ -33,23 +33,24 @@ for par in $APPS; do
   sleep 10
   adb exec-out screencap -p > "$OUT/$s-sin-red.png"
   adb logcat -d -s Capacitor:* Capacitor/Console:* TLCascara:* chromium:E AndroidRuntime:E > "$OUT/$s-logcat.txt" 2>&1 || true
-  pid=$(adb shell pidof "$id" | tr -d '\r')
+  # Sin «cmd | grep -q» con pipefail (grep -q corta el tubo y el SIGPIPE se lee como fallo): se lee entero y se busca después.
+  pid=$(adb shell pidof "$id" | tr -d '\r' || true)
   if [ -z "$pid" ]; then echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"; fallo=1; continue; fi
   grep "Loading app at\|TLCascara\|Capacitor/Console.*\(rror\|Uncaught\)\|AndroidRuntime" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
   adb forward --remove-all; adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null
   t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · $t"
-  echo "$t" | grep -q '"titulo":"Sin señal' || { echo "✗ $s: sin red no abre la página local «Sin señal»"; fallo=1; }
+  grep -q '"titulo":"Sin señal' <<< "$t" || { echo "✗ $s: sin red no abre la página local «Sin señal»"; fallo=1; }
   # El rótulo TLApp de esta app viaja en el user-agent (lo lee el servidor; nunca da permisos).
-  node "$DIR/cdp.mjs" 9222 eval "navigator.userAgent" | grep -q "TLApp/" || { echo "✗ $s: sin rótulo TLApp"; fallo=1; }
+  ua=$(node "$DIR/cdp.mjs" 9222 eval "navigator.userAgent"); grep -q "TLApp/" <<< "$ua" || { echo "✗ $s: sin rótulo TLApp"; fallo=1; }
   origen_local "$s" "página local"
-  if [ -n "$isla" ]; then echo "$t" | grep -q "funciona sin señal" || { echo "✗ $s: «Sin señal» no ofrece la isla de la app"; fallo=1; }; fi
+  if [ -n "$isla" ]; then grep -q "funciona sin señal\|works offline" <<< "$t" || { echo "✗ $s: «Sin señal» no ofrece la isla de la app"; fallo=1; }; fi
   marco "$s" "página local"
   if [ -n "$isla" ]; then
     node "$DIR/cdp.mjs" 9222 ir "$isla.html" > /dev/null
     t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · isla · $t"
     adb exec-out screencap -p > "$OUT/$s-isla.png"
-    echo "$t" | grep -q "\"url\":\"https://localhost$isla.html\"" || { echo "✗ $s: la isla $isla no se abre dentro de la app (sigue en otra página)"; fallo=1; }
-    echo "$t" | grep -qi 'sin conexión\|sin señal\|offline' || { echo "✗ $s: la isla $isla no abre sin red"; fallo=1; }
+    grep -q "\"url\":\"https://localhost$isla.html\"" <<< "$t" || { echo "✗ $s: la isla $isla no se abre dentro de la app (sigue en otra página)"; fallo=1; }
+    grep -qi 'sin conexión\|sin señal\|offline' <<< "$t" || { echo "✗ $s: la isla $isla no abre sin red"; fallo=1; }
     origen_local "$s" "isla"
     marco "$s" "isla"
   fi

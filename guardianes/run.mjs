@@ -4940,6 +4940,11 @@ const guardianes = {
     }
     const H = "apps/mobile/scripts/humo-ios.sh", h = existsSync(H) ? readFileSync(H, "utf8") : "";
     if (!/--stdout=/.test(h) || !/DiagnosticReports/.test(h) || !/log show/.test(h)) falla(G, H, 0, "si una app se cierra, el humo de iOS imprime lo que escribió, el registro del simulador y el informe de cierre");
+    // 11 nov: con pipefail, «launchctl list | grep -q» falló por SIGPIPE y dio por cerrada una app viva. Un humo no busca en un tubo con -q.
+    for (const f of archivos.filter((x) => /^apps\/mobile\/scripts\/.*\.sh$/.test(x))) {
+      const t = readFileSync(f, "utf8");
+      if (/set -[a-z]*o pipefail|set -euo pipefail/.test(t)) t.split("\n").forEach((l, i) => { if (/\|\s*grep\s+-[a-zA-Z]*q/.test(l) && !/^\s*#/.test(l)) falla(G, f, i + 1, "«… | grep -q» con pipefail: el SIGPIPE se lee como fallo (busca con grep -q … <<< \"$texto\")"); });
+    }
   },
 
   /* 8a · @capacitor/* solo en el puente (lib/nativo/puente.ts): ninguna pantalla habla con lo nativo por su cuenta ni toca window.Capacitor.

@@ -19,7 +19,10 @@ for par in ToLatino:com.tolatino.app ToLatinoNegocios:com.tolatino.negocios ToLa
   pid=${l##*: }
   sleep 12
   xcrun simctl io "$DEV" screenshot "$OUT/$t.png" > /dev/null
-  if xcrun simctl spawn "$DEV" launchctl list | grep -q "UIKitApplication:$id" && kill -0 "$pid" 2> /dev/null; then
+  # La lista se lee entera antes de buscar: con pipefail, «launchctl list | grep -q» falla por SIGPIPE si grep termina antes (11 nov: la
+  # Puerta viva se dio por cerrada).
+  vivas=$(xcrun simctl spawn "$DEV" launchctl list 2> /dev/null || true)
+  if grep -q "UIKitApplication:$id" <<< "$vivas" && kill -0 "$pid" 2> /dev/null; then
     echo "✓ $t abre y sigue viva (pid $pid)"
     grep -m4 "Loading app at\|ERROR\|Error registering" "$OUT/$t.out" "$OUT/$t.err" 2> /dev/null | sed "s/^/  $t · /" || true
   else
