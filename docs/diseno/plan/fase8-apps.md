@@ -200,13 +200,13 @@ guarda, se genera** de `apps.json` + esta tabla en cada petición (con caché de
 - `feature_flags`: **`push.webpush` · `push.apns` · `push.fcm`** (sandbox encendidos; producción, Fase 9).
 - Plantillas nuevas: `puerta_abre` y `puerta_asignada` con push (LAUNCH L881), `rep_entrega_asignada` (Repartidor).
 
-**0128 `llaves_acceso` (8d)** — **`passkeys`** (`id`, `user_id`, `credential_id` único, `public_key`, `sign_count`, `aaguid`, `transports text[]`,
+**`llaves_acceso` (8d; el plan la ponía en 0128, que tomó 8e: será la siguiente libre)** — **`passkeys`** (`id`, `user_id`, `credential_id` único, `public_key`, `sign_count`, `aaguid`, `transports text[]`,
 `backed_up bool`, `name` («iPhone de Ana»), `created_via` (`app`, `platform`), `created_at`, `last_used_at`, **`revoked_at`**, `revoked_by check in
 ('user','staff','sistema')`), **`webauthn_challenges`** (`id`, `user_id` null, `purpose check in ('registro','entrar','confirmar')`, `challenge_hash`,
 `expires_at` (2 min), `used_at`; un uso), `account_changes.kind` suma **`'passkey'`**, plantilla `cuenta_llave_nueva` (crit: «Agregaste una llave de acceso
 en {dispositivo}. Si no fuiste tú, entra y quítala.»). Claves `passkey_max` 10, `passkey_reto_s` 120.
 
-**0129 `ruta_en_vivo` (8e)** — **`delivery_positions`** (**solo inserción**: `delivery_id`, `rider_user_id`, `city_id`, `at`, **`geom geography(Point)`**,
+**0128 `ruta_en_vivo` (8e; renumerada: el plan la llamaba 0129 y su semilla 0045_ruta.sql; la última confirmada era 0127 / 0045, así que 8e tomó 0128 y `0046_ruta.sql`. 8d, que estaba en 0128, y 8b tomarán las siguientes libres. Construida con `delivery_tracks` aparte en vez de columnas en la entrega: ver REVISION «8e»)** — **`delivery_positions`** (**solo inserción**: `delivery_id`, `rider_user_id`, `city_id`, `at`, **`geom geography(Point)`**,
 `accuracy_m`, `speed_mps`, `heading`, `source check in ('app','web')`; BRIN por `at`, GIST por `geom`; **purga a los `ubic_retener_dias`**, luego solo el
 resumen en la entrega); la entrega suma `sharing_from`, `sharing_until`, `distance_m`, `last_position_at`; trigger `NOTIFY 'ruta'` con el id de la entrega
 (como `ticket_scans` → `'puerta'`). Claves `ubic_cada_s` 10, `ubic_min_m` 25, `ubic_retener_dias` 14 (§6 #14), `ubic_cliente_desde` (`recogido`).
@@ -247,7 +247,7 @@ sección de `/privacidad`), **`review_accounts`** (`app`, `user_id`, `purpose`, 
 sandbox salvo prueba; en producción se crea en la Fase 9**, §6 #24).
 
 **Semillas de pruebas** (`is_test`, nunca en producción; guardián `semilla`): **`0044_push.sql`** (8c: tokens `sim` de los vecinos, dueños, repartidor y
-portero de prueba; entregas en cada resultado; uno revocado por `invalido`), **`0045_ruta.sql`** (8e: una entrega activa en Hazleton con 30 posiciones de
+portero de prueba; entregas en cada resultado; uno revocado por `invalido`), **`0046_ruta.sql`** (8e, renumerada desde 0045: una entrega activa en Hazleton con 30 posiciones de
 una ruta real por calles de la semilla de direcciones; otra entregada con su resumen), **`0046_apps_beta.sql`** (8f: builds de las 4 apps en cada estado,
 testers, tres grupos de errores (nuevo, visto, resuelto), un caso TK- de `reporte_app` con captura de ejemplo), **`0047_pases.sql`** (8g: un boleto de
 prueba con su pase de Apple y uno anulado).
@@ -538,7 +538,11 @@ como hoy; en simulador y emulador, `TLLlave` con la biometría simulada (a verif
 **Ayuda:** `entrar-con-face-id` (vecino), `mi-cuenta` al día, `admin-usuarios` al día.
 
 ### 8e · Lo nativo de cada app: Repartidor con ubicación en vivo, Puerta en frío y con pantalla encendida, boletos y cupones — Sonnet/medium; ubicación Opus/high
-**Datos:** migración 0129; semilla `0045_ruta.sql`.
+**Estado (11 nov): hecho.** Migración **0128** (renumerada desde 0129) y semilla **0046_ruta.sql** (desde 0045). `app8e` 64 comprobaciones (390 y
+1360), 7 guardianes nuevos y 2 ampliados (53/53 al revés), regresión en verde; Android e iOS compilados por el CI y el humo de la ruta en el emulador
+(ver PROGRESS). El paso que inicia la entrega es **«Voy por el pedido»** (nuevo; o «Recogí»). Desvíos y lo diferido: `docs/REVISION.md` «8e» y
+`docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8e».
+**Datos:** migración 0128 (el plan decía 0129); semilla `0046_ruta.sql` (decía `0045_ruta.sql`).
 **Repartidor:** `TLRuta` (iOS `CLLocationManager` con `allowsBackgroundLocationUpdates` e indicador; Android servicio en primer plano de tipo ubicación
 con el aviso fijo de §1c) que **solo arranca** cuando el repartidor toca el paso que inicia la entrega y **para solo** en «Entregado», «Cancelar» o si el
 servidor contesta que la entrega ya no está activa; cada `ubic_cada_s` o `ubic_min_m`, en lotes si no hay señal. Servidor `lib/ruta.ts` (`posicion` valida

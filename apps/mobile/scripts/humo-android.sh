@@ -118,7 +118,8 @@ ruta_repartidor() {
   r=$(node "$DIR/cdp.mjs" 9222 eval "Capacitor.nativePromise('TLRuta','empezar',{token:'$t',entrega:'4242',negocio:'Sabor de prueba',cadaS:5,minM:5,idioma:'es',servidorPrueba:'http://10.0.2.2:4510'}).then((x)=>JSON.stringify(x)).catch((e)=>'error '+e.message)")
   echo "ruta · empezar: $r"; grep -q '\\"estado\\":\\"ok\\"' <<< "$r" || { echo "✗ ruta: TLRuta.empezar no dijo ok"; fallo=1; }
   sleep 3
-  if servicio && grep -q "isForeground=true" "$OUT/ruta-servicios.txt" && grep -qi "0x00000008\|location" "$OUT/ruta-servicios.txt"; then echo "ruta · servicio en primer plano de tipo ubicación: sí"
+  # dumpsys (API 34): «isForeground=true foregroundId=7301 types=00000008 …» (8 = FOREGROUND_SERVICE_TYPE_LOCATION, y nada más).
+  if servicio && grep -Eq "isForeground=true foregroundId=7301 types=(0x)?0*8( |$)" "$OUT/ruta-servicios.txt"; then echo "ruta · servicio en primer plano de tipo ubicación (types=8): sí"
   else echo "✗ ruta: no corre el servicio en primer plano de tipo «location»"; head -60 "$OUT/ruta-servicios.txt"; fallo=1; fi
   adb shell dumpsys notification --noredact 2> /dev/null | tr -d '\r' > "$OUT/ruta-avisos.txt" || true
   grep -q "Sharing your location with Sabor de prueba and the customer · Delivery #4242\|Compartiendo tu ubicación con Sabor de prueba y el cliente · Entrega #4242" "$OUT/ruta-avisos.txt" \

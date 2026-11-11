@@ -364,7 +364,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 
 ## Repartidor (bloque 2l, 6 nov 2026)
 - [ ] **App de tienda (Capacitor)** «To'Latino Repartidor» apuntando a `/repartidor` (decisión B) con su ícono; ubicación
-      en vivo con permiso del sistema (mapa en vivo para el cliente y el negocio, plan §1.4) y push.
+      en vivo con permiso del sistema (mapa en vivo para el cliente y el negocio, plan §1.4) y push. _Ubicación en vivo y mapa del cliente y del negocio: hechos en 8e (11 nov; ver «Fase 8 · 8e»); la cáscara existe desde 8a y el push desde 8c. Faltan la firma y las tiendas (8h)._
 - [ ] **Llamada y mensaje enmascarados** (hoy el botón llama al número real del cliente, solo mientras la entrega está activa).
 - [ ] **Prueba de entrega** (foto, código del cliente) y **código de recogida** del negocio.
 - [ ] **Ofertas con cuenta regresiva y asignación automática**; entregas múltiples (batch); programados con recordatorio.
@@ -655,8 +655,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Gamification, se agregan con vista previa y auditoría. (5f, 7 nov)
 - [ ] **5f · Invitados que «participan» por pedidos:** cuenta cualquier operación no cancelada; revisar con el fundador si un pedido de $1
       basta para Capitán (anillos de invitaciones). (5f, 7 nov)
-- [ ] **5g · Escanear el código del cupón** en el panel (cámara, QR): hoy se escribe (no hay escáner en ningún lado del panel). Llega con la
-      app Negocios (Capacitor) o con un lector propio; el servidor ya valida igual. (5g, 7 nov)
+- [x] **5g · Escanear el código del cupón** en el panel (cámara, QR): hoy se escribe (no hay escáner en ningún lado del panel). Llega con la
+      app Negocios (Capacitor) o con un lector propio; el servidor ya valida igual. (5g, 7 nov) _Hecho en 8e (11 nov): «Escanear cupón» en el panel (app Negocios y web) con el lector de la Puerta; el código del vecino trae su QR._
 - [ ] **5g · Validar un código desde «Hoy»** para quien solo tiene acceso a «Hoy y pedidos»: la acción ya lo permite (`cupValidar` acepta
       «Tu página» u «Hoy y pedidos»), pero el campo vive en Tu página › Cupones por monedas. Componer el bloque en Hoy. (5g, 7 nov)
 - [ ] **5g · Abogado:** monedas sin valor en dinero y cupones (leyes de tarjetas de regalo y de bienes no reclamados; premios del mes sin
@@ -861,8 +861,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       existen. Hoy, sin señal: «SIN SEÑAL · no se marcó» + **Reintentar** con el mismo id. (6g, 10 nov) _6h (10 nov): hecho (ver «Fase 6 · 6h»)._
 - [x] **6g · REPETIDOS en Confianza › Fraude** («boletos duplicados»: el mismo QR que intenta entrar otra vez, `door_counts.dup_n` y
       `ticket_scans.result = 'already_used'`): la señal viva llega con 6h/6j (`evt_senales`). (6g, 10 nov)
-- [ ] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h — _hecho en 6h con el logo SVG_) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
-      teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov)
+- [x] **6g · La app Puerta instalable** (manifiesto y service worker propios, 6h — _hecho en 6h con el logo SVG_) y la cáscara de Capacitor «To'Latino Puerta» (Fase 8); bloqueo del
+      teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov) _Kiosco hecho en 8e (11 nov): «Fijar la Puerta en esta pantalla» (Android) y la ayuda de Acceso guiado (iPhone)._
 - [ ] **6g · Cámara en teléfonos reales:** _hecho en 6j (10 nov): señal «Entró dos veces» por persona en Confianza › Fraude._ probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
       BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
 - [ ] **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov)
@@ -1244,3 +1244,30 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `sessionStorage` (solo familias de pantalla) si el equipo lo echa de menos. (8f, 11 nov)
 - [ ] **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
       distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov)
+
+## Fase 8 · 8e (lo nativo de cada app: la ruta del Repartidor, la Puerta, el boleto, compartir, «Escanear cupón»; 11 nov)
+- [ ] **La ruta en un teléfono real:** Android (servicio en primer plano con la pantalla apagada horas, batería, Doze) e iPhone (modo de fondo,
+      indicador azul, que la app no se suspenda en una entrega de 40 min). El humo del emulador cubre Android; en iOS el simulador solo compila y
+      abre (sin prueba de la ruta: el XCUITest con `simctl location` queda para cuando haya dominio). (8e, 11 nov)
+- [ ] **Web sin HTTPS:** el sandbox se sirve por HTTP en la IP y el navegador no da la ubicación ahí: el Repartidor en la web dice «este navegador
+      no da tu ubicación». Con el dominio (Paquete 8-0) funciona; la app nativa no depende de esto. (8e, 11 nov)
+- [ ] **El aviso fijo en Android 13+ sin permiso de avisos:** si el repartidor dice que no a los avisos, el servicio sigue y Android lo lista en
+      el administrador de tareas, pero el aviso no sale en la barra. Revisar en un Android real si conviene insistir. (8e, 11 nov)
+- [ ] **Linterna en iPhone:** `AVCaptureDevice.torchMode` con la cámara del WebView abierta: *a verificar* en un iPhone real (el simulador no
+      tiene luz). Si choca, la Puerta en iPhone se queda sin linterna (como hoy en Safari). (8e, 11 nov)
+- [ ] **Fijar la pantalla en Android real:** si «Fijar apps» está apagado en Ajustes, `startLockTask` puede no hacer nada en algunos teléfonos;
+      la Puerta lo dice. Probar en 2–3 marcas. (8e, 11 nov)
+- [ ] **Ritmo y carga:** guardar una posición ≤ 30 ms y 200 por segundo sostenidas (2 000 repartidores cada 10 s) en la base de carga
+      (`scripts/carga/apps-1m.mjs`, máquina aparte); SSE de la ruta ≤ 1 s. Aquí: 64 comprobaciones funcionales, sin medida de carga. El tope de una
+      llamada por segundo por token vive en la memoria de cada proceso (como el de errores): con varios procesos, contador compartido. (8e, 11 nov)
+- [ ] **Teselas en las capturas:** en local no corre el servidor de teselas; las capturas de los mapas se ven sin calles. Rehacerlas en el sandbox
+      con el dominio. (8e, 11 nov)
+- [ ] **La semilla 0046 en una base nueva** no crea las entregas de ejemplo si todavía no existen Juan (+1 570 555 0144) y Héctor (+1 570 555 0210)
+      (las crean las pruebas), igual que 0044 y 0045. (8e, 11 nov)
+- [ ] **Ofertas al repartidor («Aceptar» con cuenta regresiva), lotes y prueba de entrega con foto** siguen en «Repartidor (bloque 2l)»; cuando
+      exista la oferta, «Aceptar» pasa a ser el paso que inicia la ruta (hoy «Voy por el pedido»). (8e, 11 nov)
+- [ ] **Privacidad en las tiendas:** declarar «Ubicación precisa · funcionalidad de la app · vinculada a la persona · sin rastreo» para To'Latino
+      Repartidor (y To'Latino «al usar») en `PrivacyInfo.xcprivacy` y en la sección de seguridad de datos de Play; en Play, la **declaración de
+      ubicación en segundo plano** no aplica (no se pide ACCESS_BACKGROUND_LOCATION) pero sí la de **servicio en primer plano de tipo ubicación**
+      (video corto del flujo). (8i, 11 nov)
+- [ ] **En los 9 dispositivos:** `app8e` corre en 390 y 1360 en local; falta la matriz de CI. (8e, 11 nov)

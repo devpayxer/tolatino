@@ -3794,3 +3794,70 @@ sandbox: limpiar los casos de prueba viejos o que sop7b busque su caso.
 
 **Numeración:** el plan decía 0130 / semilla 0046; la última confirmada era 0126 / 0044 y 8b (0127 en el papel) espera el dominio: 8f tomó **0127** y
 la semilla **0045**; 8b tomará la siguiente libre. Nada asume números contiguos (migrar.sh registra por nombre). Anotado en el plan.
+
+### 8e · Lo nativo de cada app: la ruta en vivo del Repartidor, la Puerta sin señal y fijada, el brillo del boleto, compartir y «Escanear cupón» (11 nov)
+**Qué hay nuevo.** (1) **La ubicación del repartidor, solo durante la entrega.** Empieza con el paso nuevo **«Voy por el pedido»** (o con «Recogí»
+si no se tocó) y termina con **«Entregado»**, o sola si el negocio cancela o pasa el pedido a otro repartidor. El **negocio** ve el mapa en el
+detalle del pedido desde que empieza (posición y rastro); el **cliente** lo ve en su pedido desde **«Recogí»** (solo el punto, sin rastro); al
+entregar desaparece en los dos. La banda verde **«Compartiendo tu ubicación · Entrega #… · última 3:42 PM»** queda fija arriba en el Repartidor y
+la pantalla se queda encendida mientras hay entrega. En la app de Android, servicio en primer plano con el aviso fijo «Compartiendo tu ubicación con
+{negocio} y el cliente · Entrega #…»; en iPhone, el modo de fondo de ubicación con el indicador azul; permiso **«Mientras se usa»**, nunca
+«Siempre». Sin señal se guardan y suben juntas. Se guarda **14 días** (Configuración › Apps) y luego solo distancia y tiempo. (2) **Super Admin ›
+Transacciones › «Ver recorrido»**: solo escribiendo el motivo, que queda en la auditoría antes de abrir nada. (3) **Puerta**: abre sin señal (8a),
+pantalla encendida, **linterna** (en iPhone la prende el nativo), háptica, y **«Fijar la Puerta en esta pantalla»** (Android: fijación del sistema
+tras confirmar; iPhone: la ayuda de Acceso guiado). (4) **To'Latino**: brillo al máximo con el QR del boleto (se devuelve al salir), **compartir**
+con la hoja del sistema y háptica al pagar y confirmar. (5) **Negocios: «Escanear cupón»** con el lector de la Puerta, también en la web; el código
+del vecino ahora trae su QR.
+Probado: `app8e` **64** comprobaciones (390 y 1360; la cámara de prueba lee el QR real del cupón), **7 guardianes nuevos y 2 ampliados (53/53 al
+revés)**, migración y semilla dos veces (local y base nueva), regresión rep2l 17, evt6g 105, evt6h 88, app8a 110, push8c 86, beta8f 95, com5g 73.
+Android e iOS los compiló el CI (corrida 43027119917: los cuatro sabores y los cuatro targets, las cuatro apps de iOS abren); el humo de la ruta en
+el emulador: ver PROGRESS.
+
+**Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/e8-*.png`):
+1. **Repartidor · el detalle de una entrega** (`e8-rep-antes-m.png`): «Voy por el pedido» (nuevo, primero) y «Recogí, voy en camino»; los pasos
+   suman «Voy por el pedido». Después, la **banda fija** (`e8-rep-banda-m.png`, `e8-rep-app-m.png`). **Hueco #6 del diseño**: compuesta con la
+   nota `ok` del sistema (verde, ícono de pin) en un contenedor fijo arriba; sin señal, nota `warn` «Sin señal · se envía al volver»; si el
+   teléfono no comparte, nota `danger` con «Compartir».
+2. **Tu pedido · EN CAMINO · EN VIVO** (`e8-cliente-mapa-m.png`, `e8-cliente-mapa-d.png`): **hueco #6**, compuesto con **RadiusMap** (el mapa de
+   Ciudad) sin círculo: el pin morado = repartidor, el punto negro = tu dirección, arriba la hora de la última posición; vieja (> 2 min): «Última
+   posición hace N min» y la nota ámbar. Sin hora de llegada inventada. Al entregar desaparece (`e8-cliente-entregado-m.png`).
+3. **Panel › pedido › REPARTIDOR · EN VIVO** (`e8-panel-mapa-d.png`): el mismo RadiusMap como bloque `mapa` nuevo del renderizador del panel
+   (`packages/ui/src/panel/Bloques.tsx`; no toca `ds`), con el rastro tenue.
+4. **Super Admin › Transacciones › Ver recorrido** (`e8-admin-motivo-m.png`, `e8-admin-recorrido-d.png`): la confirmación con motivo
+   (ReasonConfirm) y el recorrido (resumen, mapa, últimas 12 posiciones). **Configuración › Apps** (`e8-admin-config-d.png`): las 6 claves `ubic_*`.
+5. **Escanear cupón** (`e8-escanear-cupon-d.png`, `-m.png`) en el marco oscuro del modo puerta del panel; **el QR del código** del vecino
+   (`e8-cupon-qr-m.png`).
+6. **Puerta › Más › Fijar la Puerta** (Android `e8-puerta-fijar-m.png`; iPhone `e8-puerta-acceso-guiado-m.png`; navegador `e8-puerta-fijar-d.png`).
+7. **El boleto con el brillo al máximo** en la app (`e8-boleto-brillo-m.png`: la pantalla no cambia; lo nota el teléfono).
+**En el sandbox los mapas se ven sin calles en mis capturas**: aquí no corre el servidor de teselas (`/teselas` da 404 en local); en el sandbox sí.
+
+**Qué mirar en el teléfono (cuando haya dominio y app):** con la app To'Latino Repartidor, una entrega de prueba: «Voy por el pedido» → el permiso
+«Mientras se usa» → el aviso fijo (Android) o la flecha azul (iPhone) → apaga la pantalla y camina → el cliente ve el punto moverse desde «Recogí»
+→ «Entregado» y el aviso desaparece.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **«Voy por el pedido» es el paso que inicia la entrega** (el «Aceptado» de la línea canónica de apps-delivery-checkin.md; en la v1.0 el negocio
+  asigna, no hay oferta que aceptar). Es opcional: «Recogí» también la inicia. El negocio ve el mapa desde ahí; el cliente desde «Recogí»
+  (`ubic_cliente_desde` = 1; 0 = el cliente nunca lo ve).
+- **El cliente ve solo el punto actual**, no el rastro; el negocio ve el rastro desde que empezó; el Super Admin el recorrido completo con motivo.
+- **Una ruta por entrega en una tabla aparte** (`delivery_tracks`) en vez de columnas en `operations` (el plan decía «la entrega suma
+  sharing_from…»): no toca la tabla más usada y permite una ruta nueva si el negocio pasa el pedido a otro repartidor.
+- **El token de la ruta** (no la cookie): el nativo manda las posiciones con la pantalla apagada, sin la sesión del WebView; el servidor guarda solo
+  la huella, cambia en cada arranque o reanudación y se borra al terminar. El nativo manda **solo** al servidor de la cáscara (de apps.json), nunca a
+  una dirección de la página.
+- **Velocidad imposible: 45 m/s** (≈ 160 km/h) con margen por la precisión del GPS; fuera de 100 km del centro de la ciudad, rechazada.
+- **Sin Google Play Services en Android** (LocationManager del sistema: GPS y la fusionada si existe); sin plugin de la comunidad.
+- **En la web** (sin la app) también se comparte, solo con la página abierta; **necesita HTTPS** (el sandbox por HTTP en la IP no da ubicación:
+  la banda lo dice y pide usar la app). Con el dominio funciona.
+- **Linterna en iPhone por el nativo** (el WebView no tiene «torch»), y solo en los targets con cámara para que el Repartidor no enlace la API de
+  la cámara sin su texto. *A verificar en un iPhone real* que no choque con la cámara del WebView.
+- **Fijar la pantalla en Android** con la fijación del sistema (sin MDM ni «dueño del dispositivo»): la persona confirma en la Puerta y Android lo
+  vuelve a confirmar. iPhone: solo la ayuda de Acceso guiado (una app no puede).
+- **El QR del cupón lleva solo el código** que la persona ya ve; escanear lo valida igual que escribirlo (`cupValidar`, una vez).
+- **Compartir y vibrar pasan por el puente**: en el WebView de Android `navigator.share` no existe (la app solo copiaba el enlace); 9 pantallas
+  ahora abren la hoja del sistema.
+- **Plugins oficiales nuevos (MIT, versión fija):** `@capacitor/share` 8.0.3 y `@capacitor/haptics` 8.0.2. VIBRATE (permiso normal) en las cuatro.
+- **Humo del emulador:** solo el build de depuración permite HTTP hacia el emulador (10.0.2.2) para el simulador del servidor de la ruta.
+
+**Numeración:** el plan decía migración **0129** y semilla **0045_ruta.sql**; la última confirmada era 0127 / 0045: 8e tomó **0128** y **0046**
+(8d, que el plan ponía en 0128, y 8b esperan el dominio y tomarán las siguientes libres). Anotado en el plan.

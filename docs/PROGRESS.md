@@ -1101,3 +1101,33 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
 - **Bloqueado / no hecho aquí:** TestFlight y App Store Connect de verdad (Paquete 8-2); Play interno por API no existe (Grupos de Google o la consola);
   los APK de verdad y los símbolos nativos los sube 8h; iOS y Android los compila el CI. Todo en LAUNCH-CHECKLIST «Fase 8 · 8f».
 - **Sigue:** 8b (necesita el dominio), 8d o 8e.
+
+## Fase 8 · 8e hecho — lo nativo de cada app (11 nov)
+- **Hecho:** migración **0128** (renumerada: el plan decía 0129; 8d y 8b tomarán las siguientes libres) — `delivery_tracks` (una ruta abierta por
+  entrega; nace solo con «Voy por el pedido» o «Recogí»; token del teléfono como huella, nuevo en cada arranque; lo derivado lo escribe la base; se
+  cierra sola al entregar, cancelar o cambiar de repartidor: trigger `operations_ruta`), `delivery_positions` (solo inserción; `ruta_activa` +
+  ciudad + antes de empezar + velocidad imposible en la base; BRIN + GIST; purga a los `ubic_retener_dias` con `ruta_purgar`), NOTIFY 'ruta',
+  Configuración › Apps `ubic_cada_s`, `ubic_min_m`, `ubic_retener_dias` (14), `ubic_cliente_desde`, `ubic_vel_max_mps`, `ubic_vieja_s`;
+  interruptor `app.ubicacion_vivo`. Semilla **0046_ruta.sql** (desde 0045): una entrega activa de Héctor con 30 posiciones y una entregada ayer.
+  Servidor: `lib/ruta.ts`, `lib/ruta-vivo.ts`, `POST /api/ruta/posicion` (solo el token), SSE `/api/ruta/vivo` (cliente desde «Recogí» sin rastro;
+  negocio con rastro; lo demás 404), paso «Voy por el pedido» en `lib/repartidor.ts`, Transacciones › «Ver recorrido» (motivo en la auditoría
+  antes de ver), la purga en el barrido. Pantallas: banda «Compartiendo tu ubicación» (Repartidor), mapa en vivo en el pedido del cliente y en el
+  panel (RadiusMap del sistema; bloque `mapa` en el renderizador del panel), «Escanear cupón» (panel, con el lector de la Puerta) y el QR del código
+  del vecino, Puerta › Más › «Fijar la Puerta en esta pantalla» (Android) / Acceso guiado (iPhone), linterna nativa en iPhone, brillo del QR del
+  boleto, compartir y háptica por el puente (`lib/nativo/ruta.ts`, `compartir.ts`, `haptica.ts`; `pantalla.ts` ampliado). Nativo: plugin **TLRuta**
+  (Android `TLRutaPlugin` + `TLRutaServicio` en primer plano de tipo location con el aviso fijo; iOS CLLocationManager con modo de fondo e
+  indicador; solo al servidor de la cáscara), TLPantalla con fijar/soltar/fijada y linterna (solo en los targets con cámara), `@capacitor/share`
+  8.0.3 y `@capacitor/haptics` 8.0.2; `apps.json`/`generar.mjs`: Repartidor «entrega» (ubicación mientras se usa, FOREGROUND_SERVICE_LOCATION,
+  UIBackgroundModes location), VIBRATE con Haptics. Humo de Android: ruta GPS contra `scripts/humo/ruta-sim.mjs`. Ayuda: `repartidor-ubicacion`,
+  `seguimiento-del-pedido`, `puerta-sin-senal`, `puerta-fijar-pantalla`; `panel-entrega`, `panel-cupones-por-monedas`, `monedas-y-cupones`,
+  `admin-configuracion` al día.
+- **Probado:** `app8e` 64 comprobaciones (390 y 1360), `alreves8e` 53/53 (ubicacionSoloEntregaActiva, rutaSoloDeLosTres, posicionesConPurga,
+  rutaSoloNuestroServidor, compartirPorElPuente, brilloSeDevuelve, fijarConConfirmacion; permisosMinimos y nativoConRespaldo ampliados; y
+  pluginViejoNoRompe con TLRuta), tsc, build y todos los guardianes; migración y semilla dos veces (local y base nueva); regresión rep2l 17,
+  evt6g 105, evt6h 88, app8a 110, push8c 86, beta8f 95, com5g 73 (una a la vez). CI «Cáscaras» en `claude/vibrant-franklin-krutwa`: corrida
+  43027119917 (ea1018f): Android 4 sabores e iOS 4 targets compilan, las 4 apps de iOS abren, el servicio de la ruta arranca con el aviso fijo y
+  junta posiciones, pero el humo falló porque el sabor prohíbe HTTP hacia el simulador → arreglado en 0bb56e0 (solo depuración); corrida
+  43030337172: RESULTADO_CI.
+- **Bloqueado / no hecho aquí:** la ruta en un iPhone real (el simulador solo compila y abre), la web del Repartidor en el sandbox (HTTP sin dominio:
+  sin geolocalización), las teselas en las capturas locales, la medida de carga. Todo en LAUNCH-CHECKLIST «Fase 8 · 8e».
+- **Sigue:** 8b (necesita el dominio), 8d o 8g.
