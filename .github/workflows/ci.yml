@@ -30,6 +30,8 @@ jobs:
         run: bash scripts/contrato-push/correr.sh
       - name: Contrato de las tiendas (App Store Connect con su especificación OpenAPI fijada; Google Play con su descubrimiento oficial)
         run: bash scripts/contrato-tiendas/correr.sh
+      - name: Contrato del OIDC de GitHub (cada rechazo con tokens firmados por una llave de prueba que imita la de GitHub)
+        run: bash scripts/contrato-oidc/correr.sh
       - name: Contrato de Wallet (Apple con su formato fijado y una cadena de prueba hecha en el momento; Google con su descubrimiento oficial)
         run: bash scripts/contrato-wallet/correr.sh
       - name: Ningún mapa de fuente en lo que se sirve (el build los saca a .next/mapas)

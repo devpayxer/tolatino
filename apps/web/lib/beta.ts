@@ -9,6 +9,7 @@ import { db, tx } from "./db";
 import { ENTORNO } from "./entorno";
 import { leer } from "./tiendas/llavero";
 import * as asc from "./tiendas/asc";
+import { URL_ASC } from "./tiendas/direcciones";
 
 /* 8f · El programa beta (fase8-apps.md §4 8f, §6 #9 y #10): en la Fase 8 SOLO interno, contra el sandbox (el fundador y hasta ~10 personas de
    confianza). Super Admin › Sistema › Apps › Testers (apps:editar, motivo y auditoría; lo revisa cada acción):
@@ -22,7 +23,6 @@ import * as asc from "./tiendas/asc";
 type Res = { ok: boolean; msg: string };
 const ISO = (c: string) => `to_char((${c}) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 const PROD = ENTORNO === "produccion";
-const URL_ASC = () => (!PROD && process.env.ASC_API_URL ? process.env.ASC_API_URL : "https://api.appstoreconnect.apple.com");
 const CANALES = { testflight: "ios", play_interno: "android", apk_propio: "android" } as const;
 type Canal = keyof typeof CANALES;
 const esApp = (a: unknown): a is ClaveApp => typeof a === "string" && (CLAVES_APP as string[]).includes(a);
@@ -32,12 +32,16 @@ const CORREO = /^[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9.-]{1,180}\.[A-Za-z]{2,24}$/;
 
 /* ── Versiones ── */
 export type FilaBuild = { id: string; app: ClaveApp; plat: "ios" | "android"; version: string; build: number; canal: string; estado: string; commit: string | null; ci: string | null;
-  size: number | null; sha: string | null; prueba: boolean; at: string; motivo: string | null };
+  size: number | null; sha: string | null; prueba: boolean; at: string; motivo: string | null;
+  // 8h · El pedido que lo lanzó, si trae símbolos, el id en App Store Connect, el último envío a la tienda y cuándo cambió.
+  pedido: string | null; simbolos: boolean; tienda: string | null; envio: string | null; cambio: string };
 export async function versiones(): Promise<FilaBuild[]> {
   return (await db().query<FilaBuild>(
-    `select id::text, app, platform as plat, version, build, channel as canal, status as estado, commit_sha as commit, ci_run_url as ci, size_bytes::float8 as size, sha256 as sha,
-            is_test as prueba, ${ISO("created_at")} as at, coalesce(retired_reason, fail_reason) as motivo
-       from app_builds order by app, platform, created_at desc limit 200`)).rows;
+    `select b.id::text, b.app, b.platform as plat, b.version, b.build, b.channel as canal, b.status as estado, b.commit_sha as commit, b.ci_run_url as ci, b.size_bytes::float8 as size, b.sha256 as sha,
+            b.is_test as prueba, ${ISO("b.created_at")} as at, coalesce(b.retired_reason, b.fail_reason) as motivo, b.request_id::text as pedido, b.symbols_key is not null as simbolos,
+            b.store_build_id as tienda, ${ISO("b.updated_at")} as cambio,
+            (select s.result || coalesce(' · ' || s.detail, '') from store_submissions s where s.build_id = b.id order by s.at desc, s.id desc limit 1) as envio
+       from app_builds b order by b.app, b.platform, b.created_at desc limit 200`)).rows;
 }
 
 /* ── Testers ── */

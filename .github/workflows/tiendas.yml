@@ -1,0 +1,300 @@
+name: Tiendas
+# 8h · La tubería de las tiendas (docs/diseno/plan/fase8-apps.md §3.5, §4 8h; §6 #10–#12). Las cuatro apps, iOS en macOS y Android en Linux:
+# pedir las llaves por OIDC (ninguna vive en GitHub ni en el repo: el job se identifica con su token de GitHub y el servidor le da SOLO las de su
+# job) → build firmado → TestFlight interno (xcodebuild sube con la llave de la API) / el .aab al servidor (él lo sube a Play interno con la cuenta
+# de servicio, que nunca sale) / el APK propio → registrar cada build en app_builds (por la misma tubería, con OIDC) → símbolos → borrar las llaves
+# (if: always()).
+# HOY (sin el dominio con HTTPS, Paquete 8-0, ni las cuentas, Paquetes 8-1/8-2): el sondeo ve que el servidor no contesta por https y NO manda
+# ningún token; el job compila igual, firma Android con una llave DESECHABLE hecha aquí («NO PARA DISTRIBUIR», se borra al final) y archiva iOS sin
+# firma. Nada se sube. Además, el contrato del OIDC corre con el token REAL de GitHub contra su JWKS real (el token no sale del runner).
+# Reglas (guardianes llavesFueraDelRepo, oidcEstricto, versionCoherente y tiendaSoloProduccion): ningún secreto de GitHub, ningún disparador de
+# PR, id-token solo en los jobs del entorno «tiendas», solo push a pruebas con cambios nativos o workflow_dispatch, solo el sabor de pruebas
+# (el otro: Fase 9).
+on:
+  push:
+    branches: [pruebas]
+    paths:
+      - "apps/mobile/**"
+      - "apps/web/lib/nativo/**"
+      - "apps/web/app/(cascara)/app/sin-senal/**"
+      - "apps/web/app/(puerta)/puerta/sin-conexion/**"
+      - "apps/web/app/(sin-senal)/cuenta/boletos/sin-conexion/**"
+      - "apps/web/app/repartidor/sin-conexion/**"
+      - "scripts/tiendas/**"
+      - ".github/workflows/tiendas.yml"
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: "Qué app (todas las cuatro o una)"
+        type: choice
+        options: [todas, cliente, negocio, delivery, checkin]
+        default: todas
+      plataforma:
+        description: "iPhone, Android o las dos"
+        type: choice
+        options: [ambas, ios, android]
+        default: ambas
+      pedido:
+        description: "El pedido de Super Admin › Sistema › Apps (lo pone el servidor)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tiendas-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: tiendas · plan, versión y las islas
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      apps: ${{ steps.p.outputs.apps }}
+      ios: ${{ steps.p.outputs.ios }}
+      android: ${{ steps.p.outputs.android }}
+      build: ${{ steps.p.outputs.build }}
+      pedido: ${{ steps.p.outputs.pedido }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - name: La versión es coherente con lo nativo (cambió lo nativo → se subió la versión)
+        run: node apps/mobile/scripts/version.mjs --verificar
+      - name: Lo nativo es lo que sale de apps.json
+        run: node apps/mobile/scripts/generar.mjs --verificar
+      - name: Qué apps, qué plataformas y qué build
+        id: p
+        env:
+          APPS: ${{ inputs.apps || 'todas' }}
+          PLAT: ${{ inputs.plataforma || 'ambas' }}
+          PEDIDO: ${{ inputs.pedido }}
+          RUN: ${{ github.run_number }}
+          INTENTO: ${{ github.run_attempt }}
+        run: node scripts/tiendas/ci.mjs plan
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: La web (las islas salen de su build)
+        run: pnpm --filter @tolatino/web build
+      - name: Las islas
+        run: node apps/mobile/scripts/islas.mjs
+      - uses: actions/upload-artifact@v4
+        with: { name: tiendas-islas, path: apps/mobile/www/, retention-days: 1 }
+
+  oidc:
+    name: tiendas · el token real de GitHub contra el JWKS real
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: tiendas
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Contrato del OIDC (llave de prueba y token real; el token se enmascara y no sale del runner)
+        env: { CONTRATO_OIDC_REAL: "1" }
+        run: bash scripts/contrato-oidc/correr.sh
+
+  android:
+    name: tiendas · Android · ${{ matrix.app.key }}
+    needs: plan
+    if: needs.plan.outputs.android == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: tiendas
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps) }}
+    env:
+      TL_BUILD: ${{ needs.plan.outputs.build }}
+      APP: ${{ matrix.app.key }}
+      SABOR: ${{ matrix.app.sabor }}
+      PEDIDO: ${{ needs.plan.outputs.pedido }}
+    steps:
+      - name: El directorio temporal de las llaves (se borra al final, pase lo que pase)
+        run: echo "LLAVES=$RUNNER_TEMP/tl-llaves" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with: { name: tiendas-islas, path: apps/mobile/www/ }
+      - name: Islas, íconos y splash (sabor de pruebas)
+        run: node apps/mobile/scripts/generar.mjs --preparar
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+      - name: SDK de Android (plataforma 36)
+        run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "platforms;android-36" "build-tools;36.0.0" > /dev/null
+      - name: Sondeo · ¿el servidor contesta por HTTPS? (si no, ningún token sale del runner)
+        id: s
+        run: node scripts/tiendas/ci.mjs sondeo
+      - name: Llaves por OIDC (solo las de este job)
+        id: ll
+        if: steps.s.outputs.listo == 'si'
+        run: node scripts/tiendas/ci.mjs llaves --job android --app "$APP" --dir "$LLAVES"
+      - name: Registrar el build · compilando
+        if: steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        run: |
+          node scripts/tiendas/ci.mjs build --app "$APP" --plataforma android --canal play_interno --build "$TL_BUILD" --estado compilando --pedido "$PEDIDO"
+          node scripts/tiendas/ci.mjs build --app "$APP" --plataforma android --canal apk_propio --build "$TL_BUILD" --estado compilando --pedido "$PEDIDO"
+      - name: La llave de firma en un almacén temporal (la de subida del llavero o, sin ella, una DESECHABLE · NO PARA DISTRIBUIR)
+        run: |
+          umask 077 && mkdir -p "$LLAVES"
+          if [ "${{ steps.ll.outputs.hay }}" = "si" ]; then
+            echo "TL_FIRMA_ALMACEN=$LLAVES/subida.p12" >> "$GITHUB_ENV"
+            echo "TL_FIRMA_ALIAS=${{ steps.ll.outputs.alias }}" >> "$GITHUB_ENV"
+            base64 -d "$LLAVES/subida.clave" > "$LLAVES/clave"
+          else
+            openssl rand -hex 24 > "$LLAVES/clave"
+            echo "::add-mask::$(cat "$LLAVES/clave")"
+            keytool -genkeypair -keystore "$LLAVES/desechable.p12" -storetype PKCS12 -alias desechable -keyalg RSA -keysize 2048 -validity 2 \
+              -dname "CN=NO PARA DISTRIBUIR - llave desechable del CI de To'Latino, O=To'Latino CI" \
+              -storepass "$(cat "$LLAVES/clave")" -keypass "$(cat "$LLAVES/clave")" > /dev/null
+            echo "TL_FIRMA_ALMACEN=$LLAVES/desechable.p12" >> "$GITHUB_ENV"
+            echo "TL_FIRMA_ALIAS=desechable" >> "$GITHUB_ENV"
+          fi
+      - name: Build release firmado (.aab para Play interno y .apk propio)
+        working-directory: apps/mobile/android
+        run: |
+          S="$(echo "${SABOR:0:1}" | tr '[:lower:]' '[:upper:]')${SABOR:1}"
+          TL_FIRMA_CLAVE="$(cat "$LLAVES/clave")" ./gradlew --no-daemon "bundle${S}Release" "assemble${S}Release"
+      - name: La firma se comprueba (y dice de quién es)
+        run: |
+          APK=$(ls apps/mobile/android/app/build/outputs/apk/$SABOR/release/*.apk | head -1)
+          AAB=$(ls apps/mobile/android/app/build/outputs/bundle/${SABOR}Release/*.aab | head -1)
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"
+          jarsigner -verify "$AAB" | tail -1
+          echo "APK=$APK" >> "$GITHUB_ENV"; echo "AAB=$AAB" >> "$GITHUB_ENV"
+          if [ "${{ steps.ll.outputs.hay }}" != "si" ]; then echo "::notice title=Android · $APP::firmado con una llave desechable (NO PARA DISTRIBUIR): compila y firma; nada se sube."; fi
+      - name: Subir · el APK propio y el .aab (el servidor lo manda a Play interno)
+        if: steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        run: |
+          node scripts/tiendas/ci.mjs archivo --app "$APP" --canal apk_propio --build "$TL_BUILD" --tipo apk --ruta "$APK"
+          node scripts/tiendas/ci.mjs archivo --app "$APP" --canal play_interno --build "$TL_BUILD" --tipo aab --ruta "$AAB"
+          M=apps/mobile/android/app/build/outputs/mapping/${SABOR}Release/mapping.txt
+          if [ -f "$M" ]; then node scripts/tiendas/ci.mjs archivo --app "$APP" --canal play_interno --build "$TL_BUILD" --tipo simbolos --ruta "$M"; fi
+      - name: Registrar el build · falló
+        if: failure() && steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        run: |
+          node scripts/tiendas/ci.mjs build --app "$APP" --plataforma android --canal play_interno --build "$TL_BUILD" --estado fallo --motivo "Falló el CI (run ${{ github.run_id }})" || true
+          node scripts/tiendas/ci.mjs build --app "$APP" --plataforma android --canal apk_propio --build "$TL_BUILD" --estado fallo --motivo "Falló el CI (run ${{ github.run_id }})" || true
+      - name: Borrar las llaves
+        if: always()
+        run: rm -rf -- "$LLAVES" && test ! -e "$LLAVES" && echo "✓ llaves borradas"
+
+  ios:
+    name: tiendas · iOS · ${{ matrix.app.key }}
+    needs: plan
+    if: needs.plan.outputs.ios == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 60
+    environment: tiendas
+    permissions:
+      contents: read
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.plan.outputs.apps) }}
+    env:
+      TL_BUILD: ${{ needs.plan.outputs.build }}
+      APP: ${{ matrix.app.key }}
+      TARGET: ${{ matrix.app.target }}
+      PEDIDO: ${{ needs.plan.outputs.pedido }}
+    steps:
+      - name: El directorio temporal de las llaves (se borra al final, pase lo que pase)
+        run: echo "LLAVES=$RUNNER_TEMP/tl-llaves" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with: { persist-credentials: false }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@v4
+        with: { name: tiendas-islas, path: apps/mobile/www/ }
+      - name: Islas, íconos y splash (sabor de pruebas)
+        run: node apps/mobile/scripts/generar.mjs --preparar
+      - name: Proyecto de Xcode (XcodeGen, MIT)
+        working-directory: apps/mobile/ios
+        run: |
+          brew install xcodegen
+          xcodegen generate --spec project.yml
+      - name: Sondeo · ¿el servidor contesta por HTTPS? (si no, ningún token sale del runner)
+        id: s
+        run: node scripts/tiendas/ci.mjs sondeo
+      - name: Llaves por OIDC (solo las de este job)
+        id: ll
+        if: steps.s.outputs.listo == 'si'
+        run: node scripts/tiendas/ci.mjs llaves --job ios --app "$APP" --dir "$LLAVES"
+      - name: Registrar el build · compilando
+        if: steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        run: node scripts/tiendas/ci.mjs build --app "$APP" --plataforma ios --canal testflight_interno --build "$TL_BUILD" --estado compilando --pedido "$PEDIDO"
+      - name: Llavero temporal (solo si el llavero tiene el certificado de distribución)
+        if: steps.ll.outputs.hay == 'si'
+        run: |
+          # La firma por defecto la administra Apple en la nube con la llave de la API (§6 #12); el certificado solo si el llavero lo tiene.
+          if [ -f "$LLAVES/distribucion.p12" ]; then
+            umask 077
+            openssl rand -hex 24 > "$LLAVES/kc"; echo "::add-mask::$(cat "$LLAVES/kc")"
+            security create-keychain -p "$(cat "$LLAVES/kc")" "$LLAVES/tl.keychain-db"
+            security set-keychain-settings -lut 3600 "$LLAVES/tl.keychain-db"
+            security unlock-keychain -p "$(cat "$LLAVES/kc")" "$LLAVES/tl.keychain-db"
+            security import "$LLAVES/distribucion.p12" -k "$LLAVES/tl.keychain-db" -P "$(base64 -d "$LLAVES/distribucion.clave")" -T /usr/bin/codesign -T /usr/bin/security > /dev/null
+            security set-key-partition-list -S apple-tool:,apple: -s -k "$(cat "$LLAVES/kc")" "$LLAVES/tl.keychain-db" > /dev/null
+            security list-keychains -d user -s "$LLAVES/tl.keychain-db" $(security list-keychains -d user | tr -d '"')
+          fi
+      - name: Archivo de iOS (firmado por Apple con la llave de la API; sin llaves, sin firma)
+        working-directory: apps/mobile/ios
+        run: |
+          if [ "${{ steps.ll.outputs.hay }}" = "si" ]; then
+            xcodebuild archive -project ToLatino.xcodeproj -scheme "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+              -archivePath "build/$TARGET.xcarchive" CURRENT_PROJECT_VERSION="$TL_BUILD" DEVELOPMENT_TEAM="${{ steps.ll.outputs.equipo }}" -allowProvisioningUpdates \
+              -authenticationKeyPath "$LLAVES/AuthKey_${{ steps.ll.outputs.asc_id }}.p8" -authenticationKeyID "${{ steps.ll.outputs.asc_id }}" \
+              -authenticationKeyIssuerID "${{ steps.ll.outputs.asc_emisor }}" | tail -5
+          else
+            xcodebuild archive -project ToLatino.xcodeproj -scheme "$TARGET" -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+              -archivePath "build/$TARGET.xcarchive" CURRENT_PROJECT_VERSION="$TL_BUILD" CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | tail -5
+            echo "::notice title=iOS · $APP::archivo de iPhone SIN firma (faltan las llaves o el HTTPS): compila para el dispositivo; nada se sube."
+          fi
+          test -d "build/$TARGET.xcarchive/Products/Applications/$TARGET.app"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" -c "Print :CFBundleVersion" "build/$TARGET.xcarchive/Products/Applications/$TARGET.app/Info.plist"
+      - name: Subir a TestFlight interno (xcodebuild con la llave de la API; destino upload)
+        if: steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        working-directory: apps/mobile/ios
+        run: |
+          /usr/libexec/PlistBuddy -c "Add :method string app-store-connect" -c "Add :destination string upload" -c "Add :signingStyle string automatic" \
+            -c "Add :teamID string ${{ steps.ll.outputs.equipo }}" -c "Add :manageAppVersionAndBuildNumber bool false" "$LLAVES/exportar.plist"
+          xcodebuild -exportArchive -archivePath "build/$TARGET.xcarchive" -exportOptionsPlist "$LLAVES/exportar.plist" -exportPath "$LLAVES/ipa" -allowProvisioningUpdates \
+            -authenticationKeyPath "$LLAVES/AuthKey_${{ steps.ll.outputs.asc_id }}.p8" -authenticationKeyID "${{ steps.ll.outputs.asc_id }}" \
+            -authenticationKeyIssuerID "${{ steps.ll.outputs.asc_emisor }}" | tail -5
+          cd "$GITHUB_WORKSPACE"
+          node scripts/tiendas/ci.mjs build --app "$APP" --plataforma ios --canal testflight_interno --build "$TL_BUILD" --estado subido
+          (cd "apps/mobile/ios/build/$TARGET.xcarchive" && zip -qr "$LLAVES/dsym.zip" dSYMs)
+          node scripts/tiendas/ci.mjs archivo --app "$APP" --canal testflight_interno --build "$TL_BUILD" --tipo simbolos --ruta "$LLAVES/dsym.zip"
+      - name: Registrar el build · falló
+        if: failure() && steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
+        run: node scripts/tiendas/ci.mjs build --app "$APP" --plataforma ios --canal testflight_interno --build "$TL_BUILD" --estado fallo --motivo "Falló el CI (run ${{ github.run_id }})" || true
+      - name: Borrar las llaves y el llavero temporal
+        if: always()
+        run: |
+          if [ -f "$LLAVES/tl.keychain-db" ]; then security delete-keychain "$LLAVES/tl.keychain-db" || true; fi
+          rm -rf -- "$LLAVES" && test ! -e "$LLAVES" && echo "✓ llaves borradas"

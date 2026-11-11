@@ -1,6 +1,8 @@
 "use client";
 /* 8f · Super Admin › Sistema › Apps completo (fase8-apps.md §4 8f; hueco #7: tabs + kpis + rows + la ficha, compuesto con el sistema):
-   - Versiones: lo que hay en TestFlight interno, Play interno, el APK propio y la tienda (8h lo llena desde el CI).
+   - Versiones: lo que hay en TestFlight interno, Play interno, el APK propio y la tienda; 8h: en vivo desde el CI (compilando → subido →
+     procesando → disponible; se pone al día sola cada 8 s mientras algo está en curso), «Pedir un build» (lanza el flujo de las tiendas con el
+     token del llavero; motivo y auditoría), los pedidos y qué llaves de la tubería faltan.
    - Testers: invitar a una cuenta To'Latino (motivo; el correo de Apple solo para TestFlight), quitar con motivo, «Ya está en la lista» (Play) y
      otro enlace de un uso (APK propio).
    - Salud › Errores: grupos por app, plataforma y build (cursor), sesiones sin cierre, la ficha con el stack simbolizado y Visto / Resuelto en el
@@ -9,11 +11,12 @@
    Cambiar: apps:editar (lo revisa cada acción en el servidor). */
 import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import type { FilaBuild, FilaTester } from "@/lib/beta";
 import type { FichaGrupo, SaludApps } from "@/lib/errores/admin";
+import type { EstadoTuberia } from "@/lib/tiendas/tuberia";
 import type { FilaReporte } from "@/lib/reportar";
-import { errorEstado, testerEnlace, testerEnPlay, testerInvitar, testerQuitar } from "./acciones-beta";
+import { buildPedir, errorEstado, testerEnlace, testerEnPlay, testerInvitar, testerQuitar } from "./acciones-beta";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
@@ -24,6 +27,7 @@ const APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios",
 const PLAT: Record<string, string> = { ios: "iPhone", android: "Android", web: "Navegador" };
 const CANAL: Record<string, string> = { testflight_interno: "TestFlight interno", play_interno: "Play interno", apk_propio: "APK propio", tienda: "Tienda", testflight: "TestFlight interno" };
 const EST_BUILD: Record<string, [string, string]> = { compilando: ["COMPILANDO", "neutral"], subido: ["SUBIDO", "action"], procesando: ["PROCESANDO", "action"], disponible: ["DISPONIBLE", "signal"], fallo: ["FALLÓ", "danger"], retirado: ["RETIRADO", "neutral"] };
+const EST_PEDIDO: Record<string, [string, string]> = { pendiente: ["PENDIENTE", "neutral"], enviado: ["ENVIADO", "action"], corriendo: ["COMPILANDO", "action"], terminado: ["TERMINADO", "signal"], sin_llave: ["SIN TOKEN", "danger"], error: ["ERROR", "danger"] };
 const EST_TESTER: Record<string, [string, string]> = { invitado: ["INVITADO", "action"], activo: ["ACTIVO", "signal"], pendiente_consola: ["FALTA EN PLAY", "action"], quitado: ["QUITADO", "neutral"] };
 const SYNC: Record<string, string> = { ok: "Apple al día", pendiente: "Apple pendiente", sin_llave: "Sin la llave de App Store Connect", error: "Apple no contestó bien" };
 const EST_GRUPO: Record<string, [string, string]> = { nuevo: ["NUEVO", "danger"], visto: ["VISTO", "action"], resuelto: ["RESUELTO", "signal"], silenciado: ["SILENCIADO", "neutral"] };
@@ -34,7 +38,7 @@ const hace = (iso: string) => { const m = Math.max(0, Math.floor((Date.now() - n
 const peso = (b: number | null) => (b == null ? "—" : b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export type DatosBeta =
-  | { v: "versiones"; builds: FilaBuild[] }
+  | { v: "versiones"; builds: FilaBuild[]; tuberia: EstadoTuberia }
   | { v: "testers"; testers: FilaTester[] | null }
   | { v: "salud"; salud: SaludApps; ficha: FichaGrupo | null; filtro: { app: string | null; estado: string | null; tipo: string | null } }
   | { v: "reportes"; reportes: FilaReporte[]; sop: boolean };
@@ -46,8 +50,11 @@ export function subApps(on: VistaApps, ir: (href: string) => void): Bloque {
 
 export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
-  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [invitando, setInvitando] = useState(false);
+  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [invitando, setInvitando] = useState(false), [pidiendo, setPidiendo] = useState(false);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Guardado."); setConf(null); router.refresh(); };
+  // 8h · En vivo: mientras un build está en curso o un pedido espera a GitHub, la pantalla se pone al día sola (cada 8 s).
+  const vivo = d.v === "versiones" && (d.tuberia.enCurso > 0 || d.tuberia.pedidos.some((p) => ["pendiente", "enviado", "corriendo"].includes(p.estado)));
+  useEffect(() => { if (!vivo || conf || pidiendo) return; const t = setInterval(() => router.refresh(), 8000); return () => clearInterval(t); }, [vivo, conf, pidiendo, router]);
   const cabeza: Bloque[] = [
     { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Apps", s: "Las cuatro apps de las tiendas: versiones, testers del programa beta, la salud (errores y cierres) y los reportes de la gente.", h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "apps", onClick: () => (p.k === "apps" ? undefined : router.push(p.href)) })) },
@@ -59,16 +66,39 @@ export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>);
+  if (pidiendo && d.v === "versiones") return <PedirBuild desk={desk} onBack={() => setPidiendo(false)} onDone={(r) => { setPidiendo(false); hecho(r); }} />;
   if (invitando && d.v === "testers") return <Invitar desk={desk} onBack={() => setInvitando(false)} onDone={(r) => { setInvitando(false); hecho(r); }} />;
 
   const B: Bloque[] = [...cabeza];
   if (d.v === "versiones") {
-    B.push({ type: "note", tone: "info", icon: "info", t: "Cada build sube solo desde el CI (8h: firma, TestFlight interno, Play interno y el APK propio). Hoy ves la semilla del sandbox y el APK de prueba, que no se instala. El build es creciente por app, plataforma y canal, y su estado solo avanza." });
+    const t = d.tuberia, L = t.llaves, nLl = Object.values(L).filter(Boolean).length;
+    B.push({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+      { k: "EN CURSO", v: String(t.enCurso), s: "compilando, subido o procesando", bg: t.enCurso ? "var(--tl-ink)" : undefined, fg: t.enCurso ? "var(--tl-white)" : undefined },
+      { k: "DISPONIBLES", v: String(d.builds.filter((b) => b.estado === "disponible").length), s: "para los testers" },
+      { k: "LLAVES DE LA TUBERÍA", v: `${nLl} de 4`, s: nLl === 4 ? "completas" : "faltan en el llavero" },
+      { k: "ÚLTIMO CI", v: t.ultimaCi ? hace(t.ultimaCi) : "nunca", s: t.ultimaCi ? cuando(t.ultimaCi) : "espera el dominio con HTTPS" }] });
+    B.push({ type: "note", tone: t.ultimaCi ? "info" : "warn", icon: t.ultimaCi ? "info" : "lock", t: t.ultimaCi
+      ? "Cada build sube solo desde el CI: pide sus llaves por OIDC (sin ninguna guardada en GitHub), firma, sube a TestFlight interno, Play interno y el APK propio, y avisa aquí. El build es creciente por app, plataforma y canal, y su estado solo avanza."
+      : "El CI de las tiendas todavía no entró: pide sus llaves solo por HTTPS y el servidor de pruebas sigue en HTTP (falta el dominio). Mientras, compila sin llaves y nada se sube a las tiendas. Aquí ves la semilla del sandbox." });
+    if (vivo) B.push({ type: "note", tone: "ok", icon: "clock", t: "En vivo · esta pantalla se pone al día sola mientras un build está en curso." });
+    B.push({ type: "group", k: "LO QUE NECESITA LA TUBERÍA" });
+    B.push({ type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: ([["asc_api_key", "App Store Connect · llave de la API", "Firma de iOS y subida a TestFlight interno"], ["android_upload_keystore", "Android · llave de subida", "Firma del .aab y del APK propio"],
+      ["play_service_account", "Google Play · cuenta de servicio", "El servidor sube el .aab a Play interno"], ["github_token", "GitHub · token para pedir builds", "«Pedir un build» desde aquí"]] as const).map(([k, l, s]): Fila => ({
+      key: k, icon: L[k] ? "key" : "lock", t: l, s, tag: L[k] ? "VIVA" : "FALTA", tone: L[k] ? "signal" : "neutral", ...(editar ? { onClick: () => router.push("/admin/sistema/integraciones") } : { chev: false }) })) });
+    if (editar) B.push({ type: "acts", items: [{ l: "Pedir un build", v: "primary", icon: "plus", onClick: () => setPidiendo(true) }] });
+    B.push({ type: "group", k: `PEDIDOS · ${t.pedidos.length}` });
+    B.push(t.pedidos.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: t.pedidos.map((p): Fila => ({ key: `p${p.id}`, icon: "clock",
+      t: `Pedido ${p.id} · ${p.app === "todas" ? "las cuatro apps" : APP[p.app] ?? p.app} · ${p.plat === "ambas" ? "iPhone y Android" : PLAT[p.plat] ?? p.plat}`,
+      s: [p.motivo, `${p.quien ?? "equipo"} · ${cuando(p.at)}`, p.builds ? `${p.builds} ${p.builds === 1 ? "build" : "builds"}` : null, p.resultado].filter(Boolean).join(" · "),
+      tag: EST_PEDIDO[p.estado]?.[0] ?? p.estado, tone: EST_PEDIDO[p.estado]?.[1] ?? "neutral", chev: false })) }
+      : { type: "empty", icon: "clock", t: "Sin pedidos todavía", s: "«Pedir un build» lanza el CI de las tiendas para una app o las cuatro. Un cambio en lo nativo también lo lanza solo." });
     for (const a of ["cliente", "negocio", "delivery", "checkin"]) {
       const L = d.builds.filter((b) => b.app === a);
       B.push({ type: "group", k: `${(APP[a] ?? a).toUpperCase()} · ${L.length} ${L.length === 1 ? "BUILD" : "BUILDS"}` });
       B.push(L.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: L.map((b): Fila => ({ key: b.id, icon: "phone",
-        t: `${PLAT[b.plat]} · ${b.version} (${b.build})`, s: [CANAL[b.canal] ?? b.canal, b.commit ? `commit ${b.commit.slice(0, 7)}` : null, b.size ? peso(b.size) : null, b.sha ? `sha256 ${b.sha.slice(0, 12)}…` : null, cuando(b.at), b.motivo].filter(Boolean).join(" · "),
+        t: `${PLAT[b.plat]} · ${b.version} (${b.build})`, s: [CANAL[b.canal] ?? b.canal, b.commit ? `commit ${b.commit.slice(0, 7)}` : null, b.size ? peso(b.size) : null, b.sha ? `sha256 ${b.sha.slice(0, 12)}…` : null,
+          b.simbolos ? "con símbolos" : null, b.pedido ? `pedido ${b.pedido}` : null, b.envio ? `tienda: ${b.envio}` : null, b.estado === "subido" && b.canal === "play_interno" && !d.tuberia.llaves.play_service_account ? "espera la cuenta de Play" : null,
+          cuando(b.at), b.estado !== "disponible" && b.estado !== "retirado" && b.cambio !== b.at ? `cambió ${hace(b.cambio)}` : null, b.motivo].filter(Boolean).join(" · "),
         tag: EST_BUILD[b.estado]?.[0] ?? b.estado, tone: EST_BUILD[b.estado]?.[1] ?? "neutral", chev: false, ...(b.ci ? { onClick: () => window.open(b.ci!, "_blank", "noopener") } : {}) })) }
         : { type: "empty", icon: "phone", t: "Sin builds todavía", s: "Aparecen cuando el CI compile esta app (8h)." });
     }
@@ -154,6 +184,24 @@ function Ficha({ g, desk, editar, onConf, toast }: { g: FichaGrupo; desk: boolea
     B.push({ type: "rows", items: g.alertas.map((a, i): Fila => ({ key: `${i}`, icon: "bell", t: `${a.tipo === "pico" ? "Pico" : a.tipo === "regresion" ? "Volvió" : "Nuevo"} · build ${a.build || "—"}`, s: `${a.n} ${a.n === 1 ? "vez" : "veces"} · ${cuando(a.at)}`, chev: false })) });
   }
   return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 980 }}><PanelBloques bloques={B} h1={desk ? 24 : 20} /><Toast t={toast} desk={desk} /></div>;
+}
+
+/* 8h · «Pedir un build» (hueco #7: el formulario del sistema, como Invitar): qué app, qué plataforma y el motivo. Lanza el flujo de las tiendas
+   en GitHub con el token del llavero; sin el token queda anotado y no se lanza nada. */
+function PedirBuild({ desk, onBack, onDone }: { desk: boolean; onBack: () => void; onDone: (r: ResAdm) => void }) {
+  const [app, setApp] = useState("todas"), [plat, setPlat] = useState("ambas"), [motivo, setMotivo] = useState(""), [err, setErr] = useState<string | null>(null), [pend, start] = useTransition();
+  const enviar = () => start(async () => { const r = await buildPedir(app, plat, motivo); if (!r.ok) setErr(r.mensaje ?? "No se pudo."); else onDone(r); });
+  const B: Bloque[] = [
+    { type: "head", eye: "SISTEMA · APPS · VERSIONES", t: "Pedir un build", s: "Lanza el CI de las tiendas: compila, firma y sube a TestFlight interno, Play interno y el APK propio. Unos 15 minutos por app; lo ves en Versiones en vivo.", onBack, h1: desk ? 24 : 20 },
+    { type: "chips", k: "APP", items: [["todas", "Las cuatro"], ...Object.entries(APP).filter(([k]) => k !== "web")].map(([k, l]) => ({ l: l!, v: app === k ? "selected" : "filter", onClick: () => setApp(k!) })) },
+    { type: "chips", k: "PLATAFORMA", items: [["ambas", "iPhone y Android"], ["ios", "iPhone"], ["android", "Android"]].map(([k, l]) => ({ l: l!, v: plat === k ? "selected" : "filter", onClick: () => setPlat(k!) })) },
+    { type: "note", tone: "info", icon: "info", t: "Sale de la rama de pruebas, con el sabor de pruebas (apunta al sandbox). Las tiendas públicas no se tocan." },
+    { type: "field", k: "MOTIVO · QUEDA EN LA AUDITORÍA", val: motivo, onChange: setMotivo, area: true, rows: 2, max: 300, count: `${motivo.length}/300` },
+    { type: "chips", items: ["Versión nueva para los testers", "Arreglo en lo nativo", "Volver a probar la firma"].map((p) => ({ l: p, v: motivo === p ? "selected" : "filter", onClick: () => setMotivo(p) })) },
+    err ? { type: "note", tone: "danger", icon: "warning", t: err } : null,
+    { type: "acts", items: [{ l: pend ? "Pidiendo…" : "Pedir el build", v: "primary", icon: "check", off: pend || motivo.trim().length < 3, onClick: enviar }, { l: "Cancelar", v: "secondary", onClick: onBack }] },
+  ].filter(Boolean) as Bloque[];
+  return <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}><PanelBloques bloques={B} h1={desk ? 24 : 20} /></div>;
 }
 
 /* Invitar a una cuenta To'Latino (hueco #7): teléfono de la cuenta, app, por dónde, el correo de Apple (solo TestFlight) y el motivo. */

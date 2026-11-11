@@ -50,3 +50,13 @@ export async function errorEstado(id: string, accion: string, build: string, mot
   revalidatePath(R);
   return { ok: r.ok, mensaje: r.msg };
 }
+
+/* 8h · «Pedir un build»: lanza el flujo de las tiendas (workflow_dispatch) con el token del llavero. Solo un Admin con apps:editar; motivo y
+   auditoría (lib/tiendas/tuberia.ts); tope tiendas_pedidos_hora. */
+export async function buildPedir(app: string, plataforma: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("apps", "editar")) return { ok: false, mensaje: "Solo un Admin pide builds." };
+  const r = await (await import("@/lib/tiendas/tuberia")).pedirBuild(s, { app: String(app ?? ""), plataforma: String(plataforma ?? ""), motivo: motivoOk(motivo) });
+  revalidatePath(R);
+  return { ok: r.ok, mensaje: r.msg };
+}

@@ -1,0 +1,10 @@
+{
+  "$fuente": "Historial de versiones de las cuatro apps (apps/mobile/scripts/version.mjs; guardián versionCoherente). Solo se agrega: cada versión con la huella de lo nativo con que salió.",
+  "historial": [
+    {
+      "version": "1.0.0",
+      "huella": "3c05a0bca5c7d38d12f703d5526aee28cfcf9216c5431a0c01128318ce32419f",
+      "fecha": "2026-11-11"
+    }
+  ]
+}

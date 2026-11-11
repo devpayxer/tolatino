@@ -62,6 +62,8 @@ async function arrancar(o = {}) {
   const publica = typeof o.publica === 'string' ? crypto.createPublicKey(o.publica) : o.publica;
   const apps = new Map((o.apps ?? []).map((a, i) => [a.bundle ?? a, { id: String(a.id ?? 6400000000 + i) }]));
   const registro = [], usuarios = new Map(), invitaciones = new Map(), testers = new Map();
+  // 8h · Los builds que «subió» el CI (los pone la prueba con subirBuild / POST /_build) y los que se sumaron a un grupo.
+  const builds = new Map(), enGrupo = [];
   let n = 1000;
   const err = (res, status, code, title, motivo, r) => { r.invalido = motivo ?? null; r.status = status; res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify({ errors: [{ status: String(status), code, title }] })); };
   const ok = (res, status, data, r) => { r.status = status; if (status === 204) { res.writeHead(204); res.end(); return; } res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(data)); };
@@ -73,6 +75,14 @@ async function arrancar(o = {}) {
     invitaciones.delete(inv.id);
     return true;
   };
+  // 8h · Un build «subido» por xcodebuild: queda PROCESSING hasta que la prueba lo pase a VALID / FAILED / INVALID (mismo id).
+  const subirBuild = (x) => {
+    const appId = String(x.appId ?? ''), id = x.id ?? `bld-${++n}`;
+    if (!ASC.estadosBuild.includes(x.estado ?? 'PROCESSING')) return { error: 'estado' };
+    const b = { id, app: appId, version: String(x.version ?? ''), build: String(x.build ?? ''), estado: x.estado ?? 'PROCESSING' };
+    builds.set(id, b);
+    return b;
+  };
   const server = http.createServer((req, res) => {
     let cuerpo = '';
     req.on('data', (c) => { cuerpo += c; if (cuerpo.length > 100000) req.destroy(); });
@@ -80,7 +90,8 @@ async function arrancar(o = {}) {
       const u = new URL(req.url, 'http://x'), r = { metodo: req.method, ruta: u.pathname, consulta: Object.fromEntries(u.searchParams), cuerpo: json(cuerpo), at: Date.now() };
       registro.push(r);
       if (u.pathname === '/_aceptar' && req.method === 'POST') { const ok2 = aceptar(String(r.cuerpo?.correo ?? '')); res.writeHead(ok2 ? 200 : 404); res.end(); r.control = true; return; }
-      if (u.pathname === '/_estado') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ usuarios: [...usuarios.values()], invitaciones: [...invitaciones.values()], testers: [...testers.values()], registro })); r.control = true; return; }
+      if (u.pathname === '/_estado') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ usuarios: [...usuarios.values()], invitaciones: [...invitaciones.values()], testers: [...testers.values()], builds: [...builds.values()], enGrupo, registro })); r.control = true; return; }
+      if (u.pathname === '/_build' && req.method === 'POST') { const b = subirBuild(r.cuerpo ?? {}); res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(b)); r.control = true; return; }
       const auth = /^Bearer (.+)$/.exec(req.headers.authorization ?? '')?.[1];
       const malJwt = publica ? verificarJwt(auth, publica, o) : 'sin llave pública en el simulador';
       if (malJwt) return err(res, 401, 'NOT_AUTHORIZED', 'Authentication credentials are missing or invalid.', malJwt, r);
@@ -118,6 +129,18 @@ async function arrancar(o = {}) {
           testers.set(id, { id, email: c, grupo: g });
           return ok(res, 201, { data: { type: 'betaTesters', id, attributes: { email: c } } }, r);
         }
+        case 'GET /v1/builds': {
+          // filter[app], filter[version] (el número), filter[preReleaseVersion.version] (la versión); fields[builds] sin campos que no existen.
+          const L = [...builds.values()].filter((b) => (!q('filter[app]') || b.app === q('filter[app]')) && (!q('filter[version]') || b.build === q('filter[version]')) && (!q('filter[preReleaseVersion.version]') || b.version === q('filter[preReleaseVersion.version]')));
+          const malos = (q('fields[builds]') ?? '').split(',').filter((f) => f && !ASC.build.includes(f));
+          if (malos.length) return err(res, 400, 'PARAMETER_ERROR.INVALID', 'A parameter has an invalid value', `fields[builds] no tiene ${malos.join(', ')}`, r);
+          return ok(res, 200, { data: L.slice(0, Number(q('limit') ?? 50)).map((b) => ({ type: 'builds', id: b.id, attributes: { version: b.build, processingState: b.estado } })) }, r);
+        }
+        case 'POST /v1/betaGroups/{id}/relationships/builds': {
+          if (!/^grp-int-/.test(p.id ?? '')) return err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
+          for (const d of r.cuerpo.data) { const b = builds.get(d.id); if (!b) return err(res, 422, 'ENTITY_ERROR.RELATIONSHIP.INVALID', 'build', 'build que no existe', r); if (b.estado !== 'VALID') return err(res, 422, 'ENTITY_ERROR.RELATIONSHIP.INVALID', 'build', 'build sin procesar', r); enGrupo.push({ grupo: p.id, build: d.id }); }
+          return ok(res, 204, null, r);
+        }
         case 'DELETE /v1/betaTesters/{id}': return testers.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
         case 'DELETE /v1/userInvitations/{id}': return invitaciones.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
         case 'DELETE /v1/users/{id}': return usuarios.delete(p.id) ? ok(res, 204, null, r) : err(res, 404, 'NOT_FOUND', 'The specified resource does not exist', null, r);
@@ -126,7 +149,7 @@ async function arrancar(o = {}) {
     });
   });
   await new Promise((ok2) => server.listen(o.puerto ?? 0, '127.0.0.1', ok2));
-  return { url: `http://127.0.0.1:${server.address().port}`, registro, usuarios, invitaciones, testers, aceptar, cerrar: () => new Promise((ok2) => server.close(ok2)) };
+  return { url: `http://127.0.0.1:${server.address().port}`, registro, usuarios, invitaciones, testers, builds, enGrupo, subirBuild, aceptar, cerrar: () => new Promise((ok2) => server.close(ok2)) };
 }
 
 module.exports = { arrancar, validar, verificarJwt, ASC };

@@ -98,10 +98,15 @@ mínima (25 m), los **días que se guarda** (1–90, **14**: para aclarar un rec
 el mapa** desde «Recogí» (1) o nunca (0), la **velocidad imposible** (una posición más rápida se rechaza) y cuándo una posición es **vieja**. El
 recorrido de una entrega se ve en **Transacciones › Ver recorrido**, solo escribiendo el motivo, que queda en la auditoría.
 
+Y la **tubería de las apps**: cuántas veces por hora el equipo puede **pedir un build** (1–20, **4**), cuántos **intentos rechazados por
+minuto** aguanta antes de contestar «espera» sin revisar más (10–1000, **60**) y el **tamaño máximo** de un archivo que sube el CI (10–500 MB,
+**200**). Ver «Super Admin: la tubería de las apps».
+
 **English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
 checks that the notice build stays above the minimum. Also in **Apps**: the **driver location during a delivery** (how often, minimum distance, **days kept** — 14 by default, max 90 —, whether the
 **customer sees the map** from pickup, the **impossible speed** and when a position is stale). A delivery route is opened in **Transactions ›
-View route** only with a written reason, which is audited.
+View route** only with a written reason, which is audited. And the **app pipeline**: how many builds per hour the team can **request** (4), how
+many **rejected attempts per minute** it takes before answering «wait» (60) and the **max size** of a file the CI uploads (200 MB).
 
 ## English
 

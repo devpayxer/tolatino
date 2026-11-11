@@ -8,6 +8,7 @@ import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } fro
 import { useRouter } from "next/navigation";
 import { useRef, useState, type ComponentType } from "react";
 import type { FilaLlave } from "@/lib/tiendas/llavero";
+import type { IntentoCi, LecturaCi } from "@/lib/tiendas/tuberia";
 import { llaveComprobar, llaveRetirar } from "./acciones-apps";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -26,7 +27,13 @@ const EXTRA: Record<string, { k: string; l: string; ph: string } | undefined> = 
   android_upload_keystore: { k: "alias", l: "ALIAS DE LA LLAVE", ph: "subida" },
 };
 
-export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial = null }: { filas: FilaLlave[]; tipos: Tipo[]; admin: boolean; listo: boolean; subir?: string | null }) {
+// 8h · Lo que dice cada intento de la tubería (ci_oidc_log.motivo), en palabras.
+const MOTIVO_CI: Record<string, string> = { ok: "Entró", sin_https: "Llegó sin HTTPS", sin_token: "Sin token", mal_formado: "Token mal formado", alg: "Algoritmo que no es RS256", kid: "Llave que no es de GitHub",
+  firma: "Firma que no verifica", jwks: "No se pudo leer el JWKS de GitHub", iss: "Emisor ajeno", aud: "Audiencia ajena", sub: "Sujeto ajeno", repo: "Otro repositorio", dueno: "Otro dueño", entorno: "Otro entorno",
+  rama: "Rama no permitida", evento: "Evento no permitido", flujo: "Otro flujo", runner: "Runner propio", pr: "Desde un pull request", vencido: "Token vencido", antes_de_tiempo: "Token del futuro",
+  vida: "Tiempos raros", jti: "Datos del run raros", jti_repetido: "Token repetido", limite: "Demasiados intentos", apagado: "Tubería apagada", pedido_invalido: "Pedido mal armado",
+  build_ajeno: "Build de otro run", sin_llave: "Falta la llave", error: "Error del servidor" };
+export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial = null, ci = null }: { filas: FilaLlave[]; tipos: Tipo[]; admin: boolean; listo: boolean; subir?: string | null; ci?: { lecturas: LecturaCi[]; intentos: IntentoCi[] } | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   // 8g · Desde Integraciones › Wallet se llega directo a «Subir» del certificado del pase o de la cuenta de Google (?subir=).
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [subir, setSubir] = useState<Tipo | null>(admin && listo ? tipos.find((t) => t.k === subirInicial) ?? null : null);
@@ -65,6 +72,18 @@ export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial 
     };
   });
   B.push({ type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items });
+  // 8h · El CI de las tiendas lee por OIDC (sin ninguna llave en GitHub): cada lectura con su run y su commit, y cada intento con su motivo.
+  if (ci) {
+    const nombre = (k: string) => tipos.find((t) => t.k === k)?.es ?? k;
+    B.push({ type: "group", k: `LECTURAS DEL CI · ${ci.lecturas.length}` });
+    B.push(ci.lecturas.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: ci.lecturas.map((l, i): Fila => ({ key: `l${i}`, icon: "key", t: `${nombre(l.tipo)} · run ${l.run ?? "—"}`,
+      s: [l.para, l.sha ? `commit ${l.sha.slice(0, 7)}` : null, cuando(l.at)].filter(Boolean).join(" · "), tag: l.ok ? "LEÍDA" : "FALLÓ", tone: l.ok ? "signal" : "danger", chev: false })) }
+      : { type: "empty", icon: "key", t: "El CI no ha leído ninguna llave", s: "La tubería de las tiendas pide sus llaves por OIDC y solo por HTTPS; cada lectura sale aquí con su run." });
+    B.push({ type: "group", k: "INTENTOS DE LA TUBERÍA · LOS RECHAZADOS Y LOS ÚLTIMOS QUE ENTRARON" });
+    B.push(ci.intentos.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: ci.intentos.map((x, i): Fila => ({ key: `i${i}`, icon: x.ok ? "check" : "warning", t: `${MOTIVO_CI[x.motivo] ?? x.motivo} · ${x.para}`,
+      s: [x.ref ? x.ref.replace("refs/heads/", "rama ") : null, x.run ? `run ${x.run}` : null, x.detalle, cuando(x.at)].filter(Boolean).join(" · "), tag: x.ok ? "ENTRÓ" : "RECHAZADO", tone: x.ok ? "signal" : "danger", chev: false })) }
+      : { type: "empty", icon: "check", t: "Sin intentos todavía", s: "Cada token que llega a la tubería queda anotado aquí, entre o no." });
+  }
   const retiradas = filas.filter((f) => f.retirada);
   if (retiradas.length) B.push({ type: "rows", k: "RETIRADAS · 180 DÍAS", items: retiradas.map((f): Fila => ({ key: f.id, icon: "lock", dim: true, t: `${tipos.find((t) => t.k === f.kind)?.es ?? f.kind} · v${f.version}`,
     s: `SHA-256 ${huellaCorta(f.fingerprint)} · retirada ${cuando(f.retirada!)} · ${f.motivo ?? ""}` })) });

@@ -48,6 +48,26 @@
   "publicLinkLimit",
   "publicLinkLimitEnabled"
  ],
+ "estadosBuild": [
+  "PROCESSING",
+  "FAILED",
+  "INVALID",
+  "VALID"
+ ],
+ "build": [
+  "buildAudienceType",
+  "computedMinMacOsVersion",
+  "computedMinVisionOsVersion",
+  "expirationDate",
+  "expired",
+  "iconAssetToken",
+  "lsMinimumSystemVersion",
+  "minOsVersion",
+  "processingState",
+  "uploadedDate",
+  "usesNonExemptEncryption",
+  "version"
+ ],
  "feedback": [
   "/v1/apps/{id}/betaFeedbackCrashSubmissions",
   "/v1/apps/{id}/betaFeedbackScreenshotSubmissions",
@@ -403,6 +423,94 @@
     "401",
     "403",
     "404",
+    "429"
+   ]
+  },
+  "GET /v1/builds": {
+   "consulta": [
+    "exists[usesNonExemptEncryption]",
+    "fields[appEncryptionDeclarations]",
+    "fields[appStoreVersions]",
+    "fields[apps]",
+    "fields[betaAppReviewSubmissions]",
+    "fields[betaBuildLocalizations]",
+    "fields[betaGroups]",
+    "fields[betaTesters]",
+    "fields[buildBetaDetails]",
+    "fields[buildBundles]",
+    "fields[buildIcons]",
+    "fields[buildUploads]",
+    "fields[builds]",
+    "fields[preReleaseVersions]",
+    "filter[appStoreVersion]",
+    "filter[app]",
+    "filter[betaAppReviewSubmission.betaReviewState]",
+    "filter[betaGroups]",
+    "filter[buildAudienceType]",
+    "filter[expired]",
+    "filter[id]",
+    "filter[preReleaseVersion.platform]",
+    "filter[preReleaseVersion.version]",
+    "filter[preReleaseVersion]",
+    "filter[processingState]",
+    "filter[usesNonExemptEncryption]",
+    "filter[version]",
+    "include",
+    "limit",
+    "limit[betaBuildLocalizations]",
+    "limit[betaGroups]",
+    "limit[buildBundles]",
+    "limit[icons]",
+    "limit[individualTesters]",
+    "sort"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "429"
+   ]
+  },
+  "POST /v1/betaGroups/{id}/relationships/builds": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "type": {
+         "type": "string",
+         "enum": [
+          "builds"
+         ]
+        },
+        "id": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "id",
+        "type"
+       ]
+      }
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "204",
+    "400",
+    "401",
+    "403",
+    "404",
+    "409",
+    "422",
     "429"
    ]
   }

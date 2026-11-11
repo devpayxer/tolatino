@@ -127,6 +127,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["beta", async () => (await import("./beta")).barrerBeta()],
         // 8d · Llaves de acceso: los retos vencidos hace más de un día se purgan (un uso y 2 minutos de vida; después no sirven para nada).
         ["llaves", async () => (await import("./llaves/llaves")).purgarRetos()],
+        // 8h · La tubería de las tiendas: TestFlight (Apple procesó → grupo interno), Play interno pendiente, pedidos que terminaron y los jti vencidos.
+        ["tiendas", async () => (await import("./tiendas/tuberia")).barrerTiendas()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

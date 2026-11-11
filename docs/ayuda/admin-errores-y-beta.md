@@ -23,7 +23,8 @@ teléfono. Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 ## Cómo se usa
 - **Resumen:** la pausa de cada app, los builds mínimo y de aviso y las sesiones por versión.
 - **Versiones:** cada build por app, plataforma y canal (TestFlight interno, Play interno, APK propio, tienda) con su estado (compilando,
-  subido, procesando, disponible, falló, retirado), commit, tamaño y huella sha256. Los registra el CI.
+  subido, procesando, disponible, falló, retirado), commit, tamaño y huella sha256. Los registra el CI y se ven **en vivo**; **Pedir un build**
+  y lo que necesita la tubería se explican en «Super Admin: la tubería de las apps».
 - **Testers** (solo Admin): **Invitar a una cuenta** — el teléfono de su cuenta de To'Latino, la app, por dónde (TestFlight · iPhone, Play
   interno · Android, APK propio · Android), el correo de su cuenta de Apple (solo TestFlight; se guarda cifrado y se ve tapado) y el motivo.
   En cada tester: **Quitar** (motivo), **Ya está en la lista** (Play) y **Otro enlace** (APK propio).
@@ -88,7 +89,8 @@ cuentas de las tiendas.
 ### How to use it
 - **Summary:** each app's pause, minimum and notice builds, and sessions by version.
 - **Versions:** each build by app, platform and channel (TestFlight internal, Play internal, own APK, store) with its status (building,
-  uploaded, processing, available, failed, retired), commit, size and sha256 fingerprint. The CI records them.
+  uploaded, processing, available, failed, retired), commit, size and sha256 fingerprint. The CI records them and they update **live**;
+  **Request a build** is explained in «Super Admin: the app pipeline».
 - **Testers** (Admin only): **Invite an account** — the phone of their To'Latino account, the app, the channel (TestFlight · iPhone, Play
   internal · Android, own APK · Android), their Apple account email (TestFlight only; stored encrypted, shown covered) and the reason. On each
   tester: **Remove** (reason), **Already on the list** (Play) and **Another link** (own APK).

@@ -16,7 +16,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<Rec
   const [s, sp] = await Promise.all([requerir("apps", "ver"), searchParams]);
   const editar = s.puede("apps", "editar");
   let d: DatosBeta | null = null;
-  if (sp.v === "versiones") d = { v: "versiones", builds: await versiones() };
+  // 8h · Versiones en vivo: los builds del CI, los pedidos («Pedir un build») y qué llaves de la tubería faltan.
+  if (sp.v === "versiones") { const [builds, tuberia] = await Promise.all([versiones(), (await import("@/lib/tiendas/tuberia")).estadoTuberia()]); d = { v: "versiones", builds, tuberia }; }
   else if (sp.v === "testers") d = { v: "testers", testers: s.role === "admin" && editar ? await testers() : null };
   else if (sp.v === "salud") {
     const filtro = { app: sp.app ?? null, estado: sp.estado ?? null, tipo: sp.tipo ?? null };

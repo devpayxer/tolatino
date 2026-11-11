@@ -65,7 +65,9 @@ export type ClaveConfig =
   // 8g · El boleto en Apple Wallet y Google Wallet (0129)
   | "pase_registros_hora" | "pase_ws_por_minuto" | "pase_reintentos" | "pase_cert_aviso_dias"
   // 8d · Llaves de acceso (0130)
-  | "passkey_max" | "passkey_reto_s" | "passkey_retos_hora" | "passkey_fallos_hora";
+  | "passkey_max" | "passkey_reto_s" | "passkey_retos_hora" | "passkey_fallos_hora"
+  // 8h · La tubería de las tiendas (0131)
+  | "tiendas_pedidos_hora" | "tiendas_oidc_fallos_min" | "tiendas_archivo_mb";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

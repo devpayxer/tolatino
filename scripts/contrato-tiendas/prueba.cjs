@@ -79,7 +79,55 @@ let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; c
     ok(extra.status === 422 && /Apple no tiene este campo/.test(ultimo().invalido), 'un campo de más en el cuerpo → 422');
     ok(ASC.feedback.includes('/v1/apps/{id}/betaFeedbackScreenshotSubmissions') && ASC.feedback.includes('/v1/apps/{id}/betaFeedbackCrashSubmissions'), 'la retroalimentación de TestFlight (captura y cierre) existe en la API: se trae a Soporte en 8h');
 
+    console.log('8h · Los builds del CI en App Store Connect: procesamiento y grupo interno');
+    ok(['PROCESSING', 'VALID', 'FAILED', 'INVALID'].every((x) => ASC.estadosBuild.includes(x)), `estados de procesamiento en la especificación: ${ASC.estadosBuild.join(', ')}`);
+    ok(await A.buildEnAsc(S.url, cred, { appId, version: '1.0.0', build: 41 }) === null && ultimo().valido, 'GET /v1/builds?filter[app]&filter[version]&filter[preReleaseVersion.version] → todavía no está (parámetros y fields[builds] válidos)');
+    S.subirBuild({ appId, version: '1.0.0', build: '41', id: 'bld-41' });
+    const b41 = await A.buildEnAsc(S.url, cred, { appId, version: '1.0.0', build: 41 });
+    ok(b41 && b41.id === 'bld-41' && b41.estado === 'PROCESSING', 'Apple lo está procesando (PROCESSING)');
+    ok((await A.buildAlGrupo(S.url, cred, grupo, 'bld-41')).status === 422, 'un build sin procesar no entra al grupo (422)');
+    S.subirBuild({ appId, version: '1.0.0', build: '41', id: 'bld-41', estado: 'VALID' });
+    ok((await A.buildEnAsc(S.url, cred, { appId, version: '1.0.0', build: 41 })).estado === 'VALID', 'VALID');
+    const rg = await A.buildAlGrupo(S.url, cred, grupo, 'bld-41');
+    ok(rg.status === 204 && ultimo().valido && S.enGrupo.some((x) => x.grupo === grupo && x.build === 'bld-41'), 'POST /v1/betaGroups/{id}/relationships/builds → 204 (cuerpo válido): en el grupo INTERNO');
+    ok(await A.buildEnAsc(S.url, cred, { appId, version: '1.0.1', build: 41 }) === null, 'otra versión con el mismo número → no es ese build');
+
     console.log(`Google Play · Android Publisher v3 (descubrimiento ${PLAY.revision})`);
+    {
+      const PS = require(path.join(__dirname, '../tiendas-sim/play.cjs')), P = require(OUT + '/play.js'), cuenta = PS.cuentaDePrueba();
+      const pkg = APPS[0].android, G = await PS.arrancar({ descubrimiento: PLAY, cuenta, paquetes: [pkg] });
+      try {
+        const tok = await P.tokenPlay(`${G.url}/token`, cuenta.json);
+        ok(typeof tok === 'string' && tok.startsWith('ya29.'), 'OAuth de cuenta de servicio: JWT RS256 (iss = client_email, aud = la URL del token, scope androidpublisher) → token');
+        ok(await P.tokenPlay(`${G.url}/token`, cuenta.json) === tok, 'el token se reusa');
+        const otra = PS.cuentaDePrueba('otra@x.iam.gserviceaccount.com');
+        P.olvidarTokenPlay();
+        ok(await P.tokenPlay(`${G.url}/token`, { ...otra.json, client_email: cuenta.correo }) === null, 'firmado con otra llave → sin token');
+        const t2 = await P.tokenPlay(`${G.url}/token`, cuenta.json);
+        const aab = Buffer.concat([Buffer.from([0x50, 0x4b, 0x03, 0x04]), crypto.randomBytes(400)]);
+        G.proximo(pkg, 7);
+        const r = await P.aPlayInterno(G.url, t2, { pkg, aab, nombre: '1.0.0 (7)', build: 7 });
+        ok(r.ok && r.versionCode === 7, 'edits.insert → bundles.upload (uploadType=media) → tracks.update «internal» → edits.commit');
+        const val = G.registro.filter((x) => !x.control);
+        ok(val.every((x) => x.valido && x.status === 200), `cada pedido en el descubrimiento oficial, con parámetros y cuerpo válidos (${val.map((x) => x.id).join(' → ')})`);
+        const tr = val.find((x) => x.id === 'edits.tracks.update');
+        ok(tr.cuerpo.track === 'internal' && tr.cuerpo.releases[0].status === 'completed' && tr.cuerpo.releases[0].versionCodes[0] === '7', 'la pista interna con el versionCode como texto (int64) y status completed');
+        ok(G.confirmadas.some((c) => c.pkg === pkg && c.pista === 'internal' && c.versionCodes.includes('7')), 'confirmado en la pista interna');
+        G.proximo(pkg, 8);
+        const malo = await P.aPlayInterno(G.url, t2, { pkg, aab, nombre: '1.0.0 (9)', build: 9 });
+        ok(!malo.ok && /versionCode 8 y el build es 9/.test(malo.error), 'si el .aab dice otro versionCode que el build → no se confirma');
+        const sinApp = await P.aPlayInterno(G.url, t2, { pkg: 'com.tolatino.noexiste', aab, nombre: 'x', build: 1 });
+        ok(!sinApp.ok && /edits\.insert 404 NOT_FOUND/.test(sinApp.error), `la app no existe en Play Console → ${sinApp.error.slice(0, 60)}`);
+        ok(await P.huellaFirmaGoogle(G.url, t2, pkg, 7) === G.HUELLA && val.length > 0, 'generatedapks.list → la huella SHA-256 de la firma de Google (assetlinks y llaves de acceso)');
+        ok(await P.huellaFirmaGoogle(G.url, t2, pkg, 99) === null, 'de un build que Google no tiene → null');
+        const raro = await fetch(`${G.url}/androidpublisher/v3/applications/${pkg}/edits?inventado=1`, { method: 'POST', headers: { authorization: `Bearer ${t2}`, 'content-type': 'application/json' }, body: '{}' });
+        ok(raro.status === 400, 'un parámetro que no existe → 400');
+        const campo = await fetch(`${G.url}/androidpublisher/v3/applications/${pkg}/edits`, { method: 'POST', headers: { authorization: `Bearer ${t2}`, 'content-type': 'application/json' }, body: '{"telefono":"5705550122"}' });
+        ok(campo.status === 400 && /Google no tiene este campo/.test(G.registro[G.registro.length - 1].invalido), 'un campo de más en el cuerpo → 400');
+        ok(PLAY.resources.edits.resources.bundles.methods.upload.mediaUpload.protocols.simple.path === '/upload/androidpublisher/v3/applications/{packageName}/edits/{editId}/bundles', 'la ruta de subida simple es la del descubrimiento');
+        ok(!Object.keys(PLAY.resources.applications?.methods ?? {}).some((m) => /^(create|insert)$/.test(m)), `applications solo tiene ${Object.keys(PLAY.resources.applications?.methods ?? {}).join(', ')}: CREAR una app es de Play Console (paso del fundador)`);
+      } finally { await G.cerrar(); }
+    }
     const T = PLAY.schemas.Testers;
     ok(T && Object.keys(T.properties).join() === 'googleGroups', 'Testers (pistas) solo tiene googleGroups');
     ok(/email lists are not supported/i.test(T.description), 'Google lo dice: «email lists are not supported by this resource» → Play interno se agrega en Play Console');

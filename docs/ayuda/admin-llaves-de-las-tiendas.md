@@ -6,7 +6,8 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
 ## Qué hace
 - Guarda las **llaves que Apple y Google entregan solo al dueño de la cuenta**: la llave de la API de App Store Connect, la llave de avisos de
   Apple (APNs), las cuentas de servicio de Firebase, Google Play y Google Wallet, la llave de subida de Android y los certificados de Apple
-  (distribución y Apple Wallet). Ocho tipos; una viva por tipo.
+  (distribución y Apple Wallet), y el **token de GitHub** con el que se pide un build (un archivo .txt de una línea). Nueve tipos; una viva por
+  tipo.
 - **El certificado de Apple Wallet no se sube como .p12:** su llave **nace en el servidor**. En Integraciones › **Wallet** se genera la
   solicitud (CSR), se baja y se sube a developer.apple.com; el .cer que da Apple se sube aquí y el servidor lo junta con su llave y el
   intermedio de Apple (lo comprueba: si el .cer no es de esa solicitud, no entra). Vence cada año: aviso al equipo 30 días antes. Ver
@@ -14,7 +15,10 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
 - Cada archivo se **cifra en el servidor** con la llave de los secretos del entorno (nunca en el repositorio, que es público, ni en GitHub).
   Después solo se ve su **huella** (SHA-256), quién la subió, cuándo, cuándo vence, sus datos públicos (el id de la llave, el Team ID, el correo
   de la cuenta de servicio) y cuántas veces se leyó. **El contenido no se vuelve a mostrar nunca**, a nadie.
-- Cada lectura queda anotada (la del servidor y, cuando exista la tubería de las tiendas, la del build), y no se puede borrar.
+- Cada lectura queda anotada (la del servidor y la del CI de las tiendas), y no se puede borrar. Debajo de las llaves, **LECTURAS DEL CI**: qué
+  llave leyó el build, con su número de corrida (run) y su commit; e **INTENTOS DE LA TUBERÍA**: cada vez que alguien se presentó como el CI,
+  si entró o por qué se rechazó (otro repositorio, otra rama, token repetido, llegó sin HTTPS…). El CI nunca guarda una llave: se identifica
+  con el token de GitHub de ese momento (ver «Super Admin: la tubería de las apps»).
 
 ## Cómo se usa
 1. En la fila del tipo, **Subir archivo** (o **Reemplazar** si ya hay una).
@@ -48,12 +52,13 @@ comprobar y retirar). Teléfono y escritorio. Ver y cambiar: **solo un Admin**. 
 ### What it does
 **Super Admin › System › Integrations › Store keys** keeps the keys Apple and Google give only to the account owner: the App Store Connect
 API key, the Apple push key (APNs), the Firebase, Google Play and Google Wallet service accounts, the Android upload key and the Apple
-certificates (distribution and Wallet). Eight kinds, one live per kind. The Apple Wallet certificate is not uploaded as a .p12: its key is
+certificates (distribution and Wallet), and the **GitHub token** used to request a build (a one-line .txt file). Nine kinds, one live per kind. The Apple Wallet certificate is not uploaded as a .p12: its key is
 **born on the server** (Integrations › Wallet generates the request, you upload it to Apple and upload the .cer back here; a .cer that does not
 match the request is rejected; the team is warned 30 days before it expires); the Google Wallet account goes with its **issuer ID**. Each file is **encrypted on the server** with the environment key
 (never in the public repository nor in GitHub). Afterwards only its **fingerprint** (SHA-256), who uploaded it, when, when it expires, its
 public data and how many times it was read are shown. **The content is never shown again**, to anyone. Every read is logged and can't be
-deleted.
+deleted. Below the keys, **CI READS** (which key each build read, with its run and commit) and **PIPELINE ATTEMPTS** (who presented itself as
+the CI, whether it got in or why it was rejected).
 
 ### How to use it
 1. On the row, **Upload file** (or **Replace**). 2. **Send the code**: a 6-digit code goes to your Admin phone (asked again even if you are

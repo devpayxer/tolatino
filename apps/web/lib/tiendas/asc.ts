@@ -71,3 +71,15 @@ export async function agregarTester(base: string, c: CredAsc, x: { correo: strin
 export const quitarTester = (base: string, c: CredAsc, id: string) => pedir(base, c, "DELETE", `/v1/betaTesters/${encodeURIComponent(id)}`);
 export const anularInvitacion = (base: string, c: CredAsc, id: string) => pedir(base, c, "DELETE", `/v1/userInvitations/${encodeURIComponent(id)}`);
 export const quitarUsuario = (base: string, c: CredAsc, id: string) => pedir(base, c, "DELETE", `/v1/users/${encodeURIComponent(id)}`);
+
+/* 8h · Los builds que sube el CI (xcodebuild con la llave de la API): Apple los procesa (PROCESSING) y quedan VALID, o FAILED / INVALID. El
+   barrido pregunta por el build de ESA app, versión y número; cuando está VALID lo suma al grupo interno (TestFlight interno; §6 #9). */
+export type BuildAsc = { id: string; estado: string };
+export async function buildEnAsc(base: string, c: CredAsc, x: { appId: string; version: string; build: number }): Promise<BuildAsc | null | "error"> {
+  const r = await pedir(base, c, "GET", `/v1/builds?${q("filter[app]", x.appId)}&${q("filter[version]", String(x.build))}&${q("filter[preReleaseVersion.version]", x.version)}&${q("fields[builds]", "version,processingState")}&limit=1`);
+  if (r.status !== 200) return "error";
+  const d = datos(r)[0];
+  return d?.id ? { id: d.id, estado: String(d.attributes?.processingState ?? "") } : null;
+}
+export const buildAlGrupo = (base: string, c: CredAsc, grupoId: string, buildId: string) =>
+  pedir(base, c, "POST", `/v1/betaGroups/${encodeURIComponent(grupoId)}/relationships/builds`, { data: [{ type: "builds", id: buildId }] });

@@ -41,6 +41,8 @@ const resolver = (s, n = 0) => {
 const USADAS = [
   ["GET", "/v1/apps"], ["GET", "/v1/apps/{id}/betaGroups"], ["GET", "/v1/users"], ["DELETE", "/v1/users/{id}"],
   ["POST", "/v1/userInvitations"], ["DELETE", "/v1/userInvitations/{id}"], ["POST", "/v1/betaTesters"], ["DELETE", "/v1/betaTesters/{id}"],
+  // 8h · Los builds que sube el CI: su estado de procesamiento y sumarlos al grupo interno.
+  ["GET", "/v1/builds"], ["POST", "/v1/betaGroups/{id}/relationships/builds"],
 ];
 const rutas = {};
 for (const [m, p] of USADAS) {
@@ -63,10 +65,14 @@ const out = {
   jwt: { alg: "ES256", aud: "appstoreconnect-v1", maxVidaS: 1200 },
   roles: resolver({ $ref: "#/components/schemas/UserRole" }).enum,
   betaGroup: Object.keys(S.components.schemas.BetaGroup.properties.attributes.properties).sort(),
+  // 8h · Los estados de procesamiento de un build (Build.attributes.processingState).
+  estadosBuild: S.components.schemas.Build.properties.attributes.properties.processingState.enum,
+  build: Object.keys(S.components.schemas.Build.properties.attributes.properties).sort(),
   feedback: Object.keys(S.paths).filter((p) => /betaFeedback(Screenshot|Crash)Submissions$/.test(p)).sort(),
   rutas,
 };
 falta(out.roles.includes("DEVELOPER") && out.betaGroup.includes("isInternalGroup"), "faltan roles o isInternalGroup");
+falta(["PROCESSING", "VALID", "FAILED", "INVALID"].every((x) => out.estadosBuild?.includes(x)), "faltan los estados de procesamiento de un build");
 const destino = join(dirname(fileURLToPath(import.meta.url)), "asc.json");
 writeFileSync(destino, JSON.stringify(out, null, 1) + "\n");
 console.log(`✓ ${destino}: App Store Connect API ${out.version}, ${USADAS.length} rutas`);

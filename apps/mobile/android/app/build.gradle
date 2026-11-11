@@ -22,10 +22,26 @@ android {
         resValues = true
         buildConfig = true
     }
+    // 8h · La firma de los builds release: el CI de las tiendas pone la llave de subida en un almacén TEMPORAL (del llavero por OIDC o, mientras
+    // el servidor no tenga HTTPS, una desechable que dice «NO PARA DISTRIBUIR») y lo borra al terminar (if: always()). Nunca en el repo ni en
+    // GitHub (guardián llavesFueraDelRepo). Sin TL_FIRMA_ALMACEN, el release sale sin firmar.
+    def ALMACEN = System.getenv('TL_FIRMA_ALMACEN')
+    signingConfigs {
+        if (ALMACEN) {
+            create('subida') {
+                storeFile file(ALMACEN)
+                storeType 'pkcs12'
+                storePassword System.getenv('TL_FIRMA_CLAVE')
+                keyAlias System.getenv('TL_FIRMA_ALIAS') ?: 'subida'
+                keyPassword System.getenv('TL_FIRMA_CLAVE')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (ALMACEN) signingConfig signingConfigs.subida
         }
     }
     compileOptions {

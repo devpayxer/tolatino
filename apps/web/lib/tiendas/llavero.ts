@@ -26,6 +26,8 @@ export const TIPOS = {
   google_wallet_sa: { es: "Google Wallet · cuenta de servicio", en: "Google Wallet · service account", ext: [".json"], forma: "sa" },
   // 8g · La llave de la solicitud del certificado del pase: la GENERA el servidor (no se sube); se retira al llegar el certificado.
   pass_type_csr: { es: "Apple Wallet · solicitud del certificado (llave)", en: "Apple Wallet · certificate request (key)", ext: [], forma: "generada" },
+  // 8h · El token del fundador para «Pedir un build» (lanza el flujo de las tiendas; permiso «Actions: write» solo en este repositorio).
+  github_token: { es: "GitHub · token para pedir builds", en: "GitHub · token to request builds", ext: [".txt"], forma: "token" },
 } as const;
 export type TipoLlave = keyof typeof TIPOS;
 export const esTipo = (k: unknown): k is TipoLlave => typeof k === "string" && Object.hasOwn(TIPOS, k);
@@ -38,6 +40,13 @@ function kek(tipo: string): Buffer | null {
   return Buffer.from(hkdfSync("sha256", Buffer.from(s), Buffer.from("tl:llavero:v1"), Buffer.from(tipo), 32));
 }
 export const llaveroListo = () => kek("prueba") !== null;
+/* 8h · La contraseña de un almacén PKCS12 que nace en la tubería (la llave de subida de Android; el certificado de distribución de Apple si la firma
+   en la nube no alcanza) de la versión N: se DERIVA de la llave del entorno (nunca se guarda ni se escribe): el job que crea la llave la pide para
+   la versión nueva y el que firma la recibe junto al almacén. Sin la llave del entorno, nada. */
+export function claveAlmacen(tipo: "android_upload_keystore" | "ios_dist_cert", version: number): string | null {
+  const k = kek(`${tipo}:clave:v${version}`);
+  return k ? k.toString("base64url").slice(0, 32) : null;
+}
 
 const MAGIA = Buffer.from("TLK1");
 function sellar(tipo: string, contenido: Buffer): Buffer {
@@ -85,6 +94,10 @@ export function revisarArchivo(tipo: TipoLlave, nombre: string, b: Buffer, extra
     meta.correo = String(j.client_email).slice(0, 120);
     if (typeof j.project_id === "string") meta.proyecto = j.project_id.slice(0, 80);
     if (typeof j.private_key_id === "string") meta.id_llave = j.private_key_id.slice(0, 12);
+  } else if (t.forma === "token") {
+    // 8h · Un token de GitHub en un .txt (una línea): de grano fino (github_pat_…) o clásico (ghp_…). Nada más en el archivo.
+    if (!/^(github_pat_[A-Za-z0-9_]{40,255}|ghp_[A-Za-z0-9]{36})\r?\n?$/.test(b.toString("utf8"))) return { ok: false, msg: "No es un token de GitHub (github_pat_… o ghp_…, una sola línea)." };
+    meta.tipo = b.toString("utf8").startsWith("github_pat_") ? "grano fino" : "clásico";
   } else if (t.forma === "cer") {
     const pem = /-----BEGIN CERTIFICATE-----/.test(b.toString("latin1")), der = b[0] === 0x30 && (b[1] === 0x82 || b[1] === 0x83);
     if (/PRIVATE KEY/.test(b.toString("latin1"))) return { ok: false, msg: "Sube solo el certificado (.cer), sin llave: la llave ya está en el servidor." };

@@ -2454,6 +2454,14 @@ const guardianes = {
       if (!/raise exception 'una llave de acceso no se borra/.test(ultimaFn("passkeys_antes")) || !/una llave quitada no vuelve ni se usa/.test(ultimaFn("passkeys_antes"))) falla(G, ML, 0, "una llave no se borra ni vuelve (estados)");
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) passkey_log\b|\bdelete from passkeys\b/.test(q)) falla(G, x, 0, `el libro de las llaves no se cambia y una llave no se borra: «${q.slice(0, 60)}»`);
     }
+    // 8h · La tubería: ci_oidc_log y store_submissions son de solo inserción; un pedido de build no se borra. La app no los cambia ni los borra.
+    const MT = "packages/db/migrations/0131_tiendas_tuberia.sql";
+    if (existsSync(MT)) {
+      if (!/raise exception 'ci_oidc_log es solo de inserción'/.test(ultimaFn("ci_oidc_log_antes"))) falla(G, MT, 0, "ci_oidc_log es de solo inserción (trigger)");
+      if (!/raise exception 'store_submissions es solo de inserción'/.test(ultimaFn("store_submissions_antes"))) falla(G, MT, 0, "store_submissions es de solo inserción (trigger)");
+      if (!/raise exception 'un pedido de build no se borra'/.test(ultimaFn("build_requests_antes"))) falla(G, MT, 0, "un pedido de build no se borra");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (ci_oidc_log|store_submissions)\b|\bdelete from (build_requests|app_builds)\b/.test(q)) falla(G, x, 0, "los libros de la tubería no se cambian y un pedido o un build no se borran");
+    }
     const m = readFileSync(M, "utf8");
     if (!/create trigger mod_flags_no_cambia before update or delete on mod_flags for each row execute function mod_flags_inmutable\(\)/.test(m) || !/raise exception 'mod_flags es solo de inserción'/.test(m)) falla(G, M, 0, "mod_flags sin el trigger de solo inserción");
     if (!/if tg_op = 'DELETE' then raise exception 'una apelación no se borra'/.test(m) || !/if old\.status <> 'open' then raise exception 'una apelación decidida no cambia'/.test(m)) falla(G, M, 0, "appeals: no se borra y, decidida, no cambia");
@@ -5261,10 +5269,12 @@ const guardianes = {
     const G = "llavesFueraDelRepo";
     for (const f of archivos) {
       if (/\.(p8|p12|jks|keystore|mobileprovision|pfx)$/i.test(f) || /(^|\/)(AuthKey_[A-Z0-9]+\.p8|google-services\.json|GoogleService-Info\.plist)$/.test(f)) falla(G, f, 0, "un archivo de llave en el repo (va cifrado en el llavero del servidor)");
+      // 8h · Ni una llave de App Store Connect con otra extensión, ni un almacén con otro nombre (AuthKey_*, *.keystore.*, upload-keystore*).
+      if (/(^|\/)AuthKey_[^/]*$/.test(f) || /(^|\/)[^/]*\.(keystore|jks)\.[a-z0-9]+$/i.test(f) || /(^|\/)(upload|subida)[-_]?(keystore|key)\.[a-z0-9]+$/i.test(f)) falla(G, f, 0, "un archivo de llave en el repo (va cifrado en el llavero del servidor)");
       // 8g · Ni certificados ni solicitudes ni pases firmados (el del Pass Type ID y su cadena viven en el llavero; los de prueba se hacen al vuelo).
       if (/\.(cer|crt|der|pem|key|csr|certSigningRequest|pkpass)$/i.test(f)) falla(G, f, 0, "un certificado, una llave o un pase firmado en el repo (el repo es público)");
       if (/\.(tsx?|jsx?|mjs|cjs|json|md|sql|sh|ya?ml|txt)$/.test(f) && !f.includes("node_modules") && f !== "guardianes/run.mjs") { const t = readFileSync(f, "utf8"); if (/-----BEGIN (CERTIFICATE|PRIVATE KEY|RSA PRIVATE KEY|EC PRIVATE KEY|CERTIFICATE REQUEST)-----\r?\n[A-Za-z0-9+/=]{40,}/.test(t)) falla(G, f, 0, "un certificado o una llave en PEM dentro de un archivo del repo"); }
-      if (/\.json$/.test(f) && !f.includes("node_modules")) { const t = readFileSync(f, "utf8"); if (/"private_key"\s*:\s*"-----BEGIN/.test(t)) falla(G, f, 0, "una cuenta de servicio con su llave privada en el repo"); }
+      if (/\.json$/.test(f) && !f.includes("node_modules")) { const t = readFileSync(f, "utf8"); if (/"private_key"\s*:\s*"(-----BEGIN|[A-Za-z0-9+/=\\n]{200,})/.test(t)) falla(G, f, 0, "una cuenta de servicio con su llave privada en el repo"); }
     }
     for (const g of ["apps/mobile/.gitignore", "apps/mobile/android/.gitignore", "apps/mobile/ios/.gitignore"]) if (!existsSync(g)) falla(G, g, 0, "falta el .gitignore que deja fuera las llaves");
     const gi = ["apps/mobile/android/.gitignore", "apps/mobile/ios/.gitignore"].map((g) => (existsSync(g) ? readFileSync(g, "utf8") : "")).join("\n");
@@ -5272,7 +5282,31 @@ const guardianes = {
     for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
       const t = readFileSync(f, "utf8");
       if (/pull_request_target/.test(t)) falla(G, f, 0, "pull_request_target le da secretos a un PR ajeno: no se usa");
-      if (/cascaras/.test(f) && /\$\{\{\s*secrets\./.test(t)) falla(G, f, 0, "las cáscaras no usan secretos de GitHub: las llaves viven en el llavero (OIDC, 8h)");
+      if (/cascaras|tiendas/.test(f) && /\bsecrets\.|\bsecrets\[/.test(t)) falla(G, f, 0, "las cáscaras y las tiendas no usan secretos de GitHub: las llaves viven en el llavero (OIDC, 8h)");
+    }
+    // 8h · El flujo de las tiendas: solo push a pruebas y workflow_dispatch (nunca un PR), id-token solo en los jobs del entorno «tiendas», sin
+    // credenciales de git guardadas, y las llaves en un directorio temporal que se borra con if: always() (ningún artefacto las lleva).
+    const TY = ".github/workflows/tiendas.yml";
+    if (existsSync(TY)) {
+      const t = readFileSync(TY, "utf8"), on = (/\non:\n([\s\S]*?)\n(?:permissions|concurrency|jobs):/.exec(t) ?? [])[1] ?? "";
+      if (/\bpull_request|\bissue_comment|\bworkflow_run|\bschedule|\brepository_dispatch/.test(on) || !/\n  push:\n    branches: \[pruebas\]\n/.test("\n" + on + "\n") || !/\n  workflow_dispatch:/.test("\n" + on)) falla(G, TY, 0, "el flujo de las tiendas corre SOLO con push a pruebas o workflow_dispatch");
+      const top = (/\npermissions:\n((?:  .*\n)+)/.exec(t) ?? [])[1] ?? "";
+      if (!/^  contents: read\n$/.test(top)) falla(G, TY, 0, "los permisos de arriba son solo contents: read (id-token, en cada job del entorno tiendas)");
+      for (const j of t.split(/\n  (?=[a-z][\w-]*:\n    name:)/).slice(1)) {
+        const nombre = j.slice(0, j.indexOf(":"));
+        if (/id-token: write/.test(j) && !/\n    environment: tiendas\n/.test(j)) falla(G, TY, 0, `el job «${nombre}» pide id-token sin el entorno tiendas`);
+        if (/uses: actions\/checkout/.test(j) && (j.match(/uses: actions\/checkout@v\d+\n        with: \{ persist-credentials: false \}/g) ?? []).length !== (j.match(/uses: actions\/checkout/g) ?? []).length) falla(G, TY, 0, `el job «${nombre}» deja las credenciales de git (persist-credentials: false)`);
+        if (/ci\.mjs llaves/.test(j) && !/- name: Borrar las llaves[^\n]*\n        if: always\(\)\n        run: [|]?[\s\S]{0,400}rm -rf -- "\$LLAVES"/.test(j)) falla(G, TY, 0, `el job «${nombre}» no borra las llaves con if: always()`);
+        if (/upload-artifact[\s\S]{0,200}(LLAVES|tl-llaves|\.p8|\.p12|keychain)/.test(j)) falla(G, TY, 0, `el job «${nombre}» sube las llaves como artefacto`);
+      }
+      if (/RUNNER_TEMP\/tl-llaves/.test(t) === false) falla(G, TY, 0, "las llaves van en el directorio temporal del runner");
+    }
+    const CI = "scripts/tiendas/ci.mjs";
+    if (existsSync(CI)) {
+      const t = readFileSync(CI, "utf8");
+      if (!/if \(!BASE\.startsWith\("https:\/\/"\)\) falla\(/.test(cuerpoFn(t, "pedir"))) falla(G, CI, 0, "el CI manda su token SOLO por https");
+      if (!/console\.log\(`::add-mask::\$\{j\.value\}`\)/.test(cuerpoFn(t, "token"))) falla(G, CI, 0, "el token OIDC se enmascara en el log");
+      t.split("\n").forEach((l, i) => { if (/console\.(log|error)\(/.test(l) && /\b(l\.archivo|j\.llaves|j\.value|l\.clave)\b/.test(l) && !/::add-mask::/.test(l)) falla(G, CI, i + 1, "una llave o el token en el log del CI"); });
     }
     const LL = "apps/web/lib/tiendas/llavero.ts";
     for (const f of codigo) {
@@ -5280,6 +5314,9 @@ const guardianes = {
       const t = sinComent(f);
       if (/\bblob_enc\b/.test(t)) falla(G, f, 0, "el sobre de una llave solo lo toca lib/tiendas/llavero.ts");
       if (/from ["']@\/lib\/tiendas\/llavero["']/.test(t) && /\bleer\b[,} ]/.test((/import \{([^}]*)\} from ["']@\/lib\/tiendas\/llavero["']/.exec(t) ?? [])[1] ?? "")) falla(G, f, 0, "leer() del llavero es solo del servidor de tiendas (8h), nunca de una pantalla");
+      // 8h · Quién abre un sobre: el programa beta, la tubería, el push y Wallet (servidor). Ninguna ruta ni pantalla.
+      const imp = (/import \{([^}]*)\} from ["'](?:\.{1,2}\/)+(?:lib\/)?tiendas\/llavero["']|import \{([^}]*)\} from ["']\.\/llavero["']/.exec(t) ?? []);
+      if (/\bleer\b/.test((imp[1] ?? "") + (imp[2] ?? "")) && !/^apps\/web\/lib\/(beta|tiendas\/tuberia|push\/llaves|pases\/[a-z-]+)\.ts$/.test(f)) falla(G, f, 0, "leer() del llavero solo desde lib/beta, lib/tiendas/tuberia, lib/push/llaves y lib/pases");
     }
     if (existsSync(LL)) {
       const t = sinComent(LL), l = cuerpoFn(t, "listar");
@@ -5653,10 +5690,124 @@ const guardianes = {
   /* 8f · La API de App Store Connect: fuera de producción un simulador la puede reemplazar (ASC_API_URL, como el push de 8c); en producción esa
      variable NO se lee y la dirección es la de Apple. Solo lib/beta.ts la lee. Al revés: leerla también en producción → falla. */
   tiendasSimuladorAislado() {
-    const G = "tiendasSimuladorAislado", L = "apps/web/lib/beta.ts";
-    if (!existsSync(L)) return;
-    if (!/const URL_ASC = \(\) => \(!PROD && process\.env\.ASC_API_URL \? process\.env\.ASC_API_URL : "https:\/\/api\.appstoreconnect\.apple\.com"\);/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "ASC_API_URL solo fuera de producción; en producción, la API de Apple");
-    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && /ASC_API_URL/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "solo lib/beta.ts lee ASC_API_URL");
+    // 8h · Las direcciones de Apple, Google y GitHub viven en lib/tiendas/direcciones.ts (8f empezó con ASC_API_URL en lib/beta.ts).
+    const G = "tiendasSimuladorAislado", L = "apps/web/lib/tiendas/direcciones.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/tiendas/direcciones.ts (las direcciones de las tiendas en un solo lugar)");
+    const t = readFileSync(L, "utf8");
+    if (!/const PROD = ENTORNO === "produccion";/.test(t)) falla(G, L, 0, "las direcciones saben si es producción");
+    const VARS = { ASC_API_URL: '"https://api.appstoreconnect.apple.com"', PLAY_API_URL: '"https://androidpublisher.googleapis.com"', PLAY_OAUTH_URL: '"https://oauth2.googleapis.com/token"', TIENDAS_GITHUB_API_URL: '"https://api.github.com"', TIENDAS_OIDC_JWKS_URL: "JWKS_GITHUB" };
+    for (const [v, real] of Object.entries(VARS)) {
+      if (!new RegExp(`= \\(\\) => \\(!PROD && process\\.env\\.${v} \\? process\\.env\\.${v} : ${real.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&")}\\);`).test(t)) falla(G, L, 0, `${v} solo fuera de producción; en producción, ${real}`);
+      for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && new RegExp(`\\b${v}\\b`).test(readFileSync(f, "utf8"))) falla(G, f, 0, `solo lib/tiendas/direcciones.ts lee ${v}`);
+    }
+    if (!/export const JWKS_GITHUB = `\$\{EMISOR\}\/\.well-known\/jwks`;/.test(readFileSync("apps/web/lib/tiendas/oidc.ts", "utf8"))) falla(G, "apps/web/lib/tiendas/oidc.ts", 0, "el JWKS de producción es el de GitHub");
+  },
+
+  /* 8h · El token OIDC de GitHub se revisa ENTERO antes de dar nada (fase8-apps.md §3.5): RS256 exacto (ni none, ni HS256 con la llave pública,
+     ni llaves incrustadas), kid del JWKS de GitHub con RSA ≥ 2048, firma, emisor, audiencia, repo con su id y su dueño, entorno «tiendas», sub,
+     rama permitida (el sandbox solo pruebas; producción solo produccion y solo con app.tiendas.publico), evento push o workflow_dispatch, el flujo
+     tiendas.yml de esa rama, runner de GitHub, nada de un PR, tiempos con poca holgura; HTTPS antes que nada; el jti se gasta en UNA inserción;
+     cada ruta de /api/tiendas autentica primero; nadie más verifica tokens de GitHub ni escribe sus libros. Al revés: aceptar otro alg, saltar el
+     repo, la rama, el entorno o el jti, permitir produccion en el sandbox, o una ruta que no autentica → falla. */
+  oidcEstricto() {
+    const G = "oidcEstricto", O = "apps/web/lib/tiendas/oidc.ts", T = "apps/web/lib/tiendas/tuberia.ts", M = "packages/db/migrations/0131_tiendas_tuberia.sql";
+    if (!existsSync(O) || !existsSync(T)) return falla(G, O, 0, "falta la verificación del OIDC de GitHub");
+    const o = sinComent(O), v = cuerpoFn(o, "verificar");
+    const exige = [
+      [/if \(h\.alg !== "RS256"\) return \{ ok: false, motivo: "alg" \};/, "alg EXACTAMENTE RS256"],
+      [/if \("crit" in h \|\| "jku" in h \|\| "jwk" in h \|\| "x5u" in h \|\| "x5c" in h\) return/, "sin crit ni llaves incrustadas (jku, jwk, x5u, x5c)"],
+      [/if \(!llave\) return \{ ok: false, motivo: "kid" \};/, "un kid que no está en el JWKS no entra"],
+      [/llave\.asymmetricKeyType !== "rsa" \|\| bits < 2048\) return/, "solo RSA de 2048 bits o más"],
+      [/!verify\("sha256", Buffer\.from\(`\$\{p\[0\]\}\.\$\{p\[1\]\}`\), llave, firma\)\) return \{ ok: false, motivo: "firma" \};/, "la firma se verifica con la llave del JWKS (sha256)"],
+      [/if \(c\.iss !== EMISOR\) return/, "el emisor"], [/c\.aud !== AUDIENCIA/, "la audiencia"],
+      [/if \(c\.repository !== REPO\.nombre \|\| String\(c\.repository_id\) !== REPO\.id\) return/, "el repo y su id"],
+      [/if \(c\.repository_owner !== REPO\.dueno \|\| String\(c\.repository_owner_id\) !== REPO\.duenoId\) return/, "el dueño y su id"],
+      [/if \(c\.environment !== REPO\.entorno\) return/, "el entorno tiendas"], [/if \(c\.sub !== `repo:\$\{REPO\.nombre\}:environment:\$\{REPO\.entorno\}`\) return/, "el sub del entorno"],
+      [/if \(c\.ref_type !== "branch" \|\| !esperado\.ramas\.includes\(c\.ref\)\) return/, "la rama permitida"],
+      [/if \(!\(EVENTOS as readonly string\[\]\)\.includes\(c\.event_name\)\) return/, "el evento"],
+      [/if \(c\.job_workflow_ref !== flujo \|\| c\.workflow_ref !== flujo\) return/, "el flujo tiendas.yml de esa rama"],
+      [/if \(c\.runner_environment !== "github-hosted"\) return/, "un runner de GitHub"], [/if \(c\.head_ref \|\| c\.base_ref\) return/, "nada de un pull request"],
+      [/if \(ahora > exp \+ HOLGURA_S\) return \{ ok: false, motivo: "vencido", c \};/, "un token vencido no entra"],
+    ];
+    for (const [re, que] of exige) if (!re.test(v)) falla(G, O, 0, `verificar(): ${que}`);
+    if (!/export const REPO = \{ nombre: "devpayxer\/tolatino", id: "1283030677", dueno: "devpayxer", duenoId: "281237548", entorno: "tiendas", flujo: "\.github\/workflows\/tiendas\.yml" \} as const;/.test(o)) falla(G, O, 0, "el repo, sus ids, el entorno y el flujo, fijos");
+    if (!/export const EVENTOS = \["push", "workflow_dispatch"\] as const;/.test(o)) falla(G, O, 0, "solo push y workflow_dispatch");
+    const hol = /export const HOLGURA_S = (\d+);/.exec(o);
+    if (!hol || Number(hol[1]) > 120) falla(G, O, 0, "la holgura de los tiempos es chica (≤ 120 s)");
+    if (/createHmac|"HS256"|alg === "none"|h\.alg\s*\)/.test(o.replace(/if \(h\.alg !== "RS256"\)/, ""))) falla(G, O, 0, "el algoritmo no sale de la cabecera del token");
+    const t = sinComent(T), a = cuerpoFn(t, "autenticar");
+    if (!/if \(!llegoPorHttps\(req\)\) return no\("sin_https"\);/.test(a) || a.indexOf("llegoPorHttps(req)") > a.indexOf("verificar(")) falla(G, T, 0, "autenticar(): HTTPS antes de mirar el token");
+    if (!/export const llegoPorHttps = \(req: Request\) => \(req\.headers\.get\("x-forwarded-proto"\) \?\? ""\)\.split\(","\)\[0\]!\.trim\(\)\.toLowerCase\(\) === "https";/.test(t)) falla(G, T, 0, "HTTPS: lo dice nginx (x-forwarded-proto), sin atajos");
+    if (/process\.env\.\w*(HTTP|HTTPS|INSEGURO|LOCAL)\w*/.test(t)) falla(G, T, 0, "ninguna variable del entorno salta el HTTPS");
+    if (!/insert into ci_oidc_jti \(jti, exp, run_id, para\) values \(\$1, to_timestamp\(\$2\), \$3, \$4\) on conflict \(jti\) do nothing returning jti/.test(a) || !/if \(!nuevo\) return no\("jti_repetido", c\);/.test(a)) falla(G, T, 0, "autenticar(): el jti se gasta en UNA inserción y uno repetido no entra");
+    if (!/const r = await verificar\(token, llavesDe\(URL_JWKS\(\)\), \{ ramas: await ramasPermitidas\(\) \}\);\s*\/\/[^\n]*\n?\s*if \(!r\.ok\) return no\(r\.motivo, r\.c\);|const r = await verificar\(token, llavesDe\(URL_JWKS\(\)\), \{ ramas: await ramasPermitidas\(\) \}\);\s*if \(!r\.ok\) return no\(r\.motivo, r\.c\);/.test(a)) falla(G, T, 0, "autenticar(): verificar() con el JWKS y las ramas permitidas; si no, fuera");
+    const ram = cuerpoFn(t, "ramasPermitidas");
+    if (!/if \(!PROD\) return \["refs\/heads\/pruebas"\];\s*return \(await encendido\("app\.tiendas\.publico"\)\) \? \["refs\/heads\/produccion"\] : \[\];/.test(ram)) falla(G, T, 0, "las ramas: el sandbox solo pruebas; producción solo produccion y con app.tiendas.publico");
+    for (const f of codigo.filter((x) => /^apps\/web\/app\/api\/tiendas\/.*route\.ts$/.test(x))) {
+      const r = sinComent(f);
+      if (!/export const dynamic = "force-dynamic";/.test(r)) falla(G, f, 0, "las rutas de la tubería no se guardan en caché");
+      if (/export async function (GET|HEAD|DELETE|PATCH|OPTIONS)\b/.test(r)) falla(G, f, 0, "la tubería solo recibe POST o PUT");
+      for (const m of r.matchAll(/export async function (POST|PUT)\(req: Request\) \{\n([^\n]*)\n([^\n]*)/g)) if (!/^\s*const a = await autenticar\(req, "(llaves|build|archivo)"\);$/.test(m[2]) || !/if \(!a\.ok\) return/.test(m[3])) falla(G, f, 0, `${m[1]}: lo primero es autenticar() y, si no, fuera`);
+      if (!/export async function (POST|PUT)\(req: Request\) \{\n\s*const a = await autenticar/.test(r)) falla(G, f, 0, "toda ruta de la tubería autentica primero");
+    }
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === O || f === T) continue;
+      const x = sinComent(f);
+      if (/token\.actions\.githubusercontent\.com|verificar\(.*llavesDe|from ["'][^"']*tiendas\/oidc["']/.test(x) && f !== "apps/web/lib/tiendas/direcciones.ts") falla(G, f, 0, "solo lib/tiendas/tuberia.ts verifica tokens de GitHub");
+      for (const q of x.match(/`[^`]*`/g) ?? []) if (/\b(insert into|update|delete from) (ci_oidc_jti|ci_oidc_log)\b/.test(q)) falla(G, f, 0, "solo la tubería escribe los jti y el libro del OIDC");
+    }
+    if (existsSync(M)) {
+      const m = readFileSync(M, "utf8");
+      if (!/jti     text primary key/.test(m)) falla(G, M, 0, "ci_oidc_jti: el jti es la llave primaria (el mismo token no entra dos veces)");
+      if (!/raise exception 'ci_oidc_jti: un jti usado no cambia'/.test(ultimaFn("ci_oidc_jti_antes")) || !/if old\.exp > now\(\) - interval '1 day' then raise exception/.test(ultimaFn("ci_oidc_jti_antes"))) falla(G, M, 0, "ci_oidc_jti: no cambia y solo se purga lo vencido");
+    } else falla(G, M, 0, "falta la migración de la tubería");
+  },
+
+  /* 8h · Cambiar el código nativo exige subir la versión (fase8-apps.md §3.5): apps/mobile/versiones.json guarda cada versión con la huella de lo
+     nativo; la última = apps.json y = la huella de hoy, el historial solo crece. Y el CI de las tiendas lo revisa antes de compilar. Al revés: tocar
+     un plugin sin subir la versión, re-sellar la última o bajar la versión → falla. */
+  versionCoherente() {
+    const G = "versionCoherente", V = "apps/mobile/scripts/version.mjs", TY = ".github/workflows/tiendas.yml";
+    if (!existsSync(V)) return falla(G, V, 0, "falta la versión de las apps (version.mjs)");
+    const req = createRequire(import.meta.url), raiz = process.cwd();
+    try {
+      const out = execSync(`node -e 'import(${JSON.stringify("file://" + join(raiz, V))}).then((m) => console.log(JSON.stringify(m.problemas())))'`, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+      for (const p of JSON.parse(out.trim().split("\n").pop())) falla(G, "apps/mobile/versiones.json", 0, p);
+    } catch (e) { falla(G, V, 0, `no se pudo revisar la versión: ${String(e.stderr ?? e.message).split("\n")[0]}`); }
+    void req;
+    if (existsSync(TY) && !/run: node apps\/mobile\/scripts\/version\.mjs --verificar/.test(readFileSync(TY, "utf8"))) falla(G, TY, 0, "el CI de las tiendas revisa la versión antes de compilar");
+    const gr = readFileSync("apps/mobile/android/app/build.gradle", "utf8");
+    if (!/versionName APPS\.version/.test(gr) || !/versionCode BUILD/.test(gr)) falla(G, "apps/mobile/android/app/build.gradle", 0, "versionName sale de apps.json y versionCode del build del CI");
+    if (!/MARKETING_VERSION: "\$\{A\.version\}"/.test(readFileSync("apps/mobile/scripts/generar.mjs", "utf8"))) falla(G, "apps/mobile/scripts/generar.mjs", 0, "MARKETING_VERSION sale de apps.json");
+  },
+
+  /* 8h · Las tiendas públicas son de la Fase 9 (fase8-apps.md §3.5 «Sabor y canal»): la base rechaza «revision_publica» y «lanzamiento», el sabor de
+     producción y el canal «tienda» mientras app.tiendas.publico esté apagado (y piden el OK del fundador); el interruptor nace apagado y ningún
+     código lo enciende ni inserta esos envíos; el flujo de las tiendas no corre en produccion ni compila su sabor; generar.mjs mantiene el candado.
+     Al revés: quitar la condición del trigger, encender el interruptor en la migración o compilar el sabor produccion en el flujo → falla. */
+  tiendaSoloProduccion() {
+    const G = "tiendaSoloProduccion", M = "packages/db/migrations/0131_tiendas_tuberia.sql", TY = ".github/workflows/tiendas.yml";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la tubería");
+    const m = readFileSync(M, "utf8");
+    if (!/\('app\.tiendas\.publico', false, /.test(m)) falla(G, M, 0, "app.tiendas.publico nace APAGADO");
+    const ss = ultimaFn("store_submissions_antes");
+    if (!/if new\.kind in \('revision_publica', 'lanzamiento'\) then\s+[^\n]*\n\s+if not coalesce\(\(select enabled from feature_flags where key = 'app\.tiendas\.publico'\), false\) then\s+raise exception 'tienda_solo_produccion/.test(ss)) falla(G, M, 0, "store_submissions: la revisión pública y el lanzamiento, rechazados sin app.tiendas.publico");
+    if (!/if new\.founder_ok_ref is null then raise exception 'tienda_solo_produccion/.test(ss)) falla(G, M, 0, "store_submissions: la Fase 9 pide la referencia del OK del fundador");
+    if (!/raise exception 'store_submissions es solo de inserción'/.test(ss)) falla(G, M, 0, "store_submissions es de solo inserción");
+    if (!/if \(new\.flavor = 'produccion' or new\.channel = 'tienda'\) and not coalesce\(\(select enabled from feature_flags where key = 'app\.tiendas\.publico'\), false\) then\s+raise exception 'tienda_solo_produccion/.test(ultimaFn("app_builds_antes"))) falla(G, M, 0, "app_builds: el sabor de producción y la tienda, solo con app.tiendas.publico");
+    if (!/if new\.ref = 'produccion' and not coalesce\(\(select enabled from feature_flags where key = 'app\.tiendas\.publico'\), false\) then\s+raise exception 'tienda_solo_produccion/.test(ultimaFn("build_requests_antes"))) falla(G, M, 0, "build_requests: un build de producción, solo con app.tiendas.publico");
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y > "0131" && y.endsWith(".sql"))) if (/app\.tiendas\.publico'[^;]*\btrue\b|set enabled = true where key = 'app\.tiendas\.publico'/.test(readFileSync(`packages/db/migrations/${x}`, "utf8"))) falla(G, `packages/db/migrations/${x}`, 0, "app.tiendas.publico se enciende en la Fase 9, con el OK del fundador (no en una migración)");
+    for (const f of codigo) {
+      if (!/^(apps\/web|scripts|infra)\/.*\.(tsx?|mjs|cjs|sh|sql)$/.test(f)) continue;
+      const x = /\.(tsx?|mjs|cjs)$/.test(f) ? sinComent(f) : readFileSync(f, "utf8");
+      if (/'(revision_publica|lanzamiento)'/.test(x) && /insert into store_submissions/.test(x)) falla(G, f, 0, "la revisión pública y el lanzamiento son de la Fase 9");
+      if (/app\.tiendas\.publico/.test(x) && /update feature_flags|insert into feature_flags/.test(x) && !/^scripts\//.test(f)) falla(G, f, 0, "app.tiendas.publico no se cambia desde el código");
+    }
+    if (existsSync(TY)) {
+      const t = readFileSync(TY, "utf8");
+      if (/produccion|TL_PRODUCCION|SABOR: produccion|\bmain\b\]/.test(t.replace(/#[^\n]*/g, ""))) falla(G, TY, 0, "el flujo de las tiendas no corre en produccion ni compila su sabor (Fase 9)");
+    }
+    if (!/if \(SABOR === "produccion" && process\.env\.TL_PRODUCCION !== "fase9"\)/.test(readFileSync("apps/mobile/scripts/generar.mjs", "utf8"))) falla(G, "apps/mobile/scripts/generar.mjs", 0, "generar.mjs no prepara el sabor produccion antes de la Fase 9");
   },
 
   /* 8f · Una cáscara instalada de antes no trae los métodos nuevos de un plugin propio (TLReporte.agitar, .cierres, .ultimaCaptura): Capacitor
