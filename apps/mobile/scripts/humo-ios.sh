@@ -15,7 +15,7 @@ for par in ToLatino:com.tolatino.app ToLatinoNegocios:com.tolatino.negocios ToLa
   IFS=: read -r t id <<< "$par"
   xcrun simctl install "$DEV" "$APPS/$t.app"
   desde=$(date '+%Y-%m-%d %H:%M:%S')
-  l=$(xcrun simctl launch --terminate-running-process --stdout="$OUT/$t.out" --stderr="$OUT/$t.err" "$DEV" "$id")
+  l=$(SIMCTL_CHILD_NSUnbufferedIO=YES xcrun simctl launch --terminate-running-process --stdout="$OUT/$t.out" --stderr="$OUT/$t.err" "$DEV" "$id")
   pid=${l##*: }
   sleep 12
   xcrun simctl io "$DEV" screenshot "$OUT/$t.png" > /dev/null

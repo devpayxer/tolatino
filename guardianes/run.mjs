@@ -5131,6 +5131,12 @@ const guardianes = {
     for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== "apps/web/lib/nativo/almacen.ts" && /\bindexedDB\./.test(sinComent(f))) falla(G, f, 0, "lo que se guarda para sin señal va por lib/nativo/almacen.ts (IndexedDB en la web, TLLocal en la app)");
     const IS = "apps/mobile/scripts/islas.mjs";
     if (!existsSync(IS) || !/A\.apps\.flatMap\(\(a\) => a\.islas\)/.test(readFileSync(IS, "utf8"))) falla(G, IS, 0, "las islas que se copian salen de apps.json");
+    // 11 nov: en Android, con server.url, Capacitor solo deja navegar dentro al servidor; ir a la isla (https://localhost/…) abría el navegador
+    // y el humo no lo notaba (aceptaba «Sin señal» en cualquier página). El filtro nativo abre el origen local dentro; el humo exige la URL.
+    const TA = "apps/mobile/plugins/tl-alcance/android/com/tolatino/plugins/TLAlcancePlugin.java";
+    if (!existsSync(TA) || !/if \(url != null && url\.getHost\(\) != null && esLocal\(url\)\) return false;/.test(sinComent(TA))) falla(G, TA, 0, "el origen local (las islas) se abre dentro de la cáscara, no en el navegador");
+    const HA = "apps/mobile/scripts/humo-android.sh";
+    if (!existsSync(HA) || !readFileSync(HA, "utf8").includes(`grep -q "\\"url\\":\\"https://localhost$isla.html\\""`)) falla(G, HA, 0, "el humo comprueba que la isla de verdad se abrió (su URL), no solo un «Sin señal»");
   },
 
   /* 8a · Ninguna llave en el repo (es PÚBLICO) ni en GitHub (§3.5): ni archivos de llaves (.p8, .p12, .jks, .keystore, .mobileprovision,

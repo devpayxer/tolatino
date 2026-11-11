@@ -56,8 +56,15 @@ public class TLAlcancePlugin extends Plugin {
         return alguna(ruta, propias);
     }
 
+    /* ¿Es el origen local de la cáscara (https://localhost, donde viven «Sin señal» y las islas)? Con server.url, Capacitor solo deja
+       navegar dentro al servidor y a allowNavigation: sin esto, ir de «Sin señal» a la isla abría el navegador (11 nov, humo del emulador). */
+    private boolean esLocal(Uri url) {
+        return url.getPort() == -1 && getBridge().getScheme().equalsIgnoreCase(url.getScheme()) && getBridge().getHost().equalsIgnoreCase(url.getHost());
+    }
+
     @Override
     public Boolean shouldOverrideLoad(Uri url) {
+        if (url != null && url.getHost() != null && esLocal(url)) return false; // las islas: dentro de la cáscara
         if (host.isEmpty() || url == null || url.getHost() == null) return null;
         String h = url.getPort() > 0 ? url.getHost() + ":" + url.getPort() : url.getHost();
         if (!h.equalsIgnoreCase(host)) return null; // otro origen o el local: lo decide Capacitor

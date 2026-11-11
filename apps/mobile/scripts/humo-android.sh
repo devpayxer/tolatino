@@ -26,20 +26,23 @@ for par in $APPS; do
   adb shell am start -W -n "$id/com.tolatino.cascara.MainActivity" > /dev/null
   sleep 10
   adb exec-out screencap -p > "$OUT/$s-sin-red.png"
-  adb logcat -d -s Capacitor:* TLCascara:* chromium:E AndroidRuntime:E > "$OUT/$s-logcat.txt" 2>&1 || true
+  adb logcat -d -s Capacitor:* Capacitor/Console:* TLCascara:* chromium:E AndroidRuntime:E > "$OUT/$s-logcat.txt" 2>&1 || true
   pid=$(adb shell pidof "$id" | tr -d '\r')
   if [ -z "$pid" ]; then echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"; fallo=1; continue; fi
-  grep -m3 -i "Loading app at\|WebView sin addWebMessageListener" "$OUT/$s-logcat.txt" | sed "s/^/$s · logcat · /" || true
+  grep -i "Loading app at\|WebView sin addWebMessageListener\|Console\|Uncaught\|error" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
   adb forward --remove-all; adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null
   t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · $t"
   echo "$t" | grep -q '"titulo":"Sin señal' || { echo "✗ $s: sin red no abre la página local «Sin señal»"; fallo=1; }
   # El rótulo TLApp de esta app viaja en el user-agent (lo lee el servidor; nunca da permisos).
   node "$DIR/cdp.mjs" 9222 eval "navigator.userAgent" | grep -q "TLApp/" || { echo "✗ $s: sin rótulo TLApp"; fallo=1; }
+  # Diagnóstico: ¿la página local se hidrató (React) y ofrece la isla de esta app?
+  echo "$s · hidratada: $(node "$DIR/cdp.mjs" 9222 eval "JSON.stringify({next: typeof window.next, botones: [...document.querySelectorAll('button')].map((b) => b.innerText)})")"
   marco "$s" "página local"
   if [ -n "$isla" ]; then
     node "$DIR/cdp.mjs" 9222 ir "$isla.html" > /dev/null
     t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · isla · $t"
     adb exec-out screencap -p > "$OUT/$s-isla.png"
+    echo "$t" | grep -q "\"url\":\"https://localhost$isla.html\"" || { echo "✗ $s: la isla $isla no se abre dentro de la app (sigue en otra página)"; fallo=1; }
     echo "$t" | grep -qi 'sin conexión\|sin señal\|offline' || { echo "✗ $s: la isla $isla no abre sin red"; fallo=1; }
     marco "$s" "isla"
   fi
