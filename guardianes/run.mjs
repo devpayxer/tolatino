@@ -5754,6 +5754,14 @@ const guardianes = {
     if (!/getConfig\(\)[\s\S]{0,80}getString\("servidor"/.test(s)) falla(G, S, 0, "iOS: el servidor sale de la configuración de la cáscara");
     if (!/#if DEBUG\s+if let p = call\.getString\("servidorPrueba"\)[\s\S]*?#endif/.test(s)) falla(G, S, 0, "iOS: servidorPrueba solo en Debug");
     if (!/URL\(string: servidor \+ "\/api\/ruta\/posicion"\)/.test(s)) falla(G, S, 0, "iOS: un solo destino, el servidor de la cáscara");
+    // HTTP sin cifrar solo en depuración y solo hacia el emulador (el humo); nunca en release ni en un sabor.
+    const NS = "apps/mobile/android/app/src/debug/res/xml/red_humo.xml";
+    for (const d of readdirSync("apps/mobile/android/app/src")) {
+      const x = `apps/mobile/android/app/src/${d}/AndroidManifest.xml`;
+      if (d !== "debug" && existsSync(x) && /networkSecurityConfig/.test(readFileSync(x, "utf8"))) falla(G, x, 0, "la excepción de HTTP es solo del build de depuración");
+    }
+    if (existsSync(NS)) { const n = readFileSync(NS, "utf8"), doms = [...n.matchAll(/<domain[^>]*>([^<]+)<\/domain>/g)].map((m) => m[1]);
+      if (!/<base-config cleartextTrafficPermitted="false"/.test(n) || doms.some((d) => !["10.0.2.2", "127.0.0.1"].includes(d))) falla(G, NS, 0, "en depuración, HTTP solo hacia el emulador (10.0.2.2, 127.0.0.1)"); }
   },
 
   /* 8e · Compartir y la háptica pasan por el puente (la hoja nativa y el motor del sistema en la app; lo del navegador en la web): nadie más

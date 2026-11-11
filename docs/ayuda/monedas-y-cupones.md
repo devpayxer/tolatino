@@ -17,7 +17,7 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 - **Canjear:** la hoja confirma cuánto cuesta, cuántas tienes, «Uno por persona. Vence 30 días después de canjearlo. No se cambia por
   dinero.» y las condiciones del negocio → **Canjear por N monedas** → tu código **TL-CQ-xxxx** (sin 0, O, 1 ni I), con «Muéstralo en el
   local» y la fecha en que vence.
-- **En el local:** muestras el código; el negocio lo escribe en su panel y queda **usado** (una sola vez). Te llega «Usaste tu cupón».
+- **En el local:** muestras el código (o su QR, debajo del código); el negocio lo escanea o lo escribe en su panel y queda **usado** (una sola vez). Te llega «Usaste tu cupón».
 - **Tus cupones:** los códigos vivos primero, luego los usados y los vencidos. **Movimientos:** cada entrada y salida de monedas.
 
 ## Qué pasa en cada caso
@@ -48,7 +48,7 @@ Versión: 7 nov 2026. Audiencia: vecino. Tema: comunidad._
 - **How to earn:** welcome, once **+100**; top 3 of the monthly Neighborhood Table **+200** (credited when the month closes). Being online,
   following or posting earns no coins.
 - **Coupons:** each business in the city you are viewing sets them; To’Latino approves them and sets the cost (80 to 1,000 coins).
-  **Redeem** → confirm → your code **TL-CQ-xxxx** with «Show it in store» and its expiry. The business types it in its dashboard and it is
+  **Redeem** → confirm → your code **TL-CQ-xxxx** with «Show it in store» and its expiry. The business scans its QR or types it in its dashboard and it is
   **used**, once.
 - **Cases:** not enough coins → «Need N»; already redeemed → «See my code»; sold out this month → «Gone this month» (two people redeeming the
   last one at the same time: only one gets it, the other keeps their coins); code expires unused → **coins returned**; coupon paused or

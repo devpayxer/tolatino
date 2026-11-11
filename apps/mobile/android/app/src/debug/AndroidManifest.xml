@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 8e · SOLO los builds de depuración (los del humo del CI; nunca los de TestFlight, Play ni el APK propio, que son release): HTTP sin cifrar
+     solo hacia la máquina del emulador (10.0.2.2) y el propio teléfono (127.0.0.1), donde corre el simulador del servidor de la ruta
+     (scripts/humo/ruta-sim.mjs). Todo lo demás sigue la regla de cada sabor (HTTPS). Guardián rutaSoloNuestroServidor. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:networkSecurityConfig="@xml/red_humo" />
+</manifest>

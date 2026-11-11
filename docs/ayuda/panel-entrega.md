@@ -1,7 +1,7 @@
 # Panel: Entrega · Dashboard: Delivery
 
 _Pantallas: `/panel/{negocio}/entrega` (Entrega; en el teléfono, desde **Más**). Teléfono y escritorio. Comida y Bebidas con Pedidos en línea.
-Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
+Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - **Cómo entregas:** Delivery (lo llevas a la casa) y Pickup (lo recogen en tu local). Al menos una encendida.
@@ -16,6 +16,13 @@ Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 - En **Pedidos en línea** están **Efectivo al entregar** (cobra tu repartidor) y **Pedir propina en delivery** (15, 18 o 20 % u
   otra cantidad; va completa a quien entrega).
 
+## El repartidor en el mapa
+En el detalle de un pedido a domicilio con tu equipo, desde que tu repartidor toca **Voy por el pedido** (o **Recogí**) ves **REPARTIDOR · EN
+VIVO**: el punto grande es tu repartidor, los tenues por dónde pasó desde que empezó, el negro el cliente, y arriba la hora de su última
+posición. Si no llega una nueva en un par de minutos, dice **«Última posición hace N min»**. Al marcar **Entregado** (o si se cancela o lo
+pasas a otro repartidor) el mapa desaparece. El cliente ve solo el punto, desde Recogí. Las posiciones se guardan 14 días para aclarar un
+reclamo y después se borran.
+
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
 |---|---|
@@ -25,6 +32,8 @@ Versión: 6 nov 2026. Audiencia: negocio. Tema: panel._
 | Eliges una app externa | El efectivo al entregar se apaga solo. |
 | La dirección del cliente queda más lejos que tu zona | No se puede pedir delivery: «No llega a tu dirección · pide pickup». |
 | To’Latino pausó tu delivery | Aviso con el motivo; tu página ofrece solo pickup. |
+| Tu repartidor no compartió su ubicación (dijo que no al permiso o no tiene señal) | El pedido no muestra mapa, o muestra la última posición con su hora. |
+| Lo lleva una app externa | No hay mapa de To'Latino: el cliente sigue el enlace de esa app. |
 | Pedidos en línea apagado | Se guarda igual; se aplica cuando lo enciendas. |
 
 ## Preguntas frecuentes
@@ -38,4 +47,6 @@ free-from amount, delivery minimum, travel time, last delivery time and who deli
 DoorDash or Uber Eats — external apps don't collect cash). "How the client sees it" summarizes it; every change is
 audited. Cash on delivery and asking for a tip live in Online orders. If To'Latino pauses your delivery, your page offers
 pickup only and you see the reason. Invite drivers in Delivery › Your drivers (they sign in to To'Latino Driver with their code); without drivers you mark delivery
-orders "Out for delivery" and "Delivered" in the dashboard.
+orders "Out for delivery" and "Delivered" in the dashboard. In a delivery order's detail you see **DRIVER · LIVE** from the moment your driver
+taps "Heading to pick up" (or "Picked up"): their position, where they went since starting and the customer address, with the time of the last
+position; it disappears on Delivered. The customer sees only the current point, from pickup. Positions are kept 14 days, then deleted.

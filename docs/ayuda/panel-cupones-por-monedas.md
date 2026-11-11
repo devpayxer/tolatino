@@ -2,9 +2,10 @@
 
 _Pantallas: **Panel › Tu página › Cupones por monedas** (`/panel/{negocio}/pagina/cup`; editor «Crear» / «Editar»). Teléfono y escritorio. Plan
 **Pro** (en Free se ve el candado «Ver Pro»). Crear, editar, pausar y terminar: quien tiene acceso a «Tu página»; validar un código: «Tu página» o
-«Hoy y pedidos». Versión: 7 nov 2026. Audiencia: negocio. Tema: panel._
+«Hoy y pedidos». Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
+- **Escanear cupón** (arriba): la cámara lee el QR que el vecino tiene junto a su código; lo valida igual que escribirlo.
 - **Validar un código** (arriba): escribe el código que el vecino te muestra en su teléfono (TL-CQ- y 4 letras o números; da igual
   mayúsculas o minúsculas) → **Validar** → «Código válido: «…» para {vecino}: ya quedó usado.» Cada código se usa **una sola vez**.
 - **Crear un cupón:** qué das (español, y en inglés si quieres), condiciones (opcional), **cuántos al mes** (1–500) y **días para usarlo**
@@ -32,12 +33,16 @@ _Pantallas: **Panel › Tu página › Cupones por monedas** (`/panel/{negocio}/
 ## Preguntas frecuentes
 - **¿Puedo poner el costo?** No: lo fija To'Latino para que sea parejo entre negocios.
 - **¿Me pagan por cada canje?** No. Nadie paga a nadie: es un descuento que tú decides dar.
-- **¿Puedo escanear el código?** No: el código se escribe en «Validar un código».
+- **¿Puedo escanear el código?** Sí: **Escanear cupón** abre la cámara (en la app To'Latino Negocios o en el navegador) y lee el QR que el
+  vecino tiene junto a su código. Si dice **CÓDIGO VÁLIDO**, ya quedó usado; **NO VALE** si ya se usó, venció o es de otro negocio. También
+  lo puedes escribir.
 - **¿Un vecino puede canjear dos veces?** Uno por persona mientras su código esté vivo o usado.
 
 ## English
 
 ### What it does
+- **Scan coupon:** the camera reads the QR next to the neighbor's code (in the To'Latino Negocios app or the browser): **VALID CODE** = now
+  used; **NOT VALID** if it was used, expired or belongs to another business.
 - **Validate a code:** type the code the neighbor shows on their phone → **Validate** → it becomes **used**, once. Used, expired or
   another business’s code: a clear message, nothing changes.
 - **Create a coupon:** what you give (Spanish, optional English), terms, **how many a month** (1–500) and **days to use it** (7–90).

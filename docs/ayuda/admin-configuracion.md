@@ -93,8 +93,15 @@ La sección **Apps** muestra el build mínimo y el de aviso de cada app y plataf
 Android). Se cambian en **Sistema › Apps** (fila «Se cambia en su pantalla»), porque allí además se revisa que el aviso quede por encima del
 mínimo. Ver la ayuda «Super Admin: Apps».
 
+También en **Apps**, la **ubicación del repartidor durante la entrega**: cada cuánto manda su posición (5–60 s, 10 por defecto), la distancia
+mínima (25 m), los **días que se guarda** (1–90, **14**: para aclarar un reclamo; después solo queda la distancia y el tiempo), si **el cliente ve
+el mapa** desde «Recogí» (1) o nunca (0), la **velocidad imposible** (una posición más rápida se rechaza) y cuándo una posición es **vieja**. El
+recorrido de una entrega se ve en **Transacciones › Ver recorrido**, solo escribiendo el motivo, que queda en la auditoría.
+
 **English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
-checks that the notice build stays above the minimum.
+checks that the notice build stays above the minimum. Also in **Apps**: the **driver location during a delivery** (how often, minimum distance, **days kept** — 14 by default, max 90 —, whether the
+**customer sees the map** from pickup, the **impossible speed** and when a position is stale). A delivery route is opened in **Transactions ›
+View route** only with a written reason, which is audited.
 
 ## English
 
