@@ -1322,3 +1322,31 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ya no entra con llave: lo revisa `abrirSesionEn`). (8d, 11 nov)
 - [ ] **Nombres de los administradores de llaves (AAGUID):** la lista corta de `lib/llaves/llaves.ts` (iCloud Keychain, Google Password Manager, Windows
       Hello, Samsung Pass, 1Password, Bitwarden) es solo para el nombre que se muestra; revisarla contra la lista pública el día del lanzamiento. (8d, 11 nov)
+
+## Fase 8 · 8h (la tubería de las tiendas; 11 nov)
+- [ ] **Paquete 8-0 (dominio con HTTPS):** sin él la tubería no entrega ninguna llave (el CI ve que no hay https y no manda su token). Con
+      `https://pruebas.tolatino.com` detrás de Cloudflare en modo **Full (strict)**: lanzar «Tiendas» y ver en Integraciones › Lecturas del CI que
+      entró. (8h, 11 nov)
+- [ ] **Paquete 8-2 (llaves):** subir en Integraciones la llave de la API de App Store Connect (rol Admin, con el Issuer ID), la cuenta de servicio de
+      Google Play (invitada en Play Console con permiso de publicar en las cuatro apps) y el **token de GitHub** para «Pedir un build» (de grano fino,
+      solo este repositorio, permiso «Actions: write», vence como máximo en un año: anotar el vencimiento al subirlo). Crear las cuatro apps en App
+      Store Connect y en Play Console (no hay API). (8h, 11 nov)
+- [ ] **La llave de subida de Android la crea el primer job** (plan §3.5): falta el pedido OIDC que guarda en el llavero una llave generada en el CI
+      **solo si no existe**, con la contraseña derivada (`claveAlmacen`, ya escrita). Hasta entonces el CI firma con una llave desechable y no sube
+      nada. Igual para el certificado de distribución de iOS si la firma administrada por Apple no alcanza (a verificar con la cuenta real). (8h, 11 nov)
+- [ ] **Primer TestFlight real** en el iPhone del fundador y primer build en Play interno: verificar `xcodebuild -exportArchive` con destino upload
+      y la llave de la API (sin fastlane), que App Store Connect procese y que el grupo interno lo reciba; y que la primera subida por API a una app
+      recién creada en Play funcione. (8h, 11 nov)
+- [ ] **Símbolos nativos:** el CI sube el dSYM (y el mapping.txt si un día se activa R8) al almacén privado (`app_builds.symbols_key`), pero los
+      cierres nativos todavía no se simbolizan con ellos (llvm-symbolizer / retrace en la imagen). (8h, 11 nov)
+- [ ] **La huella de la firma de Google** (`lib/tiendas/play.ts` `huellaFirmaGoogle`, generatedapks.list) está escrita y probada contra el simulador,
+      pero no se usa todavía: 8b la lleva a assetlinks.json y 8d a `PASSKEY_ORIGENES` (`android:apk-key-hash:`). (8h, 11 nov)
+- [ ] **La configuración de Firebase de la app** (google-services / firebase.xml para el push de Android) no la escribe todavía el CI desde el
+      llavero. (8h, 11 nov)
+- [ ] **El entorno «tiendas» de GitHub:** hoy lo creó GitHub al primer uso, sin reglas. Ponerle «solo la rama pruebas» (y produccion en la Fase 9)
+      por la API cuando haya un token con permiso de administración. (8h, 11 nov)
+- [ ] **Cloudflare (plan gratis) corta los cuerpos en 100 MB:** un .aab o un dSYM más grande no pasaría; medir el tamaño real de los builds. (8h, 11 nov)
+- [ ] **`app_min_build_*` nunca por encima del último build disponible** (plan §3.5): no lo revisa 8h; revisarlo al cambiar el mínimo en Sistema ›
+      Apps. (8h, 11 nov)
+- [ ] **Fase 9:** encender `app.tiendas.publico` con el OK del fundador, aceptar la rama produccion en el servidor de producción, el sabor de
+      producción y los envíos a revisión pública (hoy la base los rechaza). (8h, 11 nov)

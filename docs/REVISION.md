@@ -3998,3 +3998,87 @@ texto «Agregaste una llave de acceso…». En Mi cuenta › Privacidad la ves y
   (androidx.credentials 1.5.0). Necesita el dominio asociado (`webcredentials` en el AASA) y `get_login_creds` en assetlinks (8b), y en Android el
   origen `android:apk-key-hash:…` de la llave de firma (8h). Hasta entonces la app no ofrece la llave (ni cae al WebAuthn del WebView).
 - **Equipo:** se ofrece y se ve en Sistema › Equipo; obligatoria para el equipo en la Fase 9 (LAUNCH L36), como dice el plan.
+
+### 8h · La tubería de las tiendas: llaves por OIDC, builds desde el CI, TestFlight y Play interno, APK propio y «Pedir un build» (11 nov)
+**Numeración:** migración **0131** (el plan decía 0132; la última confirmada era 0130) y **sin semilla** (los builds de la semilla 0045 ya muestran
+cada estado; lo que llega del CI no se inventa). Anotado en el plan.
+
+**Qué hay nuevo.** (1) **Super Admin › Sistema › Apps › Versiones** en vivo: cifras (en curso, disponibles, llaves de la tubería «N de 4», último
+CI), «Lo que necesita la tubería» (App Store Connect, llave de subida de Android, cuenta de Google Play, token de GitHub: VIVA / FALTA), los
+**pedidos** y cada build con su estado, commit, tamaño, huella, símbolos, pedido y lo que dijo la tienda; mientras algo está en curso se pone al
+día sola cada 8 s («En vivo»). (2) **«Pedir un build»** (solo Admin): app o las cuatro, plataforma, motivo → lanza el flujo de las tiendas en
+GitHub (workflow_dispatch) con el token del llavero; sin token queda «SIN TOKEN» y no lanza nada; tope `tiendas_pedidos_hora` (4). (3)
+**Integraciones › Llaves**: el tipo nuevo «GitHub · token para pedir builds» (.txt de una línea), **LECTURAS DEL CI** (qué llave leyó cada corrida,
+con su run y su commit) e **INTENTOS DE LA TUBERÍA** (los rechazados con su motivo en palabras y los últimos que entraron). (4) El servidor:
+`/api/tiendas/oidc` (las llaves del job), `/api/tiendas/build` (registrar y avanzar) y `/api/tiendas/archivo` (APK, .aab, símbolos); el barrido
+pregunta a Apple por lo subido y lo suma al grupo interno, sube a Play lo pendiente y purga los jti vencidos. (5) `.github/workflows/tiendas.yml`.
+
+**Probado:** `tien8h` **106** comprobaciones (API y pantallas a 390 y 1360), `alreves8h` **51/51**, contrato del OIDC **49** (y, en CI, el token
+REAL de GitHub contra su JWKS real), contrato de las tiendas **62** (16 nuevas: builds de App Store Connect y Google Play), tsc, build y todos los
+guardianes; migración dos veces en la base local y en una base nueva (+ semillas dos veces). Regresión y CI: ver PROGRESS.
+
+**Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/`): `t8h-versiones-1360.png` y
+`t8h-versiones-390.png`, `t8h-pedir-1360.png` y `t8h-pedir-390.png` (el formulario), `t8h-vivo-390.png` (el build pasó a DISPONIBLE sin recargar),
+`t8h-integraciones-1360.png` y `t8h-integraciones-390.png` (lecturas del CI e intentos). **Huecos del diseño:** no hay pantalla de la tubería en el
+diseño: Versiones se compuso con `kpis`/`note`/`group`/`rows`/`acts`/`empty` del sistema como el resto de Sistema › Apps, y «Pedir un build» con
+el mismo formulario que «Invitar a una cuenta» (`chips` + `field` + plantillas + `acts`).
+
+**Qué mirar en el teléfono:** hoy, en el sandbox (HTTP en la IP), Sistema › Apps › Versiones dice «El CI de las tiendas todavía no entró» y
+«Pedir un build» queda «SIN TOKEN» hasta que subas el token de GitHub. **Después del Paquete 8-0 (dominio con HTTPS) y del 8-2 (llaves):** pide
+un build de To'Latino · las dos plataformas → en unos 15 minutos lo ves pasar a SUBIDO, PROCESANDO y DISPONIBLE; abre TestFlight en tu iPhone e
+instálala.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **Sin dependencias nuevas:** el JWT de GitHub se verifica con `node:crypto` (`createPublicKey({format:'jwk'})` y `verify`), alg **exactamente
+  RS256** (none, HS256 con la llave pública, RS512, crit y llaves incrustadas jku/jwk/x5u/x5c → fuera), kid del JWKS de GitHub con RSA ≥ 2048. El
+  JWKS se guarda una hora y un kid desconocido lo vuelve a pedir como mucho una vez por minuto.
+- **Más revisiones que las del plan:** además de iss, aud, repo, entorno, rama, evento, jti y tiempos: el **id numérico del repo y de su dueño**
+  (1283030677 / 281237548: si alguien borra el repo y crea otro con el mismo nombre, no entra), el `sub` del entorno, el **flujo** (`job_workflow_ref`
+  y `workflow_ref` = tiendas.yml de esa rama: ni cascaras.yml ni un flujo reutilizable ajeno), **runner de GitHub** (no uno propio) y **ningún
+  pull request** (head_ref / base_ref). Holgura de 60 s; vida máxima 1 h.
+- **Un token nuevo por pedido:** cada jti entra UNA vez (la inserción en `ci_oidc_jti` es la prueba, atómica; dos pedidos a la vez con el mismo
+  token: solo uno). El CI pide otro token a GitHub para cada llamada.
+- **HTTPS lo dice nginx** (`X-Forwarded-Proto $scheme`, que pisa lo que mande el cliente; la app solo escucha en 127.0.0.1). **No hay modo de
+  prueba que lo salte**: la prueba local pone la cabecera como lo haría nginx. Con Cloudflare delante, el modo tiene que ser **Full (strict)**
+  (Cloudflare → nginx en 443); con «Flexible» nginx ve http y la tubería no entrega nada (es lo correcto). Y el CI tampoco manda su token si la
+  dirección no es https o el certificado no es válido (sondeo).
+- **El libro de intentos** (`ci_oidc_log`, solo inserción): cada intento con su motivo; lo que dice el token se anota **solo si su firma verificó**.
+  Pasados `tiendas_oidc_fallos_min` (60) rechazos en un minuto, 429 sin revisar ni anotar.
+- **Qué llaves recibe cada job:** iPhone, la de App Store Connect (y el certificado de distribución solo si un día existe); Android, la llave de
+  subida. **La cuenta de servicio de Google Play no sale del servidor:** el CI le entrega el .aab y el servidor lo sube a Play interno
+  (edits → bundles → pista interna → commit). APNs, Firebase, Wallet y el token de GitHub tampoco salen nunca. El Team ID de Apple sale de los
+  datos públicos de la llave de APNs.
+- **La contraseña de un almacén PKCS12** que nace en la tubería (la llave de subida; el certificado de distribución si hiciera falta) **se deriva**
+  de la llave del entorno (HKDF por tipo y versión): nunca se guarda ni se escribe; viaja con el almacén y el CI la pone en un archivo 600 del
+  directorio temporal.
+- **iPhone sube con `xcodebuild -exportArchive` (destino «upload») y la llave de la API** (herramienta de Apple; firma administrada por Apple en la
+  nube, §6 #12) en vez de fastlane pilot: sin Ruby ni una dependencia más. A verificar con la cuenta real.
+- **El servidor decide el estado:** el CI solo dice compilando, subido o falló (con motivo); PROCESANDO y DISPONIBLE los pone el servidor cuando
+  Apple (processingState) o Google contestan, o cuando el APK llegó con su huella. Un run solo toca los builds que creó (mismo run y commit, del
+  token; nunca del cuerpo). Google con error: se reintenta; a los tres, FALLÓ.
+- **Número de build** = número de la corrida × 100 + intento (creciente sin estado); la base lo vuelve a exigir creciente por app, plataforma y canal.
+- **Versión: una sola, en `apps.json`** (las cuatro apps comparten lo nativo), en vez de un `version.json` por app. `apps/mobile/versiones.json` guarda
+  cada versión con la **huella de lo nativo** (sha256 de apps/mobile sin las pruebas de humo, con la versión normalizada); guardián
+  `versionCoherente` y el primer paso del CI de las tiendas: cambió lo nativo → hay que subir la versión (`node apps/mobile/scripts/version.mjs
+  --subir X.Y.Z`); el historial solo crece. Arranca en 1.0.0 con la huella de hoy.
+- **Sin el dominio:** el CI compila las cuatro apps; Android firma con una **llave desechable** creada en la corrida (CN «NO PARA DISTRIBUIR»,
+  vence en 2 días, se borra al final) y se comprueba la firma; iOS archiva para el dispositivo **sin firma**. Ningún binario se guarda como
+  artefacto y ningún token sale del runner.
+- **Fase 9 bloqueada en la base:** `store_submissions` rechaza `revision_publica` y `lanzamiento` sin `app.tiendas.publico` (nace apagado) y sin la
+  referencia del OK del fundador; `app_builds` rechaza el sabor de producción y el canal «tienda»; `build_requests` rechaza «produccion». El
+  flujo no corre en produccion; el sandbox solo acepta la rama pruebas (producción aceptará solo produccion y solo con el interruptor).
+- **Las direcciones de Apple, Google y GitHub en un solo archivo** (`lib/tiendas/direcciones.ts`; `ASC_API_URL` se mudó de `lib/beta.ts`): los
+  simuladores solo fuera de producción (guardián `tiendasSimuladorAislado` ampliado).
+- **Simuladores:** GitHub (`scripts/tiendas-sim/github.cjs`: JWKS con llaves de prueba hechas en el momento y kids nuevos en cada arranque;
+  workflow_dispatch que revisa los inputs contra los que declara tiendas.yml), Google Play (`play.cjs`: OAuth de cuenta de servicio y cada ruta contra
+  el descubrimiento oficial fijado) y App Store Connect ampliado (builds y grupo interno; `asc.json` re-extraído de la misma especificación 4.6,
+  misma huella).
+- **nginx:** `/api/tiendas/archivo` acepta hasta 200 MB (`tiendas_archivo_mb`), solo esa ruta.
+- **Verificación del flujo en CI:** como un flujo nuevo no se puede lanzar a mano hasta que esté en la rama por defecto, un commit TEMPORAL lo hizo
+  correr también en `claude/vibrant-franklin-krutwa` y el último commit lo quitó. Corrida verde **43075242906** (ver PROGRESS). Dos fallas del
+  flujo en el camino dejaron el guardián **`flujosBienFormados`** (llaves repetidas; la variable SABOR del job pisaba la de generar.mjs).
+- **Un token del flujo puede pedir las llaves de iOS o de Android:** GitHub no pone en el token el nombre del job, así que el servidor no distingue
+  el job de iPhone del de Android dentro del mismo flujo y la misma rama. Lo que limita es todo lo demás (repo, rama pruebas, entorno, flujo,
+  runner, un uso).
+- **Prueba de regresión `app8a`:** espera «0 DE 9» llaves (era «0 DE 8»): el tipo nuevo del token de GitHub (cambio en el script de la prueba, no
+  en la app).

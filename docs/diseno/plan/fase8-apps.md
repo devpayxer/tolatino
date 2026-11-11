@@ -234,7 +234,9 @@ resumen en la entrega); la entrega suma `sharing_from`, `sharing_until`, `distan
 inserción**: `serial`, `action check in ('emitido','actualizado','anulado','registrado','baja')`, `at`). `feature_flags` **`app.wallet.apple`** ·
 **`app.wallet.google`**. Semilla **`0047_pases.sql`**.
 
-**0132 `tiendas_tuberia` (8h)** — **`ci_oidc_jti`** (`jti` pk, `exp`; el mismo token de GitHub no se usa dos veces), **`store_submissions`** (**solo inserción**: `build_id`, `kind check in ('testflight','play_interno','revision_publica','lanzamiento')`, `by`,
+**0132 `tiendas_tuberia` (8h; renumerada: es la **0131**, la última confirmada era 0130 (8d); sin semilla. Suma `ci_oidc_log` (cada intento,
+solo inserción), `build_requests` («Pedir un build»), `app_builds.symbols_key` / `bundle_key` / `request_id` / `store_build_id`, `store_secrets.kind`
+`'github_token'` y el interruptor `app.tiendas.tuberia`: ver REVISION «8h»)** — **`ci_oidc_jti`** (`jti` pk, `exp`; el mismo token de GitHub no se usa dos veces), **`store_submissions`** (**solo inserción**: `build_id`, `kind check in ('testflight','play_interno','revision_publica','lanzamiento')`, `by`,
 `founder_ok_ref`, `result`, `at`; **`revision_publica` y `lanzamiento` rechazados por `check` mientras el interruptor `app.tiendas.publico` esté
 apagado**, que solo se enciende en la Fase 9).
 
@@ -622,7 +624,14 @@ QR del pase igual que el de la app).
 **Ayuda:** `boletos-en-wallet` (vecino), `admin-eventos` al día.
 
 ### 8h · Tubería de tiendas: llaves por OIDC, firma, versiones, TestFlight interno, Play interno y APK propio — **Opus/high** (secretos)
-**Datos:** migración 0132.
+**Estado (11 nov): hecho hasta donde llegan el dominio y las cuentas.** Migración **0131** (renumerada desde 0132; sin semilla). La tubería del
+servidor (`/api/tiendas/{oidc,build,archivo}`, `lib/tiendas/{oidc,tuberia,play,github,direcciones}.ts`), Versiones en vivo y «Pedir un build»
+están construidos y probados contra los simuladores (`tien8h` 106, `alreves8h` 51/51, contratos `scripts/contrato-oidc` y `scripts/contrato-tiendas`;
+CI 43075242906 en verde, con el token real de GitHub validado). El
+flujo `tiendas.yml` corre en CI hasta el build firmado con una llave **desechable** (Android) y el archivo sin firma (iOS): sin HTTPS en el sandbox
+(Paquete 8-0) no manda ningún token. La versión es una sola en `apps.json` con su historial y huella en `apps/mobile/versiones.json` (no un
+`version.json` por app: las cuatro comparten lo nativo). Desvíos y lo diferido: `docs/REVISION.md` «8h» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8h».
+**Datos:** migración 0132 (hoy **0131**).
 **CI:** `.github/workflows/tiendas.yml` (entorno **`tiendas`** con regla de ramas; `permissions: id-token: write, contents: read`; jobs `ios-{app}` en
 macOS y `android-{app}` en Linux, por matriz de las 4 apps; solo en `push` a `pruebas` con cambios nativos o `workflow_dispatch`): pedir llaves por OIDC →
 build firmado → subir a **TestFlight interno** / **Play interno** / guardar el **APK propio** → registrar en `app_builds` (por la misma API con OIDC) → subir

@@ -12,7 +12,7 @@ name: Tiendas
 # (el otro: Fase 9).
 on:
   push:
-    branches: [pruebas, claude/vibrant-franklin-krutwa]  # TEMPORAL: solo para verificar el flujo en CI; se quita en el commit siguiente
+    branches: [pruebas]
     paths:
       - "apps/mobile/**"
       - "apps/web/lib/nativo/**"

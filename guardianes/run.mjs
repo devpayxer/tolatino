@@ -5703,6 +5703,38 @@ const guardianes = {
     if (!/export const JWKS_GITHUB = `\$\{EMISOR\}\/\.well-known\/jwks`;/.test(readFileSync("apps/web/lib/tiendas/oidc.ts", "utf8"))) falla(G, "apps/web/lib/tiendas/oidc.ts", 0, "el JWKS de producción es el de GitHub");
   },
 
+  /* 8h · Un flujo de GitHub mal formado no corre (corrida 43074283366: una salida «ios» repetida → «workflow file issue», sin ningún job) y una
+     variable del job con el nombre de una de generar.mjs lo rompe (corrida 43072031036: SABOR=negocios en vez de pruebas | produccion). Ninguna
+     llave repetida en el mismo mapa de un flujo, y SABOR solo puede valer pruebas. Al revés: repetir una salida o poner SABOR: negocios → falla. */
+  flujosBienFormados() {
+    const G = "flujosBienFormados";
+    for (const f of archivos.filter((x) => /^\.github\/workflows\/.*\.ya?ml$/.test(x))) {
+      const pila = [];
+      let bloque = -1;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (!l.trim() || /^\s*#/.test(l)) return;
+        const ind = l.length - l.trimStart().length;
+        if (bloque >= 0) { if (ind > bloque) return; bloque = -1; }
+        let m = /^(\s*)- (?:([\w.-]+):(?:\s|$))?/.exec(l), k = null, ki = ind;
+        if (m) {
+          while (pila.length && pila[pila.length - 1].ind >= ind + 2) pila.pop();
+          if (m[2]) { pila.push({ ind: ind + 2, llaves: new Set([m[2]]) }); }
+          if (/:\s*[|>][-+]?\s*$/.test(l)) bloque = ind + 2 - 1;
+          return;
+        }
+        m = /^(\s*)([\w.${}-]+):(?:\s|$)/.exec(l);
+        if (!m) return;
+        k = m[2];
+        while (pila.length && pila[pila.length - 1].ind > ki) pila.pop();
+        const top = pila[pila.length - 1];
+        if (top && top.ind === ki) { if (top.llaves.has(k)) falla(G, f, i + 1, `«${k}» repetida en el mismo mapa: GitHub rechaza el flujo entero`); top.llaves.add(k); }
+        else pila.push({ ind: ki, llaves: new Set([k]) });
+        if (/:\s*[|>][-+]?\s*$/.test(l)) bloque = ki;
+        if (k === "SABOR" && !/^\s*SABOR:\s*["']?pruebas["']?\s*$/.test(l)) falla(G, f, i + 1, "SABOR es la variable de generar.mjs (pruebas | produccion): el sabor de Gradle va con otro nombre");
+      });
+    }
+  },
+
   /* 8h · El token OIDC de GitHub se revisa ENTERO antes de dar nada (fase8-apps.md §3.5): RS256 exacto (ni none, ni HS256 con la llave pública,
      ni llaves incrustadas), kid del JWKS de GitHub con RSA ≥ 2048, firma, emisor, audiencia, repo con su id y su dueño, entorno «tiendas», sub,
      rama permitida (el sandbox solo pruebas; producción solo produccion y solo con app.tiendas.publico), evento push o workflow_dispatch, el flujo

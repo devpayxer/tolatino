@@ -1194,3 +1194,55 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
   espera 8b (AASA, assetlinks, dominio asociado) y 8h (origen android:apk-key-hash de la llave de firma); obligatorias para el equipo, Fase 9.
   Todo en LAUNCH-CHECKLIST «Fase 8 · 8d».
 - **Sigue:** 8b (necesita el dominio) u 8h.
+
+## Fase 8 · 8h hecho hasta donde llegan el dominio y las cuentas — la tubería de las tiendas (11 nov)
+- **Hecho:** migración **0131** (renumerada: el plan decía 0132; sin semilla) — `ci_oidc_jti` (jti pk: el mismo token no entra dos veces; solo
+  inserción y purga de lo vencido), `ci_oidc_log` (cada intento con su motivo, solo inserción; lo que dice el token solo con la firma buena),
+  `store_submissions` (solo inserción; `revision_publica` y `lanzamiento` rechazados por la base sin `app.tiendas.publico` y sin el OK del
+  fundador), `build_requests` («Pedir un build»; no se borra, el estado solo avanza), `app_builds` + `symbols_key`, `bundle_key`, `request_id`,
+  `store_build_id` (una vez; sabor de producción y canal «tienda» rechazados sin el interruptor), `store_secrets.kind` + `github_token`,
+  Configuración › Apps `tiendas_pedidos_hora`, `tiendas_oidc_fallos_min`, `tiendas_archivo_mb`, interruptores `app.tiendas.tuberia` (encendido)
+  y `app.tiendas.publico` (apagado). Servidor: `lib/tiendas/oidc.ts` (el JWT de GitHub con `node:crypto`: RS256 exacto, kid del JWKS ≥ 2048, firma,
+  emisor, audiencia, repo e ids, dueño, entorno, sub, rama, evento, flujo, runner, sin PR, tiempos), `lib/tiendas/tuberia.ts` (autenticar: HTTPS de
+  nginx → tope → interruptor → token → jti en una inserción; las llaves de cada job con la contraseña del almacén derivada; registrar y avanzar
+  builds; archivos al almacén privado; Play interno desde el servidor; TestFlight procesado por Apple → grupo interno; el barrido; «Pedir un build»;
+  lo que ve el Super Admin), `lib/tiendas/play.ts` (Android Publisher v3), `lib/tiendas/github.ts` (workflow_dispatch), `lib/tiendas/asc.ts`
+  (builds y grupo interno), `lib/tiendas/direcciones.ts` (todas las direcciones; `ASC_API_URL` se mudó de lib/beta.ts), rutas
+  `/api/tiendas/{oidc,build,archivo}`, nginx `/api/tiendas/archivo` hasta 200 MB. Pantallas: Sistema › Apps › **Versiones** en vivo (cifras, lo que
+  necesita la tubería, «Pedir un build», pedidos, cada build con símbolos, pedido y envío) e **Integraciones** (token de GitHub, LECTURAS DEL CI,
+  INTENTOS DE LA TUBERÍA). CI: `.github/workflows/tiendas.yml` (plan + versión + islas, el contrato del OIDC con el token REAL, Android y iOS por
+  matriz de las 4 apps en el entorno `tiendas`; sondeo HTTPS antes de mandar un token; llaves en un directorio temporal borrado con `if: always()`;
+  sin el dominio: llave desechable «NO PARA DISTRIBUIR» y archivo de iPhone sin firma), `scripts/tiendas/ci.mjs`, `apps/mobile/scripts/version.mjs`
+  + `apps/mobile/versiones.json` (una versión con la huella de lo nativo), firma release en `build.gradle` (solo con `TL_FIRMA_ALMACEN`).
+  Contratos: `scripts/contrato-oidc` (nuevo, también en ci.yml) y `scripts/contrato-tiendas` ampliado; simuladores `scripts/tiendas-sim/github.cjs`
+  y `play.cjs`, `sim.cjs` con builds. Guardianes nuevos `oidcEstricto`, `versionCoherente`, `tiendaSoloProduccion`, `flujosBienFormados`; ampliados `llavesFueraDelRepo`,
+  `tiendasSimuladorAislado`, `libroSoloInsercion`. Ayuda `admin-tuberia-de-apps`; `admin-llaves-de-las-tiendas`, `admin-errores-y-beta` y
+  `admin-configuracion` al día.
+- **Probado:** `tien8h` **106** comprobaciones (API: cada rechazo —HTTP, sin token, otro repo o id, main, produccion, otro entorno, otra audiencia,
+  vencido, PR, cascaras.yml, runner propio, alg none, HS256 con la llave pública, kid desconocido, otra firma—, apagado, el mismo token dos veces
+  y a la vez, las llaves de cada job y la contraseña derivada que abre el .p12, lecturas con run y commit, builds y archivos, Play interno contra el
+  simulador del descubrimiento oficial, TestFlight procesado y en el grupo interno, INVALID, build ajeno, no creciente, el servidor decide,
+  símbolos, tope de tamaño, paredes de la base, tope por minuto; pantallas a 390 y 1360: Versiones, «Pedir un build» sin token y con él —el
+  workflow_dispatch con los inputs que declara tiendas.yml—, la pantalla que se pone al día sola, Integraciones, Soporte sin botón ni llaves),
+  `alreves8h` **51/51**, contrato del OIDC **49** (54 en CI con el token real), contrato de las tiendas **62**, tsc, build y todos los guardianes; migración dos veces en la base
+  local y en una base nueva (131 migraciones + semillas dos veces). Regresión (una a la vez): beta8f 95, app8a 110 (con «0 DE 9» llaves: el tipo
+  nuevo; la primera vez 56 por esa espera), wal8g 97, llave8d 90 (la primera vez falló porque serví sin las variables de 8d: `servir8h.sh` ahora
+  sale de `servir8d.sh`), adm7i 113. La primera corrida de beta8f falló en el APK de un uso porque `tien8h` dejaba sus builds del CI en la base
+  (el enlace tomó el APK de la prueba): `tien8h` ahora los quita al terminar.
+- **CI «Tiendas»** (`claude/vibrant-franklin-krutwa`; como un flujo nuevo no se lanza a mano hasta estar en la rama por defecto, un commit
+  TEMPORAL lo hizo correr también en esta rama y el último commit lo quita): corrida **43072031036** (82c6364): plan + versión + islas en verde, el
+  **contrato del OIDC con el token REAL de GitHub** contra su JWKS real en verde (54: repo 1283030677, dueño 281237548, entorno `tiendas` —GitHub
+  lo creó al primer uso—, push, github-hosted, flujo tiendas.yml, vida 300 s; con solo «pruebas» permitida, este run sale por «rama»; con el cuerpo
+  cambiado, «firma»), los 4 archivos de iPhone (Release, iphoneos, **sin firma**, 1.0.0 (101)) en verde y el sondeo dijo «pruebas.tolatino.com no
+  contesta por HTTPS (ENOTFOUND)» sin mandar ningún token; los 4 de Android fallaron porque la variable SABOR del job (el sabor de Gradle) pisaba la
+  de generar.mjs → 67d11d1 (VARIANTE); esa corrida (43074283366) GitHub ni la empezó: el reemplazo dejó la salida «ios» repetida → 37b609d; corrida
+  **43074403264** (37b609d): los 4 sabores compilan el .aab y el .apk release **firmados con la llave desechable** (apksigner: «CN=NO PARA
+  DISTRIBUIR…») y «✓ llaves borradas»; la firma del .aab no se comprobaba de verdad (tail -1) → 1286ea5 (pipefail y «jar verified»); cancelé esa
+  corrida para no esperar sus iOS en cola; corrida **43075242906** (1286ea5): **verde** en el segundo intento (el iOS de Repartidor del primero se
+  canceló a los 15 min sin conseguir una Mac de GitHub; con «re-run failed» pasó): plan, OIDC real, Android ×4 (firmado, «jar verified») e iOS ×4.
+  Las dos fallas del flujo dejaron el guardián nuevo **`flujosBienFormados`** (ninguna llave repetida en un flujo; SABOR solo «pruebas»):
+  `alreves8h` **51/51**.
+- **Bloqueado / no hecho aquí:** HTTPS del sandbox (Paquete 8-0) y las cuentas y llaves (8-1/8-2): sin ellos nada se sube; crear la llave de subida
+  en el primer job (falta el pedido OIDC que la guarda), el primer TestFlight real, simbolizar con los dSYM, la huella de la firma de Google hacia
+  assetlinks y las llaves de acceso, la configuración de Firebase en el CI, reglas del entorno `tiendas`. Todo en LAUNCH-CHECKLIST «Fase 8 · 8h».
+- **Sigue:** 8b (necesita el dominio) u 8i.
