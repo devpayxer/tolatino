@@ -5135,8 +5135,13 @@ const guardianes = {
     // y el humo no lo notaba (aceptaba «Sin señal» en cualquier página). El filtro nativo abre el origen local dentro; el humo exige la URL.
     const TA = "apps/mobile/plugins/tl-alcance/android/com/tolatino/plugins/TLAlcancePlugin.java";
     if (!existsSync(TA) || !/if \(url != null && url\.getHost\(\) != null && esLocal\(url\)\) return false;/.test(sinComent(TA))) falla(G, TA, 0, "el origen local (las islas) se abre dentro de la cáscara, no en el navegador");
-    const HA = "apps/mobile/scripts/humo-android.sh";
-    if (!existsSync(HA) || !readFileSync(HA, "utf8").includes(`grep -q "\\"url\\":\\"https://localhost$isla.html\\""`)) falla(G, HA, 0, "el humo comprueba que la isla de verdad se abrió (su URL), no solo un «Sin señal»");
+    const HA = "apps/mobile/scripts/humo-android.sh", ha = existsSync(HA) ? readFileSync(HA, "utf8") : "";
+    if (!ha.includes(`grep -q "\\"url\\":\\"https://localhost$isla.html\\""`)) falla(G, HA, 0, "el humo comprueba que la isla de verdad se abrió (su URL), no solo un «Sin señal»");
+    if (!ha.includes(`"$(cat "$DIR/humo/local.js")"`) || !/origen_local "\$s" "página local"/.test(ha) || !/origen_local "\$s" "isla"/.test(ha) || !/a\.plugins\.includes\("TLLocal"\)/.test(ha)) falla(G, HA, 0, "el humo comprueba que la página local y la isla se hidratan y tienen TLLocal sin red");
+    // Con server.url, Capacitor no sirve del paquete más que la página de error ni inyecta su JS en el origen local: lo hace MainActivity.
+    const MA = "apps/mobile/android/app/src/main/java/com/tolatino/cascara/MainActivity.java", ma = existsSync(MA) ? sinComent(MA) : "";
+    if (!/new WebViewAssetLoader\.Builder\(\)[\s\S]*assets\.handle\("public\/"/.test(ma) || !/b\.setWebViewClient\(new BridgeWebViewClient\(b\)/.test(ma)) falla(G, MA, 0, "el origen local (https://localhost) se sirve entero desde assets/public, sin red");
+    if (!/addDocumentStartJavaScript\(w, [^;]*Collections\.singleton\(b\.getScheme\(\) \+ ":\/\/" \+ host\)\)/.test(ma)) falla(G, MA, 0, "el JS de Capacitor se inyecta también en el origen local (y solo ahí), para que la isla use TLLocal");
   },
 
   /* 8a · Ninguna llave en el repo (es PÚBLICO) ni en GitHub (§3.5): ni archivos de llaves (.p8, .p12, .jks, .keystore, .mobileprovision,

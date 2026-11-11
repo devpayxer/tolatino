@@ -7,7 +7,7 @@
 set -euo pipefail
 APK="$1"; OUT="$2"; mkdir -p "$OUT"
 DIR="$(cd "$(dirname "$0")" && pwd)"
-APPS=$(node -e 'const A=require(process.argv[1]);console.log(A.apps.map(a=>[a.sabor,a.android,a.islas[0]??""].join(":")).join(" "))' "$DIR/../apps.json")
+APPS=$(node -e 'const A=require(process.argv[1]);console.log(A.apps.map(a=>[a.sabor,a.android,a.islas[0]??"",a.plugins.includes("TLLocal")].join(":")).join(" "))' "$DIR/../apps.json")
 adb wait-for-device
 for par in $APPS; do s=${par%%:*}; adb install -r "$APK/$s/debug/app-$s-debug.apk" > /dev/null; done
 adb shell cmd connectivity airplane-mode enable || adb shell settings put global airplane_mode_on 1
@@ -20,8 +20,14 @@ marco() { # $1 = app, $2 = dónde
   r=$(node "$DIR/cdp.mjs" 9222 eval "$(cat "$DIR/humo/puente-principal.js")")
   echo "$1 · $2 · marco principal: $r"; [ "$r" = '"{\"puente\":true,\"abiertos\":[]}"' ] || { echo "✗ $1 ($2): el marco principal no tiene el puente o quedó un objeto Java abierto"; fallo=1; }
 }
+# Una página del origen local funciona sin red: hidratada y, si la app trae TLLocal, con el almacén del teléfono.
+origen_local() { # $1 = app, $2 = dónde
+  local r; r=$(node "$DIR/cdp.mjs" 9222 eval "$(cat "$DIR/humo/local.js")")
+  echo "$1 · $2 · origen local: $r"
+  [ "$r" = "\"{\\\"hidratada\\\":true,\\\"tllocal\\\":$tllocal}\"" ] || { echo "✗ $1 ($2): la página local no se hidrató o no tiene el almacén del teléfono (TLLocal: $tllocal)"; fallo=1; }
+}
 for par in $APPS; do
-  IFS=: read -r s id isla <<< "$par"
+  IFS=: read -r s id isla tllocal <<< "$par"
   adb logcat -c || true
   adb shell am start -W -n "$id/com.tolatino.cascara.MainActivity" > /dev/null
   sleep 10
@@ -29,14 +35,14 @@ for par in $APPS; do
   adb logcat -d -s Capacitor:* Capacitor/Console:* TLCascara:* chromium:E AndroidRuntime:E > "$OUT/$s-logcat.txt" 2>&1 || true
   pid=$(adb shell pidof "$id" | tr -d '\r')
   if [ -z "$pid" ]; then echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"; fallo=1; continue; fi
-  grep -i "Loading app at\|WebView sin addWebMessageListener\|Console\|Uncaught\|error" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
+  grep "Loading app at\|TLCascara\|Capacitor/Console.*\(rror\|Uncaught\)\|AndroidRuntime" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
   adb forward --remove-all; adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null
   t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · $t"
   echo "$t" | grep -q '"titulo":"Sin señal' || { echo "✗ $s: sin red no abre la página local «Sin señal»"; fallo=1; }
   # El rótulo TLApp de esta app viaja en el user-agent (lo lee el servidor; nunca da permisos).
   node "$DIR/cdp.mjs" 9222 eval "navigator.userAgent" | grep -q "TLApp/" || { echo "✗ $s: sin rótulo TLApp"; fallo=1; }
-  # Diagnóstico: ¿la página local se hidrató (React) y ofrece la isla de esta app?
-  echo "$s · hidratada: $(node "$DIR/cdp.mjs" 9222 eval "JSON.stringify({next: typeof window.next, botones: [...document.querySelectorAll('button')].map((b) => b.innerText)})")"
+  origen_local "$s" "página local"
+  if [ -n "$isla" ]; then echo "$t" | grep -q "funciona sin señal" || { echo "✗ $s: «Sin señal» no ofrece la isla de la app"; fallo=1; }; fi
   marco "$s" "página local"
   if [ -n "$isla" ]; then
     node "$DIR/cdp.mjs" 9222 ir "$isla.html" > /dev/null
@@ -44,6 +50,7 @@ for par in $APPS; do
     adb exec-out screencap -p > "$OUT/$s-isla.png"
     echo "$t" | grep -q "\"url\":\"https://localhost$isla.html\"" || { echo "✗ $s: la isla $isla no se abre dentro de la app (sigue en otra página)"; fallo=1; }
     echo "$t" | grep -qi 'sin conexión\|sin señal\|offline' || { echo "✗ $s: la isla $isla no abre sin red"; fallo=1; }
+    origen_local "$s" "isla"
     marco "$s" "isla"
   fi
   adb shell am force-stop "$id"
