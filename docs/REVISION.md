@@ -4082,3 +4082,80 @@ instálala.
   runner, un uso).
 - **Prueba de regresión `app8a`:** espera «0 DE 9» llaves (era «0 DE 8»): el tipo nuevo del token de GitHub (cambio en el script de la prueba, no
   en la app).
+
+### 8i · Fichas ES/EN, capturas, privacidad, reglas de las tiendas, cuentas de revisión, «Lo que te toca» y Analítica › Apps — cierre de la Fase 8 salvo 8b (11 nov)
+**Numeración:** migración **0132** (el plan decía 0133; la última confirmada era 0131) y semilla **0048_revision.sql** (sandbox, `is_test`). Anotado en
+el plan.
+
+**Qué hay nuevo.** (1) **Las fichas** de las cuatro apps en español e inglés (nombre, subtítulo, descripción corta y larga, palabras clave, texto
+promocional, novedades) en `apps/mobile/tiendas/{cliente,negocio,delivery,checkin}/{es,en}.md`, escritas desde la Ayuda. (2) **Super Admin › Sistema ›
+Apps › Fichas y revisión**: las 16 fichas (AL DÍA / CAMBIÓ / SIN SUBIR / ERROR), las capturas, «Subir como borrador», las cuentas de revisión con su
+interruptor y las direcciones que se dan a las tiendas. (3) **Lo que te toca**: los pasos de los Paquetes 8-0 a 8-3 con su estado (el sistema marca
+solo lo que puede ver), «Abrir» la consola, «Copiar» el correo de la cuenta de servicio y «Ya lo hice». (4) **Declaraciones**: cada pregunta de Apple
+y Google lado a lado con la respuesta y de dónde sale, y el CSV de Data safety. (5) **/privacidad** pública (borrador versión 0) y **/soporte** sin
+sesión (ya existía). (6) **Dentro de las apps no se compra Pro**: los «Ver Pro» no tienen botón, Tu plan es solo su estado; en la web, todo igual.
+(7) **Mi cuenta y ajustes** (con Borrar mi cuenta) en Negocios (Más y el menú de escritorio) y en Puerta (inicio y la puerta abierta).
+(8) **Analítica › Apps** (instalaciones activas por app y plataforma en 7 y 30 días, versiones, avisos aceptados y negados, errores por sesión,
+aperturas). (9) **Configuración › Apps**: códigos por hora de las cuentas de revisión y subidas de fichas por día. (10) Mi cuenta › Privacidad enlaza
+«Cómo usa To'Latino tus datos».
+
+**Probado:** `fich8i` **104** comprobaciones (390 y 1360, con y sin el rótulo TLApp), `alreves8i` **50/50**, contrato de las tiendas **86** (24 nuevas:
+la ficha, la clasificación, las notas, las capturas de Apple; la ficha, las capturas y Data safety de Google), contrato de Stripe con la pregunta de
+la cuenta de revisión, tsc, build y todos los guardianes; migración dos veces en la base local y en una base nueva (132 migraciones + semillas dos
+veces). Regresión y CI: ver PROGRESS.
+
+**Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/`): `f8i-privacidad-390.png`
+y `-1360`, `f8i-soporte-390.png`, `f8i-plan-web-390.png` (la web ofrece Pro) frente a `f8i-plan-app-ios-390.png` y `f8i-pro-sin-boton-390.png` (en la
+app, sin botón ni precio), `f8i-borrar-{cliente,negocio,delivery,checkin}-390.png`, `f8i-revision-no-paga-390.png`, `f8i-fichas-1360.png` y
+`f8i-fichas-subidas-1360.png`, `f8i-toca-1360.png`, `f8i-declaraciones-390.png` y `-1360`, `f8i-analitica-1360.png`; las capturas de las fichas
+(local, con Chromium) en `scratchpad/cap8i-tiendas/`. **Huecos del diseño:** no hay pantallas de fichas, del paquete ni de las declaraciones en el
+diseño: se compusieron con `kpis`/`note`/`group`/`rows`/`acts`/`chips` del sistema como el resto de Sistema › Apps; /privacidad usa la plantilla del
+artículo de la Ayuda. El bloque `lock` del sistema acepta ahora ir sin botón (el mismo aviso PRO, solo informativo) para las apps.
+
+**Qué mirar en el teléfono:** /privacidad en tu iPhone (sin entrar) y «Read in English»; Super Admin › Sistema › Apps › **Lo que te toca** (lo que
+te falta hacer, con su botón) y **Declaraciones** (lo que contestarás en Apple y Google). En el sandbox, las cuentas de revisión están **apagadas**:
+para probarlas, enciéndelas en Fichas y revisión (con motivo) — el código no se ve en ningún lado; vive en el servidor.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **Las claves de app del repo** son las de apps.json (`cliente`, `negocio`, `delivery`, `checkin`), no los nombres de las apps.
+- **Pro dentro de las apps: ni botón, ni enlace, ni precio** (Apple 3.1.3(f), Pagos de Google). El servidor decide por el rótulo TLApp, que **solo
+  quita** (un rótulo falso solo le quita la compra a quien lo pone); además rechaza «Seguir / Volver a Pro» aunque se llame la acción. Los avisos de
+  la prueba Pro quedan sin botón y sin precio; los recibos sí se ven. «Pasar a Free» tampoco está en la app (se gestiona todo en la web).
+- **Cuentas de revisión: el código vive en el entorno** (`REVISION_CODIGO_CLIENTE/NEGOCIO/REPARTIDOR/PUERTA`; deploy.sh los crea al azar, 6 dígitos)
+  y `review_accounts.code_ref` guarda solo el nombre; el servidor solo puede leer esos cuatro nombres. Se guarda como un código más (la huella para ESE
+  teléfono, con los mismos topes de intentos y de pedidos, más `revision_intentos_hora`), nunca sale por SMS ni en la pantalla del modo pruebas, y
+  se vuelve a revisar al verificar (desactivar o apagar corta también un código ya pedido). Con la cuenta inactiva o el interruptor apagado, el
+  número sigue el camino normal. En producción, además, pide `app.tiendas.publico` (Fase 9). El código llega a Apple solo por la API, en las notas
+  para la revisión.
+- **Números de las cuentas de revisión:** +1 484 555 0181…0184 (los 555-01xx son de ficción; los de 570 ya estaban usados por la semilla).
+- **No paga:** las cuatro maneras de cobrar con la tarjeta de la persona en la pasarela preguntan primero (y lo anotan), guardar una tarjeta lo
+  rechaza el servidor y la base. **Ve solo lo suyo:** el negocio de revisión nace **oculto** (la base lo exige) y la cuenta de Negocios solo es dueña
+  de ese. La cuenta de Puerta no es portera en la semilla (el teléfono del portero va cifrado): en la Fase 9 se invita desde el negocio de revisión.
+- **Las cuentas nacen activas pero el interruptor apagado** en el sandbox.
+- **Capturas a pedido, no en cada build:** el job «capturas» de `tiendas.yml` corre solo con `workflow_dispatch` y `capturas=si` (por el costo): base
+  desechable con la semilla, la web contra ella, Apple 6.9" (1320×2868) con WebKit y Google 1080×2400 con Chromium, con el rótulo TLApp de cada app, y
+  la cáscara real de Android en el emulador (Pixel 6) con `adb exec-out screencap`; las sube por la tubería (OIDC) solo con el dominio con HTTPS.
+  Las de iPhone en el simulador real necesitan XCUITest para navegar dentro de la app: quedan en LAUNCH. Las fotos de la semilla no están en el
+  almacén del CI (las capturas del CI salen sin fotos).
+- **La Puerta en las capturas:** el job abre una puerta de La Terraza moviendo una fecha de esa base desechable a «hoy».
+- **Fichas sin Face ID:** las llaves de acceso en las apps esperan el dominio (8b); las fichas no prometen lo que todavía no funciona.
+- **Subir como borrador** toca en Apple solo la versión EN PREPARACIÓN (si no hay, nada) y en Google confirma con `changesNotSentForReview=true`;
+  ninguna ruta de envío a revisión existe en el código (guardián). Tope `fichas_subidas_dia` (6).
+- **Hallazgo:** Google sí tiene **Data safety por la API** (`applications.dataSafety`, el mismo CSV). Lo dejé escrito y probado contra el simulador,
+  pero el servidor **no** lo manda solo: es una declaración legal tuya. Si quieres que lo suba Claude con tu OK, se conecta a un botón.
+- **Clasificación de Apple** (por la API, con la verdad): alcohol «poco frecuente o leve» (Noche, eventos 21+), contenido de usuarios y mensajes
+  en To'Latino y Negocios, temas de salud leves en To'Latino (Doctores), **advertising: no** (Destacados es la posición por el plan, no un anuncio de
+  terceros; si Apple lo cuenta como publicidad, se cambia). Google IARC y lo demás: en la pantalla Declaraciones.
+- **PrivacyInfo.xcprivacy por target** sale del inventario (tipos de datos, ligados, sin rastreo, propósitos) y declara la API de razón requerida
+  que de verdad usa cada target: UserDefaults (CA92.1) solo en To'Latino y Repartidor (plugin TLLocal). Por eso la versión nativa subió a **1.0.1**.
+- **Inventario:** 18 categorías; 29 columnas que parecen personales por el nombre pero no lo son (la dirección del negocio, el mapa…) van en
+  `noPersonales` con su porqué; una columna nueva sin lugar rompe el build. El patrón está fijado en el guardián.
+- **Play: el token se cachea por correo Y llave** (antes solo por correo): rotar la cuenta de servicio ya no reusa un token viejo; y la ficha se
+  reintenta una vez con un 401.
+- **/privacidad** sin indexar (borrador). /terminos no existe todavía (Fase 9).
+
+**Para ti (lista):**
+- [ ] Mirar /privacidad (ES y EN) y decir si el tono va.
+- [ ] Decidir si Data safety lo sube Claude por la API (con tu OK) o lo importas tú (CSV desde Declaraciones).
+- [ ] Revisar las respuestas de la clasificación de Apple (sobre todo «advertising» y salud).
+- [ ] Revisar las fichas (en el repo o en Fichas y revisión cuando estén subidas).

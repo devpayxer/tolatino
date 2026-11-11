@@ -74,8 +74,16 @@ for (const tienda of TIENDAS) {
     const page = await ctx.newPage();
     let n = 0, puerta = null;
     try {
-      if (sesiones[app]) await ctx.addCookies(sesiones[app]);
-      else { await entrar(page, C.cuentas[app]); sesiones[app] = (await ctx.cookies()).filter((k) => k.name !== "tl_lang"); }
+      // La entrada se hace en Chromium: WebKit no guarda una cookie «Secure» por http (el servidor del CI no tiene https), y luego la sesión
+      // se pone en cada contexto sin «Secure» (solo en esta máquina, contra este servidor).
+      if (!sesiones[app]) {
+        navegadores.chromium ??= await pw.chromium.launch();
+        const c0 = await navegadores.chromium.newContext(), p0 = await c0.newPage();
+        await entrar(p0, C.cuentas[app]);
+        sesiones[app] = (await c0.cookies()).filter((k) => k.name !== "tl_lang").map((k) => ({ ...k, secure: false }));
+        await c0.close();
+      }
+      await ctx.addCookies(sesiones[app]);
       for (const t of C.tomas[app]) {
         let ruta = t.ruta;
         if (ruta.startsWith("@puerta")) { puerta ??= puertaAbierta ??= await abrirPuerta(page, es); if (!puerta) { fallos.push(`${tienda} ${app} ${locale}: ninguna puerta se puede abrir ahora (${t.nombre})`); continue; } ruta = puerta + ruta.slice(7); }

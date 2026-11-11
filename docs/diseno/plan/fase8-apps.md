@@ -240,7 +240,7 @@ solo inserción), `build_requests` («Pedir un build»), `app_builds.symbols_key
 `founder_ok_ref`, `result`, `at`; **`revision_publica` y `lanzamiento` rechazados por `check` mientras el interruptor `app.tiendas.publico` esté
 apagado**, que solo se enciende en la Fase 9).
 
-**0133 `tiendas_fichas` (8i)** — **`store_listings`** (copia de lo enviado: `app`, `store check in ('apple','google')`, `locale` (`es-MX`/`en-US` en Apple,
+**0133 `tiendas_fichas` (8i; renumerada: es la **0132**, la última confirmada era 0131 (8h); semilla `0048_revision.sql` (sandbox). `store_screenshots` guarda `media_key` (almacén privado) en vez de `media_id`; suma `review_account_log`, `founder_steps`, el interruptor `app.revision.cuentas` y `otp_codes.channel` «revision»: ver REVISION «8i»)** — **`store_listings`** (copia de lo enviado: `app`, `store check in ('apple','google')`, `locale` (`es-MX`/`en-US` en Apple,
 `es-US`/`en-US` en Google, §6 #23), `title`, `subtitle`, `short_desc`, `description`, `keywords`, `promo`, `whats_new`, `privacy_url`, `support_url`,
 `sha256` del archivo del repo, `pushed_at`, `pushed_by`; **el repo es la fuente**: `apps/mobile/tiendas/{app}/{locale}.md`), **`store_screenshots`** (`app`,
 `store`, `device_class`, `locale`, `ord`, `media_id`, `commit`), **`data_inventory`** (generado desde `apps/mobile/inventario-datos.json`: categoría de
@@ -651,6 +651,13 @@ Se dice en REVISION y en PROGRESS.
 **Ayuda:** `admin-tuberia-de-apps` (equipo; cómo se pide un build, qué hace cada estado, qué hacer si una llave vence).
 
 ### 8i · Fichas ES/EN, capturas automáticas, privacidad, clasificación, cuentas de revisión, el paquete del fundador y Super Admin, avisos, analítica y ayuda — Sonnet/medium; reglas de pago y privacidad Opus/high
+**Estado (11 nov): hecho hasta donde llegan el dominio y las cuentas.** Migración **0132** (renumerada desde 0133) y semilla **0048**. Fichas ES/EN de
+las cuatro apps en el repo (`apps/mobile/tiendas`, `fichaEnLimites`), «Subir como borrador» a App Store Connect y Google Play probado contra los
+simuladores (contrato de las tiendas 86); inventario de datos → etiquetas de Apple, CSV de Data safety, `PrivacyInfo.xcprivacy` y `/privacidad`
+(`privacidadCoherente`); Pro fuera de las apps (`sinCompraDigitalEnApp`), Borrar mi cuenta en las cuatro (`borrarCuentaEnCadaApp`), «Pronto» solo
+aviso (`sinProntoEnTienda`), cuentas de revisión acotadas (`revisionAcotada`); Sistema › Apps › Fichas y revisión, Lo que te toca y Declaraciones;
+Analítica › Apps. `fich8i` 104, `alreves8i` 50/50. Capturas: job «capturas» de `tiendas.yml` a pedido. Sin las cuentas (Paquetes 8-1/8-2) nada sube
+de verdad; lo que falta, en LAUNCH-CHECKLIST «Fase 8 · 8i». **Con 8i, la Fase 8 queda cerrada salvo 8b (espera el dominio).**
 **Datos:** migración 0133.
 **Fichas:** `apps/mobile/tiendas/{app}/{es,en}.md` (nombre, subtítulo, descripción corta y larga, palabras clave, «Novedades»), escritas desde `docs/ayuda/`,
 sobrias, sin emoji ni superlativos falsos, dentro de los límites de cada tienda (guardián `fichaEnLimites`). **Capturas:** generadas solas en el job macOS

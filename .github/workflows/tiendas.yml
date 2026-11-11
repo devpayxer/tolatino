@@ -18,6 +18,8 @@ on:
     branches: [pruebas]
     paths:
       - "apps/mobile/**"
+      # 8i · Las fichas, las capturas y la privacidad de las tiendas no son lo nativo (no recompilan las apps).
+      - "!apps/mobile/tiendas/**"
       - "apps/web/lib/nativo/**"
       - "apps/web/app/(cascara)/app/sin-senal/**"
       - "apps/web/app/(puerta)/puerta/sin-conexion/**"
