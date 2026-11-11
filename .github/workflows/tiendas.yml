@@ -178,11 +178,12 @@ jobs:
           S="$(echo "${VARIANTE:0:1}" | tr '[:lower:]' '[:upper:]')${VARIANTE:1}"
           TL_FIRMA_CLAVE="$(cat "$LLAVES/clave")" ./gradlew --no-daemon "bundle${S}Release" "assemble${S}Release"
       - name: La firma se comprueba (y dice de quién es)
+        shell: bash
         run: |
           APK=$(ls apps/mobile/android/app/build/outputs/apk/$VARIANTE/release/*.apk | head -1)
           AAB=$(ls apps/mobile/android/app/build/outputs/bundle/${VARIANTE}Release/*.aab | head -1)
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"
-          jarsigner -verify "$AAB" | tail -1
+          jarsigner -verify "$AAB" | grep "jar verified"
           echo "APK=$APK" >> "$GITHUB_ENV"; echo "AAB=$AAB" >> "$GITHUB_ENV"
           if [ "${{ steps.ll.outputs.hay }}" != "si" ]; then echo "::notice title=Android · $APP::firmado con una llave desechable (NO PARA DISTRIBUIR): compila y firma; nada se sube."; fi
       - name: Subir · el APK propio y el .aab (el servidor lo manda a Play interno)
