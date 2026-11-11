@@ -166,9 +166,11 @@ export async function datosSoporte(q: Quien) {
 
 /* ── Abrir un caso ── */
 export type AbrirIn = { tema: string; operacion?: string | null; texto: string; foto?: string | null; enlazado?: string | null; clave?: string | null };
-type Origen = "form" | "panel" | "compa";
+type Origen = "form" | "panel" | "compa" | "reporte_app";
+/* 8f · Lo que acompaña un «Reportar un problema» (lib/reportar.ts ya lo tapó y lo acotó): queda en support_case_logs, en la MISMA transacción. */
+export type RegistroCaso = { kind: "registro_app" | "captura"; body: Record<string, unknown> };
 const ALTA = /(entr[oó]|entraron|metieron)\s+(a|en)\s+mi\s+cuenta|hacke|me\s+robaron\s+(la|mi)\s+cuenta|no\s+fui\s+yo|me\s+amenaz|me\s+est[aá]\s+acosando|someone\s+(got|logged|broke)\s+into|hacked|not\s+me|threat/i;
-export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resumen?: string | null; compaConversacion?: number | null; prioridad?: "alta" | null } = {}): Promise<ResS> {
+export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resumen?: string | null; compaConversacion?: number | null; prioridad?: "alta" | null; registros?: RegistroCaso[] } = {}): Promise<ResS> {
   const origen: Origen = o.origen ?? (q.negocio ? "panel" : "form");
   const n = q.negocio ? (NEG.test(q.negocio) ? q.negocio : "") : null;
   if (n === "") return no("Ese negocio no existe.", "That business does not exist.");
@@ -227,6 +229,7 @@ export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resu
         mid = foto;
       }
       await c.query(`insert into support_messages (case_id, city_id, sender, user_id, body, photo_media_id) values ($1, $2, 'user', $3, $4, $5::uuid)`, [k.id, ciudad, q.userId, t.texto, mid]);
+      for (const g of o.registros ?? []) await c.query(`insert into support_case_logs (case_id, city_id, kind, body) values ($1, $2, $3, $4)`, [k.id, ciudad, g.kind, JSON.stringify(g.body)]);
       const cuando = { es: prometido(k.due, k.tz, true), en: prometido(k.due, k.tz, false) };
       await c.query(`insert into support_messages (case_id, city_id, sender, sys_key, vars) values ($1, $2, 'system', 'recibido', $3)`, [k.id, ciudad, JSON.stringify({ num: k.number, es: cuando.es, en: cuando.en })]);
       return { ok: true, numero: k.number, id: k.id, mensaje: t.tapado ? { es: "Tapamos un dato que no se comparte aquí. Nunca te lo pedimos.", en: "We covered a detail that is not shared here. We never ask for it." } : undefined };

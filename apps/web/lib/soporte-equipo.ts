@@ -1,4 +1,5 @@
 import "server-only";
+import { registroDelCaso, type RegistroEquipo } from "./reportar";
 import type { PoolClient } from "pg";
 import { auditar, type Staff } from "./admin";
 import { tapar } from "./compa/tapar";
@@ -89,6 +90,7 @@ export type CasoEquipo = {
   tope: number | null; devueltoCaso: number; puedeDevolver: boolean; devoluciones: { monto: number; quien: string | null; rol: string | null; status: string; at: string }[];
   unidoA: string | null; unidos: string[]; enlazado: string | null; msjs: MsjEquipo[]; historial: { quien: string | null; action: string; before: unknown; after: unknown; reason: string | null; at: string }[];
   macros: Macro[]; horas: number;
+  registro: RegistroEquipo;   // 8f · «Reportar un problema»: el registro técnico y de dónde salió la captura (support_case_logs)
 };
 export type Macro = { key: string; title: Bi; body: Bi; topic: Tema | null; on: boolean; at: string; quien: string | null };
 
@@ -132,6 +134,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
     db().query<{ t: number | null }>(`select soporte_tope_devolver($1) as t`, [s.role]),
     db().query<{ h: number }>(`select cfg_int('soporte_sla_h') as h`),
   ]);
+  const registro = c.origin === "reporte_app" ? await registroDelCaso(c.id) : null;
   const p = P.rows[0];
   const devueltoCaso = R.rows.filter((x) => x.status !== "failed").reduce((a, x) => a + x.monto, 0);
   // null = sin tope del rol (hasta lo cobrado); 0 = su rol no devuelve. Nunca se confunden.
@@ -145,7 +148,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
     ayuda: c.hnum ? { num: c.hnum, status: c.hst ?? "", opnum: c.hop ?? "" } : null,
     pago: p ? { id: p.id, status: p.status, amount: p.amount, devuelto: p.devuelto, tarjeta: p.brand && p.l4 ? `${p.brand.toUpperCase()} ·· ${p.l4}` : null } : null,
     tope: t, devueltoCaso, puedeDevolver: puedeDevolverRol(s) && t !== 0, devoluciones: R.rows,
-    unidoA: c.unidoA, unidos: U.rows.map((x) => x.num), enlazado: c.enlazado, msjs: M.rows, historial: H.rows, macros: mac, horas: hs.rows[0]?.h ?? 8,
+    unidoA: c.unidoA, unidos: U.rows.map((x) => x.num), enlazado: c.enlazado, msjs: M.rows, historial: H.rows, macros: mac, horas: hs.rows[0]?.h ?? 8, registro,
   };
 }
 

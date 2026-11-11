@@ -560,7 +560,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts"]); // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts"]); // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -1787,6 +1787,19 @@ const guardianes = {
       if (!/export const SLA_SQL = slaCase\(cfgSql\);/.test(sinComent(L))) falla("colaConVista", L, 0, "el plazo de las colas se arma con slaCase(cfgSql) (Configuración)");
       if (!/espera\(x\.opened_at, x\.sla_h\)/.test(sinComent(L))) falla("colaConVista", L, 0, "la lista mide la espera con el plazo de la base (sla_h), no con COLAS[…].sla");
       for (const x of codigo) if (/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(x) && x !== f && /`case q\.queue \$\{Object\.entries\(COLAS\)/.test(sinComent(x))) falla("colaConVista", x, 0, "plazo de las colas armado a mano: usa SLA_SQL / slaCase(cfgSql)");
+    }
+    // 8f · La cola «ticket» (Soporte) muestra cada ORIGEN de un caso con su nombre (un origen nuevo sin nombre salía en crudo, «reporte_app»), y el
+    // caso de «Reportar un problema» trae a la ficha del equipo su registro técnico (lib/reportar registroDelCaso → SoporteAdmin k.registro).
+    const SA = "apps/web/app/admin/SoporteAdmin.tsx", SE = "apps/web/lib/soporte-equipo.ts";
+    if (existsSync(SA)) {
+      let ori = "";
+      for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) {
+        const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+        for (const m of t.matchAll(/origin\s+text not null default 'form' check \(origin in \(([^)]*)\)\)|support_cases_origin_check check \(origin in \(([^)]*)\)\)/g)) ori = m[1] ?? m[2];
+      }
+      const mapa = /const ORIGEN: Record<string, string> = \{([^}]*)\}/.exec(sinComent(SA))?.[1] ?? "";
+      for (const o of [...ori.matchAll(/'(\w+)'/g)].map((x) => x[1])) if (!new RegExp(`\\b${o}:\\s*"`).test(mapa)) falla("colaConVista", SA, 0, `el origen «${o}» de un caso no tiene su nombre en la ficha de Soporte (ORIGEN)`);
+      if (/'reporte_app'/.test(ori) && (!/k\.registro\b/.test(sinComent(SA)) || !existsSync(SE) || !/registroDelCaso\(c\.id\)/.test(sinComent(SE)))) falla("colaConVista", SA, 0, "un caso «Reportar un problema» muestra su registro técnico en la ficha del equipo");
     }
   },
 
@@ -5011,7 +5024,9 @@ const guardianes = {
     const G = "appNoAutoriza";
     const OK = new Set(["apps/web/lib/app-nativa.ts", "apps/web/lib/app-nativa-comun.ts", "apps/web/middleware.ts", "apps/web/lib/cuenta.ts", "apps/web/lib/soporte.ts", "apps/web/lib/eventos.ts",
       "apps/web/app/_cascara/Compuerta.tsx", "apps/web/app/_cascara/HojaPermiso.tsx", "apps/web/app/(cascara)/app/actualizar/page.tsx", "apps/web/app/(cascara)/app/pausa/page.tsx",
-      "apps/web/app/(cascara)/app/fuera/page.tsx", "apps/web/app/(cascara)/app/Estados.tsx"]);
+      "apps/web/app/(cascara)/app/fuera/page.tsx", "apps/web/app/(cascara)/app/Estados.tsx",
+      // 8f · Los errores se agrupan por app y plataforma y llevan su build (informativo; nunca decide nada).
+      "apps/web/lib/errores/ingesta.ts"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       const t = sinComent(f);
@@ -5411,6 +5426,205 @@ const guardianes = {
     }
     const L = "apps/web/lib/uuid.ts";
     if (!existsSync(L) || !/crypto\.getRandomValues\(new Uint8Array\(16\)\)/.test(readFileSync(L, "utf8")) || !/\(b\[6\]! & 0x0f\) \| 0x40/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "uuid() es un UUID v4 de crypto.getRandomValues");
+  },
+
+  /* 8f · Errores y cierres propios (fase8-apps.md §4 8f): lo que llega a /api/errores se TAPA antes de guardarse o de sacar su huella. La clase:
+     un error que guarda el teléfono que la persona escribió, la URL con el número del pedido o el valor de un campo. Vigila: (a) solo
+     lib/errores/ingesta.ts escribe app_error_events / app_error_groups; (b) ahí mensaje y stack salen de taparError() y la ruta de familiaRuta(), y lo
+     simbolizado se vuelve a tapar; (c) taparError quita direcciones, correos, teléfonos y pasa tapar() de 7c; (d) el navegador solo manda la familia de
+     la pantalla (nunca location.href / search / hash, ni el valor de un campo); (e) la base vuelve a rechazar correos, teléfonos, «?x=» y tarjetas. */
+  erroresTapados() {
+    const G = "erroresTapados", I = "apps/web/lib/errores/ingesta.ts", T = "apps/web/lib/errores/tapar.ts", C = "apps/web/lib/nativo/errores.ts", M = "packages/db/migrations/0127_apps_beta.sql";
+    for (const f of [I, T, C, M]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de los errores propios");
+    for (const f of codigo) {
+      if (!/\.(tsx?|mjs|cjs)$/.test(f) || f === I || f.startsWith("guardianes/")) continue;
+      if (/insert into app_error_(events|groups)\b/.test(sinComent(f))) falla(G, f, 0, "solo lib/errores/ingesta.ts guarda errores (pasan por el tapado)");
+    }
+    const i = sinComent(I);
+    if (!/const mensaje = taparError\(texto\(b\.mensaje, \d+\)[^;]*, \d+\);/.test(i)) falla(G, I, 0, "el mensaje se guarda tapado: const mensaje = taparError(...)");
+    if (!/const crudo = taparError\(texto\(b\.stack, \d+\), \d+\);/.test(i) || !/simbolizar\(crudo\)/.test(i)) falla(G, I, 0, "el stack se tapa ANTES de simbolizar (crudo = taparError(...); simbolizar(crudo))");
+    if (!/const stack = taparError\(s\.stack, \d+\);/.test(i)) falla(G, I, 0, "lo simbolizado se vuelve a tapar (const stack = taparError(s.stack, …))");
+    if (!/const ruta = familiaRuta\(b\.ruta\);/.test(i)) falla(G, I, 0, "la ruta se guarda como familia (familiaRuta)");
+    const ins = /insert into app_error_events \(([^)]*)\)\s*values \(([^)]*)\)`,\s*\[([^\]]*)\]/.exec(i);
+    if (!ins) falla(G, I, 0, "no encuentro el insert de app_error_events");
+    else {
+      const cols = ins[1].split(",").map((x) => x.trim()), vals = ins[3].split(",").map((x) => x.trim());
+      const de = (c) => vals[cols.indexOf(c)] ?? "";
+      if (!/^mensaje\b/.test(de("message"))) falla(G, I, 0, "message ← mensaje (tapado)");
+      if (!/^stack\b/.test(de("stack"))) falla(G, I, 0, "stack ← stack (tapado y simbolizado)");
+      if (de("route_family") !== "ruta") falla(G, I, 0, "route_family ← ruta (familia)");
+    }
+    if (!/const titulo = \(normalizar\(`\$\{nombre[\s\S]{0,80}?\? `\$\{nombre\}: ` : ""\}\$\{mensaje \|\|/.test(i)) falla(G, I, 0, "el título del grupo sale del mensaje YA tapado");
+    const t = sinComent(T), tf = cuerpoFn(t, "taparError");
+    for (const [re, m] of [[/sinDirecciones\(t\)/, "las direcciones (sinDirecciones)"], [/\.replace\(CORREO, "\[correo\]"\)/, "los correos"], [/\.replace\(TEL, "\[tel\]"\)/, "los teléfonos"], [/tapar\(t\)\.texto/, "tarjetas, SSN, códigos y contraseñas (tapar de 7c)"], [/\.replace\(COMILLAS,/, "el texto entre comillas (valores de campos)"], [/\.replace\(NUMERO, "#"\)/, "los números de operación"]])
+      if (!re.test(tf)) falla(G, T, 0, `taparError no tapa ${m}`);
+    if (!/if \(ESTATICO\.test\(p\) && !p\.includes\("\.\."\)\) return p \+ pos;/.test(t) || !/return `\[url\]\$\{pos\}`;/.test(t)) falla(G, T, 0, "de una dirección solo queda la ruta de /_next/static; lo demás es [url] (con su línea y columna)");
+    const c = sinComent(C);
+    if (/location\.(href|search|hash)|document\.(cookie|querySelector|getElement)|\.value\b|localStorage|sessionStorage/.test(c)) falla(G, C, 0, "el navegador no manda la dirección, cookies, almacenamiento ni el valor de un campo");
+    if (!/ruta: familia\(location\.pathname\)/.test(c)) falla(G, C, 0, "la pantalla va como familia (familia(location.pathname))");
+    const m = readFileSync(M, "utf8");
+    for (const [re, x] of [[/check \(coalesce\(message, ''\) \|\| ' ' \|\| coalesce\(stack, ''\) !~\* '\[a-z0-9\._%\+-\]\+@/, "correos"], [/!~ '\(\\\+\?1\[ \.-\]\?\)\?\\\(\?\[0-9\]\{3\}/, "teléfonos"], [/!~ '\[\?&\]\[A-Za-z_\]\+='\)/, "«?x=»"], [/check \(not texto_con_secretos\(message\) and not texto_con_secretos\(stack\)\)/, "tarjetas y SSN"], [/route_family !~ '\[0-9\?#&=\]'/, "números en la ruta"]])
+      if (!re.test(m)) falla(G, M, 0, `la base ya no rechaza ${x} en app_error_events`);
+  },
+
+  /* 8f · La puerta de los errores no tiene sesión: cualquiera la puede llamar. Tamaño (cuerpo ≤ 64 KB leído con tope, no entero), origen (una
+     página nuestra o el origen local de una cáscara), límite por minuto global y por teléfono / conexión ANTES de tocar la base, y el interruptor
+     app.errores. Al revés: leer el cuerpo sin tope, quitar el límite o aceptar cualquier origen → falla. */
+  ingestaLimitada() {
+    const G = "ingestaLimitada", R = "apps/web/app/api/errores/route.ts", I = "apps/web/lib/errores/ingesta.ts";
+    if (!existsSync(R) || !existsSync(I)) return falla(G, R, 0, "falta la puerta de los errores");
+    const r = sinComent(R), i = sinComent(I);
+    const max = Number(/const MAX = (\d+) \* 1024;/.exec(r)?.[1] ?? 0);
+    if (!max || max > 64) falla(G, R, 0, "el cuerpo tiene un tope (≤ 64 KB)");
+    if (/req\.(json|text|formData|arrayBuffer)\(\)/.test(r)) falla(G, R, 0, "el cuerpo se lee con tope (leer), nunca entero");
+    if (!/if \(n > MAX\) \{ await r\.cancel\(\)/.test(r) || !/content-length[^\n]*> MAX\) return null/.test(r)) falla(G, R, 0, "leer() corta al pasar MAX");
+    if (!/if \(!mio\) return nada\(403\);/.test(r) || !/LOCAL\.has\(origen\) \|\| new URL\(origen\)\.host === host/.test(r)) falla(G, R, 0, "solo desde una página nuestra o una cáscara (origen)");
+    const f = cuerpoFn(i, "recibirError");
+    const ip = f.indexOf("permitir("), ib = f.search(/tx\(|db\(\)/);
+    if (ip < 0 || (ib >= 0 && ib < ip)) falla(G, I, 0, "el límite por minuto va ANTES de la base");
+    if (!/valores\("errores_por_minuto", "errores_por_dispositivo"\)/.test(f)) falla(G, I, 0, "los topes salen de Configuración (errores_por_minuto / errores_por_dispositivo)");
+    if (!/if \(!\(await encendido\(\)\)\) return/.test(f)) falla(G, I, 0, "el interruptor app.errores se mira primero");
+    const p = cuerpoFn(i, "permitir");
+    if (!/ventana\.global >= lim\.global/.test(p) || !/>= lim\.dev\b/.test(p) || !/>= lim\.dev \* 4/.test(p) || !/ventana\.por\.size > 100_000/.test(p)) falla(G, I, 0, "permitir(): tope global, por teléfono, por conexión y memoria acotada");
+    if (!/if \(\(tipo === "cierre" \|\| tipo === "nativo"\) && !app\) return/.test(f)) falla(G, I, 0, "un cierre nativo solo de una app");
+    // Lo que corre sobre 16 KB sin sesión no puede ser cuadrático: el correo solo desde el comienzo de una palabra y con topes (sin eso, 16 KB de
+    // letras costaban ~300 ms), y un cuadro de stack largo no se intenta (dos «.+?» seguidos).
+    const T = "apps/web/lib/errores/tapar.ts", H = "apps/web/lib/errores/huella.ts";
+    if (existsSync(T) && !/const CORREO = \/\(\?<!\[A-Za-z0-9\._%\+-\]\)\[A-Za-z0-9\._%\+-\]\{1,64\}@/.test(readFileSync(T, "utf8"))) falla(G, T, 0, "CORREO: desde el comienzo de una palabra y con tope ({1,64}@): sin eso es cuadrático sobre la entrada sin sesión");
+    if (existsSync(H) && !/if \(l\.length > 500\) return null;/.test(cuerpoFn(sinComent(H), "cuadro"))) falla(G, H, 0, "cuadro(): una línea larga no se intenta (expresiones cuadráticas)");
+  },
+
+  /* 8f · En los errores no hay personas (fase8-apps.md §4 8f: «nada de nombre, teléfono, correo ni ids de operación»). Las tablas de errores no
+     tienen esas columnas; la sesión es una huella que cambia cada día; Salud no lee la huella ni junta errores con cuentas; el navegador no manda
+     quién es. Al revés: sumar user_id u operation_id a app_error_events, devolver session_hash a la pantalla, o mandar el id de la cuenta → falla. */
+  erroresSinPersonas() {
+    const G = "erroresSinPersonas", M = "packages/db/migrations/0127_apps_beta.sql", I = "apps/web/lib/errores/ingesta.ts", A = "apps/web/lib/errores/admin.ts", C = "apps/web/lib/nativo/errores.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0127");
+    const PROHIBIDO = /^\s*(user_id|users?_|phone|telefono|email|correo|first_name|last_name|nombre|name|operation_id|operation|op_id|business_id|order_id|case_id|ip|ip_address|user_agent|ua|device_id|tl_dev|city_id)\b/;
+    const sql = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    for (const tabla of ["app_error_groups", "app_error_events", "app_error_alerts"]) {
+      const b = new RegExp(`create table if not exists ${tabla} \\(([\\s\\S]*?)\\n\\);`).exec(sql)?.[1];
+      if (!b) { falla(G, M, 0, `no encuentro ${tabla}`); continue; }
+      for (const l of b.split("\n")) if (PROHIBIDO.test(l)) falla(G, M, 0, `${tabla} no lleva datos de personas: «${l.trim().slice(0, 50)}»`);
+      for (const m of sql.matchAll(new RegExp(`alter table ${tabla} add column(?: if not exists)? (\\w+)`, "g"))) if (PROHIBIDO.test(m[1])) falla(G, M, 0, `${tabla} no suma ${m[1]}`);
+    }
+    if (!existsSync(I)) return;
+    const i = sinComent(I);
+    if (!/sesion = hmac\(`errores:\$\{dia\}:\$\{e\.dev \?\? e\.ip \?\? "\?"\}`\)\.slice\(0, 32\)/.test(i)) falla(G, I, 0, "la sesión es una huella del día (hmac con la fecha), nunca el id del teléfono");
+    if (/\byo\(|\buser_id\b|users\b/.test(i)) falla(G, I, 0, "la ingesta no mira la cuenta");
+    if (existsSync(A)) { const a = sinComent(A); if (/session_hash\s+as|select[^;]*\bsession_hash\b[^;]*from app_error_events/i.test(a.replace(/count\(distinct e\.session_hash\)/g, ""))) falla(G, A, 0, "Salud no devuelve la huella de la sesión"); if (/join users u on u\.id = (e|g)\.(user|session)/.test(a)) falla(G, A, 0, "Salud no junta errores con cuentas"); }
+    if (existsSync(C)) { const c = sinComent(C); const b = /JSON\.stringify\(\{([^}]*)\}\)/.exec(c)?.[1] ?? ""; const k = [...b.matchAll(/(\w+):/g)].map((x) => x[1]).sort().join(","); if (k !== "mensaje,nombre,ruta,stack,tipo") falla(G, C, 0, `el navegador manda solo tipo, nombre, mensaje, stack y ruta (manda: ${k})`); }
+  },
+
+  /* 8f · «Reportar un problema»: el registro técnico y la captura salen del teléfono SOLO al tocar «Enviar» (consentimiento). La clase: una pantalla
+     que manda el registro al abrirse, una captura que se sube al elegirla, o el nativo que lo manda por su cuenta. Vigila: en Reportar.tsx la acción
+     reportar() y subirFotoPrivada() solo dentro de enviar(), enviar solo desde un botón y nada de eso en un useEffect; registro() solo en enviar()
+     o en «Ver lo que se envía» (que lo muestra en el teléfono); solo esa acción llama a reportarProblema; los plugins TLReporte no usan la red. */
+  reporteConConsentimiento() {
+    const G = "reporteConConsentimiento", P = "apps/web/app/(app)/soporte/reportar/Reportar.tsx", A = "apps/web/app/(app)/soporte/reportar/acciones.ts";
+    if (!existsSync(P) || !existsSync(A)) return falla(G, P, 0, "falta la pantalla de Reportar un problema");
+    const t = sinComent(P), env = cuerpoFn("\n" + t.replace(/\n  function enviar\(/, "\nfunction enviar("), "enviar");
+    if (!env) return falla(G, P, 0, "no encuentro enviar()");
+    const fuera = t.replace(env.slice(1), "");
+    for (const x of ["reportar(", "subirFotoPrivada("]) {
+      if (!env.includes(x)) falla(G, P, 0, `${x}…) se llama en enviar()`);
+      if (fuera.includes(x)) falla(G, P, 0, `${x}…) solo en enviar() (al tocar «Enviar»)`);
+    }
+    for (const m of fuera.matchAll(/registro\(\)/g)) { const antes = fuera.slice(Math.max(0, m.index - 200), m.index); if (!/const ver = \(\) => \{[^\n]*$/.test(antes.split("\n").pop() ?? "")) falla(G, P, 0, "registro() solo en enviar() o en «Ver lo que se envía» (ver)"); }
+    for (const m of t.matchAll(/useEffect\(\(\) => \{([\s\S]*?)\n  \}, \[/g)) if (/reportar\(|subirFotoPrivada\(|registro\(|enviar\(/.test(m[1])) falla(G, P, 0, "nada se manda al abrir la pantalla (useEffect)");
+    const llamadas = [...t.matchAll(/\benviar\(/g)].length, boton = [...t.matchAll(/onClick: enviar\b/g)].length, otros = [...t.matchAll(/[=(,{]\s*enviar\b(?!\()/g)].length;
+    if (boton !== 1 || llamadas !== 1 || otros !== 0) falla(G, P, 0, "enviar() solo desde el botón «Enviar» (se define una vez y solo lo usa ese onClick)");
+    if (/onClick: enviar/.test(t) && !/l: pend \? E2\("Enviando…", "Sending…"\) : conSesion \? E2\("Enviar", "Send"\)/.test(t)) falla(G, P, 0, "el botón de enviar dice «Enviar»");
+    for (const f of codigo) if (/\.(tsx?)$/.test(f) && f !== A && f !== "apps/web/lib/reportar.ts" && /reportarProblema\(/.test(sinComent(f))) falla(G, f, 0, "solo la acción de «Enviar» abre un reporte");
+    const R = "apps/web/lib/nativo/reporte.ts";
+    if (existsSync(R) && /fetch\(|XMLHttpRequest|sendBeacon|urlServidor/.test(sinComent(R))) falla(G, R, 0, "el registro y la captura no salen del puente por su cuenta");
+    if (existsSync("apps/web/lib/nativo/errores.ts") && /registro\(|capturaGuardada\(/.test(sinComent("apps/web/lib/nativo/errores.ts"))) falla(G, "apps/web/lib/nativo/errores.ts", 0, "los errores nunca llevan el registro ni la captura");
+    for (const f of archivos) if (/^apps\/mobile\/plugins\/tl-reporte\/.*\.(swift|java)$/.test(f) && /URLSession|URLRequest|HttpURLConnection|HttpsURLConnection|okhttp|java\.net\.URL\b|Socket\(/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "TLReporte no usa la red: todo sale por «Enviar» en la página");
+  },
+
+  /* 8f · «Errores en vivo» (docs/PLAN.md §5): lee app_error_groups y avisa al equipo de un grupo nuevo, un pico o un error resuelto que vuelve,
+     UNA vez por grupo, tipo y build. Vigila que el barrido lo corra, que la alerta quede anotada (única) ANTES de avisar, que lo silenciado no avise,
+     que la plantilla exista y que la base reabra un grupo resuelto que vuelve en un build posterior. Al revés: sacar la tarea del barrido, avisar
+     sin anotar, o quitar la regresión → falla. */
+  erroresEnVivo() {
+    const G = "erroresEnVivo", B = "apps/web/lib/barrido.ts", V = "apps/web/lib/errores/vivo.ts", M = "packages/db/migrations/0127_apps_beta.sql";
+    if (!existsSync(V) || !existsSync(M)) return falla(G, V, 0, "falta «Errores en vivo»");
+    if (!/\["errores", async \(\) => \(await import\("\.\/errores\/vivo"\)\)\.barrerErrores\(\)\]/.test(sinComent(B))) falla(G, B, 0, "el barrido corre barrerErrores");
+    const v = sinComent(V), f = cuerpoFn(v, "barrerErrores");
+    const ia = f.indexOf("insert into app_error_alerts"), iv = f.indexOf("avisar(u.id, \"err_vivo\"");
+    if (ia < 0 || iv < 0 || iv < ia) falla(G, V, 0, "la alerta se anota (única) antes de avisar");
+    if (!/if \(!a\) continue;/.test(f)) falla(G, V, 0, "si la alerta ya estaba, no se avisa otra vez");
+    if (!/from app_error_groups g/.test(f) || !/g\.status <> 'silenciado'/.test(f)) falla(G, V, 0, "lee los grupos y lo silenciado no avisa");
+    if (!/cfg_int|valor\("errores_pico_n"\)/.test(f)) falla(G, V, 0, "el pico sale de Configuración (errores_pico_n)");
+    if (!/sinSms: true/.test(f)) falla(G, V, 0, "el aviso del equipo no va por SMS");
+    const m = readFileSync(M, "utf8");
+    if (!/unique \(group_id, kind, release\)/.test(m)) falla(G, M, 0, "una alerta por grupo, tipo y build (único)");
+    if (!/\('err_vivo', 'mod',/.test(m)) falla(G, M, 0, "falta la plantilla err_vivo");
+    if (!/status = case when g\.status = 'resuelto' and error_build_posterior\(new\.release, g\.resolved_in_build\) then 'nuevo'/.test(m)) falla(G, M, 0, "un resuelto que vuelve en un build posterior se reabre solo");
+  },
+
+  /* 8f · Los mapas de fuente simbolizan EN EL SERVIDOR y nunca se sirven (fase8-apps.md §4 8f). La clase: productionBrowserSourceMaps encendido y los
+     .map en /_next/static (el código original del sitio, entero, para cualquiera). Vigila: el build de apps/web corre scripts/mapas-privados.mjs (que
+     los saca y falla si queda uno); nginx niega *.map; las islas no los copian; simbolizar.ts los lee de .next/mapas con la ruta comprobada; nada
+     de public/ termina en .map. Al revés: quitar el paso del build o la regla de nginx → falla. */
+  mapasPrivados() {
+    const G = "mapasPrivados", N = "apps/web/next.config.ts", P = "apps/web/package.json", X = "infra/pruebas/nginx-pruebas.conf", S = "scripts/mapas-privados.mjs", I = "apps/mobile/scripts/islas.mjs", Z = "apps/web/lib/errores/simbolizar.ts";
+    const mapas = existsSync(N) && /productionBrowserSourceMaps:\s*true/.test(sinComent(N));
+    if (!mapas) return;
+    const build = JSON.parse(readFileSync(P, "utf8")).scripts?.build ?? "";
+    if (!/^next build && node \.\.\/\.\.\/scripts\/mapas-privados\.mjs \.$/.test(build)) falla(G, P, 0, "el build saca los mapas de lo que se sirve (next build && node ../../scripts/mapas-privados.mjs .)");
+    if (!existsSync(S) || !/renameSync\(p, q\)/.test(readFileSync(S, "utf8")) || !/if \(quedan\.length\)[^\n]*process\.exit\(1\)/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "mapas-privados mueve los .map y falla si queda alguno");
+    if (!existsSync(X) || !/location ~\* \\\.map\$ \{ return 404; \}/.test(readFileSync(X, "utf8"))) falla(G, X, 0, "nginx niega *.map");
+    if (existsSync(I) && !/filter: \(s\) => !s\.endsWith\("\.map"\)/.test(readFileSync(I, "utf8"))) falla(G, I, 0, "las islas no copian mapas a la app");
+    if (existsSync(Z)) { const z = sinComent(Z); if (!/path\.join\(process\.cwd\(\), "\.next", "mapas"\)/.test(z) || !/if \(f\.startsWith\(raiz \+ path\.sep\)\)/.test(z) || !/rel\.includes\("\.\."\)/.test(z)) falla(G, Z, 0, "simbolizar lee de .next/mapas, con la ruta comprobada (sin «..», dentro de la carpeta)"); }
+    for (const f of archivos) if (/^apps\/web\/public\/.*\.map$/.test(f)) falla(G, f, 0, "un mapa de fuente en public/ se serviría");
+    const D = "infra/pruebas/Dockerfile";
+    if (existsSync(D) && /\.next\/mapas[^\n]*\/static|static[^\n]*\.map/.test(readFileSync(D, "utf8"))) falla(G, D, 0, "la imagen no pone los mapas en lo que se sirve");
+  },
+
+  /* 8f · El enlace de un uso del APK propio: verlo no lo gasta (una vista previa, un rastreador), bajarlo sí, una vez, con la sesión del tester y la
+     huella sha256 comprobada; solo se guarda la huella del enlace; ningún APK en el repo. Al revés: gastar en el GET, quitar la condición de la
+     escritura o subir un .apk → falla. */
+  apkUnUso() {
+    const G = "apkUnUso", L = "apps/web/lib/beta.ts", P = "apps/web/app/(app)/beta/apk/[ficha]/page.tsx", R = "apps/web/app/(app)/beta/apk/[ficha]/bajar/route.ts";
+    for (const f of archivos) if (/\.(apk|aab|ipa)$/i.test(f)) falla(G, f, 0, "ningún binario de app en el repo (el APK de prueba lo arma el servidor; los de verdad, el CI en 8h)");
+    if (!existsSync(L) || !existsSync(P) || !existsSync(R)) return falla(G, L, 0, "falta el enlace de un uso");
+    const p = sinComent(P), r = sinComent(R), l = sinComent(L);
+    if (/bajarApk|used_at|update /.test(p)) falla(G, P, 0, "abrir el enlace (GET) no lo gasta");
+    if (/export async function (GET|HEAD)\b/.test(r) || !/export async function POST\(/.test(r)) falla(G, R, 0, "bajar es solo POST");
+    if (!/if \(!\(await mismoOrigen\(\)\)\)/.test(r) || !/const u = await yo\(\);/.test(r)) falla(G, R, 0, "bajar: desde nuestra página y con la sesión");
+    const b = cuerpoFn(l, "bajarApk");
+    if (!/update apk_links set used_at = now\(\) where id = \$1::bigint and used_at is null and revoked_at is null and expires_at > now\(\)/.test(b)) falla(G, L, 0, "se gasta en UNA escritura condicionada (used_at is null…)");
+    if (!/createHash\("sha256"\)\.update\(b\)\.digest\("hex"\) !== l\.sha/.test(b)) falla(G, L, 0, "se comprueba la huella sha256 antes de entregar");
+    if (!/where l\.token_hash = \$1 and t\.user_id = \$2/.test(b) || !/where l\.token_hash = \$1 and t\.user_id = \$2/.test(cuerpoFn(l, "verEnlace"))) falla(G, L, 0, "el enlace es solo de la cuenta del tester");
+    if (/token_hash, [^)]*ficha\b(?!\))/.test(l.replace(/createHash\("sha256"\)\.update\(ficha\)\.digest\("hex"\)/g, "H"))) falla(G, L, 0, "del enlace solo se guarda la huella");
+    for (const f of codigo) if (/\.(tsx?)$/.test(f) && f !== L && /update apk_links/.test(sinComent(f))) falla(G, f, 0, "solo lib/beta.ts toca los enlaces del APK");
+  },
+
+  /* 8f · La API de App Store Connect: fuera de producción un simulador la puede reemplazar (ASC_API_URL, como el push de 8c); en producción esa
+     variable NO se lee y la dirección es la de Apple. Solo lib/beta.ts la lee. Al revés: leerla también en producción → falla. */
+  tiendasSimuladorAislado() {
+    const G = "tiendasSimuladorAislado", L = "apps/web/lib/beta.ts";
+    if (!existsSync(L)) return;
+    if (!/const URL_ASC = \(\) => \(!PROD && process\.env\.ASC_API_URL \? process\.env\.ASC_API_URL : "https:\/\/api\.appstoreconnect\.apple\.com"\);/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "ASC_API_URL solo fuera de producción; en producción, la API de Apple");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && /ASC_API_URL/.test(readFileSync(f, "utf8"))) falla(G, f, 0, "solo lib/beta.ts lee ASC_API_URL");
+  },
+
+  /* 8f · Una cáscara instalada de antes no trae los métodos nuevos de un plugin propio (TLReporte.agitar, .cierres, .ultimaCaptura): Capacitor
+     contesta «no implementado» y, sin atraparlo, la página se rompe (lo cazó push8c con el puente de 8c: «TLReporte.addListener() is not
+     implemented»). Toda llamada a un método de un plugin propio en lib/nativo va con .catch( o dentro de un try en la misma línea. Al revés: quitar
+     el try de agitar() → falla. */
+  pluginViejoNoRompe() {
+    const G = "pluginViejoNoRompe";
+    for (const f of codigo.filter((x) => /^apps\/web\/lib\/nativo\/.*\.ts$/.test(x) && !x.endsWith("/puente.ts"))) {
+      const t = sinComent(f), vars = [...t.matchAll(/const (\w+) = plugin<TL\w+>\(/g)].map((m) => m[1]);
+      if (!vars.length) continue;
+      t.split("\n").forEach((l, i) => {
+        for (const v of new Set(vars)) for (const m of l.matchAll(new RegExp(`\\b${v}(?:\\??\\.|\\s+as\\s+unknown\\s+as\\s+\\w+\\)\\.)(\\w+)\\(`, "g"))) {
+          if (!/\.catch\(/.test(l.slice(m.index)) && !/\btry \{/.test(l.slice(0, m.index))) falla(G, f, i + 1, `«${v}.${m[1]}(…)» sin .catch ni try: una cáscara de antes sin ese método rompería la página`);
+        }
+      });
+    }
   },
 
   idioma() {

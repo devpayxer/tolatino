@@ -31,7 +31,7 @@ const hace = (iso: string) => {
   return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : `hace ${Math.floor(m / 1440)} d`;
 };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
-const ORIGEN: Record<string, string> = { form: "App · formulario", panel: "Panel del negocio", compa: "El Compa" };
+const ORIGEN: Record<string, string> = { form: "App · formulario", panel: "Panel del negocio", compa: "El Compa", reporte_app: "App · Reportar un problema" };
 const OPST: Record<string, string> = { pending: "pendiente", change_proposed: "con un cambio propuesto", confirmed: "confirmado", declined: "no aceptado", expired: "sin respuesta", cancelled: "cancelado", done: "terminado" };
 const vence = (iso: string) => {
   const ms = new Date(iso).getTime() - Date.now();
@@ -188,6 +188,11 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
       { k: "COBRADO", v: money(pago.amount) }, { k: "YA DEVUELTO", v: money(pago.devuelto) }, { k: "TARJETA", v: pago.tarjeta ?? "—" },
       { k: "TU TOPE EN ESTE CASO", v: k.tope == null ? `Hasta lo cobrado (${money(queda)})` : k.tope === 0 ? "Tu rol no devuelve" : `${money(topeQueda ?? 0)} de ${money(k.tope)}` }] }]} />);
     if (k.devoluciones.length) out.push(<A.AdminList key="dev" rows={k.devoluciones.map((d) => ({ icon: "card", title: `${money(d.monto)} · ${d.status === "done" ? "devuelto" : d.status === "failed" ? "no se pudo" : "en camino"}`, sub: `${d.quien ?? "Equipo"}${d.rol ? ` (${d.rol})` : ""} · ${fecha(d.at)}` }))} />);
+    // 8f · «Reportar un problema»: el registro técnico que mandó el teléfono al tocar «Enviar» (familias de pantalla, errores, señal; tapado).
+    if (k.registro) out.push(<PanelBloques key="reg" bloques={[{ type: "group", k: "REGISTRO DE LA APP · LO QUE MANDÓ EL TELÉFONO" },
+      { type: "kv", cols: 2, items: [{ k: "SISTEMA", v: k.registro.sistema ?? "—" }, { k: "MODELO", v: k.registro.modelo ?? "—" }, { k: "CAPTURA", v: k.registro.captura === "agitar" ? "De la pantalla (agitar)" : k.registro.captura === "archivo" ? "Un archivo que eligió" : "Sin captura" }, { k: "LÍNEAS", v: String(k.registro.lineas.length) }] },
+      k.registro.purgado ? { type: "note", tone: "info", icon: "info", t: "Se borró: la cuenta se cerró hace más de 30 días." }
+        : k.registro.lineas.length ? { type: "timeline", items: k.registro.lineas.slice(-60).map((l) => ({ t: l.slice(9), s: l.slice(0, 8) })) } : { type: "note", tone: "info", icon: "info", t: "El teléfono no tenía pantallas anotadas." }]} />);
     out.push(<PanelBloques key="hilo" bloques={[{ type: "group", k: "CONVERSACIÓN" }, { type: "thread", items: hilo }]} />);
     if (fotos.length) out.push(<A.AdminList key="fotos" rows={fotos.map((m) => ({ icon: "image", title: "Foto del caso", sub: `${(m.quien ?? k.persona.nombre)} · ${fecha(m.at)} · se abre aparte y queda en la auditoría`, chevron: true, onClick: () => window.open(m.foto!, "_blank", "noopener") }))} />);
     if (abierto && puede.editar) {

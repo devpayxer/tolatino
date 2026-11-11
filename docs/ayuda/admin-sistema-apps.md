@@ -19,6 +19,7 @@ Audiencia: equipo. Tema: equipo._
 - **Cambiar un build:** en la fila de la plataforma, **Mínimo** o **Aviso**, escribe el número de build y el motivo, **Guardar**.
 - Los cambios valen en cada servidor **en 15 segundos como mucho** (como toda la Configuración) y la app los ve la próxima vez que abre una
   pantalla de su entrada.
+- **Las otras pestañas de Apps** (Versiones, Testers, Salud · errores y Reportes) se explican en «Errores, beta y reportes en el Super Admin».
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -51,6 +52,7 @@ and the **notice build** (below it: a dismissible note that comes back after 7 d
 - **Pause or reopen an app:** tap its switch, choose or write the reason, confirm. It goes to the audit log.
 - **Change a build:** on the platform row, **Minimum** or **Notice**, type the build number and the reason, **Save**.
 - Changes reach every server **within 15 seconds**, and the app sees them the next time it opens an entry screen.
+- **The other Apps tabs** (Versions, Testers, Health · errors and Reports) are explained in «Errors, beta and reports in Super Admin».
 
 ### What happens in each case
 | Case | What happens |

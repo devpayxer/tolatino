@@ -59,7 +59,9 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }
     if (equipos.length) B.push({ type: "rows", k: E2("TUS EQUIPOS DE PUERTA", "YOUR DOOR TEAMS"), items: equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio, chev: false, compact: true,
       acts: [{ l: E2("Salir", "Leave"), v: "secondary", onClick: () => { if (window.confirm(E2(`¿Salir de la puerta de ${e.negocio}?`, `Leave ${e.negocio}’s door team?`))) run(() => puertaSalirEquipo(e.id), () => router.refresh()); } }] })) });
   }
-  B.push({ type: "rows", k: E2("AYUDA", "HELP"), items: [{ key: "ayuda", icon: "help", t: E2("Cómo funciona la puerta", "How the door works"), s: E2("Escanear, sin señal y qué hacer en cada caso.", "Scanning, offline and what to do in each case."), chev: true, onClick: () => router.push("/ayuda?t=puerta") }] });
+  B.push({ type: "rows", k: E2("AYUDA", "HELP"), items: [{ key: "ayuda", icon: "help", t: E2("Cómo funciona la puerta", "How the door works"), s: E2("Escanear, sin señal y qué hacer en cada caso.", "Scanning, offline and what to do in each case."), chev: true, onClick: () => router.push("/ayuda?t=puerta") },
+    // 8f · Reportar un problema de la app (lo ve el equipo de To'Latino).
+    { key: "reportar", icon: "warning", t: E2("Reportar un problema de la app", "Report an app problem"), s: E2("Algo no funciona: cuéntanos qué pasó.", "Something is not working: tell us what happened."), chev: true, onClick: () => router.push("/soporte/reportar") }] });
   return (
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <Cabeza eye="TO’LATINO PUERTA" t={E2(`Hola, ${nombre}`, `Hi, ${nombre}`)} s={E2("Escanea los boletos en la puerta. Solo escaneas: en la puerta no se venden boletos.", "Scan tickets at the door. You only scan: no tickets are sold at the door.")} />

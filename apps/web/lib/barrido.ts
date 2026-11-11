@@ -117,6 +117,10 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 8c · Push: lo que se quedó «enviando» vuelve a la cola, los reintentos que tocan salen (espera creciente), lo vencido (push_ttl_h) se
         // deja y su SMS de respaldo sale (una vez), y los tokens sin uso (push_inactivo_dias) vencen. Idempotente.
         ["push", async () => (await import("./push/cola")).barrerPush()],
+        // 8f · «Errores en vivo»: grupo nuevo, pico o regresión por build → aviso a los Admins (una vez por grupo, tipo y build), y la purga de los
+        // errores y cierres de más de errores_retener_dias. Y el programa beta: los testers de TestFlight que esperan a Apple o quedaron a medias.
+        ["errores", async () => (await import("./errores/vivo")).barrerErrores()],
+        ["beta", async () => (await import("./beta")).barrerBeta()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

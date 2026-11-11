@@ -484,7 +484,7 @@ HTML ni RSC; otro rol → 403.
 **Ayuda:** `apps-de-to-latino` (vecino: qué app es para qué y cómo se instala), `admin-sistema-apps` y `admin-llaves-de-las-tiendas` (equipo).
 
 ### 8b · Enlaces universales y App Links, enlaces de SMS, WhatsApp y correo, y volver de Stripe — **Opus/high**
-**Datos:** migración 0127 (antes 0126; ver 8c).
+**Datos:** la siguiente migración libre (antes 0126 y después 0127; 8c tomó 0126 y 8f tomó 0127).
 **Servidor:** `app/.well-known/apple-app-site-association/route.ts`, `app/.well-known/assetlinks.json/route.ts` (de `apps.json` + `apple_team_id` +
 `app_signing_certs`), exclusión en el `matcher` del middleware, regla de Cloudflare para `/.well-known/*` (por la API), `lib/enlaces.ts` (`hrefDeAviso`
 con la app que lo abre), Stripe Connect con `return_url` / `refresh_url` universales, `@capacitor/app` `appUrlOpen` → navegar dentro de la cáscara
@@ -563,7 +563,13 @@ pantalla no rompen la web).
 `seguimiento-del-pedido` (vecino).
 
 ### 8f · Programa beta, «Reportar un problema», errores y cierres propios (+ Super Admin › Sistema › Apps completo) — Sonnet/medium; ingesta y tapado Opus/high
-**Datos:** migración 0130; semilla `0046_apps_beta.sql`.
+**Estado (11 nov): hecho salvo lo que piden las cuentas de las tiendas.** Migración **0127** (renumerada: el plan decía 0130) y semilla **0045**
+(decía 0046): 8b, que tomaría 0127 en el papel, espera el dominio; 8b tomará la siguiente libre. Nada asume números contiguos. Probado: `beta8f`
+94 comprobaciones (390 y 1360), contrato de las tiendas 46 (App Store Connect con su especificación OpenAPI 4.6 fijada; Google Play), 8 guardianes
+nuevos o ampliados con `alreves8f` 48/48. TestFlight interno contra el simulador (faltan las cuentas, Paquete 8-2); el APK propio de punta a punta con
+un APK de PRUEBA que arma el servidor (sin binarios en el repo); Play interno se agrega en Play Console (su API no acepta correos). Desvíos y lo
+diferido: `docs/REVISION.md` «8f» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8f».
+**Datos:** migración 0127 (antes 0130); semilla `0045_apps_beta.sql` (antes 0046).
 **Servidor:** `/api/errores` (JS de la web y de las apps, cierres nativos de la vez anterior; límite por dispositivo; **tapado** con `lib/compa/tapar.ts`;
 agrupado por huella del stack; nunca la URL con ids ni el texto de un campo), `lib/reportar.ts` (`reportarProblema` → `abrirCaso` de 7b con tema
 `tecnico`, `origin 'reporte_app'`, la captura como foto privada y el registro técnico en `support_case_logs`), `lib/beta.ts` (`invitar` por la API de

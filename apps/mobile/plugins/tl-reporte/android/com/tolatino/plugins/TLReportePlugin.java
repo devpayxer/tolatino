@@ -15,14 +15,22 @@ import java.util.List;
 
 /* 8a · TLReporte (lo mínimo de 8a; fase8-apps.md §3.1): el registro técnico en anillo (las últimas 200 líneas: pantallas por familia de ruta,
    errores de la página y cambios de señal; nunca lo que la persona escribe). Vive en noBackupFilesDir y sobrevive a un cierre de la app;
-   «Reportar un problema» (8f) lo lee solo al tocar «Enviar». La captura del WebView, agitar y los cierres de la vez anterior llegan en 8f.
-   Métodos: anotar, leer (los mismos que el iOS). */
+   «Reportar un problema» (8f) lo lee solo al tocar «Enviar».
+   8f · ultimaCaptura, agitar (evento «agitado») y cierres: la lógica vive en TLReporteBeta.java.
+   Métodos: anotar, leer, ultimaCaptura, agitar, cierres (los mismos que el iOS). */
 @CapacitorPlugin(name = "TLReporte")
 public class TLReportePlugin extends Plugin {
 
     private static final int ANILLO = 200;
     private final List<String> lineas = new ArrayList<>();
     private boolean cargado = false;
+    private TLReporteBeta.Agitar agitado;
+    private volatile String captura;
+
+    @Override
+    public void load() {
+        TLReporteBeta.instalarManejador(getContext());
+    }
 
     private File archivo() {
         return new File(getContext().getNoBackupFilesDir(), "tl-reporte.txt");
@@ -61,5 +69,40 @@ public class TLReportePlugin extends Plugin {
         JSObject r = new JSObject();
         r.put("lineas", a);
         call.resolve(r);
+    }
+
+    @PluginMethod
+    public void ultimaCaptura(PluginCall call) {
+        JSObject r = new JSObject();
+        String c = captura;
+        captura = null;
+        if (c != null) r.put("imagen", c);
+        call.resolve(r);
+    }
+
+    @PluginMethod
+    public void agitar(PluginCall call) {
+        boolean on = Boolean.TRUE.equals(call.getBoolean("on", false));
+        getActivity().runOnUiThread(() -> {
+            if (agitado == null) agitado = new TLReporteBeta.Agitar(getContext(), () -> getActivity().runOnUiThread(() -> {
+                captura = TLReporteBeta.captura(getBridge().getWebView());
+                notifyListeners("agitado", new JSObject());
+            }));
+            agitado.encender(on);
+            call.resolve();
+        });
+    }
+
+    @PluginMethod
+    public void cierres(PluginCall call) {
+        JSObject r = new JSObject();
+        r.put("cierres", TLReporteBeta.tomarCierres(getContext()));
+        call.resolve(r);
+    }
+
+    @Override
+    protected void handleOnPause() {
+        if (agitado != null) agitado.encender(false);
+        super.handleOnPause();
     }
 }

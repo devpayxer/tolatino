@@ -57,7 +57,9 @@ export type ClaveConfig =
   | "app_aviso_build_cliente_ios" | "app_aviso_build_cliente_android" | "app_aviso_build_negocio_ios" | "app_aviso_build_negocio_android"
   | "app_aviso_build_delivery_ios" | "app_aviso_build_delivery_android" | "app_aviso_build_checkin_ios" | "app_aviso_build_checkin_android"
   // 8c · Push (0126; se cambian en Sistema › Integraciones › Push)
-  | "push_ttl_h" | "push_reintentos" | "push_lote" | "push_por_minuto" | "push_inactivo_dias";
+  | "push_ttl_h" | "push_reintentos" | "push_lote" | "push_por_minuto" | "push_inactivo_dias"
+  // 8f · Errores, «Reportar un problema» y el programa beta (0127)
+  | "errores_retener_dias" | "errores_por_minuto" | "errores_por_dispositivo" | "errores_pico_n" | "reporte_logs_kb" | "beta_agitar" | "apk_enlace_horas";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

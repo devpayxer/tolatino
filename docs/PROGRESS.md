@@ -1075,3 +1075,29 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
 - **Bloqueado / no hecho aquí:** Web Push en el iPhone espera el dominio (Paquete 8-0); APNs/FCM reales esperan las llaves (8-2); Android e iOS
   los compila el CI. Todo en LAUNCH-CHECKLIST «Fase 8 · 8c».
 - **Sigue:** 8b (necesita el dominio) o 8d/8f.
+
+## Fase 8 · 8f hecho — programa beta, «Reportar un problema», errores y cierres propios (11 nov)
+- **Hecho:** migración **0127** (renumerada: el plan decía 0130; 8b tomará la siguiente libre) — `app_builds` (build creciente por app, plataforma y
+  canal; el estado solo avanza; se retira con motivo), `beta_testers` (correo de Apple cifrado + huella; quitar una vez con motivo), `apk_links`
+  (solo la huella del enlace; usar o anular una vez), `app_error_groups` (derivados: las cifras las escribe solo la base), `app_error_events` (solo
+  inserción, sin personas; la base rechaza correos, teléfonos, «?x=», tarjetas y SSN; purga por `errores_retener_dias`), `app_error_alerts` (una por
+  grupo, tipo y build), `support_case_logs` (registro y captura del reporte; la purga D5 lo vacía), `support_cases.origin` + `reporte_app`;
+  Configuración `errores_*`, `reporte_logs_kb`, `beta_agitar`, `apk_enlace_horas`; interruptores `app.reportar` y `app.errores`; avisos `err_vivo`,
+  `beta_testflight`, `beta_apk`, `beta_quitado`. Semilla **0045_apps_beta.sql** (builds en cada estado, testers, tres grupos de errores, un reporte).
+  Servidor: `/api/errores` + `lib/errores/` (tapar, huella, simbolizar con los mapas del servidor, ingesta con topes, Salud, «Errores en vivo» en el
+  barrido), `lib/reportar.ts` (`reportarProblema` → `abrirCaso` tema técnico, origen `reporte_app`, logs en la misma transacción), `lib/beta.ts`
+  (TestFlight interno por `lib/tiendas/asc.ts`, Play interno pendiente en la consola, APK propio con enlace de un uso), `lib/tiendas/apk-prueba.ts`.
+  Mapas de fuente: `productionBrowserSourceMaps` + `scripts/mapas-privados.mjs` después de `next build` (fuera de `.next/static`), nginx niega `*.map`,
+  las islas no los copian. Cliente: `lib/nativo/errores.ts` (colector), `lib/nativo/reporte.ts` (captura, agitar, cierres), Arranque (agitar solo
+  fuera de producción). Pantallas: `/soporte/reportar` (hueco #5) con entradas en Mi cuenta › Ayuda y soporte, Panel › Más, Repartidor › Perfil y
+  Puerta; `/beta/apk/{ficha}`. Super Admin › Sistema › Apps: Versiones, Testers, Salud · errores (ficha), Reportes; Soporte muestra el registro.
+  Nativo (poco y aparte): `TLReporteBeta.swift` / `.java` + `ultimaCaptura`, `agitar`, `cierres` en TLReporte. Contrato `scripts/contrato-tiendas`
+  (App Store Connect con la especificación OpenAPI 4.6 fijada en `asc.json`; Google Play) + simulador `scripts/tiendas-sim`; CI: el contrato y que no
+  quede un `.map` en lo servido. Ayuda `reportar-un-problema`, `admin-errores-y-beta`; `admin-sistema-apps` al día.
+- **Probado:** `beta8f` 95 (390 y 1360), contrato de las tiendas 46, `alreves8f` 52/52 (erroresTapados, ingestaLimitada, erroresSinPersonas,
+  reporteConConsentimiento, erroresEnVivo, mapasPrivados, apkUnUso, tiendasSimuladorAislado, pluginViejoNoRompe; colaConVista ampliado), tsc,
+  build y todos los guardianes; migraciones y semillas dos veces (local y base nueva); regresión app8a 110, push8c 86, adm7i 113, rep2l 17, evt6g
+  105, sop7b 104 (con la búsqueda por número: la base local acumula ~180 casos abiertos y el caso nuevo ya no sale en la primera página; ver REVISION).
+- **Bloqueado / no hecho aquí:** TestFlight y App Store Connect de verdad (Paquete 8-2); Play interno por API no existe (Grupos de Google o la consola);
+  los APK de verdad y los símbolos nativos los sube 8h; iOS y Android los compila el CI. Todo en LAUNCH-CHECKLIST «Fase 8 · 8f».
+- **Sigue:** 8b (necesita el dominio), 8d o 8e.

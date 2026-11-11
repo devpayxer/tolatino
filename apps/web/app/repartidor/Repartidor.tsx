@@ -189,6 +189,8 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       acts: [{ l: E2("Salir del equipo", "Leave team"), v: "secondary", onClick: () => { if (window.confirm(E2(`¿Salir del equipo de ${e.negocio.nombre}?`, `Leave ${e.negocio.nombre}'s team?`))) run(() => repSalir(e.id), E2("Saliste del equipo.", "You left the team.")); } }] })) });
     B.push({ type: "rows", items: [
       { icon: "language", t: E2("Idioma y cuenta", "Language and account"), s: E2("Mi cuenta de To’Latino", "My To’Latino account"), onClick: () => router.push("/cuenta/ajustes") },
+      // 8f · Reportar un problema de la APP (no de una entrega: ese va al negocio desde el pedido). Lo ve el equipo de To’Latino.
+      { icon: "warning", t: E2("Reportar un problema de la app", "Report an app problem"), s: E2("Algo no funciona en la app: lo ve el equipo de To’Latino.", "Something is not working in the app: the To’Latino team sees it."), onClick: () => router.push("/soporte/reportar") },
       { icon: "home", t: E2("Ir a To’Latino", "Go to To’Latino"), onClick: () => router.push("/") },
     ] });
   }

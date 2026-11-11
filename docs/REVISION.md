@@ -3712,3 +3712,85 @@ de push de Google); el cifrado, la firma VAPID, el service worker, la notificaci
 
 **Numeración:** el plan reservaba 0126 para 8b y 0127 para 8c; como 8b espera el dominio, 8c tomó **0126** y 8b tomará 0127 (anotado en el plan;
 nada asume números contiguos).
+
+### 8f · Programa beta, «Reportar un problema», errores y cierres propios, y Super Admin › Sistema › Apps completo (11 nov)
+**Qué hay nuevo.** (1) **Reportar un problema**: cualquiera (vecino, negocio, repartidor, portero) le cuenta al equipo que algo no funciona en la
+app, con una captura opcional; es un caso TK- normal de Soporte (tema técnico) y **nada sale del teléfono hasta tocar «Enviar»**. En las apps de
+prueba, **agitar el teléfono** lo abre con la captura de esa pantalla. (2) **Errores y cierres propios** (sin Sentry ni GlitchTip, $0): la web y las
+apps mandan sus errores y, al abrir otra vez, los cierres nativos; el servidor los **tapa**, los **agrupa** y los **simboliza** con los mapas de
+fuente, que ahora existen pero **nunca se sirven**. «Errores en vivo» avisa a los Admins de un grupo nuevo, un pico o un error resuelto que vuelve.
+(3) **Programa beta**: invitar a TestFlight interno por la API de Apple, Play interno (en Play Console) o el **APK propio** con un enlace de un uso.
+(4) **Super Admin › Sistema › Apps** con Resumen · Versiones · Testers · Salud · errores · Reportes.
+Probado: `beta8f` **94** comprobaciones (390 y 1360), contrato de las tiendas **46** (en el CI), 8 guardianes nuevos o ampliados (**48/48** al revés),
+migraciones y semillas dos veces (local y base nueva) y la regresión (ver PROGRESS).
+
+**Lo que vas a ver (en el sandbox):**
+1. **Mi cuenta › Ayuda y soporte › «Reportar un problema de la app»** (`b8f-reportar-web-390.png`, `-1360.png`): la captura arriba (tocar = verla
+   grande, «Quitar»), «Cuéntanos qué pasó», la línea «Se envía también: el modelo del teléfono, la versión de la app y las últimas pantallas, sin lo
+   que escribiste.» y **«Ver lo que se envía»** (lo muestra ahí mismo). Al enviar: «Recibimos tu reporte · TK-…» (`b8f-reportar-recibido-390.png`).
+2. **En la app de prueba, agitando** (`b8f-reportar-agitar-390.png`): la captura llega marcada «ESTA PANTALLA».
+3. **Panel › Más › Reportar un problema** (el caso es del negocio), **Repartidor › Perfil** y **Puerta › Ayuda** («Reportar un problema de la app»).
+4. **Super Admin › Soporte › el caso** (`b8f-soporte-registro-1360.png`): canal «App · Reportar un problema», «REGISTRO DE LA APP» (sistema,
+   modelo, de dónde salió la captura y las pantallas).
+5. **Sistema › Apps › Salud · errores** (`b8f-salud-1360.png`, `-390.png`) y la **ficha** de un grupo (`b8f-ficha-1360.png`): Visto, Resuelto en…,
+   Silenciar (motivo), Reabrir; ningún teléfono, correo ni nombre.
+6. **Sistema › Apps › Testers** (`b8f-testers-1360.png`, `-390.png`, el formulario `b8f-invitar-1360.png`), **Versiones** (`b8f-versiones-1360.png`,
+   `-390.png`), **Reportes** (`b8f-reportes-1360.png`) y el Resumen con las pestañas nuevas (`b8f-resumen-1360.png`).
+7. **El enlace del APK propio** en el teléfono del tester (`b8f-apk-390.png`): ver no lo gasta; «Descargar» sí, una vez.
+Capturas: `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/b8f-*.png`.
+
+**Huecos del diseño compuestos con el sistema (§1b):** «Reportar un problema» (#5: encabezado, fotos, campo, nota, línea de tiempo y acciones de
+`PanelBloques`; la vista grande es un diálogo con el `IconButton` del sistema), Sistema › Apps › Versiones / Testers / Salud / Reportes y la ficha de
+un grupo (#7: tabs, chips, kpis, rows, kv, timeline), el formulario «Invitar a una cuenta» y la página del enlace del APK. Ninguna pieza nueva.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **Sin grabación de sesión** (plan §6 #16): captura + registro técnico (familias de pantalla, errores de la página, cambios de señal).
+- **La captura en la web** es un archivo que eliges (el navegador no deja tomar la pantalla sin una librería); **en la app**, la toma la cáscara al
+  agitar. Desde un menú de la app no hay captura automática (sería la del menú): se puede elegir de la galería.
+- **«Agitar» lo decide el servidor:** solo si este servidor NO es producción (las apps de prueba apuntan al sandbox), `beta_agitar` = 1 y
+  «Reportar un problema» encendido. En producción no existe.
+- **Otra cuenta que pide el caso** ve «Ese caso no existe» (como todo Soporte de 7b; la página no dice si existe) y la captura privada responde
+  **404**. El plan decía «404» para el caso: la página de Soporte contesta 200 con «no existe», sin ningún dato.
+- **TestFlight interno exige ser del equipo de App Store Connect:** se invita con el rol **DEVELOPER** sin aprovisionamiento y solo esa app
+  (*a verificar* con Apple; alternativa: MARKETING) y, cuando acepta el correo de Apple, el barrido lo suma al grupo interno. Al quitarlo se borra
+  ese usuario de prueba. El correo de Apple se guarda **cifrado**.
+- **Play interno:** la API de Google Play **no deja agregar correos** a una pista (el recurso `Testers` solo acepta Grupos de Google; el contrato lo
+  comprueba en el documento oficial). Queda «Falta en Play» y el Admin marca «Ya está en la lista» después de agregarlo en Play Console (paso del
+  fundador, choque con U dicho en §6 #25). Para el resto, el **APK propio**.
+- **El APK propio** sale por el aviso del tester (campana y push) a `/beta/apk/{ficha}`: solo su cuenta lo abre, verlo no lo gasta, bajarlo sí, se
+  comprueba la huella sha256 y vence a las `apk_enlace_horas` (48). De la ficha la tabla guarda solo la huella; el enlace vive en el aviso del tester.
+  En el sandbox el build «disponible» apunta a un **APK de prueba** que arma el servidor (un ZIP con forma de APK que **no se instala**): el repo no
+  lleva binarios. Los de verdad los sube el CI en 8h.
+- **Errores:** sin columna de persona (el plan decía «`user_id` null»: no hay columna); la sesión es una huella del teléfono que cambia cada día;
+  hasta 10 errores por página abierta; topes 600/min en total y 30/min por teléfono (120 por conexión), **en memoria del proceso** (en producción
+  con varios procesos, el tope es por proceso). La huella del grupo: app + plataforma + tipo + mensaje sin números + 5 cuadros propios por archivo y
+  función (sin hash ni línea). Los cierres nativos se agrupan por binario y desplazamiento hasta que haya símbolos (dSYM / mapping.txt, 8h).
+- **«Errores en vivo»** avisa solo a los Admins (sin SMS), una vez por grupo, tipo y build, hasta 10 por minuto. «Propone la corrección» (PLAN §5)
+  no se hace: el aviso lleva a la ficha con el stack simbolizado.
+- **Mapas de fuente:** `productionBrowserSourceMaps` encendido y un paso después de `next build` (`scripts/mapas-privados.mjs`) los mueve fuera de
+  `.next/static` (falla el build si queda uno); nginx niega `*.map`; las islas no los copian. Antes no había mapas: nada estaba expuesto.
+
+**Lo que encontré y arreglé en el camino (cada uno con su guardián):**
+- **Una cáscara instalada de antes rompía la página:** la web pedía `TLReporte.agitar` / `.cierres` a un TLReporte que no los tiene y Capacitor
+  contesta «no implementado» (lo cazó la regresión `push8c`, con el puente de 8c). Toda llamada a un método de un plugin propio va ahora con
+  `.catch` o `try`: guardián `pluginViejoNoRompe`.
+- **Una expresión cuadrática en la entrada sin sesión:** tapar correos en 16 KB de letras sin «@» costaba ~300 ms por error (con 600 por minuto,
+  un ataque barato). Ahora el correo se busca solo desde el comienzo de una palabra y con topes, y un cuadro de stack de más de 500 caracteres no
+  se intenta: 16 KB hechos para ser lentos se tapan en milisegundos (`beta8f` lo mide). Guardián `ingestaLimitada` ampliado.
+
+**Lo que no pude probar aquí (dicho tal cual):** iOS y Android no se compilan en esta máquina. Lo nativo es poco y aparte: `TLReporteBeta.swift`
+(MetricKit, acelerómetro, captura del WKWebView) y `TLReporteBeta.java` (manejador de excepciones, ApplicationExitInfo, acelerómetro, captura del
+WebView) + tres métodos en cada plugin (`ultimaCaptura`, `agitar`, `cierres`); el Java compila aquí contra Android 16 con los stubs de Capacitor; el
+Swift lo compila el CI de las cáscaras. Agitar y los cierres se probaron con el puente simulado. TestFlight y App Store Connect, contra el simulador
+(valida cada pedido con la especificación de Apple fijada); falta la cuenta (Paquete 8-2). La regla de nginx para `*.map` se revisa por guardián
+(aquí no hay nginx); que Next no los sirve, de verdad (404).
+
+**Regresión y un tropiezo de orden (dicho tal cual):** app8a 110, push8c 86, adm7i 113, rep2l 17, evt6g 105, cada una sola. La primera vuelta
+falló app8a, push8c y sop7b: (1) app8a porque yo corría `beta8f` a la vez (entró Marisol con otra app y la «última sesión» ya no era la de app8a); al
+correrlas una detrás de otra pasa. (2) push8c cazó un error real (la cáscara vieja sin `agitar`; arreglado arriba). (3) **sop7b** falla en su 17.ª
+comprobación por **los datos de la base local**, no por 8f: hay ~180 casos abiertos de corridas anteriores con plazo antes que el caso nuevo y la
+primera página de Super Admin › Soporte (61) ya no lo trae. Con la misma prueba buscando el caso por su número (`?q=TK-…`) pasan las 104. Para el
+sandbox: limpiar los casos de prueba viejos o que sop7b busque su caso.
+
+**Numeración:** el plan decía 0130 / semilla 0046; la última confirmada era 0126 / 0044 y 8b (0127 en el papel) espera el dominio: 8f tomó **0127** y
+la semilla **0045**; 8b tomará la siguiente libre. Nada asume números contiguos (migrar.sh registra por nombre). Anotado en el plan.

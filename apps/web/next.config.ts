@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../../"),
   transpilePackages: ["@tolatino/ui"],
   poweredByHeader: false,
+  // 8f · Mapas de fuente del navegador para simbolizar los errores EN EL SERVIDOR (lib/errores/simbolizar.ts). Nunca se sirven: el paso que
+  // sigue al build (scripts/mapas-privados.mjs) los saca de .next/static; nginx además niega *.map (guardián mapasPrivados).
+  productionBrowserSourceMaps: true,
   reactStrictMode: true,
   // 7d · Las piezas del sistema de diseño piden su logo con ruta relativa («assets/logo-tolatino.svg», p. ej. el avatar de El Compa): en una
   // ruta honda (/cita/C-1/ayuda) eso sería /cita/C-1/assets/…; se sirve el mismo archivo de /assets. Solo lee public/assets.

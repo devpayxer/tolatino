@@ -1,0 +1,410 @@
+{
+ "fuente": "https://developer.apple.com/sample-code/app-store-connect/app-store-connect-openapi-specification.zip",
+ "version": "4.6",
+ "extraido": "2026-11-11",
+ "sha256": {
+  "zip": "f41ed4489c78bf1488cd2291f23394565364fe37b402130f48c3e3c3f5ea1acd",
+  "json": "74732362a91236dcb66eb1620f8be18c2b6060771269b483eab578473bb32763"
+ },
+ "servidor": "https://api.appstoreconnect.apple.com/",
+ "seguridad": {
+  "itc-bearer-token": {
+   "type": "http",
+   "scheme": "bearer",
+   "bearerFormat": "JWT"
+  }
+ },
+ "jwt": {
+  "alg": "ES256",
+  "aud": "appstoreconnect-v1",
+  "maxVidaS": 1200
+ },
+ "roles": [
+  "ADMIN",
+  "FINANCE",
+  "ACCOUNT_HOLDER",
+  "SALES",
+  "MARKETING",
+  "APP_MANAGER",
+  "DEVELOPER",
+  "ACCESS_TO_REPORTS",
+  "CUSTOMER_SUPPORT",
+  "CREATE_APPS",
+  "CLOUD_MANAGED_DEVELOPER_ID",
+  "CLOUD_MANAGED_APP_DISTRIBUTION",
+  "GENERATE_INDIVIDUAL_KEYS"
+ ],
+ "betaGroup": [
+  "createdDate",
+  "feedbackEnabled",
+  "hasAccessToAllBuilds",
+  "iosBuildsAvailableForAppleSiliconMac",
+  "iosBuildsAvailableForAppleVision",
+  "isInternalGroup",
+  "name",
+  "publicLink",
+  "publicLinkEnabled",
+  "publicLinkId",
+  "publicLinkLimit",
+  "publicLinkLimitEnabled"
+ ],
+ "feedback": [
+  "/v1/apps/{id}/betaFeedbackCrashSubmissions",
+  "/v1/apps/{id}/betaFeedbackScreenshotSubmissions",
+  "/v1/apps/{id}/relationships/betaFeedbackCrashSubmissions",
+  "/v1/apps/{id}/relationships/betaFeedbackScreenshotSubmissions"
+ ],
+ "rutas": {
+  "GET /v1/apps": {
+   "consulta": [
+    "exists[gameCenterEnabledVersions]",
+    "fields[androidToIosAppMappingDetails]",
+    "fields[appClips]",
+    "fields[appCustomProductPages]",
+    "fields[appEncryptionDeclarations]",
+    "fields[appEvents]",
+    "fields[appInfos]",
+    "fields[appStoreVersionExperiments]",
+    "fields[appStoreVersions]",
+    "fields[apps]",
+    "fields[betaAppLocalizations]",
+    "fields[betaAppReviewDetails]",
+    "fields[betaGroups]",
+    "fields[betaLicenseAgreements]",
+    "fields[buildIcons]",
+    "fields[builds]",
+    "fields[ciProducts]",
+    "fields[endUserLicenseAgreements]",
+    "fields[gameCenterDetails]",
+    "fields[gameCenterEnabledVersions]",
+    "fields[inAppPurchases]",
+    "fields[preReleaseVersions]",
+    "fields[promotedPurchases]",
+    "fields[retentionMessages]",
+    "fields[reviewSubmissions]",
+    "fields[subscriptionGracePeriods]",
+    "fields[subscriptionGroups]",
+    "filter[appStoreVersions.appStoreState]",
+    "filter[appStoreVersions.appVersionState]",
+    "filter[appStoreVersions.platform]",
+    "filter[appStoreVersions]",
+    "filter[bundleId]",
+    "filter[id]",
+    "filter[name]",
+    "filter[reviewSubmissions.platform]",
+    "filter[reviewSubmissions.state]",
+    "filter[sku]",
+    "include",
+    "limit",
+    "limit[androidToIosAppMappingDetails]",
+    "limit[appClips]",
+    "limit[appCustomProductPages]",
+    "limit[appEncryptionDeclarations]",
+    "limit[appEvents]",
+    "limit[appInfos]",
+    "limit[appStoreVersionExperimentsV2]",
+    "limit[appStoreVersions]",
+    "limit[betaAppLocalizations]",
+    "limit[betaGroups]",
+    "limit[builds]",
+    "limit[gameCenterEnabledVersions]",
+    "limit[inAppPurchasesV2]",
+    "limit[inAppPurchases]",
+    "limit[preReleaseVersions]",
+    "limit[promotedPurchases]",
+    "limit[retentionMessages]",
+    "limit[reviewSubmissions]",
+    "limit[subscriptionGroups]",
+    "sort"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "429"
+   ]
+  },
+  "GET /v1/apps/{id}/betaGroups": {
+   "consulta": [
+    "fields[betaGroups]",
+    "limit"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "GET /v1/users": {
+   "consulta": [
+    "fields[apps]",
+    "fields[users]",
+    "filter[roles]",
+    "filter[username]",
+    "filter[visibleApps]",
+    "include",
+    "limit",
+    "limit[visibleApps]",
+    "sort"
+   ],
+   "respuestas": [
+    "200",
+    "400",
+    "401",
+    "403",
+    "429"
+   ]
+  },
+  "DELETE /v1/users/{id}": {
+   "consulta": [],
+   "respuestas": [
+    "204",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/userInvitations": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "userInvitations"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "email": {
+          "type": "string",
+          "format": "email"
+         },
+         "firstName": {
+          "type": "string"
+         },
+         "lastName": {
+          "type": "string"
+         },
+         "roles": {
+          "type": "array",
+          "items": {
+           "$ref": "#/components/schemas/UserRole"
+          }
+         },
+         "allAppsVisible": {
+          "type": "boolean",
+          "nullable": true
+         },
+         "provisioningAllowed": {
+          "type": "boolean",
+          "nullable": true
+         }
+        },
+        "required": [
+         "firstName",
+         "lastName",
+         "roles",
+         "email"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "visibleApps": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "type": {
+               "type": "string",
+               "enum": [
+                "apps"
+               ]
+              },
+              "id": {
+               "type": "string"
+              }
+             },
+             "required": [
+              "id",
+              "type"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "required": [
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "DELETE /v1/userInvitations/{id}": {
+   "consulta": [],
+   "respuestas": [
+    "204",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  },
+  "POST /v1/betaTesters": {
+   "consulta": [],
+   "cuerpo": {
+    "type": "object",
+    "properties": {
+     "data": {
+      "type": "object",
+      "properties": {
+       "type": {
+        "type": "string",
+        "enum": [
+         "betaTesters"
+        ]
+       },
+       "attributes": {
+        "type": "object",
+        "properties": {
+         "firstName": {
+          "type": "string",
+          "nullable": true
+         },
+         "lastName": {
+          "type": "string",
+          "nullable": true
+         },
+         "email": {
+          "type": "string",
+          "format": "email"
+         }
+        },
+        "required": [
+         "email"
+        ]
+       },
+       "relationships": {
+        "type": "object",
+        "properties": {
+         "betaGroups": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "type": {
+               "type": "string",
+               "enum": [
+                "betaGroups"
+               ]
+              },
+              "id": {
+               "type": "string"
+              }
+             },
+             "required": [
+              "id",
+              "type"
+             ]
+            }
+           }
+          }
+         },
+         "builds": {
+          "type": "object",
+          "properties": {
+           "data": {
+            "type": "array",
+            "items": {
+             "type": "object",
+             "properties": {
+              "type": {
+               "type": "string",
+               "enum": [
+                "builds"
+               ]
+              },
+              "id": {
+               "type": "string"
+              }
+             },
+             "required": [
+              "id",
+              "type"
+             ]
+            }
+           }
+          }
+         }
+        }
+       }
+      },
+      "required": [
+       "attributes",
+       "type"
+      ]
+     }
+    },
+    "required": [
+     "data"
+    ]
+   },
+   "respuestas": [
+    "201",
+    "400",
+    "401",
+    "403",
+    "409",
+    "422",
+    "429"
+   ]
+  },
+  "DELETE /v1/betaTesters/{id}": {
+   "consulta": [],
+   "respuestas": [
+    "202",
+    "204",
+    "400",
+    "401",
+    "403",
+    "404",
+    "429"
+   ]
+  }
+ }
+}

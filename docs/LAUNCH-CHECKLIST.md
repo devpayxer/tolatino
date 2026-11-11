@@ -1213,3 +1213,34 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Íconos de la web instalada:** `public/assets/app/icono-*.png` salen del logo del sistema sobre `--tl-action` (el mismo dibujo que el
       ícono de la app To'Latino); se generaron una vez con sharp. Si el ícono de la app cambia, regenerarlos. (8c, 11 nov)
 - [ ] **En los 9 dispositivos:** `push8c` corre en 390 y 1360 en local; falta la matriz de CI. (8c, 11 nov)
+
+## Fase 8 · 8f (programa beta, «Reportar un problema», errores y cierres propios, Sistema › Apps completo; 11 nov)
+- [ ] **TestFlight interno de verdad:** hoy contra el simulador de App Store Connect (`scripts/tiendas-sim`) y el contrato (`scripts/contrato-tiendas`,
+      especificación OpenAPI 4.6 fijada por su sha256). Faltan la cuenta de Apple y la llave de la API en el llavero (Paquete 8-2), y verificar con
+      Apple que el rol DEVELOPER sin aprovisionamiento alcanza para ser tester interno (si no, MARKETING). (8f, 11 nov)
+- [ ] **Retroalimentación de TestFlight a Soporte:** la API la tiene (`betaFeedbackScreenshotSubmissions` y `betaFeedbackCrashSubmissions`, en la
+      especificación); traerla como casos `reporte_app` cuando haya cuenta (8h). (8f, 11 nov)
+- [ ] **Play interno:** la API no acepta correos (solo Grupos de Google). Decidir con el fundador si se usa un Grupo de Google para la lista (y
+      agregar por la API) o se sigue agregando en Play Console (paso del Paquete 8-2). (8f, 11 nov)
+- [ ] **APK propio de verdad:** hoy el build «disponible» del sandbox es un APK de PRUEBA que arma el servidor y no se instala. 8h sube los APK
+      firmados por el CI (con su sha256) a `privado/apk/` y los registra en `app_builds`; nginx corta en 14 MB los cuerpos de subida: la subida del
+      CI va directa al almacenamiento. Probar la instalación en un Android real (fuentes desconocidas). (8f, 11 nov)
+- [ ] **Símbolos nativos:** los cierres de iOS y Android llegan con binario y desplazamiento (iOS) o la pila de Java ofuscada por R8; simbolizar con
+      el dSYM y el `mapping.txt` que 8h guarda en `app_builds.symbols_media_id`. (8f, 11 nov)
+- [ ] **Compilar lo nativo de 8f:** `TLReporteBeta.swift` / `.java` y los tres métodos nuevos de TLReporte (`ultimaCaptura`, `agitar`, `cierres`) los
+      compila el CI de las cáscaras; probar en un iPhone y un Android reales agitar (captura de la pantalla) y un cierre que aparezca al abrir otra
+      vez. MetricKit entrega los cierres al abrir de nuevo (iOS 15+). (8f, 11 nov)
+- [ ] **Privacidad en las tiendas:** declarar «Datos de diagnóstico / Crash data» (sin vincular a la persona, sin rastreo) en `PrivacyInfo.xcprivacy`
+      (`NSPrivacyCollectedDataTypes`, desde `generar.mjs`) y en las etiquetas de App Store y la sección de seguridad de datos de Play (8i). (8f, 11 nov)
+- [ ] **Tope de errores con varios procesos:** el tope por minuto vive en la memoria de cada proceso; en producción con varios procesos (o
+      máquinas) se multiplica. Pasar a un contador compartido o a Cloudflare (límite por IP en `/api/errores`) en la Fase 9. (8f, 11 nov)
+- [ ] **Vuelta atrás por «Errores en vivo»:** en producción, un pico en la web servida debe volver al despliegue anterior y, en las apps, pausar el
+      lanzamiento por fases por la API de las tiendas (Fase 9). Hoy avisa a los Admins. (8f, 11 nov)
+- [ ] **La semilla 0045 en una base nueva** no crea testers ni el caso de ejemplo si todavía no existen esas cuentas (las crean otras semillas o las
+      pruebas); los builds y los grupos de errores sí. (8f, 11 nov)
+- [ ] **En los 9 dispositivos:** `beta8f` corre en 390 y 1360 en local; falta la matriz de CI. (8f, 11 nov)
+- [ ] **El registro de la web vive en la memoria de la pestaña:** una navegación con recarga completa (Panel › Más usa una recarga) lo empieza de
+      nuevo, así que un reporte desde el panel en el navegador trae pocas pantallas. En las apps vive en el nativo y sobrevive. Pasarlo a
+      `sessionStorage` (solo familias de pantalla) si el equipo lo echa de menos. (8f, 11 nov)
+- [ ] **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
+      distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov)

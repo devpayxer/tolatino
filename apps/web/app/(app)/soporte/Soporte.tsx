@@ -103,6 +103,8 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
         </div>
         <div className="flex"><C.Button size="md" block icon="edit" onClick={() => toNew()}>{E2("Escríbenos", "Write to us")}</C.Button></div>
       </div>}
+      {/* 8f · «Reportar un problema» (algo no funciona en la app): con la captura y las últimas pantallas, solo al tocar «Enviar». */}
+      <div className="flex" data-reportar><C.Button size="md" block variant="secondary" icon="warning" onClick={() => router.push(negocio ? `/soporte/reportar?negocio=${encodeURIComponent(negocio.id)}` : "/soporte/reportar")}>{E2("Reportar un problema de la app", "Report an app problem")}</C.Button></div>
       {revs.length ? (
         <div className="flex flex-col gap-2.5" data-screen-label="Soporte · en revisión">
           <span className={k10} style={{ fontFamily: MONO }}>{E2("TO'LATINO ESTÁ REVISANDO", "TO'LATINO IS REVIEWING")}</span>

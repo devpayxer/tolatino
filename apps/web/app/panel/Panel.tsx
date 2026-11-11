@@ -745,6 +745,8 @@ function masBloques(c: Ctx): Bloque[] {
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },
       // 7b · Ayuda y Soporte (DASH-MAS L1298, hueco #8): los casos del negocio con To'Latino.
+      // 8f · Reportar un problema (algo no funciona en la app; hueco #5): el caso es del negocio, con la pantalla y lo que pasó.
+      { icon: "warning", t: E2("Reportar un problema", "Report a problem"), s: E2("Algo no funciona en la app: cuéntanos qué pasó.", "Something is not working in the app: tell us what happened."), onClick: () => window.location.assign(`/soporte/reportar?negocio=${encodeURIComponent(d.id)}`) },
       { icon: "chat", t: E2("Ayuda y Soporte", "Help and Support"), s: `${d.sop.abiertos ? `${d.sop.abiertos} ${d.sop.abiertos === 1 ? E2("caso abierto", "open case") : E2("casos abiertos", "open cases")} · ` : ""}${E2("Te contesta una persona del equipo: ", "A person on the team replies: ")}${d.sop.horario}.`, onClick: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}`) }] },
   ];
 }

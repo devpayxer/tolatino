@@ -10,6 +10,7 @@ import { appBuild, appPausa } from "./acciones-apps";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
+import { subApps } from "./SistemaAppsBeta";
 
 const PLAT = { ios: "iPhone", android: "Android" } as const;
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
@@ -28,6 +29,8 @@ export function SistemaApps({ apps, sesiones, web, admin }: { apps: FilaApp[]; s
   const B: Bloque[] = [
     { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Apps", s: "Las cuatro apps de las tiendas abren la misma web servida. Aquí: la pausa de emergencia, las versiones mínimas y quién usa qué versión. Cada cambio pide motivo y queda en la auditoría.", h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "apps", onClick: () => (p.k === "apps" ? undefined : router.push(p.href)) })) },
+    // 8f · Versiones · Testers · Salud · Reportes (Sistema › Apps completo).
+    subApps("resumen", (h) => router.push(h)),
     { type: "kpis", cols: desk ? "repeat(5,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       ...apps.map((a) => ({ k: a.nombre.es.replace("To'Latino ", "").toUpperCase(), v: String(n7(a.key)), s: "sesiones · 7 d" })),
       { k: "WEB", v: String(web), s: "sesiones · 30 d" },

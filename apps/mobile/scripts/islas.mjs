@@ -21,7 +21,8 @@ rmSync(join(RAIZ, "www"), { recursive: true, force: true });
 mkdirSync(D, { recursive: true });
 writeFileSync(join(D, "index.html"), readFileSync(html("/app/sin-senal")));
 for (const r of ISLAS.slice(1)) { mkdirSync(dirname(join(D, `${r}.html`)), { recursive: true }); writeFileSync(join(D, `${r}.html`), readFileSync(html(r))); }
-cpSync(join(NEXT, "static"), join(D, "_next/static"), { recursive: true });
+// 8f · Sin mapas de fuente (se quedan en el servidor; scripts/mapas-privados.mjs ya los sacó de .next/static: esto es la segunda puerta).
+cpSync(join(NEXT, "static"), join(D, "_next/static"), { recursive: true, filter: (s) => !s.endsWith(".map") });
 for (const x of ["fuentes", "assets"]) cpSync(join(WEB, "public", x), join(D, x), { recursive: true });
 // La Puerta lee el QR con jsQR en un Worker (/puerta/lector.js) donde no hay BarcodeDetector (iOS): va con la isla. Nada del service worker.
 mkdirSync(join(D, "puerta"), { recursive: true });
