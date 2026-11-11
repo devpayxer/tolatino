@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (8i · fichas, privacidad, reglas de las tiendas y cuentas de revisión — Fase 8 cerrada salvo 8b, que espera el dominio)._
+_Actualizado: 11 nov 2026 (plan de la Fase 9 escrito: `docs/diseno/plan/fase9-apertura.md`; sigue 9a. Fase 8 cerrada salvo 8b, que espera el dominio y pasa a 9p)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -1291,3 +1291,24 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
 - **Fase 8:** 8a, 8c, 8d, 8e, 8f, 8g, 8h y 8i hechos hasta donde llegan el dominio y las cuentas. **Queda 8b** (enlaces universales y App Links),
   que espera el dominio con HTTPS (Paquete 8-0).
 - **Sigue:** 8b (necesita el dominio con HTTPS, Paquete 8-0).
+
+## Fase 9 · plan escrito (11 nov)
+`docs/diseno/plan/fase9-apertura.md`: 22 bloques en tres grupos; migraciones **0133–0145** (grupo A; B y C toman la siguiente libre), semillas
+**0049–0056** (solo pruebas). Nada construido todavía.
+- **Grupo A · ya, en el sandbox, sin el fundador (encadenado, AB):** 9a orden (las pruebas de punta a punta al repo, las viejas al día, LAUNCH
+  auditada con destino) · 9b tubería completa (9 dispositivos, visual, axe, Semgrep, velocidad) y escala 1M · 9c accesibilidad del sistema de diseño ·
+  9d exportar mis datos, borrado definitivo a 30 días, retenciones, fusionar · 9e legales por estado (PA) y aceptación · 9f CMS completo · 9g Analítica
+  completa y reporte diario · 9h Crecimiento, landing de acceso anticipado, QR de calle, SEO · 9i Ciudades (asistente, `beta`) · 9j Sistema completo y
+  segundo factor del equipo · 9k dinero real listo · 9l avisos, correo y canales · 9m lo diferido del vecino · 9n lo diferido del negocio, Repartidor y
+  operación · 9o producción como código y ensayada (sobre sellado, respaldos con restauración probada, vuelta atrás, monitoreo, manual de incidentes).
+- **Grupo B · espera paquete:** 9p (8-0 dominio: 8b y lo que necesita HTTPS) · 9q (9-1 Stripe, Telnyx 10DLC, WhatsApp, SES, Anthropic) · 9r (8-1/8-2/8-3
+  tiendas) · 9s (9-2 abogado y contador).
+- **Grupo C · producción con OK:** 9t acceso anticipado (OK-1) · 9u beta en Hazleton y apps a revisión (OK-2) · 9v apertura de las cinco (OK-3).
+- **LAUNCH-CHECKLIST:** 535 pendientes (532 casillas + 3 viñetas) mapeadas por línea en el Anexo A: 403 (a) sandbox, 113 (b) paquete del fundador, 19
+  (c) encendido de producción. Muchas de las viejas ya están hechas: 9a las verifica contra lo servido.
+- **Hallazgos al escribir el plan:** las ~220 pruebas de punta a punta (y 37 al revés) **no están en el repo** (viven en el directorio temporal de la
+  sesión de trabajo): 9a las sube a `pruebas/` antes que nada. `sinProntoEnTienda` cuenta `PantallaPronto` (ciudad «próximamente») como si fuera
+  «En construcción»: 9a lo parte en dos guardianes. Las llaves de terceros no tienen camino al servidor (el sobre sellado de 9o lo resuelve).
+  `planes2n` sigue fallando por un texto viejo (9a).
+- **Pedir ya los paquetes** (tardan): 8-0, 8-1/8-2/8-3, 9-1, 9-2, 9-3; 9-4 va llegando; 9-5 al final.
+- **Sigue:** 9a.

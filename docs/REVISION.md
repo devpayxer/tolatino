@@ -4162,3 +4162,51 @@ para probarlas, enciéndelas en Fichas y revisión (con motivo) — el código n
 - [ ] Decidir si Data safety lo sube Claude por la API (con tu OK) o lo importas tú (CSV desde Declaraciones).
 - [ ] Revisar las respuestas de la clasificación de Apple (sobre todo «advertising» y salud).
 - [ ] Revisar las fichas (en el repo o en Fichas y revisión cuando estén subidas).
+
+### Fase 9 · plan del cierre y la apertura (11 nov)
+El plan está en `docs/diseno/plan/fase9-apertura.md` (9a–9v, migraciones 0133–0145). Se construye con los defaults de su §9 (34 preguntas; las más
+importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
+- **Producción se enciende en dos tiempos** (la landing junta teléfonos y negocios reales, que no pueden vivir en el sandbox): decidí **acceso anticipado
+  en `tolatino.com` (OK-1: landing, lista de espera, Publica tu negocio y panel; lo demás apagado) → beta cerrada en Hazleton con las cuentas de revisión
+  de Apple y Google (OK-2) → las cinco ciudades el mismo día (OK-3)**; si prefieres encender producción solo el día de la apertura, la landing va en una
+  máquina aparte.
+- **Proveedor de producción:** decidí el más barato ese día por la misma capacidad entre Hetzner Ashburn, DigitalOcean NY y Vultr NJ (empate =
+  Hetzner); **tres máquinas** (app, base, réplica que vigila y prueba los respaldos); si prefieres dos, se pierde la base de análisis aparte.
+- **Respaldos:** decidí copia continua de la base (pgBackRest) a un almacén del mismo proveedor en otra región y **una restauración de prueba cada
+  semana en una máquina desechable** (el respaldo cuenta solo si restaura); si prefieres otro proveedor para los respaldos, se cambia el destino.
+- **Llaves de Stripe, Telnyx, SES, Meta y Anthropic al servidor:** decidí un **sobre sellado** que solo ese servidor abre, guardado en el repo (texto
+  cifrado); si prefieres que nada cifrado viva en el repo público, va por un endpoint con OIDC de GitHub.
+- **Equipo del Super Admin:** decidí **segundo factor obligatorio** (llave de acceso o app de códigos) en los dos entornos; el SMS solo no alcanza.
+- **Borrar la cuenta a los 30 días:** decidí borrar lo personal, dejar operaciones y cobros como «Cuenta borrada» (ley y Stripe) y sus negocios sin
+  otro dueño como «sin reclamar».
+- **Legales:** decidí EE. UU. + adenda de Pennsylvania; Claude escribe los borradores, marcados BORRADOR; **en producción ninguna página legal se publica
+  sin el abogado** (guardián). **El abogado y el contador no están en la lista de lo que se paga (PLAN §8): contratarlos es tu decisión.** Sin ellos la
+  apertura no pasa.
+- **Landing:** decidí la Coming Soon **v3** (sin ciudad ni fecha; código postal + teléfono con código; «Tengo un negocio»), compuesta con el sistema
+  porque el archivo de diseño no está en el repo; si lo exportas, se porta tal cual.
+- **Fundadores:** decidí solo la insignia, para los primeros 500 vecinos y 100 negocios de cada ciudad; `HZL30` sigue igual.
+- **Regla de apertura vs. «todo junto»:** el diseño pide 300 en lista o 30 negocios listos por ciudad y tu decisión A abre las cinco el mismo día.
+  Decidí comprobar la regla en cada ciudad y abrir juntas; si una no llega, tú decides si abre igual o espera.
+- **Repartidor:** decidí que deja de llamar al número real del cliente (mensaje en la app y «Llamar al negocio»); la llamada enmascarada pide un
+  servicio de voz pagado nuevo. Prueba de entrega con foto y código, y oferta con cuenta regresiva, sí; lotes, después de abrir.
+- **Lo que va «después de abrir»** (El Patio, Repartidores de To'Latino, Apple Pay nativo, lotes, grabación de sesiones, promotores de eventos, QR
+  rotativo, iPad…): decidí una lista aparte, `docs/DESPUES-DE-ABRIR.md`, con el motivo de cada una.
+- **Hallazgo:** las pruebas de punta a punta no estaban en el repo; 9a las sube antes que nada.
+
+**Tus paquetes (plan §10; se piden todos al empezar 9a porque tardan):**
+- **8-0 Dominio** (sigue pendiente): Cloudflare, servidores de nombres de `tolatino.com`, token al formulario seguro.
+- **8-1 / 8-2 / 8-3 Tiendas** (siguen pendientes): D-U-N-S, Apple y Google como organización, Firebase; llaves y las cuatro apps en cada consola, más un
+  token de GitHub con permiso de administración; declaraciones de privacidad.
+- **9-1 Proveedores:** Stripe (prueba y luego en vivo, con Connect), Telnyx con registro 10DLC, WhatsApp Business de Meta, Amazon SES fuera de su
+  «sandbox», Anthropic con retención cero.
+- **9-2 Abogado y contador:** contratarlos, reenviarles los documentos que arma Claude, registrar el agente DMCA.
+- **9-3 Producción:** proyecto y token del proveedor, almacén de respaldos, dónde llegan las alertas; borrar Vercel y los Supabase viejos el día del
+  cambio de dominio.
+- **9-4 Personas y contenido:** quiénes entran al Super Admin, el equipo local de cada ciudad, fotos de portada y de la cuenta oficial, listas de
+  moderación con vecinos, plantillas de estimado, invitados de la beta, contacto para Apple y Google.
+- **9-5 Revisión y los tres OK:** esta lista paso a paso; OK-1 (acceso anticipado), OK-2 (apps a revisión y beta), OK-3 (apertura).
+
+**Para ti (lista):**
+- [ ] Decir si te sirven los dos tiempos de producción (acceso anticipado antes de abrir).
+- [ ] Decidir abogado y contador (presupuesto) para que el paquete 9-2 empiece ya.
+- [ ] Pedir los paquetes 8-0, 8-1 y 9-1 (son los que más tardan).
