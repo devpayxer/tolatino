@@ -1156,3 +1156,41 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
   pase hasta que haya HTTPS (Paquete 8-0); el arte oficial de los botones (licencias de Apple y Google, del fundador); los botones en el correo.
   Todo en LAUNCH-CHECKLIST «Fase 8 · 8g».
 - **Sigue:** 8b (necesita el dominio), 8d o 8h.
+
+## Fase 8 · 8d hecho — entrar con Face ID o huella (llaves de acceso) en la web; TLLlave nativo compilado y apagado hasta 8b (11 nov)
+- **Hecho:** migración **0130** (renumerada: el plan decía 0128; sin semilla) — `passkeys` (credencial única en todo el sistema, llave pública,
+  contador que solo sube en la base, dónde nació: app, plataforma, sesión y dispositivo; nunca se borra: quitada por la persona, revocada por el
+  equipo con motivo o quitada por el sistema), `webauthn_challenges` (solo la huella, vence en `passkey_reto_s`, un uso en la base, se purgan los
+  vencidos), `passkey_log` (solo inserción), `sessions.via` + `passkey_id`, `users.llave_ofrecida_at`, `account_changes` kind `passkey` y by
+  `sistema`, avisos crit `cuenta_llave_nueva` / `cuenta_llave_quitada`, Configuración › Apps `passkey_max`, `passkey_reto_s`, `passkey_retos_hora`,
+  `passkey_fallos_hora`, interruptor `cuenta.llaves`. Servidor: `@simplewebauthn/server` **14.0.3** fijo (dependencias ASN.1 fijadas por
+  `pnpm.overrides`), `lib/llaves/config.ts` (RP ID y orígenes del entorno: `PASSKEY_RP_ID`, `PASSKEY_ORIGENES`; solo https o http://localhost del
+  dominio; se ofrecen solo si el origen de la petición está en la lista), `lib/llaves/llaves.ts` (`retoRegistro`, `registrar`, `retoEntrar`,
+  `entrar`, `ofrecerUnaVez`, `quitar`, `revocarEn`, `quitarTodasEn`, `llavesDe360`, `purgarRetos`), `lib/cuenta.ts` **`abrirSesionEn`** (la única
+  puerta de la sesión: el código y la llave pasan por las mismas revisiones) y `ponerSesion`; rutas `/api/cuenta/llave/{entrar/reto, entrar,
+  registro/reto, registro, oferta}`; la purga en el barrido; `Permissions-Policy` con publickey-credentials. Cliente: `lib/nativo/llave.ts` (TLLlave o
+  `navigator.credentials`; nada sin contexto seguro; en una cáscara sin TLLlave, nada). Pantallas: Entrar «Usar mi llave de acceso», la hoja «Entra la
+  próxima vez con Face ID / tu huella» (`app/entrar/HojaLlave.tsx`), Mi cuenta › Privacidad › Llaves de acceso, Super Admin › Usuarios 360° ›
+  Seguridad › LLAVES DE ACCESO (revocar con motivo, aviso y auditoría; restablecer la verificación también las quita), Sistema › Equipo (con / sin
+  llave). Nativo: plugin **TLLlave** (`apps/mobile/plugins/tl-llave`: iOS AuthenticationServices, Android Credential Manager con androidx.credentials
+  1.5.0) en las 4 apps por `apps.json`/`generar.mjs`, **apagado** (`llaves.activas: false`) hasta que 8b sirva AASA `webcredentials` y assetlinks
+  `get_login_creds`; humo de Android que lo pregunta en cada app. Ayuda `entrar-con-face-id`; `mi-cuenta` y `admin-usuarios` al día.
+- **Probado:** `llave8d` **90** comprobaciones (390 y 1360; autenticador virtual de Chromium por CDP: registrar, salir, entrar sin SMS, la misma
+  sesión, reto repetido / vencido / inventado / de otra cuenta, llave de otra cuenta por userHandle y por id, quitar, suspendida, baneada, este
+  dispositivo y el de origen bloqueados, sesión de origen bloqueada, verificación restablecida, borrado programado cancelado y el de To'Latino no,
+  borrándose, contador que retrocede (con firma buena se quita; sin firma buena NO), límites, tope, paredes de la base, TLLlave por el puente simulado,
+  Super Admin, HTTP en una IP sin botón y el SMS igual, interruptor apagado); `alreves8d` **41/41** (5 guardianes nuevos: `retoUnUso`,
+  `llaveDeSuCuenta`, `passkeyNoSaltaBloqueo`, `clonSoloConFirma`, `llaveSoloDondeSePuede`; y `libroSoloInsercion`, `nativoConRespaldo`,
+  `pluginViejoNoRompe`, `accionesConAcceso` cubriendo 8d), tsc, build y todos los guardianes; migración dos veces en la base local y en una base nueva
+  (`tlci-db`, 130 migraciones + 54 semillas, dos veces). CI «Cáscaras» en `claude/vibrant-franklin-krutwa`: corrida **43055393415 (756b9ff) verde**
+  (Android 4 sabores + emulador; iOS 4 targets compilan y abren, con TLLlave) y **43058696975 (e6f4a07)** con el humo de TLLlave en las 4 apps de
+  Android («plugin: true, disponible: no, obtener: opciones»). Regresión (una a la vez): cuenta2h 29, adm7i 113, beta8f 95, app8a 110, wal8g 97,
+  app8e 64 (la primera vez 52: el número al azar del vecino del cupón cayó en uno que ya lo había canjeado; otra vez, 64), push8c 86 (la primera vez
+  85: un error de hidratación en el 360°, que arreglé mostrando la última vez de una llave con fecha y no «hace N min»; después la agenda de Hoy del
+  panel de Sabor Dominicano tenía 167 pedidos de prueba aceptados de hoy y el pedido nuevo ya no salía: los marqué hechos en la base local y pasó).
+  `usr1l` (Fase 1) no pasa por datos acumulados, no por 8d: busca «Marisol» y abre «Marisol Gómez» (semilla del 7 nov) y Marisol comparte
+  dispositivo con 2 cuentas desde el 10 nov.
+- **Bloqueado / no hecho aquí:** usar las llaves en el sandbox espera el dominio con HTTPS (Paquete 8-0); TLLlave de verdad en iPhone y Android
+  espera 8b (AASA, assetlinks, dominio asociado) y 8h (origen android:apk-key-hash de la llave de firma); obligatorias para el equipo, Fase 9.
+  Todo en LAUNCH-CHECKLIST «Fase 8 · 8d».
+- **Sigue:** 8b (necesita el dominio) u 8h.
