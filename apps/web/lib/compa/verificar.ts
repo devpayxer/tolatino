@@ -84,3 +84,22 @@ export function verificar(x: unknown, c: Contexto): Veredicto {
   if (r.tipo === "respuesta" && !fuente) return { ok: false, motivo: "sin_fuente" };
   return { ok: true, r: { ...r, fuente } };
 }
+
+/* 7f · La respuesta automática (y el borrador de «Sugerir respuesta») habla EN NOMBRE DE UN NEGOCIO: además de verificar(), nunca promete ni
+   compromete al negocio (fase7-compa.md §3 punto 5, guardián compaRespuestaAuto). Rechaza:
+   - cualquier acción (la respuesta automática no prepara nada);
+   - cualquier porcentaje (un negocio no necesita uno para decir su horario o su menú; así un «50 %» de una inyección nunca sale);
+   - descuentos, rebajas, regalos, cupones o promociones; devoluciones o reembolsos; «confirmado», «reservado», «te lo guardo / aparto»;
+     disponibilidad («hay mesa», «tenemos lugar», «available»); garantías y promesas;
+   - hacerse pasar por el dueño (también lo frena verificar()).
+   Lo que falla no sale: contestan las reglas fijas o pasa al dueño. */
+const PROMETE = /descuent|rebaj|gratis|regal|cupon|promocion|oferta especial|precio especial|discount|for free|free of charge|coupon|promo\b|reembols|devoluci|devolv|refund|money back|\bte (lo |la |los |las )?(guardo|aparto|reservo|confirmo|separo|garantizo)\b|\b(queda|quedo|esta|estan|esta ya) (confirmad|reservad|apartad|guardad)|confirmad|\bconfirmed\b|reserved for you|garantiz|guarantee|te prometo|\bpromise|disponib|\bavailab|\bhay (mesa|lugar|cupo|espacio|sitio)|\b(si|ya) (tenemos|hay) (mesa|lugar|cupo|espacio)|\bwe (have|got) (a )?(table|room|space|spot)|\b(soy|i am|i'm) (el|la|the) (dueno|duena|owner)\b/;
+const PCT_TODO = /\d\s?%|\bpor ?ciento\b|\bpercent\b/i;
+const sinAcentosV = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+export function verificarAuto(r: Respuesta): Veredicto {
+  if (r.accion.tipo !== "ninguna") return { ok: false, motivo: "auto_accion" };
+  const todo = [r.respuesta, ...r.chips].join(" \n ");
+  if (PCT_TODO.test(todo)) return { ok: false, motivo: "auto_porcentaje" };
+  if (PROMETE.test(sinAcentosV(todo))) return { ok: false, motivo: "auto_promete" };
+  return { ok: true, r: { ...r, chips: [] } };
+}

@@ -1,6 +1,6 @@
 import "server-only";
 import { FOTO_AYUDA_SQL } from "./ayuda-cita";
-const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
+const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa", compa: "Una respuesta de El Compa" };
 export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
 import type { Staff } from "./admin";
 import { INCIDENTE_SQL, UMBRAL_NOCHE } from "./noche-vigilar";
@@ -322,11 +322,13 @@ export async function caso(s: Staff, id: string) {
   }
   if (q.queue === "chat") {
     // La conversación reportada: solo se lee con el caso abierto (si ya se decidió, no se muestra el hilo).
-    const t = (await db().query<{ vecino: string; vecino_id: string; ctx: { es: string; en: string } | null; bloqueado: boolean }>(
-      `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as vecino, u.id::text as vecino_id, t.context as ctx, t.blocked_at is not null as bloqueado
+    // 7f · Con las respuestas de El Compa marcadas (compa) y si El Compa está apagado en esta conversación (compa_off).
+    const t = (await db().query<{ vecino: string; vecino_id: string; ctx: { es: string; en: string } | null; bloqueado: boolean; compa_off: string | null }>(
+      `select coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as vecino, u.id::text as vecino_id, t.context as ctx, t.blocked_at is not null as bloqueado,
+              t.compa_off_reason as compa_off
          from chat_threads t join users u on u.id = t.user_id where t.id = $1::bigint`, [q.subject_id])).rows[0];
-    const msjs = q.status === "open" && t ? (await db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; quien: string | null }>(
-      `select m.id::text, m.sender as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto,
+    const msjs = q.status === "open" && t ? (await db().query<{ id: string; de: string; t: string; at: string; oculto: boolean; quien: string | null; compa: boolean }>(
+      `select m.id::text, m.sender as de, m.body as t, m.created_at as at, m.hidden_at is not null as oculto, m.compa,
               (select coalesce(nullif(trim(coalesce(x.first_name, '')), ''), 'Equipo') from users x where x.id = m.sender_user_id and m.sender = 'business') as quien
          from chat_messages m where m.thread_id = $1::bigint order by m.id desc limit 60`, [q.subject_id])).rows.reverse() : [];
     const reps = (await db().query<{ reason: string; note: string | null; at: string; by_business: boolean; quien: string | null }>(

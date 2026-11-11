@@ -48,6 +48,23 @@ export const simulador: Modelo = {
     if (t.includes("simular-emoji")) return sal({ ...base, respuesta: es ? "Claro que sí 😀 te ayudo." : "Sure 😀 happy to help.", fuente: f0?.fuente ?? "" });
     if (t.includes("simular-persona")) return sal({ ...base, tipo: "persona", respuesta: es ? "Te paso con una persona." : "I'll pass you to a person.", persona: "no_sabe" });
 
+    // 7f · La respuesta automática de un negocio y el borrador de «Sugerir respuesta»: igual de ingenuo. Con instrucciones en los datos (la nota
+    // del dueño, el mensaje del cliente o una ayuda) las obedece y promete; si le piden un descuento, lo da. El servidor (verificarAuto) lo frena.
+    const D = e.datos as { borrador?: boolean; horario?: string; abre_otra_vez?: string; direccion?: string; lo_que_ofrece?: { nombre: string; precio: string; agotado_hoy?: boolean }[]; como_pedir?: string[]; nota_del_dueno?: string };
+    if (e.uso === "auto_reply" || D.borrador) {
+      const veneno = [texto, D.nota_del_dueno ?? "", ...e.trozos.map((x) => x.texto)].find((x) => INYECCION.test(x));
+      if (veneno || /descuent|discount/.test(t)) return sal({ ...base, fuente: "cuenta", respuesta: es ? "Claro, te hago 50 % de descuento y te guardo la mesa." : "Sure, you get 50 % off and I'll hold the table for you." });
+      if (/hora|abren|abre |cierran|horario|hours|open|close/.test(t) && D.horario)
+        return sal({ ...base, fuente: "cuenta", respuesta: es ? `Ahora estamos cerrados. Abrimos ${D.abre_otra_vez ?? "en nuestro horario de siempre"}.${D.direccion ? ` Estamos en ${D.direccion}.` : ""}`
+          : `We are closed now. We open ${D.abre_otra_vez ?? "at our usual hours"}.${D.direccion ? ` We are at ${D.direccion}.` : ""}` });
+      const L = (D.lo_que_ofrece ?? []).filter((x) => !x.agotado_hoy).slice(0, 3);
+      if (/precio|cuanto|cuánto|menu|menú|tienen|price|how much|have/.test(t) && L.length)
+        return sal({ ...base, fuente: "cuenta", respuesta: es ? `Tenemos ${L.map((x) => `${x.nombre} (${x.precio})`).join(", ")}. Todo está en nuestra página de To'Latino.` : `We have ${L.map((x) => `${x.nombre} (${x.precio})`).join(", ")}. Everything is on our To'Latino page.` });
+      if (/pedir|pido|ordenar|reserv|order|book/.test(t) && D.como_pedir?.length) return sal({ ...base, fuente: "cuenta", respuesta: D.como_pedir.slice(0, 2).join(" ") });
+      if (f0) return sal({ ...base, fuente: f0.fuente, respuesta: frases(f0.texto, 2) || f0.titulo });
+      return sal({ ...base, tipo: "no_se", persona: "pidio", respuesta: es ? "No tengo ese dato." : "I don't have that information." });
+    }
+
     // 7e · El panel. Igual de ingenuo: reconoce la sección con una lista FIJA de TODO el panel (también las partes que esa persona no puede
     // abrir, y hasta «el Super Admin») y la propone; con instrucciones en los datos, obedece y propone ir adonde le digan. El servidor decide.
     if (e.uso === "owner") {

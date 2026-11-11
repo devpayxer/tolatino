@@ -8,6 +8,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { DatosCompaAdmin, FichaConv } from "@/lib/compa/admin-compa";
+import type { AutoNegocio } from "@/lib/compa/respuesta-auto";
 import { compaInterruptor, compaLevantar, compaPausarEn, compaTope } from "./acciones-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -39,9 +40,9 @@ const pares = (o: Record<string, string> | null) => (o ? Object.entries(o).map((
 const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 const mesL = (m: string) => { const [a, b] = m.split("-"); return `${MESES[Number(b) - 1] ?? b} de ${a}`; };
 
-export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, antes, cambiar, cp = null, ficha = null, leer = false }: {
-  d: DatosCompaAdmin; tab: "ctl" | "conv"; uso: string | null; res: string | null; canal?: string | null; buscar?: string | null; antes: string | null; cambiar: boolean;
-  cp?: string | null; ficha?: FichaConv | null; leer?: boolean;
+export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, antes, cambiar, cp = null, ficha = null, leer = false, negocios = [] }: {
+  d: DatosCompaAdmin; tab: "ctl" | "conv" | "neg"; uso: string | null; res: string | null; canal?: string | null; buscar?: string | null; antes: string | null; cambiar: boolean;
+  cp?: string | null; ficha?: FichaConv | null; leer?: boolean; negocios?: AutoNegocio[];
 }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [q, setQ] = useState(buscar ?? "");
@@ -111,7 +112,8 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
     ...(I.candado ? [{ type: "note" as const, tone: "warn" as const, t: "Producción: El Compa queda apagado hasta que se encienda todo (fase 9), aunque los interruptores digan otra cosa." }] : []),
     ...(pausados.length ? [{ type: "note" as const, tone: "warn" as const, t: `En pausa: ${pausados.join(" · ")}.` }] : []),
     { type: "tabs", items: [{ l: "Interruptores y tope", n: pausados.length ? String(pausados.length) : undefined, on: tab === "ctl", onClick: () => ir({ tab: "ctl" }) },
-      { l: "Conversaciones", n: d.conv.total7d ? String(d.conv.total7d) : undefined, on: tab === "conv", onClick: () => ir({ tab: "conv" }) }] },
+      { l: "Conversaciones", n: d.conv.total7d ? String(d.conv.total7d) : undefined, on: tab === "conv", onClick: () => ir({ tab: "conv" }) },
+      { l: "Negocios", on: tab === "neg", onClick: () => ir({ tab: "neg" }) }] },
   ];
   if (tab === "ctl") {
     B.push(
@@ -146,6 +148,10 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
         t: `${ACCION[h.accion] ?? h.accion} · ${pares(h.despues) || h.objetivo}`, s: `${cuando(h.at)}${h.quien ? ` · ${h.quien}` : ""}${h.antes ? ` · antes: ${valores(h.antes)}` : ""}${h.motivo ? ` · ${h.motivo}` : ""}`, chev: false, compact: true }))
         : [{ key: "x", icon: "folder", t: "Sin cambios todavía", chev: false }] },
     );
+  } else if (tab === "neg") {
+    // 7f · Respuestas automáticas por negocio (secCompa · Negocios): cifras de 30 días, sin texto ni personas. «Apagar El Compa aquí» está en la
+    // ficha del negocio (Negocios 360° › El Compa), con motivo y aviso al dueño.
+    B.push({ type: "note", tone: "info", icon: "help", t: "Cada dueño Pro enciende sus respuestas automáticas en su panel; solo contestan fuera de su horario, con lo que dice su página. Aquí ves dónde están encendidas y dónde las apagó To'Latino." });
   } else {
     const k = d.conv.porResultado, tot = d.conv.total7d, solo = (k.self_resolved ?? 0) + (k.action_done ?? 0) + (k.open ?? 0);
     B.push(
@@ -165,6 +171,11 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <PanelBloques bloques={B} h1={desk ? 26 : 22} />
+      {tab === "neg" ? (negocios.length
+        ? <A.AdminList label={`${negocios.length} NEGOCIOS`} rows={negocios.map((x) => ({ icon: x.pausa ? "ban" : "store", chevron: true, onClick: () => router.push(`/admin/negocios/${x.id}?tab=compa`),
+            title: `${x.nombre} · ${x.ciudad}`, sub: `30 días: ${x.contesto30} respuestas · ${x.paso30} pasadas al negocio${x.reportes ? ` · ${x.reportes} reportes` : ""}${x.pausa ? ` · apagadas por To'Latino: ${x.pausa.motivo}` : ""}`,
+            tag: x.pausa ? "APAGADAS POR TO'LATINO" : !x.pro ? "SIN PRO" : x.enabled ? "ENCENDIDAS" : "APAGADAS", tone: x.pausa ? "danger" : x.enabled && x.pro ? "signal" : "neutral" }))} />
+        : <PanelBloques bloques={[{ type: "empty", icon: "store", t: "Ningún negocio tiene respuestas automáticas", s: "Cuando un dueño Pro las encienda en su panel, sale aquí." }]} />) : null}
       {tab === "conv" ? (d.conv.filas.length
         ? <A.AdminList label={`${d.conv.filas.length}${d.conv.sig ? "+" : ""} CONVERSACIONES`} rows={d.conv.filas.map((x) => ({ icon: x.ai ? "chat" : "lock",
             onClick: () => ir({ cp: x.num }), chevron: leer,

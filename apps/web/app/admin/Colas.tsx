@@ -12,6 +12,7 @@ import { motivoAyuda, quiereAyuda } from "@/lib/ayuda-motivos";
 import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
+import { compaHilo } from "./acciones-compa";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -393,7 +394,10 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     }
     if (k.queue === "chat" && "chat" in k) {
       // Mensajes reportados (2p): el hilo se lee solo con el caso abierto. Ocultar un mensaje avisa a quien lo escribió.
-      const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa" };
+      const t = k.chat, reps = k.reportesC ?? [], MC: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa", compa: "Una respuesta de El Compa" };
+      // 7f · Si El Compa contestó aquí (respuestas automáticas Pro del negocio): sus mensajes van marcados y se puede apagar en esta conversación
+      // (o en todo el negocio, desde Negocios 360° › El Compa).
+      const conCompa = !!t?.msjs.some((m) => m.compa);
       const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
       cuerpoB.push({ type: "kv", cols: 3, items: [
         { k: "VECINO", v: t?.vecino ?? "—" }, { k: "CONTEXTO", v: t?.ctx?.es ?? "Consulta general" }, { k: "REPORTES", v: `${reps.length}${reps[0] ? ` · hace ${hace(reps[0].at)}` : ""}` },
@@ -401,17 +405,21 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       reps.forEach((x) => cuerpoB.push({ type: "note", tone: x.by_business ? "info" : "warn", t: `${x.by_business ? "Lo reportó el negocio" : `Lo reportó ${x.quien ?? "el vecino"}`} · ${MC[x.reason] ?? "Otra cosa"}${x.note ? ` · «${x.note}»` : ""}` }));
       cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: "Ves esta conversación porque hay un reporte abierto. Al cerrar el caso deja de verse aquí." });
       if (t?.bloqueado) cuerpoB.push({ type: "note", tone: "ink", icon: "ban", t: "El negocio ya bloqueó a este vecino." });
+      if (conCompa) cuerpoB.push({ type: "note", tone: t?.compa_off ? "ink" : "info", icon: "help", t: t?.compa_off ? `El Compa está apagado en esta conversación: ${t.compa_off}.` : "En esta conversación contestó El Compa (respuestas automáticas del negocio, marcadas abajo como «El Compa · IA»). Si una respuesta no está bien, apágalo aquí o en todo el negocio." });
       cuerpoB.push({ type: "group", k: `CONVERSACIÓN · ${t?.msjs.length ?? 0} MENSAJES` });
       extra = t ? <A.AdminList rows={t.msjs.map((m) => ({
         icon: m.de === "user" ? "users" : m.de === "business" ? "store" : "info", title: m.de === "system" ? m.t.split(" · ")[0] : m.t,
-        sub: `${m.de === "user" ? t.vecino : m.de === "business" ? `${n?.name ?? "Negocio"}${m.quien ? ` · ${m.quien}` : ""}` : m.de === "auto" ? "Respuesta automática" : "Aviso del sistema"} · hace ${hace(m.at)}`,
-        tag: m.oculto ? "OCULTO" : undefined, tone: m.oculto ? "danger" : undefined,
+        sub: `${m.de === "user" ? t.vecino : m.de === "business" ? `${n?.name ?? "Negocio"}${m.quien ? ` · ${m.quien}` : ""}` : m.de === "auto" ? (m.compa ? "El Compa · IA (respuesta automática del negocio)" : "Respuesta automática") : "Aviso del sistema"} · hace ${hace(m.at)}`,
+        tag: m.oculto ? "OCULTO" : m.compa ? "EL COMPA" : undefined, tone: m.oculto ? "danger" : m.compa ? "action" : undefined,
         actions: k.puedeDecidir && !m.oculto && (m.de === "user" || m.de === "business") ? [{ label: "Ocultar", variant: "secondary", onClick: () => setConf({ titulo: "¿Por qué se oculta este mensaje?", sub: "Quien lo escribió ve el motivo. La conversación sigue.", plantillas: PLANT.hide, peligro: true, hacer: (x) => chatOcultarMensaje(k.id, m.id, x) }) }] : undefined,
       }))} /> : null;
       acts = [
         { l: "Todo bien", v: "action", icon: "check", onClick: () => setConf({ titulo: "¿Por qué está bien?", plantillas: PLANT.keep, hacer: (x) => decidirChat(k.id, "mantener", x) }) },
         { l: "Resuelto", v: "ghost", icon: "shield", onClick: () => setConf({ titulo: "¿Qué se hizo?", plantillas: ["Se ocultaron los mensajes que no cumplían las reglas.", "Se sancionó a la cuenta desde Usuarios.", "El negocio ya bloqueó a la persona."], hacer: (x) => decidirChat(k.id, "resuelto", x) }) },
         ...(t ? [{ l: "Ver al vecino", v: "ghost", icon: "users", onClick: () => router.push(`/admin/usuarios/${t.vecino_id}`) }] : []),
+        ...(conCompa && !t?.compa_off ? [{ l: "Apagar El Compa aquí", v: "ghost", icon: "ban", onClick: () => setConf({ titulo: "¿Por qué se apaga El Compa en esta conversación?", peligro: true, sub: "El Compa deja de contestar en esta conversación; el negocio la sigue viendo y contestando como siempre. Queda en el historial.",
+          plantillas: ["Contestó algo que no está en la página del negocio.", "Prometió algo que el negocio no ofrece.", "El vecino pidió hablar solo con el negocio."], hacer: (x) => compaHilo(k.id, false, x) }) }] : []),
+        ...(conCompa && n ? [{ l: "El Compa en el negocio", v: "ghost", icon: "store", onClick: () => router.push(`/admin/negocios/${n.id}?tab=compa`) }] : []),
       ];
     }
     if (k.queue === "rec" && "rec" in k && k.rec) {

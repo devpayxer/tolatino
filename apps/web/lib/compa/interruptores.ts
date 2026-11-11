@@ -118,3 +118,33 @@ export async function levantarPausa(s: Staff, id: string, motivo: string): Promi
     return { ok: true, msg: "Pausa levantada: El Compa vuelve a contestar ahí." };
   });
 }
+
+/* ── 7f · Respuestas automáticas ──
+   - La pausa de To'Latino en un negocio («Apagar El Compa aquí», Super Admin) es la misma de arriba: compa_pauses del negocio con el nivel
+     auto_reply (o todo El Compa). pausaAuto() la lee para el panel y el Super Admin.
+   - «Apagar El Compa aquí» en UNA conversación de Mensajes (desde el reporte de un cliente): chat_threads.compa_off_*, con motivo y auditoría; se
+     enciende otra vez, no se borra. hiloApagado() la lee en cada respuesta. Apagado = el camino de siempre (la respuesta fija, si el negocio la
+     tiene). */
+export async function pausaAuto(negocio: string): Promise<{ id: string; motivo: string; at: string; todo: boolean } | null> {
+  return (await db().query<{ id: string; motivo: string; at: string; todo: boolean }>(
+    `select id::text, reason as motivo, ${ISO("paused_at")} as at, use is null as todo from compa_pauses
+      where scope = 'business' and business_id = $1 and lifted_at is null and (use is null or use = 'auto_reply') order by paused_at desc limit 1`, [String(negocio ?? "")])).rows[0] ?? null;
+}
+export async function hiloApagado(hilo: string | number): Promise<boolean> {
+  return !!(await db().query(`select 1 from chat_threads where id = $1 and compa_off_at is not null`, [Number(hilo) || 0])).rowCount;
+}
+export async function apagarEnHilo(s: Staff, hilo: string | number, encender: boolean, motivo: string): Promise<Res> {
+  const m = limpiar(motivo);
+  if (m.length < 3) return { ok: false, msg: "Escribe el motivo: queda en el historial." };
+  return tx(async (c): Promise<Res> => {
+    const t = (await c.query<{ id: string; off: boolean; city: string | null; negocio: string }>(
+      `select t.id::text, t.compa_off_at is not null as off, t.city_id as city, b.name as negocio from chat_threads t join businesses b on b.id = t.business_id where t.id = $1 for update of t`, [Number(hilo) || 0])).rows[0];
+    if (!t) return { ok: false, msg: "Esa conversación no existe." };
+    if (t.off === !encender) return { ok: false, msg: encender ? "El Compa ya contesta en esta conversación." : "El Compa ya está apagado en esta conversación." };
+    await c.query(encender ? `update chat_threads set compa_off_at = null, compa_off_by = null, compa_off_reason = null, compa_pending_until = null where id = $1`
+      : `update chat_threads set compa_off_at = now(), compa_off_by = $2, compa_off_reason = $3, compa_pending_until = null where id = $1`, encender ? [t.id] : [t.id, s.id, m]);
+    await auditar(c, { actor: s.id, action: encender ? "compa.encender_hilo" : "compa.apagar_hilo", targetKind: "chat_thread", targetId: t.id, city: t.city,
+      before: { [`El Compa en una conversación de ${t.negocio}`]: encender ? "apagado" : "encendido" }, after: { [`El Compa en una conversación de ${t.negocio}`]: encender ? "encendido" : "apagado" }, reason: m });
+    return { ok: true, msg: encender ? "El Compa vuelve a contestar en esta conversación." : "Listo: El Compa ya no contesta en esta conversación. El negocio la ve como siempre." };
+  });
+}

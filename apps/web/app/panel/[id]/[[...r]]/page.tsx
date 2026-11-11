@@ -147,12 +147,17 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const reps = food && (ruta.sec === "dlv" || ruta.det?.startsWith("ped:")) ? await repartidoresDe(d.id) : undefined;
   // Mensajes (2p): la lista, la conversación (marca leído) y «Mensajes sin responder» en Hoy. Piden acceso a Mensajes.
   const vMsg = acc.partes.includes("all") || acc.partes.includes("msg");
+  // 7f · Respuestas automáticas de El Compa: Panel › El Compa (sus ajustes solo para quien lleva Mensajes: lo decide ajustesAuto) y Mensajes
+  // («El Compa contesta por ti», «Sugerir respuesta con El Compa»). Lecturas baratas y a prueba de fallas: si fallan, la pantalla es la de siempre.
+  const RA = ruta.sec === "cpa" || (ruta.sec === "msg" && vMsg) ? await import("@/lib/compa/respuesta-auto") : null;
   if (ruta.det?.startsWith("msg:") && !vMsg) ruta.det = null;
   const msj: MsjPanel = {
     lista: ruta.sec === "msg" && vMsg ? await hilosNegocio(d.id, "todas", typeof sp.antes === "string" ? sp.antes : null) : undefined,
     det: ruta.det?.startsWith("msg:") ? await conversacionNegocio(d.id, ruta.det.slice(4)) : undefined,
     hoy: ruta.sec === "hoy" && vMsg ? (await hilosNegocio(d.id, "sin")).hilos.slice(0, 5) : undefined,
     n: vMsg ? (await db().query<{ n: number }>(`select count(*)::int as n from chat_threads where business_id = $1 and biz_unread > 0`, [d.id])).rows[0]?.n ?? 0 : 0,
+    compa: ruta.sec === "msg" && RA ? await RA.estadoAutoMensajes(d.id).catch(() => null) : null,
+    sugerir: ruta.det?.startsWith("msg:") && RA ? await RA.sugerirDisponible(d.id).catch(() => false) : false,
   };
   // Servicios y citas (Fase 3): Lo que vendes de un negocio de citas (servicios, reglas, sillas) y el editor.
   const conCitas = d.mods.some((m) => m === "svc" || m === "citas") || d.cat === "NEG-BELL";
@@ -300,5 +305,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 7e · Panel › El Compa (cualquier miembro activo): lo que la sección necesita para empezar, SOLO aquí y a prueba de fallas (si falla, la
   // sección dice que El Compa no está y lleva a Ayuda y Soporte; ninguna otra pantalla del panel espera a El Compa).
   const cpa = ruta.sec === "cpa" ? await (await import("@/lib/compa/asistente-panel")).asistentePanel(acc.yo.id, d.id, lang).catch(() => null) : undefined;
-  return <Panel cpa={cpa} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
+  const cpaAuto = ruta.sec === "cpa" && RA ? await RA.ajustesAuto(d.id, acc.partes).catch(() => null) : undefined;
+  return <Panel cpa={cpa} cpaAuto={cpaAuto} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
 }

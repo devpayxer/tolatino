@@ -56,3 +56,23 @@ export const LINEAS = {
   dueno: { es: "Eso lo ve el dueño del negocio: tu parte del panel no lo incluye. Si lo necesitas, pídeselo.", en: "The business owner handles that: your part of the dashboard doesn't include it. If you need it, ask the owner." },
   panelCuenta: { es: "Eso lo revisa una persona del equipo: yo no cambio nada en tu negocio ni en tu cuenta. Ya le pasé tu caso con el resumen.", en: "A person on the team reviews that: I don't change anything in your business or your account. I already passed your case on with a summary." },
 } as const;
+
+/* 7f · En la respuesta automática (un cliente le escribe a un NEGOCIO cerrado), además de detectar(): lo que solo decide el negocio — un
+   descuento, un precio especial, confirmar o guardar algo, si hay lugar o mesa para una fecha, una devolución o un cobro — pasa al negocio SIN
+   el modelo («Eso lo decide {negocio}: le pasé tu mensaje…»). Va sobre el texto ya tapado. Ante la duda, al negocio. */
+const DECIDE_NEGOCIO = /descuent|rebaj|gratis|regal|cupon|promocion|precio especial|mas barato|ofert|discount|for free|coupon|promo\b|cheaper|deal\b|\bconfirm|\bgarantiz|guarantee|\b(me )?(guardas?|guardan|apartas?|apartan|separas?|separan)\b|\breserv(a|e|en)me\b|\bme (reservas?|reservan)\b|\bhold\b|\bsave me\b|\bbook me\b|\b(hay|tienen|tienes|queda|quedan|habra) (mesa|lugar|cupo|espacio|sitio|disponib)|\bdisponib|\bavailab|\bdo you have (a )?(table|room|space|spot|opening)|\bdevoluci|\bdevuelv|\breembols|\bcobr|\brefund|\bmoney back|\bcharg/;
+export function detectarAuto(textoTapado: string): { tipo: "negocio" } | null {
+  return DECIDE_NEGOCIO.test(sinAcentos(String(textoTapado ?? ""))) ? { tipo: "negocio" } : null;
+}
+type Bi7 = { es: string; en: string };
+/* Las líneas fijas de la respuesta automática (§1c: «Soy El Compa, el asistente de IA de {negocio}.» la primera vez; nunca se suavizan). */
+export const LINEAS_AUTO = {
+  presentacion: (n: string): Bi7 => ({ es: `Soy El Compa, el asistente de IA de ${n}.`, en: `I'm El Compa, ${n}'s AI assistant.` }),
+  decide: (n: string): Bi7 => ({ es: `Eso lo decide ${n}: le pasé tu mensaje y te contesta cuando abra.`, en: `${n} decides that: I passed your message on and they will reply when they open.` }),
+  noSe: (n: string): Bi7 => ({ es: `No tengo ese dato. Le pasé tu mensaje a ${n} y te contesta cuando abra.`, en: `I don't have that information. I passed your message to ${n} and they will reply when they open.` }),
+  ultimo: (n: string): Bi7 => ({ es: `Le paso tu mensaje a ${n}: te contesta cuando abra.`, en: `I'm passing your message to ${n}: they will reply when they open.` }),
+  emergencia: (n: string): Bi7 => ({ es: `Si es una emergencia, llama al 911 ahora. Le pasé tu mensaje a ${n}.`, en: `If this is an emergency, call 911 now. I passed your message to ${n}.` }),
+  seguridad: (n: string): Bi7 => ({ es: `Le pasé tu mensaje a ${n}. Si estás en peligro, llama al 911.`, en: `I passed your message to ${n}. If you are in danger, call 911.` }),
+  // El borrador para el negocio (no se presenta; nunca promete): cuando no hay nada mejor que sugerir.
+  borradorRevisar: { es: "Gracias por escribirnos. Lo reviso y te contesto en un rato.", en: "Thanks for writing to us. Let me check and I will reply shortly." },
+} as const;

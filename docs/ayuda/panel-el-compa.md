@@ -15,7 +15,8 @@ Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
 - **Con una persona** está siempre a la vista: abre un caso de Soporte de tu negocio. El equipo atiende **lunes a viernes, de 9 AM a 6 PM**
   (hora de tu ciudad).
 - Cada respuesta dice **EL COMPA · IA** y de dónde salió: **SEGÚN EL CENTRO DE AYUDA** (con el artículo, que puedes abrir) o **SEGÚN TU PANEL**.
-- Las **respuestas automáticas a tus clientes** (Pro) no están en esta pantalla todavía.
+- Debajo, **Respuestas automáticas** (Pro, para el dueño o quien lleva Mensajes): El Compa contesta a tus clientes cuando tu negocio está cerrado,
+  con lo que dice tu página. Todo en la ayuda «Panel: respuestas automáticas de El Compa».
 
 ## Cómo se usa
 1. Abre **El Compa**: en el escritorio, en el menú de la izquierda (**Tu negocio**); en el teléfono, en **Más**.
@@ -53,7 +54,8 @@ from the dashboard help and tells you which section to use. Under the answer you
 in that business. It **changes nothing in your dashboard** and never moves money. Money (a payout that did not arrive, a charge), your account,
 claiming or transferring the business, sanctions or fake reviews go to **a person on the team**: El Compa opens your business case in Support
 with a summary. **Talk to a person** is always visible. Every answer says **EL COMPA · AI** and its source (**PER THE HELP CENTER** with the
-article, or **PER YOUR DASHBOARD**). Auto-replies to your clients (Pro) are not on this screen yet.
+article, or **PER YOUR DASHBOARD**). Below it, **Auto-replies** (Pro, for the owner or whoever handles Messages): El Compa replies to your clients
+when you are closed, from your page; see the help article «Dashboard: El Compa auto-replies».
 
 ### How to use it
 Open **El Compa** (desktop: left menu, **Your business**; phone: **More**). Tap a suggested question or type yours (up to 400 characters) and tap

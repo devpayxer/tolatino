@@ -27,7 +27,13 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 - **Negocios › un negocio › El Compa:** las cifras de 30 días del asistente en el panel de ese negocio (conversaciones, «Ir a …» que tocaron,
   casos que pasaron a Soporte, contestadas sin IA, por resultado) y si El Compa está en pausa ahí. Sin texto ni personas; el hilo, en
-  Conversaciones (lectura anotada).
+  Conversaciones (lectura anotada). Y **RESPUESTAS AUTOMÁTICAS** (Pro): si el negocio las encendió, lo que contestó y lo que pasó al negocio en
+  30 días, los reportes «Una respuesta de El Compa» y **Apagar El Compa aquí** (con motivo; aviso al dueño, que apela por Soporte) o **Volver a
+  permitirlas**.
+- **Pestaña Negocios:** dónde están encendidas las respuestas automáticas y dónde las apagó To'Latino, con sus cifras de 30 días; cada fila lleva
+  a la ficha del negocio. **DÓNDE › Respuestas automáticas** en Conversaciones muestra sus conversaciones (la ficha con el hilo, anotada).
+- **Colas › Mensajes reportados:** si en la conversación contestó El Compa, sus mensajes salen marcados **EL COMPA** y el caso ofrece **Apagar El
+  Compa aquí** (solo en esa conversación; el negocio la sigue viendo y contestando) y **El Compa en el negocio**.
 
 ## Cómo se usa
 1. **Pausar un nivel o un canal:** toca su interruptor, elige o escribe el motivo y **Poner en pausa**. Para volver: el interruptor, motivo y
@@ -51,6 +57,9 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 | Servidor de producción | El Compa queda apagado hasta que se enciende todo, aunque los interruptores digan otra cosa. |
 | Pausas «Panel del negocio» (o el negocio, o su ciudad) | En el panel, la sección El Compa dice «El Compa no está disponible ahora» y lleva a Ayuda y Soporte; el resto del panel sigue igual. Igual al tope. |
 | Alguien del equipo de un negocio pregunta por una parte del panel que no tiene | El Compa contesta «Eso lo ve el dueño del negocio», sin enlace; nada de esa parte le llega a la IA. |
+| Apagas las respuestas automáticas de un negocio | Sus clientes vuelven a la respuesta fija de siempre (si el negocio la tiene); el dueño ve el motivo y no las puede encender. |
+| Un cliente reporta una respuesta de El Compa | Caso en Mensajes reportados con el motivo «Una respuesta de El Compa»; ahí se apaga en esa conversación o se va al negocio. |
+| Pausas «Respuestas automáticas», el canal, la ciudad o llega al tope | Mensajes funciona exactamente como antes: la respuesta fija de siempre, si el negocio la tiene. |
 
 ## Preguntas frecuentes
 - **¿El Compa puede cobrar o devolver?** No. Solo prepara: cancelar una solicitud pendiente y gratis, abrir una pantalla o ir a una sección del
@@ -89,7 +98,11 @@ The output checker blocks answers without a source, invented prices or terms, «
 links and emoji. After 20 messages an hour (60 a day) it offers a person without calling the AI. Non-Admin roles see everything but cannot
 change switches. In production El Compa stays off until everything is turned on. With «Business dashboard» paused (or the business, or its city)
 or at the cap, the dashboard's El Compa section says it is not available and links to Help and Support; the rest of the dashboard is unchanged. A
-team member asking about a part they don't have gets «The business owner handles that», with no link.
+team member asking about a part they don't have gets «The business owner handles that», with no link. **Auto-replies (Pro):** a business's card (Businesses ›
+a business › El Compa) shows whether it turned them on, 30-day counts and reports, and **Turn off El Compa here** (with a reason; the owner is
+notified and appeals through Support) or **Allow them again**; the **Businesses** tab lists where they are on or turned off by To'Latino. In
+Queues › Reported messages, El Compa's replies are marked and the case offers **Turn off El Compa here** for that conversation only. With
+auto-replies paused at any level or at the cap, Messages works exactly as before (the business's fixed reply, if it has one).
 
 ### FAQ
 - **Can El Compa charge or refund?** No. It only prepares: cancel a pending free request, open a screen, or go to a panel section; the person

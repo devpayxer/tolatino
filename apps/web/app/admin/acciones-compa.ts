@@ -1,10 +1,14 @@
 "use server";
 /* 7c · Super Admin › El Compa · acciones: encender o pausar un nivel o un canal, pausar en una ciudad o un negocio (y levantar la pausa) y
    cambiar el tope. Permiso compa:aprobar (Admin); motivo obligatorio; auditoría en la misma transacción (lib/compa/interruptores.ts,
-   lib/compa/admin-compa.ts → lib/config.ts). */
+   lib/compa/admin-compa.ts → lib/config.ts).
+   7f · «Apagar El Compa aquí»: en un NEGOCIO (las respuestas automáticas; la pausa del negocio de 7c con el nivel auto_reply; compa:aprobar; aviso
+   al dueño con el motivo, que apela por Soporte) y en UNA conversación de Mensajes reportada (quien decide esos casos — colas:aprobar — o el
+   equipo de El Compa — compa:editar; encenderla otra vez, compa:aprobar). Motivo obligatorio y auditoría. */
 import { staff } from "@/lib/admin";
 import { cambiarTope } from "@/lib/compa/admin-compa";
-import { cambiarInterruptor, levantarPausa, NIVELES, pausarEn } from "@/lib/compa/interruptores";
+import { db } from "@/lib/db";
+import { apagarEnHilo, cambiarInterruptor, levantarPausa, NIVELES, pausaAuto, pausarEn } from "@/lib/compa/interruptores";
 import type { Uso } from "@/lib/compa/modelo";
 import type { ResAdm } from "./acciones-colas";
 
@@ -32,4 +36,33 @@ export async function compaTope(dolares: string, motivo: string): Promise<ResAdm
   const s = await staff();
   if (!s || !s.puede("compa", "aprobar")) return SIN;
   return res(await cambiarTope(s, String(dolares ?? ""), String(motivo ?? "")));
+}
+
+export async function compaAutoNegocio(negocio: string, apagar: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "aprobar")) return SIN;
+  const id = String(negocio ?? "").trim().slice(0, 80);
+  const b = (await db().query<{ name: string }>(`select name from businesses where id = $1`, [id])).rows[0];
+  if (!b) return { ok: false, mensaje: "Ese negocio no existe." };
+  if (apagar) {
+    const r = await pausarEn(s, { scope: "business", donde: id, uso: "auto_reply" }, String(motivo ?? ""));
+    if (!r.ok) return res(r);
+    await (await import("@/lib/avisos")).avisarNegocio(id, "compa_auto_apagado", { negocio: b.name, motivo: String(motivo ?? "").trim().slice(0, 200) }, { href: `/panel/${id}/compa` }).catch(() => undefined);
+    return { ok: true, mensaje: `Respuestas automáticas apagadas en ${b.name}. El dueño recibió el motivo; sus clientes vuelven a la respuesta de siempre.` };
+  }
+  const p = await pausaAuto(id);
+  if (!p) return { ok: false, mensaje: "To'Latino no las tiene apagadas ahí." };
+  const r = await levantarPausa(s, p.id, String(motivo ?? ""));
+  if (!r.ok) return res(r);
+  await (await import("@/lib/avisos")).avisarNegocio(id, "compa_auto_levantado", { negocio: b.name }, { href: `/panel/${id}/compa` }).catch(() => undefined);
+  return { ok: true, mensaje: `Listo: ${b.name} puede volver a usar las respuestas automáticas.` };
+}
+export async function compaHilo(caso: string, encender: boolean, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !(encender ? s.puede("compa", "aprobar") : s.puede("colas", "aprobar") || s.puede("compa", "editar"))) return SIN;
+  // Solo la conversación de un caso ABIERTO de «Mensajes reportados» que esa persona del equipo puede ver (su ciudad).
+  const q = /^\d{1,18}$/.test(String(caso ?? "")) ? (await db().query<{ hilo: string; city: string | null }>(
+    `select subject_id as hilo, city_id as city from queue_items where id = $1 and queue = 'chat' and subject_kind = 'chat_thread' and status = 'open'`, [caso])).rows[0] : undefined;
+  if (!q || (s.cities.length && (!q.city || !s.cities.includes(q.city)))) return { ok: false, mensaje: "Ese caso no existe o ya se decidió." };
+  return res(await apagarEnHilo(s, q.hilo, !!encender, String(motivo ?? "")));
 }

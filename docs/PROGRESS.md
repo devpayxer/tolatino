@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7e · El Compa en el panel)._
+_Actualizado: 11 nov 2026 (7f · respuestas automáticas de El Compa en Mensajes)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -434,6 +434,28 @@ negocio) y **Negocios 360° › El Compa** (cifras de 30 días, sin texto). Guar
 `compa7d` 140 ✓, `sop7b` 104 ✓, `compa7c` 111 ✓, `adm5i` ✓; 0120 dos veces en local y en una base nueva (semillas dos veces). Ayuda:
 **`panel-el-compa`** nueva; `panel`, `panel-ayuda-y-soporte`, `admin-el-compa`, `admin-negocios` al día. Sigue **7f** (respuestas automáticas
 Pro y «Sugerir respuesta con El Compa»; migración 0121, semilla 0042).
+**7f hecho (11 nov)** — Respuestas automáticas de El Compa (Pro) en Mensajes y «Sugerir respuesta con El Compa». Migración **0121**
+(`compa_negocio_pro()` = Pro AHORA; `compa_business_settings` apagadas de fábrica, «cuándo» closed, temas, canales {app}, nota {es,en} ≤ 400, la
+base no deja encender sin Pro (`compa_solo_pro`) ni borrar; `chat_messages.compa`; `chat_threads.compa_pending_until` y `compa_off_*` (apagar en
+una conversación); `compa_conversations.chat_thread_id`; `compa_handoffs.chat_message_id`; motivo de reporte «compa»; avisos `compa_te_paso`,
+`compa_auto_apagado`, `compa_auto_levantado`; claves `compa_auto_hilo_max` 6, `compa_auto_dia_negocio` 200, `compa_auto_espera_min` bloqueada).
+Semilla **0042** (Sabor Dominicano encendidas con la nota del diseño y dos conversaciones de ejemplo; Rosa, moderadora con «Hoy y pedidos»;
+Barbería El Primo apagada por el equipo si hay un Admin). Código: `lib/compa/contexto-negocio.ts` (la página pública por temas, tapada),
+`respuesta-auto.ts` (puerta barata: `compaContestara`, `contestarAuto` por after() y el barrido, ajustes del panel, estado en Mensajes, Super
+Admin), `conversacion.ts` (`debeContestarAuto`, `SISTEMA_AUTO`/`SISTEMA_BORRADOR`, `respuestaAuto` = servidor antes del modelo → consultar →
+`verificarAuto` → reglas; `turnoAuto` con reclamo de 90 s, límite por conversación, la presentación, pasar al negocio y «como antes» con la fija;
+`probarAuto`; `borradorNegocio` que nunca envía), `verificar.ts` (`verificarAuto`), `reglas.ts` (`detectarAuto`, `LINEAS_AUTO`), `modelo-reglas.ts`
+(`responderAutoConReglas`), simulador con el uso auto_reply (ingenuo), `interruptores.ts` (`pausaAuto`, `hiloApagado`, `apagarEnHilo`);
+`lib/mensajes.ts` (con El Compa no sale la fija; sin él, la de siempre texto a texto; `ponerRespuestaFija`). Pantallas: Panel › El Compa ›
+RESPUESTAS AUTOMÁTICAS (Free → candado; interruptor, CUÁNDO, temas, POR DÓNDE, reglas fijas, la nota con «Traducir», Pruébalo como cliente, LO QUE
+CONTESTÓ EL COMPA) y la cabecera «…con Pro, contesta a tus clientes…»; Panel › Mensajes (fila «El Compa contesta por ti», «EL COMPA · IA» en el
+hilo, «Sugerir respuesta con El Compa»); Mi cuenta › chat («EL COMPA · IA», «El Compa está escribiendo…», reportar «Una respuesta de El Compa»);
+Super Admin › El Compa › **Negocios**, Negocios 360° › El Compa › «Apagar El Compa aquí», Colas › Mensajes reportados con «Apagar El Compa aquí»
+en la conversación. Guardianes **`compaRespuestaAuto`**, **`borradorSoloBorrador`**, **`compaSiempreIAMensajes`**, **`ordenSinTexto`** +
+`compaSalidaLimpia`, `compaTapaEnElMotor`, `compaInterruptores`, `compaSinRutaCritica`, `compaSiempreIA` ampliados (40/40 al revés `alreves7f`; 36/36 `alreves7e`, 33/33 `alreves7d`, 66/66 `alreves7c`); e2e **`compa7f` 130 ✓**
+(390 y 1360); `msg2p` ✓ con El Compa apagado y al tope, `compa7e` 117 ✓ (su comparación de Mensajes deja fuera la fila nueva de 7f), `compa7d` 140 ✓, `adm5i` ✓; 0121 dos veces en local y en una base nueva (semillas dos
+veces). Ayuda: **`panel-respuestas-automaticas`** nueva; `mensajes`, `panel-el-compa`, `admin-el-compa` al día. Bug de clase cazado: `id::text …
+order by id` ordena el texto (LAUNCH, tarea sugerida). Sigue **7g** (copiloto del equipo en Super Admin › Soporte; migración 0122).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

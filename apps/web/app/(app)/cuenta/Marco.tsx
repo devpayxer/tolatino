@@ -44,7 +44,7 @@ export type Bloque =
   // Solo en escritorio (los botones que en el teléfono van en la barra de abajo).
   | { type: "desk"; b: Bloque[] }
   // Conversación con un negocio (plantilla isChat): contexto, burbujas y la caja para escribir (fija abajo en el teléfono).
-  | { type: "chat"; ph?: string | null; ini: string; ctx: string; onBiz: Fn; msgs: { yo: boolean; t: string; time: string; suave?: boolean }[]; v: string; onV: (v: string) => void; ph2: string; send: string; onSend: Fn; off?: boolean; nota?: string }
+  | { type: "chat"; ph?: string | null; ini: string; ctx: string; onBiz: Fn; msgs: { yo: boolean; t: string; time: string; suave?: boolean; ia?: boolean }[]; v: string; onV: (v: string) => void; ph2: string; send: string; onSend: Fn; off?: boolean; nota?: string }
   | { type: "biz"; items: { name: string; meta: string; ver: boolean; slot: string; img?: string; on: Fn }[] };
 export type Tarjeta = { label?: string; k?: string; t?: string; s?: string; rows?: { t: string; s?: string; v?: string; on?: Fn }[]; cta?: string; onCta?: Fn };
 export type Hoja = { title: string; sub?: string; yes: string; onYes: Fn; peligro?: boolean } | null;
@@ -245,7 +245,7 @@ function Pieza({ b, M }: { b: Bloque; M: boolean }): ReactNode {
         </div>
         {b.msgs.map((m, i) => (
           <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: m.yo ? "flex-end" : "flex-start", gap: 3 }}>
-            <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.yo ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.suave ? "rgba(75,55,245,.07)" : m.yo ? "var(--tl-ink)" : "var(--tl-white)", color: m.suave ? "rgba(11,14,18,.6)" : m.yo ? "var(--tl-white)" : "var(--tl-ink)", border: m.yo && !m.suave ? "none" : "1px solid rgba(11,14,18,.08)", font: "500 14px/1.45 Manrope,sans-serif", textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</div>
+            <div style={{ maxWidth: "78%", padding: "10px 13px", borderRadius: m.yo ? "18px 18px 6px 18px" : "18px 18px 18px 6px", background: m.suave || m.ia ? "rgba(75,55,245,.07)" : m.yo ? "var(--tl-ink)" : "var(--tl-white)", color: m.suave && !m.ia ? "rgba(11,14,18,.6)" : m.yo ? "var(--tl-white)" : "var(--tl-ink)", border: m.yo && !m.suave ? "none" : "1px solid rgba(11,14,18,.08)", font: "500 14px/1.45 Manrope,sans-serif", textWrap: "pretty", whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{m.t}</div>
             <span style={{ font: `600 8.5px ${MONO}`, letterSpacing: ".06em", color: "rgba(11,14,18,.42)" }}>{m.time}</span>
           </div>))}
         {b.nota ? <div style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(75,55,245,.07)", color: "var(--tl-action-ink)", font: "600 13px/1.45 Manrope,sans-serif", textAlign: "center" }}>{b.nota}</div> : null}

@@ -4201,6 +4201,12 @@ const guardianes = {
       if (!/if texto_con_secretos\(new\.summary\)/.test(ultimaFn("compa_handoffs_antes"))) falla(G, M, 0, "la base rechaza tarjeta o SSN en el resumen al pasar a una persona");
     }
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /insert into compa_messages/.test(sinComent(x)) && x !== C) falla(G, x, 0, "solo conversacion.ts escribe mensajes de El Compa");
+    // 7f · La respuesta automática que sale en Mensajes también va tapada, y solo conversacion.ts escribe una (compa = true).
+    const ins = [...c.matchAll(/insert into chat_messages \(thread_id, sender, body, compa\) values \(\$1, 'auto', \$2, true\)(?: returning id::text)?`, \[([^\]]*)\]/g)];
+    if (!ins.length || ins.some((m) => !/^t\.id, tapar\(/.test(m[1]))) falla(G, C, 0, "la respuesta automática de El Compa se escribe en Mensajes tapada");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== C && /insert into chat_messages[^`]*compa/.test(sinComent(x))) falla(G, x, 0, "solo conversacion.ts escribe una respuesta de El Compa en Mensajes");
+    const nHist = (c.match(/\.map\(\(m\) => \(\{ de: m\.sender === "user"/g) ?? []).length;
+    if (!nHist || nHist !== (c.match(/\.map\(\(m\) => \(\{ de: m\.sender === "user" \? "persona" as const : "compa" as const, texto: tapar\(m\.body\)\.texto \}\)\)/g) ?? []).length) falla(G, C, 0, "cada conversación de Mensajes que va al modelo pasa por tapar()");
   },
 
   /* 7c. El verificador de salida corre en TODA respuesta: la del modelo (sal.json) y la de las reglas; cubre esquema, emoji, enlaces, teléfonos,
@@ -4218,7 +4224,9 @@ const guardianes = {
     if (!/export const SISTEMA_VECINO = \[/.test(c) || /SISTEMA_VECINO\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del modelo es fijo y vive en el código del servidor");
     // 7e · El del panel también; y el modelo solo se llama por consultar() (que verifica): cada uso le pasa su sistema fijo.
     if (!/export const SISTEMA_PANEL = \[/.test(c) || /SISTEMA_PANEL\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del panel es fijo y vive en el código del servidor");
-    for (const m of c.matchAll(/await consultar\(\{[^}]*sistema: ([A-Za-z_.]+)/g)) if (!/^SISTEMA_(VECINO|PANEL)$/.test(m[1])) falla(G, C, 0, `el modelo recibe un sistema fijo (no ${m[1]})`);
+    for (const m of c.matchAll(/await consultar\(\{[^}]*sistema: ([A-Za-z_.]+)/g)) if (!/^SISTEMA_(VECINO|PANEL|AUTO|BORRADOR)$/.test(m[1])) falla(G, C, 0, `el modelo recibe un sistema fijo (no ${m[1]})`);
+    // 7f · Los de la respuesta automática y el borrador, también fijos del servidor (la nota del dueño va como DATO, nunca en el sistema).
+    for (const k of ["SISTEMA_AUTO", "SISTEMA_BORRADOR"]) if (!new RegExp(`export const ${k} = \\[`).test(c) || new RegExp(`${k}\\s*=.*(query|valor|process\\.env|nota)`).test(c)) falla(G, C, 0, `${k} es fijo y vive en el código del servidor`);
   },
 
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
@@ -4237,6 +4245,8 @@ const guardianes = {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === I) continue;
       const t = sinComent(x);
       if (/feature_flags[^`]*compa\.|'compa\.(use|channel)\./.test(t) || /\b(from|update|into) compa_pauses\b/.test(t)) falla(G, x, 0, "los interruptores de El Compa se leen y se cambian solo en lib/compa/interruptores.ts");
+      // 7f · «Apagar El Compa aquí» en una conversación (chat_threads.compa_off_*): se lee y se cambia solo ahí.
+      if (/\bcompa_off_(at|by|reason)\b/.test(t.replace(/compa_off_reason as compa_off/g, ""))) falla(G, x, 0, "El Compa apagado en una conversación se lee y se cambia solo en lib/compa/interruptores.ts");
     }
   },
 
@@ -4262,6 +4272,15 @@ const guardianes = {
       if (/from "@\/lib\/compa\/hoja"/.test(t)) for (const m of t.matchAll(/\b(estadoVecino|hojaDe|opsVecino|vecinoDisponible|opVecino)\(/g))
         if (!/^[^;]*?\.catch\(\(\) =>/.test(t.slice(m.index))) falla(G, x, 0, `${m[1]}() fuera de El Compa sin .catch(() => …): si falla, la pantalla sigue como siempre`);
       if (/hoja-ayuda/.test(t) && !/^apps\/web\/app\/\(app\)\/[a-z/]+\/\[num\]\/ayuda\/page\.tsx$/.test(x)) falla(G, x, 0, "la hoja de ayuda solo la abre la página «Ayuda con …» de una operación");
+      // 7f · Mensajes y el panel solo PREGUNTAN a lib/compa/respuesta-auto (lecturas baratas) y siempre con .catch (si falla, lo de siempre); el turno
+      // con el modelo nunca se espera: corre después (after) o en el barrido.
+      if (/compa\/respuesta-auto"/.test(t) && !/^apps\/web\/(app\/panel\/acciones-compa\.ts|app\/admin\/compa\/page\.tsx)$/.test(x)) {
+        for (const m of t.matchAll(/\b(compaContestara|ajustesAuto|estadoAutoMensajes|sugerirDisponible|contestarAuto)\(/g)) {
+          const resto = t.slice(m.index, m.index + 200);
+          if (!/^[^;\n]*?\.catch\(\(\) =>/.test(resto) && !(m[1] === "contestarAuto" && /^contestarAuto\(hilo\)\)\.catch\(\(\) => undefined\)\); \}/.test(resto))) falla(G, x, 0, `${m[1]}() fuera de El Compa sin .catch(() => …): si falla, Mensajes y el panel siguen como siempre`);
+        }
+        if (/\bcontestarAuto\(/.test(t) && !/after\(\(\) => import\("@\/lib\/compa\/respuesta-auto"\)\.then\(\(m\) => m\.contestarAuto\(hilo\)\)\.catch\(\(\) => undefined\)\)/.test(t)) falla(G, x, 0, "la respuesta automática corre DESPUÉS de contestar (after), nunca en la ruta del mensaje");
+      }
     }
   },
 
@@ -4294,6 +4313,11 @@ const guardianes = {
       if (iNota < iRet) falla(G, PC, 0, "la nota de IA va en toda pantalla donde El Compa contesta (después del «no disponible»)");
     }
     if (existsSync(C) && (sinComent(C).match(/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/g) ?? []).length < 2) falla(G, C, 0, "el sistema del panel también dice que es una IA");
+    // 7f · CADA sistema fijo (vecino, panel, respuesta automática y borrador) dice que es una IA (contar no basta: hay cuatro).
+    if (existsSync(C)) { const c = sinComent(C);
+      for (const k of ["VECINO", "PANEL", "AUTO", "BORRADOR"]) { const i = c.indexOf(`export const SISTEMA_${k} = [`);
+        if (i < 0) { if (k === "VECINO" || k === "PANEL") falla(G, C, 0, `falta SISTEMA_${k}`); continue; }
+        if (!/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/.test(c.slice(i, c.indexOf("].join(", i)))) falla(G, C, 0, `SISTEMA_${k} dice que es una IA`); } }
   },
 
   /* 7d. Sin El Compa nada se rompe (la regresión «todo apagado» hecha regla): cada página «Ayuda con …» de una operación pregunta PRIMERO por la
@@ -4376,6 +4400,102 @@ const guardianes = {
     for (const k of filas.keys()) if (!conocidas.has(k)) falla(G, M, 0, `la guía tiene «${k}», que no es una sección del panel`);
     if (existsSync(A)) { const c = cuerpoFn(sinComent(A), "confirmar");
       if (!/select ruta, parte from compa_panel_guide where code = \$1 and enabled/.test(c) || !/const acc = await accesoPanel\(a\.target\.negocio \?\? "", s\.parte \?\? undefined\);/.test(c) || !/if \(!acc \|\| acc\.yo\.id !== q\.userId\)/.test(c)) falla(G, A, 0, "«Ir a …»: confirmar vuelve a leer la parte de la guía y pide accesoPanel con ella, para la misma persona"); }
+  },
+
+  /* ── Fase 7 · 7f Respuestas automáticas (Pro) en Mensajes y «Sugerir respuesta con El Compa» ── */
+  /* 7f. Lo que la respuesta automática nunca hace, hecho regla (revisión de seguridad de 7f):
+     (1) Solo Pro, decidido en el servidor y en la base: debeContestarAuto pide compa_negocio_pro y «enabled»; guardarAuto no enciende sin Pro ni
+         con la pausa de To'Latino; la base no deja encender sin Pro (compa_solo_pro) y nace apagada (enabled false);
+     (2) solo «fuera de tu horario» y con El Compa disponible: cerrado (negocio_abierto, la regla de la fija), nivel auto_reply, la conversación sin
+         apagar y no al tope;
+     (3) quien la cambia o pide un borrador: el dueño o quien lleva Mensajes (accesoPanel(id, "msg") en cada acción);
+     (4) nunca promete: lo que solo decide el negocio pasa al negocio ANTES del modelo (detectarAuto); la salida del modelo y la de las reglas
+         pasan por verificarAuto (acciones, porcentajes, descuentos, devoluciones, «confirmado», disponibilidad); el verificador NO acepta
+         montos que solo escribió el cliente (su texto no entra en lo que se le permite citar);
+     (5) con El Compa la respuesta fija no sale; sin El Compa (apagado, tope, falla) sale EXACTAMENTE la de antes (mismo texto, una cada 12 h);
+     (6) nunca bloquea al humano: la respuesta automática no marca leído el hilo para el negocio. */
+  compaRespuestaAuto() {
+    const G = "compaRespuestaAuto", M = "packages/db/migrations/0121_compa_respuestas_auto.sql", C = "apps/web/lib/compa/conversacion.ts", R = "apps/web/lib/compa/respuesta-auto.ts",
+      V = "apps/web/lib/compa/verificar.ts", L = "apps/web/lib/compa/reglas.ts", MS = "apps/web/lib/mensajes.ts", AC = "apps/web/app/panel/acciones-compa.ts";
+    for (const f of [M, C, R, V, L, MS, AC]) if (!existsSync(f)) return falla(G, f, 0, "falta una pieza de las respuestas automáticas");
+    const m = readFileSync(M, "utf8"), c = sinComent(C), r = sinComent(R), v = sinComent(V), ms = sinComent(MS), ac = sinComent(AC);
+    if (!/enabled\s+boolean not null default false/.test(m)) falla(G, M, 0, "las respuestas automáticas nacen apagadas (enabled false)");
+    if (!/if new\.enabled and \(tg_op = 'INSERT' or not old\.enabled\) and not compa_negocio_pro\(new\.business_id\) then\s*raise exception 'compa_solo_pro/.test(ultimaFn("compa_business_settings_antes"))) falla(G, M, 0, "la base no deja encender sin Pro (compa_solo_pro)");
+    if (!/raise exception 'los ajustes de las respuestas automáticas no se borran/.test(ultimaFn("compa_business_settings_antes"))) falla(G, M, 0, "los ajustes no se borran (estados)");
+    const d = cuerpoFn(c, "debeContestarAuto");
+    for (const [re, q] of [[/compa_negocio_pro\(b\.id\) as pro/, "Pro AHORA (compa_negocio_pro)"], [/if \(!r \|\| !r\.on \|\| !r\.pro \|\| r\.cuando !== "closed" \|\| r\.abierto\) return false;/, "encendido, Pro, «fuera de tu horario» y cerrado"],
+      [/negocio_abierto\(b\.id, now\(\) at time zone c\.timezone\)/, "el horario real del negocio (negocio_abierto)"], [/disponible\(\{ uso: "auto_reply", canal: "app"/, "el nivel y el canal de El Compa"], [/alTope\(\)/, "el tope"], [/hiloApagado\(hilo\)/, "la conversación sin apagar"]])
+      if (!re.test(d)) falla(G, C, 0, `debeContestarAuto: falta ${q}`);
+    const g = cuerpoFn(r, "guardarAuto");
+    if (!/if \(!b\.pro\) return no\(/.test(g) || !/if \(x\.enabled === true && pausa\) return no\(/.test(g)) falla(G, R, 0, "guardarAuto: sin Pro o con la pausa de To'Latino no se enciende");
+    if (/"(no_reply_10m|always)"/.test(g)) falla(G, R, 0, "7f solo contesta «fuera de tu horario»");
+    for (const fn of ["compaAutoGuardar", "compaAutoProbar", "compaAutoTraducir", "compaSugerir"]) { const b = cuerpoFn(ac, fn);
+      if (!b || !/if \(!\(await mismoOrigen\(\)\)\) return SIN;/.test(b) || !/await accesoPanel\(id, "msg"\)/.test(b)) falla(G, AC, 0, `${fn}: mismo origen y el dueño o quien lleva Mensajes (accesoPanel(id, "msg"))`); }
+    const ra = cuerpoFn(c, "respuestaAuto");
+    if (!/if \(det \|\| detectarAuto\(x\.ultimo\)\) return pasar\(LINEAS_AUTO\.decide\(N\)/.test(ra) || ra.indexOf("detectarAuto(") > ra.indexOf("await consultar(")) falla(G, C, 0, "lo que solo decide el negocio pasa al negocio ANTES del modelo (detectarAuto)");
+    if (!/const w = verificarAuto\(q2\.r\);\s*if \(!w\.ok\) return reglas\(/.test(ra) || !/w = v\.ok \? verificarAuto\(v\.r\) : v;/.test(ra)) falla(G, C, 0, "la salida del modelo y la de las reglas pasan por verificarAuto");
+    if (!/texto: \[x\.ctx\.texto, \.\.\.trozos\.map\(\(z\) => `\$\{z\.titulo\} \$\{z\.seccion\} \$\{z\.texto\}`\)\]\.join\("\\n"\)/.test(ra) || /x\.ultimo\]\.join|ultimo, \.\.\.trozos/.test(ra)) falla(G, C, 0, "el verificador solo acepta montos y plazos de la página y la ayuda, nunca del cliente");
+    if (!/permitidos: \[\]/.test(ra)) falla(G, C, 0, "la respuesta automática no comparte teléfonos ni correos de nadie");
+    const va = cuerpoFn(v, "verificarAuto");
+    if (!/if \(r\.accion\.tipo !== "ninguna"\) return/.test(va) || !/PCT_TODO\.test\(todo\)/.test(va) || !/PROMETE\.test\(sinAcentosV\(todo\)\)/.test(va)) falla(G, V, 0, "verificarAuto: sin acciones, porcentajes ni promesas");
+    const pr = /const PROMETE = \/([^\n]*)\/;/.exec(v)?.[1] ?? "";
+    for (const w of ["descuent", "confirmad", "disponib", "reembols", "refund", "discount", "gratis", "garantiz"]) if (!pr.includes(w)) falla(G, V, 0, `verificarAuto no frena «${w}»`);
+    const ec = cuerpoFn(ms, "enviarCliente");
+    if (!/const compa = !b\.abierto \? await \(await import\("\.\/compa\/respuesta-auto"\)\)\.compaContestara\(b\.id, previo\.rows\[0\]\?\.id \?\? null, userId\)\.catch\(\(\) => false\) : false;/.test(ec)) falla(G, MS, 0, "Mensajes pregunta a El Compa solo fuera del horario y con .catch (si falla, lo de siempre)");
+    if (!/if \(compa\) await c\.query\(`update chat_threads set compa_pending_until = coalesce\(compa_pending_until, now\(\)\) where id = \$1`, \[t\.id\]\);\s*else if \(b\.auto && !b\.abierto && !t\.auto_reciente\) \{ await ponerRespuestaFija\(/.test(ec)) falla(G, MS, 0, "con El Compa no sale la fija; sin El Compa, la fija de siempre");
+    if (!/m\.sender = 'auto' and not m\.compa and m\.created_at > now\(\) - interval '12 hours'/.test(ec)) falla(G, MS, 0, "la fija sigue saliendo una vez cada 12 horas (sin contar las de El Compa)");
+    if (!/export const textoFijo = \(nombre: string, lang: "es" \| "en"\) => \(lang === "en" \? `Thanks for writing to \$\{nombre\}\. We are closed now; we will reply when we open\.` : `Gracias por escribir a \$\{nombre\}\. Ahora estamos cerrados; te contestamos cuando abramos\.`\);/.test(ms)) falla(G, MS, 0, "la respuesta fija es la de siempre (texto a texto)");
+    if (!/if \(x && t\.fija && !t\.abierto && !x\.reciente\) await ponerRespuestaFija\(/.test(cuerpoFn(c, "comoAntes"))) falla(G, C, 0, "sin El Compa entre el mensaje y la respuesta: la fija de siempre");
+    const una = cuerpoFn(c, "unaRespuestaAuto");
+    if (/biz_unread\s*=|biz_read_at\s*=/.test(una)) falla(G, C, 0, "la respuesta automática nunca marca leído el hilo para el negocio (el humano siempre lo ve)");
+    if (!/if \(S\.n >= lim\.compa_auto_hilo_max\)/.test(una)) falla(G, C, 0, "como mucho compa_auto_hilo_max respuestas seguidas sin el negocio");
+  },
+
+  /* 7f. «Sugerir respuesta con El Compa» deja un BORRADOR: borradorNegocio nunca envía ni escribe en Mensajes (ni enviarNegocio, ni chat_messages);
+     guarda su respuesta como draft; la pantalla solo llena el campo y el envío es el botón de siempre. */
+  borradorSoloBorrador() {
+    const G = "borradorSoloBorrador", C = "apps/web/lib/compa/conversacion.ts", P = "apps/web/app/panel/MensajesPanel.tsx", AC = "apps/web/app/panel/acciones-compa.ts";
+    const b = cuerpoFn(sinComent(C), "borradorNegocio");
+    if (!b) return falla(G, C, 0, "falta borradorNegocio");
+    if (/insert into chat_messages|update chat_threads|enviarNegocio|enviarCliente|avisar\(/.test(b)) falla(G, C, 0, "el borrador nunca envía ni escribe en Mensajes");
+    if (!/source_label, chips, engine, draft\) values \(\$1, \$2, 'compa', \$3, \$4, \$5, '\{\}', \$6, true\)/.test(b)) falla(G, C, 0, "el borrador queda guardado como borrador (draft)");
+    const s = cuerpoFn(sinComent(AC), "compaSugerir");
+    if (/enviarNegocio|mensajeResponder|insert into/.test(s)) falla(G, AC, 0, "«Sugerir respuesta» no envía");
+    const p = sinComent(P);
+    if (!/c\.run\(\(\) => compaSugerir\(d\.id, x\.id\), E2\("Revísalo antes de enviar\. Sale con tu nombre\.", "Check it before sending\. It goes out with your name\."\), \(r: \{ texto\?: string \}\) => \{ c\.setUi\(\{ cpaSug: null \}\); if \(r\.texto\) F\.set\(\{ txt: r\.texto\.slice\(0, 1000\)\ }\); \}\)/.test(p)) falla(G, P, 0, "«Sugerir respuesta» solo llena el campo, con «Revísalo antes de enviar. Sale con tu nombre.»");
+  },
+
+  /* 7f. Siempre se sabe que es una IA (compaSiempreIA, en Mensajes): la primera respuesta de El Compa en una conversación empieza con «Soy El
+     Compa, el asistente de IA de {negocio}.» (verbatim de §1c); el cliente y el negocio la ven con «EL COMPA · IA»; nunca se hace pasar por el
+     dueño (verificar + verificarAuto). */
+  compaSiempreIAMensajes() {
+    const G = "compaSiempreIAMensajes", L = "apps/web/lib/compa/reglas.ts", C = "apps/web/lib/compa/conversacion.ts", CH = "apps/web/app/(app)/cuenta/mensajes/[negocio]/Chat.tsx", P = "apps/web/app/panel/MensajesPanel.tsx";
+    if (!/presentacion: \(n: string\): Bi7 => \(\{ es: `Soy El Compa, el asistente de IA de \$\{n\}\.`, en: `I'm El Compa, \$\{n\}'s AI assistant\.` \}\)/.test(sinComent(L))) falla(G, L, 0, "la presentación «Soy El Compa, el asistente de IA de {negocio}.» (verbatim)");
+    const una = cuerpoFn(sinComent(C), "unaRespuestaAuto");
+    if (!/const resp = a, texto = `\$\{S\.primera \? `\$\{LINEAS_AUTO\.presentacion\(t\.nombre\)\[lang\]\} ` : ""\}\$\{resp\.texto\}`/.test(una)) falla(G, C, 0, "la primera respuesta automática de una conversación empieza con la presentación");
+    if (!/time: `\$\{m\.de === "auto" \? \(m\.compa \? E2\("EL COMPA · IA · ", "EL COMPA · AI · "\)/.test(sinComent(CH))) falla(G, CH, 0, "el cliente ve «EL COMPA · IA» en cada respuesta de El Compa");
+    if (!/m\.compa \? E2\("EL COMPA · IA · ", "EL COMPA · AI · "\)/.test(sinComent(P))) falla(G, P, 0, "el negocio ve «EL COMPA · IA» en cada respuesta de El Compa");
+  },
+
+  /* 7f. Una columna de salida `x::text` con el mismo nombre que la columna NO ordena: en Postgres «order by id» usa la columna de SALIDA (el
+     texto), así que 100 va antes que 98 (cazado en 7f: la respuesta automática se saltaba el último mensaje del cliente). En lib/compa y en
+     Mensajes, ninguna consulta ordena por un nombre que en su select es un ::text sin otro alias (se califica: «order by x.id»). La misma clase
+     existe en otros módulos (LAUNCH «order by sobre id::text»): este guardián se amplía cuando se arreglen. */
+  ordenSinTexto() {
+    const G = "ordenSinTexto";
+    for (const x of codigo.filter((f) => /^apps\/web\/lib\/(compa\/[^/]+|mensajes)\.ts$/.test(f))) {
+      for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        const sel = /^`\s*select\s+([\s\S]*?)\s+from\s/i.exec(q);
+        if (!sel) continue;
+        const iOb = q.toLowerCase().lastIndexOf("order by");
+        if (iOb < 0) continue;
+        const ob = q.slice(iOb + 8).split(/\blimit\b|\bfor update\b/i)[0];
+        for (const m of sel[1].matchAll(/(?:^|,)\s*(?:\w+\.)?(\w+)::text(?:\s+as\s+"?(\w+)"?)?\s*(?=,|$)/g)) {
+          const nom = m[2] ?? m[1];   // la columna de salida se llama como el alias (o como la columna, sin alias)
+          if (new RegExp(`(^|,)\\s*${nom}\\b(?!\\.)`).test(ob)) falla(G, x, 0, `«order by ${nom}» ordena el TEXTO de ${m[1]}::text (100 antes que 98): califica la columna`);
+        }
+      }
+    }
   },
 
   idioma() {

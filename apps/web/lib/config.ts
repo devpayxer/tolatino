@@ -44,7 +44,9 @@ export type ClaveConfig =
   | "soporte_sla_h" | "soporte_dias" | "soporte_desde_h" | "soporte_hasta_h" | "soporte_casos_dia_max" | "soporte_devolver_max_cents" | "soporte_reabrir_dias"
   // 7c · El Compa: el motor, el tope y los límites (0118)
   | "compa_tope_mes_cents" | "compa_alerta_pct" | "compa_espera_ms" | "compa_salida_tokens" | "compa_msgs_hora" | "compa_msgs_dia" | "compa_turnos_max"
-  | "compa_conv_cierra_h" | "compa_accion_min" | "compa_contexto_ops" | "compa_retener_meses";
+  | "compa_conv_cierra_h" | "compa_accion_min" | "compa_contexto_ops" | "compa_retener_meses"
+  // 7f · Respuestas automáticas (0121)
+  | "compa_auto_hilo_max" | "compa_auto_dia_negocio" | "compa_auto_espera_min";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

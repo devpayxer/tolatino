@@ -16,6 +16,7 @@ import { cambiarEstado, tipoNoche, cierreTemporal, editarCampo, foto, licencia, 
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { N360Dinero } from "./N360Dinero";
+import { compaAutoNegocio } from "./acciones-compa";
 import { accionesOrg, estadoEvt } from "./ColasEventos";
 import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
 
@@ -309,6 +310,23 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
       { type: "kv", cols: 3, items: Object.entries(RES).map(([k, l]) => ({ k: l.toUpperCase(), v: String(cpa.porResultado[k] ?? 0) })) },
       cpa.pausa ? { type: "note", tone: "warn", icon: "ban", t: `El Compa en pausa en este negocio${cpa.pausa.uso ? " (panel)" : ""}: ${cpa.pausa.motivo}. Se levanta en El Compa › Interruptores.` }
         : { type: "note", tone: "info", icon: "info", t: "El Compa contesta en el panel de este negocio. Lo que se habló se lee en El Compa › Conversaciones (filtro Panel del negocio) y cada lectura queda anotada." },
+      // 7f · Respuestas automáticas (Pro) de este negocio: estado, cifras de 30 días (sin texto) y «Apagar El Compa aquí» con motivo (compa:aprobar).
+      { type: "group", k: "RESPUESTAS AUTOMÁTICAS" },
+      ...((): Bloque[] => {
+        const a = cpa.auto;
+        if (!a) return [{ type: "note", tone: "info", icon: "info", t: "Este negocio no tiene respuestas automáticas." }];
+        const est = a.pausa ? `APAGADAS POR TO'LATINO · ${a.pausa.motivo}` : !a.pro ? "SIN PRO · no contestan" : a.enabled ? "ENCENDIDAS POR EL NEGOCIO · fuera de su horario" : "APAGADAS POR EL NEGOCIO";
+        return [
+          { type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
+            { k: "CONTESTÓ · 30 D", v: String(a.contesto30), s: "respuestas de El Compa a clientes" }, { k: "PASÓ AL NEGOCIO", v: String(a.paso30), s: "lo que no podía contestar" },
+            { k: "REPORTES", v: String(a.reportes), s: "«una respuesta de El Compa»" }] },
+          { type: "note", tone: a.pausa ? "danger" : "info", icon: a.pausa ? "ban" : "help", t: est },
+          ...(cpa.puedeApagar ? [{ type: "acts" as const, items: [a.pausa
+            ? { l: "Volver a permitirlas", v: "secondary", icon: "check", onClick: () => setConf({ titulo: "¿Por qué se vuelven a permitir?", sub: "El negocio puede volver a usarlas (si las tenía encendidas, El Compa contesta otra vez). El dueño recibe un aviso.", plantillas: ["Revisado: ya está bien.", "El negocio corrigió su nota."], hacer: (m) => compaAutoNegocio(n.id, false, m) }) }
+            : { l: "Apagar El Compa aquí", v: "secondary", icon: "ban", onClick: () => setConf({ titulo: "Apagar El Compa aquí", peligro: true, sub: "Las respuestas automáticas de este negocio dejan de salir; sus clientes vuelven a la respuesta de siempre. El dueño recibe el motivo y puede escribir a Soporte. Queda en el historial.",
+              plantillas: ["Reportaron respuestas que no eran de su página.", "La nota del dueño pide prometer cosas.", "Lo pidió el dueño por Soporte."], hacer: (m) => compaAutoNegocio(n.id, true, m) }) }] }] : []),
+        ];
+      })(),
     ]} />;
   } else if (tab === "soporte" && sop) {
     cuerpo = <SoporteDe360 casos={sop} vacio="Este negocio no ha escrito a Soporte desde su panel." />;

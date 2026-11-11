@@ -647,7 +647,10 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` pasan con El Compa apagado (`ayuda2i`, `cit3e`, `ayu4z` también al tope); guardián `compaHojaSinRomper`.
       Sigue sin marcar por Mensajes (7f), el modelo real y CI. — 7e (11 nov): **la parte del panel, hecha:** con el nivel «Panel del negocio», el
       canal, el negocio o la ciudad en pausa y al tope, Tu página, Hoy, Mensajes, Más y Clientes del panel son idénticas a las de antes y la sección
-      El Compa dice que no está (`compa7e`).
+      El Compa dice que no está (`compa7e`). — 7f (11 nov): **la parte de Mensajes, hecha:** con el nivel «Respuestas automáticas», el canal,
+      Hazleton o el negocio en pausa, al tope y con el plan Free, lo que recibe el cliente, su chat y Mensajes del negocio son idénticos (texto a
+      texto) a sin El Compa, con la respuesta fija de siempre (`compa7f`); `msg2p` pasa con El Compa apagado y al tope. Sigue sin marcar por el
+      modelo real y CI.
 - [x] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
       una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés). — 7d (10 nov): 0119 dos veces en local y en una
       base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7d` 140 ✓ (hoja en las 11 familias, fuente con enlace,
@@ -662,7 +665,13 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       repitiendo las acciones reales; origen cruzado; inyección en el texto y en una ayuda envenenada; tapado; límite; todo apagado y al tope =
       el panel idéntico); guardián `guiaDelPanelCompleta` + 6 ampliados, 36/36 al revés (`alreves7e`). Falta la corrida de CI (la hace la sesión
       principal).
-- [ ] Respuestas automáticas Pro (cuándo, temas, nota, prueba, registro, pasar al dueño, apagar desde el admin) y «Sugerir respuesta».
+- [x] Respuestas automáticas Pro (cuándo, temas, nota, prueba, registro, pasar al dueño, apagar desde el admin) y «Sugerir respuesta». — 7f (11 nov):
+      0121 aplicada dos veces en local y en una base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7f` (Pro las
+      enciende; fuera del horario contesta con la presentación y la página; dentro, nada; Free nunca; IDOR con un miembro sin Mensajes y otro
+      dueño; inyección del cliente sin modelo; nota envenenada frenada; el negocio ve y contesta; borrador sin envío; límite por conversación;
+      Pruébalo; Super Admin apaga en el negocio y en la conversación; reporte del cliente; el barrido retoma; todo apagado = Mensajes texto a
+      texto); guardianes `compaRespuestaAuto`, `borradorSoloBorrador`, `compaSiempreIAMensajes`, `ordenSinTexto` + 5 ampliados, 40/40 al revés
+      (`alreves7f`). Solo «fuera de tu horario» y el chat de To'Latino (10 min / siempre y WhatsApp/SMS en LAUNCH). Falta la corrida de CI.
 - [ ] Copiloto con el modelo mayor, solo borrador, con registro de uso.
 - [ ] WhatsApp y SMS contra simuladores: firma, idempotencia, identidad por teléfono verificado, acciones solo por enlace de un uso.
 - [ ] Super Admin: `ADM-COMPA` (Resumen, Conversaciones con «Marcar respuesta incorrecta» y lecturas anotadas, Negocios, Interruptores y tope), Soporte,

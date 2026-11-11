@@ -4,6 +4,7 @@ import { cambiarConfig } from "../config";
 import { db, tx } from "../db";
 import { estadoInterruptores, type EstadoInterruptores } from "./interruptores";
 import { motorActivo, type Motor, type Uso } from "./modelo";
+import { autoNegocios, type AutoNegocio } from "./respuesta-auto";
 import { gastoDelMes, type GastoMes } from "./tope";
 
 /* 7c · Super Admin › El Compa (ADM-COMPA): Interruptores y tope (hueco #3 de fase7-compa.md: GASTADO ESTE MES · TOPE · POR NIVEL · al tope pasa
@@ -110,19 +111,21 @@ export async function fichaConversacion(s: Staff, numero: string): Promise<Ficha
 /* 7e · Negocios 360° › El Compa (cifras, sin texto ni personas): lo que El Compa habló en el PANEL de ese negocio en 30 días — conversaciones,
    resolvió solo, a una persona (con caso de Soporte del negocio), «Ir a …» que la persona tocó, contestadas sin IA — y si El Compa está en pausa
    en ese negocio. compa:ver; el hilo sigue saliendo solo en la ficha anotada (compa:editar). */
-export type CompaNegocio = { conv30: number; porResultado: Record<string, number>; ir: number; sinIa: number; casos: number; pausa: { uso: string | null; motivo: string; at: string } | null };
+export type CompaNegocio = { conv30: number; porResultado: Record<string, number>; ir: number; sinIa: number; casos: number; pausa: { uso: string | null; motivo: string; at: string } | null;
+  auto: AutoNegocio | null; puedeApagar: boolean };   // 7f · respuestas automáticas de ese negocio y «Apagar El Compa aquí» (compa:aprobar)
 export async function compaDeNegocio(s: Staff, negocio: string): Promise<CompaNegocio | null> {
   if (!s.puede("compa", "ver") || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(String(negocio ?? ""))) return null;
-  const [K, A, P] = await Promise.all([
+  const [K, A, P, AU] = await Promise.all([
     db().query<{ r: string; n: number; sin_ia: number; casos: number }>(
       `select outcome as r, count(*)::int as n, count(*) filter (where not ai)::int as sin_ia, count(support_case_id)::int as casos from compa_conversations
         where business_id = $1 and use = 'owner' and started_at > now() - interval '30 days' group by outcome`, [negocio]),
     db().query<{ n: number }>(
       `select count(*)::int as n from compa_actions a join compa_conversations c on c.id = a.conversation_id
         where c.business_id = $1 and c.use = 'owner' and a.type = 'go_to_panel' and a.status = 'confirmed' and a.proposed_at > now() - interval '30 days'`, [negocio]),
-    estadoInterruptores(),
+    estadoInterruptores(), autoNegocios(negocio),
   ]);
   const p = P.pausas.find((x) => x.scope === "business" && x.donde === negocio && (!x.uso || x.uso === "owner")) ?? null;
   return { conv30: K.rows.reduce((t, x) => t + x.n, 0), porResultado: Object.fromEntries(K.rows.map((x) => [x.r, x.n])), ir: A.rows[0]?.n ?? 0,
-    sinIa: K.rows.reduce((t, x) => t + x.sin_ia, 0), casos: K.rows.reduce((t, x) => t + x.casos, 0), pausa: p ? { uso: p.uso, motivo: p.motivo, at: p.at } : null };
+    sinIa: K.rows.reduce((t, x) => t + x.sin_ia, 0), casos: K.rows.reduce((t, x) => t + x.casos, 0), pausa: p ? { uso: p.uso, motivo: p.motivo, at: p.at } : null,
+    auto: AU[0] ?? null, puedeApagar: s.puede("compa", "aprobar") };
 }

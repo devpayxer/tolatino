@@ -35,7 +35,7 @@ import type { CobrosPanel } from "@/lib/cobros";
 import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./MensajesPanel";
-import { compaBloques, type CpaPanel } from "./CompaPanel";
+import { compaBloques, type AutoPanel, type CpaPanel } from "./CompaPanel";
 import { citasBloques, modeloDetalle, servicioDetalle, serviciosBloques, sillasBloques } from "./Servicios";
 import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques } from "./Oficios";
 import { herramientaSPBloques } from "./SaludPro";
@@ -114,10 +114,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null;
 };
 
-export function Panel({ cpa, d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
+export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; cpaAuto?: AutoPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -158,7 +158,7 @@ export function Panel({ cpa, d, lang, ruta, modoPruebas, menu, ped, rsv, res, no
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -725,7 +725,7 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt")) ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: E2("Publica eventos: To’Latino los revisa antes de que salgan.", "Publish events: To’Latino reviews them before they go live."), onClick: () => c.go("evt") }] : []),
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
       // 7e · El Compa (DASH-COMPA, en Más como el prototipo): para todo miembro.
-      { icon: "help", t: "El Compa", s: E2("El asistente de IA: te explica tu panel y te lleva a la sección.", "The AI assistant: it explains your dashboard and takes you to the section."), onClick: () => c.go("cpa") },
+      { icon: "help", t: "El Compa", s: E2("El asistente de IA: te explica tu panel y te lleva a la sección; con Pro, contesta a tus clientes cuando tú no puedes.", "The AI assistant: it explains your dashboard and takes you to the section; with Pro, it replies to your clients when you can’t."), onClick: () => c.go("cpa") },
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },

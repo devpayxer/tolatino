@@ -1,5 +1,6 @@
 "use server";
 /* Mensajes del vecino: enviar, traer lo nuevo y reportar. Solo con sesión; el servidor revisa todo (lib/mensajes). */
+import { after } from "next/server";
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { enviarCliente, nuevosCliente, reportarChat, type Msj, type ResM } from "@/lib/mensajes";
 
@@ -8,7 +9,11 @@ export async function mensajeEnviar(negocio: string, texto: string, op?: string 
   if (!(await mismoOrigen())) return SIN;
   const u = await yo();
   if (!u) return SIN;
-  return enviarCliente(u.id, String(negocio ?? ""), texto, op ? String(op) : null);
+  const r = await enviarCliente(u.id, String(negocio ?? ""), texto, op ? String(op) : null);
+  // 7f · Si El Compa va a contestar (Pro, encendido, fuera del horario), contesta DESPUÉS de responder a la persona: nadie espera al modelo.
+  // Si esto no corre, el barrido lo retoma; si falla, sale la respuesta de siempre.
+  if (r.ok && r.compa && r.id) { const hilo = r.id; after(() => import("@/lib/compa/respuesta-auto").then((m) => m.contestarAuto(hilo)).catch(() => undefined)); }
+  return r;
 }
 export async function mensajesNuevos(hilo: string, desde: string): Promise<Msj[]> {
   if (!(await mismoOrigen())) return [];
