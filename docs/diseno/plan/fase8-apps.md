@@ -200,7 +200,7 @@ guarda, se genera** de `apps.json` + esta tabla en cada petición (con caché de
 - `feature_flags`: **`push.webpush` · `push.apns` · `push.fcm`** (sandbox encendidos; producción, Fase 9).
 - Plantillas nuevas: `puerta_abre` y `puerta_asignada` con push (LAUNCH L881), `rep_entrega_asignada` (Repartidor).
 
-**`llaves_acceso` (8d; el plan la ponía en 0128, que tomó 8e: será la siguiente libre)** — **`passkeys`** (`id`, `user_id`, `credential_id` único, `public_key`, `sign_count`, `aaguid`, `transports text[]`,
+**`0130 llaves_acceso` (8d; renumerada: el plan la ponía en 0128, que tomó 8e; la última confirmada era 0129 (8g), así que 8d tomó 0130, sin semilla. Construida además con `passkey_log` solo inserción, `sessions.via`/`passkey_id`, `users.llave_ofrecida_at`, el aviso `cuenta_llave_quitada` y los límites `passkey_retos_hora`/`passkey_fallos_hora`: ver REVISION «8d»)** — **`passkeys`** (`id`, `user_id`, `credential_id` único, `public_key`, `sign_count`, `aaguid`, `transports text[]`,
 `backed_up bool`, `name` («iPhone de Ana»), `created_via` (`app`, `platform`), `created_at`, `last_used_at`, **`revoked_at`**, `revoked_by check in
 ('user','staff','sistema')`), **`webauthn_challenges`** (`id`, `user_id` null, `purpose check in ('registro','entrar','confirmar')`, `challenge_hash`,
 `expires_at` (2 min), `used_at`; un uso), `account_changes.kind` suma **`'passkey'`**, plantilla `cuenta_llave_nueva` (crit: «Agregaste una llave de acceso
@@ -525,7 +525,13 @@ servicio de push cuando la red lo permita (si no, el simulador descifra y compar
 **Ayuda:** `avisos-en-tu-telefono` (vecino), `panel-avisos` (negocio), `admin-push` (equipo); `notificaciones` y `mi-cuenta` al día.
 
 ### 8d · Entrar con Face ID o huella (passkeys) en la web y en las apps, y el almacén del teléfono — **Opus/high**
-**Datos:** migración 0128.
+**Estado (11 nov): hecho en la web; TLLlave nativo compilado y apagado hasta 8b.** Migración **0130** (renumerada desde 0128; sin semilla).
+`@simplewebauthn/server` 14.0.3 fijo; la llave y el código abren la misma sesión (`lib/cuenta.ts` `abrirSesionEn`). `llave8d` 90 comprobaciones
+(390 y 1360, autenticador virtual de Chromium), 5 guardianes nuevos (`retoUnUso`, `llaveDeSuCuenta`, `passkeyNoSaltaBloqueo`, `clonSoloConFirma`,
+`llaveSoloDondeSePuede`) y 4 que ya cubren 8d (`libroSoloInsercion`, `nativoConRespaldo`, `pluginViejoNoRompe`, `accionesConAcceso`), 41/41 al revés.
+En el sandbox por HTTP en la IP no se ofrece (correcto); funciona sola con el dominio. `TLLocal` ya estaba completo desde 8a. Desvíos y lo diferido:
+`docs/REVISION.md` «8d» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8d».
+**Datos:** migración 0130 (el plan decía 0128).
 **Servidor:** `lib/llaves/` (`retoRegistro`, `registrar`, `retoEntrar`, `entrar` → la misma sesión de `lib/cuenta.ts`, `quitar`), límites de intentos,
 aviso `crit` al agregar; `TLLlave` nativo (iOS / Android) y `TLLocal` completo (lo usan las islas desde 8a).
 **Pantallas:** Entrar con «Usar mi llave de acceso» (si el dispositivo la ofrece), la hoja «Entra la próxima vez con Face ID / tu huella» después del

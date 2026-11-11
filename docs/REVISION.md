@@ -3937,3 +3937,64 @@ walletobjects v1 **fijado al commit be503e8 de googleapis/google-api-go-client**
 
 **Numeración:** el plan decía migración **0131**; la última confirmada era 0128 (8e) y la última semilla 0046: 8g tomó **0129** y la semilla
 **0047_pases.sql** (esa coincide). Anotado en el plan.
+
+### 8d · Entrar con Face ID o huella: llaves de acceso en la web (y TLLlave nativo, apagado hasta 8b) (11 nov)
+**Numeración:** migración **0130** (el plan decía 0128, que tomó 8e; la última confirmada era 0129) y **sin semilla** (una llave solo nace en un
+autenticador de verdad; la semilla no puede inventarla). Anotado en el plan.
+
+**Qué hay nuevo.** (1) **Entrar** (`/entrar`): debajo del teléfono, «O» y **«Usar mi llave de acceso»** (con el ícono de llave del sistema), solo si el
+servidor las ofrece aquí (entorno + interruptor + el origen de la página) **y** este dispositivo puede (contexto seguro + WebAuthn, o TLLlave en la app).
+Toca → Face ID / huella → dentro, sin SMS. (2) **La hoja «Entra la próxima vez con Face ID»** («con Touch ID» en Mac, «con tu huella» en Android) después
+del código, **una vez por cuenta** (el servidor la marca al decidir mostrarla), solo si el dispositivo guarda llaves; «Activar …» o «Ahora no». En una
+cuenta nueva sale después del nombre. (3) **Mi cuenta › Ajustes › Privacidad › Llaves de acceso**: cada llave con su dispositivo y la última vez,
+«SINCRONIZADA» si vive en la nube, **Quitar** (con confirmación) y «Agregar … en este dispositivo». (4) **Super Admin › Usuarios 360° › Seguridad ›
+LLAVES DE ACCESO**: dispositivo, app, agregada, última vez, entradas, las quitadas con quién y por qué; **Revocar** con motivo (aviso crit a la persona,
+auditoría). En Verificación, los cambios de llaves. (5) **Sistema › Equipo**: «con llave de acceso (N)» o «sin llave de acceso: solo SMS».
+(6) Aviso **crit** `cuenta_llave_nueva` al agregar una (SMS siempre + push privado; sin interruptor) y `cuenta_llave_quitada` cuando el equipo la revoca o
+el sistema la quita.
+
+**Probado:** `llave8d` **90** comprobaciones (390 y 1360) con el autenticador virtual de Chromium por CDP; `alreves8d` **41/41**; tsc, build y todos los
+guardianes; migración dos veces (local y base nueva, más las 54 semillas). Regresión: ver PROGRESS. CI «Cáscaras»: ver PROGRESS (TLLlave compilado en
+los 4 sabores y los 4 targets).
+
+**Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/`): `l8d-entrar-390.png`, `l8d-entrar-1360.png` (el botón), `l8d-hoja-390.png` y `l8d-hoja-1360.png` (la hoja),
+`l8d-hoja-listo-390.png`, `l8d-privacidad-390.png`, `l8d-privacidad-1360.png`, `l8d-privacidad-vacia-1360.png`, `l8d-quitar-390.png` (confirmar),
+`l8d-quitada-390.png` («Esa llave ya no entra…»), `l8d-admin-u360-1360.png`, `l8d-admin-revocar-1360.png`, `l8d-admin-equipo-1360.png`, y el caso del
+sandbox de hoy (HTTP en una IP): `l8d-ip-entrar-390.png` y `l8d-ip-privacidad-390.png` (sin botón; el SMS igual).
+**Huecos del diseño** (no hay pantallas de llaves en el diseño): la hoja se compuso como la hoja previa de permisos (velo, asa, `Icon` «key», título,
+una frase, `Button` primario y secundario); el botón de Entrar es el `Button` secundario del sistema con el ícono «key» bajo un separador «O» con el
+rótulo mono; Privacidad y el 360° usan `sec`/`rows`/`note` y `group`/`rows` del sistema.
+
+**Qué mirar en el teléfono (después del Paquete 8-0, con `https://pruebas.tolatino.com`):** en tu iPhone, Safari → Entrar con tu número y el código →
+sale «Entra la próxima vez con Face ID» → Activar → Face ID. Sal de la cuenta → «Usar mi llave de acceso» → Face ID → dentro sin código. Te llega el
+texto «Agregaste una llave de acceso…». En Mi cuenta › Privacidad la ves y la puedes quitar. Hoy, por HTTP en la IP, **no aparece nada** (es lo correcto).
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **Biblioteca vetada:** `@simplewebauthn/server` **14.0.3** (MIT, publicada el 25 sep; fija) para toda la verificación (origen, RP ID, reto, tipo,
+  presencia y verificación de la persona, firma, contador). Sus dependencias de ASN.1 se fijaron con `pnpm.overrides` a versiones de septiembre
+  (@peculiar/asn1-* 2.9.5, @peculiar/x509 2.1.0, asn1js 3.0.10) en vez de lo último de octubre. Algoritmos: EdDSA, ES256 y RS256, nada más. Sin
+  atestación (`none`): no se necesita saber la marca del teléfono.
+- **La verificación de la persona (Face ID / huella / PIN) es obligatoria** (`userVerification: required`) para registrar y para entrar.
+- **Una sola puerta de la sesión:** `lib/cuenta.ts` `abrirSesionEn` la usan el código y la llave (mismas revisiones, mismo orden, la misma sesión de
+  180 días; la sesión solo anota `via` = codigo | llave). Entrar con la llave cancela el borrado que pidió la persona, igual que el código.
+- **La llave tampoco entra** si el dispositivo o la sesión donde NACIÓ están bloqueados (una llave sincronizada no salta el bloqueo de un teléfono
+  robado), ni si el equipo **restableció la verificación** del teléfono. Además, **restablecer la verificación quita todas sus llaves** (si el equipo
+  cree que alguien entró, una llave agregada por esa persona tampoco debe servir). Cambio en una acción existente del 360°.
+- **Contador que retrocede:** solo si la **firma es buena** (se verifica otra vez sin el contador) se trata como copia: no entra y la llave se quita
+  sola con aviso. **Lo cazó `llave8d`:** la biblioteca revisa el contador ANTES que la firma, así que sin esa segunda verificación cualquiera que
+  supiera el id de una llave (no es secreto) podía mandar basura con un contador bajo y tumbar la llave de otra persona. Guardián `clonSoloConFirma`.
+- **Reto:** 32 bytes al azar, guardado solo como huella, vence en `passkey_reto_s` (120 s), atado al dispositivo (cookie `tl_dev`) y, para registrar, a
+  la cuenta; se gasta en una sola escritura atómica ANTES de verificar (un intento fallido también lo gasta). Un intento ajeno no le gasta el reto a nadie.
+- **Entrar sin escribir el teléfono** (llaves residentes, sin lista de llaves en el reto): la cuenta sale de la llave, nunca de lo que escriba alguien.
+  El userHandle es un HMAC del servidor (ni el id ni el teléfono).
+- **Agregar una llave no pide el código otra vez:** basta la sesión, y sale el aviso crit por SMS al teléfono verificado. Si prefieres que agregar
+  pida el código (como Borrar mi cuenta) cuando la sesión es vieja, se agrega.
+- **La hoja sale una vez por cuenta** (no por teléfono). Después, se agrega desde Privacidad.
+- **Límites (Configuración › Apps):** `passkey_retos_hora` 60 por dirección, `passkey_fallos_hora` 10 por dirección y por llave, `passkey_max` 10 por
+  cuenta (también en la base). Interruptor `cuenta.llaves` (encendido en el sandbox).
+- **RP ID y orígenes del entorno:** `PASSKEY_RP_ID` / `PASSKEY_ORIGENES` en el compose del sandbox (`pruebas.tolatino.com`, `https://pruebas.tolatino.com`);
+  producción pondrá `tolatino.com`. Solo https (o `http://localhost`) del dominio del RP ID. Mientras el sandbox sea HTTP en la IP, no se ofrece nada.
+- **TLLlave (nativo) compilado pero APAGADO** (`apps.json` `llaves.activas: false`): iOS con AuthenticationServices y Android con Credential Manager
+  (androidx.credentials 1.5.0). Necesita el dominio asociado (`webcredentials` en el AASA) y `get_login_creds` en assetlinks (8b), y en Android el
+  origen `android:apk-key-hash:…` de la llave de firma (8h). Hasta entonces la app no ofrece la llave (ni cae al WebAuthn del WebView).
+- **Equipo:** se ofrece y se ve en Sistema › Equipo; obligatoria para el equipo en la Fase 9 (LAUNCH L36), como dice el plan.

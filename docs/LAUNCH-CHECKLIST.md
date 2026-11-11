@@ -24,7 +24,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       del entorno, y `lib/cuenta.ts` → envío real (hoy lanza `sin_proveedor` fuera del modo pruebas).
       WhatsApp como canal del código después de SMS.
 - [ ] **Passkeys (Face ID / huella):** necesitan HTTPS y un dominio (WebAuthn no funciona sobre una IP con
-      http). Entran cuando `pruebas.tolatino.com` esté detrás de Cloudflare.
+      http). Construidas y probadas en 8d (11 nov); se usan cuando `pruebas.tolatino.com` esté detrás de Cloudflare (ver «Fase 8 · 8d»).
 - [ ] **Onboarding del vecino pasos 3–5** (Tu zona, Lo que te gusta, El barrio) y la bienvenida de Fundadores:
       hoy después de «Tú» se va a Mi cuenta mínima.
 - [ ] **Accesibilidad de `Button` del sistema:** es un `div` con onClick (no se enfoca con teclado ni lo anuncia
@@ -1305,3 +1305,20 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
       2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov)
 - [ ] **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov)
+
+## Fase 8 · 8d (entrar con Face ID o huella: llaves de acceso; 11 nov)
+- [ ] **Solo después del Paquete 8-0 (dominio con HTTPS):** las llaves no se pueden usar en el sandbox por HTTP en la IP (el navegador no da WebAuthn
+      sin contexto seguro; la app no ofrece nada). Con `https://pruebas.tolatino.com`: probar en el iPhone del fundador (Safari) registrar, salir y entrar
+      con Face ID, y quitarla. `PASSKEY_RP_ID` / `PASSKEY_ORIGENES` ya están en el compose. (8d, 11 nov)
+- [ ] **TLLlave en las apps (8b + 8h):** el plugin compila en las 4 apps (CI) pero está apagado (`apps.json` → `llaves.activas: false`). Para
+      encenderlo: (1) 8b sirve `/.well-known/apple-app-site-association` con `webcredentials` de los cuatro IDs y `assetlinks.json` con
+      `delegate_permission/common.get_login_creds`; (2) cada target de iOS lleva `com.apple.developer.associated-domains` = `webcredentials:pruebas.tolatino.com`
+      (capacidad en el App ID, 8h); (3) 8h suma a `PASSKEY_ORIGENES` el origen `android:apk-key-hash:<sha256 de la llave de firma>` (la de subida y la de
+      Play App Signing); (4) `activas: true` y probar en el simulador de iOS (a verificar que ofrece passkeys con dominio asociado) y en el emulador con
+      un perfil de Google. (8d, 11 nov)
+- [ ] **Passkeys obligatorias para el equipo (T#30):** hoy se ofrecen y Sistema › Equipo dice quién la tiene; exigirla para entrar al Super Admin es
+      la Fase 9 (ver «Super Admin (bloque 3c)» L36). (8d, 11 nov)
+- [ ] **El borrado definitivo a los 30 días (L314)** no corre todavía; cuando corra, sus llaves quedan quitadas con la cuenta (hoy una cuenta borrada
+      ya no entra con llave: lo revisa `abrirSesionEn`). (8d, 11 nov)
+- [ ] **Nombres de los administradores de llaves (AAGUID):** la lista corta de `lib/llaves/llaves.ts` (iCloud Keychain, Google Password Manager, Windows
+      Hello, Samsung Pass, 1Password, Bitwarden) es solo para el nombre que se muestra; revisarla contra la lista pública el día del lanzamiento. (8d, 11 nov)

@@ -27,7 +27,8 @@ cuenta._
 - **Avisos:** qué te llega (pedidos, reservas, empleos, negocios que guardas, correo) y horas de silencio. Se guarda hoy y
   se aplica cuando salgan los avisos.
 - **Ajustes:** idioma (cambia la pantalla y el idioma de la cuenta), **Mi ciudad** (cada 30 días, solo a una ciudad
-  abierta), avisos, **Privacidad** (quién ve tu teléfono y tus sesiones abiertas, con «Cerrar» para las otras, y **El Compa**: qué ve la IA de
+  abierta), avisos, **Privacidad** (quién ve tu teléfono, tus **llaves de acceso** —Face ID o tu huella, con su dispositivo y la última vez;
+  «Agregar» y «Quitar», `entrar-con-face-id.md`—, tus sesiones abiertas, con «Cerrar» para las otras, y **El Compa**: qué ve la IA de
   la ayuda y quién lo lee, `privacidad-de-el-compa.md`), tu negocio
   o publícalo, cerrar sesión y **Borrar mi cuenta**.
 - **Invita vecinos:** WhatsApp, mensaje, copiar o compartir el enlace de To'Latino.
@@ -47,11 +48,17 @@ cuenta._
 | Borrar mi cuenta | 3 pasos con código a tu teléfono. Queda programado a 30 días; arriba en Mi cuenta sale la fecha. |
 | Entrar antes de los 30 días, o «Cancelar el borrado» | Se cancela. Si el borrado lo programó To'Latino, solo Soporte lo cancela. |
 | Cerrar una sesión | Ese dispositivo tiene que entrar otra vez. La sesión de este dispositivo no se cierra desde aquí. |
+| Agregar una llave de acceso | Te mandamos un aviso por texto. Solo aparece «Agregar» si este dispositivo puede guardar llaves y la página es segura (https). |
+| Quitar una llave de acceso | Ese dispositivo ya no entra con Face ID o la huella; sigue entrando con el código. |
+| Entrar con tu llave antes de los 30 días de borrar la cuenta | El borrado se cancela, igual que con el código. |
 
 ## Preguntas frecuentes
 **¿Por qué no me llegan los avisos al teléfono?** Revisa Mi cuenta › Avisos › **En este teléfono**: enciende «Avisos en este teléfono». Si
 dice que no están disponibles aquí, te dice por qué (por ejemplo, en el iPhone hace falta agregar To'Latino a la pantalla de inicio desde
 Safari). Mientras, todo te llega en la campana y, cuando aplica, por texto.
+
+**¿Puedo entrar sin esperar el código?** Sí, con una llave de acceso (Face ID o tu huella): actívala en Mi cuenta › Ajustes › Privacidad ›
+Llaves de acceso. Ver `entrar-con-face-id.md`.
 
 **¿Quién ve mi teléfono?** Solo el negocio de tu pedido, reservación o solicitud, y solo mientras dura.
 
@@ -87,7 +94,7 @@ orders, bookings and interviews, things waiting on you, your local support this 
 updates), Reviews (written and to write), Jobs (your applications), Profile (photo, name, nickname, email saved as not
 verified until emails exist; change your phone number with a code sent to the new number), Notifications («On this phone»: turn on push
 notifications here, see your phones with notifications and turn one off; each type applies to push and text messages), Settings (language, your city every 30 days and only open cities, privacy with your
-open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
+passkeys (Face ID or fingerprint: add, see the device and last use, remove; we text you when one is added) and your open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
 three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
 
 ### Help

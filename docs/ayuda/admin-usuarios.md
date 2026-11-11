@@ -14,6 +14,9 @@ equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
   - **Seguridad:** dispositivos y sesiones (cerrar una, cerrar todas, bloquear o desbloquear un dispositivo), otras
     cuentas que entraron desde el mismo dispositivo, verificación del teléfono (restablecer), cambios de teléfono, y su
     ciudad con el historial y «Cambiar ciudad».
+    **Llaves de acceso** (Face ID / huella): cada llave con su dispositivo y la app donde nació, cuándo se agregó, la última vez, cuántas
+    entradas y si está sincronizada; las quitadas dicen quién (la persona, el equipo o el sistema) y por qué. **Revocar** pide motivo, le avisa
+    a la persona por texto y en la app, y queda en la auditoría. En Verificación salen los cambios de llaves.
     Cada dispositivo dice desde dónde entró: «Web» o la app, su versión y el sistema (por ejemplo «To'Latino Puerta 1.0.0 (12) · iOS 17.5»). Es solo informativo: la app nunca cambia lo que la persona puede hacer.
   - **Confianza:** su estado, cada sanción (vigente, terminó o levantada, con su motivo y quién) y las fotos que reportó.
   - **Privacidad:** exportar sus datos (archivo JSON, para un pedido de privacidad).
@@ -46,9 +49,10 @@ equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 | Suspender 14 días | usr · retirar | Se cierran sus sesiones. Al intentar entrar ve «suspendida hasta el {fecha}» y el motivo. Se levanta sola. |
 | Banear | usr · retirar y rol Admin | Se cierran sus sesiones; no puede entrar. Ve el motivo al intentar entrar. |
 | Levantar | usr · retirar | Termina las sanciones vigentes; la cuenta vuelve a activa. |
-| Cerrar sesión / Cerrar todas | usr · editar | Entra otra vez con el código por SMS en ese dispositivo (o en todos). |
+| Cerrar sesión / Cerrar todas | usr · editar | Entra otra vez en ese dispositivo (o en todos), con el código por SMS o con su llave de acceso. |
+| Revocar una llave de acceso | usr · editar | Esa llave ya no entra; sigue entrando con el código y puede agregar otra. Recibe un aviso (texto y app) con «la quitó el equipo de To'Latino». |
 | Bloquear dispositivo | usr · retirar | Ninguna cuenta entra desde ese dispositivo; se cierran todas sus sesiones. No se bloquea el dispositivo desde el que trabajas. |
-| Restablecer verificación | usr · editar | Se cierran sus sesiones y al entrar le pedimos el código otra vez. |
+| Restablecer verificación | usr · editar | Se cierran sus sesiones, **se quitan sus llaves de acceso** y al entrar le pedimos el código otra vez (la llave no lo salta). |
 | Cambiar ciudad | usr · editar | Se salta la regla de 30 días. Si la ciudad no ha abierto, queda en su lista de espera. |
 | Quitar foto de perfil | usr · editar | Sale la foto; queda el motivo. |
 | Borrar datos | usr · editar | Entra a Cambios sensibles. **Otra persona** lo aplica: la cuenta no puede entrar y tiene 30 días de gracia; un Admin la puede restaurar. |
@@ -90,13 +94,15 @@ and following · Points and coins · Coupons and referrals (no El Patio). The us
 
 Users lists every account in your cities (search by name, phone, email or id; who, status, more filters, sort; 14 per
 page). The 360° has Overview (phone and verification, email, city, role, since, last seen, devices, internal notes,
-their businesses, actions), Security (devices and sessions: sign out one or all, block or unblock a device; accounts
+their businesses, actions), Security (devices and sessions: sign out one or all, block or unblock a device; passkeys
+with device, last use and number of sign-ins, revoke one with a reason (the person is notified, audited); accounts
 on the same device; reset phone verification; city with history and "Change city"), Trust (status, every sanction
 with its reason and who, photos they reported) and Privacy (export their data as JSON). Sanctions: warning (no
 restriction, shown in My account), mute 7 days / block posting 30 days (cannot send recommendations; lifts
 automatically), suspend 14 days (sessions closed; sees "suspended until {date}" and the reason when signing in; lifts
 automatically), ban (Admin only). "Delete data" goes to Sensitive changes and another person applies it: the account
-cannot sign in and has 30 grace days; an Admin can restore it. Nobody sanctions or deletes themselves; team members
+cannot sign in and has 30 grace days; an Admin can restore it. Resetting phone verification also removes their passkeys. A passkey never
+bypasses a suspension, a ban or a blocked device. System › Team shows whether each team member has a passkey. Nobody sanctions or deletes themselves; team members
 must lose their role first. Every action asks for a reason and is audited. Moderation notices are not texted: the person
 sees them in the bell and in My account › Moderation notices, where they can appeal.
 

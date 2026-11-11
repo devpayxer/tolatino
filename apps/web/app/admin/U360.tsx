@@ -124,7 +124,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         <PanelBloques bloques={[{ type: "group", k: `LLAVES DE ACCESO · ${u.llaves.filter((x) => !x.revocada).length} ${u.llaves.filter((x) => !x.revocada).length === 1 ? "VIVA" : "VIVAS"}` }]} />
         {u.llaves.length ? <PanelBloques bloques={[{ type: "rows", items: u.llaves.map((k) => ({
           key: `llave-${k.id}`, icon: "key", t: `${k.nombre} · ${PUSH_APP[k.app] ?? k.app}${k.plat === "web" ? "" : ` (${k.plat === "ios" ? "iOS" : "Android"})`}`,
-          s: `Agregada ${fecha(k.creada)} · ${k.usada ? `última vez ${haceUsr(k.usada)} · ${k.usos} ${k.usos === 1 ? "entrada" : "entradas"}` : "sin usar todavía"}${k.sync ? " · sincronizada" : ""}${k.revocada ? ` · ${LLAVE_POR[k.por ?? ""] ?? k.por} ${fecha(k.revocada)}${k.motivo ? ` (${k.motivo})` : ""}` : ""}`,
+          s: `Agregada ${fecha(k.creada)} · ${k.usada ? `última vez ${fecha(k.usada)} · ${k.usos} ${k.usos === 1 ? "entrada" : "entradas"}` : "sin usar todavía"}${k.sync ? " · sincronizada" : ""}${k.revocada ? ` · ${LLAVE_POR[k.por ?? ""] ?? k.por} ${fecha(k.revocada)}${k.motivo ? ` (${k.motivo})` : ""}` : ""}`,
           tag: k.revocada ? "QUITADA" : "VIVA", tone: k.revocada ? "neutral" : "signal", dim: !!k.revocada,
           acts: P.editar && !k.revocada && !borrada ? [{ l: "Revocar", icon: "ban", onClick: () => setConf({ titulo: `Revocar la llave de ${k.nombre}`, sub: "Ya no entra con esa llave (Face ID o huella). Sigue entrando con el código por SMS y puede agregar otra. Le avisamos por SMS y en la app.", peligro: true,
             plantillas: ["Teléfono perdido o robado", "Lo pidió la persona", "Posible acceso de otra persona"], hacer: (m) => llaveRevocar(u.id, k.id, m) }) }] : undefined,

@@ -55,6 +55,13 @@ red_en_vivo() { # $1 = app, $2 = dónde
   echo "$1 · $2 · eventos de red: $r"
   [ "$r" = '"ok"' ] || { echo "✗ $1 ($2): la página no recibió online y después offline ($r)"; fallo=1; }
 }
+# 8d · TLLlave (llaves de acceso con Credential Manager): está en la app, carga, y mientras apps.json diga `llaves.activas: false` (antes del
+# dominio, 8b) responde que NO se ofrece y rechaza cualquier pedido sin abrir ningún diálogo del sistema (nunca un botón roto).
+llave() { # $1 = app
+  local r; r=$(node "$DIR/cdp.mjs" 9222 eval "$(cat "$DIR/humo/llave.js")")
+  echo "$1 · TLLlave: $r"
+  [ "$r" = '"{\"plugin\":true,\"disponible\":{\"entrar\":false,\"plataforma\":false},\"obtener\":\"opciones\"}"' ] || { echo "✗ $1: TLLlave no está, no carga o responde algo distinto de «apagada» ($r)"; fallo=1; }
+}
 for par in $APPS; do
   IFS=: read -r s id isla tllocal <<< "$par"
   adb logcat -c || true
@@ -75,6 +82,7 @@ for par in $APPS; do
   red_pagina "$s" "página local" false
   if [ -n "$isla" ]; then grep -q "funciona sin señal\|works offline" <<< "$t" || { echo "✗ $s: «Sin señal» no ofrece la isla de la app"; fallo=1; }; fi
   marco "$s" "página local"
+  llave "$s"
   if [ -n "$isla" ]; then
     node "$DIR/cdp.mjs" 9222 ir "$isla.html" > /dev/null
     t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · isla · $t"
