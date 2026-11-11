@@ -10,6 +10,7 @@ import type { OpcionesPlan } from "@/lib/planes";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { HojaCasa, casaMeta, compatCasa, useOficio } from "../Oficios";
 import { empezarElPlan } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +31,7 @@ export function Plan({ op, svcId, o, es, yo, pago }: { op: OficiosPublico; svcId
   const [dow, setDow] = useState(o.dias[0]?.dow ?? null), [fi, setFi] = useState(0), [nota, setNota] = useState(""), [acceso, setAcceso] = useState("");
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const dia = o.dias.find((d) => d.dow === dow) ?? null, fecha = dia?.fechas[fi] ?? null;
   const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `${DL.es[d.getUTCDay()]} ${d.getUTCDate()} ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const win = dia ? `${hL(dia.m)}–${hL(dia.m + 120)}` : "";

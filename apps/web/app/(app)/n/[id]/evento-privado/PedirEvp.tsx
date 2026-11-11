@@ -9,6 +9,7 @@ import { useRef, useState, type ComponentType } from "react";
 import { AREAS_EVP, OCASIONES, PRESUPUESTOS, dinero, horaL, lbl } from "@/lib/evento-privado-comun";
 import type { PaginaEvp } from "@/lib/evento-privado";
 import { pedirEvpAccion } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "IconButton" | "AddOnRow" | "DepositNote" | "BusinessRow";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,7 +29,7 @@ export function PedirEvp({ x, es, p0 }: { x: PaginaEvp; es: boolean; p0: number 
   const [area, setArea] = useState(areas[0] ?? "salon"), [dia, setDia] = useState(x.desde), [h, setH] = useState<number | null>(null), [dur, setDur] = useState(3);
   const [menu, setMenu] = useState(a.menus[0]?.k ?? ""), [bud, setBud] = useState("30"), [ext, setExt] = useState<string[]>([]), [nota, setNota] = useState("");
   const [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const B = x.negocio.nombre;
   const dias = Array.from({ length: 14 }, (_, k) => sumar(x.desde, k)).map((d) => ({ id: d, dow: DOW[es ? "es" : "en"][new Date(`${d}T12:00:00Z`).getUTCDay()], num: String(Number(d.slice(8))) }));
   const lejos = dias.some((d) => d.id === dia) ? "" : dia;

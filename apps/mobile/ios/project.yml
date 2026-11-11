@@ -14,6 +14,8 @@ packages:
     path: ../node_modules/@capacitor/app
   CapacitorAppLauncher:
     path: ../node_modules/@capacitor/app-launcher
+  CapacitorPushNotifications:
+    path: ../node_modules/@capacitor/push-notifications
   CapacitorSplashScreen:
     path: ../node_modules/@capacitor/splash-screen
   CapacitorStatusBar:
@@ -47,6 +49,10 @@ targets:
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-reporte/ios
+    entitlements:
+      path: Targets/ToLatino/ToLatino.entitlements
+      properties:
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.app
@@ -60,6 +66,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
   ToLatinoNegocios:
@@ -76,6 +83,10 @@ targets:
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-reporte/ios
+    entitlements:
+      path: Targets/ToLatinoNegocios/ToLatinoNegocios.entitlements
+      properties:
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.negocios
@@ -89,6 +100,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
   ToLatinoRepartidor:
@@ -105,6 +117,10 @@ targets:
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-reporte/ios
+    entitlements:
+      path: Targets/ToLatinoRepartidor/ToLatinoRepartidor.entitlements
+      properties:
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.repartidor
@@ -118,6 +134,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
   ToLatinoPuerta:
@@ -135,6 +152,10 @@ targets:
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-reporte/ios
+    entitlements:
+      path: Targets/ToLatinoPuerta/ToLatinoPuerta.entitlements
+      properties:
+        aps-environment: development
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.tolatino.puerta
@@ -148,6 +169,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
 schemes:

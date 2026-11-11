@@ -13,6 +13,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, depositoVer, useOficio, vehMeta, vehName } from "../Oficios";
 import { horasDeVisita, pedirVisita } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,7 +42,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
   const [acceso, setAcceso] = useState<"casa" | "llave">("casa"), [accNota, setAccNota] = useState(""), [landlord, setLandlord] = useState(false), [piezas, setPiezas] = useState(false), [sms, setSms] = useState(true);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : ""), fileRef = useRef<HTMLInputElement>(null);
+  const clave = useRef(uuid()), fileRef = useRef<HTMLInputElement>(null);
   const q = useMemo(() => ({ svc: svcId, opts: inicial.opts, adds: inicial.adds, z: inicial.z, w: inicial.w }), [svcId, inicial]);
   const tam = v.veh?.size ?? null;
   useEffect(() => { let vivo = true; setCargando(true); void horasDeVisita(op.negocio.id, q, i, tam).then((x) => { if (!vivo) return; setHoras(x); setCargando(false); if (x && i === 0 && !x.sl.some((h) => h.free) && x.sig) setI(x.sig.i); }); return () => { vivo = false; }; }, [op.negocio.id, q, i, tam]);
@@ -88,7 +89,7 @@ export function Visita({ op, svcId, inicial, es, pago, yo, pre = null }: {
     if (r.ok) { router.push(`/cita/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
-    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = crypto.randomUUID(); }
+    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("hora" in r && r.hora) { setH(null); setPaso(1); void horasDeVisita(op.negocio.id, q, i, tam).then(setHoras); }
   };
   const sigue = () => { if (!okPaso) return; if (paso === 2) return void enviar(); setPaso(paso + 1); window.scrollTo({ top: 0 }); };

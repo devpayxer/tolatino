@@ -15,6 +15,7 @@ import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNue
 import { compaHilo } from "./acciones-compa";
 import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
+import { uuid } from "@/lib/uuid";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -238,7 +239,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       else acts = [
         { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su cita; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver", plantillas: cp ? [cp.borrador, ...plant] : plant, ini: cp?.borrador, hacer: (m) => decidirSop(k.id, m, null, null, cp?.id ?? null) }) },
         ...copAct,
-        ...(dinero && h.pago > 0 ? [{ l: "Resolver y devolver", v: "secondary", icon: "card", onClick: () => { const clave = crypto.randomUUID(); setConf({ titulo: `Resolver y devolver · ${h.k === "tickets" ? "orden" : "cita"} ${h.num}`, cta: "Resolver y devolver", peligro: true,
+        ...(dinero && h.pago > 0 ? [{ l: "Resolver y devolver", v: "secondary", icon: "card", onClick: () => { const clave = uuid(); setConf({ titulo: `Resolver y devolver · ${h.k === "tickets" ? "orden" : "cita"} ${h.num}`, cta: "Resolver y devolver", peligro: true,
           sub: h.k === "tickets" ? `Hasta ${usd(h.pago)} (lo cobrado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; los boletos siguen valiendo (para quitarlos, se cancelan o se devuelven desde la orden).` : `Hasta ${usd(h.pago)} (el depósito pagado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; la comisión baja en proporción.`,
           valor: { k: "MONTO EN DÓLARES", ini: ((Math.min(h.amount ?? h.pago, h.pago)) / 100).toFixed(2), max: 8 }, plantillas: cp ? [cp.borrador, ...plant] : plant, hacer: (m, _e, v) => decidirSop(k.id, m, v, clave, cp?.id ?? null) }); } }] : []),
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },

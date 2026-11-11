@@ -6,9 +6,9 @@
    Permissions API del navegador; los Ajustes no se pueden abrir desde la web (devuelve false y la pantalla dice dónde están). */
 import { plugin } from "./puente";
 
-export type Permiso = "camara" | "ubicacion";
+export type Permiso = "camara" | "ubicacion" | "avisos";
 export type EstadoPermiso = "concedido" | "negado" | "preguntar";
-const NOMBRE: Record<Permiso, string> = { camara: "camera", ubicacion: "geolocation" };
+const NOMBRE: Record<Permiso, string> = { camara: "camera", ubicacion: "geolocation", avisos: "notifications" };
 
 export async function estadoPermiso(p: Permiso): Promise<EstadoPermiso> {
   try {

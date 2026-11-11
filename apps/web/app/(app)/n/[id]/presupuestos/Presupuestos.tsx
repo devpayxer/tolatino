@@ -10,6 +10,7 @@ import type { CandPq } from "@/lib/solicitudes";
 import { subirFoto } from "@/lib/subir-foto";
 import { HojaCasa, casaMeta, compatCasa, useOficio } from "../Oficios";
 import { pedirPresupuestos } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +27,7 @@ export function Presupuestos({ op, svcId, cands, es, yo }: { op: OficiosPublico;
   const [areas, setAreas] = useState<string[]>([]), [nota, setNota] = useState(""), [medidas, setMedidas] = useState("");
   const [sel, setSel] = useState<string[]>(cands.filter((c) => c.id === op.negocio.id && c.ok).map((c) => c.id));
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(uuid());
   const cp = compatCasa(op, v.casa, es);
   const miss = [!v.casa ? E2("Agrega tu casa", "Add your home") : null, !sel.length ? E2("Elige al menos un negocio", "Pick at least one business") : null,
     !fotos.length ? E2("Agrega al menos una foto", "Add at least one photo") : null, nota.trim().length < 10 ? E2("Cuéntales qué quieres hacer", "Tell them what you want done") : null].filter(Boolean) as string[];

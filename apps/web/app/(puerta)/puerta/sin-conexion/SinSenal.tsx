@@ -12,9 +12,9 @@ import { avisoSinSenal, EstadoPuerta, horaLista } from "./Estado";
 import * as L from "./local";
 import { usePuertaLocal } from "./usePuertaLocal";
 import { enIsla, irAlServidor } from "@/lib/nativo/puente";
+import { uuid } from "@/lib/uuid";
 
 type Guardada = { s: string; titulo: string; puerta: string; negocio: string; n: number; lista: string; tz: string; reentrada: boolean; libre: boolean };
-const uuid = () => crypto.randomUUID();
 
 export function SinSenal() {
   const [es, setEs] = useState(true), [G, setG] = useState<Guardada[] | null>(null), [sel, setSel] = useState<string | null>(null), [cerro, setCerro] = useState(false);

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
 import { ordenBoletos } from "@/lib/boletos";
+import { MomentoAvisos } from "@/app/_cascara/HojaPermiso";
 import { idioma } from "@/lib/idioma";
 import { Orden } from "./Orden";
 
@@ -16,5 +17,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!o) notFound();
   // 6e · Cancelado por el organizador, cambió de fecha (y la elección) y sus avisos.
   const cambio = await (await import("@/lib/evt-cambios")).cambioOrden(u.id, o.numero);
-  return <Orden o={o} es={lang === "es"} cambio={cambio} />;
+  // 8c · El primer boleto: el momento útil para ofrecer los avisos (cambios del evento, recordatorios).
+  return <><Orden o={o} es={lang === "es"} cambio={cambio} /><MomentoAvisos es={lang === "es"} /></>;
 }

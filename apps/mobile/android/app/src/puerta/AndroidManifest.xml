@@ -3,6 +3,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
-    <application android:usesCleartextTraffic="false" />
+    <application android:usesCleartextTraffic="false">
+        <!-- 8c · Firebase solo para los avisos (FCM): sin token hasta que la persona dice que sí, y sin analítica de Firebase. -->
+        <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+    </application>
 </manifest>

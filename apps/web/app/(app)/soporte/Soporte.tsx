@@ -11,6 +11,7 @@ import type { CasoFila, CasoVecino, MsjVecino, OpSop } from "@/lib/soporte";
 import { CON_OPERACION, ESTADO_VECINO, TEMAS, horarioEquipo, type Tema } from "@/lib/soporte-comun";
 import { subirFotoPrivada } from "@/lib/subir-foto";
 import { casoAbrir, casoCalificar, casoEscribir, casoResuelto } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const C = UI as unknown as Record<"Button" | "IconButton" | "Icon" | "Tag" | "RequestCard" | "Chip", ComponentType<any>>;
@@ -24,7 +25,7 @@ function useAncho() {
   return w;
 }
 const corta = (t: string, n: number) => (t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t);
-const nuevaClave = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16).padStart(8, "0")}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, "0")}`);
+const nuevaClave = () => (uuid());
 
 export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horario, caso, casoPedido, pre, compa = false }: {
   es: boolean; conSesion: boolean; negocio: { id: string; name: string } | null; temas: Tema[]; casos: CasoFila[]; ops: OpSop[];

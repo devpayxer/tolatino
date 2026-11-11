@@ -11,6 +11,7 @@ import { compat, nombreSeguro, precioSalud, type SeguroRef } from "@/lib/salud-c
 import type { SaludPublico } from "@/lib/salud-publico";
 import { SaSeguro, useSalud } from "../Salud";
 import { horasDeConsulta, pedirConsulta } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +35,7 @@ export function Consulta({ sa, svcId, con0, seg0, es, yo }: { sa: SaludPublico; 
   const [para, setPara] = useState<string>(""), [why, setWhy] = useState<string | null>(null), [nota, setNota] = useState("");
   const [con, setCon] = useState(con0), [paso, setPaso] = useState(0), [i, setI] = useState(0), [hSel, setH] = useState<number | null>(null), [H, setHoras] = useState<HorasSalud | null>(null), [cargando, setCargando] = useState(true);
   const [interp, setInterp] = useState(false), [sms, setSms] = useState(true), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   useEffect(() => { let vivo = true; setCargando(true); void horasDeConsulta(sa.negocio.id, s.id, con, i).then((x) => { if (!vivo) return; setHoras(x); setCargando(false); if (x && i === 0 && !x.sl.some((h) => h.free) && x.sig) setI(x.sig.i); }); return () => { vivo = false; }; }, [sa.negocio.id, s.id, con, i]);
   // Al volver de «Tu seguro» con uno nuevo, queda elegido.
   useEffect(() => { if (v.seg && v.seg.cuenta) setSegSel(v.seg.id); }, [v.seg]);

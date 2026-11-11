@@ -10,6 +10,7 @@ import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosA
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
 import { hoyCitas } from "./Citas";
+import { uuid } from "@/lib/uuid";
 
 export type PedPanel = {
   hoy?: Awaited<ReturnType<typeof pedidosHoy>>; lista?: Awaited<ReturnType<typeof pedidosLista>>; f?: FiltroPed; q?: string;
@@ -133,7 +134,7 @@ export function pedidoDetalle(c: Ctx): Sec {
   // Tarjeta: devolver dinero (solo el dueño). La comisión baja en proporción; el cliente recibe el aviso.
   const pg = x.pago, puedeDev = !!pg && (pg.estado === "captured" || pg.estado === "partially_refunded") && (c.d.kind === "owner" || c.d.partes.includes("all"));
   if (pg && pg.devuelto) out.push({ type: "note", tone: "info", icon: "dollar", t: E2(`Devueltos ${money(pg.devuelto)} de ${money(pg.monto)} a la tarjeta del cliente.`, `${money(pg.devuelto)} of ${money(pg.monto)} refunded to the client's card.`) });
-  if (puedeDev && !c.ui.dev) out.push({ type: "acts", items: [{ l: E2("Devolver dinero", "Refund money"), v: "secondary", icon: "dollar", onClick: () => c.setUi({ dev: { n: ((pg!.monto - pg!.devuelto) / 100).toFixed(2), m: "", k: crypto.randomUUID() } }) }] });
+  if (puedeDev && !c.ui.dev) out.push({ type: "acts", items: [{ l: E2("Devolver dinero", "Refund money"), v: "secondary", icon: "dollar", onClick: () => c.setUi({ dev: { n: ((pg!.monto - pg!.devuelto) / 100).toFixed(2), m: "", k: uuid() } }) }] });
   if (puedeDev && c.ui.dev) {
     const dv = c.ui.dev as { n: string; m: string; k: string }, cents = Math.round((parseFloat(dv.n) || 0) * 100), max = pg!.monto - pg!.devuelto;
     out.push({ type: "group", k: E2("DEVOLVER DINERO", "REFUND MONEY") });

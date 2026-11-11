@@ -261,7 +261,9 @@ const guardianes = {
      puede sumar otra: di dónde lo ve la persona dentro de To'Latino. */
   promesaSms() {
     const ANOTADOS = new Set(["apps/web/app/(app)/reserva/[num]/Estado.tsx", "apps/web/app/(app)/CiudadSelector.tsx", "apps/web/app/(app)/n/[id]/reservar/Detalles.tsx",
-      "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx"]);
+      "apps/web/app/panel/Equipo.tsx", "apps/web/app/panel/acciones-equipo.ts", "apps/web/lib/textos.ts", "apps/web/app/panel/Menu.tsx", "apps/web/app/(app)/n/[id]/apartar/Apartar.tsx",
+      // 8c · Mi cuenta › Avisos explica el SMS de respaldo del push (sale con Telnyx; anotado en LAUNCH-CHECKLIST «Fase 8 · 8c»).
+      "apps/web/app/(app)/cuenta/avisos/Avisos.tsx", "apps/web/app/admin/IntegracionesPush.tsx", "apps/web/lib/push/admin.ts", "apps/web/app/admin/Notificaciones.tsx", "apps/web/app/admin/U360.tsx"]);
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || ANOTADOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
@@ -558,7 +560,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts"]); // 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts"]); // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -5076,7 +5078,8 @@ const guardianes = {
       if (a.permisos.ubicacion === "entrega" && a.key !== "delivery") falla(G, J, 0, `${a.key}: la ubicación de fondo es solo del Repartidor`);
       if (a.permisos.ubicacion === "siempre") falla(G, J, 0, `${a.key}: nunca ubicación «siempre»`);
       const mf = `apps/mobile/android/app/src/${a.sabor}/AndroidManifest.xml`, t = existsSync(mf) ? readFileSync(mf, "utf8") : "";
-      const ok = new Set([...(A.androidComun ?? []).filter((p) => p in COMUNES), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])]);
+      // 8c · Avisos: POST_NOTIFICATIONS (Android 13+) solo en la app que lleva el plugin de avisos.
+      const ok = new Set([...(A.androidComun ?? []).filter((p) => p in COMUNES), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []), ...(a.plugins.includes("PushNotifications") ? ["android.permission.POST_NOTIFICATIONS"] : [])]);
       for (const m of t.matchAll(/uses-permission(?:-sdk-23)? android:name="([^"]+)"/g)) {
         if (NUNCA.test(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no se pide (§3.6)`);
         else if (!ok.has(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no lo usa esta app`);
@@ -5243,6 +5246,171 @@ const guardianes = {
       if (!/raise exception 'store_secret_reads es solo de inserción'/.test(ultimaFn("store_secret_reads_antes"))) falla(G, M, 0, "store_secret_reads es de solo inserción (trigger)");
       if (!/raise exception 'una llave del llavero no se borra/.test(ultimaFn("store_secrets_antes"))) falla(G, M, 0, "una llave no se borra: se retira");
     }
+  },
+
+  /* ── 8c · Avisos push propios (fase8-apps.md §4 8c). Cada guardián vigila una clase y se prueba al revés (alreves8c). ── */
+
+  /* 8c · No hay push sin plantilla: la cola solo se llena desde un aviso YA guardado (notifications, con su plantilla), en lib/push/cola.ts y en
+     una sola sentencia que une notifications y notif_templates; los proveedores (Web Push, APNs, FCM) solo los llama el trabajador; la prueba
+     del Super Admin pasa por avisar() con su plantilla. Al revés: un insert en push_outbox en otro archivo o sin unir el aviso, o llamar a
+     enviarApns() desde otra parte → falla. */
+  pushConPlantilla() {
+    const G = "pushConPlantilla", C = "apps/web/lib/push/cola.ts", A = "apps/web/lib/push/admin.ts", M = "packages/db/migrations/0126_push.sql";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (/insert into push_outbox/.test(t) && f !== C) falla(G, f, 0, "solo lib/push/cola.ts encola un push (desde un aviso guardado)");
+      if (/\b(enviarWebPush|enviarApns|enviarFcm)\(/.test(t) && !/^apps\/web\/lib\/push\/(cola|webpush|apns|fcm)\.ts$/.test(f)) falla(G, f, 0, "solo el trabajador (lib/push/cola.ts) llama a los proveedores de push");
+    }
+    if (!existsSync(C)) return falla(G, C, 0, "falta lib/push/cola.ts");
+    const e = cuerpoFn(sinComent(C), "encolar");
+    if (!/insert into push_outbox[\s\S]*join notifications n on n\.id = x\.nid join notif_templates tp on tp\.key = n\.tpl/.test(e)) falla(G, C, 0, "encolar() parte del aviso guardado y su plantilla");
+    if (existsSync(A) && !/await avisar\(s\.id, "push_prueba"/.test(cuerpoFn(sinComent(A), "pushPrueba"))) falla(G, A, 0, "la prueba del Super Admin pasa por avisar() con la plantilla push_prueba");
+    if (existsSync(M) && !/create table if not exists push_outbox \(\s*id\s+bigint generated always as identity primary key,\s*notification_id bigint not null references notifications \(id\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "push_outbox.notification_id es obligatorio");
+  },
+
+  /* 8c · Lo sensible no pasa con su texto por Apple, Google ni el navegador (§1c): Salud, Niños, Soporte, moderación y sanciones, cuenta → «Tienes
+     un aviso nuevo en To'Latino.». La base lo impone (check + trigger), la cola arma el contenido con el genérico cuando la plantilla es privada
+     y el Super Admin no lo puede destapar. Al revés: quitar el genérico de cargaDe, el check de 0126 o el candado de plantillaPush → falla. */
+  pushPrivadoSinTexto() {
+    const G = "pushPrivadoSinTexto", C = "apps/web/lib/push/cola.ts", M = "packages/db/migrations/0126_push.sql", AC = "apps/web/app/admin/acciones-notif.ts";
+    const t = existsSync(C) ? sinComent(C) : "";
+    if (!/es: \{ t: "To'Latino", b: "Tienes un aviso nuevo en To'Latino\." \}, en: \{ t: "To'Latino", b: "You have a new notice in To'Latino\." \}/.test(t)) falla(G, C, 0, "el texto genérico es el de §1c (ES/EN)");
+    if (!/export const cargaDe = \(x[^)]*\) =>\s*JSON\.stringify\(x\.priv \? GENERICO\[/.test(t)) falla(G, C, 0, "cargaDe(): una plantilla privada lleva solo el genérico");
+    if (!/t\.push_private as priv/.test(cuerpoFn(t, "encolar"))) falla(G, C, 0, "encolar() lee push_private de la plantilla");
+    const m = existsSync(M) ? readFileSync(M, "utf8") : "";
+    if (!/check \(push_private or not \(key ~ '\^\(sal_\|biz_sal_\|nin_\|ninos_\|cuenta_\)' or grp in \('support', 'mod'\)\)\)/.test(m)) falla(G, M, 0, "la base no deja destapar Salud, Niños, cuenta, Soporte ni moderación");
+    if (!/if new\.key ~ '\^\(sal_\|biz_sal_\|nin_\|ninos_\|cuenta_\)' or new\.grp in \('support', 'mod'\) then new\.push_private := true; end if;/.test(m)) falla(G, M, 0, "una plantilla sensible nueva nace privada (trigger)");
+    if (existsSync(AC) && !/if \(campo === "priv" && p\.fija && valor !== "si"\) return/.test(sinComent(AC))) falla(G, AC, 0, "plantillaPush no destapa una plantilla sensible");
+  },
+
+  /* 8c · Push primero, SMS de respaldo (§3.3): «siempre» solo el grupo crit (la base lo impone); «sin_push» espera al push («respaldo») y solo sale si
+     el push no llegó, reclamándolo UNA vez; el push que llega lo deja «ahorrado». Al revés: mandar el SMS en línea con push pendiente, soltar el
+     respaldo sin reclamar el estado o permitir «siempre» fuera de crit → falla. */
+  smsSoloRespaldo() {
+    const G = "smsSoloRespaldo", A = "apps/web/lib/avisos.ts", C = "apps/web/lib/push/cola.ts", M = "packages/db/migrations/0126_push.sql";
+    const a = existsSync(A) ? cuerpoFn(sinComent(A), "avisar") : "";
+    if (!/const st = pst === "pendiente" && r\.sms_mode === "sin_push" && \(st1 === "pendiente" \|\| st1 === "pruebas"\) \? "respaldo" : st1;/.test(a)) falla(G, A, 0, "avisar(): con push en camino, el SMS de una plantilla sin_push queda «respaldo»");
+    if (!/if \(st === "pendiente"\) \{/.test(a) || /smsTelnyx\([^)]*\)[\s\S]{0,40}st1/.test(a)) falla(G, A, 0, "avisar() solo manda en línea el SMS «pendiente» (nunca el de respaldo)");
+    const r = existsSync(A) ? cuerpoFn(sinComent(A), "smsRespaldo") : "";
+    if (!/where n\.id = \$1::bigint and n\.sms_status = 'respaldo'/.test(r)) falla(G, A, 0, "smsRespaldo() reclama el estado «respaldo» en la misma escritura (una vez)");
+    const v = existsSync(C) ? cuerpoFn(sinComent(C), "resolver") : "";
+    if (!/sms_status = case when r\.ok and n\.sms_status = 'respaldo' then 'ahorrado'/.test(v) || !/if \(!r\.ok && r\.sms === "respaldo"\)/.test(v)) falla(G, C, 0, "resolver(): push que llegó → «ahorrado»; solo si no llegó sale el respaldo");
+    if (existsSync(M) && !/check \(sms_mode in \('siempre', 'sin_push', 'nunca'\) and \(sms_mode <> 'siempre' or grp = 'crit'\)\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "«siempre» solo para el grupo crit");
+  },
+
+  /* 8c · Ningún push sale dentro de una transacción (§4 8c «pushFueraDeTx»): encolar, el empujón, el trabajador y los proveedores van DESPUÉS del
+     commit (una red lenta no puede tener filas tomadas ni dejar un aviso que se deshace con su push ya mandado). Al revés: llamar a encolar() o
+     enviarPendientes() dentro de tx(…) o entre begin y commit → falla. */
+  pushFueraDeTx() {
+    const G = "pushFueraDeTx", RED = /\b(encolar|pronto|enviarPendientes|barrerPush|enviarWebPush|enviarApns|enviarFcm|smsRespaldo)\(/;
+    const tramo = (t, i) => { let d = 0; for (let j = t.indexOf("{", i); j < t.length; j++) { if (t[j] === "{") d++; else if (t[j] === "}" && --d === 0) return t.slice(i, j); } return t.slice(i); };
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/\btx\(async \(?[^)=]*\)?(?:: [^=]+)? => \{/g)) if (RED.test(tramo(t, m.index))) falla(G, f, 0, "un push (o su SMS de respaldo) dentro de tx(…): va después del commit");
+      for (const m of t.matchAll(/\.query\(["']begin["']\)/g)) { const fin = t.indexOf('query("commit")', m.index); if (fin > 0 && RED.test(t.slice(m.index, fin))) falla(G, f, 0, "un push entre begin y commit: va después del commit"); }
+    }
+  },
+
+  /* 8c · Los tokens de push nunca en claro (§2 push_tokens): solo lib/push/tokens.ts escribe push_tokens, con el token cifrado (cifrar) y su
+     huella (huella); solo el trabajador lo descifra; ninguna pantalla ni el Super Admin lee token_enc ni las llaves de Web Push (el 360° muestra los
+     últimos 6 de la huella). Al revés: guardar el token tal cual, leer token_enc en lib/push/admin.ts o una pantalla → falla. */
+  tokensCifrados() {
+    const G = "tokensCifrados", T = "apps/web/lib/push/tokens.ts", M = "packages/db/migrations/0126_push.sql";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      if (/insert into push_tokens/.test(t) && f !== T) falla(G, f, 0, "solo lib/push/tokens.ts registra un token");
+      if (/\b(token_enc|webpush_keys_enc)\b/.test(t) && !/^apps\/web\/lib\/push\/(tokens|cola)\.ts$/.test(f)) falla(G, f, 0, "el token cifrado solo lo tocan lib/push/tokens.ts (guardar) y lib/push/cola.ts (mandar)");
+    }
+    if (!existsSync(T)) return falla(G, T, 0, "falta lib/push/tokens.ts");
+    const r = cuerpoFn(sinComent(T), "registrar");
+    if (!/const tok = [^\n]*, h = huella\(`push:\$\{p\}:\$\{tok\}`\)/.test(r) || !/\[userId, ses\.id, ses\.city, app, ses\.platform, p, cifrar\(tok\), h, p === "webpush" \? cifrar\(JSON\.stringify\(\{ p256dh: r\.p256dh, auth: r\.auth \}\)\) : null/.test(r)) falla(G, T, 0, "registrar() guarda el token y sus llaves cifrados y busca por la huella");
+    if (/\bt\.token_hash\b/.test(cuerpoFn(sinComent(T), "misDispositivos"))) falla(G, T, 0, "misDispositivos() no devuelve la huella del token");
+    if (existsSync(M) && !/token_hash\s+text not null check \(token_hash ~ '\^\[a-f0-9\]\{64\}\$'\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "token_hash es una huella hex de 64");
+  },
+
+  /* 8c · El servidor solo le escribe a un servicio de push conocido (SSRF): la dirección de Web Push la da el navegador, pero se revisa al registrar
+     y al mandar (https, puerto 443, hosts de Apple, Google, Mozilla y Microsoft); los simuladores (PUSH_*) solo fuera de producción y solo en
+     localhost; FCM nunca usa el token_uri del archivo subido. Al revés: aceptar http, un host cualquiera, leer PUSH_WEB_HOSTS en producción o
+     usar sa.token_uri → falla. */
+  pushSoloServiciosConocidos() {
+    const G = "pushSoloServiciosConocidos", W = "apps/web/lib/push/webpush.ts", L = "apps/web/lib/push/llaves.ts", T = "apps/web/lib/push/tokens.ts";
+    const w = existsSync(W) ? sinComent(W) : "", p = cuerpoFn(w, "endpointPermitido");
+    if (!/return u\.protocol === "https:" && \(u\.port === "" \|\| u\.port === "443"\) && HOSTS\.some/.test(p) || !/u\.username \|\| u\.password/.test(p)) falla(G, W, 0, "endpointPermitido(): https, 443, sin credenciales y solo hosts conocidos");
+    if (/HOSTS = \[[^\]]*(\.\*|\\S\+|\[\^)/.test(w)) falla(G, W, 0, "la lista de servicios de push no acepta cualquier host");
+    if (!/if \(!endpointPermitido\(s\.endpoint, o\.extra \?\? \[\]\)\) return/.test(cuerpoFn(w, "enviarWebPush"))) falla(G, W, 0, "enviarWebPush() revisa la dirección antes de llamar");
+    if (existsSync(T) && !/if \(!endpointPermitido\(t, HOSTS_WEB_EXTRA\(\)\)\) return/.test(cuerpoFn(sinComent(T), "registrar"))) falla(G, T, 0, "registrar() revisa la dirección de Web Push");
+    const l = existsSync(L) ? sinComent(L) : "";
+    if (!/const env = \(k: string\) => \(PROD \? undefined : process\.env\[k\] \|\| undefined\);/.test(l) || /process\.env\.PUSH_/.test(l)) falla(G, L, 0, "los simuladores (PUSH_*) no se leen en producción");
+    if (!/\^\(127\\\.0\\\.0\\\.1\|localhost\):\\d\{2,5\}\$/.test(l)) falla(G, L, 0, "PUSH_WEB_HOSTS solo acepta localhost");
+    if (!/fcm = \{ \.\.\.j, token_uri: TOKEN_URI \}/.test(l)) falla(G, L, 0, "FCM nunca usa el token_uri del archivo subido");
+  },
+
+  /* 8c · Un aviso nunca llega dos veces al mismo teléfono y su SMS de respaldo sale una vez: única (aviso, token) en la cola con «on conflict do
+     nothing», el trabajador toma con «for update skip locked», el estado del aviso se resuelve una vez (push_status 'pendiente') y el respaldo se
+     reclama. Al revés: quitar el unique, el on conflict o el skip locked → falla. */
+  pushSinDuplicados() {
+    const G = "pushSinDuplicados", M = "packages/db/migrations/0126_push.sql", C = "apps/web/lib/push/cola.ts";
+    const m = existsSync(M) ? readFileSync(M, "utf8") : "", c = existsSync(C) ? sinComent(C) : "";
+    if (!/create table if not exists push_outbox \([\s\S]*?unique \(notification_id, token_id\)/.test(m)) falla(G, M, 0, "push_outbox: una fila por aviso y token");
+    if (!/on conflict \(notification_id, token_id\) do nothing/.test(cuerpoFn(c, "encolar"))) falla(G, C, 0, "encolar() no duplica (on conflict do nothing)");
+    if (!/where status = 'pendiente' and not_before <= now\(\) order by not_before, id limit \$1 for update skip locked/.test(cuerpoFn(c, "enviarPendientes"))) falla(G, C, 0, "el trabajador toma con for update skip locked");
+    if (!/from r where n\.id = r\.nid and n\.push_status = 'pendiente'/.test(cuerpoFn(c, "resolver"))) falla(G, C, 0, "el estado del push de un aviso se resuelve una vez");
+  },
+
+  /* 8c · El service worker de los avisos (/sw-push.js, alcance «/») solo muestra y abre (§3.3): no guarda nada (sin caché ni «fetch»: las pantallas
+     sin señal tienen los suyos) y solo abre /app/aviso/{id} de NUESTRO origen. Al revés: agregar caches, un fetch, o abrir la ruta que mande el
+     aviso sin revisarla → falla. */
+  swPushSoloAbre() {
+    const G = "swPushSoloAbre", F = "apps/web/public/sw-push.js";
+    if (!existsSync(F)) return falla(G, F, 0, "falta el service worker de los avisos");
+    const t = readFileSync(F, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    if (/\bcaches\b|addEventListener\(["']fetch["']|indexedDB|importScripts/.test(t)) falla(G, F, 0, "el service worker de los avisos no guarda nada ni atiende «fetch»");
+    if (!/var RUTA = \/\^\\\/app\\\/aviso\\\/\\d\{1,18\}\(\\\?v=push\)\?\$\/;/.test(t)) falla(G, F, 0, "solo abre /app/aviso/{id}");
+    if (!/RUTA\.test\(e\.notification\.data\.u\) \? e\.notification\.data\.u : "\/avisos"/.test(t) || !/new URL\(u, self\.location\.origin\)\.href/.test(t)) falla(G, F, 0, "el toque revisa la ruta y la abre en nuestro origen");
+    if (/openWindow\((?!destino\))/.test(t)) falla(G, F, 0, "openWindow solo con la ruta revisada");
+    const N = "apps/web/lib/nativo/avisos.ts";
+    if (existsSync(N) && !/if \(\/\^\\\/app\\\/aviso\\\/\\d\{1,18\}\(\\\?v=push\)\?\$\/\.test\(u\)\) location\.href = u;/.test(sinComent(N))) falla(G, N, 0, "en la app, el toque solo abre /app/aviso/{id}");
+  },
+
+  /* 8c · avisoConPlantilla, ampliado: el push abre la app de su plantilla (notif_templates.app, 0126), así que un aviso cuyo enlace es de otra app se
+     abriría fuera. Para cada avisar(…) con plantilla y enlace escritos, la familia del enlace (/panel → Negocios, /repartidor → Repartidor, /puerta →
+     Puerta) es la app de la plantilla según las reglas de 0126. Al revés: un aviso de cliente con enlace a /repartidor (chofer_salida antes de 8c)
+     → falla. */
+  pushAbreSuApp() {
+    const G = "pushAbreSuApp", M = "packages/db/migrations/0126_push.sql";
+    if (!existsSync(M)) return;
+    const m = readFileSync(M, "utf8");
+    if (!/when key like 'drv\\_%' or key like 'chofer\\_%' then 'delivery'\s+when key in \('puerta_abre', 'puerta_asignado', 'puerta_invitado'\) then 'checkin'\s+when grp = 'biz' or key like 'biz\\_%' then 'negocio'/.test(m)) return falla(G, M, 0, "las reglas de la app de cada plantilla cambiaron: actualiza este guardián");
+    const grp = new Map();
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) for (const t of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/\(\s*'([a-z0-9_]+)',\s*'(crit|tx|mod|biz|mkt|community|events|support)',/g)) grp.set(t[1], t[2]);
+    const app = (k) => (/^(drv|chofer)_/.test(k) ? "delivery" : ["puerta_abre", "puerta_asignado", "puerta_invitado"].includes(k) ? "checkin" : grp.get(k) === "biz" || /^biz_/.test(k) ? "negocio" : "cliente");
+    const dueno = (h) => (/^\/panel/.test(h) ? "negocio" : /^\/repartidor/.test(h) ? "delivery" : /^\/puerta/.test(h) ? "checkin" : /^\/(admin|app|ayuda|soporte|entrar|cuenta\/ajustes)/.test(h) ? null : "cliente");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.+\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        for (const x of l.matchAll(/\bavisar(?:Negocio|Telefono|Muchos)?\([^;]*?"([a-z]+_[a-z0-9_]+)"[^;]*?href: *[`"](\/[a-z0-9/_-]*)/g)) {
+          const d = dueno(x[2]);
+          if (d && grp.has(x[1]) && d !== app(x[1])) falla(G, f, i + 1, `«${x[1]}» abre ${app(x[1])} y su enlace ${x[2]} es de ${d}: el push lo abriría fuera`);
+        }
+      });
+    }
+  },
+
+  /* 8c · Sin contexto seguro (el sandbox por HTTP en la IP) el navegador NO tiene crypto.randomUUID (solo con https o localhost): pedir, reservar,
+     pagar o escanear se caían ahí (la clave de respaldo ni siquiera era un UUID y el servidor la rechazaba: «No se pudo enviar»). Toda clave que
+     sale del navegador usa uuid() de lib/uuid.ts (crypto.getRandomValues, que existe siempre). Al revés: volver a usar crypto.randomUUID() o
+     «"randomUUID" in crypto» en una pantalla → falla. El servidor (node:crypto randomUUID y el middleware) puede. */
+  uuidSinContextoSeguro() {
+    const G = "uuidSinContextoSeguro";
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?)$/.test(f) || f === "apps/web/middleware.ts") continue;
+      sinComent(f).split("\n").forEach((l, i) => { if (/\bcrypto\.randomUUID\b|["']randomUUID["'] in crypto/.test(l)) falla(G, f, i + 1, "crypto.randomUUID no existe sin https (el sandbox por HTTP): usa uuid() de lib/uuid.ts"); });
+    }
+    const L = "apps/web/lib/uuid.ts";
+    if (!existsSync(L) || !/crypto\.getRandomValues\(new Uint8Array\(16\)\)/.test(readFileSync(L, "utf8")) || !/\(b\[6\]! & 0x0f\) \| 0x40/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "uuid() es un UUID v4 de crypto.getRandomValues");
   },
 
   idioma() {

@@ -14,6 +14,7 @@ import { LINEA_TRANS } from "@/lib/transporte-comun";
 import type { BookingViaje } from "@/lib/viajes";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { reservarViajeAccion } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary" | "DepositOutcomes" | "QtyStepper";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -39,7 +40,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
   const [boxes, setBoxes] = useState(1), [dest, setDest] = useState({ nombre: "", tel: "", prov: "", dir: "", ref: "" }), [prohibido, setProhibido] = useState(false), [drop, setDrop] = useState("");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), fileRef = useRef<HTMLInputElement>(null);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
 
   const seats = adults + kids, child = s.child ?? s.cents;
   const bagsX = b.aj.extra == null ? 0 : extra;
@@ -67,7 +68,7 @@ export function ViajeBooking({ b, es, pago, yo }: { b: BookingViaje; es: boolean
     if (r.ok) { router.push(`/viaje/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
-    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = crypto.randomUUID(); }
+    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("salida" in r && r.salida) { setSel(null); setPaso(1); router.refresh(); }
   };
   const sigue = () => { if (!okPaso) return; if (paso === 2) return void enviar(); setPaso(paso + 1); window.scrollTo({ top: 0 }); };

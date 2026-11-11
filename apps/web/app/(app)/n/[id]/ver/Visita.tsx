@@ -13,6 +13,7 @@ import { ANIMALES_SERVICIO, EHO, NO_PAGUES, cuotaTexto, mudarteTexto, usd } from
 import { AVISO_NOTA, LICENCIA, QUE, QUIEN, TENGO_LICENCIA, diaVis, horaVis, soloLlamada, type Bi } from "@/lib/visitas-inm-comun";
 import type { BookingVis } from "@/lib/visitas-inm";
 import { pedirVisitaAccion } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,7 +42,7 @@ export function Visita({ b, es, yo }: { b: BookingVis; es: boolean; yo: boolean 
   const [casa, setCasa] = useState(false), [calle, setCalle] = useState(""), [zip, setZip] = useState("");
   const [trade, setTrade] = useState(false), [tYear, setTYear] = useState(""), [tMake, setTMake] = useState(""), [tModel, setTModel] = useState(""), [tMiles, setTMiles] = useState("");
   const [licencia, setLicencia] = useState(false), [nota, setNota] = useState(""), [sms, setSms] = useState(true), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const H = b.horas.find((h) => h.id === hora) ?? null;
   const bloqueado = b.tope || b.pausa || !b.horas.length;
   // ── Validación de cada paso (el servidor lo vuelve a revisar todo) ──

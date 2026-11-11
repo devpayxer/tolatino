@@ -11,6 +11,7 @@ import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
 import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
 import { guardarTurno, leerCola, guardarCola, type Cola } from "./sin-conexion/local";
 import { alCambiarRed, sinRed } from "@/lib/nativo/senal";
+import { useAvisos } from "@/app/_cascara/HojaPermiso";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -31,6 +32,8 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   const router = useRouter(), [pend, start] = useTransition();
   const [toast, setToast] = useState(""), [err, setErr] = useState("");
   const [cod, setCod] = useState(""), [veh, setVeh] = useState("moto");
+  // 8c · Al ponerse en línea: la hoja previa de los avisos (te asignan una entrega), una vez por teléfono.
+  const avisos = useAvisos(es);
   const [cobro, setCobro] = useState(false), [prob, setProb] = useState(false), [mot, setMot] = useState(""), [nota, setNota] = useState("");
   const [cola, setCola] = useState<Cola>([]);
   const ir = (q: string) => router.push("/repartidor" + q);
@@ -159,7 +162,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     B.push({ type: "head", eye: `${E2("REPARTES PARA", "DELIVERING FOR")} ${eq!.negocio.nombre.toUpperCase()}`, t: eq!.enLinea ? E2("Estás en línea", "You are online") : E2("Estás fuera de línea", "You are offline"),
       s: eq!.enLinea ? E2("El negocio ve que puedes llevar pedidos.", "The business sees you can take orders.") : E2("Ponte en línea para que el negocio te asigne pedidos.", "Go online so the business can assign you orders.") });
     B.push({ type: "rows", items: [{ icon: "truck", t: E2("En línea", "Online"), s: eq!.enLinea ? E2("Toca para terminar tu turno", "Tap to end your shift") : E2("Toca para empezar tu turno", "Tap to start your shift"), tgOn: eq!.enLinea,
-      onTg: () => run(() => repEnLinea(eq!.id, !eq!.enLinea), eq!.enLinea ? E2("Fuera de línea.", "Offline.") : E2("En línea.", "Online.")) }] });
+      onTg: () => run(() => repEnLinea(eq!.id, !eq!.enLinea), eq!.enLinea ? E2("Fuera de línea.", "Offline.") : E2("En línea.", "Online."), eq!.enLinea ? undefined : () => { void avisos.ofrecer(); }) }] });
     B.push({ type: "kpis", cols: "repeat(3,minmax(0,1fr))", items: [
       { k: E2("ENTREGAS HOY", "DELIVERIES TODAY"), v: String(hoy.entregas), bg: "var(--tl-ink)", fg: "var(--tl-white)" },
       { k: E2("PROPINAS", "TIPS"), v: money(hoy.propinas) },
@@ -196,6 +199,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-5">
         <PanelBloques bloques={B} h1={24} />
       </div>
+      {avisos.hoja}
       {toast && <div role="status" className="fixed bottom-[104px] left-1/2 z-[90] w-[calc(100%-40px)] max-w-[380px] -translate-x-1/2 rounded-[14px] bg-ink px-4 py-3 text-center text-[13px] font-bold text-white">{toast}</div>}
       {eq && <div className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-[14px]">
         <BottomNav items={[{ id: "inicio", label: E2("INICIO", "HOME"), icon: "home" }, { id: "pedidos", label: E2("PEDIDOS", "ORDERS"), icon: "truck" }, { id: "ganancias", label: E2("GANANCIAS", "EARNINGS"), icon: "wallet" }, { id: "perfil", label: E2("PERFIL", "PROFILE"), icon: "users" }]}

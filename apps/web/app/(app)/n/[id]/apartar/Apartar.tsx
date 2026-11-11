@@ -11,6 +11,7 @@ import { guardarCarrito, leerCarrito, lineaValida, llaveLinea, type Carrito } fr
 import { mandarApartado } from "./acciones";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { cuotas, terminos } from "@/lib/layaway-comun";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "StepHeader" | "DateStrip" | "TimeSlots" | "PaymentSummary";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -30,7 +31,7 @@ export function Apartar({ o, es, yo, pago = null, dir = null }: { o: OpcionesApa
   const puedeEnviar = !!o.envio && !!pago, [como, setComo] = useState<"tienda" | "envio">("tienda");
   const [acepto, setAcepto] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hojaT, setHojaT] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   useEffect(() => { setCarro(leerCarrito(o.negocio.id).filter((l) => lineaValida(o.arts, l))); }, [o]);
   const H = String(o.horas);
   const volver = () => router.push(`/n/${o.negocio.id}?tab=shop`);

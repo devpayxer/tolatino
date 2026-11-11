@@ -16,7 +16,7 @@ import { diaCorto } from "@/lib/evt-comun";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
-  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
+  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, pushRevocar, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
 } from "./acciones-usuarios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -26,11 +26,14 @@ import type { CompaUsuario } from "@/lib/compa/admin-compa";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
+const PUSH_APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
+const PUSH_PROV: Record<string, string> = { apns: "APNs", fcm: "FCM", webpush: "Web Push", sim: "simulado (semilla)" };
+const PUSH_MOTIVO: Record<string, string> = { salir: "salió de la cuenta", invalido: "el proveedor dijo que ya no sirve", apagado: "los apagó la persona", reemplazado: "lo reemplazó otro", admin: "el equipo", vencido: "sin uso" };
 /* Verbo de cada acción en el historial. */
 const VERBO: Record<string, string> = {
   "usuario.nota": "agregó una nota a", "usuario.sancionar": "sancionó a", "usuario.levantar": "levantó la sanción de", "usuario.foto.quitar": "quitó la foto de",
   "usuario.sesiones.cerrar": "cerró las sesiones de", "usuario.sesion.cerrar": "cerró una sesión de", "usuario.sesion.bloquear": "bloqueó un dispositivo de",
-  "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.verificacion.restablecer": "restableció la verificación de",
+  "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.push.revocar": "revocó los avisos de un teléfono de", "usuario.verificacion.restablecer": "restableció la verificación de",
   "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
   "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de", "usuario.evt.caso": "abrió un caso de Eventos de",
 };
@@ -107,6 +110,15 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
             ] : undefined,
           };
         }) }]} /> : <A.AdminNote tone="info" icon="phone">No ha entrado desde ningún dispositivo.</A.AdminNote>}
+        {/* 8c · Avisos push: los teléfonos y navegadores con avisos (enmascarados) y revocar uno con motivo. */}
+        <PanelBloques bloques={[{ type: "group", k: `AVISOS PUSH · ${u.push.filter((x) => !x.revocado).length} ${u.push.filter((x) => !x.revocado).length === 1 ? "VIVO" : "VIVOS"}` }]} />
+        {u.push.length ? <PanelBloques bloques={[{ type: "rows", items: u.push.map((x) => ({
+          key: `push-${x.id}`, icon: x.platform === "web" ? "globe" : "phone", t: `${x.label} · ${PUSH_APP[x.app] ?? x.app}`,
+          s: `${PUSH_PROV[x.provider] ?? x.provider} · huella …${x.huella} · desde ${fecha(x.desde)} · visto ${haceUsr(x.visto)}${x.ultimo ? ` · último aviso ${haceUsr(x.ultimo)}` : ""}${x.revocado ? ` · revocado ${fecha(x.revocado)} (${PUSH_MOTIVO[x.motivo ?? ""] ?? x.motivo})` : ""}`,
+          tag: x.revocado ? "REVOCADO" : x.prueba ? "PRUEBA" : "VIVO", tone: x.revocado ? "neutral" : "signal", dim: !!x.revocado,
+          acts: P.editar && !x.revocado ? [{ l: "Revocar", icon: "ban", onClick: () => setConf({ titulo: `Revocar los avisos de ${x.label}`, sub: "Deja de recibir push en ese teléfono. Lo crítico le sigue llegando por SMS; puede volver a encenderlos ella con su sesión.", peligro: true,
+            plantillas: ["Teléfono perdido o robado", "Lo pidió la persona", "Avisos a un teléfono que no es suyo"], hacer: (m) => pushRevocar(u.id, x.id, m) }) }] : undefined,
+        })) }]} /> : <A.AdminNote tone="info" icon="bell">No tiene avisos push en ningún teléfono: le llegan en la campana y por SMS cuando aplica.</A.AdminNote>}
         {u.compartidos.length ? <>
           <A.AdminNote tone="warn" icon="warning">Otras cuentas que entraron desde el mismo dispositivo:</A.AdminNote>
           <A.AdminList rows={u.compartidos.map((x) => ({ initials: (x.nombre ?? "?").slice(0, 1), title: x.nombre ?? "(sin nombre todavía)", sub: x.phone, tag: x.estado !== "ok" ? EST_USR[x.estado] : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}`) }))} />

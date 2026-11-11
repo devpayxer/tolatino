@@ -26,6 +26,7 @@ const HOST = new URL(URL_BASE).host, HTTP = URL_BASE.startsWith("http://");
 const PLUGINS = {
   App: { ios: "AppPlugin", android: "com.capacitorjs.plugins.app.AppPlugin", npm: "@capacitor/app", spm: "CapacitorApp", gradle: "capacitor-app" },
   AppLauncher: { ios: "AppLauncherPlugin", android: "com.capacitorjs.plugins.applauncher.AppLauncherPlugin", npm: "@capacitor/app-launcher", spm: "CapacitorAppLauncher", gradle: "capacitor-app-launcher" },
+  PushNotifications: { ios: "PushNotificationsPlugin", android: "com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin", npm: "@capacitor/push-notifications", spm: "CapacitorPushNotifications", gradle: "capacitor-push-notifications" },
   SplashScreen: { ios: "SplashScreenPlugin", android: "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin", npm: "@capacitor/splash-screen", spm: "CapacitorSplashScreen", gradle: "capacitor-splash-screen" },
   StatusBar: { ios: "StatusBarPlugin", android: "com.capacitorjs.plugins.statusbar.StatusBarPlugin", npm: "@capacitor/status-bar", spm: "CapacitorStatusBar", gradle: "capacitor-status-bar" },
   TLAlcance: { ios: "TLAlcancePlugin", android: "com.tolatino.plugins.TLAlcancePlugin", dir: "tl-alcance" },
@@ -66,6 +67,8 @@ function capConfig(a, plat) {
     plugins: {
       SplashScreen: { launchShowDuration: A.splashMaxMs, launchAutoHide: true, backgroundColor: token("--tl-paper"), showSpinner: false, androidScaleType: "CENTER_CROP" },
       TLAlcance: alcance(a),
+      // 8c · Avisos: con la app abierta también se ven (banner, sonido, globo). El token sale de APNs (iOS) o FCM (Android); ver lib/nativo/avisos.ts.
+      ...(a.plugins.includes("PushNotifications") ? { PushNotifications: { presentationOptions: ["badge", "sound", "alert"] } } : {}),
     },
     packageClassList: a.plugins.map((p) => PLUGINS[p].ios),
   };
@@ -188,11 +191,16 @@ ${ps.map((p) => `"${PERM_IOS[p]}" = "${escStr(texto(p, a, l))}";`).join("\n")}`)
   poner(`${S}/assets/capacitor.config.json`, cfgA);
   poner(`${S}/assets/capacitor.plugins.json`, JSON.stringify(a.plugins.map((p) => ({ pkg: PLUGINS[p].npm ?? `tolatino/${PLUGINS[p].dir}`, classpath: PLUGINS[p].android })), null, 2));
   // Los permisos normales de las cuatro (androidComun: ACCESS_NETWORK_STATE, la red para la WebView) y después los de esta app.
-  const permA = [...(A.androidComun ?? []), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])];
+  const avisos = a.plugins.includes("PushNotifications");
+  const permA = [...(A.androidComun ?? []), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []), ...(avisos ? ["android.permission.POST_NOTIFICATIONS"] : [])];
   poner(`${S}/AndroidManifest.xml`, `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json: los permisos de ${esc(a.nombre.es)} (solo los que usa). No editar a mano. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-${permA.map((p) => `    <uses-permission android:name="${p}" />`).join("\n")}${permA.length ? "\n" : ""}${a.permisos.camara ? '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n' : ""}    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}" />
+${permA.map((p) => `    <uses-permission android:name="${p}" />`).join("\n")}${permA.length ? "\n" : ""}${a.permisos.camara ? '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n' : ""}${avisos ? `    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}">
+        <!-- 8c · Firebase solo para los avisos (FCM): sin token hasta que la persona dice que sí, y sin analítica de Firebase. -->
+        <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+    </application>` : `    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}" />`}
 </manifest>`);
   // Español primero (values/ = el idioma por defecto), inglés en values-en/. Los textos del porqué de cada permiso (§1c), para la explicación
   // nativa y las declaraciones de Google Play.
@@ -311,7 +319,11 @@ ${A.apps.map((a) => `  ${a.target}:
       - path: Targets/${a.target}/public
         type: folder
 ${a.plugins.filter((p) => PLUGINS[p].dir).map((p) => `      - path: ../plugins/${PLUGINS[p].dir}/ios`).join("\n")}
-    settings:
+${a.plugins.includes("PushNotifications") ? `    entitlements:
+      path: Targets/${a.target}/${a.target}.entitlements
+      properties:
+        aps-environment: development
+` : ""}    settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ${a.ios}
         PRODUCT_NAME: ${a.target}

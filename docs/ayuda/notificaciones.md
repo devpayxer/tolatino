@@ -11,7 +11,10 @@ _Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cue
   una vacante.
 - Cada aviso queda en la **bandeja** (la campana: un punto cuando hay nuevos). Tocar un aviso te lleva al pedido, la
   reservación o la solicitud. Abrir la bandeja los marca como leídos.
-- Además del aviso en la app, casi todos salen como **mensaje de texto** al teléfono de la cuenta, en tu idioma.
+- Además del aviso en la app, te llega **al teléfono**: primero como **aviso push** (en los teléfonos y navegadores donde encendiste
+  «Avisos en este teléfono») y, si no tienes avisos encendidos o el push no llega, como **mensaje de texto** cuando ese aviso lo lleva. Lo
+  crítico (una cancelación o un cambio de fecha u hora de tu evento) llega siempre también por texto. Todo en tu idioma. Más en «Avisos en tu
+  teléfono».
 
 ### Comunidad
 - En **Mi cuenta › Avisos › Comunidad**: **Respuestas y votos** (comentarios, respuestas, menciones, «Me sirvió», 10 votos, encuestas
@@ -80,7 +83,10 @@ motivo. En **Reglas**: «Soporte: lo del caso siempre llega».
 - **Businesses** are told about: a new order or booking, a customer asking for help with an order, someone applying to a job.
 - Every notification stays in the **inbox** (the bell shows a dot when there is something new). Tap one to open the order,
   booking or application. Opening the inbox marks them read.
-- Most also go out as a **text message** to the account's phone, in your language.
+- Besides the in-app notice, it reaches **your phone**: first as a **push notification** (on the phones and browsers where you turned on
+  «Notifications on this phone») and, if you have none on or the push does not arrive, as a **text message** when that notice carries one.
+  Critical ones (a cancellation or a date or time change of your event) always also arrive by text. All in your language. More in
+  «Notifications on your phone».
 
 Community: in My account › Notifications › Community, "Replies and votes" and "Messages from neighbors" can be turned off (they no
 longer arrive); "One daily digest instead of each alert" holds Community alerts and sends one a day at the Settings hour (7 PM local by

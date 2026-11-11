@@ -11,6 +11,7 @@ import { subirFoto } from "@/lib/subir-foto";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { avisameEstado, avisameHora, horasDeCita, pedirCita, proximasHoras } from "../acciones-cita";
 import { aprC, aprL, diaS, dinero, durL, horaL, precio } from "../Servicios";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots" | "StaffPicker" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,7 +67,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
   const clave = useRef<string>("");
   const abierto = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  useEffect(() => { clave.current = crypto.randomUUID(); }, []);
+  useEffect(() => { clave.current = uuid(); }, []);
   useEffect(() => { let vivo = true; void proximasHoras(cp.negocio.id, s.dur).then((x) => { if (vivo) setProx(x); }); return () => { vivo = false; }; }, [cp.negocio.id, s.dur]);
   const q = useMemo(() => ({ svc: s.id, opts: inicial.opts, adds: inicial.adds, con, i }), [s.id, inicial.opts, inicial.adds, con, i]);
   useEffect(() => {
@@ -194,7 +195,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     if (r.ok) { router.push(`/cita/${r.numero}${"cambio" in r && r.cambio ? "?cambio=1" : ""}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
-    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = crypto.randomUUID(); }
+    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("hora" in r && r.hora) { setH(null); setPaso(0); void horasDeCita(cp.negocio.id, q, cambiar?.numero).then(setHoras); }
   };
   const okPaso = paso === 0 ? hSel != null : paso === 1 ? whoOk : listo;

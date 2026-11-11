@@ -19,12 +19,13 @@ import { sopDevolver, sopEscalar, sopLigar, sopMacroEstado, sopMacroGuardar, sop
 import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { uuid } from "@/lib/uuid";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "AuditLog" | "Button", ComponentType<any>>;
 type Bi = { es: string; en: string };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
-const nuevaClave = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16).padStart(8, "0")}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, "0")}`);
+const nuevaClave = () => (uuid());
 const hace = (iso: string) => {
   const m = Math.floor(Math.max(0, Date.now() - new Date(iso).getTime()) / 60000);
   return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : `hace ${Math.floor(m / 1440)} d`;

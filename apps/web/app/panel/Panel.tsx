@@ -3,6 +3,7 @@
    menú de 264 px, contenido y columna de detalle en escritorio) y un renderizador de bloques (@tolatino/ui · panel).
    Cada sección arma su lista de bloques con los datos que ya calculó el servidor; los cambios van por acciones del
    servidor (acciones.ts) y después se vuelve a leer. Aquí solo se muestra. */
+import { useEsteTelefono, type EsteTelefono } from "@/app/_cascara/useEsteTelefono";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelAccion as Accion, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -109,6 +110,7 @@ export type Form<T> = { key: string; d: T; dirty: boolean; set: (p: Partial<T>) 
 export type Sec = { blocks: (Bloque | null)[]; ed: Editor | null; tail?: (Bloque | null)[] };
 export type Editor = { F: Form<any>; l: string; valid: boolean; always?: boolean; apply: (d: any) => Promise<Res>; toast?: string | ((r: any) => string | undefined); onDone?: () => void };
 export type Ctx = {
+  tel: EsteTelefono;
   d: DatosPanel; es: boolean; E2: (a: string, b: string) => string; desk: boolean; w: number; detCol: boolean;
   go: (sec: Ruta["sec"], sub?: string | null) => void; det: (id: string) => void; closeDet: () => void; ruta: Ruta;
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
@@ -158,7 +160,9 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto };
+  // 8c · «Avisos del panel en este teléfono» (Más › Tus apps).
+  const tel = useEsteTelefono(es, toast);
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa, cpaAuto, tel };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -726,6 +730,17 @@ function masBloques(c: Ctx): Bloque[] {
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
       // 7e · El Compa (DASH-COMPA, en Más como el prototipo): para todo miembro.
       { icon: "help", t: "El Compa", s: E2("El asistente de IA: te explica tu panel y te lleva a la sección; con Pro, contesta a tus clientes cuando tú no puedes.", "The AI assistant: it explains your dashboard and takes you to the section; with Pro, it replies to your clients when you can’t."), onClick: () => c.go("cpa") },
+    ] },
+    // 8c · Tus apps (hueco #8 de la Fase 8): los avisos del panel en ESTE teléfono (un pedido, una cita o un mensaje nuevo, al momento) y las apps del equipo.
+    { type: "rows", k: E2("TUS APPS", "YOUR APPS"), items: [
+      c.tel.est === "no_disponible" ? { icon: "bell", t: E2("Avisos del panel en este teléfono", "Dashboard notifications on this phone"), s: E2("Este navegador no recibe avisos (necesita https o la app). Te llegan en la campana de tu cuenta.", "This browser does not get notifications (it needs https or the app). You get them in your account bell."), tag: E2("NO DISPONIBLE", "NOT AVAILABLE"), tone: "neutral" }
+        : { icon: "bell", t: E2("Avisos del panel en este teléfono", "Dashboard notifications on this phone"),
+          s: c.tel.aqui ? E2("Encendidos: un pedido, una cita o un mensaje nuevo te llega al momento, con sonido.", "On: a new order, appointment or message reaches you right away, with sound.")
+            : c.tel.est === "negado" ? E2("Bloqueados en este teléfono: enciéndelos en los Ajustes del teléfono o del navegador.", "Blocked on this phone: turn them on in your phone or browser settings.")
+            : E2("Apagados. Una solicitud nueva tiene minutos para contestarse: enciéndelos para enterarte al momento.", "Off. A new request has minutes to be answered: turn them on to know right away."),
+          tgOn: c.tel.aqui, onTg: c.tel.tg },
+      ...(entrega ? [{ icon: "truck", t: "To'Latino Repartidor", s: E2("Tus repartidores entran con el código que les das en Entrega › Tus repartidores.", "Your drivers join with the code you give them in Delivery › Your drivers."), onClick: () => c.go("dlv") }] : []),
+      ...(d.evtAplica ? [{ icon: "ticket", t: "To'Latino Puerta", s: E2("Tus porteros entran con el código de la puerta de cada evento, en Eventos.", "Your door staff join with each event's door code, in Events."), onClick: () => c.go("evt") }] : []),
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },

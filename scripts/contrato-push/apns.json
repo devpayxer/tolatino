@@ -1,0 +1,112 @@
+{
+  "fuente": [
+    "https://developer.apple.com/tutorials/data/documentation/usernotifications/sending-notification-requests-to-apns.json",
+    "https://developer.apple.com/tutorials/data/documentation/usernotifications/handling-notification-responses-from-apns.json",
+    "https://developer.apple.com/tutorials/data/documentation/usernotifications/generating-a-remote-notification.json"
+  ],
+  "extraido": "2026-11-11",
+  "sha256": {
+    "sending-notification-requests-to-apns": "34f9632dae5af5fe7eca3dd5eb38395b442879cda5f87a41956cb8b00fc671e9",
+    "handling-notification-responses-from-apns": "fad78483850aab214f22fa82bdb68e5b08c2ba60ce6ca8ccbb9b96b00301a20a",
+    "generating-a-remote-notification": "d41ba36c610ccae1f0d1a3125f3bacaef6a2f914a586358c9ecb95158411cad2"
+  },
+  "servidores": {
+    "desarrollo": "https://api.sandbox.push.apple.com",
+    "produccion": "https://api.push.apple.com"
+  },
+  "ruta": "/3/device/{token}",
+  "metodo": "POST",
+  "obligatorias": [
+    ":method",
+    ":path",
+    "authorization",
+    "apns-push-type",
+    "apns-topic"
+  ],
+  "pushTypes": [
+    "accessory",
+    "alert",
+    "background",
+    "complication",
+    "controls",
+    "fileprovider",
+    "liveactivity",
+    "location",
+    "mdm",
+    "pushtotalk",
+    "voip"
+  ],
+  "prioridades": [
+    10,
+    5,
+    1
+  ],
+  "collapseIdMaxBytes": 64,
+  "cuerpoMaxBytes": 4096,
+  "interruptionLevels": [
+    "passive",
+    "active",
+    "time-sensitive",
+    "critical"
+  ],
+  "errores": {
+    "400": [
+      "BadCollapseId",
+      "BadDeviceToken",
+      "BadExpirationDate",
+      "BadMessageId",
+      "BadPriority",
+      "BadTopic",
+      "DeviceTokenNotForTopic",
+      "DuplicateHeaders",
+      "IdleTimeout",
+      "InvalidPushType",
+      "MissingDeviceToken",
+      "MissingTopic",
+      "PayloadEmpty",
+      "TopicDisallowed"
+    ],
+    "403": [
+      "BadCertificate",
+      "BadCertificateEnvironment",
+      "ExpiredProviderToken",
+      "Forbidden",
+      "InvalidProviderToken",
+      "MissingProviderToken",
+      "UnrelatedKeyIdInToken",
+      "BadEnvironmentKeyIdInToken"
+    ],
+    "404": [
+      "BadPath"
+    ],
+    "405": [
+      "MethodNotAllowed"
+    ],
+    "410": [
+      "ExpiredToken",
+      "Unregistered"
+    ],
+    "413": [
+      "PayloadTooLarge"
+    ],
+    "429": [
+      "TooManyProviderTokenUpdates",
+      "TooManyRequests"
+    ],
+    "500": [
+      "InternalServerError"
+    ],
+    "503": [
+      "ServiceUnavailable",
+      "Shutdown"
+    ]
+  },
+  "noReintentar": [
+    "BadDeviceToken",
+    "DeviceTokenNotForTopic",
+    "Forbidden",
+    "ExpiredToken",
+    "Unregistered",
+    "PayloadTooLarge"
+  ]
+}

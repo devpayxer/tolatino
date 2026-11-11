@@ -11,3 +11,5 @@ Targets/*/Assets.xcassets/
 *.cer
 AuthKey_*
 GoogleService-Info.plist
+# 8c · XcodeGen escribe aquí las capacidades (aps-environment) desde project.yml.
+Targets/*/*.entitlements

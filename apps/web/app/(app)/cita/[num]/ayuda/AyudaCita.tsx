@@ -10,6 +10,7 @@ import type { CitaAyudaVista, MotivoCita, QuiereCita } from "@/lib/ayuda-cita";
 import type { CitaVista } from "@/lib/citas";
 import { subirFoto, subirFotoPrivada } from "@/lib/subir-foto";
 import { ayudaCitaPedir, ayudaCitaResponder } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -108,7 +109,7 @@ export function AyudaCita({ c, v, es }: { c: CabezaAyuda; v: CitaAyudaVista; es:
   const sinDar = !v.hecho, rsn = RSN.filter((r) => !sinDar || r[0] === "dep" || r[0] === "otro"), sols = SOL.filter((s) => !sinDar || s[0] !== "corr");
   const [r, setR] = useState<MotivoCita | null>(null), [nota, setNota] = useState(""), [sol, setSol] = useState<QuiereCita>(sp || sd || rub === "evt" || rub === "fiesta" || rub === "evp" || rub === "noche" || rub === "edu" || rub === "ninos" || rub === "dep" ? "rev" : sinDar ? "rev" : "corr"), [amt, setAmt] = useState("");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState(""), [ocupado, setOcupado] = useState(false), [flash, setFlash] = useState("");
-  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(uuid());
   const volver = () => router.push(c.numero.startsWith("B-") ? `/eventos/orden/${c.numero}` : c.numero.startsWith("M-") ? `/mercado/${c.numero}` : c.numero.startsWith("A-") ? `/apartado/${c.numero}` : c.numero.startsWith("F-") ? `/fiesta/${c.numero}` : c.numero.startsWith("EP-") ? `/privado/${c.numero}` : c.numero.startsWith("V-") ? `/viaje/${c.numero}` : c.numero.startsWith("N-") ? `/noche/${c.numero}` : c.numero.startsWith("I-") ? `/insc/${c.numero}` : c.numero.startsWith("D-") ? `/vis/${c.numero}` : `/cita/${c.numero}`);
   const compra = rub === "merc" || rub === "tienda";
   const ins = rub === "edu" || rub === "ninos" || rub === "dep";

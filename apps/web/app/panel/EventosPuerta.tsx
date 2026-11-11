@@ -13,6 +13,7 @@ import { puertaBuscar } from "../(puerta)/puerta/acciones";
 import { Escanear, mandar } from "../(puerta)/puerta/Escanear";
 import { evtIncidenciaCerrar, evtPorteroAsignar, evtPorteroDesasignar, evtPorteroInvitar, evtPorteroQuitar, evtPuertaAbrir, evtPuertaCerrarSesion, evtPuertaReglas, evtPuertaRevocar } from "./acciones-puerta";
 import type { Ctx, Sec } from "./Panel";
+import { uuid } from "@/lib/uuid";
 
 type Bi = { es: string; en: string };
 const CIERRE: [number | null, string, string][] = [[null, "Sin hora", "No time"], [60, "1 h después de empezar", "1 h after start"], [120, "2 h después", "2 h after"], [180, "3 h después", "3 h after"]];
@@ -100,7 +101,7 @@ export function puertaDetalle(c: Ctx): Sec {
     const q = (ui.pQ as string) ?? "", L = (ui.pL as FilaPuerta[] | null) ?? null, man = ui.pMan as { x: FilaPuerta; motivo: string } | undefined;
     const buscar = async (s: string) => { c.setUi({ pQ: s }); if (s.trim().length < 2) { c.setUi({ pL: null }); return; } const z = await puertaBuscar(P.miSesion!, s.trim()).catch(() => null); if (z?.ok) c.setUi({ pL: (z as unknown as { filas: FilaPuerta[] }).filas }); };
     const entrar = async (x: FilaPuerta, n: number, motivo?: string) => {
-      const id = crypto.randomUUID(), z = await mandar(x.kind === "rsvp" ? { sesion: P.miSesion, tipo: "rsvp", rsvp: x.id, id, at: Date.now(), n } : { sesion: P.miSesion, tipo: "boleto", boleto: x.id, motivo, id, at: Date.now(), n, previo: false });
+      const id = uuid(), z = await mandar(x.kind === "rsvp" ? { sesion: P.miSesion, tipo: "rsvp", rsvp: x.id, id, at: Date.now(), n } : { sesion: P.miSesion, tipo: "boleto", boleto: x.id, motivo, id, at: Date.now(), n, previo: false });
       if (!z.ok) { c.setUi({ pRes: { t: es ? z.msg.es : z.msg.en, tone: "danger" }, pMan: undefined }); return; }
       const res = "v" in z ? z.v.res : (z as unknown as { res: keyof typeof RESULTADO }).res, R0 = RESULTADO[res], h = QUE_HACER[res];
       c.setUi({ pMan: undefined, pRes: { t: R0.tono === "ok" ? E2(`VÁLIDO · ${x.nombre} entró${n > 1 ? ` (${n})` : ""}.`, `VALID · ${x.nombre} is in${n > 1 ? ` (${n})` : ""}.`) : `${bi(R0.t, es)} · ${x.nombre}${"v" in z && z.v.ya ? E2(` · entró por ${z.v.ya.puerta} a las ${z.v.ya.hora}`, ` · in through ${z.v.ya.puerta} at ${z.v.ya.hora}`) : ""}${h ? ` · ${bi(h, es)}` : ""}`, tone: R0.tono === "ok" ? "ok" : "danger" } });

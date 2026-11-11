@@ -15,6 +15,7 @@ import { GRADOS } from "@/lib/ninos-comun";
 import type { BookingInsc, Nivel, Para } from "@/lib/inscripciones";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { esperaAccion, inscribirmeAccion } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "PaymentSummary" | "DepositOutcomes";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -38,7 +39,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
   // 4ie · Iglesias «Pedir fecha»: la fecha deseada y la franja (la oficina confirma, propone otra o dice que no hay). Nada se cobra.
   const fe = b.rubro === "fe", [fecha, setFecha] = useState<string | null>(null), [franja, setFranja] = useState<Franja | null>(null), [masFechas, setMasFechas] = useState(false);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false), [anotado, setAnotado] = useState(!!b.espera);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const G = b.grupos.find((g) => g.id === grupo) ?? null, B = b.bandas.find((x) => x.id === banda) ?? null;
   const mat = b.mat, curso = s.k === "curso", resto = s.cents - (curso ? s.mat : 0);
   const linea = fe ? nm(LINEA_FE) : b.rubro === "edu" ? nm(LINEA_EDU) : b.rubro === "dep" ? E2("Solo se cobra lo que ves aquí: nada que aparezca después en la tarjeta.", "Only what you see here is charged: nothing showing up later on your card.") : E2("Los datos de tu niño van cifrados y se borran a los 30 días.", "Your child's details are encrypted and deleted after 30 days.");
@@ -66,7 +67,7 @@ export function Inscribirme({ b, es, pago, yo, grupo0, banda0 }: { b: BookingIns
     if (r.ok) { router.push(`/insc/${r.numero}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
-    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = crypto.randomUUID(); }
+    if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
     if ("grupo" in r && r.grupo) { setPaso(1); router.refresh(); }
   };
   const anotarme = async () => {

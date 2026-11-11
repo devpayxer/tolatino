@@ -5,8 +5,10 @@ import { db } from "./db";
 /* ADM-NOTIF · Notificaciones (Super Admin.dc.html secNotif): plantillas por evento (ES/EN, editables con auditoría), los
    envíos de tus ciudades con su estado de SMS, y las reglas. Las cifras salen de `notifications`, nunca inventadas. */
 export type GrupoNotif = "crit" | "tx" | "support" | "events" | "community" | "mod" | "biz" | "mkt";
-export type Plantilla = { key: string; grp: GrupoNotif; pref: string | null; sms: boolean; title: { es: string; en: string }; body: { es: string; en: string }; editada: boolean; n7: number };
-export type Envio = { id: string; tpl: string; title: string; body: string; uid: string; quien: string; at: string; sms: string; leido: boolean };
+export type Plantilla = { key: string; grp: GrupoNotif; pref: string | null; sms: boolean; title: { es: string; en: string }; body: { es: string; en: string }; editada: boolean; n7: number;
+  // 8c · push: va por push; priv: texto genérico por Apple y Google; app: qué app lo abre; sms_mode: siempre (crit) / sin_push (respaldo) / nunca.
+  push: boolean; priv: boolean; app: "cliente" | "negocio" | "delivery" | "checkin"; sms_mode: "siempre" | "sin_push" | "nunca"; fija: boolean };
+export type Envio = { id: string; tpl: string; title: string; body: string; uid: string; quien: string; at: string; sms: string; leido: boolean; push: string; abierto: boolean };
 const CIUD = "(cardinality($1::text[]) = 0 or n.city_id = any($1::text[]))";
 
 export type Correo = { id: string; tpl: string; subject: string; to: string; uid: string | null; quien: string | null; at: string; status: string; error: string | null };
@@ -22,21 +24,23 @@ export async function correoDe(s: Staff, id: string) {
 }
 /* Correo enmascarado para la lista: a***@dominio.com (el equipo no necesita verlo entero). */
 const mascara = (e: string) => { const [u, d] = e.split("@"); return `${(u ?? "").slice(0, 1)}***@${d ?? ""}`; };
-export async function datosNotif(s: Staff, tab: "tpl" | "log" | "rules" | "mail", antes: string | null) {
+export async function datosNotif(s: Staff, tab: "tpl" | "log" | "rules" | "mail" | "push", antes: string | null) {
   const cur = antes && /^\d{1,18}$/.test(antes) ? antes : null;
   const [k, T, L, M, K] = await Promise.all([
-    db().query<{ hoy: number; sms: number; pruebas: number; frenados: number; fallos: number; leidos: number }>(
+    db().query<{ hoy: number; sms: number; pruebas: number; frenados: number; fallos: number; leidos: number; push: number; ahorrados: number }>(
       `select count(*)::int as hoy, count(*) filter (where n.sms_status = 'enviado')::int as sms, count(*) filter (where n.sms_status in ('pruebas', 'pendiente'))::int as pruebas,
               count(*) filter (where n.sms_status in ('apagado', 'silencio', 'baja'))::int as frenados, count(*) filter (where n.sms_status in ('fallo', 'sin_proveedor'))::int as fallos,
-              count(*) filter (where n.read_at is not null)::int as leidos
+              count(*) filter (where n.read_at is not null)::int as leidos,
+              count(*) filter (where n.push_status in ('enviado', 'pruebas'))::int as push, count(*) filter (where n.sms_status = 'ahorrado')::int as ahorrados
          from notifications n where n.created_at > now() - interval '1 day' and ${CIUD}`, [s.cities]),
     db().query<Plantilla>(
-      `select t.key, t.grp, t.pref, t.sms, t.title, t.body, t.edited_by is not null as editada,
+      `select t.key, t.grp, t.pref, t.sms, t.title, t.body, t.edited_by is not null as editada, t.push, t.push_private as priv, t.app, t.sms_mode,
+              (t.key ~ '^(sal_|biz_sal_|nin_|ninos_|cuenta_)' or t.grp in ('support', 'mod')) as fija,
               (select count(*)::int from notifications n where n.tpl = t.key and n.created_at > now() - interval '7 days' and ${CIUD}) as n7
          from notif_templates t order by array_position(array['crit', 'tx', 'support', 'events', 'community', 'mod', 'biz', 'mkt'], t.grp), coalesce(array_position(array['ord_ok', 'ord_ready', 'ord_way', 'ord_no', 'rsv_ok', 'rsv_alt', 'rsv_no', 'job_reply', 'help_reply', 'help_done', 'mod_hide', 'biz_req', 'biz_help', 'biz_job'], t.key), 99), t.key`, [s.cities]),
     tab === "log" ? db().query<Envio>(
       `select n.id::text, n.tpl, n.title, n.body, u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien,
-              to_char(n.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, n.sms_status as sms, n.read_at is not null as leido
+              to_char(n.created_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, n.sms_status as sms, n.read_at is not null as leido, n.push_status as push, n.opened_via = 'push' as abierto
          from notifications n join users u on u.id = n.user_id where ${CIUD} and ($2::bigint is null or n.id < $2::bigint) order by n.id desc limit 41`, [s.cities, cur]) : Promise.resolve({ rows: [] as Envio[] }),
     tab === "mail" ? db().query<Correo>(
       `select e.id::text, e.tpl, e.subject, e.to_email::text as to, u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), u.phone) as quien,
@@ -49,8 +53,10 @@ export async function datosNotif(s: Staff, tab: "tpl" | "log" | "rules" | "mail"
          from email_outbox where created_at > now() - interval '1 day' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))`, [s.cities]),
   ]);
   const lista = tab === "mail" ? M.rows : L.rows;
+  // 8c · Notificaciones › Push: cifras por plantilla, app y plataforma (7 días), sin personas.
+  const push = tab === "push" ? await (await import("./push/admin")).cifrasPush(s.cities) : null;
   return { kpi: k.rows[0]!, plantillas: T.rows, envios: L.rows.slice(0, 40), correos: M.rows.slice(0, 40).map((x) => ({ ...x, to: mascara(x.to) })), kmail: K.rows[0]!,
-    sig: lista.length > 40 ? lista[39]!.id : null };
+    sig: lista.length > 40 ? lista[39]!.id : null, push };
 }
 export type DatosNotif = Awaited<ReturnType<typeof datosNotif>>;
 

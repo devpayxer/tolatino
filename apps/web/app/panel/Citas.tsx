@@ -15,6 +15,7 @@ import type { RentaFila, RentaVista } from "@/lib/rentas";
 import type { ApartadoFila, ApartadoVista } from "@/lib/apartados";
 import { solicitudFila } from "./Solicitudes";
 import { abrirEstimado, estimadoArmar, estimadoVista, loFinal } from "./Estimado";
+import { uuid } from "@/lib/uuid";
 
 export type CitasData = { apartados?: ApartadoFila[]; aptDet?: ApartadoVista | null; rentas?: RentaFila[]; rentaDet?: RentaVista | null; planes?: PlanPanelFila[]; em?: EmFila[]; emDet?: EmFila | null; sol?: SolFila[]; solDet?: SolPanel | null; vivas?: FilaCita[]; lista?: Awaited<ReturnType<typeof citasLista>>; f?: FiltroCita; q?: string; det?: CitaPanel | null; ayuda?: AyudaCitaPanel | null; ayudas?: Awaited<ReturnType<typeof ayudasCitasNegocio>> };
 type Sec = { blocks: (Bloque | null)[]; ed: Editor | null };
@@ -239,7 +240,7 @@ export function ayudaCita(c: Ctx, numero: string, n: string): (Bloque | null)[] 
       out.push({ type: "note", tone: "info", icon: "card", t: tarjeta });
       if (pideMonto) out.push({ type: "field", k: dec === "alt" ? E2("CUÁNTO LE PROPONES DEVOLVER · DÓLARES", "HOW MUCH YOU PROPOSE TO REFUND · DOLLARS") : E2("CUÁNTO LE DEVUELVES A SU TARJETA · DÓLARES", "HOW MUCH YOU REFUND TO THEIR CARD · DOLLARS"), val: monto, ph: a.amount ? (a.amount / 100).toFixed(2) : a.devolvible ? (a.devolvible / 100).toFixed(2) : "10", onChange: (v) => c.setUi({ acM: v.replace(/[^\d.]/g, "").slice(0, 7) }) });
       out.push({ type: "field", area: true, rows: 3, max: 500, k: (numero.startsWith("D-") ? E2("TU RESPUESTA · LA VE EN SU VISITA", "YOUR REPLY · SHOWN ON THEIR VISIT") : numero.startsWith("M-") ? E2("TU RESPUESTA · LA VE EN SU PEDIDO", "YOUR REPLY · SHOWN ON THEIR ORDER") : numero.startsWith("A-") ? E2("TU RESPUESTA · LA VE EN SU APARTADO", "YOUR REPLY · SHOWN ON THEIR HOLD") : E2("TU RESPUESTA · LA VE EN SU CITA", "YOUR REPLY · SHOWN ON THEIR BOOKING")), val: txt, count: `${txt.length}/500`, ph: es ? ph[dec]![0] : ph[dec]![1], onChange: (v) => c.setUi({ acT: v.slice(0, 500) }) },
-        { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending || (dec === "alt" && !monto), onClick: () => c.run(() => citaAyudaResponder(d.id, numero, dec as "ok" | "alt" | "no", txt, pideMonto ? monto || (a.amount ? (a.amount / 100).toFixed(2) : null) : null, crypto.randomUUID()), E2(`Respuesta enviada. ${n} la ve en To'Latino.`, `Reply sent. ${n} sees it on To'Latino.`), () => c.setUi({ acT: "", acD: "", acM: "" })) }] });
+        { type: "acts", items: [{ l: E2("Enviar respuesta", "Send reply"), v: "primary", icon: "check", off: txt.trim().length < 5 || c.pending || (dec === "alt" && !monto), onClick: () => c.run(() => citaAyudaResponder(d.id, numero, dec as "ok" | "alt" | "no", txt, pideMonto ? monto || (a.amount ? (a.amount / 100).toFixed(2) : null) : null, uuid()), E2(`Respuesta enviada. ${n} la ve en To'Latino.`, `Reply sent. ${n} sees it on To'Latino.`), () => c.setUi({ acT: "", acD: "", acM: "" })) }] });
     }
   } else {
     const D: Record<string, string> = { ok: E2("Aceptaste", "You accepted"), alt: E2(`Propusiste devolver ${money(a.offer ?? 0)}`, `You proposed a ${money(a.offer ?? 0)} refund`), no: E2("Dijiste que no puedes", "You said you can’t") };

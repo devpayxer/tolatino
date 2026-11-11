@@ -69,11 +69,19 @@
         "/admin",
         "/sistema"
       ]
+    },
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   },
   "packageClassList": [
     "AppPlugin",
     "AppLauncherPlugin",
+    "PushNotificationsPlugin",
     "SplashScreenPlugin",
     "StatusBarPlugin",
     "TLAlcancePlugin",

@@ -4,7 +4,7 @@
 import { mismoOrigen } from "@/lib/cuenta";
 import { evento } from "@/lib/eventos";
 
-const PERMISOS = ["camara", "ubicacion"] as const, RESP = ["pedido", "continuar", "ahora_no", "negado"] as const;
+const PERMISOS = ["camara", "ubicacion", "avisos"] as const, RESP = ["pedido", "continuar", "ahora_no", "negado"] as const;
 
 export async function anotarPermiso(p: string, r: string): Promise<void> {
   if (!(await mismoOrigen())) return;

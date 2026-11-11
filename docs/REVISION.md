@@ -3641,3 +3641,74 @@ filas, cifras y pestañas de PanelBloques, y la hoja de confirmación de Mi cuen
 **Lo que no pude compilar aquí (dicho tal cual):** Android y iOS no se compilan en esta máquina (el SDK de Android y Google Maven están bloqueados
 por la red; no hay Xcode). Los plugins de Android se compilaron con `javac` contra Android 16 (el `android-all` de Maven Central) con el API de
 Capacitor simulado; Swift no se compiló. La primera compilación de verdad la hacen los jobs `cascara-android` y `cascara-ios` del CI.
+
+### 8c · Avisos push propios: Web Push, APNs y FCM — push primero, SMS de respaldo (11 nov)
+To'Latino ya avisa **al teléfono por push**: el mismo aviso de siempre (la campana) sale ahora también como notificación, con las mismas
+reglas (lo apagado no va, de noche solo lo crítico). **El servidor de avisos es nuestro** (cola, reintentos, tokens, cifras); el último tramo es
+del sistema: **Web Push** (navegadores y la web instalada, con nuestra llave; sin cuenta de nadie), **APNs** directo para el iPhone y **FCM**
+(solo mensajería) para Android. **$0.** **El SMS pasa a ser respaldo:** lo crítico (cancelación, cambio de fecha u hora) sigue saliendo siempre;
+lo demás que iba por SMS sale solo si la persona no tiene avisos encendidos o el push no llegó. Lo de **Salud, Niños, Soporte, sanciones y la
+cuenta** pasa por Apple y Google solo como «Tienes un aviso nuevo en To'Latino.». Probado: `push8c` (86 comprobaciones, 390 y 1360), el contrato
+de push en el CI (54: el vector oficial del RFC 8291, una implementación independiente que descifra, las tablas de Apple y la especificación de
+FCM v1), 10 guardianes nuevos o ampliados (37/37 al revés), 10 000 avisos por la tubería real (5 ms de media) y la regresión (app8a 110, adm7i 114,
+compa7d 140, Puerta 6g 105, Repartidor 2l 17, avisos 2j 14).
+
+**Lo que vas a ver en tu iPhone con la web instalada** (cuando esté el dominio con HTTPS, Paquete 8-0; por HTTP en la IP el iPhone no permite
+avisos y Mi cuenta te dice «no disponible»):
+1. Abre `https://pruebas.tolatino.com` en **Safari** → **Compartir › Agregar a inicio**. Abre To'Latino desde el ícono nuevo (el globo blanco
+   sobre índigo).
+2. Entra como Marisol (5705550122) → **Mi cuenta › Avisos** → «**Avisos en este teléfono**» → el iPhone pregunta → **Permitir**. Abajo sale
+   «Tus teléfonos con avisos» con **ESTE**.
+3. Pide algo en Sabor Dominicano y, desde otro teléfono o la computadora, acéptalo en el panel (Pedro, 5705550133). Con el iPhone **bloqueado**
+   te llega «Pedido aceptado · Sabor Dominicano aceptó tu pedido #…». **Tócalo**: abre el pedido. En Super Admin › Notificaciones › Envíos ese
+   aviso dice «PUSH ENTREGADO · ABIERTO DESDE EL PUSH» y su SMS «SMS AHORRADO».
+4. Después de tu primer pedido en la web instalada te aparece **una vez** la hoja «Avisos en este teléfono» (Continuar / Ahora no). En una
+   pestaña normal del navegador no interrumpe.
+5. **Super Admin › Notificaciones › Plantillas**: una de Salud dice «PUSH GENÉRICO» y no se puede destapar. **Probar en mi teléfono** con una de
+   Salud: te llega «To'Latino · Tienes un aviso nuevo en To'Latino.».
+6. **Super Admin › Sistema › Integraciones › Push** (`p8c-admin-integraciones-push-1360.png` / `-390.png`): los tres canales con su interruptor,
+   teléfonos con avisos, cola, errores, límites y **Mandar un push de prueba a mi teléfono**.
+7. **Usuarios 360° › Seguridad** de Marisol (`p8c-admin-u360-push-1360.png`): «AVISOS PUSH» con sus teléfonos enmascarados y **Revocar**.
+8. **Panel › Más › Tus apps** (`p8c-panel-tus-apps-390.png` / `-1360.png`): «Avisos del panel en este teléfono».
+
+**Capturas de la sesión:** `p8c-http-no-disponible-390.png` (el sandbox por HTTP: «no disponible», todo sigue por campana y SMS),
+`p8c-micuenta-avisos-apagado-1360.png`, `p8c-micuenta-avisos-1360.png`, `p8c-micuenta-avisos-iphone-390.png`, `p8c-toque-abre-pedido-1360.png`,
+`p8c-hoja-previa-negocios-390.png` (To'Latino Negocios al abrir el panel), `p8c-hoja-previa-pedido-390.png`, `p8c-admin-plantillas-1360.png`,
+`p8c-admin-notif-push-1360.png`, `p8c-admin-integraciones-push-1360.png` y `-390.png`, `p8c-admin-u360-push-1360.png`, `p8c-panel-tus-apps-*.png`.
+
+**Huecos del diseño compuestos con el sistema (§1b):** la hoja previa de avisos (#2, la misma de los permisos con «Avisos en este teléfono»),
+Mi cuenta › Avisos › «En este teléfono» y Panel › Más › «Tus apps» (#8), Integraciones › Push y las cifras de push (#7). Ninguna pieza nueva.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **Push primero, SMS de respaldo** (plan §6 #3–#5): `sms_mode` por plantilla: «siempre» solo el grupo crítico (4 plantillas de eventos), «si no
+  hay push» las 201 que iban por SMS, «nunca» el resto. El SMS de respaldo **espera** al push; si llega queda «ahorrado».
+- **Los interruptores de Mi cuenta › Avisos valen para push y SMS** (no hay un segundo juego «solo push» por grupo): lo que apagas no te llega
+  por ningún lado. El control nuevo es **por teléfono** («En este teléfono» y «Apagar» en cada uno). Lo de crecimiento solo con un permiso
+  aparte (`mkt_push`, apagado de fábrica; hoy no hay plantillas de crecimiento).
+- **De noche** lo que no es crítico **no sale por push** (igual que el SMS) y queda en la campana; no se manda a las 7 AM. Alternativa: mandarlo
+  sin sonido.
+- **La hoja previa solo en las apps y en la web instalada**, una vez por teléfono y en el momento útil (primer pedido, cita o boleto; Negocios al
+  abrir el panel; Repartidor al ponerse en línea; Puerta al aceptar una puerta). En una pestaña del navegador no interrumpe: Mi cuenta y Panel ›
+  Tus apps tienen el interruptor.
+- **Al tocar un push se abre `/app/aviso/{id}`** (común a las cuatro apps): con tu sesión marca abierto y leído y te lleva a la pantalla. Así el
+  push nunca lleva la ruta con datos y lo privado no se lee sin sesión.
+- **Qué app abre cada aviso:** del grupo y la clave de la plantilla (al negocio → Negocios; repartidor y chofer → Repartidor; la puerta →
+  Puerta; lo demás → To'Latino); si no tienes esa app, To'Latino; y siempre tus navegadores con Web Push. Se cambia por plantilla en
+  Notificaciones con motivo. Un guardián nuevo cazó un caso mal: «chofer_salida» abría To'Latino con un enlace del Repartidor (corregido).
+- **Android pide su token de FCM solo cuando el llavero tiene la cuenta de servicio de Firebase** (la app de Android la trae desde la tubería de
+  las tiendas): pedirlo sin Firebase cerraría la app. Hasta entonces dice «no disponible».
+- **La llave VAPID** la crea `deploy.sh` una vez en el servidor (como los demás secretos); sin ella, la app la deriva de `DATOS_SECRET`.
+- **Un servicio `push` nuevo en el compose** (la misma imagen, cada 5 s), además del empujón que da cada aviso al encolarse y del barrido de cada
+  minuto (reintentos con espera creciente, lo vencido y los tokens sin uso a los 90 días).
+
+**Algo que encontré y arreglé de paso (y su guardián):** en el sandbox por HTTP en la IP **pedir, reservar, pagar y escanear se caían** («No se pudo
+enviar»): el navegador no tiene `crypto.randomUUID` sin https y la clave de respaldo ni siquiera era un UUID. Toda clave del navegador sale ahora de
+`lib/uuid.ts` (`crypto.getRandomValues`, que existe siempre) en 33 pantallas; guardián `uuidSinContextoSeguro`.
+
+**Lo que no pude probar aquí (dicho tal cual):** Android e iOS no se compilan en esta máquina; el plugin oficial de avisos se agregó a las cuatro
+apps (y el reenvío del token en `AppDelegate+Avisos.swift`), y lo compila el CI de las cáscaras. APNs y FCM de verdad esperan las llaves
+(Paquete 8-2). En Chromium la suscripción de Web Push se simula en la página (el Chromium de las pruebas no tiene las credenciales del servicio
+de push de Google); el cifrado, la firma VAPID, el service worker, la notificación y el toque son de verdad.
+
+**Numeración:** el plan reservaba 0126 para 8b y 0127 para 8c; como 8b espera el dominio, 8c tomó **0126** y 8b tomará 0127 (anotado en el plan;
+nada asume números contiguos).

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type ComponentType, type ReactNode } from 
 import type { PrevioCancelar } from "@/lib/boletos-despues";
 import { diaCorto, dinero, hora } from "@/lib/evt-comun";
 import { bolCancelar, bolNombre, bolPrevioCancelar, bolReenviarme, bolTransferir } from "./acciones-despues";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "HelpReasonList" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -20,7 +21,7 @@ export const fechaHora = (iso: string, tz: string, es: boolean) => {
   const p = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "numeric", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(iso)).map((x) => [x.type, x.value]));
   return `${diaCorto(`${p.year}-${p.month}-${p.day}`, es)} · ${hora((Number(p.hour) % 24) * 60 + Number(p.minute))}`;
 };
-const nuevaClave = () => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16)}0000-0000-4000-8000-000000000000`.slice(0, 36));
+const nuevaClave = () => (uuid());
 
 export function Hoja({ titulo, label, onClose, children, es, fondo = "bg-white" }: { titulo: string; label: string; onClose: () => void; children: ReactNode; es: boolean; fondo?: string }) {
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); }; addEventListener("keydown", k); return () => removeEventListener("keydown", k); }, [onClose]);

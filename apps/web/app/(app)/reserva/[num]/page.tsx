@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
+import { MomentoAvisos } from "@/app/_cascara/HojaPermiso";
 import { idioma } from "@/lib/idioma";
 import { rsvDe, rsvHoras } from "@/lib/reservas";
 import { Estado } from "./Estado";
@@ -18,5 +19,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   const otras = (r.st === "no" || r.st === "exp") && r.dia >= 0
     ? (await rsvHoras(r.negocio.id, r.dia, r.p, "")).grupos.flatMap((g) => g.sl).filter((s) => s.free && s.h !== r.h).slice(0, 6).map((s) => s.h)
     : [];
-  return <Estado r={r} otras={otras} telefono={u.phone} es={lang === "es"} />;
+  // 8c · El momento útil para ofrecer los avisos en este teléfono (una vez; nunca al abrir la app por primera vez).
+  return <><Estado r={r} otras={otras} telefono={u.phone} es={lang === "es"} /><MomentoAvisos es={lang === "es"} /></>;
 }

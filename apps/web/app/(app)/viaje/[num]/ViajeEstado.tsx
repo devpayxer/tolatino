@@ -12,6 +12,7 @@ import { LINEA_TRANS } from "@/lib/transporte-comun";
 import type { ViajeVista } from "@/lib/viajes";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../pago/MetodoPago";
 import { precioAccion, viajeAccion } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,13 +27,13 @@ export function ViajeEstado({ x, es, pago }: { x: ViajeVista; es: boolean; pago:
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter(), nm = (b: { es: string; en: string }) => (es ? b.es : b.en || b.es), linea = nm(LINEA_TRANS);
   const [ocupado, setOcupado] = useState(false), [error, setError] = useState<string | null>(null), [flash, setFlash] = useState<string | null>(null), [confirmar, setConfirmar] = useState(false);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null), [hoja, setHoja] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const precio = async (que: "aceptar" | "no") => {
     if (ocupado || !x.precio) return; setOcupado(true); setError(null);
     const r = await precioAccion(x.numero, que, x.precio.v, que === "aceptar" ? tarjeta?.pm ?? null : null, clave.current).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
     setOcupado(false);
     if (r.ok) { setFlash(que === "aceptar" ? E2("Listo: tu mudanza quedó confirmada", "Done: your move is confirmed") : E2("Listo: no se cobró nada", "Done: nothing was charged")); setTimeout(() => setFlash(null), 3200); router.refresh(); }
-    else { setError(es ? r.msg.es : r.msg.en); clave.current = crypto.randomUUID(); }
+    else { setError(es ? r.msg.es : r.msg.en); clave.current = uuid(); }
   };
   const hacer = async (que: "cancelar" | "aceptar" | "nogracias", ok: string) => {
     if (ocupado) return; setOcupado(true); setError(null);

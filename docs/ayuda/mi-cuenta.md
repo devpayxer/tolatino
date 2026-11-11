@@ -49,8 +49,9 @@ cuenta._
 | Cerrar una sesión | Ese dispositivo tiene que entrar otra vez. La sesión de este dispositivo no se cierra desde aquí. |
 
 ## Preguntas frecuentes
-**¿Por qué no me llegan los avisos?** Todavía no salen avisos al teléfono ni correos. Mientras, todo lo ves en Mi cuenta y
-en cada pedido, reservación o solicitud. Lo que elijas en Avisos se aplica desde el primero.
+**¿Por qué no me llegan los avisos al teléfono?** Revisa Mi cuenta › Avisos › **En este teléfono**: enciende «Avisos en este teléfono». Si
+dice que no están disponibles aquí, te dice por qué (por ejemplo, en el iPhone hace falta agregar To'Latino a la pantalla de inicio desde
+Safari). Mientras, todo te llega en la campana y, cuando aplica, por texto.
 
 **¿Quién ve mi teléfono?** Solo el negocio de tu pedido, reservación o solicitud, y solo mientras dura.
 
@@ -84,8 +85,8 @@ My account brings together everything that is yours: an overview (neighbor card,
 orders, bookings and interviews, things waiting on you, your local support this month), Orders (by month, with filters,
 "see more", order again and write a review), Bookings (upcoming and past), Saved (businesses you saved or follow, jobs and
 updates), Reviews (written and to write), Jobs (your applications), Profile (photo, name, nickname, email saved as not
-verified until emails exist; change your phone number with a code sent to the new number), Notifications (saved now,
-applied when notifications launch), Settings (language, your city every 30 days and only open cities, privacy with your
+verified until emails exist; change your phone number with a code sent to the new number), Notifications («On this phone»: turn on push
+notifications here, see your phones with notifications and turn one off; each type applies to push and text messages), Settings (language, your city every 30 days and only open cities, privacy with your
 open sessions, your business, sign out, delete account) and Invite neighbors (share a link). Deleting your account takes
 three steps with a code, is scheduled 30 days out and is canceled if you sign in again or tap "Cancel deletion".
 

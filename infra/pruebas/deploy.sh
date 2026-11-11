@@ -31,6 +31,9 @@ grep -q '^BARRIDO_TOKEN=' "$ENV_FILE" || echo "BARRIDO_TOKEN=$(openssl rand -hex
 # Llave Ed25519 que firma el QR de los boletos (6c): la privada vive solo aquí (PKCS8 DER en base64); la pública la publica la app en
 # qr_keys. Una por entorno: un QR del sandbox nunca vale en producción. Perderla anula los QR mostrados hasta que la app los vuelva a firmar.
 grep -q '^QR_LLAVE_PRIVADA=' "$ENV_FILE" || echo "QR_LLAVE_PRIVADA=$(openssl genpkey -algorithm ed25519 -outform DER | base64 -w0)" >> "$ENV_FILE"
+# 8c · Llave VAPID de Web Push (P-256, PKCS8 DER en base64): la privada vive solo aquí; la pública la entrega la app a cada navegador. Una por
+# entorno (las suscripciones del sandbox nunca valen en producción). Perderla deja las suscripciones sin uso: los navegadores se vuelven a suscribir.
+grep -q '^VAPID_PRIVADA=' "$ENV_FILE" || echo "VAPID_PRIVADA=$(openssl ecparam -name prime256v1 -genkey -noout | openssl pkcs8 -topk8 -nocrypt -outform DER | base64 -w0)" >> "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 
 # 2b) Fotos: Garage (S3 propio). Antes que el resto: su configuración (con secretos) tiene que existir antes de montar

@@ -147,6 +147,8 @@ export async function usuario360(s: Staff, id: string) {
     // 8a · Una sesión de una de las cuatro apps dice cuál y qué versión (rótulo TLApp, informativo): «To'Latino Puerta 1.0.0 (12) · iOS 17.5».
     dispositivos: ses.rows.map((d) => ({ ...d, nombre: UA(d.ua), nav: d.plat === "web" ? NAV(d.ua) : null,
       app: d.plat === "web" ? "Web" : `${APP_NOMBRE[d.app] ?? d.app}${d.ver ? ` ${d.ver} (${d.build ?? "?"})` : ""}${d.so ? ` · ${d.plat === "ios" ? "iOS" : "Android"} ${d.so}` : ""}` })),
+    // 8c · Teléfonos con avisos (push): enmascarados (rótulo, app, canal y los últimos 6 de la huella; nunca el token).
+    push: await (await import("./push/admin")).dispositivosDe(id),
     compartidos: compartidos.rows.map((x) => ({ ...x, phone: telefonoBonito(x.phone) })),
     cambios: cambios.rows, sanciones: sanc.rows, recomendaciones: rec.rows, reportes: reps.rows, reclamos: cl.rows, cambiosSensibles: cs.rows, historial: hist.rows, ciudades: ciudades.rows,
   };

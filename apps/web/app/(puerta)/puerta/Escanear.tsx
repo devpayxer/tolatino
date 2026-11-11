@@ -11,10 +11,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Escaner } from "./Escaner";
 import { QUE_HACER, RESULTADO, type Pregunta, type ResEscaneo, type VistaEscaneo } from "@/lib/puerta-comun";
 import type { PuertaLocal } from "./sin-conexion/usePuertaLocal";
+import { uuid } from "@/lib/uuid";
 
 type Bi = { es: string; en: string };
 const TONO = { ok: ["var(--tl-signal)", "var(--tl-ink)"], warn: ["var(--tl-pro)", "var(--tl-ink)"], bad: ["var(--tl-danger)", "var(--tl-white)"] } as const;
-const uuid = () => (crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, (c) => (Number(c) ^ (crypto.getRandomValues(new Uint8Array(1))[0]! & (15 >> (Number(c) / 4)))).toString(16)));
 let audio: AudioContext | null = null;
 function sonar(bien: boolean) {
   try {

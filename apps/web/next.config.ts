@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
     // 6h · Los service workers propios: siempre la última versión, y el de la Puerta con alcance /puerta (el archivo vive en /puerta/).
     { source: "/puerta/sw.js", headers: [{ key: "Service-Worker-Allowed", value: "/puerta" }, { key: "Cache-Control", value: "no-cache" }] },
     { source: "/sw-boletos.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
+    // 8c · El service worker de los avisos (alcance «/»): siempre el último.
+    { source: "/sw-push.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
     {
       source: "/(.*)",
       headers: [

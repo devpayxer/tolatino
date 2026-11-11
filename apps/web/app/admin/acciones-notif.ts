@@ -35,3 +35,30 @@ export async function plantillaProbar(key: string): Promise<ResAdm> {
   await tx((c) => auditar(c, { actor: s.id, action: "notificaciones.probar", targetKind: "notif_template", targetId: String(key), after: { a: "mi teléfono" } }));
   return { ok: true, mensaje: "Enviada a tu bandeja. Mírala en la campana." };
 }
+
+/* 8c · El push de una plantilla (Notificaciones › Plantillas): va o no por push, texto genérico (Salud, Niños, Soporte, sanciones y cuenta no se
+   pueden destapar: la base y esta acción lo impiden) y qué app lo abre. Permiso notif:editar, con motivo y auditoría antes → después. */
+const APPS_PUSH = ["cliente", "negocio", "delivery", "checkin"] as const;
+export async function plantillaPush(key: string, campo: string, valor: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("notif", "editar")) return { ok: false, mensaje: "Tu rol no edita plantillas." };
+  const m = String(motivo ?? "").trim().slice(0, 300);
+  if (!m) return { ok: false, mensaje: "Escribe el motivo del cambio." };
+  if (!["push", "priv", "app"].includes(campo)) return { ok: false, mensaje: "Ese cambio no existe." };
+  if (campo === "app" && !(APPS_PUSH as readonly string[]).includes(valor)) return { ok: false, mensaje: "Esa app no existe." };
+  return tx(async (c) => {
+    const p = (await c.query<{ push: boolean; priv: boolean; app: string; fija: boolean }>(
+      `select push, push_private as priv, app, (key ~ '^(sal_|biz_sal_|nin_|ninos_|cuenta_)' or grp in ('support', 'mod')) as fija from notif_templates where key = $1 for update`, [String(key)])).rows[0];
+    if (!p) return { ok: false as const, mensaje: "Esa plantilla no existe." };
+    if (campo === "priv" && p.fija && valor !== "si") return { ok: false as const, mensaje: "Lo de Salud, Niños, Soporte, sanciones y cuenta siempre va con el texto genérico." };
+    const col = campo === "push" ? "push" : campo === "priv" ? "push_private" : "app";
+    const nuevo: string | boolean = campo === "app" ? valor : valor === "si";
+    const antes: string | boolean = campo === "push" ? p.push : campo === "priv" ? p.priv : p.app;
+    if (antes === nuevo) return { ok: false as const, mensaje: "Ya está así." };
+    await c.query(`update notif_templates set ${col} = $2, edited_by = $3, updated_at = now() where key = $1`, [String(key), nuevo, s.id]);
+    const etq = campo === "push" ? "Push" : campo === "priv" ? "Texto genérico" : "Abre en";
+    const ver = (x: string | boolean) => (typeof x === "boolean" ? (x ? "sí" : "no") : x);
+    await auditar(c, { actor: s.id, action: "notificaciones.push", targetKind: "notif_template", targetId: String(key), before: { [etq]: ver(antes) }, after: { [etq]: ver(nuevo) }, reason: m });
+    return { ok: true as const, mensaje: "Guardado. Los avisos nuevos salen así." };
+  });
+}

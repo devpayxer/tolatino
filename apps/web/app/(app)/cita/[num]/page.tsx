@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
+import { MomentoAvisos } from "@/app/_cascara/HojaPermiso";
 import { idioma } from "@/lib/idioma";
 import { citaVista } from "@/lib/citas";
 import { vencerCitas } from "@/lib/citas-flujo";
@@ -21,5 +22,6 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   // 4d: si el negocio cobra con tarjeta, el cliente elige con cuál se retiene lo que aprueba.
   const modo = pasarela.modo();
   const pago = c.est?.dinero.tarjeta && modo !== "apagado" ? { modo, pk: process.env.STRIPE_PUBLISHABLE_KEY ?? null, tarjetas: await misTarjetas(u.id) } : null;
-  return <Estado c={c} yo={[u.first_name, u.last_name].filter(Boolean).join(" ")} es={lang === "es"} cambio={sp.cambio === "1"} pago={pago} />;
+  // 8c · El momento útil para ofrecer los avisos en este teléfono (una vez; nunca al abrir la app por primera vez).
+  return <><Estado c={c} yo={[u.first_name, u.last_name].filter(Boolean).join(" ")} es={lang === "es"} cambio={sp.cambio === "1"} pago={pago} /><MomentoAvisos es={lang === "es"} /></>;
 }

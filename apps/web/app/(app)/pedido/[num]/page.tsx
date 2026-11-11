@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { yo } from "@/lib/cuenta";
+import { MomentoAvisos } from "@/app/_cascara/HojaPermiso";
 import { idioma } from "@/lib/idioma";
 import { ayudaDePedido } from "@/lib/ayuda";
 import { pedidoDe } from "@/lib/pedir";
@@ -15,5 +16,6 @@ export default async function Page({ params }: { params: Promise<{ num: string }
   if (!u) redirect(`/entrar?volver=${encodeURIComponent(`/pedido/${num}`)}`);
   const [p, a] = await Promise.all([pedidoDe(u.id, num, lang), ayudaDePedido(u.id, num)]);
   if (!p) notFound();
-  return <Pedido p={p} es={lang === "es"} ayuda={a ? { a: a.a, puede: a.puede } : null} />;
+  // 8c · El momento útil para ofrecer los avisos en este teléfono (una vez; nunca al abrir la app por primera vez).
+  return <><Pedido p={p} es={lang === "es"} ayuda={a ? { a: a.a, puede: a.puede } : null} /><MomentoAvisos es={lang === "es"} /></>;
 }

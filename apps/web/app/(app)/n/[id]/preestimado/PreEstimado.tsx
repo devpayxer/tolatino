@@ -9,6 +9,7 @@ import type { OficiosPublico } from "@/lib/oficios-publico";
 import { subirFoto } from "@/lib/subir-foto";
 import { HojaCasa, HojaVehiculo, casaMeta, compatCasa, compatVeh, useOficio, vehMeta, vehName } from "../Oficios";
 import { pedirPreEstimado } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,7 +26,7 @@ export function PreEstimado({ op, svcId, es, yo }: { op: OficiosPublico; svcId: 
   const [luces, setLuces] = useState<string[]>([]), [area, setArea] = useState<string | null>(null), [nota, setNota] = useState(""), [code, setCode] = useState("");
   const [marca, setMarca] = useState(""), [edad, setEdad] = useState(""), [cuando, setCuando] = useState("sem");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(uuid());
   const cp = auto ? compatVeh(op, v.veh, es) : compatCasa(op, v.casa, es), dato = auto ? v.veh : v.casa;
   const resp = op.pol.resp * 3 >= 60 ? `${Math.round((op.pol.resp * 3) / 60)} h` : `${Math.max(30, op.pol.resp * 3)} min`;
   const okSym = auto ? luces.length > 0 || nota.trim().length >= 10 : nota.trim().length >= 10;

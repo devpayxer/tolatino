@@ -55,7 +55,9 @@ export type ClaveConfig =
   | "app_min_build_cliente_ios" | "app_min_build_cliente_android" | "app_min_build_negocio_ios" | "app_min_build_negocio_android"
   | "app_min_build_delivery_ios" | "app_min_build_delivery_android" | "app_min_build_checkin_ios" | "app_min_build_checkin_android"
   | "app_aviso_build_cliente_ios" | "app_aviso_build_cliente_android" | "app_aviso_build_negocio_ios" | "app_aviso_build_negocio_android"
-  | "app_aviso_build_delivery_ios" | "app_aviso_build_delivery_android" | "app_aviso_build_checkin_ios" | "app_aviso_build_checkin_android";
+  | "app_aviso_build_delivery_ios" | "app_aviso_build_delivery_android" | "app_aviso_build_checkin_ios" | "app_aviso_build_checkin_android"
+  // 8c · Push (0126; se cambian en Sistema › Integraciones › Push)
+  | "push_ttl_h" | "push_reintentos" | "push_lote" | "push_por_minuto" | "push_inactivo_dias";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

@@ -9,6 +9,7 @@ import type { Casa, OficiosPublico } from "@/lib/oficios-publico";
 import { HojaCasa, useOficio } from "../n/[id]/Oficios";
 import { subirFoto } from "@/lib/subir-foto";
 import { pedirEmergencia } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,7 +27,7 @@ export function Emergencia({ opciones, casa: casa0, es, yo, desde, ek0, linea911
   useEffect(() => { if (casaId !== primera.current) { primera.current = casaId; router.refresh(); } }, [casaId, router]);
   const [ek, setEk] = useState<string | null>(ek0), [nota, setNota] = useState(""), [acceso, setAcceso] = useState(""), [cuando, setCuando] = useState("now");
   const [fotos, setFotos] = useState<{ id: string; url: string }[]>([]), [subiendo, setSubiendo] = useState(false), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const fileRef = useRef<HTMLInputElement>(null), clave = useRef(uuid());
   const o = opciones.find((x) => x.ek === ek) ?? null;
   const miss = [!ek ? E2("Elige qué pasa", "Pick what is going on") : null, !casa ? E2("Agrega tu casa", "Add your home") : null,
     ek && casa && o && !o.n ? E2("Nadie 24/7 llega hasta tu casa para esto. Llama a uno directo.", "No 24/7 business reaches your home for this. Call one directly.") : null].filter(Boolean) as string[];

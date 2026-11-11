@@ -8,6 +8,7 @@ import { useRef, useState, type ComponentType } from "react";
 import type { OpcionesRenta } from "@/lib/rentas";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { apartarLaRenta } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,7 +28,7 @@ export function Rentar({ o, es, yo, pago }: { o: OpcionesRenta; es: boolean; yo:
   const [dias, setDias] = useState<number>(1), [pick, setPick] = useState(o.dias[0]?.f ?? null);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const a = o.art, name = nm(a.n), cost = costo(a.precio, dias), back = pick ? addD(pick, dias) : null;
   const fL = (f: string) => { const d = new Date(`${f}T12:00:00Z`); return es ? `el ${DL.es[d.getUTCDay()]} ${d.getUTCDate()} de ${MO.es[d.getUTCMonth()]}` : `${DL.en[d.getUTCDay()]}, ${MO.en[d.getUTCMonth()]} ${d.getUTCDate()}`; };
   const pickL = (d: OpcionesRenta["dias"][number]) => { const x = new Date(`${d.f}T12:00:00Z`); return d.k === "hoy" ? E2("Hoy", "Today") : d.k === "man" ? E2("Mañana", "Tomorrow") : es ? `${DL.es[x.getUTCDay()]!.charAt(0).toUpperCase()}${DL.es[x.getUTCDay()]!.slice(1)} ${x.getUTCDate()}` : `${DL.en[x.getUTCDay()]} ${x.getUTCDate()}`; };

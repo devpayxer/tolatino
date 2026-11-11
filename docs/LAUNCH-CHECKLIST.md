@@ -336,12 +336,14 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **SMS de verdad:** con la clave de Telnyx (`TELNYX_API_KEY`, `TELNYX_FROM`) en los secretos del entorno de producción
       y el registro 10DLC, los avisos salen solos (`lib/avisos.ts`). Hoy en el sandbox quedan «en modo pruebas». Sin
       reintentos todavía: un SMS que falla queda «falló» en Envíos (agregar reintento con espera antes de la fase 9).
-- [ ] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es.
+- [x] **Push en las apps** (Fase 8): el mismo aviso como push; la plantilla ya dice qué grupo es. **Hecho en 8c (11 nov):** Web Push de verdad; APNs y
+      FCM contra simuladores hasta que estén las llaves (ver «Fase 8 · 8c»).
 - [ ] **Anuncios in-app** (secNotif «Anuncios»): banner de un día en el home de la ciudad. Falta el banner en el inicio.
 - [ ] **Plantillas que faltan** porque su función aún no existe: código de entrada como plantilla editable, pedido tarde,
       recibo por correo, propuesta de evento privado, citas (confirmada / otra hora), devolución, evento cancelado, sello
       decidido, ciudad abierta, resumen semanal. Se agregan con su función.
-- [ ] **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push.
+- [ ] **Cifras de entrega y apertura** (secNotif: entregados, abiertos, costo SMS): necesitan el webhook de Telnyx y push. **Push hecho en 8c**
+      (Notificaciones › Push: entregados al proveedor, abiertos desde el push, SMS ahorrados); falta la entrega del SMS (webhook de Telnyx).
 - [ ] **Avisos que la pantalla ya promete y ahora pueden salir:** reporte de foto («te avisamos el resultado»), invitación al
       equipo, «Avísame cuando haya», recomendar. Engancharlos a `avisar()` con su plantilla.
 
@@ -646,7 +648,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
       Tabla usa índices `(city_id, month, puntos desc, user_id)` y cursor; «mi lugar» cuenta los de delante (índice), y `pts_rango` mira la
       escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov)
-- [ ] **5f · Notificación «Subiste de rango» en la app (push):** hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
+- [x] **5f · Notificación «Subiste de rango» en la app (push):** (hecho en 8c: va por push con la misma regla) hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
 - [ ] **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov)
 - [ ] **5f · Condiciones de los rangos editables** (además del nombre): hoy el admin cambia nombres, valores de las reglas y el tope; los
       puntos mínimos y las condiciones viven en `ranks.min_points` / `ranks.cond` y se cambian con migración. Si el fundador los quiere en
@@ -665,7 +667,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       cachearla por ciudad). Medir en la base de carga. (5g, 7 nov)
 - [ ] **5g · Monedas y cupones en los 9 dispositivos:** `com5g` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
       de CI. (5g, 7 nov)
-- [ ] **5g · Push de los avisos de monedas y cupones** (`gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*`): hoy en la campana, sin SMS. (5g, 7 nov)
+- [x] **5g · Push de los avisos de monedas y cupones** (hecho en 8c) (`gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*`): hoy en la campana, sin SMS. (5g, 7 nov)
 - [x] **5g · Analítica › Comunidad:** — **Hecho en 5i** (vistas por ciudad y día, sin personas). monedas emitidas y canjeadas, canjes por negocio (por ciudad, sin personas) — bloque 5i. (5g, 7 nov)
 - [ ] **5h · LibreTranslate real en el sandbox:** aquí solo se probó con un traductor de mentira (los modelos de argos-net.com están
       bloqueados en la red de la sesión de trabajo). En el sandbox: que `tolatino-traductor` baje los modelos y quede arriba, Auto-moderación
@@ -700,7 +702,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       tablas; si pasa del presupuesto, pasar a un derivado por ciudad y día que rehace el barrido) y el resumen diario (500 personas por
       vuelta del barrido) no se midieron en la base de carga. (5i, 8 nov)
 - [ ] **5i · Rango del negocio** (§6 #23): no se construye hasta que se diseñe la ficha. (5i, 8 nov)
-- [ ] **5i · Resumen diario por push o correo:** hoy llega a la campana (la app con push llega con Capacitor). (5i, 8 nov)
+- [x] **5i · Resumen diario por push o correo:** (push hecho en 8c; el correo sigue pendiente) hoy llega a la campana (la app con push llega con Capacitor). (5i, 8 nov)
 - [ ] **5i · Super Admin de la Fase 5 en los 9 dispositivos:** `adm5i` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de
       CI. (5i, 8 nov)
 - [ ] **5i · Textos del Super Admin en inglés:** el Super Admin está en español (como el resto del admin); las etiquetas de Configuración
@@ -878,7 +880,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       resume. (6g, 10 nov)
 - [ ] **6g · SMS de verdad para «Te invitaron a la puerta»** (`puerta_invitado`): sale con la clave del proveedor (Telnyx). Hoy en modo pruebas; el
       código también se ve en el panel para dictarlo. (6g, 10 nov)
-- [ ] **6g · Push de verdad** para «Hoy escaneas en la puerta» (`puerta_abre`, una hora antes de las puertas) y «Tienes una puerta»: hoy en Avisos
+- [x] **6g · Push de verdad** (hecho en 8c: van por push a To'Latino Puerta) para «Hoy escaneas en la puerta» (`puerta_abre`, una hora antes de las puertas) y «Tienes una puerta»: hoy en Avisos
       de la app (push con la app instalable). (6g, 10 nov)
 - [ ] **6g · Prueba noc4c dependiente del día:** su reloj movido (−2000 min) no alcanza cuando la próxima noche abierta está a 2 días (martes →
       jueves); con −9000 pasa. Cambiar la prueba para que mueva el reloj desde la noche de la reserva. (6g, 10 nov)
@@ -1184,3 +1186,30 @@ en el momento. Se marca solo cuando está hecho de verdad.
       instalación congelada sin `apps/mobile` se probó aparte con pnpm. El CI la construye en cada push. (8a, 11 nov)
 - [ ] **Presupuesto de velocidad de las apps** (tocar el ícono → primer pintado ≤ 1.5 s; isla ≤ 400 ms): medir en emulador y simulador. (8a, 11 nov)
 - [ ] **En los 9 dispositivos:** `app8a` corre en 390 y 1360 en local; falta la matriz de CI. (8a, 11 nov)
+
+## Fase 8 · 8c (avisos push propios: Web Push, APNs y FCM; push primero, SMS de respaldo; 11 nov)
+- [ ] **Web Push en el iPhone del fundador (W, paso 1):** necesita el dominio con HTTPS (Paquete 8-0). En el sandbox por HTTP en la IP los
+      navegadores no permiten Web Push: Mi cuenta dice «no disponible» y todo sigue por la campana y el SMS (probado). (8c, 11 nov)
+- [ ] **APNs y FCM de verdad:** hoy contra los simuladores (`scripts/push-sim`) y el contrato (`scripts/contrato-push`, en el CI). Faltan la llave
+      .p8 de APNs con su Team ID y la cuenta de servicio de Firebase en el llavero (Paquete 8-2), y la primera prueba en un iPhone (TestFlight) y
+      un Android. El sandbox usa el APNs de producción (TestFlight); un build de Xcode necesita `APNS_ENTORNO=desarrollo`. (8c, 11 nov)
+- [ ] **Firebase en la cáscara de Android:** el CI de las tiendas (8h) escribe `res/values/firebase.xml` de cada sabor desde el llavero (el
+      plugin de avisos lo necesita para pedir el token). Hasta entonces Android dice «no disponible» y no pide el token (pedirlo sin
+      Firebase cerraría la app). Quitar esa compuerta cuando todo build la lleve. (8c, 11 nov)
+- [ ] **iOS: `aps-environment`** va en `project.yml` como «development»; la exportación a TestFlight lo cambia a producción (a verificar en el
+      primer build firmado de 8h). No se compiló aquí (sin Xcode). (8c, 11 nov)
+- [ ] **El SMS de respaldo sale de verdad cuando haya Telnyx** (`TELNYX_API_KEY`, `TELNYX_FROM`, 10DLC): hoy «en modo pruebas» en el sandbox; los
+      textos de Mi cuenta › Avisos y del Super Admin que lo nombran están anotados en el guardián promesaSms. (8c, 11 nov)
+- [ ] **«pushsubscriptionchange»:** si el navegador cambia la suscripción sola, hoy se vuelve a registrar al abrir To'Latino (una vez al día);
+      atenderlo en el service worker necesita una ruta propia (las acciones del servidor no se llaman desde ahí). (8c, 11 nov)
+- [ ] **Silencio de noche:** lo que no es crítico no sale por push entre 10 PM y 7 AM (como el SMS), ni se manda a las 7. Alternativa a decidir:
+      mandarlo «sin sonido» (iOS `passive`). (8c, 11 nov)
+- [ ] **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
+      credenciales del servicio de push de Google); el resto es real (service worker, permiso, cifrado, VAPID, descifrar, mostrar, tocar). Probar
+      una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov)
+- [ ] **Presupuesto de velocidad en la base de carga** (`scripts/carga/apps-1m.mjs`, máquina aparte): aquí, 10 000 avisos por la tubería real en
+      la base local: avisar() con el push encolado, media 4,98 ms (p95 6,3 ms); el trabajador entregó 10 000 en 49,8 s al simulador (tope
+      `push_por_minuto` 10 000; los 50 de más salieron el minuto siguiente); 0 duplicados. Falta APNs p95 ≤ 2 s contra Apple. (8c, 11 nov)
+- [ ] **Íconos de la web instalada:** `public/assets/app/icono-*.png` salen del logo del sistema sobre `--tl-action` (el mismo dibujo que el
+      ícono de la app To'Latino); se generaron una vez con sharp. Si el ícono de la app cambia, regenerarlos. (8c, 11 nov)
+- [ ] **En los 9 dispositivos:** `push8c` corre en 390 y 1360 en local; falta la matriz de CI. (8c, 11 nov)

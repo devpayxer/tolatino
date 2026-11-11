@@ -23,6 +23,9 @@ services:
       MEDIOS_KEY_ID: ${MEDIOS_KEY_ID:-}
       MEDIOS_SECRET: ${MEDIOS_SECRET:-}
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
+      # 8c · Web Push: la llave VAPID del entorno (la crea deploy.sh). Sin ella la app la deriva de DATOS_SECRET. APNs y FCM leen sus llaves del
+      # llavero de las tiendas (Sistema › Integraciones), nunca de aquí.
+      VAPID_PRIVADA: ${VAPID_PRIVADA:-}
       # 5d · Moderación de imágenes propia (regla `img`): solo por la red interna; si no responde, las fotos esperan revisión.
       MODERACION_IMG_URL: http://moderacion-img:8790
       # 5h · Traductor propio («Ver traducción»): la única dirección de traducción de la app, por la red interna. Si no responde, la
@@ -112,6 +115,19 @@ services:
     environment:
       BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
     command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;const go=async()=>{try{const r=await fetch('http://web:3000/api/interno/barrido',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(55000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'barrido',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'barrido',e.message)}};setTimeout(go,30000);setInterval(go,60000)"]
+    depends_on:
+      - web
+
+  # 8c · El trabajador de push (fase8-apps.md §3.3): cada 5 s le pide a la app que mande lo que hay en la cola (además del empujón que da cada
+  # aviso al encolarse y del barrido de cada minuto, que reintenta y vence). Misma imagen, mismo token del barrido, solo por la red interna.
+  # Caído: los avisos siguen en la campana y el SMS de respaldo sale al vencer push_ttl_h (el barrido).
+  push:
+    image: tolatino/web:pruebas
+    pull_policy: never # la construye el servicio web en este mismo `up --build`
+    restart: unless-stopped
+    environment:
+      BARRIDO_TOKEN: ${BARRIDO_TOKEN:-}
+    command: ["node", "-e", "const t=process.env.BARRIDO_TOKEN;let ocupado=false;const go=async()=>{if(ocupado)return;ocupado=true;try{const r=await fetch('http://web:3000/api/interno/push',{method:'POST',headers:{'x-barrido-token':t},signal:AbortSignal.timeout(30000)});const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)console.error(new Date().toISOString(),'push',r.status,JSON.stringify(j))}catch(e){console.error(new Date().toISOString(),'push',e.message)}finally{ocupado=false}};setTimeout(go,20000);setInterval(go,5000)"]
     depends_on:
       - web
 

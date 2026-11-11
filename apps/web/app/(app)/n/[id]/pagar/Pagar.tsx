@@ -9,6 +9,7 @@ import type { DropPref, MenuPublico } from "@/lib/pedir";
 import { calc, carritoGuardado, entrega, EnvioGratis, guardarCarrito, guardarModo, limpiar, modoDe, modoGuardado, Modos, type Linea, type Modo } from "../MenuCliente";
 import { enviarPedido } from "../acciones-pedido";
 import { MetodoPago, marcaB, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,7 +48,7 @@ export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: Pago
   const [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas[0] ?? null);
   const [hoja, setHoja] = useState(false), [declinada, setDeclinada] = useState<string | null>(null);
   const conTarjeta = !!pago && payK === "card";
-  const clave = useMemo(() => (typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now().toString(16).padStart(8, "0")}-0000-4000-8000-${Math.random().toString(16).slice(2, 14).padEnd(12, "0")}`), []);
+  const clave = useMemo(() => (uuid()), []);
   useEffect(() => { setCart(limpiar(m, carritoGuardado(biz))); setModoG(modoGuardado(biz)); window.scrollTo(0, 0); }, [m, biz]);
   useEffect(() => { setCuando(est.later ? slotsAll[0]?.v ?? "asap" : "asap"); setVerHoras(false); }, [dl]); // eslint-disable-line react-hooks/exhaustive-deps
 

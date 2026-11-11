@@ -39,6 +39,8 @@ export function Integraciones({ filas, tipos, admin, listo }: { filas: FilaLlave
   const B: Bloque[] = [
     { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Integraciones", s: "Las llaves que Apple y Google entregan solo al dueño de la cuenta viven aquí, cifradas en el servidor. Se ve su huella, nunca su contenido; cada lectura queda anotada.", h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "integ", onClick: () => (p.k === "integ" ? undefined : router.push(p.href)) })) },
+    // 8c · Integraciones › Push (IntegracionesPush.tsx).
+    { type: "chips", items: [{ l: "Llaves de las tiendas", v: "selected", onClick: () => undefined }, { l: "Push", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=push") }] },
     listo ? { type: "note", tone: "info", icon: "lock", t: admin ? "Para subir una llave te mandamos un código a tu teléfono. El archivo se cifra en el servidor y no se vuelve a mostrar." : "Solo un Admin sube o retira llaves." }
       : { type: "note", tone: "danger", icon: "warning", t: "Falta la llave del llavero en los secretos del entorno: no se puede guardar ninguna llave." },
     { type: "group", k: `LLAVES DE LAS TIENDAS · ${vivas.size} DE ${tipos.length}` },

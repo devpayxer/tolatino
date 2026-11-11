@@ -9,6 +9,7 @@ import type { HorasSalud } from "@/lib/citas-salud";
 import { precioPro, usd } from "@/lib/pro-comun";
 import type { ProPublico } from "@/lib/pro-publico";
 import { horasDeTramite, pedirTramite } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button" | "Chip" | "StepHeader" | "DateStrip" | "TimeSlots";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ export function Tramite({ pp, svcId, con0, es, yo }: { pp: ProPublico; svcId: st
   const [modo, setModo] = useState<string>(s.rem ? "" : "oficina"), [sit, setSit] = useState<string | null>(null), [nota, setNota] = useState("");
   const [con, setCon] = useState(con0), [paso, setPaso] = useState(0), [i, setI] = useState(0), [hSel, setH] = useState<number | null>(null), [H, setHoras] = useState<HorasSalud | null>(null), [cargando, setCargando] = useState(true);
   const [sms, setSms] = useState(true), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   const remoto = modo === "video" || modo === "telefono";
   useEffect(() => { let vivo = true; setCargando(true); void horasDeTramite(pp.negocio.id, s.id, con, i, remoto).then((x) => { if (!vivo) return; setHoras(x); setCargando(false); if (x && i === 0 && !x.sl.some((h) => h.free) && x.sig) setI(x.sig.i); }); return () => { vivo = false; }; }, [pp.negocio.id, s.id, con, i, remoto]);
 

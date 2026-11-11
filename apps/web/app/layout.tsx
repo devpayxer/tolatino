@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: "To'Latino",
   description: "Negocios, comunidad y eventos latinos en tu ciudad.",
   applicationName: "To'Latino",
+  // 8c · La web instalable (vecinos): en el iPhone, instalada desde Safari en la pantalla de inicio, recibe Web Push (iOS 16.4+). La Puerta
+  // tiene su propio manifiesto (alcance /puerta). Los colores del manifiesto = --tl-paper.
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "To'Latino", statusBarStyle: "default" },
+  icons: { apple: "/assets/app/icono-180.png" },
 };
 
 export const viewport: Viewport = {

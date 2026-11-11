@@ -8,18 +8,22 @@ import { useState, useTransition } from "react";
 import type { DatosNotif, GrupoNotif, Plantilla } from "@/lib/admin-notif";
 
 const DE_COMUNIDAD = /^(com|gam|dm|mod|apel)_/, DE_EVENTOS = /^(evt|bol|rsvp|espera|puerta|evp)_/, DE_SOPORTE = /^(sop|compa)_/;
-import { plantillaEditar, plantillaProbar } from "./acciones-notif";
+import { plantillaEditar, plantillaProbar, plantillaPush } from "./acciones-notif";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
 const G: Record<GrupoNotif, string> = { crit: "CRÍTICO · SIEMPRE LLEGA", tx: "PEDIDOS, RESERVACIONES Y SOLICITUDES", support: "SOPORTE · LO DEL CASO SIEMPRE LLEGA", events: "EVENTOS · LO QUE NO ES CRÍTICO SE APAGA", community: "COMUNIDAD · SE APAGA O VA EN EL RESUMEN DIARIO", mod: "MODERACIÓN", biz: "AL NEGOCIO", mkt: "CRECIMIENTO · RESPETA AVISOS Y SILENCIO" };
-const SMS: Record<string, [string, string]> = { no: ["SOLO BANDEJA", "neutral"], pruebas: ["SMS EN PRUEBAS", "action"], pendiente: ["SMS PENDIENTE", "neutral"], enviado: ["SMS ENVIADO", "signal"], fallo: ["SMS FALLÓ", "danger"], silencio: ["HORAS DE SILENCIO", "neutral"], apagado: ["SMS APAGADO", "neutral"], sin_proveedor: ["SIN PROVEEDOR", "danger"], baja: ["PIDIÓ STOP", "neutral"] };
+const SMS: Record<string, [string, string]> = { respaldo: ["SMS DE RESPALDO", "neutral"], ahorrado: ["SMS AHORRADO", "signal"], no: ["SOLO BANDEJA", "neutral"], pruebas: ["SMS EN PRUEBAS", "action"], pendiente: ["SMS PENDIENTE", "neutral"], enviado: ["SMS ENVIADO", "signal"], fallo: ["SMS FALLÓ", "danger"], silencio: ["HORAS DE SILENCIO", "neutral"], apagado: ["SMS APAGADO", "neutral"], sin_proveedor: ["SIN PROVEEDOR", "danger"], baja: ["PIDIÓ STOP", "neutral"] };
 const PREF: Record<string, string> = { ord: "Pedidos", cit: "Citas y reservas", emp: "Empleos", hoy: "Lo que traen hoy", com: "Respuestas y votos", msg: "Mensajes de vecinos", evt: "Boletos y cambios", evtR: "Recordatorios", evtG: "Eventos que guardas" };
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
 const MAIL: Record<string, [string, string]> = { pruebas: ["EN MODO PRUEBAS", "action"], pendiente: ["PENDIENTE", "neutral"], enviado: ["ENVIADO", "signal"], fallo: ["FALLÓ", "danger"], sin_proveedor: ["SIN PROVEEDOR", "danger"] };
 const MAIL_TPL: Record<string, string> = { verify: "Confirma tu correo", receipt_order: "Recibo de pedido", receipt_table: "Mesa confirmada", receipt_pro: "Recibo de Pro" };
-export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = false }: { d: DatosNotif; tab: "tpl" | "log" | "rules" | "mail"; puede: boolean; com?: boolean; evt?: boolean; sop?: boolean }) {
+// 8c · Push: el estado de cada aviso y qué app lo abre.
+const PUSH: Record<string, [string, string]> = { pendiente: ["PUSH EN COLA", "neutral"], enviado: ["PUSH ENTREGADO", "signal"], pruebas: ["PUSH EN PRUEBAS", "action"], fallo: ["PUSH FALLÓ", "danger"], silencio: ["PUSH · SILENCIO", "neutral"], apagado: ["PUSH APAGADO", "neutral"] };
+const APP: Record<string, string> = { cliente: "TO'LATINO", negocio: "NEGOCIOS", delivery: "REPARTIDOR", checkin: "PUERTA" };
+const SMS_MODO: Record<string, string> = { siempre: "SMS SIEMPRE", sin_push: "SMS SI NO HAY PUSH", nunca: "" };
+export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = false }: { d: DatosNotif; tab: "tpl" | "log" | "rules" | "mail" | "push"; puede: boolean; com?: boolean; evt?: boolean; sop?: boolean }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [pend, start] = useTransition();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -36,18 +40,29 @@ export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = 
     valor: { k: lang === "es" ? "TEXTO EN ESPAÑOL" : "TEXTO EN INGLÉS", ini: p.body[lang], area: true, max: p.sms ? 160 : 300 },
     hacer: (m, _e, v) => plantillaEditar(p.key, lang, v, m),
   });
+  // 8c · El push de una plantilla: encender/apagar, texto genérico y la app que lo abre (con motivo y auditoría).
+  const cambiarPush = (p: Plantilla, campo: "push" | "priv" | "app") => setConf(campo === "app" ? {
+    titulo: `${p.title.es} · qué app lo abre`, cta: "Guardar", sub: `Ahora: ${APP[p.app]}. Al tocar el push se abre esa app (si no la tiene, To'Latino; en la web, el navegador).`,
+    elegir: { label: "APP", items: Object.entries(APP).map(([k, l]) => ({ k, l })) }, hacer: (m, e) => plantillaPush(p.key, "app", e ?? "", m),
+  } : {
+    titulo: `${p.title.es} · ${campo === "push" ? (p.push ? "apagar el push" : "encender el push") : p.priv ? "mostrar el texto en el push" : "texto genérico en el push"}`, cta: "Guardar", peligro: campo === "push" && p.push,
+    sub: campo === "push" ? (p.push ? "Deja de ir por push; queda en la campana y, si la plantilla lleva SMS, sale el SMS." : "Vuelve a ir por push a los teléfonos con avisos.")
+      : p.priv ? "Apple y Google verán el título y el texto del aviso." : "Por Apple y Google solo pasa «Tienes un aviso nuevo en To'Latino.»; el detalle se lee al abrirlo.",
+    hacer: (m) => plantillaPush(p.key, campo, campo === "push" ? (p.push ? "no" : "si") : p.priv ? "no" : "si", m),
+  });
   const probar = (p: Plantilla) => start(async () => { const r = await plantillaProbar(p.key); setToast(r.mensaje ?? "Enviada."); router.refresh(); });
   const ir = (t: string, antes?: string) => { const q = t === "tpl" && !antes ? "" : `tab=${t}${antes ? `&antes=${antes}` : ""}`; router.push(q ? `/admin/notificaciones?${q}` : "/admin/notificaciones"); };
   const k = d.kpi;
   const B: Bloque[] = [
     { type: "head", eye: "DINERO Y CRECIMIENTO", t: "Notificaciones", s: "Plantillas por evento (ES/EN), los envíos y la regla: lo crítico siempre llega; lo demás respeta los avisos de cada persona y las horas de silencio.", h1: desk ? 26 : 22 },
-    { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+    { type: "kpis", cols: desk ? "repeat(5,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "AVISOS · 24 H", v: String(k.hoy), s: `${k.leidos} ya leídos en la app`, bg: "var(--tl-ink)", fg: "var(--tl-white)", onClick: () => ir("log") },
       { k: "SMS ENVIADOS · 24 H", v: String(k.sms), s: k.pruebas ? `${k.pruebas} en modo pruebas (no salen)` : "por el proveedor" },
       { k: "SMS FRENADOS · 24 H", v: String(k.frenados), s: "por sus avisos o las horas de silencio" },
       { k: "SMS CON PROBLEMA · 24 H", v: String(k.fallos), s: k.fallos ? "fallaron o no hay proveedor" : "ninguno", sFg: k.fallos ? "var(--tl-danger)" : undefined },
+      { k: "PUSH ENTREGADOS · 24 H", v: String(k.push), s: k.ahorrados ? `${k.ahorrados} SMS ahorrados` : "push primero, SMS de respaldo", onClick: () => ir("push") },
     ] },
-    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
+    { type: "tabs", items: ([["tpl", "Plantillas", String(d.plantillas.length)], ["log", "Envíos"], ["push", "Push"], ["mail", "Correos", d.kmail.hoy ? String(d.kmail.hoy) : undefined], ["rules", "Reglas"]] as const).map(([t, l, n]) => ({ l, n, on: tab === t, onClick: () => ir(t) })) },
   ];
   // 5i · «Solo Comunidad»: com_*, gam_*, dm_*, mod_*, apel_* (todas sin SMS; guardián avisoComunidadSinSms) y el resumen diario.
   // 6j · «Solo Eventos»: evt_*, bol_*, rsvp_*, espera_*, puerta_*, evp_* (SMS solo lo crítico; guardián avisoEventoSmsSoloCritico).
@@ -64,14 +79,18 @@ export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = 
     if (!L.length) continue;
     B.push({ type: "group", k: G[g] }, { type: "rows", cols: desk ? "repeat(auto-fill,minmax(380px,1fr))" : undefined, items: L.map((p) => ({
       key: p.key, icon: p.sms ? "phone" : "bell", t: p.title.es, s: p.body.es,
-      m: `${p.sms ? "BANDEJA · SMS" : "BANDEJA"}${p.pref ? ` · SE APAGA EN ${PREF[p.pref]?.toUpperCase() ?? p.pref}` : ""} · ${p.n7} EN 7 D${p.editada ? " · EDITADA" : ""}`,
-      acts: puede ? [{ l: "Editar español", icon: "edit", onClick: () => editar(p, "es") }, { l: "Editar inglés", icon: "edit", onClick: () => editar(p, "en") }, { l: "Probar en mi teléfono", icon: "phone", off: pend, onClick: () => probar(p) }] : undefined,
+      m: [`BANDEJA${p.push ? ` · PUSH${p.priv ? " GENÉRICO" : ""} → ${APP[p.app]}` : ""}`, SMS_MODO[p.sms_mode] || null, p.pref ? `SE APAGA EN ${PREF[p.pref]?.toUpperCase() ?? p.pref}` : null, `${p.n7} EN 7 D`, p.editada ? "EDITADA" : null].filter(Boolean).join(" · "),
+      acts: puede ? [{ l: "Editar español", icon: "edit", onClick: () => editar(p, "es") }, { l: "Editar inglés", icon: "edit", onClick: () => editar(p, "en") },
+        { l: p.push ? "Apagar push" : "Encender push", icon: "bell", onClick: () => cambiarPush(p, "push") },
+        ...(p.fija ? [] : [{ l: p.priv ? "Mostrar texto en el push" : "Texto genérico", icon: "lock", onClick: () => cambiarPush(p, "priv") }]),
+        { l: "Abre en…", icon: "phone", onClick: () => cambiarPush(p, "app") },
+        { l: "Probar en mi teléfono", icon: "phone", off: pend, onClick: () => probar(p) }] : undefined,
     })) });
   }
   if (tab === "log") {
     if (!d.envios.length) B.push({ type: "empty", icon: "bell", t: "Todavía no sale ningún aviso", s: "Aparecen aquí cuando un negocio acepta un pedido, confirma una mesa o responde una solicitud." });
     else B.push({ type: "rows", items: d.envios.map((x) => ({
-      key: x.id, icon: x.sms === "no" ? "bell" : "phone", t: `${x.title} · ${x.quien}`, s: x.body, m: `${cuando(x.at)}${x.leido ? " · LEÍDO" : ""}`,
+      key: x.id, icon: x.sms === "no" ? "bell" : "phone", t: `${x.title} · ${x.quien}`, s: x.body, m: `${cuando(x.at)}${PUSH[x.push] ? ` · ${PUSH[x.push]![0]}` : ""}${x.abierto ? " · ABIERTO DESDE EL PUSH" : x.leido ? " · LEÍDO" : ""}`,
       tag: SMS[x.sms]?.[0] ?? x.sms, tone: SMS[x.sms]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/usuarios/${x.uid}`),
     })) });
   }
@@ -84,7 +103,20 @@ export function Notificaciones({ d, tab, puede, com = false, evt = false, sop = 
       tag: MAIL[x.status]?.[0] ?? x.status, tone: MAIL[x.status]?.[1] ?? "neutral", chev: true, onClick: () => router.push(`/admin/notificaciones/correo/${x.id}`),
     })) });
   }
+  // 8c · Notificaciones › Push: por plantilla y por app y plataforma, 7 días. Sin personas.
+  if (tab === "push" && d.push) {
+    const x = d.push;
+    B.push({ type: "note", tone: "info", icon: "bell", t: `Push primero, SMS de respaldo. 24 h: ${x.dia.enviados} avisos llegaron por push · ${x.dia.abiertos} se abrieron desde el push · ${x.dia.ahorrados} SMS ahorrados · ${x.dia.respaldo} salieron por SMS porque el push no llegó · ${x.dia.sin_app} sin teléfono con avisos. Los canales, la cola y los errores: Sistema › Integraciones › Push.` });
+    B.push({ type: "group", k: "POR APP Y PLATAFORMA · 7 DÍAS" });
+    B.push(x.apps.length ? { type: "rows", cols: desk ? "repeat(3,minmax(0,1fr))" : undefined, items: x.apps.map((a) => ({ key: `${a.app}-${a.platform}`, icon: a.platform === "web" ? "globe" : "phone", t: `${APP[a.app] ?? "WEB"} · ${a.platform === "ios" ? "iPhone" : a.platform === "android" ? "Android" : "navegador"}`, s: `${a.entregados} entregados · ${a.invalidos} tokens inválidos` })) }
+      : { type: "empty", icon: "bell", t: "Todavía no sale ningún push", s: "Aparecen cuando alguien con avisos encendidos recibe uno." });
+    B.push({ type: "group", k: "POR PLANTILLA · 7 DÍAS" });
+    if (x.plantillas.length) B.push({ type: "rows", cols: desk ? "repeat(auto-fill,minmax(380px,1fr))" : undefined, items: x.plantillas.map((p) => ({ key: p.tpl, icon: "bell", t: d.plantillas.find((q) => q.key === p.tpl)?.title.es ?? p.tpl,
+      s: `${p.entregados} entregados · ${p.abiertos} abiertos · ${p.ahorrados} SMS ahorrados${p.invalidos ? ` · ${p.invalidos} inválidos` : ""}${p.fallidos ? ` · ${p.fallidos} fallidos` : ""}`, m: p.tpl.toUpperCase() })) });
+  }
   if (tab === "rules") B.push({ type: "rows", items: [
+    { icon: "bell", t: "Push primero, SMS de respaldo", s: "Cada aviso va por push a los teléfonos y navegadores de la persona que tienen avisos encendidos (en la app que lo abre; si no la tiene, To'Latino). El SMS: lo crítico siempre; lo demás que lleva SMS, solo si la persona no tiene avisos o el push no llegó (el SMS espera hasta que se sabe). Las mismas preferencias y horas de silencio valen para los dos." },
+    { icon: "lock", t: "Texto genérico", s: "Lo de Salud, Niños, Soporte, sanciones y la cuenta pasa por Apple y Google solo como «Tienes un aviso nuevo en To'Latino.»; el detalle se lee al abrirlo con la sesión. No se puede destapar." },
     { icon: "lock", t: "Lo crítico siempre llega", s: "El código para entrar sale siempre por SMS. No se apaga ni espera las horas de silencio." },
     { icon: "clock", t: "Horas de silencio", s: "De 10 PM a 7 AM, hora de la ciudad de la persona: el SMS que no es crítico no sale; el aviso queda en su bandeja. La persona puede desactivarlas en Mi cuenta › Avisos. La solicitud nueva al negocio no espera: solo llega mientras el negocio está recibiendo." },
     { icon: "bell", t: "La bandeja siempre", s: "Cada aviso queda en la campana de la app, aunque el SMS esté apagado. Abrir la bandeja lo marca como leído." },

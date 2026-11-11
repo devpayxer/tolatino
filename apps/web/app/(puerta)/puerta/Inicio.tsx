@@ -8,6 +8,7 @@ import { diaCorto, hora } from "@/lib/evt-comun";
 import { hora12, PUERTAS_SUGERIDAS } from "@/lib/puerta-comun";
 import type { PuertaAsignada, SesionAbierta } from "@/lib/puerta";
 import { puertaAbrir, puertaAceptar, puertaSalirEquipo } from "./acciones";
+import { useAvisos } from "@/app/_cascara/HojaPermiso";
 import { Cabeza, Hoja } from "./Marco";
 import { limpiarSesiones, registrarSW } from "./sin-conexion/usePuertaLocal";
 
@@ -16,6 +17,8 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }
   const E2 = (a: string, b: string) => (es ? a : b), bi = (x: Bi) => (es ? x.es : x.en || x.es);
   const router = useRouter(), [pend, start] = useTransition();
   const [cod, setCod] = useState(""), [sel, setSel] = useState<PuertaAsignada | null>(null), [pn, setPn] = useState(""), [err, setErr] = useState(""), [toast, setToast] = useState("");
+  // 8c · Al aceptar una puerta: la hoja previa de los avisos («Hoy escaneas en la puerta»), una vez por teléfono.
+  const avisos = useAvisos(es);
   // 6h · La app instalable (abre sin señal) y nada guardado de puertas que ya no están abiertas para esta persona.
   const vivas = abiertas.map((a) => a.sesion).join(",");
   useEffect(() => { registrarSW(); void limpiarSesiones(vivas ? vivas.split(",") : []); }, [vivas]);
@@ -51,7 +54,7 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }
     B.push({ type: "group", k: equipos.length ? E2("¿TE INVITÓ OTRO NEGOCIO?", "INVITED BY ANOTHER BUSINESS?") : E2("ENTRA CON EL CÓDIGO DEL NEGOCIO", "JOIN WITH THE BUSINESS CODE") });
     B.push({ type: "field", k: E2("CÓDIGO · 6 LETRAS Y NÚMEROS", "CODE · 6 LETTERS AND NUMBERS"), val: cod, onChange: (v: string) => setCod(v.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6)) });
     B.push({ type: "acts", items: [{ l: pend ? E2("Entrando…", "Joining…") : E2("Entrar al equipo de la puerta", "Join the door team"), v: "primary", icon: "check", off: pend || cod.length !== 6,
-      onClick: () => run(() => puertaAceptar(cod), (r) => { setCod(""); setToast(E2(`Listo: ya eres portero de ${String(r.negocio ?? "")}.`, `Done: you are door staff for ${String(r.negocio ?? "")}.`)); router.refresh(); }) }] });
+      onClick: () => run(() => puertaAceptar(cod), (r) => { setCod(""); setToast(E2(`Listo: ya eres portero de ${String(r.negocio ?? "")}.`, `Done: you are door staff for ${String(r.negocio ?? "")}.`)); router.refresh(); void avisos.ofrecer(); }) }] });
     B.push({ type: "note", tone: "ink", icon: "shield", t: E2(`Entraste con ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. El código solo sirve con el teléfono que te invitó el negocio.`, `Signed in as ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. The code only works with the phone the business invited.`) });
     if (equipos.length) B.push({ type: "rows", k: E2("TUS EQUIPOS DE PUERTA", "YOUR DOOR TEAMS"), items: equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio, chev: false, compact: true,
       acts: [{ l: E2("Salir", "Leave"), v: "secondary", onClick: () => { if (window.confirm(E2(`¿Salir de la puerta de ${e.negocio}?`, `Leave ${e.negocio}’s door team?`))) run(() => puertaSalirEquipo(e.id), () => router.refresh()); } }] })) });
@@ -61,5 +64,6 @@ export function Inicio({ es, nombre, tel, puertas, abiertas, equipos, ventanaH }
     <div style={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <Cabeza eye="TO’LATINO PUERTA" t={E2(`Hola, ${nombre}`, `Hi, ${nombre}`)} s={E2("Escanea los boletos en la puerta. Solo escaneas: en la puerta no se venden boletos.", "Scan tickets at the door. You only scan: no tickets are sold at the door.")} />
       <Hoja><PanelBloques bloques={B} h1={22} /></Hoja>
+      {avisos.hoja}
     </div>);
 }

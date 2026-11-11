@@ -10,6 +10,7 @@ import type { OpcionesMerc } from "@/lib/mercado";
 import { MetodoPago, tarjetaL, type ModoTarjeta, type Tarjeta } from "../../../pago/MetodoPago";
 import { guardarCarritoMerc, leerCarritoMerc, type CarritoMerc } from "../Mercado";
 import { enviarMercado } from "./acciones";
+import { uuid } from "@/lib/uuid";
 
 type N = "Icon" | "Button";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -29,7 +30,7 @@ export function PedidoMercado({ o, es, yo, pago }: { o: OpcionesMerc; es: boolea
   const [dia, setDia] = useState<"hoy" | "man">("hoy"), [hora, setHora] = useState<string | null>(null);
   const [tarjetas, setTarjetas] = useState<Tarjeta[]>(pago?.tarjetas ?? []), [tarjeta, setTarjeta] = useState<Tarjeta | null>(pago?.tarjetas.find((t) => t.def) ?? pago?.tarjetas[0] ?? null);
   const [enMercado, setEnMercado] = useState(!pago), [hoja, setHoja] = useState(false), [error, setError] = useState<string | null>(null), [ocupado, setOcupado] = useState(false);
-  const clave = useRef(typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : "");
+  const clave = useRef(uuid());
   useEffect(() => { if (!dias.some((d) => d.k === dia) && dias[0]) setDia(dias[0].k); setHora(null); }, [modo]); // eslint-disable-line react-hooks/exhaustive-deps
   const lineas = (cart?.lines ?? []).map((l) => ({ l, p: o.prods.find((x) => x.id === l.item) })).filter((x): x is { l: CarritoMerc["lines"][number]; p: OpcionesMerc["prods"][number] } => !!x.p);
   const est = (p: OpcionesMerc["prods"][number], q: number) => p.cents * q;

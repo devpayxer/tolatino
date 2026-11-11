@@ -175,12 +175,12 @@ No hay ninguna pantalla de esta fase en el diseño. Se compone con piezas existe
 - `feature_flags`: **`app.cascara.{cliente|negocio|delivery|checkin}`** (apagada = la cáscara muestra «Esta app está en pausa · Abrir en la web»; para
   emergencias) — encendidas en el sandbox; en producción, Fase 9.
 
-**0126 `apps_enlaces` (8b)** — **`app_signing_certs`** (`app`, `platform 'android'`, `sha256`, `source check in ('subida','play','pruebas')`, `added_at`,
+**0127 `apps_enlaces` (8b; renumerada: el plan la llamaba 0126, que tomó 8c porque 8b espera el dominio)** — **`app_signing_certs`** (`app`, `platform 'android'`, `sha256`, `source check in ('subida','play','pruebas')`, `added_at`,
 `retired_at`; de aquí sale `assetlinks.json`); clave de texto `apple_team_id` (de la llave de App Store Connect; de aquí sale `apple-app-site-association`);
 `app_events.name` suma `enlace_app` y `enlace_web` (props: familia de ruta y app; nunca el token). Nada más: **el contenido de AASA y assetlinks no se
 guarda, se genera** de `apps.json` + esta tabla en cada petición (con caché de 5 min).
 
-**0127 `push` (8c)**
+**0126 `push` (8c; renumerada: el plan la llamaba 0127. 8c se construyó antes que 8b —8b espera el dominio— y tomó 0126; nada asume números contiguos: migrar.sh aplica en orden de nombre y ningún guardián cuenta huecos)**
 - **`push_tokens`** (`id`, `user_id`, `session_id`, `app`, `platform`, **`provider check in ('apns','fcm','webpush','sim')`**, `token_enc` + **`token_hash`
   único** (nunca en claro), `webpush_keys_enc` (p256dh y auth), `lang`, `created_at`, `last_ok_at`, `last_seen_at`, **`revoked_at`**, `revoked_reason check in
   ('salir','invalido','apagado','reemplazado','admin','vencido')`; índice `(user_id, app) where revoked_at is null`). Salir de la cuenta revoca el token de
@@ -484,7 +484,7 @@ HTML ni RSC; otro rol → 403.
 **Ayuda:** `apps-de-to-latino` (vecino: qué app es para qué y cómo se instala), `admin-sistema-apps` y `admin-llaves-de-las-tiendas` (equipo).
 
 ### 8b · Enlaces universales y App Links, enlaces de SMS, WhatsApp y correo, y volver de Stripe — **Opus/high**
-**Datos:** migración 0126.
+**Datos:** migración 0127 (antes 0126; ver 8c).
 **Servidor:** `app/.well-known/apple-app-site-association/route.ts`, `app/.well-known/assetlinks.json/route.ts` (de `apps.json` + `apple_team_id` +
 `app_signing_certs`), exclusión en el `matcher` del middleware, regla de Cloudflare para `/.well-known/*` (por la API), `lib/enlaces.ts` (`hrefDeAviso`
 con la app que lo abre), Stripe Connect con `return_url` / `refresh_url` universales, `@capacitor/app` `appUrlOpen` → navegar dentro de la cáscara
@@ -499,7 +499,13 @@ de Google `digitalassetlinks` contra el sandbox cuando haya dominio; en emulador
 **Ayuda:** `apps-de-to-latino` al día (enlaces), `panel-cobros` al día (volver de Stripe).
 
 ### 8c · Avisos push propios: Web Push, APNs y FCM, push primero y SMS de respaldo — **Opus/high**
-**Datos:** migración 0127; semilla `0044_push.sql`.
+**Estado (11 nov): hecho, antes que 8b (el dominio sigue pendiente).** Migración **0126** (renumerada desde 0127), semilla `0044_push.sql`.
+Web Push de verdad en `localhost` (contexto seguro) y «no disponible» en el sandbox por HTTP; APNs y FCM contra los simuladores de
+`scripts/push-sim` y el contrato `scripts/contrato-push` (54 comprobaciones en el CI); `push8c` 86 comprobaciones (390 y 1360), 10 guardianes
+nuevos o ampliados (37/37 al revés), 10 000 avisos por la tubería real (media 5 ms por aviso con el push encolado). Android pide su token de
+FCM solo cuando el llavero tiene la cuenta de servicio (la cáscara trae la configuración de Firebase desde 8h). Desvíos y lo diferido:
+`docs/REVISION.md` «8c» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8c».
+**Datos:** migración 0126 (el plan decía 0127); semilla `0044_push.sql`.
 **Servidor:** `lib/push/` (`registrar(token, app, plataforma)` atado a la sesión, `revocar`, `encolar`, `enviar` con `apns.ts` (HTTP/2 + JWT ES256),
 `fcm.ts` (OAuth de la cuenta de servicio → HTTP v1), `webpush.ts` (VAPID + aes128gcm, propio con `node:crypto`), `sim.ts`); `avisar()` encola y decide el
 SMS por `sms_mode`; servicio **`push`** en el compose (perfil propio, como `barrido`, reintenta con espera creciente; caído = los avisos siguen en la

@@ -1053,3 +1053,25 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
 - **Bloqueado / no hecho aquí:** el dominio (Paquete 8-0, del fundador). Android e iOS no se compilaron en esta máquina (red y sin Xcode): lo hace
   el CI la primera vez. Todo en LAUNCH-CHECKLIST «Fase 8 · 8a».
 - **Sigue:** 8b (enlaces universales; necesita el dominio). Mientras, se puede adelantar 8c (Web Push) y 8f.
+
+## Fase 8 · 8c hecho — avisos push propios (11 nov)
+- **Hecho:** migración **0126** (renumerada: el plan decía 0127; 8b tomará 0127) — `push_tokens` (cifrado + huella, atado a la sesión; salir o
+  bloquear la sesión lo revoca en la misma transacción), `push_outbox` (único aviso×token), `push_deliveries` (solo inserción, sin personas),
+  `notifications.push_status/opened_at/opened_via`, `sms_status` «respaldo»/«ahorrado», plantillas con `push`, `push_private` (forzado en Salud,
+  Niños, Soporte, moderación y cuenta), `app`, `sms_mode`; Configuración `push_*`; interruptores `push.webpush/apns/fcm`; plantilla `push_prueba`.
+  Semilla **0044_push.sql** (teléfonos «sim» de Héctor, Lucía, Yolanda, Juan y Karla; historial en cada resultado). `lib/push/` (webpush RFC
+  8291/8292 propio, apns HTTP/2 + JWT, fcm v1 + OAuth, llaves (VAPID del entorno o derivada; APNs/FCM del llavero), tokens, cola + trabajador +
+  barrido, admin). `avisar()`/`avisarMuchos()`/resumen encolan; `smsRespaldo()`. `/sw-push.js`, `manifest.webmanifest` + íconos, `/app/aviso/{id}`,
+  `/api/interno/push` + servicio `push` del compose, VAPID en `deploy.sh`. Cliente: `lib/nativo/avisos.ts` (plugin oficial
+  `@capacitor/push-notifications` 8.1.3 o Web Push), hoja previa en el momento útil, Mi cuenta › Avisos «En este teléfono», Panel › Más › Tus apps.
+  Super Admin: Integraciones › Push, Notificaciones (push por plantilla + pestaña Push), Usuarios 360° › Avisos push. Nativo: plugin en las 4 apps
+  (generar.mjs), POST_NOTIFICATIONS y Firebase sin analítica en los sabores, `aps-environment`, `AppDelegate+Avisos.swift`. CI: contrato de push.
+  Ayuda `avisos-en-tu-telefono`, `panel-avisos`, `admin-push`; `notificaciones` y `mi-cuenta` al día. Arreglo aparte: `lib/uuid.ts` (en HTTP se
+  caían pedir/reservar/pagar/escanear).
+- **Probado:** `push8c` 86 (390 y 1360), contrato 54, `alreves8c` 37/37 (pushConPlantilla, pushPrivadoSinTexto, smsSoloRespaldo, pushFueraDeTx,
+  tokensCifrados, pushSoloServiciosConocidos, pushSinDuplicados, swPushSoloAbre, pushAbreSuApp, uuidSinContextoSeguro; permisosMinimos y
+  privacidadSalud ampliados), migraciones y semillas dos veces (local y base nueva), 10 000 avisos (media 4,98 ms), regresión app8a 110,
+  adm7i 114, compa7d 140, evt6g 105, rep2l 17, avisos2j 14.
+- **Bloqueado / no hecho aquí:** Web Push en el iPhone espera el dominio (Paquete 8-0); APNs/FCM reales esperan las llaves (8-2); Android e iOS
+  los compila el CI. Todo en LAUNCH-CHECKLIST «Fase 8 · 8c».
+- **Sigue:** 8b (necesita el dominio) o 8d/8f.

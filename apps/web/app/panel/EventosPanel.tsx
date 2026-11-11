@@ -26,6 +26,7 @@ import type { PuertaPanel } from "@/lib/puerta-equipo";
 import { chipsFechas, crearPorDia, duracionBloques, fechaVista, horarioBloques, modoDe, seriesBloques, valePara } from "./EventosSeries";
 import { evtAvisarLista, evtBoletosOrden, evtCodigoCambiar, evtCodigoCrear, evtCortesia, evtDevolver, evtEnviar, evtGuardar, evtModulo, evtQuitarCortesia, evtReenviar, evtRepetir, evtTraducir } from "./acciones-eventos";
 import type { Ctx, Editor, Form, Sec } from "./Panel";
+import { uuid } from "@/lib/uuid";
 
 export type EvtData = {
   lista: FilaPanelEvt[]; formatos: FormatoEvt[]; generos: { key: string; label: Bi }[]; org: { verificado: boolean; bloqueado: string | null };
@@ -203,7 +204,7 @@ function ventaBloques(c: Ctx, e: EvtPanel): (Bloque | null)[] {
   // 6d · «Devolver» (total o por boleto, 100 %; pide la parte de Cobros): se cargan los boletos de la orden y se confirma lo que vuelve.
   const puedeDev = c.d.kind === "owner" || c.d.partes.includes("all") || c.d.partes.includes("pay");
   const abrirDev = async (num: string) => { const L = await evtBoletosOrden(c.d.id, num).catch(() => []); const vivos = L.filter((x) => x.estado === "valid");
-    c.setUi({ evDev: { num, L, sel: vivos.map((x) => x.code), k: crypto.randomUUID() } }); };
+    c.setUi({ evDev: { num, L, sel: vivos.map((x) => x.code), k: uuid() } }); };
   const fil = (c.ui.evBuy as string) ?? "all", q = String(c.ui.evBuyQ ?? "").toLowerCase();
   const L = V.compradores.filter((b) => (fil === "mesa" ? b.mesa : fil === "extras" ? b.extras : true) && (!q || b.quien.toLowerCase().includes(q) || b.num.toLowerCase().includes(q)));
   out.push({ type: "group", k: E2(`COMPRADORES · ${V.compradores.length}`, `BUYERS · ${V.compradores.length}`) });

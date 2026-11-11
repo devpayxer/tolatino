@@ -14,3 +14,5 @@ app/src/*/res/values/ic_launcher_background.xml
 *.keystore
 *.p12
 google-services.json
+# 8c · La configuración de Firebase (solo mensajería) la escribe el CI de 8h desde el llavero; nunca en el repo.
+app/src/*/res/values/firebase.xml

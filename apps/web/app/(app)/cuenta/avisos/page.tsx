@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { yo } from "@/lib/cuenta";
+import { sesionActual, yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { avisosDe } from "@/lib/perfil";
 import { valores } from "@/lib/config";
@@ -14,7 +14,8 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [u, lang] = await Promise.all([yo(), idioma()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/cuenta/avisos")}`);
-  const [p, me, cfg, hor] = await Promise.all([avisosDe(u.id), yoMarco(u, lang === "es"), valores("com_resumen_hora", "evt_recordatorio_hora"),
-    (await import("@/lib/soporte")).lineaHorario(lang === "es")]);   // 7i · el horario del equipo (Configuración › Soporte)
-  return <Avisos p={p} es={lang === "es"} yo={me} horaResumen={cfg.com_resumen_hora} horaRecordatorio={cfg.evt_recordatorio_hora} horarioEquipo={hor} />;
+  const [p, me, cfg, hor, disp] = await Promise.all([avisosDe(u.id), yoMarco(u, lang === "es"), valores("com_resumen_hora", "evt_recordatorio_hora"),
+    (await import("@/lib/soporte")).lineaHorario(lang === "es"),   // 7i · el horario del equipo (Configuración › Soporte)
+    (async () => (await import("@/lib/push/tokens")).misDispositivos(u.id, await sesionActual()))()]);   // 8c · sus teléfonos con avisos
+  return <Avisos p={p} es={lang === "es"} yo={me} horaResumen={cfg.com_resumen_hora} horaRecordatorio={cfg.evt_recordatorio_hora} horarioEquipo={hor} disp={disp} />;
 }

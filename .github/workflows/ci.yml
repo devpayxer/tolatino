@@ -26,6 +26,8 @@ jobs:
           bash scripts/contrato-stripe/correr.sh
       - name: Contrato de WhatsApp y SMS (la especificación oficial de Telnyx y de Meta valida cada llamada de El Compa)
         run: bash scripts/contrato-canales/correr.sh
+      - name: Contrato del push propio (Web Push con el vector del RFC 8291 y http_ece; APNs con las tablas de Apple; FCM v1 con su especificación oficial)
+        run: bash scripts/contrato-push/correr.sh
       - name: Firma del correo (SES SigV4) contra el vector oficial de AWS
         run: node scripts/prueba-firma-ses/prueba.mjs
       - name: Imagen del sandbox se construye

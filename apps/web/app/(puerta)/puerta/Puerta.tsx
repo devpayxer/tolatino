@@ -18,11 +18,11 @@ import { Cabeza, Hoja, kpiOscuro } from "./Marco";
 import { avisoSinSenal, EstadoPuerta } from "./sin-conexion/Estado";
 import { soltarSesion, usePuertaLocal } from "./sin-conexion/usePuertaLocal";
 import { sinRed } from "@/lib/nativo/senal";
+import { uuid } from "@/lib/uuid";
 
 type Bi = { es: string; en: string };
 type Tab = "escanear" | "buscar" | "lista" | "aforo" | "mas" | "mesas" | "incid" | "equipo" | "cierre" | "noche";
 type Ctx = Omit<CtxPuerta, "userId">;
-const uuid = () => crypto.randomUUID();
 
 export function PuertaCerrada({ es, sesion }: { es: boolean; sesion?: string }) {
   const E2 = (a: string, b: string) => (es ? a : b), router = useRouter();

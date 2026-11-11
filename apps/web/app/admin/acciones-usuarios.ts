@@ -241,3 +241,16 @@ export async function usrCasoRed(id: string, motivo: string): Promise<ResAdm> {
     return null;
   }, "Caso abierto en Colas › Reportes de usuario.");
 }
+
+/* 8c · Usuarios 360° › Avisos push: revocar un teléfono de la persona (deja de recibir push; al volver a abrir la app con su sesión puede volver a
+   encenderlos ella). usr:editar, con motivo; queda en el historial. Nunca se ve ni se guarda el token: solo su huella. */
+export async function pushRevocar(id: string, tokenId: string, motivo: string): Promise<ResAdm> {
+  if (typeof tokenId !== "string" || !/^\d{1,18}$/.test(tokenId)) return no("Ese teléfono no existe.");
+  return hacer(id, ["editar"], motivo, async (c, s, u, m) => {
+    const t = (await c.query<{ label: string | null; app: string; provider: string }>(`select label, app, provider from push_tokens where id = $1 and user_id = $2 and revoked_at is null for update`, [tokenId, u.id])).rows[0];
+    if (!t) return "Ese teléfono ya no recibe avisos.";
+    await c.query(`update push_tokens set revoked_at = now(), revoked_reason = 'admin', revoked_by = $3 where id = $1 and user_id = $2`, [tokenId, u.id, s.id]);
+    await auditar(c, { actor: s.id, action: "usuario.push.revocar", targetKind: "user", targetId: u.id, city: u.city_id, before: { avisos: `encendidos en ${t.label ?? "un teléfono"}` }, after: { avisos: "revocados", ref: { token: tokenId } }, reason: m });
+    return null;
+  }, "Ese teléfono ya no recibe avisos.");
+}
