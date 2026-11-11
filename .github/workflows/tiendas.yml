@@ -338,9 +338,11 @@ jobs:
           $C up -d db
           for i in $(seq 1 60); do $C exec -T db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
           bash packages/db/migrar.sh $C
+          # El repartidor de la semilla de la ruta (0046) existe solo en el sandbox ya usado: aquí se crea antes, para que la semilla le dé su entrega.
+          $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "insert into users (phone, phone_verified_at, first_name, last_name, home_city_id) values ('+15705550144', now(), 'Juan', 'Repartidor', 'hzl') on conflict (phone) do nothing"
           SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C
-          # La Puerta: una fecha de La Terraza abre sus puertas en 30 minutos (solo en esta base), para capturar el escáner.
-          $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "update event_dates set doors_at = now() + interval '30 minutes', starts_at = now() + interval '1 hour', ends_at = now() + interval '6 hours', local_date = (now() at time zone 'America/New_York')::date where id = (select d.id from event_dates d join events e on e.id = d.event_id where e.business_id = 'la-terraza-night' and e.status = 'live' and d.status = 'scheduled' order by d.starts_at limit 1)"
+          # La Puerta: «Jueves de Bachata en Vivo» publicado y abriendo sus puertas en 30 minutos (solo en esta base), para capturar el escáner.
+          $C exec -T db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt -c "with f as (select d.id as fid, d.event_id from event_dates d join events e on e.id = d.event_id where e.business_id = 'la-terraza-night' and e.title->>'es' = 'Jueves de Bachata en Vivo' and d.status = 'scheduled' order by d.starts_at limit 1), e as (update events set status = 'live', approved_at = now(), approved_by = (select user_id from business_members where business_id = 'la-terraza-night' and kind = 'owner' and status = 'active' limit 1) where id = (select event_id from f) and status <> 'live' returning id) update event_dates set doors_at = now() + interval '30 minutes', starts_at = now() + interval '1 hour', ends_at = now() + interval '6 hours', local_date = (now() at time zone 'America/New_York')::date where id = (select fid from f)"
       - name: La web contra esa base (código de entrada en modo pruebas; secretos de un uso hechos aquí; el QR se deriva de AUTH_SECRET)
         run: |
           pnpm --filter @tolatino/web build
