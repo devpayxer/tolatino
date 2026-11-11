@@ -4,7 +4,7 @@ const fs = require('fs'), { execSync } = require('child_process');
 const R = ENT.RAIZ;
 const casos = [
   ['comunidadSinTelefonos', 'apps/web/lib/comunidad-filtro.ts', 'if (TEL.test(t)) return', 'if (false) return'],
-  ['comunidadSinTelefonos', 'apps/web/lib/comunidad.ts', '  const f = revisarPublicacion(p);\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n', ''],
+  ['comunidadSinTelefonos', 'apps/web/lib/comunidad.ts', '  const f = revisarPublicacion(p, diasEncuesta(await valor("com_encuesta_dias_max")));\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n', ''],
   ['comunidadSinTelefonos', 'packages/db/migrations/0097_comunidad_base.sql', "alter table com_comments add constraint com_comments_datos check (com_sin_datos(body));", ''],
   ['comunidadSinTelefonos', 'apps/web/app/admin/acciones-comunidad.ts', '"use server";', '"use server";\n// insert into com_posts (body) values (\'x\')\nconst q = "insert into com_posts (body) values ($1)";'],
   ['ubicacionDeBarrio', 'apps/web/lib/comunidad.ts', '  p.id::text as id, p.kind,', '  p.id::text as id, st_astext(p.geom) as punto, p.kind,'],

@@ -18,7 +18,7 @@ const casos = [
   ['hoySoloEnVivo', M, "  select post_en_vivo(p) and p.audience = 'all' and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'", "  select post_en_vivo(p) and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'"],
   ['hoySoloEnVivo', M, "  select post_en_vivo(p) and p.audience = 'all' and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'", "  select post_en_vivo(p) and p.audience = 'all' and p.hoy_off_at is null"],
   ['hoySoloEnVivo', M, "  select post_en_vivo(p) and p.audience = 'all' and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'", "  select p.status = 'live' and p.audience = 'all' and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'"],
-  ['hoySoloEnVivo', M, '$$;\n\n-- Fijada', "$$;\ncreate or replace function post_en_vivo(p business_posts) returns boolean language sql stable as $$\n  select p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now())\n$$;\n\n-- Fijada"],
+  ['hoySoloEnVivo', 'packages/db/migrations/0107_eventos_publico.sql', '$$;\n\n-- ── Analítica: los nombres nuevos', "$$;\ncreate or replace function post_en_vivo(p business_posts) returns boolean language sql stable as $$\n  select p.status = 'live' and p.hidden_at is null and p.publish_at <= now() and (p.ends_at is null or p.ends_at > now())\n$$;\n\n-- ── Analítica: los nombres nuevos"], // 9a: 0107 es la última definición de post_en_vivo
   ['hoySoloEnVivo', H, '          and post_en_hoy(p) and ($2::text is null', '          and ($2::text is null'],
   ['hoySoloEnVivo', H, "        and p.publish_at > now() - interval '24 hours' and post_en_hoy(p)`, [negocio]);", "        and p.publish_at > now() - interval '24 hours'`, [negocio]);"],
   ['hoySoloEnVivo', AC, '        and (post_en_hoy(p) or p.hoy_off_at is not null)', '        and (true or p.hoy_off_at is not null)'],
@@ -27,11 +27,11 @@ const casos = [
   ['buscarVecinosConSesion', P, '  if (!viewer || !consulta) return { items: [], mas: null, total: 0 };\n', ''],
   ['buscarVecinosConSesion', P, ' sinBloqueos("p.author_user_id", "$1"),\n    "not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = \'post\' and h.target_id = p.id)"];', '\n    "not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = \'post\' and h.target_id = p.id)"];'],
   ['buscarVecinosConSesion', BP, 'u && E.grupos.length && !catSel ? buscarVecinos(u.id,', 'E.grupos.length && !catSel ? buscarVecinos(u?.id ?? "",'],
-  ['buscarVecinosConSesion', BP, 'const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" && u ? "vec" : "all";', 'const tab = sp.tab === "biz" ? "biz" : sp.tab === "vec" ? "vec" : "all";'],
+  ['buscarVecinosConSesion', BP, 'sp.tab === "vec" && u ? "vec" : sp.tab === "evt"', 'sp.tab === "vec" ? "vec" : sp.tab === "evt"'],
   ['buscarVecinosConSesion', BA, '  if (!u) return { items: [], mas: null };\n', ''],
   ['buscarVecinosConSesion', 'apps/web/app/api/buscar/route.ts', 'import', 'import { buscarVecinos } from "@/lib/comunidad-portada";\nvoid buscarVecinos;\nimport'],
   // comunidadSinTelefonos (ampliado): la cuenta oficial pasa por el filtro antes de escribir.
-  ['comunidadSinTelefonos', O, '  const f = revisarPublicacion({ kind, body: String(p.body ?? ""), topic: p.topic ?? null, opts: p.opts, dias, fotos: [] });\n  if (f) return no(f.msg.es);\n', ''],
+  ['comunidadSinTelefonos', O, '  const f = revisarPublicacion({ kind, body: String(p.body ?? ""), topic: p.topic ?? null, opts: p.opts, dias, fotos: [] }, kind === "encuesta" ? diasEncuesta(await valor("com_encuesta_dias_max")) : undefined);\n  if (f) return no(f.msg.es);\n', ''],
 ];
 let bien = 0;
 for (const [g, f, a, b] of casos) {

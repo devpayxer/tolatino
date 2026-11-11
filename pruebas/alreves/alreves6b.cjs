@@ -21,9 +21,10 @@ const casos = [
   ['eventosConCursor', EP, "export const POR_PAGINA_EVT = 20;", "export const POR_PAGINA_EVT = 200;"],
   ['eventosConCursor', EV, "const verMas = async () => {", "const saltar = (n: number) => `offset ${n}`; void saltar;\n  const verMas = async () => {"],
   // rsvpConCupo (nuevo)
+  // 9a · la última definición de cada función es la que vive (0112 redefine el cupo del día): ahí se rompe.
   ['rsvpConCupo', M7, "  select * into d from event_dates where id = new.event_date_id for update;", "  select * into d from event_dates where id = new.event_date_id;"],
   ['rsvpConCupo', M7, "  if e.rsvp_capacity > 0 and d.rsvp_n - antes + new.party > e.rsvp_capacity then raise exception 'evt_cupo_lleno: quedan % lugares', greatest(0, e.rsvp_capacity - d.rsvp_n + antes); end if;\n", ""],
-  ['rsvpConCupo', M7, "  if dh > 0 and cap > 0 and n > cap then raise exception 'evt_cupo_lleno: el cupo se llenó'; end if;\n", ""],
+  ['rsvpConCupo', 'packages/db/migrations/0112_puerta.sql', "  if dh > 0 and cap > 0 and n > cap then raise exception 'evt_cupo_lleno: el cupo se llenó'; end if;\n", ""],
   ['rsvpConCupo', M7, "and coalesce(current_setting('tl.evt_derivado', true), '') <> 'si' then\n    raise exception", "and false then\n    raise exception"],
   ['rsvpConCupo', RS, "if (ya) { if (ya.party !== party) await c.query(`update rsvps set party = $2 where id = $1::bigint`, [ya.id, party]); }", "if (ya) { if (ya.party !== party) await c.query(`update rsvps set party = $2 where id = $1::bigint`, [ya.id, party]); await c.query(`update event_dates set rsvp_n = rsvp_n + $2 where id = $1::bigint`, [fechaId, party]); }"],
   ['rsvpConCupo', AC, "export async function evtCompartir(", "export async function evtVoyDirecto(f: string) { if (!(await mismoOrigen())) return; await db().query(`insert into rsvps (event_date_id, party) values ($1, 1)`, [f]); }\nexport async function evtCompartir("],
@@ -40,7 +41,7 @@ const casos = [
   ['configDesdeUnLugar', FI, "hasta ${f.guardaMin} min después de abrir puertas. Si ya no vas", "hasta 30 min después de abrir puertas. Si ya no vas"],
   ['configDesdeUnLugar', CF, '  | "rsvp_guarda_min"\n', '\n'],
   // eventosEnLista (los nombres nuevos de la analítica)
-  ['eventosEnLista', EVL, '| "ver_evento" | "rsvp" | "guardar_evento" | "compartir_evento";', '| "ver_evento" | "rsvp" | "guardar_evento";'],
+  ['eventosEnLista', EVL, '| "ver_evento" | "rsvp" | "guardar_evento" | "compartir_evento" |', '| "ver_evento" | "rsvp" | "guardar_evento" |'],
   // barridoCompleto (vencer RSVP en el barrido)
   ['barridoCompleto', BA, '["rsvpVencer", () => rsvp.vencerRsvp()], ', ''],
   // rutasVivas (los enlaces nuevos van a pantallas que existen)

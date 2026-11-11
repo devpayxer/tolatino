@@ -59,7 +59,7 @@ if [ "${SOLO:-}" != "servir" ]; then
 fi
 
 # ── El entorno del servidor: los secretos (de $SEC) + lo de cada perfil (solo direcciones locales; nada secreto) ──
-VARS=(PORT=3100 MEDIOS_S3_URL=http://127.0.0.1:3900 TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas)
+VARS=(PORT=3100 MEDIOS_S3_URL=http://127.0.0.1:${PRUEBAS_S3_PUERTO:-3900} TOLATINO_ENTORNO=pruebas TOLATINO_SMS_MODO=pruebas)
 if [ "$PERFIL" = basico ]; then
   VARS+=(HOSTNAME=127.0.0.1)
 else

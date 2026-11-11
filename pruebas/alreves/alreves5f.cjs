@@ -15,7 +15,7 @@ const casos = [
   ['saldoDerivado', PU, 'import "server-only";', 'import "server-only";\nexport const sube = `update community_profiles set rank_level = 5 where user_id = $1`;'],
   ['saldoDerivado', T, 'import "server-only";', 'import "server-only";\nexport const tabla0 = `update monthly_boards set points = 0 where city_id = $1`;'],
   ['saldoDerivado', C, 'import "server-only";', 'import "server-only";\nexport const rango0 = `select pts_rango($1::uuid)`;'],
-  ['saldoDerivado', M, "    raise exception 'los puntos y el rango son derivados: solo los escriben el libro y pts_rango';", '    null;'],
+  ['saldoDerivado', 'packages/db/migrations/0103_monedas_cupones.sql', "    raise exception 'los puntos y el rango son derivados: solo los escriben el libro y pts_rango';", '    null;'], // 9a: 0103 la redefine
   ['saldoDerivado', M, '-- ── Rangos ──', 'update community_profiles set rank_level = 3 where rank_level < 3;\n-- ── Rangos ──'],
   ['saldoDerivado', M, '      points_total = points_total + new.delta,', '      points_total = points_total,'],
   // topeDiario

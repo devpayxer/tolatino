@@ -27,7 +27,7 @@ const casos = [
   ['mensajesSinTelefonos', M, "alter table dm_messages add constraint dm_messages_body_datos check (com_sin_datos(body));", ""],
   ['mensajesSinTelefonos', V, "  const f = revisarPerfil({ bio: p.bio, apodo: p.apodo });\n  if (f) return { ok: false, msg: f.msg, campo: f.campo };\n", ""],
   ['mensajeSoloAQuienTeSigue', MV, "    if (!o.me_sigue && !t?.me_escribio) return { ok: false as const, msg: SOLO_SIGUE };\n", ""],
-  ['mensajeSoloAQuienTeSigue', 'apps/web/lib/moderacion-comun.ts', 'conversaciones: { key: "com_lim_conversaciones", def: 10,', 'conversaciones: { key: "com_lim_conversaciones", def: 99,'], // 5d: el límite vive en limiteDia
+  ['mensajeSoloAQuienTeSigue', 'packages/db/migrations/0105_configuracion_comunidad.sql', "('com_lim_conversaciones', 1, 100, 10,", "('com_lim_conversaciones', 1, 100, 99,"], // 9a: el de fábrica vive en config_keys (0105)
   ['mensajeSoloAQuienTeSigue', M, "    raise exception 'solo le escribes a quien te sigue';", "    null;"],
   ['mensajeSoloAQuienTeSigue', 'apps/web/lib/mensajes-vecinos.ts', "  if (t && !cur) await db().query(`select dm_leido($1::bigint, $2::uuid)`, [t.id, viewer]);", "  if (t && !cur) await db().query(`update dm_threads set a_unread = 0 where id = $1`, [t.id]);"],
   ['sinFechaDeNacimiento', M, "alter table community_profiles add column if not exists adult boolean;", "alter table community_profiles add column if not exists adult boolean;\nalter table community_profiles add column if not exists birth_date date;"],

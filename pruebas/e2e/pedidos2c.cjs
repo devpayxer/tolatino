@@ -80,7 +80,10 @@ const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations w
   // 4 · Nadie contesta en 10 min: SIN RESPUESTA e inventario de vuelta (sin tareas programadas: al leer)
   const n4 = await pedir([FLAN]); ok(flan0() === antes - 1, 'flan descontado otra vez');
   sql(`update operations set respond_by = now() - interval '1 second' where number='${n4}'`);
-  await d.goto(B + P + '/hoy'); await d.getByText('Nada pendiente').waitFor();
+  // 9a · Desde 6i, Hoy también cuenta las solicitudes de evento privado abiertas (la semilla deja EP-4125 pendiente): ya no se espera
+  // «Nada pendiente», sino que ESTE pedido salga de «Esperan tu respuesta».
+  await d.goto(B + P + '/hoy'); await d.waitForLoadState('networkidle');
+  ok(await d.locator('div', { has: d.getByText(`Pedido #${n4} · Pickup`, { exact: true }) }).filter({ has: d.getByText('Aceptar', { exact: true }) }).count() === 0, 'vencido: sale de «Esperan tu respuesta»');
   ok(st(n4) === 'expired|sent', 'vencido al abrir el panel'); ok(flan0() === antes, 'inventario devuelto al vencer');
   ok(sql(`select count(*) from operation_events where operation_id=(select id from operations where number='${n4}') and kind='expired'`) === '1', 'historial: «Nadie contestó en 10 minutos»');
   await m.goto(B + '/pedido/' + n4); await m.getByText('No contestaron a tiempo').waitFor(); ok(true, 'cliente: SIN RESPUESTA');

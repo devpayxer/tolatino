@@ -3331,6 +3331,11 @@ const guardianes = {
         if (!tipos.length || tipos.some((x) => !/\|\s*null\b/.test(x))) falla(G, f, t.slice(0, m.index).split("\n").length, `«${n}» sale de ${m[1]}, que puede venir vacía: típarla «string | null» y mostrar el pedido sin esa hora`);
       }
     }
+    // 9a · Tipar no basta: «antes de las ${x.responde}» con la hora vacía se leía «antes de las null» en el panel (pednull lo cazó). En una
+    // pantalla de pedidos, la hora de respuesta o de listo nunca se interpola tal cual: o con «??», o desde una variable que un «? :» ya revisó.
+    for (const f of codigo.filter((x) => /^apps\/web\/app\/(panel\/Pedidos|\(app\)\/pedido\/)/.test(x) && x.endsWith(".tsx"))) {
+      sinComent(f).split("\n").forEach((l, i) => { for (const m of l.matchAll(/\$\{\s*(\w+(?:\??\.\w+)*\??\.(responde|listo))\s*\}/g)) if (!new RegExp(`${m[1].replace(/[.?]/g, "\\$&")}\\s*\\?(?![?.])`).test(l.slice(0, m.index))) falla(G, f, i + 1, `«${m[0]}» puede decir «null»: la hora de ${m[2] === "responde" ? "respuesta" : "listo"} puede venir vacía (con «??» o solo dentro de un «${m[1]} ? … : …»)`); });
+    }
   },
 
   /* El sistema de diseño portado (packages/ui/src/ds y los tokens puntuales) es lo que produce scripts/portar-sistema.mjs, nada más.
@@ -6353,7 +6358,7 @@ const guardianes = {
   /* 9a · Las cuentas de revisión de Apple y Google (y la beta) entran a una ciudad ABIERTA: si su ciudad no abre, lo primero que ven es
      APP-CIUDAD-PRONTO y la app no se puede revisar (Apple 2.1). Hoy: cada semilla que crea cuentas de revisión (insert into review_accounts) pone a
      esas personas y a su negocio en una ciudad que la semilla del sandbox abre (update cities set status = 'on'); los probadores de la beta
-     (app_beta_testers) también. Cuando 9i agregue el estado «beta» a cities.status, una ciudad en «beta» también cuenta (se lee de las
+     (beta_testers) también. Cuando 9i agregue el estado «beta» a cities.status, una ciudad en «beta» también cuenta (se lee de las
      migraciones: no hay que tocar el guardián). Lo que no se puede mirar aquí: las cuentas de revisión de PRODUCCIÓN se crean a mano en 9u (OK-2);
      9u lo comprueba en vivo. Al revés (alreves9a): una cuenta de revisión en Allentown (soon), su negocio fuera de una ciudad abierta, la semilla
      que deja de abrir Hazleton. */
@@ -6387,7 +6392,7 @@ const guardianes = {
         for (const c of cs) if (!abiertas.has(c)) falla(G, f, 0, `una cuenta de revisión vive en «${c}», que la semilla no abre (${abiertos.join(" / ")}): vería «próximamente»`);
         for (const c of valores(t, "businesses", "city_id")) if (!abiertas.has(c)) falla(G, f, 0, `el negocio de revisión está en «${c}», que no está abierta`);
       }
-      if (/insert into app_beta_testers/.test(t)) for (const c of valores(t, "users", "home_city_id")) if (!abiertas.has(c)) falla(G, f, 0, `un probador de la beta vive en «${c}», que no está abierta`);
+      if (/insert into beta_testers/.test(t)) for (const c of valores(t, "users", "home_city_id")) if (!abiertas.has(c)) falla(G, f, 0, `un probador de la beta vive en «${c}», que no está abierta`);
     }
   },
 

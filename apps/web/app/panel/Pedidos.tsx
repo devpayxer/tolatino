@@ -122,9 +122,15 @@ export function pedidoDetalle(c: Ctx): Sec {
     .concat(x.st === "pend" ? [{ t: E2("Tu respuesta", "Your reply"), s: E2("AHORA", "NOW"), future: true } as never] : []) });
   const row = reqRow(c, x);
   if (row.acts?.length) out.push({ type: "acts", pt: "4px", items: row.acts.map((a) => ({ ...a, off: c.pending })) });
-  if (x.st === "pend" && x.pago) out.push({ type: "note", tone: "info", t: E2(`Pagó con tarjeta: ${money(x.pago.monto)} retenidos. Se cobran cuando aceptas; si no respondes antes de las ${x.responde}, se liberan y el pedido se cancela solo.`, `Paid by card: ${money(x.pago.monto)} held. Charged when you accept; if you do not reply by ${x.responde}, it is released and the order cancels on its own.`) });
-  else if (x.st === "pend") out.push({ type: "note", tone: "info", t: ENT ? E2(`Pagan en efectivo al recibir. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay cash on delivery. If you do not reply by ${x.responde}, it cancels on its own.`)
-    : E2(`Pagan en el local al recoger. Si no respondes antes de las ${x.responde}, se cancela solo.`, `They pay at the store at pickup. If you do not reply by ${x.responde}, it cancels on its own.`) });
+  // 9a · Un pedido sin hora de respuesta (respond_by vacío: viejo o de la semilla) decía «antes de las null»: la frase del plazo solo sale con la hora.
+  const plazo = x.responde;
+  if (x.st === "pend" && x.pago) out.push({ type: "note", tone: "info", t: plazo
+    ? E2(`Pagó con tarjeta: ${money(x.pago.monto)} retenidos. Se cobran cuando aceptas; si no respondes antes de las ${plazo}, se liberan y el pedido se cancela solo.`, `Paid by card: ${money(x.pago.monto)} held. Charged when you accept; if you do not reply by ${plazo}, it is released and the order cancels on its own.`)
+    : E2(`Pagó con tarjeta: ${money(x.pago.monto)} retenidos. Se cobran cuando aceptas.`, `Paid by card: ${money(x.pago.monto)} held. Charged when you accept.`) });
+  else if (x.st === "pend") {
+    const corte = plazo ? E2(` Si no respondes antes de las ${plazo}, se cancela solo.`, ` If you do not reply by ${plazo}, it cancels on its own.`) : "";
+    out.push({ type: "note", tone: "info", t: (ENT ? E2("Pagan en efectivo al recibir.", "They pay cash on delivery.") : E2("Pagan en el local al recoger.", "They pay at the store at pickup.")) + corte });
+  }
   // Despacho (delivery con tu equipo): quién lo lleva. Se asigna a un repartidor activo; el repartidor recibe el aviso.
   if (ENT && x.equipo && !ENT.ext && (x.st === "ok" || x.st === "ready" || x.st === "out")) {
     const R = (c.reps ?? []).filter((r) => r.estado === "active").sort((p, q) => Number(q.enLinea) - Number(p.enLinea));

@@ -29,9 +29,11 @@ const confirmar = async (a, { elegir, plantilla, motivo, cta = 'Confirmar' }) =>
   // Admin en escritorio
   const ca = await b.newContext({ viewport: { width: 1440, height: 900 } }); const a = await ca.newPage(); watch(a, 'admin'); await entrar(a, '5705550199');
   await a.goto(B + '/admin/usuarios'); await a.locator('text=TODAS LAS CUENTAS').waitFor(); await shot(a, 'l1-lista-d.png');
-  await a.locator('input[aria-label="Buscar usuario"]').fill('Marisol'); await a.keyboard.press('Enter'); await a.locator('text=Marisol Prueba').first().waitFor();
-  await a.locator('text=Marisol Prueba').first().click(); await a.locator('text=USUARIO 360°').waitFor(); await shot(a, 'l2-resumen-d.png');
-  if (!(await a.locator('text=/Comparte dispositivo con \d+ cuentas? más/').count())) throw new Error('no detectó el dispositivo compartido');
+  // 9a · Por su teléfono (la base local tiene otras «Marisol» de otras pruebas: por nombre se abría la que no era).
+  await a.locator('input[aria-label="Buscar usuario"]').fill('5705550122'); await a.keyboard.press('Enter'); await a.locator('text=Marisol Prueba').first().waitFor();
+  await a.locator('text=Marisol Prueba').first().click(); await a.waitForURL(new RegExp(`/admin/usuarios/${X}`)); await a.locator('text=USUARIO 360°').waitFor(); await shot(a, 'l2-resumen-d.png');
+  if (!(await a.getByText(/Comparte dispositivo con \d+ cuentas? más/).count())) // 9a · «\d» dentro de comillas era «d»: ahora una expresión de verdad
+    throw new Error('no detectó el dispositivo compartido');
   // Nota interna
   await t(a, 'Agregar nota').click(); await confirmar(a, { motivo: 'Llamó a Soporte por su cuenta', cta: 'Guardar' }); await a.locator('text=Llamó a Soporte por su cuenta').first().waitFor();
   // Silencio 7 días → la vecina no puede recomendar y lo ve en Mi cuenta

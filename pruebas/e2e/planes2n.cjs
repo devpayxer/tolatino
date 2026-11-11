@@ -30,8 +30,8 @@ const restaurar = () => { try { sql(`delete from subscriptions where business_id
   await f2.getByText('Cortesía', { exact: true }).click(); await clic(a.getByText('Socio fundador.', { exact: true })); await clic(a.getByText('Dar cortesía', { exact: true }).last());
   await a.getByText(/Pro de cortesía por 30 días/).first().waitFor();
   ok(sub() === 'courtesy' && sql(`select plan from business_stats_cache where business_id = '${BIZ}'`) === 'pro', 'cortesía: Pro sin cobro');
-  await a.goto(B + '/admin/planes?tab=fees'); await a.getByText('Pedidos (Comida, Mercados, Tiendas)').first().waitFor(); await a.screenshot({ path: OUT + 'n2-comisiones-d.png', fullPage: true });
-  const f3 = a.locator('div', { has: a.getByText('Pedidos (Comida, Mercados, Tiendas)', { exact: true }) }).filter({ has: a.getByText('Programar cambio', { exact: true }) }).last();
+  await a.goto(B + '/admin/planes?tab=fees'); await a.getByText('Pedidos de comida').first().waitFor(); await a.screenshot({ path: OUT + 'n2-comisiones-d.png', fullPage: true });
+  const f3 = a.locator('div', { has: a.getByText('Pedidos de comida', { exact: true }) }).filter({ has: a.getByText('Programar cambio', { exact: true }) }).last();
   await f3.getByText('Programar cambio', { exact: true }).click();
   const v = await vis(a.locator('input').first()); await v.fill('9'); await (await vis(a.getByRole('textbox').last())).fill('Ajuste de prueba');
   await clic(a.getByText('Programar', { exact: true }).last()); await a.getByText(/Programado: 9 % en 30 días/).first().waitFor();
