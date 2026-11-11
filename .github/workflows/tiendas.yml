@@ -54,7 +54,6 @@ jobs:
     outputs:
       apps: ${{ steps.p.outputs.apps }}
       ios: ${{ steps.p.outputs.ios }}
-      ios: ${{ steps.p.outputs.ios }}
       android: ${{ steps.p.outputs.android }}
       build: ${{ steps.p.outputs.build }}
       pedido: ${{ steps.p.outputs.pedido }}
