@@ -2457,6 +2457,24 @@ const guardianes = {
         if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MC, 0, `${msg} (estados)`);
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) (compa_messages|compa_usage|compa_handoffs)\b|\bdelete from (compa_conversations|compa_actions|compa_reservations|compa_pauses|compa_models|compa_spend_month)\b/.test(q)) falla(G, x, 0, `un libro de El Compa no se cambia ni se borra: «${q.slice(0, 60)}»`);
     }
+    // 7i · Las marcas («Marcar respuesta incorrecta») y «Lo que El Compa no supo» no se borran (se quitan / avanzan); la purga por retención
+    // y D5 solo VACÍA el texto, UNA vez, sin tocar nada más (la base, en cada tabla de solo inserción), y solo la hace compa_purgar.
+    const M7I = "packages/db/migrations/0124_compa_admin_config.sql";
+    if (existsSync(M7I)) {
+      if (!/raise exception 'una marca de El Compa no se borra/.test(ultimaFn("compa_reviews_antes")) || !/raise exception 'compa_reviews: de una marca solo se quita la marca, una vez/.test(ultimaFn("compa_reviews_antes"))) falla(G, M7I, 0, "compa_reviews: no se borra y solo se quita la marca, una vez");
+      if (!/raise exception 'lo que El Compa no supo no se borra/.test(ultimaFn("compa_unknowns_antes")) || !/raise exception 'compa_unknowns: el estado solo avanza/.test(ultimaFn("compa_unknowns_antes"))) falla(G, M7I, 0, "compa_unknowns: no se borra y el estado solo avanza");
+      for (const [fn, campos] of [["compa_messages_antes", ["text"]], ["compa_handoffs_antes", ["summary"]], ["support_messages_antes", ["body"]], ["compa_drafts_antes", ["summary", "draft", "next_step"]], ["compa_reviews_antes", ["note"]], ["compa_unknowns_antes", ["query_tapada", "note"]]]) {
+        const f = ultimaFn(fn), lista = [...campos, "purged_at"].map((x) => `'${x}'`).join(", ");
+        const una = /old\.purged_at is null and new\.purged_at is not null/.test(f) && campos.every((c) => new RegExp(`new\\.${c} is null`).test(f));
+        const nadaMas = f.includes(`(to_jsonb(new) - array[${lista}]) = (to_jsonb(old) - array[${lista}])`);
+        if (!una || !nadaMas) falla(G, M7I, 0, `${fn}: la purga vacía ${campos.join(", ")} UNA vez y no cambia nada más`);
+      }
+      if (!/compa_purgar_conversaciones\(a\)/.test(ultimaFn("compa_purgar")) || !/soporte_purgar_casos\(k\)/.test(ultimaFn("compa_purgar"))) falla(G, M7I, 0, "compa_purgar: retención de El Compa y cuentas borradas (D5)");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
+        if (/\bdelete from (compa_reviews|compa_unknowns)\b/.test(q)) falla(G, x, 0, "una marca o «lo que El Compa no supo» no se borra");
+        if (/\bupdate (support_messages|support_cases|compa_\w+) set [^`]*(\b(body|summary|draft|query_tapada) = null\b|\bpurged_at\b)/.test(q)) falla(G, x, 0, "la purga la hace la base (compa_purgar), no la app");
+      }
+    } else falla(G, M7I, 0, "falta la migración 0124 (marcas, «no supo» y la purga)");
     // 7d · Las lecturas del equipo (compa_reads) son de solo inserción: quién abrió qué conversación queda para siempre.
     const MD7 = "packages/db/migrations/0119_compa_vecinos.sql";
     if (existsSync(MD7)) {
@@ -2938,6 +2956,25 @@ const guardianes = {
       }
     }
     if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "evt"'), j = u.indexOf("} else if", i + 10); if (i < 0) falla(G, UI, 0, "falta Analítica › Eventos"); else if (/admin\/usuarios|\.uid\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › Eventos no lleva a personas"); }
+    // 7i · Analítica › El Compa y Soporte: solo compa_analitica_dia y soporte_analitica_dia (0124) y las ciudades; las vistas no sacan columnas de
+    // personas (ni user_id, staff_id, assigned_staff_id, contact_phone_*, ni el texto: text, query_tapada, summary, body); la pantalla no lleva a nadie.
+    const CP = cuerpoFn(sinComent(A), "compaSoporteAnalitica"), K7 = "packages/db/migrations/0124_compa_admin_config.sql";
+    if (!CP) return falla(G, A, 0, "falta compaSoporteAnalitica (Analítica › El Compa y Soporte)");
+    const OK7 = new Set(["compa_analitica_dia", "soporte_analitica_dia", "cities"]);
+    for (const [, t] of CP.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK7.has(t)) falla(G, A, 0, `compaSoporteAnalitica lee «${t}»: solo las vistas sin personas de 0124`);
+    const P7 = /\b(user_id|staff_id|assigned_staff_id|decided_by|contact_phone_\w+|first_name|last_name|phone|email|query_tapada|summary|body)\b|\b(?:cv|g|c)\.text\b/;
+    if (P.test(CP) || P7.test(CP)) falla(G, A, 0, "compaSoporteAnalitica pide una columna de una persona o un texto");
+    if (existsSync(K7)) {
+      const m7 = readFileSync(K7, "utf8");
+      for (const v of ["compa_analitica_dia", "soporte_analitica_dia"]) {
+        const b = new RegExp(`create or replace view ${v} as([\\s\\S]*?);\\n`).exec(m7)?.[1] ?? "";
+        if (!b) { falla(G, K7, 0, `no encuentro la vista ${v}`); continue; }
+        // Las columnas que SALEN de la vista (el último select): nada de una persona ni un texto.
+        const sel = b.slice(b.lastIndexOf("\nselect ")), cols = sel.slice(0, sel.search(/\n\s*from /));
+        if (P.test(cols) || P7.test(cols)) falla(G, K7, 0, `la vista ${v} saca una columna de una persona o un texto`);
+      }
+    } else falla(G, K7, 0, "falta la migración 0124 (vistas de la analítica de El Compa y Soporte)");
+    if (existsSync(UI)) { const u = readFileSync(UI, "utf8"), i = u.indexOf('d.tab === "cpa"'), j = u.indexOf("} else if", i + 10); if (i < 0) falla(G, UI, 0, "falta Analítica › El Compa y Soporte"); else if (/admin\/usuarios|admin\/compa\?cp|\.uid\b|\.num\b/.test(u.slice(i, j))) falla(G, UI, 0, "Analítica › El Compa y Soporte no lleva a personas ni a conversaciones"); }
   },
 
   /* 5i (MEM 651). «Ocultar los N reportados» nunca oculta la cuenta oficial: el lote pasa por loteOcultarUno, que lee author_kind y se
@@ -4250,6 +4287,11 @@ const guardianes = {
       if (!/if texto_con_secretos\(new\.summary\)/.test(ultimaFn("compa_handoffs_antes"))) falla(G, M, 0, "la base rechaza tarjeta o SSN en el resumen al pasar a una persona");
     }
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /insert into compa_messages/.test(sinComent(x)) && x !== C) falla(G, x, 0, "solo conversacion.ts escribe mensajes de El Compa");
+    // 7i · «Lo que El Compa no supo» guarda la pregunta TAPADA (la misma t.texto del mensaje) y solo lo escribe el motor; la base rechaza tarjeta y SSN.
+    const nNo = [...c.matchAll(/anotarNoSupo\(c, \{([^}]*)\}\)/g)];
+    if (nNo.length < 2 || nNo.some((m) => !/texto: t\.texto\b/.test(m[1]))) falla(G, C, 0, "lo que El Compa no supo se anota con la pregunta tapada (t.texto) en vecino y panel");
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && /insert into compa_unknowns/.test(sinComent(x)) && x !== C) falla(G, x, 0, "solo el motor anota lo que El Compa no supo");
+    if (!/if texto_con_secretos\(new\.query_tapada\) then raise exception 'compa_sin_secretos/.test(ultimaFn("compa_unknowns_antes"))) falla(G, C, 0, "la base rechaza tarjeta o SSN en lo que El Compa no supo");
     // 7f · La respuesta automática que sale en Mensajes también va tapada, y solo conversacion.ts escribe una (compa = true).
     const ins = [...c.matchAll(/insert into chat_messages \(thread_id, sender, body, compa\) values \(\$1, 'auto', \$2, true\)(?: returning id::text)?`, \[([^\]]*)\]/g)];
     if (!ins.length || ins.some((m) => !/^t\.id, tapar\(/.test(m[1]))) falla(G, C, 0, "la respuesta automática de El Compa se escribe en Mensajes tapada");
@@ -4313,7 +4355,7 @@ const guardianes = {
   compaSinRutaCritica() {
     const G = "compaSinRutaCritica";
     // 7e · Y las acciones del asistente del panel (app/panel/acciones-compa.ts: solo las llama la sección El Compa) y Negocios 360° (Super Admin).
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$|usuarios\/\[id\]\/page\.tsx$|sistema\/configuracion\/page\.tsx$|acciones-config\.ts$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
@@ -4425,6 +4467,13 @@ const guardianes = {
     if (!/if \(!s\.puede\("compa", "editar"\)\) return null;/.test(f)) falla(G, A, 0, "la ficha con el hilo pide compa:editar");
     const i = f.indexOf("insert into compa_reads"), j = f.indexOf("from compa_messages");
     if (i < 0 || j < 0 || i > j) falla(G, A, 0, "cada lectura del hilo queda en compa_reads ANTES de leerlo");
+    // 7i · La ficha (y la marca) es de una conversación de las CIUDADES de quien mira; la pregunta de «Lo que El Compa no supo» (tapada) la ve solo
+    // quien lee hilos (compa:editar): Solo lectura ve cifras. Nadie fuera del motor y del Super Admin de El Compa lee compa_unknowns.
+    if (!/insert into compa_reads[\s\S]*\$\{SUS\("city_id", "\$2"\)\}|where number = \$1 and \$\{SUS\("city_id", "\$2"\)\}`, \[n, s\.cities\]/.test(f)) falla(G, A, 0, "la ficha con el hilo es solo de las ciudades de quien mira");
+    const R7 = cuerpoFn(sinComent(A), "resumenCompa");
+    if (!R7 || !/const leer = s\.puede\("compa", "editar"\)/.test(R7) || !/case when \$2 then q\.query_tapada end as q/.test(R7) || /select [^`]*\bq\.query_tapada\b(?! end)/.test(R7.replace(/case when \$2 then q\.query_tapada end/g, ""))) falla(G, A, 0, "«Lo que El Compa no supo»: la pregunta solo para quien lee hilos (compa:editar)");
+    for (const fn of ["marcarConversacion", "quitarMarca", "decidirNoSupo"]) if (!new RegExp(`if \\(!s\\.puede\\("compa", "editar"\\)\\) return`).test(cuerpoFn(sinComent(A), fn))) falla(G, A, 0, `${fn} pide compa:editar`);
+    for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && !/^apps\/web\/lib\/compa\/(conversacion|admin-compa)\.ts$/.test(x) && /\b(from|join) compa_unknowns\b/.test(sinComent(x))) falla(G, x, 0, "lo que El Compa no supo solo lo leen el motor y el Super Admin de El Compa");
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && !/^apps\/web\/lib\/compa\/(conversacion|admin-compa)\.ts$/.test(x) && /\bfrom compa_messages\b/.test(sinComent(x))) falla(G, x, 0, "el hilo de El Compa solo lo leen el motor y la ficha anotada del Super Admin");
   },
 
@@ -4657,6 +4706,59 @@ const guardianes = {
           if (new RegExp(`(^|,)\\s*${nom}\\b(?!\\.)`).test(ob)) falla(G, x, 0, `«order by ${nom}» ordena el TEXTO de ${m[1]}::text (100 antes que 98): califica la columna`);
         }
       }
+    }
+  },
+
+  /* 7i · Una retención que se promete y no corre: compa_retener_meses estuvo en Configuración diciendo «Después solo quedan las cifras» sin que nada
+     lo hiciera (bloqueada hasta 7i). Toda clave de Configuración que promete borrar o vaciar (…_retener_… o …_purga_…) la lee una función que el
+     barrido central corre (en lib/: la función que la lee o una exportada del mismo archivo que la llama; en la base: la función SQL que la lee,
+     llamada desde una de ellas). Al revés: quitar la tarea del barrido, o que la función deje de leer la clave → falla. */
+  retencionQueCorre() {
+    const G = "retencionQueCorre", B = "apps/web/lib/barrido.ts";
+    if (!existsSync(B)) return falla(G, B, 0, "falta el barrido central");
+    const bar = sinComent(B), claves = [...new Set(catalogoConfig().map((x) => x.k).filter((k) => /(_purga_dias|_retener_(dias|meses))$/.test(k)))];
+    if (claves.length < 5) falla(G, "packages/db/migrations", 0, `solo ${claves.length} claves de retención: ¿se rompió la lectura del catálogo?`);
+    const libs = codigo.filter((x) => /^apps\/web\/lib\/.*\.ts$/.test(x) && x !== B && x !== "apps/web/lib/config.ts");
+    // Las funciones de nivel superior de un archivo (nombre, cuerpo, exportada).
+    const funciones = (t) => [...t.matchAll(/\n(export )?(?:async )?function (\w+)\(/g)].map((m, i, L) => ({ n: m[2], exp: !!m[1], b: t.slice(m.index, L[i + 1]?.index ?? t.length) }));
+    const corre = (t, quien) => { // ¿alguna función de este archivo que use `quien` la corre el barrido (directa o desde una exportada del mismo archivo)?
+      const F = funciones(t), usa = F.filter((f) => quien(f.b));
+      return usa.some((f) => bar.includes(`.${f.n}(`) || F.some((e) => e.exp && e.n !== f.n && new RegExp(`\\b${f.n}\\(`).test(e.b) && bar.includes(`.${e.n}(`)));
+    };
+    const fnSql = new Map(); // nombre de función SQL → su último cuerpo
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/create or replace function (\w+)\(/g)) fnSql.set(m[1], ultimaFn(m[1]));
+    for (const k of claves) {
+      let ok = false;
+      for (const x of libs) {
+        const t = sinComent(x);
+        if (!t.includes(k) && ![...fnSql].some(([n, b]) => b.includes(`cfg_int('${k}')`) && t.includes(`${n}(`))) continue;
+        if (corre(t, (b) => new RegExp(`["'\`]${k}["'\`]`).test(b))) ok = true;
+        // En la base: una función SQL que lee la clave (o que llama a otra que la lee), llamada desde una función del archivo que corre el barrido.
+        for (const [n, b] of fnSql) if (b.includes(`cfg_int('${k}')`) && corre(t, (cuerpo) => new RegExp(`select ${n}\\(`).test(cuerpo))) ok = true;
+        if (ok) break;
+      }
+      if (!ok) falla(G, B, 0, `«${k}» promete borrar o vaciar, pero ninguna función que el barrido central corre la lee`);
+    }
+  },
+
+  /* 7i · Mi cuenta › Avisos › Soporte (fase7-compa §4 7i): lo del caso NO se apaga. Las plantillas del caso (recibido, te respondieron, resuelto,
+     El Compa te pasó con una persona, el caso del negocio) van en el grupo `support` SIN pref (avisar() solo deja de mandar lo que tiene pref);
+     ninguna migración posterior les pone interruptor y Mi cuenta › Avisos no tiene un interruptor de Soporte. Al revés: darle pref a una → falla. */
+  soporteSiempreLlega() {
+    const G = "soporteSiempreLlega", M = "packages/db/migrations/0124_compa_admin_config.sql", A = "apps/web/lib/avisos.ts", AV = "apps/web/app/(app)/cuenta/avisos/Avisos.tsx";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración 0124");
+    const SOP = ["sop_recibido", "sop_respuesta", "sop_resuelto", "compa_caso", "compa_caso_negocio"];
+    const nulo = /update notif_templates set grp = 'support', pref = null\s+where key in \(([^)]*)\)/.exec(readFileSync(M, "utf8"))?.[1] ?? "";
+    for (const k of SOP) if (!nulo.includes(`'${k}'`)) falla(G, M, 0, `«${k}» es del caso: va en el grupo support SIN interruptor (pref null)`);
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql") && y > "0124")) {
+      const t = readFileSync(`packages/db/migrations/${x}`, "utf8");
+      for (const k of SOP) if (new RegExp(`pref = '[a-zA-Z]+'[^;]*'${k}'`).test(t) || new RegExp(`set grp = '(?!support)[a-z]+'[^;]*'${k}'`).test(t)) falla(G, `packages/db/migrations/${x}`, 0, `«${k}» es del caso: siempre llega`);
+    }
+    if (existsSync(A) && /r\.grp === "support"[^;\n]*apagado/.test(cuerpoFn(sinComent(A), "avisar"))) falla(G, A, 0, "avisar(): lo de Soporte no se apaga");
+    if (existsSync(AV)) {
+      const t = readFileSync(AV, "utf8");
+      if (!/E2\("SOPORTE", "SUPPORT"\)/.test(t) || !/Lo de tus casos siempre te llega/.test(t)) falla(G, AV, 0, "Mi cuenta › Avisos › Soporte dice que lo del caso siempre llega");
+      if (/\["sop[A-Za-z]*",/.test(t)) falla(G, AV, 0, "Mi cuenta › Avisos no tiene interruptor de Soporte");
     }
   },
 

@@ -26,6 +26,7 @@ export type DatosAnalitica = {
   ia?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").feInmAutos>>;
   com?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").comunidadAnalitica>>;
   evt?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").eventosAnalitica>>;
+  cpa?: Awaited<ReturnType<typeof import("@/lib/admin-analitica").compaSoporteAnalitica>>;
 };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)} %` : "—");
 
@@ -34,7 +35,7 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
   const [toast, setToast] = useToast();
   const [pend, start] = useTransition();
   const ir = (tab: string, dias = d.dias) => router.push(`${path}?${new URLSearchParams({ ...(tab !== "sum" ? { tab } : {}), ...(dias !== 30 ? { p: String(dias) } : {}) })}`, { scroll: false });
-  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
+  const tabs: Bloque = { type: "tabs", items: ([["sum", "Resumen"], ["ppl", "Gente y negocios"], ["trust", "Soporte y confianza"], ["sp", "Doctores y Profesionales"], ["mt", "Mercados y Tiendas"], ["ft", "Fiestas y Transporte"], ["no", "Noche"], ["en", "Educación · Niños · Deporte"], ["ia", "Iglesias · Bienes Raíces · Autos"], ["com", "Comunidad"], ["evt", "Eventos"], ["cpa", "El Compa y Soporte"], ["nosup", "Búsquedas sin oferta"], ["exp", "Exportar"]] as const).map(([k, l]) => ({ l, on: d.tab === k, onClick: () => ir(k) })) };
   const periodo: Bloque = { type: "chips", items: [7, 30, 90].map((n) => ({ l: `${n} días`, v: d.dias === n ? "selected" : "filter", onClick: () => ir(d.tab, n) })) };
   const kpis = (items: { k: string; v: string; s?: string; dark?: boolean; onClick?: () => void }[]): Bloque => ({ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))",
     items: items.map((x) => ({ k: x.k, v: x.v, s: x.s, onClick: x.onClick, ...(x.dark ? { bg: "var(--tl-ink)", fg: "var(--tl-white)", bd: "var(--tl-ink)", sFg: "rgba(255,255,255,.7)" } : {}) })) });
@@ -294,6 +295,49 @@ export function Analitica({ d }: { d: DatosAnalitica }) {
         { type: "rows", k: "POR CIUDAD", items: ciudades.map((x) => ({ key: x.ciudad, icon: "pin", t: x.ciudad, s: `${x.vistas} vistas · ${x.rsvp} RSVP · ${x.ordenes} órdenes · ${usd(x.bruto)} · devuelto ${usd(x.devuelto)}` })) },
         { type: "rows", k: "POR ORGANIZADOR", items: negocios.length ? negocios.map((x) => ({ key: x.negocio + x.ciudad, icon: "store", t: `${x.negocio} · ${x.ciudad}`, r: usd(x.bruto), s: `${x.ordenes} órdenes · comisión ${usd(x.comision)} · devuelto ${usd(x.devuelto)}` })) : [{ key: "0", icon: "store", t: "Sin ventas en el período" }] },
         { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad, formato y día: nunca quién compró, fue o entró." },
+        ]} />
+      </>);
+  } else if (d.tab === "cpa" && d.cpa) {
+    // 7i · El Compa y Soporte: por ciudad, día, nivel, canal y tema, sin personas (solo las vistas de 0124; nada lleva a una persona).
+    const { t, motivos: m, usos, canales, ciudades, sop: k, temas } = d.cpa, usd = (micro: number) => `$${(micro / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const USO: Record<string, string> = { neighbor: "Vecinos", owner: "Panel del negocio", auto_reply: "Respuestas automáticas", copilot: "Copiloto del equipo" };
+    const CANAL: Record<string, string> = { app: "Chat de To'Latino", whatsapp: "WhatsApp", sms: "SMS" };
+    const TEMA: Record<string, string> = { pedido: "Pedido", cita: "Cita", pago: "Pago", negocio: "Negocio", cuenta: "Cuenta", tecnico: "Técnico", sugerencia: "Sugerencia", seguridad: "Seguridad" };
+    const seg = (x: number | null) => (x == null ? "—" : x < 3600 ? `${Math.max(1, Math.round(x / 60))} min` : `${(x / 3600).toFixed(1)} h`);
+    const solo = t.resolvio_solo + t.accion, mxM = Math.max(1, m.dinero, m.cuenta, m.seguridad, m.pidio, m.no_supo, m.dueno);
+    cuerpo = (
+      <>
+        <PanelBloques bloques={[periodo, { type: "group", k: "EL COMPA" }, kpis([
+          { k: "CONVERSACIONES", v: t.conversaciones.toLocaleString("en-US"), s: `${t.con_ia} respuestas con IA · ${t.sin_ia} con reglas fijas`, dark: true },
+          { k: "RESOLVIÓ SOLO", v: pct(solo, t.conversaciones), s: `${t.accion} acciones confirmadas` },
+          { k: "A UNA PERSONA", v: String(t.a_persona + t.al_dueno), s: `${pct(t.a_persona + t.al_dueno, t.conversaciones)} · ${t.al_dueno} al dueño` },
+          { k: "GASTO DE IA", v: usd(t.gasto), s: `${t.al_tope} al tope · ${t.apagado} apagado · ${t.limite} por límite` },
+        ]), kpis([
+          { k: "ESPERA DE LA IA", v: t.esperas ? `${(t.espera_suma / t.esperas / 1000).toFixed(1)} s` : "—", s: `promedio · p95 del peor día ${t.p95_max != null ? `${(t.p95_max / 1000).toFixed(1)} s` : "—"}` },
+          { k: "A REGLAS", v: String(t.a_reglas), s: "lenta, error, rechazo o salida que no pasó el verificador" },
+          { k: "NO SUPO", v: String(t.no_supo), s: "conversaciones con «No tengo ese dato»" },
+          { k: "MARCADAS", v: String(t.marcadas), s: "respuesta incorrecta según el equipo" },
+        ])]} />
+        <A.HBars label="POR QUÉ PASÓ A UNA PERSONA" items={([["Dinero", m.dinero], ["Su cuenta", m.cuenta], ["Seguridad", m.seguridad], ["Pidió una persona", m.pidio], ["No supo", m.no_supo], ["Al dueño del negocio", m.dueno]] as const)
+          .map(([l, n]) => ({ label: l, width: `${Math.max(2, Math.round((n / mxM) * 100))}%`, color: l === "No supo" ? "var(--tl-pro)" : "var(--tl-ink)", value: String(n) }))} />
+        <PanelBloques bloques={[
+          { type: "rows", k: "DÓNDE CONTESTA", items: usos.length ? usos.map((x) => ({ key: x.uso, icon: "chat", t: USO[x.uso] ?? x.uso, r: String(x.conversaciones),
+            s: `resolvió solo ${pct(x.resolvio_solo + x.accion, x.conversaciones)} · a una persona ${x.a_persona + x.al_dueno} · sin IA ${x.sin_ia} · ${usd(x.gasto)}` })) : [{ key: "0", icon: "chat", t: "Sin conversaciones en el período" }] },
+          { type: "rows", k: "POR DÓNDE ESCRIBEN", items: canales.length ? canales.map((x) => ({ key: x.canal, icon: x.canal === "app" ? "chat" : "phone", t: CANAL[x.canal] ?? x.canal, r: String(x.conversaciones),
+            s: `${x.con_ia} con IA · ${usd(x.gasto)}` })) : [{ key: "0", icon: "chat", t: "Sin conversaciones en el período" }] },
+          { type: "group", k: "SOPORTE" },
+          kpis([
+            { k: "CASOS", v: String(k.casos), s: `${k.desde_compa} desde El Compa · ${k.de_negocios} de negocios · ${k.alta} prioridad alta`, dark: true },
+            { k: "PLAZO CUMPLIDO", v: pct(k.plazo_cumplido, k.con_respuesta), s: `${k.plazo_vencido} fuera de plazo (horas hábiles del equipo)` },
+            { k: "1.ª RESPUESTA", v: seg(k.con_respuesta ? k.primera_suma / k.con_respuesta : null), s: `promedio · p90 del peor día ${seg(k.primera_p90_max)}` },
+            { k: "¿SE RESOLVIÓ?", v: pct(k.csat_si, k.csat_si + k.csat_no), s: `${k.csat_si} sí · ${k.csat_no} no · ${k.resueltos} resueltos` },
+          ]),
+          { type: "rows", k: "POR TEMA", items: temas.length ? temas.map((x) => ({ key: x.tema, icon: "help", t: TEMA[x.tema] ?? x.tema, r: String(x.casos),
+            s: `plazo cumplido ${pct(x.plazo_cumplido, x.con_respuesta)} · 1.ª respuesta ${seg(x.con_respuesta ? x.primera_suma / x.con_respuesta : null)} · ¿se resolvió? ${pct(x.csat_si, x.csat_si + x.csat_no)}${x.devuelto ? ` · devuelto $${(x.devuelto / 100).toFixed(2)}` : ""}` }))
+            : [{ key: "0", icon: "help", t: "Sin casos en el período" }] },
+          { type: "rows", k: "POR CIUDAD", items: ciudades.map((x) => ({ key: x.ciudad, icon: "pin", t: x.ciudad,
+            s: `El Compa: ${x.conversaciones} conversaciones · resolvió solo ${pct(x.resolvio_solo + x.accion, x.conversaciones)} · ${usd(x.gasto)} · Soporte: ${x.casos} casos · plazo cumplido ${pct(x.plazo_cumplido, x.con_respuesta)}` })) },
+          { type: "note", tone: "info", icon: "lock", t: "Solo cifras por ciudad, día, nivel, canal y tema: nunca quién habló con El Compa ni quién abrió un caso." },
         ]} />
       </>);
   } else if (d.tab === "nosup" && d.nosup) {

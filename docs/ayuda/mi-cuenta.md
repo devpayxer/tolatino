@@ -2,7 +2,7 @@
 
 _Pantallas: `/cuenta` (Resumen), `/cuenta/pedidos`, `/cuenta/citas`, `/cuenta/guardados`, `/cuenta/resenas`, `/cuenta/empleos`, `/cuenta/perfil` (y
 `/perfil/telefono`), `/cuenta/direcciones`, `/cuenta/avisos`, `/cuenta/ajustes` (y `/ajustes/ciudad`, `/ajustes/privacidad`, `/ajustes/borrar`) y
-`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 10 nov 2026. Audiencia: vecino. Tema:
+`/cuenta/invitar`; **Ayuda y soporte** abre `/soporte`. Teléfono y escritorio (en escritorio, navegación a la izquierda). Pide haber entrado. Versión: 11 nov 2026. Audiencia: vecino. Tema:
 cuenta._
 
 ## Qué hace
@@ -70,6 +70,11 @@ se cierran y tus pedidos y reservaciones salen de tu cuenta. Tienes 30 días par
 offline), **Saved › Events** and **Notifications › Events** (tickets and changes, reminders, saved events; critical ones always arrive). A Payments
 screen in My account does not exist yet; each ticket order has its receipt.
 
+## Avisos de Soporte
+En **Avisos** hay una sección **SOPORTE**: lo de tus casos (recibido, te respondieron, resuelto, El Compa te pasó con una persona) siempre te
+llega y no se apaga, y dice el horario del equipo. **Privacidad › El Compa**: lo que hablas con El Compa se guarda tapado 12 meses y después solo
+quedan cifras; si borras tu cuenta, a los 30 días se vacían tus conversaciones con El Compa y tus casos de Soporte (los cobros quedan en Stripe).
+
 ## English
 
 Help and support also says «El Compa · AI right away» when El Compa is on, and Settings › Privacy has **El Compa** (what the help AI sees and who
@@ -87,3 +92,8 @@ three steps with a code, is scheduled 30 days out and is canceled if you sign in
 ### Help
 My account › **Help** (also in the desktop navigation) opens the Help center, in Spanish and English. **Help and support** opens your cases
 with a person on the To'Latino team, with how many are open and the team hours.
+
+### Support notifications
+**Notifications** has a **SUPPORT** section: your case updates always reach you and cannot be turned off; it shows the team hours. What you say to
+El Compa is kept covered for 12 months, then only numbers remain; if you delete your account, after 30 days your El Compa conversations and
+Support cases are emptied (payments stay with Stripe).

@@ -7,7 +7,8 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { FilaConfig, Seccion } from "@/lib/config";
-import { configCambiar } from "./acciones-config";
+import { configCambiar, configModelo } from "./acciones-config";
+import type { ModeloPapel } from "@/lib/compa/admin-compa";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
@@ -28,7 +29,9 @@ const SUB_EVT: [string, RegExp][] = [
 const fmt = (f: { key: string; unidad: { es: string } }, v: number) => (f.key.endsWith("_cents") ? `$${(v / 100).toFixed(2)}` : `${v.toLocaleString("en-US")} ${f.unidad.es}`);
 const cuando = (iso: string) => new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "");
 
-export function Configuracion({ filas, admin, autoOcultar }: { filas: FilaConfig[]; admin: boolean; autoOcultar: { reportes: number; horas: number } | null }) {
+type Modelos = { papeles: ModeloPapel[]; modelos: { id: string; label: string; entrada: number; salida: number }[] };
+export function Configuracion({ filas, admin, autoOcultar, modelos = null, horario = null }: { filas: FilaConfig[]; admin: boolean; autoOcultar: { reportes: number; horas: number } | null;
+  modelos?: Modelos | null; horario?: string | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Guardado."); setConf(null); router.refresh(); };
@@ -75,7 +78,24 @@ export function Configuracion({ filas, admin, autoOcultar }: { filas: FilaConfig
     }));
     if (sec === "comunidad" && autoOcultar) items.push({ key: "autohide", icon: "shield", t: desk ? "Auto-ocultar por reportes" : `Auto-ocultar por reportes · ${autoOcultar.reportes} en ${autoOcultar.horas} h`, r: desk ? `${autoOcultar.reportes} en ${autoOcultar.horas} h` : "",
       s: "Es un parámetro de su regla: se cambia en Contenido › Auto-moderación, junto con el interruptor de la regla.", tag: null, tone: "neutral", dim: false, chev: true, onClick: () => router.push("/admin/contenido?tab=auto") });
+    // 7i · Soporte: cómo dicen las pantallas el horario del equipo con estos números («lunes a viernes, de 9 AM a 6 PM»).
+    if (sec === "soporte" && horario) B.push({ type: "note", tone: "info", icon: "clock", t: `Las pantallas de Soporte y El Compa dicen: «El equipo atiende ${horario}» (hora de cada ciudad). Cambia con los días y las horas de abajo.` });
     B.push({ type: "rows", cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items });
+    // 7i · El Compa: el modelo de cada papel, de los encendidos en la lista de precios (compa_models); motivo y auditoría.
+    if (sec === "compa" && gk === SECCION.compa && modelos) {
+      const PAPEL: Record<string, [string, string]> = { cotidiano: ["Modelo de vecinos, panel y respuestas", "El más barato que cumpla (decisión F)."], copiloto: ["Modelo del copiloto del equipo", "Uno mayor, solo para los borradores de Soporte."] };
+      const cambiarM = (p: ModeloPapel) => {
+        if (!admin) return setToast("Solo un Admin cambia la configuración.");
+        const otros = modelos.modelos.filter((m) => m.id !== p.id);
+        if (!otros.length) return setToast("No hay otro modelo encendido en la lista de precios.");
+        setConf({ titulo: PAPEL[p.papel]![0], cta: "Guardar", elegir: { label: "MODELO", items: otros.map((m) => ({ k: m.id, l: `${m.label} · $${m.entrada.toFixed(2)} / $${m.salida.toFixed(2)} por millón de tokens` })) },
+          sub: `Ahora: ${p.label ?? "ninguno"}. Solo los modelos encendidos en la lista de precios; el precio de cada uno no se escribe en el código. Vale desde la próxima llamada y queda en la auditoría.`,
+          plantillas: ["Lo pidió el fundador", "Mejor calidad al mismo costo", "Bajar el gasto"], hacer: (m, e) => configModelo(p.papel, e ?? "", m) });
+      };
+      B.push({ type: "rows", k: "MODELO DE CADA PAPEL", cols: desk ? "repeat(auto-fill,minmax(420px,1fr))" : "1fr", items: modelos.papeles.map((p) => ({
+        key: `modelo-${p.papel}`, icon: admin ? "edit" : "lock", t: desk ? PAPEL[p.papel]![0] : `${PAPEL[p.papel]![0]} · ${p.label ?? "ninguno"}`, r: desk ? p.label ?? "ninguno" : "",
+        s: `${PAPEL[p.papel]![1]} De los modelos encendidos en la lista de precios.`, tag: null, tone: "neutral", dim: false, chev: admin, onClick: () => cambiarM(p) })) });
+    }
     }
   }
   return <div style={{ display: "flex", flexDirection: "column", gap: 14 }}><PanelBloques bloques={B} h1={desk ? 26 : 22} /><Toast t={toast} desk={desk} /></div>;

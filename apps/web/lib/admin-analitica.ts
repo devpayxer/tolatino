@@ -394,3 +394,43 @@ export async function eventosAnalitica(s: Staff, dias: number) {
   ]);
   return { t: tot.rows[0]!, formatos: fmt.rows, ciudades: ciu.rows, asistencia: asi.rows[0]!, negocios: neg.rows, evp: evp.rows[0]! };
 }
+
+/* 7i · Analítica › El Compa y Soporte (fase7-compa §2 0124): SOLO las vistas sin personas compa_analitica_dia (ciudad, día local, nivel y canal) y
+   soporte_analitica_dia (ciudad, día local y tema) y los nombres de las ciudades. La espera de la IA: promedio del período (suma ÷ llamadas) y el p95
+   del peor día (los percentiles de cada día no se suman); la primera respuesta de Soporte igual. */
+export async function compaSoporteAnalitica(s: Staff, dias: number) {
+  const DESDE = `(now() at time zone 'America/New_York')::date - ($2::int - 1)`;
+  const CS = `coalesce(sum(a.conversaciones), 0)::int as conversaciones, coalesce(sum(a.resolvio_solo), 0)::int as resolvio_solo, coalesce(sum(a.accion), 0)::int as accion,
+              coalesce(sum(a.a_persona), 0)::int as a_persona, coalesce(sum(a.al_dueno), 0)::int as al_dueno, coalesce(sum(a.sin_ia), 0)::int as sin_ia,
+              coalesce(sum(a.con_ia), 0)::int as con_ia, coalesce(sum(a.al_tope), 0)::int as al_tope, coalesce(sum(a.gasto_microusd), 0)::float8 as gasto`;
+  type C = { conversaciones: number; resolvio_solo: number; accion: number; a_persona: number; al_dueno: number; sin_ia: number; con_ia: number; al_tope: number; gasto: number };
+  const SS = `coalesce(sum(x.casos), 0)::int as casos, coalesce(sum(x.desde_compa), 0)::int as desde_compa, coalesce(sum(x.de_negocios), 0)::int as de_negocios,
+              coalesce(sum(x.alta), 0)::int as alta, coalesce(sum(x.con_respuesta), 0)::int as con_respuesta, coalesce(sum(x.plazo_cumplido), 0)::int as plazo_cumplido,
+              coalesce(sum(x.plazo_vencido), 0)::int as plazo_vencido, coalesce(sum(x.primera_suma_seg), 0)::float8 as primera_suma, max(x.primera_p90_seg)::int as primera_p90_max,
+              coalesce(sum(x.resueltos), 0)::int as resueltos, coalesce(sum(x.csat_si), 0)::int as csat_si, coalesce(sum(x.csat_no), 0)::int as csat_no, coalesce(sum(x.devuelto_cents), 0)::float8 as devuelto`;
+  type S = { casos: number; desde_compa: number; de_negocios: number; alta: number; con_respuesta: number; plazo_cumplido: number; plazo_vencido: number; primera_suma: number;
+    primera_p90_max: number | null; resueltos: number; csat_si: number; csat_no: number; devuelto: number };
+  const [tot, motivos, uso, canal, ciu, sop, temas, sopCiu] = await Promise.all([
+    db().query<C & { marcadas: number; no_supo: number; a_reglas: number; apagado: number; limite: number; espera_suma: number; esperas: number; p95_max: number | null }>(
+      `select ${CS}, coalesce(sum(a.marcadas), 0)::int as marcadas, coalesce(sum(a.no_supo), 0)::int as no_supo, coalesce(sum(a.a_reglas), 0)::int as a_reglas,
+              coalesce(sum(a.apagado), 0)::int as apagado, coalesce(sum(a.limite), 0)::int as limite, coalesce(sum(a.espera_suma_ms), 0)::float8 as espera_suma,
+              coalesce(sum(a.esperas), 0)::int as esperas, max(a.espera_p95_ms)::int as p95_max
+         from compa_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
+    db().query<{ dinero: number; cuenta: number; seguridad: number; pidio: number; no_supo: number; dueno: number }>(
+      `select coalesce(sum(a.persona_dinero), 0)::int as dinero, coalesce(sum(a.persona_cuenta), 0)::int as cuenta, coalesce(sum(a.persona_seguridad), 0)::int as seguridad,
+              coalesce(sum(a.persona_pidio), 0)::int as pidio, coalesce(sum(a.persona_no_supo), 0)::int as no_supo, coalesce(sum(a.al_dueno), 0)::int as dueno
+         from compa_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
+    db().query<C & { uso: string }>(`select a.uso, ${CS} from compa_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.uso order by 2 desc`, [s.cities, dias]),
+    db().query<C & { canal: string }>(`select a.canal, ${CS} from compa_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")} group by a.canal order by 2 desc`, [s.cities, dias]),
+    db().query<C & { ciudad: string; id: string }>(
+      `select ci.id, ci.name as ciudad, ${CS}
+         from cities ci left join compa_analitica_dia a on a.city_id = ci.id and a.dia >= ${DESDE}
+        where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.conversaciones), 0) > 0 order by ci.name`, [s.cities, dias]),
+    db().query<S>(`select ${SS} from soporte_analitica_dia x where x.dia >= ${DESDE} and ${scope("x.city_id")}`, [s.cities, dias]),
+    db().query<S & { tema: string }>(`select x.tema, ${SS} from soporte_analitica_dia x where x.dia >= ${DESDE} and ${scope("x.city_id")} group by x.tema order by 2 desc`, [s.cities, dias]),
+    db().query<S & { id: string }>(`select x.city_id as id, ${SS} from soporte_analitica_dia x where x.dia >= ${DESDE} and ${scope("x.city_id")} group by x.city_id`, [s.cities, dias]),
+  ]);
+  const vacio: S = { casos: 0, desde_compa: 0, de_negocios: 0, alta: 0, con_respuesta: 0, plazo_cumplido: 0, plazo_vencido: 0, primera_suma: 0, primera_p90_max: null, resueltos: 0, csat_si: 0, csat_no: 0, devuelto: 0 };
+  const sc = new Map(sopCiu.rows.map((x) => [x.id, x]));
+  return { t: tot.rows[0]!, motivos: motivos.rows[0]!, usos: uso.rows, canales: canal.rows, ciudades: ciu.rows.map((x) => ({ ...x, ...(sc.get(x.id) ?? vacio) })), sop: sop.rows[0]!, temas: temas.rows };
+}

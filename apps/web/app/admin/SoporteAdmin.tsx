@@ -50,7 +50,8 @@ const SISTEMA: Record<string, (v: Record<string, string>) => string> = {
 
 type Cop = Extract<BorradorCopiloto, { ok: true }> & { num: string };
 export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f, tema, horario, casoPedido, puede, copiloto = false }: {
-  tab: TabSop | "macros"; filas: FilaSop[]; sig: string | null; kpis: { abiertos: number; vencidos: number; mios: number; equipo: number; esc: number; mediana: number | null; resueltos: number; si: number; no: number };
+  tab: TabSop | "macros"; filas: FilaSop[]; sig: string | null; kpis: { abiertos: number; vencidos: number; mios: number; equipo: number; esc: number; mediana: number | null; resueltos: number; si: number; no: number;
+    plazo30?: { con: number; cumplido: number; vencido: number; casos: number; compa: number } };
   caso: CasoEquipo | null; plazo: string | null; macros: Macro[]; q: string; f: string | null; tema: Tema | null; horario: string; casoPedido: string | null;
   puede: { editar: boolean; aprobar: boolean; devolver: boolean; usr: boolean; neg: boolean; tx: boolean }; copiloto?: boolean;
 }) {
@@ -109,6 +110,11 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
       { k: "1.ª RESPUESTA", v: kpis.mediana == null ? "—" : kpis.mediana < 3600 ? `${Math.max(1, Math.round(kpis.mediana / 60))} min` : `${(kpis.mediana / 3600).toFixed(1)} h`, s: "mediana · 7 días" },
       { k: "RESUELTOS · 7 D", v: String(kpis.resueltos), s: kpis.si + kpis.no ? `¿Se resolvió? sí ${Math.round((kpis.si / (kpis.si + kpis.no)) * 100)} % · 30 d` : "¿Se resolvió?: sin respuestas" },
     ] },
+    // 7i · El plazo en 30 días (de soporte_analitica_dia, sin personas): primera respuesta dentro de las horas hábiles del plazo.
+    ...(kpis.plazo30 ? [{ type: "kv" as const, cols: desk ? 3 : 1, items: [
+      { k: "PLAZO CUMPLIDO · 30 D", v: kpis.plazo30.con ? `${Math.round((kpis.plazo30.cumplido / kpis.plazo30.con) * 100)} % · ${kpis.plazo30.cumplido} de ${kpis.plazo30.con} con respuesta` : "—" },
+      { k: "FUERA DE PLAZO · 30 D", v: `${kpis.plazo30.vencido} de ${kpis.plazo30.casos} casos`, fg: kpis.plazo30.vencido ? "var(--tl-danger)" : undefined },
+      { k: "DESDE EL COMPA", v: `${kpis.plazo30.compa} de ${kpis.plazo30.casos} casos en 30 días` }] }] : []),
     { type: "tabs", items: ([["open", "Abiertos", kpis.abiertos], ["mine", "Míos", kpis.mios], ["esc", "Escalados", kpis.esc], ["res", "Resueltos"], ["macros", "Macros"]] as [string, string, number?][])
       .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir({ tab: k === "open" ? null : k, caso: null, antes: null }) })) },
   ];

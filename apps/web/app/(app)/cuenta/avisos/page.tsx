@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [u, lang] = await Promise.all([yo(), idioma()]);
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/cuenta/avisos")}`);
-  const [p, me, cfg] = await Promise.all([avisosDe(u.id), yoMarco(u, lang === "es"), valores("com_resumen_hora", "evt_recordatorio_hora")]);
-  return <Avisos p={p} es={lang === "es"} yo={me} horaResumen={cfg.com_resumen_hora} horaRecordatorio={cfg.evt_recordatorio_hora} />;
+  const [p, me, cfg, hor] = await Promise.all([avisosDe(u.id), yoMarco(u, lang === "es"), valores("com_resumen_hora", "evt_recordatorio_hora"),
+    (await import("@/lib/soporte")).lineaHorario(lang === "es")]);   // 7i · el horario del equipo (Configuración › Soporte)
+  return <Avisos p={p} es={lang === "es"} yo={me} horaResumen={cfg.com_resumen_hora} horaRecordatorio={cfg.evt_recordatorio_hora} horarioEquipo={hor} />;
 }

@@ -6,7 +6,7 @@
    al dueño con el motivo, que apela por Soporte) y en UNA conversación de Mensajes reportada (quien decide esos casos — colas:aprobar — o el
    equipo de El Compa — compa:editar; encenderla otra vez, compa:aprobar). Motivo obligatorio y auditoría. */
 import { staff } from "@/lib/admin";
-import { cambiarTope } from "@/lib/compa/admin-compa";
+import { cambiarTope, decidirNoSupo, marcarConversacion, quitarMarca } from "@/lib/compa/admin-compa";
 import { db } from "@/lib/db";
 import { apagarEnHilo, cambiarInterruptor, levantarPausa, NIVELES, pausaAuto, pausarEn } from "@/lib/compa/interruptores";
 import type { Uso } from "@/lib/compa/modelo";
@@ -88,4 +88,24 @@ export async function compaSimular(numero: string, telefono: string, texto: stri
   if (!s || !s.puede("compa", "aprobar")) return { ok: false, msg: "Tu rol no usa el simulador." };
   const { simular } = await import("@/lib/compa/canales");
   return simular(s, { numero: String(numero ?? ""), telefono: String(telefono ?? "").slice(0, 20), texto: String(texto ?? "").slice(0, 1000) });
+}
+
+/* 7i · «Marcar respuesta incorrecta» / «Quitar la marca» en la ficha de una conversación y «Anotado» / «Corregido en {artículo}» en «Lo que El
+   Compa no supo»: compa:editar (Admin y Soporte; la función lo vuelve a revisar con sus ciudades), motivo y auditoría. */
+const SIN_MARCA: ResAdm = { ok: false, mensaje: "Tu rol ve las cifras de El Compa; marcar es de Admin y Soporte." };
+export async function compaMarcar(numero: string, motivo: string, nota: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "editar")) return SIN_MARCA;
+  return res(await marcarConversacion(s, String(numero ?? ""), String(motivo ?? ""), String(nota ?? "")));
+}
+export async function compaDesmarcar(numero: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "editar")) return SIN_MARCA;
+  return res(await quitarMarca(s, String(numero ?? ""), String(motivo ?? "")));
+}
+export async function compaNoSupo(id: string, accion: string, nota: string, slug: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || !s.puede("compa", "editar")) return SIN_MARCA;
+  if (accion !== "noted" && accion !== "fixed") return { ok: false, mensaje: "Eso no se puede." };
+  return res(await decidirNoSupo(s, String(id ?? ""), accion, { nota: String(nota ?? ""), slug: String(slug ?? "") }));
 }

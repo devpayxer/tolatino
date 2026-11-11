@@ -58,6 +58,12 @@ En el 360° › **Lo que vende** de un restaurante sale **Reservaciones** con cu
 **Pausar** (con motivo, permiso de retirar) quita la pestaña de su página; las reservaciones hechas siguen y el dueño ve el
 motivo en su panel. **Reanudar** la devuelve. Los pedidos del mes ya no cuentan las reservaciones.
 
+## El Compa y Soporte del negocio
+**Negocios 360° › El Compa**: las cifras de 30 días del asistente en el panel de ese negocio, sus respuestas automáticas (Pro) con **Apagar El
+Compa aquí** (con motivo y aviso al dueño) y si El Compa está en pausa ahí; sin texto ni personas (el hilo, en El Compa › Conversaciones, con
+la lectura anotada). **Negocios 360° › Soporte**: los casos que abrió el negocio desde su panel. **El Compa › Negocios** lista todos los negocios
+con respuestas automáticas.
+
 ## English
 
 Queues: everything waiting for a team decision, oldest against its SLA first — Verification badge (48 h), New
@@ -77,3 +83,7 @@ sanction the author (warning, 7-day mute, 30-day posting block, 14-day suspensio
 decide. 360 › Content lists the latest reviews with their state and open report, with Hide / Restore and a reason.
 360 › Content also lists the business updates (deals, polls, notices) with Hide / Show, and Pause Updates removes the tab
 and stops deal prices; the owner sees the reason.
+
+### The business's El Compa and Support
+**Businesses 360° › El Compa** shows the dashboard assistant's 30-day numbers, the auto-replies (Pro) with **Turn off El Compa here** (with a
+reason and a notice to the owner) and any pause, without text or people. **Businesses 360° › Support** lists the cases the business opened.

@@ -2,7 +2,8 @@
 /* ADM-USR · 360° (Super Admin.dc.html usrDetail): la persona como cuenta, lo que hizo y lo que hizo el equipo.
    Pestañas: Resumen, Seguridad, Confianza, Privacidad y (5c) Comunidad › Seguidores y siguiendo (bloqueó · silenció · «posible
    red» por dispositivo; los mensajes privados nunca se leen aquí: solo con un reporte, en Colas). 6j: Actividad (cuántas operaciones en
-   90 días y BOLETOS DE EVENTOS con transferencias, devoluciones y entradas, RSVP); Dinero llega con su módulo. Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
+   90 días y BOLETOS DE EVENTOS con transferencias, devoluciones y entradas, RSVP); Dinero llega con su módulo. 7i: El Compa (cifras de 30 días y
+   sus conversaciones SIN texto; el hilo se abre en la ficha anotada de Super Admin › El Compa, solo con compa:editar). Cada acción pide motivo y queda en la auditoría; el servidor revisa permiso, ciudad y estado. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { EST_USR, haceUsr } from "./Usuarios";
 import { SoporteDe360, type CasoSop } from "./SoporteDe360";
+import type { CompaUsuario } from "@/lib/compa/admin-compa";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
@@ -37,7 +39,7 @@ const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("e
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
-export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop }: { sop?: CasoSop[]; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
+export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -75,7 +77,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     {`Pedido de borrado en Cambios sensibles (#${pedido.id}): lo aplica otra persona del equipo.`}</A.AdminNote>);
 
   const alertas = u.compartidos.length + (u.phone_ok ? 0 : 1);
-  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"], ...(sop ? [["soporte", "Soporte"] as [string, string]] : [])] as [string, string, number?][])
+  const tabs: Bloque = { type: "tabs", items: ([["resumen", "Resumen"], ["act", "Actividad"], ["seguridad", "Seguridad", alertas], ["confianza", "Confianza", vigentes.length], ["privacidad", "Privacidad"], ["comunidad", "Comunidad"], ...(sop ? [["soporte", "Soporte"] as [string, string]] : []), ...(cpa !== undefined ? [["compa", "El Compa"] as [string, string]] : [])] as [string, string, number?][])
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
@@ -260,6 +262,25 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     ]} />;
   } else if (tab === "soporte" && sop) {
     cuerpo = <SoporteDe360 casos={sop} vacio="Esta persona no ha escrito a Soporte." />;
+  } else if (tab === "compa" && cpa) {
+    // 7i · El Compa de esta persona: cifras de 30 días y sus conversaciones SIN texto (el hilo, en la ficha anotada; solo Admin y Soporte).
+    const RES: Record<string, [string, string]> = { open: ["ABIERTA", "neutral"], self_resolved: ["RESOLVIÓ SOLO", "neutral"], action_done: ["ACCIÓN CONFIRMADA", "signal"], handed_off: ["A UNA PERSONA", "action"], to_owner: ["AL DUEÑO", "action"] };
+    const USO: Record<string, string> = { neighbor: "Vecinos", owner: "Panel del negocio", auto_reply: "Respuestas automáticas" };
+    const MOT: Record<string, string> = { money: "dinero", account: "cuenta", safety: "seguridad", asked_person: "lo pidió", unknown: "no supo", owner: "dueño" };
+    const r = cpa.porResultado, solo = (r.self_resolved ?? 0) + (r.action_done ?? 0);
+    cuerpo = <PanelBloques bloques={[
+      { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+        { k: "CONVERSACIONES · 30 D", v: String(cpa.conv30), s: Object.entries(cpa.porUso).map(([k, n]) => `${n} ${USO[k] ?? k}`).join(" · ") || "ninguna", bg: "var(--tl-ink)", fg: "var(--tl-white)" },
+        { k: "RESOLVIÓ SOLO", v: cpa.conv30 ? `${Math.round((solo / cpa.conv30) * 100)} %` : "—", s: `${cpa.acciones} acciones confirmadas` },
+        { k: "A UNA PERSONA", v: String((r.handed_off ?? 0) + (r.to_owner ?? 0)), s: `${cpa.sinIa} sin IA (reglas fijas)` },
+        { k: "MARCADAS · NO SUPO", v: `${cpa.marcadas} · ${cpa.noSupo}`, s: "marcadas por el equipo · preguntas sin respuesta", sFg: cpa.marcadas ? "var(--tl-danger)" : undefined }] },
+      cpa.filas.length ? { type: "rows", k: "SUS CONVERSACIONES", items: cpa.filas.map((x) => ({ key: x.num, icon: x.ai ? "chat" : "lock", chev: cpa.leer,
+        onClick: cpa.leer ? () => router.push(`/admin/compa?cp=${encodeURIComponent(x.num)}`) : undefined,
+        t: `${x.num} · ${USO[x.uso] ?? x.uso}`, s: `${x.turnos} ${x.turnos === 1 ? "mensaje" : "mensajes"} · ${x.ciudad} · ${haceUsr(x.at)}${x.motivo ? ` · motivo: ${MOT[x.motivo] ?? x.motivo}` : ""}${x.purgada ? " · texto borrado por la retención" : ""}${x.marcada ? " · MARCADA" : ""}`,
+        tag: RES[x.resultado]?.[0] ?? x.resultado, tone: x.marcada ? "danger" : RES[x.resultado]?.[1] ?? "neutral" })) } as Bloque
+        : { type: "empty", icon: "chat", t: "Esta persona no ha hablado con El Compa", s: "Cuando use la hoja de ayuda, Soporte o el panel, sale aquí (sin el texto)." } as Bloque,
+      { type: "note", tone: "ink", icon: "shield", t: cpa.leer ? "La lista no muestra lo que se habló. Al abrir una conversación ves el hilo (tapado como se guardó) y tu lectura queda anotada." : "Tu rol ve las cifras. El hilo lo leen Admin y Soporte, y cada lectura queda anotada." },
+    ]} />;
   } else if (tab === "privacidad") {
     cuerpo = (
       <>

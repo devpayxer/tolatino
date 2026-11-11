@@ -5,6 +5,7 @@
 import { revalidatePath } from "next/cache";
 import { staff } from "@/lib/admin";
 import { cambiarConfig } from "@/lib/config";
+import { cambiarModelo } from "@/lib/compa/admin-compa";
 import type { ResAdm } from "./acciones-colas";
 
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 500) : "");
@@ -17,4 +18,15 @@ export async function configCambiar(key: string, valor: string, motivo: string):
   if (!r.ok) return { ok: false, mensaje: r.msg };
   revalidatePath("/admin/sistema/configuracion");
   return { ok: true, mensaje: "Guardado. Aplica desde ahora en todas las ciudades y quedó en la auditoría." };
+}
+
+/* 7i · Configuración › El Compa › MODELO DE CADA PAPEL: el modelo cotidiano y el del copiloto, de los encendidos en compa_models. Solo un Admin;
+   cambiarModelo lo vuelve a revisar, deja la auditoría y el motivo. */
+export async function configModelo(papel: string, id: string, motivo: string): Promise<ResAdm> {
+  const s = await staff();
+  if (!s || s.role !== "admin" || !s.puede("sys", "editar")) return { ok: false, mensaje: "Solo un Admin cambia la configuración." };
+  const r = await cambiarModelo(s, String(papel ?? ""), String(id ?? ""), motivoOk(motivo));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  revalidatePath("/admin/sistema/configuracion");
+  return { ok: true, mensaje: r.msg };
 }

@@ -3503,3 +3503,58 @@ comprobaciones, 390 y 1360) con webhooks firmados con llaves de prueba locales.
 **Pruebas (local):** `compa7h` 224 ✓ (390 y 1360); `compa7d` 140 ✓, `compa7f` 130 ✓, `adm5i` ✓; contrato de los canales ✓ (especificaciones
 oficiales de Telnyx y Meta); guardianes 50/50 al revés (`alreves7h`) y los de 7a–7g otra vez (36, 45, 66, 33, 36, 40, 43). 0123 dos veces y en una
 base nueva (semillas dos veces). Falta la corrida de CI.
+
+### 7i · Super Admin completo de El Compa y Soporte, Configuración, avisos, analítica y la purga — cierre de la Fase 7 (11 nov)
+El Super Admin de El Compa queda con las **4 pestañas del diseño** (Resumen, Conversaciones, Negocios, Interruptores y tope; más Canales de 7h).
+**Resumen** es lo primero que se ve: cifras de 7 días, por qué pasó a una persona, dónde contesta, por dónde escriben, el copiloto, las marcadas,
+el horario del equipo y **«Lo que El Compa no supo · para el Centro de ayuda»**. En una conversación, **«Marcar respuesta incorrecta»** con motivo
+y **«Quitar la marca»**. Configuración › El Compa (con el **modelo de cada papel**) y › Soporte; Notificaciones y Mi cuenta › Avisos › Soporte (lo
+del caso no se apaga); **Analítica › El Compa y Soporte** sin personas; Usuarios 360° › El Compa; el plazo de 30 días en Soporte; y **la purga**
+(12 meses → solo cifras; cuenta borrada → a los 30 días). Probado de punta a punta (`adm7i`, 113 comprobaciones, 390 y 1360) con el simulador.
+
+**Qué mirar, paso a paso (sandbox):**
+1. Entra como **Admin** (5705550199) → **El Compa · IA**. Abre en **Resumen**: las cuatro cifras de 7 días, las tres barras, COPILOTO EN SOPORTE,
+   MARCADAS POR EL EQUIPO (1, la de la semilla) y PERSONAS DEL EQUIPO «lun–vie 9 AM–6 PM».
+2. Abajo, **LO QUE EL COMPA NO SUPO**: «¿Hacen envíos a Freeland?» (vecino) y «¿Cómo descargo la lista de mis clientes?» (negocio), sin quién lo
+   preguntó. En una, **Anotado** → elige el motivo → **Anotar**: pasa a «Anotadas». En otra, **Corregido en…** → elige un artículo → **Guardar**:
+   pasa a «Corregidas» con «Corregido en {artículo}». **Ver conversación** abre su ficha.
+3. Como **Marisol** (5705550122), en Soporte › Pregúntale al Compa escribe algo que no esté en la ayuda («¿Hay kumquats glaseados?»): contesta «No
+   tengo ese dato…». Vuelve al Resumen como Admin: la pregunta está en «Abiertas».
+4. **Conversaciones** → abre esa conversación → **Marcar respuesta incorrecta** → «Debía pasar a una persona» + motivo → **Marcar**. Arriba dice
+   «Marcada por …», abajo el **HISTORIAL** y el filtro **RESULTADO › Marcadas** la muestra. **Quitar la marca** con motivo.
+5. Como **Lucía** (Solo lectura, 5705550693): ve el Resumen con «Pregunta de un vecino» (sin el texto) y no puede marcar ni abrir hilos. Como
+   **Sofía** (Soporte de Allentown, 5705550694): una conversación de Hazleton «no existe» para ella.
+6. **Sistema › Configuración**: en EL COMPA, «Se guardan las conversaciones» ya se cambia (12 meses) y **MODELO DE CADA PAPEL** (Haiku para
+   vecinos, panel y respuestas; Sonnet para el copiloto). En SOPORTE, arriba dice cómo leen el horario las pantallas. Cambia «El equipo termina a
+   las» a 17 y mira /soporte y Mi cuenta › Avisos (en 15 s dicen «de 9 AM a 5 PM»); vuélvelo a 18.
+7. **Notificaciones** → «Solo Soporte y El Compa»: el grupo **SOPORTE · LO DEL CASO SIEMPRE LLEGA**. Como Marisol, Mi cuenta › **Avisos** › SOPORTE:
+   «Lo de tus casos siempre te llega», sin interruptor.
+8. **Analítica › El Compa y Soporte**: conversaciones, gasto de IA, espera, no supo, marcadas, casos, plazo cumplido, 1.ª respuesta, ¿se resolvió?,
+   por tema y por ciudad. Ningún nombre, teléfono ni número CP-/TK-.
+9. **Usuarios › Marisol › El Compa**: sus cifras y sus conversaciones por número, sin texto; tocar una abre la ficha (queda tu lectura).
+   **Soporte**: debajo de las cifras, PLAZO CUMPLIDO, FUERA DE PLAZO y DESDE EL COMPA.
+
+**Decisiones tomadas (regla AB; si prefieres otra cosa, se cambia):**
+- **Resumen es la pestaña por defecto** (como el diseño). Las cifras de 7 días y el copiloto pasaron de Conversaciones a Resumen; Conversaciones
+  conserva las cifras por nivel y la lista.
+- **«Lo que El Compa no supo»**: la pregunta (tapada y sin la persona) la ven Admin y Soporte, igual que el hilo; Solo lectura ve cifras. Se
+  anota sola cuando El Compa contesta «No tengo ese dato» (vecinos y panel; no en las respuestas automáticas: eso es del negocio y pasa al dueño).
+- **Las ciudades del equipo** (una persona del equipo con ciudades asignadas) también limitan las conversaciones de El Compa: lista, ficha, marcas
+  y «no supo». Antes la ficha no miraba la ciudad.
+- **La purga vacía, no borra** («nada se borra»): queda la fila con su estado y cifras; el texto, la pregunta, la nota, el resumen, los borradores
+  y el teléfono cifrado quedan vacíos con su fecha. La base solo deja esa actualización, una vez. Una conversación **abierta** de una cuenta
+  borrada espera a cerrarse (24 h) para purgarse. Una cuenta borrada = pasó `delete_at` (el pedido + 30 días); si la persona entra antes, no se
+  purga nada.
+- **Modelo de cada papel** en Configuración (no una clave numérica): se elige entre los modelos encendidos de la lista de precios; el simulador
+  nunca.
+- `compa_reads` ya estaba desde 0119 (llegó con la ficha en 7d); 0124 no la vuelve a crear.
+- La espera de la IA y la primera respuesta en Analítica: **promedio del período** y el **p95/p90 del peor día** (los percentiles de cada día no se
+  suman); el p50/p95 de cada día está en la vista.
+
+**Cierre de la Fase 7 — las tres puntas (regla 8):** página (Soporte, la hoja 2as, los pasos 2at, Mi cuenta, Mensajes, el enlace de WhatsApp/SMS)
+→ panel (El Compa, respuestas automáticas, Mensajes, Ayuda y Soporte) → Super Admin (El Compa con sus 4 pestañas y Canales, Soporte, Colas, 360°,
+Configuración, Notificaciones, Analítica, Textos y páginas › Ayuda). Casos límite probados en `adm7i` y en las de 7a–7h: apagado y al tope = el
+camino de siempre, IDOR con las peticiones reales repetidas, ciudades, inyección, tapado, límites, el reloj (SLA, cierre a 24 h, acción de 15 min,
+enlace de 30 min, purga a 12 meses y a 30 días). Lo que falta (modelo real, CI, 9 dispositivos, abogado, cuentas de Anthropic/Telnyx/Meta) está
+en LAUNCH-CHECKLIST.
+

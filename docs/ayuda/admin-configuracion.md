@@ -1,7 +1,7 @@
 # Super Admin: Configuración · Super Admin: Settings
 
 _Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
-escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 10 nov 2026. Audiencia: equipo. Tema: equipo._
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
@@ -44,13 +44,30 @@ escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 10 no
 La sección **Soporte**: horas hábiles para la primera respuesta de un caso (8), días que atiende el equipo (5 = lunes a viernes; 6 hasta el
 sábado; 7 todos los días), hora en que empieza (9) y termina (18), casos que una persona abre al día (5; uno de seguridad nunca se frena),
 **tope de devolución del rol Soporte** por caso (5000 centavos = $50; más lo devuelven Finanzas o un Admin) y días para reabrir un caso resuelto
-(7). Las pantallas de Soporte, Mi cuenta y el panel dicen el horario con estos valores; el plazo de cada caso lo calcula la base con ellos, y el
+(7). Las pantallas de Soporte, Mi cuenta (también Avisos › Soporte), el panel y El Compa dicen el horario con estos valores (arriba de la
+sección sale cómo lo dicen: «El equipo atiende lunes a viernes, de 9 AM a 6 PM»); el plazo de cada caso lo calcula la base con ellos, y el
 tope lo lee la base en el momento de devolver.
 
 **English:** the **Support** section: business hours to first reply (8), days the team works (5 = Mon–Fri), start (9) and end (18) hour, cases
 per person per day (5; safety cases are never blocked), the **Support role refund cap** per case (5000 cents = $50; Finance or an Admin refund
 more) and days to reopen a resolved case (7). Screens read the hours from here; the database computes each case deadline and reads the cap at
 refund time.
+
+## El Compa
+La sección **El Compa**: tope de gasto del mes (10000 centavos = $100; 0 = sin IA), aviso antes del tope (80 %), espera máxima de la IA (8000
+ms; pasado eso contestan las reglas fijas), respuesta más larga, mensajes por persona en una hora (20) y en un día (60), turnos por conversación
+(20), cierre de una conversación (24 h), vencimiento de una acción preparada (15 min), operaciones de la persona que ve El Compa (10),
+**cuánto se guardan las conversaciones (12 meses; después solo cifras)**, los límites de las respuestas automáticas, del copiloto y de WhatsApp y
+SMS (enlace de un uso, mensajes al día, retención del registro de entrada), y la ayuda que lee (trozos y umbral). Abajo, **MODELO DE CADA
+PAPEL**: el modelo de vecinos, panel y respuestas (Claude Haiku 5.5) y el del copiloto del equipo (Claude Sonnet 5.5). Se elige entre los
+modelos encendidos de la lista de precios (el simulador nunca); un modelo no tiene dos papeles; el precio de cada uno no se escribe en el
+código. Solo un Admin, con motivo y auditoría; vale desde la llamada siguiente. «Si no contestas en» de las respuestas automáticas sigue en
+**SOLO LECTURA** (hoy solo contestan fuera del horario del negocio).
+
+**English:** the **El Compa** section: monthly cap ($100), warning (80 %), maximum AI wait, longest answer, messages per person per hour and per
+day, turns, closing, action expiry, operations it sees, **how long conversations are kept (12 months; then numbers only)**, auto-reply, copilot
+and WhatsApp/SMS limits, and the help it reads. **MODEL FOR EACH ROLE** picks the everyday model and the copilot model among the models turned on
+in the price list (never the simulator; one role each); Admin only, with a reason and audit.
 
 ## Para El Compa
 <!-- solo-equipo -->

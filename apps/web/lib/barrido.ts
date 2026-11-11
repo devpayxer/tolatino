@@ -111,6 +111,9 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 7h · WhatsApp y SMS: una entrada que no se procesó (el proceso se cayó) se retoma (la respuesta tardía respeta las horas de silencio y
         // la ventana de 24 h); pasada la retención se vacían el texto y el teléfono cifrado del registro de entrada y salida.
         ["compaCanales", async () => (await import("./compa/canales")).barrerCanales()],
+        // 7i · La purga por retención: las conversaciones de El Compa cerradas hace más de compa_retener_meses quedan en cifras, y a los 30 días
+        // de borrar una cuenta (D5) se vacían sus casos de Soporte, sus conversaciones y las fotos de esos casos (nada se borra de la base).
+        ["compaRetencion", async () => (await import("./compa/purga")).barrerRetencion()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

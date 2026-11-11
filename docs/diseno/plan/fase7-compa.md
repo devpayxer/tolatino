@@ -532,7 +532,7 @@ el enlace usado otra vez o vencido → no; teléfono sin cuenta → solo la resp
 el enlace ajeno → no; 31.º mensaje del día → límite.
 **Ayuda:** `el-compa-por-whatsapp-y-sms` (vecino), `panel-respuestas-automaticas` al día (canales).
 
-### 7i · Super Admin completo de El Compa y Soporte, Configuración, avisos, analítica, Mi cuenta y ayuda — Sonnet/medium; Configuración Opus/high
+### 7i · Super Admin completo de El Compa y Soporte, Configuración, avisos, analítica, Mi cuenta y ayuda — Sonnet/medium; Configuración Opus/high — **hecho (11 nov)**
 - **`ADM-COMPA`** con sus 4 pestañas del diseño: **Resumen** (los KPI y barras de `secCompa`, COPILOTO, MARCADAS, «LO QUE EL COMPA NO SUPO · PARA EL CENTRO
   DE AYUDA» con «Anotado» / «Corregido en {artículo}», hueco #7), **Conversaciones** (cursor, filtros, ficha `compaDetail` con hilo tapado, «Contestó sin
   IA», **«Marcar respuesta incorrecta»** con motivo / «Quitar la marca», caso ligado, Historial; cada apertura en `compa_reads`), **Negocios**, **Interruptores**
@@ -688,15 +688,25 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       dejarla»; STOP/START/HELP; WhatsApp + ventana de 24 h; canal apagado; horas de silencio; límite; respuestas automáticas de un negocio por
       WhatsApp; Super Admin › Canales y simulador; barrido y purga); contrato con las especificaciones oficiales de Telnyx y Meta; guardián
       `canalConFirma` + 6 ampliados, 50/50 al revés (`alreves7h`). Sin probar con los proveedores reales (no hay cuentas); falta la corrida de CI.
-- [ ] Super Admin: `ADM-COMPA` (Resumen, Conversaciones con «Marcar respuesta incorrecta» y lecturas anotadas, Negocios, Interruptores y tope), Soporte,
+- [x] Super Admin: `ADM-COMPA` (Resumen, Conversaciones con «Marcar respuesta incorrecta» y lecturas anotadas, Negocios, Interruptores y tope), Soporte,
       Usuarios y Negocios 360°, Configuración › El Compa y Soporte, Notificaciones, Analítica sin personas; cada acción con motivo, aviso y auditoría.
+      — 7i (11 nov): 0124 aplicada dos veces en local y en una base nueva (semilla 0043 dos veces, la segunda con las huellas cambiadas); e2e
+      `adm7i` 113 ✓ (Resumen con «Lo que no supo» Anotado / Corregido; Marcar / Quitar la marca con Historial y filtro; Solo lectura y Soporte de
+      otra ciudad repitiendo las peticiones reales; Configuración con retención y modelo de cada papel; el horario de Configuración en /soporte y
+      Mi cuenta; avisos del caso que llegan con todo apagado; Analítica sin personas; Usuarios 360°; la purga con el reloj a 12 meses, a 6
+      meses y a los 30 días de borrar una cuenta, con su foto); guardianes `retencionQueCorre`, `soporteSiempreLlega` + 4 ampliados, 35/35 al
+      revés (`alreves7i`). Falta la corrida de CI (la hace la sesión principal).
 - [ ] Batería del modelo real ≥ 95 % (o sin marcar si no hay clave, con el motivo); presupuesto de velocidad con la base de carga (cifras en PROGRESS);
       guardianes de §3 en `guardianes/run.mjs`, cada uno probado al revés; build + CI + punta a punta en 9 dispositivos verdes; Ayuda, Mensajes, Pedidos,
       Citas y Eventos sin regresión.
-- [ ] `docs/ayuda/` de cada bloque (ES/EN); preguntas #1–#18 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con la cuenta de Anthropic y retención cero, aviso de
+- [x] `docs/ayuda/` de cada bloque (ES/EN); preguntas #1–#18 en `docs/REVISION.md`; `LAUNCH-CHECKLIST` con la cuenta de Anthropic y retención cero, aviso de
       IA y proveedor en Términos y Privacidad, WhatsApp Business y 10DLC para respuestas, correo entrante de Soporte, foto de la lista, «Traducir» con Haiku.
-- [ ] `docs/PROGRESS.md` al día (Fase 7 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox (vecino, dueño Pro, dueño Free, moderador,
+      — 7i (11 nov): las ayudas de 7a–7i con la forma única (`ayudaConForma`) e indexadas; LAUNCH con Anthropic y ZDR (7c), abogado (7c, 7h),
+      WhatsApp/10DLC (7h), correo entrante, foto de la lista y «Traducir» (7i).
+- [x] `docs/PROGRESS.md` al día (Fase 7 cerrada) y `docs/REVISION.md` con los pasos para mirarla en el sandbox (vecino, dueño Pro, dueño Free, moderador,
       Soporte y Admin).
+      — 7i (11 nov): PROGRESS «7i hecho — Fase 7 · El Compa completa»; REVISION «### 7i» con los pasos y el cierre de las tres puntas (los pasos
+      de vecino, dueño Pro/Free, moderador y Soporte de cada bloque están en «### 7a»…«### 7h»).
 
 ## 9. Decisiones del fundador pendientes (resumen para `docs/REVISION.md`; se construye con el default, regla AB)
 | # | Qué decidir | Default que se construye (reversible) |

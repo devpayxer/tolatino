@@ -1,7 +1,7 @@
 # Notificaciones · Notifications
 
 _Pantallas: la campana del encabezado, `/avisos` (APP-NOTIF, la bandeja), Mi cuenta › Avisos (qué llega por teléfono) y Super Admin › Notificaciones
-(ADM-NOTIF). Versión: 6 nov 2026. Audiencia: vecino. Tema: cuenta._
+(ADM-NOTIF). Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - Cuando pasa algo con lo tuyo, To'Latino te avisa: **el negocio aceptó o no tu pedido, está listo, va en camino; confirmó
@@ -62,6 +62,15 @@ configured hour) and **Events you save**. Turning them off means they don't arri
 you, a comp, a waitlist spot, a cancellation or a date/time change, the private event proposal and confirmation). Organizers get «Your event is
 almost sold out» (90 %, once per date) and «To'Latino adjusted your event».
 
+## Soporte
+En **Mi cuenta › Avisos › Soporte**: lo de tus casos **siempre te llega** y no tiene interruptor — cuando recibimos tu caso, cuando te responde el
+equipo, cuando queda resuelto y cuando El Compa te pasa con una persona (también el caso de tu negocio). Llega a la campana (sin SMS). Ahí mismo
+dice el horario del equipo («El equipo atiende lunes a viernes, de 9 AM a 6 PM», según lo que tenga To'Latino configurado).
+
+En **Super Admin › Notificaciones**, el chip **Solo Soporte y El Compa** muestra esas plantillas (grupo **SOPORTE · LO DEL CASO SIEMPRE LLEGA**),
+las del equipo (tope de El Compa, caso fuera de plazo) y las del negocio (respuestas automáticas), cada una en español e inglés y editable con
+motivo. En **Reglas**: «Soporte: lo del caso siempre llega».
+
 ## English
 
 ### What it does
@@ -89,3 +98,9 @@ default). Blocked people's activity is not counted. Moderation and coins always 
 ### FAQ
 **I didn't get the text.** Check the bell: it is there. Check My account › Notifications and whether it was quiet hours.
 **Can I delete a notification?** No; they stay in the inbox, newest first.
+
+### Support
+In **My account › Notifications › Support**, your case updates **always reach you** and cannot be turned off: when we get your case, when the
+team replies, when it is resolved and when El Compa passes you to a person (also your business's case). They arrive in the bell, without SMS,
+and the section shows the team hours. In Super Admin › Notifications, **Only Support and El Compa** shows those templates (group **SUPPORT**),
+editable in Spanish and English with a reason.

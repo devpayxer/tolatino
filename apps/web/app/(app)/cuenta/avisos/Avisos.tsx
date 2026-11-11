@@ -3,7 +3,9 @@
    guardas, correo y horas de silencio. Los avisos al teléfono todavía no salen: tus preferencias quedan guardadas y se
    aplican desde el primero (anotado en LAUNCH-CHECKLIST). Comunidad (5i): respuestas y votos, resumen diario y mensajes de vecinos.
    Eventos (6j, grupo `events`): boletos y cambios, recordatorios (a la hora de Configuración) y eventos que guardas; lo crítico (tu boleto,
-   una cancelación, un cambio de fecha u hora, el boleto que te mandan) no se apaga. */
+   una cancelación, un cambio de fecha u hora, el boleto que te mandan) no se apaga.
+   Soporte (7i, grupo `support`): lo de tus casos (lo recibimos, te respondieron, quedó resuelto, El Compa te pasó con una persona) no se apaga; el
+   horario del equipo sale de Configuración › Soporte. */
 import { useState } from "react";
 import type { avisosDe } from "@/lib/perfil";
 import { avisoGuardar } from "../acciones-perfil";
@@ -11,7 +13,7 @@ import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
 
 const hora12 = (h: number) => `${h % 12 || 12} ${h < 12 ? "AM" : "PM"}`;
 type P = Awaited<ReturnType<typeof avisosDe>>;
-export function Avisos({ p, es, yo, horaResumen, horaRecordatorio }: { p: P; es: boolean; yo: Yo; horaResumen: number; horaRecordatorio: number }) {
+export function Avisos({ p, es, yo, horaResumen, horaRecordatorio, horarioEquipo = null }: { p: P; es: boolean; yo: Yo; horaResumen: number; horaRecordatorio: number; horarioEquipo?: string | null }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const ui = useCuentaUi();
   const [v, setV] = useState(p);
@@ -43,6 +45,10 @@ export function Avisos({ p, es, yo, horaResumen, horaRecordatorio }: { p: P; es:
     // 6j · Lo crítico de Eventos no se apaga (no tiene interruptor).
     if (rows[0]?.[0] === "evt") B.push({ type: "note", tone: "info", ic: "lock", t: E2("Siempre te llega", "You always get these"), s: E2("Tu boleto comprado, devuelto o anulado, el boleto que te mandan, una cortesía, un lugar de la lista de espera, una cancelación o un cambio de fecha u hora, y la propuesta de un evento privado.", "Your ticket bought, refunded or voided, a ticket sent to you, a comp, a waitlist spot, a cancellation or a date or time change, and a private event proposal.") });
   });
+  // 7i · Soporte (grupo `support`): lo de tus casos siempre llega (sin interruptor), con el horario del equipo de Configuración.
+  B.push({ type: "sec", t: E2("SOPORTE", "SUPPORT"), fs: "14px", mt: "8px" }, { type: "note", tone: "info", ic: "lock", t: E2("Lo de tus casos siempre te llega", "Your case updates always reach you"),
+    s: E2(`Cuando recibimos tu caso, cuando te responde el equipo, cuando queda resuelto y cuando El Compa te pasa con una persona. No se apaga.${horarioEquipo ? ` El equipo atiende ${horarioEquipo}.` : ""}`,
+      `When we get your case, when the team replies, when it is resolved and when El Compa passes you to a person. It cannot be turned off.${horarioEquipo ? ` The team works ${horarioEquipo}.` : ""}`) });
   // 7h · El Compa por WhatsApp y SMS (§6 #14): apagado de fábrica; solo contesta a TU teléfono verificado y lo que cambia algo se confirma en la app.
   B.push({ type: "sec", t: "EL COMPA", fs: "14px", mt: "8px" }, { type: "rows", rows: [{ key: "cpa", ic: "chat", t: E2("Hablar con El Compa por WhatsApp y SMS", "Talk to El Compa by WhatsApp and SMS"),
     s: E2("SOLO DESDE TU TELÉFONO VERIFICADO · LO QUE CAMBIA ALGO SE CONFIRMA AQUÍ · STOP PARA SALIR", "ONLY FROM YOUR VERIFIED PHONE · ANYTHING THAT CHANGES SOMETHING IS CONFIRMED HERE · STOP TO OPT OUT"), tog: v.cpa, onTog: () => void tg("cpa") }] });

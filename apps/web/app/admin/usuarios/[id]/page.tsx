@@ -6,7 +6,7 @@ import { monedas360, puntos360 } from "@/lib/admin-gam";
 import { U360 } from "../../U360";
 
 /* ADM-USR · 360° de una persona (pantalla completa, como el prototipo por defecto en Usuarios). ?tab= la pestaña. */
-const TABS = new Set(["resumen", "act", "seguridad", "confianza", "privacidad", "comunidad", "soporte"]);
+const TABS = new Set(["resumen", "act", "seguridad", "confianza", "privacidad", "comunidad", "soporte", "compa"]);
 const SUBS = new Set(["pub", "cm", "seg", "pym", "cup"]);
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string; sub?: string }> }) {
   const s = await requerir("usr", "ver");
@@ -20,5 +20,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const act = tab === "act" ? await (await import("@/lib/evt-admin")).actividadEventos(u.id) : null;
   // 7b · Soporte: sus casos con To'Latino (quien ve Soporte).
   const sop = s.puede("sop", "ver") ? (tab === "soporte" ? await (await import("@/lib/soporte-equipo")).casosDe(s, { userId: u.id }) : []) : undefined;
-  return <U360 sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
+  // 7i · El Compa: cifras y sus conversaciones sin texto (quien ve El Compa; el hilo, en la ficha anotada).
+  const cpa = s.puede("compa", "ver") ? (tab === "compa" ? await (await import("@/lib/compa/admin-compa")).compaDeUsuario(s, u.id) : null) : undefined;
+  return <U360 cpa={cpa} sop={sop} act={act} u={u} tab={tab} sub={SUBS.has(sp.sub ?? "") ? sp.sub! : "pub"} com={com} pts={pts} mon={mon} topeAjuste={s.role === "admin" ? 5000 : 500} topeMonedas={s.role === "admin" ? 1000 : 500} />;
 }

@@ -87,6 +87,17 @@ prioridad y una persona la mira en el registro oficial; el sello cambia cuando d
 refunded), at the door for past dates (attendance, no-shows, RSVPs that arrived, incidents per 1,000 entries), private events (requested, quoted,
 accepted, deposits, cancelled on time / late / by the restaurant), by format, city and organizer. Only figures by city, local day and format: never people.
 
+## El Compa y Soporte
+La pestaña **El Compa y Soporte** (7, 30 o 90 días) sale de dos vistas sin personas, por ciudad, día, nivel, canal y tema:
+- **El Compa:** conversaciones (con IA y con reglas fijas), resolvió solo (y acciones confirmadas), a una persona (y al dueño), **gasto de IA**
+  (y cuántas veces no llamó por el tope, apagado o el límite), **espera de la IA** (promedio del período y el p95 del peor día: los percentiles de
+  cada día no se suman), a reglas (lenta, error, rechazo o salida que no pasó el verificador), **no supo** y **marcadas**. Barras **POR QUÉ PASÓ A
+  UNA PERSONA** y filas **DÓNDE CONTESTA** (vecinos, panel, respuestas automáticas, copiloto) y **POR DÓNDE ESCRIBEN**.
+- **Soporte:** casos (desde El Compa, de negocios, prioridad alta), **plazo cumplido** (primera respuesta dentro de las horas hábiles del plazo
+  vigente del caso), fuera de plazo, **1.ª respuesta** (promedio y p90 del peor día), **¿Se resolvió?** (sí/no) y **POR TEMA** y **POR CIUDAD**.
+- Nunca quién habló con El Compa ni quién abrió un caso: ni nombres, ni teléfonos, ni números CP- o TK-, ni el texto. Para una conversación o un
+  caso, El Compa › Conversaciones o Soporte (con su permiso; la lectura del hilo queda anotada).
+
 ## English
 
 Community: posts, comments, % of questions solved, time to first answer, reports per 1,000 posts, appeals lifted, coins issued and
@@ -111,3 +122,9 @@ house and to sell a car, properties and cars live today by city, % of reviews sa
 visits, listings paused for a possible scam, texts blocked by the fair housing list, 62-and-over declarations to review, church dates and
 catechism requested and % answered within 48 h, and licenses of the three (valid, due within 14 days, past review, in review). Never people
 by religion and never credit data.
+
+### El Compa and Support
+The **El Compa and Support** tab (7, 30 or 90 days) reads two views without people, by city, day, level, channel and topic: El Compa
+conversations, solved alone, to a person, AI spend, AI wait (period average and the worst day's p95), fallbacks to the rules, didn't know and
+flagged; Support cases, deadline met, first reply (average and the worst day's p90), «Was it solved?», by topic and by city. Never names, phones,
+CP- or TK- numbers or text.

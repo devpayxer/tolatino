@@ -1,7 +1,7 @@
 # Super Admin: Usuarios · Super Admin: Users
 
 _Pantallas: ADM-USR (`/admin/usuarios` y `/admin/usuarios/{id}`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del
-equipo). Versión: 5 nov 2026. Audiencia: equipo. Tema: equipo._
+equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Lista:** todas las cuentas de tus ciudades (Mi ciudad de la persona; una cuenta sin ciudad solo la ve quien
@@ -75,6 +75,12 @@ orden, si lo recibió o lo pasó por transferencia, a qué hora entró y su esta
 (personas, cuántos llegaron). Cada boleto abre Buscar boleto; cada RSVP, la ficha del evento. Nunca el teléfono de otra persona.
 **English:** Users 360° › Activity shows 90-day counts and the person's event tickets (status, comp, transfers, entry time) and RSVPs.
 
+## El Compa
+**Usuarios 360° › El Compa** (con el permiso de El Compa): lo que esa persona habló con El Compa en 30 días, en cifras (conversaciones por
+nivel, resolvió solo, acciones confirmadas, a una persona, sin IA, marcadas y preguntas sin respuesta) y **SUS CONVERSACIONES** por número CP-,
+resultado y ciudad, **sin el texto**. Admin y Soporte tocan una para abrir su ficha en El Compa › Conversaciones (la lectura queda anotada);
+Solo lectura ve las cifras. Si el texto ya se borró por la retención, la fila lo dice. **Soporte** (al lado) son sus casos.
+
 ## English
 
 Community: the 360° Community tab shows rank, points, coins (no cash value), votes received, followers, blocks and mutes, and a
@@ -92,3 +98,7 @@ automatically), ban (Admin only). "Delete data" goes to Sensitive changes and an
 cannot sign in and has 30 grace days; an Admin can restore it. Nobody sanctions or deletes themselves; team members
 must lose their role first. Every action asks for a reason and is audited. Moderation notices are not texted: the person
 sees them in the bell and in My account › Moderation notices, where they can appeal.
+
+### El Compa
+**Users 360° › El Compa** (with El Compa permission): that person's 30-day El Compa numbers and **their conversations** by CP- number, outcome
+and city, **without the text**. Admin and Support tap one to open its record (the read is logged); Read-only sees numbers only.

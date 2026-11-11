@@ -68,7 +68,12 @@ export async function kpisSoporte(s: Staff) {
             count(*) filter (where c.csat = 'no' and c.csat_at > now() - interval '30 days')::int as no
        from support_cases c where ${CIUDAD("$1")} and (c.status not in ('resolved', 'merged') or c.resolved_at > now() - interval '30 days' or c.csat_at > now() - interval '30 days')`,
     [s.cities, s.id])).rows[0]!;
-  return r;
+  // 7i · El plazo de 30 días (soporte_analitica_dia, sin personas): primera respuesta dentro del plazo de horas hábiles, vencidos, desde El Compa.
+  const p = (await db().query<{ con: number; cumplido: number; vencido: number; casos: number; compa: number }>(
+    `select coalesce(sum(con_respuesta), 0)::int as con, coalesce(sum(plazo_cumplido), 0)::int as cumplido, coalesce(sum(plazo_vencido), 0)::int as vencido,
+            coalesce(sum(casos), 0)::int as casos, coalesce(sum(desde_compa), 0)::int as compa
+       from soporte_analitica_dia where dia >= (now() at time zone 'America/New_York')::date - 29 and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))`, [s.cities])).rows[0]!;
+  return { ...r, plazo30: p };
 }
 
 /* ── La ficha ── */
@@ -108,7 +113,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
   if (!c) return null;
   const [M, P, R, H, mac, U, tope, hs] = await Promise.all([
     db().query<MsjEquipo>(
-      `select m.id::text, m.sender, m.body, m.hidden_at is not null as oculto, m.hidden_reason as "motivoOculto",
+      `select m.id::text, m.sender, case when m.purged_at is not null then '(Se borró: la cuenta se cerró hace más de 30 días.)' else m.body end as body, m.hidden_at is not null as oculto, m.hidden_reason as "motivoOculto",
               case when m.photo_media_id is not null then '/api/ayuda/foto/' || m.photo_media_id::text end as foto, m.internal, m.sys_key, m.vars, ${ISO("m.at")} as at,
               coalesce(st.first_name, us.first_name) as quien, m.macro_key as macro
          from support_messages m left join users st on st.id = m.staff_id left join users us on us.id = m.user_id where m.case_id = $1 order by m.at, m.id`, [c.id]),

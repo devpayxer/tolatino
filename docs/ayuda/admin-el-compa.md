@@ -1,11 +1,28 @@
 # Super Admin: El Compa · Super Admin: El Compa
 
-_Pantallas: **Super Admin › El Compa · IA** (`/admin/compa`: «Interruptores y tope», «Conversaciones», «Negocios» y «Canales»), la alerta del tope en Super Admin ›
-Inicio y Sistema › Configuración › El Compa. Permisos (sección «El Compa · IA»): ver = la pantalla y las cifras; aprobar = interruptores, pausas
-y tope (Admin de fábrica); Soporte y Solo lectura ven. También Super Admin › Negocios › un negocio › **El Compa**. Teléfono y escritorio.
+_Pantallas: **Super Admin › El Compa · IA** (`/admin/compa`: «Resumen», «Conversaciones», «Negocios», «Interruptores y tope» y «Canales»), la alerta del tope en Super Admin ›
+Inicio y Sistema › Configuración › El Compa. Permisos (sección «El Compa · IA»): ver = la pantalla y las cifras; editar = leer el hilo, marcar y la lista de «lo que no supo»
+(Admin y Soporte); aprobar = interruptores, pausas y tope (Admin de fábrica); Solo lectura ve cifras. Cada quien ve las conversaciones de sus ciudades. También Super Admin › Negocios › un negocio › **El Compa**. Teléfono y escritorio.
 Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
+- **Resumen** (lo primero que se ve): las cifras de 7 días (**CONVERSACIONES**, **RESOLVIÓ SOLO**, **A UNA PERSONA** —con caso en Soporte o al
+  dueño—, **ACCIONES CONFIRMADAS**), tres barras (**POR QUÉ PASÓ A UNA PERSONA**: dinero, su cuenta, seguridad, pidió una persona, no supo, al
+  dueño; **DÓNDE CONTESTA**: vecinos, panel, respuestas automáticas, copiloto; **POR DÓNDE ESCRIBEN**: chat de To'Latino, WhatsApp, SMS),
+  **COPILOTO EN SOPORTE** (borradores de 30 días y qué se hizo con ellos), **MARCADAS POR EL EQUIPO** y **PERSONAS DEL EQUIPO** (el horario de
+  Configuración › Soporte). Y **LO QUE EL COMPA NO SUPO · PARA EL CENTRO DE AYUDA**: cada vez que contesta «No tengo ese dato», la pregunta
+  —tapada, sin la persona— con su audiencia (vecino o negocio), idioma, ciudad y la conversación CP-. Se marca **Anotado** (con motivo) o
+  **Corregido en {artículo}** (un artículo del Centro de ayuda); el estado solo avanza (Abiertas → Anotadas → Corregidas). El texto del
+  artículo se corrige en el repo y sale con el siguiente despliegue; aquí queda anotado. La pregunta la ven Admin y Soporte; Solo lectura ve
+  «Pregunta de un vecino» y las cifras.
+- **Marcar respuesta incorrecta** (en la ficha de una conversación): eliges qué estuvo mal (Dato equivocado · Debía pasar a una persona · El
+  tono · El idioma · Otra cosa) y escribes el motivo. La ficha dice «Marcada por {quién} · {motivo}: {nota}», sale en **RESULTADO › Marcadas** y en
+  Resumen. **Quitar la marca** pide motivo. Una marca viva por conversación; no se borra (queda quién la quitó y por qué). Todo sale en el
+  **HISTORIAL** de la ficha. Al vecino no le llega nada.
+- **Retención:** pasados los meses de Configuración › El Compa (12 de fábrica), el barrido vacía el texto de una conversación cerrada (lo que
+  dijo la persona, lo que contestó El Compa, el resumen al pasar a una persona, la pregunta de «no supo», la nota de una marca, los borradores
+  del copiloto y el teléfono cifrado) y deja las cifras: resultado, motivo, uso, gasto. La ficha dice «El texto se borró el {día}…» y ya no se
+  marca. A los 30 días de que alguien pide borrar su cuenta, igual con sus conversaciones y sus casos de Soporte (y las fotos de esos casos).
 - **El gasto del mes:** cuánto lleva El Compa en IA (precios de la API con el recargo de EE. UU.), el **tope** ($100 al mes de fábrica), el
   **aviso** (80 %) y lo que está en curso. Cada llamada a la IA **reserva** su costo máximo antes de salir y se liquida con lo que de verdad
   costó; si no cabe en el tope, no se llama: contestan las reglas fijas y la persona tiene «Con una persona». Muchas llamadas a la vez nunca
@@ -23,7 +40,7 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
   **DÓNDE › Panel del negocio** son las conversaciones del asistente del panel (dueños y su equipo). Al tocar una, **la ficha**: QUIÉN · NEGOCIO · CANAL · RESULTADO · MOTIVO · CASO EN SOPORTE · DÓNDE, el hilo tal
   como se guardó (tapado), «Contestó sin IA (reglas fijas)» si pasó, las acciones que preparó y en qué quedaron, y **QUIÉN LA LEYÓ**. La ficha
   la abren **Admin y Soporte**; **cada apertura queda anotada** (quién y cuándo) antes de mostrar el hilo y esa lista no se borra. Solo lectura
-  ve las cifras, no el hilo. «Marcar respuesta incorrecta» llega con el Super Admin completo de El Compa.
+  ve las cifras, no el hilo.
 
 - **COPILOTO EN SOPORTE · 30 D** (Conversaciones): cuántos borradores pidió el equipo (en casos y en ayudas escaladas) y qué se hizo con ellos:
   **enviados tal cual**, **editados**, **descartados** (pidieron otro, eligieron una macro o nadie lo envió en un día) y cuántos sin IA (reglas).
@@ -56,7 +73,10 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 5. **Canales › Conectar un número:** elige el canal (WhatsApp · Meta o SMS · Telnyx; en el sandbox también «de prueba»), escribe el número (SMS:
    10 dígitos; WhatsApp: el phone_number_id de Meta) y, si es de un negocio, su id después de una coma («100200300401, sabor-dominicano»), y el
    motivo. **Retirar** lo deja sin recibir (no se borra). El **simulador**: elige el número, el teléfono desde el que «escribes» y el mensaje.
-6. **Conversaciones:** filtra por DÓNDE, RESULTADO y CANAL o busca un **CP-**; **Siguientes** para ver más. Toca una para abrir su ficha (tu
+6. **Lo que no supo:** en Resumen, **Anotado** (elige o escribe el motivo) o **Corregido en…** (elige el artículo y el motivo); **Ver
+   conversación** abre su ficha (tu lectura queda anotada). Los chips **Abiertas · Anotadas · Corregidas** cambian la lista.
+7. **Marcar:** en la ficha, **Marcar respuesta incorrecta** → qué estuvo mal → motivo → **Marcar**. Para deshacerlo, **Quitar la marca** con motivo.
+8. **Conversaciones:** filtra por DÓNDE, RESULTADO y CANAL o busca un **CP-**; **Siguientes** para ver más. Toca una para abrir su ficha (tu
    lectura queda anotada); desde ahí, **Ver TK-… en Soporte** y **Ver a la persona**.
 
 ## Qué pasa en cada caso
@@ -78,6 +98,10 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 | Llega una entrada sin firma, con firma mala o con la hora fuera de la ventana | Se rechaza (401) sin guardar nada; solo se cuenta en RECHAZADAS. |
 | El mismo mensaje llega dos veces (el proveedor reintenta) | Una sola entrada y una sola respuesta. |
 | Escribe un número sin cuenta o una cuenta que no encendió el canal | La misma respuesta fija (cómo entrar y dónde encenderlo); nada de ninguna cuenta. |
+| Quieres marcar una conversación ya marcada | «Ya está marcada»: primero se quita la marca. |
+| Solo lectura o Soporte de otra ciudad intenta marcar o abrir un hilo | «Tu rol ve las cifras…» o «Esa conversación no existe»; no queda lectura. |
+| Una conversación cerró hace más de 12 meses | El barrido vacía su texto; quedan las cifras y la analítica cuenta lo mismo. |
+| Alguien borró su cuenta hace 30 días | Sus casos de Soporte y conversaciones cerradas quedan sin texto (y sin fotos); el caso sigue con su estado y tema. |
 | Pausas «Copiloto», el canal o la ciudad, o llega al tope | En Soporte y en Colas › Ayuda con pedidos y citas no sale «Sugerir respuesta con El Compa»: todo como antes (macros, Enviar, Resolver). |
 
 ## Preguntas frecuentes
@@ -86,6 +110,8 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 - **¿Qué ve la IA?** Lo mínimo de esa persona, tapado: sus operaciones recientes y la ayuda de su audiencia. Nunca de otra persona, ni Salud,
   Profesionales, Niños, mensajes privados o algo del Super Admin.
 - **¿Se guarda lo que dijo la gente?** Las conversaciones se guardan tapadas; el libro de uso (tokens, costo, modelo, espera) no guarda texto.
+  Pasados los meses de retención (12) solo quedan las cifras.
+- **¿Lo que no supo se corrige solo?** No: alguien lo anota y el artículo se corrige en el repo; «Corregido en …» dice dónde quedó.
 - **¿Qué prueba la firma del proveedor?** Que el mensaje lo mandó Meta o Telnyx, no quién lo escribió. Por eso El Compa solo contesta a ese
   teléfono, solo a una cuenta que lo encendió en Mi cuenta › Avisos, y nunca hace nada por mensaje: manda un enlace de un uso que se confirma en
   la app después de entrar con el código.
@@ -95,7 +121,16 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 ## English
 
 ### What it does
-Super Admin › El Compa · AI shows this month's AI spend (API prices plus the U.S. surcharge), the **cap** ($100 a month by default), the
+**Overview** (first tab): 7-day numbers (conversations, solved alone, to a person, confirmed actions), bars for why it went to a person, where it
+answers and which channel, the support copilot, conversations flagged by the team, the team hours and **WHAT EL COMPA DIDN'T KNOW · FOR THE HELP
+CENTER**: every «I don't have that information», as the covered question without the person, its audience, language, city and CP- number; mark
+it **Noted** (with a reason) or **Fixed in {article}**; the status only moves forward. Only Admin and Support see the question. In a
+conversation record, **Flag wrong answer** (wrong info · should have handed off · tone · language · other, plus a note) and **Remove flag** (with a
+reason); one live flag per conversation, never deleted, shown in the record's **HISTORY**; the neighbor gets nothing. **Retention:** after the
+months in Settings (12) the sweep empties a closed conversation's text and keeps the numbers; 30 days after an account deletion request, the
+same for that person's conversations and Support cases (and their photos). Everyone sees the conversations of their own cities.
+
+Super Admin › El Compa · AI also shows this month's AI spend (API prices plus the U.S. surcharge), the **cap** ($100 a month by default), the
 **warning** (80 %) and what is in flight. Every AI call **reserves** its maximum cost before going out and settles with the real cost; if it does
 not fit under the cap, the AI is not called: the fixed rules answer and the person keeps «Talk to a person». Many calls at once never go over
 the cap. **Switches BY LEVEL** (neighbors, business panel, auto-replies, copilot) and **BY CHANNEL** (To'Latino chat, WhatsApp, SMS): off means

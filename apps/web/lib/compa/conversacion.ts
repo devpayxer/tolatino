@@ -80,6 +80,15 @@ function conTiempo<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([p, new Promise<T>((_, no) => { t = setTimeout(() => no(new ErrorModelo("timeout", true, "tiempo agotado")), ms); })]).finally(() => clearTimeout(t));
 }
 
+/* 7i · «LO QUE EL COMPA NO SUPO · PARA EL CENTRO DE AYUDA» (hueco #7): cuando El Compa contesta «No tengo ese dato», la pregunta tal como se guardó
+   (TAPADA por tapar(); la base rechaza tarjeta y SSN), la audiencia de la ayuda que buscó y el idioma. Sin la persona. En la misma transacción
+   que la respuesta; la misma pregunta en la misma conversación, una vez. */
+async function anotarNoSupo(c: import("pg").PoolClient, x: { conv: number; ciudad: string; audiencia: "vecino" | "negocio"; lang: Lang; texto: string }) {
+  const q = x.texto.slice(0, 800);
+  if (q.length < 2) return;
+  await c.query(`insert into compa_unknowns (conversation_id, city_id, audience, lang, query_tapada) values ($1, $2, $3, $4, $5) on conflict do nothing`, [x.conv, x.ciudad, x.audiencia, x.lang, q]);
+}
+
 export async function turno(q: { userId: string }, x: { conversacion?: string | null; texto: string; uso: Uso; canal: Canal; superficie: "support_page" | "help_sheet" | "channel"; lang: Lang; operacion?: string | null;
   accionMin?: number }): Promise<Turno> {   // 7h · por WhatsApp/SMS: superficie «channel» y la acción vive lo que su enlace (compa_link_min)
   const lang: Lang = x.lang === "en" ? "en" : "es", es = lang === "es";
@@ -132,6 +141,8 @@ export async function turno(q: { userId: string }, x: { conversacion?: string | 
       const m = (await c.query<{ id: string }>(
         `insert into compa_messages (conversation_id, city_id, sender, text, source_slug, source_label, chips, engine) values ($1, $2, 'compa', $3, $4, $5, $6, $7) returning id::text`,
         [conv.id, ciudad, tapar(r.texto).texto, slug, slug ? (es ? "SEGÚN EL CENTRO DE AYUDA" : "PER THE HELP CENTER") : null, chips, motor === "claude" ? "modelo" : motor])).rows[0]!;
+      // 7i · «Lo que El Compa no supo»: la pregunta YA TAPADA, para el Centro de ayuda (sin la persona; una por pregunta y conversación).
+      if (r.tipo === "no_se") await anotarNoSupo(c, { conv: conv.id, ciudad, audiencia: "vecino", lang, texto: t.texto });
       return r.p ? { id: await proponer(c, { conversacion: conv.id, mensaje: Number(m.id), userId: q.userId, p: r.p, minutos: x.accionMin }), tipo: r.p.type, target: r.p.target } : null;
     });
     return { ok: true, conversacion: conv.number, motor, texto: r.texto, tipo: r.tipo, fuente: slug && r.titulo ? { slug, titulo: r.titulo, href: `/ayuda/${slug}` } : null,
@@ -441,6 +452,7 @@ export async function turnoPanel(q: { userId: string }, x: { negocio: string; co
       const m = (await c.query<{ id: string }>(
         `insert into compa_messages (conversation_id, city_id, sender, text, source_slug, source_label, chips, engine) values ($1, $2, 'compa', $3, $4, $5, $6, $7) returning id::text`,
         [conv.id, ciudad, tapar(r.texto).texto, slug, label, chips, r.motor === "claude" ? "modelo" : r.motor])).rows[0]!;
+      if (r.tipo === "no_se") await anotarNoSupo(c, { conv: conv.id, ciudad, audiencia: "negocio", lang, texto: t.texto });   // 7i · para el Centro de ayuda
       return r.p ? { id: await proponer(c, { conversacion: conv.id, mensaje: Number(m.id), userId: q.userId, p: r.p }), tipo: r.p.type, target: r.p.target } : null;
     });
     return { ok: true, conversacion: conv.number, motor: r.motor, texto: r.texto, tipo: r.tipo, fuente: slug && r.titulo ? { slug, titulo: r.titulo, href: `/ayuda/${slug}` } : null,

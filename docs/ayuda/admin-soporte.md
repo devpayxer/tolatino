@@ -68,6 +68,11 @@ Audiencia: equipo. Tema: equipo._
 - **¿La persona sabe que lo escribió El Compa?** El mensaje sale con tu nombre: lo revisaste y lo enviaste tú. En la base queda marcado que salió
   de un borrador (tal cual o editado), para las cifras.
 
+## El plazo en 30 días
+Debajo de las cifras: **PLAZO CUMPLIDO · 30 D** (de los casos con respuesta, cuántos se contestaron dentro de las horas hábiles del plazo),
+**FUERA DE PLAZO · 30 D** y **DESDE EL COMPA** (30 días). Por tema y por ciudad, en Analítica › El Compa y Soporte. Si la cuenta de la persona se
+borró hace más de 30 días, los mensajes del caso dicen «(Se borró: la cuenta se cerró hace más de 30 días.)»: el caso queda con su estado y tema.
+
 ## English
 
 ### What it does
@@ -103,3 +108,7 @@ what you see in that case, covered (no phone, email, card, passwords or ids); in
 - **Where are unanswered order and booking help requests?** Queues › Order and booking help.
 - **Does the person see who replied?** Your first name and «To'Latino».
 - **Is anything deleted?** No: messages are append-only (text can be hidden with a reason), cases change status, macros are turned off.
+
+### The 30-day deadline
+Under the numbers: **DEADLINE MET · 30 D**, **PAST DEADLINE · 30 D** and **FROM EL COMPA** (30 days); by topic and city in Analytics › El Compa
+and Support. If the person's account was deleted more than 30 days ago, the case messages say so and the case keeps its status and topic.

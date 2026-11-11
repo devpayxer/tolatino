@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7h · El Compa por WhatsApp y SMS con enlace de un uso)._
+_Actualizado: 11 nov 2026 (7i · Super Admin completo de El Compa y Soporte — Fase 7 completa)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -509,6 +509,27 @@ Compose pasa `TELNYX_PUBLIC_KEY`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN`
 de los canales ✓; 0123 dos veces en local y en una base nueva (semillas dos veces). Ayuda: **`el-compa-por-whatsapp-y-sms`** nueva;
 `panel-respuestas-automaticas`, `admin-el-compa`, `privacidad-de-el-compa` al día (indexadas). Sigue **7i** (Super Admin completo de El Compa y
 Soporte, Configuración, avisos, analítica, purga; migración 0124).
+**7i hecho (11 nov) — FASE 7 · EL COMPA COMPLETA** (falta la corrida de CI, la hace la sesión principal). Migración **0124**
+(`compa_reviews` «Marcar respuesta incorrecta» con motivo de lista cerrada y nota, una viva por conversación, se quita una vez con motivo y no se
+borra; `compa_unknowns` «Lo que El Compa no supo» con la pregunta TAPADA, audiencia e idioma, sin la persona, estado que solo avanza open → noted →
+fixed con el artículo; **la purga**: `purged_at` en conversaciones, mensajes, pasos a una persona, borradores, casos y mensajes de Soporte, y cada
+tabla de solo inserción admite UNA actualización que vacía el texto sin tocar nada más; `compa_purgar(lim)` = conversaciones cerradas de más de
+`compa_retener_meses` + cuentas borradas (D5: pasado `delete_at`) con sus casos, el copiloto de esos casos y sus conversaciones cerradas;
+`compa_retener_meses` pasa a editable; grupo de avisos **`support`** sin interruptor (sop_recibido, sop_respuesta, sop_resuelto, compa_caso,
+compa_caso_negocio); vistas **`compa_analitica_dia`** y **`soporte_analitica_dia`** sin personas). Semilla **0043** (dos «no supo» abiertas —vecino
+y negocio—, una anotada y una marcada por Soporte si existe). Código: `lib/compa/admin-compa.ts` (`resumenCompa`, `marcarConversacion`,
+`quitarMarca`, `decidirNoSupo`, `modelosPorPapel`/`cambiarModelo`, `compaDeUsuario`; ficha con marca, purga e HISTORIAL; todo limitado a las
+ciudades de quien mira), `lib/compa/purga.ts` (`barrerRetencion` en el barrido; borra las fotos de los casos purgados), `conversacion.ts`
+(`anotarNoSupo` en vecino y panel), `admin-analitica.ts` (`compaSoporteAnalitica`), `soporte-equipo.ts` (plazo de 30 días; mensaje purgado).
+Pantallas: Super Admin › El Compa (**Resumen** por defecto con KPI, HBars, copiloto, marcadas, horario y LO QUE EL COMPA NO SUPO con Anotado /
+Corregido en…; Conversaciones con «Marcadas» y la ficha con Marcar / Quitar la marca), Configuración (MODELO DE CADA PAPEL; la línea del horario en
+Soporte), Notificaciones (Solo Soporte y El Compa; regla), Analítica › **El Compa y Soporte**, Usuarios 360° › **El Compa**, Soporte (PLAZO
+CUMPLIDO · FUERA DE PLAZO · DESDE EL COMPA), Mi cuenta › Avisos › **SOPORTE**. Guardianes **`retencionQueCorre`**, **`soporteSiempreLlega`** (nuevos)
++ `analiticaSinPersonas`, `libroSoloInsercion`, `compaLecturaAnotada`, `compaTapaEnElMotor` ampliados (35/35 al revés `alreves7i`); e2e **`adm7i`
+113 ✓** (390 y 1360); `compa7d` 140 ✓, `compa7f` 130 ✓, `compa7h` 224 ✓, `adm5i` ✓, `sop7b` 104 ✓, `compa7e` 117 ✓, `compa7c` 112 ✓ y `compa7g` 92 ✓
+(estas dos con la pestaña nueva por defecto); 0124 dos veces en local y en una base nueva (semillas dos veces, la segunda con las huellas
+cambiadas). Ayuda: `admin-el-compa`, `admin-configuracion`, `notificaciones`, `admin-analitica`, `mi-cuenta`, `admin-usuarios`, `admin-negocios`,
+`admin-soporte` al día (indexadas). Sigue la **Fase 8** (ver `docs/PLAN.md`).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →
