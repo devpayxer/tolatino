@@ -7,14 +7,16 @@ import { Auditoria } from "./Auditoria";
 import { AgregarMiembro } from "./AgregarMiembro";
 import { PestanasSistema } from "./Pestanas";
 
-/* ADM-SYS · Sistema: equipo y roles, matriz de permisos (2am), auditoría (2al) y (5i) la pestaña Configuración. */
+/* ADM-SYS · Sistema: equipo y roles, matriz de permisos (2am), auditoría (2al) y (5i) la pestaña Configuración.
+   8d · Cada miembro dice si tiene llave de acceso (Face ID / huella). Hoy se ofrece y se guarda; obligatoria para el equipo en la Fase 9 (LAUNCH L36). */
 export default async function Sistema() {
   const s = await requerir("sys", "ver");
   const editar = s.puede("sys", "editar");
   const [eq, roles, secc, perms] = await Promise.all([
-    db().query<{ user_id: string; nombre: string; phone: string; role: string; rol: string; status: string; desde: Date }>(
+    db().query<{ user_id: string; nombre: string; phone: string; role: string; rol: string; status: string; desde: Date; llaves: number }>(
       `select m.user_id, trim(coalesce(u.first_name,'') || ' ' || coalesce(u.last_name,'')) as nombre, u.phone, m.role,
-              r.name->>'es' as rol, m.status, m.added_at as desde
+              r.name->>'es' as rol, m.status, m.added_at as desde,
+              (select count(*)::int from passkeys p where p.user_id = m.user_id and p.revoked_at is null) as llaves
          from staff_members m join users u on u.id = m.user_id join staff_roles r on r.key = m.role
         where m.status <> 'removed' order by r.sort, m.added_at`,
     ),
@@ -26,7 +28,7 @@ export default async function Sistema() {
   const fmt = (p: string) => p.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
   return (
     <>
-      <Titulo eyebrow="SUPER ADMIN · SISTEMA" titulo="Equipo, permisos y auditoría" sub="Cada cambio pide motivo y queda en la auditoría, que nadie puede editar ni borrar." />
+      <Titulo eyebrow="SUPER ADMIN · SISTEMA" titulo="Equipo, permisos y auditoría" sub="Cada cambio pide motivo y queda en la auditoría, que nadie puede editar ni borrar. Cada miembro agrega su llave de acceso en Mi cuenta › Privacidad." />
       <PestanasSistema on="equipo" />
       <section className="flex flex-col gap-2.5">
         <span className="font-mono text-[9.5px] font-bold tracking-[0.14em] text-text-muted">EQUIPO · {eq.rows.length}</span>
@@ -36,7 +38,7 @@ export default async function Sistema() {
               <AdminRow
                 initials={m.nombre.split(" ").map((x) => x[0]).join("").slice(0, 2).toUpperCase()}
                 title={m.nombre || "(sin nombre)"}
-                sub={`${fmt(m.phone)} · desde ${new Date(m.desde).toLocaleDateString("es-US", { timeZone: "America/New_York" })}`}
+                sub={`${fmt(m.phone)} · desde ${new Date(m.desde).toLocaleDateString("es-US", { timeZone: "America/New_York" })} · ${m.llaves ? `con llave de acceso (${m.llaves})` : "sin llave de acceso: solo SMS"}`}
                 tag={m.rol.toUpperCase()}
                 tone={m.role === "admin" ? "ink" : "neutral"}
               />

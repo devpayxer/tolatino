@@ -15,6 +15,15 @@ const MENSAJES: Record<string, [number, string, string]> = {
   nombre_requerido: [400, "Escribe tu nombre y tu apellido.", "Enter your first and last name."],
   sin_proveedor: [503, "No pudimos mandar el código ahora. Inténtalo en un rato.", "We couldn't send the code right now. Try again soon."],
   origen: [403, "Petición no permitida.", "Request not allowed."],
+  // 8d · Llaves de acceso (Face ID / huella). Nunca dicen de quién es una llave ni por qué exactamente no sirvió.
+  llave_no_disponible: [404, "Aquí no se puede entrar con llave de acceso. Entra con tu teléfono.", "Passkeys aren't available here. Sign in with your phone."],
+  reto_vencido: [400, "Se acabó el tiempo. Inténtalo otra vez.", "Time ran out. Try again."],
+  llave_desconocida: [400, "Esa llave ya no entra a To'Latino. Entra con tu teléfono y, si quieres, agrega otra.", "That passkey no longer signs in to To'Latino. Sign in with your phone and, if you want, add another."],
+  llave_invalida: [400, "No pudimos comprobar tu llave. Inténtalo otra vez o entra con tu teléfono.", "We couldn't check your passkey. Try again or sign in with your phone."],
+  llave_maximo: [400, "Ya tienes el máximo de llaves. Quita una en Mi cuenta › Privacidad.", "You already have the maximum number of passkeys. Remove one in My account › Privacy."],
+  llave_repetida: [400, "Esa llave ya está guardada.", "That passkey is already saved."],
+  verificar_sms: [403, "Por seguridad, esta vez entra con el código que te mandamos por texto.", "For your security, this time sign in with the code we text you."],
+  sin_cuenta: [400, "Esa llave ya no entra a To'Latino. Entra con tu teléfono.", "That passkey no longer signs in to To'Latino. Sign in with your phone."],
 };
 
 export function respuestaError(e: unknown) {

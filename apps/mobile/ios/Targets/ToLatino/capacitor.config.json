@@ -72,6 +72,10 @@
         "/sistema"
       ]
     },
+    "TLLlave": {
+      "rpId": "pruebas.tolatino.com",
+      "activas": false
+    },
     "PushNotifications": {
       "presentationOptions": [
         "badge",
@@ -89,6 +93,7 @@
     "SplashScreenPlugin",
     "StatusBarPlugin",
     "TLAlcancePlugin",
+    "TLLlavePlugin",
     "TLLocalPlugin",
     "TLPantallaPlugin",
     "TLReportePlugin"

@@ -38,6 +38,8 @@ const PLUGINS = {
   TLReporte: { ios: "TLReportePlugin", android: "com.tolatino.plugins.TLReportePlugin", dir: "tl-reporte" },
   // 8e · La ubicación del Repartidor durante una entrega (servicio en primer plano en Android; modo de fondo de ubicación en iOS).
   TLRuta: { ios: "TLRutaPlugin", android: "com.tolatino.plugins.TLRutaPlugin", dir: "tl-ruta" },
+  // 8d · Llaves de acceso con la API del sistema (iOS: AuthenticationServices; Android: Credential Manager, versión fija de androidx.credentials).
+  TLLlave: { ios: "TLLlavePlugin", android: "com.tolatino.plugins.TLLlavePlugin", dir: "tl-llave", maven: ["androidx.credentials:credentials:1.5.0", "androidx.credentials:credentials-play-services-auth:1.5.0"] },
 };
 const rotulo = (a, plat) => `TLApp/${a.key}/${plat}/${A.version} (${BUILD})`;
 /* El alcance que aplica el filtro nativo (TLAlcance): el mismo que el servidor (apps/web/lib/app-nativa-comun.ts). */
@@ -74,6 +76,8 @@ function capConfig(a, plat) {
       TLAlcance: alcance(a),
       // 8e · La ruta del Repartidor: el nativo manda las posiciones SOLO a este servidor (el de la cáscara), nunca a una dirección de la página.
       ...(a.plugins.includes("TLRuta") ? { TLRuta: { servidor: URL_BASE, rotulo: rotulo(a, plat) } } : {}),
+      // 8d · Las llaves solo para el dominio de la cáscara (RP ID = el host del servidor, sin puerto) y solo cuando 8b las encienda (apps.json llaves.activas).
+      ...(a.plugins.includes("TLLlave") ? { TLLlave: { rpId: new URL(URL_BASE).hostname, activas: A.llaves.activas === true && !HTTP } } : {}),
       // 8c · Avisos: con la app abierta también se ven (banner, sonido, globo). El token sale de APNs (iOS) o FCM (Android); ver lib/nativo/avisos.ts.
       ...(a.plugins.includes("PushNotifications") ? { PushNotifications: { presentationOptions: ["badge", "sound", "alert"] } } : {}),
     },
@@ -294,6 +298,7 @@ ${A.apps.map((a) => `        ${a.sabor}.java.srcDirs += [${a.plugins.filter((p) 
 }
 dependencies {
 ${A.apps.flatMap((a) => a.plugins.filter((p) => PLUGINS[p].gradle).map((p) => `    ${a.sabor}Implementation project(':${PLUGINS[p].gradle}')`)).join("\n")}
+${A.apps.flatMap((a) => a.plugins.flatMap((p) => (PLUGINS[p].maven ?? []).map((m) => `    ${a.sabor}Implementation "${m}"`))).join("\n")}
 }`);
 poner("android/capacitor.settings.gradle", `// Generado por apps/mobile/scripts/generar.mjs: Capacitor y los plugins oficiales desde node_modules (versiones fijas en apps/mobile/package.json).
 include ':capacitor-android'

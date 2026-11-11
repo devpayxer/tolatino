@@ -125,6 +125,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 8g · Wallet: los avisos a Apple y Google que quedaron pendientes o con reintento, y el certificado del pase que vence.
         ["pases", async () => (await import("./pases/pases")).barrerPases()],
         ["beta", async () => (await import("./beta")).barrerBeta()],
+        // 8d · Llaves de acceso: los retos vencidos hace más de un día se purgan (un uso y 2 minutos de vida; después no sirven para nada).
+        ["llaves", async () => (await import("./llaves/llaves")).purgarRetos()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

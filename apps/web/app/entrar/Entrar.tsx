@@ -8,7 +8,9 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import type { DatosBienvenida } from "@/lib/vecinos";
+import { entrarConLlave, llaveDisponible } from "@/lib/nativo/llave";
 import { bvDatos, bvPaso } from "./acciones";
+import { HojaLlave } from "./HojaLlave";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { OnbTopBar, OnbActionBar, Icon, Tag, Chip, Button } = UI as unknown as Record<"OnbTopBar" | "OnbActionBar" | "Icon" | "Tag" | "Chip" | "Button", ComponentType<any>>;
@@ -42,7 +44,7 @@ async function enviar(url: string, cuerpo: unknown) {
   return (await r.json()) as { ok: boolean; mensaje?: { es: string; en: string }; espera?: number } & Record<string, unknown>;
 }
 
-export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { inicial: { paso: 1 | 2 | 3 | 7; telefono?: string }; destino?: string; lang0?: L; bv?: DatosBienvenida }) {
+export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv, llaves = false }: { inicial: { paso: 1 | 2 | 3 | 7; telefono?: string }; destino?: string; lang0?: L; bv?: DatosBienvenida; llaves?: boolean }) {
   const router = useRouter();
   const [lang, setLang] = useState<L>(lang0);
   const E2 = (es: string, en: string) => (lang === "es" ? es : en);
@@ -73,6 +75,34 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
   useEffect(() => {
     if (enviado) refCodigo.current?.focus();
   }, [enviado]);
+  // 8d · Llaves de acceso: solo si el servidor las ofrece aquí Y este dispositivo puede (contexto seguro + WebAuthn, o TLLlave en la app).
+  // Si no, nada cambia: ni un botón de más.
+  const [cap, setCap] = useState<{ entrar: boolean; plataforma: boolean }>({ entrar: false, plataforma: false });
+  const [hojaLlave, setHojaLlave] = useState<null | (() => void)>(null);
+  useEffect(() => {
+    if (!llaves) return;
+    let vivo = true;
+    void llaveDisponible().then((x) => { if (vivo) setCap(x); });
+    return () => { vivo = false; };
+  }, [llaves]);
+  /* Después de entrar con el código: la hoja «Entra la próxima vez con Face ID / tu huella», una vez por cuenta (lo decide el servidor) y solo
+     si este dispositivo guarda llaves. Si no sale, sigue directo. */
+  async function despues(seguir: () => void) {
+    if (!llaves || !cap.plataforma) return seguir();
+    const r = await enviar("/api/cuenta/llave/oferta", {}).catch(() => null);
+    if (!r?.ok || !r.ofrecer) return seguir();
+    setOcupado(false);
+    setHojaLlave(() => () => { setHojaLlave(null); seguir(); });
+  }
+  async function conLlave() {
+    setOcupado(true); setError(null);
+    const r = await entrarConLlave().catch(() => ({ ok: false } as { ok: boolean; cancelado?: boolean; mensaje?: { es: string; en: string }; nombre?: unknown }));
+    setOcupado(false);
+    if (r.cancelado) return;
+    if (!r.ok) return msg(r);
+    if (r.nombre) return router.replace(destino);
+    setPaso(2);
+  }
 
   const msg = (r: { mensaje?: { es: string; en: string } }) => setError(r.mensaje ? r.mensaje[lang] : E2("Algo falló.", "Something failed."));
 
@@ -90,13 +120,18 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
     const r = await enviar("/api/cuenta/verificar", { telefono: tel, codigo });
     setOcupado(false);
     if (!r.ok) return msg(r);
-    if (r.nombre) return router.replace(destino); // ya tenía cuenta: entra directo
+    if (r.nombre) return despues(() => router.replace(destino)); // ya tenía cuenta: entra directo
     setPaso(2);
   }
   async function guardar() {
     setOcupado(true); setError(null);
     const r = await enviar("/api/cuenta/perfil", { nombre, apellido, apodo });
     if (!r.ok) { setOcupado(false); return msg(r); }
+    // 8d · Cuenta nueva: la hoja de la llave sale aquí, ya con el nombre (y antes de seguir a donde iba).
+    await despues(() => void trasNombre());
+  }
+  async function trasNombre() {
+    setOcupado(true);
     // Quien venía de un pedido, una cita u otra compra sigue ahí («solo el nombre»); los demás siguen con los pasos 3–5.
     if (!(destino === "/cuenta" || destino.startsWith("/comunidad"))) return router.replace(destino);
     const x = await bvDatos().catch(() => null);
@@ -266,6 +301,14 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
                   </div>
                 )}
               </label>
+            )}
+            {llaves && cap.entrar && !enviado && (
+              <div data-llave className="mt-4 flex flex-col gap-2.5">
+                <div className="flex items-center gap-2.5"><span className="h-px flex-1 bg-line" /><Clave>{E2("O", "OR")}</Clave><span className="h-px flex-1 bg-line" /></div>
+                <div className="flex"><Button variant="secondary" block icon="key" disabled={ocupado} onClick={() => void conLlave()}>
+                  {E2("Usar mi llave de acceso", "Use my passkey")}
+                </Button></div>
+              </div>
             )}
             <p className="mt-4 text-[12px] font-medium leading-normal text-text-3">
               {E2("Al seguir aceptas los Términos y la Privacidad de To'Latino, escritos en palabras claras. Nunca te pedimos tu estatus ni tu seguro social.", "By continuing you accept To'Latino's Terms and Privacy, written in plain words. We never ask for your status or your social security number.")}
@@ -458,6 +501,7 @@ export function Entrar({ inicial, destino = "/cuenta", lang0 = "es", bv }: { ini
         <button type="submit" hidden aria-hidden="true" tabIndex={-1} />
       </form>
       <OnbActionBar fixed go={go} alt={alt} />
+      {hojaLlave && <HojaLlave es={lang === "es"} seguir={hojaLlave} />}
     </div>
   );
 }

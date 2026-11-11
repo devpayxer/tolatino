@@ -122,49 +122,67 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
       return { error: "codigo_incorrecto" as const };
     }
     await c.query("update otp_codes set used_at = now() where id = $1", [fila.id]);
-
-    if ((await c.query(`select 1 from blocked_devices where device = $1::uuid and lifted_at is null`, [dev])).rowCount)
-      return { error: "dispositivo_bloqueado" as const };
-    const u = await c.query<{ id: string; first_name: string | null; status: string; until: string | null; delete_at: string | null; nuevo: boolean }>(
+    return abrirSesionEn(c, { dev: dev as string, ip, ua: h.get("user-agent"), via: "codigo" }, async () => (await c.query<EntradaCuenta>(
       `insert into users (phone, phone_verified_at) values ($1, now())
        on conflict (phone) do update set phone_verified_at = coalesce(users.phone_verified_at, now()), last_seen_at = now()
        returning id, first_name, cuenta_estado(status, status_until) as status, status_until as until, delete_at, (xmax = 0) as nuevo`,
       [tel],
-    );
-    const user = u.rows[0]!;
-    // Lo que la persona ve al intentar entrar: el estado, hasta cuándo y el motivo (sanción o borrado).
-    if (["suspended", "banned", "deleted_pending", "deleted", "merged"].includes(user.status)) {
-      const m = (await c.query<{ reason: string }>(
-        `select reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0]?.reason;
-      const por = m ? { es: ` Motivo: ${m}.`, en: ` Reason: ${m}.` } : { es: "", en: "" };
-      const det = user.status === "suspended" && user.until
-        ? { es: `Tu cuenta está suspendida hasta el ${fechaCorta(user.until)}.${por.es}`, en: `Your account is suspended until ${fechaCorta(user.until, true)}.${por.en}` }
-        : user.status === "deleted_pending" && user.delete_at
-          ? { es: `Esta cuenta se está borrando: se borra del todo el ${fechaCorta(user.delete_at)}. Si fue un error, escríbele a Soporte antes.`, en: `This account is being deleted: it is fully erased on ${fechaCorta(user.delete_at, true)}. If this is a mistake, contact Support before then.` }
-          : { es: `Esta cuenta no puede entrar.${por.es} Escríbele a Soporte.`, en: `This account can't sign in.${por.en} Contact Support.` };
-      return { error: "cuenta_bloqueada" as const, detalle: det };
-    }
-    // Entrar antes de los 30 días cancela el borrado que pidió la persona (no el de To'Latino).
-    if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at is not null and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)
-      await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'undelete', null, 'entró', 'user')`, [user.id]);
-    // Un silencio o una suspensión que ya venció se levanta sola.
-    await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);
-
-    const token = randomBytes(32).toString("base64url");
-    // 8a · La sesión de una cáscara dice qué app, qué plataforma y qué versión (rótulo TLApp; solo informativo: Usuarios 360° › Sesiones,
-    // Sistema › Apps). Sin rótulo: la web («cliente» / «web», como siempre).
-    const ap = appDeSesion(h.get("user-agent"));
-    await c.query(
-      `insert into sessions (user_id, token_hash, ip, user_agent, expires_at, device, app, platform, app_version, app_build, os_version)
-       values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid, $7, $8, $9, $10, $11)`,
-      [user.id, huellaToken(token), ip, (h.get("user-agent") || "").slice(0, 300), SESION_DIAS, dev, ap.app, ap.platform, ap.version, ap.build, ap.os],
-    );
-    return { token, nuevo: user.nuevo, nombre: user.first_name, id: user.id };
+    )).rows[0]!);
   });
   if ("error" in res) throw new ErrorCuenta(res.error!, undefined, "detalle" in res ? res.detalle : undefined);
+  await ponerSesion(res.token);
+  return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
+}
 
+/* 8d · LA puerta de la sesión: el código por SMS (verificarCodigo) y la llave de acceso (lib/llaves/llaves.ts entrar) abren la sesión AQUÍ,
+   con las mismas revisiones y en el mismo orden, dentro de la transacción de quien llama: (1) el dispositivo no está bloqueado; (2) la cuenta
+   (`cargar`: el SMS la crea o la toca; la llave solo la lee) puede entrar — suspendida, baneada, borrándose, borrada o fusionada no entra y
+   la persona ve el motivo; (3) entrar antes de los 30 días cancela el borrado que pidió la persona; (4) un silencio o una suspensión vencidos
+   se levantan; (5) la sesión nace igual (180 días, app y plataforma del rótulo TLApp), solo anota por dónde entró (`via`). Guardián
+   passkeyNoSaltaBloqueo: nadie más inserta en sessions. */
+export type EntradaCuenta = { id: string; first_name: string | null; status: string; until: string | null; delete_at: string | null; nuevo: boolean };
+export type ResEntrada = { token: string; nuevo: boolean; nombre: string | null; id: string } | { error: "dispositivo_bloqueado" | "cuenta_bloqueada" | "sin_cuenta"; detalle?: { es: string; en: string } };
+export async function abrirSesionEn(c: import("pg").PoolClient, ctx: { dev: string; ip: string | null; ua: string | null; via: "codigo" | "llave"; passkeyId?: string | null },
+  cargar: () => Promise<EntradaCuenta | null>): Promise<ResEntrada> {
+  if ((await c.query(`select 1 from blocked_devices where device = $1::uuid and lifted_at is null`, [ctx.dev])).rowCount)
+    return { error: "dispositivo_bloqueado" as const };
+  const user = await cargar();
+  if (!user) return { error: "sin_cuenta" as const };
+  // Lo que la persona ve al intentar entrar: el estado, hasta cuándo y el motivo (sanción o borrado).
+  if (["suspended", "banned", "deleted_pending", "deleted", "merged"].includes(user.status)) {
+    const m = (await c.query<{ reason: string }>(
+      `select reason from sanctions where target_kind = 'user' and target_id = $1::text and lifted_at is null and kind in ('susp14', 'ban') order by starts_at desc limit 1`, [user.id])).rows[0]?.reason;
+    const por = m ? { es: ` Motivo: ${m}.`, en: ` Reason: ${m}.` } : { es: "", en: "" };
+    const det = user.status === "suspended" && user.until
+      ? { es: `Tu cuenta está suspendida hasta el ${fechaCorta(user.until)}.${por.es}`, en: `Your account is suspended until ${fechaCorta(user.until, true)}.${por.en}` }
+      : user.status === "deleted_pending" && user.delete_at
+        ? { es: `Esta cuenta se está borrando: se borra del todo el ${fechaCorta(user.delete_at)}. Si fue un error, escríbele a Soporte antes.`, en: `This account is being deleted: it is fully erased on ${fechaCorta(user.delete_at, true)}. If this is a mistake, contact Support before then.` }
+        : { es: `Esta cuenta no puede entrar.${por.es} Escríbele a Soporte.`, en: `This account can't sign in.${por.en} Contact Support.` };
+    return { error: "cuenta_bloqueada" as const, detalle: det };
+  }
+  // Entrar antes de los 30 días cancela el borrado que pidió la persona (no el de To'Latino).
+  if ((await c.query(`update users set delete_at = null, delete_reason = null where id = $1 and status = 'active' and delete_at is not null and coalesce(delete_reason, '') <> 'admin' returning 1`, [user.id])).rowCount)
+    await c.query(`insert into account_changes (user_id, kind, "from", "to", by) values ($1, 'undelete', null, 'entró', 'user')`, [user.id]);
+  // Un silencio o una suspensión que ya venció se levanta sola.
+  await c.query(`update users set status = 'active', status_until = null where id = $1 and status in ('muted', 'suspended') and status_until <= now()`, [user.id]);
+
+  const token = randomBytes(32).toString("base64url");
+  // 8a · La sesión de una cáscara dice qué app, qué plataforma y qué versión (rótulo TLApp; solo informativo: Usuarios 360° › Sesiones,
+  // Sistema › Apps). Sin rótulo: la web («cliente» / «web», como siempre).
+  const ap = appDeSesion(ctx.ua);
+  await c.query(
+    `insert into sessions (user_id, token_hash, ip, user_agent, expires_at, device, app, platform, app_version, app_build, os_version, via, passkey_id)
+     values ($1, $2, $3::inet, $4, now() + make_interval(days => $5), $6::uuid, $7, $8, $9, $10, $11, $12, $13)`,
+    [user.id, huellaToken(token), ctx.ip, (ctx.ua || "").slice(0, 300), SESION_DIAS, ctx.dev, ap.app, ap.platform, ap.version, ap.build, ap.os, ctx.via, ctx.passkeyId ?? null],
+  );
+  return { token, nuevo: user.nuevo, nombre: user.first_name, id: user.id };
+}
+
+/* Las cookies de la sesión recién abierta (las mismas para el código y la llave). */
+export async function ponerSesion(token: string): Promise<void> {
+  const h = await headers();
   const seguro = (h.get("x-forwarded-proto") || "").includes("https");
-  (await cookies()).set(COOKIE, res.token, {
+  (await cookies()).set(COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
     secure: seguro,
@@ -173,11 +191,10 @@ export async function verificarCodigo(entrada: string, codigo: string): Promise<
   });
   // 6h · La llave de los boletos sin señal de ESTA sesión (nueva en cada entrada: lo guardado por otra cuenta en el teléfono no se lee).
   (await cookies()).set(COOKIE_BOLETOS, randomBytes(32).toString("base64url"), { httpOnly: false, sameSite: "strict", secure: seguro, path: "/cuenta/boletos", maxAge: SESION_DIAS * 86400 });
-  return { nuevo: res.nuevo, nombre: res.nombre, id: res.id };
 }
 
 /* 8a · App, plataforma y versión de la sesión desde el rótulo TLApp (informativo). La versión del sistema sale del user-agent del WebView. */
-function appDeSesion(ua: string | null): { app: string; platform: string; version: string | null; build: number | null; os: string | null } {
+export function appDeSesion(ua: string | null): { app: string; platform: string; version: string | null; build: number | null; os: string | null } {
   const a = leerRotulo(ua);
   if (!a) return { app: "cliente", platform: "web", version: null, build: null, os: null };
   const os = a.plataforma === "ios" ? /OS (\d{1,2})[_.](\d{1,2})/.exec(ua ?? "") : /Android (\d{1,2}(?:\.\d{1,2})?)/.exec(ua ?? "");

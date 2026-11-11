@@ -21,6 +21,8 @@ export async function sesionCerrar(id: string): Promise<ResP> { const u = await 
 export async function borrarCodigo(): Promise<ResP> { const u = await quien(); return u ? codigoBorrar(u) : NO; }
 export async function borrarConfirmar(codigo: string, por: string): Promise<ResP> { const u = await quien(); return u ? borrarCuenta(u, String(codigo ?? ""), String(por ?? "")) : NO; }
 export async function borrarCancelar(): Promise<ResP> { const u = await quien(); return u ? cancelarBorrado(u.id) : NO; }
+/* 8d · Mi cuenta › Privacidad › Llaves de acceso: quitar una de MIS llaves (la consulta va por la cuenta de la sesión: la de otro no existe). */
+export async function llaveQuitar(id: string): Promise<ResP> { const u = await quien(); return u ? (await import("@/lib/llaves/llaves")).quitar(u, String(id ?? "")) : NO; }
 /* Idioma: la cookie de la interfaz y el de la cuenta (para lo que le mandemos después). */
 export async function idiomaCuenta(lang: "es" | "en"): Promise<ResP> {
   const u = await quien();

@@ -43,6 +43,11 @@ services:
       WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
       WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
       WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      # 8d · Llaves de acceso (Face ID / huella): el dominio de la cuenta (RP ID) y los orígenes que pueden firmar. No son secretos. Mientras el
+      # sandbox se sirva por HTTP en la IP (sin el Paquete 8-0), el origen de la petición no está en la lista y la app NO ofrece llaves (el SMS
+      # sigue igual). Con el dominio y HTTPS, funcionan sin tocar nada. El de Android (android:apk-key-hash:…) se suma cuando 8h firme las apps.
+      PASSKEY_RP_ID: ${PASSKEY_RP_ID:-pruebas.tolatino.com}
+      PASSKEY_ORIGENES: ${PASSKEY_ORIGENES:-https://pruebas.tolatino.com}
     networks: [default, interna]
     depends_on:
       db:

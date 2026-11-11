@@ -32,6 +32,10 @@
     "classpath": "com.tolatino.plugins.TLAlcancePlugin"
   },
   {
+    "pkg": "tolatino/tl-llave",
+    "classpath": "com.tolatino.plugins.TLLlavePlugin"
+  },
+  {
     "pkg": "tolatino/tl-pantalla",
     "classpath": "com.tolatino.plugins.TLPantallaPlugin"
   },

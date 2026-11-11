@@ -150,9 +150,12 @@ export async function restablecerVerificacion(id: string, motivo: string): Promi
     if (!u.phone_ok) return "Ya está pendiente: al entrar le pedimos el código.";
     await c.query(`update users set phone_verified_at = null where id = $1`, [u.id]);
     await cerrarTodas(c, u.id);
-    await auditar(c, { actor: s.id, action: "usuario.verificacion.restablecer", targetKind: "user", targetId: u.id, city: u.city_id, before: { telefono: "verificado" }, after: { telefono: "pide código" }, reason: m });
+    // 8d · Si el equipo cree que alguien entró a la cuenta, una llave que haya agregado esa persona tampoco sirve: se quitan todas (vuelve a
+    // agregarlas la dueña después de entrar con el código).
+    const llaves = await (await import("@/lib/llaves/llaves")).quitarTodasEn(c, u.id);
+    await auditar(c, { actor: s.id, action: "usuario.verificacion.restablecer", targetKind: "user", targetId: u.id, city: u.city_id, before: { telefono: "verificado" }, after: { telefono: "pide código", ...(llaves ? { llaves: `${llaves} quitada${llaves === 1 ? "" : "s"}` } : {}) }, reason: m });
     return null;
-  }, "Verificación restablecida. Sus sesiones se cerraron.");
+  }, "Verificación restablecida. Sus sesiones se cerraron y sus llaves de acceso se quitaron.");
 }
 
 /* Cambiar Mi ciudad: se salta la regla de 30 días. Si la ciudad aún no abre, queda en su lista de espera. */
@@ -211,6 +214,8 @@ export async function exportarDatos(id: string, motivo: string): Promise<ResAdm 
       cambios_de_cuenta: await q(`select kind as tipo, "from" as antes, "to" as despues, by as quien, at as fecha from account_changes where user_id = $1 order by at`),
       dispositivos: await q(`select coalesce(name, '') as nombre, platform as plataforma, user_agent, host(ip) as ip, created_at as primera, last_seen_at as ultima, signed_out_at as cerrada
                                from sessions where user_id = $1 order by created_at`),
+      // 8d · Sus llaves de acceso (nunca la llave pública ni el id de la credencial: el dispositivo y las fechas).
+      llaves_de_acceso: await q(`select name as dispositivo, created_at as agregada, last_used_at as ultima_vez, revoked_at as quitada, revoked_by as quitada_por from passkeys where user_id = $1 order by created_at`),
       negocios: await q(`select b.id, b.name as nombre, m.kind as rol, m.status as estado from business_members m join businesses b on b.id = m.business_id where m.user_id = $1`),
       recomendaciones: await q(`select business_name as negocio, status as estado, created_at as fecha from recommendations where by_user_id = $1 order by created_at`),
       reportes_de_fotos: await q(`select reason as motivo, note as nota, status as estado, created_at as fecha from photo_reports where reporter_user_id = $1 order by created_at`),
@@ -240,6 +245,23 @@ export async function usrCasoRed(id: string, motivo: string): Promise<ResAdm> {
     await auditar(c, { actor: s.id, action: "usuario.red.caso", targetKind: "user", targetId: u.id, city: u.city_id, before: { caso: "sin caso de red" }, after: { caso: "abierto en Reportes de usuario" }, reason: m });
     return null;
   }, "Caso abierto en Colas › Reportes de usuario.");
+}
+
+/* 8d · Usuarios 360° › Seguridad › Llaves de acceso: revocar una llave de la persona (ya no entra con ella; sigue entrando con el código y puede
+   agregar otra). usr:editar, con motivo; en la misma transacción: la llave, su cambio de cuenta, su libro y la auditoría. Después, el aviso crit
+   cuenta_llave_quitada (sin interruptor). */
+export async function llaveRevocar(id: string, llaveId: string, motivo: string): Promise<ResAdm> {
+  if (typeof llaveId !== "string" || !/^\d{1,18}$/.test(llaveId)) return no("Esa llave no existe.");
+  let nombre: string | null = null, quien = "";
+  const r = await hacer(id, ["editar"], motivo, async (c, s, u, m) => {
+    nombre = await (await import("@/lib/llaves/llaves")).revocarEn(c, s.id, u.id, llaveId, m);
+    if (!nombre) return "Esa llave ya no entra.";
+    quien = u.id;
+    await auditar(c, { actor: s.id, action: "usuario.llave.revocar", targetKind: "user", targetId: u.id, city: u.city_id, before: { llave: `viva en ${nombre}` }, after: { llave: "revocada", ref: { llave: llaveId } }, reason: m });
+    return null;
+  }, "Esa llave ya no entra a la cuenta. Le avisamos.");
+  if (r.ok && nombre && quien) await (await import("@/lib/avisos")).avisar(quien, "cuenta_llave_quitada", { dispositivo: nombre, motivo: "la quitó el equipo de To'Latino" }, { href: "/cuenta/ajustes/privacidad", ref: ["passkey", llaveId] });
+  return r;
 }
 
 /* 8c · Usuarios 360° › Avisos push: revocar un teléfono de la persona (deja de recibir push; al volver a abrir la app con su sesión puede volver a

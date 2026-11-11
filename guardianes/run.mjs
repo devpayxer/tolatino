@@ -2446,6 +2446,14 @@ const guardianes = {
         if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MW, 0, `${msg} (estados)`);
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) pass_log\b|\bdelete from (ticket_passes|pass_devices|pass_registrations)\b/.test(q)) falla(G, x, 0, `el libro de los pases no se cambia y nada de Wallet se borra: «${q.slice(0, 60)}»`);
     }
+    // 8d · Las llaves: passkey_log es de solo inserción; una llave no se borra (se quita o se revoca) ni vuelve.
+    const ML = "packages/db/migrations/0130_llaves_acceso.sql";
+    if (existsSync(ML)) {
+      const ml = readFileSync(ML, "utf8");
+      if (!/create trigger passkey_log_no_cambia before update or delete on passkey_log/.test(ml) || !/raise exception 'passkey_log es solo de inserción'/.test(ml)) falla(G, ML, 0, "passkey_log es de solo inserción (trigger)");
+      if (!/raise exception 'una llave de acceso no se borra/.test(ultimaFn("passkeys_antes")) || !/una llave quitada no vuelve ni se usa/.test(ultimaFn("passkeys_antes"))) falla(G, ML, 0, "una llave no se borra ni vuelve (estados)");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) passkey_log\b|\bdelete from passkeys\b/.test(q)) falla(G, x, 0, `el libro de las llaves no se cambia y una llave no se borra: «${q.slice(0, 60)}»`);
+    }
     const m = readFileSync(M, "utf8");
     if (!/create trigger mod_flags_no_cambia before update or delete on mod_flags for each row execute function mod_flags_inmutable\(\)/.test(m) || !/raise exception 'mod_flags es solo de inserción'/.test(m)) falla(G, M, 0, "mod_flags sin el trigger de solo inserción");
     if (!/if tg_op = 'DELETE' then raise exception 'una apelación no se borra'/.test(m) || !/if old\.status <> 'open' then raise exception 'una apelación decidida no cambia'/.test(m)) falla(G, M, 0, "appeals: no se borra y, decidida, no cambia");
@@ -5013,7 +5021,7 @@ const guardianes = {
       }
     }
     for (const [plug, L] of usos) {
-      const dir = { TLLocal: "tl-local", TLPantalla: "tl-pantalla", TLReporte: "tl-reporte", TLAlcance: "tl-alcance", TLRuta: "tl-ruta" }[plug];
+      const dir = { TLLocal: "tl-local", TLPantalla: "tl-pantalla", TLReporte: "tl-reporte", TLAlcance: "tl-alcance", TLRuta: "tl-ruta", TLLlave: "tl-llave" }[plug];
       if (!dir) { falla(G, D, 0, `«${plug}» no es un plugin propio de apps/mobile/plugins`); continue; }
       const sw = `apps/mobile/plugins/${dir}/ios/${plug}Plugin.swift`, jv = `apps/mobile/plugins/${dir}/android/com/tolatino/plugins/${plug}Plugin.java`;
       const s = existsSync(sw) ? readFileSync(sw, "utf8") : "", j = existsSync(jv) ? readFileSync(jv, "utf8") : "";
@@ -5917,6 +5925,106 @@ const guardianes = {
     }
     for (const f of codigo.filter((x) => x.startsWith(`${R}/`))) if (/\byo\(\)|cookies\(|mismoOrigen|staff\(\)/.test(sinComent(f))) falla(G, f, 0, "el servicio web de Wallet no usa la sesión ni cookies: solo el token del pase");
     for (const f of codigo.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && x !== P && !x.startsWith(`${R}/`))) if (/\b(registrar|darDeBaja|paseAlDia)\s*\(\s*p\b|\btokenPase\(|\bauthenticationToken\b/.test(sinComent(f)) && !/lib\/pases\/apple\.ts$/.test(f)) falla(G, f, 0, "el token del pase y lo que pide un pase autorizado viven solo en lib/pases y el servicio web");
+  },
+
+  /* ── 8d · Entrar con Face ID o huella: llaves de acceso (fase8-apps.md §4 8d). Al revés: alreves8d. ── */
+
+  /* 8d · Un reto de WebAuthn sirve UNA vez y poco tiempo. La base (0130): solo la huella del reto (nunca el reto), vence a los minutos, used_at
+     pasa de null a una hora una sola vez («ya se usó») y no se alarga. La app (lib/llaves/llaves.ts): gastarReto lo consume en UNA escritura
+     atómica (sin usar, sin vencer, de este propósito, dispositivo y cuenta) con `returning`, y registrar/entrar lo gastan ANTES de verificar la
+     firma (un intento fallido también lo gasta). Nadie más escribe en webauthn_challenges. Al revés: quitar `used_at is null` o
+     `expires_at > now()` de gastarReto, verificar antes de gastar, o borrar el «ya se usó» del trigger → falla. */
+  retoUnUso() {
+    const G = "retoUnUso", M = "packages/db/migrations/0130_llaves_acceso.sql", L = "apps/web/lib/llaves/llaves.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, M, 0, "faltan la migración 0130 o lib/llaves/llaves.ts");
+    const m = readFileSync(M, "utf8"), fn = ultimaFn("webauthn_challenges_antes");
+    if (!/challenge_hash text not null unique check \(challenge_hash ~ '\^\[a-f0-9\]\{64\}\$'\)/.test(m) || /\bchallenge\s+(text|bytea)\b/.test(m)) falla(G, M, 0, "el reto se guarda solo como huella (sha256 hex)");
+    if (!/expires_at <= created_at \+ interval '10 minutes'/.test(m)) falla(G, M, 0, "un reto vive minutos, no más");
+    if (!/if old\.used_at is not null then raise exception 'reto: ya se usó \(un uso\)'/.test(fn) || !/if new\.used_at is null or old\.expires_at <= now\(\) then raise exception 'reto: vencido'/.test(fn) || !/is distinct from \(old\.purpose, old\.challenge_hash, old\.user_id, old\.device, old\.ip, old\.created_at, old\.expires_at\)/.test(fn))
+      falla(G, M, 0, "webauthn_challenges: un uso, sin vencer y sin cambiar nada más (trigger)");
+    const t = sinComent(L), g = cuerpoFn(t, "gastarReto");
+    if (!/update webauthn_challenges set used_at = now\(\)\s+where challenge_hash = \$1 and purpose = \$2 and used_at is null and expires_at > now\(\) and device = \$3::uuid and user_id is not distinct from \$4::uuid\s+returning id/.test(g) || !/rowCount \?\? 0\) === 1/.test(g))
+      falla(G, L, 0, "gastarReto: una sola escritura atómica (sin usar, sin vencer, propósito, dispositivo y cuenta) que devuelve la fila");
+    for (const [fn2, ver] of [["registrar", "verifyRegistrationResponse"], ["entrar", "verificar\\("]]) {
+      const c = cuerpoFn(t, fn2), iG = c.search(/await gastarReto\(reto, "(registro|entrar)"/), iV = c.search(new RegExp(ver));
+      if (iG < 0 || iV < 0 || iG > iV) falla(G, L, 0, `${fn2}: el reto se gasta ANTES de verificar la firma`);
+      if (!/leerCliente\(resp\.response\.clientDataJSON, "webauthn\.(create|get)"\)/.test(c)) falla(G, L, 0, `${fn2}: el reto sale del clientDataJSON del tipo correcto (y sin crossOrigin)`);
+    }
+    if (!/j\.crossOrigin === true/.test(cuerpoFn(t, "leerCliente"))) falla(G, L, 0, "un marco de otro origen (crossOrigin) no vale");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && /webauthn_challenges/.test(sinComent(f))) falla(G, f, 0, "solo lib/llaves/llaves.ts toca los retos de WebAuthn");
+  },
+
+  /* 8d · Una llave entra SOLO a su cuenta. La base: credential_id único en todo el sistema. lib/llaves/llaves.ts entrar: la llave se busca por su
+     id (viva), el userHandle (si viene) tiene que ser el de la dueña (manejador = HMAC del servidor, opaco), la sesión se abre con la cuenta
+     de la LLAVE (k.user_id) y el reto de entrar no lista llaves (no se adivina la cuenta). Al revés: abrir la sesión con otro id, quitar la
+     comparación del userHandle o el `unique` → falla. */
+  llaveDeSuCuenta() {
+    const G = "llaveDeSuCuenta", M = "packages/db/migrations/0130_llaves_acceso.sql", L = "apps/web/lib/llaves/llaves.ts";
+    if (!existsSync(M) || !existsSync(L)) return falla(G, M, 0, "faltan la migración 0130 o lib/llaves/llaves.ts");
+    if (!/credential_id\s+text not null unique check/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "una credencial es de una sola cuenta (unique)");
+    const t = sinComent(L), e = cuerpoFn(t, "entrar");
+    if (!/from passkeys where credential_id = \$1 and revoked_at is null`, \[resp\.id\]/.test(e)) falla(G, L, 0, "entrar: la llave viva se busca por su id");
+    if (!/Buffer\.from\(uh, "base64url"\)\.compare\(manejador\(k\.user_id\)\) !== 0/.test(e)) falla(G, L, 0, "entrar: el userHandle tiene que ser el de la dueña de la llave");
+    if (!/abrirSesionEn\(c, \{ dev, ip, ua, via: "llave", passkeyId: k\.id \}/.test(e) || !/returning id, first_name, cuenta_estado\(status, status_until\) as status, status_until as until, delete_at, false as nuevo`, \[k\.user_id\]\)/.test(e))
+      falla(G, L, 0, "entrar: la sesión se abre para la cuenta de la llave (k.user_id), nunca otra");
+    if (/allowCredentials/.test(cuerpoFn(t, "retoEntrar"))) falla(G, L, 0, "el reto de entrar no lista llaves de nadie");
+    if (!/createHmac\("sha256", secretoAuth\(\)\)\.update\(`llave:\$\{userId\}`\)/.test(t)) falla(G, L, 0, "el userHandle es un HMAC del servidor (ni el id ni el teléfono)");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== L && /\b(verifyAuthenticationResponse|verifyRegistrationResponse)\b/.test(sinComent(f))) falla(G, f, 0, "solo lib/llaves/llaves.ts verifica llaves");
+  },
+
+  /* 8d · Una llave nunca salta un bloqueo. La sesión SOLO nace en lib/cuenta.ts abrirSesionEn (dispositivo bloqueado; suspendida, baneada,
+     borrándose, borrada o fusionada; borrado pedido → se cancela), y la llave entra por ahí; además mira el dispositivo y la sesión donde NACIÓ
+     (bloqueados → no) y que el teléfono siga verificado (el equipo lo restableció → con el código). Al revés: insertar sesiones en otro lado,
+     que entrar no llame abrirSesionEn, o quitar una de las revisiones → falla. */
+  passkeyNoSaltaBloqueo() {
+    const G = "passkeyNoSaltaBloqueo", C = "apps/web/lib/cuenta.ts", L = "apps/web/lib/llaves/llaves.ts";
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== C && /insert into sessions\b/.test(sinComent(f))) falla(G, f, 0, "una sesión solo nace en lib/cuenta.ts abrirSesionEn");
+    if (!existsSync(C) || !existsSync(L)) return falla(G, L, 0, "faltan lib/cuenta.ts o lib/llaves/llaves.ts");
+    const c = sinComent(C), a = cuerpoFn(c, "abrirSesionEn");
+    const iB = a.search(/from blocked_devices where device = \$1::uuid and lifted_at is null/), iC = a.search(/await cargar\(\)/), iE = a.search(/\["suspended", "banned", "deleted_pending", "deleted", "merged"\]\.includes\(user\.status\)/),
+      iU = a.search(/update users set delete_at = null, delete_reason = null where id = \$1 and status = 'active'/), iS = a.search(/insert into sessions/);
+    if (iB < 0 || iC < 0 || iE < 0 || iU < 0 || iS < 0 || !(iB < iC && iC < iE && iE < iU && iU < iS)) falla(G, C, 0, "abrirSesionEn: dispositivo bloqueado → cuenta → estado → borrado pedido → sesión, en ese orden");
+    if ((c.match(/insert into sessions/g) ?? []).length !== 1) falla(G, C, 0, "una sola inserción de sesión (la de abrirSesionEn)");
+    if (!/return abrirSesionEn\(c, \{ dev: dev as string, ip, ua: h\.get\("user-agent"\), via: "codigo" \}/.test(cuerpoFn(c, "verificarCodigo"))) falla(G, C, 0, "el código por SMS abre la sesión con abrirSesionEn");
+    const e = cuerpoFn(sinComent(L), "entrar");
+    if (!/return abrirSesionEn\(c,/.test(e)) falla(G, L, 0, "la llave abre la sesión con abrirSesionEn (las mismas revisiones que el SMS)");
+    if (!/from blocked_devices where device = \$1::uuid and lifted_at is null`, \[k\.created_device\]/.test(e) || !/from sessions where id = \$1::uuid and blocked`, \[k\.created_session\]/.test(e))
+      falla(G, L, 0, "entrar: el dispositivo y la sesión donde nació la llave, bloqueados → no entra");
+    if (!/phone_verified_at is not null`, \[k\.user_id\]\)\)\.rowCount\) return \{ error: "verificar_sms" as const \}/.test(e)) falla(G, L, 0, "entrar: verificación del teléfono restablecida → con el código");
+    if (!/requireUserVerification: true/.test(e) || !/v\.authenticationInfo\.userVerified/.test(e)) falla(G, L, 0, "entrar: Face ID / huella / PIN siempre (verificación de la persona requerida)");
+    const r = cuerpoFn(sinComent("apps/web/app/admin/acciones-usuarios.ts"), "restablecerVerificacion");
+    if (!/quitarTodasEn\(c, u\.id\)/.test(r)) falla(G, "apps/web/app/admin/acciones-usuarios.ts", 0, "restablecer la verificación quita también las llaves");
+  },
+
+  /* 8d · Contador que retrocede = copia de la llave, pero SOLO si la firma es buena. @simplewebauthn revisa el contador ANTES que la firma: sin
+     esta pared, cualquiera que sepa el id de una llave (no es secreto) mandaría basura con un contador bajo y la llave de otra persona se
+     quitaría sola (lo cazó llave8d). Al revés: quitar la verificación sin contador antes de quitarPorContador → falla. */
+  clonSoloConFirma() {
+    const G = "clonSoloConFirma", L = "apps/web/lib/llaves/llaves.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/llaves/llaves.ts");
+    const t = sinComent(L), e = cuerpoFn(t, "entrar");
+    if (!/const firmaBuena = await verificar\(0\)\.then\(\(x\) => x\.verified && x\.authenticationInfo\.userVerified\)\.catch\(\(\) => false\);\s+if \(firmaBuena\) \{ await quitarPorContador\(/.test(e))
+      falla(G, L, 0, "una llave se quita por contador solo después de verificar su firma");
+    if ((t.match(/quitarPorContador\(/g) ?? []).length !== 2) falla(G, L, 0, "quitarPorContador se llama en un solo lugar (después de la firma)");
+    const M = "packages/db/migrations/0130_llaves_acceso.sql";
+    if (existsSync(M) && !/if new\.sign_count < old\.sign_count or \(new\.sign_count = old\.sign_count and old\.sign_count > 0 and new\.last_used_at is distinct from old\.last_used_at\)\s+then raise exception 'llave: el contador de firmas no retrocede \(posible clon\)'/.test(ultimaFn("passkeys_antes"))) falla(G, M, 0, "la base: el contador de firmas solo sube");
+  },
+
+  /* 8d · La llave se ofrece solo donde de verdad funciona: el RP ID y los orígenes salen del entorno (https o http://localhost, del dominio del RP
+     ID), el interruptor cuenta.llaves y el origen de la petición; el cliente además exige contexto seguro y WebAuthn (o TLLlave). En el
+     sandbox por HTTP en una IP: ni botón ni retos (nunca un botón roto). Las rutas de las llaves piden mismo origen. Al revés: aceptar http
+     en otro host, ofrecer el botón sin `llaves` o sin `cap.entrar`, o una ruta sin cuerpo() → falla. */
+  llaveSoloDondeSePuede() {
+    const G = "llaveSoloDondeSePuede", K = "apps/web/lib/llaves/config.ts", N = "apps/web/lib/nativo/llave.ts", E = "apps/web/app/entrar/Entrar.tsx", R = "apps/web/app/api/cuenta/llave";
+    if (!existsSync(K) || !existsSync(N)) return falla(G, K, 0, "faltan lib/llaves/config.ts o lib/nativo/llave.ts");
+    const k = sinComent(K);
+    if (!/const seguro = u\.protocol === "https:" \|\| \(u\.protocol === "http:" && u\.hostname === "localhost"\);/.test(k) || !/u\.hostname === rpId \|\| u\.hostname\.endsWith\(`\.\$\{rpId\}`\)/.test(k)) falla(G, K, 0, "orígenes: solo https (o http://localhost) del dominio del RP ID");
+    if (!/process\.env\.PASSKEY_RP_ID/.test(k) || !/r\.web\.includes\(o\)/.test(cuerpoFn(k, "llavesAqui")) || !/key = 'cuenta\.llaves'/.test(k)) falla(G, K, 0, "llavesAqui: entorno + interruptor + el origen de esta petición");
+    if (!/window\.isSecureContext === true && typeof window\.PublicKeyCredential === "function"/.test(sinComent(N))) falla(G, N, 0, "el cliente ofrece la llave solo con contexto seguro y WebAuthn");
+    if (existsSync(E) && !/\{llaves && cap\.entrar && !enviado && \(/.test(sinComent(E))) falla(G, E, 0, "Entrar: el botón solo con `llaves` (servidor) y `cap.entrar` (dispositivo)");
+    const L = sinComent("apps/web/lib/llaves/llaves.ts");
+    for (const fn of ["retoRegistro", "registrar", "retoEntrar", "entrar"]) if (!/const r = await llavesAqui\(\);\s+if \(!r\) throw fallo\("llave_no_disponible"\)/.test(cuerpoFn(L, fn))) falla(G, "apps/web/lib/llaves/llaves.ts", 0, `${fn}: sin llavesAqui() no hay llaves`);
+    for (const f of codigo.filter((x) => x.startsWith(R + "/") && x.endsWith("/route.ts"))) if (!/await cuerpo\(req\)/.test(sinComent(f))) falla(G, f, 0, "las rutas de las llaves piden mismo origen y cuerpo acotado (cuerpo())");
   },
 
   idioma() {

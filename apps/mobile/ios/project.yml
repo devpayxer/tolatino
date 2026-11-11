@@ -50,6 +50,7 @@ targets:
       - path: Targets/ToLatino/public
         type: folder
       - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-llave/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-pantalla/ios-camara
@@ -88,6 +89,7 @@ targets:
       - path: Targets/ToLatinoNegocios/public
         type: folder
       - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-llave/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-pantalla/ios-camara
       - path: ../plugins/tl-reporte/ios
@@ -125,6 +127,7 @@ targets:
       - path: Targets/ToLatinoRepartidor/public
         type: folder
       - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-llave/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-pantalla/ios-sin-camara
@@ -163,6 +166,7 @@ targets:
       - path: Targets/ToLatinoPuerta/public
         type: folder
       - path: ../plugins/tl-alcance/ios
+      - path: ../plugins/tl-llave/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
       - path: ../plugins/tl-pantalla/ios-camara

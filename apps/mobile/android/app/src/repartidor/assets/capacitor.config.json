@@ -74,6 +74,10 @@
       "servidor": "https://pruebas.tolatino.com",
       "rotulo": "TLApp/delivery/android/1.0.0 (1)"
     },
+    "TLLlave": {
+      "rpId": "pruebas.tolatino.com",
+      "activas": false
+    },
     "PushNotifications": {
       "presentationOptions": [
         "badge",
@@ -90,6 +94,7 @@
     "SplashScreenPlugin",
     "StatusBarPlugin",
     "TLAlcancePlugin",
+    "TLLlavePlugin",
     "TLLocalPlugin",
     "TLPantallaPlugin",
     "TLReportePlugin",

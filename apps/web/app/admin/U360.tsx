@@ -16,7 +16,7 @@ import { diaCorto } from "@/lib/evt-comun";
 import { usrAjustarMonedas, usrAjustarPuntos, usrPisoRango } from "./acciones-gam";
 import { ORDEN_SANCIONES, PLANTILLAS_USR, SANCIONES, sub as subSancion, type Sancion } from "@/lib/sanciones";
 import {
-  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, pushRevocar, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
+  cambiarCiudadUsuario, cerrarSesiones, dispositivoAccion, exportarDatos, llaveRevocar, pushRevocar, levantar, notaUsuario, pedirBorrado, quitarFotoPerfil, restablecerVerificacion, restaurarCuenta, sancionar, usrCasoRed,
 } from "./acciones-usuarios";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
@@ -28,12 +28,13 @@ import type { CompaUsuario } from "@/lib/compa/admin-compa";
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
 const PUSH_APP: Record<string, string> = { cliente: "To'Latino", negocio: "Negocios", delivery: "Repartidor", checkin: "Puerta", web: "Web" };
 const PUSH_PROV: Record<string, string> = { apns: "APNs", fcm: "FCM", webpush: "Web Push", sim: "simulado (semilla)" };
+const LLAVE_POR: Record<string, string> = { user: "la quitó la persona", staff: "la revocó el equipo", sistema: "la quitó el sistema" };
 const PUSH_MOTIVO: Record<string, string> = { salir: "salió de la cuenta", invalido: "el proveedor dijo que ya no sirve", apagado: "los apagó la persona", reemplazado: "lo reemplazó otro", admin: "el equipo", vencido: "sin uso" };
 /* Verbo de cada acción en el historial. */
 const VERBO: Record<string, string> = {
   "usuario.nota": "agregó una nota a", "usuario.sancionar": "sancionó a", "usuario.levantar": "levantó la sanción de", "usuario.foto.quitar": "quitó la foto de",
   "usuario.sesiones.cerrar": "cerró las sesiones de", "usuario.sesion.cerrar": "cerró una sesión de", "usuario.sesion.bloquear": "bloqueó un dispositivo de",
-  "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.push.revocar": "revocó los avisos de un teléfono de", "usuario.verificacion.restablecer": "restableció la verificación de",
+  "usuario.dispositivo.bloquear": "bloqueó un dispositivo de", "usuario.dispositivo.desbloquear": "desbloqueó un dispositivo de", "usuario.push.revocar": "revocó los avisos de un teléfono de", "usuario.llave.revocar": "revocó una llave de acceso de", "usuario.verificacion.restablecer": "restableció la verificación de",
   "usuario.ciudad": "cambió la ciudad de", "usuario.borrado.pedir": "pidió borrar la cuenta de", "usuario.borrar": "borró la cuenta de", "usuario.restaurar": "restauró la cuenta de",
   "usuario.exportar": "exportó los datos de", "usuario.red.caso": "abrió un caso de red de cuentas de", "usuario.evt.caso": "abrió un caso de Eventos de",
 };
@@ -95,7 +96,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     cuerpo = (
       <>
         <PanelBloques bloques={[{ type: "group", k: `DISPOSITIVOS Y SESIONES · ${u.dispositivos.length}`, first: true, link: puedeS && abiertas ? "Cerrar todas" : undefined,
-          onLink: () => setConf({ titulo: `Cerrar todas las sesiones de ${corto}`, sub: "Tiene que entrar otra vez con el código por SMS en cada dispositivo.", cta: "Cerrar todas", hacer: (m) => cerrarSesiones(u.id, m) }) }]} />
+          onLink: () => setConf({ titulo: `Cerrar todas las sesiones de ${corto}`, sub: "Tiene que entrar otra vez en cada dispositivo, con el código por SMS o con su llave de acceso.", cta: "Cerrar todas", hacer: (m) => cerrarSesiones(u.id, m) }) }]} />
         {u.dispositivos.length ? <PanelBloques bloques={[{ type: "rows", items: u.dispositivos.map((d, i) => {
           const bloq = d.dev_bloq || d.bloqueada;
           return {
@@ -119,6 +120,15 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           acts: P.editar && !x.revocado ? [{ l: "Revocar", icon: "ban", onClick: () => setConf({ titulo: `Revocar los avisos de ${x.label}`, sub: "Deja de recibir push en ese teléfono. Lo crítico le sigue llegando por SMS; puede volver a encenderlos ella con su sesión.", peligro: true,
             plantillas: ["Teléfono perdido o robado", "Lo pidió la persona", "Avisos a un teléfono que no es suyo"], hacer: (m) => pushRevocar(u.id, x.id, m) }) }] : undefined,
         })) }]} /> : <A.AdminNote tone="info" icon="bell">No tiene avisos push en ningún teléfono: le llegan en la campana y por SMS cuando aplica.</A.AdminNote>}
+        {/* 8d · Llaves de acceso (Face ID / huella): el dispositivo, cuándo se agregó, la última vez y cuántas entradas; revocar con motivo (aviso a la persona). */}
+        <PanelBloques bloques={[{ type: "group", k: `LLAVES DE ACCESO · ${u.llaves.filter((x) => !x.revocada).length} ${u.llaves.filter((x) => !x.revocada).length === 1 ? "VIVA" : "VIVAS"}` }]} />
+        {u.llaves.length ? <PanelBloques bloques={[{ type: "rows", items: u.llaves.map((k) => ({
+          key: `llave-${k.id}`, icon: "key", t: `${k.nombre} · ${PUSH_APP[k.app] ?? k.app}${k.plat === "web" ? "" : ` (${k.plat === "ios" ? "iOS" : "Android"})`}`,
+          s: `Agregada ${fecha(k.creada)} · ${k.usada ? `última vez ${haceUsr(k.usada)} · ${k.usos} ${k.usos === 1 ? "entrada" : "entradas"}` : "sin usar todavía"}${k.sync ? " · sincronizada" : ""}${k.revocada ? ` · ${LLAVE_POR[k.por ?? ""] ?? k.por} ${fecha(k.revocada)}${k.motivo ? ` (${k.motivo})` : ""}` : ""}`,
+          tag: k.revocada ? "QUITADA" : "VIVA", tone: k.revocada ? "neutral" : "signal", dim: !!k.revocada,
+          acts: P.editar && !k.revocada && !borrada ? [{ l: "Revocar", icon: "ban", onClick: () => setConf({ titulo: `Revocar la llave de ${k.nombre}`, sub: "Ya no entra con esa llave (Face ID o huella). Sigue entrando con el código por SMS y puede agregar otra. Le avisamos por SMS y en la app.", peligro: true,
+            plantillas: ["Teléfono perdido o robado", "Lo pidió la persona", "Posible acceso de otra persona"], hacer: (m) => llaveRevocar(u.id, k.id, m) }) }] : undefined,
+        })) }]} /> : <A.AdminNote tone="info" icon="key">No tiene llaves de acceso: entra con el código por SMS.</A.AdminNote>}
         {u.compartidos.length ? <>
           <A.AdminNote tone="warn" icon="warning">Otras cuentas que entraron desde el mismo dispositivo:</A.AdminNote>
           <A.AdminList rows={u.compartidos.map((x) => ({ initials: (x.nombre ?? "?").slice(0, 1), title: x.nombre ?? "(sin nombre todavía)", sub: x.phone, tag: x.estado !== "ok" ? EST_USR[x.estado] : undefined, tone: "danger", chevron: true, onClick: () => router.push(`/admin/usuarios/${x.id}`) }))} />
@@ -129,9 +139,10 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           ...cambiosTel.map((c) => ({ icon: "edit", t: `Cambió de teléfono: ${c.de ?? "—"} → ${c.a ?? "—"}`, s: `${c.by === "staff" ? "Lo cambió el equipo" : "Lo cambió la persona"} · ${fecha(c.at)}` })),
           // Mi cuenta (2h): correo, y borrar la cuenta (30 días) o cancelarlo.
           ...u.cambios.filter((c) => c.kind === "email").map((c) => ({ icon: "news", t: `Cambió el correo: ${c.de ?? "—"} → ${c.a ?? "—"}`, s: `${c.by === "staff" ? "Lo cambió el equipo" : "Lo cambió la persona"} · ${fecha(c.at)}` })),
+          ...u.cambios.filter((c) => c.kind === "passkey").map((c) => ({ icon: "key", t: c.de ? `Llave de acceso de ${c.de}: ${c.a ?? "—"}` : `Llave de acceso: ${c.a ?? "—"}`, s: `${c.by === "staff" ? "Lo hizo el equipo" : c.by === "sistema" ? "Lo hizo el sistema" : "Lo hizo la persona"} · ${fecha(c.at)}` })),
           ...u.cambios.filter((c) => c.kind === "delete" || c.kind === "undelete").map((c) => ({ icon: "trash", t: c.kind === "delete" ? `Pidió borrar su cuenta${c.a ? ` · motivo: ${({ uso: "ya no la usa", avisos: "muchos avisos", priv: "privacidad", ciudad: "se mudó", otra: "otra razón" } as Record<string, string>)[c.a] ?? c.a}` : ""}` : "Canceló el borrado de su cuenta", s: `Lo hizo la persona · ${fecha(c.at)}` })),
         ] }]} />
-        {P.editar && !borrada && u.phone_ok ? <PanelBloques bloques={[{ type: "acts", items: [{ l: "Restablecer verificación", icon: "lock", off: pend, onClick: () => setConf({ titulo: `Restablecer verificación de ${corto}`, sub: "Se cierran sus sesiones y al entrar le pedimos el código por SMS otra vez. Úsalo si cree que alguien entró a su cuenta.", hacer: (m) => restablecerVerificacion(u.id, m) }) }] }]} /> : null}
+        {P.editar && !borrada && u.phone_ok ? <PanelBloques bloques={[{ type: "acts", items: [{ l: "Restablecer verificación", icon: "lock", off: pend, onClick: () => setConf({ titulo: `Restablecer verificación de ${corto}`, sub: "Se cierran sus sesiones, se quitan sus llaves de acceso y al entrar le pedimos el código por SMS otra vez. Úsalo si cree que alguien entró a su cuenta.", hacer: (m) => restablecerVerificacion(u.id, m) }) }] }]} /> : null}
         <PanelBloques bloques={[{ type: "group", k: "CIUDAD" }, { type: "kv", cols: desk ? 3 : 1, items: [{ k: "AHORA", v: u.ciudad ?? "Sin ciudad" }, { k: "ÚLTIMO CAMBIO", v: u.city_changed ? fecha(u.city_changed) : "Nunca" }, { k: "REGLA", v: "El vecino la cambia 1 vez cada 30 días" }] }]} />
         {cambiosCiudad.length ? <PanelBloques bloques={[{ type: "rows", items: cambiosCiudad.map((c) => ({ icon: "globe", t: `${c.de ?? "Sin ciudad"} → ${c.a ?? "—"}`, s: `${c.by === "staff" ? "La cambió el equipo" : "La cambió el vecino"} · ${fecha(c.at)}` })) }]} /> : null}
         {P.editar && !borrada ? <PanelBloques bloques={[{ type: "acts", items: [{ l: "Cambiar ciudad", icon: "globe", off: pend, onClick: () => setConf({

@@ -63,7 +63,9 @@ export type ClaveConfig =
   // 8e · La ruta en vivo del repartidor (0128)
   | "ubic_cada_s" | "ubic_min_m" | "ubic_retener_dias" | "ubic_cliente_desde" | "ubic_vel_max_mps" | "ubic_vieja_s"
   // 8g · El boleto en Apple Wallet y Google Wallet (0129)
-  | "pase_registros_hora" | "pase_ws_por_minuto" | "pase_reintentos" | "pase_cert_aviso_dias";
+  | "pase_registros_hora" | "pase_ws_por_minuto" | "pase_reintentos" | "pase_cert_aviso_dias"
+  // 8d · Llaves de acceso (0130)
+  | "passkey_max" | "passkey_reto_s" | "passkey_retos_hora" | "passkey_fallos_hora";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

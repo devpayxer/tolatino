@@ -24,10 +24,10 @@ android {
         }
     }
     sourceSets {
-        cliente.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
-        negocios.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
-        repartidor.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android', '../../plugins/tl-ruta/android']
-        puerta.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+        cliente.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-llave/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+        negocios.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-llave/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
+        repartidor.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-llave/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android', '../../plugins/tl-ruta/android']
+        puerta.java.srcDirs += ['../../plugins/tl-alcance/android', '../../plugins/tl-llave/android', '../../plugins/tl-local/android', '../../plugins/tl-pantalla/android', '../../plugins/tl-reporte/android']
     }
 }
 dependencies {
@@ -57,4 +57,12 @@ dependencies {
     puertaImplementation project(':capacitor-push-notifications')
     puertaImplementation project(':capacitor-splash-screen')
     puertaImplementation project(':capacitor-status-bar')
+    clienteImplementation "androidx.credentials:credentials:1.5.0"
+    clienteImplementation "androidx.credentials:credentials-play-services-auth:1.5.0"
+    negociosImplementation "androidx.credentials:credentials:1.5.0"
+    negociosImplementation "androidx.credentials:credentials-play-services-auth:1.5.0"
+    repartidorImplementation "androidx.credentials:credentials:1.5.0"
+    repartidorImplementation "androidx.credentials:credentials-play-services-auth:1.5.0"
+    puertaImplementation "androidx.credentials:credentials:1.5.0"
+    puertaImplementation "androidx.credentials:credentials-play-services-auth:1.5.0"
 }

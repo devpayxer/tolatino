@@ -149,6 +149,8 @@ export async function usuario360(s: Staff, id: string) {
       app: d.plat === "web" ? "Web" : `${APP_NOMBRE[d.app] ?? d.app}${d.ver ? ` ${d.ver} (${d.build ?? "?"})` : ""}${d.so ? ` · ${d.plat === "ios" ? "iOS" : "Android"} ${d.so}` : ""}` })),
     // 8c · Teléfonos con avisos (push): enmascarados (rótulo, app, canal y los últimos 6 de la huella; nunca el token).
     push: await (await import("./push/admin")).dispositivosDe(id),
+    // 8d · Llaves de acceso (Face ID / huella): dispositivo, cuándo se agregó, la última vez y cuántas entradas; revocar con motivo.
+    llaves: await (await import("./llaves/llaves")).llavesDe360(id),
     compartidos: compartidos.rows.map((x) => ({ ...x, phone: telefonoBonito(x.phone) })),
     cambios: cambios.rows, sanciones: sanc.rows, recomendaciones: rec.rows, reportes: reps.rows, reclamos: cl.rows, cambiosSensibles: cs.rows, historial: hist.rows, ciudades: ciudades.rows,
   };
