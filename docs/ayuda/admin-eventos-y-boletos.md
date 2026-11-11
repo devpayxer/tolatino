@@ -4,7 +4,7 @@ _Pantallas: **Super Admin › Eventos y boletos** (`/admin/eventos`: pestañas E
 revisar** (`/admin/colas?cola=evt`) y **Negocios 360° › Contenido › Eventos**. Ver: todos los roles con Eventos; **decidir y verificar**: Admin y
 Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar). Pestaña **Buscar boleto** y la ficha del boleto
 (`/admin/eventos/boleto/{código}`); Reenviar y Reemitir: Admin y Ciudad (evt:editar); Anular: Admin (evt:retirar). «Modo puerta»: ver
-`admin-puerta-auditoria`. Versión: 9 nov 2026. Audiencia: equipo. Tema: equipo._
+`admin-puerta-auditoria`. Wallet: la ficha del boleto › **WALLET** y **Sistema › Integraciones › Wallet** (`/admin/sistema/integraciones?tab=wallet`). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Series y varios días:** la lista dice «Cada jueves · N por delante» o «3 días»; la ficha muestra **FECHAS** (cada fecha con lo vendido, movida, saltada, cancelada o con artista solo esa fecha) o **DÍAS** (con boleto o pase y el aforo de cada día). El cambio de la regla de una serie de un organizador sin verificar llega a la cola como «LO QUE CAMBIA · Se repite».
@@ -94,6 +94,24 @@ Ciudad (evt:aprobar); **ocultar y bloquear**: Admin (evt:retirar). Pestaña **Bu
   puerta, sesiones de portero, últimos en la puerta e incidencias. La ficha de un boleto suma **ESCANEOS EN LA PUERTA** (resultado, puerta, quién y
   hora). Detalle en `admin-puerta-auditoria`.
 
+## El boleto en Apple Wallet y Google Wallet
+- **La ficha del boleto › WALLET:** cada pase del boleto (Apple Wallet o Google Wallet) con su serie corta, su **versión** (sube con cada
+  cambio del boleto, la fecha o el evento), **VIVO** o **ANULADO** y por qué (el boleto ya no vale, cambió de dueño, la fecha o el evento se
+  cancelaron), cuántos teléfonos lo siguen, cuántos faltan por avisar y el último aviso a Apple; en Google, si está al día o qué error dio.
+  Debajo, **LOS PASES**: su historia (emitido, lo volvió a bajar, actualizado, anulado, un teléfono lo sigue o lo dejó, aviso enviado a
+  Apple, Google al día, avisos que se dejaron de intentar). Sin pases: «Este boleto no está en Apple Wallet ni en Google Wallet».
+- **Todo cambio del boleto toca su pase en la misma acción:** transferir, recibir, devolver, cancelar, anular, reemitir, cambiar el nombre,
+  mover la fecha o la hora y cancelar el evento. El pase de Apple se actualiza en el teléfono (Apple le avisa y el teléfono lo baja) y el de
+  Google se reemplaza. **Anular** desde esta ficha anula también sus pases.
+- **El QR del pase es el mismo del boleto:** la puerta lo valida igual, con y sin señal. **Reemitir** cambia el QR también en el pase.
+- **Sistema › Integraciones › Wallet** (solo Admin): el **certificado del pase de Apple** (vence cada año; el equipo recibe un aviso a los
+  30 días —Configuración › Apps, «Wallet · avisar antes de que venza»— y otro al vencer), la **solicitud** (se genera aquí con el código a
+  tu teléfono; la llave se queda en el servidor; se baja y se sube a developer.apple.com; luego se sube aquí el .cer), la **cuenta de Google
+  Wallet** (cuenta de servicio + ID del emisor), los interruptores `app.wallet.apple` y `app.wallet.google` (apagados: no se emiten pases
+  nuevos; los emitidos siguen recibiendo sus cambios) y las cifras: pases emitidos, teléfonos que los siguen, por avisar, fallos de 7 días.
+- Lo que pasa por Apple y Google: el evento, la fecha, el lugar, el tipo y el código. Nunca el nombre de la persona, su teléfono ni montos;
+  eventos de Fe, Salud y Niños: «Boleto de evento», sin nombre ni lugar.
+
 ## Cierre de la fase: cupos, venta, sobreventa, catálogo y señales
 - **Cifras:** BRUTO BOLETOS dice la comisión vigente (la regla «bol» de Planes, hoy 5 % + $1).
 - **La ficha del evento › CUPOS** (de UNA fecha: la próxima, o elige otra en «FECHA QUE ESTÁS VIENDO»): cada tipo de boleto, mesa y el aforo del día
@@ -161,3 +179,18 @@ the event page adds the change history, the cancellation progress and money by d
 event payouts**; new Event settings (notices per date, payout day, new-organizer threshold, cancellations window, adjustment wait, refunds batch).
 
 **Recurring and multi-day:** the list shows “Every Thursday · N ahead” or “3 days”; the event page shows DATES (sold, moved, skipped, cancelled, performer for one date) or DAYS (ticket or pass holders and the daily capacity). A rule change from an unverified organizer reaches the queue as “WHAT CHANGES · Repeats”.
+
+#### Tickets in Apple Wallet and Google Wallet
+- **The ticket page › WALLET:** each pass of the ticket (Apple Wallet or Google Wallet) with its short serial, its **version** (it goes up with
+  every change of the ticket, the date or the event), **LIVE** or **VOIDED** and why (the ticket is no longer valid, changed owner, the date or
+  the event was cancelled), how many phones follow it, how many are still to be notified and the last notice to Apple; for Google, whether it is
+  up to date or which error it gave. Below, **THE PASSES**: their history. Without passes: «This ticket is not in Apple Wallet or Google Wallet».
+- **Every ticket change touches its pass in the same action:** transfer, receive, refund, cancel, void, reissue, rename, move the date or time
+  and cancel the event. The Apple pass updates on the phone (Apple notifies it and the phone downloads it) and the Google one is replaced.
+  **Void** on this page also voids its passes. The pass QR is the same as the ticket's: the door validates it the same way, online and offline.
+- **System › Integrations › Wallet** (Admin only): the **Apple pass certificate** (it expires every year; the team gets a notice 30 days before
+  and another when it expires), the **certificate request** (generated here with the code sent to your phone; the key stays on the server;
+  download it, upload it at developer.apple.com, then upload the .cer here), the **Google Wallet account** (service account + issuer ID), the
+  `app.wallet.apple` and `app.wallet.google` switches (off: no new passes; existing passes keep getting their changes) and the figures.
+- What goes through Apple and Google: event, date, venue, type and code. Never the person's name, phone or amounts; Faith, Health and Kids
+  events: «Event ticket», without name or venue.

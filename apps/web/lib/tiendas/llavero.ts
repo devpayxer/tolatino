@@ -21,8 +21,11 @@ export const TIPOS = {
   play_service_account: { es: "Google Play · cuenta de servicio", en: "Google Play · service account", ext: [".json"], forma: "sa" },
   android_upload_keystore: { es: "Android · llave de subida", en: "Android · upload key", ext: [".jks", ".keystore", ".p12"], forma: "bin" },
   ios_dist_cert: { es: "Apple · certificado de distribución", en: "Apple · distribution certificate", ext: [".p12"], forma: "bin" },
-  pass_type_cert: { es: "Apple Wallet · certificado del pase", en: "Apple Wallet · pass certificate", ext: [".p12"], forma: "bin" },
+  // 8g · El .cer que da Apple para la solicitud que generó el servidor (lib/pases/certificado.ts); se guarda con su llave y el intermedio.
+  pass_type_cert: { es: "Apple Wallet · certificado del pase", en: "Apple Wallet · pass certificate", ext: [".cer", ".pem"], forma: "cer" },
   google_wallet_sa: { es: "Google Wallet · cuenta de servicio", en: "Google Wallet · service account", ext: [".json"], forma: "sa" },
+  // 8g · La llave de la solicitud del certificado del pase: la GENERA el servidor (no se sube); se retira al llegar el certificado.
+  pass_type_csr: { es: "Apple Wallet · solicitud del certificado (llave)", en: "Apple Wallet · certificate request (key)", ext: [], forma: "generada" },
 } as const;
 export type TipoLlave = keyof typeof TIPOS;
 export const esTipo = (k: unknown): k is TipoLlave => typeof k === "string" && Object.hasOwn(TIPOS, k);
@@ -66,6 +69,7 @@ export const huellaDe = (b: Buffer) => createHash("sha256").update(b).digest("he
 type Meta = Record<string, string>;
 export function revisarArchivo(tipo: TipoLlave, nombre: string, b: Buffer, extra: Meta): { ok: true; meta: Meta } | { ok: false; msg: string } {
   const t = TIPOS[tipo], ext = (/\.[a-z0-9]+$/i.exec(nombre)?.[0] ?? "").toLowerCase();
+  if (t.forma === "generada") return { ok: false, msg: "Esta llave no se sube: la genera el servidor." };
   if (!b.length || b.length > MAX_BYTES) return { ok: false, msg: "El archivo está vacío o es demasiado grande (64 KB)." };
   if (!(t.ext as readonly string[]).includes(ext)) return { ok: false, msg: `Ese tipo de llave es un archivo ${t.ext.join(" o ")}.` };
   const meta: Meta = {};
@@ -81,6 +85,10 @@ export function revisarArchivo(tipo: TipoLlave, nombre: string, b: Buffer, extra
     meta.correo = String(j.client_email).slice(0, 120);
     if (typeof j.project_id === "string") meta.proyecto = j.project_id.slice(0, 80);
     if (typeof j.private_key_id === "string") meta.id_llave = j.private_key_id.slice(0, 12);
+  } else if (t.forma === "cer") {
+    const pem = /-----BEGIN CERTIFICATE-----/.test(b.toString("latin1")), der = b[0] === 0x30 && (b[1] === 0x82 || b[1] === 0x83);
+    if (/PRIVATE KEY/.test(b.toString("latin1"))) return { ok: false, msg: "Sube solo el certificado (.cer), sin llave: la llave ya está en el servidor." };
+    if (!pem && !der) return { ok: false, msg: "No es un certificado (.cer) de Apple." };
   } else {
     const jks = b.readUInt32BE(0) === 0xfeedfeed, der = b[0] === 0x30 && (b[1] === 0x82 || b[1] === 0x83 || b[1] === 0x80);
     if (!jks && !der) return { ok: false, msg: "No parece un almacén de llaves (.jks / .p12)." };

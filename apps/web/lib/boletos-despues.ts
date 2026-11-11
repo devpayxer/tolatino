@@ -6,6 +6,7 @@ import { normalizarTelefono } from "./cuenta";
 import { db, tx } from "./db";
 import { bi, diaCorto, dinero, hora, type Bi } from "./evt-comun";
 import { pasarela } from "./pagos/pasarela";
+import { pasesPronto } from "./pases/pronto";
 
 /* 6d · Después de comprar (fase6-eventos.md §3 «Devoluciones» y §4 6d): transferir, recibir, cancelar con devolución, cambiar el nombre,
    cortesías del organizador y «Devolver» desde el panel. El servidor decide TODO: quién, hasta cuándo y cuánto.
@@ -86,6 +87,8 @@ export async function transferir(userId: string, code: string, telRaw: unknown):
       return { id: x.id, title: b.title, dia: b.dia, h0: b.h0, city: b.city, mesa: b.mesa, admits: b.admits, de: yo.de, code };
     });
   } catch (e) { return atrapa(e); }
+  // 8g · El pase de Wallet ya quedó tocado en la transacción (trigger de 0129): que salga ya.
+  pasesPronto();
   const { avisarTelefono } = await import("./avisos");
   await avisarTelefono(tel, "bol_transfer_in", { de: r.de, cuantos: cuantosL(1, r.mesa, r.admits), evento: r.title.es, cuando: `${diaCorto(r.dia, true)} · ${hora(r.h0)}`, enlace: `${await base()}/eventos/recibir/${token}` },
     { href: `/eventos/recibir/${token}`, ref: ["ticket_transfer", r.id], city: r.city });
@@ -107,6 +110,7 @@ export async function cancelarTransferencia(userId: string, code: string): Promi
       await c.query(`update tickets set qr_ver = qr_ver + 1 where id = $1::bigint`, [t.id]);
       await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'transfer_cancelado', $4, 'user')`, [t.id, t.op, t.city, userId]);
     });
+    pasesPronto();
     return { ok: true };
   } catch (e) { return atrapa(e); }
 }
@@ -130,6 +134,7 @@ export async function vencerTransferencias(): Promise<number> {
     }).catch(() => null);
     if (!r) continue;
     n++;
+    pasesPronto();
     if (r.kind === "transfer") await (await import("./avisos")).avisar(r.uid, "bol_transfer_vuelve", { codigo: r.code, evento: r.title.es }, { href: `/cuenta/boletos/${r.code}`, ref: ["tickets", r.code] });
   }
   return n;
@@ -207,6 +212,7 @@ export async function reclamar(userId: string, token: string): Promise<Res<{ cod
       aviso = { uid: x.from, code: t.code, title: t.title };
       return n.code;
     });
+    pasesPronto();
     if (aviso) { const a = aviso as { uid: string; code: string; title: Bi }; await (await import("./avisos")).avisar(a.uid, "bol_transfer_ok", { codigo: a.code, evento: a.title.es }, { href: `/cuenta/boletos/${a.code}`, ref: ["tickets", a.code] }); }
     return { ok: true, codigo };
   } catch (e) { return atrapa(e); }
@@ -228,6 +234,7 @@ export async function cambiarNombre(userId: string, code: string, nombreRaw: unk
       await c.query(`update tickets set holder_name = $2 where id = $1::bigint`, [t.id, nombre || null]);
       await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind) values ($1::bigint, $2::bigint, $3, 'nombre', $4, 'user')`, [t.id, t.op, t.city, userId]);
     });
+    pasesPronto();
     return { ok: true };
   } catch (e) { return atrapa(e); }
 }
@@ -426,6 +433,7 @@ export async function cancelarBoletos(userId: string, numero: string, codesRaw: 
     return atrapa(e);
   }
   if (!hecho.rf) return { ok: true, monto: hecho.total, ya: true };
+  pasesPronto();
   await ejecutarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
   await avisar(userId, "bol_cancelado", { evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1), monto: dinero(hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
@@ -469,6 +477,7 @@ export async function devolverDesdePanel(negocio: string, actorId: string, numer
     return atrapa(e);
   }
   if (!hecho.rf) return { ok: true, monto: hecho.total };
+  pasesPronto();
   await ejecutarDevolucion(hecho.rf);
   const { avisar } = await import("./avisos");
   await avisar(hecho.uid, "bol_devuelto", { negocio: hecho.org, monto: dinero(hecho.total), evento: hecho.title.es, cuantos: cuantosL(hecho.n, false, 1) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
@@ -552,6 +561,7 @@ export async function quitarCortesia(negocio: string, actorId: string, numero: s
       await c.query(`update ticket_transfers set status = 'cancelled', ended_at = now() where operation_id = $1::bigint and status = 'pending'`, [o.id]);
       await c.query(`insert into ticket_log (ticket_id, operation_id, city_id, kind, by_user, by_kind, reason) select id, operation_id, city_id, 'anulado', $2, 'business', 'Cortesía quitada' from tickets where id = any($1::bigint[])`, [L.map((x) => x.id), actorId]);
     });
+    pasesPronto();
     return { ok: true };
   } catch (e) { return atrapa(e); }
 }

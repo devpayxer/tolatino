@@ -11,6 +11,8 @@ escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 - **Tu QR es la entrada; no hace falta imprimir.** El QR va **firmado por To'Latino**: la puerta lo verifica sin conexión y nadie puede
   fabricar uno. No lleva tu nombre ni tu teléfono.
 - Una **mesa** es un solo QR con sus entradas («Mesa · Pista · 4 entradas»).
+- **Guárdalo en Apple Wallet o Google Wallet** desde el boleto: el mismo QR, y se actualiza solo si lo transfieres, lo devuelves o cambia el
+  evento. Ver `boletos-en-wallet`.
 - Arriba de **Eventos** sale **Mis boletos y RSVP** cuando tienes boletos o RSVP próximos.
 
 ## Qué pasa en cada caso
@@ -43,7 +45,8 @@ escritorio. Versión: 10 nov 2026. Audiencia: vecino. Tema: eventos._
 **My account › Tickets**: **Upcoming** and **Past**, one row per order with the date, how many tickets and **WITH QR** (or USED · REFUNDED ·
 VOID). **The ticket** page shows the big QR, the human code (**TL-XXX-0000**), the name and status. **Tap the code to see it big. Turn up the
 brightness.** Your QR is your entry; no need to print. It is **signed by To'Latino**: the door checks it offline and nobody can forge one. It
-carries no name or phone. A **table** is one QR with its entries.
+carries no name or phone. A **table** is one QR with its entries. **Save it to Apple Wallet or Google Wallet** from the ticket: the same QR,
+and it updates by itself if you transfer it, refund it or the event changes (see `boletos-en-wallet`).
 
 ### Cases and FAQ (English)
 Reissued by To'Latino → notice, new QR, the old QR no longer works. Voided → notice with the reason; the QR is dimmed. Past events → Past, no

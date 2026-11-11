@@ -3,6 +3,7 @@ import type { PoolClient } from "pg";
 import { auditar, type Staff } from "./admin";
 import { verificarFirma } from "./boletos-qr";
 import { db, tx } from "./db";
+import { pasesPronto } from "./pases/pronto";
 import type { Bi } from "./evt-comun";
 
 /* 6c · Super Admin › Eventos y boletos › Buscar boleto (ADM-EVT secEvt L1005–1056): por código humano (TL-XXX-0000), por el texto del QR
@@ -100,6 +101,8 @@ export async function accionBoletoAdmin(s: Staff, code: string, paso: "reenviar"
     if (b.uid) aviso = { uid: b.uid, num: b.num, tpl: paso === "reenviar" ? "bol_reenviado" : paso === "reemitir" ? "bol_reemitido" : "bol_anulado", vars: { evento: b.t.es, codigo: code, motivo: motivo.slice(0, 200) } };
     return {};
   });
+  // 8g · Reemitir o anular ya tocó el pase de Wallet en la transacción (trigger de 0129): que salga ya.
+  if (paso !== "reenviar") pasesPronto();
   if (aviso) { const a = aviso as { uid: string; tpl: string; vars: Record<string, string>; num: string }; await (await import("./avisos")).avisar(a.uid, a.tpl, a.vars, { href: `/eventos/orden/${a.num}`, ref: ["tickets", a.num] }); }
   return r;
 }

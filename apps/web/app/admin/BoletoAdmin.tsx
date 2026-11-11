@@ -8,6 +8,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { BoletoAdm } from "@/lib/boletos-admin";
+import type { PaseAdm } from "@/lib/pases/admin";
 import { diaCorto } from "@/lib/evt-comun";
 import { evtBoleto } from "./acciones-eventos";
 import type { ResAdm } from "./acciones-colas";
@@ -22,10 +23,14 @@ const LOG: Record<string, string> = { emitido: "Emitido al pagar", reenviado: "R
 const EV: Record<string, string> = { tickets_sold: "Orden pagada · boletos emitidos", payment_captured: "Cobrado en la tarjeta", payment_failed: "El cobro no se completó", refunded: "Devolución",
   tickets_cancelled: "El comprador canceló boletos", tickets_refunded: "El organizador devolvió boletos", comp_given: "Cortesía" };
 const XST: Record<string, string> = { pending: "ESPERANDO", claimed: "RECIBIDO", cancelled: "DESHECHO", expired: "VENCIÓ" };
+// 8g · Wallet: lo que pasó con cada pase (pass_log) y por qué quedó anulado.
+const PLOG: Record<string, string> = { emitido: "Emitido", descargado: "Lo volvió a bajar", actualizado: "Actualizado (cambió el boleto, la fecha o el evento)", anulado: "Anulado", registrado: "Un teléfono lo sigue",
+  baja: "Un teléfono dejó de seguirlo", aviso: "Aviso de cambio enviado a Apple", aviso_fallo: "El aviso a Apple no salió (se dejó de intentar)", google: "Google Wallet al día", google_fallo: "Google Wallet no respondió (se dejó de intentar)", enviado: "El teléfono bajó el pase al día" };
+const PPOR: Record<string, string> = { boleto: "el boleto ya no vale", dueno: "cambió de dueño", fecha: "la fecha se canceló", evento: "el evento se canceló" };
 const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 const cuando = (at: string, tz: string) => new Date(at).toLocaleString("es-US", { timeZone: tz, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
-export function BoletoAdmin({ b, puede, escaneos = [] }: { b: BoletoAdm; puede: { editar: boolean; retirar: boolean }; escaneos?: Awaited<ReturnType<typeof escaneosBoleto>> }) {
+export function BoletoAdmin({ b, puede, escaneos = [], pases = [] }: { b: BoletoAdm; puede: { editar: boolean; retirar: boolean }; escaneos?: Awaited<ReturnType<typeof escaneosBoleto>>; pases?: PaseAdm[] }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -55,6 +60,16 @@ export function BoletoAdmin({ b, puede, escaneos = [] }: { b: BoletoAdm; puede: 
     // 6g · En la puerta: cada escaneo (resultado, puerta, quién y hora).
     ...(escaneos.length ? [{ type: "timeline", k: "ESCANEOS EN LA PUERTA", items: escaneos.map((x) => ({ t: `${x.resolucion === "duplicate" ? "REPETIDO" : RESULTADO[x.res].t.es}${x.k > 1 ? ` · ${x.k}` : ""}${x.dir === "out" ? " · salida" : ""}${x.offline ? " · SIN CONEXIÓN" : ""}`,
       s: `${x.puerta.toUpperCase()} · ${x.quien.toUpperCase()} · ${x.dia} ${x.hora}${x.motivo ? ` · A MANO: ${x.motivo}` : ""}${x.offline ? ` · HORA DEL TELÉFONO CORREGIDA · LLEGÓ ${x.llego}` : ""}${x.desviado ? ` · RELOJ DESVIADO${x.desfase != null ? ` · ${x.desfase < 0 ? "ADELANTADO" : "ATRASADO"} ${Math.abs(Math.round(x.desfase / 1000))} S` : ""}` : ""}${x.corregido ? " · DECIDIDO OTRA VEZ AL SUBIR OTRA PUERTA" : ""}` })) } as Bloque] : [{ type: "note", tone: "info", icon: "key", t: "Este boleto no ha pasado por la puerta." } as Bloque]),
+    // 8g · WALLET: los pases de este boleto (Apple / Google), si siguen vivos, qué teléfonos los siguen y lo que pasó con cada uno.
+    ...(pases.length ? [{ type: "rows", k: `WALLET · ${pases.length} ${pases.length === 1 ? "PASE" : "PASES"}`, items: pases.map((p) => ({ key: p.id, icon: "ticket", t: `${p.plat === "apple" ? "Apple Wallet" : "Google Wallet"} · ${p.serie}`,
+        s: [`versión ${p.version}`, p.anulado ? `anulado ${cuando(p.anulado, b.tz)}${p.por ? ` · ${PPOR[p.por] ?? p.por}` : ""}` : `emitido ${cuando(p.emitido, b.tz)}`,
+          p.plat === "apple" ? `${p.telefonos} ${p.telefonos === 1 ? "teléfono" : "teléfonos"}${p.aviso.pendientes ? ` · ${p.aviso.pendientes} por avisar` : ""}${p.aviso.at ? ` · último aviso ${cuando(p.aviso.at, b.tz)} (${p.aviso.res ?? "—"})` : ""}`
+            : p.google ? (p.google.al_dia ? "Google al día" : `Google pendiente${p.google.error ? ` · ${p.google.error}` : ""}`) : ""].filter(Boolean).join(" · "),
+        tag: p.anulado ? "ANULADO" : "VIVO", tone: p.anulado ? "neutral" : "signal" })) } as Bloque,
+      // En el orden en que pasó (el número del libro: varias cosas caen en el mismo segundo).
+      { type: "timeline", k: "LOS PASES", items: pases.flatMap((p) => p.log.map((l) => ({ t: `${p.plat === "apple" ? "APPLE" : "GOOGLE"} · ${PLOG[l.a] ?? l.a}`, s: `${cuando(l.at, b.tz)}${l.d ? ` · ${l.d}` : ""}`, n: Number(l.id) })))
+        .sort((x, y) => y.n - x.n).slice(0, 30).map(({ t, s }) => ({ t, s })) } as Bloque]
+      : [{ type: "note", tone: "info", icon: "ticket", t: "Este boleto no está en Apple Wallet ni en Google Wallet." } as Bloque]),
     { type: "note", tone: "ink", icon: "lock", t: "Lo que ve la puerta: nombre e inicial, tipo, entradas y estado. Nunca el teléfono completo ni montos." },
     ...(acts.length ? [{ type: "acts", items: acts } as Bloque] : []),
   ];

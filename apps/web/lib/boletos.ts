@@ -538,6 +538,7 @@ async function anularPorCobro(op: string, pi: string, codigo: string) {
     await c.query(`update payments set status = 'released', released_at = now(), failure_code = $2, updated_at = now() where operation_id = $1::bigint and kind = 'full' and status = 'held'`, [op, codigo.slice(0, 60)]);
     await c.query(`insert into operation_events (operation_id, kind, actor) values ($1::bigint, 'payment_failed', 'system')`, [op]);
   });
+  (await import("./pases/pronto")).pasesPronto();
   await pasarela.liberar(pi).catch(() => undefined);
 }
 /* Lo que quedó a medias (la app se cortó entre la orden y la captura): capturar o anular. Lo corre el barrido. */
@@ -701,6 +702,19 @@ export async function miBoleto(userId: string, code: string, es: boolean): Promi
   if (!ev) return null;
   // mia = la compró esta persona (vuelve a su orden); recibido de otra persona = vuelve a Mis boletos.
   return { b: await vistaBoleto(b, es, !ev.pasado), numero: b.num, evento: ev, mia: b.mia, ventanas: await ventanas(b.fid) };
+}
+
+/* 8g · El boleto para su pase de Wallet (lib/pases/pases.ts): la MISMA vista que la pantalla del boleto —vistaBoleto: el mismo QR firmado,
+   el mismo estado, lo mismo que se muestra— en los dos idiomas, por id. Solo la llama lib/pases (que ya revisó de quién es el pase). Guardián
+   paseMismoQr: el pase nunca firma ni arma un QR por su cuenta. */
+export type BoletoPase = { es: BoletoVista; en: BoletoVista; evento: { es: OrdenVista["evento"]; en: OrdenVista["evento"] }; holder: string | null; fid: string };
+export async function boletoParaPase(ticketId: string): Promise<BoletoPase | null> {
+  if (!/^\d{1,18}$/.test(String(ticketId))) return null;
+  const b = (await db().query<FilaB & { uid: string | null }>(`${SEL_B.replace("select t.id::text", "select t.holder_user_id::text as uid, t.id::text")} where t.id = $1::bigint`, [ticketId])).rows[0];
+  if (!b) return null;
+  const [es, en] = await Promise.all([eventoDeFecha(b.fid, true), eventoDeFecha(b.fid, false)]);
+  if (!es || !en) return null;
+  return { es: await vistaBoleto(b, true, !es.pasado), en: await vistaBoleto(b, false, !en.pasado), evento: { es, en }, holder: b.uid, fid: b.fid };
 }
 
 /* ── Panel › Eventos › la ficha: lo vendido (evView). Solo de su negocio; compradores con nombre + inicial (sin teléfono ni correo). ── */

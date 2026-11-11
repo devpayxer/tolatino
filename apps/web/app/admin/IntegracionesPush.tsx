@@ -32,7 +32,8 @@ export function IntegracionesPush({ d, admin }: { d: EstadoPushAdmin; admin: boo
   const B: Bloque[] = [
     { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Integraciones", s: "Avisos push propios: el servidor de avisos es nuestro; el último tramo es del sistema del teléfono (APNs en iPhone, FCM en Android, el servicio de push del navegador en la web). Sin costo.", h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "integ", onClick: () => (p.k === "integ" ? undefined : router.push(p.href)) })) },
-    { type: "chips", items: [{ l: "Llaves de las tiendas", v: "filter", onClick: () => router.push("/admin/sistema/integraciones") }, { l: "Push", v: "selected", onClick: () => undefined }] },
+    { type: "chips", items: [{ l: "Llaves de las tiendas", v: "filter", onClick: () => router.push("/admin/sistema/integraciones") }, { l: "Push", v: "selected", onClick: () => undefined },
+      { l: "Wallet", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=wallet") }] },
     { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "TELÉFONOS CON AVISOS", v: String(d.tokens.reduce((a, x) => a + x.n, 0)), s: `Web ${tok("webpush")} · iPhone ${tok("apns")} · Android ${tok("fcm")}${tok("sim") ? ` · prueba ${tok("sim")}` : ""}`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
       { k: "ENTREGADOS · 24 H", v: String(dia("enviado") + dia("pruebas")), s: dia("pruebas") ? `${dia("pruebas")} en modo pruebas` : "al proveedor" },

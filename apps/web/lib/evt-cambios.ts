@@ -1,4 +1,5 @@
 import "server-only";
+import { pasesPronto } from "./pases/pronto";
 import type { PoolClient } from "pg";
 import { anotarDevolucionTotal, ejecutarDevolucion } from "./boletos-despues";
 import { cfgSql, valores } from "./config";
@@ -57,6 +58,7 @@ export async function pausarVenta(q: Quien, eventoId: string, pausar: boolean): 
       await c.query(`insert into event_changes (event_id, city_id, kind, before, after, by_user, by_kind) values ($1::bigint, $2, $3, $4::jsonb, $5::jsonb, $6, $7)`,
         [eventoId, e.city, pausar ? "paused" : "resumed", JSON.stringify({ venta: e.st }), JSON.stringify({ venta: pausar ? "paused" : "live" }), q.userId, byKind(q)]);
     });
+    pasesPronto();
     if (!pausar) { const F = (await db().query<{ id: string }>(`select id::text from event_dates where event_id = $1::bigint and status = 'scheduled' and ends_at > now()`, [eventoId])).rows; for (const f of F) await (await import("./espera")).ofrecer(f.id).catch(() => 0); }
     return { ok: true };
   } catch (e) { return atrapa(e); }
@@ -80,6 +82,7 @@ export async function congelarVenta(q: Extract<Quien, { tipo: "admin" }>, evento
       await c.query(`insert into event_changes (event_id, city_id, kind, reason_key, note, by_user, by_kind) values ($1::bigint, $2, $3, 'admin', $4, $5, 'admin')`, [eventoId, e.city, congelar ? "frozen" : "unfrozen", m, q.userId]);
       if (congelar) aviso = { biz: e.biz, t: e.t };
     });
+    pasesPronto();
     if (aviso) { const a = aviso as { biz: string; t: Bi }; await (await import("./avisos")).avisarNegocio(a.biz, "evt_venta_congelada", { evento: a.t.es, motivo: m }, { href: `/panel/${a.biz}/eventos?det=evt:${eventoId}`, ref: ["event", eventoId] }); }
     return { ok: true };
   } catch (e) { return atrapa(e); }
@@ -126,6 +129,8 @@ export async function moverFecha(q: Quien, fechaId: string, x: { dia: unknown; h
     if ((e as { code?: string }).code === "23505") return falla("Ya hay una fecha de este evento a esa hora.", "This event already has a date at that time.");
     return atrapa(e);
   }
+  // 8g · La fecha nueva ya está en los pases de Wallet (trigger de 0129): que salga ya, con el mismo aviso.
+  pasesPronto();
   const avisados = await avisarCambio(r!.cambio);
   return { ok: true, cambio: r!.cambio, avisados };
 }
@@ -191,6 +196,7 @@ export async function elegirCambio(userId: string, numero: string, eleccion: "ke
     return atrapa(e);
   }
   if (!hecho.rf) return { ok: true, monto: hecho.total };
+  pasesPronto();
   await ejecutarDevolucion(hecho.rf);
   const { avisar, avisarNegocio } = await import("./avisos");
   await avisar(userId, "evt_devolucion_total", { evento: hecho.title.es, monto: dinero(hecho.total) }, { href: `/eventos/orden/${numero}`, ref: ["tickets", numero] });
@@ -243,6 +249,8 @@ export async function cancelarEvento(q: Quien, eventoId: string, alcance: "date"
   }
   // Las devoluciones: unas en el acto (evt_cancelar_lote); el resto, el barrido. Luego los avisos y la regla de Confianza.
   const lote = (await db().query<{ n: number }>(`select ${cfgSql("evt_cancelar_lote")} as n`)).rows[0]!.n; // de la base en el momento (sin la caché de 15 s)
+  // 8g · Los pases de Wallet de esa fecha ya quedaron anulados (trigger de 0129): que salga ya, con el mismo aviso.
+  pasesPronto();
   const p = await procesarCancelacion(cx, { ordenes: lote, ms: 20_000 });
   await avisarCancelacion(cx).catch(() => 0);
   await revisarCancelaciones(cx).catch(() => undefined);
@@ -280,6 +288,7 @@ export async function procesarCancelacion(cxId: string, lim: { ordenes: number; 
     }).catch((e) => { console.error("[evt-cambios] cancelación", cx.id, op, String((e as Error)?.message ?? e).slice(0, 200)); return null; });
     if (!r) { saltar.push(op); continue; }
     n++;
+    pasesPronto();
     if (r.rf) await ejecutarDevolucion(r.rf).catch(() => false);
   }
   const quedan = (await db().query<{ n: number; held: number }>(

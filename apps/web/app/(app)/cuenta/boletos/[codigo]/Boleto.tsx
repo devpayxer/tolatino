@@ -15,12 +15,13 @@ import { estadoBoleto } from "../../../eventos/orden/[num]/Orden";
 import { useToast } from "../../../eventos/comun";
 import { bolDeshacer } from "../../../eventos/acciones-despues";
 import { fechaHora, HojaNombre, HojaTransferir } from "../../../eventos/Despues";
+import { WalletBotones } from "./Wallet";
 
 type N = "Icon" | "Button" | "TicketQR" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { Icon, Button, TicketQR, QrCode } = UI as unknown as Record<N, ComponentType<any>>;
 
-export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento: OrdenVista["evento"]; mia: boolean; ventanas: Ventanas }; es: boolean }) {
+export function Boleto({ x, es, wallet = { apple: false, google: false }, walletNo = false }: { x: { b: BoletoVista; numero: string; evento: OrdenVista["evento"]; mia: boolean; ventanas: Ventanas }; es: boolean; wallet?: { apple: boolean; google: boolean }; walletNo?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const [grande, setGrande] = useState(false);
@@ -66,6 +67,9 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
             <Button variant="secondary" icon="edit" onClick={() => setHoja("nombre")}>{E2("Cambiar el nombre", "Change the name")}</Button>
           </div>
         ) : <div className="text-[12px] font-medium leading-[1.5] text-ink/55">{E2(`Ya no se transfiere ni cambia de nombre: era hasta ${V.horasTransferir} h antes del evento.`, `It can no longer be transferred or renamed: that was up to ${V.horasTransferir} h before the event.`)}</div>)}
+        {/* 8g · El boleto en Apple Wallet / Google Wallet (el mismo QR; se actualiza solo). */}
+        {guardable && <WalletBotones code={b.code} es={es} d={wallet} avisar={toast} />}
+        {walletNo && <div role="status" className="rounded-[18px] bg-ink/[.06] p-4 text-[12.5px] font-semibold leading-[1.5] text-ink/70">{E2("Este boleto no se puede guardar en Wallet ahora: ya no vale, se está transfiriendo o ya pasó.", "This ticket cannot be saved to Wallet right now: it is no longer valid, it is being transferred or it is past.")}</div>}
         <div className="flex flex-col gap-2 rounded-[18px] border border-ink/[.07] bg-white p-4 text-[12.5px] font-medium leading-[1.5] text-ink/75">
           {[E2("Toca el código para verlo grande. Sube el brillo.", "Tap the code to see it big. Turn up the brightness."), E2("Si no hay señal, el código funciona igual.", "Without signal, the code still works."),
             ...(guardable ? [E2("Guardado en este teléfono: se abre sin señal. Al salir de tu cuenta se borra.", "Saved on this phone: it opens without signal. Signing out erases it.")] : []),

@@ -122,6 +122,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["errores", async () => (await import("./errores/vivo")).barrerErrores()],
         // 8e · La purga de la ruta del repartidor: posiciones de más de ubic_retener_dias (14 por defecto); la entrega queda con su resumen.
         ["ruta", async () => (await import("./ruta")).purgarRutas()],
+        // 8g · Wallet: los avisos a Apple y Google que quedaron pendientes o con reintento, y el certificado del pase que vence.
+        ["pases", async () => (await import("./pases/pases")).barrerPases()],
         ["beta", async () => (await import("./beta")).barrerBeta()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {

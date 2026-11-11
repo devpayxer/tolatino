@@ -21,12 +21,15 @@ export const huellaCorta = (h: string) => `${h.slice(0, 16).replace(/(.{4})(?=.)
 const EXTRA: Record<string, { k: string; l: string; ph: string } | undefined> = {
   asc_api_key: { k: "emisor", l: "ISSUER ID (DE APP STORE CONNECT)", ph: "57246542-96fe-1a63-e053-0824d011072a" },
   apns_key: { k: "equipo", l: "TEAM ID (DE APPLE DEVELOPER)", ph: "A1B2C3D4E5" },
+  // 8g · Google Wallet: el ID del emisor (Google Pay & Wallet Console) va con la cuenta de servicio.
+  google_wallet_sa: { k: "emisor", l: "ISSUER ID (DE GOOGLE PAY & WALLET CONSOLE)", ph: "3388000000012345678" },
   android_upload_keystore: { k: "alias", l: "ALIAS DE LA LLAVE", ph: "subida" },
 };
 
-export function Integraciones({ filas, tipos, admin, listo }: { filas: FilaLlave[]; tipos: Tipo[]; admin: boolean; listo: boolean }) {
+export function Integraciones({ filas, tipos, admin, listo, subir: subirInicial = null }: { filas: FilaLlave[]; tipos: Tipo[]; admin: boolean; listo: boolean; subir?: string | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
-  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [subir, setSubir] = useState<Tipo | null>(null);
+  // 8g · Desde Integraciones › Wallet se llega directo a «Subir» del certificado del pase o de la cuenta de Google (?subir=).
+  const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [subir, setSubir] = useState<Tipo | null>(admin && listo ? tipos.find((t) => t.k === subirInicial) ?? null : null);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo."); setConf(null); router.refresh(); };
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14, maxWidth: 720 }}>
@@ -40,7 +43,8 @@ export function Integraciones({ filas, tipos, admin, listo }: { filas: FilaLlave
     { type: "head", eye: "SUPER ADMIN · SISTEMA", t: "Integraciones", s: "Las llaves que Apple y Google entregan solo al dueño de la cuenta viven aquí, cifradas en el servidor. Se ve su huella, nunca su contenido; cada lectura queda anotada.", h1: desk ? 26 : 22 },
     { type: "tabs", items: PESTANAS_SISTEMA.map((p) => ({ l: p.l, on: p.k === "integ", onClick: () => (p.k === "integ" ? undefined : router.push(p.href)) })) },
     // 8c · Integraciones › Push (IntegracionesPush.tsx).
-    { type: "chips", items: [{ l: "Llaves de las tiendas", v: "selected", onClick: () => undefined }, { l: "Push", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=push") }] },
+    { type: "chips", items: [{ l: "Llaves de las tiendas", v: "selected", onClick: () => undefined }, { l: "Push", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=push") },
+      { l: "Wallet", v: "filter", onClick: () => router.push("/admin/sistema/integraciones?tab=wallet") }] },
     listo ? { type: "note", tone: "info", icon: "lock", t: admin ? "Para subir una llave te mandamos un código a tu teléfono. El archivo se cifra en el servidor y no se vuelve a mostrar." : "Solo un Admin sube o retira llaves." }
       : { type: "note", tone: "danger", icon: "warning", t: "Falta la llave del llavero en los secretos del entorno: no se puede guardar ninguna llave." },
     { type: "group", k: `LLAVES DE LAS TIENDAS · ${vivas.size} DE ${tipos.length}` },

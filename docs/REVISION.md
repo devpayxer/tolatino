@@ -3862,3 +3862,78 @@ apagada, guarda en modo avión y sube en lote al volver, y se detiene solo con e
 
 **Numeración:** el plan decía migración **0129** y semilla **0045_ruta.sql**; la última confirmada era 0127 / 0045: 8e tomó **0128** y **0046**
 (8d, que el plan ponía en 0128, y 8b esperan el dominio y tomarán las siguientes libres). Anotado en el plan.
+
+### 8g · El boleto en Apple Wallet y Google Wallet (11 nov)
+**Qué hay nuevo.** (1) **En el boleto** (Mi cuenta › Boletos › el boleto): el bloque **«GUÁRDALO EN TU TELÉFONO»** con **«Agregar a Apple
+Wallet»** (iPhone), **«Agregar a Google Wallet»** (Android) o los dos (computadora), y la línea «El mismo código de esta pantalla. Si lo
+transfieres, lo devuelves o cambia el evento, se actualiza solo.» Solo sale si el boleto vale, no se está transfiriendo y no pasó, y si hay
+certificado / cuenta de Google y el interruptor encendido. (2) **El pase lleva EXACTAMENTE el QR firmado del boleto** (el mismo texto que la
+pantalla; la Puerta lo valida igual con y sin señal), el evento, la fecha y la hora de la ciudad, el lugar, el tipo y el código; **sin el nombre
+de la persona, sin teléfono, sin montos**; Fe, Salud y Niños: «Boleto de evento», sin nombre ni lugar. ES/EN en el pase (`es.lproj` / `en.lproj`).
+(3) **Todo cambio del boleto toca su pase en la misma acción que ya avisa**: transferir (sin código mientras se transfiere; anulado al
+recibirlo), devolver, cancelar, anular, reemitir, cambiar el nombre, mover la fecha o la hora, cancelar la fecha o el evento, y el escaneo en
+la puerta («Usado»). Apple: el servidor avisa a cada teléfono que sigue el pase (APNs con el certificado del pase) y el teléfono baja el pase
+nuevo por el **servicio web de PassKit** (`/api/pases/v1/…`, solo con el token de ese pase). Google: el objeto se reemplaza (INACTIVE si se anula).
+(4) **Super Admin › Eventos › el boleto › WALLET** (los pases, su estado y su historia) y **Sistema › Integraciones › Wallet** (el certificado
+con su vencimiento —aviso al equipo 30 días antes—, la solicitud CSR, la cuenta de Google, los interruptores y las cifras).
+Probado: `wal8g` **97** comprobaciones (390 y 1360), contrato de Wallet **42**, `alreves8g` **33/33** (3 guardianes nuevos —paseMismoQr,
+paseSigueAlBoleto, tokenDePase— y 5 ampliados —libroSoloInsercion, tokensCifrados, pushSoloServiciosConocidos, llavesFueraDelRepo, rutasVivas—),
+tsc, build y todos los guardianes; migración y semilla dos veces (local y base nueva); regresión evt6c 70, evt6d 126 (con El Compa de vecinos apagado mientras corre: con él encendido, «Ayuda con esta orden» abre la hoja de El Compa desde 7d y el paso 11 de evt6d —escrito antes— se queda en 113/126; no es de 8g), evt6e 96, evt6g 105, evt6h 88, push8c 86, beta8f 95, app8e 64 (una a la vez).
+
+**Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/w8g-*.png`):
+1. **El boleto en iPhone** (`w8g-boleto-iphone-m.png`), **Android** (`w8g-boleto-android-m.png`) y **computadora** (`w8g-boleto-escritorio-d.png`).
+   **Hueco #9 del diseño:** los botones de Apple y Google son arte oficial (excepción al sistema, §6 #15) y **aquí no se pudo bajar** (ver abajo):
+   son **insignias provisionales** que siguen las reglas de forma (negro, borde gris, «Agregar a / Apple Wallet» en dos líneas; Google en una),
+   sin logos imitados, marcadas `data-arte="provisional"`. El bloque que las contiene se compuso con la tarjeta blanca del sistema y el
+   rótulo mono, como el resto de la pantalla del boleto.
+2. **Super Admin › Sistema › Integraciones › Wallet** (`w8g-integ-falta-d.png` → `w8g-integ-solicitud-d.png` → `w8g-integ-solicitud-lista-d.png` →
+   `w8g-integ-vivo-d.png` → `w8g-integ-vence-d.png`, `-m.png`): **hueco #7**, compuesto con `head`, `tabs`, `chips` (Llaves · Push · **Wallet**),
+   `kpis`, `note`, `rows`, `field` y `acts` del sistema.
+3. **Super Admin › Eventos › el boleto › WALLET** (`w8g-admin-boleto-vivo-d.png`, `w8g-admin-boleto-anulado-d.png`, `-m.png`): `rows` + `timeline`.
+
+**Qué mirar en el teléfono (después del Paquete 8-0, con el certificado de verdad):** en tu iPhone, un boleto de prueba → «Agregar a Apple
+Wallet» → «Agregar» → el pase en Wallet con el QR; ábrelo en la Puerta (escanea igual); transfiérelo a otro teléfono tuyo → a los segundos el
+pase dice «Se está transfiriendo» sin código; al recibirlo, el pase queda anulado. En Android, lo mismo con Google Wallet.
+
+**Lo que decidí (si prefieres otra cosa, se cambia):**
+- **El certificado del pase nace en el servidor** (el plan §10 lo pide: «subir el CSR que genera el servidor y bajar el certificado»): Integraciones
+  › Wallet genera la llave y la solicitud (con el código a tu teléfono); a Apple va solo la solicitud; el .cer que devuelve Apple se sube y el
+  servidor lo junta con su llave y el intermedio. **No se acepta un .p12** (node:crypto no lee PKCS#12 y el contenedor no trae openssl; además
+  así la llave nunca sale del servidor). El llavero suma el tipo `pass_type_csr` (la llave de la solicitud; se retira al llegar el .cer).
+- **El intermedio de Apple (WWDR)** no va en el repo (es público y la regla es «ningún certificado en el repo»): el servidor lo baja de la
+  dirección que trae el propio certificado (AIA), solo de `certs.apple.com` / `www.apple.com`, y comprueba que firmó el certificado. *A verificar*
+  con el certificado de verdad (aquí el proxy no deja bajar el WWDR G4 para fijar su huella).
+- **La firma del .pkpass es propia** (`lib/pases/der.ts`: CMS separada, SHA-256 + RSA, con signingTime, sin openssl en el contenedor); el ZIP
+  también (`lib/pases/zip.ts`). openssl la verifica en el contrato y en `wal8g`.
+- **El token del servicio web no se guarda**: es un HMAC de la llave del entorno sobre la serie; en la base solo su sha256. Un teléfono que
+  pide un pase con el token de otro pase recibe 401, igual que si el pase no existiera.
+- **Sin el nombre de la persona en el pase** (la pantalla sí lo muestra): el objeto de Google vive en los servidores de Google; el pase no
+  necesita el nombre para entrar. Si lo quieres, se agrega.
+- **Mientras se transfiere, el pase va sin código** (como la pantalla); si se deshace, vuelve con el QR nuevo. Al recibirse, **anulado**.
+- **Google: el objeto se REEMPLAZA (update = PUT)**, no se parchea: un PATCH dejaba puesto el código viejo cuando el boleto se queda sin QR
+  vigente (lo cazó el simulador).
+- **Una clase de Google por fecha** (genérica para Fe, Salud y Niños) y un objeto por boleto; las clases quedan «UNDER_REVIEW» (Google las aprueba).
+- **El trabajador de los pases** corre con el empujón de quien cambia el boleto (`pasesPronto`), cada 5 s con el trabajador de push y cada minuto
+  con el barrido (reintentos con espera creciente, `pase_reintentos`). Sin servicio nuevo en el compose.
+- **Interruptores `app.wallet.apple` / `app.wallet.google`:** apagados no emiten pases nuevos, pero los emitidos siguen recibiendo sus cambios
+  (un pase en un teléfono nunca se queda con un QR viejo).
+- **Dentro de la app iOS** el .pkpass se abre en la vista de Safari con un enlace firmado de 10 minutos (el WebView no muestra «Agregar a
+  Wallet» y la vista de Safari no tiene la sesión). Sin cambio nativo en 8g.
+- **304 con If-Modified-Since** en «pedir el pase al día» (la lista actual de Apple dice 200/401; la de antes también 304).
+- **Límites:** registros por teléfono por hora en la base (`pase_registros_hora`, 60) y pedidos por minuto por dirección (`pase_ws_por_minuto`, 120).
+- **Arte oficial de los botones:** Apple entrega el arte (SVG en 45 idiomas) solo después de aceptar la **Apple Wallet Marketing Artwork License
+  Agreement**; aceptar un acuerdo legal es del dueño de la cuenta, así que **no lo acepté**. La página de marca de Google Wallet no abrió desde este
+  entorno (el proxy la negó). Por eso las insignias son provisionales (fuente: las reglas publicadas de cada uno; licencia: ninguna arte de
+  terceros copiado). Cuando aceptes las licencias, se reemplazan por el SVG oficial ES/EN (LAUNCH «8g»).
+
+**Guardianes que cambié además de los nuevos:** `privacidadSalud` deja que `lib/pases/pases.ts` use `descifrar()` (solo para el token de push del
+teléfono de Wallet, como `lib/push/cola.ts`); `rutasVivas` ahora acepta una ruta de API con `[param]` (antes solo comparaba el principio literal y
+daba por muerto `/api/pases/apple/${código}`); `llavesFueraDelRepo` prohíbe además `.cer .crt .der .pem .key .csr .certSigningRequest .pkpass` y
+un PEM dentro de cualquier archivo; `lib/push/fcm.ts` guarda un token de acceso por alcance (FCM y Wallet usan el mismo OAuth de Google).
+
+**Contrato** (`scripts/contrato-wallet`, en CI): Apple con su formato fijado en `apple.json` (sacado de la documentación oficial por
+`extraer-apple.mjs`, con el sha256 de cada página) y una cadena de prueba hecha en el momento; Google con el documento de descubrimiento oficial de
+walletobjects v1 **fijado al commit be503e8 de googleapis/google-api-go-client** (revisión 20260806, sha256 comprobado).
+
+**Numeración:** el plan decía migración **0131**; la última confirmada era 0128 (8e) y la última semilla 0046: 8g tomó **0129** y la semilla
+**0047_pases.sql** (esa coincide). Anotado en el plan.

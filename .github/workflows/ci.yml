@@ -30,6 +30,8 @@ jobs:
         run: bash scripts/contrato-push/correr.sh
       - name: Contrato de las tiendas (App Store Connect con su especificación OpenAPI fijada; Google Play con su descubrimiento oficial)
         run: bash scripts/contrato-tiendas/correr.sh
+      - name: Contrato de Wallet (Apple con su formato fijado y una cadena de prueba hecha en el momento; Google con su descubrimiento oficial)
+        run: bash scripts/contrato-wallet/correr.sh
       - name: Ningún mapa de fuente en lo que se sirve (el build los saca a .next/mapas)
         run: test -z "$(find apps/web/.next/static -name '*.map' -print -quit)" && test -n "$(find apps/web/.next/standalone/apps/web/.next/mapas -name '*.map' -print -quit)"
       - name: Firma del correo (SES SigV4) contra el vector oficial de AWS

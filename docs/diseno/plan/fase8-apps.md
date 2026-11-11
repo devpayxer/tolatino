@@ -228,7 +228,7 @@ resumen en la entrega); la entrega suma `sharing_from`, `sharing_until`, `distan
 - Claves `errores_retener_dias` 90, `errores_por_minuto` 600 (por dispositivo 30), `reporte_logs_kb` 32, `beta_agitar` 1 (solo builds de prueba).
   `feature_flags` **`app.reportar`**. Semilla **`0046_apps_beta.sql`**.
 
-**0131 `pases_wallet` (8g)** — **`ticket_passes`** (`id`, `ticket_id`, `platform check in ('apple','google')`, `serial` único, `auth_token_hash`,
+**0129 `pases_wallet` (8g; renumerada: el plan la llamaba 0131; la última confirmada era 0128 (8e) y la última semilla 0046, así que 8g tomó 0129 y la semilla `0047_pases.sql` (esa coincide). Construida con un trigger por tabla —tickets, event_dates, events— que llama `pase_tocar()` en la misma transacción, `pass_registrations` con el estado del aviso por registro y `store_secrets.kind` + `'pass_type_csr'` (la llave de la solicitud del certificado nace en el servidor): ver REVISION «8g»)** — **`ticket_passes`** (`id`, `ticket_id`, `platform check in ('apple','google')`, `serial` único, `auth_token_hash`,
 `pass_type_id` / `google_class_id`, `version`, `voided_at`, `updated_at`), **`pass_devices`** (`device_library_id`, `push_token_enc`, `created_at`) y
 **`pass_registrations`** (`device_library_id`, `serial`, `created_at`, `removed_at`) — el servicio web de PassKit de Apple; **`pass_log`** (**solo
 inserción**: `serial`, `action check in ('emitido','actualizado','anulado','registrado','baja')`, `at`). `feature_flags` **`app.wallet.apple`** ·
@@ -594,7 +594,12 @@ invitar un tester → simulador de la API).
 **Ayuda:** `reportar-un-problema` (vecino, negocio, repartidor, portero), `admin-errores-y-beta` (equipo).
 
 ### 8g · El boleto en Apple Wallet y Google Wallet — **Opus/high** (firma y actualizaciones)
-**Datos:** migración 0131; semilla `0047_pases.sql`.
+**Estado (11 nov): hecho contra la cadena de prueba y los simuladores.** Migración **0129** (renumerada desde 0131) y semilla `0047_pases.sql`.
+Sin certificado del Pass Type ID ni cuenta de emisor de Google (Paquete 8-2, opcional): todo construido y probado con una cadena de prueba hecha
+en el momento (nunca en el repo), el APNs simulado con TLS de cliente y el simulador de Google Wallet validado con su descubrimiento oficial
+(`wal8g`, `alreves8g`, contrato `scripts/contrato-wallet`). El arte oficial de los botones espera aceptar las licencias de Apple y Google
+(insignias provisionales marcadas). Desvíos y lo diferido: `docs/REVISION.md` «8g» y `docs/LAUNCH-CHECKLIST.md` «Fase 8 · 8g».
+**Datos:** migración 0131 (hoy **0129**); semilla `0047_pases.sql`.
 **Servidor:** `lib/pases/apple.ts` (`.pkpass` firmado con el certificado del Pass Type ID (llavero `pass_type_cert`, PKCS#7 propio con `node:crypto` o
 `openssl` en el contenedor); el QR es **el mismo QR firmado del boleto** (6c), así la Puerta lo valida igual con y sin señal), el **servicio web de
 PassKit** (`/api/pases/v1/devices/…`, `/passes/…`, `/log`) con su token por pase, y el push de actualización a Wallet por APNs (para pases se usa el

@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { enviarPendientes } from "@/lib/push/cola";
 
-/* POST /api/interno/push — lo llama cada pocos segundos el servicio «push» del docker-compose (red interna), además del empujón que da cada
+/* POST /api/interno/push — (8g: también los pases de Wallet) lo llama cada pocos segundos el servicio «push» del docker-compose (red interna), además del empujón que da cada
    aviso al encolarse y del barrido de cada minuto (reintentos, vencidos, tokens viejos). Mismo token del entorno que el barrido (BARRIDO_TOKEN);
    nginx no deja entrar a /api/interno desde fuera. Sin token configurado no corre. */
 export const dynamic = "force-dynamic";
@@ -18,5 +18,8 @@ function tokenOk(dado: string | null): boolean {
 export async function POST(req: Request) {
   if (!tokenOk(req.headers.get("x-barrido-token"))) return NextResponse.json({ ok: false }, { status: 404 });
   const r = await enviarPendientes().catch((e) => ({ error: String((e as Error)?.message ?? e).slice(0, 200) }));
-  return NextResponse.json({ ok: !("error" in r), ...r });
+  // 8g · El mismo trabajador pone al día los pases de Wallet (avisos de Apple, objetos de Google) cada 5 s, además del empujón de quien cambió
+  // el boleto (pasesPronto) y del barrido. Un fallo de Wallet no tumba el push.
+  const pases = await (await import("@/lib/pases/pases")).enviarPendientes().catch((e) => ({ error: String((e as Error)?.message ?? e).slice(0, 200) }));
+  return NextResponse.json({ ok: !("error" in r), ...r, pases });
 }

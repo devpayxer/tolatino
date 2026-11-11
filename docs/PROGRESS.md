@@ -1133,3 +1133,26 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
 - **Bloqueado / no hecho aquí:** la ruta en un iPhone real (el simulador solo compila y abre), la web del Repartidor en el sandbox (HTTP sin dominio:
   sin geolocalización), las teselas en las capturas locales, la medida de carga. Todo en LAUNCH-CHECKLIST «Fase 8 · 8e».
 - **Sigue:** 8b (necesita el dominio), 8d o 8g.
+
+## Fase 8 · 8g hecho — el boleto en Apple Wallet y Google Wallet (11 nov)
+- **Hecho:** migración **0129** (renumerada: el plan decía 0131) — `ticket_passes` (un pase por boleto y plataforma; serie al azar; el token del
+  servicio web solo como huella; `version` derivada: solo `pase_tocar()`; un pase anulado no vuelve), `pass_devices` (token de push cifrado +
+  huella), `pass_registrations` (estado del aviso por registro; límite por teléfono por hora en la base), `pass_log` (solo inserción), triggers
+  en `tickets` / `event_dates` / `events` que tocan el pase EN LA MISMA TRANSACCIÓN (anulan lo que ya no vale), `pase_generico()` (Fe, Salud,
+  Niños), `store_secrets.kind` + `pass_type_csr`, Configuración › Apps `pase_*`, interruptores `app.wallet.apple` / `app.wallet.google`,
+  aviso `pase_cert_vence`. Semilla **0047_pases.sql** (un pase vivo de Yokasta y uno anulado por la vía de verdad). Servidor: `lib/pases/`
+  (`der.ts` CMS separada + CSR propios, `zip.ts`, `apple.ts` pass.json ES/EN + .pkpass, `apns-pase.ts` APNs con TLS de cliente, `google.ts`
+  clase/objeto/«Guardar», `credenciales.ts`, `certificado.ts` solicitud → .cer → vencimiento, `pases.ts` emitir, servicio web, trabajador,
+  `pronto.ts`, `admin.ts`); `boletoParaPase()` en `lib/boletos.ts` (la misma vista que la pantalla); rutas `/api/pases/v1/…` (PassKit),
+  `/api/pases/apple/{código}`, `/api/admin/llavero/solicitud`; el .cer por `/api/admin/llavero`; `pasesPronto()` en cada acción que cambia un
+  boleto, una fecha o un evento; el trabajador en `/api/interno/push` y en el barrido. Pantallas: el bloque «GUÁRDALO EN TU TELÉFONO» del boleto
+  (insignias provisionales, hueco #9), Super Admin › Eventos › el boleto › WALLET y Sistema › Integraciones › Wallet. Contrato
+  `scripts/contrato-wallet` (en CI) y simulador `scripts/wallet-sim` (Google + AIA + APNs con TLS de cliente; cadena de prueba al vuelo).
+  Ayuda `boletos-en-wallet`; `admin-eventos-y-boletos`, `admin-llaves-de-las-tiendas`, `mis-boletos-y-el-qr` al día.
+- **Probado:** `wal8g` 97 comprobaciones (390 y 1360), contrato de Wallet 42, `alreves8g` 33/33 (paseMismoQr, paseSigueAlBoleto,
+  tokenDePase; libroSoloInsercion, tokensCifrados, pushSoloServiciosConocidos, llavesFueraDelRepo y rutasVivas ampliados), tsc, build y todos los
+  guardianes; migración y semilla dos veces (local y base nueva); contratos de push 54 y tiendas 40; regresión evt6c 70, evt6d 126 (con El Compa de vecinos apagado mientras corre: con él encendido, «Ayuda con esta orden» abre la hoja de El Compa desde 7d y el paso 11 de evt6d —escrito antes— se queda en 113/126; no es de 8g), evt6e 96, evt6g 105, evt6h 88, push8c 86, beta8f 95, app8e 64 (una a la vez).
+- **Bloqueado / no hecho aquí:** el certificado del Pass Type ID y la cuenta de emisor de Google (Paquete 8-2, opcional); el iPhone no agrega el
+  pase hasta que haya HTTPS (Paquete 8-0); el arte oficial de los botones (licencias de Apple y Google, del fundador); los botones en el correo.
+  Todo en LAUNCH-CHECKLIST «Fase 8 · 8g».
+- **Sigue:** 8b (necesita el dominio), 8d o 8h.

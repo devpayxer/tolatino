@@ -29,9 +29,13 @@ export async function POST(req: Request) {
   for (const k of ["equipo", "emisor", "alias"]) { const v = limpio(f.get(k), 80); if (v) extra[k] = v; }
   const rev = revisarArchivo(tipo, archivo.name, b, extra);
   if (!rev.ok) { b.fill(0); return no(rev.msg, 400); }
+  // 8g · El certificado del pase: se comprueba contra la solicitud que generó el servidor y se le junta su llave y el intermedio de Apple.
+  const cert = tipo === "pass_type_cert" ? await (await import("@/lib/pases/certificado")).revisarCertificado(b) : null;
+  if (cert && !cert.ok) { b.fill(0); return no(cert.msg, 400); }
   const r = await tx(async (c) => {
     const cod = await consumirCodigo(c, s.phone, "llavero", codigo);
     if (cod !== "ok") return { error: cod };
+    if (cert?.ok) return (await import("@/lib/pases/certificado")).completar(c, cert.x, s.id, motivo);
     return guardar(c, { tipo, contenido: b, meta: rev.meta, vence: vence || null, actor: s.id, motivo });
   });
   b.fill(0);

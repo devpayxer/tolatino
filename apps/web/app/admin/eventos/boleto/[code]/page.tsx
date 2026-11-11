@@ -9,8 +9,9 @@ import { BoletoAdmin } from "../../../BoletoAdmin";
 export default async function Page({ params }: { params: Promise<{ code: string }> }) {
   const s = await requerir("evt", "ver");
   const code = decodeURIComponent((await params).code).toUpperCase();
-  const [b, esc] = await Promise.all([boletoAdmin(s, code), escaneosBoleto(s, code)]);
+  const [b, esc, pases] = await Promise.all([boletoAdmin(s, code), escaneosBoleto(s, code), (await import("@/lib/pases/admin")).pasesDeBoleto(s, code)]);
   if (!b) notFound();
   // 6g · ESCANEOS: cada vez que pasó por la puerta (auditoría de check-ins: quién, en qué puerta y a qué hora).
-  return <BoletoAdmin b={b} escaneos={esc} puede={{ editar: s.puede("evt", "editar"), retirar: s.puede("evt", "retirar") }} />;
+  // 8g · WALLET: los pases de Apple y Google de este boleto y su estado.
+  return <BoletoAdmin b={b} escaneos={esc} pases={pases} puede={{ editar: s.puede("evt", "editar"), retirar: s.puede("evt", "retirar") }} />;
 }

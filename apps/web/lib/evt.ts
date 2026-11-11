@@ -259,6 +259,8 @@ export async function guardarEvento(a: { userId: string; negocio: string }, id: 
     return { ok: true, id: e.id, envio: "cambio_revision", aviso: "evt_revision" };
   }); } catch (err) { const m = errorDeLaBase(err); if (m) return m; throw err; }
   if (!r.ok) return r;
+  // 8g · Un cambio publicado (nombre, lugar) ya tocó los pases de Wallet en la transacción (trigger de 0129): que salga ya.
+  (await import("./pases/pronto")).pasesPronto();
   await avisoEnvio(a.negocio, r.id, r.envio, x.cfg.evt_revision_h);
   return { ok: true, id: r.id, envio: r.envio };
 }

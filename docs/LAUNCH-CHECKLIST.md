@@ -1271,3 +1271,37 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ubicación en segundo plano** no aplica (no se pide ACCESS_BACKGROUND_LOCATION) pero sí la de **servicio en primer plano de tipo ubicación**
       (video corto del flujo). (8i, 11 nov)
 - [ ] **En los 9 dispositivos:** `app8e` corre en 390 y 1360 en local; falta la matriz de CI. (8e, 11 nov)
+
+## Fase 8 · 8g (el boleto en Apple Wallet y Google Wallet; 11 nov)
+- [ ] **Solo después del Paquete 8-0 (dominio con HTTPS):** el iPhone del fundador NO puede agregar un pase desde el sandbox por HTTP en la IP:
+      Apple Wallet exige `webServiceURL` con **HTTPS** (y el .pkpass se baja por Safari). Hoy el pase dice `https://pruebas.tolatino.com/api/pases`
+      (BASE_URL); hasta que ese dominio responda, el pase se agrega pero no se actualiza. Con el dominio: agregar un boleto de prueba a Wallet,
+      transferirlo y ver que el pase se anula solo. (8g, 11 nov)
+- [ ] **Certificado del Pass Type ID (Paquete 8-2, opcional):** crear el Pass Type ID `pass.com.tolatino.boletos` en developer.apple.com, generar
+      la solicitud en Super Admin › Sistema › Integraciones › Wallet, subirla a Apple, bajar el .cer y subirlo ahí. Todo lo demás (firma, servicio
+      web, avisos) quedó probado contra una cadena de prueba hecha en el momento y simuladores. (8g, 11 nov)
+- [ ] **A verificar con el certificado de verdad:** (1) que el intermedio que trae el AIA del .cer sea **Apple WWDR G4** (aquí no se pudo bajar
+      `www.apple.com/certificateauthority`: el proxy lo negó; el servidor baja el intermedio de la dirección que dice el propio certificado, solo
+      de `certs.apple.com` / `www.apple.com`, y comprueba que lo firmó); (2) que el aviso de cambio a APNs (TLS con el certificado del pase, cuerpo
+      «{}», tema = Pass Type ID) entra **sin `apns-push-type`** — Apple no documenta cuál lleva un aviso de Wallet; (3) que `pass.strings` en
+      UTF-16 con BOM se lee bien en un iPhone en inglés; (4) que el 304 de «If-Modified-Since» (no está en la lista actual de Apple, sí en la
+      vieja) no molesta a Wallet. (8g, 11 nov)
+- [ ] **Cuenta de emisor de Google Wallet (Paquete 8-2, opcional):** crear la cuenta en Google Pay & Wallet Console, la cuenta de servicio con
+      acceso a la API de Wallet y subirla con el **ID del emisor** en Integraciones › Llaves. Las clases quedan en «UNDER_REVIEW»: Google las aprueba
+      (a verificar el tiempo). Sin ella, solo sale Apple. (8g, 11 nov)
+- [ ] **Arte oficial de los botones (hueco #9):** las insignias de hoy son **provisionales** (negro, borde gris, texto ES/EN, sin logos), marcadas
+      `data-arte="provisional"`. Apple da el arte (SVG por idioma) solo después de **aceptar la «Apple Wallet Marketing Artwork License
+      Agreement»** en developer.apple.com/wallet/add-to-apple-wallet-guidelines; Google, en su página de marca de Google Wallet (no abrió desde
+      este entorno). Es un acuerdo legal del dueño de la cuenta: el fundador lo acepta (o da el OK para que Claude lo acepte en su nombre) y se
+      reemplazan los dos botones ES/EN por el SVG oficial en `Wallet.tsx` (y se revisa que la licencia deje tenerlos en un repo público). (8g, 11 nov)
+- [ ] **El correo de la compra** todavía no trae los botones de Wallet (lleva a Mis boletos, donde están). Con el arte oficial: sumar las dos
+      insignias al recibo (`lib/correo/recibos.ts`), enlazadas a la página del boleto. (8g, 11 nov)
+- [ ] **Dentro de la app iOS (Capacitor):** el botón abre el .pkpass con un enlace firmado de 10 minutos en la vista del sistema (Safari), porque
+      el WebView no muestra «Agregar a Wallet». Probar en TestFlight; si no basta, un plugin nativo pequeño con `PKAddPassesViewController`
+      (versión nueva de la app, revisada). (8g, 11 nov)
+- [ ] **Los límites del servicio web** (pase_ws_por_minuto por dirección) viven en la memoria de cada proceso; con varios procesos, contador
+      compartido. El de registros por teléfono por hora está en la base. Detrás de Cloudflare, la dirección es `CF-Connecting-IP` (hoy
+      `x-real-ip` de nginx). (8g, 11 nov)
+- [ ] **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
+      2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov)
+- [ ] **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov)

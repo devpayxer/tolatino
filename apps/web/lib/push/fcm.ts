@@ -13,13 +13,14 @@ export const TOKEN_URI = "https://oauth2.googleapis.com/token";
 export const ALCANCE = "https://www.googleapis.com/auth/firebase.messaging";
 const b64u = (b: Buffer | string) => Buffer.from(b).toString("base64url");
 
-let acceso: { k: string; t: string; vence: number } | null = null;
+/* Un token de acceso por cuenta de servicio, servidor y alcance (8g: la cuenta de Google Wallet usa el mismo camino con su alcance). */
+const accesos = new Map<string, { t: string; vence: number }>();
 /* `tokenUri` lo decide quien llama: el de Google (o un simulador fuera de producción), nunca el que traiga el archivo subido. */
-export async function tokenAcceso(sa: CuentaServicio, tokenUri: string, ahoraMs = Date.now()): Promise<string | null> {
-  const k = `${sa.client_email}|${tokenUri}`;
-  if (acceso && acceso.k === k && acceso.vence - 60_000 > ahoraMs) return acceso.t;
+export async function tokenAcceso(sa: CuentaServicio, tokenUri: string, ahoraMs = Date.now(), alcance = ALCANCE): Promise<string | null> {
+  const k = `${sa.client_email}|${tokenUri}|${alcance}`, acceso = accesos.get(k);
+  if (acceso && acceso.vence - 60_000 > ahoraMs) return acceso.t;
   const iat = Math.floor(ahoraMs / 1000);
-  const h = b64u(JSON.stringify({ alg: "RS256", typ: "JWT" })), p = b64u(JSON.stringify({ iss: sa.client_email, scope: ALCANCE, aud: TOKEN_URI, iat, exp: iat + 3600 }));
+  const h = b64u(JSON.stringify({ alg: "RS256", typ: "JWT" })), p = b64u(JSON.stringify({ iss: sa.client_email, scope: alcance, aud: TOKEN_URI, iat, exp: iat + 3600 }));
   let firma: Buffer;
   try { firma = firmar("sha256", Buffer.from(`${h}.${p}`), createPrivateKey(sa.private_key)); } catch { return null; }
   try {
@@ -28,11 +29,12 @@ export async function tokenAcceso(sa: CuentaServicio, tokenUri: string, ahoraMs 
     if (!r.ok) return null;
     const j = (await r.json()) as { access_token?: string; expires_in?: number };
     if (!j.access_token) return null;
-    acceso = { k, t: j.access_token, vence: ahoraMs + (Number(j.expires_in) || 3600) * 1000 };
-    return acceso.t;
+    if (accesos.size > 20) accesos.clear();
+    accesos.set(k, { t: j.access_token, vence: ahoraMs + (Number(j.expires_in) || 3600) * 1000 });
+    return j.access_token;
   } catch { return null; }
 }
-export const olvidarAccesoFcm = () => { acceso = null; };
+export const olvidarAccesoFcm = () => { accesos.clear(); };
 
 /* El Message de FCM v1 (nombres JSON del documento de descubrimiento: collapseKey, defaultSound): notificación (lo que se ve), data (la ruta que abre: u), Android con prioridad, TTL, colapso y etiqueta (el estado
    nuevo reemplaza al viejo en la barra). Nada más (sin analítica: fcm_options.analytics_label no se usa). */

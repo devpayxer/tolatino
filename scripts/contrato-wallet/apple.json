@@ -1,0 +1,247 @@
+{
+ "fuente": "https://developer.apple.com/tutorials/data/documentation/walletpasses/",
+ "extraido": "2026-11-11",
+ "sha256": {
+  "pass": "fb9d75a12bffc39f12daa31ba65e082fa78f1ecf996f18ab20d25c856fb50310",
+  "barcodes": "b86821189a9429fa6a0b98a902ed3cf4bd8348c0d65d0b0543ac80ab7a87148b",
+  "campo": "46176f49d66b47ae697b7e9632f3b775a8a63bbef6a894823149bc504ce5eb7e",
+  "campos": "63145703180a808b48fa77c3fcf33c4cc4a0f81e992a50701585f3ee74c97362",
+  "auxiliar": "8dd1a74550f5108c23736dbfadf061e3b856d415806ff7b7d1051bc08b0f02cb",
+  "registrar": "97f3d5f0505f12c2824fabc5cb9e6ffdaccb61541f08e424b814f75834440fce",
+  "baja": "d8a9694532d7d6d8fc98bb7ee7cf984a810537b2b9194b96f02b5865ad2184dc",
+  "lista": "e669c91c05e05f21894959c0de23ad04372b9386e24e3b689a6c9bbdd1f0730f",
+  "pase": "270a39c3aa3843335a513fbcea790e3836c872cbd78dc00e30e7f9cc315b12c3",
+  "log": "f710474c2a9252ce5bddbb5f93a0886de6c6b05c8dbf5a6c647cac4cccb9a88e",
+  "series": "191b7f3e480a52becba283e7159fb5a069b6f63fb4a16e49fb6d85964ec9454e",
+  "token": "9e21c2f3d3517e5203fb6137c7d08762c1231cd6f68bfc99995b428e3ba2f97c",
+  "logs": "f8b483c50b10df4ccd64b1c326862d7c1ff8b0e6634bc3c5759befd336503875",
+  "servicio": "8b0a722db4ead9ea81dcdde964e7d6a1aa7bca26ccb4cf4a42594612f5bde14f"
+ },
+ "pass": {
+  "propiedades": {
+   "accessibilityURL": "string",
+   "addOnURL": "string",
+   "appLaunchURL": "string",
+   "associatedStoreIdentifiers": "[number]",
+   "auxiliaryStoreIdentifiers": "[number]",
+   "authenticationToken": "string",
+   "backgroundColor": "string",
+   "bagPolicyURL": "string",
+   "barcode": "Pass.Barcode",
+   "barcodes": "[Pass.Barcodes]",
+   "beacons": "[Pass.Beacons]",
+   "boardingPass": "Pass.BoardingPass",
+   "contactVenueEmail": "string",
+   "contactVenuePhoneNumber": "string",
+   "contactVenueWebsite": "string",
+   "coupon": "Pass.Coupon",
+   "description": "localizable string",
+   "directionsInformationURL": "string",
+   "eventLogoText": "localizable string",
+   "eventTicket": "Pass.EventTicket",
+   "expirationDate": "string",
+   "footerBackgroundColor": "string",
+   "foregroundColor": "string",
+   "formatVersion": "number",
+   "generic": "Pass.Generic",
+   "groupingIdentifier": "string",
+   "labelColor": "string",
+   "locations": "[Pass.Locations]",
+   "logoText": "localizable string",
+   "maxDistance": "number",
+   "merchandiseURL": "string",
+   "nfc": "Pass.NFC",
+   "orderFoodURL": "string",
+   "organizationName": "localizable string",
+   "parkingInformationURL": "string",
+   "passTypeIdentifier": "string",
+   "preferredStyleSchemes": "[string]",
+   "purchaseParkingURL": "string",
+   "relevantDate": "string",
+   "relevantDates": "[Pass.RelevantDates]",
+   "sellURL": "string",
+   "semantics": "SemanticTags",
+   "serialNumber": "string",
+   "sharingProhibited": "boolean",
+   "storeCard": "Pass.StoreCard",
+   "suppressStripShine": "boolean",
+   "suppressHeaderDarkening": "boolean",
+   "teamIdentifier": "string",
+   "transferURL": "string",
+   "transitInformationURL": "string",
+   "useAutomaticColors": "boolean",
+   "userInfo": "any JSON data",
+   "voided": "boolean",
+   "webServiceURL": "string",
+   "changeSeatURL": "string",
+   "entertainmentURL": "string",
+   "purchaseAdditionalBaggageURL": "string",
+   "purchaseLoungeAccessURL": "string",
+   "purchaseWifiURL": "string",
+   "upgradeURL": "string",
+   "upcomingPassInformation": "[UpcomingPassInformationEntry]",
+   "managementURL": "string",
+   "registerServiceAnimalURL": "string",
+   "reportLostBagURL": "string",
+   "requestWheelchairURL": "string",
+   "trackBagsURL": "string",
+   "transitProviderEmail": "string",
+   "transitProviderPhoneNumber": "string",
+   "transitProviderWebsiteURL": "string"
+  },
+  "requeridas": [
+   "description",
+   "formatVersion",
+   "organizationName",
+   "passTypeIdentifier",
+   "serialNumber",
+   "teamIdentifier"
+  ],
+  "permitidos": {}
+ },
+ "barcodes": {
+  "propiedades": {
+   "altText": "string",
+   "format": "string",
+   "message": "string",
+   "messageEncoding": "string"
+  },
+  "requeridas": [
+   "format",
+   "message",
+   "messageEncoding"
+  ],
+  "permitidos": {
+   "format": [
+    "PKBarcodeFormatQR",
+    "PKBarcodeFormatPDF417",
+    "PKBarcodeFormatAztec",
+    "PKBarcodeFormatCode128",
+    "PKBarcodeFormatCode39",
+    "PKBarcodeFormatCodabar",
+    "PKBarcodeFormatEAN13",
+    "PKBarcodeFormatI2of5"
+   ]
+  }
+ },
+ "campo": {
+  "propiedades": {
+   "attributedValue": "localizable string, ISO 8601 date, or number",
+   "changeMessage": "Localizable format string",
+   "currencyCode": "ISO 4217 currency code as a string",
+   "dataDetectorTypes": "[string]",
+   "dateStyle": "string",
+   "ignoresTimeZone": "boolean",
+   "isRelative": "boolean",
+   "key": "string",
+   "label": "localizable string",
+   "numberStyle": "string",
+   "textAlignment": "string",
+   "timeStyle": "string",
+   "value": "localizable string, ISO 8601 date, or number"
+  },
+  "requeridas": [
+   "key",
+   "value"
+  ],
+  "permitidos": {
+   "dataDetectorTypes": [
+    "PKDataDetectorTypePhoneNumber",
+    "PKDataDetectorTypeLink",
+    "PKDataDetectorTypeAddress",
+    "PKDataDetectorTypeCalendarEvent"
+   ],
+   "dateStyle": [
+    "PKDateStyleNone",
+    "PKDateStyleShort",
+    "PKDateStyleMedium",
+    "PKDateStyleLong",
+    "PKDateStyleFull"
+   ],
+   "numberStyle": [
+    "PKNumberStyleDecimal",
+    "PKNumberStylePercent",
+    "PKNumberStyleScientific",
+    "PKNumberStyleSpellOut"
+   ],
+   "textAlignment": [
+    "PKTextAlignmentLeft",
+    "PKTextAlignmentCenter",
+    "PKTextAlignmentRight",
+    "PKTextAlignmentNatural"
+   ],
+   "timeStyle": [
+    "PKDateStyleNone",
+    "PKDateStyleShort",
+    "PKDateStyleMedium",
+    "PKDateStyleLong",
+    "PKDateStyleFull"
+   ]
+  }
+ },
+ "auxiliar": [
+  "row"
+ ],
+ "grupos": [
+  "additionalInfoFields",
+  "auxiliaryFields",
+  "backFields",
+  "headerFields",
+  "primaryFields",
+  "secondaryFields"
+ ],
+ "servicio": {
+  "POST v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}": {
+   "autorizacion": true,
+   "respuestas": [
+    200,
+    201,
+    401
+   ]
+  },
+  "DELETE v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}/{serialNumber}": {
+   "autorizacion": true,
+   "respuestas": [
+    200,
+    401
+   ]
+  },
+  "GET v1/devices/{deviceLibraryIdentifier}/registrations/{passTypeIdentifier}": {
+   "autorizacion": false,
+   "respuestas": [
+    200,
+    204
+   ]
+  },
+  "GET v1/passes/{passTypeIdentifier}/{serialNumber}": {
+   "autorizacion": true,
+   "respuestas": [
+    200,
+    401
+   ]
+  },
+  "POST v1/log": {
+   "autorizacion": false,
+   "respuestas": [
+    200
+   ]
+  }
+ },
+ "cuerpos": {
+  "series": [
+   "lastUpdated",
+   "serialNumbers"
+  ],
+  "pushToken": [
+   "pushToken"
+  ],
+  "logs": [
+   "logs"
+  ]
+ },
+ "aviso": {
+  "mismoCertificado": true,
+  "cuerpoVacio": true,
+  "soloProduccion": true
+ }
+}

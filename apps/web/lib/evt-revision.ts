@@ -62,6 +62,8 @@ export async function decidirEvento(s: Staff, id: string, d: Decision, razon: st
     const tpl = d === "aprobar" ? "evt_aprobado" : d === "cambios" ? "evt_cambios" : "evt_rechazado";
     return { err: null, aviso: [e.business_id, tpl, titulo(e), motivo, nuevo && d === "rechazar" ? RUTA_AVISO("event", id) : panel(e.business_id, id)] };
   });
+  // 8g · Aprobar un cambio (nombre, lugar) o rechazar ya tocó los pases de Wallet en la transacción (trigger de 0129): que salga ya.
+  if (!r.err) (await import("./pases/pronto")).pasesPronto();
   if (!r.err && r.aviso) {
     const [neg, tpl, evento, motivo, href] = r.aviso;
     // Un cambio no aprobado no se apela (la versión publicada sigue): el aviso lleva al panel para corregirlo.

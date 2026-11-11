@@ -115,7 +115,9 @@ const guardianes = {
       .map((f) => f.replace(/^apps\/web\/app/, "").replace(/\/page\.tsx$/, "").split("/").filter((s) => s && !/^\(.*\)$/.test(s)))
       // «[[...r]]» (opcional, cualquier cantidad de segmentos) casa con nada o con /lo/que/sea.
       .map((seg) => new RegExp("^/" + seg.map((s) => (/^\[\[\.\.\..*\]\]$/.test(s) ? "\u0000" : /^\[.*\]$/.test(s) ? "[^/]+" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("/").replace(/\/?\u0000/, "(?:/.*)?") + "/?$"));
-    const apis = archivos.filter((f) => /^apps\/web\/app\/.*route\.ts$/.test(f)).map((f) => f.replace(/^apps\/web\/app/, "").replace(/\/route\.ts$/, ""));
+    // 8g · Una ruta de API con «[param]» (p. ej. /api/pases/apple/[codigo]) acepta cualquier segmento ahí, como las páginas.
+    const apis = archivos.filter((f) => /^apps\/web\/app\/.*route\.ts$/.test(f)).map((f) => f.replace(/^apps\/web\/app/, "").replace(/\/route\.ts$/, ""))
+      .map((a) => ({ startsWith: (r) => new RegExp("^" + a.split("/").map((s) => (/^\[.*\]$/.test(s) ? "[^/]+" : s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))).join("/") + "(?:/|$)").test(r) }));
     for (const f of codigo) {
       if (!/^apps\/web\/(app|lib)\/.*\.tsx?$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => {
@@ -124,7 +126,7 @@ const guardianes = {
           if (m[0].includes("`") && m[1].includes("${")) r = r.replace(/\/[^/]*$/, "/x"); // `/c/${slug}` → /c/x
           // Archivos de apps/web/public (fuentes, logos): existen como archivo o, si la ruta lleva ${…}, su carpeta.
           if (existsSync("apps/web/public" + r) || (m[1].includes("${") && existsSync("apps/web/public" + r.replace(/\/[^/]*$/, "")) && r.replace(/\/[^/]*$/, "") !== "")) continue;
-          if (!r || r === "/" ? false : r.startsWith("/api/") ? !apis.some((a) => r.startsWith(a)) : !paginas.some((re) => re.test(r.replace(/\/$/, ""))))
+          if (!r || r === "/" ? false : r.startsWith("/api/") ? !apis.some((a) => a.startsWith(r)) : !paginas.some((re) => re.test(r.replace(/\/$/, ""))))
             falla("rutasVivas", f, i + 1, `enlace a «${m[1]}» y no existe esa pantalla`);
         }
       });
@@ -560,7 +562,7 @@ const guardianes = {
     for (const f of readdirSync("packages/db/migrations").map((x) => `packages/db/migrations/${x}`)) {
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/\('(sal_|biz_sal_)[a-z_]+'/.test(l) && /\{(negocio|servicio|svc|cliente)\}/.test(l)) falla("privacidadSalud", f, i + 1, "un aviso de Salud no lleva {negocio}, {servicio} ni {cliente}: tiene que ser neutro"); });
     }
-    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts"]); // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios)
+    const PERMITIDOS = new Set(["apps/web/lib/citas-salud.ts", "apps/web/lib/citas-panel.ts", "apps/web/lib/citas-flujo.ts", "apps/web/lib/citas-pro.ts", "apps/web/lib/cifrado.ts", "apps/web/lib/viajes.ts", "apps/web/lib/envios.ts", "apps/web/lib/ninos-privado.ts", "apps/web/lib/visitas-inm.ts", "apps/web/lib/compa/canales.ts", "apps/web/lib/push/cola.ts", "apps/web/lib/beta.ts", "apps/web/lib/pases/pases.ts"]); // 8f: el correo de Apple del tester se abre solo para invitarlo por la API y mostrarlo tapado // 8c: el token de push y el contenido cifrado se abren solo para mandarlos · 7h: el teléfono cifrado de una entrada de WhatsApp/SMS (para contestar a ese teléfono) · 4ie: la dirección cifrada de la prueba en casa (crear y ver confirmada) · crear · ver en el panel · borrar a los 30 d · 4y-2: el destinatario de la caja (crear en viajes, ver en envios) // 8g: el token de push del teléfono de Wallet (pass_devices.push_token_enc), solo para mandarle el aviso de cambio
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f) || PERMITIDOS.has(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/note_enc|descifrar\(/.test(l)) falla("privacidadSalud", f, i + 1, "la nota cifrada de una cita (op_private) solo se toca en lib/citas-salud o lib/citas-pro (crear), lib/citas-panel (ver) o lib/citas-flujo (borrar a los 30 d)"); });
@@ -2435,6 +2437,15 @@ const guardianes = {
   libroSoloInsercion() {
     const G = "libroSoloInsercion", M = "packages/db/migrations/0100_moderacion_apelaciones.sql";
     if (!existsSync(M)) return;
+    // 8g · Wallet: pass_log es de solo inserción; un pase, un teléfono o un registro no se borran (estados). La app no cambia ni borra el libro.
+    const MW = "packages/db/migrations/0129_pases_wallet.sql";
+    if (existsSync(MW)) {
+      const mw = readFileSync(MW, "utf8");
+      if (!/create trigger pass_log_no_cambia before update or delete on pass_log/.test(mw) || !/raise exception 'pass_log es solo de inserción'/.test(mw)) falla(G, MW, 0, "pass_log es de solo inserción (trigger)");
+      for (const [fn, msg] of [["ticket_passes_antes", "un pase no se borra"], ["pass_devices_antes", "un teléfono de Wallet no se borra"], ["pass_registrations_antes", "un registro de Wallet no se borra"]])
+        if (!new RegExp(`raise exception '${msg}`).test(ultimaFn(fn))) falla(G, MW, 0, `${msg} (estados)`);
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) pass_log\b|\bdelete from (ticket_passes|pass_devices|pass_registrations)\b/.test(q)) falla(G, x, 0, `el libro de los pases no se cambia y nada de Wallet se borra: «${q.slice(0, 60)}»`);
+    }
     const m = readFileSync(M, "utf8");
     if (!/create trigger mod_flags_no_cambia before update or delete on mod_flags for each row execute function mod_flags_inmutable\(\)/.test(m) || !/raise exception 'mod_flags es solo de inserción'/.test(m)) falla(G, M, 0, "mod_flags sin el trigger de solo inserción");
     if (!/if tg_op = 'DELETE' then raise exception 'una apelación no se borra'/.test(m) || !/if old\.status <> 'open' then raise exception 'una apelación decidida no cambia'/.test(m)) falla(G, M, 0, "appeals: no se borra y, decidida, no cambia");
@@ -5242,6 +5253,9 @@ const guardianes = {
     const G = "llavesFueraDelRepo";
     for (const f of archivos) {
       if (/\.(p8|p12|jks|keystore|mobileprovision|pfx)$/i.test(f) || /(^|\/)(AuthKey_[A-Z0-9]+\.p8|google-services\.json|GoogleService-Info\.plist)$/.test(f)) falla(G, f, 0, "un archivo de llave en el repo (va cifrado en el llavero del servidor)");
+      // 8g · Ni certificados ni solicitudes ni pases firmados (el del Pass Type ID y su cadena viven en el llavero; los de prueba se hacen al vuelo).
+      if (/\.(cer|crt|der|pem|key|csr|certSigningRequest|pkpass)$/i.test(f)) falla(G, f, 0, "un certificado, una llave o un pase firmado en el repo (el repo es público)");
+      if (/\.(tsx?|jsx?|mjs|cjs|json|md|sql|sh|ya?ml|txt)$/.test(f) && !f.includes("node_modules") && f !== "guardianes/run.mjs") { const t = readFileSync(f, "utf8"); if (/-----BEGIN (CERTIFICATE|PRIVATE KEY|RSA PRIVATE KEY|EC PRIVATE KEY|CERTIFICATE REQUEST)-----\r?\n[A-Za-z0-9+/=]{40,}/.test(t)) falla(G, f, 0, "un certificado o una llave en PEM dentro de un archivo del repo"); }
       if (/\.json$/.test(f) && !f.includes("node_modules")) { const t = readFileSync(f, "utf8"); if (/"private_key"\s*:\s*"-----BEGIN/.test(t)) falla(G, f, 0, "una cuenta de servicio con su llave privada en el repo"); }
     }
     for (const g of ["apps/mobile/.gitignore", "apps/mobile/android/.gitignore", "apps/mobile/ios/.gitignore"]) if (!existsSync(g)) falla(G, g, 0, "falta el .gitignore que deja fuera las llaves");
@@ -5359,6 +5373,11 @@ const guardianes = {
     if (!/const tok = [^\n]*, h = huella\(`push:\$\{p\}:\$\{tok\}`\)/.test(r) || !/\[userId, ses\.id, ses\.city, app, ses\.platform, p, cifrar\(tok\), h, p === "webpush" \? cifrar\(JSON\.stringify\(\{ p256dh: r\.p256dh, auth: r\.auth \}\)\) : null/.test(r)) falla(G, T, 0, "registrar() guarda el token y sus llaves cifrados y busca por la huella");
     if (/\bt\.token_hash\b/.test(cuerpoFn(sinComent(T), "misDispositivos"))) falla(G, T, 0, "misDispositivos() no devuelve la huella del token");
     if (existsSync(M) && !/token_hash\s+text not null check \(token_hash ~ '\^\[a-f0-9\]\{64\}\$'\)/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "token_hash es una huella hex de 64");
+    // 8g · El token de push de un teléfono de Wallet: cifrado y con su huella; solo lib/pases/pases.ts lo guarda y lo abre para mandar el aviso.
+    const PW = "apps/web/lib/pases/pases.ts", MW = "packages/db/migrations/0129_pases_wallet.sql";
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== PW && /\bpush_token_enc\b/.test(sinComent(f))) falla(G, f, 0, "el token de un teléfono de Wallet solo lo toca lib/pases/pases.ts");
+    if (existsSync(PW) && !/cifrar\(token\.toLowerCase\(\)\), h\]/.test(cuerpoFn(sinComent(PW), "registrar"))) falla(G, PW, 0, "el token de push de Wallet se guarda cifrado, con su huella");
+    if (existsSync(MW) && !/push_token_enc\s+bytea not null/.test(readFileSync(MW, "utf8"))) falla(G, MW, 0, "pass_devices guarda el token cifrado (bytea)");
   },
 
   /* 8c · El servidor solo le escribe a un servicio de push conocido (SSRF): la dirección de Web Push la da el navegador, pero se revisa al registrar
@@ -5376,6 +5395,13 @@ const guardianes = {
     if (!/const env = \(k: string\) => \(PROD \? undefined : process\.env\[k\] \|\| undefined\);/.test(l) || /process\.env\.PUSH_/.test(l)) falla(G, L, 0, "los simuladores (PUSH_*) no se leen en producción");
     if (!/\^\(127\\\.0\\\.0\\\.1\|localhost\):\\d\{2,5\}\$/.test(l)) falla(G, L, 0, "PUSH_WEB_HOSTS solo acepta localhost");
     if (!/fcm = \{ \.\.\.j, token_uri: TOKEN_URI \}/.test(l)) falla(G, L, 0, "FCM nunca usa el token_uri del archivo subido");
+    // 8g · Wallet: los simuladores (PASES_*) no se leen en producción y solo lib/pases/credenciales.ts los lee; el intermedio del certificado
+    // se baja solo de Apple (o de localhost en pruebas); Google nunca usa el token_uri del archivo subido.
+    const W8 = "apps/web/lib/pases/credenciales.ts", w8 = existsSync(W8) ? sinComent(W8) : "";
+    if (!/const env = \(k: string\) => \(PROD \? undefined : process\.env\[k\] \|\| undefined\);/.test(w8) || /process\.env\.PASES_/.test(w8)) falla(G, W8, 0, "los simuladores de Wallet (PASES_*) no se leen en producción");
+    if (!/\["certs\.apple\.com", "www\.apple\.com", \.\.\.\(env\("PASES_AIA_HOSTS"\)/.test(w8) || !/\^\(127\\\.0\\\.0\\\.1\|localhost\):\\d\{2,5\}\$/.test(w8)) falla(G, W8, 0, "el intermedio del certificado del pase se baja solo de Apple (o de localhost fuera de producción)");
+    if (!/google = \{ sa: \{ \.\.\.j, token_uri: TOKEN_URI \}/.test(w8)) falla(G, W8, 0, "Google Wallet nunca usa el token_uri del archivo subido");
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== W8 && /PASES_(APNS|GOOGLE|AIA)/.test(sinComent(f))) falla(G, f, 0, "solo lib/pases/credenciales.ts lee las direcciones de Wallet");
   },
 
   /* 8c · Un aviso nunca llega dos veces al mismo teléfono y su SMS de respaldo sale una vez: única (aviso, token) en la cola con «on conflict do
@@ -5800,6 +5826,97 @@ const guardianes = {
     if (existsSync(J) && /setLockTaskPackages|DevicePolicyManager/.test(readFileSync(J, "utf8"))) falla(G, J, 0, "sin MDM: la fijación de pantalla del sistema, que la persona confirma");
     const S = "apps/mobile/plugins/tl-pantalla/ios/TLPantallaPlugin.swift";
     if (existsSync(S) && /requestGuidedAccessSession|UIAccessibility\.requestGuidedAccess/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "iOS no se fija solo (Acceso guiado lo enciende la persona)");
+  },
+
+  /* 8g · El QR del pase de Wallet es EXACTAMENTE el QR firmado del boleto (6c): el pase lo toma de la misma vista que la pantalla del boleto
+     (boletoParaPase → vistaBoleto), nunca firma ni arma uno por su cuenta; así la Puerta lo valida igual con y sin señal. Apple lo pone en
+     barcodes[].message (QR, iso-8859-1) y Google en barcode.value (QR_CODE). Anulado: ninguno. Al revés: firmar en lib/pases, poner el código
+     humano en el mensaje o armar el pase sin vistaBoleto → falla. */
+  paseMismoQr() {
+    const G = "paseMismoQr", P = "apps/web/lib/pases/pases.ts", A = "apps/web/lib/pases/apple.ts", GO = "apps/web/lib/pases/google.ts", B = "apps/web/lib/boletos.ts";
+    for (const f of codigo.filter((x) => /^apps\/web\/lib\/pases\/.*\.ts$/.test(x))) {
+      const t = sinComent(f);
+      if (/boletos-qr|\bfirmarQR\b|\bmatrizQR\b|\bqr_ver\b|["'`]TL1\.|\bqr_keys\b|QR_LLAVE/.test(t)) falla(G, f, 0, "el pase no firma ni arma un QR: lo toma de vistaBoleto (boletoParaPase)");
+    }
+    if (!existsSync(P) || !existsSync(A) || !existsSync(GO)) return falla(G, P, 0, "faltan lib/pases/pases.ts, apple.ts o google.ts");
+    const cp = cuerpoFn(sinComent(P), "contenidoPase");
+    if (!/const B = await boletoParaPase\(p\.tid\)/.test(cp) || !/const qr = p\.voided \? null : es\.qr;/.test(cp) || !/if \(es\.qr !== en\.qr\) throw/.test(cp) || !/\bqr, anulado: p\.voided/.test(cp)) falla(G, P, 0, "contenidoPase: el QR es el de vistaBoleto (es.qr, igual en los dos idiomas) y ninguno si el pase está anulado");
+    const bp = cuerpoFn(sinComent(B), "boletoParaPase");
+    if (!/es: await vistaBoleto\(b, true, !es\.pasado\), en: await vistaBoleto\(b, false, !en\.pasado\)/.test(bp)) falla(G, B, 0, "boletoParaPase usa vistaBoleto, la MISMA vista de la pantalla del boleto");
+    const a = cuerpoFn(sinComent(A), "paseJson");
+    if (!/if \(c\.qr && !c\.anulado\) json\.barcodes = \[\{ format: "PKBarcodeFormatQR", message: c\.qr, messageEncoding: "iso-8859-1", altText: c\.codigo \}\];/.test(a) || /\bbarcode:/.test(a)) falla(G, A, 0, "Apple: barcodes con message = c.qr (QR, iso-8859-1), solo si hay QR y no está anulado");
+    const o = cuerpoFn(sinComent(GO), "objeto");
+    if (!/if \(c\.qr && !c\.anulado\) b\.barcode = \{ type: "QR_CODE", value: c\.qr, alternateText: c\.codigo \};/.test(o) || /rotatingBarcode/.test(o)) falla(G, GO, 0, "Google: barcode.value = c.qr (QR_CODE), solo si hay QR y no está anulado");
+  },
+
+  /* 8g · Todo cambio del boleto toca su pase EN LA MISMA ACCIÓN que ya avisa: (1) en la base, los triggers de 0129 (tickets: estado, versión del
+     QR, dueño, nombre; event_dates: fecha, hora, cancelar; events: nombre, lugar, cancelar) llaman pase_tocar() en la misma transacción, que
+     anula lo que ya no vale (anulado, devuelto, transferido, otro dueño, fecha o evento cancelados) y actualiza lo demás; solo pase_tocar sube
+     la versión. (2) Ninguna escritura de un boleto cambia una columna que el trigger no mira. (3) Toda función de la app que cambia un boleto,
+     una fecha o un evento (fuera de la transacción de otro) llama pasesPronto() para que el aviso salga ya. Al revés: sacar holder_name del
+     trigger, anular sin mirar «replaced», escribir admits de un boleto o quitar pasesPronto() de transferir → falla. */
+  paseSigueAlBoleto() {
+    const G = "paseSigueAlBoleto", M = "packages/db/migrations/0129_pases_wallet.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de los pases");
+    const m = readFileSync(M, "utf8"), vigila = /create trigger tickets_pase after update of ([a-z_, ]+) on tickets for each row/.exec(m)?.[1]?.split(/,\s*/) ?? [];
+    for (const c of ["status", "qr_ver", "holder_user_id", "holder_name"]) if (!vigila.includes(c)) falla(G, M, 0, `el trigger de los pases mira ${c} del boleto`);
+    if (!/create trigger event_dates_pase after update of starts_at, ends_at, doors_at, local_date, status on event_dates/.test(m)) falla(G, M, 0, "el trigger de los pases mira la fecha, la hora y el estado de event_dates");
+    if (!/create trigger events_pase after update of title, venue_mode, venue_name, venue_address, status on events/.test(m)) falla(G, M, 0, "el trigger de los pases mira el nombre, el lugar y el estado del evento");
+    const pt = ultimaFn("pase_tocar");
+    for (const [re, que] of [[/t\.status in \('void', 'refunded', 'replaced'\) then 'boleto'/, "anulado, devuelto o transferido"], [/t\.holder_user_id is distinct from p\.issued_to then 'dueno'/, "otro dueño"],
+      [/e\.status = 'cancelled' then 'evento'/, "evento cancelado"], [/d\.status = 'cancelled' then 'fecha'/, "fecha cancelada"], [/version = p\.version \+ 1/, "sube la versión"], [/perform set_config\('tl\.pase', 'si', true\)/, "con la marca de la base"]])
+      if (!re.test(pt)) falla(G, M, 0, `pase_tocar: ${que}`);
+    if (!/coalesce\(current_setting\('tl\.pase', true\), ''\) <> 'si' then\s+raise exception/.test(ultimaFn("ticket_passes_antes"))) falla(G, M, 0, "la versión y el estado de un pase solo los cambia pase_tocar (marca tl.pase)");
+    // (2) Lo que una escritura cambia de un boleto, el trigger lo mira (más lo que siempre acompaña al estado).
+    const OK = new Set([...vigila, "void_reason", "replaced_by", "updated_at"]);
+    const textos = [...codigo.filter((f) => /^apps\/web\/.*\.tsx?$/.test(f)).map((f) => [f, sinComent(f)]),
+      ...readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).map((x) => [`packages/db/migrations/${x}`, readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "")])];
+    for (const [f, t] of textos) for (const u of t.matchAll(/update tickets set ([\s\S]*?)\s+(?:where|from|returning)\b/g)) {
+      const cols = u[1].split(/,(?![^(]*\))/).map((x) => x.trim().split(/\s*=/)[0].trim());
+      for (const c of cols) if (!OK.has(c)) falla(G, f, 0, `«update tickets set ${c}»: el pase de Wallet no mira esa columna (súmala al trigger tickets_pase o no la cambies)`);
+    }
+    // (3) pasesPronto() en cada función que cambia un boleto, una fecha o un evento (las que reciben la transacción de otro no: lo hace quien la abre).
+    const CAMBIA = /update tickets set [^`]*\b(status|qr_ver|holder_user_id|holder_name)\s*=|update event_dates set [^`]*\b(starts_at|ends_at|status)\s*=|update events set (\$\{|[^`]*\b(status|title|venue_name|venue_address|venue_mode)\s*=)/;
+    for (const f of codigo.filter((x) => /^apps\/web\/lib\/[^/]+\.ts$/.test(x))) {
+      // Cada función de primer nivel hasta la siguiente (una de una sola línea no se come a la de abajo).
+      const t = sinComent(f), ms = [...t.matchAll(/\n(?:export )?(?:async )?function (\w+)\(([^)]*)/g)], fns = ms.map((x, i) => ({ n: x[1], p: x[2], c: t.slice(x.index, ms[i + 1]?.index ?? t.length) }));
+      const ayudantes = new Set(fns.filter((x) => CAMBIA.test(x.c) && /^c\s*:/.test(x.p.trim())).map((x) => x.n));
+      for (const x of fns) {
+        if (/^c\s*:/.test(x.p.trim())) continue;
+        const cambia = CAMBIA.test(x.c) || [...ayudantes].some((h) => new RegExp(`\\b${h}\\(c\\b`).test(x.c));
+        if (cambia && !/\bpasesPronto\(\)/.test(x.c)) falla(G, f, 0, `«${x.n}» cambia un boleto, una fecha o un evento y no llama pasesPronto() (el pase de Wallet tiene que salir con el mismo aviso)`);
+      }
+    }
+    const PR = "apps/web/lib/pases/pronto.ts";
+    if (!existsSync(PR) || !/import\("\.\/pases"\)\.then\(\(m\) => m\.pasesPronto\(\)\)/.test(sinComent(PR))) falla(G, PR, 0, "pasesPronto() despierta al trabajador de los pases");
+    if (!/\["pases", async \(\) => \(await import\("\.\/pases\/pases"\)\)\.barrerPases\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "el barrido reintenta los avisos de los pases");
+  },
+
+  /* 8g · El servicio web de Apple Wallet solo responde por un pase con el token de ESE pase («Authorization: ApplePass <token>»): se busca el
+     pase por su tipo y su serie y se compara la huella del token en tiempo constante; un token ajeno, viejo o de otro pase → 401, igual que
+     un pase que no existe. El token nunca se guarda (solo su sha256). Ninguna ruta del servicio usa cookies ni la sesión. La lista de series
+     (sin token, por el diseño de Apple) solo devuelve series. Al revés: buscar el pase solo por serie, comparar con ===, quitar el 401 de una
+     ruta o devolver el pase entero en la lista → falla. */
+  tokenDePase() {
+    const G = "tokenDePase", M = "packages/db/migrations/0129_pases_wallet.sql", P = "apps/web/lib/pases/pases.ts", R = "apps/web/app/api/pases/v1";
+    if (existsSync(M)) { const m = readFileSync(M, "utf8"); if (!/auth_token_hash\s+text check \(auth_token_hash ~ '\^\[a-f0-9\]\{64\}\$'\)/.test(m) || /\bauth_token\s+(text|bytea)/.test(m)) falla(G, M, 0, "el token del pase se guarda solo como huella (sha256 hex)"); }
+    if (!existsSync(P)) return falla(G, P, 0, "falta lib/pases/pases.ts");
+    const p = sinComent(P), a = cuerpoFn(p, "autorizarPase");
+    if (!/\^ApplePass \(\[A-Za-z0-9_-\]\{16,128\}\)\$/.test(a) || !/where p\.serial = \$1 and p\.pass_type_id = \$2 and p\.platform = 'apple'/.test(a) || !/timingSafeEqual\(a, b\)/.test(a) || !/Buffer\.from\(huellaToken\(t\), "hex"\)/.test(a) || /===\s*p\.h\b|p\.h\s*===/.test(a))
+      falla(G, P, 0, "autorizarPase: «ApplePass <token>», el pase por tipo Y serie, huella comparada en tiempo constante");
+    if (!/return \{ serialNumbers: r\.map\(\(x\) => x\.serial\), lastUpdated:/.test(cuerpoFn(p, "seriesCambiadas")) || !/where r\.device_library_id = \$1 and r\.removed_at is null/.test(cuerpoFn(p, "seriesCambiadas"))) falla(G, P, 0, "la lista sin token devuelve solo series de los registros de ESE teléfono");
+    const rutas = { [`${R}/devices/[dispositivo]/registrations/[tipo]/[serie]/route.ts`]: ["POST", "DELETE"], [`${R}/passes/[tipo]/[serie]/route.ts`]: ["GET"] };
+    for (const [f, ms] of Object.entries(rutas)) {
+      if (!existsSync(f)) { falla(G, f, 0, "falta la ruta del servicio web"); continue; }
+      const t = sinComent(f);
+      for (const mt of ms) {
+        const c = cuerpoFn(t, mt);
+        const iA = c.search(/const p = await autorizarPase\(tipo, serie, req\.headers\.get\("authorization"\)\);\s+if \(!p\) return [^\n]*401/), iU = c.search(/\b(registrar|darDeBaja|paseAlDia)\(p,/);
+        if (iA < 0 || iU < 0 || iA > iU) falla(G, f, 0, `${mt}: autoriza con el token de ESE pase (401 si no) antes de tocar nada`);
+      }
+    }
+    for (const f of codigo.filter((x) => x.startsWith(`${R}/`))) if (/\byo\(\)|cookies\(|mismoOrigen|staff\(\)/.test(sinComent(f))) falla(G, f, 0, "el servicio web de Wallet no usa la sesión ni cookies: solo el token del pase");
+    for (const f of codigo.filter((x) => /^apps\/web\/.*\.tsx?$/.test(x) && x !== P && !x.startsWith(`${R}/`))) if (/\b(registrar|darDeBaja|paseAlDia)\s*\(\s*p\b|\btokenPase\(|\bauthenticationToken\b/.test(sinComent(f)) && !/lib\/pases\/apple\.ts$/.test(f)) falla(G, f, 0, "el token del pase y lo que pide un pase autorizado viven solo en lib/pases y el servicio web");
   },
 
   idioma() {
