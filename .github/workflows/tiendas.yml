@@ -54,6 +54,7 @@ jobs:
     outputs:
       apps: ${{ steps.p.outputs.apps }}
       ios: ${{ steps.p.outputs.ios }}
+      ios: ${{ steps.p.outputs.ios }}
       android: ${{ steps.p.outputs.android }}
       build: ${{ steps.p.outputs.build }}
       pedido: ${{ steps.p.outputs.pedido }}
@@ -123,7 +124,8 @@ jobs:
     env:
       TL_BUILD: ${{ needs.plan.outputs.build }}
       APP: ${{ matrix.app.key }}
-      SABOR: ${{ matrix.app.sabor }}
+      # El sabor de Gradle de esta app (cliente, negocios…). No se llama SABOR: esa variable es la de generar.mjs (pruebas | produccion).
+      VARIANTE: ${{ matrix.app.sabor }}
       PEDIDO: ${{ needs.plan.outputs.pedido }}
     steps:
       - name: El directorio temporal de las llaves (se borra al final, pase lo que pase)
@@ -174,12 +176,12 @@ jobs:
       - name: Build release firmado (.aab para Play interno y .apk propio)
         working-directory: apps/mobile/android
         run: |
-          S="$(echo "${SABOR:0:1}" | tr '[:lower:]' '[:upper:]')${SABOR:1}"
+          S="$(echo "${VARIANTE:0:1}" | tr '[:lower:]' '[:upper:]')${VARIANTE:1}"
           TL_FIRMA_CLAVE="$(cat "$LLAVES/clave")" ./gradlew --no-daemon "bundle${S}Release" "assemble${S}Release"
       - name: La firma se comprueba (y dice de quién es)
         run: |
-          APK=$(ls apps/mobile/android/app/build/outputs/apk/$SABOR/release/*.apk | head -1)
-          AAB=$(ls apps/mobile/android/app/build/outputs/bundle/${SABOR}Release/*.aab | head -1)
+          APK=$(ls apps/mobile/android/app/build/outputs/apk/$VARIANTE/release/*.apk | head -1)
+          AAB=$(ls apps/mobile/android/app/build/outputs/bundle/${VARIANTE}Release/*.aab | head -1)
           "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs "$APK" | grep -E "Signer #1 certificate (DN|SHA-256)"
           jarsigner -verify "$AAB" | tail -1
           echo "APK=$APK" >> "$GITHUB_ENV"; echo "AAB=$AAB" >> "$GITHUB_ENV"
@@ -189,7 +191,7 @@ jobs:
         run: |
           node scripts/tiendas/ci.mjs archivo --app "$APP" --canal apk_propio --build "$TL_BUILD" --tipo apk --ruta "$APK"
           node scripts/tiendas/ci.mjs archivo --app "$APP" --canal play_interno --build "$TL_BUILD" --tipo aab --ruta "$AAB"
-          M=apps/mobile/android/app/build/outputs/mapping/${SABOR}Release/mapping.txt
+          M=apps/mobile/android/app/build/outputs/mapping/${VARIANTE}Release/mapping.txt
           if [ -f "$M" ]; then node scripts/tiendas/ci.mjs archivo --app "$APP" --canal play_interno --build "$TL_BUILD" --tipo simbolos --ruta "$M"; fi
       - name: Registrar el build · falló
         if: failure() && steps.s.outputs.listo == 'si' && steps.ll.outputs.hay == 'si'
