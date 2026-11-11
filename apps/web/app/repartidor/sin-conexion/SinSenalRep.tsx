@@ -6,19 +6,19 @@ import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } fro
 import { useEffect, useState } from "react";
 import { abrirFuera } from "@/lib/nativo/externo";
 import { irAlServidor } from "@/lib/nativo/puente";
+import { useSenal } from "@/lib/nativo/senal";
 import { leerCola, leerTurno, type Cola, type Turno } from "./local";
 
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const PASO: Record<string, [string, string]> = { recogi: ["Recogí", "Picked up"], llegue: ["Llegué", "Arrived"], entregado: ["Entregado", "Delivered"] };
 
 export function SinSenalRep() {
-  const [t, setT] = useState<Turno | null | undefined>(undefined), [cola, setCola] = useState<Cola>([]), [linea, setLinea] = useState(false), [abierta, setAbierta] = useState<string | null>(null);
+  const [t, setT] = useState<Turno | null | undefined>(undefined), [cola, setCola] = useState<Cola>([]), [abierta, setAbierta] = useState<string | null>(null);
   useEffect(() => {
     void leerTurno().then(setT); void leerCola().then(setCola);
-    const f = () => setLinea(navigator.onLine); f();
-    window.addEventListener("online", f); window.addEventListener("offline", f);
-    return () => { window.removeEventListener("online", f); window.removeEventListener("offline", f); };
   }, []);
+  // «Hay señal» solo si NUESTRO servidor responde (no basta con que el teléfono diga que tiene red: lib/nativo/senal.ts).
+  const linea = useSenal() === true;
   const es = t?.es ?? !/^en/i.test(typeof navigator === "undefined" ? "es" : navigator.language ?? "es");
   const E2 = (a: string, b: string) => (es ? a : b);
   const hora = (ms: number) => new Date(ms).toLocaleTimeString(es ? "es-US" : "en-US", { hour: "numeric", minute: "2-digit" });

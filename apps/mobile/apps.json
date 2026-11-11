@@ -5,6 +5,8 @@
   "minimos": { "ios": "16.0", "android": 26 },
   "splashMaxMs": 3000,
   "comun": ["/entrar", "/recuperar", "/cuenta/ajustes", "/soporte", "/ayuda", "/privacidad", "/terminos", "/app"],
+  "$androidComun": "Permisos normales de Android (sin aviso al usuario) que piden las cuatro apps. ACCESS_NETWORK_STATE: la WebView de Android no sabe sola si hay red; MainActivity (RedWebView) la sigue y se la cuenta, para que en modo avión la página diga «sin señal» (guardianes permisosMinimos y senalHonesta). Solo se suma un permiso normal aquí con su porqué en permisosMinimos.",
+  "androidComun": ["android.permission.ACCESS_NETWORK_STATE"],
   "tecnico": ["/api", "/_next", "/assets", "/fuentes", "/medios", "/teselas", "/.well-known", "/favicon.ico"],
   "soloWeb": ["/admin", "/sistema"],
   "inicio": ["/", "/cuenta"],

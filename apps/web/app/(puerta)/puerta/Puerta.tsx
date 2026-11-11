@@ -17,6 +17,7 @@ import { Escanear, mandar, mandarOLocal } from "./Escanear";
 import { Cabeza, Hoja, kpiOscuro } from "./Marco";
 import { avisoSinSenal, EstadoPuerta } from "./sin-conexion/Estado";
 import { soltarSesion, usePuertaLocal } from "./sin-conexion/usePuertaLocal";
+import { sinRed } from "@/lib/nativo/senal";
 
 type Bi = { es: string; en: string };
 type Tab = "escanear" | "buscar" | "lista" | "aforo" | "mas" | "mesas" | "incid" | "equipo" | "cierre" | "noche";
@@ -53,8 +54,8 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   const ultimo = useRef(0);
   useEffect(() => {
     let es1: EventSource | null = null, poll: ReturnType<typeof setInterval> | null = null;
-    const refrescar = () => { if (Date.now() - ultimo.current > 4000 && t !== "escanear" && t !== "buscar" && navigator.onLine !== false) { ultimo.current = Date.now(); router.refresh(); } };
-    const preguntar = () => { if (navigator.onLine !== false && enLinea.current) router.refresh(); };
+    const refrescar = () => { if (Date.now() - ultimo.current > 4000 && t !== "escanear" && t !== "buscar" && !sinRed()) { ultimo.current = Date.now(); router.refresh(); } };
+    const preguntar = () => { if (!sinRed() && enLinea.current) router.refresh(); };
     try {
       es1 = new EventSource(`/api/puerta/vivo?sesion=${ctx.sesion}`);
       es1.addEventListener("resumen", (ev) => { try { setR(JSON.parse((ev as MessageEvent).data) as Resumen); refrescar(); } catch { /* nada */ } });
@@ -117,7 +118,7 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
       const s = sc.enLinea ? await puertaBuscar(ctx.sesion, q.trim()).catch(() => null) : null;
       if (s?.ok) setRes((s as unknown as { filas: FilaPuerta[] }).filas); else if (sc.listo) setRes(filasLocales(await sc.buscar(q.trim())));
     }
-    if (sc.enLinea && navigator.onLine !== false) router.refresh();
+    if (sc.enLinea && !sinRed()) router.refresh();
   });
   const ST: Record<string, [string, string, string]> = {
     valid: ["FALTA", "MISSING", "neutral"], used: ["ADENTRO", "INSIDE", "signal"], void: ["ANULADO", "VOIDED", "danger"], refunded: ["DEVUELTO", "REFUNDED", "danger"], replaced: ["QR ANULADO", "QR VOIDED", "danger"],

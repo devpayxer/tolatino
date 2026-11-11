@@ -34,10 +34,14 @@ import java.util.Collections;
    la página de error: lo demás de https://localhost (los /_next/static de la página, la isla) lo manda a la red, y sin señal no carga (la
    página no se hidrataba y la isla no abría). Aquí se sirve TODO https://localhost desde assets/public (WebViewAssetLoader, solo https,
    solo ese dominio), y el JS de Capacitor (puente y cabeceras de los plugins) se inyecta también en ese origen —Capacitor solo lo inyecta
-   en el del servidor—, para que la isla use TLLocal (el almacén del teléfono) como la app en línea. Solo nuestro paquete vive ahí. */
+   en el del servidor—, para que la isla use TLLocal (el almacén del teléfono) como la app en línea. Solo nuestro paquete vive ahí.
+
+   3. La red (RedWebView; guardián senalHonesta): la WebView de Android no sigue sola la red del teléfono; se le cuenta aquí, para que
+   navigator.onLine y los eventos online/offline digan la verdad (en modo avión, «sin red»). */
 public class MainActivity extends BridgeActivity {
 
     private static final String[] SIN_MARCOS = { "androidBridge", "CapacitorHttpAndroidInterface", "CapacitorCookiesAndroidInterface" };
+    private RedWebView red;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +54,14 @@ public class MainActivity extends BridgeActivity {
             Log.w("TLCascara", "WebView sin addWebMessageListener: la app abre sin puente nativo (lo nativo usa su respaldo web)");
         }
         origenLocal(b, w);
+        red = new RedWebView(this, w);
+        red.empezar();
+    }
+
+    @Override
+    public void onDestroy() {
+        if (red != null) red.parar();
+        super.onDestroy();
     }
 
     private void origenLocal(Bridge b, WebView w) {

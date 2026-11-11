@@ -187,7 +187,8 @@ ${ps.map((p) => `"${PERM_IOS[p]}" = "${escStr(texto(p, a, l))}";`).join("\n")}`)
   /* Android */
   poner(`${S}/assets/capacitor.config.json`, cfgA);
   poner(`${S}/assets/capacitor.plugins.json`, JSON.stringify(a.plugins.map((p) => ({ pkg: PLUGINS[p].npm ?? `tolatino/${PLUGINS[p].dir}`, classpath: PLUGINS[p].android })), null, 2));
-  const permA = [...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])];
+  // Los permisos normales de las cuatro (androidComun: ACCESS_NETWORK_STATE, la red para la WebView) y después los de esta app.
+  const permA = [...(A.androidComun ?? []), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])];
   poner(`${S}/AndroidManifest.xml`, `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json: los permisos de ${esc(a.nombre.es)} (solo los que usa). No editar a mano. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">

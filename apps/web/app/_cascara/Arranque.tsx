@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { anotarPantalla, botonAtras, quitarSplash } from "@/lib/nativo/inicio";
 import { esApp } from "@/lib/nativo/puente";
 import { anotar } from "@/lib/nativo/reporte";
+import { alCambiarRed } from "@/lib/nativo/senal";
 
 export function Arranque() {
   const ruta = usePathname();
@@ -15,9 +16,9 @@ export function Arranque() {
     let quitar = () => undefined as void;
     void botonAtras().then((f) => { quitar = f; });
     const err = (e: ErrorEvent) => { void anotar(`error ${String(e.message ?? "").replace(/\d{3,}/g, "#").slice(0, 120)}`); };
-    const red = () => { void anotar(navigator.onLine ? "señal: sí" : "señal: no"); };
-    window.addEventListener("error", err); window.addEventListener("online", red); window.addEventListener("offline", red);
-    return () => { quitar(); window.removeEventListener("error", err); window.removeEventListener("online", red); window.removeEventListener("offline", red); };
+    const quitarRed = alCambiarRed((r) => { void anotar(r ? "señal: sí" : "señal: no"); });
+    window.addEventListener("error", err);
+    return () => { quitar(); quitarRed(); window.removeEventListener("error", err); };
   }, []);
   useEffect(() => { if (ruta && esApp()) anotarPantalla(ruta); }, [ruta]);
   return null;

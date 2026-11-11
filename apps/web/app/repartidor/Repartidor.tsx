@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState, useTransition, type ComponentType } f
 import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
 import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
 import { guardarTurno, leerCola, guardarCola, type Cola } from "./sin-conexion/local";
+import { alCambiarRed, sinRed } from "@/lib/nativo/senal";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -38,7 +39,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   // Sin señal: lo pendiente se envía al volver la señal (y cada 15 s mientras quede algo).
   const enviarCola = useCallback(async () => {
     const c = await leerCola();
-    if (!c.length || !navigator.onLine) { setCola(c); return; }
+    if (!c.length || sinRed()) { setCola(c); return; }
     const resto: Cola = [];
     for (const x of c) { try { await repPaso(x.numero, x.paso, x.efectivo); } catch { resto.push(x); } }
     await guardarCola(resto); setCola(resto);
@@ -46,7 +47,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   }, [router]);
   // 8a · En la app: lo pendiente y las entregas del turno quedan en el teléfono para abrir sin señal (/repartidor/sin-conexion).
   useEffect(() => { void guardarTurno(entregas, es); }, [entregas, es]);
-  useEffect(() => { void enviarCola(); const on = () => void enviarCola(); window.addEventListener("online", on); const i = setInterval(on, 15000); return () => { window.removeEventListener("online", on); clearInterval(i); }; }, [enviarCola]);
+  useEffect(() => { void enviarCola(); const on = () => void enviarCola(); const quitar = alCambiarRed((r) => { if (r) on(); }); const i = setInterval(on, 15000); return () => { quitar(); clearInterval(i); }; }, [enviarCola]);
 
   const run = (f: () => Promise<{ ok: boolean; msg?: { es: string; en: string } }>, ok: string, luego?: () => void) => start(async () => {
     setErr("");
@@ -57,7 +58,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   });
   const paso = (numero: string, ps: PasoRep, ok: string, efectivo?: number) => {
     const guardar = async () => { const c = [...(await leerCola()), { numero, paso: ps, efectivo, at: Date.now() }]; await guardarCola(c); setCola(c); setToast(E2("Sin señal: se guardó y se envía solo.", "No signal: saved, it sends on its own.")); };
-    if (!navigator.onLine) { void guardar(); return; }
+    if (sinRed()) { void guardar(); return; }
     start(async () => {
       setErr("");
       try {

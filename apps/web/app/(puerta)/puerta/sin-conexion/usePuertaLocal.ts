@@ -4,8 +4,13 @@
    - Con señal, cada puerta_sync_seg: sube la cola EN ORDEN (de a puerta_sync_lote, con la hora del teléfono de ahora para medir su reloj) y
      después baja los cambios desde su cursor. Sin señal: decide con el paquete y guarda cada escaneo en la cola (cifrada) con su id.
    - Si el servidor dice que la puerta se cerró, se revocó o venció: se borra todo de esta sesión en el teléfono.
-   - El service worker propio de /puerta guarda solo la cáscara de la app (nunca respuestas con datos): así la puerta abre sin señal. */
+   - El service worker propio de /puerta guarda solo la cáscara de la app (nunca respuestas con datos): así la puerta abre sin señal.
+   - 8a · En la isla de la app (origen local, sin el servidor): no se sube ni se baja nada desde aquí (lo sube la puerta en línea, con la misma
+     cola del llavero); «en línea» solo si NUESTRO servidor responde (lib/nativo/senal.ts). Antes un /api relativo caía en el origen local,
+     su 404 contaba como «hay señal» y la isla lo decía en modo avión. */
 import { useCallback, useEffect, useRef, useState } from "react";
+import { enIsla } from "@/lib/nativo/puente";
+import { alCambiarRed, haySenal, sinRed } from "@/lib/nativo/senal";
 import type { Pregunta, ResEscaneo, VistaEscaneo } from "@/lib/puerta-comun";
 import * as L from "./local";
 
@@ -25,6 +30,7 @@ export type PuertaLocal = EstadoLocal & {
 const hayDS = () => typeof DecompressionStream !== "undefined";
 const T_RED = 8000;
 async function post(url: string, body: unknown): Promise<{ st: number; j: Record<string, unknown> } | null> {
+  if (enIsla()) return null; // el origen local no es el servidor
   const ab = new AbortController(), t = setTimeout(() => ab.abort(), T_RED);
   try {
     const r = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: ab.signal, cache: "no-store" });
@@ -43,7 +49,7 @@ async function bajarPublicas() {
 }
 
 export function usePuertaLocal(sesion: string, es: boolean, o: { puerta: string; onCerrada: () => void; activo?: boolean }): PuertaLocal {
-  const [st, setSt] = useState<EstadoLocal>({ listo: false, preparando: true, n: 0, lista: null, enLinea: true, desde: null, porSubir: 0, avisoMin: 10, sincronizado: null, error: null, tz: "America/New_York", revocada: false });
+  const [st, setSt] = useState<EstadoLocal>({ listo: false, preparando: true, n: 0, lista: null, enLinea: !enIsla(), desde: null, porSubir: 0, avisoMin: 10, sincronizado: null, error: null, tz: "America/New_York", revocada: false });
   const est = useRef<L.Estado | null>(null), ocupado = useRef(false), cerrada = useRef(o.onCerrada), vivo = useRef(true), seg = useRef(15);
   cerrada.current = o.onCerrada;
   const pon = useCallback((x: Partial<EstadoLocal>) => { if (vivo.current) setSt((s) => ({ ...s, ...x })); }, []);
@@ -110,7 +116,8 @@ export function usePuertaLocal(sesion: string, es: boolean, o: { puerta: string;
       const e = await L.leerEstado(sesion).catch(() => null);
       if (e) reflejar(e);
       await contar();
-      if (navigator.onLine === false) { sinSenal(); pon({ preparando: false }); return; }
+      if (sinRed()) { sinSenal(); pon({ preparando: false }); return; }
+      if (enIsla()) { if (await haySenal()) conSenal(); else sinSenal(); pon({ preparando: false }); return; }
       if (!e) await completo(); else await sincronizar();
       pon({ preparando: false });
     })();
@@ -120,12 +127,13 @@ export function usePuertaLocal(sesion: string, es: boolean, o: { puerta: string;
   useEffect(() => {
     if (o.activo === false) return;
     let t: ReturnType<typeof setTimeout>;
-    const vuelta = async () => { await sincronizar(); t = setTimeout(vuelta, Math.max(5, seg.current) * 1000); };
+    const isla = enIsla();
+    const probar = async () => { if (await haySenal()) conSenal(); else sinSenal(); };
+    const vuelta = async () => { await (isla ? probar() : sincronizar()); t = setTimeout(vuelta, Math.max(5, seg.current) * 1000); };
     t = setTimeout(vuelta, Math.max(5, seg.current) * 1000);
-    const on = () => void sincronizar(), off = () => sinSenal();
-    window.addEventListener("online", on); window.addEventListener("offline", off);
-    return () => { clearTimeout(t); window.removeEventListener("online", on); window.removeEventListener("offline", off); };
-  }, [sincronizar, sinSenal, o.activo]);
+    const quitar = alCambiarRed((red) => { if (!red) sinSenal(); else void (isla ? probar() : sincronizar()); });
+    return () => { clearTimeout(t); quitar(); };
+  }, [sincronizar, sinSenal, conSenal, o.activo]);
 
   /* Un escaneo sin señal: decide con el paquete, lo anota y lo pone en la cola (mismo id, hora del teléfono). */
   const escanear = useCallback(async (c: Record<string, unknown>): Promise<ResEscaneo | { ok: true; res: string; k: number }> => {

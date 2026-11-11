@@ -23,6 +23,8 @@ const sinComent = (f) => readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (x
 const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); const re = new RegExp(`create or replace function ${nombre}\\([\\s\\S]*?\\$\\$([\\s\\S]*?)\\$\\$`, "g"); for (const m of t.matchAll(re)) b = m[1]; } return b; };
 /* Las filas del catálogo config_keys en todas las migraciones que lo amplían (0105 Comunidad, 0106 Eventos…). */
 const catalogoConfig = () => { const out = []; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); if (!/insert into config_keys/.test(t)) continue; for (const m of t.matchAll(/^\s*\('([a-z0-9_]+)', (-?\d+), (-?\d+), (-?\d+), '\{/gm)) out.push({ k: m[1], a: +m[2], b: +m[3], d: +m[4], f: `packages/db/migrations/${x}` }); } return out; };
+/* El cuerpo de un método de Java (desde su firma hasta la llave que lo cierra, contando llaves). */
+const cuerpoJava = (t, nombre) => { const i = t.search(new RegExp(`\\b\\w+ ${nombre}\\([^)]*\\)\\s*\\{`)); if (i < 0) return ""; let n = 0; for (let j = t.indexOf("{", i); j < t.length; j++) { if (t[j] === "{") n++; else if (t[j] === "}" && --n === 0) return t.slice(i, j + 1); } return t.slice(i); };
 const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
 
 const guardianes = {
@@ -5055,11 +5057,18 @@ const guardianes = {
 
   /* 8a · Permisos mínimos (§3.6): cada app pide solo lo que usa. Cámara solo donde hay foto o lector; ubicación «al usar» solo To'Latino (el
      Repartidor la suma en 8e, «entrega», con modo de fondo solo él); nunca micrófono, galería entera, contactos, otras apps ni ubicación
-     «siempre». Al revés: sumar RECORD_AUDIO, CAMERA al Repartidor o NSMicrophoneUsageDescription → falla. */
+     «siempre». Los permisos normales de las cuatro (apps.json androidComun) solo de esta lista, cada uno con su porqué (normales: sin aviso ni
+     texto de permiso, permisoConTexto no los pide). Al revés: sumar RECORD_AUDIO, CAMERA al Repartidor, NSMicrophoneUsageDescription o un
+     permiso fuera de la lista en androidComun → falla. */
   permisosMinimos() {
     const G = "permisosMinimos", J = "apps/mobile/apps.json";
     if (!existsSync(J)) return;
     const A = JSON.parse(readFileSync(J, "utf8"));
+    const COMUNES = {
+      // Normal (sin aviso). La WebView no sabe sola si hay red: RedWebView la sigue y se la cuenta (navigator.onLine honesto; senalHonesta).
+      "android.permission.ACCESS_NETWORK_STATE": "la red para la WebView",
+    };
+    for (const p of A.androidComun ?? []) if (!(p in COMUNES)) falla(G, J, 0, `androidComun: ${p} no es un permiso normal con su porqué en permisosMinimos`);
     const NUNCA = /android\.permission\.(RECORD_AUDIO|READ_MEDIA_IMAGES|READ_MEDIA_VIDEO|READ_EXTERNAL_STORAGE|WRITE_EXTERNAL_STORAGE|READ_CONTACTS|QUERY_ALL_PACKAGES|SYSTEM_ALERT_WINDOW|ACCESS_BACKGROUND_LOCATION|READ_PHONE_STATE|READ_SMS)\b/;
     const base = "apps/mobile/android/app/src/main/AndroidManifest.xml";
     if (existsSync(base)) for (const m of readFileSync(base, "utf8").matchAll(/uses-permission android:name="([^"]+)"/g)) if (m[1] !== "android.permission.INTERNET") falla(G, base, 0, `la base común solo pide INTERNET (${m[1]} va en el sabor que lo usa)`);
@@ -5067,7 +5076,7 @@ const guardianes = {
       if (a.permisos.ubicacion === "entrega" && a.key !== "delivery") falla(G, J, 0, `${a.key}: la ubicación de fondo es solo del Repartidor`);
       if (a.permisos.ubicacion === "siempre") falla(G, J, 0, `${a.key}: nunca ubicación «siempre»`);
       const mf = `apps/mobile/android/app/src/${a.sabor}/AndroidManifest.xml`, t = existsSync(mf) ? readFileSync(mf, "utf8") : "";
-      const ok = new Set([...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])]);
+      const ok = new Set([...(A.androidComun ?? []).filter((p) => p in COMUNES), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])]);
       for (const m of t.matchAll(/uses-permission(?:-sdk-23)? android:name="([^"]+)"/g)) {
         if (NUNCA.test(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no se pide (§3.6)`);
         else if (!ok.has(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no lo usa esta app`);
@@ -5077,6 +5086,48 @@ const guardianes = {
       if (/UIBackgroundModes/.test(p) && !(a.key === "delivery" && a.permisos.ubicacion === "entrega")) falla(G, pl, 0, `${a.key}: modo de fondo solo para el Repartidor con entrega (8e)`);
       if (!a.permisos.camara && /NSCameraUsageDescription/.test(p)) falla(G, pl, 0, `${a.key}: cámara sin usarla`);
     }
+  },
+
+  /* 8a · La señal no se da por hecha (11 nov: en el emulador en modo avión la isla del Repartidor decía «Hay señal» y ofrecía «Abrir el
+     Repartidor»). En Android navigator.onLine solo dice la verdad si la app le cuenta la red a la WebView: la cáscara pide ACCESS_NETWORK_STATE
+     (los cuatro sabores), sigue la red por defecto y llama setNetworkAvailable, y suelta el escucha al cerrar. En la web nadie lee
+     navigator.onLine ni escucha online/offline fuera de lib/nativo/senal.ts, y una pantalla que ofrece «hay señal» lo confirma contra nuestro
+     servidor (haySenal/useSenal), nunca con el teléfono solo. El humo de Android lo comprueba en el emulador. Al revés: leer navigator.onLine
+     en una isla, quitar setNetworkAvailable o el registro del escucha, o quitar el permiso de apps.json → falla. */
+  senalHonesta() {
+    const G = "senalHonesta", S = "apps/web/lib/nativo/senal.ts";
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?|mjs)$/.test(f) || f === S) continue;
+      const t = sinComent(f);
+      if (/\bnavigator\.onLine\b|\bon(online|offline)\s*=/.test(t)) falla(G, f, 0, "navigator.onLine solo en lib/nativo/senal.ts (sinRed / haySenal / useSenal): en la app no prueba que el servidor responda");
+      if (/addEventListener\(\s*["'](online|offline)["']/.test(t)) falla(G, f, 0, "los avisos online/offline se escuchan con alCambiarRed (lib/nativo/senal.ts)");
+    }
+    if (!existsSync(S)) return falla(G, S, 0, "falta la señal compartida");
+    const s = sinComent(S);
+    if (!/method: "HEAD"/.test(s) || !/signal: ab\.signal/.test(s) || !/setTimeout\(\(\) => ab\.abort\(\)/.test(s) || !/urlServidor\(/.test(s)) falla(G, S, 0, "haySenal prueba NUESTRO servidor (urlServidor), con HEAD y tiempo límite");
+    // Las islas que ofrecen «hay señal» lo confirman contra el servidor.
+    for (const [f, re] of [["apps/web/app/repartidor/sin-conexion/SinSenalRep.tsx", /useSenal\(\)/], ["apps/web/app/(puerta)/puerta/sin-conexion/usePuertaLocal.ts", /haySenal\(\)/]]) {
+      if (existsSync(f) && !re.test(sinComent(f))) falla(G, f, 0, "«hay señal» se confirma con nuestro servidor (lib/nativo/senal.ts), no con el teléfono");
+    }
+    const U = "apps/web/app/(puerta)/puerta/sin-conexion/usePuertaLocal.ts";
+    if (existsSync(U) && !/if \(enIsla\(\)\) return null;/.test(cuerpoFn(sinComent(U), "post"))) falla(G, U, 0, "desde la isla no se manda nada a un /api relativo (cae en el origen local y su 404 parecía señal)");
+    // Android: la cáscara le cuenta la red a la WebView.
+    const J = "apps/mobile/apps.json", D = "apps/mobile/android/app/src/main/java/com/tolatino/cascara";
+    const A = existsSync(J) ? JSON.parse(readFileSync(J, "utf8")) : { apps: [] };
+    if (!(A.androidComun ?? []).includes("android.permission.ACCESS_NETWORK_STATE")) falla(G, J, 0, "androidComun pide ACCESS_NETWORK_STATE (sin él la WebView no sabe si hay red)");
+    for (const a of A.apps) {
+      const mf = `apps/mobile/android/app/src/${a.sabor}/AndroidManifest.xml`;
+      if (!existsSync(mf) || !readFileSync(mf, "utf8").includes('<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />')) falla(G, mf, 0, `${a.key}: sin ACCESS_NETWORK_STATE la WebView no sabe si hay red`);
+    }
+    const sinJ = (f) => (existsSync(f) ? readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "") : "");
+    const R = `${D}/RedWebView.java`, M = `${D}/MainActivity.java`, r = sinJ(R), m = sinJ(M);
+    if (!/\.setNetworkAvailable\(/.test(r)) falla(G, R, 0, "la red se le cuenta a la WebView (setNetworkAvailable)");
+    if (!/registerDefaultNetworkCallback\([^;]*Looper\.getMainLooper\(\)/.test(r)) falla(G, R, 0, "se sigue la red por defecto, en el hilo principal (registerDefaultNetworkCallback con el Looper principal)");
+    if (!/unregisterNetworkCallback\(/.test(r)) falla(G, R, 0, "el escucha de la red se suelta al cerrar");
+    if (!/void onLost\(/.test(r) || !/void onCapabilitiesChanged\(/.test(r) || !/NET_CAPABILITY_INTERNET/.test(r)) falla(G, R, 0, "sin red al perderla (onLost) y con red solo si dice INTERNET (onCapabilitiesChanged)");
+    if (!/new RedWebView\(this, \w+\)/.test(m) || !/\.empezar\(\)/.test(cuerpoJava(m, "onCreate")) || !/\.parar\(\)/.test(cuerpoJava(m, "onDestroy"))) falla(G, M, 0, "MainActivity empieza RedWebView en onCreate y lo para en onDestroy");
+    const H = "apps/mobile/scripts/humo-android.sh", h = existsSync(H) ? readFileSync(H, "utf8") : "";
+    if (!/navigator\.onLine/.test(h) || !/Hay señal\\\|There is signal/.test(h)) falla(G, H, 0, "el humo de Android comprueba en modo avión que la página dice sin red y que la isla no dice «Hay señal»");
   },
 
   /* 8a · Sin rastreo (§3.6, ATT): ningún SDK de anuncios ni de analítica de terceros, nada de IDFA / AdSupport / AppTrackingTransparency ni del
