@@ -1138,3 +1138,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7i · «Traducir con El Compa» y «Tómale foto a tu lista»** siguen como decidió el plan (§6 #9, #10): «Traducir» con el traductor propio y la
       foto de la lista sin construir; cambiarlo es decisión del fundador. (7i, 11 nov)
 
+
+## Fase 8 → Fase 9 (del plan de las apps, 11 nov)
+- [ ] Build de producción apuntando a `tolatino.com` con su `apple-app-site-association` y `assetlinks.json`; llave de APNs y proyecto de Firebase de producción, aparte de los del sandbox.
+- [ ] Cuentas de revisión en producción (decisión I, choque anotado en REVISION) y textos finales de `/privacidad` y `/terminos` revisados por el abogado.
+- [ ] Ninguna pantalla «Pronto» alcanzable en los builds de tienda (Apple 2.1); la purga final de la cuenta a los 30 días corriendo (L314).
+- [ ] Enviar a revisión y lanzamiento por fases; beta real en Hazleton.
+- [ ] Apple Pay / Google Pay nativos; Smart App Banner; passkeys obligatorias para el equipo.
+- [ ] El día del envío: revisar de nuevo las reglas de compras externas en EE. UU. y el SDK mínimo que pide cada tienda.

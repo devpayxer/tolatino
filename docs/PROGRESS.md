@@ -1030,3 +1030,9 @@ cambiadas). Ayuda: `admin-el-compa`, `admin-configuracion`, `notificaciones`, `a
 3. ~~Pexels~~ hecho (5 nov): clave nueva en los secretos del entorno, probada (HTTP 200).
 4. Crear la rama `pruebas` nueva (hoy apunta al código v1) con `infra/pruebas/deploy.sh`
    cuando empiece la Fase 0.
+
+## Fase 8 · plan escrito (11 nov)
+`docs/diseno/plan/fase8-apps.md`: 8a–8i, migraciones 0125–0133, semillas 0044–0047. **Requisito previo:** `pruebas.tolatino.com` con HTTPS detrás
+de Cloudflare (Paquete 8-0; hoy el sandbox es HTTP en la IP). Pedir el Paquete 8-1 (D-U-N-S, Apple, Google, Firebase) al empezar 8a. Sin
+cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de ningún tipo, ni passkeys, ni colector de errores, ni
+`/privacidad` / `/terminos` públicas: el plan los construye.

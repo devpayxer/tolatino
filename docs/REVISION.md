@@ -3558,3 +3558,25 @@ camino de siempre, IDOR con las peticiones reales repetidas, ciudades, inyecció
 enlace de 30 min, purga a 12 meses y a 30 días). Lo que falta (modelo real, CI, 9 dispositivos, abogado, cuentas de Anthropic/Telnyx/Meta) está
 en LAUNCH-CHECKLIST.
 
+
+**Para mirar en 7i (anotado al revisar):** en Super Admin › El Compa › Resumen, la cifra del copiloto («202 borradores · 30 d») sale dos veces: en
+la franja y en las cuatro tarjetas de debajo. Decidí dejarla así hasta tu revisión; si prefieres, la franja muestra solo marcas y horario.
+
+### Fase 8 · Plan de las cuatro apps en las tiendas (11 nov)
+El plan está en `docs/diseno/plan/fase8-apps.md` (8a–8i, migraciones 0125–0133). Se construye con los defaults de su §9 (29 preguntas; las más
+importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
+- **Cuentas de las tiendas como organización** (necesita el D-U-N-S de la empresa; ¿existe ya la LLC?).
+- **Las apps cargan el sitio** (las páginas se arman en el servidor) más pantallas sin conexión y funciones del teléfono: avisos, cámara, ubicación,
+  Face ID / huella.
+- **Avisos al teléfono con servidor propio** ($0; la lista de lo que se paga no crece). El SMS queda para lo crítico o para quien no tiene la app.
+- **Pro no se vende dentro de las apps** (se maneja en la web); pedidos, boletos y depósitos siguen con tarjeta.
+- **iPhone solamente** (no iPad); iOS 16+ y Android 8+. Clasificación 17+.
+- **Ubicación del repartidor** solo durante una entrega activa, «Mientras se usa», y se borra a los 14 días.
+- **El repositorio sigue público** (las Mac de GitHub salen gratis); ninguna llave vive en el repo ni en GitHub.
+- **Choque con la regla U (#25):** en Google Play Console hay que escribir una vez el correo de la cuenta de servicio; no hay otra forma.
+- **Choque con la decisión I (#24):** Apple y Google piden cuentas de revisión en producción. Default: cuentas operativas ocultas con un número
+  reservado, creadas en la Fase 9 con tu OK.
+- **Tus pasos en el teléfono** (plan §10): 8-0 Cloudflare y el dominio (antes de 8a); 8-1 D-U-N-S, Apple Developer y Google Play como
+  organización, proyecto de Firebase; 8-2 llaves y registros de las apps (unos 15 minutos); 8-3 declaraciones de privacidad de cada tienda.
+  Costos: $99 al año (Apple) y $25 una vez (Google), ya en PLAN §8.
+- **Qué mirarás primero:** la web instalada en tu iPhone con avisos (8c) y luego TestFlight (8h).
