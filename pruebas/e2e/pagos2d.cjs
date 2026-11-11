@@ -17,7 +17,11 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
   sql(`update delivery_settings set auto_accept=false, pay_card=false, pay_cash_pickup=true where business_id='${BIZ}'`);
-  sql(`delete from notifications where tpl in ('pay_refund', 'pay_released')`); sql(`delete from refunds`); sql(`update operations set pay_status = null where pay_status is not null`); sql(`delete from queue_items where queue = 'disputa'`); sql(`delete from disputes`); sql(`delete from payments`); sql(`delete from sim_intents`); sql(`delete from payment_methods`); sql(`delete from stripe_accounts`);
+  // 9a · Ya no borra datos compartidos (antes: TODOS los pagos, devoluciones, disputas, tarjetas y cuentas de cobro de la base). Solo deja
+  // como al empezar lo que esta prueba necesita: Sabor Dominicano sin cuenta de cobro (la prueba la vuelve a conectar) y Marisol sin tarjetas
+  // activas (quitadas, no borradas). Los avisos se cuentan desde que empieza la prueba.
+  const T0 = sql(`select now()::text`);
+  sql(`delete from stripe_accounts where business_id = '${BIZ}'`); sql(`update payment_methods set status = 'removed' where user_id = ${MARISOL} and status = 'active'`);
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   // 1 · El dueño conecta su cuenta de cobro (simulador)
@@ -50,7 +54,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   };
   await agregar('4000000000000002');
   const appAntes = sql(`select count(*) from operations where user_id = ${MARISOL} and pay_mode = 'app'`);
-  ok(sql(`select count(*) from payment_methods where user_id = ${MARISOL} and last4 = '0002' and simulated`) === '1', 'tarjeta guardada: solo marca y últimos 4');
+  ok(sql(`select count(*) from payment_methods where user_id = ${MARISOL} and last4 = '0002' and simulated and status = 'active'`) === '1', 'tarjeta guardada: solo marca y últimos 4');
   await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
   await m.getByText(/Tu banco la rechazó/).first().waitFor(); ok(true, 'rechazada: «Tu banco la rechazó» y no hay pedido');
   ok(sql(`select count(*) from operations where user_id = ${MARISOL} and pay_mode = 'app'`) === appAntes, 'sin pedido con la tarjeta rechazada');
@@ -73,7 +77,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   await d.screenshot({ path: OUT + 'd7-devolver-d.png' });
   await clic(d.getByText('Devolver $2.00', { exact: true })); await d.getByText(/Devuelto\. El cliente ya lo sabe/).first().waitFor();
   ok(pago(n1) === `partially_refunded|${tot}|${Math.round(sub * 0.1)}|200`, 'devolución parcial de $2.00');
-  ok(sql(`select count(*) from notifications where user_id = ${MARISOL} and tpl = 'pay_refund'`) === '1', 'el cliente recibe «Te devolvimos dinero»');
+  ok(sql(`select count(*) from notifications where user_id = ${MARISOL} and tpl = 'pay_refund' and created_at >= '${T0}'`) === '1', 'el cliente recibe «Te devolvimos dinero»');
   ok(sql(`select count(*) from audit_entries where action = 'pedido.devolver' and at > now() - interval '1 minute'`) !== '0', 'auditado');
   // 6 · Super Admin devuelve el resto
   const a = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(a, 'admin'); globalThis.__p.push(a);
@@ -86,7 +90,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   const n2 = m.url().split('/').pop(); ok(pago(n2).startsWith('held|'), `pedido #${n2} con la tarjeta guardada: retenido`);
   await clic(m.getByText('Cancelar pedido', { exact: true })); await m.waitForURL(/cancelar$/); await clic(m.getByText('Sí, cancelar el pedido', { exact: true })); await m.waitForURL(/\/pedido\/\d+$/);
   ok(await espera(() => pago(n2).split('|')[0], 'released') === 'released', 'el cliente cancela → liberado completo');
-  ok(sql(`select count(*) from notifications where user_id = ${MARISOL} and tpl = 'pay_released'`) === '1', 'aviso «Liberamos tu dinero»');
+  ok(sql(`select count(*) from notifications where user_id = ${MARISOL} and tpl = 'pay_released' and created_at >= '${T0}'`) === '1', 'aviso «Liberamos tu dinero»');
   // 8 · Nadie contesta → se libera
   await alCheckout(); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click(); await m.waitForURL(/\/pedido\/\d+$/);
   const n3 = m.url().split('/').pop(); sql(`update operations set respond_by = now() - interval '1 minute' where number = '${n3}'`);

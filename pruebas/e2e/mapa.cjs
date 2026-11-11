@@ -1,7 +1,7 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
-const OUT = ENT.S + '/cap/', TES = ENT.S + '/muestra/';
+const OUT = ENT.S + '/cap/', TES = ENT.rec('teselas-muestra') + '/'; // 9a: teselas de muestra OPCIONALES (sin ellas, 404 y el mapa sale sin fondo)
 (async () => {
   const b = await chromium.launch(); const err = [];
   const teselas = async (ctx) => ctx.route('**/teselas/**', async (r) => {

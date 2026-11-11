@@ -10,7 +10,7 @@
 // WALLET. Deja los datos como estaban (eventos de prueba cancelados, llaves de prueba retiradas).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const crypto = require('crypto'); const fs = require('fs'); const zlib = require('zlib');
-const { S, B, sql, api, entrar, uid, firmar } = require('./g6/comun.cjs');
+const { S, B, sql, api, entrar, uid, firmar } = require('../lib/g6-comun.cjs');
 const REPO = ENT.RAIZ, OUT = S + '/cap/';
 const SIM = require(REPO + '/scripts/wallet-sim/sim.cjs'), PKI = require(REPO + '/scripts/wallet-sim/pki.cjs');
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
@@ -379,8 +379,8 @@ const ws = async (metodo, ruta, token, cuerpo, extra = {}) => {
     await pam.screenshot({ path: OUT + 'w8g-integ-vence-m.png', fullPage: true });
 
     // ── 14 · Lo que queda: nada se borró; el libro no se cambia ──
-    ok(/solo de inserción/.test(require('./g6/comun.cjs').sqlErr(`update pass_log set detail = 'x' where id = (select max(id) from pass_log)`)) && /no se borra/.test(require('./g6/comun.cjs').sqlErr(`delete from ticket_passes where id = ${PASE1[0]}`)), 'pass_log no se cambia y un pase no se borra (la base)');
-    ok(/la versión y el estado los lleva la base/.test(require('./g6/comun.cjs').sqlErr(`update ticket_passes set version = version + 5 where id = ${PASE1[0]}`)), 'la versión de un pase no la cambia nadie más que pase_tocar');
+    ok(/solo de inserción/.test(require('../lib/g6-comun.cjs').sqlErr(`update pass_log set detail = 'x' where id = (select max(id) from pass_log)`)) && /no se borra/.test(require('../lib/g6-comun.cjs').sqlErr(`delete from ticket_passes where id = ${PASE1[0]}`)), 'pass_log no se cambia y un pase no se borra (la base)');
+    ok(/la versión y el estado los lleva la base/.test(require('../lib/g6-comun.cjs').sqlErr(`update ticket_passes set version = version + 5 where id = ${PASE1[0]}`)), 'la versión de un pase no la cambia nadie más que pase_tocar');
     ok(err.length === 0, `sin errores de página (${err.length}) ${err.slice(0, 3).join(' | ')}`);
   } finally {
     limpiar(); retirar();

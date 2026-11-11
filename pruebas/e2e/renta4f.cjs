@@ -99,7 +99,7 @@ const limpiar = () => {
   await panelDet(T2); await clic(h.getByRole('button', { name: 'La devolvió con un daño' }));
   await h.getByText('Cuánto descontar').waitFor();
   ok(await h.getByRole('button', { name: 'Mandar el daño' }).isDisabled(), 'sin foto no se manda');
-  const [fc] = await Promise.all([h.waitForEvent('filechooser'), clic(h.getByText('Tomar o subir foto'))]); await fc.setFiles(ENT.S + '/servida.jpg');
+  const [fc] = await Promise.all([h.waitForEvent('filechooser'), clic(h.getByText('Tomar o subir foto'))]); await fc.setFiles(ENT.rec('fotos') + '/portada.jpg');
   await h.getByLabel('QUÉ SE DAÑÓ').fill('Un peldaño llegó doblado');
   for (let i = 0; i < 60 && await h.getByRole('button', { name: 'Mandar el daño' }).isDisabled(); i++) await h.waitForTimeout(250);
   await h.screenshot({ path: OUT + 'r8-panel-dano-d.png', fullPage: true });
@@ -124,7 +124,7 @@ const limpiar = () => {
   await apartar('Escalera de extensión 24 pies'); const T3 = await confirmarApartar();
   await panelDet(T3); await clic(h.getByRole('button', { name: 'La recogió' })); await h.getByText(/la tiene. Renta cobrada/).first().waitFor();
   await panelDet(T3); await clic(h.getByRole('button', { name: 'La devolvió con un daño' }));
-  const [fc2] = await Promise.all([h.waitForEvent('filechooser'), clic(h.getByText('Tomar o subir foto'))]); await fc2.setFiles(ENT.S + '/servida.jpg');
+  const [fc2] = await Promise.all([h.waitForEvent('filechooser'), clic(h.getByText('Tomar o subir foto'))]); await fc2.setFiles(ENT.rec('fotos') + '/portada.jpg');
   await h.getByLabel('QUÉ SE DAÑÓ').fill('La cuerda llegó rota');
   for (let i = 0; i < 60 && await h.getByRole('button', { name: 'Mandar el daño' }).isDisabled(); i++) await h.waitForTimeout(250);
   await clic(h.getByRole('button', { name: 'Mandar el daño' })); await h.getByText(/ya ve el daño/).first().waitFor();

@@ -103,7 +103,7 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   ok(sql(`select before->>'estado' from audit_entries where action = 'licencia.verificar' order by id desc limit 1`) === 'verificada, revisión por vencer', 'la auditoría dice de qué estado venía');
 
   // ── 4 · Rutas: «Posible estafa», Plantones y las ayudas de las tres ──
-  ok(sql(`select count(*) from queue_items q join help_requests h on h.id::text = q.subject_id join operations o on o.id = h.operation_id join businesses bz on bz.id = h.business_id
+  ok(sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id join businesses bz on bz.id = h.business_id
           where bz.category_id in ('NEG-FE','NEG-INMUEBLE','NEG-DEALER') and q.subject_kind = 'help_request'
             and ((h.reason in ('ver','mudar') or (h.reason = 'cobro' and bz.category_id = 'NEG-FE')) <> (q.queue = 'estafa'))`) === '0', 'cada ayuda de las tres está en su cola: estafa directo, lo demás en «Ayuda con pedidos y citas»');
   ok(sql(`select count(*) from queue_items q where q.queue = 'plantones' and not exists (select 1 from businesses bz where bz.id = q.subject_id and bz.category_id in ('NEG-INMUEBLE','NEG-DEALER'))`) === '0', 'Plantones solo de Bienes Raíces y Autos');

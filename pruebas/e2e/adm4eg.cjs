@@ -36,7 +36,7 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   ok(sql(`select count(*) from audit_entries where action = 'transacciones.devolver' and after->>'inscripcion' = '${I}'`) !== '0', 'queda en la auditoría como inscripción');
 
   // ── Colas › Cuidado de niños ──
-  const QC = sql(`select q.id from queue_items q join help_requests h on h.id::text = q.subject_id where q.queue = 'cuidado' and q.status = 'open' and h.business_id = '${NIN}' order by q.id desc limit 1`);
+  const QC = sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.queue = 'cuidado' and q.status = 'open' and h.business_id = '${NIN}' order by q.id desc limit 1`);
   ok(/^\d+$/.test(QC), `la ayuda «No cuidaron bien a mi niño» abrió un caso en «Cuidado de niños» (${QC})`);
   ok(sql(`select count(*) from queue_items q where q.queue = 'sop' and q.subject_id = (select subject_id from queue_items where id = ${QC})`) === '0', 'no se duplica en «Ayuda con pedidos y citas»');
   await ad.goto(B + '/admin/colas'); ok(await espera(ad.getByText(/Cuidado de niños · Guardería Mis Angelitos/).first()), 'sale primero en Colas');

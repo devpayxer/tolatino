@@ -1,4 +1,8 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'barberia-el-primo';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -21,7 +25,7 @@ const limpiar = () => {
   sql(`update payments set status = 'released', released_at = now() where status = 'held' and operation_id in (select id from operations where user_id = ${MARISOL} and business_id = '${BIZ}')`);
   sql(`update change_proposals set status = 'expired' where status = 'open' and operation_id in (select id from operations where user_id = ${MARISOL} and business_id = '${BIZ}')`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and business_id = '${BIZ}' and status in ('pending', 'change_proposed', 'confirmed')`);
-  sql(`delete from notifications where ref_kind = 'appointment'`);
+  // 9a · ya no borra los avisos de citas de todos: las citas de esta prueba son nuevas en cada corrida (nt() cuenta por su número).
   sql(`update items set duration_min = 40, svc_opts = '[]'::jsonb, sell = true, status = 'live', hidden_reason = null where id = ${SV('Fade')}`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 1000, chair_response_min = 15 where id = ${LUIS}`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 0, chair_response_min = 30 where id = ${ANDY}`);
@@ -43,9 +47,10 @@ async function reservar(m, svc, persona, nDia, conTarjeta) {
   return { numero: m.url().split('/').pop().split('?')[0], hora };
 }
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
-const FOTO = ENT.S + '/cap/a1-360-rsv.png';
+const FOTO = ENT.rec('fotos') + '/portada.jpg'; // 9a: antes, una captura que dejaba otra prueba (rsvadmin)
 const ayuda = (n, cols) => sql(`select ${cols} from help_requests h where h.operation_id = (select id from operations where number = '${n}')`);
-const limpiarAyuda = () => { sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open'`); sql(`delete from queue_items where queue = 'sop'`); sql(`delete from help_requests`); };
+// 9a · ya no borra todas las solicitudes ni la cola: cierra en la cola «sop» solo las de citas de Marisol en este negocio (las de esta prueba).
+const limpiarAyuda = () => sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open' and subject_kind = 'help_request' and subject_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.user_id = ${MARISOL} and o.business_id = '${BIZ}')`);
 const terminar = (n) => sql(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where number = '${n}'`);
 (async () => {
   limpiar(); limpiarAyuda();
@@ -60,10 +65,10 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${A.numero}`); const det = d.locator('[data-screen-label="Panel v2 · detalle"]');
   await clic(det.getByRole('button', { name: 'Confirmar' }));
   ok(await espera(() => pago(A.numero), 'captured|1000|0') === 'captured|1000|0', `${A.numero}: confirmada, depósito de $10 cobrado`);
-  await m.goto(B + `/cita/${A.numero}/ayuda`); await m.getByText(/La ayuda se pide cuando la cita ya pasó/).first().waitFor();
+  await m.goto(B + `/cita/${A.numero}/ayuda?de=compa`); await m.getByText(/La ayuda se pide cuando la cita ya pasó/).first().waitFor();
   ok(true, 'antes de la cita: no se puede pedir ayuda');
   terminar(A.numero);
-  await m.goto(B + `/cita/${A.numero}`); await clic(m.getByRole('button', { name: 'Ayuda con la cita' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/cita/${A.numero}`); await clic(m.getByRole('button', { name: 'Ayuda con la cita' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(f.getByText('Lo que pagas es el precio publicado.'))), 'formulario: tu cita, precio publicado');
   ok(!!(await vis(m.getByText('Elige qué pasó'))), 'te falta: elige qué pasó');
@@ -99,7 +104,7 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   ok(await espera(() => ayuda(A.numero, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|600') === 'answered|alt|600', 'respondida: propone devolver $6');
   ok(sql(`select count(*) from audit_entries where action = 'cita.ayuda.responder' and at > now() - interval '1 minute'`) !== '0', 'queda en la auditoría del negocio');
   // ── 3. Marisol acepta la propuesta: vuelven $6 a su tarjeta ──
-  await m.goto(B + `/cita/${A.numero}/ayuda`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
+  await m.goto(B + `/cita/${A.numero}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   ok(!!(await vis(m.getByText(/Tienes razón en parte/))), 've la respuesta del negocio');
   await m.screenshot({ path: OUT + 'e5-estado-alt.png', fullPage: true });
   await clic(m.getByRole('button', { name: 'Aceptar $6' }));
@@ -109,7 +114,7 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   await m.getByText('TERMINADA').first().waitFor(); ok(true, 'estado: terminada');
   // ── 4. Sin depósito: el negocio no puede, ella pide revisión y To'Latino resuelve ──
   const C = await reservar(m, 'Fade', ANDY, 2, false); terminar(C.numero);
-  await m.goto(B + `/cita/${C.numero}/ayuda`); const f2 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f2.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(B + `/cita/${C.numero}/ayuda?de=compa`); const f2 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f2.getByText('¿Qué pasó?').first().waitFor();
   await clic(f2.getByText('Esperé mucho a pesar de la cita')); await (await vis(f2.getByLabel('Qué pasó'))).fill('Llegué a mi hora y esperé 45 minutos sin que me avisaran.');
   await clic(f2.getByRole('radio', { name: /Solo quiero avisar/ }));
   await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
@@ -120,28 +125,28 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   await (await vis(det.locator('textarea'))).fill('Ese día se nos juntaron dos citas, disculpa la espera.');
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => ayuda(C.numero, "h.status || '|' || h.decision"), 'answered|no') === 'answered|no', 'respondida: no puede');
-  await m.goto(B + `/cita/${C.numero}/ayuda`); await m.getByText('NO PUDO').first().waitFor();
+  await m.goto(B + `/cita/${C.numero}/ayuda?de=compa`); await m.getByText('NO PUDO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Pedir revisión a To’Latino' }));
   ok(await espera(() => ayuda(C.numero, "h.status || '|' || h.escalated_by"), 'escalated|user') === 'escalated|user', 'pidió revisión: pasa a To’Latino');
-  ok(sql(`select count(*) from queue_items where queue = 'sop' and status = 'open'`) === '1', 'cola de soporte: 1 caso');
+  ok(sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and q.status = 'open' and o.user_id = ${MARISOL} and o.business_id = '${BIZ}'`) === '1', 'cola de soporte: 1 caso');
   await m.getByText('EN REVISIÓN DE TO’LATINO').first().waitFor(); ok(true, 'estado: en revisión de To’Latino');
   // ── 5. Con depósito y sin respuesta en 24 h: To'Latino resuelve y devuelve ──
   const E = await reservar(m, 'Fade', LUIS, 3, true);
   await d.goto(B + `/panel/${BIZ}/hoy?det=cita:${E.numero}`); await clic(det.getByRole('button', { name: 'Confirmar' }));
   ok(await espera(() => pago(E.numero), 'captured|1000|0') === 'captured|1000|0', `${E.numero}: depósito cobrado`);
   terminar(E.numero);
-  await m.goto(B + `/cita/${E.numero}/ayuda`); const f3 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f3.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(B + `/cita/${E.numero}/ayuda?de=compa`); const f3 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f3.getByText('¿Qué pasó?').first().waitFor();
   await clic(f3.getByText('Cobraron más del precio publicado')); await (await vis(f3.getByLabel('Qué pasó'))).fill('El precio publicado era $28 y me cobraron $35 en el local.');
   await f3.locator('input[type="file"]').first().setInputFiles(FOTO); await f3.getByRole('button', { name: 'Quitar foto' }).first().waitFor({ state: 'attached' });
   await clic(f3.getByRole('radio', { name: /Que me devuelvan/ })); await (await vis(f3.getByLabel('Cuánto'))).fill('7');
   await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click(); await m.getByText('PENDIENTE').first().waitFor();
   ok(ayuda(E.numero, "h.reason || '|' || h.amount_cents") === 'cobro|700', 'cobraron más: pide $7');
   sql(`update help_requests set created_at = now() - interval '25 hours' where operation_id = (select id from operations where number = '${E.numero}')`);
-  await m.goto(B + `/cita/${E.numero}/ayuda`); await m.getByText('EN REVISIÓN DE TO’LATINO').first().waitFor();
+  await m.goto(B + `/cita/${E.numero}/ayuda?de=compa`); await m.getByText('EN REVISIÓN DE TO’LATINO').first().waitFor();
   ok(ayuda(E.numero, "h.status || '|' || h.escalated_by") === 'escalated|system', 'sin respuesta en 24 h → To’Latino');
   const a = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(a); a.on('pageerror', e => err.push('admin ' + e.message));
   await entrar(a, '5705550199');
-  const caso = sql(`select q.id from queue_items q join help_requests h on h.id::text = q.subject_id join operations o on o.id = h.operation_id where o.number = '${E.numero}'`);
+  const caso = sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and q.status = 'open' and o.number = '${E.numero}' order by q.id desc limit 1`); // 9a: subject_id se repite en otras colas
   await a.goto(B + `/admin/colas?cola=sop&caso=${caso}`); await a.getByText('DEVOLVIBLE A LA TARJETA').first().waitFor();
   ok(!!(await vis(a.getByText(/Ayuda con una cita/).first())), 'admin: «Ayuda con una cita» con lo devolvible ($10 de depósito)');
   await a.screenshot({ path: OUT + 'e6-admin-sop.png', fullPage: true });
@@ -150,7 +155,7 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   ok(await espera(() => pago(E.numero), 'partially_refunded|1000|700') === 'partially_refunded|1000|700', 'To’Latino resolvió y devolvió $7 a su tarjeta');
   ok(ayuda(E.numero, "h.status || '|' || h.closed_by || '|' || h.refunded_cents") === 'resolved|admin|700', 'solicitud resuelta por To’Latino');
   ok(sql(`select count(*) from notifications where tpl = 'help_done'`) !== '0', 'aviso al cliente: resuelta');
-  await m.goto(B + `/cita/${E.numero}/ayuda`); await m.getByText('RESPUESTA DE TO’LATINO').first().waitFor(); ok(true, 'cliente: ve la respuesta de To’Latino');
+  await m.goto(B + `/cita/${E.numero}/ayuda?de=compa`); await m.getByText('RESPUESTA DE TO’LATINO').first().waitFor(); ok(true, 'cliente: ve la respuesta de To’Latino');
   // ── 6. Admin › Transacciones › Citas ──
   await a.goto(B + '/admin/transacciones?tab=cita'); await a.getByText(`Cita ${E.numero} · Barbería El Primo`).first().waitFor();
   ok(!!(await vis(a.getByText(/depósito \$10\.00 · VISA ·· 4242 DEVUELTO EN PARTE \$7\.00 · comisión \$0\.80/).first())), 'Transacciones › Citas: depósito, devuelto y comisión 8 %');
@@ -158,8 +163,8 @@ const terminar = (n) => sql(`update operations set status = 'done', status_detai
   await a.screenshot({ path: OUT + 'e7-admin-tx.png', fullPage: true });
   // ── 7. Desktop del formulario y del estado ──
   const md = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(md); md.on('pageerror', e => err.push('desk ' + e.message)); await entrar(md, '5705550122');
-  await md.goto(B + `/cita/${A.numero}/ayuda`); await md.getByText('TERMINADA').first().waitFor(); await md.screenshot({ path: OUT + 'e8-estado-d.png', fullPage: true });
+  await md.goto(B + `/cita/${A.numero}/ayuda?de=compa`); await md.getByText('TERMINADA').first().waitFor(); await md.screenshot({ path: OUT + 'e8-estado-d.png', fullPage: true });
   const G = await reservar(m, 'Fade', ANDY, 4, false); terminar(G.numero);
-  await md.goto(B + `/cita/${G.numero}/ayuda`); await md.getByText('¿Qué pasó?').first().waitFor(); await md.screenshot({ path: OUT + 'e9-form-d.png', fullPage: true });
+  await md.goto(B + `/cita/${G.numero}/ayuda?de=compa`); await md.getByText('¿Qué pasó?').first().waitFor(); await md.screenshot({ path: OUT + 'e9-form-d.png', fullPage: true });
   ok(err.length === 0, 'sin errores: ' + err.join(' | ')); limpiar(); limpiarAyuda(); await b.close(); console.log('OK');
 })().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) { await p.screenshot({ path: OUT + 'fail-' + Math.random().toString(36).slice(2, 6) + '.png' }); console.log('url', p.url()); } } catch {} try { limpiar(); } catch {} process.exit(1); });

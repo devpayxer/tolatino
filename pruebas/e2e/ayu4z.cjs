@@ -1,8 +1,12 @@
 // 4z-2 · Ayuda con la fiesta (faltó algo del paquete, foto, «Que me devuelvan» → el salón propone $100 → aceptar = se devuelve
 // del depósito cobrado en la app) y con el viaje («Manejo inseguro» va directo a To'Latino con prioridad, sin esperar al negocio).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', F = 'salon-imperial', V = 'van-express-nyc', FOTO = ENT.S + '/servida.jpg';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', F = 'salon-imperial', V = 'van-express-nyc', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -26,7 +30,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message));
   // ── Fiesta ──
-  await m.goto(B + `/fiesta/${FN}`); await clic(m.getByRole('button', { name: 'Ayuda con la fiesta' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/fiesta/${FN}`); await clic(m.getByRole('button', { name: 'Ayuda con la fiesta' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 7, 'fiesta: 7 motivos');
   await clic(f.getByText('Faltó algo del paquete')); ok(!!(await vis(f.getByText('Fotos · obligatorias'))), 'faltó algo: foto obligatoria');
@@ -50,11 +54,11 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await t.screenshot({ path: OUT + 'x2-panel-ayuda-fiesta-d.png', fullPage: true });
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(FN, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|10000') === 'answered|alt|10000', 'el salón propone $100');
-  await m.goto(B + `/fiesta/${FN}/ayuda`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
+  await m.goto(B + `/fiesta/${FN}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $100' }));
   ok(await espera(() => sql(`select (p.refunded_cents - ${DEV0})::text from payments p join operations o on o.id = p.operation_id where o.number = '${FN}' and p.kind = 'deposit'`), '10000') === '10000', 'aceptó: $100 devueltos del depósito');
   // ── Viaje: manejo inseguro → directo a To'Latino ──
-  await m.goto(B + `/viaje/${VN}`); await clic(m.getByRole('button', { name: 'Ayuda con el viaje' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/viaje/${VN}`); await clic(m.getByRole('button', { name: 'Ayuda con el viaje' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(g.getByText('Manejo inseguro'))) && !!(await vis(g.getByText('Perdió o dañó mi equipaje o caja'))), 'viaje: sus motivos');
   await clic(g.getByRole('button', { name: 'Manejo inseguro', exact: true })); await (await vis(g.getByLabel('Qué pasó'))).fill('Iba muy rápido en la 81 y usando el teléfono.');
@@ -63,7 +67,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
   await m.waitForTimeout(1500);
   ok(AY(VN, "h.reason || '|' || h.status || '|' || h.escalated_by") === 'inseguro|escalated|system', 'manejo inseguro: escalada sola, sin esperar al negocio');
-  ok(sql(`select priority from queue_items q join help_requests h on h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${VN}')`) === 'alta', 'en la cola de To\'Latino con prioridad alta');
+  ok(sql(`select priority from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${VN}')`) === 'alta', 'en la cola de To\'Latino con prioridad alta');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK ayu4z');
 })().catch((e) => { console.error(e); process.exit(1); });

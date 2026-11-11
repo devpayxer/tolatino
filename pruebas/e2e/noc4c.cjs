@@ -98,10 +98,12 @@ async function reservar(p, svc, { pax = 2, card = true } = {}) {
   await clic(cli.getByRole('button', { name: 'Aceptar esta hora' }));
   ok(await espera(() => st(M4) === 'confirmed' && pay(M4) === 'captured:5000:0'), 'acepta la otra hora → se cobra');
   // Cancelar DESPUÉS del corte (reloj movido: el corte ya pasó) → el depósito se queda.
-  sql(`update operations set details = details || '{\"cut\":-2000}'::jsonb where number = '${M4}'`);
+  // 9a · El corte se mide en minutos desde el mediodía de la noche de la reserva (nowN): se pone 1 h ANTES de ahora, sea cual sea esa noche
+  // (con −2000 fijo fallaba cuando la próxima noche abierta estaba a 2 días: martes → jueves).
+  sql(`update operations set details = details || jsonb_build_object('cut', (extract(epoch from (now() at time zone 'America/New_York') - (night_date + time '12:00')) / 60)::int - 60) where number = '${M4}'`);
   await cli.reload(); await cli.getByText('MESA CONFIRMADA').first().waitFor();
   await clic(cli.getByRole('button', { name: 'Cancelar la reserva' }));
-  ok(!!(await vis(cli.getByText(/se queda con el local/))), 'la hoja dice que el depósito se queda');
+  await cli.getByText(/se queda con el local/).first().waitFor({ timeout: 8000 }).catch(() => undefined); ok(!!(await vis(cli.getByText(/se queda con el local/))), 'la hoja dice que el depósito se queda');
   await clic(cli.getByRole('button', { name: 'Sí, cancelar' }));
   ok(await espera(() => st(M4) === 'cancelled' && pay(M4) === 'captured:5000:0'), 'cancelar después del corte → el depósito se queda con el local');
 

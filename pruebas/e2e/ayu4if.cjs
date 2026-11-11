@@ -5,8 +5,12 @@
 // con las preguntas del rubro → «Lo que importa en Bienes Raíces» y «De N visitas y citas por To'Latino en los últimos 12 meses.». Ningún pago ni
 // devolución en todo el flujo. Teléfono y escritorio; se resetea solo (pasa al volver a correrlo).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.S + '/servida.jpg';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -76,7 +80,7 @@ const reset = () => {
   await y.goto(`${B}/vis/${V1}`); await y.getByText('CONFIRMADA').first().waitFor();
   ok(!(await vis(y.getByRole('button', { name: 'Ayuda con la visita' }))), 'antes de la hora no hay Ayuda (todavía no pasó)');
   sql(`update operations set scheduled_at = now() - interval '20 minutes' where number = '${V1}'`); // llegó la hora: está en la puerta
-  await y.goto(`${B}/vis/${V1}`); await clic(y.getByRole('button', { name: 'Ayuda con la visita' })); await y.waitForURL(/\/vis\/D-\d+\/ayuda$/);
+  await y.goto(`${B}/vis/${V1}`); await clic(y.getByRole('button', { name: 'Ayuda con la visita' })); await y.waitForURL(/\/vis\/D-\d+\/ayuda(\?|$)/); await pasarHoja(y);
   const f = y.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 5, 'Bienes Raíces: 5 motivos');
   ok(await ve(f.getByText(/Para mudarte, lo que viste: \$/)), 'la cabeza muestra la copia de «Para mudarte» que vio al pedir');
@@ -89,9 +93,9 @@ const reset = () => {
   await y.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
   await y.getByText(/EN REVISIÓN DE TO’LATINO · PRIORIDAD/).first().waitFor();
   ok(AY(V1, "h.reason || '|' || h.wants || '|' || h.amount_cents || '|' || h.status || '|' || h.escalated_by") === 'ver|devolver|5000|escalated|system', 'guardada: ver · devolver $50 · escalada sola (sin esperar 24 h)');
-  const HN1 = AY(V1, 'h.number'), Q1 = sql(`select q.id || '|' || q.queue || '|' || q.priority from queue_items q join help_requests h on h.id::text = q.subject_id where h.number = '${HN1}' and q.status = 'open'`);
+  const HN1 = AY(V1, 'h.number'), Q1 = sql(`select q.id || '|' || q.queue || '|' || q.priority from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where h.number = '${HN1}' and q.status = 'open'`);
   ok(Q1.split('|')[1] === 'estafa' && Q1.split('|')[2] === 'alta', `en la cola «Posible estafa» con prioridad (${Q1})`);
-  ok(sql(`select count(*) from queue_items q join help_requests h on h.id::text = q.subject_id where h.number = '${HN1}' and q.queue = 'sop'`) === '0', 'no se duplica en Soporte');
+  ok(sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where h.number = '${HN1}' and q.queue = 'sop'`) === '0', 'no se duplica en Soporte');
   ok(sql(`select bool_and(m.private) from media m join help_requests h on m.owner_kind = 'help' and m.owner_id = h.id::text where h.number = '${HN1}'`) === 't', 'la foto de la ayuda es privada');
   const pz1 = sql(`select status || '|' || (hidden_reason like 'Pausa por revisión de To''Latino (${HN1})%') from items where id = ${PROP}`);
   ok(pz1 === 'hidden|true', `la propiedad queda en pausa con el motivo (${pz1})`);
@@ -119,7 +123,7 @@ const reset = () => {
   ok(sql(`select decision from queue_items where id = ${QID1}`) === 'sin_accion', 'el caso queda decidido «sin acción»');
   ok(sql(`select count(*) from audit_entries where action in ('ayuda.estafa.pausar', 'ayuda.estafa.reanudar', 'estafa.sin_accion') and (after::text like '%${HN1}%' or before::text like '%${HN1}%')`) === '3', 'pausa, reanudación y decisión en la auditoría');
   await m.goto(`${B}/n/${INM}?tab=svc`); await m.waitForLoadState('networkidle'); ok((await m.content()).includes(PNAME), 'la ficha vuelve a ofrecer la propiedad');
-  await y.goto(`${B}/vis/${V1}/ayuda`); ok(await ve(y.getByText('RESPUESTA DE TO’LATINO')), 'la persona ve la respuesta de To\'Latino');
+  await y.goto(`${B}/vis/${V1}/ayuda?de=compa`); ok(await ve(y.getByText('RESPUESTA DE TO’LATINO')), 'la persona ve la respuesta de To\'Latino');
 
   // ── 2 · Reseña verificada de la visita (pasó a las 24 h) con las preguntas de Bienes Raíces ──
   sql(`update operations set scheduled_at = now() - interval '25 hours' where number = '${V1}'`); barrer();
@@ -146,7 +150,7 @@ const reset = () => {
   sql(`update operations set scheduled_at = now() - interval '2 hours' where number = '${V2}'`);
   await juan.goto(`${B}/panel/${DL}/hoy?det=vis:${V2}`); await clic(juan.getByRole('button', { name: 'Pasó', exact: true }));
   ok(await espera(() => st(V2), 'done') === 'done', 'el dealer marca «Pasó»');
-  await yd.goto(`${B}/vis/${V2}`); await clic(yd.getByRole('button', { name: 'Ayuda con el dealer' })); await yd.waitForURL(/\/ayuda$/);
+  await yd.goto(`${B}/vis/${V2}`); await clic(yd.getByRole('button', { name: 'Ayuda con el dealer' })); await yd.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(yd);
   const g = yd.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
   ok(await ve(g.getByText(/En la puerta, lo que viste: \$/)), 'la cabeza muestra el total en la puerta que vio al pedir');
   await clic(g.getByRole('button', { name: 'El precio en la puerta fue más', exact: true })); ok(await ve(g.getByText('Fotos · obligatorias')), 'precio: foto obligatoria');
@@ -171,7 +175,7 @@ const reset = () => {
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(V2, "h.status || '|' || h.decision || '|' || h.outside_refund"), 'answered|ok|pending') === 'answered|ok|pending', 'el dealer acepta: «Me lo devolvieron» queda pendiente');
   await juan.screenshot({ path: OUT + 'h4if-panel-ayuda-d.png', fullPage: true });
-  await yd.goto(`${B}/vis/${V2}/ayuda`); await yd.getByText('ACEPTÓ').first().waitFor();
+  await yd.goto(`${B}/vis/${V2}/ayuda?de=compa`); await yd.getByText('ACEPTÓ').first().waitFor();
   ok(await ve(yd.getByText(/no pasó por la app/).first()), 'la persona: se lo devuelve el dealer, fuera de la app');
   await yd.screenshot({ path: OUT + 'h4if-me-lo-devolvieron-d.png', fullPage: true });
   await clic(yd.getByRole('button', { name: 'Me lo devolvieron' }));
@@ -203,7 +207,7 @@ const reset = () => {
   await luis.goto(`${B}/panel/${FE}/hoy?det=insc:${I1}`); await clic(luis.getByRole('button', { name: 'Confirmar', exact: true }));
   await espera(() => sql(`select status from operations where number = '${I1}'`), 'confirmed');
   sql(`update operations set status = 'done', done_at = now() where number = '${I1}'`); // la charla ya pasó
-  await h.goto(`${B}/insc/${I1}`); await clic(h.getByRole('button', { name: 'Ayuda con la iglesia' })); await h.waitForURL(/\/insc\/I-\d+\/ayuda$/);
+  await h.goto(`${B}/insc/${I1}`); await clic(h.getByRole('button', { name: 'Ayuda con la iglesia' })); await h.waitForURL(/\/insc\/I-\d+\/ayuda(\?|$)/); await pasarHoja(h);
   const k = h.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await k.getByText('¿Qué pasó?').first().waitFor();
   await clic(k.getByRole('button', { name: 'Me pidieron dinero por la ayuda', exact: true }));
   ok(await ve(h.getByText(/«Pedir fecha» de este lugar queda en pausa/).first()), 'Iglesias: va directo y avisa la pausa de «Pedir fecha»');
@@ -213,7 +217,7 @@ const reset = () => {
   await h.screenshot({ path: OUT + 'h4if-ayuda-iglesia-m.png', fullPage: true });
   await h.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
   await h.getByText(/EN REVISIÓN DE TO’LATINO · PRIORIDAD/).first().waitFor();
-  const HN3 = AY(I1, 'h.number'), Q3 = sql(`select q.id || '|' || q.queue from queue_items q join help_requests h on h.id::text = q.subject_id where h.number = '${HN3}' and q.status = 'open'`);
+  const HN3 = AY(I1, 'h.number'), Q3 = sql(`select q.id || '|' || q.queue from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where h.number = '${HN3}' and q.status = 'open'`);
   ok(Q3.split('|')[1] === 'estafa', 'a «Posible estafa»');
   ok(sql(`select modules_off->'svc'->>'reason' like 'Pausa por revisión%' from businesses where id = '${FE}'`) === 't', '«Pedir fecha» de la parroquia en pausa');
   ok(sql(`select count(*) from notifications where ref_id = '${HN3}' and user_id = ${U2} and (body::text ilike '%Santa%' or body::text ilike '%parroquia%' or body::text ilike '%bautizo%')`) === '0', 'los avisos a la persona son neutros (sin el lugar ni el servicio)');

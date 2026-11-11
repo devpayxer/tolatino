@@ -38,7 +38,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   sql(`set session_replication_role = replica; update support_cases set created_at = created_at - interval '2 days' where user_id in ('${MU}', '${YU}') and created_at > now() - interval '1 day'`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id in ('${MU}', '${YU}') and kind in ('table', 'appointment') and status in ('pending', 'change_proposed')`);
   await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración es de 15 s
-  const FAM = fs.readFileSync(ENT.S + '/q-fam.sql', 'utf8');
+  const FAM = fs.readFileSync(ENT.RAIZ + '/pruebas/lib/compa7d-familias.sql', 'utf8');
   const fam = execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -At`, { input: FAM }).toString().trim().split('\n').map((l) => { const [kind, num, tel, st, neg] = l.split('|'); return { kind, num, tel: tel.slice(2), st, neg }; });
   ok(fam.length === 11, `una operación de prueba por familia: ${fam.map((f) => f.num).join(' ')}`);
   const br = await chromium.launch(), errs = [];

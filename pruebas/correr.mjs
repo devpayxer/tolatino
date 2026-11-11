@@ -15,7 +15,7 @@
    Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
    Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
 import { spawn, execSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, writeFileSync, createWriteStream } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync, createWriteStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,6 +87,15 @@ const correrUna = (t) => new Promise((ok) => {
   });
 });
 
+/* Un candado por carril (en la salida): dos corridas de punta a punta a la vez se pisan en la base, y dos de al revés en los archivos del repo. */
+const candados = [];
+for (const c of ["e2e", "alreves"]) {
+  if (!sel.some((t) => t.carril === c)) continue;
+  const f = join(SALIDA, `corriendo-${c}.pid`);
+  if (existsSync(f)) { const pid = Number(readFileSync(f, "utf8")); let vivo = false; try { process.kill(pid, 0); vivo = true; } catch { /* ya no corre */ } if (vivo && pid !== process.pid) { console.error(`✗ ya hay una corrida de ${c} (pid ${pid}): esperar a que termine`); process.exit(2); } }
+  writeFileSync(f, String(process.pid)); candados.push(f);
+}
+process.on("exit", () => { for (const f of candados) try { unlinkSync(f); } catch { /* nada */ } });
 const carril = async (ts) => { const rs = []; for (const t of ts) rs.push(await correrUna(t)); return rs; };
 const inicio = Date.now();
 console.log(`${sel.length} pruebas · salida en ${RES}${flag("--paralelo") ? " · dos carriles (al revés | punta a punta)" : " · una a la vez"}\n`);

@@ -9,18 +9,23 @@ const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++
 const clic = async (l) => { for (let i = 0; i < 20; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 const MARISOL = "(select id from users where phone='+15705550122')";
-const limpiar = () => { sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open'`); sql(`delete from queue_items where queue = 'sop'`); sql(`delete from help_requests`); };
+// 9a · Ya no borra todas las solicitudes de ayuda ni la cola entera (El Compa las referencia y otras pruebas las usan): elige dos pedidos de
+// Marisol SIN solicitud y al final cierra en la cola solo los casos que abrió.
+const RUN = Date.now().toString(36);
+const HOJA = /^(Algo no está bien|Algo no salió bien)$/;
+// 7d · Con El Compa encendido, «Ayuda con …» abre primero su hoja; «Algo no está bien» lleva al formulario de siempre (?de=compa).
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(HOJA); if (await r.count()) { await clic(r); await p.waitForURL(/de=compa/); } };
 (async () => {
-  limpiar();
   // Dos pedidos terminados recientes de Marisol (uno para el flujo, otro para vencer a las 24 h).
-  const [n1, n2] = sql(`select number from operations where user_id = ${MARISOL} and kind = 'order' and status = 'done' and business_id = '${BIZ}' order by id desc limit 2`).split('\n');
+  const [n1, n2] = sql(`select number from operations where user_id = ${MARISOL} and kind = 'order' and status = 'done' and business_id = '${BIZ}' and not exists (select 1 from help_requests h where h.operation_id = operations.id) order by id desc limit 2`).split('\n');
+  const limpiar = () => sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open' and subject_kind = 'help_request' and subject_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.number in ('${n1}', '${n2}'))`);
   sql(`update operations set done_at = now() - interval '2 hours' where number in ('${n1}', '${n2}')`);
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente'); globalThis.__p = [m];
   await entrar(m, '5705550122');
   await m.goto(B + `/pedido/${n1}`); await clic(m.getByText('Ayuda con el pedido', { exact: true }));
-  await m.waitForURL(/\/ayuda$/); await m.getByText('Falta algo').first().waitFor();
+  await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m); await m.getByText('Falta algo').first().waitFor();
   ok(!!(await vis(m.getByText(/responde en 24 horas/))), 'ayuda: es una solicitud al negocio (24 h)');
   await m.screenshot({ path: OUT + 'h1-ayuda.png', fullPage: true });
   await clic(m.getByText('Falta algo', { exact: true }));
@@ -46,13 +51,13 @@ const limpiar = () => { sql(`update queue_items set status = 'decided', decision
   await clic(m.getByText(/Pedir que To’Latino lo revise/));
   ok(await espera(() => sql(`select h.status || '|' || (select count(*) from queue_items q where q.queue = 'sop' and q.subject_id = h.id::text and q.status = 'open') from help_requests h join operations o on o.id = h.operation_id where o.number = '${n1}'`), 'escalated|1') === 'escalated|1', 'pide revisión → cola de To’Latino');
   // Vence a las 24 h sin respuesta
-  sql(`insert into help_requests (number, operation_id, business_id, city_id, user_id, reason, body, created_at) select 'H-' || nextval('help_request_number_seq'), id, business_id, city_id, user_id, 'frio', 'Prueba vencida', now() - interval '25 hours' from operations where number = '${n2}'`);
+  sql(`insert into help_requests (number, operation_id, business_id, city_id, user_id, reason, body, created_at) select 'H-' || nextval('help_request_number_seq'), id, business_id, city_id, user_id, 'frio', 'Prueba vencida ${RUN}', now() - interval '25 hours' from operations where number = '${n2}'`);
   const a = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(a, 'admin'); globalThis.__p.push(a);
   await entrar(a, '5705550199'); await a.goto(B + '/admin/colas?cola=sop'); await a.getByText(/Ayuda con un pedido/).first().waitFor();
-  ok(sql(`select status || '|' || escalated_by from help_requests where body = 'Prueba vencida'`) === 'escalated|system', 'sin respuesta en 24 h → pasa a To’Latino');
-  ok(sql(`select count(*) from queue_items where queue = 'sop' and status = 'open'`) === '2', 'cola Ayuda con pedidos: 2 casos');
+  ok(sql(`select status || '|' || escalated_by from help_requests where body = 'Prueba vencida ${RUN}'`) === 'escalated|system', 'sin respuesta en 24 h → pasa a To’Latino');
+  ok(sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and q.status = 'open' and o.number in ('${n1}', '${n2}')`) === '2', 'cola Ayuda con pedidos: los 2 casos');
   // Resolver el primero
-  const caso = sql(`select q.id from queue_items q join help_requests h on h.id::text = q.subject_id join operations o on o.id = h.operation_id where o.number = '${n1}'`);
+  const caso = sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and q.status = 'open' and o.number = '${n1}' order by q.id desc limit 1`); // 9a: subject_id se repite en otras colas
   console.log('caso', JSON.stringify(caso)); await a.goto(B + `/admin/colas?cola=sop&caso=${caso}`); await a.getByText(/QUÉ QUIERE/).first().waitFor();
   await a.screenshot({ path: OUT + 'h4-admin.png', fullPage: true });
   await clic(a.getByText('Resolver con un mensaje', { exact: true })); await clic(a.getByText(/te devuelven lo de esos platos en el local/)); await clic(a.getByText('Resolver', { exact: true }));

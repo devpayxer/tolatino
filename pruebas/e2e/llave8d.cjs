@@ -8,7 +8,7 @@
 // con motivo, aviso y auditoría; permiso; Sistema › Equipo) y el caso HTTP en una IP (sin botón, el SMS igual). Deja todo como estaba.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const crypto = require('crypto');
-const { S, B, sql, sqlErr } = require('./g6/comun.cjs');
+const { S, B, sql, sqlErr } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/', IPB = 'http://192.0.2.2:3100';
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const espera = async (f, ms = 15000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 200)); } return false; };

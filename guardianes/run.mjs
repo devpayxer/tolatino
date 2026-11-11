@@ -3150,7 +3150,7 @@ const guardianes = {
       const t = readFileSync(x, "utf8");
       // 9a · pruebas/alreves inyecta una llave FALSA a propósito (alreves6c); pruebaSinSecretos vigila que en pruebas/ no haya una de verdad.
       if (!x.startsWith("pruebas/alreves/") && /MC4CAQAwBQYDK2VwBCIEI[A-Za-z0-9+/]{20,}/.test(t)) falla(G, x, 0, "una llave privada Ed25519 escrita en el repo");
-      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && x !== "pruebas/servir/servir.sh" && !x.startsWith("pruebas/alreves/") && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
+      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && x !== "pruebas/servir/servir.sh" && x !== "pruebas/lib/g6-comun.cjs" && !x.startsWith("pruebas/alreves/") && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
     }
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== Q && x !== "apps/web/lib/boletos.ts" && /\bfirmarQR\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts pide firmar un QR (servidor)");
   },

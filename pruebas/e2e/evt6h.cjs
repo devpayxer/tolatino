@@ -11,7 +11,7 @@
 // se borra al salir; otra cuenta en el mismo teléfono no ve nada → panel y Super Admin marcan lo de sin conexión. Deja los datos como estaban.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto'); const fs = require('fs');
-const { S, B, sql, api, entrar, uid, firmar, otraLlave } = require('./g6/comun.cjs');
+const { S, B, sql, api, entrar, uid, firmar, otraLlave } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/';
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };

@@ -4,7 +4,7 @@
 // Antes: merc4p (deja un pedido del mercado terminado y cobrado con tarjeta).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', M = 'supermercado-la-cosecha', T = 'boutique-yaritza', FOTO = ENT.S + '/servida.jpg';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', M = 'supermercado-la-cosecha', T = 'boutique-yaritza', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -87,7 +87,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   ok(AY(AP, "h.reason || '|' || h.wants") === 'talla|reponer', 'guardada: talla · cambiarlo');
   sql(`update help_requests set created_at = now() - interval '25 hours' where operation_id = (select id from operations where number = '${AP}')`);
   await m.goto(B + `/apartado/${AP}/ayuda`); await m.waitForTimeout(500);
-  ok(AY(AP, 'h.status') === 'escalated' && sql(`select count(*) from queue_items q join help_requests h on h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and o.number = '${AP}' and q.status = 'open'`) === '1', 'sin respuesta en 24 h: pasa a To’Latino (cola de ayuda)');
+  ok(AY(AP, 'h.status') === 'escalated' && sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and o.number = '${AP}' and q.status = 'open'`) === '1', 'sin respuesta en 24 h: pasa a To’Latino (cola de ayuda)');
   await m.goto(B + `/n/${T}/resena?pedido=${AP}`); ok(await espera(m.getByText('TU APARTADO · DATO DEL APARTADO')) && await espera(m.getByText('¿LA TALLA O MEDIDA CORRECTA?')), 'reseña de la tienda: dato del apartado y preguntas');
   await clic(m.getByRole('button', { name: '4 ★', exact: true }));
   await clic(m.locator('div').filter({ hasText: /^¿EL PRECIO DE LA CAJA FUE EL PUBLICADO\?/ }).getByText('Sí', { exact: true }));

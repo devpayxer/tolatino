@@ -3,7 +3,7 @@
 // devuelve exacto por Stripe; «Me sentí inseguro» va directo a To'Latino con prioridad) y el bloque de ayuda en el panel.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', NEG = 'la-terraza-night', FOTO = ENT.S + '/servida.jpg';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', NEG = 'la-terraza-night', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -95,7 +95,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
   await m.waitForTimeout(1500);
   ok(AY(I, "h.reason || '|' || h.status || '|' || h.escalated_by") === 'inseguro|escalated|system', 'inseguro: escalada sola, sin esperar al local');
-  ok(sql(`select priority from queue_items q join help_requests h on h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${I}')`) === 'alta', "en la cola de To'Latino con prioridad alta");
+  ok(sql(`select priority from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${I}')`) === 'alta', "en la cola de To'Latino con prioridad alta");
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK noc4d');
 })().catch((e) => { console.error(e); process.exit(1); });

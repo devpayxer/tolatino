@@ -12,7 +12,7 @@
 // estaban (eventos de prueba cancelados, porteros de prueba quitados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto'); const fs = require('fs');
-const { S, B, sql, sqlErr, api, apiRaw, entrar, uid, firmar, otraLlave } = require('./g6/comun.cjs');
+const { S, B, sql, sqlErr, api, apiRaw, entrar, uid, firmar, otraLlave } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/';
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
 const QR = require(ENT.rec('nayuki/package/index.js')).default.QrCode;

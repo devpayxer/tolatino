@@ -406,7 +406,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     await p1.screenshot({ path: OUT + 'e6d-ayuda-pago-m.png', fullPage: true });
     await p1.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
     ok(await espera(() => sql(`select h.reason || '|' || h.status || '|' || h.escalated_by from help_requests h join operations o on o.id = h.operation_id where o.number = '${O1}'`) === 'doble|escalated|system'), 'la solicitud va directo a To’Latino (escalada por el sistema)');
-    const caso = sql(`select q.id || '|' || q.queue from queue_items q join help_requests h on h.id::text = q.subject_id and q.subject_kind = 'help_request' join operations o on o.id = h.operation_id where o.number = '${O1}'`).split('|');
+    const caso = sql(`select q.id || '|' || q.queue from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id and q.subject_kind = 'help_request' join operations o on o.id = h.operation_id where o.number = '${O1}'`).split('|');
     ok(caso[1] === 'sop', 'entra a la cola «Ayuda con pedidos» (sop) por su motivo (COLA_AYUDA_SQL)');
     { const ca = await ctx(1440, 900), pa = await ca.newPage(); await entrar(pa, ADM);
       await pa.goto(B + `/admin/colas?cola=sop&caso=${caso[0]}`); await pa.getByText('DEVOLVIBLE A LA TARJETA').first().waitFor();

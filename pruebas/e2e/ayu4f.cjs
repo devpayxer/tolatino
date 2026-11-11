@@ -3,7 +3,7 @@
 // y reseña verificada (preguntas por rubro, dato de la inscripción, «Lo que importa»; Niños sin fotos ni el nombre del niño).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.S + '/servida.jpg';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos', GYM = 'power-gym-hzl';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -81,7 +81,7 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   await m.screenshot({ path: OUT + 'f4f-ayuda-ninos-m.png', fullPage: true });
   await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click();
   ok(await espera(() => AY(N1, "h.reason || '|' || h.status || '|' || h.escalated_by"), 'cuidado|escalated|system') === 'cuidado|escalated|system', '«cuidado»: escalada sola, sin esperar 24 h');
-  ok(sql(`select priority from queue_items q join help_requests h on h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${N1}')`) === 'alta', 'en la cola de To\'Latino con prioridad alta');
+  ok(sql(`select priority from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.subject_kind = 'help_request' and h.operation_id = (select id from operations where number = '${N1}')`) === 'alta', 'en la cola de To\'Latino con prioridad alta');
   ok(sql(`select count(*) from notifications where ref_id = '${N1}' and (body::text ilike '%Valentina%' or title::text ilike '%Valentina%')`) === '0', 'ningún aviso lleva el nombre del niño');
 
   // ── Deporte: «No me dejan cancelar» con foto y «Cancelar mi membresía» ──
