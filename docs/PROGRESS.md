@@ -1127,7 +1127,9 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
   evt6g 105, evt6h 88, app8a 110, push8c 86, beta8f 95, com5g 73 (una a la vez). CI «Cáscaras» en `claude/vibrant-franklin-krutwa`: corrida
   43027119917 (ea1018f): Android 4 sabores e iOS 4 targets compilan, las 4 apps de iOS abren, el servicio de la ruta arranca con el aviso fijo y
   junta posiciones, pero el humo falló porque el sabor prohíbe HTTP hacia el simulador → arreglado en 0bb56e0 (solo depuración); corrida
-  43030337172: RESULTADO_CI.
+  43030337172 (0bb56e0): la ruta funciona de punta a punta (posiciones con el token, pantalla apagada, cola en modo avión que sube en lote,
+  410 → se detiene solo, detener()) y solo falló la comprobación del tipo del servicio (dumpsys escribe «types=00000008») → 23a3a7c; corrida
+  **43031740708 (23a3a7c): verde** (Android: los 4 sabores + emulador con la ruta; iOS: 4 targets, las 4 abren).
 - **Bloqueado / no hecho aquí:** la ruta en un iPhone real (el simulador solo compila y abre), la web del Repartidor en el sandbox (HTTP sin dominio:
   sin geolocalización), las teselas en las capturas locales, la medida de carga. Todo en LAUNCH-CHECKLIST «Fase 8 · 8e».
 - **Sigue:** 8b (necesita el dominio), 8d o 8g.

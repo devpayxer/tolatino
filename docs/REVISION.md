@@ -3810,8 +3810,9 @@ con la hoja del sistema y háptica al pagar y confirmar. (5) **Negocios: «Escan
 del vecino ahora trae su QR.
 Probado: `app8e` **64** comprobaciones (390 y 1360; la cámara de prueba lee el QR real del cupón), **7 guardianes nuevos y 2 ampliados (53/53 al
 revés)**, migración y semilla dos veces (local y base nueva), regresión rep2l 17, evt6g 105, evt6h 88, app8a 110, push8c 86, beta8f 95, com5g 73.
-Android e iOS los compiló el CI (corrida 43027119917: los cuatro sabores y los cuatro targets, las cuatro apps de iOS abren); el humo de la ruta en
-el emulador: ver PROGRESS.
+Android e iOS en el CI: corrida **43031740708** (23a3a7c) **verde**: los cuatro sabores y los cuatro targets compilan, las cuatro apps de iOS
+abren, y en el emulador To'Latino Repartidor arranca el servicio en primer plano de tipo ubicación con el aviso fijo, sigue con la pantalla
+apagada, guarda en modo avión y sube en lote al volver, y se detiene solo con el 410 del servidor y con detener().
 
 **Lo que vas a ver** (capturas en `/tmp/claude-0/-home-user-tolatino/eca57e26-4a1a-53b1-a4eb-26535476dd6c/scratchpad/cap/e8-*.png`):
 1. **Repartidor · el detalle de una entrega** (`e8-rep-antes-m.png`): «Voy por el pedido» (nuevo, primero) y «Recogí, voy en camino»; los pasos
