@@ -4852,6 +4852,96 @@ const guardianes = {
     if (!existsSync(MW) || !/destinoEnApp\(app\.app,/.test(sinComent(MW))) falla(G, MW, 0, "el middleware manda cada ruta de la cáscara con destinoEnApp() (la misma regla)");
   },
 
+  /* 8a · El puente nativo solo para nuestro origen y el marco principal (§3.1 «Seguridad del WebView»). 11 nov, primera corrida del emulador:
+     en Negocios, Repartidor y Puerta un iframe de otro origen alcanzaba el puente. Causa: server.url con ruta (https://…/panel). Capacitor usa
+     server.url tal cual como regla de origen de addWebMessageListener; con ruta la regla es inválida, la llamada falla y Capacitor cae EN
+     SILENCIO a addJavascriptInterface, que entrega el objeto a todos los marcos. Además, los plugins internos CapacitorHttp y CapacitorCookies
+     instalan siempre su objeto Java (setCookie deja a cualquier marco poner cookies, también HttpOnly). La clase: «algo de la configuración o
+     del código hace que Capacitor entregue el puente por addJavascriptInterface, o que un manejador de iOS atienda a cualquier marco».
+     - Android: server.url es solo un origen y la entrada va en appStartPath; allowNavigation son nombres de dominio (sin comodín ni ruta);
+       sin el puente viejo; CapacitorHttp y CapacitorCookies apagados; MainActivity quita los tres objetos Java después de super.onCreate; y
+       ningún código propio usa addJavascriptInterface.
+     - iOS: TLBridgeViewController reemplaza el manejador «bridge» por el portero (solo el marco principal y nuestros dos orígenes), la escena
+       lo usa, y ningún código propio agrega otro manejador ni un script para todos los marcos.
+     - El humo de Android prueba las cuatro apps (de apps.json) en la página local y en la isla: el iframe opaco debe responder "false" y el
+       marco principal debe tener el puente.
+     Al revés: volver a poner la entrada en server.url de Android, quitar un removeJavascriptInterface, un addJavascriptInterface en un plugin,
+     quitar isMainFrame del portero o darle allow-same-origin al iframe del humo → falla. */
+  puenteSoloNuestroOrigen() {
+    const G = "puenteSoloNuestroOrigen", J = "apps/mobile/apps.json";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8"));
+    for (const a of A.apps) {
+      const T = `apps/mobile/android/app/src/${a.sabor}/assets/capacitor.config.json`;
+      if (!existsSync(T)) { falla(G, T, 0, "falta el capacitor.config.json del sabor"); continue; }
+      const c = JSON.parse(readFileSync(T, "utf8")), s = c.server ?? {};
+      let origen = null;
+      try { origen = new URL(s.url).origin; } catch { /* abajo */ }
+      if (!origen || s.url !== origen) falla(G, T, 0, `server.url «${s.url}» no es solo un origen: Capacitor la usa como regla de addWebMessageListener y, con ruta, entrega el puente a todos los marcos (la entrada va en server.appStartPath)`);
+      if ((a.entrada === "/" ? undefined : a.entrada) !== s.appStartPath) falla(G, T, 0, `server.appStartPath es la entrada de ${a.key} (${a.entrada})`);
+      for (const n of s.allowNavigation ?? []) if (!/^[a-z0-9.-]+(:\d+)?$/.test(n)) falla(G, T, 0, `allowNavigation «${n}»: solo un nombre de dominio (sin comodín, esquema ni ruta; también es regla de origen del puente)`);
+      if (c.android?.useLegacyBridge !== false) falla(G, T, 0, "android.useLegacyBridge: false (el puente viejo es addJavascriptInterface)");
+      for (const p of ["CapacitorHttp", "CapacitorCookies"]) if (c.plugins?.[p]?.enabled) falla(G, T, 0, `${p} apagado: su objeto Java lo alcanza cualquier marco`);
+    }
+    const MA = "apps/mobile/android/app/src/main/java/com/tolatino/cascara/MainActivity.java";
+    const ma = existsSync(MA) ? sinComent(MA) : "";
+    const oc = /void onCreate\(Bundle [a-zA-Z]+\)\s*\{([\s\S]*?)\n    \}/.exec(ma)?.[1] ?? "";
+    if (!/super\.onCreate\([\s\S]*removeJavascriptInterface\(/.test(oc)) falla(G, MA, 0, "MainActivity.onCreate quita los objetos Java del puente después de super.onCreate");
+    for (const n of ["androidBridge", "CapacitorHttpAndroidInterface", "CapacitorCookiesAndroidInterface"]) if (!ma.includes(`"${n}"`)) falla(G, MA, 0, `MainActivity no quita «${n}» (addJavascriptInterface lo da a todos los marcos)`);
+    for (const f of archivos.filter((x) => /^apps\/mobile\/.*\.(java|kt)$/.test(x))) if (/\baddJavascriptInterface\s*\(/.test(sinComent(f))) falla(G, f, 0, "addJavascriptInterface entrega el objeto a todos los marcos, también a un iframe de otro origen: usa un plugin de Capacitor");
+    const BV = "apps/mobile/ios/App/TLBridgeViewController.swift", bv = existsSync(BV) ? sinComent(BV) : "";
+    if (!/guard message\.frameInfo\.isMainFrame else \{ return \}/.test(bv) || !/securityOrigin/.test(bv) || !/guard origenes\.contains\(/.test(bv)) falla(G, BV, 0, "el portero del puente de iOS solo deja pasar el marco principal de nuestros orígenes");
+    if (!/removeScriptMessageHandler\(forName: "bridge"\)[\s\S]*\.add\(TLPortero\(/.test(bv)) falla(G, BV, 0, "el manejador «bridge» de Capacitor se reemplaza por el portero");
+    const SD = "apps/mobile/ios/App/SceneDelegate.swift";
+    if (!existsSync(SD) || !/rootViewController = TLBridgeViewController\(\)/.test(sinComent(SD))) falla(G, SD, 0, "la escena abre TLBridgeViewController (con el portero), no CAPBridgeViewController");
+    for (const f of archivos.filter((x) => /^apps\/mobile\/.*\.swift$/.test(x) && x !== BV)) {
+      const t = sinComent(f);
+      if (/\.add\([^)]*,\s*name:|addScriptMessageHandler|messageHandlers/.test(t)) falla(G, f, 0, "un manejador de mensajes de WKWebView lo llama cualquier marco: solo el portero de TLBridgeViewController");
+      if (/forMainFrameOnly:\s*false/.test(t)) falla(G, f, 0, "un script para todos los marcos (forMainFrameOnly: false)");
+    }
+    const H = "apps/mobile/scripts/humo-android.sh", h = existsSync(H) ? readFileSync(H, "utf8") : "";
+    const MJ = "apps/mobile/scripts/humo/marco-ajeno.js", mj = existsSync(MJ) ? readFileSync(MJ, "utf8") : "";
+    if (!/require\(process\.argv\[1\]\)[\s\S]*apps\.json/.test(h) || !/for par in \$APPS; do\n\s+IFS=: read -r s id isla/.test(h)) falla(G, H, 0, "el humo de Android prueba las cuatro apps de apps.json");
+    if (!h.includes(`"$(cat "$DIR/humo/marco-ajeno.js")"`) || !h.includes(`[ "$r" = '"false"' ] || {`) || !/marco "\$s" "página local"/.test(h) || !/marco "\$s" "isla"/.test(h)) falla(G, H, 0, "el humo exige que el marco ajeno no vea el puente (\"false\"), en la página local y en la isla");
+    if (!h.includes(`"$(cat "$DIR/humo/puente-principal.js")"`)) falla(G, H, 0, "el humo comprueba que el marco principal sí tiene el puente");
+    if (!/f\.sandbox = "allow-scripts";/.test(mj) || /allow-same-origin/.test(mj) || !/androidBridge/.test(mj) || !/CapacitorCookiesAndroidInterface/.test(mj)) falla(G, MJ, 0, "el iframe del humo es de otro origen (sandbox allow-scripts, sin allow-same-origin) y busca todo el puente");
+    const WF = ".github/workflows/cascaras.yml", wf = existsSync(WF) ? readFileSync(WF, "utf8") : "";
+    if (!/script: bash apps\/mobile\/scripts\/humo-android\.sh /.test(wf) || !/run: bash apps\/mobile\/scripts\/humo-ios\.sh /.test(wf)) falla(G, WF, 0, "el CI de las cáscaras corre los dos humos");
+  },
+
+  /* 8a · Cada cáscara de iOS arranca (11 nov, primera corrida del simulador: las cuatro se cerraban al abrir). Causa: el plugin SplashScreen de
+     Capacitor abre UIStoryboard(name: "LaunchScreen") al cargar y el Info.plist usaba la clave UILaunchScreen sin storyboard: iOS lanza una
+     excepción y cierra la app. La clase: «algo que el código nativo exige del paquete y el paquete no trae». Con SplashScreen, cada Info.plist
+     nombra su storyboard de arranque y el archivo está en las fuentes del target; server.appStartPath no se usa en iOS (allí es un archivo
+     local y, si no existe, Capacitor cierra la app); cada plugin propio que la config pide se puede encontrar por su nombre (@objc); y el
+     humo guarda lo que la app escribe y el informe de cierre. Al revés: volver a UILaunchScreen, borrar el storyboard, poner appStartPath en
+     iOS o quitar @objc(TLLocalPlugin) → falla. */
+  cascaraArrancaIos() {
+    const G = "cascaraArrancaIos", J = "apps/mobile/apps.json", PY = "apps/mobile/ios/project.yml";
+    if (!existsSync(J)) return;
+    const A = JSON.parse(readFileSync(J, "utf8")), py = existsSync(PY) ? readFileSync(PY, "utf8") : "";
+    for (const a of A.apps) {
+      const T = `apps/mobile/ios/Targets/${a.target}`, pl = existsSync(`${T}/Info.plist`) ? readFileSync(`${T}/Info.plist`, "utf8") : "";
+      const bloque = py.split(/\n  (?=[A-Za-z]+:\n    type: application)/).find((b) => b.startsWith(`${a.target}:\n`)) ?? "";
+      if (!bloque) falla(G, PY, 0, `project.yml no tiene el target ${a.target}`);
+      if (a.plugins.includes("SplashScreen")) {
+        const sb = /<key>UILaunchStoryboardName<\/key>\s*<string>([^<]+)<\/string>/.exec(pl)?.[1];
+        if (!sb) falla(G, `${T}/Info.plist`, 0, "con SplashScreen, el Info.plist nombra su storyboard de arranque (UILaunchStoryboardName): sin él la app se cierra al abrir");
+        else if (!["App", `Targets/${a.target}`].some((d) => existsSync(`apps/mobile/ios/${d}/${sb}.storyboard`) && bloque.includes(`- path: ${d}\n`))) falla(G, `${T}/Info.plist`, 0, `${sb}.storyboard no está en las fuentes del target ${a.target}`);
+      }
+      const cf = `${T}/capacitor.config.json`, c = existsSync(cf) ? JSON.parse(readFileSync(cf, "utf8")) : {};
+      if (c.server?.appStartPath) falla(G, cf, 0, "server.appStartPath en iOS es un archivo local (public/…): si no existe, Capacitor cierra la app. La entrada va en server.url");
+      const dirs = [...bloque.matchAll(/- path: \.\.\/plugins\/([a-z-]+)\/ios/g)].map((m) => m[1]);
+      for (const p of c.packageClassList ?? []) {
+        if (!/^TL/.test(p)) continue;
+        const ok = dirs.some((d) => archivos.some((f) => f.startsWith(`apps/mobile/plugins/${d}/ios/`) && f.endsWith(".swift") && new RegExp(`@objc\\(${p}\\)\\s*public class ${p}: CAPPlugin, CAPBridgedPlugin`).test(readFileSync(f, "utf8"))));
+        if (!ok) falla(G, cf, 0, `${p}: el target ${a.target} no compila una clase @objc(${p}) que Capacitor pueda encontrar por su nombre`);
+      }
+    }
+    const H = "apps/mobile/scripts/humo-ios.sh", h = existsSync(H) ? readFileSync(H, "utf8") : "";
+    if (!/--stdout=/.test(h) || !/DiagnosticReports/.test(h) || !/log show/.test(h)) falla(G, H, 0, "si una app se cierra, el humo de iOS imprime lo que escribió, el registro del simulador y el informe de cierre");
+  },
+
   /* 8a · @capacitor/* solo en el puente (lib/nativo/puente.ts): ninguna pantalla habla con lo nativo por su cuenta ni toca window.Capacitor.
      Al revés: importar @capacitor/core en una pantalla → falla. */
   capacitorSoloEnPuente() {

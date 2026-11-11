@@ -4,7 +4,8 @@
   "webDir": "public",
   "loggingBehavior": "debug",
   "server": {
-    "url": "https://pruebas.tolatino.com/puerta",
+    "url": "https://pruebas.tolatino.com",
+    "appStartPath": "/puerta",
     "hostname": "localhost",
     "androidScheme": "https",
     "iosScheme": "capacitor",

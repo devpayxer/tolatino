@@ -4,7 +4,8 @@
   "webDir": "public",
   "loggingBehavior": "debug",
   "server": {
-    "url": "https://pruebas.tolatino.com/repartidor",
+    "url": "https://pruebas.tolatino.com",
+    "appStartPath": "/repartidor",
     "hostname": "localhost",
     "androidScheme": "https",
     "iosScheme": "capacitor",

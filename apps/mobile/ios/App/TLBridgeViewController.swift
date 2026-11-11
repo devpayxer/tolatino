@@ -9,14 +9,18 @@ import Capacitor
    apagado hasta comprobar en el simulador que no rompe la hoja de Stripe y su 3-D Secure (a verificar, LAUNCH-CHECKLIST). */
 final class TLPortero: NSObject, WKScriptMessageHandler {
     private weak var destino: WKScriptMessageHandler?
-    private let hosts: Set<String>
-    init(destino: WKScriptMessageHandler, hosts: Set<String>) { self.destino = destino; self.hosts = hosts }
+    private let origenes: Set<String>
+    init(destino: WKScriptMessageHandler, origenes: Set<String>) { self.destino = destino; self.origenes = origenes }
+
+    static func origen(_ esquema: String?, _ host: String?, _ puerto: Int?) -> String {
+        let p = (puerto ?? 0) > 0 ? ":\(puerto!)" : ""
+        return "\((esquema ?? "").lowercased())://\((host ?? "").lowercased())\(p)"
+    }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame else { return }
         let o = message.frameInfo.securityOrigin
-        let h = o.port > 0 ? "\(o.host):\(o.port)" : o.host
-        guard hosts.contains(h.lowercased()) else { return }
+        guard origenes.contains(TLPortero.origen(o.protocol, o.host, o.port)) else { return }
         destino?.userContentController(userContentController, didReceive: message)
     }
 }
@@ -25,9 +29,11 @@ class TLBridgeViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         guard let bridge = bridge as? CapacitorBridge else { return }
         let h = bridge.webViewDelegationHandler
-        var hosts: Set<String> = ["localhost"]
-        if let s = bridge.config.serverURL.host { hosts.insert((bridge.config.serverURL.port.map { "\(s):\($0)" } ?? s).lowercased()) }
+        let c = bridge.config
+        // Solo dos orígenes: el local de las islas (capacitor://localhost) y nuestro servidor (https://pruebas.tolatino.com).
+        let origenes: Set<String> = [TLPortero.origen(c.localURL.scheme, c.localURL.host, c.localURL.port),
+                                     TLPortero.origen(c.serverURL.scheme, c.serverURL.host, c.serverURL.port)]
         h.contentController.removeScriptMessageHandler(forName: "bridge")
-        h.contentController.add(TLPortero(destino: h, hosts: hosts), name: "bridge")
+        h.contentController.add(TLPortero(destino: h, origenes: origenes), name: "bridge")
     }
 }

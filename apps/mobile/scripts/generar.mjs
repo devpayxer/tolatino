@@ -45,14 +45,22 @@ function alcance(a) {
     ajenas: [...(a.alcance.includes("/") ? otras : []), ...A.soloWeb],
   };
 }
-function capConfig(a) {
+/* La entrada de cada app, distinta por plataforma (guardián puenteSoloNuestroOrigen):
+   - Android: server.url es SOLO el origen y la entrada va en server.appStartPath. Capacitor usa server.url tal cual como regla de origen de
+     addWebMessageListener; con una ruta (/panel) la regla es inválida, la llamada falla y Capacitor cae en silencio a addJavascriptInterface,
+     que entrega el puente a TODOS los marcos, también a un iframe de otro origen (11 nov: Negocios, Repartidor y Puerta en el emulador).
+   - iOS: la entrada va en server.url. En iOS appStartPath es un archivo LOCAL (public/{entrada}): si no existe, Capacitor cierra la app. */
+function capConfig(a, plat) {
   const ent = a.entrada === "/" ? "" : a.entrada;
+  const server = plat === "android"
+    ? { url: URL_BASE, ...(ent ? { appStartPath: ent } : {}) }
+    : { url: `${URL_BASE}${ent}` };
   return {
     appId: a.ios,
     appName: a.nombre.es,
     webDir: "public",
     loggingBehavior: SABOR === "pruebas" ? "debug" : "none",
-    server: { url: `${URL_BASE}${ent}`, hostname: "localhost", androidScheme: "https", iosScheme: "capacitor", errorPath: "index.html", allowNavigation: [HOST], cleartext: HTTP },
+    server: { ...server, hostname: "localhost", androidScheme: "https", iosScheme: "capacitor", errorPath: "index.html", allowNavigation: [HOST], cleartext: HTTP },
     ios: { appendUserAgent: rotulo(a, "ios"), contentInset: "never", scrollEnabled: true, allowsLinkPreview: false, webContentsDebuggingEnabled: SABOR === "pruebas", limitsNavigationsToAppBoundDomains: false },
     android: { appendUserAgent: rotulo(a, "android"), allowMixedContent: false, captureInput: true, webContentsDebuggingEnabled: SABOR === "pruebas", useLegacyBridge: false },
     plugins: {
@@ -73,7 +81,7 @@ const salidas = new Map(); // ruta relativa a apps/mobile → contenido
 const poner = (r, c) => salidas.set(r, c.endsWith("\n") ? c : c + "\n");
 
 for (const a of A.apps) {
-  const cfg = JSON.stringify(capConfig(a), null, 2);
+  const cfg = JSON.stringify(capConfig(a, "ios"), null, 2), cfgA = JSON.stringify(capConfig(a, "android"), null, 2);
   const T = `ios/Targets/${a.target}`, S = `android/app/src/${a.sabor}`;
   /* iOS */
   poner(`${T}/capacitor.config.json`, cfg);
@@ -129,15 +137,8 @@ ${ps.map((p) => `	<key>${PERM_IOS[p]}</key>\n	<string>${esc(texto(p, a, "es"))}<
 			</array>
 		</dict>
 	</dict>
-	<key>UILaunchScreen</key>
-	<dict>
-		<key>UIColorName</key>
-		<string>Splash</string>
-		<key>UIImageName</key>
-		<string>SplashLogo</string>
-		<key>UIImageRespectsSafeAreaInsets</key>
-		<true/>
-	</dict>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
 		<string>arm64</string>
@@ -184,7 +185,7 @@ ${ps.map((p) => `"${PERM_IOS[p]}" = "${escStr(texto(p, a, l))}";`).join("\n")}`)
 </dict>
 </plist>`);
   /* Android */
-  poner(`${S}/assets/capacitor.config.json`, cfg);
+  poner(`${S}/assets/capacitor.config.json`, cfgA);
   poner(`${S}/assets/capacitor.plugins.json`, JSON.stringify(a.plugins.map((p) => ({ pkg: PLUGINS[p].npm ?? `tolatino/${PLUGINS[p].dir}`, classpath: PLUGINS[p].android })), null, 2));
   const permA = [...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : [])];
   poner(`${S}/AndroidManifest.xml`, `<?xml version="1.0" encoding="utf-8"?>
@@ -202,6 +203,46 @@ ${permA.map((p) => `    <uses-permission android:name="${p}" />`).join("\n")}${p
     <string name="package_name">${a.android}</string>
     <string name="custom_url_scheme">${a.android}</string>
 ${ps.map((p) => `    <string name="permiso_${p}">${escAndroid(texto(p, a, l))}</string>`).join("\n")}${ps.length ? "\n" : ""}</resources>`);
+}
+
+/* iOS: la pantalla de arranque de las cuatro apps (App/ entra en los cuatro targets). Es un storyboard y no la clave UILaunchScreen porque el
+   plugin SplashScreen de Capacitor abre UIStoryboard(name: "LaunchScreen") al cargar: sin ese archivo, iOS lanza una excepción y la app se
+   cierra al abrir (11 nov, las cuatro en el simulador; guardián cascaraArrancaIos). El color «Splash» y el logo «SplashLogo» salen del
+   catálogo de cada target (iconos.mjs); el color de aquí es solo el respaldo del archivo (token --tl-paper). */
+{
+  const p = token("--tl-paper"), c = (i) => (parseInt(p.slice(i, i + 2), 16) / 255).toFixed(3);
+  poner("ios/App/LaunchScreen.storyboard", `<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generado por apps/mobile/scripts/generar.mjs. No editar a mano. -->
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="tlA-rr-Vc1">
+    <device id="retina6_12" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22504"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <scene sceneID="tlA-rr-Esc">
+            <objects>
+                <viewController id="tlA-rr-Vc1" sceneMemberID="viewController">
+                    <imageView key="view" userInteractionEnabled="NO" contentMode="center" image="SplashLogo" id="tlA-rr-Img">
+                        <rect key="frame" x="0.0" y="0.0" width="393" height="852"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" name="Splash"/>
+                    </imageView>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="tlA-rr-Fr1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="53" y="375"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="SplashLogo" width="120" height="120"/>
+        <namedColor name="Splash">
+            <color red="${c(1)}" green="${c(3)}" blue="${c(5)}" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+    </resources>
+</document>`);
 }
 
 /* Gradle: los cuatro sabores, cada uno con solo sus plugins. */
