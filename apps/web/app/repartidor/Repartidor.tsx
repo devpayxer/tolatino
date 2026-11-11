@@ -8,10 +8,14 @@ import { PanelBloques, type PanelBloqueT as Bloque, type PanelFila as Fila } fro
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState, useTransition, type ComponentType } from "react";
 import type { EntregaRep, MiRep, PasoRep } from "@/lib/repartidor";
-import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repSalir } from "./acciones";
+import { choferAbordoAccion, choferPasoAccion, repAceptar, repEnLinea, repPaso, repProblema, repRutaReanudar, repSalir } from "./acciones";
 import { guardarTurno, leerCola, guardarCola, type Cola } from "./sin-conexion/local";
 import { alCambiarRed, sinRed } from "@/lib/nativo/senal";
-import { useAvisos } from "@/app/_cascara/HojaPermiso";
+import { useAvisos, usePermiso } from "@/app/_cascara/HojaPermiso";
+import { compartirRuta, dejarDeCompartir, estadoRuta, type EstadoRuta, type TokenRuta } from "@/lib/nativo/ruta";
+import { mantenerEncendida } from "@/lib/nativo/pantalla";
+import { vibrar } from "@/lib/nativo/haptica";
+import { horaCorta } from "@/lib/mapa-ruta";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const { BottomNav } = UI as unknown as Record<"BottomNav", ComponentType<any>>;
@@ -25,8 +29,9 @@ const MOT: [string, string, string][] = [["noresponde", "El cliente no responde"
   ["incompleto", "El pedido está incompleto", "Order is incomplete"], ["accidente", "Tuve un accidente o un problema con el vehículo", "Accident or vehicle problem"], ["otro", "Otro problema", "Something else"]];
 const AT: Record<string, [string, string]> = { timbre: ["Toca el timbre", "Ring the bell"], noTimbre: ["No toques el timbre", "Don't ring the bell"], llamar: ["Llámame al llegar", "Call me on arrival"], texto: ["Escríbeme al llegar", "Text me on arrival"] };
 
-export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s }: {
-  es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null;
+type RutaAbierta = { numero: string; negocio: string; desde: string; ultima: string | null };
+export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias, salidas, s, rutas = [] }: {
+  es: boolean; t: Tab; p: string | null; nombre: string; tel: string; equipos: MiRep[]; entregas: EntregaRep[]; ganancias: Gan[]; salidas: SalidaC[]; s: string | null; rutas?: RutaAbierta[];
 }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), [pend, start] = useTransition();
@@ -37,6 +42,30 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   const [cobro, setCobro] = useState(false), [prob, setProb] = useState(false), [mot, setMot] = useState(""), [nota, setNota] = useState("");
   const [cola, setCola] = useState<Cola>([]);
   const ir = (q: string) => router.push("/repartidor" + q);
+  // 8e · La ubicación durante la entrega. Empieza SOLO con el token que da el servidor en el paso que inicia la entrega («Voy por el pedido» o
+  // «Recogí»), o al reanudarla si la app se cerró; para al marcar «Entregado» o cuando el servidor ya no tiene la entrega activa. La hoja previa
+  // del permiso sale antes de que el sistema pregunte. Mientras hay entrega activa, la pantalla se queda encendida.
+  const { hoja: hojaPermiso, conPermiso } = usePermiso(es), [ruta, setRuta] = useState<EstadoRuta | null>(null), [sinUbic, setSinUbic] = useState<"negado" | "sin_gps" | "no" | null>(null);
+  const iniciar = useCallback((tk: TokenRuta) => {
+    void conPermiso("ubicacion",
+      () => { void compartirRuta(tk, es).then((r) => { setSinUbic(r === "ok" ? null : r); void estadoRuta().then(setRuta); }); },
+      () => setSinUbic("no"));
+  }, [conPermiso, es]);
+  const abierta = rutas[0]?.numero ?? null;
+  useEffect(() => {
+    if (!abierta) { void dejarDeCompartir(); void mantenerEncendida(false); setRuta(null); return; }
+    void mantenerEncendida(true);
+    let vivo = true;
+    void estadoRuta().then(async (e) => {
+      if (!vivo) return;
+      setRuta(e);
+      // La app se volvió a abrir con la entrega en curso y el teléfono no comparte: token nuevo (solo si la ruta sigue abierta para ti).
+      if (!e.activo || e.entrega !== abierta) { const tk = await repRutaReanudar(abierta).catch(() => null); if (vivo && tk) iniciar(tk); }
+    });
+    const i = setInterval(() => { void estadoRuta().then((e) => { if (vivo) setRuta(e); }); }, 5000);
+    return () => { vivo = false; clearInterval(i); };
+  }, [abierta]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { void mantenerEncendida(false); }, []);
   useEffect(() => { if (!toast) return; const x = setTimeout(() => setToast(""), 2600); return () => clearTimeout(x); }, [toast]);
   useEffect(() => { setCobro(false); setProb(false); setErr(""); }, [p]);
   // Sin señal: lo pendiente se envía al volver la señal (y cada 15 s mientras quede algo).
@@ -44,10 +73,10 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     const c = await leerCola();
     if (!c.length || sinRed()) { setCola(c); return; }
     const resto: Cola = [];
-    for (const x of c) { try { await repPaso(x.numero, x.paso, x.efectivo); } catch { resto.push(x); } }
+    for (const x of c) { try { const r = await repPaso(x.numero, x.paso, x.efectivo); if (r.ok && r.ruta) iniciar(r.ruta); } catch { resto.push(x); } }
     await guardarCola(resto); setCola(resto);
     if (resto.length < c.length) router.refresh();
-  }, [router]);
+  }, [router, iniciar]);
   // 8a · En la app: lo pendiente y las entregas del turno quedan en el teléfono para abrir sin señal (/repartidor/sin-conexion).
   useEffect(() => { void guardarTurno(entregas, es); }, [entregas, es]);
   useEffect(() => { void enviarCola(); const on = () => void enviarCola(); const quitar = alCambiarRed((r) => { if (r) on(); }); const i = setInterval(on, 15000); return () => { quitar(); clearInterval(i); }; }, [enviarCola]);
@@ -67,6 +96,8 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
       try {
         const r = await repPaso(numero, ps, efectivo);
         if (!r.ok) { setErr(es ? r.msg.es : r.msg.en); return; }
+        if (r.ruta) iniciar(r.ruta); // el paso que inicia la entrega: el teléfono empieza a compartir
+        if (ps === "entregado") { vibrar("hecho"); if (rutas.length <= 1) void dejarDeCompartir(); }
         setToast(ok); setCobro(false); router.refresh();
       } catch {
         await guardar();
@@ -131,14 +162,17 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
         acts: x.negocio.tel ? [{ l: E2("Llamar", "Call"), v: "secondary", icon: "phone", onClick: () => { location.href = `tel:${x.negocio.tel}`; } }] : undefined },
     ] });
     B.push({ type: "rows", k: E2("LO QUE LLEVAS", "WHAT YOU CARRY"), items: x.lineas.map((l, i): Fila => ({ key: String(i), icon: "bag", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`, compact: true, chev: false })) });
-    const st = x.stage, en = st === "on_the_way";
+    const st = x.stage, en = st === "on_the_way", empezo = x.empezo || rutas.some((r) => r.numero === x.numero);
     B.push({ type: "timeline", k: E2("PASOS", "STEPS"), items: [
-      { t: E2("Recogido · en camino", "Picked up · on the way"), s: en || x.status === "done" ? E2("HECHO", "DONE") : E2("AHORA", "NOW"), now: !en && vivo },
+      { t: E2("Voy por el pedido", "Heading to pick up"), s: empezo || en || x.status === "done" ? E2("HECHO", "DONE") : E2("AHORA", "NOW"), now: !empezo && !en && vivo },
+      { t: E2("Recogido · en camino", "Picked up · on the way"), s: en || x.status === "done" ? E2("HECHO", "DONE") : empezo ? E2("AHORA", "NOW") : "", now: empezo && !en && vivo, future: !empezo && !en },
       { t: E2("Llegué", "Arrived"), s: x.llegue ? E2("HECHO", "DONE") : "", now: en && !x.llegue, future: !en },
       { t: E2("Entregado", "Delivered"), s: x.status === "done" ? E2("HECHO", "DONE") : "", now: en && x.llegue, future: !en },
     ] as never });
     if (err) B.push({ type: "note", tone: "danger", icon: "warning", t: err });
-    if (vivo && !en) B.push({ type: "acts", items: [{ l: E2("Recogí, voy en camino", "Picked up, on my way"), v: "primary", icon: "truck", off: pend, onClick: () => paso(x.numero, "recogi", E2("El cliente ya sabe que vas en camino.", "The customer knows you are on the way.")) }] });
+    // 8e · «Voy por el pedido» inicia la entrega: el negocio te ve en el mapa desde aquí (el cliente, desde «Recogí»).
+    if (vivo && !en && !empezo) B.push({ type: "acts", items: [{ l: E2("Voy por el pedido", "Heading to pick up"), v: "primary", icon: "pin", off: pend, onClick: () => paso(x.numero, "empezar", E2("El negocio ya ve que vas por el pedido.", "The business sees you are heading there.")) }] });
+    if (vivo && !en) B.push({ type: "acts", items: [{ l: E2("Recogí, voy en camino", "Picked up, on my way"), v: empezo ? "primary" : "secondary", icon: "truck", off: pend, onClick: () => paso(x.numero, "recogi", E2("El cliente ya sabe que vas en camino.", "The customer knows you are on the way.")) }] });
     if (vivo && en && !x.llegue) B.push({ type: "acts", items: [{ l: E2("Llegué", "I'm here"), v: "primary", icon: "pin", off: pend, onClick: () => paso(x.numero, "llegue", E2("Le avisamos al cliente que llegaste.", "We told the customer you arrived.")) }] });
     if (vivo && en && (x.llegue || cobro)) {
       if (cash && !cobro) B.push({ type: "acts", items: [{ l: E2(`Cobrar ${money(x.efectivo!)}`, `Collect ${money(x.efectivo!)}`), v: "primary", icon: "dollar", off: pend, onClick: () => setCobro(true) }] });
@@ -196,12 +230,24 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
   }
   // El error de la última acción, debajo del encabezado (en el detalle va junto a los botones).
   if (err && !det) { const i = B.findIndex((b) => b.type === "head"); B.splice(i + 1, 0, { type: "note", tone: "danger", icon: "warning", t: err }); }
+  // 8e · La banda «Compartiendo tu ubicación» (hueco #6 del plan: compuesta con la nota del sistema, fija arriba): mientras hay una entrega con la
+  // ruta abierta. Verde con la hora de la última posición que llegó al servidor; sin señal, cuántas esperan; si el teléfono no comparte, por qué.
+  const band: Bloque | null = !abierta ? null
+    : sinUbic ? { type: "note", tone: "danger", icon: "pin", t: sinUbic === "sin_gps" ? E2(`Entrega #${abierta}: este navegador no da tu ubicación. Usa la app To’Latino Repartidor para que el negocio y el cliente vean por dónde vas.`, `Delivery #${abierta}: this browser can’t give your location. Use the To’Latino Repartidor app so the business and the customer can see where you are.`)
+        : E2(`Entrega #${abierta}: no estás compartiendo tu ubicación. El negocio y el cliente no ven por dónde vas.`, `Delivery #${abierta}: you are not sharing your location. The business and the customer can’t see where you are.`),
+        cta: E2("Compartir", "Share"), onCta: () => { void repRutaReanudar(abierta).then((tk) => { if (tk) iniciar(tk); }); } }
+    : ruta?.activo && ruta.sinSenal ? { type: "note", tone: "warn", icon: "wifi", t: E2(`Sin señal · se envía al volver${ruta.pendientes ? ` · ${ruta.pendientes} ${ruta.pendientes === 1 ? "posición espera" : "posiciones esperan"}` : ""}`, `No signal · it sends when it’s back${ruta.pendientes ? ` · ${ruta.pendientes} ${ruta.pendientes === 1 ? "position waiting" : "positions waiting"}` : ""}`) }
+    : { type: "note", tone: "ok", icon: "pin", t: (() => { const u = ruta?.ultima ? new Date(ruta.ultima).toISOString() : rutas[0]?.ultima ?? null;
+        return E2(`Compartiendo tu ubicación · Entrega #${abierta}${u ? ` · última ${horaCorta(u, true)}` : " · esperando la primera posición"}. Al marcar «Entregado» deja de compartirse.`,
+          `Sharing your location · Delivery #${abierta}${u ? ` · last sent ${horaCorta(u, false)}` : " · waiting for the first position"}. It stops when you mark “Delivered”.`); })() };
   return (
     <div className="min-h-dvh bg-paper pb-[110px]">
+      {band ? <div data-banda="ubicacion" className="sticky top-0 z-30 bg-paper/95 px-4 pb-2 pt-[calc(8px+env(safe-area-inset-top))] backdrop-blur-[14px]"><div className="mx-auto max-w-[560px]"><PanelBloques bloques={[band]} /></div></div> : null}
       <div className="mx-auto flex max-w-[560px] flex-col gap-3 px-4 pt-5">
         <PanelBloques bloques={B} h1={24} />
       </div>
       {avisos.hoja}
+      {hojaPermiso}
       {toast && <div role="status" className="fixed bottom-[104px] left-1/2 z-[90] w-[calc(100%-40px)] max-w-[380px] -translate-x-1/2 rounded-[14px] bg-ink px-4 py-3 text-center text-[13px] font-bold text-white">{toast}</div>}
       {eq && <div className="fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur-[14px]">
         <BottomNav items={[{ id: "inicio", label: E2("INICIO", "HOME"), icon: "home" }, { id: "pedidos", label: E2("PEDIDOS", "ORDERS"), icon: "truck" }, { id: "ganancias", label: E2("GANANCIAS", "EARNINGS"), icon: "wallet" }, { id: "perfil", label: E2("PERFIL", "PROFILE"), icon: "users" }]}

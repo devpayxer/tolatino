@@ -3,6 +3,7 @@
    publicación como PostCard del sistema de diseño con lo propio de su tipo (oferta, hoy hay, aviso, encuesta, novedad con
    botón), votos + y −, comentarios con la respuesta del negocio, guardar (ofertas) y compartir. El servidor decide qué se
    ve (en vivo, quién lo ve) y el precio de la oferta (el mismo que se cobra). */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -209,7 +210,7 @@ export function NovTab({ v, logo, sesion, es, onItem, onHoras }: { v: NovedadesF
             voteStyle={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(11,14,18,.07)", gap: 6 }}
             comments={p.cm.length ? String(p.cm.length) : E2("Comentar", "Comment")} onComments={() => { setOpen(open === p.id ? null : p.id); setDraft(""); }}
             onSave={p.kind === "oferta" ? () => hacer(() => novGuardar(p.id)) : undefined} saveColor={p.saved ? "var(--tl-danger)" : "rgba(11,14,18,.6)"}
-            onShare={() => { const u = `${location.origin}/n/${v.negocio.id}?tab=nov`; if (navigator.share) navigator.share({ title: p.title, url: u }).catch(() => undefined); else navigator.clipboard?.writeText(u).catch(() => undefined); }}>
+            onShare={() => { void compartirNativo({ titulo: p.title, url: `${location.origin}/n/${v.negocio.id}?tab=nov` }); }}>
             {fotos.length > 0 && (
               <div className="mt-3 grid gap-1.5 overflow-hidden rounded-[14px]" style={{ gridTemplateColumns: `repeat(${Math.min(2, fotos.length)},minmax(0,1fr))` }}>
                 {fotos.map((u, i) => <span key={i} className="bg-photo-bg bg-cover bg-center" style={{ height: fotos.length > 2 ? 120 : fotos.length > 1 ? 150 : 200, backgroundImage: `url(${u})` }} />)}

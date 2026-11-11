@@ -1,6 +1,7 @@
 "use client";
 /* USR-INVITAR (diseño «To'Latino Mi cuenta» · invV): TU CÓDIGO «NOMBRE-N» con tu enlace (copiar, WhatsApp, mensaje, compartir), «Cuenta
    para tu rango» (Capitán: los vecinos que invitaste y participan; sin premios en dinero) y «Tus invitados» (SE UNIÓ · PARTICIPA). */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { useEffect, useState } from "react";
 import type { Invitado } from "@/lib/invitar";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../Marco";
@@ -12,7 +13,8 @@ export function Invitar({ es, yo, nombre, ciudad, code, invitados }: { es: boole
   useEffect(() => setUrl(`${location.origin}/${code ? `i/${code.toLowerCase()}` : ""}`), [code]);
   const txt = E2(`${nombre ? `${nombre} te invita a To'Latino: ` : ""}los negocios latinos de ${ciudad} en un solo lugar. Pide, reserva y encuentra trabajo.`, `${nombre ? `${nombre} invites you to To'Latino: ` : ""}the Latino businesses of ${ciudad} in one place. Order, book and find jobs.`);
   const copiar = async () => { try { await navigator.clipboard.writeText(`${txt} ${url}`); ui.toast(E2("Enlace copiado.", "Link copied.")); } catch { ui.toast(E2("No se pudo copiar.", "Could not copy.")); } };
-  const compartir = async () => { if (navigator.share) { try { await navigator.share({ title: "To'Latino", text: txt, url }); } catch { /* la persona cerró */ } } else void copiar(); };
+  // 8e · En la app, la hoja nativa de compartir; en la web, la del navegador o copiar (lib/nativo/compartir.ts).
+  const compartir = async () => { const r = await compartirNativo({ titulo: "To'Latino", texto: txt, url, copiar: `${txt} ${url}` }); if (r === "copiado") ui.toast(E2("Enlace copiado.", "Link copied.")); else if (r === "no") ui.toast(E2("No se pudo copiar.", "Could not copy.")); };
   const B: Bloque[] = [
     { type: "rows", rows: [{ ic: "share", t: code ?? E2("Comparte To'Latino con tus vecinos", "Share To'Latino with your neighbors"), s: code ? E2("TU CÓDIGO · TUS VECINOS LO USAN AL CREAR SU CUENTA", "YOUR CODE · NEIGHBORS USE IT WHEN SIGNING UP") : url.replace(/^https?:\/\//, "").toUpperCase(), x: `${txt} ${url}` }] },
     { type: "acts", cols: "repeat(3,minmax(0,1fr))", btns: [

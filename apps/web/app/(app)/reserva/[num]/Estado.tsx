@@ -2,6 +2,7 @@
 /* APP-NEG-RESERVA-ESTADO · móvil y desktop (prototipo rsvStVals): estado (pendiente, te proponen otra hora, confirmada,
    en tu mesa, terminada, no llegaste, no pudo, sin respuesta, cancelada), los pasos con su hora real, voy tarde, detalles,
    lo que conviene recordar, Calendario · Compartir · Cómo llegar · Llamar, cambiar la solicitud y cancelar. */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -85,7 +86,7 @@ export function Estado({ r, otras, telefono, es }: { r: RsvVista; otras: number[
   };
   const compartir = async () => {
     const t = `${E2("Mesa en ", "Table at ")}${n} · ${dL} · ${T} · ${P(r.p)}`, url = `${location.origin}/n/${r.negocio.id}`;
-    try { if (navigator.share) { await navigator.share({ title: n, text: t, url }); return; } await navigator.clipboard.writeText(`${t}\n${url}`); setFlash(E2("Copiamos los datos de tu mesa.", "We copied your table details.")); } catch { /* cancelado */ }
+    if ((await compartirNativo({ titulo: n, texto: t, url, copiar: `${t}\n${url}` })) === "copiado") setFlash(E2("Copiamos los datos de tu mesa.", "We copied your table details."));
   };
   const llegar = r.negocio.lat != null && r.negocio.lng != null ? () => window.open(`https://www.google.com/maps/dir/?api=1&destination=${r.negocio.lat},${r.negocio.lng}`, "_blank", "noopener") : null;
   const llamar = r.negocio.telefono ? () => { location.href = `tel:${r.negocio.telefono}`; } : null;

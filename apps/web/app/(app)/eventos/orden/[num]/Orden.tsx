@@ -2,6 +2,7 @@
 /* APP-EVT-ORDEN · móvil y desktop (prototipo odVals L1399 · «Orden · estado · recibo»). «¡Listo, vas!», los boletos con su QR REAL
    (TicketQR con la matriz del texto firmado por el servidor) y «MUÉSTRALO EN LA PUERTA · SUBE EL BRILLO», la mesa, los pasos Boletos
    listos · Día del evento · En la puerta · Después, y Calendario · Cómo llegar · Recibo («Cargos de servicio · Incluidos»). */
+import { useBrilloQr } from "@/lib/nativo/pantalla";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -49,6 +50,8 @@ export function Orden({ o, es, cambio = null }: { o: OrdenVista; es: boolean; ca
   const [hoja, setHoja] = useState<"tr" | "ayuda" | "cx" | "nombre" | null>(null), { toast, el } = useToast();
   const listo = (m: string) => { setHoja(null); toast(m); router.refresh(); };
   const cancelada = o.estado === "cancelled", ev = o.evento;
+  // 8e · En la app: con los boletos a la vista, el brillo al máximo (se devuelve al salir).
+  useBrilloQr(!cancelada && !ev.pasado);
   const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
   const llegar = ev.lat != null && ev.lng != null ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : ev.addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ev.addr)}` : null;
   const calendario = () => {

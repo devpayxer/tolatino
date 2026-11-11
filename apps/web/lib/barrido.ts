@@ -120,6 +120,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 8f · «Errores en vivo»: grupo nuevo, pico o regresión por build → aviso a los Admins (una vez por grupo, tipo y build), y la purga de los
         // errores y cierres de más de errores_retener_dias. Y el programa beta: los testers de TestFlight que esperan a Apple o quedaron a medias.
         ["errores", async () => (await import("./errores/vivo")).barrerErrores()],
+        // 8e · La purga de la ruta del repartidor: posiciones de más de ubic_retener_dias (14 por defecto); la entrega queda con su resumen.
+        ["ruta", async () => (await import("./ruta")).purgarRutas()],
         ["beta", async () => (await import("./beta")).barrerBeta()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {

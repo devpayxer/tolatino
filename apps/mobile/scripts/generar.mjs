@@ -26,6 +26,9 @@ const HOST = new URL(URL_BASE).host, HTTP = URL_BASE.startsWith("http://");
 const PLUGINS = {
   App: { ios: "AppPlugin", android: "com.capacitorjs.plugins.app.AppPlugin", npm: "@capacitor/app", spm: "CapacitorApp", gradle: "capacitor-app" },
   AppLauncher: { ios: "AppLauncherPlugin", android: "com.capacitorjs.plugins.applauncher.AppLauncherPlugin", npm: "@capacitor/app-launcher", spm: "CapacitorAppLauncher", gradle: "capacitor-app-launcher" },
+  // 8e · La háptica de lo que confirma y la hoja de compartir del sistema (oficiales de Capacitor, MIT; versiones fijas en package.json).
+  Haptics: { ios: "HapticsPlugin", android: "com.capacitorjs.plugins.haptics.HapticsPlugin", npm: "@capacitor/haptics", spm: "CapacitorHaptics", gradle: "capacitor-haptics" },
+  Share: { ios: "SharePlugin", android: "com.capacitorjs.plugins.share.SharePlugin", npm: "@capacitor/share", spm: "CapacitorShare", gradle: "capacitor-share" },
   PushNotifications: { ios: "PushNotificationsPlugin", android: "com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin", npm: "@capacitor/push-notifications", spm: "CapacitorPushNotifications", gradle: "capacitor-push-notifications" },
   SplashScreen: { ios: "SplashScreenPlugin", android: "com.capacitorjs.plugins.splashscreen.SplashScreenPlugin", npm: "@capacitor/splash-screen", spm: "CapacitorSplashScreen", gradle: "capacitor-splash-screen" },
   StatusBar: { ios: "StatusBarPlugin", android: "com.capacitorjs.plugins.statusbar.StatusBarPlugin", npm: "@capacitor/status-bar", spm: "CapacitorStatusBar", gradle: "capacitor-status-bar" },
@@ -33,6 +36,8 @@ const PLUGINS = {
   TLLocal: { ios: "TLLocalPlugin", android: "com.tolatino.plugins.TLLocalPlugin", dir: "tl-local" },
   TLPantalla: { ios: "TLPantallaPlugin", android: "com.tolatino.plugins.TLPantallaPlugin", dir: "tl-pantalla" },
   TLReporte: { ios: "TLReportePlugin", android: "com.tolatino.plugins.TLReportePlugin", dir: "tl-reporte" },
+  // 8e · La ubicación del Repartidor durante una entrega (servicio en primer plano en Android; modo de fondo de ubicación en iOS).
+  TLRuta: { ios: "TLRutaPlugin", android: "com.tolatino.plugins.TLRutaPlugin", dir: "tl-ruta" },
 };
 const rotulo = (a, plat) => `TLApp/${a.key}/${plat}/${A.version} (${BUILD})`;
 /* El alcance que aplica el filtro nativo (TLAlcance): el mismo que el servidor (apps/web/lib/app-nativa-comun.ts). */
@@ -67,6 +72,8 @@ function capConfig(a, plat) {
     plugins: {
       SplashScreen: { launchShowDuration: A.splashMaxMs, launchAutoHide: true, backgroundColor: token("--tl-paper"), showSpinner: false, androidScaleType: "CENTER_CROP" },
       TLAlcance: alcance(a),
+      // 8e · La ruta del Repartidor: el nativo manda las posiciones SOLO a este servidor (el de la cáscara), nunca a una dirección de la página.
+      ...(a.plugins.includes("TLRuta") ? { TLRuta: { servidor: URL_BASE, rotulo: rotulo(a, plat) } } : {}),
       // 8c · Avisos: con la app abierta también se ven (banner, sonido, globo). El token sale de APNs (iOS) o FCM (Android); ver lib/nativo/avisos.ts.
       ...(a.plugins.includes("PushNotifications") ? { PushNotifications: { presentationOptions: ["badge", "sound", "alert"] } } : {}),
     },
@@ -123,7 +130,11 @@ for (const a of A.apps) {
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-${ps.map((p) => `	<key>${PERM_IOS[p]}</key>\n	<string>${esc(texto(p, a, "es"))}</string>`).join("\n")}${ps.length ? "\n" : ""}	<key>UIApplicationSceneManifest</key>
+${ps.map((p) => `	<key>${PERM_IOS[p]}</key>\n	<string>${esc(texto(p, a, "es"))}</string>`).join("\n")}${ps.length ? "\n" : ""}${a.permisos.ubicacion === "entrega" ? `	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
+` : ""}	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>
@@ -192,14 +203,23 @@ ${ps.map((p) => `"${PERM_IOS[p]}" = "${escStr(texto(p, a, l))}";`).join("\n")}`)
   poner(`${S}/assets/capacitor.plugins.json`, JSON.stringify(a.plugins.map((p) => ({ pkg: PLUGINS[p].npm ?? `tolatino/${PLUGINS[p].dir}`, classpath: PLUGINS[p].android })), null, 2));
   // Los permisos normales de las cuatro (androidComun: ACCESS_NETWORK_STATE, la red para la WebView) y después los de esta app.
   const avisos = a.plugins.includes("PushNotifications");
-  const permA = [...(A.androidComun ?? []), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []), ...(avisos ? ["android.permission.POST_NOTIFICATIONS"] : [])];
+  // 8e · Repartidor («entrega»): ubicación «mientras se usa» (nunca ACCESS_BACKGROUND_LOCATION) + el servicio en primer plano de tipo ubicación
+  // (TLRutaServicio) con su aviso fijo; sigue con la pantalla apagada porque es un servicio en primer plano, no un permiso «siempre».
+  // Háptica: VIBRATE (normal, sin aviso) solo en la app que lleva el plugin; lo declara también el plugin, aquí se ve.
+  const entrega = a.permisos.ubicacion === "entrega";
+  const permA = [...(A.androidComun ?? []), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" || entrega ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []),
+    ...(entrega ? ["android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_LOCATION"] : []), ...(avisos ? ["android.permission.POST_NOTIFICATIONS"] : []), ...(a.plugins.includes("Haptics") ? ["android.permission.VIBRATE"] : [])];
+  const servicio = entrega ? `
+        <!-- 8e · La ubicación durante la entrega: servicio en primer plano de tipo «location» con el aviso fijo (§1c). No se exporta. -->
+        <service android:name="com.tolatino.plugins.TLRutaServicio" android:exported="false" android:foregroundServiceType="location" />` : "";
   poner(`${S}/AndroidManifest.xml`, `<?xml version="1.0" encoding="utf-8"?>
 <!-- Generado por apps/mobile/scripts/generar.mjs desde apps.json: los permisos de ${esc(a.nombre.es)} (solo los que usa). No editar a mano. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 ${permA.map((p) => `    <uses-permission android:name="${p}" />`).join("\n")}${permA.length ? "\n" : ""}${a.permisos.camara ? '    <uses-feature android:name="android.hardware.camera" android:required="false" />\n' : ""}${avisos ? `    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}">
         <!-- 8c · Firebase solo para los avisos (FCM): sin token hasta que la persona dice que sí, y sin analítica de Firebase. -->
         <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
-        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
+        <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />${servicio}
+    </application>` : servicio ? `    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}">${servicio}
     </application>` : `    <application android:usesCleartextTraffic="${HTTP ? "true" : "false"}" />`}
 </manifest>`);
   // Español primero (values/ = el idioma por defecto), inglés en values-en/. Los textos del porqué de cada permiso (§1c), para la explicación
@@ -211,7 +231,9 @@ ${permA.map((p) => `    <uses-permission android:name="${p}" />`).join("\n")}${p
     <string name="title_activity_main">${escAndroid(a.nombre[l])}</string>
     <string name="package_name">${a.android}</string>
     <string name="custom_url_scheme">${a.android}</string>
-${ps.map((p) => `    <string name="permiso_${p}">${escAndroid(texto(p, a, l))}</string>`).join("\n")}${ps.length ? "\n" : ""}</resources>`);
+${ps.map((p) => `    <string name="permiso_${p}">${escAndroid(texto(p, a, l))}</string>`).join("\n")}${ps.length ? "\n" : ""}${a.permisos.ubicacion === "entrega" ? `    <string name="ruta_aviso">${escAndroid(A.rutaAviso[l].replace("{negocio}", "%1$s").replace("{business}", "%1$s").replace("{num}", "%2$s"))}</string>
+    <string name="ruta_canal">${escAndroid(l === "es" ? "Ubicación durante la entrega" : "Location during a delivery")}</string>
+` : ""}</resources>`);
 }
 
 /* iOS: la pantalla de arranque de las cuatro apps (App/ entra en los cuatro targets). Es un storyboard y no la clave UILaunchScreen porque el
@@ -318,7 +340,7 @@ ${A.apps.map((a) => `  ${a.target}:
           - Info.plist
       - path: Targets/${a.target}/public
         type: folder
-${a.plugins.filter((p) => PLUGINS[p].dir).map((p) => `      - path: ../plugins/${PLUGINS[p].dir}/ios`).join("\n")}
+${a.plugins.filter((p) => PLUGINS[p].dir).map((p) => `      - path: ../plugins/${PLUGINS[p].dir}/ios${p === "TLPantalla" ? `\n      - path: ../plugins/tl-pantalla/${a.permisos.camara ? "ios-camara" : "ios-sin-camara"}` : ""}`).join("\n")}
 ${a.plugins.includes("PushNotifications") ? `    entitlements:
       path: Targets/${a.target}/${a.target}.entitlements
       properties:

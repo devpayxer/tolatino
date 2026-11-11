@@ -6,6 +6,7 @@ import type { AjustesPed, DetallePed, Fila as FilaPed, FiltroPed, pedidosHoy, pe
 import { menuAjustes } from "./acciones-menu";
 import type { Ayuda } from "@/lib/ayuda";
 import { repAsignar } from "./acciones-repartidores";
+import { rutaBloque, type RutaUi } from "./RutaPanel";
 import { ayudaResponder, pedidoDevolver, pedidoPaso, pedidoSeguimiento, pedidosAjustes, pedidosModulo } from "./acciones-pedidos";
 import type { Ctx, Editor } from "./Panel";
 import { clientesTabs, hoyMesas } from "./Reservas";
@@ -109,6 +110,8 @@ export function pedidoDetalle(c: Ctx): Sec {
         s: [ENT.drop.at.map((k) => (c.es ? AT[k]?.[0] : AT[k]?.[1])).filter(Boolean).join(" · "), ENT.drop.note ? `“${ENT.drop.note}”` : ""].filter(Boolean).join(" · ") || undefined, chev: false, compact: true } as Fila] : []),
     ] });
   }
+  // 8e · Entrega › Despacho: el repartidor en el mapa mientras dura la entrega (lo trae el SSE; RutaPanel.tsx).
+  if (ENT && !ENT.ext) out.push(rutaBloque(c.ui.ruta as RutaUi | undefined, x.numero, es, x.repartidor?.nombre ?? null));
   if (x.nota) out.push({ type: "note", tone: "warn", icon: "edit", t: `${E2("Nota del cliente: ", "Client note: ")}${x.nota}` });
   out.push({ type: "rows", k: E2("DETALLE", "DETAIL"), items: [
     ...x.lineas.map((l): Fila => ({ icon: "check", ibg: "var(--tl-paper)", ifg: "rgba(11,14,18,.6)", t: `${l.q} × ${es ? l.name.es : l.name.en || l.name.es}`,

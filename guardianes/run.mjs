@@ -5002,15 +5002,19 @@ const guardianes = {
       }
     }
     for (const [plug, L] of usos) {
-      const dir = { TLLocal: "tl-local", TLPantalla: "tl-pantalla", TLReporte: "tl-reporte", TLAlcance: "tl-alcance" }[plug];
+      const dir = { TLLocal: "tl-local", TLPantalla: "tl-pantalla", TLReporte: "tl-reporte", TLAlcance: "tl-alcance", TLRuta: "tl-ruta" }[plug];
       if (!dir) { falla(G, D, 0, `«${plug}» no es un plugin propio de apps/mobile/plugins`); continue; }
       const sw = `apps/mobile/plugins/${dir}/ios/${plug}Plugin.swift`, jv = `apps/mobile/plugins/${dir}/android/com/tolatino/plugins/${plug}Plugin.java`;
       const s = existsSync(sw) ? readFileSync(sw, "utf8") : "", j = existsSync(jv) ? readFileSync(jv, "utf8") : "";
       if (!s) falla(G, sw, 0, `falta ${plug} en iOS`); if (!j) falla(G, jv, 0, `falta ${plug} en Android`);
       if (s && !s.includes(`jsName = "${plug}"`)) falla(G, sw, 0, `${plug}: jsName distinto`);
-      if (j && !j.includes(`@CapacitorPlugin(name = "${plug}")`)) falla(G, jv, 0, `${plug}: nombre distinto`);
+      if (j && !new RegExp(`@CapacitorPlugin\\(\\s*name = "${plug}"[,)]`).test(j)) falla(G, jv, 0, `${plug}: nombre distinto`);
+      // 8e · Un método puede vivir en una extensión por variante de target (tl-pantalla/ios-camara y ios-sin-camara: la linterna solo enlaza la
+      // cámara donde hay texto de cámara). Entonces TODAS las variantes lo tienen que traer.
+      const variantes = existsSync(`apps/mobile/plugins/${dir}`) ? readdirSync(`apps/mobile/plugins/${dir}`).filter((d) => /^ios-/.test(d)).map((d) => `apps/mobile/plugins/${dir}/${d}`) : [];
+      const enVariantes = (x) => variantes.length > 0 && variantes.every((d) => readdirSync(d).some((f) => f.endsWith(".swift") && new RegExp(`@objc func ${x}\\(_ call: CAPPluginCall\\)`).test(readFileSync(`${d}/${f}`, "utf8"))));
       for (const x of L) {
-        if (s && (!new RegExp(`@objc func ${x}\\(_ call: CAPPluginCall\\)`).test(s) || !s.includes(`CAPPluginMethod(name: "${x}"`))) falla(G, sw, 0, `${plug}.${x}() lo pide la web y no está en iOS`);
+        if (s && ((!new RegExp(`@objc func ${x}\\(_ call: CAPPluginCall\\)`).test(s) && !enVariantes(x)) || !s.includes(`CAPPluginMethod(name: "${x}"`))) falla(G, sw, 0, `${plug}.${x}() lo pide la web y no está en iOS`);
         if (j && !new RegExp(`@PluginMethod\\s+public void ${x}\\(PluginCall call\\)`).test(j)) falla(G, jv, 0, `${plug}.${x}() lo pide la web y no está en Android`);
       }
     }
@@ -5094,7 +5098,11 @@ const guardianes = {
       if (a.permisos.ubicacion === "siempre") falla(G, J, 0, `${a.key}: nunca ubicación «siempre»`);
       const mf = `apps/mobile/android/app/src/${a.sabor}/AndroidManifest.xml`, t = existsSync(mf) ? readFileSync(mf, "utf8") : "";
       // 8c · Avisos: POST_NOTIFICATIONS (Android 13+) solo en la app que lleva el plugin de avisos.
-      const ok = new Set([...(A.androidComun ?? []).filter((p) => p in COMUNES), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []), ...(a.plugins.includes("PushNotifications") ? ["android.permission.POST_NOTIFICATIONS"] : [])]);
+      // 8e · Repartidor («entrega»): ubicación mientras se usa + servicio en primer plano de tipo ubicación (nunca BACKGROUND_LOCATION). Háptica:
+      // VIBRATE (normal) solo con el plugin Haptics.
+      const entrega = a.permisos.ubicacion === "entrega";
+      const ok = new Set([...(A.androidComun ?? []).filter((p) => p in COMUNES), ...(a.permisos.camara ? ["android.permission.CAMERA"] : []), ...(a.permisos.ubicacion === "al_usar" || entrega ? ["android.permission.ACCESS_COARSE_LOCATION", "android.permission.ACCESS_FINE_LOCATION"] : []),
+        ...(entrega ? ["android.permission.FOREGROUND_SERVICE", "android.permission.FOREGROUND_SERVICE_LOCATION"] : []), ...(a.plugins.includes("PushNotifications") ? ["android.permission.POST_NOTIFICATIONS"] : []), ...(a.plugins.includes("Haptics") ? ["android.permission.VIBRATE"] : [])]);
       for (const m of t.matchAll(/uses-permission(?:-sdk-23)? android:name="([^"]+)"/g)) {
         if (NUNCA.test(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no se pide (§3.6)`);
         else if (!ok.has(m[1])) falla(G, mf, 0, `${a.key}: ${m[1]} no lo usa esta app`);
@@ -5102,6 +5110,13 @@ const guardianes = {
       const pl = `apps/mobile/ios/Targets/${a.target}/Info.plist`, p = existsSync(pl) ? readFileSync(pl, "utf8") : "";
       if (/NSMicrophoneUsageDescription|NSPhotoLibraryUsageDescription|NSContactsUsageDescription|NSLocationAlwaysAndWhenInUseUsageDescription|NSLocationAlwaysUsageDescription|NSBluetooth/.test(p)) falla(G, pl, 0, `${a.key}: un permiso que ninguna app usa (micrófono, galería entera, contactos, ubicación siempre, Bluetooth)`);
       if (/UIBackgroundModes/.test(p) && !(a.key === "delivery" && a.permisos.ubicacion === "entrega")) falla(G, pl, 0, `${a.key}: modo de fondo solo para el Repartidor con entrega (8e)`);
+      // 8e · El modo de fondo del Repartidor es SOLO «location» (nada de audio, fetch, voip…); la ruta (TLRuta) y su servicio, solo ahí.
+      const modos = /<key>UIBackgroundModes<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(p)?.[1] ?? "";
+      for (const m of modos.matchAll(/<string>([^<]+)<\/string>/g)) if (m[1] !== "location") falla(G, pl, 0, `${a.key}: modo de fondo «${m[1]}» no se pide (solo «location» para la entrega)`);
+      if (entrega && !/<string>location<\/string>/.test(modos)) falla(G, pl, 0, `${a.key}: la entrega con la pantalla apagada necesita UIBackgroundModes location`);
+      if (a.plugins.includes("TLRuta") !== entrega) falla(G, J, 0, `${a.key}: TLRuta solo en la app con ubicación «entrega» (Repartidor)`);
+      if (/TLRutaServicio|foregroundServiceType/.test(t) !== entrega) falla(G, mf, 0, `${a.key}: el servicio de ubicación en primer plano solo en el Repartidor`);
+      if (entrega && !/<service android:name="com\.tolatino\.plugins\.TLRutaServicio" android:exported="false" android:foregroundServiceType="location" \/>/.test(t)) falla(G, mf, 0, `${a.key}: TLRutaServicio no exportado y de tipo «location» (y nada más)`);
       if (!a.permisos.camara && /NSCameraUsageDescription/.test(p)) falla(G, pl, 0, `${a.key}: cámara sin usarla`);
     }
   },
@@ -5625,6 +5640,158 @@ const guardianes = {
         }
       });
     }
+  },
+
+  /* ── 8e · Lo nativo de cada app: la ruta del Repartidor, la Puerta, los boletos y los cupones (fase8-apps.md §4 8e). Al revés: alreves8e. ── */
+
+  /* 8e · La ubicación del repartidor solo se guarda con una entrega ACTIVA de ESE repartidor en ESA ciudad, y solo empieza con el paso que inicia
+     la entrega. Dos paredes: lib/ruta.ts (token de esa entrega guardado como huella, ruta_activa antes de insertar, velocidad imposible) y la base
+     (0128: ruta_activa en el trigger de delivery_positions, solo inserción). Solo lib/ruta.ts escribe la ruta; solo el paso del repartidor la
+     abre; el POST no usa la cookie (solo el token); el teléfono deja de compartir cuando el servidor dice que terminó (web, Android, iOS).
+     Al revés: quitar ruta_activa del trigger o de guardarPosiciones, abrir la ruta desde otro archivo, leer la sesión en el POST, o no parar
+     con 410 → falla. */
+  ubicacionSoloEntregaActiva() {
+    const G = "ubicacionSoloEntregaActiva", M = "packages/db/migrations/0128_ruta_en_vivo.sql", L = "apps/web/lib/ruta.ts", RT = "apps/web/app/api/ruta/posicion/route.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la ruta");
+    const m = readFileSync(M, "utf8");
+    const act = /create or replace function ruta_activa\([\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    for (const [re, que] of [[/t\.sharing_until is null/, "la ruta abierta"], [/t\.rider_user_id = rider/, "de ese repartidor"], [/o\.status = 'confirmed'/, "la entrega sin terminar"], [/coalesce\(o\.stage, ''\) <> 'delivered'/, "no entregada"],
+      [/o\.city_id = ciudad/, "de esa ciudad"], [/t\.city_id = ciudad/, "la ruta de esa ciudad"], [/d\.user_id = rider and d\.status = 'active'/, "el repartidor activo de esa entrega"], [/d\.id = t\.driver_id/, "el mismo repartidor que la empezó"]])
+      if (!re.test(act)) falla(G, M, 0, `ruta_activa revisa ${que}`);
+    const tr = /create or replace function delivery_positions_antes\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/if tg_op = 'UPDATE' then raise exception/.test(tr)) falla(G, M, 0, "delivery_positions es solo de inserción");
+    if (!/if not ruta_activa\(new\.operation_id, new\.rider_user_id, new\.city_id\) then raise exception/.test(tr)) falla(G, M, 0, "la base rechaza una posición sin entrega activa de ese repartidor en esa ciudad");
+    if (!/cfg_int\('ubic_vel_max_mps'\)/.test(tr) || !/st_dwithin\(new\.geom, c\.center/.test(tr) || !/new\.at < t\.sharing_from/.test(tr)) falla(G, M, 0, "la base rechaza velocidad imposible, fuera de la ciudad y de antes de empezar");
+    if (!/create trigger delivery_positions_antes before insert or update or delete on delivery_positions/.test(m)) falla(G, M, 0, "el trigger de las posiciones");
+    if (!/create trigger operations_ruta after update of status, stage, driver_id on operations/.test(m)) falla(G, M, 0, "la entrega cierra su ruta sola al entregar, cancelar o cambiar de repartidor");
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/ruta.ts");
+    const l = sinComent(L), gp = cuerpoFn(l, "guardarPosiciones");
+    if (!/where t\.token_hash = \$1 and t\.sharing_until is null/.test(gp) || !/huella\(token\)/.test(gp)) falla(G, L, 0, "guardarPosiciones busca la ruta abierta por la huella del token");
+    const iAct = gp.search(/ruta_activa\(/), iIns = gp.search(/insertar\(ok\)/);
+    if (iAct < 0 || iIns < 0 || iAct > iIns) falla(G, L, 0, "guardarPosiciones revisa ruta_activa ANTES de guardar");
+    if (!/m \/ seg > vmax/.test(gp) || !/x\.at < desde/.test(gp) || !/> 100_000/.test(gp)) falla(G, L, 0, "guardarPosiciones descarta velocidad imposible, de antes de empezar y fuera de la ciudad");
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === L) continue;
+      const t = sinComent(f);
+      if (/(insert into|update|delete from) delivery_(positions|tracks)\b/.test(t)) falla(G, f, 0, "solo lib/ruta.ts escribe la ruta del repartidor");
+      if (/\bempezarRuta\(|\bempezar\(c, /.test(t) && f !== "apps/web/lib/repartidor.ts") falla(G, f, 0, "la ruta solo la abre el paso del repartidor (lib/repartidor.ts)");
+      if (/\bcompartirRuta\(/.test(t) && !["apps/web/app/repartidor/Repartidor.tsx", "apps/web/lib/nativo/ruta.ts"].includes(f)) falla(G, f, 0, "el teléfono empieza a compartir solo desde el Repartidor, con el token del servidor");
+    }
+    const R = existsSync("apps/web/lib/repartidor.ts") ? sinComent("apps/web/lib/repartidor.ts") : "";
+    const ps = cuerpoFn(R, "pasoRepartidor"), usos = [...ps.matchAll(/empezarRuta\(c, o\.id, userId, "(\w+)"\)/g)].map((x) => x[1]);
+    if (usos.sort().join(",") !== "empezar,recogi") falla(G, "apps/web/lib/repartidor.ts", 0, "la ruta se abre en «Voy por el pedido» y en «Recogí», y en ningún otro paso");
+    if (existsSync(RT)) { const r = sinComent(RT); if (/\byo\(\)|cookies|mismoOrigen/.test(r) || !/Bearer \(\[A-Za-z0-9_-\]\{43\}\)/.test(r)) falla(G, RT, 0, "el POST de posiciones solo acepta el token de la entrega (sin la sesión del navegador)"); }
+    else falla(G, RT, 0, "falta el POST de posiciones");
+    const W = existsSync("apps/web/lib/nativo/ruta.ts") ? sinComent("apps/web/lib/nativo/ruta.ts") : "";
+    if (!/r\.status === 401 \|\| r\.status === 410 \|\| j\.activa === false\) \{ pararWeb\(\)/.test(W)) falla(G, "apps/web/lib/nativo/ruta.ts", 0, "la web deja de compartir cuando el servidor dice que la entrega terminó");
+    const J = "apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaServicio.java", S = "apps/mobile/plugins/tl-ruta/ios/TLRutaPlugin.swift";
+    if (!existsSync(J) || !/if \(st == 401 \|\| st == 410 \|\| !activa\) \{[^}]*terminar\(\)/.test(readFileSync(J, "utf8"))) falla(G, J, 0, "Android deja de compartir con 401/410 o «activa: false»");
+    if (!existsSync(S) || !/if h\.statusCode == 401 \|\| h\.statusCode == 410 \|\| !activa \{ self\.limpiar\(\)/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "iOS deja de compartir con 401/410 o «activa: false»");
+    if (existsSync(S) && /requestAlwaysAuthorization/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "nunca el permiso «Siempre»");
+  },
+
+  /* 8e · La ruta la ven solo tres: el cliente de ESE pedido (desde «Recogí», solo la última posición), el negocio de ESE pedido (con «Hoy y
+     pedidos») y el Super Admin con un motivo que queda en la auditoría ANTES de ver nada. Solo lib/ruta.ts lee la ruta; el SSE de una entrega
+     ajena (o antes de «Recogí») contesta 404, igual para todos. Al revés: quitar el user_id del cliente, el accesoPanel del SSE, el motivo o
+     auditar después de leer, o leer delivery_positions en otro archivo → falla. */
+  rutaSoloDeLosTres() {
+    const G = "rutaSoloDeLosTres", L = "apps/web/lib/ruta.ts", V = "apps/web/app/api/ruta/vivo/route.ts";
+    if (!existsSync(L)) return falla(G, L, 0, "falta lib/ruta.ts");
+    const l = sinComent(L);
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f) || f === L) continue;
+      if (/\bdelivery_positions\b|\bdelivery_tracks\b|\blast_geom\b/.test(sinComent(f))) falla(G, f, 0, "solo lib/ruta.ts lee la ruta del repartidor");
+    }
+    const cl = cuerpoFn(l, "rutaCliente");
+    if (!/user_id = \$2/.test(cl) || !/ubic_cliente_desde !== 1/.test(cl) || !/vista\(o\.id, false, true\)/.test(cl)) falla(G, L, 0, "el cliente: solo SU pedido, si ubic_cliente_desde lo deja, sin rastro y desde «Recogí»");
+    if (!/if \(desdeCliente && !t\.cliente\) return null/.test(cuerpoFn(l, "vista"))) falla(G, L, 0, "antes de «Recogí» el cliente no ve nada");
+    if (!/business_id = \$2/.test(cuerpoFn(l, "rutaNegocio"))) falla(G, L, 0, "el negocio: solo SU pedido");
+    const ad = cuerpoFn(l, "rutaAdmin");
+    if (!/s\.puede\("tx", "ver"\)/.test(ad) || !/m\.length < 10/.test(ad) || !/o\.city_id = any\(\$2::text\[\]\)/.test(ad)) falla(G, L, 0, "el Super Admin: permiso tx:ver, sus ciudades y un motivo");
+    const iA = ad.search(/await auditar\(c, \{ actor: s\.id, action: "ruta\.ver"/), iP = ad.search(/from delivery_positions/);
+    if (iA < 0 || iP < 0 || iA > iP) falla(G, L, 0, "el motivo queda en la auditoría ANTES de leer las posiciones");
+    if (!existsSync(V)) return falla(G, V, 0, "falta el SSE de la ruta");
+    const v = sinComent(V);
+    if (!/accesoPanel\(negocio, "ord"\)\) \? rutaNegocio\(negocio, pedido\)/.test(v) || !/rutaCliente\(u\.id, pedido\)/.test(v)) falla(G, V, 0, "el SSE revisa quién mira (el negocio con «Hoy y pedidos» o el cliente del pedido) en cada cambio");
+    if (/status: 40[13]\b/.test(v) || !/status: 404/.test(v)) falla(G, V, 0, "una entrega ajena es 404, igual para todos (no dice si existe)");
+    for (const f of ["apps/web/app/admin/acciones-tx.ts"]) if (existsSync(f) && !/staff\(\)[\s\S]{0,120}s\.puede\("tx", "ver"\)[\s\S]{0,200}rutaAdmin\(s,/.test(sinComent(f))) falla(G, f, 0, "ver el recorrido desde Transacciones pide el permiso y pasa el motivo");
+  },
+
+  /* 8e · Las posiciones se borran a los ubic_retener_dias (14 por defecto, máximo 90) y la entrega queda con su resumen; nada más se borra. La
+     base solo deja borrar lo vencido; el barrido corre la purga; el teléfono borra su cola al terminar. Al revés: quitar la purga del barrido,
+     dejar borrar lo no vencido o subir el máximo → falla. */
+  posicionesConPurga() {
+    const G = "posicionesConPurga", M = "packages/db/migrations/0128_ruta_en_vivo.sql";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración de la ruta");
+    const m = readFileSync(M, "utf8"), k = catalogoConfig().find((x) => x.k === "ubic_retener_dias");
+    if (!k || k.b > 90 || k.d !== 14) falla(G, M, 0, "ubic_retener_dias: 14 días por defecto y nunca más de 90 (§6 #14)");
+    const tr = /create or replace function delivery_positions_antes\(\)[\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/if old\.received_at >= now\(\) - make_interval\(days => cfg_int\('ubic_retener_dias'\)\) then\s+raise exception/.test(tr)) falla(G, M, 0, "la base solo deja borrar posiciones vencidas");
+    const pu = /create or replace function ruta_purgar\([\s\S]*?\$\$([\s\S]*?)\$\$/.exec(m)?.[1] ?? "";
+    if (!/received_at < now\(\) - make_interval\(days => cfg_int\('ubic_retener_dias'\)\)/.test(pu) || !/last_geom = null/.test(pu)) falla(G, M, 0, "ruta_purgar borra lo vencido y deja la entrega solo con su resumen");
+    if (!/ruta_purgar\(5000\)/.test(sinComent("apps/web/lib/ruta.ts"))) falla(G, "apps/web/lib/ruta.ts", 0, "purgarRutas corre ruta_purgar");
+    if (!/\["ruta", async \(\) => \(await import\("\.\/ruta"\)\)\.purgarRutas\(\)\]/.test(sinComent("apps/web/lib/barrido.ts"))) falla(G, "apps/web/lib/barrido.ts", 0, "el barrido central corre la purga de la ruta");
+    const J = "apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaServicio.java";
+    if (existsSync(J) && !/public void onDestroy\(\)[\s\S]*?archivo\(\)\.delete\(\)/.test(readFileSync(J, "utf8"))) falla(G, J, 0, "Android borra su cola del teléfono al dejar de compartir");
+    if (existsSync(J) && !/getNoBackupFilesDir\(\)/.test(readFileSync(J, "utf8"))) falla(G, J, 0, "la cola sin señal vive fuera de la copia");
+  },
+
+  /* 8e · El nativo manda la ubicación SOLO al servidor de la cáscara (capacitor.config: plugins.TLRuta.servidor, de apps.json), nunca a una
+     dirección que diga la página (una página o un marco ajeno no pueden desviar la ubicación). La única excepción es el humo del CI en un build
+     de prueba: Android depurable con 10.0.2.2/127.0.0.1, iOS #if DEBUG con 127.0.0.1. Al revés: aceptar «url» de la página o quitar el candado
+     del build de prueba → falla. */
+  rutaSoloNuestroServidor() {
+    const G = "rutaSoloNuestroServidor", P = "apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaPlugin.java", S = "apps/mobile/plugins/tl-ruta/ios/TLRutaPlugin.swift", SV = "apps/mobile/plugins/tl-ruta/android/com/tolatino/plugins/TLRutaServicio.java";
+    if (!existsSync(P) || !existsSync(S) || !existsSync(SV)) return falla(G, P, 0, "falta TLRuta (Android e iOS)");
+    const p = readFileSync(P, "utf8"), s = readFileSync(S, "utf8"), sv = readFileSync(SV, "utf8");
+    const strs = [...p.matchAll(/call\.getString\("(\w+)"/g)].map((x) => x[1]);
+    for (const x of strs) if (!["token", "entrega", "negocio", "servidorPrueba"].includes(x)) falla(G, P, 0, `TLRuta no recibe «${x}» de la página`);
+    if (!/getConfig\(\)\.getString\("servidor"/.test(p)) falla(G, P, 0, "Android: el servidor sale de la configuración de la cáscara");
+    if (!/if \(prueba != null && depurable\(\)\)/.test(p) || !/h\.equals\("10\.0\.2\.2"\) \|\| h\.equals\("127\.0\.0\.1"\)/.test(p)) falla(G, P, 0, "Android: servidorPrueba solo en un build depurable y hacia el emulador");
+    if (!/new URL\(servidor \+ "\/api\/ruta\/posicion"\)/.test(sv) || (sv.match(/new URL\(/g) ?? []).length !== 1) falla(G, SV, 0, "Android: un solo destino, el servidor de la cáscara");
+    const ss = [...s.matchAll(/call\.getString\("(\w+)"/g)].map((x) => x[1]);
+    for (const x of ss) if (!["token", "entrega", "servidorPrueba"].includes(x)) falla(G, S, 0, `TLRuta (iOS) no recibe «${x}» de la página`);
+    if (!/getConfig\(\)[\s\S]{0,80}getString\("servidor"/.test(s)) falla(G, S, 0, "iOS: el servidor sale de la configuración de la cáscara");
+    if (!/#if DEBUG\s+if let p = call\.getString\("servidorPrueba"\)[\s\S]*?#endif/.test(s)) falla(G, S, 0, "iOS: servidorPrueba solo en Debug");
+    if (!/URL\(string: servidor \+ "\/api\/ruta\/posicion"\)/.test(s)) falla(G, S, 0, "iOS: un solo destino, el servidor de la cáscara");
+  },
+
+  /* 8e · Compartir y la háptica pasan por el puente (la hoja nativa y el motor del sistema en la app; lo del navegador en la web): nadie más
+     llama a navigator.share ni a navigator.vibrate (en el WebView de Android navigator.share no existe y la app solo copiaba el enlace). Al
+     revés: volver a llamar navigator.share en la ficha del negocio → falla. */
+  compartirPorElPuente() {
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?)$/.test(f)) continue;
+      const t = sinComent(f);
+      if (/\bnavigator\.share\b|\bn\?\.share\(/.test(t) && f !== "apps/web/lib/nativo/compartir.ts") falla("compartirPorElPuente", f, 0, "compartir va por lib/nativo/compartir.ts (la hoja del sistema en la app)");
+      if (/\bnavigator\.vibrate\b/.test(t) && f !== "apps/web/lib/nativo/haptica.ts") falla("compartirPorElPuente", f, 0, "la vibración va por lib/nativo/haptica.ts (la háptica del sistema en la app)");
+    }
+  },
+
+  /* 8e · El brillo al máximo se devuelve siempre: solo useBrilloQr lo sube y su limpieza lo baja (salir de la pantalla); el nativo además lo
+     devuelve al salir de la app. Al revés: llamar brilloMaximo(true) en una pantalla, o quitar el brilloMaximo(false) de la limpieza → falla. */
+  brilloSeDevuelve() {
+    const G = "brilloSeDevuelve", P = "apps/web/lib/nativo/pantalla.ts";
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== P && /\bbrilloMaximo\(/.test(sinComent(f))) falla(G, f, 0, "el brillo lo sube y lo baja useBrilloQr (lib/nativo/pantalla.ts)");
+    const b = existsSync(P) ? cuerpoFn(sinComent(P), "useBrilloQr") : "";
+    if (!/void brilloMaximo\(true\)/.test(b) || !/return \(\) => \{[^}]*void brilloMaximo\(false\)/.test(b)) falla(G, P, 0, "useBrilloQr sube el brillo y lo devuelve al salir");
+    const S = "apps/mobile/plugins/tl-pantalla/ios/TLPantallaPlugin.swift";
+    const sw = existsSync(S) ? readFileSync(S, "utf8") : "", sal = /@objc private func alSalir\(\) \{([\s\S]*?)\n    \}/.exec(sw)?.[1] ?? "";
+    if (!/selector: #selector\(alSalir\), name: UIApplication\.willResignActiveNotification/.test(sw) || !/UIScreen\.main\.brightness = b/.test(sal)) falla(G, S, 0, "iOS devuelve el brillo al salir de la app");
+  },
+
+  /* 8e · Fijar la Puerta en la pantalla solo después de que la persona lo confirma (y el sistema lo vuelve a confirmar: startLockTask sin ser
+     dueño del dispositivo); en iOS no se intenta (Acceso guiado). Al revés: llamar fijarPantalla() al abrir la Puerta → falla. */
+  fijarConConfirmacion() {
+    const G = "fijarConConfirmacion", P = "apps/web/app/(puerta)/puerta/Puerta.tsx";
+    for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== P && f !== "apps/web/lib/nativo/pantalla.ts" && /\bfijarPantalla\(/.test(sinComent(f))) falla(G, f, 0, "solo la Puerta fija la pantalla, después de confirmarlo");
+    if (!existsSync(P)) return;
+    const t = sinComent(P), i = t.indexOf("fijarPantalla()"), c = t.lastIndexOf('if (fij === "pregunta")', i);
+    if (i < 0 || c < 0 || t.slice(c, i).includes("} else")) falla(G, P, 0, "fijarPantalla() solo en el botón de la confirmación («Fijar la pantalla»)");
+    const J = "apps/mobile/plugins/tl-pantalla/android/com/tolatino/plugins/TLPantallaPlugin.java";
+    if (existsSync(J) && /setLockTaskPackages|DevicePolicyManager/.test(readFileSync(J, "utf8"))) falla(G, J, 0, "sin MDM: la fijación de pantalla del sistema, que la persona confirma");
+    const S = "apps/mobile/plugins/tl-pantalla/ios/TLPantallaPlugin.swift";
+    if (existsSync(S) && /requestGuidedAccessSession|UIAccessibility\.requestGuidedAccess/.test(readFileSync(S, "utf8"))) falla(G, S, 0, "iOS no se fija solo (Acceso guiado lo enciende la persona)");
   },
 
   idioma() {

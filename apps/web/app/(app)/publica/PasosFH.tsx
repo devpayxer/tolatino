@@ -2,6 +2,7 @@
 /* Publica tu negocio v2 · paso 5 (ONB-NEG-F1 · tu foto y tu página) y «publicada» (ONB-NEG-H1). Tal cual el diseño.
    Las fotos son reales: se toman o se eligen del teléfono, se reducen aquí y el servidor las limpia y las guarda
    (/api/medios). «Elegir de tus fotos» abre las fotos del teléfono (el prototipo mostraba un carrete de ejemplo). */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { reducir } from "@/lib/subir-foto";
 import * as UI from "@tolatino/ui";
 import { useRef, useState, type ComponentType } from "react";
@@ -157,8 +158,7 @@ export function PasoH1({ p, d, es, pv, toast }: { p: Publicado; d: Borrador; es:
   const ver = () => { window.location.href = `/n/${p.id}`; };
   const compartir = async () => {
     const url = `${window.location.origin}/n/${p.id}`;
-    try { if (navigator.share) { await navigator.share({ title: p.nombre, url }); return; } await navigator.clipboard.writeText(url); toast(E2("Link copiado · ", "Link copied · ") + url.replace(/^https?:\/\//, "")); }
-    catch { /* cancelado */ }
+    if ((await compartirNativo({ titulo: p.nombre, url })) === "copiado") toast(E2("Link copiado · ", "Link copied · ") + url.replace(/^https?:\/\//, ""));
   };
   return (
     <div data-screen-label="ONB-NEG-H1 · publicada" style={{ display: "flex", flexDirection: "column", gap: 14, animation: "oFade .2s ease-out" }}>

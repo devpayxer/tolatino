@@ -1,6 +1,7 @@
 "use client";
 /* APP-NEG-LISTING (prototipo «APP-NEG-LISTING · móvil» y «· desktop»): ficha base de la Fase 1, compuesta con el
    sistema de diseño. Pro: pestañas cuando hay más de una (Resumen, Relacionados…); Free: una sola página. */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import type { ArticuloRenta } from "@/lib/rentas";
 import type { ArticuloVenta } from "@/lib/apartados";
 import { TiendaTab } from "./Tienda";
@@ -133,12 +134,9 @@ export function Ficha({ f, t, menu, rsv, svc, ofi, salud, prof, merc, fiesta, tr
   const compartir = async () => {
     void registrarToque(f.id, "share", "ficha");
     const url = location.href;
-    try {
-      if (navigator.share) return await navigator.share({ title: f.nombre, url });
-      await navigator.clipboard.writeText(url);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2200);
-    } catch { /* la persona cerró la hoja de compartir */ }
+    if ((await compartirNativo({ titulo: f.nombre, url })) !== "copiado") return;
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2200);
   };
   const guardar = async () => {
     const antes = guardado;

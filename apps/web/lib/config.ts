@@ -59,7 +59,9 @@ export type ClaveConfig =
   // 8c · Push (0126; se cambian en Sistema › Integraciones › Push)
   | "push_ttl_h" | "push_reintentos" | "push_lote" | "push_por_minuto" | "push_inactivo_dias"
   // 8f · Errores, «Reportar un problema» y el programa beta (0127)
-  | "errores_retener_dias" | "errores_por_minuto" | "errores_por_dispositivo" | "errores_pico_n" | "reporte_logs_kb" | "beta_agitar" | "apk_enlace_horas";
+  | "errores_retener_dias" | "errores_por_minuto" | "errores_por_dispositivo" | "errores_pico_n" | "reporte_logs_kb" | "beta_agitar" | "apk_enlace_horas"
+  // 8e · La ruta en vivo del repartidor (0128)
+  | "ubic_cada_s" | "ubic_min_m" | "ubic_retener_dias" | "ubic_cliente_desde" | "ubic_vel_max_mps" | "ubic_vieja_s";
 
 type Bi = { es: string; en: string };
 const TTL_MS = 15_000;

@@ -6,6 +6,7 @@
    disponible), RSVP «Voy» con personas, «Ya no voy», «Cupo lleno», «Invita», galería, organizador,
    «Antes de ir», la política y «Te puede gustar». Teléfono: barra fija abajo; escritorio: la columna de 372 px. El cupo lo cuenta la base:
    la pantalla solo pide y muestra lo que contestó. */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import * as UI from "@tolatino/ui";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
@@ -69,7 +70,7 @@ export function FichaEvento({ f, es }: { f: FichaEvt; es: boolean; conSesion: bo
   const compartir = async () => {
     void evtCompartir(f.id);
     const url = `${location.origin}/eventos/${f.slug}?fecha=${f.fecha}`;
-    try { if (navigator.share) { await navigator.share({ title: f.title, text: `${f.title} · ${f.dia}`, url }); return; } await navigator.clipboard.writeText(url); toast(E2("Enlace copiado para compartir.", "Link copied to share.")); } catch { /* la persona cerró */ }
+    if ((await compartirNativo({ titulo: f.title, texto: `${f.title} · ${f.dia}`, url })) === "copiado") toast(E2("Enlace copiado para compartir.", "Link copied to share."));
   };
   const calendario = () => {
     const z = (s: string) => s.replace(/[-:]/g, "").replace(/\.\d+/, "");

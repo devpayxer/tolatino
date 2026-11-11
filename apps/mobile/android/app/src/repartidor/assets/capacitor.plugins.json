@@ -8,6 +8,10 @@
     "classpath": "com.capacitorjs.plugins.applauncher.AppLauncherPlugin"
   },
   {
+    "pkg": "@capacitor/haptics",
+    "classpath": "com.capacitorjs.plugins.haptics.HapticsPlugin"
+  },
+  {
     "pkg": "@capacitor/push-notifications",
     "classpath": "com.capacitorjs.plugins.pushnotifications.PushNotificationsPlugin"
   },
@@ -28,7 +32,15 @@
     "classpath": "com.tolatino.plugins.TLLocalPlugin"
   },
   {
+    "pkg": "tolatino/tl-pantalla",
+    "classpath": "com.tolatino.plugins.TLPantallaPlugin"
+  },
+  {
     "pkg": "tolatino/tl-reporte",
     "classpath": "com.tolatino.plugins.TLReportePlugin"
+  },
+  {
+    "pkg": "tolatino/tl-ruta",
+    "classpath": "com.tolatino.plugins.TLRutaPlugin"
   }
 ]

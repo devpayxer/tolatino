@@ -80,7 +80,9 @@
   "packageClassList": [
     "AppPlugin",
     "AppLauncherPlugin",
+    "HapticsPlugin",
     "PushNotificationsPlugin",
+    "SharePlugin",
     "SplashScreenPlugin",
     "StatusBarPlugin",
     "TLAlcancePlugin",

@@ -5,4 +5,7 @@
     <string name="title_activity_main">To\'Latino Repartidor</string>
     <string name="package_name">com.tolatino.repartidor</string>
     <string name="custom_url_scheme">com.tolatino.repartidor</string>
+    <string name="permiso_ubicacion">To\'Latino Repartidor uses your location only while you have an active delivery, also with the screen off, so the customer and the business can see where the order is. It stops when you mark &quot;Delivered&quot;.</string>
+    <string name="ruta_aviso">Sharing your location with %1$s and the customer · Delivery #%2$s</string>
+    <string name="ruta_canal">Location during a delivery</string>
 </resources>

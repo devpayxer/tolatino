@@ -81,6 +81,7 @@
   "packageClassList": [
     "AppPlugin",
     "AppLauncherPlugin",
+    "HapticsPlugin",
     "PushNotificationsPlugin",
     "SplashScreenPlugin",
     "StatusBarPlugin",

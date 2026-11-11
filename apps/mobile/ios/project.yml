@@ -14,8 +14,12 @@ packages:
     path: ../node_modules/@capacitor/app
   CapacitorAppLauncher:
     path: ../node_modules/@capacitor/app-launcher
+  CapacitorHaptics:
+    path: ../node_modules/@capacitor/haptics
   CapacitorPushNotifications:
     path: ../node_modules/@capacitor/push-notifications
+  CapacitorShare:
+    path: ../node_modules/@capacitor/share
   CapacitorSplashScreen:
     path: ../node_modules/@capacitor/splash-screen
   CapacitorStatusBar:
@@ -48,6 +52,7 @@ targets:
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-pantalla/ios-camara
       - path: ../plugins/tl-reporte/ios
     entitlements:
       path: Targets/ToLatino/ToLatino.entitlements
@@ -66,7 +71,9 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorHaptics
       - package: CapacitorPushNotifications
+      - package: CapacitorShare
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
   ToLatinoNegocios:
@@ -82,6 +89,7 @@ targets:
         type: folder
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-pantalla/ios-camara
       - path: ../plugins/tl-reporte/ios
     entitlements:
       path: Targets/ToLatinoNegocios/ToLatinoNegocios.entitlements
@@ -100,7 +108,9 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorHaptics
       - package: CapacitorPushNotifications
+      - package: CapacitorShare
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
   ToLatinoRepartidor:
@@ -116,7 +126,10 @@ targets:
         type: folder
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-local/ios
+      - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-pantalla/ios-sin-camara
       - path: ../plugins/tl-reporte/ios
+      - path: ../plugins/tl-ruta/ios
     entitlements:
       path: Targets/ToLatinoRepartidor/ToLatinoRepartidor.entitlements
       properties:
@@ -134,6 +147,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorHaptics
       - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar
@@ -151,6 +165,7 @@ targets:
       - path: ../plugins/tl-alcance/ios
       - path: ../plugins/tl-local/ios
       - path: ../plugins/tl-pantalla/ios
+      - path: ../plugins/tl-pantalla/ios-camara
       - path: ../plugins/tl-reporte/ios
     entitlements:
       path: Targets/ToLatinoPuerta/ToLatinoPuerta.entitlements
@@ -169,6 +184,7 @@ targets:
         product: Cordova
       - package: CapacitorApp
       - package: CapacitorAppLauncher
+      - package: CapacitorHaptics
       - package: CapacitorPushNotifications
       - package: CapacitorSplashScreen
       - package: CapacitorStatusBar

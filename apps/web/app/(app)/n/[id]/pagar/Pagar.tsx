@@ -2,6 +2,7 @@
 /* APP-NEG-CHECKOUT · móvil y desktop (prototipo ckVals). Delivery o Pickup: a dónde (tu dirección, o el local), cuándo
    (lo antes posible o una hora de hoy), cómo te lo entregamos y la propina (delivery), cómo pagas (efectivo al recibir o
    en el local) y el resumen. El servidor vuelve a calcular todo al enviar: precios, zona, mínimo, envío y propina. */
+import { vibrar } from "@/lib/nativo/haptica";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentType } from "react";
@@ -106,7 +107,7 @@ export function Pagar({ m, es, pago }: { m: MenuPublico; es: boolean; pago: Pago
         pago: conTarjeta && tarjeta ? { tipo: "tarjeta", pm: tarjeta.pm } : { tipo: "efectivo" },
         ...(dl ? { direccion: dir?.id, propina: tipOn ? { k: tip, monto: tipC } : undefined, entrega: { drop, at, note: nota.trim(), guardar } } : {}),
       });
-      if (r.ok) { guardarCarrito(biz, []); router.push(`/pedido/${r.numero}`); return; }
+      if (r.ok) { vibrar("hecho"); guardarCarrito(biz, []); router.push(`/pedido/${r.numero}`); return; }
       if (r.entrar || r.perfil) { router.push(`/entrar?volver=${aqui}`); return; }
       if (r.tarjeta && tarjeta) setDeclinada(tarjeta.pm);
       setError({ msg: es ? r.msg.es : r.msg.en, menu: !!r.menu }); window.scrollTo({ top: 0, behavior: "smooth" });

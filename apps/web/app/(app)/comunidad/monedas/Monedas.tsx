@@ -9,13 +9,14 @@ import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import { hace } from "@/lib/comunidad-comun";
+import { matrizTexto } from "@/lib/qr/matriz";
 import { LINEA_MONEDAS, NOTA_CANJE, REGLAS_MONEDAS, SIN_VALOR, type CuponVecino, type MiCanje, type MisMonedas, type Movimiento } from "@/lib/monedas-comun";
 import { monCanjear, monCupones, monMisCupones, monMovimientos } from "../acciones";
 import { LINE, MONO, Marco, useAncho, useComUi, type YoCom } from "../Marco";
 
-type N = "Icon" | "Button" | "Tag";
+type N = "Icon" | "Button" | "Tag" | "QrCode";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const { Icon, Button, Tag } = UI as unknown as Record<N, ComponentType<any>>;
+const { Icon, Button, Tag, QrCode } = UI as unknown as Record<N, ComponentType<any>>;
 const CARD = { borderRadius: 18, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)", padding: 16 } as const;
 const K = { font: `700 10px ${MONO}`, letterSpacing: ".2em", color: "rgba(11,14,18,.42)" } as const;
 const dia = (iso: string, es: boolean) => new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "long", timeZone: "America/New_York" });
@@ -36,6 +37,8 @@ export function Monedas({ es, yo, d }: { es: boolean; yo: YoCom; d: MisMonedas }
       <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 12 }}>
         <div data-screen-label="Monedas · tu código" style={{ padding: "18px 16px", borderRadius: 16, background: "var(--tl-paper)", textAlign: "center" }}>
           <div style={{ font: `700 9.5px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.5)" }}>{m.estado === "used" ? E2("CÓDIGO USADO", "CODE USED") : E2("TU CÓDIGO", "YOUR CODE")}</div>
+          {/* 8e · El QR del código: el negocio lo lee con «Escanear cupón» en su panel (también lo puede escribir). Solo el código. */}
+          {m.estado !== "used" && <div data-qr-cupon={m.codigo} style={{ marginTop: 12, display: "flex", justifyContent: "center" }}><QrCode matrix={matrizTexto(m.codigo)} size={176} label={E2(`Código QR del cupón ${m.codigo}`, `QR code for coupon ${m.codigo}`)} /></div>}
           <div data-codigo={m.codigo} style={{ marginTop: 8, font: `800 30px/1.1 ${MONO}`, letterSpacing: ".06em", color: m.estado === "used" ? "rgba(11,14,18,.4)" : "var(--tl-ink)", textDecoration: m.estado === "used" ? "line-through" : "none" }}>{m.codigo}</div>
           <div style={{ marginTop: 8, font: "500 13px/1.5 Manrope,sans-serif", color: "rgba(11,14,18,.65)", textWrap: "pretty" }}>
             {m.estado === "used" ? E2(`Ya lo usaste en ${c.negocio.nombre}.`, `You already used it at ${c.negocio.nombre}.`)

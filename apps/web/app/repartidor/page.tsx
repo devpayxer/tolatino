@@ -4,6 +4,7 @@ import { yo } from "@/lib/cuenta";
 import { idioma } from "@/lib/idioma";
 import { misSalidas } from "@/lib/chofer";
 import { misEntregas, misEquipos, misGanancias } from "@/lib/repartidor";
+import { misRutas } from "@/lib/ruta";
 import { Repartidor } from "./Repartidor";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
   if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent("/repartidor")}`);
   const t = ["inicio", "pedidos", "ganancias", "perfil"].includes(sp.t ?? "") ? (sp.t as "inicio" | "pedidos" | "ganancias" | "perfil") : "inicio";
   const p = typeof sp.p === "string" && /^\d{1,12}$/.test(sp.p) ? sp.p : null;
-  const [equipos, entregas, salidas] = await Promise.all([misEquipos(u.id), misEntregas(u.id), misSalidas(u.id)]);
+  // 8e · Las entregas con la ruta abierta (la banda «Compartiendo tu ubicación» y el teléfono que vuelve a compartir si la app se cerró).
+  const [equipos, entregas, salidas, rutas] = await Promise.all([misEquipos(u.id), misEntregas(u.id), misSalidas(u.id), misRutas(u.id)]);
   const s = typeof sp.s === "string" && /^\d{1,18}$/.test(sp.s) ? sp.s : null;
   const ganancias = t === "ganancias" || t === "inicio" ? await misGanancias(u.id) : [];
-  return <Repartidor es={lang === "es"} t={t} p={p} nombre={u.first_name} tel={u.phone} equipos={equipos} entregas={entregas} ganancias={ganancias} salidas={salidas} s={s} />;
+  return <Repartidor es={lang === "es"} t={t} p={p} nombre={u.first_name} tel={u.phone} equipos={equipos} entregas={entregas} ganancias={ganancias} salidas={salidas} s={s} rutas={rutas} />;
 }

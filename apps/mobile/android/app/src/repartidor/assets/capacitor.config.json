@@ -70,6 +70,10 @@
         "/sistema"
       ]
     },
+    "TLRuta": {
+      "servidor": "https://pruebas.tolatino.com",
+      "rotulo": "TLApp/delivery/android/1.0.0 (1)"
+    },
     "PushNotifications": {
       "presentationOptions": [
         "badge",
@@ -81,11 +85,14 @@
   "packageClassList": [
     "AppPlugin",
     "AppLauncherPlugin",
+    "HapticsPlugin",
     "PushNotificationsPlugin",
     "SplashScreenPlugin",
     "StatusBarPlugin",
     "TLAlcancePlugin",
     "TLLocalPlugin",
-    "TLReportePlugin"
+    "TLPantallaPlugin",
+    "TLReportePlugin",
+    "TLRutaPlugin"
   ]
 }

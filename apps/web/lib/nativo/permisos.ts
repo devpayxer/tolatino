@@ -10,7 +10,11 @@ export type Permiso = "camara" | "ubicacion" | "avisos";
 export type EstadoPermiso = "concedido" | "negado" | "preguntar";
 const NOMBRE: Record<Permiso, string> = { camara: "camera", ubicacion: "geolocation", avisos: "notifications" };
 
+type TLRuta = { permiso(): Promise<{ estado: EstadoPermiso }> };
 export async function estadoPermiso(p: Permiso): Promise<EstadoPermiso> {
+  // 8e · En To'Latino Repartidor la ubicación la pide el plugin nativo TLRuta (la del sistema para la app, no la del WebView).
+  const r = p === "ubicacion" ? plugin<TLRuta>("TLRuta") : null;
+  if (r) { try { return (await r.permiso()).estado; } catch { /* una cáscara de antes: lo del WebView */ } }
   try {
     const r = await navigator.permissions.query({ name: NOMBRE[p] as PermissionName });
     return r.state === "granted" ? "concedido" : r.state === "denied" ? "negado" : "preguntar";

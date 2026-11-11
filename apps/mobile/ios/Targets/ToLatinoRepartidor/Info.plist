@@ -32,6 +32,12 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>To'Latino Repartidor usa tu ubicación solo mientras tienes una entrega activa, también con la pantalla apagada, para que el cliente y el negocio vean por dónde va el pedido. Al marcar «Entregado» deja de compartirse.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

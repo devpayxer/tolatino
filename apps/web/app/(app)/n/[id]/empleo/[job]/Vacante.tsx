@@ -2,6 +2,7 @@
 /* APP-NEG-JOB (prototipo «APP-NEG-JOB · móvil / · desktop», «Vacante · barra»): el negocio, el puesto, el pago real por
    hora, horario, días, idiomas, puestos, el trabajo, lo que piden y ofrecen, el aviso de que nunca se pide CV ni papeles,
    tu solicitud y vacantes parecidas. Aplicar pide sesión. */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, type ComponentType } from "react";
@@ -27,7 +28,7 @@ export function Vacante({ v, negocio, sesion, es }: { v: VacanteDet; negocio: st
     setSv(!sv); const r = await vacGuardar(v.id).catch(() => null); if (!r?.ok) setSv(sv);
   };
   const aplicar = () => vivo ? router.push(`/solicitud/${app!.number}`) : router.push(sesion ? `/n/${negocio}/empleo/${v.id}/aplicar` : `/entrar?volver=${encodeURIComponent(`/n/${negocio}/empleo/${v.id}/aplicar`)}`);
-  const compartir = () => { const u = location.href; if (navigator.share) navigator.share({ title, url: u }).catch(() => undefined); else navigator.clipboard?.writeText(u).catch(() => undefined); };
+  const compartir = () => { void compartirNativo({ titulo: title, url: location.href }); };
   const cuando = (iso: string) => new Intl.DateTimeFormat(es ? "es-US" : "en-US", { weekday: "short", day: "numeric", month: "short" }).format(new Date(iso)).replace(/\./g, "");
   const meta = `${tipoL(v.kind, es)} · ${haceL(v.ago, es)}`.toUpperCase();
 

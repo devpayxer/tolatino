@@ -69,7 +69,10 @@ export type Bloque =
       /* hasDates (evView, 6f): FECHA QUE ESTÁS VIENDO · N FECHAS: chips de las fechas de una serie; la elegida, en tinta. */
       datesK?: string; dates?: { l: string; on: boolean; onClick?: Fn; key?: string }[] }
   /* isChart (evView · VENDIDOS POR DÍA): rótulo y cifra, barras (la marcada en Action, las demás al 35 %) con su letra y una nota. */
-  | { type: "chart"; k: string; v: string; bars: { h: string; on?: boolean; l?: string }[]; s?: string };
+  | { type: "chart"; k: string; v: string; bars: { h: string; on?: boolean; l?: string }[]; s?: string }
+  /* 8e · El mapa en vivo de una entrega (hueco #6 de fase8-apps.md): RadiusMap del sistema (2ag) sin círculo, con las teselas, el pin (centro) y
+     los puntos que arma la pantalla (lib/mapa-ruta.ts). */
+  | { type: "mapa"; k: string; r?: string; tiles: { src: string; left: number; top: number }[]; dots: { x: number; y: number; color: string }[]; place?: string; towns?: string; note?: string };
 
 const toque = (on: boolean): CSSProperties => ({ width: 42, height: 24, borderRadius: 99, background: on ? "var(--tl-ink)" : "rgba(11,14,18,.18)", position: "relative", flex: "none", cursor: "pointer", transition: "background .2s" });
 const bolita = (on: boolean): CSSProperties => ({ position: "absolute", top: 3, left: 3, width: 18, height: 18, borderRadius: 99, background: "var(--tl-white)", transform: `translateX(${on ? 18 : 0}px)`, transition: "transform .2s" });
@@ -78,6 +81,10 @@ const para = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNode {
   switch (b.type) {
+    case "mapa": return (
+      <div data-bloque="mapa" style={{ padding: "14px 15px", borderRadius: 17, background: "var(--tl-white)", border: "1px solid rgba(11,14,18,.08)" }}>
+        <DS.RadiusMap label={b.k} radius={b.r} tiles={b.tiles} dots={b.dots} circle={0} place={b.place} towns={b.towns} note={b.note} />
+      </div>);
     case "nprev": return (
       <div>
         {b.k ? <div style={{ ...K, color: "rgba(11,14,18,.5)", marginBottom: 8 }}>{b.k}</div> : null}

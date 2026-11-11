@@ -2,10 +2,11 @@
 import { mismoOrigen, yo } from "@/lib/cuenta";
 import { choferAbordo, choferPaso } from "@/lib/chofer";
 import { aceptarInvitacion, enLinea, pasoRepartidor, problemaRepartidor, salirEquipo, type PasoRep } from "@/lib/repartidor";
+import { reanudar, type RutaToken } from "@/lib/ruta";
 
 /* App To'Latino Repartidor: cada acción la hace el repartidor con su cuenta, sobre lo que el negocio le asignó. */
 type Bi = { es: string; en: string };
-type R = { ok: true; negocio?: string } | { ok: false; msg: Bi };
+type R = { ok: true; negocio?: string; ruta?: RutaToken | null } | { ok: false; msg: Bi };
 const NO: R = { ok: false, msg: { es: "Entra para seguir.", en: "Sign in to continue." } };
 async function quien() { if (!(await mismoOrigen())) return null; return yo(); }
 
@@ -22,6 +23,7 @@ export async function repEnLinea(id: string, on: boolean): Promise<R> {
 export async function repPaso(numero: string, paso: PasoRep, efectivo?: number): Promise<R> {
   const u = await quien();
   if (!u) return NO;
+  if (!["empezar", "recogi", "llegue", "entregado"].includes(paso)) return { ok: false, msg: { es: "Ese paso no existe.", en: "That step does not exist." } };
   const r = await pasoRepartidor(u.id, String(numero ?? ""), paso, efectivo);
   if (r.ok && "aviso" in r && r.aviso) {
     const { avisarPedido, avisar } = await import("@/lib/avisos");
@@ -32,7 +34,14 @@ export async function repPaso(numero: string, paso: PasoRep, efectivo?: number):
       if (o) await avisar(o.uid, "ord_here", { negocio: o.negocio, num: r.aviso.numero }, { href: `/pedido/${r.aviso.numero}`, ref: ["order", r.aviso.numero] });
     }
   }
-  return r.ok ? { ok: true } : r;
+  // 8e · El paso que inicia la entrega trae el token de la ruta para el teléfono (solo a este repartidor, solo de esta entrega).
+  return r.ok ? { ok: true, ...("ruta" in r ? { ruta: r.ruta ?? null } : {}) } : r;
+}
+/* 8e · La app se abrió otra vez con una entrega en curso: el teléfono vuelve a compartir con un token nuevo, si la ruta sigue abierta para ti. */
+export async function repRutaReanudar(numero: string): Promise<RutaToken | null> {
+  const u = await quien();
+  if (!u) return null;
+  return reanudar(u.id, String(numero ?? ""));
 }
 export async function repProblema(numero: string, motivo: string, nota: string): Promise<R> {
   const u = await quien();

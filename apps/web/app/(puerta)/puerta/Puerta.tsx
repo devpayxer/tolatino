@@ -19,6 +19,8 @@ import { avisoSinSenal, EstadoPuerta } from "./sin-conexion/Estado";
 import { soltarSesion, usePuertaLocal } from "./sin-conexion/usePuertaLocal";
 import { sinRed } from "@/lib/nativo/senal";
 import { uuid } from "@/lib/uuid";
+import { esApp, plataforma } from "@/lib/nativo/puente";
+import { fijarPantalla, pantallaFijada, soltarPantalla } from "@/lib/nativo/pantalla";
 
 type Bi = { es: string; en: string };
 type Tab = "escanear" | "buscar" | "lista" | "aforo" | "mas" | "mesas" | "incid" | "equipo" | "cierre" | "noche";
@@ -49,6 +51,14 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
   const [inc, setInc] = useState({ k: "", nota: "", code: "" }), [grupo, setGrupo] = useState<string | null>(null);
   const base = `/puerta/s/${ctx.sesion}`, ir = (x: string) => router.push(base + x);
   useEffect(() => setR(r0), [r0]);
+  // 8e · «Fijar la Puerta en esta pantalla» (kiosco sin MDM): en la app de Android, la fijación de pantalla del sistema (la persona confirma aquí y
+  // el sistema lo vuelve a confirmar); en iPhone, Acceso guiado (una app no puede fijarse sola); en un navegador, cómo hacerlo con el teléfono.
+  const [fij, setFij] = useState<null | "pregunta" | "ayuda">(null), [fijada, setFijada] = useState(false), [donde, setDonde] = useState<"android_app" | "ios" | "otro">("otro");
+  useEffect(() => {
+    const ios = plataforma() === "ios" || /iPhone|iPad|iPod/.test(navigator.userAgent);
+    setDonde(esApp() && plataforma() === "android" ? "android_app" : ios ? "ios" : "otro");
+    void pantallaFijada().then(setFijada);
+  }, [t]);
   useEffect(() => { if (!toast) return; const x = setTimeout(() => setToast(""), 2600); return () => clearTimeout(x); }, [toast]);
   // En vivo: la cabecera por SSE; las listas se refrescan como mucho cada 4 s. Si el SSE se cae, se pregunta cada 5 s.
   const ultimo = useRef(0);
@@ -193,6 +203,27 @@ export function Puerta({ es, t, f, ctx, r0, lista, aforo, mesas, incid, equipo, 
       { key: "cierre", icon: "check", t: E2("Cierre de la noche", "Close the night"), s: E2("Resumen y cerrar tu puerta", "Summary and close your door"), chev: true, onClick: () => ir("?t=cierre") },
       { key: "cambiar", icon: "key", t: E2("Cambiar de puerta", "Change door"), s: E2("Volver a tus puertas", "Back to your doors"), chev: true, onClick: () => router.push("/puerta") },
     ] });
+    // 8e · Fijar la Puerta en esta pantalla.
+    if (fij === "pregunta") {
+      B.push({ type: "note", tone: "info", icon: "lock", t: E2("La Puerta se queda en esta pantalla: nadie sale a otra app ni a Inicio. El teléfono te pide confirmarlo. Para soltarla: mantén tocados Atrás y Recientes a la vez (o lo que diga el aviso del sistema).", "The Door stays on this screen: nobody can leave to another app or Home. Your phone asks you to confirm. To unpin: touch and hold Back and Recents together (or what the system notice says).") });
+      B.push({ type: "acts", items: [{ l: E2("Fijar la pantalla", "Pin the screen"), v: "primary", icon: "lock", onClick: () => { setFij(null); void fijarPantalla().then((x) => { if (x === "ok") { setFijada(true); setToast(E2("Pantalla fijada. Confirma en el aviso del teléfono si te lo pide.", "Screen pinned. Confirm in the phone notice if it asks.")); } else setErr(E2("Este teléfono no dejó fijar la pantalla. Revisa en Ajustes › Seguridad › Fijar apps.", "This phone did not allow pinning. Check Settings › Security › App pinning.")); }); } },
+        { l: E2("Ahora no", "Not now"), v: "secondary", onClick: () => setFij(null) }] });
+    } else if (fij === "ayuda") {
+      B.push({ type: "rows", k: donde === "ios" ? E2("EN IPHONE · ACCESO GUIADO", "ON IPHONE · GUIDED ACCESS") : E2("EN ANDROID · FIJAR APPS", "ON ANDROID · APP PINNING"), items: (donde === "ios" ? [
+        [E2("1 · Enciéndelo una vez", "1 · Turn it on once"), E2("Ajustes › Accesibilidad › Acceso guiado › actívalo y pon un código.", "Settings › Accessibility › Guided Access › turn it on and set a passcode.")],
+        [E2("2 · Fija la Puerta", "2 · Pin the Door"), E2("Con la Puerta abierta, presiona tres veces el botón lateral y toca «Iniciar».", "With the Door open, press the side button three times and tap «Start».")],
+        [E2("3 · Para soltarla", "3 · To unpin"), E2("Presiona tres veces el botón lateral, escribe el código y toca «Finalizar».", "Press the side button three times, enter the passcode and tap «End».")],
+      ] : [
+        [E2("1 · Enciéndelo una vez", "1 · Turn it on once"), E2("Ajustes › Seguridad › Fijar apps (o «Fijar pantalla»).", "Settings › Security › App pinning (or «Screen pinning»).")],
+        [E2("2 · Fija la Puerta", "2 · Pin the Door"), E2("Abre Recientes, toca el ícono de la Puerta y elige «Fijar».", "Open Recents, tap the Door icon and choose «Pin».")],
+        [E2("3 · Para soltarla", "3 · To unpin"), E2("Mantén tocados Atrás y Recientes a la vez.", "Touch and hold Back and Recents together.")],
+      ]).map(([a, b], i): Fila => ({ key: `fj${i}`, icon: "check", t: a!, s: b, chev: false, compact: true })) });
+      B.push({ type: "note", tone: "ink", icon: "info", t: donde === "ios" ? E2("Un iPhone no deja que una app se fije sola: Acceso guiado es la forma que trae el teléfono.", "An iPhone does not let an app pin itself: Guided Access is the way the phone offers.") : E2("Con la app To’Latino Puerta de Android, la Puerta se fija sola con un toque.", "With the To’Latino Puerta Android app, the Door pins itself with one tap.") });
+      B.push({ type: "acts", items: [{ l: E2("Entendido", "Got it"), v: "secondary", onClick: () => setFij(null) }] });
+    } else B.push({ type: "rows", items: [fijada
+      ? { key: "soltar", icon: "lock", t: E2("Soltar la pantalla", "Unpin the screen"), s: E2("La Puerta está fijada en esta pantalla", "The Door is pinned to this screen"), chev: true, onClick: () => { void soltarPantalla().then(() => { setFijada(false); setToast(E2("Pantalla suelta.", "Screen unpinned.")); }); } }
+      : { key: "fijar", icon: "lock", t: E2("Fijar la Puerta en esta pantalla", "Pin the Door to this screen"), s: donde === "android_app" ? E2("Nadie sale a otra app mientras escaneas", "Nobody leaves to another app while you scan") : donde === "ios" ? E2("Con Acceso guiado del iPhone", "With iPhone Guided Access") : E2("Cómo hacerlo con tu teléfono", "How to do it with your phone"),
+          chev: true, onClick: () => setFij(donde === "android_app" ? "pregunta" : "ayuda") }] });
   } else if (t === "mesas" && mesas) {
     const g = grupo ? mesas.grupos.find((x) => x.id === grupo) ?? null : null, z = g ? mesas.zonas.find((x) => x.id === g.mesa) ?? null : null;
     B.push({ type: "head", t: E2("Mesas", "Tables"), s: E2("Toca un grupo y dale su número de mesa. Dos grupos nunca tienen la misma.", "Tap a group and give it its table number. Two groups never get the same one."), onBack: () => ir("?t=mas") });

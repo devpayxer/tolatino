@@ -4,6 +4,7 @@
    la tarjeta (MetodoPago: guardada o nueva; simulador en el sandbox), el resumen con lo que decidió el servidor, «CARGOS INCLUIDOS · NADA
    MÁS EN LA PUERTA», ANTES DE PAGAR (y la línea de ID si es 18+ o 21+) y «Pagar $X». Tarjeta rechazada: «No se cobró nada y tus
    boletos siguen guardados.»; agotado mientras pagabas: «Se acabaron mientras pagabas. No se cobró nada.». */
+import { vibrar } from "@/lib/nativo/haptica";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ComponentType } from "react";
@@ -36,7 +37,7 @@ export function Pagar({ p, es, pago }: { p: PantallaPago; es: boolean; pago: { m
     if (!tarjeta || ocupado || fin) return;
     setOcupado(true); setError(null);
     const r = await evtPagar(p.apartado, tarjeta.pm, nombres).catch(() => null);
-    if (r?.ok) { router.push(`/eventos/orden/${r.numero}`); return; }
+    if (r?.ok) { vibrar("hecho"); router.push(`/eventos/orden/${r.numero}`); return; }
     setOcupado(false);
     if (r && !r.ok && r.entrar) { router.push(`/entrar?volver=${encodeURIComponent(location.pathname)}`); return; }
     setError(r?.msg ? (es ? r.msg.es : r.msg.en) : E2("No se pudo. Revisa tu conexión. No se cobró nada.", "Could not do it. Check your connection. Nothing was charged."));

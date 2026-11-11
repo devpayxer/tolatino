@@ -30,8 +30,10 @@ export function cupBloques(c: Ctx): Sec {
   // Validar un código (lo primero: es lo que se hace con el vecino enfrente).
   const cod = (c.ui.cupCod as string | undefined) ?? "", res = c.ui.cupRes as { ok: boolean; t: string } | undefined;
   out.push({ type: "group", k: E2("VALIDAR UN CÓDIGO", "VALIDATE A CODE"), first: true },
-    { type: "field", k: E2("CÓDIGO DEL VECINO", "NEIGHBOR'S CODE"), val: cod, max: 12, ph: "TL-CQ-7K4M", help: E2("Escribe el código que el vecino te muestra en su teléfono. Cada código se usa una sola vez.", "Type the code the neighbor shows on their phone. Each code works once."),
+    { type: "field", k: E2("CÓDIGO DEL VECINO", "NEIGHBOR'S CODE"), val: cod, max: 12, ph: "TL-CQ-7K4M", help: E2("Escanea el QR o escribe el código que el vecino te muestra en su teléfono. Cada código se usa una sola vez.", "Scan the QR or type the code the neighbor shows on their phone. Each code works once."),
       onChange: (v) => c.setUi({ cupCod: v.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 12), cupRes: undefined }) },
+    // 8e · «Escanear cupón»: la cámara lee el QR del código (EscanearCupon.tsx, el lector de la Puerta); también en la web.
+    { type: "acts", items: [{ l: E2("Escanear cupón", "Scan coupon"), v: "secondary", icon: "grid", onClick: () => c.setUi({ cupScan: true, cupRes: undefined }) }] },
     { type: "acts", items: [{ l: c.pending ? E2("Validando…", "Validating…") : E2("Validar", "Validate"), v: "primary", icon: "check", off: cod.replace(/[^A-Z0-9]/g, "").length < 8 || c.pending,
       onClick: () => c.run(() => cupValidar(d.id, cod).then((r) => { if (!r.ok) c.setUi({ cupRes: { ok: false, t: c.es ? r.mensaje.es : r.mensaje.en } }); return r; }), (r: { titulo?: { es: string; en: string }; vecino?: string; codigo?: string }) => {
         const t = E2(`Código válido: «${r.titulo?.es ?? ""}» para ${r.vecino ?? ""}: ya quedó usado.`, `Valid code: «${r.titulo?.en || r.titulo?.es || ""}» for ${r.vecino ?? ""}: it is now used.`);

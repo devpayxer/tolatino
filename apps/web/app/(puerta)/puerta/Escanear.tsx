@@ -12,13 +12,14 @@ import { Escaner } from "./Escaner";
 import { QUE_HACER, RESULTADO, type Pregunta, type ResEscaneo, type VistaEscaneo } from "@/lib/puerta-comun";
 import type { PuertaLocal } from "./sin-conexion/usePuertaLocal";
 import { uuid } from "@/lib/uuid";
+import { vibrar } from "@/lib/nativo/haptica";
 
 type Bi = { es: string; en: string };
 const TONO = { ok: ["var(--tl-signal)", "var(--tl-ink)"], warn: ["var(--tl-pro)", "var(--tl-ink)"], bad: ["var(--tl-danger)", "var(--tl-white)"] } as const;
 let audio: AudioContext | null = null;
 function sonar(bien: boolean) {
   try {
-    navigator.vibrate?.(bien ? 80 : [120, 80, 120]);
+    vibrar(bien ? "hecho" : "error"); // 8e · en la app, la háptica del sistema (lib/nativo/haptica.ts)
     audio ??= new AudioContext();
     const o = audio.createOscillator(), g = audio.createGain();
     o.frequency.value = bien ? 880 : 220; g.gain.value = 0.08; o.connect(g); g.connect(audio.destination);

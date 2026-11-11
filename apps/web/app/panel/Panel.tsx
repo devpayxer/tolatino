@@ -3,6 +3,7 @@
    menú de 264 px, contenido y columna de detalle en escritorio) y un renderizador de bloques (@tolatino/ui · panel).
    Cada sección arma su lista de bloques con los datos que ya calculó el servidor; los cambios van por acciones del
    servidor (acciones.ts) y después se vuelve a leer. Aquí solo se muestra. */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { useEsteTelefono, type EsteTelefono } from "@/app/_cascara/useEsteTelefono";
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelAccion as Accion, type PanelBloqueT as Bloque, type PanelFila as Fila } from "@tolatino/ui";
@@ -64,6 +65,8 @@ import { hoyJobs, jobsBloques, jobsDetalle, type JobsData } from "./JobsPanel";
 import type { MenuPanel } from "@/lib/menu";
 import { evtBloques, evtDetalle, type EvtData } from "./EventosPanel";
 import { PuertaCamaraPanel, PuertaVivo, puertaDetalle } from "./EventosPuerta";
+import { RutaVivoPanel } from "./RutaPanel";
+import { EscanearCupon } from "./EscanearCupon";
 
 const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
@@ -328,6 +331,8 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, menu, ped, rsv
         </div>
       ) : null}
       {ruta.det?.startsWith("door:") && evt?.puerta?.fecha ? <PuertaVivo negocio={d.id} fecha={evt.puerta.fecha} /> : null}
+      {ruta.det?.startsWith("ped:") && /^\d{1,12}$/.test(ruta.det.slice(4)) ? <RutaVivoPanel negocio={d.id} numero={ruta.det.slice(4)} setUi={setUi} /> : null}
+      {ui.cupScan ? <EscanearCupon negocio={d.id} es={es} onCerrar={() => setUi({ cupScan: false })} onValidado={() => router.refresh()} /> : null}
       {ui.puertaCam && evt?.puerta && evt.puerta.miSesion === ui.puertaCam ? <PuertaCamaraPanel sesion={ui.puertaCam as string} es={es} reentrada={!!evt.puerta.reglas.reentrada} libre={(evt.det?.pending ? evt.det.vivo : evt.det?.d)?.entrada === "free"} onCerrar={() => setUi({ puertaCam: null })} /> : null}
       {toastT ? <div role="status" style={{ position: "fixed", left: "50%", bottom: desk ? 28 : 100, transform: "translateX(-50%)", zIndex: 90, maxWidth: 360, width: "calc(100% - 40px)", boxSizing: "border-box", padding: "12px 16px", borderRadius: 14, background: "var(--tl-ink)", color: "var(--tl-white)", font: "700 13px/1.4 Manrope,sans-serif", textAlign: "center", animation: "d2Up .2s ease-out" }}>{toastT}</div> : null}
       {ui.planHoja && plan && plan.modo !== "apagado" ? (
@@ -479,8 +484,7 @@ function pagina(c: Ctx): (Bloque | null)[] {
       { l: E2("Ver como cliente", "View as client"), icon: "store", onClick: () => window.open(`/n/${d.id}`, "_blank") },
       { l: E2("Compartir", "Share"), icon: "share", onClick: () => {
         const u = `${location.origin}/n/${d.id}`;
-        if (navigator.share) navigator.share({ title: d.name, url: u }).catch(() => undefined);
-        else navigator.clipboard?.writeText(u).then(() => c.toast(`${u.replace(/^https?:\/\//, "")}${E2(" · link copiado", " · link copied")}`)).catch(() => undefined);
+        void compartirNativo({ titulo: d.name, url: u }).then((r) => { if (r === "copiado") c.toast(`${u.replace(/^https?:\/\//, "")}${E2(" · link copiado", " · link copied")}`); });
       } },
     ],
   });

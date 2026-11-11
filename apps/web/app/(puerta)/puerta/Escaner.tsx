@@ -5,13 +5,13 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Icon } from "@tolatino/ui";
 import { usePermiso } from "@/app/_cascara/HojaPermiso";
-import { esApp } from "@/lib/nativo/puente";
-import { mantenerEncendida } from "@/lib/nativo/pantalla";
+import { esApp, plataforma } from "@/lib/nativo/puente";
+import { linternaNativa, mantenerEncendida } from "@/lib/nativo/pantalla";
 import { abrirAjustes } from "@/lib/nativo/permisos";
 type Det = { detect: (v: HTMLVideoElement) => Promise<{ rawValue?: string }[]> };
 
 export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo: boolean; onCodigo: (t: string) => void; linterna: boolean; es: boolean; onLinterna?: (puede: boolean) => void }) {
-  const video = useRef<HTMLVideoElement>(null), act = useRef(activo), cb = useRef(onCodigo), pista = useRef<MediaStreamTrack | null>(null);
+  const video = useRef<HTMLVideoElement>(null), act = useRef(activo), cb = useRef(onCodigo), pista = useRef<MediaStreamTrack | null>(null), luzNativa = useRef(false);
   const [estado, setEstado] = useState<"pidiendo" | "listo" | "sin_permiso" | "sin_camara">("pidiendo"), [intento, setIntento] = useState(0);
   act.current = activo; cb.current = onCodigo;
   // 8a · En la app To'Latino Puerta: la hoja previa antes de que el sistema pida la cámara, y la pantalla encendida mientras escanea.
@@ -39,7 +39,9 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
       await v.play().catch(() => undefined);
       pista.current = stream.getVideoTracks()[0] ?? null;
       const caps = (pista.current?.getCapabilities?.() ?? {}) as { torch?: boolean };
-      onLinterna?.(!!caps.torch);
+      // 8e · En la app de iPhone la cámara del WebView no trae «torch»: la luz la prende el nativo (TLPantalla.linterna). Android y la web: «torch».
+      luzNativa.current = !caps.torch && esApp() && plataforma() === "ios" ? await linternaNativa(false) : false;
+      onLinterna?.(!!caps.torch || luzNativa.current);
       setEstado("listo");
       void mantenerEncendida(true);
       let det: Det | null = null;
@@ -60,11 +62,12 @@ export function Escaner({ activo, onCodigo, linterna, es, onLinterna }: { activo
         worker!.postMessage({ px, w, h, n: ++n }, [px.buffer]);
       }, 160);
     })();
-    return () => { parado = true; if (timer) clearInterval(timer); worker?.terminate(); stream?.getTracks().forEach((x) => x.stop()); pista.current = null; void mantenerEncendida(false); };
+    return () => { parado = true; if (timer) clearInterval(timer); worker?.terminate(); stream?.getTracks().forEach((x) => x.stop()); pista.current = null; void mantenerEncendida(false); if (luzNativa.current) void linternaNativa(false); };
   }, [intento]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const t = pista.current;
     if (!t) return;
+    if (luzNativa.current) { void linternaNativa(linterna); return; }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     void t.applyConstraints({ advanced: [{ torch: linterna } as any] }).catch(() => undefined);
   }, [linterna, estado]);

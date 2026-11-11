@@ -3,6 +3,7 @@
    (scroll con imán), corazón y enviar a la derecha, abajo cuándo, título, lugar, cuántos van y «Voy · Gratis» o «Boletos» + «Ver más».
    Escritorio: una historia a la vez con flechas. «Voy · Gratis» hace el RSVP (1 persona; las personas se cambian en la ficha); la base
    cuenta el cupo. Con boletos: abre la ficha (la venta en la app llega con 6c). */
+import { compartir as compartirNativo } from "@/lib/nativo/compartir";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { HistoriaEvt } from "@/lib/evt-publico";
@@ -20,7 +21,7 @@ export function EstaNoche({ es, ciudad, slides, inicio }: { es: boolean; ciudad:
   const compartir = async (s: HistoriaEvt) => {
     void evtCompartir(s.id);
     const url = `${location.origin}${s.href}`;
-    try { if (navigator.share) { await navigator.share({ title: s.title, url }); return; } await navigator.clipboard.writeText(url); toast(E2("Enlace copiado para compartir.", "Link copied to share.")); } catch { /* la persona cerró */ }
+    if ((await compartirNativo({ titulo: s.title, url })) === "copiado") toast(E2("Enlace copiado para compartir.", "Link copied to share."));
   };
   const cta = async (s: HistoriaEvt) => {
     if (!s.ctaRsvp || vas[s.fecha]) { router.push(s.href); return; }

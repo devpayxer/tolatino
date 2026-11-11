@@ -7,7 +7,9 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type ComponentType } from "react";
 import type { EstTx, FiltrosTx, ListaTx } from "@/lib/admin-tx";
-import { devolverTx, disputaSimular, disputaSimularResultado, exportarTx } from "./acciones-tx";
+import { devolverTx, disputaSimular, disputaSimularResultado, exportarTx, verRutaTx } from "./acciones-tx";
+import type { RutaAdmin } from "@/lib/ruta";
+import { mapaRuta, zoomQueCabe } from "@/lib/mapa-ruta";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 import { uuid } from "@/lib/uuid";
@@ -25,9 +27,28 @@ const E_M = (x: { mEst: number | null; mRet: number | null; pago: string | null;
   : `estimado ${money2(x.mEst ?? 0)} · retenido ${money2(x.mRet)}${x.pago === "captured" || x.pago === "partially_refunded" || x.pago === "refunded" ? ` · cobrado ${money2(x.cob)} · liberado ${money2(x.mRet - x.cob)}` : x.pago === "released" ? " · liberado todo" : " · sin cobrar"}`;
 // Lo que el Super Admin puede devolver desde aquí (acciones-tx.ts › devolverTx decide lo mismo en el servidor).
 const DEVUELVE = new Set(["order", "appointment", "party", "trip", "night", "enrollment", "private_event"]);
-export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean; devolver: boolean; sim?: boolean }) {
+const FIN: Record<string, string> = { entregado: "entregado", cancelado: "cancelado", reasignado: "pasó a otro repartidor", inactivo: "ya no estaba activo", admin: "lo cerró To’Latino" };
+const metros = (m: number) => (m >= 1609 ? `${(m / 1609.34).toFixed(1)} mi` : `${Math.round(m * 3.281)} ft`);
+/* 8e · El recorrido de una entrega (solo después de escribir el motivo; ya quedó en la auditoría). */
+function Recorrido({ r, desk, onBack }: { r: RutaAdmin; desk: boolean; onBack: () => void }) {
+  const P = r.puntos.map((x) => [x.lat, x.lng] as [number, number]), ult = P[P.length - 1] ?? r.destino;
+  const bloques: (Bloque | null)[] = [
+    { type: "head", eye: `TRANSACCIONES · ${r.negocio.toUpperCase()}`, t: `Recorrido · pedido #${r.numero}`, s: "La ruta del repartidor mientras duró la entrega. Abriste esto con un motivo: quedó en la auditoría. Las posiciones se borran a los días de Configuración › Apps; queda el resumen.", onBack, h1: desk ? 26 : 22 },
+    ...r.rutas.map((x, i): Bloque => ({ type: "kv", cols: desk ? 4 : 2, items: [
+      { k: r.rutas.length > 1 ? `RUTA ${i + 1} · DESDE` : "DESDE", v: cuando(x.desde) }, { k: "HASTA", v: x.hasta ? `${cuando(x.hasta)} · ${FIN[x.fin ?? ""] ?? x.fin ?? ""}` : "sigue en curso" },
+      { k: "DISTANCIA", v: metros(x.distancia) }, { k: "POSICIONES", v: `${x.n}${x.rechazadas ? ` · ${x.rechazadas} rechazadas` : ""}${x.paso === "empezar" ? " · desde «Voy por el pedido»" : " · desde «Recogí»"}` }] })),
+    r.rutas.some((x) => x.purgada) && !P.length ? { type: "note", tone: "info", icon: "clock", t: "Las posiciones ya se borraron por la retención: queda solo el resumen." } : null,
+    ult && P.length ? (() => { const c = P[Math.floor(P.length / 2)]!, m = mapaRuta(c, { rastro: P, destino: r.destino, zoom: zoomQueCabe(c, [...P, ...(r.destino ? [r.destino] : [])]) });
+      return { type: "mapa", k: "RECORRIDO", r: `${P.length} PUNTOS`, tiles: m.tiles, dots: m.dots, towns: "El centro es la mitad del recorrido; los puntos tenues, cada posición; el negro, la dirección del cliente." } as Bloque; })() : null,
+    P.length ? { type: "rows", k: "POSICIONES · LAS ÚLTIMAS 12", items: r.puntos.slice(-12).reverse().map((x, i) => ({ key: String(i), icon: "pin", t: cuando(x.at), s: `${x.lat.toFixed(5)}, ${x.lng.toFixed(5)}${x.acc != null ? ` · ±${x.acc} m` : ""} · ${x.src === "app" ? "app" : "web"}`, chev: false, compact: true })) } : null,
+  ];
+  return <PanelBloques bloques={bloques.filter((b): b is Bloque => !!b)} h1={desk ? 26 : 22} />;
+}
+
+export function Transacciones({ d, f, porPagina, exportar, devolver, sim, rutas = [] }: { d: ListaTx; f: FiltrosTx; porPagina: number; exportar: boolean; devolver: boolean; sim?: boolean; rutas?: string[] }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [toast, setToast] = useToast(), [pend, start] = useTransition(), [conf, setConf] = useState<Confirmar | null>(null);
+  const [rec, setRec] = useState<RutaAdmin | null>(null), conRuta = new Set(rutas);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("pag" in p)) u.delete("pag"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
   const tg = (k: EstTx) => { const l = f.st.includes(k) ? f.st.filter((x) => x !== k) : [...f.st, k]; ir({ st: l.join(",") || null }); };
@@ -38,9 +59,15 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d:
     setToast(r.mensaje ?? "Descargado.");
   });
   const k = d.kpi;
+  if (rec) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Recorrido r={rec} desk={desk} onBack={() => setRec(null)} />
+      <Toast t={toast} desk={desk} />
+    </div>
+  );
   if (conf) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <PanelBloques bloques={[{ type: "head", eye: "TRANSACCIONES", t: "Devolver dinero", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
+      <PanelBloques bloques={[{ type: "head", eye: "TRANSACCIONES", t: conf.cta === "Ver recorrido" ? "Ver el recorrido" : "Devolver dinero", onBack: () => setConf(null), h1: desk ? 26 : 22 }]} />
       <ConfirmarMotivo c={conf} desk={desk} onBack={() => setConf(null)} onDone={hecho} />
       <Toast t={toast} desk={desk} />
     </div>
@@ -90,6 +117,11 @@ export function Transacciones({ d, f, porPagina, exportar, devolver, sim }: { d:
             : x.k === "appointment" ? `${x.svc ? `${x.svc} · ` : ""}${money(x.total)}${x.dep ? ` · depósito ${money(x.dep)}` : " · sin depósito"}${x.pago ? ` · ${x.tarjeta ?? "tarjeta"} ${PG[x.pago] ?? x.pago}${x.devuelto ? ` ${money(x.devuelto)}` : ""} · comisión ${money(x.comision)}${x.disputa ? ` · ${DISP[x.disputa] ?? "disputa"}` : ""}` : ""}${x.estV ? ` · estimado${x.estV > 1 ? ` (${x.estV} versiones)` : ""}: aprobado ${money(x.estAp)}${x.estCob ? ` · cobrado en la app ${money(x.estCob)}` : ""}` : ""}${x.estFallo ? " · retención no renovada" : ""}` : `mesa para ${x.p ?? "—"}`}${x.st === "cx" && x.detalle ? ` · canceló ${x.detalle === "user" ? "el cliente" : x.detalle === "business" ? "el negocio" : x.detalle === "admin" ? "To’Latino" : "el sistema"}` : ""}`,
           tag: ST[x.st][0], tone: ST[x.st][1],
           actions: [{ label: "Ver negocio", variant: "secondary", onClick: () => router.push(`/admin/negocios/${x.biz}`) }, { label: "Ver cliente", variant: "secondary", onClick: () => router.push(`/admin/usuarios/${x.uid}`) },
+            // 8e · La ruta del repartidor: solo con motivo (queda en la auditoría antes de ver nada).
+            ...(x.k === "order" && conRuta.has(x.num) ? [{ label: "Ver recorrido", variant: "secondary", onClick: () => setConf({
+              titulo: `Ver el recorrido · pedido #${x.num}`, cta: "Ver recorrido", sub: "La ubicación del repartidor es privada. Escribe por qué la necesitas: queda en la auditoría con tu nombre antes de abrirla.",
+              plantillas: ["Disputa de entrega: el cliente dice que no llegó.", "Reclamo del negocio sobre el tiempo de entrega.", "Revisión de seguridad por un incidente reportado."],
+              hacer: async (m) => { const r = await verRutaTx(x.num, m); if (r.ok && r.ruta) setRec(r.ruta); return r; } }) }] : []),
             ...(devolver && DEVUELVE.has(x.k) && (x.pago === "captured" || x.pago === "partially_refunded") ? [{ label: "Devolver", variant: "secondary", onClick: () => { const clave = uuid(); setConf({
               titulo: x.k === "private_event" ? `Devolver depósito · evento privado ${x.num}` : x.k === "enrollment" ? `Devolver matrícula · inscripción ${x.num}` : x.k === "night" ? `Devolver depósito · noche ${x.num}` : x.k === "party" ? `Devolver depósito · fiesta ${x.num}` : x.k === "appointment" ? `Devolver depósito · cita ${x.num}` : x.k === "trip" ? `Devolver dinero · viaje ${x.num}` : `Devolver dinero · pedido #${x.num}`, cta: "Devolver", peligro: true, sub: `Hasta ${money((x.k === "appointment" || x.k === "party" || x.k === "night" || x.k === "enrollment" || x.k === "private_event" ? x.dep : x.total) - x.devuelto)}. Vuelve a la tarjeta del cliente en 3 a 5 días hábiles; la comisión baja en proporción. El motivo lo ve el cliente y queda en la auditoría.`,
               valor: { k: "MONTO EN DÓLARES", ini: (((x.k === "appointment" || x.k === "party" || x.k === "night" || x.k === "enrollment" || x.k === "private_event" ? x.dep : x.total) - x.devuelto) / 100).toFixed(2), max: 8 }, plantillas: x.k === "private_event" ? ["El restaurante no cumplió lo acordado.", "El restaurante canceló el evento.", "Cobro duplicado."] : x.k === "enrollment" ? ["El grupo no abrió.", "No entregaron el certificado prometido.", "Cobro duplicado."] : x.k === "night" ? ["El local no respetó la mesa.", "El local canceló la noche.", "Cobro duplicado."] : x.k === "trip" ? ["El negocio no salió.", "El viaje no fue como se acordó.", "Cobro duplicado."] : x.k === "party" ? ["El negocio canceló la fiesta.", "No se cumplió el acuerdo.", "Cobro duplicado."] : x.k === "appointment" ? ["El negocio canceló la cita.", "No se devolvió el depósito a tiempo.", "Cobro duplicado."] : ["Falta un plato del pedido.", "El pedido llegó mal.", "El negocio no entregó el pedido.", "Cobro duplicado."],

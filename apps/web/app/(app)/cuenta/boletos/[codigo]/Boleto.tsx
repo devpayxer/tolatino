@@ -3,6 +3,7 @@
    funciona igual»): el boleto con su QR real, grande, el código humano y el estado. Usado, devuelto o anulado: el QR sale apagado.
    6h: con señal, el QR queda guardado CIFRADO en este teléfono para esta cuenta (lib/boletos-sin-conexion.ts); sin señal lo muestra la
    cáscara /cuenta/boletos/sin-conexion. Si deja de valer (transferido, devuelto, anulado, pasado), se quita. */
+import { useBrilloQr } from "@/lib/nativo/pantalla";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ComponentType } from "react";
@@ -30,6 +31,8 @@ export function Boleto({ x, es }: { x: { b: BoletoVista; numero: string; evento:
   const { b, evento: ev } = x, [t, bg, fg] = estadoBoleto(b, es);
   const cuando = ev.rango ? ev.rango.toUpperCase() : `${diaCorto(ev.dia, es).toUpperCase()} · ${hora(ev.h0)}`;
   const guardable = !!b.matriz && !b.envio && !ev.pasado && (b.estado === "valid" || !!b.sigue);
+  // 8e · En la app: el QR vivo con el brillo al máximo mientras se ve (se devuelve al salir).
+  useBrilloQr(!!b.matriz && !b.envio && !ev.pasado && (b.estado === "valid" || !!b.sigue));
   useEffect(() => {
     registrarSWBoletos(); recordarIdioma(es);
     void guardarBoleto(guardable && b.matriz ? { code: b.code, filas: filasDe(b.matriz), tipo: b.mesa ? `${b.tipo} · ${b.admits} ${es ? "entradas" : "entries"}` : b.vale ? `${b.tipo} · ${b.vale}` : b.tipo,

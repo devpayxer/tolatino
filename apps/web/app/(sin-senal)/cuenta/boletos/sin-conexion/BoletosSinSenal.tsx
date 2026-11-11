@@ -2,6 +2,7 @@
 /* 6h · USR-BOLETO sin señal (Mi cuenta L561 «Si no hay señal, el código funciona igual»): los boletos que esta cuenta abrió con señal en
    este teléfono, con su QR real (TicketQR / QrCode del sistema), el código y el estado de cuando se guardó. Sin la cookie de la sesión
    (salió de la cuenta u otra cuenta) no se ve nada. */
+import { useBrilloQr } from "@/lib/nativo/pantalla";
 import * as UI from "@tolatino/ui";
 import { useEffect, useState, type ComponentType } from "react";
 import { idiomaGuardado, leerBoletos, matrizDe, type BoletoGuardado } from "@/lib/boletos-sin-conexion";
@@ -18,6 +19,7 @@ export function BoletosSinSenal() {
     void leerBoletos().then((x) => { setL(x); const c = new URLSearchParams(location.search).get("c"); setSel(x.find((b) => b.code === c)?.code ?? (x.length === 1 ? x[0]!.code : null)); });
   }, []);
   const E2 = (a: string, b: string) => (es ? a : b), b = L?.find((x) => x.code === sel) ?? null;
+  useBrilloQr(!!b); // 8e · el QR del boleto con el brillo al máximo (se devuelve al salir)
   return (
     <div data-pantalla="USR-BOLETO-SIN-SENAL" className="min-h-[100dvh] bg-paper">
       <div className="mx-auto flex max-w-[460px] flex-col gap-4 px-4 pb-12 pt-4 lg:pt-8">

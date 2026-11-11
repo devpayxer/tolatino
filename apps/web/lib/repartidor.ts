@@ -3,6 +3,7 @@ import { randomInt } from "node:crypto";
 import type { PoolClient } from "pg";
 import { cobrarOperacion } from "./cobros";
 import { db, tx } from "./db";
+import { empezar as empezarRuta, type RutaToken } from "./ruta";
 
 /* App To'Latino Repartidor (bloque 2l · plan apps-delivery-checkin.md §1, v1.0 = repartidor del propio negocio).
    El servidor decide: solo el repartidor asignado mueve su pedido, un paso a la vez y en orden; el efectivo cobrado queda
@@ -126,17 +127,18 @@ export type EntregaRep = {
   numero: string; negocio: { id: string; nombre: string; direccion: string | null; tel: string | null }; cliente: string; telCliente: string | null;
   calle: string | null; apto: string | null; zip: string | null; mi: number | null; entrega: { drop: string; at: string[]; note: string } | null;
   lineas: { q: number; name: Bi }[]; total: number; propina: number; efectivo: number | null; pagado: boolean;
-  stage: string; status: string; listo: string | null; llega: string | null; llegue: boolean; at: string;
+  stage: string; status: string; listo: string | null; llega: string | null; llegue: boolean; at: string; empezo: boolean;
 };
 const ESTADO_SQL = `o.kind = 'order' and coalesce(o.mode, 'pickup') = 'delivery'`;
 /* Las entregas de hoy del repartidor: activas primero (con lo necesario para entregar) y las terminadas de hoy. */
 export async function misEntregas(userId: string, numero?: string): Promise<EntregaRep[]> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const r = await db().query<{ number: string; bid: string; bname: string; baddr: string | null; btel: string | null; first_name: string | null; last_name: string | null; phone: string; det: Record<string, any>;
-    total_cents: number; tip_cents: number; pay_mode: string; stage: string | null; status: string; listo: string | null; at: string; llegue: boolean; lineas: { q: number; name: Bi }[] }>(
+    total_cents: number; tip_cents: number; pay_mode: string; stage: string | null; status: string; listo: string | null; at: string; llegue: boolean; empezo: boolean; lineas: { q: number; name: Bi }[] }>(
     `select o.number, b.id as bid, b.name as bname, b.address as baddr, b.phone as btel, u.first_name, u.last_name, u.phone, o.details as det, o.total_cents, o.tip_cents, o.pay_mode, o.stage, o.status,
             to_char(o.ready_at at time zone c.timezone, 'HH24:MI') as listo, to_char(coalesce(o.done_at, o.confirmed_at, o.sent_at) at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at,
             exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_arrived') as llegue,
+            exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'driver_started') as empezo,
             coalesce((select json_agg(json_build_object('q', l.qty, 'name', l.name) order by l.id) from operation_lines l where l.operation_id = o.id), '[]') as lineas
        from operations o join delivery_drivers d on d.id = o.driver_id join businesses b on b.id = o.business_id join users u on u.id = o.user_id join cities c on c.id = o.city_id
       where d.user_id = $1 and ${ESTADO_SQL} and ($2::text is null or o.number = $2)
@@ -150,28 +152,36 @@ export async function misEntregas(userId: string, numero?: string): Promise<Entr
       telCliente: vivo ? x.phone : null, calle: to.street ?? null, apto: to.apt ?? null, zip: to.zip ?? null, mi: to.mi ?? null, entrega: x.det?.drop ?? null,
       lineas: x.lineas, total: x.total_cents, propina: x.tip_cents, efectivo: x.pay_mode === "entrega" ? x.total_cents : null, pagado: x.pay_mode === "app",
       stage: x.stage ?? "accepted", status: x.status, listo: h(x.listo), llega: eta ? `${h(`${Math.floor(eta.d1 / 60)}:${eta.d1 % 60}`)}–${h(`${Math.floor(eta.d2 / 60)}:${eta.d2 % 60}`)}` : null,
-      llegue: x.llegue, at: x.at,
+      llegue: x.llegue, at: x.at, empezo: x.empezo,
     };
   });
 }
 
-/* Un paso del repartidor: «Recogí, voy en camino» → «Llegué» → «Entregado» (con el efectivo cobrado si toca). */
-export type PasoRep = "recogi" | "llegue" | "entregado";
-export async function pasoRepartidor(userId: string, numero: string, paso: PasoRep, efectivo?: number): Promise<ResR & { aviso?: { tpl: string; numero: string }; op?: string }> {
-  if (!/^\d{1,12}$/.test(numero) || !["recogi", "llegue", "entregado"].includes(paso)) return no("Ese pedido no existe.", "That order does not exist.");
+/* Un paso del repartidor: «Voy por el pedido» (opcional) → «Recogí, voy en camino» → «Llegué» → «Entregado» (con el efectivo cobrado si toca).
+   8e · El paso que inicia la entrega («Voy por el pedido», o «Recogí» si no se tocó antes) abre la ruta en vivo y devuelve el token del teléfono
+   (lib/ruta.ts): ningún otro camino la abre. El negocio la ve desde ahí; el cliente, desde «Recogí». «Entregado» (o cancelar, o quitar el
+   repartidor) la cierra en la base (trigger operations_ruta). */
+export type PasoRep = "empezar" | "recogi" | "llegue" | "entregado";
+export async function pasoRepartidor(userId: string, numero: string, paso: PasoRep, efectivo?: number): Promise<ResR & { aviso?: { tpl: string; numero: string }; op?: string; ruta?: RutaToken | null }> {
+  if (!/^\d{1,12}$/.test(numero) || !["empezar", "recogi", "llegue", "entregado"].includes(paso)) return no("Ese pedido no existe.", "That order does not exist.");
   const r = await tx(async (c: PoolClient) => {
     const o = (await c.query<{ id: string; status: string; stage: string | null; pay: string; total: number; did: string }>(
       `select o.id::text, o.status, o.stage, o.pay_mode as pay, o.total_cents as total, d.id::text as did from operations o join delivery_drivers d on d.id = o.driver_id
         where o.number = $2 and d.user_id = $1 and d.status = 'active' and ${ESTADO_SQL} for update of o`, [userId, numero])).rows[0];
     if (!o) return no("Este pedido ya no es tuyo. Pregúntale al negocio.", "This order is no longer yours. Ask the business.");
-    const ya = (paso === "recogi" && o.stage === "on_the_way") || (paso === "entregado" && o.status === "done");
+    const ya = ((paso === "recogi" || paso === "empezar") && o.stage === "on_the_way") || (paso === "entregado" && o.status === "done");
     if (ya) return { ok: true } as const; // sin señal: el mismo paso que llega dos veces no hace nada
     if (o.status !== "confirmed") return no("Este pedido ya no está activo.", "This order is no longer active.");
     const ev = (kind: string, note?: Bi) => c.query(`insert into operation_events (operation_id, kind, actor, actor_id, note) values ($1::bigint, $2, 'member', $3, $4::jsonb)`, [o.id, kind, userId, note ? JSON.stringify(note) : null]);
+    if (paso === "empezar") {
+      const dos = await c.query(`select 1 from operation_events where operation_id = $1::bigint and kind = 'driver_started'`, [o.id]);
+      if (!dos.rowCount) await ev("driver_started", { es: "El repartidor va por el pedido", en: "The driver is heading to pick it up" });
+      return { ok: true, ruta: await empezarRuta(c, o.id, userId, "empezar") } as const;
+    }
     if (paso === "recogi") {
       await c.query(`update operations set stage = 'on_the_way', updated_at = now() where id = $1::bigint`, [o.id]);
       await ev("on_the_way", { es: "El repartidor recogió el pedido", en: "The driver picked up the order" });
-      return { ok: true, aviso: { tpl: "ord_way", numero } } as const;
+      return { ok: true, aviso: { tpl: "ord_way", numero }, ruta: await empezarRuta(c, o.id, userId, "recogi") } as const;
     }
     if (o.stage !== "on_the_way") return no("Primero toca «Recogí, voy en camino».", "First tap “Picked up, on my way”.");
     if (paso === "llegue") {

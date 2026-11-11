@@ -9,6 +9,7 @@ import type { Ayuda } from "@/lib/ayuda";
 import { AyudaEstado } from "./AyudaEstado";
 import { guardarCarrito } from "../../n/[id]/MenuCliente";
 import { lineasDelPedido } from "./acciones";
+import { MapaVivo } from "@/app/_ruta/MapaVivo";
 
 type N = "Icon" | "Button" | "OrderTracker";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +20,7 @@ const ETAPAS = ["sent", "accepted", "preparing", "ready", "picked_up"];
 // Delivery (prototipo ordVals · dl): enviado → preparando → en camino → entregado.
 const ETAPAS_D = ["sent", "preparing", "on_the_way", "delivered"];
 
-export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: { a: Ayuda | null; puede: boolean } | null }) {
+export function Pedido({ p, es, ayuda, ruta = false }: { p: PedidoVista; es: boolean; ayuda: { a: Ayuda | null; puede: boolean } | null; ruta?: boolean }) {
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter();
   const pendiente = (p.status === "pending" && !p.sinRespuesta) || p.status === "confirmed"; // en curso: se actualiza sola
@@ -180,6 +181,8 @@ export function Pedido({ p, es, ayuda }: { p: PedidoVista; es: boolean; ayuda: {
           {hero}
           {!cerrado && <div className="grid lg:hidden"><OrderTracker steps={steps} /></div>}
           {!cerrado && <div className="hidden lg:grid"><OrderTracker steps={steps} horizontal /></div>}
+          {/* 8e · El repartidor en el mapa, desde «Recogí» hasta que entrega (el servidor decide si se ve). */}
+          {ruta && dl && !cerrado && !fin ? <MapaVivo pedido={p.numero} es={es} repartidor={p.repartidor?.nombre ?? null} /> : null}
           {donde}
           <div className="lg:hidden">{lineas}</div>
           <div className="lg:hidden">{botones}</div>

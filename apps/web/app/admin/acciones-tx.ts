@@ -6,6 +6,7 @@ import { csv } from "@/lib/csv";
 import { devolverPago } from "@/lib/cobros";
 import { db, tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
+import { rutaAdmin, type RutaAdmin } from "@/lib/ruta";
 
 export async function exportarTx(filtros: Record<string, string>): Promise<ResAdm & { archivo?: string; nombre?: string }> {
   const s = await staff();
@@ -46,4 +47,14 @@ export async function disputaSimularResultado(pago: string, gana: boolean): Prom
   if (!s || !s.puede("tx", "aprobar")) return { ok: false, mensaje: "Tu rol no toca dinero." };
   const r = await (await import("@/lib/disputas")).simularResultado(String(pago ?? "").replace(/\D/g, "") || "0", !!gana);
   return r.ok ? { ok: true, mensaje: gana ? "El banco dio la razón: el dinero se queda." : "El banco dio la razón al cliente." } : { ok: false, mensaje: r.msg };
+}
+
+/* 8e · Transacciones › entrega › «Ver recorrido»: la ruta del repartidor (mientras no se purgue). Permiso tx:ver, en tus ciudades, con motivo que
+   queda en la auditoría ANTES de ver nada (lib/ruta.ts › rutaAdmin). */
+export async function verRutaTx(numero: string, motivo: string): Promise<ResAdm & { ruta?: RutaAdmin }> {
+  const s = await staff();
+  if (!s || !s.puede("tx", "ver")) return { ok: false, mensaje: "Tu rol no ve transacciones." };
+  const r = await rutaAdmin(s, String(numero ?? ""), String(motivo ?? ""));
+  if (!r.ok) return { ok: false, mensaje: r.msg };
+  return { ok: true, mensaje: "Recorrido abierto. Quedó en la auditoría con tu motivo.", ruta: r.r };
 }

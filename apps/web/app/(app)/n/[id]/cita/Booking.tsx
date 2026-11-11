@@ -3,6 +3,7 @@
    paso a la vez con la barra «Booking · barra»; en escritorio, todo en una página con la columna de pago. Las horas las
    decide el servidor (horasDeCita) y al enviar vuelve a revisar todo (pedirCita). Compuesto con el sistema de diseño
    (StepHeader, DateStrip, TimeSlots, StaffPicker, Chip, PaymentSummary, DepositOutcomes, Button, Icon). */
+import { vibrar } from "@/lib/nativo/haptica";
 import * as UI from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
@@ -192,7 +193,7 @@ export function Booking({ cp, svcId, inicial, es, pago, yo, cambiar }: {
     const r = await pedirCita(cp.negocio.id, {
       svc: s.id, opts: inicial.opts, adds: inicial.adds, con, i, m: hSel, para, nombre, edad: edad ?? undefined, nota, sms, pm: necesitaTarjeta ? tarjeta?.pm ?? null : null, clave: clave.current, fotos: fotos.map((f) => f.id), cambiar: cambiar?.numero ?? null,
     }).catch(() => ({ ok: false as const, msg: { es: "No se pudo. Revisa tu conexión.", en: "Could not. Check your connection." } }));
-    if (r.ok) { router.push(`/cita/${r.numero}${"cambio" in r && r.cambio ? "?cambio=1" : ""}`); return; }
+    if (r.ok) { vibrar("hecho"); router.push(`/cita/${r.numero}${"cambio" in r && r.cambio ? "?cambio=1" : ""}`); return; }
     if ("entrar" in r && r.entrar) return entrar();
     setError(es ? r.msg.es : r.msg.en); setOcupado(false);
     if ("tarjeta" in r && r.tarjeta && tarjeta) { setDeclinada(tarjeta.pm); clave.current = uuid(); }
