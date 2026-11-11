@@ -626,7 +626,7 @@ escritorio de cada pantalla compuesta (§1b) y su línea en `docs/REVISION.md`.
 
 ## 8. Lista de cierre de la fase (todo marcado antes de decir «Fase 7 completa»)
 _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin marcar con el motivo._
-- [ ] Migraciones 0116–0124 aplicadas dos veces en PostGIS real (idempotentes) y en CI; semillas 0040–0042 solo en pruebas (`semilla`).
+- [x] Migraciones 0116–0124 aplicadas dos veces en PostGIS real (idempotentes) y en CI; semillas 0040–0042 solo en pruebas (`semilla`). — CI run 194 (98966fa) verde: migraciones 0116–0124 dos veces en base real + semillas 0040–0043 (0043 de 7i) solo en pruebas.
 - [x] `docs/ayuda/` con una sola forma (`ayudaConForma`), sin lenguaje interno para el vecino (`ayudaSinFaseInterna`), auditada contra lo construido,
       indexada por audiencia; `/ayuda` y `/ayuda/[slug]`; un artículo de equipo nunca llega a un vecino o dueño. — 7a (10 nov): 151 archivos con la
       forma; 0116 aplicada dos veces en local y en una base nueva; índice 2 veces (la segunda «0 nuevos · 0 cambiados»); guardianes 36/36 al revés;
