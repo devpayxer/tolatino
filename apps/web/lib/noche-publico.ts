@@ -34,7 +34,7 @@ export async function nochePublica(negocio: string): Promise<NochePublica | null
   if (!b || b.cat !== "NEG-NOCHE") return null;
   const h = await herramientaNoche(negocio);
   if (!h) return null;
-  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]);
+  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]);
   const I = (b.off ?? {}).svc ? { rows: [] as SvcNoche[] } : await db().query<SvcNoche>(
     `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, i.svc_kind as k,
             (i.svc_attrs->>'until')::int as until, (i.svc_attrs->>'pax')::int as pax, (i.svc_attrs->>'tables')::int as tables, coalesce((i.svc_attrs->>'hr')::boolean, false) as hr,

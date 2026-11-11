@@ -37,7 +37,7 @@ export async function inscPublica(negocio: string): Promise<InscPublica | null> 
   const rubro = b ? rubroInsc(b.cat) : null;
   if (!b || !rubro) return null;
   const fv = b.fv ?? [];
-  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]);
+  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]);
   const I = (b.off ?? {}).svc ? [] : (await db().query<Omit<CursoPub, "grupos">>(
     `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.svc_kind as k, i.price_cents as cents, coalesce(i.deposit_cents, 0) as mat,
             coalesce((i.svc_attrs->>'plan_n')::int, 0) as plan, coalesce((i.svc_attrs->>'g1')::boolean, false) as g1, (i.svc_attrs->>'sem')::int as sem, (i.svc_attrs->>'horas')::int as horas,

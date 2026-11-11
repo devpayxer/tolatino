@@ -33,7 +33,7 @@ export async function herramientaSP(negocio: string, rubro: "salud" | "pro", c?:
     `select days, warranty_days as warr, estimate_first as est, insurers_n as cos, compares as cmp, payment_plan as plan, urgent as urgente from pro_settings where business_id = $1`, [negocio])).rows[0];
   const gov = legal ? (await q.query<{ id: string; name: Bi; cents: number; gov: number }>(
     `select id::text, name, price_cents as cents, coalesce((svc_attrs->>'gov')::int, 0) as gov from items
-      where business_id = $1 and module = 'svc' and removed_at is null and svc_kind = 'fijo' and (coalesce((svc_attrs->>'gov')::int, 0) > 0 or price_cents > 10000) order by sort, id`, [negocio])).rows : [];
+      where business_id = $1 and module = 'svc' and removed_at is null and svc_kind = 'fijo' and (coalesce((svc_attrs->>'gov')::int, 0) > 0 or price_cents > 10000) order by sort, items.id`, [negocio])).rows : [];
   return {
     rubro, kind, legal, gov,
     days: p?.days ?? D.days, warr: p?.warr ?? D.warr, est: p?.est ?? D.est, cos: p?.cos ?? 6, cmp: p ? p.cmp : kind === "seg",

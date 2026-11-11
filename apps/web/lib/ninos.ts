@@ -27,7 +27,7 @@ export async function herramientaNinos(negocio: string, c: Q = db()): Promise<He
     `select status, number, next_review::text as vence from licenses where business_id = $1 and kind = 'pa_dhs_childcare' and status not in ('withdrawn', 'not_found', 'revoked') order by (status = 'valid') desc, id desc limit 1`, [negocio])).rows[0];
   const lic: LicNinos = !L ? { estado: "none", numero: null, vence: null } : { estado: L.status === "valid" ? "valid" : L.status === "expired" ? "expired" : "review", numero: L.number, vence: L.vence };
   const bandas = cuidado ? (await c.query<{ id: string; label: Bi; min: number; max: number; libres: number }>(
-    `select id::text, label, band_min as min, band_max as max, openings as libres from care_openings where business_id = $1 and removed_at is null order by sort, id`, [negocio])).rows : [];
+    `select id::text, label, band_min as min, band_max as max, openings as libres from care_openings where business_id = $1 and removed_at is null order by sort, care_openings.id`, [negocio])).rows : [];
   const edad: [number, number] | null = b.amin != null && b.amax != null ? [b.amin, b.amax] : b.edad;
   return {
     kind, forzado: !!b.ov, cuidado, edad, lic, bandas, semana: b.semana, ccis: b.ccis ?? fv.includes("subsidio"), ext: b.ext ?? fv.includes("extendido"), comidas: b.meals ?? fv.includes("comidas"),

@@ -1038,6 +1038,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7e · «Cambiar mi teléfono / ciudad / borrar la cuenta» escrito en el panel** abre un caso de cuenta del negocio (el plan lo pide así);
       si el dueño quería su cuenta personal, ¿mejor abrirle Mi cuenta como al vecino? Decisión del fundador. (7e, 11 nov)
 
+## «order by» sobre id::text (11 nov)
+- [x] **«order by» sobre id::text:** en 51 consultas de `apps/web` (38 archivos) un `select id::text … order by id` ordenaba el texto
+      («1000» antes que «999»): desempates mal y, con `order by id desc limit 1`, la fila equivocada en cuanto los ids cruzan de 99 a 100
+      (propuestas de cambio, pagos, cola de correo, lista de espera…). Arreglado calificando el ORDER BY con la tabla, sin cambiar la salida.
+      Guardián `ordenSinTexto` sobre todo apps/packages/services (al revés: 51 fallos sobre el código anterior + 3 inyectados);
+      `listaDeEsperaEnOrden` ya no exige el defecto. e2e `orden7f` 20/20 (390 y 1360), falla contra el código anterior. (11 nov)
+
 ## Pedidos sin hora de listo o de respuesta (10 nov)
 - [x] **Un pedido con `ready_at` o `respond_by` vacíos tumbaba con un 500 la página del pedido del cliente y TODA la pantalla Hoy del panel**
       (`hm2m(null)` en `lib/pedir.ts` y `lib/pedidos.ts`). Ahora esas horas son `string | null`: el cliente ve el pedido sin la hora («La

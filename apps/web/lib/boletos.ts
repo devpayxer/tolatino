@@ -113,7 +113,7 @@ export async function pantallaBoletos(fecha: string, userId: string | null, es: 
          from event_tables t join table_stock s on s.table_id = t.id and s.event_date_id = $2::bigint where t.event_id = $1::bigint and not t.off order by t.sort, t.id`, [v.eid, fecha]),
     db().query<{ id: string; n: Bi; s: Bi; p: number; mesa: boolean; quedan: number | null }>(
       `select id::text, name as n, descr as s, price_cents as p, table_only as mesa, case when quantity is null then null else greatest(0, quantity - sold_n - held_n) end::int as quedan
-         from event_addons where event_id = $1::bigint and not off order by sort, id`, [v.eid]),
+         from event_addons where event_id = $1::bigint and not off order by sort, event_addons.id`, [v.eid]),
     db().query<{ n: number }>(`select count(*)::int as n from discount_codes where event_id = $1::bigint and status = 'on' and used_n + held_n < uses_max`, [v.eid]),
     userId ? entradasDe(db(), fecha, userId, dev, null, null) : Promise.resolve(0),
     userId ? db().query<{ id: string }>(`select id::text from ticket_holds where user_id = $1 and event_date_id = $2::bigint and status = 'held' and expires_at > now() order by created_at desc limit 1`, [userId, fecha]) : Promise.resolve({ rows: [] as { id: string }[] }),
@@ -199,7 +199,7 @@ export async function apartar(userId: string, raw: BoletosIn): Promise<Res<{ apa
       const est = v ? estadoDe(v) : null;
       if (!v || est !== "abierta") throw no(v && est ? textoVenta(est, v.hasta, true) || "Esa fecha no está a la venta." : "Esa fecha no está a la venta.", v && est ? textoVenta(est, v.hasta, false) || "That date is not on sale." : "That date is not on sale.");
       // Volver a elegir reemplaza el apartado anterior de esta fecha.
-      for (const h of (await c.query<{ id: string }>(`select id::text from ticket_holds where user_id = $1 and event_date_id = $2::bigint and status = 'held' order by id`, [userId, fecha])).rows) await soltarEn(c, h.id, "released");
+      for (const h of (await c.query<{ id: string }>(`select id::text from ticket_holds where user_id = $1 and event_date_id = $2::bigint and status = 'held' order by ticket_holds.id`, [userId, fecha])).rows) await soltarEn(c, h.id, "released");
       const vivos = (await c.query<{ n: number }>(`select count(*)::int as n from ticket_holds where user_id = $1 and status = 'held' and expires_at > now()`, [userId])).rows[0]?.n ?? 0;
       if (vivos >= cfg.evt_apartados_vivos_max) throw no("Tienes otras compras de boletos abiertas. Termina o deja vencer una.", "You have other ticket checkouts open. Finish one or let it expire.");
       const nTk = boletos.reduce((s, b) => s + b.q, 0);

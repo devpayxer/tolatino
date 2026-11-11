@@ -166,7 +166,7 @@ type FilaItem = {
 async function filas(c: Q, negocio: string, tz: string, lock = false, userId: string | null = null) {
   const tzq = `(select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1)`;
   const qS = () => c.query<{ id: string; name: Bi; avail: string; av: Av | null }>(
-      `select id::text, name, avail, av from item_sections where business_id = $1 and module = 'menu' and removed_at is null and visible order by sort, id`, [negocio]);
+      `select id::text, name, avail, av from item_sections where business_id = $1 and module = 'menu' and removed_at is null and visible order by sort, item_sections.id`, [negocio]);
   const qI = () => c.query<FilaItem>(
       `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", coalesce(oferta_precio(i.id, $2::uuid), i.price_cents) as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
               ${AGOTADO_SQL("i", tzq)} as agotado, i.stock_mode as stk, ${QUEDAN_SQL("i", tzq)} as quedan, i.max_qty as "maxQ", i.tags, i.extra_min as extra,

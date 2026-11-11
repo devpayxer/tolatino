@@ -37,7 +37,7 @@ export async function oficiosPanel(negocio: string, cat: string): Promise<OfiPan
   if (!rubro) return null;
   const [b, S, I, T, P, R] = await Promise.all([
     db().query<{ mods: string[]; off: Record<string, { reason?: string }> | null; zone: number | null; model: string }>(`select modules_on as mods, modules_off as off, service_radius_mi as zone, svc_model as model from businesses where id = $1`, [negocio]),
-    db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<Oficio>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, coalesce(i.svc_kind, 'fijo') as k, i.price_cents as cents, i.duration_min as dur,
               i.svc_attrs as a, i.svc_opts as opts, i.photos[1] as foto, not i.sell as oculto, case when i.status = 'hidden' then coalesce(i.hidden_reason, '') end as adm, i.sort
@@ -47,7 +47,7 @@ export async function oficiosPanel(negocio: string, cat: string): Promise<OfiPan
       `select auto_approve as auto, response_min as resp, deposit_cents as dep, cancel_free_h as cxh, staff_pick as pick, expires_h as exp, deposit_kinds as kinds,
               deposit_big_over_cents as "bigOver", deposit_big_cents as big, deposit_min_price_cents as min from booking_policies where business_id = $1`, [negocio]),
     // 4f-2: lo que renta (Tu herramienta › RENTA DE HERRAMIENTA · APARTADA 48 H, encendido por artículo).
-    db().query<{ id: string; n: Bi; p: number; dep: number; on: boolean; quedan: number }>(`select id::text, name as n, price_cents as p, deposit_cents as dep, sell as on, stock_left as quedan from items where business_id = $1 and module = 'renta' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; n: Bi; p: number; dep: number; on: boolean; quedan: number }>(`select id::text, name as n, price_cents as p, deposit_cents as dep, sell as on, stock_left as quedan from items where business_id = $1 and module = 'renta' and removed_at is null order by sort, items.id`, [negocio]),
   ]);
   const x = b.rows[0];
   if (!x) return null;

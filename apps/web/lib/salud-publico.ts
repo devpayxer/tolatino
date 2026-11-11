@@ -27,7 +27,7 @@ export async function saludPublico(negocio: string, userId: string | null): Prom
   const off = b.off ?? {};
   if (off.svc) return null;
   const [S, I, G, H, C, segs] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<SvcPub>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur,
               coalesce(i.svc_kind, 'cons') as k, coalesce((i.svc_attrs->>'esc')::boolean, false) as esc, coalesce((i.svc_attrs->>'rem')::boolean, false) as rem,

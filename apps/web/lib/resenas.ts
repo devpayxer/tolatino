@@ -546,7 +546,7 @@ export async function guardarResena(userId: string, p: ResenaIn): Promise<Res> {
     if (rubro === "fe" && fotos.length) return no("Las reseñas de iglesias no llevan fotos: nadie sale en una foto sin saberlo.", "Church reviews do not include photos: no one appears in a photo without knowing.");
     if (rubro === "ninos") {
       const { leerNino } = await import("./ninos-privado");
-      const ops = (await c.query<{ id: string }>(`select id::text from operations where business_id = $1 and user_id = $2 and kind = 'enrollment' and details->>'for' = 'hijo' order by id desc limit 10`, [b.id, userId])).rows;
+      const ops = (await c.query<{ id: string }>(`select id::text from operations where business_id = $1 and user_id = $2 and kind = 'enrollment' and details->>'for' = 'hijo' order by operations.id desc limit 10`, [b.id, userId])).rows;
       for (const o of ops) {
         const n = await leerNino(o.id, { usuario: userId });
         if (n && n.nombre.length >= 2 && new RegExp(`(^|[^\\p{L}])${n.nombre.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}($|[^\\p{L}])`, "iu").test(body)) return no("No escribas el nombre de tu niño: la reseña es pública.", "Do not write your child's name: the review is public.");

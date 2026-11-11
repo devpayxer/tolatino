@@ -26,10 +26,10 @@ export async function herramientaFe(negocio: string, c: Q = db()): Promise<HerrF
        from businesses b join cities ci on ci.id = b.city_id left join fe_settings s on s.business_id = b.id where b.id = $1 and b.category_id = 'NEG-FE'`, [negocio])).rows[0];
   if (!b) return null;
   // Una tras otra: herramientaFe también corre dentro de la transacción del panel (guardián transaccionEnFila).
-  const H = await c.query<HorarioFe>(`select id::text, dow, start_min as min, label, lang, kind from worship_times where business_id = $1 and removed_at is null order by dow, start_min, id`, [negocio]);
+  const H = await c.query<HorarioFe>(`select id::text, dow, start_min as min, label, lang, kind from worship_times where business_id = $1 and removed_at is null order by dow, start_min, worship_times.id`, [negocio]);
   const I = await c.query<{ id: string; name: Bi; k: string | null; cents: number; fe: string | null; vende: boolean }>(
     `select id::text, name, svc_kind as k, price_cents as cents, svc_attrs->>'fe' as fe, sell and status = 'live' as vende from items
-      where business_id = $1 and module = 'svc' and removed_at is null and not is_extra order by sort, id`, [negocio]);
+      where business_id = $1 and module = 'svc' and removed_at is null and not is_extra order by sort, items.id`, [negocio]);
   const fv = b.fv ?? [], kind = kindFeDe(b.subs, b.ov);
   return {
     kind, forzado: !!b.ov, subs: b.subs, horarios: H.rows,

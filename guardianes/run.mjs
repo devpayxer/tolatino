@@ -3147,7 +3147,7 @@ const guardianes = {
     const G = "listaDeEsperaEnOrden", E = "apps/web/lib/espera.ts", B = "apps/web/lib/boletos.ts", M = "packages/db/migrations/0109_boletos_comprador.sql", R = "apps/web/lib/barrido.ts";
     if (!existsSync(E)) return falla(G, E, 0, "falta lib/espera.ts");
     const of = cuerpoFn(sinComent(E), "ofrecer");
-    if (!/status = 'waiting' order by created_at, id/.test(of)) falla(G, E, 0, "ofrecer: en orden de llegada (created_at, id)");
+    if (!/status = 'waiting' order by created_at, waitlist\.id\b/.test(of)) falla(G, E, 0, "ofrecer: en orden de llegada (created_at, waitlist.id: el id numérico, no el texto de la salida)");
     if (!/pg_advisory_xact_lock\(hashtext\('espera:' \|\| \$1\)\)/.test(of)) falla(G, E, 0, "ofrecer: un candado por fecha");
     if (!/sold_n \+ held_n \+ \$3 <= quantity/.test(of) || !/waitlist_id\)/.test(of)) falla(G, E, 0, "ofrecer: la oferta es un apartado (update condicional) con waitlist_id");
     if (existsSync(M)) { const w = ultimaFn("waitlist_antes"); if (!/new\.created_at\) is distinct from \(old\.event_date_id, old\.event_id, old\.city_id, old\.user_id, old\.party, old\.created_at\)/.test(w) && !/old\.created_at\) then\s*raise exception 'el lugar en la lista de espera no cambia'/.test(w)) falla(G, M, 0, "la base no deja cambiar el lugar en la fila (created_at)"); }
@@ -4376,6 +4376,120 @@ const guardianes = {
     for (const k of filas.keys()) if (!conocidas.has(k)) falla(G, M, 0, `la guía tiene «${k}», que no es una sección del panel`);
     if (existsSync(A)) { const c = cuerpoFn(sinComent(A), "confirmar");
       if (!/select ruta, parte from compa_panel_guide where code = \$1 and enabled/.test(c) || !/const acc = await accesoPanel\(a\.target\.negocio \?\? "", s\.parte \?\? undefined\);/.test(c) || !/if \(!acc \|\| acc\.yo\.id !== q\.userId\)/.test(c)) falla(G, A, 0, "«Ir a …»: confirmar vuelve a leer la parte de la guía y pide accesoPanel con ella, para la misma persona"); }
+  },
+
+  /* «order by» sobre id::text (11 nov, hallado en 7f). En Postgres un nombre suelto del ORDER BY que coincide con una columna de
+     salida se refiere a la SALIDA: `select id::text … order by id` ordena el texto («100» < «98» < «99»). El desempate sale mal y
+     `order by id desc limit 1` toma la fila equivocada en cuanto los ids cruzan de 99 a 100 (propuestas de cambio, pagos, apartados,
+     la cola de correo…), y los «for update» bloquean en otro orden que el resto (bloqueos cruzados). Vale para cualquier `x::text`
+     (at::text, day::text) y para el ORDER BY por posición. Se arregla calificando (`order by s.sort, s.id`, `order by tabla.id`) u
+     ordenando por la expresión; nunca cambiando la forma de la salida. Mira todo el código de apps/, packages/ y services/. */
+  ordenSinTexto() {
+    const G = "ordenSinTexto";
+    // Literales de plantilla y de cadena del archivo, con ${…} cambiado por un hueco (el SQL vive en ellos).
+    const literales = (t) => {
+      const out = [], n = t.length;
+      const plantilla = (j) => {
+        let s = "";
+        while (j < n && t[j] !== "`") {
+          if (t[j] === "\\") { s += t[j] + (t[j + 1] ?? ""); j += 2; continue; }
+          if (t[j] === "$" && t[j + 1] === "{") {
+            let d = 1; j += 2;
+            while (j < n && d > 0) {
+              if (t[j] === "`") { j = plantilla(j + 1)[1] + 1; continue; }
+              if (t[j] === "'" || t[j] === '"') { const q = t[j++]; while (j < n && t[j] !== q) { if (t[j] === "\\") j++; j++; } j++; continue; }
+              if (t[j] === "{") d++; else if (t[j] === "}") d--;
+              j++;
+            }
+            s += " __x__ "; continue;
+          }
+          s += t[j++];
+        }
+        return [s, j];
+      };
+      for (let i = 0; i < n; ) {
+        const c = t[i];
+        if (c === "/" && t[i + 1] === "/") { while (i < n && t[i] !== "\n") i++; continue; }
+        if (c === "/" && t[i + 1] === "*") { const j = t.indexOf("*/", i + 2); i = j < 0 ? n : j + 2; continue; }
+        if (c === "`") { const [s, f] = plantilla(i + 1); out.push({ s, at: i + 1 }); i = f + 1; continue; }
+        if (c === "'" || c === '"') { let j = i + 1, s = ""; while (j < n && t[j] !== c && t[j] !== "\n") { if (t[j] === "\\") { s += t[j + 1]; j += 2; continue; } s += t[j++]; } out.push({ s, at: i + 1 }); i = j + 1; continue; }
+        i++;
+      }
+      return out;
+    };
+    const FIN = new Set(["limit", "offset", "for", "fetch", "union", "intersect", "except", "returning", "on", "window"]);
+    const TRAS = new Set(["asc", "desc", "nulls", "limit", "offset", "for", "fetch"]);
+    // Los nombres del ORDER BY que apuntan a una salida `x::text` del select de su mismo nivel de paréntesis.
+    const defectos = (sql) => {
+      if (!/\bselect\b/i.test(sql) || !/\border\s+by\b/i.test(sql)) return [];
+      const F = [...sql.matchAll(/'(?:[^']|'')*'|"[^"]*"|::|[A-Za-z_][A-Za-z0-9_$]*|\$\d+|\d+(?:\.\d+)?|--[^\n]*|\S/g)].filter((m) => !m[0].startsWith("--")).map((m) => ({ v: m[0], l: m[0].toLowerCase().replace(/^"(.*)"$/, "$1"), at: m.index }));
+      const out = [], pila = [{ texto: null, union: false }];
+      for (let k = 0; k < F.length; k++) {
+        const x = F[k];
+        if (x.v === "(") { pila.push({ texto: null, union: false }); continue; }
+        if (x.v === ")") { if (pila.length > 1) pila.pop(); continue; }
+        if (x.v === ";") { pila.length = 1; pila[0] = { texto: null, union: false }; continue; }
+        const g = pila[pila.length - 1];
+        if (x.l === "union" || x.l === "intersect" || x.l === "except") { g.union = true; continue; }
+        if (x.l === "select") {
+          const items = [[]];
+          for (let j = k + 1, d = 0; j < F.length; j++) {
+            const y = F[j];
+            if (y.v === "(") d++;
+            else if (y.v === ")") { if (d === 0) break; d--; }
+            else if (d === 0 && ["from", "into", "where", "union", "intersect", "except"].includes(y.l)) break;
+            else if (y.v === ";") break;
+            if (d === 0 && y.v === ",") { items.push([]); continue; }
+            items[items.length - 1].push(y);
+          }
+          const texto = new Set(), nombres = new Map();
+          items.forEach((it, p) => {
+            let v = it.map((y) => y.l);
+            if (v[0] === "distinct" || v[0] === "all") v = v.slice(1);
+            let alias = null;
+            if (v.length >= 2 && v[v.length - 2] === "as") { alias = v[v.length - 1]; v = v.slice(0, -2); }
+            const col = v.length === 3 && v[1] === "::" && v[2] === "text" && /^[a-z_]/.test(v[0]) ? v[0]
+              : v.length === 5 && v[1] === "." && v[3] === "::" && v[4] === "text" && /^[a-z_]/.test(v[2]) ? v[2] : null;
+            if (col) { texto.add(alias ?? col); texto.add(String(p + 1)); nombres.set(String(p + 1), `${col}::text`); }
+          });
+          // En un UNION los nombres son los del primer select.
+          if (!g.union || g.texto === null) { g.texto = texto; g.nombres = nombres; }
+          g.union = false;
+          continue;
+        }
+        if (x.l === "order" && F[k + 1]?.l === "by" && g.texto?.size) {
+          let inicio = true;
+          for (let j = k + 2, d = 0; j < F.length; j++) {
+            const y = F[j];
+            if (y.v === "(") { d++; inicio = false; continue; }
+            if (y.v === ")") { if (d === 0) break; d--; continue; }
+            if (d > 0) continue;
+            if (y.v === ";" || FIN.has(y.l)) break;
+            if (y.v === ",") { inicio = true; continue; }
+            if (inicio) { const s = F[j + 1]; if ((!s || [",", ")", ";"].includes(s.v) || TRAS.has(s.l)) && g.texto.has(y.l)) out.push({ col: y.v, sal: g.nombres.get(y.l) ?? `${y.l}::text`, at: y.at }); }
+            inicio = false;
+          }
+        }
+      }
+      return out;
+    };
+    // Prueba propia del detector: si deja de ver estos casos, el guardián no sirve (y si ve los buenos, molesta).
+    const casos = [["select id::text from t order by id desc limit 1", 1], ["select id::text, sort from t order by sort, id", 1], ["select s.id::text as id from t s order by id", 1],
+      ["select at::text, kind from e order by at, id", 1], ["select id::text, name from t order by 1", 1], ["select x from (select id::text from t order by id limit 1) y", 1],
+      ["select s.id::text from t s order by s.sort, s.id", 0], ["select id::text from t order by t.id desc", 0], ["select id::text from t order by id::bigint", 0],
+      ["select jsonb_agg(x.id order by id) from (select id::text from t) x", 0], ["select id::text, row_number() over (order by id) from t", 0], ["select id::text as k from t order by id", 0]];
+    for (const [s, n] of casos) if (defectos(s).length !== n) falla(G, "guardianes/run.mjs", 0, `el detector falla en su propio caso: ${s}`);
+    for (const f of codigo) {
+      if (!/^(apps|packages|services)\//.test(f) || !/\.(tsx?|mjs|cjs|jsx?)$/.test(f) || /^apps\/[^/]+\/public\//.test(f) || /\/node_modules\//.test(f)) continue;
+      const t = readFileSync(f, "utf8");
+      if (!/::text/.test(t) || !/order\s+by/i.test(t)) continue;
+      const lineas = t.split("\n");
+      for (const { s, at } of literales(t)) for (const d of defectos(s)) {
+        const n = t.slice(0, at).split("\n").length + s.slice(0, d.at).split("\n").length - 1;
+        if (/GUARDIAN-OK/.test(lineas[n - 1] ?? "")) continue;
+        falla(G, f, n, `«order by ${d.col}» ordena el texto de la salida ${d.sal}; califícalo (alias.columna o tabla.columna) u ordena por la expresión`);
+      }
+    }
   },
 
   idioma() {

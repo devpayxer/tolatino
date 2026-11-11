@@ -55,7 +55,7 @@ export async function inmPublica(negocio: string): Promise<InmPublica | null> {
          from property_listings pl join items i on i.id = pl.item_id
         where pl.business_id = $1 and pl.status in ('available', 'pending') and i.removed_at is null and i.status = 'live' and i.sell
         order by (pl.status = 'available') desc, i.sort, i.id limit ${TOPE_PROPS_FICHA}`, [negocio]),
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     (b.off ?? {}).svc ? Promise.resolve({ rows: [] as SvcInmPub[] }) : db().query<SvcInmPub>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, i.photos[1] as foto
          from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra

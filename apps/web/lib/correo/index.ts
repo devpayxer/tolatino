@@ -40,7 +40,7 @@ let ultimo = 0;
 export async function procesarCorreos() {
   if (modoCorreo() !== "ses" || Date.now() - ultimo < 60_000) return;
   ultimo = Date.now();
-  const L = (await db().query<{ id: string }>(`select id::text from email_outbox where status in ('pendiente', 'fallo', 'sin_proveedor') and attempts < 5 and created_at > now() - interval '3 days' order by id limit 20`)).rows;
+  const L = (await db().query<{ id: string }>(`select id::text from email_outbox where status in ('pendiente', 'fallo', 'sin_proveedor') and attempts < 5 and created_at > now() - interval '3 days' order by email_outbox.id limit 20`)).rows;
   await db().query(`update email_outbox set status = 'pendiente' where status = 'sin_proveedor' and attempts < 5 and created_at > now() - interval '3 days'`);
   for (const x of L) await mandar(x.id);
 }

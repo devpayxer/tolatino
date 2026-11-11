@@ -21,7 +21,7 @@ export async function proPublico(negocio: string): Promise<ProPublico | null> {
        from businesses b where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   if (!b || b.cat !== "NEG-PRO" || (b.off ?? {}).svc) return null;
   const [S, I, G, L, H] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<SvcPro>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur,
               coalesce(i.svc_kind, 'cons') as k, coalesce((i.svc_attrs->>'gov')::int, 0) as gov, coalesce((i.svc_attrs->>'mes')::boolean, false) as mes, i.svc_attrs->>'hrs' as hrs,

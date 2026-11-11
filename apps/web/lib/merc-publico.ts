@@ -25,7 +25,7 @@ export async function mercPublico(negocio: string): Promise<MercPublico | null> 
   const h = (await herramientaRetail(negocio)) as HerrMerc | null;
   if (!h) return null;
   const [S, I] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'shop' and visible and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'shop' and visible and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<ProdMerc & { g: { name: Bi; options: { es: string; en: string; on: boolean }[] } | null }>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.photos[1] as foto, i.price_cents as cents,
               coalesce(i.shop_kind, 'unid') as k, i.ebt, i.age_min as edad, i.in_store_only or not i.sell as tienda, ${AGOTADO_SQL("i", "$2")} as ago,

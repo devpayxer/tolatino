@@ -27,7 +27,7 @@ export async function fiestaPublico(negocio: string, userId: string | null): Pro
     `select deposit_cents as dep, guests_max as guests, book_ahead_days as ahead, cancel_full_days as cancel from fiesta_settings where business_id = $1`, [negocio])).rows[0];
   const ahead = s?.ahead ?? 180, hasta = sumarDias(b.hoy, ahead);
   const [S, I, D, F] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<SvcFiesta>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.svc_kind, 'fijo') as k,
               (i.svc_attrs->>'h')::int as h, (i.svc_attrs->>'cap')::int as cap, coalesce((i.svc_attrs->>'mont')::boolean, false) as mont,

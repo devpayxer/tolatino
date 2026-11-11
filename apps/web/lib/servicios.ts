@@ -264,7 +264,7 @@ export async function serviciosPanel(negocio: string): Promise<SvcPanel> {
   const [b, S, I, H, G, P] = await Promise.all([
     db().query<{ model: SvcPanel["model"]; rent: number | null; comm: number | null; mods: string[]; off: Record<string, { reason?: string }> | null; cat: string }>(
       `select svc_model as model, svc_rent_cents as rent, svc_comm_pct as comm, modules_on as mods, modules_off as off, category_id as cat from businesses where id = $1`, [negocio]),
-    db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi; sort: number }>(`select id::text, name, sort from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<Omit<Servicio, "hacen">>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur, i.buffer_min as buf,
               i.price_from as desde, i.svc_opts as opts, i.svc_kind as k, coalesce(i.svc_attrs, '{}'::jsonb) as a, i.is_extra as extra, i.photos[1] as foto, not i.sell as oculto, case when i.status = 'hidden' then coalesce(i.hidden_reason, '') end as adm, i.sort

@@ -267,7 +267,7 @@ export async function citaCambio(negocio: string, numero: string, que: "aceptar"
     await c.query(`select pg_advisory_xact_lock(hashtext('cita:' || $1))`, [negocio]);
     const o = await leer(c, "o.business_id = $1 and o.number = $2", [negocio, numero], true);
     if (!o || o.status !== "confirmed") return no("Esta cita ya cambió. Actualiza la pantalla.", "This booking already changed. Refresh the screen.");
-    const p = (await c.query<{ id: string; ymd: string; m: number }>(`select id::text, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'customer' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; ymd: string; m: number }>(`select id::text, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'customer' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return no("Ese cambio ya no está pendiente.", "That change is no longer pending.");
     if (que === "rechazar") {
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
@@ -332,7 +332,7 @@ export async function citaCliente(userId: string, numero: string, que: QueClient
     }
     if (que === "aceptar" || que === "nogracias") {
       if (o.status !== "change_proposed") return ya;
-      const p = (await c.query<{ id: string; ymd: string; m: number }>(`select id::text, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+      const p = (await c.query<{ id: string; ymd: string; m: number }>(`select id::text, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
       if (!p) return ya;
       if (que === "nogracias") {
         await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);

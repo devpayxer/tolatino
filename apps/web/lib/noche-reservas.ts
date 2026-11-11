@@ -314,7 +314,7 @@ export async function nocheCliente(userId: string, numero: string, que: QueNoche
       return { ok: true };
     }
     if (o.status !== "change_proposed") return ya;
-    const p = (await c.query<{ id: string; m: number }>(`select id::text, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; m: number }>(`select id::text, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return ya;
     if (que === "nogracias") {
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
@@ -498,7 +498,7 @@ export async function nocheVista(userId: string, numero: string): Promise<NocheV
       where o.kind = 'night' and o.number = $1 and o.user_id = $2`, [numero, userId])).rows[0];
   if (!o) return null;
   const alt = o.status === "change_proposed" ? (await db().query<{ m: number }>(`select (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and status = 'open' order by id desc limit 1`, [o.id])).rows[0] ?? null : null;
-  const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
+  const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by operation_events.at, id`, [o.id])).rows;
   const resena = (await db().query(`select 1 from reviews where operation_id = $1::bigint and status <> 'removed' limit 1`, [o.id]).catch(() => ({ rowCount: 0 }))).rowCount! > 0;
   const d = o.det;
   return {
@@ -546,6 +546,6 @@ export async function nochePanel(negocio: string, numero: string): Promise<Noche
     nota: null, dep: o.dep, pay: o.pay, code: null, inN: o.det.in_n == null ? null : Number(o.det.in_n), llego: !!o.det.llego, resp: null, cupo: null, nowN: o.nowN, hold: Number(o.det.hold ?? 30), esHoy: o.night === o.hoy };
   const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item));
   const slots = s && f.st === "pending" ? ((await noches(db(), x, s)).find((n) => n.fecha === o.night)?.slots ?? []).filter((m) => m !== f!.llega) : [];
-  const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
+  const L = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by operation_events.at, id`, [o.id])).rows;
   return { ...f, slots, puerta: { es: puertaTexto(o.det, true), en: puertaTexto(o.det, false) }, edad: Number(o.det.edad ?? 21), motivoNeg: (o.det.motivoNeg as string) ?? null, linea: L };
 }

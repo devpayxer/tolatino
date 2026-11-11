@@ -86,7 +86,7 @@ export async function nuevosCliente(userId: string, threadId: string, desde: str
 /* ?op= es el número del pedido o la reservación (como sale en pantalla); solo cuenta si es de esta persona y de este negocio. */
 async function contextoDe(userId: string, negocio: string, num: string): Promise<{ op: string; ctx: Bi } | null> {
   const o = (await db().query<{ id: string; kind: string; number: string }>(
-    `select id::text, kind, number from operations where number = $1 and user_id = $2 and business_id = $3 order by id desc limit 1`, [String(num).slice(0, 20), userId, negocio])).rows[0];
+    `select id::text, kind, number from operations where number = $1 and user_id = $2 and business_id = $3 order by operations.id desc limit 1`, [String(num).slice(0, 20), userId, negocio])).rows[0];
   if (!o) return null;
   return { op: o.id, ctx: o.kind === "private_event" ? { es: `Evento privado #${o.number}`, en: `Private event #${o.number}` } : o.kind === "table" ? { es: `Reservación #${o.number}`, en: `Reservation #${o.number}` } : o.kind === "appointment" ? { es: `Cita #${o.number}`, en: `Booking #${o.number}` } : { es: `Pedido #${o.number}`, en: `Order #${o.number}` } };
 }

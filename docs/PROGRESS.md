@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7e · El Compa en el panel)._
+_Actualizado: 11 nov 2026 (7e · El Compa en el panel · arreglo «order by sobre id::text»)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -434,6 +434,25 @@ negocio) y **Negocios 360° › El Compa** (cifras de 30 días, sin texto). Guar
 `compa7d` 140 ✓, `sop7b` 104 ✓, `compa7c` 111 ✓, `adm5i` ✓; 0120 dos veces en local y en una base nueva (semillas dos veces). Ayuda:
 **`panel-el-compa`** nueva; `panel`, `panel-ayuda-y-soporte`, `admin-el-compa`, `admin-negocios` al día. Sigue **7f** (respuestas automáticas
 Pro y «Sugerir respuesta con El Compa»; migración 0121, semilla 0042).
+**Arreglo de clase «order by sobre id::text» (11 nov)** — hallado en 7f (la respuesta automática se saltaba un mensaje). En Postgres un nombre
+suelto del ORDER BY que coincide con una columna de salida ordena la SALIDA: `select id::text … order by id` ordena texto («100» < «98» < «99»).
+Barrido de todo `apps/` + `packages/` + `services/` (y las 120 migraciones, limpias): **51 casos en 38 archivos**, todos arreglados calificando
+el ORDER BY con la tabla (`order by sort, item_sections.id`, `order by change_proposals.id desc limit 1`, `order by operation_events.at, id`),
+sin cambiar la forma de la salida. Los graves: la propuesta de cambio vigente (`change_proposals` en citas-flujo ×2, fiestas-reservas,
+noche-reservas, inscripciones, visitas-inm, viajes), el pago que se devuelve (`payments` en ayuda-cita y layaway), la operación de `?op=` en
+mensajes y reseñas de niños, la fila siguiente de la lista de espera (`waitlist_entries`, `waitlist`), la cola de correo (`email_outbox`), los
+`for update` en otro orden que el resto (items y tallas al apartar, `ticket_holds`, `operation_lines`, mover plato/categoría/servicio) y el
+desempate de todas las listas por `sort` (secciones, platos, servicios, extras, horarios de culto, bandas de cuidado, opciones del menú);
+`at::text` / `day::text` en los historiales (inscripciones, noche, visitas) y bloqueos de reservaciones. Guardián **`ordenSinTexto`** (nuevo,
+todo el código de apps/packages/services; también alias igual, `as id`, y ORDER BY por posición; se prueba a sí mismo con 12 casos; escape
+`GUARDIAN-OK`) y `listaDeEsperaEnOrden` corregido (exigía el texto con el defecto: ahora `created_at, waitlist.id`). Al revés: el código
+anterior da 51 fallos; inyectados en `lib/compa/conversacion.ts`, `menu.ts` multilínea y `order by 1` → 3 fallos; quitar el arreglo de
+`espera.ts` → fallan los dos guardianes. Las 50 consultas cambiadas se PREPARAN en PostGIS 16 local con las 120 migraciones (0 errores; con un
+calificador malo, error: la prueba sí corre). Antes/después en la base: propuesta 9 vs 10 → antes la 9, ahora la 10; categorías empatadas 999
+y 1000 → antes 1000 primero. e2e **`orden7f` 20 ✓** (390 y 1360: ficha › Menú, Panel › Menú › Categorías, «Bajar»/«Subir» con la base y la
+ficha de espejo, sin 5xx); contra el código anterior falla donde debe. Build, tipos y guardianes verdes. Nota: este arreglo va en
+`claude/confident-cray-vazvqf` sobre 7e; el 7f (con su propio `order by x.id` en `conversacion.ts`) no estaba en el repo al hacerlo — al
+juntarlo, el guardián ya cubre `lib/compa` y `lib/mensajes.ts`.
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

@@ -208,7 +208,7 @@ export async function eventosDeNegocioAdmin(negocio: string) {
   const [L, o] = await Promise.all([
     db().query<{ id: string; t: Bi; st: EstadoEvt; hidden: boolean; pending: string | null; dia: string; h0: number; entrada: string }>(
       `select id::text, title as t, status as st, hidden_at is not null as hidden, pending_status as pending, start_date::text as dia, start_min as h0, entry as entrada
-         from events where business_id = $1 and status <> 'draft' order by start_date desc, id desc limit 30`, [negocio]),
+         from events where business_id = $1 and status <> 'draft' order by start_date desc, events.id desc limit 30`, [negocio]),
     db().query<{ verificado: boolean; bloqueado: string | null }>(`select verified_at is not null as verificado, blocked_reason as bloqueado from event_organizers where business_id = $1`, [negocio]),
   ]);
   return { filas: L.rows, org: o.rows[0] ?? { verificado: false, bloqueado: null } };
