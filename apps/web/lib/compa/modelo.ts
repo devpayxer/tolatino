@@ -62,7 +62,7 @@ export const ESQUEMA = {
     fuente: { type: "string", description: "La «fuente» exacta de un trozo de AYUDA usado, «cuenta» si sale de DATOS DE LA CUENTA, o vacío." },
     accion: {
       type: "object", additionalProperties: false, required: ["tipo", "ref", "pantalla"],
-      properties: { tipo: { type: "string", enum: [...ACCIONES] }, ref: { type: "string", description: "La «ref» (op1, op2…) de una operación de DATOS DE LA CUENTA, o vacío." },
+      properties: { tipo: { type: "string", enum: [...ACCIONES] }, ref: { type: "string", description: "La «ref» (op1, op2…) de una operación de DATOS DE LA CUENTA; en el panel, el «codigo» de una sección de puedes_abrir; o vacío." },
         pantalla: { type: "string", enum: ["", ...PANTALLAS] } },
     },
     persona: { type: "string", enum: [...MOTIVOS] },

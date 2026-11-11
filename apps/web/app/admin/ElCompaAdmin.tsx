@@ -150,10 +150,12 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
     const k = d.conv.porResultado, tot = d.conv.total7d, solo = (k.self_resolved ?? 0) + (k.action_done ?? 0) + (k.open ?? 0);
     B.push(
       { type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
-        { k: "CONVERSACIONES · 7 D", v: String(tot), s: `${k.open ?? 0} abiertas`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
+        { k: uso ? `${(NIVEL[uso]?.[0] ?? uso).toUpperCase()} · 7 D` : "CONVERSACIONES · 7 D", v: String(tot), s: `${k.open ?? 0} abiertas`, bg: "var(--tl-ink)", fg: "var(--tl-white)" },
         { k: "RESOLVIÓ SOLO", v: tot ? `${Math.round((solo / tot) * 100)} %` : "—", s: "sin pasar a nadie" },
         { k: "A UNA PERSONA", v: String((k.handed_off ?? 0) + (k.to_owner ?? 0)), s: "con caso en Soporte o al dueño", onClick: () => ir({ res: "handed_off" }) },
         { k: "ACCIONES CONFIRMADAS", v: String(k.action_done ?? 0), s: "la persona dijo que sí", onClick: () => ir({ res: "action_done" }) }] },
+      // 7e · Cuántas por nivel en 7 días (vecinos, panel del negocio…): tocar uno filtra DÓNDE.
+      { type: "kv", cols: desk ? 4 : 2, items: Object.entries(NIVEL).map(([key, v]) => ({ k: `${v[0].toUpperCase()} · 7 D`, v: String(d.conv.porUso[key] ?? 0), fg: (uso ?? "") === key ? "var(--tl-action)" : undefined })) },
       { type: "chips", k: "DÓNDE", items: [["", "Todo"], ...Object.entries(NIVEL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (uso ?? "") === key ? "selected" : "filter", onClick: () => ir({ uso: key || null }) })) },
       { type: "chips", k: "RESULTADO", items: [["", "Todos"], ...Object.entries(RESULTADO).map(([key, v]) => [key, v[0].charAt(0) + v[0].slice(1).toLowerCase()])].map(([key, l]) => ({ l: l!, v: (res ?? "") === key ? "selected" : "filter", onClick: () => ir({ res: key || null }) })) },
       { type: "chips", k: "CANAL", items: [["", "Todos"], ...Object.entries(CANAL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (canal ?? "") === key ? "selected" : "filter", onClick: () => ir({ canal: key || null }) })) },
@@ -168,7 +170,7 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
             onClick: () => ir({ cp: x.num }), chevron: leer,
             title: `${x.num} · ${NIVEL[x.uso]?.[0] ?? x.uso}`, sub: `${SUP[x.superficie] ?? x.superficie} · ${CANAL[x.canal]?.[0] ?? x.canal} · ${x.turnos} ${x.turnos === 1 ? "mensaje" : "mensajes"} · ${x.ciudad} · ${cuando(x.at)}${x.motivo ? ` · motivo: ${MOTIVO[x.motivo] ?? x.motivo}` : ""}${x.ai ? "" : " · contestó sin IA (reglas fijas)"}`,
             tag: RESULTADO[x.resultado]?.[0] ?? x.resultado, tone: RESULTADO[x.resultado]?.[1] ?? "neutral" }))} />
-        : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Todavía no hay conversaciones", s: uso || res || canal || buscar ? "Nada con ese filtro: quita uno." : "Cuando los vecinos le escriban al Compa, salen aquí." }]} />) : null}
+        : <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Todavía no hay conversaciones", s: uso || res || canal || buscar ? "Nada con ese filtro: quita uno." : "Cuando los vecinos o los negocios le escriban al Compa, salen aquí." }]} />) : null}
       {tab === "conv" ? <PanelBloques bloques={[
         ...(d.conv.sig || antes ? [{ type: "acts" as const, items: [...(antes ? [{ l: "← Desde el principio", v: "secondary", onClick: () => ir({ antes: null }) }] : []), ...(d.conv.sig ? [{ l: "Siguientes →", v: "secondary", onClick: () => ir({ antes: d.conv.sig }) }] : [])] }] : []),
         { type: "note", tone: "info", t: leer ? "La lista no muestra lo que se habló. Al abrir una conversación ves el hilo (tapado como se guardó) y tu lectura queda anotada."

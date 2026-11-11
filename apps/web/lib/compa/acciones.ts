@@ -30,11 +30,10 @@ export const tiposCancelables = () => Object.keys(CANCELABLES);
 const BASE: Record<string, string> = { appointment: "/cita", table: "/reserva", order: "/pedido", market_order: "/mercado", hold: "/apartado", party: "/fiesta", trip: "/viaje",
   night: "/noche", visit: "/vis", private_event: "/privado", rental: "/renta", plan: "/plan", quote: "/solicitud", tickets: "/eventos/orden" };
 const CUENTA: Record<string, string> = { cuenta_telefono: "/cuenta/ajustes", cuenta_ciudad: "/cuenta/ajustes/ciudad", cuenta_privacidad: "/cuenta/ajustes/privacidad", soporte: "/soporte" };
-/* Panel: hasta que exista la guía del panel (compa_panel_guide), una lista cerrada mínima con la parte que pide accesoPanel. */
-const PANEL: Record<string, { ruta: string; parte: string | null }> = { hoy: { ruta: "hoy", parte: null }, mensajes: { ruta: "mensajes", parte: "msg" }, cobros: { ruta: "cobros", parte: "pay" }, eventos: { ruta: "eventos", parte: "evt" }, mas: { ruta: "mas", parte: null } };
-
 export type Propuesta = { type: "cancel_request" | "open_screen" | "go_to_panel"; operationId: string | null; opStatus: string | null; target: Record<string, string> };
-export function validarAccion(x: { uso: Uso; accion: Respuesta["accion"]; refs: Map<string, OpRef>; negocio?: string | null; seccion?: string | null }): Propuesta | null {
+/* 7e · go_to_panel: solo una sección de `secciones` — las de la guía del panel (compa_panel_guide) que ESA persona puede abrir en ESE negocio
+   (contexto-panel.ts; lo arma el servidor con la sesión). Un código que no esté ahí (de una parte que no tiene, inventado o del Super Admin) = sin acción. */
+export function validarAccion(x: { uso: Uso; accion: Respuesta["accion"]; refs: Map<string, OpRef>; negocio?: string | null; secciones?: Map<string, { ruta: string; parte: string | null }> }): Propuesta | null {
   const a = x.accion;
   if (a.tipo === "ninguna") return null;
   if (a.tipo === "cancel_request") {
@@ -55,8 +54,10 @@ export function validarAccion(x: { uso: Uso; accion: Respuesta["accion"]; refs: 
     return href ? { type: "open_screen", operationId: null, opStatus: null, target: { pantalla: a.pantalla, href } } : null;
   }
   if (a.tipo === "go_to_panel") {
-    if (x.uso !== "owner" || !x.negocio || !x.seccion || !PANEL[x.seccion]) return null;
-    return { type: "go_to_panel", operationId: null, opStatus: null, target: { negocio: x.negocio, seccion: x.seccion } };
+    if (x.uso !== "owner" || !x.negocio || !x.secciones) return null;
+    const s = /^[a-z]+(\/[a-z]+)?$/.test(a.ref) ? x.secciones.get(a.ref) : undefined;
+    if (!s) return null;
+    return { type: "go_to_panel", operationId: null, opStatus: null, target: { negocio: x.negocio, seccion: a.ref } };
   }
   return null;
 }
@@ -127,7 +128,9 @@ export async function confirmar(q: { userId: string }, id: string, via: "app" | 
       return { ok: true, tipo: a.type, href: a.target.href };
     }
     if (a.type === "go_to_panel") {
-      const s = PANEL[a.target.seccion ?? ""];
+      // 7e · La sección otra vez de la guía (encendida) y el acceso otra vez con accesoPanel (la sesión de AHORA y su parte): si le quitaron
+      // esa parte entre la respuesta y el toque, no entra.
+      const s = (await db().query<{ ruta: string; parte: string | null }>(`select ruta, parte from compa_panel_guide where code = $1 and enabled`, [String(a.target.seccion ?? "")])).rows[0];
       if (!s) { await decidir("failed", "sección desconocida"); return NO_EXISTE; }
       const { accesoPanel } = await import("../panel");
       const acc = await accesoPanel(a.target.negocio ?? "", s.parte ?? undefined);
@@ -136,7 +139,7 @@ export async function confirmar(q: { userId: string }, id: string, via: "app" | 
         return { ok: false, estado: "failed", msg: { es: "Eso lo ve el dueño del negocio.", en: "The business owner sees that." } };
       }
       await decidir("confirmed");
-      return { ok: true, tipo: a.type, href: `/panel/${acc.negocio.id}/${s.ruta}` };
+      return { ok: true, tipo: a.type, href: `/panel/${acc.negocio.id}${s.ruta ? `/${s.ruta}` : ""}` };
     }
     await decidir("failed", "tipo desconocido");
     return NO_EXISTE;

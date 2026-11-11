@@ -27,3 +27,20 @@ export function responderConReglas(x: { texto: string; lang: Lang; ops: OpCtx[];
     chips: es ? ["Una cita", "Un pedido", "Un pago"] : ["A booking", "An order", "A payment"] };
 }
 export const lineaNoSe = (lang: Lang) => LINEAS.noSe[lang];
+
+/* 7e · Las reglas fijas del PANEL (prototipo `ownFallback`), sin IA: la ayuda de su audiencia (vecino + negocio, sin la de partes que no tiene)
+   y, si el servidor reconoció la sección y la persona la puede abrir, «Ir a …» (go_to_panel, que pasa por la misma validación). Si no hay
+   nada, una pregunta corta con las secciones que SÍ puede abrir. Nunca dicen que hicieron algo. */
+export function responderPanelConReglas(x: { lang: Lang; seccion: { code: string; titulo: string } | null; puede: string[]; trozos: TrozoModelo[] }): SalidaReglas {
+  const es = x.lang === "es", nada = { tipo: "ninguna", ref: "", pantalla: "" };
+  const ir = x.seccion ? { tipo: "go_to_panel", ref: x.seccion.code, pantalla: "" } : nada;
+  const f = x.trozos[0];
+  if (f) {
+    const r = frases(f.texto, 2);
+    if (r) return { tipo: "respuesta", fuente: f.fuente, persona: "ninguno", chips: [], accion: ir, respuesta: r.length > 400 ? r.slice(0, 397).replace(/\s+\S*$/, "") + "…" : r };
+  }
+  if (x.seccion) return { tipo: "respuesta", fuente: "cuenta", persona: "ninguno", chips: [], accion: ir,
+    respuesta: es ? `Eso está en ${x.seccion.titulo}. Te llevo.` : `That is in ${x.seccion.titulo}. I'll take you there.` };
+  return { tipo: "pregunta", fuente: "", persona: "ninguno", accion: nada, chips: x.puede.slice(0, 3),
+    respuesta: es ? "No estoy seguro de entenderte. ¿Es sobre alguna de estas partes de tu panel? Si prefieres, te paso con una persona." : "I'm not sure I follow. Is it about one of these parts of your dashboard? If you prefer, I'll pass you to a person." };
+}

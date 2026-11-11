@@ -32,6 +32,13 @@ export function detectar(textoTapado: string): Detectado {
   return null;
 }
 
+/* 7e · En el PANEL, además (fase7-compa.md §4 7e): reclamar, transferir o vender el negocio, sanciones, una página suspendida u oculta y reseñas
+   falsas → caso de Soporte del negocio, sin el modelo. Va sobre el texto ya tapado. */
+const NEGOCIO = /\b(transferir|traspasar|vender|ceder) (el|mi|este) negocio|\breclam(ar|o|aron|aron) (el|mi|este) negocio|\botro dueno\b|\bme (suspendieron|ocultaron|cerraron|bloquearon|quitaron) (la|mi) (pagina|negocio|sello)|\bsuspendid[oa]s?\b|\bsancion|\bresenas? falsas?|\bfake reviews?\b|\btransfer (the|my|this) business|\bsell (the|my|this) business|\bclaim(ed)? (the|my|this) business|\b(suspended|banned|sanction)/;
+export function detectarPanel(textoTapado: string): { tipo: "negocio" } | null {
+  return NEGOCIO.test(sinAcentos(String(textoTapado ?? ""))) ? { tipo: "negocio" } : null;
+}
+
 /* Las líneas fijas (fase7-compa.md §1c; nunca se suavizan). */
 export const LINEAS = {
   emergencia: { es: "Si es una emergencia, llama al 911 ahora.", en: "If this is an emergency, call 911 now." },
@@ -44,4 +51,8 @@ export const LINEAS = {
   apagado: { es: "El Compa no está disponible ahora. Escríbele a Soporte: te contesta una persona.", en: "El Compa is not available right now. Write to Support: a person will answer." },
   limite: { es: "Escribiste muchos mensajes seguidos. Si lo necesitas, te paso con una persona.", en: "You wrote many messages in a row. If you need to, I'll pass you to a person." },
   larga: { es: "Esta conversación ya es larga. Empieza otra o habla con una persona.", en: "This conversation is already long. Start a new one or talk to a person." },
+  // 7e · El panel.
+  panelApagado: { es: "El Compa no está disponible ahora. Escríbele a Soporte.", en: "El Compa is not available right now. Write to Support." },
+  dueno: { es: "Eso lo ve el dueño del negocio: tu parte del panel no lo incluye. Si lo necesitas, pídeselo.", en: "The business owner handles that: your part of the dashboard doesn't include it. If you need it, ask the owner." },
+  panelCuenta: { es: "Eso lo revisa una persona del equipo: yo no cambio nada en tu negocio ni en tu cuenta. Ya le pasé tu caso con el resumen.", en: "A person on the team reviews that: I don't change anything in your business or your account. I already passed your case on with a summary." },
 } as const;

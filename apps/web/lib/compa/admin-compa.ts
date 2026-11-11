@@ -13,7 +13,7 @@ export type FilaConv = { num: string; uso: Uso; canal: string; superficie: strin
 export type Historial = { accion: string; objetivo: string; antes: Record<string, string> | null; despues: Record<string, string> | null; motivo: string | null; quien: string | null; at: string };
 export type DatosCompaAdmin = {
   gasto: GastoMes; interruptores: EstadoInterruptores; motor: Motor; modelos: { id: string; label: string; role: string | null; entrada: number; salida: number; geo: number; precioDe: string }[];
-  historial: Historial[]; conv: { filas: FilaConv[]; sig: string | null; total7d: number; porResultado: Record<string, number> };
+  historial: Historial[]; conv: { filas: FilaConv[]; sig: string | null; total7d: number; porResultado: Record<string, number>; porUso: Record<string, number> };
 };
 const ISO = (c: string) => `to_char(${c} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 const USOS = new Set(["neighbor", "owner", "auto_reply", "copilot"]);
@@ -44,14 +44,16 @@ export async function datosCompaAdmin(f: { uso: string | null; resultado: string
           and ($3::timestamptz is null or (c.started_at, c.id) < ($3::timestamptz, $4::bigint))
           and ($5::text is null or c.channel = $5 or ($5 = 'app' and c.channel = 'web')) and ($6::text is null or c.number = $6)
         order by c.started_at desc, c.id desc limit 31`, [uso, res, cur?.[0] ?? null, cur?.[1] ?? null, canal, numero]),
-    db().query<{ r: string; n: number }>(`select outcome as r, count(*)::int as n from compa_conversations where started_at > now() - interval '7 days' group by outcome`),
+    db().query<{ r: string; u: string; n: number }>(`select outcome as r, use as u, count(*)::int as n from compa_conversations where started_at > now() - interval '7 days' group by outcome, use`),
   ]);
   const filas = C.rows.slice(0, 30), ult = C.rows.length > 30 ? filas[filas.length - 1]! : null;
-  const porResultado = Object.fromEntries(K.rows.map((x) => [x.r, x.n]));
+  const porResultado: Record<string, number> = {}, porUso: Record<string, number> = {};
+  // 7e · Cifras de 7 días por resultado (del filtro DÓNDE si hay uno) y por nivel (vecinos, panel…).
+  for (const x of K.rows) { porUso[x.u] = (porUso[x.u] ?? 0) + x.n; if (!uso || x.u === uso) porResultado[x.r] = (porResultado[x.r] ?? 0) + x.n; }
   return {
     gasto, interruptores: inter, motor: motorActivo(), modelos: M.rows, historial: H.rows,
     conv: { filas: filas.map(({ sid: _a, sat: _b, ...x }) => { void _a; void _b; return x; }), sig: ult ? `${ult.sat}|${ult.sid}` : null,
-      total7d: K.rows.reduce((s, x) => s + x.n, 0), porResultado },
+      total7d: K.rows.filter((x) => !uso || x.u === uso).reduce((s, x) => s + x.n, 0), porResultado, porUso },
   };
 }
 
@@ -103,4 +105,24 @@ export async function fichaConversacion(s: Staff, numero: string): Promise<Ficha
   if (!k) return null;
   const { uid, unom, bid, bnom, ...base } = k;
   return { ...base, quien: uid ? { id: uid, nombre: unom ?? "Vecino" } : null, negocio: bid ? { id: bid, nombre: bnom ?? bid } : null, msjs: M.rows, acciones: A.rows, lecturas: R.rows };
+}
+
+/* 7e · Negocios 360° › El Compa (cifras, sin texto ni personas): lo que El Compa habló en el PANEL de ese negocio en 30 días — conversaciones,
+   resolvió solo, a una persona (con caso de Soporte del negocio), «Ir a …» que la persona tocó, contestadas sin IA — y si El Compa está en pausa
+   en ese negocio. compa:ver; el hilo sigue saliendo solo en la ficha anotada (compa:editar). */
+export type CompaNegocio = { conv30: number; porResultado: Record<string, number>; ir: number; sinIa: number; casos: number; pausa: { uso: string | null; motivo: string; at: string } | null };
+export async function compaDeNegocio(s: Staff, negocio: string): Promise<CompaNegocio | null> {
+  if (!s.puede("compa", "ver") || !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(String(negocio ?? ""))) return null;
+  const [K, A, P] = await Promise.all([
+    db().query<{ r: string; n: number; sin_ia: number; casos: number }>(
+      `select outcome as r, count(*)::int as n, count(*) filter (where not ai)::int as sin_ia, count(support_case_id)::int as casos from compa_conversations
+        where business_id = $1 and use = 'owner' and started_at > now() - interval '30 days' group by outcome`, [negocio]),
+    db().query<{ n: number }>(
+      `select count(*)::int as n from compa_actions a join compa_conversations c on c.id = a.conversation_id
+        where c.business_id = $1 and c.use = 'owner' and a.type = 'go_to_panel' and a.status = 'confirmed' and a.proposed_at > now() - interval '30 days'`, [negocio]),
+    estadoInterruptores(),
+  ]);
+  const p = P.pausas.find((x) => x.scope === "business" && x.donde === negocio && (!x.uso || x.uso === "owner")) ?? null;
+  return { conv30: K.rows.reduce((t, x) => t + x.n, 0), porResultado: Object.fromEntries(K.rows.map((x) => [x.r, x.n])), ir: A.rows[0]?.n ?? 0,
+    sinIa: K.rows.reduce((t, x) => t + x.sin_ia, 0), casos: K.rows.reduce((t, x) => t + x.casos, 0), pausa: p ? { uso: p.uso, motivo: p.motivo, at: p.at } : null };
 }

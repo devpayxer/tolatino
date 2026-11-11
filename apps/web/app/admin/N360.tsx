@@ -8,6 +8,7 @@ import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition, type ComponentType, type ReactNode } from "react";
 import type { Dinero } from "@/lib/admin-dinero";
+import type { CompaNegocio } from "@/lib/compa/admin-compa";
 import type { Negocio360 } from "@/lib/admin-negocios";
 import { fmtHora } from "@/lib/panel-reglas";
 import { KINDS_LOCAL } from "@/lib/noche-comun";
@@ -55,7 +56,7 @@ const feL = (i: { k: string | null; cents: number; a: Record<string, unknown> })
 const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", "NEG-FIESTA", "NEG-TRANS", "NEG-NOCHE", "NEG-EDU", "NEG-NINOS", "NEG-DEPORTE", "NEG-FE", "NEG-INMUEBLE", "NEG-DEALER"];
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
-export function N360({ n, tab, din, evts = null, sop }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[] }) {
+export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null }) {
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -83,7 +84,7 @@ export function N360({ n, tab, din, evts = null, sop }: { n: Negocio360; tab: st
     {`Cerrado temporalmente hasta el ${fecha(n.temp_until)}: ${n.temp_reason ?? ""}. La ficha dice «Cerrado temporalmente».`}</A.AdminNote>);
   const LIC_ST: Record<string, [string, string, string]> = { valid: ["Verificada", "VERIFICADA", "signal"], review: ["Pide revisión", "EN REVISIÓN", "action"], expired: ["Vencida según el registro", "VENCIDA", "danger"], not_found: ["No se pudo verificar", "NO", "danger"], revoked: ["No se pudo verificar", "NO", "danger"] };
   const licPeor = n.licencias.find((l) => l.status === "review") ?? n.licencias.find((l) => l.status !== "valid") ?? n.licencias[0];
-  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
+  const tabs: Bloque = { type: "tabs", items: [["resumen", "Resumen"], ["ficha", "Ficha"], ...(VENDE.includes(n.cat_id) ? [["vende", "Lo que vende"]] : []), ...(din !== undefined ? [["din", "Dinero"]] : []), ["equipo", "Equipo"], ["cont", "Contenido"], ["confianza", "Confianza"], ...(sop ? [["soporte", "Soporte"]] : []), ...(cpa !== undefined ? [["compa", "El Compa"]] : [])].map(([k, l]) => ({ l: l!, n: k === "confianza" && casosAbiertos.length ? String(casosAbiertos.length) : undefined, on: tab === k, onClick: () => ir(k!) })) };
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
@@ -296,6 +297,19 @@ export function N360({ n, tab, din, evts = null, sop }: { n: Negocio360; tab: st
           ? <A.AdminNote tone="bad" icon="ban" cta="Reanudar" onCta={() => setConf({ titulo: "¿Por qué se reanuda Jobs?", hacer: (m) => moduloPausar(n.id, "jobs", false, m) })}>{`Jobs en pausa: ${n.modsOff.jobs.reason}`}</A.AdminNote>
           : <A.AdminNote tone="info" icon="brief" cta="Pausar Jobs" onCta={() => setConf({ titulo: "Pausar Jobs", sub: "La pestaña Jobs deja de salir en la ficha y nadie aplica hasta que la reactives. El dueño recibe el motivo.", peligro: true, plantillas: ["Reportes de vecinos", "Pide papeles o pago para aplicar", "Vacantes falsas"], hacer: (m) => moduloPausar(n.id, "jobs", true, m) })}>Jobs activo en su página.</A.AdminNote>) : null}
       </>);
+  } else if (tab === "compa" && cpa) {
+    // 7e · El Compa en el panel de este negocio (cifras de 30 días, sin texto ni personas). El hilo: El Compa › Conversaciones (lectura anotada).
+    const RES: Record<string, string> = { open: "Abiertas", self_resolved: "Resolvió solo", action_done: "Acción confirmada", handed_off: "A una persona", to_owner: "Al dueño" };
+    cuerpo = <PanelBloques bloques={[
+      { type: "kpis", cols: "repeat(4,minmax(0,1fr))", items: [
+        { k: "PANEL · 30 D", v: String(cpa.conv30), s: "conversaciones con El Compa", bg: "var(--tl-ink)", fg: "var(--tl-white)" },
+        { k: "«IR A …»", v: String(cpa.ir), s: "secciones que abrieron" },
+        { k: "A UNA PERSONA", v: String(cpa.casos), s: "casos de Soporte del negocio" },
+        { k: "SIN IA", v: String(cpa.sinIa), s: "contestó con reglas fijas" }] },
+      { type: "kv", cols: 3, items: Object.entries(RES).map(([k, l]) => ({ k: l.toUpperCase(), v: String(cpa.porResultado[k] ?? 0) })) },
+      cpa.pausa ? { type: "note", tone: "warn", icon: "ban", t: `El Compa en pausa en este negocio${cpa.pausa.uso ? " (panel)" : ""}: ${cpa.pausa.motivo}. Se levanta en El Compa › Interruptores.` }
+        : { type: "note", tone: "info", icon: "info", t: "El Compa contesta en el panel de este negocio. Lo que se habló se lee en El Compa › Conversaciones (filtro Panel del negocio) y cada lectura queda anotada." },
+    ]} />;
   } else if (tab === "soporte" && sop) {
     cuerpo = <SoporteDe360 casos={sop} vacio="Este negocio no ha escrito a Soporte desde su panel." />;
   } else if (tab === "confianza") {

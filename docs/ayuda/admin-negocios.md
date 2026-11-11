@@ -1,7 +1,7 @@
 # Super Admin: Negocios y Colas · Super Admin: Businesses and Queues
 
 _Pantallas: ADM-COLAS (`/admin/colas`) y ADM-NEG (`/admin/negocios`, `/admin/negocios/{id}`), teléfono y escritorio. Para el equipo de To'Latino (y El
-Compa como copiloto del equipo). Versión: 5 nov 2026. Audiencia: equipo. Tema: equipo._
+Compa como copiloto del equipo). Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **Colas:** todo lo que espera la decisión de una persona del equipo, la más vieja contra su plazo primero:
@@ -13,7 +13,8 @@ Compa como copiloto del equipo). Versión: 5 nov 2026. Audiencia: equipo. Tema: 
   filtros» y orden. El **360°** muestra el negocio como lo ve el cliente, lo que hizo el dueño y lo que hizo el equipo:
   Resumen (datos, fuerza del perfil, notas internas, acciones), Ficha (fotos y campos que se editan en su nombre,
   horario), Dinero (cobros, pagos al banco y su pausa, plan; ver `admin-negocio-dinero.md`), Equipo (quién entra al
-  panel, staff) y Confianza (casos abiertos, sello, sanciones).
+  panel, staff) y Confianza (casos abiertos, sello, sanciones). Con permiso de Soporte, **Soporte** (los casos que abrió desde su panel); con
+  permiso de El Compa, **El Compa** (cifras de 30 días del asistente en su panel y si está en pausa ahí; sin texto ni personas).
 
 ## Decisiones y lo que ve el negocio
 | Acción | Dónde | Permiso | Qué ve el dueño / la página |
@@ -63,7 +64,8 @@ Queues: everything waiting for a team decision, oldest against its SLA first —
 businesses (24 h light review), Flagged media (4 h), Neighbor recommendations (7 days), Licenses (72 h) and Sensitive changes (48 h, business claims). You only see your role's
 queues in your cities; "Take next" assigns you the most urgent unassigned case; "Take" shows others "X is on it".
 Businesses: searchable list with category, plan, status, more filters and sorting; the 360° shows the business as
-clients see it, what the owner did and what the team did (Overview, Page, Team, Trust). Every action asks for a
+clients see it, what the owner did and what the team did (Overview, Page, Team, Trust; with permission, Support and El Compa — the dashboard
+assistant's 30-day numbers, without text or people). Every action asks for a
 reason (approvals store a fixed one), writes the audit log, and the owner sees the result and reason in their
 dashboard; the page reflects it (temporarily closed, hidden, photo removed, badge). Team decisions are not texted: the owner
 sees them in the dashboard and the bell. "Create seed" lists a recommended business as unclaimed in its category; "Apply change"

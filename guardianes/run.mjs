@@ -4146,6 +4146,26 @@ const guardianes = {
     if (existsSync(C)) { const c = sinComent(C), todas = (c.match(/from compa_conversations where number = \$1/g) ?? []).length, buenas = (c.match(/from compa_conversations where number = \$1 and user_id = \$2 and use = \$3 and closed_at is null/g) ?? []).length;
       if (!buenas || todas !== buenas) falla(G, C, 0, "una conversación se sigue solo si es de esa persona (en el turno y en los pasos)"); }
     for (const x of codigo.filter((f) => /^apps\/web\/lib\/compa\/contexto-[a-z]+\.ts$/.test(f))) if (!/export async function contexto[A-Z][a-z]+\((userId|staffId|negocio): string/.test(sinComent(x))) falla(G, x, 0, "una función de contexto recibe solo el id de la sesión");
+    // 7e · El panel: el contexto vuelve a comprobar en la base que la persona de la sesión es miembro ACTIVO de ESE negocio (la regla de
+    // accesoPanel) y reparte la guía con esa misma regla; go_to_panel solo vale con una sección de ese mapa; la conversación del panel se sigue
+    // solo si es de esa persona Y de ese negocio; el hilo que ve la pantalla es el suyo.
+    const P = "apps/web/lib/compa/contexto-panel.ts";
+    if (existsSync(P)) {
+      const t = sinComent(P), cp = cuerpoFn(t, "contextoPanel");
+      if (!/export async function contextoPanel\(userId: string, negocio: string, lang: Lang\)/.test(t) || !/where m\.business_id = \$2 and m\.user_id = \$1 and m\.status = 'active' and b\.status <> 'merged'/.test(cp)) falla(G, P, 0, "el contexto del panel comprueba que la persona de la sesión es miembro activo de ese negocio");
+      if (!/const partes = m\.kind === "owner" \? \["all"\] : m\.access \?\? \[\];/.test(cp) || !/\(puedeAbrir\(partes, s\.parte\) \? secciones : prohibidas\)\.set\(s\.code, s\)/.test(cp)) falla(G, P, 0, "la guía del panel se reparte con la regla de accesoPanel (dueño todo; equipo sus partes)");
+      if (!/export const puedeAbrir = \(partes: string\[\], parte: string \| null\) => !parte \|\| partes\.includes\("all"\) \|\| partes\.includes\(parte\);/.test(t)) falla(G, P, 0, "puedeAbrir = la regla de accesoPanel");
+      if (!/puedes_abrir: \[\.\.\.secciones\.values\(\)\]/.test(cp) || /prohibidas\.values\(\)\]\.map/.test(cp)) falla(G, P, 0, "el modelo recibe solo las secciones que esa persona puede abrir");
+      if (!/ve\("ord"\) \? db\(\)/.test(cp) || !/ve\("msg"\) \? db\(\)/.test(cp) || !/\.\.\.\(pay \? \{ plan:/.test(cp)) falla(G, P, 0, "las cifras del panel solo de las partes de esa persona");
+    } else falla(G, P, 0, "falta el contexto del panel");
+    if (!/const s = \/\^\[a-z\]\+\(\\\/\[a-z\]\+\)\?\$\/\.test\(a\.ref\) \? x\.secciones\.get\(a\.ref\) : undefined;/.test(val)) falla(G, A, 0, "go_to_panel: solo una sección del mapa del servidor (las que esa persona puede abrir)");
+    if (existsSync(C)) {
+      const tp = cuerpoFn(sinComent(C), "turnoPanel"), hp = cuerpoFn(sinComent(C), "hiloPanel");
+      if (tp && (!/const ctx = await contextoPanel\(q\.userId, String\(x\.negocio \?\? ""\), lang\);\n\s*if \(!ctx\) return/.test(tp) || !/and closed_at is null and business_id = \$4 for update/.test(tp) || !/secciones: ctx\.secciones/.test(tp))) falla(G, C, 0, "turnoPanel: el contexto de la sesión en ESE negocio, su conversación y sus secciones");
+      if (tp && !/if \(r\.accion\.tipo === "go_to_panel" && ctx\.prohibidas\.has\(r\.accion\.ref\)\) return fija\(LINEAS\.dueno/.test(tp)) falla(G, C, 0, "turnoPanel: una sección prohibida que propone el modelo = «Eso lo ve el dueño», sin enlace");
+      if (tp && (!/if \(sec && !sec\.permitida\) return fija\(LINEAS\.dueno/.test(tp) || !/crudos\.filter\(\(h\) => !ctx\.slugsProhibidos\.has\(h\.slug\)\)/.test(tp))) falla(G, C, 0, "turnoPanel: nada de una parte que no tiene llega al modelo (sección y ayuda)");
+      if (hp && !/where user_id = \$1 and business_id = \$2 and use = 'owner'/.test(hp)) falla(G, C, 0, "hiloPanel: solo la conversación de esa persona en ese negocio");
+    }
   },
 
   /* 7c. El contexto nunca lee datos sensibles: Salud, Profesionales, Niños e inscripciones, op_private (salvo para dejarlas fuera), door_code,
@@ -4169,6 +4189,13 @@ const guardianes = {
     if (!/const t = tapar\(crudo\);/.test(c) || !/values \(\$1, \$2, 'user', \$3, \$4\)`, \[conv\.id, ciudad, q\.userId, t\.texto\]/.test(c)) falla(G, C, 0, "el mensaje de la persona se guarda tapado");
     if (!/texto: tapar\(h\.body\)\.texto/.test(c) || !/texto: tapar\(r\.text\)\.texto/.test(c)) falla(G, C, 0, "los trozos y el historial que van al modelo pasan por tapar()");
     if (!/\[conv\.id, ciudad, tapar\(r\.texto\)\.texto,/.test(c)) falla(G, C, 0, "la respuesta se guarda tapada");
+    // 7e · En CADA uso (vecino y panel): cada trozo que va al modelo, cada mensaje de la persona y cada respuesta que se guarda, tapados.
+    const nTrozos = (c.match(/\.map\(\(h\) => \(\{ fuente: h\.slug,/g) ?? []).length;
+    if (nTrozos !== (c.match(/\.map\(\(h\) => \(\{ fuente: h\.slug, titulo: [^}]*texto: tapar\(h\.body\)\.texto \}\)\)/g) ?? []).length) falla(G, C, 0, "cada uso pasa sus trozos de ayuda por tapar() antes del modelo");
+    for (const m of c.matchAll(/insert into compa_messages \(conversation_id, city_id, sender, user_id, text(?:, step_key)?\) values \(\$1, \$2, 'user', \$3, \$4(?:, \$5)?\)`, \[([^\]]*)\]/g))
+      if (!/^conv\.id, ciudad, q\.userId, (t\.texto|tapar\()/.test(m[1])) falla(G, C, 0, "cada mensaje de la persona se guarda tapado");
+    for (const m of c.matchAll(/insert into compa_messages \(conversation_id, city_id, sender, text,[^`]*'compa'[^`]*`,\s*\[([^\]]*)\]/g))
+      if (!/^conv\.id, ciudad, tapar\(/.test(m[1])) falla(G, C, 0, "cada respuesta de El Compa se guarda tapada");
     if (existsSync(M)) {
       if (!/if texto_con_secretos\(new\.text\) then raise exception 'compa_sin_secretos/.test(ultimaFn("compa_messages_antes"))) falla(G, M, 0, "la base rechaza tarjeta o SSN en compa_messages");
       if (!/if texto_con_secretos\(new\.summary\)/.test(ultimaFn("compa_handoffs_antes"))) falla(G, M, 0, "la base rechaza tarjeta o SSN en el resumen al pasar a una persona");
@@ -4189,6 +4216,9 @@ const guardianes = {
     if (!/v = verificar\(sal\.json, vctx\)/.test(c) || (c.match(/sal\.json/g) ?? []).length !== 1) falla(G, C, 0, "la salida del modelo solo se usa después de verificar()");
     if (!/verificar\(responderConReglas\(/.test(c)) falla(G, C, 0, "las reglas fijas también pasan por el verificador");
     if (!/export const SISTEMA_VECINO = \[/.test(c) || /SISTEMA_VECINO\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del modelo es fijo y vive en el código del servidor");
+    // 7e · El del panel también; y el modelo solo se llama por consultar() (que verifica): cada uso le pasa su sistema fijo.
+    if (!/export const SISTEMA_PANEL = \[/.test(c) || /SISTEMA_PANEL\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del panel es fijo y vive en el código del servidor");
+    for (const m of c.matchAll(/await consultar\(\{[^}]*sistema: ([A-Za-z_.]+)/g)) if (!/^SISTEMA_(VECINO|PANEL)$/.test(m[1])) falla(G, C, 0, `el modelo recibe un sistema fijo (no ${m[1]})`);
   },
 
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
@@ -4200,6 +4230,9 @@ const guardianes = {
     if (!/if \(candadoProduccion\(\)\) return \{ ok: false, por: "produccion" \};/.test(d) || !/ENTORNO === "produccion" && process\.env\.TOLATINO_COMPA !== "encendido"/.test(i)) falla(G, I, 0, "candado: en producción El Compa no se enciende antes de la fase 9");
     if (!/if \(!r\?\.nivel\) return \{ ok: false, por: "nivel" \};/.test(d) || !/compa_pauses where scope = 'city'/.test(d) || !/compa_pauses where scope = 'business'/.test(d)) falla(G, I, 0, "disponible(): nivel, canal, ciudad y negocio (una bandera que falta = apagado)");
     for (const fn of ["turno", "paso"]) { const b = cuerpoFn(sinComent(C), fn); if (b && (!/const d = await disponible\(/.test(b) || !/if \(!d\.ok \|\| !dOp\.ok\) return \{ ok: false, apagado: true/.test(b))) falla(G, C, 0, `${fn}(): revisa los interruptores (la persona y la operación) antes de todo`); }
+    // 7e · El panel: nivel «owner», canal, la ciudad y la pausa DEL NEGOCIO y el tope, antes de escribir nada.
+    { const b = cuerpoFn(sinComent(C), "turnoPanel"), i = b.indexOf("insert into compa_conversations");
+      if (b && (!/const d = await disponible\(\{ uso: "owner", canal: "app", ciudad, negocio \}\);\n\s*if \(!d\.ok \|\| \(await alTope\(\)\)\) return \{ ok: false, apagado: true/.test(b) || i < 0 || b.indexOf("await disponible(") > i)) falla(G, C, 0, "turnoPanel(): revisa los interruptores del panel y el tope antes de todo"); }
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || x === I) continue;
       const t = sinComent(x);
@@ -4211,11 +4244,20 @@ const guardianes = {
      (conversación, modelo, tope, acciones, contexto). Solo lo usan lib/compa, su ruta de pruebas, el barrido y el Super Admin. */
   compaSinRutaCritica() {
     const G = "compaSinRutaCritica";
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|ElCompaAdmin\.tsx$)|app\/\(app\)\/soporte\/compa\/)/;
+    // 7e · Y las acciones del asistente del panel (app/panel/acciones-compa.ts: solo las llama la sección El Compa) y Negocios 360° (Super Admin).
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
-      for (const m of t.matchAll(/(?:from |import\()"(@\/lib\/compa\/|\.\.?\/(?:\.\.\/)*compa\/)(conversacion|modelo[a-z-]*|tope|acciones|persona|contexto-[a-z]+|interruptores|verificar|reglas|admin-compa)"/g)) falla(G, x, 0, `la ruta de ${x.split("/").slice(2, 4).join("/")} no espera a El Compa (importa ${m[2]})`);
+      // (un import solo de TIPOS no ejecuta nada: no cuenta)
+      const sinTipos = t.replace(/import\s+type\s+\{[^}]*\}\s+from\s+"[^"]+";/g, "");
+      for (const m of sinTipos.matchAll(/(?:from |import\()"(@\/lib\/compa\/|\.\.?\/(?:\.\.\/)*compa\/)(conversacion|modelo[a-z-]*|tope|acciones|persona|contexto-[a-z]+|interruptores|verificar|reglas|admin-compa)"/g)) falla(G, x, 0, `la ruta de ${x.split("/").slice(2, 4).join("/")} no espera a El Compa (importa ${m[2]})`);
+      // 7e · El asistente del panel solo lo carga la página del panel, solo para su sección y siempre con .catch(() => …): si falla, la sección
+      // dice que El Compa no está y nada más del panel cambia.
+      if (/(?:from |import\()"@\/lib\/compa\/asistente-panel"/.test(sinTipos)) {
+        if (x !== "apps/web/app/panel/[id]/[[...r]]/page.tsx") falla(G, x, 0, "el asistente del panel solo lo carga la página del panel");
+        else if (!/const cpa = ruta\.sec === "cpa" \? await \(await import\("@\/lib\/compa\/asistente-panel"\)\)\.asistentePanel\(acc\.yo\.id, d\.id, lang\)\.catch\(\(\) => null\) : undefined;/.test(t)) falla(G, x, 0, "el asistente del panel: solo en su sección y con .catch(() => null)");
+      }
       // 7d · Fuera de su lugar solo se puede preguntar si El Compa está (lib/compa/hoja: lectura barata) y SIEMPRE con el camino de siempre si falla.
       if (/from "@\/lib\/compa\/hoja"/.test(t)) for (const m of t.matchAll(/\b(estadoVecino|hojaDe|opsVecino|vecinoDisponible|opVecino)\(/g))
         if (!/^[^;]*?\.catch\(\(\) =>/.test(t.slice(m.index))) falla(G, x, 0, `${m[1]}() fuera de El Compa sin .catch(() => …): si falla, la pantalla sigue como siempre`);
@@ -4240,6 +4282,18 @@ const guardianes = {
     if ((v.match(/<C\.CompaFrame\b/g) ?? []).length !== 1) falla(G, V, 0, "un solo marco CompaFrame (con el aviso y la persona)");
     for (const x of codigo) if (/^apps\/web\/.*\.tsx$/.test(x) && x !== V && /\bCompaFrame\b/.test(sinComent(x))) falla(G, x, 0, "El Compa del vecino se pinta solo en CompaVecino.tsx (con el aviso de IA y «Con una persona»)");
     if (existsSync(C) && !/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/.test(sinComent(C))) falla(G, C, 0, "el sistema del modelo dice que es una IA");
+    // 7e · El panel (DASH-COMPA): la nota fija de IA (verbatim de §1c) siempre que El Compa está, «Con una persona» sin condición, el rótulo
+    // «EL COMPA · IA» en cada respuesta; y los DOS sistemas dicen que es una IA.
+    const PC = "apps/web/app/panel/CompaPanel.tsx";
+    if (!existsSync(PC)) falla(G, PC, 0, "falta la pantalla Panel › El Compa");
+    else {
+      const t = sinComent(PC);
+      for (const [re, q] of [[/E2\(`El Compa es una IA\. No cambia nada en tu panel: te dice dónde se hace y te lleva\. Lo de dinero o tu cuenta lo ve una persona del equipo, \$\{x\.horario\}\.`,/, "la nota fija de IA del panel (verbatim)"],
+        [/\{ l: E2\("Con una persona", "Talk to a person"\), v: "secondary"/, "«Con una persona» siempre"], [/m: `EL COMPA · \$\{/, "el rótulo «EL COMPA · IA» en cada respuesta"]]) if (!re.test(t)) falla(G, PC, 0, `falta ${q}`);
+      const iNota = t.indexOf("El Compa es una IA. No cambia nada"), iRet = t.indexOf("return { blocks: out, ed: null };\n  }");
+      if (iNota < iRet) falla(G, PC, 0, "la nota de IA va en toda pantalla donde El Compa contesta (después del «no disponible»)");
+    }
+    if (existsSync(C) && (sinComent(C).match(/Eres El Compa, el asistente de IA de To'Latino[^"]*Eres una IA y lo dices si te preguntan/g) ?? []).length < 2) falla(G, C, 0, "el sistema del panel también dice que es una IA");
   },
 
   /* 7d. Sin El Compa nada se rompe (la regresión «todo apagado» hecha regla): cada página «Ayuda con …» de una operación pregunta PRIMERO por la
@@ -4279,6 +4333,49 @@ const guardianes = {
     const i = f.indexOf("insert into compa_reads"), j = f.indexOf("from compa_messages");
     if (i < 0 || j < 0 || i > j) falla(G, A, 0, "cada lectura del hilo queda en compa_reads ANTES de leerlo");
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && !/^apps\/web\/lib\/compa\/(conversacion|admin-compa)\.ts$/.test(x) && /\bfrom compa_messages\b/.test(sinComent(x))) falla(G, x, 0, "el hilo de El Compa solo lo leen el motor y la ficha anotada del Super Admin");
+  },
+
+  /* ── Fase 7 · 7e El Compa en el panel ── */
+  /* 7e. La guía del panel (compa_panel_guide, migración 0120) es la NAVEGACIÓN del panel, entera: cada ruta de app/panel/[id]/[[...r]]/page.tsx
+     (hoy, clientes, mensajes, vendes, entrega, mas, eventos, cobros, cobros/plan, compa y Tu página) y cada apartado de Tu página (Panel.tsx PARTS
+     → pagina/{k}, con el mismo título) tiene su fila; la PARTE de cada fila es la que esa ruta le pide a accesoPanel (así El Compa nunca ofrece
+     «Ir a …» a algo que el panel le negaría, ni esconde algo que sí le abre). Los apartados de «Lo que vendes» (vendes/menu…) van con su fila
+     «vendes». Y el toque «Ir a …» (confirmar) vuelve a leer la parte de la guía y a pedir accesoPanel con ella. */
+  guiaDelPanelCompleta() {
+    const G = "guiaDelPanelCompleta", M = "packages/db/migrations/0120_compa_panel.sql", R = "apps/web/app/panel/[id]/[[...r]]/page.tsx", PN = "apps/web/app/panel/Panel.tsx", A = "apps/web/lib/compa/acciones.ts";
+    if (!existsSync(M)) return falla(G, M, 0, "falta la guía del panel (0120)");
+    const m = readFileSync(M, "utf8"), filas = new Map();
+    for (const x of m.matchAll(/^\s*\('([a-z/]+)', '([a-z/]*)', (null|'[a-z]+'), '([a-z]+)', '(\{[^']*\})',/gm)) filas.set(x[1], { ruta: x[2], parte: x[3] === "null" ? null : x[3].slice(1, -1), title: JSON.parse(x[5]) });
+    if (filas.size < 15) falla(G, M, 0, `la guía del panel tiene ${filas.size} filas: ¿se rompió su forma?`);
+    for (const [k, f] of filas) if (f.ruta !== (k === "pagina" ? "" : k)) falla(G, M, 0, `la fila «${k}» lleva a «${f.ruta}» (el código ES la ruta)`);
+    const r = sinComent(R);
+    // La parte que pide cada sección (la expresión de accesoPanel de la página).
+    const exp = /const acc = await accesoPanel\(id, ([^;]+)\);/.exec(r)?.[1] ?? "";
+    if (!exp) return falla(G, R, 0, "no encuentro la llamada a accesoPanel de la página del panel");
+    const parteDe = (sec) => { for (const y of exp.matchAll(/((?:ruta\.sec === "[a-z]+"(?: \|\| )?)+) \? (undefined|"[a-z]+")/g)) if ([...y[1].matchAll(/"([a-z]+)"/g)].some((z) => z[1] === sec)) return y[2] === "undefined" ? null : y[2].slice(1, -1); return /: "([a-z]+)"$/.exec(exp)?.[1] ?? "?"; };
+    const rutas = [];
+    for (const y of r.matchAll(/r\.length === 1 && r\[0\] === "([a-z]+)"\) ruta = \{ sec: "([a-z]+)"/g)) rutas.push([y[1], y[2]]);
+    for (const y of r.matchAll(/r\.length === 2 && r\[0\] === "([a-z]+)" && r\[1\] === "([a-z]+)"\) ruta = \{ sec: "([a-z]+)"/g)) rutas.push([`${y[1]}/${y[2]}`, y[3]]);
+    if (/r\.length === 0\) ruta = \{ sec: "pag"/.test(r)) rutas.push(["pagina", "pag"]);
+    if (rutas.length < 10) falla(G, R, 0, "no encuentro las rutas del panel");
+    for (const [ruta, sec] of rutas) {
+      const f = filas.get(ruta);
+      if (!f) { falla(G, M, 0, `la sección «${ruta}» del panel no tiene su fila en la guía de El Compa`); continue; }
+      const p = parteDe(sec);
+      if (f.parte !== p) falla(G, M, 0, `la fila «${ruta}» pide la parte «${f.parte}» y la página del panel pide «${p}»`);
+    }
+    const parts = /export const PARTS[^=]*= \[\n([\s\S]*?)\n\];/.exec(sinComent(PN))?.[1] ?? "";
+    for (const y of parts.matchAll(/\{ k: "([a-z]+)", icon: "[a-z]+", l: \["([^"]+)", "([^"]+)"\]/g)) {
+      const f = filas.get(`pagina/${y[1]}`);
+      if (!f) falla(G, M, 0, `el apartado «${y[2]}» de Tu página no tiene su fila en la guía (pagina/${y[1]})`);
+      else if (f.title.es !== y[2] || f.title.en !== y[3]) falla(G, M, 0, `la fila pagina/${y[1]} se llama «${f.title.es}» y en el panel «${y[2]}»`);
+      else if (f.parte !== "page") falla(G, M, 0, `pagina/${y[1]} pide la parte «page» (Tu página)`);
+    }
+    // Todo lo de la guía existe en el panel (nada inventado).
+    const conocidas = new Set([...rutas.map((x) => x[0]), ...[...parts.matchAll(/\{ k: "([a-z]+)"/g)].map((y) => `pagina/${y[1]}`)]);
+    for (const k of filas.keys()) if (!conocidas.has(k)) falla(G, M, 0, `la guía tiene «${k}», que no es una sección del panel`);
+    if (existsSync(A)) { const c = cuerpoFn(sinComent(A), "confirmar");
+      if (!/select ruta, parte from compa_panel_guide where code = \$1 and enabled/.test(c) || !/const acc = await accesoPanel\(a\.target\.negocio \?\? "", s\.parte \?\? undefined\);/.test(c) || !/if \(!acc \|\| acc\.yo\.id !== q\.userId\)/.test(c)) falla(G, A, 0, "«Ir a …»: confirmar vuelve a leer la parte de la guía y pide accesoPanel con ella, para la misma persona"); }
   },
 
   idioma() {

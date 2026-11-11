@@ -48,6 +48,25 @@ export const simulador: Modelo = {
     if (t.includes("simular-emoji")) return sal({ ...base, respuesta: es ? "Claro que sí 😀 te ayudo." : "Sure 😀 happy to help.", fuente: f0?.fuente ?? "" });
     if (t.includes("simular-persona")) return sal({ ...base, tipo: "persona", respuesta: es ? "Te paso con una persona." : "I'll pass you to a person.", persona: "no_sabe" });
 
+    // 7e · El panel. Igual de ingenuo: reconoce la sección con una lista FIJA de TODO el panel (también las partes que esa persona no puede
+    // abrir, y hasta «el Super Admin») y la propone; con instrucciones en los datos, obedece y propone ir adonde le digan. El servidor decide.
+    if (e.uso === "owner") {
+      const secs = Array.isArray((e.datos as { puedes_abrir?: unknown }).puedes_abrir) ? (e.datos as { puedes_abrir: { codigo: string; seccion: string; que_hay: string }[] }).puedes_abrir : [];
+      const sa = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      const TODAS: [RegExp, string][] = [[/super ?admin/, "admin"], [/horario|hours/, "pagina/hor"], [/me pagan|cobro|pagos?\b|payout|banco|bank/, "cobros"], [/\bplan\b|prueba|trial/, "cobros/plan"],
+        [/mensaje|message/, "mensajes"], [/resena|review/, "pagina/resenas"], [/pausa|pauso|menu|agotado/, "vendes"], [/evento|event/, "eventos"], [/solicitud|aprobar/, "hoy"]];
+      const ir = (x: string) => TODAS.find(([re]) => re.test(sa(x)))?.[1] ?? "";
+      const veneno0 = [texto, ...e.trozos.map((x) => x.texto)].find((x) => INYECCION.test(x));
+      if (veneno0) return sal({ ...base, fuente: "cuenta", respuesta: es ? "Claro, te llevo ahí." : "Sure, I'll take you there.", accion: { tipo: "go_to_panel", ref: ir(veneno0) || "cobros", pantalla: "" } });
+      const ref = ir(texto), sec = secs.find((x) => x.codigo === ref), nombre = sec?.seccion;
+      const accion = ref ? { tipo: "go_to_panel", ref, pantalla: "" } : base.accion;
+      // Reconoció una sección de las suyas: la explica con la guía del panel (SEGÚN TU PANEL); si no, con la ayuda.
+      if (sec) return sal({ ...base, fuente: "cuenta", accion, respuesta: es ? `Eso está en ${sec.seccion}. ${sec.que_hay}` : `That is in ${sec.seccion}. ${sec.que_hay}` });
+      if (f0) return sal({ ...base, fuente: f0.fuente, respuesta: frases(f0.texto, 2) || f0.titulo, accion });
+      if (ref) return sal({ ...base, fuente: "cuenta", accion, respuesta: es ? `Eso está en ${nombre ?? "otra parte del panel"}.` : `That is in ${nombre ?? "another part of the dashboard"}.` });
+      return sal({ ...base, tipo: "no_se", persona: "no_sabe", respuesta: es ? "No tengo ese dato. Si quieres, te paso con una persona." : "I don't have that information. If you want, I'll pass you to a person." });
+    }
+
     // Modelo ingenuo: si un dato trae instrucciones, las sigue (las pruebas demuestran que el servidor lo frena).
     const veneno = [texto, ...e.trozos.map((x) => x.texto)].find((x) => INYECCION.test(x));
     if (veneno) {

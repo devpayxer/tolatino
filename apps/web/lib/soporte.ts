@@ -233,7 +233,8 @@ export async function abrirCaso(q: Quien, x: AbrirIn, o: { origen?: Origen; resu
     throw e;
   }
   // 7d · Si lo pasó El Compa, el aviso dice «Tu caso pasó a Soporte» (compa_caso); si no, el de siempre.
-  if (r.ok && r.id) await avisarCaso(r.numero!, origen === "compa" ? "compa_caso" : "sop_recibido");
+  // 7e · Desde El Compa del panel (caso del negocio): compa_caso_negocio («Lo ves en tu panel › Más › Ayuda y Soporte»).
+  if (r.ok && r.id) await avisarCaso(r.numero!, origen === "compa" ? (n ? "compa_caso_negocio" : "compa_caso") : "sop_recibido");
   return r.ok ? { ok: true, numero: r.numero, mensaje: r.mensaje } : r;
 }
 class FotoPerdida extends Error {}
@@ -243,7 +244,7 @@ class FotoPerdida extends Error {}
 export async function abrirCasoDesdeCompa(x: { userId: string; conversacion: number; tema: Tema; texto: string; resumen: string; operacion?: string | null; negocio?: string | null; prioridad?: "alta" | null }): Promise<ResS> {
   if (!Number.isSafeInteger(x.conversacion) || x.conversacion <= 0) return no("Prueba de nuevo.", "Try again.");
   return abrirCaso({ userId: x.userId, negocio: x.negocio ?? null }, { tema: x.tema, texto: x.texto, operacion: x.operacion ?? null, clave: null },
-    { origen: x.negocio ? "panel" : "compa", resumen: `Desde El Compa: ${x.resumen}`, compaConversacion: x.conversacion, prioridad: x.prioridad ?? null });
+    { origen: "compa", resumen: `Desde El Compa: ${x.resumen}`, compaConversacion: x.conversacion, prioridad: x.prioridad ?? null });
 }
 
 /* ── En el caso ── */
@@ -312,14 +313,14 @@ export async function calificarCaso(q: Quien, numero: string, si: boolean): Prom
 }
 
 /* Avisos del caso (en la app; sin SMS): recibido, respuesta del equipo y resuelto. */
-export async function avisarCaso(numero: string, tpl: "sop_recibido" | "sop_respuesta" | "sop_resuelto" | "compa_caso", quien?: string) {
+export async function avisarCaso(numero: string, tpl: "sop_recibido" | "sop_respuesta" | "sop_resuelto" | "compa_caso" | "compa_caso_negocio", quien?: string) {
   const { avisar } = await import("./avisos");
   const k = (await db().query<{ uid: string; due: string; tz: string; lang: string; neg: string | null }>(
     `select c.user_id::text as uid, ${ISO("c.sla_due_at")} as due, coalesce(ci.timezone, 'America/New_York') as tz, coalesce(u.lang, 'es') as lang, c.business_id as neg
        from support_cases c join users u on u.id = c.user_id left join cities ci on ci.id = c.city_id where c.number = $1`, [numero])).rows[0];
   if (!k) return;
   const href = `/soporte?caso=${encodeURIComponent(numero)}${k.neg ? `&negocio=${encodeURIComponent(k.neg)}` : ""}`;
-  if (tpl === "sop_recibido" || tpl === "compa_caso") await avisar(k.uid, tpl, { num: numero, cuando: prometido(k.due, k.tz, k.lang !== "en") }, { href, ref: ["support", numero] });
+  if (tpl === "sop_recibido" || tpl === "compa_caso" || tpl === "compa_caso_negocio") await avisar(k.uid, tpl, { num: numero, cuando: prometido(k.due, k.tz, k.lang !== "en") }, { href, ref: ["support", numero] });
   else if (tpl === "sop_respuesta") await avisar(k.uid, tpl, { num: numero, quien: quien || "Una persona" }, { href, ref: ["support", numero] });
   else await avisar(k.uid, tpl, { num: numero }, { href, ref: ["support", numero] });
 }

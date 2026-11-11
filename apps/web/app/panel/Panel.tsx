@@ -35,6 +35,7 @@ import type { CobrosPanel } from "@/lib/cobros";
 import type { RepPanel } from "@/lib/repartidor";
 import { hoyResenas, resenaDetalle, resenasBloques, type ResPanel } from "./ResenasPanel";
 import { hoyMensajes, mensajeDetalle, mensajesBloques, type MsjPanel } from "./MensajesPanel";
+import { compaBloques, type CpaPanel } from "./CompaPanel";
 import { citasBloques, modeloDetalle, servicioDetalle, serviciosBloques, sillasBloques } from "./Servicios";
 import { citasOficioBloques, herramientaBloques, oficioDetalle, oficiosBloques } from "./Oficios";
 import { herramientaSPBloques } from "./SaludPro";
@@ -67,7 +68,7 @@ const Icon = UI.Icon as ComponentType<any>;
 const Button = UI.Button as ComponentType<any>;
 const MONO = "'JetBrains Mono',monospace";
 
-export type Ruta = { sec: "pag" | "hoy" | "cli" | "msg" | "mod" | "dlv" | "mas" | "pay" | "evt"; sub: string | null; det: string | null };
+export type Ruta = { sec: "pag" | "hoy" | "cli" | "msg" | "mod" | "dlv" | "mas" | "pay" | "evt" | "cpa"; sub: string | null; det: string | null };
 type Bi = [string, string];
 /* Apartados de Tu página (PARTS del prototipo). Solo los que ya existen: los demás llegan en sus fases (LAUNCH-CHECKLIST). */
 export const PARTS: { k: string; icon: string; l: Bi; s: Bi }[] = [
@@ -113,10 +114,10 @@ export type Ctx = {
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
   form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
-  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void;
+  ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData; nav: (href: string) => void; cpa?: CpaPanel | null;
 };
 
-export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
+export function Panel({ cpa, d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp }: { cpa?: CpaPanel | null; d: DatosPanel; lang: "es" | "en"; ruta: Ruta; modoPruebas: boolean; menu?: MenuPanel; ped?: PedPanel; rsv?: RsvPanel; res?: ResPanel; nov?: NovData; cup?: CupData; jobs?: JobsData; cob?: CobrosPanel; reps?: RepPanel[]; plan?: PlanPanel; msj?: MsjPanel; svc?: SvcPanel; citas?: CitasData; ofi?: OfiPanel; ret?: HerrRetail; mped?: MercPanel; fies?: FiesPanel; via?: ViajesP; noc?: NocPanel; ins?: InsPanel; vis?: VisP; evt?: EvtData; evp?: EvpData }) {
   const es = lang === "es", E2 = useCallback((a: string, b: string) => (es ? a : b), [es]);
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const [pending, start] = useTransition();
@@ -128,7 +129,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);
   const base = `/panel/${d.id}`;
-  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "msg" ? `${base}/mensajes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "evt" ? `${base}/eventos` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
+  const url = (sec: Ruta["sec"], sub?: string | null) => (sec === "hoy" ? `${base}/hoy` : sec === "cli" ? `${base}/clientes` : sec === "msg" ? `${base}/mensajes` : sec === "dlv" ? `${base}/entrega` : sec === "pay" ? `${base}/cobros${sub ? `/${sub}` : ""}` : sec === "mas" ? `${base}/mas` : sec === "cpa" ? `${base}/compa` : sec === "evt" ? `${base}/eventos` : sec === "mod" ? `${base}/vendes${sub ? `/${sub}` : ""}` : sub ? `${base}/pagina/${sub}` : base);
   const go = useCallback((sec: Ruta["sec"], sub?: string | null) => {
     setForms({}); setUi({ dayOpen: -1, gSel: -1, sheet: null });
     router.push(url(sec, sub ?? null));
@@ -157,7 +158,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
   const pickFiles = useCallback((multi: boolean, cb: (f: File[]) => void) => { const el = fileRef.current; if (!el) return; el.multiple = multi; el.value = ""; fileCb.current = cb; el.click(); }, []);
 
   const hasDet = !!ruta.det, detCol = desk && w >= 1200 && hasDet;
-  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav };
+  const ctx: Ctx = { d, es, E2, desk, w, detCol, go, det, closeDet, ruta, toast, run, form, ui, setUi, pending, pickFiles, modoPruebas, menu, ped, rsv, res, nov, cup, jobs, cob, reps, plan, msj, svc, citas, ofi, ret, mped, fies, via, noc, ins, vis, evt, evp, nav, cpa };
 
   // Secciones → bloques. El editor activo (si hay) pone «Guardar» (acts en escritorio, barra fija en el teléfono).
   const S = useMemo(() => secciones(ctx), [ctx]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -200,7 +201,12 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
   // Eventos (DASH-EVENTOS, 6a): el dueño o quien tenga la parte «evt» del equipo. 6b: solo donde el módulo aplica (su categoría admite
   // Eventos en el Catálogo del Super Admin); el interruptor del negocio y la pausa de To'Latino deciden si sus eventos salen.
   const evts = d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt"));
-  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(msgs ? [{ k: "msg", l: E2("Mensajes", "Messages"), icon: "chat" }] : []), ...(vende ? [d.sells ? { k: "mas", l: E2("Más", "More"), icon: "grid" } : { k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : []), ...(evts && !(d.sells && vende) ? [{ k: "evt", l: E2("Eventos", "Events"), icon: "ticket" }] : [])];
+  const mnav = [...(d.sells || vende ? [{ k: "pag", l: E2("Tu página", "Your page"), icon: "store" }] : []), ...(d.sells ? [{ k: "hoy", l: E2("Hoy", "Today"), icon: "home" }, { k: "cli", l: E2("Clientes", "Clients"), icon: "users" }] : []), ...(msgs ? [{ k: "msg", l: E2("Mensajes", "Messages"), icon: "chat" }] : []), ...(vende && !d.sells ? [{ k: "mod", l: E2("Lo que vendes", "What you sell"), icon: "grid" }] : []), ...(evts && !(d.sells && vende) ? [{ k: "evt", l: E2("Eventos", "Events"), icon: "ticket" }] : []),
+    // 7e · Más (El Compa, Ayuda, Ayuda y Soporte) para todo miembro del panel, también sin «Lo que vendes».
+    { k: "mas", l: E2("Más", "More"), icon: "grid" }];
+  const mtabs = new Set(mnav.map((n) => n.k));
+  // 7e · El Compa (DASH-COMPA) en TU NEGOCIO, para todo miembro: solo explica y lleva a lo que esa persona puede abrir.
+  const cpaIt = navIt(sec === "cpa", "help", "El Compa", () => go("cpa"));
   const avatar = (n: number) => <span style={{ width: n, height: n, borderRadius: 12, backgroundImage: bz.ph, backgroundSize: "cover", backgroundPosition: "center", backgroundColor: "var(--tl-ink)", color: "var(--tl-white)", display: "grid", placeItems: "center", font: "800 13px/1 Sora,sans-serif", flex: "none" }}>{bz.ini}</span>;
   const estadoL = (sz: number, ls: string) => <span style={{ display: "flex", alignItems: "center", gap: 5, font: `700 ${sz}px ${MONO}`, letterSpacing: ls, color: stFg }}><span style={{ width: 6, height: 6, borderRadius: 99, background: stDot }} />{bz.stL}</span>;
 
@@ -259,17 +265,25 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
                   {evts ? navIt(sec === "evt", "ticket", E2("Eventos", "Events"), () => go("evt")) : null}
                   {cobra ? navIt(sec === "pay", "card", E2("Cobros y plan", "Payouts and plan"), () => go("pay", d.cat === "NEG-FOOD" ? null : "plan")) : null}
                 </div>
+              ) : null}
+              {d.sells || (!vende && !msgs) ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
+                  <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
+                  {cpaIt}
+                </div>
               ) : vende ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "mod", "grid", E2("Lo que vendes", "What you sell"), () => go("mod"))}
                   {evts ? navIt(sec === "evt", "ticket", E2("Eventos", "Events"), () => go("evt")) : null}
                   {msgs ? navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg")) : null}
+                  {cpaIt}
                 </div>
               ) : msgs ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 1, padding: "0 2px" }}>
                   <span style={{ padding: "6px 10px", font: `700 9px ${MONO}`, letterSpacing: ".16em", color: "rgba(11,14,18,.45)" }}>{E2("TU NEGOCIO", "YOUR BUSINESS")}</span>
                   {navIt(sec === "msg", "chat", msj?.n ? E2(`Mensajes · ${msj.n}`, `Messages · ${msj.n}`) : E2("Mensajes", "Messages"), () => go("msg"))}
+                  {cpaIt}
                 </div>
               ) : null}
             </div>
@@ -295,7 +309,7 @@ export function Panel({ d, lang, ruta, modoPruebas, menu, ped, rsv, res, nov, cu
         </div>
       ) : !desk && mnav.length > 1 ? (
         <div style={{ position: "sticky", bottom: 0, zIndex: 40, background: "rgba(247,246,243,.96)", backdropFilter: "blur(14px)", borderTop: "1px solid rgba(11,14,18,.08)", padding: "8px 8px 14px", display: "grid", gridTemplateColumns: `repeat(${mnav.length},minmax(0,1fr))` }}>
-          {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && (sec === "mod" || sec === "dlv" || sec === "pay" || sec === "evt")); return (
+          {mnav.map((n) => { const on = n.k === sec || (n.k === "mas" && ["mod", "dlv", "pay", "evt", "cpa"].includes(sec) && !mtabs.has(sec)); return (
             <div key={n.k} role="link" onClick={() => go(n.k as Ruta["sec"])} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "6px 0", cursor: "pointer", color: on ? "var(--tl-ink)" : "rgba(11,14,18,.42)" }}>
               <Icon name={n.icon} size={21} color={on ? "var(--tl-ink)" : "rgba(11,14,18,.42)"} /><span style={{ font: "700 10.5px Manrope,sans-serif" }}>{n.l}</span>
             </div>); })}
@@ -339,6 +353,7 @@ function secciones(c: Ctx): Sec {
     return { blocks: [cb[0]!, tabs, ...cb.slice(1)], ed: null };
   }
   if (c.ruta.sec === "mas") return { blocks: masBloques(c), ed: null };
+  if (c.ruta.sec === "cpa") return compaBloques(c);
   if (c.ruta.sec === "evt" && c.evt) return evtBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "inscripciones" && c.ins) return inscripcionesBloques(c);
   if (c.ruta.sec === "mod" && c.ruta.sub === "visitas" && c.vis) return visitasBloques(c);
@@ -697,7 +712,7 @@ function licencias(c: Ctx): Sec {
 }
 
 /* Más (Panel v2 · DASH-MAS, teléfono): Lo que vendes, Entrega, Eventos y Cobros y plan. «También»: ver mi página como cliente, la
-   Ayuda del panel (7a: el Centro de ayuda con el tema «Tu panel») y Ayuda y Soporte (7b: los casos del negocio; El Compa llega en 7e). */
+   Ayuda del panel (7a: el Centro de ayuda con el tema «Tu panel») y Ayuda y Soporte (7b: los casos del negocio). 7e: El Compa, el asistente del panel. */
 function masBloques(c: Ctx): Bloque[] {
   const { E2, d } = c;
   const vende = d.kind === "owner" || d.partes.includes("all") || d.partes.includes("cat");
@@ -709,10 +724,12 @@ function masBloques(c: Ctx): Bloque[] {
       ...(entrega ? [{ icon: "truck", t: E2("Entrega", "Delivery"), onClick: () => c.go("dlv") }] : []),
       ...(d.evtAplica && (d.kind === "owner" || d.partes.includes("all") || d.partes.includes("evt")) ? [{ icon: "ticket", t: E2("Eventos", "Events"), s: E2("Publica eventos: To’Latino los revisa antes de que salgan.", "Publish events: To’Latino reviews them before they go live."), onClick: () => c.go("evt") }] : []),
       ...(d.kind === "owner" || d.partes.includes("all") || d.partes.includes("pay") ? [{ icon: "card", t: E2("Cobros y plan", "Payouts and plan"), onClick: () => c.go("pay", d.cat === "NEG-FOOD" ? null : "plan") }] : []),
+      // 7e · El Compa (DASH-COMPA, en Más como el prototipo): para todo miembro.
+      { icon: "help", t: "El Compa", s: E2("El asistente de IA: te explica tu panel y te lleva a la sección.", "The AI assistant: it explains your dashboard and takes you to the section."), onClick: () => c.go("cpa") },
     ] },
     { type: "rows", k: E2("TAMBIÉN", "ALSO"), items: [{ icon: "search", t: E2("Ver mi página como cliente", "View my page as a client"), onClick: () => window.open(`/n/${d.id}`, "_blank", "noopener") },
       { icon: "help", t: E2("Ayuda", "Help"), s: E2("Cómo funciona cada parte de tu panel, en español y en inglés.", "How each part of your dashboard works, in Spanish and English."), onClick: () => window.location.assign("/ayuda?t=panel") },
-      // 7b · Ayuda y Soporte (DASH-MAS L1298, hueco #8): los casos del negocio con To'Latino. El Compa se suma en 7e.
+      // 7b · Ayuda y Soporte (DASH-MAS L1298, hueco #8): los casos del negocio con To'Latino.
       { icon: "chat", t: E2("Ayuda y Soporte", "Help and Support"), s: `${d.sop.abiertos ? `${d.sop.abiertos} ${d.sop.abiertos === 1 ? E2("caso abierto", "open case") : E2("casos abiertos", "open cases")} · ` : ""}${E2("Te contesta una persona del equipo: ", "A person on the team replies: ")}${d.sop.horario}.`, onClick: () => window.location.assign(`/soporte?negocio=${encodeURIComponent(d.id)}`) }] },
   ];
 }

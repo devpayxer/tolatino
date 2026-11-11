@@ -10,14 +10,17 @@ import { tapar } from "./tapar";
    «Desde El Compa: …») y deja la fila en compa_handoffs (la base marca la conversación «a una persona»). Abrir un caso no mueve nada. */
 export type Motivo = "money" | "account" | "safety" | "asked_person" | "unknown";
 const TEMA: Record<Motivo, Tema> = { money: "pago", account: "cuenta", safety: "seguridad", asked_person: "tecnico", unknown: "tecnico" };
+/* 7e · Desde el panel: el caso es DEL NEGOCIO (lo ve quien lo abrió y el dueño, como Panel › Más › Ayuda y Soporte) con los temas del negocio;
+   seguridad va como «cuenta» con prioridad alta. */
+const TEMA_NEGOCIO: Record<Motivo, Tema> = { money: "pago", account: "cuenta", safety: "cuenta", asked_person: "tecnico", unknown: "tecnico" };
 
 export type ResPersona = { ok: true; caso: string; promesa: { es: string; en: string } } | { ok: false; msg: { es: string; en: string } };
-export async function pasarAPersona(x: { userId: string; conversacionId: number; motivo: Motivo; textos: string[]; operacion?: string | null; lang: Lang; tema?: Tema }): Promise<ResPersona> {
+export async function pasarAPersona(x: { userId: string; conversacionId: number; motivo: Motivo; textos: string[]; operacion?: string | null; lang: Lang; tema?: Tema; negocio?: string | null }): Promise<ResPersona> {
   // El resumen: lo último que dijo la persona (≤ 4 frases, tapado). Así nadie le vuelve a preguntar.
   const resumen = tapar(x.textos.slice(-4).join(" ").replace(/\s+/g, " ").trim()).texto.slice(0, 440);
   const texto = (resumen.length >= 10 ? resumen : `${resumen} (desde El Compa)`).slice(0, 800);
-  const r = await abrirCasoDesdeCompa({ userId: x.userId, conversacion: x.conversacionId, tema: x.tema ?? TEMA[x.motivo], texto, resumen, operacion: x.operacion ?? null,
-    prioridad: x.motivo === "safety" ? "alta" : null });
+  const r = await abrirCasoDesdeCompa({ userId: x.userId, conversacion: x.conversacionId, tema: x.tema ?? (x.negocio ? TEMA_NEGOCIO : TEMA)[x.motivo], texto, resumen,
+    operacion: x.negocio ? null : x.operacion ?? null, negocio: x.negocio ?? null, prioridad: x.motivo === "safety" ? "alta" : null });
   if (!r.ok || !r.numero) return { ok: false, msg: r.ok ? { es: "Prueba de nuevo.", en: "Try again." } : r.msg };
   const k = (await db().query<{ id: string; due: string; tz: string }>(
     `select c.id::text, to_char(c.sla_due_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as due, coalesce(ci.timezone, 'America/New_York') as tz

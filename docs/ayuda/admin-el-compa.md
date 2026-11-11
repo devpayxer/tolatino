@@ -2,7 +2,8 @@
 
 _Pantallas: **Super Admin › El Compa · IA** (`/admin/compa`: «Interruptores y tope» y «Conversaciones»), la alerta del tope en Super Admin ›
 Inicio y Sistema › Configuración › El Compa. Permisos (sección «El Compa · IA»): ver = la pantalla y las cifras; aprobar = interruptores, pausas
-y tope (Admin de fábrica); Soporte y Solo lectura ven. Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: equipo. Tema: equipo._
+y tope (Admin de fábrica); Soporte y Solo lectura ven. También Super Admin › Negocios › un negocio › **El Compa**. Teléfono y escritorio.
+Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - **El gasto del mes:** cuánto lleva El Compa en IA (precios de la API con el recargo de EE. UU.), el **tope** ($100 al mes de fábrica), el
@@ -16,12 +17,17 @@ y tope (Admin de fábrica); Soporte y Solo lectura ven. Teléfono y escritorio. 
   ahora» dice si corre Claude (con la llave), el simulador del servidor de pruebas (sin llave) o las reglas fijas.
 - **Reglas fijas (no se apagan):** siempre dice que es IA, nunca mueve dinero ni cambia la cuenta, nunca pide tarjeta, contraseñas, SSN ni
   estatus, no da consejo legal, médico ni de inmigración y contesta en el idioma de la persona.
-- **Conversaciones:** cifras de 7 días (cuántas, resolvió solo, a una persona, acciones confirmadas), filtros **DÓNDE · RESULTADO · CANAL**, la
-  búsqueda por número **CP-** y la lista (número, nivel, dónde —Soporte u hoja de ayuda—, canal, mensajes, ciudad, resultado, motivo y si
-  contestó sin IA), sin el texto. Al tocar una, **la ficha**: QUIÉN · NEGOCIO · CANAL · RESULTADO · MOTIVO · CASO EN SOPORTE · DÓNDE, el hilo tal
+- **Conversaciones:** cifras de 7 días (cuántas, resolvió solo, a una persona, acciones confirmadas; con un DÓNDE elegido, las de ese nivel) y
+  cuántas por nivel (**VECINOS · 7 D**, **PANEL DEL NEGOCIO · 7 D**…), filtros **DÓNDE · RESULTADO · CANAL**, la búsqueda por número **CP-** y la
+  lista (número, nivel, dónde —Soporte, hoja de ayuda o Panel—, canal, mensajes, ciudad, resultado, motivo y si contestó sin IA), sin el texto.
+  **DÓNDE › Panel del negocio** son las conversaciones del asistente del panel (dueños y su equipo). Al tocar una, **la ficha**: QUIÉN · NEGOCIO · CANAL · RESULTADO · MOTIVO · CASO EN SOPORTE · DÓNDE, el hilo tal
   como se guardó (tapado), «Contestó sin IA (reglas fijas)» si pasó, las acciones que preparó y en qué quedaron, y **QUIÉN LA LEYÓ**. La ficha
   la abren **Admin y Soporte**; **cada apertura queda anotada** (quién y cuándo) antes de mostrar el hilo y esa lista no se borra. Solo lectura
   ve las cifras, no el hilo. «Marcar respuesta incorrecta» llega con el Super Admin completo de El Compa.
+
+- **Negocios › un negocio › El Compa:** las cifras de 30 días del asistente en el panel de ese negocio (conversaciones, «Ir a …» que tocaron,
+  casos que pasaron a Soporte, contestadas sin IA, por resultado) y si El Compa está en pausa ahí. Sin texto ni personas; el hilo, en
+  Conversaciones (lectura anotada).
 
 ## Cómo se usa
 1. **Pausar un nivel o un canal:** toca su interruptor, elige o escribe el motivo y **Poner en pausa**. Para volver: el interruptor, motivo y
@@ -43,6 +49,8 @@ y tope (Admin de fábrica); Soporte y Solo lectura ven. Teléfono y escritorio. 
 | Alguien escribe muchos mensajes | Después de 20 en una hora (o 60 en un día) El Compa ofrece «Con una persona» sin llamar a la IA. |
 | Tu rol no es Admin | Ves todo; al tocar un interruptor: «Tu rol no cambia interruptores.» |
 | Servidor de producción | El Compa queda apagado hasta que se enciende todo, aunque los interruptores digan otra cosa. |
+| Pausas «Panel del negocio» (o el negocio, o su ciudad) | En el panel, la sección El Compa dice «El Compa no está disponible ahora» y lleva a Ayuda y Soporte; el resto del panel sigue igual. Igual al tope. |
+| Alguien del equipo de un negocio pregunta por una parte del panel que no tiene | El Compa contesta «Eso lo ve el dueño del negocio», sin enlace; nada de esa parte le llega a la IA. |
 
 ## Preguntas frecuentes
 - **¿El Compa puede cobrar o devolver?** No. Solo prepara: cancelar una solicitud pendiente y gratis, abrir una pantalla o ir a una sección del
@@ -65,7 +73,9 @@ Claude Sonnet 5.5 only for the team copilot; «Answers now» says whether Claude
 rules cannot be turned off. **Conversations** (filters WHERE · OUTCOME · CHANNEL and a CP- search; tapping one opens its record with who,
 business, channel, outcome, reason, Support case, the stored (covered) thread, actions and **WHO READ IT** — only Admin and Support open it, and
 every opening is logged before the thread shows; Read-only sees numbers only) shows 7-day numbers and the list (CP- number, level, channel, messages, city, outcome, reason,
-answered without AI) without any text.
+answered without AI) without any text; it also counts conversations per level (neighbors, business dashboard…). **WHERE › Business dashboard**
+are the dashboard assistant's conversations. Businesses › a business › **El Compa** shows that business's 30-day dashboard numbers (conversations,
+«Go to …» taps, cases passed to Support, answered without AI) and whether El Compa is paused there, without text or people.
 
 ### How to use it
 Tap a switch, pick or write a reason, then **Pause** or **Turn on**. **Pause here** on a city or **Pause in a business** (id or exact name),
@@ -77,7 +87,9 @@ At the warning, the Admin team is notified once a month and Home shows an alert;
 fixed rules answer until next month or a higher cap. A slow (over 8 s) or failing AI falls back to the rules; a timeout counts the reserved cost.
 The output checker blocks answers without a source, invented prices or terms, «I already cancelled it», phone numbers, covered data, outside
 links and emoji. After 20 messages an hour (60 a day) it offers a person without calling the AI. Non-Admin roles see everything but cannot
-change switches. In production El Compa stays off until everything is turned on.
+change switches. In production El Compa stays off until everything is turned on. With «Business dashboard» paused (or the business, or its city)
+or at the cap, the dashboard's El Compa section says it is not available and links to Help and Support; the rest of the dashboard is unchanged. A
+team member asking about a part they don't have gets «The business owner handles that», with no link.
 
 ### FAQ
 - **Can El Compa charge or refund?** No. It only prepares: cancel a pending free request, open a screen, or go to a panel section; the person

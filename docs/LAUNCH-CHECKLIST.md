@@ -1002,8 +1002,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       construye con el Super Admin completo de El Compa. `compa_retener_meses` queda bloqueada en Configuración hasta entonces.
 - [ ] **Abogado:** aviso de IA en Términos y Privacidad; el texto (tapado y mínimo) se procesa con Anthropic en EE. UU.; quién del equipo lee las
       conversaciones y cuánto se guardan.
-- [ ] El copiloto, el panel y las respuestas automáticas usan el mismo motor (`turno` hoy solo acepta el uso «vecino»).
-- [ ] `go_to_panel` usa una lista cerrada mínima (hoy, mensajes, cobros, eventos, más) hasta que exista `compa_panel_guide`.
+- [ ] El copiloto, el panel y las respuestas automáticas usan el mismo motor (`turno` hoy solo acepta el uso «vecino»). — 7e (11 nov): el panel
+      ya usa el motor (`turnoPanel` sobre `consultar()`, la llamada al modelo común); faltan las respuestas automáticas (7f) y el copiloto (7g).
+- [x] `go_to_panel` usa una lista cerrada mínima (hoy, mensajes, cobros, eventos, más) hasta que exista `compa_panel_guide`. — 7e (11 nov):
+      `go_to_panel` va contra `compa_panel_guide` (0120) filtrada por las partes de la persona; confirmar relee la guía y pide `accesoPanel`.
 
 ## Fase 7 · 7d (El Compa para vecinos)
 - [ ] **7d · Botón «Ayuda» en operaciones vivas:** la hoja sale donde ya había «Ayuda con …» (casi siempre en operaciones terminadas). Para una
@@ -1019,6 +1021,22 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **7d · El Compa en los 9 dispositivos:** `compa7d` corre en 390 y 1360 en local; falta la matriz de CI. (7d, 10 nov)
 - [ ] **7d · Pantalla de un pedido sin hora de «listo» o de respuesta** (`lib/pedir.ts` `pedidoDe` falla con `ready_at` o `respond_by` nulos): la
       semilla 0041 repara el pedido de la 0040; pedidos de prueba hechos a mano siguen fallando. Hacer la pantalla tolerante. (7d, 10 nov)
+
+## Fase 7 · 7e (El Compa en el panel)
+- [ ] **7e · Un miembro con partes en la semilla del sandbox:** el panel no tiene todavía la pantalla para dar partes a alguien del equipo
+      (Moderadores, más arriba), así que en el sandbox no hay un miembro con una sola parte para mirar «Eso lo ve el dueño». La prueba `compa7e`
+      lo crea en la base local. Propuesta: la semilla 0042 (7f) suma una moderadora de prueba en Sabor Dominicano con «Hoy y pedidos». (7e, 11 nov)
+- [ ] **7e · Respuestas automáticas en Panel › El Compa** (Pro, `lockB` para Free, «Pruébalo como cliente», «Lo que contestó El Compa»): 7f. Hoy
+      la sección es solo el asistente y su cabecera no las menciona. (7e, 11 nov)
+- [ ] **7e · El Compa del panel en los 9 dispositivos:** `compa7e` corre en 390 y 1360 en local; falta la matriz de CI. (7e, 11 nov)
+- [ ] **7e · Calidad con el modelo real:** la batería (`scripts/compa/bateria/`) debe sumar preguntas del panel (dueño y miembro con partes,
+      ES/EN, «llévame a…», dinero, transferir el negocio) cuando haya llave. Con el simulador la respuesta es la guía o el primer trozo de ayuda;
+      con Haiku debería elegir el trozo útil. (7e, 11 nov)
+- [ ] **7e · Visto de paso: el pedido pagado de la semilla 0040 (El Fogón, #1360 en local) no tiene líneas** (`operation_lines`): su «Ayuda
+      con el pedido › Falta algo» muestra «¿QUÉ PLATOS?» vacío y no deja seguir. `compa7d` §8 ya elige un pedido con líneas; corregir la semilla
+      (una semilla nueva que le sume sus líneas, sin tocar la 0040) o que el formulario lo diga. (7e, 11 nov)
+- [ ] **7e · «Cambiar mi teléfono / ciudad / borrar la cuenta» escrito en el panel** abre un caso de cuenta del negocio (el plan lo pide así);
+      si el dueño quería su cuenta personal, ¿mejor abrirle Mi cuenta como al vecino? Decisión del fundador. (7e, 11 nov)
 
 ## Pedidos sin hora de listo o de respuesta (10 nov)
 - [x] **Un pedido con `ready_at` o `respond_by` vacíos tumbaba con un 500 la página del pedido del cliente y TODA la pantalla Hoy del panel**

@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 10 nov 2026 (7d · El Compa para vecinos)._
+_Actualizado: 11 nov 2026 (7e · El Compa en el panel)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -411,6 +411,29 @@ Guardianes **`compaSiempreIA`**, **`compaHojaSinRomper`**, **`compaLecturaAnotad
 **`compa7d` 140 ✓** (390 y 1360); `compa7c` 111 ✓, `sop7b` 104 ✓, `adm5i` ✓; `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` ✓ con El Compa apagado y (salvo
 `ayu4if`) al tope. Ayuda: **`el-compa`** nueva; las 9 `ayuda-con-*`/`resena-y-ayuda-*`, `soporte`, `privacidad-de-el-compa`, `mi-cuenta`,
 `admin-el-compa` al día. Sigue **7e** (El Compa en el panel: `DASH-COMPA`, guía del panel `compa_panel_guide`, `go_to_panel`; migración 0120).
+**7e hecho (11 nov)** — El Compa en el panel (`DASH-COMPA`). Migración **0120** (`compa_panel_guide`: 20 secciones = la navegación del panel
+(las rutas de `page.tsx` + los apartados de Tu página), cada una con la **parte** que pide `accesoPanel`, cuándo aplica (siempre · vende ·
+eventos · entrega · licencias), título y «qué hay» ES/EN, la ayuda que la explica (`help_slugs`) y las palabras con que el servidor la reconoce;
+no se borra; plantilla `compa_caso_negocio`; sin semilla). Código: `lib/compa/contexto-panel.ts` (`contextoPanel(userId, negocio)`: vuelve a
+comprobar en la base que es miembro activo; reparte la guía con la regla de `accesoPanel` en `secciones` (lo único que ve el modelo) y
+`prohibidas`; cifras solo de sus partes; nunca clientes, teléfonos ni montos; `seccionPedida` por palabras), `conversacion.ts` (**`consultar()`**:
+la llamada al modelo de TODOS los usos —gastar → modelo → anotarUso → verificar— sale de `turno`; **`SISTEMA_PANEL`**, **`turnoPanel`** (interruptores
+«owner» de la ciudad y el negocio + tope → límites → tapar → dinero/seguridad/cuenta/negocio/persona sin modelo → sección prohibida = «Eso lo ve
+el dueño» → ayuda vecino+negocio sin la de partes ajenas → Haiku → `go_to_panel` solo a SUS secciones; acción rechazada = reglas), `hiloPanel`,
+`cerrarPanel`), `acciones.ts` (`go_to_panel` contra el mapa del servidor; confirmar relee la guía y pide `accesoPanel` con su parte; la lista
+fija mínima de 7c se fue), `persona.ts` (caso DEL NEGOCIO: pago · cuenta · técnico; seguridad = cuenta alta), `reglas.ts` (`detectarPanel`,
+líneas `dueno` y `panelApagado`), `modelo-reglas.ts` (`responderPanelConReglas`), simulador con el uso panel (ingenuo), `asistente-panel.ts`
+(lectura barata para la pantalla, con `.catch`), `soporte.ts` (origen «compa» con negocio + aviso `compa_caso_negocio`). Pantalla **Panel ›
+El Compa** (`/panel/{negocio}/compa`, `CompaPanel.tsx` con los bloques del panel: nota fija de IA, hilo con «EL COMPA · IA · SEGÚN …», «Ir a
+{sección}», el artículo, «Tu caso pasó a Soporte · TK-» con «Ver mi caso», chips de sus partes, Preguntar · Con una persona · Empezar de nuevo;
+apagado/tope = «no disponible» + Ayuda y Soporte); en TU NEGOCIO (escritorio) y en Más (teléfono, ahora para todo miembro). Acciones
+`app/panel/acciones-compa.ts` (mismo origen + sesión + `accesoPanel`). Super Admin: Conversaciones con cifras por nivel (DÓNDE › Panel del
+negocio) y **Negocios 360° › El Compa** (cifras de 30 días, sin texto). Guardianes **`guiaDelPanelCompleta`** (nuevo) + `compaSoloSusDatos`,
+`compaInterruptores`, `compaSalidaLimpia`, `compaSiempreIA`, `compaSinRutaCritica`, `compaTapaEnElMotor` ampliados (36/36 al revés
+`alreves7e`; 66/66 `alreves7c`, 33/33 `alreves7d`, 45/45 `alreves7b`, 36/36 `alreves7a`); e2e **`compa7e` 117 ✓** (390 y 1360);
+`compa7d` 140 ✓, `sop7b` 104 ✓, `compa7c` 111 ✓, `adm5i` ✓; 0120 dos veces en local y en una base nueva (semillas dos veces). Ayuda:
+**`panel-el-compa`** nueva; `panel`, `panel-ayuda-y-soporte`, `admin-el-compa`, `admin-negocios` al día. Sigue **7f** (respuestas automáticas
+Pro y «Sugerir respuesta con El Compa»; migración 0121, semilla 0042).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

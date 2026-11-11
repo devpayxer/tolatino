@@ -6,7 +6,7 @@ import { N360 } from "../../N360";
 
 /* ADM-NEG · 360° de un negocio (pantalla completa, como el prototipo por defecto en Negocios). ?tab= la pestaña.
    Dinero solo sale a quien ve transacciones (tx:ver); sus datos se leen solo en esa pestaña. */
-const TABS = new Set(["resumen", "ficha", "vende", "din", "equipo", "cont", "confianza", "soporte"]);
+const TABS = new Set(["resumen", "ficha", "vende", "din", "equipo", "cont", "confianza", "soporte", "compa"]);
 export default async function Page({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ tab?: string }> }) {
   const s = await requerir("neg", "ver");
   const [{ id }, sp] = await Promise.all([params, searchParams]);
@@ -20,5 +20,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   const evts = tab === "cont" && s.puede("evt", "ver") ? { ...(await (await import("@/lib/evt-revision")).eventosDeNegocioAdmin(n.id)), ...(await (await import("@/lib/evt-admin")).eventos360(n.id)), puede: { aprobar: s.puede("evt", "aprobar"), retirar: s.puede("evt", "retirar") } } : null;
   // 7b · Soporte: los casos que el negocio abrió desde su panel (quien ve Soporte).
   const sop = s.puede("sop", "ver") ? (tab === "soporte" ? await (await import("@/lib/soporte-equipo")).casosDe(s, { negocio: n.id }) : []) : undefined;
-  return <N360 n={n} tab={tab} din={din} evts={evts} sop={sop} />;
+  // 7e · El Compa en el panel de este negocio: cifras (quien ve El Compa).
+  const cpa = s.puede("compa", "ver") ? (tab === "compa" ? await (await import("@/lib/compa/admin-compa")).compaDeNegocio(s, n.id) : null) : undefined;
+  return <N360 n={n} tab={tab} din={din} evts={evts} sop={sop} cpa={cpa} />;
 }

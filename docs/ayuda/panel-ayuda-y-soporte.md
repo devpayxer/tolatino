@@ -1,7 +1,7 @@
 # Panel: Ayuda y Soporte · Dashboard: Help and Support
 
 _Pantallas: **Panel › Más › Ayuda y Soporte** (abre Soporte con tu negocio: `/soporte?negocio={tu negocio}`) y los avisos del panel que dicen
-«Escribir a Soporte». Teléfono y escritorio. Versión: 10 nov 2026. Audiencia: negocio. Tema: panel._
+«Escribir a Soporte». Teléfono y escritorio. Versión: 11 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
 - Le escribes a **una persona del equipo de To'Latino** sobre tu negocio: **tus cobros o tu plan**, **tu cuenta**, **la app no funciona bien**
@@ -9,6 +9,7 @@ _Pantallas: **Panel › Más › Ayuda y Soporte** (abre Soporte con tu negocio:
 - Los casos de tu negocio salen en **Los casos de tu negocio**, con su número (**TK-…**) y su estado (Recibido · Lo están viendo · Te
   respondieron · Resuelto).
 - Lo que un cliente te pide sobre un pedido o una cita sigue en **Hoy** (la ayuda de cada operación): Soporte es tu conversación con To'Latino.
+- Si le preguntaste a **El Compa** (Panel › El Compa) y te pasó con una persona, ese caso también sale aquí, con el resumen de lo que hablaron.
 
 ## Cómo se usa
 1. Panel › **Más** › **Ayuda y Soporte**. Toca **Escríbenos**.
@@ -28,14 +29,15 @@ _Pantallas: **Panel › Más › Ayuda y Soporte** (abre Soporte con tu negocio:
 ## Preguntas frecuentes
 - **¿Mis clientes ven mis casos?** No. Solo tú, quien lo abrió y el equipo de To'Latino.
 - **¿Puedo escribir de mi cuenta personal?** Sí: Mi cuenta › Ayuda y soporte es para lo tuyo; esto es para tu negocio.
-- **¿Dónde está la ayuda de cómo funciona el panel?** En Más › **Ayuda** (los artículos de tu panel).
+- **¿Dónde está la ayuda de cómo funciona el panel?** En Más › **Ayuda** (los artículos de tu panel), o pregúntale a **El Compa**.
 
 ## English
 
 ### What it does
 You write to **a person on the To'Latino team** about your business: **payouts or plan**, **your account**, **the app is not working well** or
 **an idea**. The team works **Monday to Friday, 9 AM to 6 PM** (your city's time). Your business cases show in **Your business cases** with their
-number (**TK-…**) and status. A customer's request about an order or booking stays in **Today**; Support is your conversation with To'Latino.
+number (**TK-…**) and status. A customer's request about an order or booking stays in **Today**; Support is your conversation with To'Latino. If
+**El Compa** (Dashboard › El Compa) passed you to a person, that case shows here too, with the summary.
 
 ### How to use it
 Dashboard › **More** › **Help and Support** › **Write to us**. Pick the topic, tell us what happened, add a photo if it helps and **Send**. You get
@@ -49,4 +51,4 @@ that needs a payment review goes to Finance; you stay in the same case.
 ### FAQ
 - **Do my customers see my cases?** No.
 - **Can I write from my personal account?** Yes: My account › Help and support is for your own matters.
-- **Where is the help on how the dashboard works?** More › **Help**.
+- **Where is the help on how the dashboard works?** More › **Help**, or ask **El Compa**.

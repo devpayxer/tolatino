@@ -1,6 +1,6 @@
 # Panel del negocio · Business dashboard
 
-_Pantallas: DASH-PAGINA (Tu página y sus apartados Horario, Fotos y portada, Quiénes somos, Equipo) y DASH-HOY, en teléfono y escritorio. Versión: 5
+_Pantallas: DASH-PAGINA (Tu página y sus apartados Horario, Fotos y portada, Quiénes somos, Equipo) y DASH-HOY, en teléfono y escritorio. Versión: 11
 nov 2026. Audiencia: negocio. Tema: panel._
 
 ## Qué hace
@@ -19,6 +19,9 @@ Es donde el dueño maneja su página de To'Latino. Todo lo que cambia aquí se v
   «Quiénes somos», quita una foto o el sello, el panel lo dice con el motivo.
 - **Equipo:** quién sale en la página. Se invita con nombre, teléfono y qué hace; solo sale quien acepta. Cada persona
   pone su foto, sus palabras y sus idiomas; el negocio pone el rol, desde cuándo, las especialidades y el horario.
+
+- **El Compa:** el asistente de IA del panel (en **Tu negocio** del escritorio y en **Más** del teléfono): le preguntas cómo se hace algo y
+  te lleva a la sección (ver `panel-el-compa.md`).
 
 Entra en **/panel** con la misma cuenta con la que publicó (teléfono y código). Si tiene varios negocios, toca el
 nombre arriba para cambiar.
@@ -70,7 +73,7 @@ quienes tienen un negocio en To'Latino (`centro-de-ayuda.md`).
 
 ## English
 
-The dashboard is where an owner manages their To'Latino page; every change shows on the page right away. **Your page**
+The dashboard is where an owner manages their To'Latino page; every change shows on the page right away. **El Compa** (desktop: **Your business**; phone: **More**) is the dashboard's AI assistant: ask how to do something and it takes you to the section (see `panel-el-compa.md`). **Your page**
 shows the business card (open/closed, real 7-day views and contacts, profile strength 30–100 computed by To'Latino),
 what is left to complete and the sections. **Today** (only if the business sells or books) shows what awaits a reply,
 today's agenda, sales, today's views and **Close for today** (the page and lists say "Closed today" and it reopens by

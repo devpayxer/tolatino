@@ -645,7 +645,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       probar (no hay llave); falta la corrida de CI (la hace la sesión principal). — 7d (10 nov): **la parte de Ayuda, hecha:** en las 11 familias
       la pantalla con el nivel apagado, el canal apagado, la ciudad en pausa, el negocio en pausa y al tope es idéntica a la de antes (`compa7d`), y
       `ayuda2i`, `cit3e`, `ayu4if`, `ayu4z` pasan con El Compa apagado (`ayuda2i`, `cit3e`, `ayu4z` también al tope); guardián `compaHojaSinRomper`.
-      Sigue sin marcar por Mensajes (7f), el modelo real y CI.
+      Sigue sin marcar por Mensajes (7f), el modelo real y CI. — 7e (11 nov): **la parte del panel, hecha:** con el nivel «Panel del negocio», el
+      canal, el negocio o la ciudad en pausa y al tope, Tu página, Hoy, Mensajes, Más y Clientes del panel son idénticas a las de antes y la sección
+      El Compa dice que no está (`compa7e`).
 - [x] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
       una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés). — 7d (10 nov): 0119 dos veces en local y en una
       base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7d` 140 ✓ (hoja en las 11 familias, fuente con enlace,
@@ -653,7 +655,13 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       origen cruzado, inyección, caso TK- con solo lo permitido, dinero sin modelo, formulario con origin «compa», ficha del Super Admin con lectura
       anotada, límite); guardianes 3 nuevos + 5 ampliados, 33/33 al revés (`alreves7d`) y 66/66 de 7c. Falta la corrida de CI (la hace la sesión
       principal).
-- [ ] Panel: asistente con la guía de las partes de esa persona; «Ir a …»; dinero y cuenta a Soporte.
+- [x] Panel: asistente con la guía de las partes de esa persona; «Ir a …»; dinero y cuenta a Soporte. — 7e (11 nov): 0120 aplicada dos veces en
+      local y en una base nueva (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7e` 117 ✓ (dueño con fuente e «Ir a
+      Horario» que llega; miembro con solo «Hoy y pedidos»: el modelo recibe solo sus secciones y cifras, «Eso lo ve el dueño» sin enlace, la parte
+      quitada antes del toque = no entra; caso de Soporte del negocio por dinero, cuenta y «Con una persona»; IDOR con el dueño de otro negocio
+      repitiendo las acciones reales; origen cruzado; inyección en el texto y en una ayuda envenenada; tapado; límite; todo apagado y al tope =
+      el panel idéntico); guardián `guiaDelPanelCompleta` + 6 ampliados, 36/36 al revés (`alreves7e`). Falta la corrida de CI (la hace la sesión
+      principal).
 - [ ] Respuestas automáticas Pro (cuándo, temas, nota, prueba, registro, pasar al dueño, apagar desde el admin) y «Sugerir respuesta».
 - [ ] Copiloto con el modelo mayor, solo borrador, con registro de uso.
 - [ ] WhatsApp y SMS contra simuladores: firma, idempotencia, identidad por teléfono verificado, acciones solo por enlace de un uso.

@@ -52,13 +52,14 @@ export default async function Page({ params, searchParams }: { params: Promise<{
   else if (r.length === 1 && r[0] === "vendes") ruta = { sec: "mod", sub: null, det: null };
   else if (r.length === 1 && r[0] === "entrega") ruta = { sec: "dlv", sub: null, det: null };
   else if (r.length === 1 && r[0] === "mas") ruta = { sec: "mas", sub: null, det: null };
+  else if (r.length === 1 && r[0] === "compa") ruta = { sec: "cpa", sub: null, det: null };
   else if (r.length === 1 && r[0] === "eventos") ruta = { sec: "evt", sub: null, det: null };
   else if (r.length === 1 && r[0] === "cobros") ruta = { sec: "pay", sub: null, det: null };
   else if (r.length === 2 && r[0] === "cobros" && r[1] === "plan") ruta = { sec: "pay", sub: "plan", det: null };
   else if (r.length === 2 && r[0] === "vendes" && (r[1] === "menu" || r[1] === "pedidos" || r[1] === "reservaciones" || r[1] === "jobs" || r[1] === "servicios" || r[1] === "citas" || r[1] === "sillas" || r[1] === "herramienta" || r[1] === "productos" || r[1] === "inscripciones" || r[1] === "propiedades" || r[1] === "inventario" || r[1] === "visitas")) ruta = { sec: "mod", sub: r[1], det: null };
   else notFound();
   if (typeof sp.det === "string" && DET.test(sp.det)) ruta.det = sp.det;
-  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "evt" ? "evt" : ruta.sec === "mas" ? undefined : "page");
+  const acc = await accesoPanel(id, ruta.sec === "hoy" || ruta.sec === "cli" ? "ord" : ruta.sec === "msg" ? "msg" : ruta.sec === "mod" ? "cat" : ruta.sec === "dlv" ? "dlv" : ruta.sec === "pay" ? "pay" : ruta.sec === "evt" ? "evt" : ruta.sec === "mas" || ruta.sec === "cpa" ? undefined : "page");
   if (!acc) {
     const es = lang === "es";
     return (
@@ -296,5 +297,8 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       aj: ajOn ? { ...(await E.ajustesEvp(d.id)), min: (await valores("evp_anticipacion_dias")).evp_anticipacion_dias, tarjeta: !!(await tarjetaDe(d.id)).cuenta } : undefined,
     };
   })() : undefined;
-  return <Panel d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
+  // 7e · Panel › El Compa (cualquier miembro activo): lo que la sección necesita para empezar, SOLO aquí y a prueba de fallas (si falla, la
+  // sección dice que El Compa no está y lleva a Ayuda y Soporte; ninguna otra pantalla del panel espera a El Compa).
+  const cpa = ruta.sec === "cpa" ? await (await import("@/lib/compa/asistente-panel")).asistentePanel(acc.yo.id, d.id, lang).catch(() => null) : undefined;
+  return <Panel cpa={cpa} d={d} lang={lang} ruta={ruta} modoPruebas={process.env.TOLATINO_ENTORNO !== "produccion"} menu={menu} ped={ped} rsv={rsv} res={res} nov={nov} cup={cup} jobs={jobs} cob={cob} reps={reps} plan={plan} msj={msj} svc={svc} citas={citas} ofi={ofi} ret={ret} mped={mped} fies={fies} via={via} noc={noc} ins={ins} vis={vis} evt={evt} evp={evp} />;
 }
