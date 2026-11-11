@@ -25,6 +25,11 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
   la abren **Admin y Soporte**; **cada apertura queda anotada** (quién y cuándo) antes de mostrar el hilo y esa lista no se borra. Solo lectura
   ve las cifras, no el hilo. «Marcar respuesta incorrecta» llega con el Super Admin completo de El Compa.
 
+- **COPILOTO EN SOPORTE · 30 D** (Conversaciones): cuántos borradores pidió el equipo (en casos y en ayudas escaladas) y qué se hizo con ellos:
+  **enviados tal cual**, **editados**, **descartados** (pidieron otro, eligieron una macro o nadie lo envió en un día) y cuántos sin IA (reglas).
+  Sin personas ni texto. En **POR NIVEL**, la fila **Copiloto** dice lo que gastó este mes (usa Claude Sonnet) y sus llamadas; en **DÓNDE ›
+  Copiloto**, sus conversaciones (una por caso y por persona del equipo; la ficha con el borrador, lectura anotada). El copiloto se explica en la
+  ayuda de Soporte.
 - **Negocios › un negocio › El Compa:** las cifras de 30 días del asistente en el panel de ese negocio (conversaciones, «Ir a …» que tocaron,
   casos que pasaron a Soporte, contestadas sin IA, por resultado) y si El Compa está en pausa ahí. Sin texto ni personas; el hilo, en
   Conversaciones (lectura anotada). Y **RESPUESTAS AUTOMÁTICAS** (Pro): si el negocio las encendió, lo que contestó y lo que pasó al negocio en
@@ -60,6 +65,7 @@ Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
 | Apagas las respuestas automáticas de un negocio | Sus clientes vuelven a la respuesta fija de siempre (si el negocio la tiene); el dueño ve el motivo y no las puede encender. |
 | Un cliente reporta una respuesta de El Compa | Caso en Mensajes reportados con el motivo «Una respuesta de El Compa»; ahí se apaga en esa conversación o se va al negocio. |
 | Pausas «Respuestas automáticas», el canal, la ciudad o llega al tope | Mensajes funciona exactamente como antes: la respuesta fija de siempre, si el negocio la tiene. |
+| Pausas «Copiloto», el canal o la ciudad, o llega al tope | En Soporte y en Colas › Ayuda con pedidos y citas no sale «Sugerir respuesta con El Compa»: todo como antes (macros, Enviar, Resolver). |
 
 ## Preguntas frecuentes
 - **¿El Compa puede cobrar o devolver?** No. Solo prepara: cancelar una solicitud pendiente y gratis, abrir una pantalla o ir a una sección del
@@ -109,5 +115,8 @@ auto-replies paused at any level or at the cap, Messages works exactly as before
   confirms and the usual function and permissions apply.
 - **What does the AI see?** The minimum about that person, covered. Never anyone else, Health, Professionals, Kids, private messages or Super
   Admin data.
+- **Where do I see the support copilot?** Conversations › SUPPORT COPILOT · 30 D: drafts requested by the team and whether they were sent as is,
+  edited or discarded (no people, no text); its monthly spend is in BY LEVEL › Copilot. Pausing the Copilot level (or the channel, the city, or
+  reaching the cap) removes «Suggest a reply with El Compa» from Support and the help queue; everything else stays as before.
 - **Where does the Anthropic key go?** In the server secrets, never in the repo or chat. Without it, the simulator runs on the test server and
   the fixed rules in production.

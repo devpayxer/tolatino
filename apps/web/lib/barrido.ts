@@ -106,6 +106,8 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         // 7f · Respuestas automáticas que se quedaron esperando (el proceso que contestaba se cayó: su reclamo vence a los 90 s). Si El Compa ya no
         // contesta ahí, sale lo de siempre (la respuesta fija, si el negocio la tiene).
         ["compaRespuestasAuto", async () => (await import("./compa/respuesta-auto")).contestarPendientes()],
+        // 7g · Un borrador del copiloto que nadie envió en un día queda «descartado» (nada se borra; las cifras de El Compa lo cuentan).
+        ["compaBorradores", async () => { await db().query(`update compa_drafts set used = 'discarded' where used is null and at < now() - interval '1 day'`); }],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],
         ["dinero", async () => { for (const b of await negociosConRetenido()) {
           await cobros.repararPagos(b).catch(() => undefined); await estimados.repararEstimados(b).catch(() => undefined); await estimados.renovarRetenciones(b).catch(() => undefined);

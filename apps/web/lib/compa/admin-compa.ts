@@ -15,7 +15,11 @@ export type Historial = { accion: string; objetivo: string; antes: Record<string
 export type DatosCompaAdmin = {
   gasto: GastoMes; interruptores: EstadoInterruptores; motor: Motor; modelos: { id: string; label: string; role: string | null; entrada: number; salida: number; geo: number; precioDe: string }[];
   historial: Historial[]; conv: { filas: FilaConv[]; sig: string | null; total7d: number; porResultado: Record<string, number>; porUso: Record<string, number> };
+  copiloto: CifrasCopiloto;
 };
+/* 7g · COPILOTO EN SOPORTE (secCompa · Resumen): borradores de 30 días y qué se hizo con ellos (enviado tal cual, editado, descartado, sin
+   usar todavía), cuántos sin IA, en casos y en ayudas escaladas. Sin personas ni texto. */
+export type CifrasCopiloto = { borradores: number; tal: number; editados: number; descartados: number; abiertos: number; sinIA: number; casos: number; ayudas: number };
 const ISO = (c: string) => `to_char(${c} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')`;
 const USOS = new Set(["neighbor", "owner", "auto_reply", "copilot"]);
 const RES = new Set(["open", "self_resolved", "action_done", "handed_off", "to_owner"]);
@@ -26,7 +30,7 @@ export async function datosCompaAdmin(f: { uso: string | null; resultado: string
   const canal = f.canal && CANALES.has(f.canal) ? f.canal : null, numero = f.numero && /^CP-\d{4,12}$/.test(f.numero.trim().toUpperCase()) ? f.numero.trim().toUpperCase() : null;
   // Cursor «fecha|id» (la lista va de la más nueva a la más vieja).
   const cur = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z\|\d{1,12}$/.test(f.antes ?? "") ? f.antes!.split("|") : null;
-  const [gasto, inter, M, H, C, K] = await Promise.all([
+  const [gasto, inter, M, H, C, K, P] = await Promise.all([
     gastoDelMes(), estadoInterruptores(),
     db().query<DatosCompaAdmin["modelos"][number]>(
       `select id, label, role, input_per_mtok_microusd::float8 / 1000000 as entrada, output_per_mtok_microusd::float8 / 1000000 as salida, geo_pct as geo, to_char(priced_at, 'YYYY-MM-DD') as "precioDe"
@@ -46,13 +50,18 @@ export async function datosCompaAdmin(f: { uso: string | null; resultado: string
           and ($5::text is null or c.channel = $5 or ($5 = 'app' and c.channel = 'web')) and ($6::text is null or c.number = $6)
         order by c.started_at desc, c.id desc limit 31`, [uso, res, cur?.[0] ?? null, cur?.[1] ?? null, canal, numero]),
     db().query<{ r: string; u: string; n: number }>(`select outcome as r, use as u, count(*)::int as n from compa_conversations where started_at > now() - interval '7 days' group by outcome, use`),
+    db().query<CifrasCopiloto>(
+      `select count(*)::int as borradores, count(*) filter (where used = 'sent_as_is')::int as tal, count(*) filter (where used = 'edited')::int as editados,
+              count(*) filter (where used = 'discarded')::int as descartados, count(*) filter (where used is null)::int as abiertos, count(*) filter (where engine = 'reglas')::int as "sinIA",
+              count(*) filter (where case_id is not null)::int as casos, count(*) filter (where help_request_id is not null)::int as ayudas
+         from compa_drafts where at > now() - interval '30 days'`),
   ]);
   const filas = C.rows.slice(0, 30), ult = C.rows.length > 30 ? filas[filas.length - 1]! : null;
   const porResultado: Record<string, number> = {}, porUso: Record<string, number> = {};
   // 7e · Cifras de 7 días por resultado (del filtro DÓNDE si hay uno) y por nivel (vecinos, panel…).
   for (const x of K.rows) { porUso[x.u] = (porUso[x.u] ?? 0) + x.n; if (!uso || x.u === uso) porResultado[x.r] = (porResultado[x.r] ?? 0) + x.n; }
   return {
-    gasto, interruptores: inter, motor: motorActivo(), modelos: M.rows, historial: H.rows,
+    gasto, interruptores: inter, motor: motorActivo(), modelos: M.rows, historial: H.rows, copiloto: P.rows[0]!,
     conv: { filas: filas.map(({ sid: _a, sat: _b, ...x }) => { void _a; void _b; return x; }), sig: ult ? `${ult.sat}|${ult.sid}` : null,
       total7d: K.rows.filter((x) => !uso || x.u === uso).reduce((s, x) => s + x.n, 0), porResultado, porUso },
   };

@@ -3,7 +3,9 @@
 _Pantallas: **Super Admin › Soporte** (`/admin/soporte`: cifras, Abiertos · Míos · Escalados · Resueltos · Macros, buscador, chips y la ficha
 del caso con `?caso=TK-…`), Colas › «Soporte · casos», Usuarios 360° › Soporte, Negocios 360° › Soporte y Configuración › Soporte.
 Permisos (sección «Soporte»): ver; editar = responder, notas, tomar, resolver, unir, ligar, reabrir, pasar a Finanzas y devolver con tope;
-aprobar = macros y ocultar un mensaje; «Transacciones › aprobar» devuelve sin tope del rol. Escritorio y teléfono. Versión: 10 nov 2026.
+aprobar = macros y ocultar un mensaje; «Transacciones › aprobar» devuelve sin tope del rol. El copiloto de El Compa («Sugerir respuesta con El
+Compa») sale a quien puede responder (editar) y en Colas › Ayuda con pedidos y citas a quien resuelve (Colas › aprobar). Escritorio y teléfono.
+Versión: 11 nov 2026.
 Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -14,6 +16,11 @@ Audiencia: equipo. Tema: equipo._
   persona (respondido, resuelto, unido). Un caso que pasa su plazo sube a prioridad **alta** y avisa a quien lo tiene.
 - **Macros** ES/EN con {nombre}: un toque llena la respuesta en el idioma de la persona; tú la revisas y la envías.
 - **Notas internas:** solo el equipo las ve; nunca le llegan a la persona (la pantalla de la persona no las recibe).
+- **El copiloto (El Compa):** «Sugerir respuesta con El Compa» deja un **resumen** del caso y el **siguiente paso** (para ti) y un **borrador** de
+  respuesta en el idioma de la persona, en el campo RESPUESTA. **Nada se envía solo:** lo lees, lo cambias si quieres y lo envías tú con
+  **Enviar**; sale con tu nombre. El copiloto nunca devuelve dinero, nunca cambia el estado del caso y nunca promete devoluciones, montos, plazos
+  ni sanciones; como mucho te dice qué macro encaja o que, si corresponde devolver, «Resolver y devolver» lo decides tú. También sale en
+  **Colas › Ayuda con pedidos y citas** (las ayudas que el negocio no respondió): el borrador va al mensaje de «Resolver con un mensaje».
 
 ## Cómo se usa
 1. **Tomar el siguiente caso** (el sin asignar más urgente) o abre uno de la lista. Tomarlo le dice a la persona «Lo están viendo».
@@ -26,6 +33,12 @@ Audiencia: equipo. Tema: equipo._
 5. **Ligar a una operación** (1234, C-…, H-…) de esa persona o de su negocio; **Unir a otro caso** (mismo dueño); **Reabrir** un resuelto;
    **Ocultar un mensaje** que trae datos que no se guardan.
 6. **Macros:** nueva, editar, apagar o encender (con motivo; queda en la auditoría). Solo texto: sin etiquetas y sin otra llave que {nombre}.
+7. **Sugerir respuesta con El Compa** (en «A la persona»): sale la nota «EL COMPA · {resumen} Siguiente paso: …» y el borrador en RESPUESTA.
+   Revísalo, cámbialo y **Enviar**. **Otro borrador con El Compa** pide uno nuevo (el anterior queda descartado). Si eliges una macro, reemplaza
+   el borrador. Si la nota dice «(sin IA: borrador de reglas)», el borrador es uno fijo (la IA no contestó a tiempo o lo que dijo no pasó las
+   reglas): complétalo tú.
+8. **En una ayuda escalada** (Colas › Ayuda con pedidos y citas): **Sugerir respuesta con El Compa** → la nota y el BORRADOR; **Resolver con un
+   mensaje** abre con el borrador ya escrito. Complétalo con lo que decidiste y **Resolver**.
 
 ## Qué pasa en cada caso
 | Caso | Qué pasa |
@@ -37,12 +50,23 @@ Audiencia: equipo. Tema: equipo._
 | Tu rol es de una ciudad | Solo ves y trabajas los casos de tus ciudades. |
 | Ver una foto del caso | Se abre aparte y queda en la auditoría. |
 | La persona escribió una tarjeta o un SSN | Ya llegó tapado; la base rechaza guardarlo sin tapar. |
+| Pides un borrador y no lo envías | No se envía nada ni cambia nada del caso. Al día queda «descartado» en las cifras de El Compa. |
+| El copiloto está apagado (nivel «Copiloto», el canal, la ciudad o el negocio) o El Compa llegó al tope | No sale el botón: la ficha y la cola son las de siempre (macros, Enviar, Resolver). |
+| El borrador traía algo que no se puede decir (prometer una devolución, un monto que no está en el caso, una nota interna, un teléfono) | No se muestra: sale el borrador de reglas, «(sin IA: borrador de reglas)». |
+| Un caso de una operación de Salud, Profesionales, una inscripción de niños o con datos privados | El copiloto no lee esa operación (la nombra como privada); en la cola de ayudas, el botón no sale. |
+| Llegas al límite de borradores del día (200, Configuración › El Compa) | «Llegaste al límite de borradores de El Compa por hoy»: escribe tu respuesta; las macros siguen. |
+| Tu rol solo ve Soporte (Finanzas) o no lo ve | No sale el botón; si alguien lo intenta igual, el servidor no da nada. |
 
 ## Preguntas frecuentes
 - **¿Dónde están las ayudas de pedidos y citas que el negocio no respondió?** En Colas › Ayuda con pedidos y citas (el enlace está al pie de
   Abiertos).
 - **¿La persona ve quién le respondió?** Ve tu nombre de pila y «To'Latino».
 - **¿Se borra algo?** No: los mensajes solo se agregan (el texto se oculta con motivo), los casos cambian de estado y las macros se apagan.
+- **¿Qué ve la IA del copiloto?** Lo que tú ves en la ficha de ese caso, tapado: el tema, la conversación, la operación y lo pagado en la app como
+  salen en la ficha, el tope de tu rol para devolver, las macros y las notas internas (marcadas: nunca van al borrador). Nunca el teléfono, el
+  correo, la tarjeta, contraseñas ni ids. Usa el modelo mayor (Claude Sonnet) y cuenta en el tope de El Compa.
+- **¿La persona sabe que lo escribió El Compa?** El mensaje sale con tu nombre: lo revisaste y lo enviaste tú. En la base queda marcado que salió
+  de un borrador (tal cual o editado), para las cifras.
 
 ## English
 
@@ -64,6 +88,16 @@ same person, **Reopen**, **Hide a message**. **Macros:** create, edit, turn off 
 Over the Support cap: refused before reaching the payment provider. More than charged: refused, nothing moves, the attempt is logged as failed.
 No paid operation: link it first. Different people cannot be merged. City-scoped roles only see their cities. Opening a case photo is audited.
 Card or SSN numbers arrive covered; the database refuses them uncovered.
+
+**The copilot (El Compa):** «Suggest a reply with El Compa» (for people who can reply; in Queues › Order and booking help, for people who can
+resolve) leaves a **summary** and **next step** for you and a **draft** in the person's language in the REPLY box (in a help request, in the
+«Resolve with a message» text). **Nothing is sent on its own:** you read it, edit it and send it with your own button, under your name. It never
+refunds, never changes the case and never promises refunds, amounts, deadlines or sanctions; at most it suggests a macro or points to «Resolve
+and refund», which you decide. «Another draft» discards the previous one; a macro replaces it; unused drafts are marked discarded after a day.
+«(no AI: rules draft)» means a fixed draft (the AI was late or its answer broke a rule). Copilot off (level, channel, city, business) or El Compa
+at its cap: no button, the case looks as before. Health, Professionals, kids' enrollments and private-data operations are never read. The AI sees
+what you see in that case, covered (no phone, email, card, passwords or ids); internal notes are marked and never reach the draft. Daily limit:
+200 drafts per team member (Configuration › El Compa).
 
 ### FAQ
 - **Where are unanswered order and booking help requests?** Queues › Order and booking help.

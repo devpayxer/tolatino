@@ -316,7 +316,7 @@ const SANC_CONTENIDO = ["adv", "mute7", "nopub", "susp14"] as const;
 /* Ayuda con pedidos y citas: To'Latino resuelve con un mensaje que el cliente ve en su pedido o su cita y el negocio en
    su panel. Con monto (solo quien aprueba dinero en Transacciones), además devuelve a la tarjeta lo pagado en la app
    (el pedido con tarjeta o el depósito de la cita); idempotente por la clave del intento. */
-export async function decidirSop(id: string, mensaje: string, monto?: string | null, clave?: string | null): Promise<ResAdm> {
+export async function decidirSop(id: string, mensaje: string, monto?: string | null, clave?: string | null, borrador?: string | null): Promise<ResAdm> {
   const s = await quien();
   if (!s) return no("Tu rol solo puede ver esta cola.");
   const m = motivoOk(mensaje);
@@ -343,6 +343,10 @@ export async function decidirSop(id: string, mensaje: string, monto?: string | n
                               where id = $1::bigint and status in ('open', 'answered', 'escalated') returning number`, [q.subject_id, m, s.id, devuelto]);
     if (!h.rowCount) return no("Esta solicitud ya se resolvió.");
     await c.query(`update queue_items set status = 'decided', decision = 'resuelta', reason = $2, decided_by = $3, decided_at = now() where id = $1::bigint`, [id, m, s.id]);
+    // 7g · El mensaje salió de un borrador del copiloto (de ESTA ayuda, de ESTA persona del equipo, sin usar): se anota una vez si tal cual o editado.
+    if (borrador && /^[0-9a-f-]{36}$/.test(String(borrador)))
+      await c.query(`update compa_drafts set used = case when btrim(regexp_replace(draft, '\\s+', ' ', 'g')) = btrim(regexp_replace($4, '\\s+', ' ', 'g')) then 'sent_as_is' else 'edited' end
+                      where id = $1::uuid and help_request_id = $2::bigint and staff_id = $3 and used is null`, [borrador, q.subject_id, s.id, m]);
     await auditar(c, { actor: s.id, action: "soporte.resolver", targetKind: "business", targetId: q.business_id ?? "", city: q.city_id, before: { solicitud: (h.rows[0] as { number: string }).number, estado: "abierta" }, after: { estado: "resuelta", ...(devuelto ? { devuelto: `$${(devuelto / 100).toFixed(2)}` } : {}) }, reason: m });
     return { ok: true as const, mensaje: `Resuelta${devuelto ? ` y devueltos $${(devuelto / 100).toFixed(2)}` : ""}. El cliente la ve en su pedido o su cita.`, caso: q.subject_id };
   }).then(async (r) => {

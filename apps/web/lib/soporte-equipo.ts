@@ -75,6 +75,7 @@ export async function kpisSoporte(s: Staff) {
 export type MsjEquipo = { id: string; sender: "user" | "staff" | "system"; body: string | null; oculto: boolean; motivoOculto: string | null; foto: string | null; internal: boolean; sys_key: string | null; vars: Record<string, string> | null; at: string; quien: string | null; macro: string | null };
 export type CasoEquipo = {
   id: string; num: string; tema: Tema; status: string; priority: string; origin: string; escalado: string | null; at: string; due: string; equipo: boolean; vencido: boolean;
+  ciudad: string;   // 7g · la ciudad del caso (los interruptores del copiloto por ciudad)
   asignado: { id: string; nombre: string } | null; mio: boolean; primeraRespuesta: string | null; resuelto: { por: string | null; at: string | null }; csat: string | null;
   persona: { id: string; nombre: string; tel: string; ciudad: string | null; lang: string; desde: string; casos: number; estado: string };
   negocio: { id: string; name: string } | null; device: string | null; version: string | null; summary: string | null;
@@ -91,7 +92,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
   const c = (await db().query<Omit<CasoEquipo, "persona" | "op" | "ayuda" | "pago" | "msjs" | "historial" | "macros" | "tope" | "devoluciones" | "unidos" | "puedeDevolver" | "horas" | "asignado"> & {
     aid: string | null; anom: string | null; uid: string; unom: string; utel: string; uciudad: string | null; ulang: string; udesde: string; ucasos: number; uest: string;
     opnum: string | null; opk: string | null; opst: string | null; optot: number | null; opbiz: string | null; hnum: string | null; hst: string | null; hop: string | null; bid: string | null; bname: string | null }>(
-    `select c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.origin, c.escalated_to as escalado, ${ISO("c.created_at")} as at, ${ISO("c.sla_due_at")} as due,
+    `select c.id::text, c.number as num, c.topic as tema, c.status, c.priority, c.origin, c.escalated_to as escalado, ${ISO("c.created_at")} as at, ${ISO("c.sla_due_at")} as due, c.city_id as ciudad,
             soporte_toca_equipo(c.status) as equipo, soporte_toca_equipo(c.status) and c.sla_due_at < now() as vencido, c.assigned_staff_id::text as aid, a.first_name as anom,
             coalesce(c.assigned_staff_id = $3, false) as mio, ${ISO("c.first_reply_at")} as "primeraRespuesta", jsonb_build_object('por', c.resolved_by, 'at', ${ISO("c.resolved_at")}) as resuelto, c.csat,
             u.id::text as uid, coalesce(nullif(trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), ''), 'Vecino') as unom, u.phone as utel, ci.name as uciudad,
@@ -131,7 +132,7 @@ export async function casoEquipo(s: Staff, numero: string): Promise<CasoEquipo |
   // null = sin tope del rol (hasta lo cobrado); 0 = su rol no devuelve. Nunca se confunden.
   const t = tope.rows.length ? tope.rows[0]!.t : 0;
   return {
-    id: c.id, num: c.num, tema: c.tema, status: c.status, priority: c.priority, origin: c.origin, escalado: c.escalado, at: c.at, due: c.due, equipo: c.equipo, vencido: c.vencido,
+    id: c.id, num: c.num, tema: c.tema, status: c.status, priority: c.priority, origin: c.origin, escalado: c.escalado, at: c.at, due: c.due, equipo: c.equipo, vencido: c.vencido, ciudad: c.ciudad,
     asignado: c.aid ? { id: c.aid, nombre: c.anom ?? "Equipo" } : null, mio: c.mio, primeraRespuesta: c.primeraRespuesta, resuelto: c.resuelto, csat: c.csat,
     persona: { id: c.uid, nombre: c.unom, tel: telefonoBonito(c.utel), ciudad: c.uciudad, lang: c.ulang, desde: c.udesde, casos: c.ucasos, estado: c.uest },
     negocio: c.bid ? { id: c.bid, name: c.bname ?? "" } : null, device: c.device, version: c.version, summary: c.summary,
@@ -191,8 +192,11 @@ export async function tomarSiguienteSop(s: Staff): Promise<ResE> {
   return r.ok ? { ok: true, numero: n, mensaje: r.mensaje } : r;
 }
 
-/* Responder a la persona (con una macro, si se eligió). La persona recibe el aviso; el caso pasa a «te respondieron». */
-export async function responder(s: Staff, numero: string, texto: string, macro?: string | null): Promise<ResE> {
+/* Responder a la persona (con una macro, si se eligió). La persona recibe el aviso; el caso pasa a «te respondieron».
+   7g · Si el texto salió de un borrador del copiloto (`borrador` = su id, de ESTE caso, de ESTA persona del equipo, sin usar y de hoy), el mensaje
+   queda from_draft y el borrador anota, una vez, si salió tal cual o editado. Un id que no cuadra no cambia nada: el mensaje sale igual, sin marca.
+   El que envía es siempre la persona del equipo, con este botón: el copiloto nunca llega aquí. */
+export async function responder(s: Staff, numero: string, texto: string, macro?: string | null, borrador?: string | null): Promise<ResE> {
   if (!puedeEditar(s)) return no("Tu rol solo puede ver Soporte.");
   const crudo = limpio(texto, 2000);
   if (crudo.length < 2) return no("Escribe la respuesta.");
@@ -206,9 +210,13 @@ export async function responder(s: Staff, numero: string, texto: string, macro?:
       if (!mk) return no("Esa macro ya no está. Escribe la respuesta.");
     }
     const t = tapar(crudo.replace(/\{nombre\}|\{name\}/g, k.first ?? "")).texto;
-    await c.query(`insert into support_messages (case_id, city_id, sender, staff_id, body, macro_key) values ($1, $2, 'staff', $3, $4, $5)`, [k.id, k.city_id, s.id, t, mk]);
+    const bd = borrador && UUID.test(String(borrador)) ? (await c.query<{ id: string; draft: string }>(
+      `select id::text, draft from compa_drafts where id = $1::uuid and case_id = $2::bigint and staff_id = $3 and used is null and at > now() - interval '1 day' for update`, [borrador, k.id, s.id])).rows[0] : undefined;
+    const m = (await c.query<{ id: string }>(`insert into support_messages (case_id, city_id, sender, staff_id, body, macro_key, from_draft) values ($1, $2, 'staff', $3, $4, $5, $6) returning id::text`,
+      [k.id, k.city_id, s.id, t, mk, !!bd])).rows[0]!;
+    if (bd) await c.query(`update compa_drafts set used = $2, message_id = $3::bigint where id = $1::uuid`, [bd.id, t.replace(/\s+/g, " ").trim() === bd.draft.replace(/\s+/g, " ").trim() ? "sent_as_is" : "edited", m.id]);
     await c.query(`update support_cases set status = 'waiting', first_reply_at = coalesce(first_reply_at, now()), assigned_staff_id = coalesce(assigned_staff_id, $2) where id = $1`, [k.id, s.id]);
-    await audit(c, s, k, "soporte.responder", { estado: EST[k.status] }, { estado: EST.waiting, ...(mk ? { macro: mk } : {}) });
+    await audit(c, s, k, "soporte.responder", { estado: EST[k.status] }, { estado: EST.waiting, ...(mk ? { macro: mk } : {}), ...(bd ? { borrador: "de El Compa" } : {}) });
     return { ok: true, mensaje: "Enviado. La persona lo ve en su caso.", numero: k.number };
   });
   if (r.ok) await avisarCaso(r.numero!, "sop_respuesta", s.first_name ?? "");

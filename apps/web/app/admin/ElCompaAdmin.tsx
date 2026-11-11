@@ -162,6 +162,12 @@ export function ElCompaAdmin({ d, tab, uso, res, canal = null, buscar = null, an
         { k: "ACCIONES CONFIRMADAS", v: String(k.action_done ?? 0), s: "la persona dijo que sí", onClick: () => ir({ res: "action_done" }) }] },
       // 7e · Cuántas por nivel en 7 días (vecinos, panel del negocio…): tocar uno filtra DÓNDE.
       { type: "kv", cols: desk ? 4 : 2, items: Object.entries(NIVEL).map(([key, v]) => ({ k: `${v[0].toUpperCase()} · 7 D`, v: String(d.conv.porUso[key] ?? 0), fg: (uso ?? "") === key ? "var(--tl-action)" : undefined })) },
+      // 7g · COPILOTO EN SOPORTE (30 días): borradores y qué hizo el equipo con ellos. Sin personas ni texto.
+      ...((): Bloque[] => { const c = d.copiloto, usados = c.tal + c.editados, pct = (n: number) => (c.borradores ? `${Math.round((n / c.borradores) * 100)} %` : "—");
+        return [{ type: "kpis", cols: desk ? "repeat(4,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
+          { k: "COPILOTO EN SOPORTE · 30 D", v: `${c.borradores} ${c.borradores === 1 ? "borrador" : "borradores"}`, s: `${c.casos} en casos · ${c.ayudas} en ayudas escaladas` },
+          { k: "ENVIADOS TAL CUAL", v: pct(c.tal), s: `${c.tal} de ${c.borradores}` }, { k: "EDITADOS", v: pct(c.editados), s: `${usados} enviados en total` },
+          { k: "DESCARTADOS", v: pct(c.descartados), s: `${c.abiertos} sin usar todavía · ${c.sinIA} sin IA (reglas)` }] }]; })(),
       { type: "chips", k: "DÓNDE", items: [["", "Todo"], ...Object.entries(NIVEL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (uso ?? "") === key ? "selected" : "filter", onClick: () => ir({ uso: key || null }) })) },
       { type: "chips", k: "RESULTADO", items: [["", "Todos"], ...Object.entries(RESULTADO).map(([key, v]) => [key, v[0].charAt(0) + v[0].slice(1).toLowerCase()])].map(([key, l]) => ({ l: l!, v: (res ?? "") === key ? "selected" : "filter", onClick: () => ir({ res: key || null }) })) },
       { type: "chips", k: "CANAL", items: [["", "Todos"], ...Object.entries(CANAL).map(([key, v]) => [key, v[0]])].map(([key, l]) => ({ l: l!, v: (canal ?? "") === key ? "selected" : "filter", onClick: () => ir({ canal: key || null }) })) },

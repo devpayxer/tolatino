@@ -22,6 +22,7 @@ export type Entrada = {
   uso: Uso; modelo: string; lang: Lang; sistema: string;
   datos: Record<string, unknown>; trozos: TrozoModelo[]; mensajes: MensajeModelo[];
   maxTokens: number; esperaMs: number;
+  esquema?: Record<string, unknown>;   // 7g · el esquema de salida del uso (sin él, ESQUEMA: vecino, panel y respuestas automáticas)
 };
 export type UsoTokens = { entrada: number; cacheLeida: number; cacheEscrita: number; salida: number };
 export type Salida = { json: unknown; tokens: UsoTokens; motor: Motor; modelo: string };
@@ -67,6 +68,22 @@ export const ESQUEMA = {
     },
     persona: { type: "string", enum: [...MOTIVOS] },
     chips: { type: "array", items: { type: "string" }, description: "Hasta 3 respuestas cortas que la persona podría tocar." },
+  },
+} as const;
+
+/* 7g · La salida del COPILOTO del equipo (Super Admin › Soporte y la cola de ayudas escaladas): un resumen y un siguiente paso para el equipo y un
+   BORRADOR para la persona, que alguien del equipo lee, cambia y envía con su nombre. No hay acciones: como mucho sugiere una macro de la lista y
+   marca «sugerir_devolver» (la persona del equipo decide y toca «Resolver y devolver»). verificar.ts verificarCopiloto lo vuelve a revisar. */
+export const ESQUEMA_COPILOTO = {
+  type: "object", additionalProperties: false,
+  required: ["resumen", "borrador", "siguiente", "macro", "fuente", "sugerir_devolver"],
+  properties: {
+    resumen: { type: "string", description: "Para el equipo: una o dos frases, qué pasa y qué pide la persona." },
+    borrador: { type: "string", description: "Lo que leerá la persona, en su idioma: máximo 4 frases, sin emoji, sin enlaces, sin promesas." },
+    siguiente: { type: "string", description: "El siguiente paso para el equipo, corto, o vacío." },
+    macro: { type: "string", description: "La «clave» exacta de una macro de la lista que encaja, o vacío." },
+    fuente: { type: "string", description: "La «fuente» exacta de un trozo de AYUDA usado, o vacío." },
+    sugerir_devolver: { type: "boolean", description: "true solo si el caso es de un cobro y tu_rol tiene «Resolver y devolver»: la persona del equipo decide." },
   },
 } as const;
 

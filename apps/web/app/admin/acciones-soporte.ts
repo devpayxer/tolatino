@@ -12,9 +12,9 @@ const listo = (r: R) => { if (r.ok) { revalidatePath("/admin/soporte"); revalida
 
 export async function sopTomar(numero: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.tomar(s, String(numero ?? ""))); }
 export async function sopTomarSiguiente(): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.tomarSiguienteSop(s)); }
-export async function sopResponder(numero: string, texto: string, macro?: string | null): Promise<R> {
+export async function sopResponder(numero: string, texto: string, macro?: string | null, borrador?: string | null): Promise<R> {
   const s = await staff(); if (!s) return SIN;
-  return listo(await S.responder(s, String(numero ?? ""), String(texto ?? ""), macro ? String(macro) : null));
+  return listo(await S.responder(s, String(numero ?? ""), String(texto ?? ""), macro ? String(macro) : null, borrador ? String(borrador) : null));
 }
 export async function sopNota(numero: string, texto: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.notaInterna(s, String(numero ?? ""), String(texto ?? ""))); }
 export async function sopResolver(numero: string, texto: string): Promise<R> { const s = await staff(); if (!s) return SIN; return listo(await S.resolver(s, String(numero ?? ""), String(texto ?? ""))); }

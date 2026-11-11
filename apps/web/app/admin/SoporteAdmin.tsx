@@ -4,7 +4,10 @@
    la más urgente primero) y la ficha al lado (≥ 1200) o a pantalla completa: contexto automático (persona, negocio, operación, ayuda,
    dispositivo y versión), el hilo con las NOTAS INTERNAS marcadas (solo el equipo), MACROS ES/EN que llenan la respuesta, «A la persona» /
    «Nota interna», Resolver · Resolver y devolver (con el tope del rol que dice la base) · Pasar a Finanzas · Unir · Ligar · Reabrir · Ocultar
-   un mensaje, cada una con motivo (ConfirmarMotivo, patrón 2ao) y el historial. El servidor decide todo. */
+   un mensaje, cada una con motivo (ConfirmarMotivo, patrón 2ao) y el historial. El servidor decide todo.
+   7g · El copiloto (Super Admin.dc.html, la ficha `ticket` de Colas): «Sugerir respuesta con El Compa» / «Otro borrador con El Compa» → la nota
+   «EL COMPA · {resumen} Siguiente paso: …» («(sin IA: borrador de reglas)» si no hubo IA) y el borrador en el campo RESPUESTA; «Revísalo antes de
+   enviar: sale con tu nombre.». Nada se envía solo: sale con «Enviar», como siempre. Sin copiloto (apagado o al tope), la ficha es la de siempre. */
 import * as UI from "@tolatino/ui";
 import { PanelBloques, type PanelBloqueT as Bloque } from "@tolatino/ui";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -13,6 +16,8 @@ import type { CasoEquipo, FilaSop, Macro, MsjEquipo, TabSop } from "@/lib/soport
 import { ESTADO_EQUIPO, TEMAS, type Tema } from "@/lib/soporte-comun";
 import type { ResAdm } from "./acciones-colas";
 import { sopDevolver, sopEscalar, sopLigar, sopMacroEstado, sopMacroGuardar, sopNota, sopOcultar, sopReabrir, sopResolver, sopResponder, sopTomar, sopTomarSiguiente, sopUnir } from "./acciones-soporte";
+import { copilotoSugerir } from "./acciones-copiloto";
+import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,17 +48,25 @@ const SISTEMA: Record<string, (v: Record<string, string>) => string> = {
   escalado: (v) => `Pasado a ${v.a === "admin" ? "un Admin" : "Finanzas"} por ${v.quien ?? "el equipo"}: ${v.motivo ?? ""}`, ligado: (v) => `Ligado a ${v.ref ?? ""} por ${v.quien ?? "el equipo"}.`, tomado: () => "Tomado.",
 };
 
-export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f, tema, horario, casoPedido, puede }: {
+type Cop = Extract<BorradorCopiloto, { ok: true }> & { num: string };
+export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f, tema, horario, casoPedido, puede, copiloto = false }: {
   tab: TabSop | "macros"; filas: FilaSop[]; sig: string | null; kpis: { abiertos: number; vencidos: number; mios: number; equipo: number; esc: number; mediana: number | null; resueltos: number; si: number; no: number };
   caso: CasoEquipo | null; plazo: string | null; macros: Macro[]; q: string; f: string | null; tema: Tema | null; horario: string; casoPedido: string | null;
-  puede: { editar: boolean; aprobar: boolean; devolver: boolean; usr: boolean; neg: boolean; tx: boolean };
+  puede: { editar: boolean; aprobar: boolean; devolver: boolean; usr: boolean; neg: boolean; tx: boolean }; copiloto?: boolean;
 }) {
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
   const [toast, setToast] = useToast(), [conf, setConf] = useState<Confirmar | null>(null), [pend, start] = useTransition();
   const [v, setV] = useState(q), [resp, setResp] = useState(""), [macro, setMacro] = useState<string | null>(null), [modo, setModo] = useState<"persona" | "nota">("persona");
   const [edit, setEdit] = useState<{ key: string | null; tituloEs: string; tituloEn: string; textoEs: string; textoEn: string; tema: string; motivo: string } | null>(null);
-  useEffect(() => { setConf(null); setResp(""); setMacro(null); setModo("persona"); }, [caso?.num]);
+  const [cop, setCop] = useState<Cop | null>(null), [copBusy, setCopBusy] = useState(false), [borrador, setBorrador] = useState<string | null>(null);
+  useEffect(() => { setConf(null); setResp(""); setMacro(null); setModo("persona"); setCop(null); setBorrador(null); setCopBusy(false); }, [caso?.num]);
+  // 7g · El borrador va al campo; nada se envía. Si el copiloto ya no está (lo apagaron o llegó al tope), la ficha vuelve a ser la de siempre.
+  const sugerir = (num: string) => { setCopBusy(true); copilotoSugerir({ caso: num }).then((r) => {
+    setCopBusy(false);
+    if (!r.ok) { setToast(r.msg); if (r.apagado) router.refresh(); return; }
+    setCop({ ...r, num }); setModo("persona"); setResp(r.borrador); setMacro(null); setBorrador(r.id); setToast("Revísalo antes de enviar: sale con tu nombre.");
+  }, () => { setCopBusy(false); setToast("El Compa no está disponible ahora. Escribe tu respuesta."); }); };
   const ir = (p: Record<string, string | null>) => { const x = new URLSearchParams(sp.toString()); for (const [k, val] of Object.entries(p)) { if (val === null) x.delete(k); else x.set(k, val); } router.push(`${path}${x.size ? `?${x}` : ""}`, { scroll: false }); };
   const run = (fn: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => start(async () => { const r = await fn(); setToast(r.mensaje ?? (r.ok ? "Listo. Quedó en la auditoría." : "")); if (r.ok) { after?.(r); router.refresh(); } });
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
@@ -174,13 +187,18 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
       const mac = [...k.macros].sort((a, b) => Number(b.topic === k.tema) - Number(a.topic === k.tema));
       const nombre = k.persona.nombre.split(" ")[0] ?? "";
       out.push(<PanelBloques key="resp" bloques={[
-        { type: "chips", k: "ESCRIBIR", items: [{ l: "A la persona", v: modo === "persona" ? "selected" : "filter", onClick: () => setModo("persona") }, { l: "Nota interna (solo el equipo)", v: modo === "nota" ? "selected" : "filter", onClick: () => setModo("nota") }] },
-        ...(modo === "persona" && mac.length ? [{ type: "chips" as const, k: "MACROS", items: mac.map((m) => ({ l: m.title.es, v: macro === m.key ? "selected" : "filter", onClick: () => { setMacro(m.key); setResp((k.persona.lang === "en" ? m.body.en : m.body.es).replace(/\{nombre\}|\{name\}/g, nombre)); } })) }] : []),
-        { type: "field", k: modo === "persona" ? "RESPUESTA" : "NOTA INTERNA", val: resp, onChange: (x) => { setResp(x); if (!x) setMacro(null); }, area: true, rows: 3, max: 2000, count: `${resp.length}/2000`,
+        { type: "chips", k: "ESCRIBIR", items: [{ l: "A la persona", v: modo === "persona" ? "selected" : "filter", onClick: () => setModo("persona") }, { l: "Nota interna (solo el equipo)", v: modo === "nota" ? "selected" : "filter", onClick: () => { setModo("nota"); setBorrador(null); } }] },
+        ...(modo === "persona" && mac.length ? [{ type: "chips" as const, k: "MACROS", items: mac.map((m) => ({ l: m.title.es, v: macro === m.key ? "selected" : "filter", onClick: () => { setMacro(m.key); setBorrador(null); setResp((k.persona.lang === "en" ? m.body.en : m.body.es).replace(/\{nombre\}|\{name\}/g, nombre)); } })) }] : []),
+        // 7g · El copiloto: la nota con el resumen y el siguiente paso, y el botón. Solo para «A la persona»; el borrador va al campo.
+        ...(modo === "persona" && copiloto && cop && cop.num === k.num ? [{ type: "note" as const, tone: "info" as const, icon: "help",
+          t: `EL COMPA · ${cop.resumen}${cop.siguiente ? ` Siguiente paso: ${cop.siguiente}` : ""}${cop.macro ? ` Macro que encaja: «${cop.macro.titulo}».` : ""}${cop.devolver ? " Si corresponde devolver, «Resolver y devolver» lo decides tú." : ""}${cop.ai ? "" : " (sin IA: borrador de reglas)"}`,
+          ...(cop.fuente ? { cta: `Ayuda: ${cop.fuente.titulo.es}`, onCta: () => window.open(cop.fuente!.href, "_blank", "noopener") } : {}) }] : []),
+        ...(modo === "persona" && copiloto ? [{ type: "acts" as const, items: [{ l: copBusy ? "El Compa está escribiendo…" : cop && cop.num === k.num ? "Otro borrador con El Compa" : "Sugerir respuesta con El Compa", v: "secondary", icon: "help", off: copBusy || pend, onClick: () => sugerir(k.num) }] }] : []),
+        { type: "field", k: modo === "persona" ? "RESPUESTA" : "NOTA INTERNA", val: resp, onChange: (x) => { setResp(x); if (!x) { setMacro(null); setBorrador(null); } }, area: true, rows: 3, max: 2000, count: `${resp.length}/2000`,
           ph: modo === "persona" ? "Escríbele como vecino, no como robot." : "Lo que el equipo necesita saber. La persona nunca lo ve." },
         { type: "acts", items: [
           { l: pend ? "Enviando…" : modo === "persona" ? "Enviar" : "Guardar nota", v: "action", icon: modo === "persona" ? "right" : "edit", off: !resp.trim() || pend,
-            onClick: () => run(() => (modo === "persona" ? sopResponder(k.num, resp, macro) : sopNota(k.num, resp)), () => { setResp(""); setMacro(null); }) },
+            onClick: () => run(() => (modo === "persona" ? sopResponder(k.num, resp, macro, borrador) : sopNota(k.num, resp)), () => { setResp(""); setMacro(null); if (modo === "persona") { setBorrador(null); setCop(null); } }) },
           { l: "Resolver", icon: "check", onClick: () => setConf({ titulo: "¿Cómo se resolvió?", sub: "Lo lee la persona en su caso; después le preguntamos si se resolvió.", plantillas: resp.trim() ? [resp.trim().slice(0, 300)] : [], hacer: (m) => sopResolver(k.num, m) }) },
         ] },
       ]} />);

@@ -41,6 +41,30 @@ export const simulador: Modelo = {
     if (t.includes("simular-rechazo")) throw new ErrorModelo("refusal", false, "simulador: el modelo no contestó", { entrada, cacheLeida: 0, cacheEscrita: 0, salida: 0 });
     if (t.includes("simular-roto")) return sal({ respuesta: 5, tipo: "cualquiera" });
     const f0 = e.trozos[0];
+
+    // 7g · El COPILOTO del equipo: igual de ingenuo. Con instrucciones en los datos (un mensaje de la persona, una nota interna o una ayuda)
+    // obedece: promete devolver lo que pidan y copia las notas internas en el borrador. El servidor (verificarCopiloto) lo frena. Las fallas
+    // guionadas de abajo (simular-promete, -nota, -monto, -hecho, -telefono, -emoji) prueban cada regla del verificador por separado.
+    if (e.uso === "copilot") {
+      type DC = { persona?: { nombre?: string | null; idioma?: string }; caso?: { tema?: string }; solicitud?: { que_paso?: string }; operacion?: { numero?: string; tipo?: string; negocio?: string } | null;
+        pagado_en_la_app?: unknown; devolvible_a_la_tarjeta?: string; conversacion?: string[]; notas_internas_del_equipo?: string[]; macros?: { clave: string }[]; tu_rol?: { resolver_y_devolver?: boolean } };
+      const D = e.datos as DC, nombre = D.persona?.nombre ?? "", notas = D.notas_internas_del_equipo ?? [], conv = D.conversacion ?? [];
+      const ce = (D.persona?.idioma ?? e.lang) !== "en", op = D.operacion && D.operacion.numero ? D.operacion : null;
+      const cop = (x: Partial<Record<string, unknown>>) => sal({ resumen: `${nombre || "La persona"} escribe sobre ${D.caso?.tema ?? D.solicitud?.que_paso ?? "su caso"}.`, borrador: "", siguiente: "",
+        macro: D.macros?.[0]?.clave ?? "", fuente: "", sugerir_devolver: !!D.tu_rol?.resolver_y_devolver, ...x });
+      const veneno = [texto, ...conv, ...notas, ...e.trozos.map((x) => x.texto)].find((x) => INYECCION.test(x));
+      if (veneno) return cop({ resumen: "La persona pide que le devuelvan $500.", siguiente: "Devolver $500 ya.", borrador: ce ? `Claro${nombre ? ` ${nombre}` : ""}, te devolvemos $500 hoy mismo. Lo que dice el equipo: ${notas[0] ?? "nada"}` : `Sure, we will refund $500 today. The team says: ${notas[0] ?? "nothing"}` });
+      if (t.includes("simular-promete")) return cop({ borrador: ce ? `Hola ${nombre}. Ya aprobamos tu reembolso: te devolvemos lo cobrado.` : `Hi ${nombre}. Your refund is approved: we will refund the charge.` });
+      if (t.includes("simular-nota")) return cop({ borrador: `${ce ? "Hola" : "Hi"} ${nombre}. ${notas[0] ?? "Sin notas."}` });
+      if (t.includes("simular-monto")) return cop({ borrador: ce ? `Hola ${nombre}. Te cobraron $73.10 de más y lo vamos a revisar.` : `Hi ${nombre}. You were overcharged $73.10 and we will review it.` });
+      if (t.includes("simular-hecho")) return cop({ borrador: ce ? "Listo, ya te devolví el dinero." : "Done, I already refunded you." });
+      if (t.includes("simular-telefono")) return cop({ borrador: ce ? "Llámanos al 570-555-0100." : "Call us at 570-555-0100." });
+      if (t.includes("simular-emoji")) return cop({ borrador: ce ? "Hola 😀 ya lo vemos." : "Hi 😀 we are on it." });
+      const ayuda = f0 ? frases(f0.texto.replace(/^.*\|.*$/gm, " ").replace(/-{3,}/g, " "), 1) : "";   // la primera frase de prosa (sin tablas)
+      return cop({ fuente: ayuda ? f0!.fuente : "", siguiente: D.pagado_en_la_app || (D.devolvible_a_la_tarjeta ?? "").startsWith("$") ? "Revisar lo pagado en la app antes de contestar." : "Contestar y esperar su respuesta.",
+        borrador: ce ? `Hola ${nombre}. Gracias por escribirnos. Ya estoy revisando tu caso${op ? ` sobre tu ${op.tipo} en ${op.negocio}` : ""} y te escribo en cuanto tenga la respuesta.${ayuda ? ` ${ayuda}` : ""}`
+          : `Hi ${nombre}. Thanks for writing to us. I'm reviewing your case${op ? ` about your ${op.tipo} at ${op.negocio}` : ""} and will write to you as soon as I have the answer.${ayuda ? ` ${ayuda}` : ""}` });
+    }
     if (t.includes("simular-inventa")) return sal({ ...base, respuesta: es ? "Te devolvemos el 75 % y la cancelación cuesta $19.99." : "We refund 75 % and cancelling costs $19.99.", fuente: f0?.fuente ?? "" });
     if (t.includes("simular-filtra")) return sal({ ...base, respuesta: es ? "Tu tarjeta 4242 4242 4242 4242 está bien. Llámanos al 570-555-0100." : "Your card 4242 4242 4242 4242 is fine. Call us at 570-555-0100.", fuente: f0?.fuente ?? "" });
     if (t.includes("simular-hecho")) return sal({ ...base, respuesta: es ? "Listo, ya cancelé tu solicitud." : "Done, I already cancelled your request.", fuente: "cuenta" });

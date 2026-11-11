@@ -13,6 +13,8 @@ import { cuerpoComunidad, tituloComunidad } from "./ColasComunidad";
 import { cuerpoEventos, tituloEventos } from "./ColasEventos";
 import { crearSemilla, decidirCambio, decidirLicencia, decidirMedios, decidirNuevo, decidirRec, decidirReclamo, decidirRep, decidirSop, decidirSello, tomarCaso, tomarSiguiente, chatOcultarMensaje, decidirChat, decidirDisputa, decidirRenta, decidirNoche, decidirEstafa, pausaEstafa, decidirVivienda, type ResAdm, verNinoCaso } from "./acciones-colas";
 import { compaHilo } from "./acciones-compa";
+import { copilotoSugerir } from "./acciones-copiloto";
+import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -35,11 +37,11 @@ export function useAncho() {
   return w;
 }
 
-export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; peligro?: boolean; cta?: string; elegir?: { label: string; items: { k: string; l: string }[] }; valor?: { k: string; ini: string; area?: boolean; max: number }; hacer: (motivo: string, elegido: string | null, valor: string) => Promise<ResAdm> };
+export type Confirmar = { titulo: string; sub?: string; plantillas?: string[]; peligro?: boolean; cta?: string; ini?: string; elegir?: { label: string; items: { k: string; l: string }[] }; valor?: { k: string; ini: string; area?: boolean; max: number }; hacer: (motivo: string, elegido: string | null, valor: string) => Promise<ResAdm> };
 
 /* Confirmación con motivo (patrón 2ao): ReasonConfirm, con elección y, si hace falta, el campo del valor nuevo. */
 export function ConfirmarMotivo({ c, onBack, onDone, desk }: { c: Confirmar; onBack: () => void; onDone: (r: ResAdm) => void; desk: boolean }) {
-  const [motivo, setMotivo] = useState(""), [elegido, setElegido] = useState<string | null>(null), [valor, setValor] = useState(c.valor?.ini ?? "");
+  const [motivo, setMotivo] = useState(c.ini ?? ""), [elegido, setElegido] = useState<string | null>(null), [valor, setValor] = useState(c.valor?.ini ?? "");
   const [pend, start] = useTransition(), [err, setErr] = useState<string | null>(null);
   const falta = !motivo.trim() || (!!c.elegir && !elegido) || (!!c.valor && !valor.trim() && c.valor.k !== "QUIÉNES SOMOS");
   return (
@@ -76,7 +78,14 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
   const [conf, setConf] = useState<Confirmar | null>(null);
   const [checks, setChecks] = useState<Record<string, boolean>>({});
   const [pend, start] = useTransition();
-  useEffect(() => { setConf(null); setChecks({}); }, [caso?.id]);
+  // 7g · El copiloto en una ayuda escalada (cola «sop»): el borrador va al mensaje de «Resolver con un mensaje»; nada se envía solo.
+  const [cop, setCop] = useState<(Extract<BorradorCopiloto, { ok: true }> & { caso: string }) | null>(null), [copBusy, setCopBusy] = useState(false);
+  useEffect(() => { setConf(null); setChecks({}); setCop(null); setCopBusy(false); }, [caso?.id]);
+  const sugerir = (id: string) => { setCopBusy(true); copilotoSugerir({ cola: id }).then((r) => {
+    setCopBusy(false);
+    if (!r.ok) { setToast(r.msg); if (r.apagado) router.refresh(); return; }
+    setCop({ ...r, caso: id }); setToast("Revísalo antes de enviar: sale con tu nombre.");
+  }, () => { setCopBusy(false); setToast("El Compa no está disponible ahora. Escribe tu respuesta."); }); };
   const ir = (p: Record<string, string | null>) => { const q = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v === null) q.delete(k); else q.set(k, v); } router.push(`${path}${q.size ? `?${q}` : ""}`, { scroll: false }); };
   const cola = (sp.get("cola") as Cola | null) ?? null, filtro = sp.get("f");
   const run = (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => start(async () => { const r = await f(); setToast(r.mensaje ?? (r.ok ? "Listo. Quedó en la auditoría." : "")); if (r.ok) { after?.(r); router.refresh(); } });
@@ -111,6 +120,13 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     const cuerpoB: (Bloque | null)[] = [];
     let acts: { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void }[] = [];
     let extra: ReactNode = null;
+    // 7g · El copiloto (solo la cola «sop» y solo si el servidor dice que está): la nota con el resumen y el siguiente paso, el borrador, y el botón.
+    const copOn = k.queue === "sop" && "copiloto" in k && !!k.copiloto, cp = copOn && cop && cop.caso === k.id ? cop : null;
+    const copBloques: Bloque[] = cp ? [
+      { type: "note", tone: "info", icon: "help", t: `EL COMPA · ${cp.resumen}${cp.siguiente ? ` Siguiente paso: ${cp.siguiente}` : ""}${cp.devolver ? " Si corresponde devolver, «Resolver y devolver» lo decides tú." : ""}${cp.ai ? "" : " (sin IA: borrador de reglas)"}`,
+        ...(cp.fuente ? { cta: `Ayuda: ${cp.fuente.titulo.es}`, onCta: () => window.open(cp.fuente!.href, "_blank", "noopener") } : {}) },
+      { type: "note", tone: "ink", icon: "quote", t: `BORRADOR DE EL COMPA · «${cp.borrador}» · Revísalo antes de enviar: sale con tu nombre.` }] : [];
+    const copAct = copOn ? [{ l: copBusy ? "El Compa está escribiendo…" : cp ? "Otro borrador con El Compa" : "Sugerir respuesta con El Compa", v: "secondary", icon: "help", off: copBusy, onClick: () => sugerir(k.id) }] : [];
     if (k.queue === "sello" && n) {
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "DIRECCIÓN", v: n.address ?? "—" }, { k: "TELÉFONO", v: n.phone || "—" }, { k: `EN ${n.ciudad.toUpperCase()} DESDE`, v: n.founded ? String(n.founded) : "—" }, { k: "FOTOS", v: String(n.fotos) }, { k: "RESEÑAS", v: String(n.reviews) }, { k: "PLAN", v: n.plan === "pro" ? "Pro" : "Free" }] });
       cuerpoB.push({ type: "group", k: "LISTA DE VERIFICACIÓN" });
@@ -200,6 +216,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE CUENTA · «${h.body}»` });
       if (h.fotos.length) cuerpoB.push({ type: "photos", k: "SUS FOTOS", cols: 4, items: h.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => window.open(u, "_blank", "noopener") })) });
       cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · ${DEC[h.decision ?? ""] ?? "Respondió"} · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : k.queue === "estafa" || (h.escalated_by === "system" && (k.queue !== "sop" || h.k === "tickets")) ? { type: "note", tone: "warn", icon: "warning", t: "Vino directo a To'Latino: no espera al negocio." } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
+      cuerpoB.push(...copBloques);
       // 4if · «Posible estafa»: lo que está en pausa, lo que vio la persona al pedir (la copia) y sus otras ayudas directas; decidir sin dinero.
       const pz = "pausa" in k ? k.pausa : null;
       if (k.queue === "estafa" && pz) {
@@ -219,10 +236,11 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
       ];
       else acts = [
-        { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su cita; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver", plantillas: plant, hacer: (m) => decidirSop(k.id, m) }) },
+        { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su cita; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver", plantillas: cp ? [cp.borrador, ...plant] : plant, ini: cp?.borrador, hacer: (m) => decidirSop(k.id, m, null, null, cp?.id ?? null) }) },
+        ...copAct,
         ...(dinero && h.pago > 0 ? [{ l: "Resolver y devolver", v: "secondary", icon: "card", onClick: () => { const clave = crypto.randomUUID(); setConf({ titulo: `Resolver y devolver · ${h.k === "tickets" ? "orden" : "cita"} ${h.num}`, cta: "Resolver y devolver", peligro: true,
           sub: h.k === "tickets" ? `Hasta ${usd(h.pago)} (lo cobrado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; los boletos siguen valiendo (para quitarlos, se cancelan o se devuelven desde la orden).` : `Hasta ${usd(h.pago)} (el depósito pagado en la app). Vuelve a su tarjeta en 3 a 5 días hábiles; la comisión baja en proporción.`,
-          valor: { k: "MONTO EN DÓLARES", ini: ((Math.min(h.amount ?? h.pago, h.pago)) / 100).toFixed(2), max: 8 }, plantillas: plant, hacer: (m, _e, v) => decidirSop(k.id, m, v, clave) }); } }] : []),
+          valor: { k: "MONTO EN DÓLARES", ini: ((Math.min(h.amount ?? h.pago, h.pago)) / 100).toFixed(2), max: 8 }, plantillas: cp ? [cp.borrador, ...plant] : plant, hacer: (m, _e, v) => decidirSop(k.id, m, v, clave, cp?.id ?? null) }); } }] : []),
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
         // 4eg · «Cuidado de niños»: los datos del niño solo con motivo, y quedan en la auditoría.
         ...(k.queue === "cuidado" ? [{ l: "Ver los datos del niño", icon: "shield", onClick: () => setConf({ titulo: "¿Para qué necesitas ver los datos del niño?", sub: "Solo Soporte o Admin. Queda en la auditoría con tu motivo; se muestran solo en esta pantalla.", cta: "Ver los datos",
@@ -237,10 +255,13 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
         ...(h.items.length ? [{ k: "PLATOS", v: h.items.map((x) => `${x.q} × ${x.n}`).join(" · ") }] : []), { k: "QUÉ QUIERE", v: Q[h.wants] ?? h.wants }] });
       if (h.body) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `SU NOTA · «${h.body}»` });
       cuerpoB.push(h.reply ? { type: "note", tone: "info", icon: "chat", t: `RESPUESTA DEL NEGOCIO · «${h.reply}»${h.escalated_by === "user" ? " · el cliente pidió que lo revisemos" : ""}` } : { type: "note", tone: "warn", icon: "clock", t: "El negocio no respondió en 24 horas." });
+      cuerpoB.push(...copBloques);
+      const plantP = ["Hablamos con el negocio: te reponen lo que faltó.", "Hablamos con el negocio: te devuelven lo de esos platos en el local.", "Gracias por avisar. Se lo dijimos al negocio para que no vuelva a pasar."];
       acts = [
         { l: "Resolver con un mensaje", v: "action", icon: "check", onClick: () => setConf({ titulo: "Tu respuesta al cliente", sub: "La ve en su pedido; el negocio la ve en su panel. Queda en la auditoría.", cta: "Resolver",
-          plantillas: ["Hablamos con el negocio: te reponen lo que faltó.", "Hablamos con el negocio: te devuelven lo de esos platos en el local.", "Gracias por avisar. Se lo dijimos al negocio para que no vuelva a pasar."],
-          hacer: (m) => decidirSop(k.id, m) }) },
+          plantillas: cp ? [cp.borrador, ...plantP] : plantP, ini: cp?.borrador,
+          hacer: (m) => decidirSop(k.id, m, null, null, cp?.id ?? null) }) },
+        ...copAct,
         { l: "Ver el cliente", icon: "users", onClick: () => router.push(`/admin/usuarios/${h.uid}`) },
       ];
     }

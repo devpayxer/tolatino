@@ -2462,6 +2462,13 @@ const guardianes = {
       if (!/create trigger compa_reads_antes before insert or update or delete on compa_reads/.test(readFileSync(MD7, "utf8")) || !/raise exception 'compa_reads es solo de inserción'/.test(ultimaFn("compa_reads_antes"))) falla(G, MD7, 0, "compa_reads es de solo inserción (trigger)");
       for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\b(update|delete from) compa_reads\b/.test(q)) falla(G, x, 0, "una lectura del equipo no se cambia ni se borra");
     }
+    // 7g · Los borradores del copiloto (compa_drafts) son de solo inserción: lo único que se anota, una vez, es si se usaron (y el mensaje que salió).
+    const MD8 = "packages/db/migrations/0122_compa_copiloto.sql";
+    if (existsSync(MD8)) {
+      const f = ultimaFn("compa_drafts_antes");
+      if (!/create trigger compa_drafts_antes before insert or update or delete on compa_drafts/.test(readFileSync(MD8, "utf8")) || !/raise exception 'compa_drafts es solo de inserción/.test(f) || !/if old\.used is not null then raise exception 'compa_borrador_usado/.test(f)) falla(G, MD8, 0, "compa_drafts es de solo inserción (se anota una vez si se usó)");
+      for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x)) for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) if (/\bdelete from compa_drafts\b|\bupdate compa_drafts set (?!used = )/.test(q)) falla(G, x, 0, "de un borrador del copiloto solo se anota si se usó");
+    } else falla(G, MD8, 0, "falta la migración del copiloto (compa_drafts)");
     // 7a · El libro de la ayuda (help_article_log): pausar, volver a usar, desplegar y retirar quedan para siempre.
     const MA = "packages/db/migrations/0116_ayuda_base.sql";
     if (existsSync(MA) && (!/create trigger help_article_log_no_cambia before update or delete on help_article_log/.test(readFileSync(MA, "utf8")) || !/raise exception 'help_article_log es solo de inserción'/.test(ultimaFn("help_article_log_inmutable")))) falla(G, MA, 0, "help_article_log es de solo inserción (trigger)");
@@ -4145,7 +4152,20 @@ const guardianes = {
     if (!gets || gets !== buenos || /query\(|refs\.values\(|refs\.entries\(|\.find\(/.test(val)) falla(G, A, 0, "validarAccion: solo una ref del mapa del servidor (op1…), sin buscar nada que diga el modelo");
     if (existsSync(C)) { const c = sinComent(C), todas = (c.match(/from compa_conversations where number = \$1/g) ?? []).length, buenas = (c.match(/from compa_conversations where number = \$1 and user_id = \$2 and use = \$3 and closed_at is null/g) ?? []).length;
       if (!buenas || todas !== buenas) falla(G, C, 0, "una conversación se sigue solo si es de esa persona (en el turno y en los pasos)"); }
-    for (const x of codigo.filter((f) => /^apps\/web\/lib\/compa\/contexto-[a-z]+\.ts$/.test(f))) if (!/export async function contexto[A-Z][a-z]+\((userId|staffId|negocio): string/.test(sinComent(x))) falla(G, x, 0, "una función de contexto recibe solo el id de la sesión");
+    // (7g · el contexto del copiloto recibe a la persona del equipo de la SESIÓN —Staff, con sus permisos y sus ciudades—, no un id suelto.)
+    for (const x of codigo.filter((f) => /^apps\/web\/lib\/compa\/contexto-[a-z]+\.ts$/.test(f))) if (!/export async function contexto[A-Z][a-z]+\((userId|staffId|negocio): string|export async function contextoCopiloto\(s: Staff,/.test(sinComent(x))) falla(G, x, 0, "una función de contexto recibe solo el id de la sesión");
+    // 7g · El copiloto: el caso se lee con las MISMAS lecturas de la ficha (casoEquipo: sop:ver y sus ciudades; caso de Colas: su rol y sus
+    // ciudades), con el permiso de la acción que el borrador alimenta (sop:editar = Enviar; colas:aprobar = Resolver con un mensaje), solo la cola
+    // «sop», y la conversación del copiloto es de esa persona del equipo y de ESE caso.
+    const CP = "apps/web/lib/compa/contexto-copiloto.ts";
+    if (existsSync(CP)) {
+      const t = sinComent(CP), cc = cuerpoFn(t, "contextoCaso"), ca = cuerpoFn(t, "contextoAyuda");
+      if (!/if \(!\(s\.puede\("sop", "ver"\) && s\.puede\("sop", "editar"\)\)\) return null;\n\s*const k = await casoEquipo\(s, numero\);/.test(cc)) falla(G, CP, 0, "el copiloto de un caso: Soporte › editar y la lectura de la ficha (casoEquipo con la persona de la sesión)");
+      if (!/if \(!s\.puede\("colas", "aprobar"\)\) return null;\n\s*const k = await casoCola\(s, id\);/.test(ca) || !/k\.queue !== "sop"/.test(ca)) falla(G, CP, 0, "el copiloto de una ayuda escalada: Colas › aprobar, la lectura de la ficha (su rol y su ciudad) y solo la cola «sop»");
+      if (/\b(from|join|update|into) (support_messages|support_cases|help_requests|queue_items)\b/.test(t)) falla(G, CP, 0, "el contexto del copiloto no lee las tablas del caso por su cuenta: usa las lecturas de la ficha");
+    } else falla(G, CP, 0, "falta el contexto del copiloto");
+    if (existsSync(C)) { const b = cuerpoFn(sinComent(C), "borradorCopiloto");
+      if (!b || !/const ctx = await contextoCopiloto\(s, \{/.test(b) || !/where use = 'copilot' and user_id = \$1 and closed_at is null\s*and \(support_case_id = \$2::bigint or help_request_id = \$3::bigint\)/.test(b)) falla(G, C, 0, "borradorCopiloto: el contexto de la sesión y SU conversación de ese caso"); }
     // 7e · El panel: el contexto vuelve a comprobar en la base que la persona de la sesión es miembro ACTIVO de ESE negocio (la regla de
     // accesoPanel) y reparte la guía con esa misma regla; go_to_panel solo vale con una sección de ese mapa; la conversación del panel se sigue
     // solo si es de esa persona Y de ese negocio; el hilo que ve la pantalla es el suyo.
@@ -4176,6 +4196,11 @@ const guardianes = {
       const t = sinComent(x), sinExcl = t.replace(/not exists \(select 1 from op_private p where p\.operation_id = o\.id\)/g, "");
       if (/\b(op_private|door_code|dm_threads|dm_messages|neighbor_messages|chat_messages|health_|salud_|ninos|kids_|staff_members|audit_entries|support_messages|media\b)/.test(sinExcl)) falla(G, x, 0, "el contexto de El Compa lee una tabla sensible");
       if (/ninos-privado|salud|citas-salud|mensajes-vecinos/.test(t.match(/from "[^"]+"/g)?.join(" ") ?? "")) falla(G, x, 0, "el contexto importa un módulo sensible");
+      // 7g · El copiloto nunca lee Salud, Profesionales, inscripciones (Niños) ni datos privados (la base lo dice por la operación), nunca la cola de
+      // Cuidado de niños, y quita teléfonos y correos antes del modelo.
+      if (/contexto-copiloto/.test(x) && (!/not \(o\.kind not in \('enrollment'\) and not \(coalesce\(o\.details->>'rubro', ''\) in \('salud', 'pro'\)\) and not exists \(select 1 from op_private p where p\.operation_id = o\.id\)\) as s/.test(t)
+        || !/if \(h\.k === "enrollment" \|\| h\.rub === "salud" \|\| h\.rub === "pro"\) return null;/.test(t) || !/if \(await sensible\(h\.num, h\.uid, null\)\) return null;/.test(t)
+        || !/export const paraModelo = [^\n]*tapar\([^\n]*\.replace\(TEL, TAPADO\)\.replace\(CORREO, TAPADO\)/.test(t))) falla(G, x, 0, "el contexto del copiloto deja fuera Salud, Profesionales, inscripciones y datos privados, y tapa teléfonos y correos");
       if (/contexto-vecino/.test(x) && (!/o\.kind not in \('enrollment'\)/.test(t) || !/coalesce\(o\.details->>'rubro', ''\) in \('salud', 'pro'\)/.test(t) || !/not exists \(select 1 from op_private p where p\.operation_id = o\.id\)/.test(t))) falla(G, x, 0, "el contexto del vecino deja fuera Salud, Profesionales, inscripciones (Niños) y lo que tiene datos privados");
     }
   },
@@ -4219,14 +4244,23 @@ const guardianes = {
       [/r\.respuesta\.match\(MONTO\)/, "montos"], [/r\.respuesta\.match\(PCT\)/, "porcentajes"], [/r\.respuesta\.match\(PLAZO\)/, "plazos"], [/HECHO\.test\(r\.respuesta\)/, "«ya lo hice»"], [/PERSONA\.test\(todo\)/, "hacerse pasar"],
       [/matchAll\(CONF\)/, "«confirmada»"], [/!c\.fuentes\.includes\(fuente\)\) fuente = ""/, "cita fuera de los trozos"], [/r\.tipo === "respuesta" && !fuente\) return \{ ok: false, motivo: "sin_fuente" \}/, "respuesta sin fuente"]])
       if (!re.test(f)) falla(G, V, 0, `el verificador no revisa ${q}`);
-    if (!/v = verificar\(sal\.json, vctx\)/.test(c) || (c.match(/sal\.json/g) ?? []).length !== 1) falla(G, C, 0, "la salida del modelo solo se usa después de verificar()");
+    // 7g · Cada uso verifica su salida: el verificador de siempre o el del uso (el copiloto), nunca ninguno; sal.json se lee una sola vez.
+    if (!/const ver = x\.verificador \?\? \(\(j: unknown\) => verificar\(j, vctx!\)\);/.test(c) || !/v = ver\(sal\.json\)/.test(c) || (c.match(/sal\.json/g) ?? []).length !== 1) falla(G, C, 0, "la salida del modelo solo se usa después de verificar()");
+    for (const m of c.matchAll(/await consultar\(\{[^]*?\}\);/g)) if (/SISTEMA_COPILOTO/.test(m[0]) && !/esquema: ESQUEMA_COPILOTO, verificador: \(j\) => verificarCopiloto\(j, vc\)/.test(m[0])) falla(G, C, 0, "el copiloto pasa por su esquema y por verificarCopiloto");
+    if (!/const v = verificarCopiloto\(borradorCopilotoConReglas\(/.test(c)) falla(G, C, 0, "el borrador de reglas del copiloto también pasa por verificarCopiloto");
+    const vc = cuerpoFn(v, "verificarCopiloto");
+    for (const [re, q] of [[/EMOJI\.test\(todo\)/, "emoji"], [/URL\.test\(todo\)/, "enlaces"], [/tapar\(todo\)\.tapado/, "datos tapados"], [/todo\.match\(TEL\)/, "teléfonos"], [/HECHO\.test\(r\.borrador\)/, "«ya lo hice»"],
+      [/PROMETE_COP\.test\(sinAcentosV\(r\.borrador\)\)/, "promesas de dinero o sanciones"], [/r\.borrador\.match\(MONTO\)/, "montos"], [/r\.borrador\.match\(PLAZO\)/, "plazos"], [/for \(const nota of c\.internas\) for \(const s of tejas\(nota, 5\)\) if \(t\.has\(s\)\) return \{ ok: false, motivo: "nota_interna" \}/, "notas internas en el borrador (cinco palabras seguidas)"],
+      [/for \(const w of palabrasV\(r\.borrador\)\) if \(numsInt\.has\(w\)\) return \{ ok: false, motivo: "nota_interna" \}/, "números que solo están en una nota interna"],
+      [/c\.macros\.includes\(r\.macro\)/, "la macro de la lista"], [/sugerir_devolver: r\.sugerir_devolver && c\.puedeDevolver/, "«Resolver y devolver» solo si su rol puede"]])
+      if (!re.test(vc)) falla(G, V, 0, `verificarCopiloto no revisa ${q}`);
     if (!/verificar\(responderConReglas\(/.test(c)) falla(G, C, 0, "las reglas fijas también pasan por el verificador");
     if (!/export const SISTEMA_VECINO = \[/.test(c) || /SISTEMA_VECINO\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del modelo es fijo y vive en el código del servidor");
     // 7e · El del panel también; y el modelo solo se llama por consultar() (que verifica): cada uso le pasa su sistema fijo.
     if (!/export const SISTEMA_PANEL = \[/.test(c) || /SISTEMA_PANEL\s*=.*(query|valor|process\.env)/.test(c)) falla(G, C, 0, "el sistema del panel es fijo y vive en el código del servidor");
-    for (const m of c.matchAll(/await consultar\(\{[^}]*sistema: ([A-Za-z_.]+)/g)) if (!/^SISTEMA_(VECINO|PANEL|AUTO|BORRADOR)$/.test(m[1])) falla(G, C, 0, `el modelo recibe un sistema fijo (no ${m[1]})`);
+    for (const m of c.matchAll(/await consultar\(\{[^}]*sistema: ([A-Za-z_.]+)/g)) if (!/^SISTEMA_(VECINO|PANEL|AUTO|BORRADOR|COPILOTO)$/.test(m[1])) falla(G, C, 0, `el modelo recibe un sistema fijo (no ${m[1]})`);
     // 7f · Los de la respuesta automática y el borrador, también fijos del servidor (la nota del dueño va como DATO, nunca en el sistema).
-    for (const k of ["SISTEMA_AUTO", "SISTEMA_BORRADOR"]) if (!new RegExp(`export const ${k} = \\[`).test(c) || new RegExp(`${k}\\s*=.*(query|valor|process\\.env|nota)`).test(c)) falla(G, C, 0, `${k} es fijo y vive en el código del servidor`);
+    for (const k of ["SISTEMA_AUTO", "SISTEMA_BORRADOR", "SISTEMA_COPILOTO"]) if (!new RegExp(`export const ${k} = \\[`).test(c) || new RegExp(`${k}\\s*=.*(query|valor|process\\.env|nota)`).test(c)) falla(G, C, 0, `${k} es fijo y vive en el código del servidor`);
   },
 
   /* 7c. Los interruptores se leen en UN lugar (lib/compa/interruptores.ts: feature_flags compa.* y compa_pauses), en cada turno y otra vez en gastar();
@@ -4255,7 +4289,7 @@ const guardianes = {
   compaSinRutaCritica() {
     const G = "compaSinRutaCritica";
     // 7e · Y las acciones del asistente del panel (app/panel/acciones-compa.ts: solo las llama la sección El Compa) y Negocios 360° (Super Admin).
-    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
+    const PERMITIDO = /^apps\/web\/(lib\/compa\/|app\/api\/interno\/compa\/|lib\/barrido\.ts$|app\/admin\/(page\.tsx$|compa\/|acciones-compa\.ts$|acciones-copiloto\.ts$|ElCompaAdmin\.tsx$|negocios\/\[id\]\/page\.tsx$)|app\/\(app\)\/soporte\/compa\/|app\/panel\/acciones-compa\.ts$)/;
     for (const x of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(x) || PERMITIDO.test(x)) continue;
       const t = sinComent(x);
@@ -4272,6 +4306,14 @@ const guardianes = {
       if (/from "@\/lib\/compa\/hoja"/.test(t)) for (const m of t.matchAll(/\b(estadoVecino|hojaDe|opsVecino|vecinoDisponible|opVecino)\(/g))
         if (!/^[^;]*?\.catch\(\(\) =>/.test(t.slice(m.index))) falla(G, x, 0, `${m[1]}() fuera de El Compa sin .catch(() => …): si falla, la pantalla sigue como siempre`);
       if (/hoja-ayuda/.test(t) && !/^apps\/web\/app\/\(app\)\/[a-z/]+\/\[num\]\/ayuda\/page\.tsx$/.test(x)) falla(G, x, 0, "la hoja de ayuda solo la abre la página «Ayuda con …» de una operación");
+      // 7g · El copiloto: fuera de su acción (acciones-copiloto.ts), solo la ficha de Soporte y la de Colas PREGUNTAN si está (copilotoDisponible,
+      // lectura barata) y siempre con .catch(() => false): apagado, al tope o con un error, la ficha es la de siempre. Responder, resolver y devolver
+      // nunca esperan al copiloto.
+      if (/(?:from |import\()"(?:@\/lib\/|\.\/)compa\/copiloto"/.test(sinTipos)) {
+        if (!/^apps\/web\/(app\/admin\/soporte\/page\.tsx|lib\/admin-colas\.ts)$/.test(x)) falla(G, x, 0, "solo la ficha de Soporte y la de Colas preguntan por el copiloto");
+        for (const m of t.matchAll(/\bcopilotoDisponible\(/g)) if (!/^[^;]*?\.catch\(\(\) => false\)/.test(t.slice(m.index))) falla(G, x, 0, "copilotoDisponible() sin .catch(() => false): si falla, la ficha sigue como siempre");
+        if (/\bborrador\(/.test(t)) falla(G, x, 0, "el borrador del copiloto solo lo pide su acción (acciones-copiloto.ts)");
+      }
       // 7f · Mensajes y el panel solo PREGUNTAN a lib/compa/respuesta-auto (lecturas baratas) y siempre con .catch (si falla, lo de siempre); el turno
       // con el modelo nunca se espera: corre después (after) o en el barrido.
       if (/compa\/respuesta-auto"/.test(t) && !/^apps\/web\/(app\/panel\/acciones-compa\.ts|app\/admin\/compa\/page\.tsx)$/.test(x)) {
@@ -4463,6 +4505,44 @@ const guardianes = {
     if (/enviarNegocio|mensajeResponder|insert into/.test(s)) falla(G, AC, 0, "«Sugerir respuesta» no envía");
     const p = sinComent(P);
     if (!/c\.run\(\(\) => compaSugerir\(d\.id, x\.id\), E2\("Revísalo antes de enviar\. Sale con tu nombre\.", "Check it before sending\. It goes out with your name\."\), \(r: \{ texto\?: string \}\) => \{ c\.setUi\(\{ cpaSug: null \}\); if \(r\.texto\) F\.set\(\{ txt: r\.texto\.slice\(0, 1000\)\ }\); \}\)/.test(p)) falla(G, P, 0, "«Sugerir respuesta» solo llena el campo, con «Revísalo antes de enviar. Sale con tu nombre.»");
+  },
+
+  /* 7g. El copiloto del equipo SOLO deja un borrador (fase7-compa.md §3 punto 6; copilotoSoloBorrador): su turno (conversacion.ts borradorCopiloto)
+     solo escribe su conversación (compa_messages, draft) y el borrador (compa_drafts); nunca un mensaje del caso, el estado del caso o de la ayuda,
+     la cola, un aviso ni nada de dinero. Su acción (acciones-copiloto.ts) revisa el mismo origen, la persona del equipo de la sesión y el permiso
+     de la acción que alimenta, y no envía. Las pantallas solo ponen el borrador en el campo (Soporte) o en el mensaje de «Resolver con un
+     mensaje» (Colas): el envío es el botón de siempre. El mensaje que sale marca from_draft solo con un borrador de ESE caso y de ESA persona
+     (la base lo vuelve a revisar). Interruptor y tope: nivel «copiloto» antes de todo, límite por persona del equipo al día, y la ficha solo
+     pinta el botón con el copiloto encendido y bajo el tope. */
+  copilotoSoloBorrador() {
+    const G = "copilotoSoloBorrador", C = "apps/web/lib/compa/conversacion.ts", AC = "apps/web/app/admin/acciones-copiloto.ts", SA = "apps/web/app/admin/SoporteAdmin.tsx", CO = "apps/web/app/admin/Colas.tsx",
+      E = "apps/web/lib/soporte-equipo.ts", M = "packages/db/migrations/0122_compa_copiloto.sql", K = "apps/web/lib/compa/copiloto.ts", CP = "apps/web/lib/compa/contexto-copiloto.ts";
+    const b = cuerpoFn(sinComent(C), "borradorCopiloto");
+    if (!b) return falla(G, C, 0, "falta borradorCopiloto");
+    if (/insert into support_messages|update support_cases|update help_requests|update queue_items|insert into chat_messages|devolverPago|resolverYDevolver|decidirSop|responder\(|avisar|avisarCaso|notaInterna\(/.test(b)) falla(G, C, 0, "el copiloto nunca envía, ni cambia el caso, ni avisa, ni toca dinero: solo deja un borrador");
+    if (!/insert into compa_drafts \(/.test(b) || !/source_label, chips, engine, draft\) values \(\$1, \$2, 'compa', \$3, \$4, \$5, '\{\}', \$6, true\)/.test(b)) falla(G, C, 0, "el copiloto guarda su respuesta como borrador (draft) y en compa_drafts");
+    if (!/const d = await disponible\(\{ uso: "copilot", canal: "app", ciudad, negocio: ctx\.negocio \}\);\n\s*if \(!d\.ok\) return/.test(b) || b.indexOf("await disponible(") > b.indexOf("insert into compa_conversations")) falla(G, C, 0, "borradorCopiloto revisa el interruptor del copiloto antes de escribir nada");
+    if (!/select count\(\*\)::int as n from compa_drafts where staff_id = \$1 and at > now\(\) - interval '1 day'/.test(b) || !/if \(n >= lim\) return \{ limite: true \};/.test(b) || !/valor\("compa_copiloto_dia_staff"\)/.test(b)) falla(G, C, 0, "el copiloto cuenta aparte por persona del equipo (compa_copiloto_dia_staff)");
+    for (const f of [K, CP]) if (existsSync(f) && /from "[^"]*(acciones-colas|acciones-soporte|cobros|pagos|avisos)"|\b(responder|resolver|resolverYDevolver|notaInterna|decidirSop)\(/.test(sinComent(f))) falla(G, f, 0, "el copiloto no importa ni llama nada que envíe, resuelva o devuelva");
+    if (existsSync(CP) && !/import \{ casoEquipo, money \} from "\.\.\/soporte-equipo";/.test(sinComent(CP))) falla(G, CP, 0, "de Soporte, el contexto del copiloto solo usa la lectura de la ficha (casoEquipo)");
+    if (!existsSync(AC)) return falla(G, AC, 0, "falta la acción del copiloto");
+    const a = cuerpoFn(sinComent(AC), "copilotoSugerir");
+    if (!/if \(!\(await mismoOrigen\(\)\)\) return/.test(a) || !/const s = await staff\(\);/.test(a) || !/if \(caso && !\(s\.puede\("sop", "ver"\) && s\.puede\("sop", "editar"\)\)\) return/.test(a) || !/if \(cola && !s\.puede\("colas", "aprobar"\)\) return/.test(a)) falla(G, AC, 0, "la acción del copiloto: mismo origen, la persona del equipo de la sesión y el permiso de la acción que alimenta");
+    if (/sopResponder|decidirSop|insert into|update /.test(a)) falla(G, AC, 0, "«Sugerir respuesta con El Compa» no envía");
+    const trozo = (t, i) => (i < 0 ? "" : t.slice(i, t.indexOf("}); };", i) + 6));
+    const tSA = sinComent(SA), sa = trozo(tSA, tSA.indexOf("const sugerir = "));
+    if (!/copilotoSugerir\(\{ caso: num \}\)/.test(sa) || !/setResp\(r\.borrador\)/.test(sa) || /sopResponder|sopResolver|sopDevolver|sopNota/.test(sa)) falla(G, SA, 0, "Soporte: el borrador solo llena el campo RESPUESTA; se envía con «Enviar»");
+    if (!/sopResponder\(k\.num, resp, macro, borrador\)/.test(sinComent(SA)) || !/"Revísalo antes de enviar: sale con tu nombre\."/.test(sinComent(SA)) || !/"\(sin IA: borrador de reglas\)"|\(sin IA: borrador de reglas\)/.test(sinComent(SA))) falla(G, SA, 0, "Soporte: «Revísalo antes de enviar: sale con tu nombre.», «(sin IA: borrador de reglas)» y Enviar con el borrador");
+    const tCO = sinComent(CO), co = trozo(tCO, tCO.indexOf("const sugerir = "));
+    if (!/copilotoSugerir\(\{ cola: id \}\)/.test(co) || /decidirSop|decidir[A-Z]/.test(co)) falla(G, CO, 0, "Colas: el borrador solo va al mensaje de «Resolver con un mensaje»; se resuelve con ese botón");
+    if (!/const copOn = k\.queue === "sop" && "copiloto" in k && !!k\.copiloto/.test(sinComent(CO))) falla(G, CO, 0, "Colas: el copiloto solo en la cola «sop» y cuando el servidor dice que está");
+    const r = cuerpoFn(sinComent(E), "responder");
+    if (!/from compa_drafts where id = \$1::uuid and case_id = \$2::bigint and staff_id = \$3 and used is null/.test(r) || !/\[k\.id, k\.city_id, s\.id, t, mk, !!bd\]/.test(r)) falla(G, E, 0, "from_draft solo con un borrador de ESE caso y de ESA persona del equipo, sin usar");
+    if (!existsSync(M)) return falla(G, M, 0, "falta la migración del copiloto");
+    const m = readFileSync(M, "utf8");
+    if (!/check \(not from_draft or \(sender = 'staff' and not internal\)\)/.test(m) || !/raise exception 'compa_borrador_mensaje/.test(ultimaFn("compa_drafts_antes"))) falla(G, M, 0, "la base: from_draft solo en un mensaje del equipo a la persona, y el mensaje de un borrador es de ese caso y de esa persona");
+    if (!/new\.from_draft\)\s*is distinct from/.test(ultimaFn("support_messages_antes"))) falla(G, M, 0, "from_draft no cambia después (solo inserción)");
+    if (existsSync(K) && !/disponible\(\{ uso: "copilot", canal: "app", ciudad: x\.ciudad, negocio: x\.negocio \?\? null \}\), alTope\(\)/.test(sinComent(K))) falla(G, K, 0, "copilotoDisponible: el nivel «copiloto», el canal, la ciudad, el negocio y el tope");
   },
 
   /* 7f. Siempre se sabe que es una IA (compaSiempreIA, en Mensajes): la primera respuesta de El Compa en una conversación empieza con «Soy El

@@ -33,7 +33,7 @@ export const claude: Modelo = {
       max_tokens: e.maxTokens,
       system: [{ type: "text", text: e.sistema, cache_control: { type: "ephemeral" } }],
       messages: [{ role: "user", content: bloques(e).map((text) => ({ type: "text", text })) }],
-      output_config: { format: { type: "json_schema", schema: ESQUEMA }, effort: "low" },
+      output_config: { format: { type: "json_schema", schema: e.esquema ?? ESQUEMA }, effort: "low" },
       inference_geo: "us",
     };
     let r: Response;

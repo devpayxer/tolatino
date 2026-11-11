@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7f · respuestas automáticas de El Compa en Mensajes)._
+_Actualizado: 11 nov 2026 (7g · el copiloto del equipo en Super Admin › Soporte y en las ayudas escaladas)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -456,6 +456,30 @@ en la conversación. Guardianes **`compaRespuestaAuto`**, **`borradorSoloBorrado
 (390 y 1360); `msg2p` ✓ con El Compa apagado y al tope, `compa7e` 117 ✓ (su comparación de Mensajes deja fuera la fila nueva de 7f), `compa7d` 140 ✓, `adm5i` ✓; 0121 dos veces en local y en una base nueva (semillas dos
 veces). Ayuda: **`panel-respuestas-automaticas`** nueva; `mensajes`, `panel-el-compa`, `admin-el-compa` al día. Bug de clase cazado: `id::text …
 order by id` ordena el texto (LAUNCH, tarea sugerida). Sigue **7g** (copiloto del equipo en Super Admin › Soporte; migración 0122).
+**7g hecho (11 nov)** — El copiloto del equipo en Super Admin › Soporte (caso TK-) y en Colas › Ayuda con pedidos y citas (ayuda escalada H-).
+Migración **0122** (`compa_drafts` SOLO INSERCIÓN: resumen, borrador, siguiente paso, macro y ayuda sugeridas, motor; lo único que se anota UNA vez
+es si se usó —tal cual · editado · descartado— y el mensaje que salió, y la base revisa que ese mensaje sea de ESE caso, de ESA persona del equipo,
+para la persona y `from_draft`; `support_messages.from_draft` con su regla de solo inserción redefinida; `compa_conversations.help_request_id`;
+clave `compa_copiloto_dia_staff` 200; sin semilla). Código: `lib/compa/contexto-copiloto.ts` (`contextoCopiloto(s: Staff, …)` con las MISMAS
+lecturas de la ficha: `casoEquipo` (sop:ver + sus ciudades) con sop:editar, o `caso` de Colas (su rol y su ciudad) con colas:aprobar y solo la cola
+«sop»; nunca Salud, Profesionales, inscripciones ni op_private —lo dice la base—; tapado y sin teléfonos ni correos; notas internas aparte y
+marcadas; tu_rol con el tope de «Resolver y devolver»), `conversacion.ts` (`consultar()` acepta el esquema y el verificador del uso;
+**`SISTEMA_COPILOTO`** fijo; **`borradorCopiloto`**: interruptor «copiloto» → límite por persona del equipo al día → su conversación de ese caso →
+ayuda de TODAS las audiencias → Sonnet por el tope → `verificarCopiloto` → si falla, borrador de reglas; solo escribe `compa_messages` (draft) y
+`compa_drafts`), `modelo.ts` (`ESQUEMA_COPILOTO`; `Entrada.esquema`), `modelo-claude.ts` (el esquema del uso), `verificar.ts`
+(**`verificarCopiloto`**: promesas de dinero/sanciones, «ya lo hice», montos/porcentajes/plazos solo de lo que la persona ya ve, nada de una nota
+interna —5 palabras o un número—, emoji, enlaces, teléfonos, tapado; macro de la lista; «Resolver y devolver» solo si su rol puede), `modelo-reglas.ts`
+(`borradorCopilotoConReglas`), simulador con el uso copilot (ingenuo + fallas guionadas), `copiloto.ts` (`copilotoDisponible` barata),
+`soporte-equipo.ts` (`responder` con el borrador → `from_draft` y tal cual/editado; `casoEquipo.ciudad`), `acciones-colas.ts` (`decidirSop` anota el
+borrador de la ayuda), `admin-compa.ts` (cifras del copiloto), barrido `compaBorradores` (un día sin enviar = descartado). Pantallas: **Super Admin ›
+Soporte** (en «A la persona»: «Sugerir respuesta con El Compa» / «Otro borrador con El Compa», la nota «EL COMPA · {resumen} Siguiente paso: …»,
+«(sin IA: borrador de reglas)», el borrador al campo RESPUESTA, «Revísalo antes de enviar: sale con tu nombre.»; Enviar como siempre), **Colas ›
+Ayuda con pedidos y citas** (la nota, el BORRADOR y «Resolver con un mensaje» que abre con él), **El Compa › Conversaciones › COPILOTO EN SOPORTE ·
+30 D**; acción `app/admin/acciones-copiloto.ts` (mismo origen, sesión, permiso de la acción que alimenta). Guardianes **`copilotoSoloBorrador`**
+(nuevo) + `compaSoloSusDatos`, `compaSinDatosSensibles`, `compaSalidaLimpia`, `compaSinRutaCritica`, `libroSoloInsercion` ampliados (43/43 al revés
+`alreves7g`; 45/45 `alreves7b` y 66/66 `alreves7c` con dos casos apuntados al código nuevo; 36/36 7a, 33/33 7d, 36/36 7e, 40/40 7f); e2e
+**`compa7g` 92 ✓** (390 y 1360); `sop7b` 104 ✓, `compa7c` 111 ✓, `compa7f` 130 ✓, `adm5i` ✓; 0122 dos veces en local y en una base nueva (semillas
+dos veces). Ayuda: `admin-soporte`, `admin-el-compa` al día (indexadas). Sigue **7h** (WhatsApp y SMS con enlace; migración 0123).
 
 - **Retomar aquí (6 nov, tarde):** **Fase 2 · Comida COMPLETA** (2a–2s, CI verde en todo; falta el OK del fundador en el
   sandbox con las guías de `docs/REVISION.md`). Sigue la **Fase 3 · Belleza (citas)**: reserva con depósito, solicitud →

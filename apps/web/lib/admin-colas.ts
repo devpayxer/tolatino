@@ -297,7 +297,12 @@ export async function caso(s: Staff, id: string) {
               case when o.kind = 'visit' then jsonb_strip_nulls(jsonb_build_object('rent', o.details->'rent_cents', 'dep', o.details->'deposit_cents', 'moveIn', o.details->'move_in_cents', 'price', o.details->'price_cents', 'otd', o.details#>'{puerta,otd}', 'item', o.details#>'{item,es}', 'que', o.details->'what')) end as copia,
               (select count(*)::int from help_requests x where x.business_id = h.business_id and x.id <> h.id and x.reason in ('ver', 'mudar', 'cobro') and x.created_at > now() - interval '90 days') as otras
          from help_requests h join operations o on o.id = h.operation_id where h.id = $1::bigint`, [q.subject_id])).rows[0] ?? null : null;
-    return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar"), pausa };
+    // 7g · «Sugerir respuesta con El Compa» solo en la cola «sop» (nunca Cuidado de niños, No me dejan cancelar ni Posible estafa), para quien
+    // resuelve (colas:aprobar), con la ayuda abierta, nunca de Salud, Profesionales ni inscripciones, y con el copiloto encendido y bajo el tope.
+    // Lectura barata y con .catch: apagado, al tope o con un error, la ficha es la de siempre.
+    const copiloto = q.queue === "sop" && q.status === "open" && base.puedeDecidir && !!h && h.k !== "enrollment" && h.rub !== "salud" && h.rub !== "pro"
+      ? await import("./compa/copiloto").then((m) => m.copilotoDisponible({ ciudad: q.city_id, negocio: q.business_id })).catch(() => false) : false;
+    return { ...base, negocio, ayuda: h ?? null, puedeDinero: s.puede("tx", "aprobar"), pausa, copiloto };
   }
   if (q.queue === "renta") {
     // Daño de una renta (4f-2): la herramienta, la foto, el monto, la nota del negocio, el depósito y el cliente.

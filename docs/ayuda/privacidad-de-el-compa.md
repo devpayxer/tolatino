@@ -1,7 +1,7 @@
 # Privacidad de El Compa · El Compa privacy
 
 _Pantallas: El Compa (el asistente de IA de To'Latino) en Soporte y en la ayuda de cada operación; lo que aquí se explica vale en la app y en la
-web. Versión: 10 nov 2026. Audiencia: vecino. Tema: cuenta._
+web. Versión: 11 nov 2026. Audiencia: vecino. Tema: cuenta._
 
 ## Qué hace
 - **El Compa es una IA** y lo dice siempre. Contesta con el Centro de ayuda de To'Latino y con **tus** pedidos, citas y reservaciones. Puede
@@ -37,6 +37,9 @@ web. Versión: 10 nov 2026. Audiencia: vecino. Tema: cuenta._
   Privacidad › **El Compa**.
 - **Si le paso a una persona, ¿qué recibe el equipo?** Tu caso con un resumen de lo que escribiste (tapado), la operación de la que hablas y
   el número de tu conversación. Nada más de tu cuenta.
+- **Y cuando le escribo a Soporte, ¿lo lee la IA?** El equipo puede pedirle a El Compa un **borrador** de respuesta para tu caso. Para eso, tu
+  caso (lo que escribiste y lo que te contestó el equipo, tapado y sin tu teléfono ni tu correo) va al mismo proveedor de IA. El borrador nunca
+  te llega solo: una persona del equipo lo lee, lo corrige y te lo envía con su nombre. Nunca devuelve dinero ni decide tu caso.
 - **¿Cuánto se guardan?** 12 meses; después solo quedan cifras sin texto (por ejemplo, si te pasó a una persona). Si borras tu cuenta, se borran
   con ella.
 - **¿Me da consejo legal, médico o de inmigración?** No. Tampoco te pide tu estatus migratorio ni datos de salud.
@@ -66,5 +69,8 @@ always there. Emergencies: call 911.
   is logged. The business never sees them.
 - **What does the team get when it passes me to a person?** Your case with a covered summary of what you wrote, the item you asked about and
   your conversation number. Nothing else from your account.
+- **Does the AI read what I write to Support?** The team can ask El Compa for a **draft** reply to your case. Your case (what you wrote and what
+  the team answered, covered, without your phone or email) goes to the same AI provider. The draft never reaches you on its own: a team member
+  reads it, edits it and sends it under their name. It never refunds or decides your case.
 - **How long are they kept?** 12 months; after that only numbers without text remain. If you delete your account, they go with it.
 - **Legal, medical or immigration advice?** No. It never asks for your immigration status or health data.

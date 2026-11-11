@@ -649,7 +649,9 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       canal, el negocio o la ciudad en pausa y al tope, Tu página, Hoy, Mensajes, Más y Clientes del panel son idénticas a las de antes y la sección
       El Compa dice que no está (`compa7e`). — 7f (11 nov): **la parte de Mensajes, hecha:** con el nivel «Respuestas automáticas», el canal,
       Hazleton o el negocio en pausa, al tope y con el plan Free, lo que recibe el cliente, su chat y Mensajes del negocio son idénticos (texto a
-      texto) a sin El Compa, con la respuesta fija de siempre (`compa7f`); `msg2p` pasa con El Compa apagado y al tope. Sigue sin marcar por el
+      texto) a sin El Compa, con la respuesta fija de siempre (`compa7f`); `msg2p` pasa con El Compa apagado y al tope. — 7g (11 nov): **la parte
+      de Soporte, hecha:** con el nivel «Copiloto», el canal o la ciudad en pausa y al tope, la ficha del caso y la de la ayuda escalada son
+      idénticas (texto a texto) entre sí y sin nada del copiloto (`compa7g`); `sop7b` pasa con el copiloto encendido. Sigue sin marcar por el
       modelo real y CI.
 - [x] Vecinos: hoja 2as en cada operación con ayuda y pasos 2at; cancelar una solicitud pendiente con «Así queda» y confirmación; dinero / cuenta / seguridad a
       una persona con caso y resumen; nunca datos de otra persona (`compaSoloSusDatos` al revés). — 7d (10 nov): 0119 dos veces en local y en una
@@ -672,7 +674,13 @@ _Cada marca dice con qué se comprobó; lo que no se pudo comprobar queda sin ma
       Pruébalo; Super Admin apaga en el negocio y en la conversación; reporte del cliente; el barrido retoma; todo apagado = Mensajes texto a
       texto); guardianes `compaRespuestaAuto`, `borradorSoloBorrador`, `compaSiempreIAMensajes`, `ordenSinTexto` + 5 ampliados, 40/40 al revés
       (`alreves7f`). Solo «fuera de tu horario» y el chat de To'Latino (10 min / siempre y WhatsApp/SMS en LAUNCH). Falta la corrida de CI.
-- [ ] Copiloto con el modelo mayor, solo borrador, con registro de uso.
+- [x] Copiloto con el modelo mayor, solo borrador, con registro de uso. — 7g (11 nov): 0122 aplicada dos veces en local y en una base nueva
+      (semillas dos veces, la segunda con las huellas cambiadas); e2e `compa7g` 92 ✓ (borrador al campo y nada se envía hasta «Enviar»;
+      `from_draft` editado / tal cual / descartado; Soporte vs Admin con su tope; Finanzas, Solo lectura y Soporte de otra ciudad sin nada; lo que
+      recibe el simulador tapado y sin ids; inyección y cada regla del verificador → reglas; la base; límite por persona; barrido; ayuda escalada;
+      apagado (nivel, canal, ciudad) y al tope = Soporte y la cola texto a texto; cifras), uso «copilot» con el modelo del papel «copiloto»
+      (Sonnet) por el tope y el libro; guardián `copilotoSoloBorrador` + 5 ampliados, 43/43 al revés (`alreves7g`). Sin probar con el modelo
+      real (no hay llave); falta la corrida de CI (la hace la sesión principal).
 - [ ] WhatsApp y SMS contra simuladores: firma, idempotencia, identidad por teléfono verificado, acciones solo por enlace de un uso.
 - [ ] Super Admin: `ADM-COMPA` (Resumen, Conversaciones con «Marcar respuesta incorrecta» y lecturas anotadas, Negocios, Interruptores y tope), Soporte,
       Usuarios y Negocios 360°, Configuración › El Compa y Soporte, Notificaciones, Analítica sin personas; cada acción con motivo, aviso y auditoría.
