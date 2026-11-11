@@ -4154,6 +4154,9 @@ para probarlas, enciéndelas en Fichas y revisión (con motivo) — el código n
   reintenta una vez con un 401.
 - **/privacidad** sin indexar (borrador). /terminos no existe todavía (Fase 9).
 
+- **CI:** Cáscaras en verde con lo nativo nuevo (43091158128). El job «capturas» falló dos veces por cosas reales (WebKit y las cuentas de una base
+  nueva), las dos arregladas; la tercera corrida no arrancó (GitHub dio `startup_failure` también a un flujo sin cambios): queda por verla en verde.
+
 **Para ti (lista):**
 - [ ] Mirar /privacidad (ES y EN) y decir si el tono va.
 - [ ] Decidir si Data safety lo sube Claude por la API (con tu OK) o lo importas tú (CSV desde Declaraciones).

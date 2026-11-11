@@ -1,6 +1,6 @@
 # To'Latino v2 — Dónde estamos / cómo retomar
 
-_Actualizado: 11 nov 2026 (7i · Super Admin completo de El Compa y Soporte — Fase 7 completa)._
+_Actualizado: 11 nov 2026 (8i · fichas, privacidad, reglas de las tiendas y cuentas de revisión — Fase 8 cerrada salvo 8b, que espera el dominio)._
 
 ## Ramas (léelo antes de nada)
 - **`main`** = la rama de trabajo de la v2 y la que debe ser **rama por defecto** del
@@ -1246,3 +1246,48 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
   en el primer job (falta el pedido OIDC que la guarda), el primer TestFlight real, simbolizar con los dSYM, la huella de la firma de Google hacia
   assetlinks y las llaves de acceso, la configuración de Firebase en el CI, reglas del entorno `tiendas`. Todo en LAUNCH-CHECKLIST «Fase 8 · 8h».
 - **Sigue:** 8b (necesita el dominio) u 8i.
+
+## Fase 8 · 8i hecho hasta donde llegan el dominio y las cuentas — fichas, privacidad, reglas de las tiendas y cuentas de revisión (11 nov) · FASE 8 CERRADA SALVO 8b
+- **Hecho:** migración **0132** (renumerada: el plan decía 0133) — `store_listings` (copia de lo subido, solo inserción, con los topes de cada
+  tienda en la base), `store_screenshots` (almacén privado, nada se borra), `data_inventory` (rastreo siempre false; semilla repetible
+  `inventario_datos.sql` generada del inventario), `review_accounts` + `review_account_log` (solo inserción), `founder_steps` (solo inserción),
+  `otp_codes.channel` «revision», interruptor `app.revision.cuentas` (apagado), Configuración › Apps `revision_intentos_hora` y `fichas_subidas_dia`;
+  la base no deja guardar tarjetas a una cuenta de revisión y exige su negocio oculto. Semilla **0048_revision.sql** (sandbox: 4 cuentas
+  +1 484 555 0181…0184 y el negocio oculto «To’Latino Revisión»). Fichas ES/EN de las 4 apps (`apps/mobile/tiendas/*/{es,en}.md` → `fichas.json`,
+  `apps/mobile/scripts/fichas.mjs`); `apps/mobile/inventario-datos.json` (18 categorías) → `privacidad.mjs`: etiquetas de Apple, CSV de Data safety,
+  `PrivacyInfo.xcprivacy` por target (API de razón requerida reales; versión nativa **1.0.1**), `salidas.json` y la semilla; `/privacidad` pública
+  (borrador versión 0). Servidor: `lib/tiendas/{fichas,paquete,revision,reglas}.ts`, ASC (ficha, clasificación, notas, capturas) y Play (ficha,
+  capturas, Data safety) en `asc.ts`/`play.ts`, `/api/tiendas/archivo?tipo=captura`, `/api/admin/tiendas/data-safety`. Pro fuera de las apps (ctaPro,
+  estado del plan, compuerta en planSeguir/planDeshacer; el bloque `lock` admite ir sin botón); Mi cuenta y ajustes en Negocios y Puerta. Pantallas:
+  Sistema › Apps › **Fichas y revisión**, **Lo que te toca**, **Declaraciones**; **Analítica › Apps**; Mi cuenta › Privacidad enlaza /privacidad.
+  CI: `scripts/tiendas/capturas.mjs`, `capturas-android.sh`, `ci.mjs capturas` y el job «capturas» de `tiendas.yml` (a pedido); deploy.sh crea los
+  `REVISION_CODIGO_*`. Guardianes nuevos `fichaEnLimites`, `privacidadCoherente`, `sinCompraDigitalEnApp`, `borrarCuentaEnCadaApp`,
+  `sinProntoEnTienda` (aviso), `revisionAcotada`; ampliados `appNoAutoriza`, `llavesFueraDelRepo`, `semilla`, `direccionAlConfirmar`. Ayuda
+  `admin-fichas-y-revision`, `privacidad`; `admin-sistema-apps`, `admin-configuracion`, `apps-de-to-latino`, `plan-pro` al día.
+- **Probado:** `fich8i` **104** comprobaciones (390 y 1360, con y sin TLApp: /privacidad y /soporte sin sesión; la web ofrece Pro y Negocios iOS y
+  Android en 9 pantallas no; el servidor rechaza volver a Pro con el rótulo de la app; Borrar mi cuenta en las 4 apps con sus cuentas de revisión;
+  la cuenta de revisión entra con su código, nunca se muestra, código malo y el de otra cuenta no entran, no guarda tarjeta ni paga — la pasarela lo
+  frena y lo anota —, su negocio no se ve, desactivarla y apagar el interruptor la cortan también con un código ya pedido; Fichas sin llaves → sin
+  llave; con llaves → 16 borradores en los simuladores, nada a revisión; Lo que te toca, Declaraciones, el CSV, Analítica › Apps, Configuración),
+  `alreves8i` **50/50**, contrato de las tiendas **86** (24 nuevas), contrato de Stripe, tsc, build y todos los guardianes; migración dos veces en la
+  base local y en una base nueva (132 migraciones + semillas dos veces). Capturas de las fichas en local (con Chromium; aquí no hay WebKit): 16 juegos
+  (4 apps × 2 tiendas × ES/EN) de 5 o 6, todas sin texto cortado; la Puerta en inglés fallaba la primera vez (intentaba abrir otra puerta en vez de
+  reusar la abierta) → corregido y repetido: 20 de la Puerta.
+- **Regresión (una a la vez):** app8a 110, beta8f 95, tien8h 106, llave8d 90, adm7i 113, cuenta2h OK (borrar la cuenta). `planes2n` (Fase 2) **falla**
+  esperando el texto «Pedidos (Comida, Mercados, Tiendas)» en Super Admin › Planes › comisiones: ese texto salió del código el 6 nov (4n-1); la
+  prueba está vieja, no es de 8i (Pro y su compra quedan cubiertos por `fich8i`).
+- **CI** (`claude/vibrant-franklin-krutwa`, a mano): **Cáscaras 43091158128 (099df8c) verde** (Android 4 sabores + emulador; iOS 4 targets con los
+  PrivacyInfo.xcprivacy nuevos y la versión 1.0.1). **Tiendas 43091151175 (099df8c):** plan, OIDC con el token real y Android · cliente en verde; el
+  job «capturas» **falló**: con WebKit primero la sesión no quedaba (la cookie Secure por http) → a31b114 (la entrada en Chromium para todas).
+  **Tiendas 43092711241 (a31b114):** el job «capturas» **falló** otra vez: en una base recién sembrada Sabor Dominicano no tiene dueño, el
+  repartidor de la semilla 0046 no existe y los eventos de La Terraza están en revisión → d9a1d09 (Barbería El Primo, el repartidor creado antes de
+  la semilla y el evento publicado; probado en una base nueva: `puerta_puede` = t; y en local, 24 capturas de Negocios). **Tiendas 43095423083 y
+  43096938976 (d9a1d09): `startup_failure`** sin jobs, y **direcciones.yml 43097589711** (sin cambios) también: GitHub no está arrancando corridas
+  en este momento (no es el flujo: actionlint limpio). **No verificado en CI:** el job «capturas» con los últimos arreglos ni las capturas de la
+  cáscara real en el emulador (ese paso nunca llegó a correr).
+- **Bloqueado / no hecho aquí:** subir de verdad las fichas, capturas, clasificación y notas (Paquetes 8-1/8-2: cuentas, llaves y apps creadas);
+  capturas de iPhone en el simulador real (XCUITest); Data safety por la API (decisión del fundador); cuentas de revisión de producción (Fase 9);
+  Apple App Privacy y las declaraciones de Google (Paquete 8-3, a mano con la pantalla Declaraciones). Todo en LAUNCH-CHECKLIST «Fase 8 · 8i».
+- **Fase 8:** 8a, 8c, 8d, 8e, 8f, 8g, 8h y 8i hechos hasta donde llegan el dominio y las cuentas. **Queda 8b** (enlaces universales y App Links),
+  que espera el dominio con HTTPS (Paquete 8-0).
+- **Sigue:** 8b (necesita el dominio con HTTPS, Paquete 8-0).
