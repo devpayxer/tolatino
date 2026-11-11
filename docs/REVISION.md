@@ -4210,3 +4210,36 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
 - [ ] Decir si te sirven los dos tiempos de producción (acceso anticipado antes de abrir).
 - [ ] Decidir abogado y contador (presupuesto) para que el paquete 9-2 empiece ya.
 - [ ] Pedir los paquetes 8-0, 8-1 y 9-1 (son los que más tardan).
+
+### 9a · Orden antes de cerrar: las pruebas al repo, las viejas al día y la LAUNCH auditada contra lo servido (11 nov)
+
+**Qué mirar (no hay pantallas nuevas para las personas):** nada en el teléfono. Lo que cambió es la casa de las pruebas y la lista de lanzamiento.
+- **Las pruebas viven en el repo** (`pruebas/`): 159 de punta a punta en `pruebas/e2e`, 39 al revés en `pruebas/alreves`, un solo servidor de pruebas
+  (`pruebas/servir/servir.sh`, perfiles `completo` y `basico`), la base local (`base.sh`), los recursos de terceros que no se suben (`recursos.sh`) y
+  `pruebas/correr.mjs` (una, un grupo o todas; una a la vez; candado por carril). **El repo es público:** ningún secreto, llave, código de revisión
+  ni teléfono real; los secretos nacen al azar en cada máquina fuera del repo (guardián `pruebaSinSecretos`).
+- **La LAUNCH tiene destino en cada línea:** las 535 pendientes se revisaron por el Anexo A; las 89 «verificar» contra el código: 56 hechas (con su
+  evidencia en la línea) y 33 con lo que falta en su bloque. Cada pendiente dice `→ 9x` o `→ Paquete N-M` (guardián `launchConDestino`; con
+  `TOLATINO_FASE=9` ninguna puede quedar). Lo que sale de la apertura está en **`docs/DESPUES-DE-ABRIR.md`** (25 líneas, DA-01…DA-25).
+- **Un arreglo de verdad en el panel:** el detalle de un pedido sin hora de respuesta decía «Si no respondes antes de las **null**»; ahora dice solo
+  cómo pagan (y el plazo cuando hay plazo). Lo cazó la prueba `pednull` y lo vigila `pedidoHorasOpcionales`.
+
+**Decisiones (decidí X; si prefieres Y, se cambia):**
+- **«En construcción»:** decidí borrar el componente `Pronto` (ya no lo usaba ninguna pantalla) y que su guardián (`sinEnConstruccion`) falle
+  siempre; la pantalla de «tu ciudad abre pronto» (`PantallaPronto`) es una función y queda. Las secciones del Super Admin que todavía no existen
+  (hoy solo Crecimiento, 9h) solo avisan hasta la apertura y con `TOLATINO_FASE=9` fallan.
+- **Cuentas de revisión y beta en una ciudad abierta** (`revisionVeCiudadAbierta`): decidí comprobarlo hoy en las semillas (Hazleton `on`); cuando
+  9i agregue el estado `beta`, una ciudad en beta también vale sin tocar el guardián. Las cuentas de revisión de producción las crea 9u en vivo.
+- **Semilla 0049** (solo sandbox, `is_test`): decidí no tocar las semillas confirmadas y completarlas: en una base nueva crea a Ana, Juan y Lucía y
+  repite los bloques de 0044/0045/0046 (y le pone sus platos al pedido de El Fogón de 0040). **Ana queda Admin solo si la base no tiene ningún
+  Admin** (la regla del código de arranque); si prefieres que una base nueva nazca sin Admin, se quita esa línea.
+- **Pruebas que borraban datos compartidos** (`pagos2d`, `ayuda2i`, `cit3e`): decidí que solo toquen lo suyo (pedidos o citas propios, la cuenta de
+  cobro de Sabor que vuelven a conectar, tarjetas de Marisol quitadas, no borradas). Las que dependían de una captura u hoja de otra prueba usan
+  ahora fotos de prueba hechas en el momento.
+- **9a-D (63 notas y decisiones viejas):** 36 cerradas con la decisión que ya regía (cada una lo dice en su línea de LAUNCH: textos sin diseño de
+  1i–1m, «Traducir» con el traductor propio, el cargo de disputa lo absorbe To'Latino, la comisión `evp` 8 %, el silencio de noche del push, el
+  copiloto que no lee niños ni salud…); 25 pasan a `DESPUES-DE-ABRIR.md` (QR rotativo, red entre porteros, series sin fin, mesas de varios días,
+  promotores, Wallet como pago, DoorDash/Uber Direct, Repartidores de To'Latino, llamar a Soporte…); 2 siguen abiertas (8b con el dominio; la lista
+  de AAGUID el día de la apertura).
+- **La regresión entera es `node pruebas/correr.mjs --todas`** en el sandbox local, una prueba a la vez. Decidí no meterla todavía en el CI (es 9b,
+  con la matriz de 9 dispositivos).

@@ -6375,11 +6375,12 @@ const guardianes = {
     /* Las tuplas de un «insert into <tabla> (cols) values (…), (…)»: el valor de una columna en cada una. */
     const valores = (t, tabla, col) => {
       const out = [];
-      for (const m of t.matchAll(new RegExp(`insert into ${tabla} \\(([^)]*)\\) values([\\s\\S]*?)(?:on conflict|;)`, "g"))) {
+      for (const m of t.matchAll(new RegExp(`insert into ${tabla} \\(([^)]*)\\)\\s*values([\\s\\S]*?)(?:on conflict|;)`, "g"))) {
         const cols = m[1].split(",").map((x) => x.trim()), k = cols.indexOf(col);
         if (k < 0) continue;
         for (const tup of m[2].matchAll(/\(((?:[^()']|'(?:[^']|'')*'|\([^()]*\))*)\)/g)) {
-          const vs = [...tup[1].matchAll(/'(?:[^']|'')*'(?:::[\w\[\]]+)?|[^,]+/g)].map((x) => x[0].trim());
+          // Cada valor: una cadena '…' (con su ::tipo), un array[…] o lo que haya hasta la coma (las comas de adentro no parten).
+          const vs = [...tup[1].matchAll(/\s*(?:array\[(?:[^\]']|'(?:[^']|'')*')*\](?:::[\w\[\]]+)?|'(?:[^']|'')*'(?:::[\w\[\]]+)?|[^,']+)+/g)].map((x) => x[0].trim()).filter(Boolean);
           if (vs.length === cols.length) out.push(vs[k].replace(/^'|'$/g, ""));
         }
       }
@@ -6426,6 +6427,57 @@ const guardianes = {
         for (const m of l.matchAll(tel)) { const area = m[2] ?? m[4], ex = m[3] ?? m[5]; if (ex !== "555" && !/^8(00|33|44|55|66|77|88)$/.test(area)) falla(G, f, i + 1, `teléfono que no es de prueba (${m[0].trim()}): solo 555`); }
       });
     }
+  },
+
+  /* 9a · Toda línea pendiente de docs/LAUNCH-CHECKLIST.md tiene destino: es una casilla «- [ ] **→ 9x** · …» (un bloque de la Fase 9 que
+     todavía no cerró: 9b … 9v) o «- [ ] **→ Paquete N-M** · …» (8-0…8-3, 9-1…9-5). Una línea nueva sin destino, una viñeta pendiente sin casilla
+     o un destino que no existe rompen el CI. Lo que salió de la apertura está marcado «- [x] **→ después de abrir (DA-NN)**» y su DA-NN está en
+     docs/DESPUES-DE-ABRIR.md (y al revés). Con TOLATINO_FASE=9 (el despliegue de la apertura, OK-3) NO puede quedar ninguna pendiente.
+     Al revés (alreves9a): una casilla sin destino, un destino 9z, una viñeta suelta, un DA que falta, una pendiente con TOLATINO_FASE=9. */
+  launchConDestino() {
+    const G = "launchConDestino", LC = "docs/LAUNCH-CHECKLIST.md", DA = "docs/DESPUES-DE-ABRIR.md";
+    if (!existsSync(LC)) return falla(G, LC, 0, "falta la LAUNCH-CHECKLIST");
+    const lineas = readFileSync(LC, "utf8").split("\n"), da = existsSync(DA) ? readFileSync(DA, "utf8") : "";
+    const DEST = /^- \[ \] \*\*→ (?:9[b-v]|Paquete (?:8-[0-3]|9-[1-5]))\*\* · \S/;
+    const enLaunch = new Set();
+    let pend = 0;
+    lineas.forEach((l, i) => {
+      if (/^- \[ \]/.test(l)) {
+        pend++;
+        if (!DEST.test(l)) falla(G, LC, i + 1, /^- \[ \] \*\*→ 9a\*\*/.test(l) ? "destino 9a: 9a ya cerró; elige el bloque que lo hace" : "pendiente sin destino válido: empieza con «- [ ] **→ 9x** · » (9b…9v) o «- [ ] **→ Paquete N-M** · »");
+        if (process.env.TOLATINO_FASE === "9") falla(G, LC, i + 1, "con TOLATINO_FASE=9 (apertura) no puede quedar ninguna línea pendiente en LAUNCH");
+      } else if (/^- (?!\[[ xX]\])/.test(l)) falla(G, LC, i + 1, "viñeta pendiente sin casilla: cada pendiente es «- [ ] **→ 9x** · …»");
+      for (const m of l.matchAll(/→ después de abrir \((DA-\d{2})\)/g)) { enLaunch.add(m[1]); if (!/^- \[x\]/.test(l)) falla(G, LC, i + 1, `${m[1]}: lo que pasa a «después de abrir» se marca hecho ([x]) en LAUNCH`); }
+    });
+    for (const id of enLaunch) if (!new RegExp(`\\*\\*${id}\\*\\*`).test(da)) falla(G, DA, 0, `${id} está en LAUNCH como «después de abrir» y no en ${DA}`);
+    for (const m of da.matchAll(/^- \*\*(DA-\d{2})\*\*/gm)) if (!enLaunch.has(m[1])) falla(G, DA, 0, `${m[1]} no corresponde a ninguna línea de LAUNCH marcada «después de abrir (${m[1]})»`);
+    if (process.env.TOLATINO_FASE !== "9" && pend) avisos.push(`[${G}] ${pend} línea(s) pendiente(s) en LAUNCH, todas con destino (con TOLATINO_FASE=9 ninguna puede quedar)`);
+  },
+
+  /* 9a · Las pruebas viven en el repo (antes solo en el directorio temporal de una sesión: una sesión nueva las perdía). Cada prueba que
+     docs/PROGRESS.md nombra —un nombre con forma de prueba: letras, el dígito de la fase y la letra del bloque («evt6c», «alreves8i»,
+     «evt6b-6c»)— existe en pruebas/e2e o pruebas/alreves, salvo las de EXCEPCIONES, cada una con su motivo. Al revés (alreves9a): nombrar en
+     PROGRESS una prueba que no está; quitar una prueba del repo. */
+  e2eEnElRepo() {
+    const G = "e2eEnElRepo", PR = "docs/PROGRESS.md";
+    const EXCEPCIONES = {
+      evt6b: "reemplazada por evt6b-6c (la misma prueba, al día con la venta de 6c)",
+      servir8d: "no es una prueba: el servidor de 8d es el perfil «completo» de pruebas/servir/servir.sh",
+      servir8h: "no es una prueba: el servidor de 8h es el perfil «completo» de pruebas/servir/servir.sh",
+      orden9a: "no es un archivo: es toda la regresión (node pruebas/correr.mjs --todas)",
+    };
+    if (!existsSync(PR)) return falla(G, PR, 0, "falta docs/PROGRESS.md");
+    const hay = new Set(["e2e", "alreves"].flatMap((d) => (existsSync(`pruebas/${d}`) ? readdirSync(`pruebas/${d}`) : []).map((f) => f.replace(/\.(cjs|mjs|sh)$/, ""))));
+    if (hay.size < 100) falla(G, "pruebas/", 0, `solo ${hay.size} pruebas en pruebas/e2e y pruebas/alreves: ¿se borraron?`);
+    const vistos = new Set();
+    readFileSync(PR, "utf8").split("\n").forEach((l, i) => {
+      for (const m of l.matchAll(/(?<![\w/.-])([a-z]{2,10}\d[a-z]{1,2}(?:-[a-z0-9]+)?)(?![\w/-]|\.\w)/g)) {
+        const n = m[1];
+        if (vistos.has(n) || hay.has(n) || EXCEPCIONES[n]) continue;
+        vistos.add(n);
+        falla(G, PR, i + 1, `PROGRESS nombra la prueba «${n}» y no está en pruebas/e2e ni en pruebas/alreves (súbela, o anótala en EXCEPCIONES con su motivo)`);
+      }
+    });
   },
 
   /* 8i · Las cuentas de revisión, acotadas (fase8-apps.md §6 #24): es una entrada SIN SMS. El código fijo se lee del entorno SOLO por uno de los
