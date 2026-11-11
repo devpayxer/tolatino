@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+/* 9a · Corre las pruebas de punta a punta (pruebas/e2e) y al revés (pruebas/alreves) contra el servidor local de :3100.
+   Uso:
+     node pruebas/correr.mjs evt6c adm7i          una o varias, por nombre
+     node pruebas/correr.mjs --grupo fase6         un grupo (fase1 … fase8, varios, alreves); --grupo fase6,fase7 varios
+     node pruebas/correr.mjs --todas               todas (orden9a): primero las al revés, luego fase por fase
+     node pruebas/correr.mjs --lista               los grupos y lo que tiene cada uno
+   Opciones:
+     --servir             antes, construye y sirve (bash pruebas/servir/servir.sh completo)
+     --desde <nombre>     empieza en esa (para retomar una corrida larga)
+     --saltar a,b         no corre esas
+     --paralelo           las al revés (tocan archivos del repo y corren los guardianes) en un carril y las de punta a punta (la base y
+                          :3100) en otro: los dos carriles no se pisan. Dentro de cada carril, SIEMPRE una a la vez. Por defecto: todo en fila.
+     --tiempo <min>       tiempo máximo por prueba (25 por defecto)
+   Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
+   Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
+import { spawn, execSync } from "node:child_process";
+import { existsSync, mkdirSync, readdirSync, writeFileSync, createWriteStream } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const SALIDA = resolve(process.env.PRUEBAS_SALIDA || join(tmpdir(), "tolatino-pruebas"));
+const RES = join(SALIDA, "res");
+const args = process.argv.slice(2);
+const opt = (k) => { const i = args.indexOf(k); return i < 0 ? null : args[i + 1]; };
+const flag = (k) => args.includes(k);
+
+/* El catálogo: cada archivo de pruebas/e2e y pruebas/alreves; el grupo sale del nombre (fase = el primer dígito). */
+const catalogo = [];
+for (const [dir, carril] of [["e2e", "e2e"], ["alreves", "alreves"]]) {
+  for (const f of readdirSync(join(RAIZ, "pruebas", dir)).sort()) {
+    const m = /^(.+)\.(cjs|mjs|sh)$/.exec(f);
+    if (!m || f.startsWith("_")) continue;
+    const nombre = m[1], fase = /(\d)[a-z]/.exec(nombre)?.[1];
+    const grupo = carril === "alreves" ? "alreves" : fase ? `fase${fase}` : "varios";
+    catalogo.push({ nombre, archivo: join(RAIZ, "pruebas", dir, f), tipo: m[2], carril, grupo });
+  }
+}
+const grupos = [...new Set(catalogo.map((t) => t.grupo))].sort((a, b) => (a === "alreves" ? -1 : b === "alreves" ? 1 : a.localeCompare(b)));
+
+if (flag("--lista") || !args.length) {
+  for (const g of grupos) { const ts = catalogo.filter((t) => t.grupo === g); console.log(`${g} (${ts.length}): ${ts.map((t) => t.nombre).join(" ")}`); }
+  console.log(`\n${catalogo.length} pruebas. Uso: node pruebas/correr.mjs <nombre…> | --grupo <g> | --todas`);
+  process.exit(0);
+}
+
+let sel;
+if (flag("--todas")) sel = grupos.flatMap((g) => catalogo.filter((t) => t.grupo === g));
+else if (opt("--grupo")) { const gs = opt("--grupo").split(","); for (const g of gs) if (!grupos.includes(g)) { console.error(`grupo desconocido: ${g} (${grupos.join(", ")})`); process.exit(2); } sel = gs.flatMap((g) => catalogo.filter((t) => t.grupo === g)); }
+else {
+  const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo"].includes(args[i - 1]));
+  sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\.(cjs|mjs|sh)$/, "")) ?? (console.error(`no existe: ${n}`), process.exit(2)));
+}
+if (opt("--desde")) { const i = sel.findIndex((t) => t.nombre === opt("--desde")); if (i < 0) { console.error(`--desde: ${opt("--desde")} no está en la selección`); process.exit(2); } sel = sel.slice(i); }
+if (opt("--saltar")) { const fuera = new Set(opt("--saltar").split(",")); sel = sel.filter((t) => !fuera.has(t.nombre)); }
+const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
+
+/* Playwright: el del repo si lo hay; si no, el global (npm root -g). */
+let NODE_PATH = process.env.NODE_PATH ?? "";
+try { execSync("node -e \"require.resolve('playwright')\"", { cwd: RAIZ, stdio: "ignore" }); } catch { NODE_PATH = [NODE_PATH, execSync("npm root -g", { encoding: "utf8" }).trim()].filter(Boolean).join(":"); }
+const ENV = { ...process.env, NODE_PATH, PRUEBAS_SALIDA: SALIDA };
+
+mkdirSync(RES, { recursive: true });
+if (flag("--servir")) execSync(`bash ${JSON.stringify(join(RAIZ, "pruebas/servir/servir.sh"))} completo`, { stdio: "inherit", env: ENV });
+if (sel.some((t) => t.carril === "e2e")) {
+  try { execSync("curl -fs -o /dev/null -m 10 http://127.0.0.1:3100/api/salud"); }
+  catch { console.error("✗ nadie responde en :3100. Primero: bash pruebas/servir/base.sh && bash pruebas/servir/servir.sh (o --servir)"); process.exit(2); }
+}
+
+const correrUna = (t) => new Promise((ok) => {
+  const ini = Date.now(), out = join(RES, `${t.nombre}.out`), w = createWriteStream(out);
+  const [cmd, cargs] = t.tipo === "sh" ? ["bash", [t.archivo]] : ["node", [t.archivo]];
+  const p = spawn(cmd, cargs, { cwd: RAIZ, env: ENV, stdio: ["ignore", "pipe", "pipe"] });
+  let texto = "";
+  const mira = (d) => { w.write(d); texto += d; if (texto.length > 2e6) texto = texto.slice(-1e6); };
+  p.stdout.on("data", mira); p.stderr.on("data", mira);
+  const reloj = setTimeout(() => { mira(`\n✗ se pasó de ${TIEMPO / 60000} min: se detiene\n`); p.kill("SIGKILL"); }, TIEMPO);
+  p.on("close", (codigo) => {
+    clearTimeout(reloj); w.end();
+    const checks = (texto.match(/^\s*✓/gm) ?? []).length, malas = (texto.match(/^\s*✗/gm) ?? []).length;
+    const error = codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
+    const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
+    console.log(`${r.ok ? "✓" : "✗"} ${t.nombre.padEnd(16)} ${String(checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s${r.ok ? "" : `  · ${error}`}`);
+    ok(r);
+  });
+});
+
+const carril = async (ts) => { const rs = []; for (const t of ts) rs.push(await correrUna(t)); return rs; };
+const inicio = Date.now();
+console.log(`${sel.length} pruebas · salida en ${RES}${flag("--paralelo") ? " · dos carriles (al revés | punta a punta)" : " · una a la vez"}\n`);
+const res = flag("--paralelo")
+  ? (await Promise.all([carril(sel.filter((t) => t.carril === "alreves")), carril(sel.filter((t) => t.carril === "e2e"))])).flat()
+  : await carril(sel);
+
+const bien = res.filter((r) => r.ok), mal = res.filter((r) => !r.ok);
+const total = res.reduce((s, r) => s + r.checks, 0);
+writeFileSync(join(RES, "resumen.json"), JSON.stringify({ fecha: new Date().toISOString(), commit: (() => { try { return execSync("git rev-parse --short HEAD", { cwd: RAIZ, encoding: "utf8" }).trim(); } catch { return null; } })(), pruebas: res.length, verdes: bien.length, rojas: mal.length, comprobaciones: total, minutos: Math.round((Date.now() - inicio) / 60000), res }, null, 2));
+console.log(`\n${bien.length}/${res.length} en verde · ${total} comprobaciones (✓) · ${Math.round((Date.now() - inicio) / 60000)} min`);
+if (mal.length) { console.log(`En rojo (${mal.length}):`); for (const r of mal) console.log(`  ✗ ${r.nombre} (código ${r.codigo}) · ${r.error}\n    ${r.salida}`); }
+process.exit(mal.length ? 1 : 0);

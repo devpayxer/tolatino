@@ -1,0 +1,30 @@
+const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { chromium } = require('playwright');
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'multiservicios-la-patria';
+const entrar = async (p, tel) => { await p.goto(B + '/entrar'); const j = (u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]); const a = await j('/api/cuenta/codigo', { telefono: tel }); if (!a.codigoPrueba) throw new Error('sin código ' + JSON.stringify(a)); await j('/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
+const t = (p, x) => p.getByText(x, { exact: true }).last();
+const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p.screenshot({ path: OUT + n, fullPage: full }); };
+(async () => {
+  const b = await chromium.launch(); const err = [];
+  const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
+  const mc = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const v = await mc.newPage(); watch(v, 'vecino');
+  await v.goto(B + '/n/' + BIZ); await v.locator('text=¿PUEDE HACERLO POR LEY?').first().waitFor(); await shot(v, 'k1-ficha-ley-m.png', false);
+  await v.locator('text=¿PUEDE HACERLO POR LEY?').first().click(); await v.waitForURL('**/licencia'); await v.locator('text=Nadie te garantiza un resultado.').waitFor(); await shot(v, 'k2-licencia-m.png');
+  const dc = await b.newContext({ viewport: { width: 1440, height: 900 } }); const vd = await dc.newPage(); watch(vd, 'vecino-d');
+  await vd.goto(B + '/n/' + BIZ + '/licencia'); await vd.locator('text=Volver a la ficha').waitFor(); await shot(vd, 'k3-licencia-d.png');
+  // Dueño: agrega CPA y pone el número
+  const o = await mc.newPage(); watch(o, 'dueño'); await entrar(o, '5705550177');
+  await o.goto(B + '/panel/' + BIZ + '/pagina/lic'); await o.getByText('TUS LICENCIAS', { exact: true }).first().waitFor();
+  if (await o.getByText('Contador público (CPA)', { exact: true }).count()) { await t(o, 'Contador público (CPA)').click(); await o.locator('text=Enviada. To’Latino la verifica en 72 h.').waitFor(); await o.waitForTimeout(800); }
+  const campo = o.locator('input[placeholder="Como sale en tu licencia"]').last(); await campo.fill('PA-123456');
+  await shot(o, 'k4-panel-lic-m.png');
+  await t(o, 'Guardar').click(); await o.locator('text=Enviado. To’Latino lo revisa en 72 h.').waitFor();
+  // Admin verifica desde la cola
+  const ac = await b.newContext({ viewport: { width: 1440, height: 900 } }); const a = await ac.newPage(); watch(a, 'admin'); await entrar(a, '5705550199');
+  await a.goto(B + '/admin/colas?cola=lic'); await a.locator('text=Licencia · ').first().click(); await a.locator('text=ESTADO HOY').waitFor(); await shot(a, 'k5-cola-lic-d.png');
+  await t(a, 'Verificada').click(); await a.locator('text=Listo. Quedó en la auditoría.').waitFor();
+  await a.goto(B + '/admin/negocios/' + BIZ + '?tab=vende'); await a.locator('text=/SU HERRAMIENTA/').waitFor(); await shot(a, 'k6-360-vende-d.png');
+  await vd.goto(B + '/n/' + BIZ + '/licencia'); const n = await vd.locator('text=/VERIFICADA POR TO’LATINO/').count(); console.log('verificadas en la ficha:', n); await shot(vd, 'k7-licencia-despues-d.png');
+  console.log('errores:', err.length ? err : 'ninguno'); await b.close();
+})().catch(e => { console.error('FALLO', e.message.split('\n')[0]); process.exit(1); });

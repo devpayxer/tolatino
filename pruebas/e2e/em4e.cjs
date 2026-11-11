@@ -1,0 +1,81 @@
+// 4e-3 · Emergencia 24/7: pedir (con la línea del 911), el primero que acepta la toma y se vuelve visita «va en camino»;
+// dos negocios aceptan a la vez → gana uno; nadie en 15 min → nadie disponible → mandarla otra vez.
+const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', H = 'plomeria-rodriguez', T = 'taller-hermanos-pena';
+const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
+const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
+const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
+const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
+const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const MARISOL = "(select id from users where phone = '+15705550122')";
+const limpiar = () => { sql(`update service_requests set status = 'cancelled' where user_id = ${MARISOL} and status in ('sent', 'answered')`); sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and business_id in ('${H}','${T}') and status in ('pending', 'change_proposed', 'confirmed')`); };
+(async () => {
+  limpiar();
+  sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select ${MARISOL}, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false where not exists (select 1 from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null)`);
+  sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', true from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null) limit 1`);
+  const b = await chromium.launch(); const err = [];
+  const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); globalThis.__p = [m]; await entrar(m, '5705550122');
+  m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });
+  // ── Pedir desde la ficha ──
+  const emer = sql(`select name->>'es' from items where business_id = '${H}' and svc_kind = 'emer' and removed_at is null limit 1`);
+  await m.goto(B + `/n/${H}?tab=svc`); await clic(m.getByText(emer, { exact: true }));
+  const hoja = m.locator('[data-screen-label="Servicio · opciones"]'); await hoja.waitFor();
+  await clic(hoja.getByRole('button', { name: 'Pedir ayuda ahora' })); await m.waitForURL(/\/emergencia\?b=/);
+  ok(!!(await vis(m.getByText('Si huele a gas, hay chispas o humo, sal de la casa y llama al 911.'))), 'la línea del 911 arriba');
+  ok((await m.getByRole('button', { name: 'Fuga que no para' }).first().getAttribute('aria-pressed')) !== 'false', 'tipo «Fuga que no para» elegido desde el servicio');
+  ok(!!(await vis(m.getByText(/Salida con recargo: \$/))), 'rango de salidas con recargo');
+  await m.getByLabel('Qué pasa').fill('Se reventó un tubo en el sótano; ya cerré la llave principal.');
+  await m.getByLabel('Cómo entrar').fill('Puerta del lado');
+  await m.screenshot({ path: OUT + 'e1-emergencia-form-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Pedir ayuda ahora' })); await m.waitForURL(/\/pre\/E-\d+/);
+  const E = m.url().split('/pre/')[1];
+  await m.getByText('BUSCANDO QUIEN VAYA').first().waitFor(); ok(!!(await vis(m.getByText(/llama al 911/))), `${E}: buscando quien vaya · 911 visible`);
+  const nC = Number(sql(`select count(*) from request_targets t join service_requests r on r.id = t.request_id where r.number = '${E}'`));
+  ok(nC >= 1 && sql(`select count(*) from request_targets t join service_requests r on r.id = t.request_id where r.number = '${E}' and t.business_id = '${H}'`) === '1', `se mandó a ${nC} negocios 24/7 (incluida la plomería)`);
+  ok(sql(`select count(*) from request_targets t join service_requests r on r.id = t.request_id join businesses bz on bz.id = t.business_id join trade_settings ts on ts.business_id = bz.id where r.number = '${E}' and not ts.h24`) === '0', 'ninguno sin 24 h');
+  ok(sql(`select count(*) from notifications where tpl = 'biz_em' and ref_id = '${E}'`) !== '0', 'aviso EMERGENCIA a los negocios');
+  await m.screenshot({ path: OUT + 'e2-emergencia-buscando-m.png', fullPage: true });
+  // ── Tomás acepta desde Hoy ──
+  const h = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(h); h.on('pageerror', e => err.push('panel ' + e.message)); await entrar(h, '5705550222');
+  await h.goto(B + `/panel/${H}/hoy`); await h.getByText(`EMERGENCIA #${E}`, { exact: false }).first().waitFor(); ok(true, 'panel: la emergencia arriba en Hoy');
+  await h.screenshot({ path: OUT + 'e3-panel-hoy-emergencia-d.png', fullPage: true });
+  await clic(h.getByRole('button', { name: 'Ver y aceptar' }));
+  const ht = h.locator('[data-screen-label="Panel v2 · detalle"]'); await ht.getByText('Puerta del lado').waitFor();
+  await clic(ht.getByRole('button', { name: 'Aceptar · salgo ahora' }));
+  await h.waitForURL(/det=cita%3AC-|det=cita:C-/, { timeout: 15000 }); ok(true, 'aceptó → abre la visita');
+  const C = sql(`select o.number from operations o join service_requests r on r.operation_id = o.id where r.number = '${E}'`);
+  ok(sql(`select status || '|' || status_detail || '|' || (details->>'k') || '|' || subtotal_cents from operations where number = '${C}'`) === `confirmed|road|emer|${sql(`select price_cents from items where business_id = '${H}' and svc_kind = 'emer' and removed_at is null limit 1`)}`, 'visita confirmada «va en camino» con la salida como precio');
+  ok(sql(`select r.status || '|' || r.accepted_business_id from service_requests r where r.number = '${E}'`) === `taken|${H}`, 'la tomó la plomería');
+  ok(sql(`select count(*) from request_targets t join service_requests r on r.id = t.request_id where r.number = '${E}' and t.status not in ('taken', 'lost')`) === '0', 'los demás quedan «la tomó otro»');
+  ok(sql(`select count(*) from notifications where tpl = 'em_ok' and ref_id = '${C}'`) === '1', 'aviso al cliente: va en camino');
+  await m.goto(B + `/pre/${E}`); await m.getByText('ACEPTÓ · VA EN CAMINO').first().waitFor(); ok(!!(await vis(m.getByText(/Llega en unos \d+ min/))), 'cliente: aceptó, llega en ~N min, salida con recargo');
+  await m.screenshot({ path: OUT + 'e4-emergencia-acepto-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Ver en camino' })); await m.waitForURL(new RegExp(`/cita/${C}`)); await m.getByText('VA EN CAMINO').first().waitFor(); ok(true, 'Tu visita: VA EN CAMINO');
+  // ── Carrera: dos negocios aceptan a la vez → gana uno ──
+  const casa = sql(`select id from user_homes where user_id = ${MARISOL} and removed_at is null order by is_default desc limit 1`);
+  const E2n = 'E-' + sql(`select nextval('service_request_seq')`);
+  const rid = sql(`insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ('${E2n}', 'em', ${MARISOL}, 'hzl', 'NEG-HOGAR', 'hogar', '${casa}', '{"svc":{"es":"Fuga que no para","en":"Leak"},"k":"emer","ek":"e:fuga","nota":"","cuando":"now","casa":{"dir":"112 W Oak St, 18201","tenure":"dueno"}}'::jsonb, now() + interval '15 minutes') returning id`).split('\n')[0];
+  const itemH = sql(`select id from items where business_id = '${H}' and svc_kind = 'emer' and removed_at is null limit 1`);
+  sql(`insert into request_targets (request_id, business_id, item_id, sort) values (${rid}, '${H}', ${itemH}, 0), (${rid}, '${T}', ${itemH}, 1)`);
+  const r2 = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(r2); await entrar(r2, '5705550211');
+  await h.goto(B + `/panel/${H}/hoy?det=sol:${E2n}`); await r2.goto(B + `/panel/${T}/hoy?det=sol:${E2n}`);
+  const bH = h.locator('[data-screen-label="Panel v2 · detalle"]').getByRole('button', { name: 'Aceptar · salgo ahora' }), bT = r2.locator('[data-screen-label="Panel v2 · detalle"]').getByRole('button', { name: 'Aceptar · salgo ahora' });
+  await bH.waitFor(); await bT.waitFor();
+  await Promise.all([bH.click(), bT.click()]); await h.waitForTimeout(2500);
+  ok(sql(`select count(*) from operations o join service_requests r on r.operation_id = o.id where r.number = '${E2n}'`) === '1' && sql(`select count(*) from request_targets where request_id = ${rid} and status = 'taken'`) === '1', 'carrera: los dos aceptaron a la vez y ganó uno solo (una sola visita)');
+  const gano = sql(`select accepted_business_id from service_requests where id = ${rid}`), perd = gano === H ? r2 : h;
+  ok(!!(await vis(perd.getByText('Ya la tomó otro negocio.'))), `el otro ve «Ya la tomó otro negocio» (ganó ${gano})`);
+  // ── Nadie en 15 min ──
+  const E3 = 'E-' + sql(`select nextval('service_request_seq')`);
+  const rid3 = sql(`insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by) values ('${E3}', 'em', ${MARISOL}, 'hzl', 'NEG-HOGAR', 'hogar', '${casa}', '{"svc":{"es":"Sin calefacción","en":"No heat"},"k":"emer","ek":"e:calef","nota":"","cuando":"now","casa":{"dir":"112 W Oak St, 18201","tenure":"dueno"}}'::jsonb, now() - interval '1 minute') returning id`).split('\n')[0];
+  sql(`insert into request_targets (request_id, business_id, item_id, sort) values (${rid3}, '${H}', ${itemH}, 0)`);
+  await m.goto(B + `/pre/${E3}`); await m.getByText('NADIE DISPONIBLE').first().waitFor(); ok(!!(await vis(m.getByText('LLAMA DIRECTO'))), 'nadie en 15 min: NADIE DISPONIBLE · llama directo');
+  ok(sql(`select count(*) from notifications where tpl = 'em_nadie' and ref_id = '${E3}'`) === '1', 'aviso: nadie disponible, no se cobró nada');
+  await m.screenshot({ path: OUT + 'e5-emergencia-nadie-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Mandarla otra vez' })); await m.getByText('BUSCANDO QUIEN VAYA').first().waitFor();
+  ok(sql(`select status || '|' || (respond_by > now() + interval '14 minutes') from service_requests where id = ${rid3}`) === 'sent|true', 'mandada otra vez: 15 min nuevos');
+  await clic(m.getByRole('button', { name: 'Ya no la necesito' })); await m.getByText('CANCELADA').first().waitFor(); ok(true, 'ya no la necesito → cancelada');
+  ok(err.length === 0, 'sin errores: ' + err.join(' | ')); limpiar(); await b.close(); console.log('OK');
+})().catch(async e => { console.error(e); try { for (const p of globalThis.__p || []) { await p.screenshot({ path: OUT + 'fail-' + Math.random().toString(36).slice(2, 6) + '.png', fullPage: true }); console.log('url', p.url()); } } catch {} try { limpiar(); } catch {} process.exit(1); });

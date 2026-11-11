@@ -1,0 +1,51 @@
+// 4j-1 · Booking de Doctores: 3 pasos (seguro obligatorio, para quién, motivo, nota) → día y hora → revisa y envía ($0 hoy).
+// Privacidad: la nota va CIFRADA a op_private (nunca a operations ni a avisos); el aviso al consultorio es neutro.
+const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { chromium } = require('playwright'); const { execSync } = require('child_process');
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = 'centro-medico-quisqueya';
+const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
+const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
+const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
+const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+(async () => {
+  const b = await chromium.launch(); const err = [];
+  const mk = async (vp) => { const p = await (await b.newContext({ viewport: vp })).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|maplibre|tiles/i.test(x.text())) err.push('console ' + x.text()); }); return p; };
+  const m = await mk({ width: 390, height: 844 });
+  const MU = sql(`select id from users where phone = '+15705550122'`);
+  sql(`update operations set status = 'cancelled', cancelled_by = 'admin' where user_id = '${MU}' and kind = 'appointment' and status in ('pending','confirmed','change_proposed')`);
+  sql(`update user_insurances set removed_at = now() where user_id = '${MU}' and removed_at is null`);
+  sql(`insert into user_insurances (user_id, kind, insurer, plan, member_last4, for_whom, is_default) values ('${MU}', 'medicaid', 'medicaid', 'upmcfy', '4471', 'yo', true)`);
+  sql(`update businesses set modules_on = (select array(select distinct unnest(modules_on || array['citas']::text[]))) where id = '${S}'`);
+  sql(`update booking_policies set auto_approve = false where business_id = '${S}'`);
+  await entrar(m, '5705550122');
+  await m.goto(B + `/n/${S}?tab=svc`); await clic(m.getByText('Consulta de medicina general', { exact: true }));
+  await clic(m.getByRole('button', { name: 'Elegir hora' }));
+  await m.waitForURL(/\/consulta\?/); await verV(m.getByText('TU SEGURO', { exact: true }));
+  ok(!!(await vis(m.getByText(/Aceptan tu Medicaid · UPMC for You/))), 'paso 1: el seguro principal elegido y «Aceptan tu Medicaid…»');
+  await clic(m.getByText('Para mí', { exact: true })); await clic(m.getByText('Chequeo', { exact: true }));
+  await (await vis(m.getByLabel('Nota para el consultorio'))).fill('Tengo tos desde hace una semana');
+  await m.screenshot({ path: OUT + 'j1-salud-booking-1-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Continuar' }));
+  await verV(m.getByText('HORA', { exact: true }));
+  await clic(m.locator('[role="radio"]:not([aria-disabled="true"])').filter({ hasText: /^\s*\d{1,2}:\d{2} (AM|PM)\s*$/ })); await m.screenshot({ path: OUT + 'j2-salud-booking-2-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Continuar' }));
+  await verV(m.getByText('Si es una emergencia, llama al 911. No esperes una cita.'));
+  ok(!!(await vis(m.getByText('Hoy, al enviar'))), 'paso 3: «Hoy, al enviar $0»');
+  await m.screenshot({ path: OUT + 'j3-salud-booking-3-m.png', fullPage: true });
+  await clic(m.getByRole('button', { name: 'Enviar solicitud' }));
+  await m.waitForURL(/\/cita\/C-\d+/); const num = m.url().match(/C-\d+/)[0];
+  await verV(m.getByText(/Revisan tu seguro y confirman/)); ok(true, `${num}: «Revisan tu seguro y confirman… No se ha cobrado nada.»`);
+  await m.screenshot({ path: OUT + 'j4-salud-cita-pend-m.png', fullPage: true });
+  const op = sql(`select id from operations where number = '${num}'`);
+  ok(sql(`select coalesce(customer_note, '') || '|' || (details::text like '%tos%')::text || '|' || pay_mode || '|' || deposit_cents from operations where id = ${op}`) === '|false|local|0', 'operations: sin nota, sin texto de la nota, pago en el consultorio, depósito 0');
+  ok(sql(`select reason || '|' || (note_enc is not null)::text || '|' || (position('tos' in convert_from(note_enc, 'LATIN1')) = 0)::text from op_private where operation_id = ${op}`) === 'chequeo|true|true', 'op_private: motivo «chequeo» y la nota CIFRADA (el texto no aparece)');
+  ok(sql(`select details->'seguro'->>'acepta' || '|' || (details->'seguro'->>'last4') from operations where id = ${op}`) === 'true|4471', 'la cita copia el seguro (aceptado, solo 4471)');
+  const av = sql(`select body from notifications where ref_id = '${num}' and tpl = 'biz_sal_cita' order by id desc limit 1`);
+  ok(av && !/Quisqueya|Consulta|\btos\b|Marisol/i.test(av), `aviso al consultorio neutro: «${av}»`);
+  ok(sql(`select count(*) from payments where operation_id = ${op}`) === '0', 'ningún pago en una cita de Salud');
+  ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
+  await b.close(); console.log('OK sal4j ' + num);
+})().catch((e) => { console.error(e); process.exit(1); });

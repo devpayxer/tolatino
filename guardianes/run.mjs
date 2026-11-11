@@ -19,7 +19,7 @@ const archivos = execSync("git ls-files --cached --others --exclude-standard", {
 const codigo = archivos.filter((f) => /^(apps|packages|services|guardianes|infra|scripts|\.github)\//.test(f) && /\.(tsx?|jsx?|mjs|cjs|css|sh|ya?ml|json)$/.test(f));
 const fallos = [];
 const falla = (g, f, linea, msg) => fallos.push(`[${g}] ${f}${linea ? ":" + linea : ""} — ${msg}`);
-// 8i · Avisos: lo que todavía no rompe el build (sinProntoEnTienda hasta la Fase 9). Se imprimen siempre.
+// 8i · Avisos: lo que todavía no rompe el build (9a: las secciones pendientes del Super Admin en sinEnConstruccion, hasta TOLATINO_FASE=9). Se imprimen siempre.
 const avisos = [];
 
 /* Texto de un archivo sin comentarios (los guardianes de la Comunidad miran código, no prosa) y el cuerpo de una función de primer nivel. */
@@ -2814,7 +2814,7 @@ const guardianes = {
     const LLM = /api\.openai\.com|api\.anthropic\.com|generativelanguage\.googleapis\.com|api\.mistral\.ai|api\.cohere\.(ai|com)/i;
     const PAQ = /"(@google-cloud\/translate|deepl-node|deepl|@vitalets\/google-translate-api|google-translate-api[\w-]*|translate|bing-translate-api|@iamtraction\/google-translate|libretranslate)"\s*:/;
     for (const f of archivos) {
-      if (f.startsWith("guardianes/") || f.startsWith("docs/") || !/\.(tsx?|jsx?|mjs|cjs|sh|ya?ml|json|py|conf)$/.test(f)) continue;
+      if (f.startsWith("guardianes/") || f.startsWith("pruebas/alreves/") || f.startsWith("docs/") || !/\.(tsx?|jsx?|mjs|cjs|sh|ya?ml|json|py|conf)$/.test(f)) continue;
       const t = readFileSync(f, "utf8");
       t.split("\n").forEach((l, i) => { const m = TERCEROS.exec(l); if (m) falla(G, f, i + 1, `«${m[0]}»: un traductor de terceros; el texto de los vecinos no sale de nuestros servidores`); });
       if (/traduc|translat/i.test(t) && LLM.test(t)) falla(G, f, 0, `«${LLM.exec(t)[0]}» en un archivo que traduce: la traducción es propia (un modelo pago es decisión del fundador, §6 #15)`);
@@ -3148,8 +3148,9 @@ const guardianes = {
     for (const x of archivos) {
       if (/\.(png|jpe?g|gif|webp|svg|woff2?|ico|lock)$/.test(x) || x.startsWith("docs/diseno/")) continue;
       const t = readFileSync(x, "utf8");
-      if (/MC4CAQAwBQYDK2VwBCIEI[A-Za-z0-9+/]{20,}/.test(t)) falla(G, x, 0, "una llave privada Ed25519 escrita en el repo");
-      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
+      // 9a · pruebas/alreves inyecta una llave FALSA a propósito (alreves6c); pruebaSinSecretos vigila que en pruebas/ no haya una de verdad.
+      if (!x.startsWith("pruebas/alreves/") && /MC4CAQAwBQYDK2VwBCIEI[A-Za-z0-9+/]{20,}/.test(t)) falla(G, x, 0, "una llave privada Ed25519 escrita en el repo");
+      if (x !== Q && x !== "infra/pruebas/deploy.sh" && x !== "infra/pruebas/docker-compose.yml" && x !== "pruebas/servir/servir.sh" && !x.startsWith("pruebas/alreves/") && !x.startsWith("guardianes/") && !x.startsWith("docs/") && !x.endsWith(".sql") && /QR_LLAVE_PRIVADA/.test(t)) falla(G, x, 0, "solo lib/boletos-qr.ts lee QR_LLAVE_PRIVADA");
     }
     for (const x of codigo) if (/^apps\/web\/.*\.tsx?$/.test(x) && x !== Q && x !== "apps/web/lib/boletos.ts" && /\bfirmarQR\(/.test(sinComent(x))) falla(G, x, 0, "solo lib/boletos.ts pide firmar un QR (servidor)");
   },
@@ -4151,7 +4152,8 @@ const guardianes = {
     const G = "compaUnSoloProveedor", MC = "apps/web/lib/compa/modelo-claude.ts";
     const OTROS = /"(openai|@google\/generative-ai|@google\/genai|cohere-ai|@mistralai\/[\w-]+|mistralai|langchain|@langchain\/[\w-]+|ollama|groq-sdk|together-ai|replicate|ai|@ai-sdk\/[\w-]+)"\s*:/;
     for (const x of archivos) {
-      if (x.startsWith("docs/") || x.startsWith("guardianes/") || !/\.(tsx?|jsx?|mjs|cjs|sh|ya?ml|json|conf)$/.test(x)) continue;
+      // 9a · pruebas/ (las al revés inyectan el defecto a propósito y compa7c busca la llave en el registro) cuenta como guardianes/.
+      if (x.startsWith("docs/") || x.startsWith("guardianes/") || x.startsWith("pruebas/") || !/\.(tsx?|jsx?|mjs|cjs|sh|ya?ml|json|conf)$/.test(x)) continue;
       const t = readFileSync(x, "utf8");
       if (/api\.anthropic\.com|@anthropic-ai\/sdk/.test(t) && x !== MC) falla(G, x, 0, "solo lib/compa/modelo-claude.ts habla con el proveedor de IA");
       if (/(^|\/)package\.json$/.test(x) && OTROS.test(t)) falla(G, x, 0, `otro SDK de IA (${OTROS.exec(t)[1]}): El Compa usa un solo proveedor`);
@@ -6325,18 +6327,100 @@ const guardianes = {
     }
   },
 
-  /* 8i · Ninguna pantalla «Pronto» alcanzable cuando las apps vayan a revisión pública (Apple 2.1, fase8-apps.md §3.6). En la Fase 8 SOLO AVISA
-     (cuenta y lista los archivos que las usan); con TOLATINO_FASE=9 (el CI de la Fase 9) falla. Al revés: con TOLATINO_FASE=9 falla con su mensaje. */
-  sinProntoEnTienda() {
-    const G = "sinProntoEnTienda", usos = [];
+  /* 9a · (antes sinProntoEnTienda, 8i, que contaba la ciudad «próximamente» como si fuera «En construcción»; partido en dos).
+     Ninguna pantalla «En construcción» en la app (Apple 2.1, fase8-apps.md §3.6): el componente Pronto se borró en 9a y no vuelve; ninguna
+     pantalla de la app dice «EN CONSTRUCCIÓN» ni «Esta pantalla se construye en». FALLA SIEMPRE. PantallaPronto / CiudadPronto (APP-CIUDAD-PRONTO,
+     la ciudad que todavía no abre) es una función de verdad y no cuenta. Las secciones del Super Admin que todavía no existen (FASE sin HECHAS en
+     lib/admin-nav.ts, la nota «Esta sección se construye en…») solo AVISAN hasta la apertura; con TOLATINO_FASE=9 fallan.
+     Al revés (alreves9a): devolver Pronto.tsx, usar <Pronto>, escribir «EN CONSTRUCCIÓN» en una pantalla, una sección pendiente con TOLATINO_FASE=9. */
+  sinEnConstruccion() {
+    const G = "sinEnConstruccion", AN = "apps/web/lib/admin-nav.ts";
     for (const f of codigo) {
-      if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || /\/(Pronto|PantallaPronto)\.tsx$/.test(f)) continue;
-      if (/<(Pronto|PantallaPronto)\b|import \{[^}]*\b(Pronto|PantallaPronto)\b/.test(sinComent(f))) usos.push(f);
+      if (!/^apps\/web\/app\/.*\.tsx$/.test(f) || /^apps\/web\/app\/admin\//.test(f)) continue;
+      if (/\/Pronto\.tsx$/.test(f)) { falla(G, f, 0, "el componente «En construcción» (Pronto) se borró en 9a y no vuelve"); continue; }
+      const t = sinComent(f);
+      if (/<Pronto\b|import \{[^}]*\bPronto\b[^}]*\} from "[^"]*\/Pronto"/.test(t)) falla(G, f, 0, "usa «Pronto» (En construcción): ninguna pantalla de la app puede estar sin construir");
+      t.split("\n").forEach((l, i) => { if (/EN CONSTRUCCIÓN|UNDER CONSTRUCTION|[Ee]sta pantalla se construye en/.test(l)) falla(G, f, i + 1, "pantalla «En construcción»: ninguna pantalla de la app puede quedar sin construir"); });
     }
-    if (!usos.length) return;
-    const msg = `${usos.length} pantallas usan «Pronto» (${usos.slice(0, 4).join(", ")}${usos.length > 4 ? "…" : ""}): en la revisión pública no puede quedar ninguna alcanzable`;
-    if (process.env.TOLATINO_FASE === "9") falla(G, usos[0], 0, msg);
-    else avisos.push(`[${G}] ${msg} (solo aviso hasta la Fase 9)`);
+    if (!existsSync(AN)) return falla(G, AN, 0, "falta lib/admin-nav.ts");
+    const an = sinComent(AN), llaves = (n) => Object.keys(Object.fromEntries([...(new RegExp(`export const ${n}[^=]*= \\{([\\s\\S]*?)\\};`).exec(an)?.[1] ?? "").matchAll(/(\w+):\s*"/g)].map((m) => [m[1], 1])));
+    const hechas = new Set(llaves("HECHAS")), pend = llaves("FASE").filter((k) => !hechas.has(k));
+    if (!pend.length) return;
+    const msg = `${pend.length} sección(es) del Super Admin todavía «se construye en…» (${pend.join(", ")}): en la apertura no puede quedar ninguna`;
+    if (process.env.TOLATINO_FASE === "9") falla(G, AN, 0, msg); else avisos.push(`[${G}] ${msg} (solo aviso hasta TOLATINO_FASE=9)`);
+  },
+
+  /* 9a · Las cuentas de revisión de Apple y Google (y la beta) entran a una ciudad ABIERTA: si su ciudad no abre, lo primero que ven es
+     APP-CIUDAD-PRONTO y la app no se puede revisar (Apple 2.1). Hoy: cada semilla que crea cuentas de revisión (insert into review_accounts) pone a
+     esas personas y a su negocio en una ciudad que la semilla del sandbox abre (update cities set status = 'on'); los probadores de la beta
+     (app_beta_testers) también. Cuando 9i agregue el estado «beta» a cities.status, una ciudad en «beta» también cuenta (se lee de las
+     migraciones: no hay que tocar el guardián). Lo que no se puede mirar aquí: las cuentas de revisión de PRODUCCIÓN se crean a mano en 9u (OK-2);
+     9u lo comprueba en vivo. Al revés (alreves9a): una cuenta de revisión en Allentown (soon), su negocio fuera de una ciudad abierta, la semilla
+     que deja de abrir Hazleton. */
+  revisionVeCiudadAbierta() {
+    const G = "revisionVeCiudadAbierta", SD = "infra/pruebas/semilla";
+    const mig = readdirSync("packages/db/migrations").filter((x) => x.endsWith(".sql")).sort().map((x) => readFileSync(`packages/db/migrations/${x}`, "utf8")).join("\n");
+    const estados = [...mig.matchAll(/cities[\s\S]{0,400}?status\s+text[^\n]*check \(status in \(([^)]*)\)\)|alter table cities[^;]*check \(status in \(([^)]*)\)\)/g)].map((m) => m[1] ?? m[2]).pop() ?? "";
+    const abiertos = ["on", ...(/'beta'/.test(estados) ? ["beta"] : [])];
+    if (!existsSync(SD)) return falla(G, SD, 0, "falta la semilla del sandbox");
+    const semillas = readdirSync(SD).filter((x) => x.endsWith(".sql")).sort().map((x) => [`${SD}/${x}`, readFileSync(`${SD}/${x}`, "utf8").replace(/--.*$/gm, "")]);
+    const abiertas = new Set();
+    for (const [, t] of semillas) for (const m of t.matchAll(/update cities set status = '(\w+)'[^;]*? where id (?:= '(\w+)'|in \(([^)]*)\))/g)) if (abiertos.includes(m[1])) for (const c of (m[2] ? [m[2]] : m[3].match(/\w+/g))) abiertas.add(c);
+    if (!abiertas.size) falla(G, SD, 0, "la semilla del sandbox no abre ninguna ciudad: las cuentas de revisión verían «próximamente»");
+    /* Las tuplas de un «insert into <tabla> (cols) values (…), (…)»: el valor de una columna en cada una. */
+    const valores = (t, tabla, col) => {
+      const out = [];
+      for (const m of t.matchAll(new RegExp(`insert into ${tabla} \\(([^)]*)\\) values([\\s\\S]*?)(?:on conflict|;)`, "g"))) {
+        const cols = m[1].split(",").map((x) => x.trim()), k = cols.indexOf(col);
+        if (k < 0) continue;
+        for (const tup of m[2].matchAll(/\(((?:[^()']|'(?:[^']|'')*'|\([^()]*\))*)\)/g)) {
+          const vs = [...tup[1].matchAll(/'(?:[^']|'')*'(?:::[\w\[\]]+)?|[^,]+/g)].map((x) => x[0].trim());
+          if (vs.length === cols.length) out.push(vs[k].replace(/^'|'$/g, ""));
+        }
+      }
+      return out;
+    };
+    for (const [f, t] of semillas) {
+      if (/insert into review_accounts/.test(t)) {
+        const cs = valores(t, "users", "home_city_id");
+        if (!cs.length) falla(G, f, 0, "las cuentas de revisión se crean sin home_city_id: entrarían a la ciudad por defecto, que puede no estar abierta");
+        for (const c of cs) if (!abiertas.has(c)) falla(G, f, 0, `una cuenta de revisión vive en «${c}», que la semilla no abre (${abiertos.join(" / ")}): vería «próximamente»`);
+        for (const c of valores(t, "businesses", "city_id")) if (!abiertas.has(c)) falla(G, f, 0, `el negocio de revisión está en «${c}», que no está abierta`);
+      }
+      if (/insert into app_beta_testers/.test(t)) for (const c of valores(t, "users", "home_city_id")) if (!abiertas.has(c)) falla(G, f, 0, `un probador de la beta vive en «${c}», que no está abierta`);
+    }
+  },
+
+  /* 9a · Las pruebas de punta a punta y al revés viven en pruebas/ y EL REPO ES PÚBLICO: ninguna lleva un secreto del entorno (AUTH_SECRET,
+     DATOS_SECRET, BARRIDO_TOKEN, REVISION_CODIGO_*, VAPID, la llave del QR, Stripe, Telnyx, WhatsApp, Garage, la base…), una llave de un proveedor,
+     una llave privada, una cadena hex o base64 larga, un «secret=…», una ruta absoluta de una máquina ni un teléfono que no sea de prueba (555;
+     los gratuitos 8XX de un servicio público, como ChildLine, sí). Los secretos los genera pruebas/servir/servir.sh en $PRUEBAS_SALIDA/secretos.env
+     (fuera del repo) y las pruebas los leen con pruebas/lib/entorno.cjs (ENT.sec). Una huella pública o un dato de prueba que parece secreto lleva
+     GUARDIAN-OK en la línea, con su motivo. Ningún archivo de llaves (*.pem, *.p8, *.p12, *.key, secretos.env) en pruebas/.
+     Al revés (alreves9a): un token escrito a mano, un código de revisión, una llave PEM, un hex largo, un teléfono real, una ruta /home/…. */
+  pruebaSinSecretos() {
+    const G = "pruebaSinSecretos";
+    const NOMBRES = "AUTH_SECRET|DATOS_SECRET|BARRIDO_TOKEN|LLAVERO_SECRET|VAPID_PRIVADA|QR_LLAVE_PRIVADA|STRIPE_[A-Z_]+|WHATSAPP_[A-Z_]+|TELNYX_[A-Z_]+|MEDIOS_SECRET|MEDIOS_KEY_ID|ANTHROPIC_API_KEY|SES_[A-Z_]+|REVISION_CODIGO_[A-Z]+|DATABASE_URL|POSTGRES_PASSWORD";
+    const reglas = [
+      [new RegExp(`\\b(?:${NOMBRES})\\s*[=:]\\s*['"\`]?(?![^\\s'"\`]*\\$)(?!ENT\\.|process\\.env|env\\.)[^\\s'"\`,;)]{4,}`), "un secreto del entorno escrito a mano (se lee de secretos.env con ENT.sec)"],
+      [/sk_(?:live|test)_[A-Za-z0-9]{8,}|rk_(?:live|test)_[A-Za-z0-9]{8,}|sk-ant-[A-Za-z0-9_-]{8,}|AKIA[0-9A-Z]{16}|whsec_[A-Za-z0-9]{8,}|xox[bpa]-[A-Za-z0-9-]{8,}|gh[pousr]_[A-Za-z0-9]{20,}/, "llave de un proveedor"],
+      [/-----BEGIN [A-Z ]*PRIVATE KEY-----(?:\\n|\s)*[A-Za-z0-9+/]{40,}/, "llave privada"],
+      [/(?<![\w-])[0-9a-f]{32,}(?![\w-])/i, "una cadena hex larga (¿una llave o un token?)"],
+      [/(?<![\w/+.-])(?=[A-Za-z0-9+/]*\d)(?=[A-Za-z0-9+/]*[A-Z])(?=[A-Za-z0-9+/]*[a-z])[A-Za-z0-9+/]{48,}={0,2}/, "una cadena base64 larga (¿una llave?)"],
+      [/(?:secret|token|password|passwd|clave|contrasena)=(?!\$)[^\s&'"`$)]{8,}/i, "«secret=…» escrito a mano"],
+      [/\/tmp\/claude-|\/home\/[a-z]+\/|\/root\//, "una ruta absoluta de una máquina (usa ENT.RAIZ / ENT.S)"],
+    ];
+    const tel = /(['"`])\+?1?([2-9]\d{2})([2-9]\d{2})\d{4}\1|\(?\b([2-9]\d{2})\)?[ .-]([2-9]\d{2})[ .-]\d{4}\b/g;
+    for (const f of archivos) {
+      if (!f.startsWith("pruebas/")) continue;
+      if (/(secretos\.env|\.pem|\.p8|\.p12|\.key|\.der)$/.test(f)) { falla(G, f, 0, "archivo de llaves o de secretos dentro de pruebas/ (van a $PRUEBAS_SALIDA)"); continue; }
+      if (!/\.(cjs|mjs|js|sh|json|py|txt|md)$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l)) return;
+        for (const [re, que] of reglas) if (re.test(l)) falla(G, f, i + 1, que);
+        for (const m of l.matchAll(tel)) { const area = m[2] ?? m[4], ex = m[3] ?? m[5]; if (ex !== "555" && !/^8(00|33|44|55|66|77|88)$/.test(area)) falla(G, f, i + 1, `teléfono que no es de prueba (${m[0].trim()}): solo 555`); }
+      });
+    }
   },
 
   /* 8i · Las cuentas de revisión, acotadas (fase8-apps.md §6 #24): es una entrada SIN SMS. El código fijo se lee del entorno SOLO por uno de los
