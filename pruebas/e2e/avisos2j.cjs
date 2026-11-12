@@ -39,7 +39,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   await entrar(d, '5705550133'); await d.goto(B + P + '/hoy'); await d.getByText(`Pedido #${n1} · Pickup`).first().waitFor();
   const fila = d.locator('div', { has: d.getByText(`Pedido #${n1} · Pickup`, { exact: true }) }).filter({ has: d.getByText('Aceptar', { exact: true }) }).last();
   await fila.getByText('Aceptar', { exact: true }).click(); await d.getByText('Marisol ya lo ve en su pedido.').waitFor();
-  ok(await espera(() => sql(`select tpl || '|' || sms_status || '|' || (body like 'Sabor Dominicano aceptó tu pedido #${n1}. Listo a las %') from notifications where user_id = ${MARISOL} and ref_id = '${n1}'`), `ord_ok|${smsEsperado('ord_ok')}|true`) === `ord_ok|${smsEsperado('ord_ok')}|true`, 'aceptar → aviso ord_ok con el texto lleno; SMS «en modo pruebas»');
+  ok(await espera(() => sql(`select tpl || '|' || sms_status || '|' || (body like 'Sabor Dominicano aceptó tu pedido #${n1}. Listo a las %') from notifications where user_id = ${MARISOL} and ref_id = '${n1}'`), `ord_ok|${smsEsperado('ord_ok', `${MARISOL}`)}|true`) === `ord_ok|${smsEsperado('ord_ok', `${MARISOL}`)}|true`, 'aceptar → aviso ord_ok con el texto lleno; SMS «en modo pruebas»');
   // Preferencia apagada → SMS apagado (la bandeja igual)
   sql(`update users set notif_prefs = notif_prefs || '{"ord": false}'::jsonb where id = ${MARISOL}`);
   await d.goto(B + P + '/hoy?det=ped:' + n1); const det = d.locator('aside[data-screen-label="Panel v2 · detalle"]'); await det.getByText('HISTORIAL').waitFor();

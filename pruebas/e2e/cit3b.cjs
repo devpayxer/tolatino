@@ -14,13 +14,21 @@ const limpiar = () => {
   // Solo la base local de pruebas. Nada se borra: las citas de prueba anteriores quedan canceladas y su depósito liberado.
   sql(`update payments set status = 'released', released_at = now() where status = 'held' and operation_id in (select id from operations where user_id = ${MARISOL} and business_id = '${BIZ}')`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and business_id = '${BIZ}' and status in ('pending', 'change_proposed', 'confirmed')`);
-  sql(`delete from notifications where ref_kind = 'appointment'`);
+  sql(`delete from notifications where ref_kind = 'appointment' and ref_id in (select number from operations where business_id = '${BIZ}' and user_id = ${MARISOL})`); // 9b-1 · solo los de sus citas (antes: TODOS los avisos de citas de la base)
   sql(`delete from appointment_alerts where user_id = ${MARISOL}`);
   sql(`delete from special_hours where business_id = '${BIZ}' and label->>'es' = 'prueba'`);
   sql(`update items set duration_min = 40, svc_opts = '[]'::jsonb, sell = true, status = 'live', hidden_reason = null where id = ${SV('Fade')}`);
   sql(`update business_members set chair_auto = false, chair_deposit_cents = 1000, chair_response_min = 15 where id = ${LUIS}`);
   sql(`update business_members set chair_auto = true, chair_deposit_cents = 500 where id = ${KEL}`); sql(`delete from member_payout_accounts where member_id = ${KEL}`); // sin su cuenta propia: no pide depósito (3d)
   sql(`update businesses set svc_model = 'chair', modules_on = array['svc','citas','staff'], modules_off = modules_off - 'citas' - 'svc' where id = '${BIZ}'`);
+  // 9b-1 · La cita de Juan con Luis MAÑANA a las 10:00 (la que ocupa 10:00 y 10:30). Antes era la de la semilla 0011, que es «mañana» del día en
+  // que se sembró la base: al día siguiente ya no estaba. Si mañana no la tiene, se la pone igual que la semilla (confirmada, 40 min + 5).
+  sql(`insert into operations (number, kind, city_id, business_id, user_id, member_id, status, scheduled_at, duration_min, buffer_min, details, subtotal_cents, total_cents, pay_mode, confirmed_at, answered_at, client_key, is_test)
+       select 'C-' || nextval('operations_appt_seq'), 'appointment', 'hzl', '${BIZ}', u.id, ${LUIS}, 'confirmed', (((now() at time zone 'America/New_York')::date + 1) + time '10:00') at time zone 'America/New_York', 40, 5,
+              jsonb_build_object('svc', '{\"es\":\"Fade\",\"en\":\"Fade\"}'::jsonb, 'svcId', ${SV('Fade')}::text, 'opts', '[]'::jsonb, 'adds', '[]'::jsonb, 'para', 'me', 'sms', true, 'base', 2800), 2800, 2800, 'local', now(), now(), gen_random_uuid(), true
+         from users u where u.phone = '+15705550144'
+          and not exists (select 1 from operations o where o.business_id = '${BIZ}' and o.user_id = u.id and o.member_id = ${LUIS} and o.status = 'confirmed'
+                          and o.scheduled_at = (((now() at time zone 'America/New_York')::date + 1) + time '10:00') at time zone 'America/New_York')`);
 };
 (async () => {
   limpiar();

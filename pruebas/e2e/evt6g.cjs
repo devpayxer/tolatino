@@ -87,6 +87,10 @@ function videoQR(t, file) {
       values ('', 'hzl', '${biz}', '${fmt}', '{"es":"${titulo} ${TAG}","en":"${titulo} ${TAG}"}', (now() at time zone 'America/New_York')::date + ${o.dias ?? 0}, ${H0}, ${H0 + 180}, '${o.entry ?? 'tickets'}', 'live', now(), now(), '${ADMID}', 0, '${ADMID}', ${o.edad ?? 0},
               '${(o.entry ?? 'tickets') === 'tickets' ? tk : '[]'}'::jsonb, '${(o.entry ?? 'tickets') === 'tickets' ? mt : '[]'}'::jsonb, ${o.cap ?? 0}, ${o.pmax ?? 1}, '${o.kind ?? 'single'}', ${o.span ?? 1}, ${o.dcap ?? 0}) returning id`).split('\n')[0];
     sql(`select evt_sincronizar_fechas(${id})`);
+    // 9b-1 · Sin depender de la hora: los de HOY empiezan en 1 h según el reloj del servidor (antes min(10 PM, ahora + 1 h): pasadas las 9 PM
+    // la puerta ya había abierto y no se podía comprar). Se corren todas sus fechas juntas; su noche (local_date) no cambia.
+    if (!(o.dias > 0)) sql(`update event_dates d set starts_at = d.starts_at + x.delta, doors_at = d.doors_at + x.delta, ends_at = d.ends_at + x.delta
+      from (select (now() + interval '60 minutes') - min(starts_at) as delta from event_dates where event_id = ${id}) x where d.event_id = ${id}`);
     sql(`insert into media (owner_kind, owner_id, url, w, h, status, sort, uploaded_by) select 'event', '${id}', url, w, h, 'visible', 0, uploaded_by from media where owner_kind = 'business' and owner_id = '${biz}' and status = 'visible' order by sort limit 1`);
     return id;
   };
@@ -168,7 +172,7 @@ function videoQR(t, file) {
     const K1 = await invitar(pm, NEG, EV1, 'Ana Portera', P1, false);
     ok(K1 && sql(`select status || '|' || scope || '|' || event_ids::text || '|' || phone_last4 from door_staff where invite_code = '${K1}'`) === `invited|events|{${EV1}}|${P1.slice(-4)}`, `el dueño invita a Ana (solo este evento): código ${K1} de 7 días; la base guarda «··${P1.slice(-4)}», el teléfono cifrado y su huella`);
     ok(sql(`select count(*) from door_staff where invite_code = '${K1}' and phone_enc is not null and phone_hash ~ '^[a-f0-9]{64}$' and position('${P1}' in encode(phone_enc, 'escape')) = 0`) === '1', 'el teléfono del portero no está en claro en la base');
-    ok(await espera(async () => sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'puerta_invitado' and created_at > now() - interval '2 minutes' order by id desc limit 1`) === smsEsperado('puerta_invitado')), 'a Ana le llega el aviso con el código (SMS en modo pruebas)');
+    ok(await espera(async () => sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'puerta_invitado' and created_at > now() - interval '2 minutes' order by id desc limit 1`) === smsEsperado('puerta_invitado', `'${U1}'`)), 'a Ana le llega el aviso con el código (SMS en modo pruebas)');
     ok(await contiene(pm, `Código ${K1}: le llegó por SMS. Vale 7 días`) && await contiene(pm, 'INVITADO'), 'el panel muestra el código y a Ana como INVITADO');
     await pm.screenshot({ path: OUT + 'e6g-panel-porteros-390.png', fullPage: true });
     const K2 = await invitar(pn, NEG, EV1, 'Beto Portero', P2, true);

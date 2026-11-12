@@ -32,8 +32,9 @@ vivo() { [ "$(timeout 10 adb get-state 2> /dev/null)" = device ] && [ "$(timeout
 diagnostico() { # $1 = cuándo
   local f="$DIAG/$(date +%H%M%S)-$1.txt"
   { echo "== $1 · $(date -u +%FT%TZ)"; echo "== adb devices"; adb devices 2>&1
-    echo "== memoria"; free -m; echo "== procesos (más memoria)"; ps -eo pid,rss,etime,comm --sort=-rss | head -15
-    echo "== kernel (OOM)"; sudo -n dmesg 2> /dev/null | grep -iE "out of memory|oom|killed process" | tail -20
+    echo "== memoria"; free -m; echo "== disco"; df -h / /tmp "$HOME" 2> /dev/null | sort -u
+    echo "== procesos (más memoria)"; ps -eo pid,rss,etime,comm --sort=-rss | head -15
+    echo "== kernel (lo último)"; sudo -n dmesg 2> /dev/null | tail -25
     echo "== emulador (fallos guardados)"; ls -la /tmp/android-runner/ 2> /dev/null; ls -la "${ANDROID_AVD_HOME:-$HOME/.android/avd}/$AVD.avd/" 2> /dev/null | tail -20
     echo "== logcat (lo último)"; timeout 15 adb logcat -d -t 200 2> /dev/null | grep -iE "FATAL|lowmemorykiller|am_kill|crash|chromium.*E " | tail -40
   } > "$f" 2>&1
@@ -54,6 +55,7 @@ revivir() {
   vivo || { echo "✗ el emulador no terminó de arrancar"; tail -30 "$DIAG/emulador-$revividas.log"; return 1; }
   for k in window_animation_scale transition_animation_scale animator_duration_scale; do adb shell settings put global "$k" 0.0 > /dev/null 2>&1 || true; done
   adb shell input keyevent 82 > /dev/null 2>&1 || true
+  seguir_logcat
   echo "… emulador de nuevo arriba"
 }
 asegurar() { vivo || revivir; }
@@ -87,7 +89,10 @@ entrar() { # $1 = id, $2 = teléfono → "ok" o el motivo
   cdp "$1" eval "(async()=>{const h={'content-type':'application/json'};const a=await (await fetch('/api/cuenta/codigo',{method:'POST',headers:h,body:JSON.stringify({telefono:'$2'})})).json();if(!a.codigoPrueba)return 'sin código';const b=await (await fetch('/api/cuenta/verificar',{method:'POST',headers:h,body:JSON.stringify({telefono:'$2',codigo:a.codigoPrueba})})).json();return b.ok?'ok':'no entró'})()"
 }
 
+# El logcat entero mientras corre (el del emulador que se va no se puede leer después): uno por cada vez que se levanta.
+seguir_logcat() { nohup adb logcat -v time > "$DIAG/logcat-$revividas.txt" 2>&1 & }
 asegurar || { diagnostico "sin-emulador-al-empezar"; echo "✗ no hay emulador"; exit 1; }
+seguir_logcat
 while read -r app sabor id tel tomas; do
   asegurar || { falla "$app: sin emulador"; continue; }
   timeout 180 adb install -r "$APK/$sabor/debug/app-$sabor-debug.apk" > /dev/null || { falla "$app: no se instaló el apk"; continue; }
@@ -115,6 +120,7 @@ while read -r app sabor id tel tomas; do
   adb shell am force-stop "$id" > /dev/null 2>&1 || true
 done <<< "$LISTA"
 diagnostico "final" > /dev/null
+for f in "$DIAG"/logcat-*.txt; do [ -f "$f" ] && { echo "== $(basename "$f"): lo último"; grep -iE "FATAL|ANR|lowmemorykiller|am_kill|crash|died|chromium.*(E|F) " "$f" | tail -15 | sed 's/^/  · /'; }; done
 # Los volcados del emulador (si se cayó), para mirarlos en el artefacto.
 [ -d /tmp/android-runner ] && cp -r /tmp/android-runner "$DIAG/android-runner" 2> /dev/null || true
 echo "capturas de Android: $bien bien, $mal mal, emulador levantado de nuevo $revividas vez/veces"

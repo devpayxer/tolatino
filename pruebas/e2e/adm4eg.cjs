@@ -2,6 +2,8 @@
 // ayuda de ayu4f; ver los datos del niño con motivo y auditoría), «No me dejan cancelar» (la ayuda «salir» escalada) y «Grupos que no
 // abrieron» (3 cancelados en 90 días; revisado); Analítica › Educación · Niños · Deporte.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hacen otras pruebas (la matrícula cobrada de ins4e, los casos de ayu4f) se pide con requiere: ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -23,7 +25,7 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   ok(await espera(ad.getByText(/Educación · Preparación para ciudadanía/).first()), 'dice el rubro y el curso');
   ok(!(await ad.content()).includes('Valentina'), 'nunca el nombre de un niño en Transacciones');
   await ad.screenshot({ path: OUT + 'g4g-tx-d.png', fullPage: true });
-  const I = sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'enrollment' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 1000 order by o.id desc limit 1`);
+  const I = requiere('ins4e', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'enrollment' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 1000 order by o.id desc limit 1`), { que: 'una matrícula cobrada' });
   ok(/^I-\d+$/.test(I), `una matrícula cobrada para devolver: ${I}`);
   const R0 = Number(sql(`select refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I}' and p.kind = 'deposit'`));
   await ad.goto(B + `/admin/transacciones?tab=insc&q=${I}`); await ad.getByText(new RegExp(`Inscripción ${I}`)).first().waitFor();
@@ -36,7 +38,7 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   ok(sql(`select count(*) from audit_entries where action = 'transacciones.devolver' and after->>'inscripcion' = '${I}'`) !== '0', 'queda en la auditoría como inscripción');
 
   // ── Colas › Cuidado de niños ──
-  const QC = sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.queue = 'cuidado' and q.status = 'open' and h.business_id = '${NIN}' order by q.id desc limit 1`);
+  const QC = requiere('ayu4f', () => sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.queue = 'cuidado' and q.status = 'open' and h.business_id = '${NIN}' order by q.id desc limit 1`), { que: 'el caso abierto de «No cuidaron bien a mi niño»' });
   ok(/^\d+$/.test(QC), `la ayuda «No cuidaron bien a mi niño» abrió un caso en «Cuidado de niños» (${QC})`);
   ok(sql(`select count(*) from queue_items q where q.queue = 'sop' and q.subject_id = (select subject_id from queue_items where id = ${QC})`) === '0', 'no se duplica en «Ayuda con pedidos y citas»');
   await ad.goto(B + '/admin/colas?cola=cuidado'); ok(await espera(ad.getByText(/Cuidado de niños · Guardería Mis Angelitos/).first()), 'sale en su cola'); // 9a: la lista general tiene cientos
@@ -57,7 +59,7 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   sql(`update help_requests set created_at = now() - interval '25 hours' where reason = 'salir' and status = 'open'`);
   await ad.goto(B + '/admin/colas'); // escalarVencidas corre al abrir las ayudas; se fuerza con el barrido
   execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`);
-  const QS = sql(`select id from queue_items where queue = 'salir' and status = 'open' order by id desc limit 1`);
+  const QS = requiere('ayu4f', () => sql(`select id from queue_items where queue = 'salir' and status = 'open' order by id desc limit 1`), { que: 'el caso abierto de «No me dejan cancelar»' });
   ok(/^\d+$/.test(QS), `la ayuda «No me dejan cancelar» sin respuesta pasó a su cola (${QS})`);
   await ad.goto(B + `/admin/colas?cola=salir&caso=${QS}`); ok(await espera(ad.getByText(/No lo dejan cancelar/).first()), 'el caso dice el motivo');
   await clic(ad.getByRole('button', { name: 'Resolver con un mensaje' })); await (await vis(ad.locator('textarea').last())).fill('Hablamos con el gimnasio: tu membresía quedó cancelada en la fecha que la pediste.');

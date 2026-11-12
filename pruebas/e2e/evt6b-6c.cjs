@@ -28,6 +28,7 @@ const C1 = '5705550122', C2 = '5705550299', C3 = '5705550288', C4 = '5705550433'
 const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').equipo('5705550188'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const ADMID = uid(ADM);
   const limpiar = () => {
     sql(`update rsvps set status = 'cancelled' where status = 'going' and event_id in (select id from events where title->>'es' like '%[e6b %')`);

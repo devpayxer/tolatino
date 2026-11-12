@@ -31,6 +31,7 @@ const hoyBruto = (u) => +sql(`select coalesce(sum(delta), 0) from points_entries
 const tarjeta = (p, t) => p.locator('[data-screen-label="Publicación · comentario"], [data-screen-label="Publicación · la más votada"]').filter({ hasText: t }).first();
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').equipo('5705550188'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const b = await chromium.launch(); const err = [];
   const mira = (pg) => { pg.on('pageerror', (e) => err.push(e.message));
     pg.on('console', (m) => { if (m.type() === 'error' && !/ERR_TUNNEL_CONNECTION_FAILED|status of 404|status of 503|pexels/.test(m.text())) err.push('console: ' + m.text()); }); };

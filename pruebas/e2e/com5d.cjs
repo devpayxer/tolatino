@@ -37,6 +37,7 @@ const servicioImg = (on) => {
 const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhost:8790/salud').toString()).ok === true; } catch { return false; } };
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').equipo('5705550188'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const b = await chromium.launch(); const err = [];
   const mira = (pg) => { pg.on('pageerror', (e) => err.push(e.message));
     pg.on('console', (m) => { if (m.type() === 'error' && !/ERR_TUNNEL_CONNECTION_FAILED|status of 404|status of 503/.test(m.text())) err.push('console: ' + m.text()); }); };

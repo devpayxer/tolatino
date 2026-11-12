@@ -33,8 +33,9 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   // Panel del dueño: el aviso Free cuenta los pedidos reales
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage();
   await d.goto(B + '/entrar'); sql('delete from otp_codes'); const a2 = await api(d, '/api/cuenta/codigo', { telefono: '5705550133' }); await api(d, '/api/cuenta/verificar', { telefono: '5705550133', codigo: a2.codigoPrueba });
-  await d.goto(B + '/panel/sabor-dominicano/hoy'); await d.getByText(new RegExp(`Free: ${tras} de ${usados + 1} pedidos`)).first().waitFor(); ok(true, `panel: «Free: ${tras} de ${usados + 1} pedidos o citas en línea este mes»`);
-  ok(await d.getByText(`Pedido #${num} · Marisol`, { exact: false }).first().isVisible(), 'panel › Hoy: el pedido espera respuesta');
+  await d.goto(B + '/panel/sabor-dominicano/hoy'); /* 9b-1 · Con el techo lleno el panel dice «Free: llegaste a N de N…» (Pedidos.tsx; antes la prueba esperaba «Free: N de N», el texto de antes de llegar) */ await d.getByText(new RegExp(`Free: llegaste a ${usados + 1} de ${usados + 1} pedidos`)).first().waitFor(); ok(true, `panel: «Free: llegaste a ${usados + 1} de ${usados + 1} pedidos o citas en línea este mes»`);
+  // 9b-1 · La fila del Hoy dice «Pedido #N · Pickup» (cómo lo recibe), ya no «· Marisol» (el nombre va abajo).
+  ok(await d.getByText(`Pedido #${num} · `, { exact: false }).first().waitFor({ timeout: 8000 }).then(() => true, () => false), 'panel › Hoy: el pedido espera respuesta');
   await d.screenshot({ path: OUT + 'b22-panel-free-d.png' });
   sql(`update business_stats_cache set plan='pro' where business_id='${BIZ}'`);
   await d.goto(B + '/panel/sabor-dominicano/vendes'); await d.getByText('EN TU PÁGINA').first().waitFor(); ok(true, 'panel › Lo que vendes: «EN TU PÁGINA»');

@@ -107,8 +107,22 @@ function sinTopeDeAyuda(tel) {
 }
 /* El estado del SMS que la app le pone AHORA a un aviso de esa plantilla en modo pruebas, con la regla del servidor (lib/avisos.ts): lo
    crítico (y biz_req) siempre sale («pruebas»); lo demás, entre las 10 PM y las 7 AM de Hazleton, espera («silencio»). Antes las pruebas
-   esperaban «pruebas» siempre y fallaban de noche. (Quien apagó las horas de silencio en sus preferencias no entra aquí.) */
-function smsEsperado(tpl) {
-  return sql(`select case when grp = 'crit' or key = 'biz_req' or extract(hour from now() at time zone 'America/New_York') between 7 and 21 then 'pruebas' else 'silencio' end from notif_templates where key = '${tpl}'`);
+   esperaban «pruebas» siempre y fallaban de noche. `quien` (una expresión SQL con el id: '${U}' o (select …)): si esa persona apagó las
+   horas de silencio en sus preferencias (notif_prefs.quiet = false), le sale igual. */
+function smsEsperado(tpl, quien = null) {
+  const sinSilencio = quien ? `or coalesce((select notif_prefs->>'quiet' from users where id = ${quien}), '') = 'false'` : '';
+  return sql(`select case when grp = 'crit' or key = 'biz_req' or extract(hour from now() at time zone 'America/New_York') between 7 and 21 ${sinSilencio} then 'pruebas' else 'silencio' end from notif_templates where key = '${tpl}'`);
 }
-module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, smsEsperado, medios, PUERTO_MEDIOS, sql };
+/* Alguien del equipo (Super Admin) que la prueba necesita y que no es de la semilla: Beto (segundo Admin, 0188), Lucía (Solo lectura, 0693),
+   Sofía (Soporte de Allentown, 0694). Antes los creaban usr1l y compa7g, y evt6a, com5d, com5f, adm7i… los daban por hechos (en una base
+   nueva o en otro orden no estaban). Se crean como lo hacía compa7g: la persona si falta y su rol, activo, agregado por Ana. */
+const EQUIPO = { '5705550188': ['Beto', 'admin', '{}'], '5705550693': ['Lucía', 'lectura', '{}'], '5705550694': ['Sofía', 'soporte', '{alw}'] };
+function equipo(...tels) {
+  for (const t of tels) {
+    const [nom, rol, ci] = EQUIPO[t] ?? (() => { throw new Error(`equipo: ${t} no es del equipo de prueba`); })();
+    sql(`insert into users (phone, first_name, last_name, home_city_id, lang, is_test) values ('+1${t}', '${nom}', 'Prueba', 'hzl', 'es', true) on conflict (phone) do nothing`);
+    sql(`insert into staff_members (user_id, role, cities, status, added_by) select u.id, '${rol}', '${ci}', 'active', (select id from users where phone = '+15705550199') from users u where u.phone = '+1${t}'
+         on conflict (user_id) do update set role = excluded.role, cities = excluded.cities, status = 'active'`);
+  }
+}
+module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, smsEsperado, equipo, medios, PUERTO_MEDIOS, sql };

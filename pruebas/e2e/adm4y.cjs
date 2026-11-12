@@ -11,6 +11,12 @@ const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++
 const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
 const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
 (async () => {
+  // 9b-1 · Los viajes que esta prueba mira en Transacciones los hacen tra4y (la mitad cobrada, la salida que cancela el negocio) y tra4y2 (la caja
+  // con rastreo, la mudanza con su precio cerrado). Se corren siempre antes (requiere): así son los últimos de la lista, en una base nueva o en
+  // la décima corrida (antes la lista se llenaba con viajes de otras corridas y lo de tra4y ya no salía arriba).
+  const { requiere } = require('../lib/requiere.cjs');
+  requiere('tra4y', () => sql(`select number from operations where kind = 'trip' and business_id = 'van-express-nyc' and created_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'los viajes de tra4y' });
+  const V = requiere('tra4y2', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'full' where o.kind = 'trip' and o.details->>'k' = 'cotiza' and p.status = 'captured' order by o.id desc limit 1`), { siempre: true, que: 'un viaje cotizado y cobrado' });
   const b = await chromium.launch(); const err = [];
   const ad = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(ad, '5705550199');
   ad.on('pageerror', e => err.push(e.message));
@@ -22,7 +28,6 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
   ok(!(await ad.content()).includes('Testigo'), 'el destinatario no sale en Transacciones');
   await ad.screenshot({ path: OUT + 'a1-admin-viajes-d.png', fullPage: true });
   // Devolver $10 de la mudanza cobrada (M1 de tra4y2, $650 captured y done).
-  const V = sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'full' where o.kind = 'trip' and o.details->>'k' = 'cotiza' and p.status = 'captured' order by o.id desc limit 1`);
   ok(/^V-\d+$/.test(V), `mudanza cobrada para devolver: ${V}`);
   await ad.goto(B + `/admin/transacciones?tab=viaje&q=${V}`); await ad.getByText(new RegExp(`Viaje ${V}`)).first().waitFor();
   await clic(ad.getByRole('button', { name: 'Devolver' }));

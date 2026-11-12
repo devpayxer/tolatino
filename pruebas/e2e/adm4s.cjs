@@ -9,6 +9,9 @@ const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  �
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
 (async () => {
+  // 9b-1 · El plan de apartado con lo pagado que lista Transacciones › Apartados lo hace lay4r: se corre antes (requiere, siempre), así está en una base nueva, en cualquier orden y arriba de la
+  // lista aunque la base tenga muchas corridas (antes se daba por hecho que ya había corrido).
+  require('../lib/requiere.cjs').requiere('lay4r', () => sql(`select o.number from operations o join layaway_plans l on l.operation_id = o.id where o.created_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'un plan de apartado con abonos (lay4r)' });
   const b = await chromium.launch(); const err = [];
   const a = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(a, '5705550199');
   a.on('pageerror', e => err.push(e.message)); a.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

@@ -1,6 +1,8 @@
 // 4ne · Super Admin de Noche: Transacciones › Noche (lista/mesa, noche, personas, cómo cerró, depósito) y «Devolver» un depósito;
 // Colas «Sin identificación» y «Mesas no respetadas» (abiertas por la puerta real de noc4c), revisar y pausar; Analítica › Noche.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace noc4c (el depósito que se quedó, las dos colas de la noche) se pide con requiere: ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -26,7 +28,7 @@ const NEG = 'la-terraza-night';
   ok(!codigos.some((c) => html.includes(`código ${c}`) || html.includes(`>${c}<`)), 'el código de la puerta no sale en Transacciones');
   await ad.screenshot({ path: OUT + 'n4e-tx-d.png', fullPage: true });
   // Devolver $20 de un depósito que se quedó con el local («no entró: sin identificación»).
-  const N = sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'night' and o.business_id = '${NEG}' and o.status_detail = 'noid' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 2000 order by p.refunded_cents, o.id limit 1`);
+  const N = requiere('noc4c', () => sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' where o.kind = 'night' and o.business_id = '${NEG}' and o.status_detail = 'noid' and p.status in ('captured', 'partially_refunded') and p.amount_cents - p.refunded_cents >= 2000 order by p.refunded_cents, o.id limit 1`), { que: 'un depósito de mesa que se quedó con el local (no entró: sin identificación)' });
   ok(/^N-\d+$/.test(N), `depósito que se quedó, para devolver: ${N}`);
   await ad.goto(B + `/admin/transacciones?tab=noche&q=${N}`); await ad.getByText(new RegExp(`Mesa ${N}`)).first().waitFor();
   ok(await espera(ad.getByText(/no entró: sin identificación · depósito \$50\.00 (cobrado|devuelto en parte)/i).first()) , 'la fila dice «no entró» y el depósito cobrado');
@@ -42,8 +44,8 @@ const NEG = 'la-terraza-night';
   ok(AUD('transacciones.devolver', N, "after->>'noche'") === aud0 + 1, 'queda en la auditoría como noche');
 
   // ── Colas › Sin identificación (abierta por la puerta real: 3+ en 30 noches) ──
-  const QN = sql(`select id from queue_items where queue = 'noid' and subject_id = '${NEG}' and status = 'open'`);
-  const QM = sql(`select id from queue_items where queue = 'mesa' and subject_id = '${NEG}' and status = 'open'`);
+  const QN = requiere('noc4c', () => sql(`select id from queue_items where queue = 'noid' and subject_id = '${NEG}' and status = 'open'`), { que: 'el caso abierto de «Sin identificación»' });
+  const QM = requiere('noc4c', () => sql(`select id from queue_items where queue = 'mesa' and subject_id = '${NEG}' and status = 'open'`), { que: 'el caso abierto de «Mesas no respetadas»' });
   ok(!!QN && !!QM, `las dos colas se abrieron solas (noid ${QN}, mesa ${QM})`);
   // 9a · En la lista general (cientos de casos abiertos en la base local) pueden no caber en la primera página: cada una en su cola.
   await ad.goto(B + '/admin/colas?cola=noid'); const v1 = await espera(ad.getByText(/Sin identificación · La Terraza/).first());

@@ -12,6 +12,8 @@
      --paralelo           las al revés (tocan archivos del repo y corren los guardianes) en un carril y las de punta a punta (la base y
                           :3100) en otro: los dos carriles no se pisan. Dentro de cada carril, SIEMPRE una a la vez. Por defecto: todo en fila.
      --tiempo <min>       tiempo máximo por prueba (25 por defecto)
+     --barajar [semilla]  9b-1 · las corre en otro orden (al azar, o el de esa semilla para repetirlo): saca a la luz las que dependen del orden.
+                          Las al revés siguen primero; las de punta a punta, todas mezcladas (sin fases). La semilla se imprime al empezar.
    Salida: $PRUEBAS_SALIDA/res/<nombre>.out por prueba y resumen.json; al final, la tabla con las comprobaciones (✓) de cada una.
    Una prueba pasa si termina con código 0. Nada de esto lleva secretos: los lee cada prueba de $PRUEBAS_SALIDA/secretos.env. */
 import { spawn, execSync } from "node:child_process";
@@ -53,8 +55,16 @@ const enOrden = (ts) => [...ts.filter((t) => !/^(adm|ana|tx)\d/.test(t.nombre)),
 if (flag("--todas")) sel = grupos.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g)));
 else if (opt("--grupo")) { const gs = opt("--grupo").split(","); for (const g of gs) if (!grupos.includes(g)) { console.error(`grupo desconocido: ${g} (${grupos.join(", ")})`); process.exit(2); } sel = gs.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g))); }
 else {
-  const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo"].includes(args[i - 1]));
+  const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo", "--barajar"].includes(args[i - 1]));
   sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\.(cjs|mjs|sh)$/, "")) ?? (console.error(`no existe: ${n}`), process.exit(2)));
+}
+if (flag("--barajar")) {
+  const v = opt("--barajar"), semilla = v && /^\d+$/.test(v) ? Number(v) : Math.floor(Math.random() * 2 ** 31);
+  let x = semilla >>> 0; const azar = () => { x = (x + 0x6d2b79f5) >>> 0; let t = x; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 2 ** 32; };
+  const al = sel.filter((t) => t.carril === "alreves"), e2e = sel.filter((t) => t.carril === "e2e");
+  for (let i = e2e.length - 1; i > 0; i--) { const j = Math.floor(azar() * (i + 1)); [e2e[i], e2e[j]] = [e2e[j], e2e[i]]; }
+  sel = [...al, ...e2e];
+  console.log(`--barajar · semilla ${semilla} (para repetir este orden: --barajar ${semilla})`);
 }
 if (opt("--desde")) { const i = sel.findIndex((t) => t.nombre === opt("--desde")); if (i < 0) { console.error(`--desde: ${opt("--desde")} no está en la selección`); process.exit(2); } sel = sel.slice(i); }
 if (opt("--saltar")) { const fuera = new Set(opt("--saltar").split(",")); sel = sel.filter((t) => !fuera.has(t.nombre)); }

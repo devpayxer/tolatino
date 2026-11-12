@@ -27,6 +27,7 @@ const RUN = Date.now().toString(36), TAG = `[e6a ${RUN}]`;
 const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = '5705550199', ADM2 = '5705550188';
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').equipo('5705550188'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const limpiar = () => {
     sql(`update events set status = 'cancelled', cancelled_at = now(), cancelled_by = 'admin', cancel_reason = 'prueba', hidden_at = null, hidden_by = null, hidden_reason = null, pending = null, pending_status = null where title->>'es' like '%[e6a %' and status <> 'cancelled'`);
     sql(`update queue_items set status = 'decided', decision = 'prueba', decided_at = now() where status = 'open' and ((queue = 'evt' and subject_id in (select id::text from events where title->>'es' like '%[e6a %')) or (queue = 'apel' and subject_id in (select id::text from appeals where target_kind in ('event', 'evt_org') and target_id in (select id::text from events where title->>'es' like '%[e6a %' union select 'sabor-dominicano'))))`);
@@ -99,7 +100,7 @@ const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = 
     await decidir(ad, 'Aprobar', null, null, 'Aprobar');
     ok(await espera(() => sql(`select status from events where id = ${EV}`) === 'live'), 'aprobado: en vivo');
     ok(sql(`select (approved_by = '${uid(ADM)}')::text || '|' || (select listable::text from event_dates where event_id = ${EV}) from events where id = ${EV}`) === 'true|true', 'aprobado por esa persona y listable');
-    ok(sql(`select sms_status from notifications where user_id = '${OWNER}' and tpl = 'evt_aprobado' order by id desc limit 1`) === smsEsperado('evt_aprobado'), 'aviso «Tu evento ya está publicado» con SMS (modo pruebas)');
+    ok(sql(`select sms_status from notifications where user_id = '${OWNER}' and tpl = 'evt_aprobado' order by id desc limit 1`) === smsEsperado('evt_aprobado', `'${OWNER}'`), 'aviso «Tu evento ya está publicado» con SMS (modo pruebas)');
 
     // ── 5 · Cambio que importa (la hora) de un organizador sin verificar: vuelve a la cola, la versión anterior sigue en vivo ──
     const T0 = sql(`select starts_at from event_dates where event_id = ${EV}`), H0 = sql(`select start_min from events where id = ${EV}`);
@@ -167,7 +168,7 @@ const TERRAZA = '5705550366', SABOR = '5705550133', PADRE = '5705550422', ADM = 
     await ad.goto(B + `/admin/eventos/${EP}`);
     await decidir(ad, 'No aprobar', 'La foto no corresponde al evento', 'Sube una foto del sancocho o del local', 'No aprobar');
     ok(await espera(() => sql(`select status from events where id = ${EP}`) === 'rejected'), 'no aprobado');
-    ok(sql(`select sms_status || '|' || href from notifications where tpl = 'evt_rechazado' and user_id = '${uid(SABOR)}' order by id desc limit 1`) === `${smsEsperado('evt_rechazado')}|/cuenta/moderacion?k=event&id=${EP}`, 'aviso «no se publicó» con SMS (pruebas) y la apelación');
+    ok(sql(`select sms_status || '|' || href from notifications where tpl = 'evt_rechazado' and user_id = '${uid(SABOR)}' order by id desc limit 1`) === `${smsEsperado('evt_rechazado', `'${uid(SABOR)}'`)}|/cuenta/moderacion?k=event&id=${EP}`, 'aviso «no se publicó» con SMS (pruebas) y la apelación');
     await sm.goto(B + `/panel/sabor-dominicano/eventos?det=evt:${EP}`);
     ok(await contiene(sm, 'No se publicó: La foto no corresponde al evento') && await contiene(sm, 'Apelar'), 'el panel: no se publicó, con el motivo y «Apelar»');
 

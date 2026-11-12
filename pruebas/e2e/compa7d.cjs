@@ -5,6 +5,7 @@
 // otra), origen cruzado, el formulario abierto por El Compa (help_requests.origin = 'compa'), la regresión «todo apagado» (nivel, canal, ciudad,
 // negocio y tope: las MISMAS pantallas de antes) y Super Admin › El Compa › Conversaciones con la ficha y la lectura anotada. 390 y 1360.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const fs = require('fs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', TOK = ENT.TOK;
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -40,7 +41,13 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id in ('${MU}', '${YU}') and kind in ('table', 'appointment') and status in ('pending', 'change_proposed')`);
   await new Promise((r) => setTimeout(r, 16000));   // la caché de Configuración es de 15 s
   const FAM = fs.readFileSync(ENT.RAIZ + '/pruebas/lib/compa7d-familias.sql', 'utf8');
-  const fam = execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -At`, { input: FAM }).toString().trim().split('\n').map((l) => { const [kind, num, tel, st, neg] = l.split('|'); return { kind, num, tel: tel.slice(2), st, neg }; });
+  const leerFam = () => execSync(`docker exec -i ${ENT.DB} psql -U tolatino -d tolatino -At`, { input: FAM }).toString().trim().split('\n').filter(Boolean).map((l) => { const [kind, num, tel, st, neg] = l.split('|'); return { kind, num, tel: tel.slice(2), st, neg }; });
+  // 9b-1 · Una operación de cada familia sin ayuda pedida. Antes se daba por hecho que las otras pruebas ya las habían dejado (en una base nueva
+  // o en otro orden faltaba alguna: la del viaje). La que falte la hace la prueba de su familia (requiere).
+  const PRODUCTOR = { appointment: 'cit3c', order: 'pedidos2c', market_order: 'merc4p', hold: 'apt4f', party: 'fie4v', trip: 'tra4y', night: 'noc4c', enrollment: 'ins4e', visit: 'vis4ie', private_event: 'evt6i', tickets: 'evt6c' };
+  let fam = leerFam();
+  for (const [k, prod] of Object.entries(PRODUCTOR)) if (!fam.some((f) => f.kind === k)) { requiere(prod, () => (leerFam().some((f) => f.kind === k) ? k : ''), { que: `una operación «${k}» sin ayuda` }); }
+  fam = leerFam();
   ok(fam.length === 11, `una operación de prueba por familia: ${fam.map((f) => f.num).join(' ')}`);
   const br = await chromium.launch(), errs = [];
   const ctx = async (w = 390) => { const c = await br.newContext({ viewport: { width: w, height: w > 500 ? 900 : 844 }, deviceScaleFactor: w > 500 ? 1 : 2,

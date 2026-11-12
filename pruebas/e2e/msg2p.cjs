@@ -62,12 +62,16 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   await p.goto(B + `/panel/${BIZ}/mensajes`); await clic(p.getByRole('switch', { name: 'Respuesta automática fuera de horario' }));
   await p.getByText(/Encendida: cuando estés cerrado/).first().waitFor(); ok(sql(`select chat_auto_reply from businesses where id = '${BIZ}'`) === 't', 'respuesta automática encendida');
   sql(`update business_hours set open = false where business_id = '${BIZ}' and module = '' and weekday = extract(dow from now() at time zone 'America/New_York')::int`);
+  // 9b-1 · Esto prueba la respuesta FIJA (2p). Con El Compa encendido en un negocio Pro (7f), fuera de horario contesta él en vez de la fija
+  // (dos «auto» en un minuto, una por mensaje). Se apaga El Compa de este negocio mientras dura este paso y se deja como estaba.
+  const compaAntes = sql(`select coalesce((select enabled::text from compa_business_settings where business_id = '${BIZ}'), '')`);
+  if (compaAntes === 'true') sql(`update compa_business_settings set enabled = false where business_id = '${BIZ}'`);
   try {
     await m.goto(B + `/cuenta/mensajes/${BIZ}`); await m.getByPlaceholder(/Escribe a/).fill('¿Abren mañana?'); await m.getByRole('button', { name: 'Enviar' }).click();
     await m.getByText(/Ahora estamos cerrados/).first().waitFor(); ok(sql(`select sender from chat_messages where thread_id = ${TH} order by id desc limit 1`) === 'auto', 'cerrado: contesta la automática');
     await m.getByPlaceholder(/Escribe a/).fill('Gracias'); await m.getByRole('button', { name: 'Enviar' }).click(); await m.getByText('Gracias', { exact: true }).first().waitFor();
-    ok(Number(sql(`select count(*) from chat_messages where thread_id = ${TH} and sender = 'auto' and created_at > now() - interval '1 minute'`)) === 1, 'una sola automática cada 12 h');
-  } finally { sql(`update business_hours set open = true where business_id = '${BIZ}' and module = '' and weekday = extract(dow from now() at time zone 'America/New_York')::int`); }
+    ok(Number(sql(`select count(*) from chat_messages where thread_id = ${TH} and sender = 'auto' and not compa and created_at > now() - interval '1 minute'`)) === 1, 'una sola automática (la fija) cada 12 h');
+  } finally { sql(`update business_hours set open = true where business_id = '${BIZ}' and module = '' and weekday = extract(dow from now() at time zone 'America/New_York')::int`); if (compaAntes === 'true') sql(`update compa_business_settings set enabled = true where business_id = '${BIZ}'`); }
   // 7) bloquear
   await p.goto(B + `/panel/${BIZ}/mensajes?det=msg:` + sql(`select id from chat_threads where user_id = ${MARI} and business_id = '${BIZ}'`)); await clic(p.getByRole('button', { name: 'Bloquear' }));
   await p.getByText(/Bloqueado: ya no te puede escribir/).first().waitFor();

@@ -99,7 +99,9 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
       await p.context().close();
     }
     // El servidor decide: volver a Pro desde la app se rechaza aunque alguien llame la acción (se cambia el user-agent SOLO del POST).
-    const TRI = 'barberia-7747', TEL_TRI = '5705557747';
+    // 9b-1 · Un negocio recién publicado (con su prueba Pro) hecho para la corrida (antes `barberia-7747`, que solo existía en una base vieja).
+    const NTRI = await require('../lib/negocio-nuevo.cjs').publicarBarberia(br), TRI = NTRI.id, TEL_TRI = NTRI.tel;
+    if (sql(`select count(*) from subscriptions where business_id = '${TRI}'`) === '0') throw new Error(`${TRI} no tiene su prueba Pro (subscriptions) al publicarse`);
     sql(`update subscriptions set trial_choice = 'no_continue' where business_id = '${TRI}'`);
     const pt = await pagina('trial', 390); await entrar(pt, TEL_TRI);
     await pt.goto(`${B}/panel/${TRI}/cobros/plan`); await pt.waitForLoadState('networkidle');

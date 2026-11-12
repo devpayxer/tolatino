@@ -142,7 +142,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(!!capTransfer, 'se tiene la llamada del servidor de «Enviar boleto» (para repetirla con otra cuenta)');
     // Aviso a C2 (tiene cuenta): en la app y por SMS (modo pruebas) con el enlace.
     const N2 = sql(`select href || '|' || sms_status from notifications where user_id = '${U2}' and tpl = 'bol_transfer_in' order by id desc limit 1`).split('|');
-    ok(/^\/eventos\/recibir\/[A-Za-z0-9_-]{32}$/.test(N2[0]) && N2[1] === smsEsperado('bol_transfer_in'), 'C2 recibe el aviso «Te mandaron un boleto» con el enlace (SMS en modo pruebas)');
+    ok(/^\/eventos\/recibir\/[A-Za-z0-9_-]{32}$/.test(N2[0]) && N2[1] === smsEsperado('bol_transfer_in', `'${U2}'`), 'C2 recibe el aviso «Te mandaron un boleto» con el enlace (SMS en modo pruebas)');
     const TOKEN1 = N2[0].split('/').pop();
     // Admin: el QR viejo ya no entra.
     {
@@ -372,7 +372,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(sql(`select status from waitlist where user_id = '${U2}' and event_date_id = ${E2v.F}`) === 'offered' && sql(`select status from waitlist where user_id = '${U3}' and event_date_id = ${E2v.F}`) === 'waiting', 'se liberó un lugar: una sola oferta, a C2 (la primera); C3 sigue esperando');
     const HW = sql(`select hold_id || '|' || round(extract(epoch from offer_expires_at - now()) / 60) from waitlist where user_id = '${U2}' and event_date_id = ${E2v.F}`).split('|');
     ok(Number(HW[1]) >= 29 && Number(HW[1]) <= 30 && sql(`select user_id || '|' || status || '|' || held_n from ticket_holds h join ticket_stock s on s.ticket_type_id = ${T_UNO} where h.id = '${HW[0]}'`) === `${U2}|held|1`, 'la oferta es un apartado a nombre de C2 por 30 min (Configuración)');
-    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'espera_lugar' order by id desc limit 1`) === smsEsperado('espera_lugar'), 'a C2 le llega «Se liberó un lugar» (SMS, modo pruebas)');
+    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'espera_lugar' order by id desc limit 1`) === smsEsperado('espera_lugar', `'${U2}'`), 'a C2 le llega «Se liberó un lugar» (SMS, modo pruebas)');
     { const cy = await ctx(390, 844, true), py = await cy.newPage(); await entrar(py, YESENIA); tarjeta(YESENIA, '4242');
       await py.goto(B + `/eventos/${E2v.SLUG}?fecha=${E2v.F}`);
       ok(await contiene(py, 'LISTA DE ESPERA') && !(await contiene(py, 'QUEDAN 1', 1500)), 'el público no ve el lugar liberado: es de la lista');

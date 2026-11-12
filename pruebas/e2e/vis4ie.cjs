@@ -25,7 +25,8 @@ const INM = 'rentas-hazleton-latino', DL = 'autos-el-cibao', FE = 'parroquia-san
 const casa = (n) => sql(`select id from items where business_id = 'rentas-hazleton-latino' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);
 const P1 = casa('2 cuartos · 312 Alter St'), P2 = casa('3 cuartos · casa · 90 W Diamond Ave'), P3 = casa('Estudio · 15 E Broad St');
 // El cuarto de pruebas de Rentas Hazleton Latino (lo crea inm4ib y lo retira al volver a correr): se toma el último y se revive abajo.
-const CUARTO = sql(`select pl.item_id from property_listings pl where pl.business_id = 'rentas-hazleton-latino' and pl.kind = 'cuarto' and not pl.addr_public order by pl.item_id desc limit 1`);
+// 9b-1 · Si no está (base nueva, u otro orden), lo hace inm4ib (requiere).
+const CUARTO = require('../lib/requiere.cjs').requiere('inm4ib', () => sql(`select pl.item_id from property_listings pl where pl.business_id = 'rentas-hazleton-latino' and pl.kind = 'cuarto' and not pl.addr_public order by pl.item_id desc limit 1`), { que: 'el cuarto de pruebas de Rentas Hazleton Latino' });
 // De la semilla (nunca de otra prueba, que los retira al volver a correr): catecismo, bautizo («Pedir fecha») y consejería.
 const svcDe = (neg, n) => sql(`select id from items where business_id = '${neg}' and module = 'svc' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);
 const CATE = svcDe('parroquia-santa-maria', 'Catecismo · primera comunión'), BENDICION = (() => {

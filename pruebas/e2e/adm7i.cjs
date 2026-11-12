@@ -22,6 +22,7 @@ const ADM = '5705550199', DAYANA = '5705550677', LUCIA = '5705550693', SOFIA = '
 const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t instanceof RegExp ? t : new RegExp(`^${t}$`) });
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').equipo('5705550693', '5705550694'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const AU = uid(ADM), MU = uid(MARI), DU = uid(DUENO);
   // ── Preparar: todo encendido, sin pausas, límites holgados; lo que dejó una corrida anterior de esta prueba se quita (solo esta base) ──
   sql(`update feature_flags set enabled = true where key like 'compa.%'`);

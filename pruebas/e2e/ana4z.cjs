@@ -8,6 +8,9 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 (async () => {
+  // 9b-1 · Las ayudas de Fiestas y Transporte cuyos motivos cuenta la Analítica lo hace ayu4z: se corre antes (requiere, siempre), así está en una base nueva, en cualquier orden y arriba de la
+  // lista aunque la base tenga muchas corridas (antes se daba por hecho que ya había corrido).
+  require('../lib/requiere.cjs').requiere('ayu4z', () => sql(`select h.id from help_requests h where h.created_at > now() - interval '30 minutes' limit 1`), { siempre: true, que: 'las ayudas de una fiesta y de un viaje (ayu4z)' });
   const b = await chromium.launch(); const err = [];
   const ad = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(ad, '5705550199');
   ad.on('pageerror', e => err.push(e.message));
