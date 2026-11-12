@@ -21,6 +21,8 @@ const casos = [
   ['ahoraDeLaHidratacion', 'apps/web/app/layout.tsx', '<body><AhoraProvider t={Date.now()}>{children}<Arranque /></AhoraProvider></body>', '<body>{children}<Arranque /></body>'],
   // listaPuertaCoherente: la lista de la noche vuelve a contar solo in_n en una reserva terminada («Entró 1» que el servidor rechaza)
   ['listaPuertaCoherente', 'apps/web/lib/noche-reservas.ts', "case when o.status = 'done' then o.party_size else coalesce((o.details->>'in_n')::int, 0) end as entraron", "coalesce((o.details->>'in_n')::int, 0) as entraron"],
+  // bloquesConLlave: los bloques del panel vuelven a la posición como llave (un bloque nuevo arriba desmonta el campo que se está escribiendo)
+  ['bloquesConLlave', 'packages/ui/src/panel/Bloques.tsx', '<PanelBloque key={ks[i]} b={b} h1={h1} />', '<PanelBloque key={i} b={b} h1={h1} />'],
   // pruebaQueComprueba: la corrida vuelve a contar en verde una prueba sin ninguna ✓, o una prueba que solo imprime
   ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada,', 'ok: codigo === 0,'],
 ];

@@ -6592,6 +6592,17 @@ const guardianes = {
       }
     }
   },
+  /* 9b-1 · Los bloques del panel (PanelBloques) no llevan la posición como llave: con key={i}, un bloque que aparece arriba después (las
+     plantillas del estimado) desmontaba los campos de abajo mientras se escribía y se perdía lo escrito y el foco (est4d). La llave es el tipo
+     y cuántos del mismo tipo van antes (llavesDeBloques). Al revés (alreves9b1): volver a key={i}. */
+  bloquesConLlave() {
+    const G = "bloquesConLlave", F = "packages/ui/src/panel/Bloques.tsx";
+    if (!existsSync(F)) return falla(G, F, 0, "falta Bloques.tsx");
+    const t = sinComent(F);
+    if (!/<PanelBloque key=\{ks\[i\]\}/.test(t) || !/n\.get\(b\.type\)/.test(t)) falla(G, F, 0, "PanelBloques tiene que usar llavesDeBloques (tipo + cuántos del mismo tipo antes), no la posición: un bloque nuevo arriba desmonta los campos de abajo mientras se escribe");
+    if (/<PanelBloque key=\{i\}/.test(t)) falla(G, F, 0, "PanelBloque con la posición como llave");
+  },
+
   /* 9b-1 · La lista de la noche en la Puerta no ofrece lo que el servidor va a rechazar: trae reservas «confirmed» y «done», y marcarLlegada solo
      acepta «confirmed». Una «done» (ya entró, o la noche se cerró) cuenta como completa (entraron = personas) para que no salga «Entró 1»;
      antes la puerta lo ofrecía en una mesa terminada y al tocarlo decía «Esta reserva ya cambió…» (evt6g tocó esa fila). Al revés

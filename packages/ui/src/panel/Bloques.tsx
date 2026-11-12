@@ -513,6 +513,15 @@ export function PanelBloque({ b, h1 = 24 }: { b: Bloque; h1?: number }): ReactNo
   }
 }
 
+/* 9b-1 · La llave de cada bloque es su tipo y cuántos del mismo tipo van antes («field#2»), no su posición en la lista: si aparece un bloque de
+   otro tipo arriba (las plantillas del estimado, que llegan después), los de abajo no se desmontan. Con la posición como llave, el campo
+   «QUÉ ES» se volvía a montar mientras se escribía: se perdía lo escrito y el foco (en el teléfono se cerraba el teclado); est4d lo cazó con
+   la máquina cargada. No usa el rótulo: un rótulo que cambia al escribir volvería a montar el campo en cada tecla. Guardián bloquesConLlave. */
+export function llavesDeBloques(bloques: Bloque[]): string[] {
+  const n = new Map<string, number>();
+  return bloques.map((b) => { const i = n.get(b.type) ?? 0; n.set(b.type, i + 1); return `${b.type}#${i}`; });
+}
 export function PanelBloques({ bloques, h1 }: { bloques: (Bloque | null | false | undefined)[]; h1?: number }) {
-  return <>{bloques.filter((b): b is Bloque => !!b).map((b, i) => <PanelBloque key={i} b={b} h1={h1} />)}</>;
+  const bs = bloques.filter((b): b is Bloque => !!b), ks = llavesDeBloques(bs);
+  return <>{bs.map((b, i) => <PanelBloque key={ks[i]} b={b} h1={h1} />)}</>;
 }

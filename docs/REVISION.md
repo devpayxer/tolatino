@@ -4284,6 +4284,12 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
   Catálogo, ficha del negocio y del usuario, Usuarios, Soporte, Apps › Beta). Si el minuto cambiaba entre que el servidor pintaba la página y el
   teléfono la abría, React la volvía a pintar entera (error 418). Ahora no, y esos «hace N min» se actualizan solos cada 30 s mientras la
   pantalla está abierta (antes se quedaban como al abrirla). Guardián `ahoraDeLaHidratacion`.
+- **To'Latino Puerta › Lista de la noche:** una mesa o una lista que ya entró (o cuya noche se cerró) sale completa («ENTRARON 2 DE 2») y al
+  final, sin «Entró 1». Antes ofrecía el botón y al tocarlo decía «Esta reserva ya cambió o no es de esta noche». Guardián
+  `listaPuertaCoherente`.
+- **Panel › Cita › «Armar el precio completo» (y todo el panel):** si las plantillas llegaban mientras se escribía «QUÉ ES», el campo se volvía
+  a montar: se perdía lo escrito y, en el teléfono, se cerraba el teclado. Ahora los bloques del panel no se desmontan cuando aparece otro
+  arriba. Guardián `bloquesConLlave`.
 
 **Decisiones de la aceptación (decidí X; si prefieres Y, se cambia):**
 - **Repartidor sin equipo:** decidí poner las TRES filas de Perfil (cuenta, reportar un problema, ir a To'Latino) y no solo «Idioma y cuenta»:
