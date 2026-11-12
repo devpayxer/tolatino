@@ -19,6 +19,7 @@ import { N360Dinero } from "./N360Dinero";
 import { compaAutoNegocio } from "./acciones-compa";
 import { accionesOrg, estadoEvt } from "./ColasEventos";
 import { diaCorto, hora, type Bi } from "@/lib/evt-comun";
+import { useAhora } from "@/lib/ahora";
 
 /* 6a · Contenido › Eventos: los eventos del negocio (no los borradores) y su estado de organizador. 6j: liquidaciones y cancelaciones. */
 const LIQ_N: Record<string, string> = { pending: "PENDIENTES", held: "RETENIDAS", paid: "PAGADAS", reversed: "AJUSTADAS", paying: "EN CAMINO" };
@@ -43,7 +44,7 @@ const VERBO: Record<string, string> = {
 };
 const DIAS = [["Lunes", 1], ["Martes", 2], ["Miércoles", 3], ["Jueves", 4], ["Viernes", 5], ["Sábado", 6], ["Domingo", 0]] as const;
 const fecha = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—");
-const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
+const hace = (iso: string, ahora: number) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
 
 /* Cómo cobra un servicio de Auto u Hogar (4a), para el Super Admin. */
@@ -58,6 +59,7 @@ const VENDE_SVC = ["NEG-BELL", "NEG-AUTO", "NEG-HOGAR", "NEG-SALUD", "NEG-PRO", 
 const VENDE_RET = ["NEG-MERC", "NEG-TIENDA"];
 const VENDE = ["NEG-FOOD", ...VENDE_SVC, ...VENDE_RET];
 export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; tab: string; din?: Dinero | null; evts?: Evts360 | null; sop?: CasoSop[]; cpa?: CompaNegocio | null }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -89,7 +91,7 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
 
   const historial = (filtro?: (a: string) => boolean): ReactNode => {
     const h = n.historial.filter((x) => !filtro || filtro(x.action));
-    return h.length ? <A.AuditLog rows={h.map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: `${VERBO[x.action] ?? x.action} ${n.name}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at) }))} />
+    return h.length ? <A.AuditLog rows={h.map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: `${VERBO[x.action] ?? x.action} ${n.name}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora) }))} />
       : <A.AdminNote tone="info" icon="folder">Nadie del equipo ha hecho cambios aquí todavía.</A.AdminNote>;
   };
 
@@ -335,7 +337,7 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
     const selloL = n.verified ? "Verificado" : n.sello?.status === "review" ? "En revisión" : n.sello?.status === "info" ? "Te falta un dato" : n.sello?.status === "no" ? "No aprobado" : "Sin sello";
     cuerpo = (
       <>
-        {casosAbiertos.length ? <A.AdminList label={`REPORTES Y CASOS ABIERTOS · ${casosAbiertos.length}`} rows={casosAbiertos.map((c) => ({ icon: "bell", title: COL[c.queue] ?? c.queue, sub: `${hace(c.opened_at)}`, tag: "ABIERTO", tone: "action", chevron: true, onClick: () => router.push(`/admin/colas?caso=${c.id}`) }))} />
+        {casosAbiertos.length ? <A.AdminList label={`REPORTES Y CASOS ABIERTOS · ${casosAbiertos.length}`} rows={casosAbiertos.map((c) => ({ icon: "bell", title: COL[c.queue] ?? c.queue, sub: `${hace(c.opened_at, ahora)}`, tag: "ABIERTO", tone: "action", chevron: true, onClick: () => router.push(`/admin/colas?caso=${c.id}`) }))} />
           : <PanelBloques bloques={[{ type: "group", k: "REPORTES ABIERTOS · 0", first: true }]} />}
         {!casosAbiertos.length ? <A.AdminNote tone="ok">Ninguno.</A.AdminNote> : null}
         <PanelBloques bloques={[{ type: "group", k: "SELLO Y LICENCIA" }, { type: "kv", cols: 2, items: [{ k: "SELLO", v: selloL, fg: n.verified ? "var(--tl-open-text)" : undefined }, { k: "LICENCIA", v: licPeor ? (LIC_ST[licPeor.status] ?? LIC_ST.review!)[0] : "No la necesita", fg: licPeor ? (licPeor.status === "valid" ? "var(--tl-open-text)" : "var(--tl-danger)") : undefined }] }, { type: "group", k: "ESTADO Y SANCIONES" }]} />
@@ -343,7 +345,7 @@ export function N360({ n, tab, din, evts = null, sop, cpa }: { n: Negocio360; ta
       </>);
   } else {
     const selloL = n.verified ? "Verificado" : n.sello?.status === "review" ? "En revisión" : n.sello?.status === "info" ? "Te falta un dato" : n.sello?.status === "no" ? "No aprobado" : n.sello?.status === "revoked" ? "Quitado por To’Latino" : "Sin sello";
-    const viejo = Date.now() - new Date(n.updated).getTime() > 30 * 86_400_000;
+    const viejo = ahora - new Date(n.updated).getTime() > 30 * 86_400_000;
     const acts: { l: string; v?: string; icon?: string; onClick: () => void }[] = [];
     if (P.editar && n.status === "active") {
       if (n.plan === "pro" && !n.verified) acts.push({ l: "Dar sello", icon: "verified", onClick: () => setConf({ titulo: "Dar el sello Verificado", sub: "¿Cómo lo verificaste?", hacer: (m) => sello(n.id, true, m) }) });

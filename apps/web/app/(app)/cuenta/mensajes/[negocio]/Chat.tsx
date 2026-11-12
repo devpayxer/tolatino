@@ -11,9 +11,11 @@ import type { Conversacion, Msj } from "@/lib/mensajes";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../../Marco";
 import { cuando, sistema } from "../Mensajes";
 import { mensajeEnviar, mensajeReportar, mensajesNuevos } from "../acciones";
+import { useAhora } from "@/lib/ahora";
 
 const TEL = /(\d[\s.\-()]*){10}/;
 export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es: boolean; yo: Yo }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
   const [msjs, setMsjs] = useState<Msj[]>(c.msjs), [v, setV] = useState(""), [pend, start] = useTransition();
@@ -56,7 +58,7 @@ export function Chat({ c, op, es, yo }: { c: Conversacion; op: string | null; es
     msgs: msjs.length ? [...msjs.map((m) => ({
       yo: m.de === "user", suave: m.de === "auto" || m.de === "system" || m.oculto, ia: m.compa && !m.oculto,
       t: m.oculto ? E2("Mensaje oculto por To’Latino.", "Message hidden by To’Latino.") : m.de === "system" ? sistema(m.t, es) : m.t,
-      time: `${m.de === "auto" ? (m.compa ? E2("EL COMPA · IA · ", "EL COMPA · AI · ") : E2("RESPUESTA AUTOMÁTICA · ", "AUTO-REPLY · ")) : m.de === "business" && m.quien ? `${m.quien.toUpperCase()} · ` : ""}${cuando(m.at, es)}`,
+      time: `${m.de === "auto" ? (m.compa ? E2("EL COMPA · IA · ", "EL COMPA · AI · ") : E2("RESPUESTA AUTOMÁTICA · ", "AUTO-REPLY · ")) : m.de === "business" && m.quien ? `${m.quien.toUpperCase()} · ` : ""}${cuando(m.at, es, ahora)}`,
     })), ...(escribe ? [{ yo: false, suave: true, t: E2("El Compa está escribiendo…", "El Compa is typing…"), time: E2("EL COMPA · IA", "EL COMPA · AI") }] : [])] : [{ yo: false, suave: true, t: E2(`Escríbele a ${c.negocio.nombre}. Te contesta aquí y te avisamos.`, `Write to ${c.negocio.nombre}. They reply here and we let you know.`), time: c.negocio.abierto ? E2("ABIERTO AHORA", "OPEN NOW") : E2("AHORA CERRADO · CONTESTA CUANDO ABRA", "CLOSED NOW · THEY REPLY WHEN THEY OPEN") }],
     v, onV: (x) => setV(x.slice(0, 1000)), ph2: E2(`Escribe a ${c.negocio.nombre}…`, `Write to ${c.negocio.nombre}…`), send: E2("Enviar", "Send"), onSend: enviar,
     off: !c.puede, nota: c.motivo ? (es ? c.motivo.es : c.motivo.en) : undefined,

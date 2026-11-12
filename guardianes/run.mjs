@@ -6592,6 +6592,26 @@ const guardianes = {
       }
     }
   },
+  /* 9b-1 · Un tiempo relativo («hace 5 min», «hace 2 h», «hace 3 días») en un componente del cliente sale del MISMO «ahora» en el servidor y en
+     la hidratación: useAhora() de lib/ahora.tsx (la raíz pone <AhoraProvider t={Date.now()}>). Con Date.now() en cada lado, cuando el minuto
+     cambiaba entre el HTML del servidor y la hidratación React daba el error 418 y volvía a pintar la página (adm7i lo vio en /soporte). Falla:
+     «Date.now() - new Date(…)» / «Date.now() - Date.parse(…)» en un archivo "use client" (en el servidor y en las acciones está bien), o la raíz sin
+     el proveedor. Al revés (alreves9b1): volver a poner Date.now() en el «hace» de Soporte o quitar el proveedor de la raíz. */
+  ahoraDeLaHidratacion() {
+    const G = "ahoraDeLaHidratacion", RZ = "apps/web/app/layout.tsx", AH = "apps/web/lib/ahora.tsx";
+    for (const f of codigo) {
+      if (!/^(apps\/web|packages\/ui)\/.*\.(tsx?|jsx?)$/.test(f)) continue;
+      const t = sinComent(f);
+      if (!/^\s*["']use client["']/.test(t)) continue;
+      t.split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l)) return;
+        if (/Date\.now\(\)\s*-\s*(new Date\(|Date\.parse\()/.test(l) || /new Date\(\)\.getTime\(\)\s*-\s*(new Date\(|Date\.parse\()/.test(l))
+          falla(G, f, i + 1, "tiempo relativo con el reloj de cada lado: usa const ahora = useAhora() (lib/ahora.tsx), el mismo en el servidor y en la hidratación");
+      });
+    }
+    if (!existsSync(AH) || !/export function useAhora\(\)/.test(readFileSync(AH, "utf8"))) falla(G, AH, 0, "falta useAhora (lib/ahora.tsx)");
+    if (!existsSync(RZ) || !/<AhoraProvider t=\{Date\.now\(\)\}>\{children\}/.test(sinComent(RZ))) falla(G, RZ, 0, "la raíz tiene que envolver la app con <AhoraProvider t={Date.now()}> (lib/ahora.tsx)");
+  },
 
   idioma() {
     for (const f of codigo) {

@@ -40,7 +40,9 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
   ok(SEM.length === 11, 'hay 11 vecinos de la semilla para la prueba de límites');
   const TODOS = [RA, RB, RC, RY, RW, RM], LISTA = TODOS.map((x) => `'${x}'`).join(', ');
   for (const u of TODOS) sql(`insert into community_profiles (user_id) values ('${u}') on conflict do nothing`);
-  sql(`update users set status = 'active', status_until = null, home_city_id = coalesce(home_city_id, 'hzl') where id in (${LISTA})`);
+  // 9b-1 · En una base recién sembrada (menos de 24 h) las cuentas son «nuevas» y los topes del día van a la mitad (lib/moderacion.ts limiteDia):
+  // la 11.ª conversación ya se rechazaba en la 6.ª con «Llegaste a 5…». Esta prueba es de una cuenta con días; la mitad se prueba aparte, al final de «5 · 10 conversaciones».
+  sql(`update users set status = 'active', status_until = null, home_city_id = coalesce(home_city_id, 'hzl'), created_at = least(created_at, now() - interval '5 days') where id in (${LISTA})`);
   sql(`update community_profiles set rules_version = 1, rules_ok_at = coalesce(rules_ok_at, now()), adult = true, adult_ok_at = coalesce(adult_ok_at, now()), welcome_at = coalesce(welcome_at, now()) where user_id in ('${RA}', '${RB}', '${RC}', '${RY}')`);
   sql(`update community_profiles set rules_version = null, rules_ok_at = null, adult = null, adult_ok_at = null, welcome_at = null where user_id in ('${RW}', '${RM}')`);
   sql(`update users set zone_id = null, interests = '{}'::jsonb where id in ('${RW}', '${RM}')`);
@@ -184,6 +186,16 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
   await ap.goto(B + '/comunidad/mensajes/' + S11); await ap.getByLabel('Tu mensaje').waitFor();
   await ap.getByLabel('Tu mensaje').fill('Hola vecino, una pregunta'); await ap.getByLabel('Enviar').click();
   ok(await contiene(ap, 'Llegaste a 10 conversaciones nuevas hoy. Vuelve mañana.') && sql(`select count(*) from dm_threads where a_user_id = least('${RA}'::uuid, '${S11}'::uuid) and b_user_id = greatest('${RA}'::uuid, '${S11}'::uuid)`) === '0', 'la 11.ª conversación nueva del día → rechazada');
+  // 9b-1 · Una cuenta de menos de 24 h tiene la mitad: con 5 de hoy, la 6.ª se rechaza y dice por qué (la cuenta vuelve a tener sus días).
+  sql(`update dm_threads set created_at = created_at - interval '2 days' where started_by = '${RA}' and b_user_id <> all ('{${SEM.slice(0, 5).join(',')}}'::uuid[]) and a_user_id <> all ('{${SEM.slice(0, 5).join(',')}}'::uuid[]) and created_at > now() - interval '2 days'`);
+  const creadaA = sql(`select created_at from users where id = '${RA}'`);
+  sql(`update users set created_at = now() - interval '1 hour' where id = '${RA}'`);
+  try {
+    ok(sql(`select count(*) from dm_threads where started_by = '${RA}' and created_at > now() - interval '24 hours'`) === '5', 'cuenta nueva: A empezó 5 conversaciones hoy');
+    await ap.goto(B + '/comunidad/mensajes/' + S11); await ap.getByLabel('Tu mensaje').waitFor();
+    await ap.getByLabel('Tu mensaje').fill('Hola vecino, otra pregunta'); await ap.getByLabel('Enviar').click();
+    ok(await contiene(ap, 'Llegaste a 5 conversaciones nuevas hoy (la mitad el primer día de tu cuenta). Vuelve mañana.') && sql(`select count(*) from dm_threads where a_user_id = least('${RA}'::uuid, '${S11}'::uuid) and b_user_id = greatest('${RA}'::uuid, '${S11}'::uuid)`) === '0', 'cuenta de menos de 24 h: la 6.ª se rechaza (la mitad) y dice por qué');
+  } finally { sql(`update users set created_at = '${creadaA}' where id = '${RA}'`); }
   sql(`update dm_threads set created_at = created_at - interval '2 days' where started_by = '${RA}' and created_at > now() - interval '2 days'`);
   sql(`delete from follows where follower_user_id = '${S11}' and target_id = '${RA}'`);
 

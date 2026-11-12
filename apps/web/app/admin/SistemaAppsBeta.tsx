@@ -20,6 +20,7 @@ import { buildPedir, errorEstado, testerEnlace, testerEnPlay, testerInvitar, tes
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { PESTANAS_SISTEMA } from "./sistema/Pestanas";
+import { useAhora } from "@/lib/ahora";
 
 export type VistaApps = "resumen" | "versiones" | "testers" | "salud" | "reportes" | "fichas" | "toca" | "declaraciones";
 // 8i · Fichas y revisión · Lo que te toca · Declaraciones (SistemaAppsTiendas).
@@ -35,7 +36,7 @@ const EST_GRUPO: Record<string, [string, string]> = { nuevo: ["NUEVO", "danger"]
 const TIPO: Record<string, string> = { js: "Error de la página", red: "Sin conexión con el servidor", cierre: "Cierre de la app", nativo: "Error nativo" };
 const EST_CASO: Record<string, string> = { new: "Nuevo", in_progress: "En curso", waiting: "Esperando a la persona", resolved: "Resuelto", reopened: "Reabierto", merged: "Unido" };
 const cuando = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
-const hace = (iso: string) => { const m = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000)); return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : cuando(iso); };
+const hace = (iso: string, ahora: number) => { const m = Math.max(0, Math.floor((ahora - new Date(iso).getTime()) / 60000)); return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : cuando(iso); };
 const peso = (b: number | null) => (b == null ? "—" : b > 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`);
 
 export type DatosBeta =
@@ -50,6 +51,7 @@ export function subApps(on: VistaApps, ir: (href: string) => void): Bloque {
 }
 
 export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [invitando, setInvitando] = useState(false), [pidiendo, setPidiendo] = useState(false);
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Guardado."); setConf(null); router.refresh(); };
@@ -77,7 +79,7 @@ export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }
       { k: "EN CURSO", v: String(t.enCurso), s: "compilando, subido o procesando", bg: t.enCurso ? "var(--tl-ink)" : undefined, fg: t.enCurso ? "var(--tl-white)" : undefined },
       { k: "DISPONIBLES", v: String(d.builds.filter((b) => b.estado === "disponible").length), s: "para los testers" },
       { k: "LLAVES DE LA TUBERÍA", v: `${nLl} de 4`, s: nLl === 4 ? "completas" : "faltan en el llavero" },
-      { k: "ÚLTIMO CI", v: t.ultimaCi ? hace(t.ultimaCi) : "nunca", s: t.ultimaCi ? cuando(t.ultimaCi) : "espera el dominio con HTTPS" }] });
+      { k: "ÚLTIMO CI", v: t.ultimaCi ? hace(t.ultimaCi, ahora) : "nunca", s: t.ultimaCi ? cuando(t.ultimaCi) : "espera el dominio con HTTPS" }] });
     B.push({ type: "note", tone: t.ultimaCi ? "info" : "warn", icon: t.ultimaCi ? "info" : "lock", t: t.ultimaCi
       ? "Cada build sube solo desde el CI: pide sus llaves por OIDC (sin ninguna guardada en GitHub), firma, sube a TestFlight interno, Play interno y el APK propio, y avisa aquí. El build es creciente por app, plataforma y canal, y su estado solo avanza."
       : "El CI de las tiendas todavía no entró: pide sus llaves solo por HTTPS y el servidor de pruebas sigue en HTTP (falta el dominio). Mientras, compila sin llaves y nada se sube a las tiendas. Aquí ves la semilla del sandbox." });
@@ -99,7 +101,7 @@ export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }
       B.push(L.length ? { type: "rows", cols: desk ? "repeat(2,minmax(0,1fr))" : "1fr", items: L.map((b): Fila => ({ key: b.id, icon: "phone",
         t: `${PLAT[b.plat]} · ${b.version} (${b.build})`, s: [CANAL[b.canal] ?? b.canal, b.commit ? `commit ${b.commit.slice(0, 7)}` : null, b.size ? peso(b.size) : null, b.sha ? `sha256 ${b.sha.slice(0, 12)}…` : null,
           b.simbolos ? "con símbolos" : null, b.pedido ? `pedido ${b.pedido}` : null, b.envio ? `tienda: ${b.envio}` : null, b.estado === "subido" && b.canal === "play_interno" && !d.tuberia.llaves.play_service_account ? "espera la cuenta de Play" : null,
-          cuando(b.at), b.estado !== "disponible" && b.estado !== "retirado" && b.cambio !== b.at ? `cambió ${hace(b.cambio)}` : null, b.motivo].filter(Boolean).join(" · "),
+          cuando(b.at), b.estado !== "disponible" && b.estado !== "retirado" && b.cambio !== b.at ? `cambió ${hace(b.cambio, ahora)}` : null, b.motivo].filter(Boolean).join(" · "),
         tag: EST_BUILD[b.estado]?.[0] ?? b.estado, tone: EST_BUILD[b.estado]?.[1] ?? "neutral", chev: false, ...(b.ci ? { onClick: () => window.open(b.ci!, "_blank", "noopener") } : {}) })) }
         : { type: "empty", icon: "phone", t: "Sin builds todavía", s: "Aparecen cuando el CI compile esta app (8h)." });
     }
@@ -142,7 +144,7 @@ export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }
     B.push({ type: "chips", k: "ESTADO", items: [["", "Todos"], ["nuevo", "Nuevos"], ["visto", "Vistos"], ["resuelto", "Resueltos"], ["silenciado", "Silenciados"]].map(([k, l]) => ({ l: l!, v: (f.estado ?? "") === k ? "selected" : "filter", onClick: () => ir({ estado: k || null }) })) });
     B.push({ type: "chips", k: "TIPO", items: [["", "Todos"], ...Object.entries(TIPO)].map(([k, l]) => ({ l: l!, v: (f.tipo ?? "") === k ? "selected" : "filter", onClick: () => ir({ tipo: k || null }) })) });
     B.push(s.grupos.length ? { type: "rows", k: "GRUPOS · LO MÁS RECIENTE PRIMERO", items: s.grupos.map((g): Fila => ({ key: g.id, icon: g.tipo === "cierre" ? "warning" : g.tipo === "red" ? "info" : "help",
-      t: g.titulo, s: `${APP[g.app] ?? g.app} · ${PLAT[g.plat] ?? g.plat} · ${TIPO[g.tipo] ?? g.tipo} · ${g.n} ${g.n === 1 ? "vez" : "veces"} · ${g.tel} ${g.tel === 1 ? "teléfono" : "teléfonos"} · build ${g.build ?? "—"} · ${hace(g.ultimo)}${g.n24 ? ` · ${g.n24} hoy` : ""}`,
+      t: g.titulo, s: `${APP[g.app] ?? g.app} · ${PLAT[g.plat] ?? g.plat} · ${TIPO[g.tipo] ?? g.tipo} · ${g.n} ${g.n === 1 ? "vez" : "veces"} · ${g.tel} ${g.tel === 1 ? "teléfono" : "teléfonos"} · build ${g.build ?? "—"} · ${hace(g.ultimo, ahora)}${g.n24 ? ` · ${g.n24} hoy` : ""}`,
       tag: EST_GRUPO[g.estado]?.[0] ?? g.estado, tone: EST_GRUPO[g.estado]?.[1] ?? "neutral", onClick: () => router.push(`/admin/sistema/apps?v=salud&g=${g.id}`) })),
       ...(s.siguiente ? { link: "Ver más", onLink: () => ir({ cursor: s.siguiente }) } : {}) }
       : { type: "empty", icon: "check", t: "Sin errores con estos filtros", s: "Los errores de la web y de las apps llegan aquí tapados y agrupados. «Errores en vivo» avisa a los Admins de un grupo nuevo, un pico o uno que vuelve." });

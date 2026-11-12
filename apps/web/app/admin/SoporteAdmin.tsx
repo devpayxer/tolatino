@@ -20,14 +20,15 @@ import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
 import { uuid } from "@/lib/uuid";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "AuditLog" | "Button", ComponentType<any>>;
 type Bi = { es: string; en: string };
 const money = (c: number) => `$${(c / 100).toFixed(2)}`;
 const nuevaClave = () => (uuid());
-const hace = (iso: string) => {
-  const m = Math.floor(Math.max(0, Date.now() - new Date(iso).getTime()) / 60000);
+const hace = (iso: string, ahora: number) => {
+  const m = Math.floor(Math.max(0, ahora - new Date(iso).getTime()) / 60000);
   return m < 1 ? "ahora" : m < 60 ? `hace ${m} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : `hace ${Math.floor(m / 1440)} d`;
 };
 const fecha = (iso: string | null) => (iso ? new Intl.DateTimeFormat("es-US", { timeZone: "America/New_York", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(iso)).replace(/\./g, "") : "—");
@@ -56,6 +57,7 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
   caso: CasoEquipo | null; plazo: string | null; macros: Macro[]; q: string; f: string | null; tema: Tema | null; horario: string; casoPedido: string | null;
   puede: { editar: boolean; aprobar: boolean; devolver: boolean; usr: boolean; neg: boolean; tx: boolean }; copiloto?: boolean;
 }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
   const [toast, setToast] = useToast(), [conf, setConf] = useState<Confirmar | null>(null), [pend, start] = useTransition();
@@ -143,7 +145,7 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
   const ancho = desk && !(lado && caso);
   const tarjetas = filas.length ? filas.map((x) => {
     const estado = x.status === "resolved" || x.status === "merged" ? "ok" : !x.equipo ? "ok" : x.vencido ? "late" : x.r >= 0.7 ? "soon" : "ok";
-    const sla = x.status === "resolved" ? "RESUELTO" : x.status === "merged" ? "UNIDO" : !x.equipo ? "ESPERA A LA PERSONA" : x.vencido ? `VENCIDO · ${hace(x.due)}` : vence(x.due);
+    const sla = x.status === "resolved" ? "RESUELTO" : x.status === "merged" ? "UNIDO" : !x.equipo ? "ESPERA A LA PERSONA" : x.vencido ? `VENCIDO · ${hace(x.due, ahora)}` : vence(x.due);
     return <div key={x.num} data-tk={x.num}><A.QueueCard icon={x.escalado ? "card" : "chat"} state={estado} title={x.titulo || "(sin texto)"}
       sub={`${x.num} · ${temaL(x.tema)} · ${x.negocio ? `${x.negocio} · ` : ""}${x.quien}`} meta={`${(ESTADO_EQUIPO[x.status]?.es ?? x.status).toUpperCase()}${x.escalado ? ` · A ${x.escalado === "admin" ? "ADMIN" : "FINANZAS"}` : ""}`}
       priority={x.priority === "alta" ? "ALTA" : undefined} who={{ name: x.quien, initials: x.quien.slice(0, 1) }} sla={sla} assignee={x.asignado ? { name: x.asignado } : undefined}
@@ -179,7 +181,7 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
     const hilo = k.msjs.map((m: MsjEquipo) => ({
       t: m.sender === "system" ? SISTEMA[m.sys_key ?? ""]?.(m.vars ?? {}) ?? "" : `${m.oculto ? `[Oculto: ${m.motivoOculto ?? ""}] ` : ""}${m.body ?? ""}${m.foto ? " · [foto]" : ""}`,
       mine: m.sender === "staff", soft: m.internal || m.sender === "system",
-      m: `${m.internal ? "NOTA INTERNA · " : m.sender === "system" ? "SISTEMA · " : ""}${(m.quien ?? (m.sender === "user" ? k.persona.nombre : "To'Latino")).toUpperCase()}${m.macro ? " · MACRO" : ""} · ${hace(m.at).toUpperCase()}`,
+      m: `${m.internal ? "NOTA INTERNA · " : m.sender === "system" ? "SISTEMA · " : ""}${(m.quien ?? (m.sender === "user" ? k.persona.nombre : "To'Latino")).toUpperCase()}${m.macro ? " · MACRO" : ""} · ${hace(m.at, ahora).toUpperCase()}`,
     })).filter((x) => x.t);
     const fotos = k.msjs.filter((m) => m.foto && !m.oculto);
     const pago = k.pago, queda = pago ? pago.amount - pago.devuelto : 0, topeQueda = k.tope == null ? null : Math.max(0, k.tope - k.devueltoCaso);
@@ -236,7 +238,7 @@ export function SoporteAdmin({ tab, filas, sig, kpis, caso, plazo, macros, q, f,
     }
     if (k.status === "resolved" && puede.editar) out.push(<PanelBloques key="re" bloques={[{ type: "acts", items: [{ l: "Reabrir", icon: "edit", onClick: () => setConf({ titulo: "¿Por qué se reabre?", sub: "Vuelve a la cola con plazo nuevo.", plantillas: ["La persona escribió de nuevo", "Falta un paso"], hacer: (m) => sopReabrir(k.num, m) }) }] }]} />);
     out.push(<PanelBloques key="hg" bloques={[{ type: "group", k: "HISTORIAL" }]} />);
-    out.push(k.historial.length ? <A.AuditLog key="hist" rows={k.historial.map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: VERBO_SOP[x.action] ?? x.action.replace("soporte.", ""), before: x.before ? JSON.stringify(x.before).replace(/[{}"]/g, "").replace(/:/g, ": ").replace(/,/g, " · ") : undefined, after: x.after ? JSON.stringify(x.after).replace(/[{}"]/g, "").replace(/:/g, ": ").replace(/,/g, " · ") : undefined, why: x.reason ?? undefined, when: hace(x.at) }))} />
+    out.push(k.historial.length ? <A.AuditLog key="hist" rows={k.historial.map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: VERBO_SOP[x.action] ?? x.action.replace("soporte.", ""), before: x.before ? JSON.stringify(x.before).replace(/[{}"]/g, "").replace(/:/g, ": ").replace(/,/g, " · ") : undefined, after: x.after ? JSON.stringify(x.after).replace(/[{}"]/g, "").replace(/:/g, ": ").replace(/,/g, " · ") : undefined, why: x.reason ?? undefined, when: hace(x.at, ahora) }))} />
       : <A.AdminNote key="hist" tone="info" icon="folder">Nadie del equipo ha hecho cambios aquí todavía.</A.AdminNote>);
     return <div style={{ display: "flex", flexDirection: "column", gap: 12 }} data-screen-label="Soporte · caso" data-tk-abierto={k.num}>{out}</div>;
   }

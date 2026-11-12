@@ -12,9 +12,9 @@ import type { Confirmar } from "./Colas";
 import type { ResAdm } from "./acciones-colas";
 
 type Acc = { l: string; v?: string; icon?: string; off?: boolean; onClick: () => void };
-type Ctx = { setConf: (c: Confirmar) => void; run: (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => void; fuera: () => void; abrir: (h: string) => void; usuario: (id: string) => void; apelarDias: number };
+type Ctx = { setConf: (c: Confirmar) => void; run: (f: () => Promise<ResAdm>, after?: (r: ResAdm) => void) => void; fuera: () => void; abrir: (h: string) => void; usuario: (id: string) => void; apelarDias: number; ahora: number };
 const fecha = (d: string) => new Date(d).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "America/New_York" });
-const hace = (d: string) => { const h = (Date.now() - new Date(d).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
+const hace = (d: string, ahora: number) => { const h = (ahora - new Date(d).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 export const PLANT_COM = {
   ocultar: ["Venta, spam o cadena", "Datos de otra persona", "Insulto o acoso", "Lenguaje discriminatorio", "Información falsa", "Se recomienda a sí mismo"],
   queda: ["No rompe las reglas del barrio", "Es una opinión", "El reporte no trae evidencia"],
@@ -44,8 +44,8 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE ESCRIBIÓ · «${c.body}»` });
     if (c.fotos.length) B.push({ type: "photos", k: "FOTOS", cols: 4, items: c.fotos.map((u) => ({ bg: `url(${u})`, key: u, onClick: () => x.abrir(u) })) });
     if (auto) B.push({ type: "note", tone: "warn", icon: "warning", t: "Se ocultó sola: varias personas con dispositivos distintos la reportaron. «Se queda» la vuelve a mostrar y le avisa a su autor." });
-    if (c.reportes.length) B.push({ type: "group", k: "REPORTES" }, { type: "rows", items: c.reportes.map((r, i) => ({ key: String(i), icon: "warning", t: MOTIVO_REP[r.reason] ?? "Otro motivo", s: `${r.note ? `«${r.note}» · ` : ""}${r.quien ?? "Vecino"}${r.rango >= 8 ? ` · rango ${r.rango}` : ""} · ${hace(r.at)}` })) });
-    if (c.marcas.length) B.push({ type: "group", k: "LO QUE MARCARON LAS REGLAS" }, { type: "rows", items: c.marcas.map((f, i) => ({ key: `f${i}`, icon: "bolt", t: REGLA_L[f.regla] ?? f.regla, s: `${f.detalle} · ${hace(f.at)}` })) });
+    if (c.reportes.length) B.push({ type: "group", k: "REPORTES" }, { type: "rows", items: c.reportes.map((r, i) => ({ key: String(i), icon: "warning", t: MOTIVO_REP[r.reason] ?? "Otro motivo", s: `${r.note ? `«${r.note}» · ` : ""}${r.quien ?? "Vecino"}${r.rango >= 8 ? ` · rango ${r.rango}` : ""} · ${hace(r.at, x.ahora)}` })) });
+    if (c.marcas.length) B.push({ type: "group", k: "LO QUE MARCARON LAS REGLAS" }, { type: "rows", items: c.marcas.map((f, i) => ({ key: `f${i}`, icon: "bolt", t: REGLA_L[f.regla] ?? f.regla, s: `${f.detalle} · ${hace(f.at, x.ahora)}` })) });
     return { bloques: B, acts: [
       { l: "Ver en la Comunidad", icon: "search", onClick: () => x.abrir(`/comunidad/p/${c.post}`) },
       { l: auto ? "Vuelve a verse" : "Se queda", v: "action", icon: "check", onClick: () => x.setConf({ titulo: auto ? "¿Por qué vuelve a verse?" : "¿Por qué se queda?", sub: "Quienes lo reportaron reciben el resultado (sin nombres). Queda en la auditoría.", plantillas: PLANT_COM.queda, hacer: (m) => decidirRepCom(k.id, "mantener", m) }) },
@@ -58,8 +58,8 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     B.push({ type: "rows", items: [{ icon: "users", t: p.quien, s: `${p.ciudad ?? "Sin ciudad"} · en To'Latino desde ${fecha(p.creada)} · rango ${p.rango} · ${p.estado === "active" ? "activa" : p.estado === "muted" ? "silenciada" : p.estado === "suspended" ? "suspendida" : p.estado}`, chev: true, onClick: () => x.usuario(p.id) }] });
     B.push({ type: "kv", cols: 2, items: [{ k: "PUBLICACIONES · 30 D", v: String(c.posts) }, { k: "COMENTARIOS · 30 D", v: String(c.cms) }, { k: "CONTENIDO OCULTO", v: String(c.ocultas) },
       { k: "RESEÑAS SIN TRANSACCIÓN · 24 H", v: String(c.resenas24), fg: c.resenas24 >= 5 ? "var(--tl-danger)" : undefined }, { k: "SUS DISPOSITIVOS", v: String(c.dispositivos) }, { k: "OTRAS CUENTAS EN ELLOS", v: String(c.otras), fg: c.otras ? "var(--tl-danger)" : undefined }] });
-    if (p.reportes.length) B.push({ type: "group", k: "REPORTES DE VECINOS" }, { type: "rows", items: p.reportes.map((r, i) => ({ key: String(i), icon: "warning", t: MOTIVO_REP[r.reason] ?? "Otro motivo", s: `${r.note ? `«${r.note}» · ` : ""}${r.quien ?? "Vecino"} · ${hace(r.at)}` })) });
-    if (p.marcas.length) B.push({ type: "group", k: "LO QUE MARCARON LAS REGLAS" }, { type: "rows", items: p.marcas.map((f, i) => ({ key: `f${i}`, icon: "bolt", t: REGLA_L[f.regla] ?? f.regla, s: `${f.detalle} · ${hace(f.at)}` })) });
+    if (p.reportes.length) B.push({ type: "group", k: "REPORTES DE VECINOS" }, { type: "rows", items: p.reportes.map((r, i) => ({ key: String(i), icon: "warning", t: MOTIVO_REP[r.reason] ?? "Otro motivo", s: `${r.note ? `«${r.note}» · ` : ""}${r.quien ?? "Vecino"} · ${hace(r.at, x.ahora)}` })) });
+    if (p.marcas.length) B.push({ type: "group", k: "LO QUE MARCARON LAS REGLAS" }, { type: "rows", items: p.marcas.map((f, i) => ({ key: `f${i}`, icon: "bolt", t: REGLA_L[f.regla] ?? f.regla, s: `${f.detalle} · ${hace(f.at, x.ahora)}` })) });
     if (p.sanciones.length) B.push({ type: "group", k: "SANCIONES ANTES" }, { type: "rows", items: p.sanciones.map((s, i) => ({ key: `s${i}`, icon: "shield", t: SANCIONES[s.kind]?.es ?? s.kind, s: `${s.reason} · ${fecha(s.at)}${s.vigente ? " · vigente" : ""}` })) });
     B.push({ type: "note", tone: "info", t: "Escalera: advertencia → silencio 7 días → bloquear publicación 30 días → suspender 14 días → banear (solo un Admin). Toda sanción avisa con el motivo y se puede apelar." });
     return { bloques: B, acts: p.staff ? [] : [
@@ -73,7 +73,7 @@ export function cuerpoComunidad(k: Caso, x: Ctx): { bloques: Bloque[]; acts: Acc
     if (!a) return { bloques: [{ type: "empty", icon: "check", t: "Ya se decidió", s: "Lo apelado solo se ve con la apelación abierta." }], acts: [] };
     if (a.mia) B.push({ type: "note", tone: "warn", icon: "lock", t: "Tú ocultaste o sancionaste esto: la apelación la decide otra persona del equipo." });
     B.push({ type: "kv", cols: 2, items: [{ k: "APELACIÓN", v: a.numero }, { k: "QUÉ APELA", v: a.sancion ? SANCIONES[a.sancion].es : APELABLE[a.k].es }, { k: "LO DECIDIÓ", v: a.por ? a.por_nombre ?? "Equipo" : "Las reglas (auto-ocultar)" },
-      { k: "ENVIADA", v: `${fecha(a.at)} · ${hace(a.at)}` }, ...(a.hasta ? [{ k: "TERMINA", v: fecha(a.hasta) }] : [])] });
+      { k: "ENVIADA", v: `${fecha(a.at)} · ${hace(a.at, x.ahora)}` }, ...(a.hasta ? [{ k: "TERMINA", v: fecha(a.hasta) }] : [])] });
     B.push({ type: "rows", items: [{ icon: "users", t: a.quien, s: "Quien apela · ver su 360°", chev: true, onClick: () => x.usuario(a.uid) }] });
     if (a.motivo) B.push({ type: "note", tone: "info", icon: "shield", t: `MOTIVO QUE RECIBIÓ · ${a.motivo}` });
     B.push({ type: "note", tone: "ink", icon: "quote", t: `LO QUE ESCRIBIÓ · «${a.texto}»` });

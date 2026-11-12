@@ -13,9 +13,10 @@ import { TEMAS } from "@/lib/comunidad-filtro";
 import { hoyRetirar, oficialFijar, oficialPublicar } from "./acciones-hoy";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { useAhora } from "@/lib/ahora";
 
 const NOV: Record<string, string> = { oferta: "Oferta", hoy: "Hoy hay / Llegó", aviso: "Aviso", encuesta: "Encuesta", novedad: "Novedad" };
-const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : `hace ${Math.floor(h)} h`; };
+const hace = (iso: string, ahora: number) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : `hace ${Math.floor(h)} h`; };
 const fecha = (iso: string) => new Intl.DateTimeFormat("es-US", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }).format(new Date(iso)).replace(/\./g, "");
 
 function Marco({ conf, setConf, toast, setToast, desk, children }: { conf: Confirmar | null; setConf: (c: Confirmar | null) => void; toast: string | null; setToast: (t: string | null) => void; desk: boolean; children: React.ReactNode }) {
@@ -30,6 +31,7 @@ function Marco({ conf, setConf, toast, setToast, desk, children }: { conf: Confi
 }
 
 export function HoyAdmin({ d, puede, arriba }: { d: DatosHoy; puede: boolean; arriba: Bloque[] }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), desk = useAncho() >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const retirar = (x: DatosHoy["filas"][number], si: boolean) => setConf({
@@ -45,7 +47,7 @@ export function HoyAdmin({ d, puede, arriba }: { d: DatosHoy; puede: boolean; ar
       { k: "EN HOY AHORA", v: String(d.enHoy), s: "avisos de 24 h" }, { k: "NEGOCIOS", v: String(d.negocios), s: "con tarjeta hoy" }, { k: "RETIRADAS", v: String(d.retiradas), s: "últimas 24 h" }] },
     d.filas.length ? { type: "rows", items: d.filas.map((x) => ({
       key: x.id, icon: "news", t: x.title, dim: !x.enHoy,
-      s: x.enHoy ? `${NOV[x.kind] ?? "Novedad"} · ${x.bname} · origen: Novedades${x.quien ? `, publicó ${x.quien}` : ""} · ${hace(x.at)} · ${x.seguidores} seguidores`
+      s: x.enHoy ? `${NOV[x.kind] ?? "Novedad"} · ${x.bname} · origen: Novedades${x.quien ? `, publicó ${x.quien}` : ""} · ${hace(x.at, ahora)} · ${x.seguidores} seguidores`
         : `${NOV[x.kind] ?? "Novedad"} · ${x.bname} · retirada de Hoy${x.offBy ? ` por ${x.offBy}` : ""}${x.off ? `: ${x.off}` : ""}`,
       tag: x.enHoy ? `EN HOY · QUEDAN ${x.quedan} H` : "FUERA DE HOY", tone: x.enHoy ? "signal" : "danger",
       acts: [...(puede ? [x.enHoy ? { l: "Retirar de Hoy", v: "danger", icon: "ban", onClick: () => retirar(x, true) } : x.off ? { l: "Devolver a Hoy", v: "secondary", icon: "undo", onClick: () => retirar(x, false) } : null].filter(Boolean) as { l: string; v: string; icon: string; onClick: () => void }[] : []),
@@ -58,6 +60,7 @@ export function HoyAdmin({ d, puede, arriba }: { d: DatosHoy; puede: boolean; ar
 type Form = { ciudad: string; kind: "pregunta" | "encuesta" | "publicacion"; topic: string; body: string; opts: string[]; dias: number; lang: "es" | "en"; cuando: "ya" | "prog"; sale: string; fijar: number };
 
 export function OficialAdmin({ d, escribe, arriba }: { d: CuentaOficial; escribe: boolean; arriba: Bloque[] }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), desk = useAncho() >= 1024;
   const [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast();
   const [abierto, setAbierto] = useState(false), [err, setErr] = useState<string | null>(null), [pend, start] = useTransition();
@@ -102,7 +105,7 @@ export function OficialAdmin({ d, escribe, arriba }: { d: CuentaOficial; escribe
     { type: "group", k: `PUBLICACIONES · ${d.filas.length}` },
     d.filas.length ? { type: "rows", items: d.filas.map((x) => ({
       key: x.id, icon: x.kind === "encuesta" ? "check" : x.kind === "pregunta" ? "help" : "news", t: x.body, dim: x.status !== "visible",
-      s: `${nombre(x.city_id)} · ${x.kind === "pregunta" ? "Pregunta" : x.kind === "encuesta" ? "Encuesta" : "Aviso"} · ${x.prog ? `sale ${fecha(x.publish)}` : `${hace(x.publish)} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${x.cms} comentarios${x.votos != null ? ` · ${x.votos} votos en la encuesta` : ""}`}${x.fijada && x.hasta ? ` · fijada hasta ${fecha(x.hasta)}` : ""}${x.staff ? ` · escribió ${x.staff}` : ""}`,
+      s: `${nombre(x.city_id)} · ${x.kind === "pregunta" ? "Pregunta" : x.kind === "encuesta" ? "Encuesta" : "Aviso"} · ${x.prog ? `sale ${fecha(x.publish)}` : `${hace(x.publish, ahora)} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${x.cms} comentarios${x.votos != null ? ` · ${x.votos} votos en la encuesta` : ""}`}${x.fijada && x.hasta ? ` · fijada hasta ${fecha(x.hasta)}` : ""}${x.staff ? ` · escribió ${x.staff}` : ""}`,
       tag: x.status !== "visible" ? "OCULTA" : x.prog ? "PROGRAMADA" : x.fijada ? "FIJADA" : null, tone: x.prog ? "action" : x.fijada ? "ink" : "neutral",
       acts: [...(escribe && x.status === "visible" ? [x.fijada ? { l: "Desfijar", v: "secondary", onClick: () => fijar(x, 0) } : { l: "Fijar 7 días", v: "secondary", icon: "bolt", onClick: () => fijar(x, 7) }] : []),
         ...(x.prog ? [] : [{ l: "Ver", v: "secondary", onClick: () => window.open(`/comunidad/p/${x.id}`, "_blank", "noopener") }])],

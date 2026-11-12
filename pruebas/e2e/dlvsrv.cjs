@@ -12,7 +12,10 @@ const MARISOL = "(select id from users where phone='+15705550122')";
 const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
 (async () => {
   // Delivery encendido: 3 mi, envío $3, gratis desde $40, mínimo $15, propina, efectivo al entregar con mi equipo.
-  sql(`update business_hours set ranges='[["06:00","05:00"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
+  // 9b-1 · Abierto 23 h que empiezan 3 h antes de AHORA (en Hazleton). Antes era fijo 06:00–05:00 y de 4:45 a 6:00 AM el negocio ya no tomaba
+  // pedidos («Ya no toma pedidos en línea hoy»: el último pedido es 15 min antes de cerrar) y «Enviar pedido» quedaba apagado.
+  const [abre, cierra] = sql(`select to_char(date_trunc('hour', now() at time zone 'America/New_York') - interval '3 hours', 'HH24:MI') || '|' || to_char(date_trunc('hour', now() at time zone 'America/New_York') - interval '4 hours', 'HH24:MI')`).split('|');
+  sql(`update business_hours set ranges='[["${abre}","${cierra}"]]'::jsonb, open=true where business_id='${BIZ}' and module=''`);
   sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}' and id in (9,10,7,2)`);
   sql(`update delivery_settings set delivery=true, pickup=true, pay_cash_delivery=true, ask_tip=true, zone_mi=3, fee_cents=300, free_over_cents=4000, min_order_cents=1500, travel_min=15, last_delivery_min=0, who='team', external_app=null, auto_accept=false where business_id='${BIZ}'`);

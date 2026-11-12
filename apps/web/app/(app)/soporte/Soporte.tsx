@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, useTransition, type ComponentType } from "
 import type { CasoFila, CasoVecino, MsjVecino, OpSop } from "@/lib/soporte";
 import { CON_OPERACION, ESTADO_VECINO, TEMAS, horarioEquipo, type Tema } from "@/lib/soporte-comun";
 import { subirFotoPrivada } from "@/lib/subir-foto";
+import { useAhora } from "@/lib/ahora";
 import { casoAbrir, casoCalificar, casoEscribir, casoResuelto } from "./acciones";
 import { uuid } from "@/lib/uuid";
 
@@ -42,6 +43,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
   const toNew = (o: { tema?: string | null; op?: string | null; otro?: string | null } = {}) =>
     ir(["nuevo=1", o.tema ? `tema=${o.tema}` : "", o.op ? `op=${encodeURIComponent(o.op)}` : "", o.otro ? `otro=${encodeURIComponent(o.otro)}` : ""].filter(Boolean).join("&"));
   const hor = horarioEquipo(horario, es);
+  const ahora = useAhora(); // 9b-1 · el mismo en el servidor y en la hidratación (lib/ahora.tsx)
 
   // Casos: se refrescan solos mientras se mira uno abierto (el equipo contesta desde el Super Admin).
   useEffect(() => {
@@ -51,7 +53,7 @@ export function Soporte({ es, conSesion, negocio, temas, casos, ops, revs, horar
   }, [v, caso, router]);
 
   const ago = (iso: string) => {
-    const m = Math.floor(Math.max(0, Date.now() - new Date(iso).getTime()) / 60000);
+    const m = Math.floor(Math.max(0, ahora - new Date(iso).getTime()) / 60000);
     return m < 1 ? E2("AHORA", "NOW") : m < 60 ? E2(`HACE ${m} MIN`, `${m} MIN AGO`) : m < 1440 ? E2(`HACE ${Math.floor(m / 60)} H`, `${Math.floor(m / 60)} H AGO`)
       : new Date(iso).toLocaleDateString(es ? "es-US" : "en-US", { day: "numeric", month: "short", timeZone: "America/New_York" }).replace(/\./g, "").toUpperCase();
   };

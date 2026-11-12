@@ -17,6 +17,7 @@ import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { uuid } from "@/lib/uuid";
 import { hoyEn } from "@/lib/fecha-local";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -74,6 +75,7 @@ export function useToast() {
 export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeAprobar, apelarDias = 0, slas = {} }: {
   casos: CasoLista[]; conteo: Record<string, number>; vencidos: number; total: number; visibles: Cola[]; caso: Caso | null; puedeAprobar: boolean; apelarDias?: number; slas?: Partial<Record<Cola, number>>;
 }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024, lado = w >= 1200;
   const [toast, setToast] = useToast();
@@ -153,7 +155,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     }
     if (k.queue === "cambio" && "reclamo" in k && k.reclamo && n) {
       const c = k.reclamo, ROL: Record<string, string> = { dueno: "dueño", socio: "socio", encargado: "encargado" }, DOC: Record<string, string> = { licencia: "Licencia del negocio", servicio: "Factura de luz o agua", ein: "Carta del IRS con el EIN", otro: "Otro documento" };
-      const diasAviso = c.notified ? Math.floor((Date.now() - new Date(c.notified).getTime()) / 86_400_000) : null;
+      const diasAviso = c.notified ? Math.floor((ahora - new Date(c.notified).getTime()) / 86_400_000) : null;
       cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LO RECLAMA", v: `${c.quien ?? "Sin nombre"} · ${c.quien_tel}` }, { k: "AFECTA A", v: "El panel del negocio pasa a esta persona" }, { k: "RECLAMO", v: `#${c.id}` }, { k: "ORIGEN", v: c.source === "publica" ? "Publica tu negocio (nombre repetido)" : "Recuperar tu negocio" }] });
       if (c.doc) extra = <div style={{ height: 220, borderRadius: 18, backgroundImage: `url("/api/admin/reclamo/${c.id}")`, backgroundSize: "contain", backgroundRepeat: "no-repeat", backgroundPosition: "center", backgroundColor: "var(--tl-photo-bg)" }} />;
       cuerpoB.push({ type: "group", k: "EVIDENCIAS" });
@@ -269,7 +271,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     }
     if (k.queue === "rep" && "resena" in k) {
       // Reportes de contenido · reseña (adm-data · rep): la cita, quién reportó, cuántos y hace cuánto; sigue visible mientras se decide.
-      const r = k.resena, reps = k.reportesR ?? [], hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      const r = k.resena, reps = k.reportesR ?? [], hace = (iso: string) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
       if (r) cuerpoB.push({ type: "note", tone: "ink", icon: "quote", t: `RESEÑA · ${"★".repeat(r.stars)}${"☆".repeat(5 - r.stars)} · ${r.autor} · «${r.body}»${r.reply ? ` — Respuesta del negocio: «${r.reply}»` : ""}` });
       const r0 = reps[0];
       cuerpoB.push({ type: "kv", cols: 3, items: [
@@ -397,7 +399,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     if (k.queue === "chat" && "dm" in k) {
       // 5c · Mensajes entre vecinos: se leen solo con el caso y un reporte abiertos (lib/admin-dm.ts). Ocultar avisa a quien lo escribió.
       const d = k.dm, MD: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
-      const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      const hace = (iso: string) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
       if (!d) cuerpoB.push({ type: "note", tone: "info", icon: "lock", t: "Este caso ya no tiene un reporte abierto: la conversación no se puede leer." });
       else {
         cuerpoB.push({ type: "kv", cols: 3, items: [{ k: "VECINOS", v: `${d.a.nombre} · ${d.b.nombre}` }, { k: "REPORTES", v: `${d.reportes.length}${d.reportes[0] ? ` · hace ${hace(d.reportes[0].at)}` : ""}` }, { k: "ESTADO", v: d.cerrada ? "Cerrada por un bloqueo" : "Abierta" }] });
@@ -421,7 +423,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       // 7f · Si El Compa contestó aquí (respuestas automáticas Pro del negocio): sus mensajes van marcados y se puede apagar en esta conversación
       // (o en todo el negocio, desde Negocios 360° › El Compa).
       const conCompa = !!t?.msjs.some((m) => m.compa);
-      const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
+      const hace = (iso: string) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "menos de 1 h" : h < 24 ? `${Math.floor(h)} h` : `${Math.floor(h / 24)} d`; };
       cuerpoB.push({ type: "kv", cols: 3, items: [
         { k: "VECINO", v: t?.vecino ?? "—" }, { k: "CONTEXTO", v: t?.ctx?.es ?? "Consulta general" }, { k: "REPORTES", v: `${reps.length}${reps[0] ? ` · hace ${hace(reps[0].at)}` : ""}` },
       ] });
@@ -461,7 +463,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
       ];
     }
     // 5d · Casos de la Comunidad (rep de publicaciones y comentarios, repUsr, apel y fotos de la Comunidad): ./ColasComunidad.tsx.
-    const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`), apelarDias });
+    const com = cuerpoComunidad(k, { setConf, run, fuera: () => ir({ caso: null }), abrir: (h) => window.open(h, "_blank", "noopener"), usuario: (id) => router.push(`/admin/usuarios/${id}`), apelarDias, ahora });
     if (com) { cuerpoB.push(...com.bloques); acts = com.acts; extra = null; }
     // 6a · Eventos a revisar (k.queue === "evt"): ./ColasEventos.tsx.
     const evt = cuerpoEventos(k, { setConf, abrir: (h) => (h.startsWith("/admin/") ? router.push(h) : window.open(h, "_blank", "noopener")), negocio: (id) => router.push(`/admin/negocios/${id}`) });

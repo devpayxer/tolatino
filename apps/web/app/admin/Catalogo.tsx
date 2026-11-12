@@ -9,6 +9,7 @@ import { useState, useTransition, type ComponentType, type ReactNode } from "rea
 import { filtroActivo, filtrosTodos, fraseActiva, fraseAgregar, seguroVisible, sinActivo, sinAgregar, subAgregar, subEstado, topeCargoDealer } from "./acciones-catalogo";
 import type { ResAdm } from "./acciones-colas";
 import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Colas";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminNote" | "AdminList" | "AuditLog" | "HBars" | "PermMatrix" | "Pager" | "Icon", ComponentType<any>>;
@@ -38,9 +39,10 @@ const VERBO: Record<string, string> = {
   "catalogo.filtro.apagar": "apagó un filtro", "catalogo.filtro.encender": "encendió un filtro", "autos.cargo.tope": "cambió el tope del cargo del dealer",
 };
 const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Record<string, unknown>).filter((v) => typeof v === "string" || typeof v === "number").join(" · ") : String(x ?? "—"));
-const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
+const hace = (iso: string, ahora: number) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "hace un momento" : h < 24 ? `hace ${Math.floor(h)} h` : `hace ${Math.floor(h / 24)} d`; };
 
 export function Catalogo({ d }: { d: DatosCatalogo }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -50,7 +52,7 @@ export function Catalogo({ d }: { d: DatosCatalogo }) {
   const hecho = (r: ResAdm) => { setToast(r.mensaje ?? "Listo. Quedó en la auditoría."); setConf(null); router.refresh(); };
   const run = (f: () => Promise<ResAdm>) => start(async () => { const r = await f(); if (r.ok) hecho(r); else setToast(r.mensaje); });
   const historial = (h: Hist): ReactNode => h.length
-    ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: VERBO[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at) }))} />
+    ? <A.AuditLog rows={h.slice(0, 8).map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: VERBO[x.action] ?? x.action, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: hace(x.at, ahora) }))} />
     : <A.AdminNote tone="info" icon="folder">Nadie del equipo ha hecho cambios aquí todavía.</A.AdminNote>;
 
   if (conf) return (

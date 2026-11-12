@@ -24,13 +24,14 @@ import type { AutoMod } from "@/lib/admin-confianza";
 import { HoyAdmin, OficialAdmin } from "./HoyAdmin";
 import type { HoyAdmin as DatosHoy } from "@/lib/admin-contenido";
 import type { CuentaOficial } from "@/lib/oficial";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminList" | "Pager" | "Icon" | "BatchProgress", ComponentType<any>>;
 
 const TIPO: Record<FilaCont["k"], [string, string]> = { rev: ["Reseña", "star"], nov: ["Novedad", "news"], cm: ["Comentario", "chat"], vac: ["Vacante", "brief"], pub: ["Publicación", "users"], ccm: ["Comentario de vecino", "bubble"] };
 const PUB: Record<string, string> = { pregunta: "Pregunta", recomendacion: "Recomendación", encuesta: "Encuesta", publicacion: "Publicación" };
-const hace = (iso: string) => { const h = (Date.now() - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "HACE UN MOMENTO" : h < 24 ? `HACE ${Math.floor(h)} H` : `HACE ${Math.floor(h / 24)} D`; };
+const hace = (iso: string, ahora: number) => { const h = (ahora - new Date(iso).getTime()) / 3_600_000; return h < 1 ? "HACE UN MOMENTO" : h < 24 ? `HACE ${Math.floor(h)} H` : `HACE ${Math.floor(h / 24)} D`; };
 
 type Lote = { total: number; hechos: number; fallos: { texto: string; motivo: string }[]; fin: boolean } | null;
 const TIPOS_L: [FilaCont["k"], string][] = [["pub", "Publicaciones"], ["ccm", "Comentarios de vecinos"], ["rev", "Reseñas"], ["nov", "Novedades"], ["cm", "Comentarios de novedades"], ["vac", "Vacantes"]];
@@ -38,6 +39,7 @@ const TIPOS_L: [FilaCont["k"], string][] = [["pub", "Publicaciones"], ["ccm", "C
 export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = null, hoy = null, oficial = null, escribeOficial = false, tab }: {
   d: ListaCont; f: FiltrosCont; porPagina: number; puede: boolean; puedeCom: boolean; editaCom: boolean; auto?: AutoMod | null; hoy?: DatosHoy | null; oficial?: CuentaOficial | null; escribeOficial?: boolean; tab: string;
 }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams(), w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [conf, setConf] = useState<Confirmar | null>(null), [toast, setToast] = useToast(), [lote, setLote] = useState<Lote>(null);
   const ir = (p: Record<string, string | null>) => { const u = new URLSearchParams(sp.toString()); for (const [k, v] of Object.entries(p)) { if (v) u.set(k, v); else u.delete(k); } if (!("c" in p)) u.delete("c"); router.push(`${path}${u.size ? `?${u}` : ""}`); };
@@ -126,9 +128,9 @@ export function Contenido({ d, f, porPagina, puede, puedeCom, editaCom, auto = n
       {!d.filas.length ? <PanelBloques bloques={[{ type: "empty", icon: "chat", t: "Nada aquí", s: "Nada coincide con ese filtro." }]} />
         : <A.AdminList rows={d.filas.map((x) => ({
           icon: TIPO[x.k][1], title: x.text || "(sin texto)",
-          sub: x.k === "ccm" ? `Comentario de vecino · ${x.who}${x.rango && x.rango >= 4 ? ` · rango ${x.rango}` : ""}${x.bname ? ` · recomienda ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at)}${x.hidden && x.why ? ` · Oculto: ${x.why}` : ""}`
-            : x.k === "pub" ? `${PUB[x.extra ?? ""] ?? "Publicación"} · ${x.who}${x.oficial ? "" : x.rango && x.rango >= 4 ? ` · rango ${x.rango}` : ""}${x.inv ? " · invitado" : ""}${x.bname ? ` · recomienda ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at)}${x.pin ? " · Fijada" : ""}${x.lock ? " · Comentarios bloqueados" : ""}${x.hidden && x.why ? ` · Oculta: ${x.why}` : ""}`
-            : `${TIPO[x.k][0]} · ${x.who}${x.who !== x.bname ? ` · ${x.bname}` : ""}${x.k === "rev" && x.extra ? ` · ${x.extra} ★` : x.k === "vac" && x.extra ? ` · ${x.extra}` : x.k === "cm" && x.extra ? ` · en «${x.extra}»` : ""} · ${x.ciudad} · ${x.k === "vac" ? `${x.up} solicitudes` : `+${x.up}${x.dn ? ` / −${x.dn}` : ""}`} · ${hace(x.at)}${x.hidden && x.why ? ` · Oculto: ${x.why}` : ""}`,
+          sub: x.k === "ccm" ? `Comentario de vecino · ${x.who}${x.rango && x.rango >= 4 ? ` · rango ${x.rango}` : ""}${x.bname ? ` · recomienda ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora)}${x.hidden && x.why ? ` · Oculto: ${x.why}` : ""}`
+            : x.k === "pub" ? `${PUB[x.extra ?? ""] ?? "Publicación"} · ${x.who}${x.oficial ? "" : x.rango && x.rango >= 4 ? ` · rango ${x.rango}` : ""}${x.inv ? " · invitado" : ""}${x.bname ? ` · recomienda ${x.bname}` : ""} · ${x.ciudad} · +${x.up}${x.dn ? ` / −${x.dn}` : ""} · ${hace(x.at, ahora)}${x.pin ? " · Fijada" : ""}${x.lock ? " · Comentarios bloqueados" : ""}${x.hidden && x.why ? ` · Oculta: ${x.why}` : ""}`
+            : `${TIPO[x.k][0]} · ${x.who}${x.who !== x.bname ? ` · ${x.bname}` : ""}${x.k === "rev" && x.extra ? ` · ${x.extra} ★` : x.k === "vac" && x.extra ? ` · ${x.extra}` : x.k === "cm" && x.extra ? ` · en «${x.extra}»` : ""} · ${x.ciudad} · ${x.k === "vac" ? `${x.up} solicitudes` : `+${x.up}${x.dn ? ` / −${x.dn}` : ""}`} · ${hace(x.at, ahora)}${x.hidden && x.why ? ` · Oculto: ${x.why}` : ""}`,
           tag: x.hidden ? "OCULTO" : x.oficial ? "CUENTA OFICIAL" : x.rep ? `REPORTADO · ${x.rep}` : undefined, tone: x.hidden ? "danger" : "action",
           actions: x.k === "ccm" ? [
             ...(puedeCom ? [x.hidden ? { label: "Restaurar", variant: "secondary", onClick: () => void accion(x, false) } : { label: "Ocultar", variant: "danger", onClick: () => void accion(x, true) }] : []),

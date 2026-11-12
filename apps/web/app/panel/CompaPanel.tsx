@@ -69,8 +69,8 @@ export function compaBloques(c: Ctx): Sec {
 /* 7f · Respuestas automáticas (Pro). Todo lo decide el servidor (lib/compa/respuesta-auto ajustesAuto: Pro AHORA, quién puede, la pausa de
    To'Latino); la pantalla solo muestra y pide. */
 const TEMA_L: Record<string, [string, string]> = { hours: ["Horario y dirección", "Hours and address"], menu: ["Menú, servicios y precios", "Menu, services and prices"], how_to_order: ["Cómo pedir o reservar", "How to order or book"], faq: ["Tus preguntas frecuentes", "Your FAQ"] };
-function hace(c: Ctx, iso: string) {
-  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000), E2 = c.E2;
+function hace(c: Ctx, iso: string, ahora: number) {
+  const min = Math.floor((ahora - new Date(iso).getTime()) / 60000), E2 = c.E2;
   return min < 1 ? E2("AHORA", "NOW") : min < 60 ? E2(`HACE ${min} MIN`, `${min} MIN AGO`) : min < 1440 ? E2(`HACE ${Math.floor(min / 60)} H`, `${Math.floor(min / 60)} H AGO`) : E2(`HACE ${Math.floor(min / 1440)} D`, `${Math.floor(min / 1440)} D AGO`);
 }
 function autoBloques(c: Ctx): Bloque[] {
@@ -155,5 +155,5 @@ function registro(c: Ctx, a: AutoPanel): Bloque[] {
   const { E2 } = c;
   if (!a.registro.length) return [];
   return [{ type: "rows", k: `${E2("LO QUE CONTESTÓ EL COMPA · ", "WHAT EL COMPA ANSWERED · ")}${a.contesto}${a.paso ? E2(` · TE PASÓ ${a.paso}`, ` · PASSED TO YOU ${a.paso}`) : ""}`,
-    items: a.registro.map((x) => ({ key: x.id, icon: x.paso ? "users" : "chat", t: `${x.quien}: «${x.q}»`, s: `El Compa: ${x.a}`, m: hace(c, x.at), tag: x.paso ? E2("TE LO PASÓ", "PASSED TO YOU") : null, tone: "action", chev: false })) }];
+    items: a.registro.map((x) => ({ key: x.id, icon: x.paso ? "users" : "chat", t: `${x.quien}: «${x.q}»`, s: `El Compa: ${x.a}`, m: hace(c, x.at, c.ahora), tag: x.paso ? E2("TE LO PASÓ", "PASSED TO YOU") : null, tone: "action", chev: false })) }];
 }

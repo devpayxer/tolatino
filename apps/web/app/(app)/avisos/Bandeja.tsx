@@ -4,13 +4,15 @@
 import { useRouter } from "next/navigation";
 import type { misAvisos } from "@/lib/avisos";
 import { Marco, useCuentaUi, type Bloque, type Yo } from "../cuenta/Marco";
+import { useAhora } from "@/lib/ahora";
 
 type D = Awaited<ReturnType<typeof misAvisos>>;
 const IC: Record<string, string> = { ord_ok: "bag", ord_no: "bag", ord_ready: "bag", ord_way: "truck", rsv_ok: "calendar", rsv_alt: "calendar", rsv_no: "calendar", job_reply: "brief", help_reply: "help", help_done: "help", mod_hide: "shield", biz_req: "store", biz_help: "help", biz_job: "brief" };
 export function Bandeja({ d, es, yo, pagina }: { d: D; es: boolean; yo: Yo; pagina: boolean }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const E2 = (a: string, b: string) => (es ? a : b);
   const router = useRouter(), ui = useCuentaUi();
-  const hace = (iso: string) => { const m = (Date.now() - new Date(iso).getTime()) / 60_000; return m < 1 ? E2("AHORA", "NOW") : m < 60 ? E2(`HACE ${Math.floor(m)} MIN`, `${Math.floor(m)} MIN AGO`) : m < 1440 ? E2(`HACE ${Math.floor(m / 60)} H`, `${Math.floor(m / 60)} H AGO`) : E2(`HACE ${Math.floor(m / 1440)} D`, `${Math.floor(m / 1440)} D AGO`); };
+  const hace = (iso: string) => { const m = (ahora - new Date(iso).getTime()) / 60_000; return m < 1 ? E2("AHORA", "NOW") : m < 60 ? E2(`HACE ${Math.floor(m)} MIN`, `${Math.floor(m)} MIN AGO`) : m < 1440 ? E2(`HACE ${Math.floor(m / 60)} H`, `${Math.floor(m / 60)} H AGO`) : E2(`HACE ${Math.floor(m / 1440)} D`, `${Math.floor(m / 1440)} D AGO`); };
   const B: Bloque[] = [];
   if (!d.filas.length) B.push({ type: "empty", ic: "bell", t: E2("No tienes notificaciones", "No notifications yet"), s: E2("Aquí te avisamos cuando acepten tu pedido, confirmen tu mesa o respondan tu solicitud.", "We let you know here when your order is accepted, your table is confirmed or your request gets a reply.") });
   else B.push({ type: "rows", rows: d.filas.map((x) => ({ key: x.id, ic: IC[x.tpl] ?? "bell", ibg: x.leido ? "rgba(11,14,18,.05)" : undefined, ifg: x.leido ? "rgba(11,14,18,.55)" : undefined, al: "flex-start" as const,

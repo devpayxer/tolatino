@@ -18,9 +18,9 @@ const SP: Record<string, Bi> = { "NEG-BELL": ["silla", "chair"], "NEG-AUTO": ["b
 const first = (n: string) => primerNombre(n) || n;
 const ahoraDec = (hm: string) => Number(hm.slice(0, 2)) + Number(hm.slice(3)) / 60;
 const L = (c: Ctx, b: { es: string; en: string } | null | undefined) => (b ? (c.es ? b.es : b.en || b.es) : "");
-function cuando(c: Ctx, iso: string | null) {
+function cuando(c: Ctx, iso: string | null, ahora: number) {
   if (!iso) return "";
-  const dias = Math.floor((Date.now() - Date.parse(iso)) / 86_400_000);
+  const dias = Math.floor((ahora - Date.parse(iso)) / 86_400_000);
   return dias <= 0 ? c.E2("hoy", "today") : dias === 1 ? c.E2("ayer", "yesterday") : c.E2(`hace ${dias} días`, `${dias} days ago`);
 }
 const semanaDe = (c: Ctx, m: Persona): Semana | null => (m.same || m.kind === "renter" && !m.wk ? semanaNegocio(c.d.horas) : m.wk);
@@ -46,7 +46,7 @@ export function equipoBloques(c: Ctx): (Bloque | null)[] {
     tools: [{ icon: "search", l: E2("Ver página", "View page"), onClick: () => window.open(`/n/${d.id}`, "_blank") }, { icon: "plus", l: E2("Invitar", "Invite"), onClick: () => c.det("stf:new") }],
   });
   const pic = (m: Persona): Partial<Fila> => (m.photo ? { img: `url("${m.photo}")` } : { imgIni: m.name.slice(0, 1) });
-  if (req.length) out.push({ type: "rows", k: E2(`PIDEN UNIRSE A TU EQUIPO · ${req.length}`, `ASK TO JOIN YOUR TEAM · ${req.length}`), items: req.map((m): Fila => ({ ...pic(m), imgW: "44px", t: m.name, s: [L(c, m.role), cuando(c, m.invitedAt)].filter(Boolean).join(" · "), tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.det(`stf:${m.id}`) })) });
+  if (req.length) out.push({ type: "rows", k: E2(`PIDEN UNIRSE A TU EQUIPO · ${req.length}`, `ASK TO JOIN YOUR TEAM · ${req.length}`), items: req.map((m): Fila => ({ ...pic(m), imgW: "44px", t: m.name, s: [L(c, m.role), cuando(c, m.invitedAt, c.ahora)].filter(Boolean).join(" · "), tag: E2("POR RESPONDER", "TO ANSWER"), tone: "action", onClick: () => c.det(`stf:${m.id}`) })) });
   out.push({ type: "rows", k: E2(`TU EQUIPO · ${ok.length}`, `YOUR TEAM · ${ok.length}`), link: E2("Invitar", "Invite"), onLink: () => c.det("stf:new"),
     items: ok.map((m): Fila => {
       const td = hoyPersona(semanaDe(c, m), dow, t, c.es), frX = !d.pro && m.kind !== "owner" && m.show;
@@ -54,7 +54,7 @@ export function equipoBloques(c: Ctx): (Bloque | null)[] {
         tag: m.hidden !== null ? E2("QUITADO POR TO’LATINO", "REMOVED BY TO’LATINO") : !m.show ? E2("NO SALE", "HIDDEN") : frX ? E2("NO SALE CON FREE", "NOT ON FREE") : null,
         tone: m.hidden !== null ? "danger" : "neutral", dim: !m.show || frX, onClick: () => c.det(`stf:${m.id}`) };
     }).concat(ok.length === 1 && !inv.length ? [{ icon: "plus", t: E2("Invita a quien trabaja contigo", "Invite who works with you"), s: E2("Le mandamos un SMS. Cuando acepte, sale en tu página con su foto.", "We text them. Once they accept, they show on your page with their photo."), onClick: () => c.det("stf:new") }] : []) });
-  if (inv.length) out.push({ type: "rows", k: E2(`INVITACIONES SIN ACEPTAR · ${inv.length}`, `INVITES NOT ACCEPTED · ${inv.length}`), items: inv.map((m): Fila => ({ ...pic(m), imgW: "44px", t: m.name, s: `${E2("Enviada ", "Sent ")}${cuando(c, m.invitedAt)} · SMS · ${m.phone}`, dim: true, onClick: () => c.det(`stf:${m.id}`) })) });
+  if (inv.length) out.push({ type: "rows", k: E2(`INVITACIONES SIN ACEPTAR · ${inv.length}`, `INVITES NOT ACCEPTED · ${inv.length}`), items: inv.map((m): Fila => ({ ...pic(m), imgW: "44px", t: m.name, s: `${E2("Enviada ", "Sent ")}${cuando(c, m.invitedAt, c.ahora)} · SMS · ${m.phone}`, dim: true, onClick: () => c.det(`stf:${m.id}`) })) });
   if (!d.pro && ok.length > 1) out.push({ type: "note", tone: "warn", t: E2("Con Free sale 1 persona en tu página: tú. Con Pro sale todo tu equipo, cada quien con su horario.", "On Free, 1 person shows on your page: you. On Pro, your whole team shows, each with a schedule.") });
   return out;
 }
@@ -93,7 +93,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
   if (m.st === "inv") {
     const cx = c.ui.stfCx === m.id;
     out.push(H({ eye: E2("INVITACIÓN SIN ACEPTAR", "INVITE NOT ACCEPTED"), t: m.name, s: L(c, m.role) }));
-    out.push({ type: "kv", items: [{ k: E2("TELÉFONO", "PHONE"), v: m.phone || "—" }, { k: E2("ENVIADA", "SENT"), v: `${cuando(c, m.invitedAt)} · SMS` }, { k: E2("VENCE", "EXPIRES"), v: E2("A los 7 días · la puedes reenviar", "After 7 days · you can resend it") }] });
+    out.push({ type: "kv", items: [{ k: E2("TELÉFONO", "PHONE"), v: m.phone || "—" }, { k: E2("ENVIADA", "SENT"), v: `${cuando(c, m.invitedAt, c.ahora)} · SMS` }, { k: E2("VENCE", "EXPIRES"), v: E2("A los 7 días · la puedes reenviar", "After 7 days · you can resend it") }] });
     out.push({ type: "note", tone: "info", icon: "users", t: E2("No sale en tu página hasta que acepte. Cuando acepte, pone su foto y su bio, y te avisamos.", "Not on your page until they accept. Then they add their photo and bio, and we let you know.") });
     out.push({ type: "acts", items: cx
       ? [{ l: E2("Sí, cancelar invitación", "Yes, cancel invite"), v: "danger", icon: "trash", onClick: () => c.run(() => equipoCancelar(d.id, m.id), E2("Invitación cancelada.", "Invite canceled."), () => { c.setUi({ stfCx: null }); c.closeDet(); }) }, { l: "No", v: "secondary", onClick: () => c.setUi({ stfCx: null }) }]
@@ -102,7 +102,7 @@ export function equipoDetalle(c: Ctx, mid: string): Sec {
   }
   if (m.st === "req") {
     const nn = c.ui.stfNo === m.id;
-    out.push(H({ eye: E2("PIDE UNIRSE A TU EQUIPO", "ASKS TO JOIN YOUR TEAM"), t: m.name, s: cuando(c, m.invitedAt) }));
+    out.push(H({ eye: E2("PIDE UNIRSE A TU EQUIPO", "ASKS TO JOIN YOUR TEAM"), t: m.name, s: cuando(c, m.invitedAt, c.ahora) }));
     if (m.msg) out.push({ type: "note", tone: "ink", icon: "chat", t: `«${L(c, m.msg)}»` });
     out.push({ type: "kv", items: [{ k: E2("TELÉFONO", "PHONE"), v: m.phone || "—" }, { k: E2("ENTRA COMO", "JOINS AS"), v: L(c, m.role) || (m.kind === "renter" ? E2(`Renta ${sp[0]}`, `Rents a ${sp[1]}`) : "—") }] });
     out.push({ type: "note", tone: "info", icon: "users", t: E2("Si aceptas, sale en tu página con su foto y su bio. Tú pones lo que hace y su horario.", "If you accept, they show on your page with their photo and bio. You set what they do and their schedule.") });

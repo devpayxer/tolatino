@@ -14,8 +14,8 @@ import type { Ctx, Sec } from "./Panel";
 export type MsjPanel = { lista?: { hilos: HiloNeg[]; mas: string | null; sinLeer: number; auto: boolean }; det?: ConvNeg | null; hoy?: HiloNeg[]; n: number;
   compa?: { pro: boolean; enabled: boolean; on: boolean; apagadoPor: boolean } | null; sugerir?: boolean };
 
-function hace(c: Ctx, iso: string) {
-  const min = Math.floor((Date.now() - new Date(iso).getTime()) / 60000), E2 = c.E2;
+function hace(c: Ctx, iso: string, ahora: number) {
+  const min = Math.floor((ahora - new Date(iso).getTime()) / 60000), E2 = c.E2;
   if (min < 1) return E2("AHORA", "NOW");
   if (min < 60) return E2(`HACE ${min} MIN`, `${min} MIN AGO`);
   if (min < 1440) return E2(`HACE ${Math.floor(min / 60)} H`, `${Math.floor(min / 60)} H AGO`);
@@ -29,7 +29,7 @@ function fila(c: Ctx, x: HiloNeg) {
   return {
     key: x.id, icon: "chat", t: `${x.quien} · ${ctxL(c, x)}`,
     s: `${x.lastFrom === "business" ? E2("Tú: ", "You: ") : x.lastFrom === "auto" ? (x.lastCompa ? "El Compa: " : E2("Automática: ", "Auto: ")) : ""}${x.lastFrom === "system" ? sistema(x.last ?? "", c.es) : x.last ?? ""}`,
-    m: `${hace(c, x.at)}${x.lleva ? E2(` · LO LLEVA ${x.lleva.toUpperCase()}`, ` · HANDLED BY ${x.lleva.toUpperCase()}`) : ""}${x.bloqueado ? E2(" · BLOQUEADO", " · BLOCKED") : ""}`,
+    m: `${hace(c, x.at, c.ahora)}${x.lleva ? E2(` · LO LLEVA ${x.lleva.toUpperCase()}`, ` · HANDLED BY ${x.lleva.toUpperCase()}`) : ""}${x.bloqueado ? E2(" · BLOQUEADO", " · BLOCKED") : ""}`,
     tag: x.unread ? String(x.unread) : null, tone: "action", onClick: () => c.det(`msg:${x.id}`),
   };
 }
@@ -71,7 +71,7 @@ export function mensajeDetalle(c: Ctx): Sec {
     { type: "thread", items: x.msjs.map((m) => ({
       mine: m.de === "business", soft: m.de === "auto" || m.de === "system" || m.oculto,
       t: m.oculto ? E2("Mensaje oculto por To’Latino.", "Message hidden by To’Latino.") : m.de === "system" ? sistema(m.t, es) : m.t,
-      m: `${m.de === "auto" ? (m.compa ? E2("EL COMPA · IA · ", "EL COMPA · AI · ") : E2("RESPUESTA AUTOMÁTICA · ", "AUTO-REPLY · ")) : m.de === "business" && m.quien ? `${m.quien.toUpperCase()} · ` : ""}${hace(c, m.at)}`,
+      m: `${m.de === "auto" ? (m.compa ? E2("EL COMPA · IA · ", "EL COMPA · AI · ") : E2("RESPUESTA AUTOMÁTICA · ", "AUTO-REPLY · ")) : m.de === "business" && m.quien ? `${m.quien.toUpperCase()} · ` : ""}${hace(c, m.at, c.ahora)}`,
     })) },
   ];
   if (x.bloqueado) out.push({ type: "note", tone: "warn", icon: "ban", t: E2("Bloqueaste a esta persona: no te puede escribir.", "You blocked this person: they cannot write to you."), cta: E2("Desbloquear", "Unblock"), onCta: () => c.run(() => mensajeBloquear(d.id, x.id, false), E2("Desbloqueado.", "Unblocked.")) });

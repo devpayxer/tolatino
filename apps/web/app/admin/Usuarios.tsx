@@ -8,18 +8,20 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type ComponentType } from "react";
 import type { FiltrosUsr } from "@/lib/admin-usuarios";
 import { useAncho } from "./Colas";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"DenseTable" | "AdminList" | "Pager" | "Icon", ComponentType<any>>;
 type Fila = { id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null };
 export const EST_USR: Record<string, string> = { adv: "ADVERTIDO", mute: "SILENCIADO", susp: "SUSPENDIDO", ban: "BANEADO", del: "BORRADO" };
-export const haceUsr = (iso: string | null) => {
+export const haceUsr = (iso: string | null, ahora: number) => {
   if (!iso) return "nunca";
-  const m = (Date.now() - new Date(iso).getTime()) / 60_000;
+  const m = (ahora - new Date(iso).getTime()) / 60_000;
   return m < 5 ? "ahora" : m < 60 ? `hace ${Math.floor(m)} min` : m < 1440 ? `hace ${Math.floor(m / 60)} h` : m < 43200 ? `hace ${Math.floor(m / 1440)} d` : new Date(iso).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" });
 };
 
 export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; total: number; cab: { n: number; duenos: number; sanc: number }; f: FiltrosUsr; porPagina: number }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), path = usePathname(), sp = useSearchParams();
   const w = useAncho(), desk = w >= 1024;
   const [q, setQ] = useState(f.q), [mas, setMas] = useState(f.mas.length > 0);
@@ -67,7 +69,7 @@ export function Usuarios({ filas, total, cab, f, porPagina }: { filas: Fila[]; t
               cells: [
                 { image: r.photo ?? undefined, initials: r.photo ? undefined : nombre(r).slice(0, 1), text: nombre(r), bold: true, sub: r.phone },
                 { text: lugar(r) },
-                { text: haceUsr(r.visto) },
+                { text: haceUsr(r.visto, ahora) },
                 { tag: t, tone },
               ],
             };

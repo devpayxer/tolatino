@@ -23,6 +23,7 @@ import { ConfirmarMotivo, Toast, useAncho, useToast, type Confirmar } from "./Co
 import { EST_USR, haceUsr } from "./Usuarios";
 import { SoporteDe360, type CasoSop } from "./SoporteDe360";
 import type { CompaUsuario } from "@/lib/compa/admin-compa";
+import { useAhora } from "@/lib/ahora";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"AdminNote" | "AdminList" | "AuditLog" | "Icon", ComponentType<any>>;
@@ -44,6 +45,7 @@ const val = (x: unknown) => (x && typeof x === "object" ? Object.values(x as Rec
 const OK = "var(--tl-open-text)", WARN = "var(--tl-pro-ink)", BAD = "var(--tl-danger)";
 
 export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, topeMonedas = 500, act = null, sop, cpa }: { sop?: CasoSop[]; cpa?: CompaUsuario | null; u: Usuario360; tab: string; sub?: string; com?: Comunidad360 | null; pts?: Puntos360 | null; mon?: Monedas360 | null; topeAjuste?: number; topeMonedas?: number; act?: Actividad360 | null }) {
+  const ahora = useAhora(); // 9b-1 · «hace N min»: el mismo ahora en el servidor y en la hidratación (lib/ahora.tsx)
   const router = useRouter(), w = useAncho(), desk = w >= 1024;
   const [toast, setToast] = useToast();
   const [conf, setConf] = useState<Confirmar | null>(null);
@@ -85,7 +87,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
     .map(([k, l, n]) => ({ l, n: n ? String(n) : undefined, on: tab === k, onClick: () => ir(k) })) };
 
   const historial = (): ReactNode => u.historial.length
-    ? <A.AuditLog rows={u.historial.slice(0, 10).map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: `${VERBO[x.action] ?? x.action} ${nombre}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: haceUsr(x.at) }))} />
+    ? <A.AuditLog rows={u.historial.slice(0, 10).map((x) => ({ who: x.quien ?? "Equipo", initials: (x.quien ?? "E").slice(0, 1), action: `${VERBO[x.action] ?? x.action} ${nombre}`, before: val(x.before), after: val(x.after), why: x.reason ?? undefined, when: haceUsr(x.at, ahora) }))} />
     : <A.AdminNote tone="info" icon="folder">Nadie del equipo ha hecho cambios aquí todavía.</A.AdminNote>;
 
   let cuerpo: ReactNode;
@@ -101,7 +103,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           const bloq = d.dev_bloq || d.bloqueada;
           return {
             key: d.sid, icon: /iPhone|Android|iPad|Tableta/.test(d.nombre) ? "phone" : "grid", t: `${d.nombre}${d.nav ? ` · ${d.nav}` : ""} · ${d.app}`,
-            s: `Primera vez ${fecha(d.primera)} · ${d.abiertas ? `última ${haceUsr(d.ultima)}` : `sesión cerrada · última ${haceUsr(d.ultima)}`}${d.ip ? ` · ${d.ip}` : ""}`,
+            s: `Primera vez ${fecha(d.primera)} · ${d.abiertas ? `última ${haceUsr(d.ultima, ahora)}` : `sesión cerrada · última ${haceUsr(d.ultima, ahora)}`}${d.ip ? ` · ${d.ip}` : ""}`,
             tag: bloq ? "BLOQUEADO" : i === 0 && u.compartidos.length && d.device ? "COMPARTIDO" : d.abiertas ? "ABIERTA" : null, tone: bloq || (i === 0 && u.compartidos.length) ? "danger" : "signal",
             acts: puedeS ? [
               ...(d.abiertas && !bloq ? [{ l: "Cerrar sesión", icon: "lock", onClick: () => setConf({ titulo: `Cerrar sesión en ${d.nombre}`, plantillas: ["Lo pidió la persona", "Posible acceso de otra persona", "Teléfono perdido o robado"], hacer: (m) => dispositivoAccion(u.id, d.sid, "cerrar", m) }) }] : []),
@@ -115,7 +117,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         <PanelBloques bloques={[{ type: "group", k: `AVISOS PUSH · ${u.push.filter((x) => !x.revocado).length} ${u.push.filter((x) => !x.revocado).length === 1 ? "VIVO" : "VIVOS"}` }]} />
         {u.push.length ? <PanelBloques bloques={[{ type: "rows", items: u.push.map((x) => ({
           key: `push-${x.id}`, icon: x.platform === "web" ? "globe" : "phone", t: `${x.label} · ${PUSH_APP[x.app] ?? x.app}`,
-          s: `${PUSH_PROV[x.provider] ?? x.provider} · huella …${x.huella} · desde ${fecha(x.desde)} · visto ${haceUsr(x.visto)}${x.ultimo ? ` · último aviso ${haceUsr(x.ultimo)}` : ""}${x.revocado ? ` · revocado ${fecha(x.revocado)} (${PUSH_MOTIVO[x.motivo ?? ""] ?? x.motivo})` : ""}`,
+          s: `${PUSH_PROV[x.provider] ?? x.provider} · huella …${x.huella} · desde ${fecha(x.desde)} · visto ${haceUsr(x.visto, ahora)}${x.ultimo ? ` · último aviso ${haceUsr(x.ultimo, ahora)}` : ""}${x.revocado ? ` · revocado ${fecha(x.revocado)} (${PUSH_MOTIVO[x.motivo ?? ""] ?? x.motivo})` : ""}`,
           tag: x.revocado ? "REVOCADO" : x.prueba ? "PRUEBA" : "VIVO", tone: x.revocado ? "neutral" : "signal", dim: !!x.revocado,
           acts: P.editar && !x.revocado ? [{ l: "Revocar", icon: "ban", onClick: () => setConf({ titulo: `Revocar los avisos de ${x.label}`, sub: "Deja de recibir push en ese teléfono. Lo crítico le sigue llegando por SMS; puede volver a encenderlos ella con su sesión.", peligro: true,
             plantillas: ["Teléfono perdido o robado", "Lo pidió la persona", "Avisos a un teléfono que no es suyo"], hacer: (m) => pushRevocar(u.id, x.id, m) }) }] : undefined,
@@ -299,7 +301,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
         { k: "MARCADAS · NO SUPO", v: `${cpa.marcadas} · ${cpa.noSupo}`, s: "marcadas por el equipo · preguntas sin respuesta", sFg: cpa.marcadas ? "var(--tl-danger)" : undefined }] },
       cpa.filas.length ? { type: "rows", k: "SUS CONVERSACIONES", items: cpa.filas.map((x) => ({ key: x.num, icon: x.ai ? "chat" : "lock", chev: cpa.leer,
         onClick: cpa.leer ? () => router.push(`/admin/compa?cp=${encodeURIComponent(x.num)}`) : undefined,
-        t: `${x.num} · ${USO[x.uso] ?? x.uso}`, s: `${x.turnos} ${x.turnos === 1 ? "mensaje" : "mensajes"} · ${x.ciudad} · ${haceUsr(x.at)}${x.motivo ? ` · motivo: ${MOT[x.motivo] ?? x.motivo}` : ""}${x.purgada ? " · texto borrado por la retención" : ""}${x.marcada ? " · MARCADA" : ""}`,
+        t: `${x.num} · ${USO[x.uso] ?? x.uso}`, s: `${x.turnos} ${x.turnos === 1 ? "mensaje" : "mensajes"} · ${x.ciudad} · ${haceUsr(x.at, ahora)}${x.motivo ? ` · motivo: ${MOT[x.motivo] ?? x.motivo}` : ""}${x.purgada ? " · texto borrado por la retención" : ""}${x.marcada ? " · MARCADA" : ""}`,
         tag: RES[x.resultado]?.[0] ?? x.resultado, tone: x.marcada ? "danger" : RES[x.resultado]?.[1] ?? "neutral" })) } as Bloque
         : { type: "empty", icon: "chat", t: "Esta persona no ha hablado con El Compa", s: "Cuando use la hoja de ayuda, Soporte o el panel, sale aquí (sin el texto)." } as Bloque,
       { type: "note", tone: "ink", icon: "shield", t: cpa.leer ? "La lista no muestra lo que se habló. Al abrir una conversación ves el hilo (tapado como se guardó) y tu lectura queda anotada." : "Tu rol ve las cifras. El hilo lo leen Admin y Soporte, y cada lectura queda anotada." },
@@ -339,7 +341,7 @@ export function U360({ u, tab, sub = "pub", com, pts, mon, topeAjuste = 500, top
           { k: "CIUDAD", v: u.ciudad ?? "Sin ciudad" },
           { k: "ROL", v: rol },
           { k: "DESDE", v: fecha(u.creado) },
-          { k: "ÚLTIMA VEZ", v: haceUsr(u.visto) },
+          { k: "ÚLTIMA VEZ", v: haceUsr(u.visto, ahora) },
           { k: "DISPOSITIVOS", v: String(u.dispositivos.length), fg: u.compartidos.length ? BAD : undefined },
         ] }]} />
         {u.compartidos.length ? <A.AdminNote tone="warn" icon="warning" cta="Ver" onCta={() => ir("seguridad")}>{`Comparte dispositivo con ${u.compartidos.length} ${u.compartidos.length === 1 ? "cuenta más" : "cuentas más"}.`}</A.AdminNote> : null}
