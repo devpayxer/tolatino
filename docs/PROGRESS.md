@@ -1312,3 +1312,54 @@ cuentas de tienda, 8h llega hasta la firma y el APK propio. Hoy no hay push de n
   `planes2n` sigue fallando por un texto viejo (9a).
 - **Pedir ya los paquetes** (tardan): 8-0, 8-1/8-2/8-3, 9-1, 9-2, 9-3; 9-4 va llegando; 9-5 al final.
 - **Sigue:** 9a.
+
+## Fase 9 · 9a — orden antes de cerrar (11–12 nov)
+**Hecho (rama `claude/vibrant-franklin-krutwa`):**
+- **Las pruebas al repo** (`pruebas/`): **159 de punta a punta** (`pruebas/e2e`, las 158 reales del scratchpad + `rsvp9a`) y **39 al revés**
+  (`pruebas/alreves`: las 36 `alreves5a…8i`, `alreves8a-puente.mjs`, `alreves8e-senal.sh` y `alreves9a`). Fuera quedaron las de depuración y de
+  un solo uso (`dbg*`, `cap*`, `shot*`, `*.pre*`, `*-dbg`, `*-smoke`, `humo*`, `t*`, `mira*`, `bench8c-run` → 9b…). Variantes elegidas: `edu4a_r` →
+  `edu4a`, `sop7b-8f` → `sop7b`, `usr1l-8d` → `usr1l`; `evt6b` quedó reemplazada por `evt6b-6c`.
+- **Un solo servidor de pruebas** `pruebas/servir/servir.sh [completo|basico]` (reemplaza `servir*.sh` y `servidor.sh`; `SOLO=servir`,
+  `TRADUCTOR_URL`), `base.sh` (crea o enciende la base y Garage; migraciones y semilla con `pruebas/fakecompose.sh`), `recursos.sh` (jsQR, el
+  generador de QR, los documentos de descubrimiento de Google con su huella, fotos de prueba, el venv de la moderación) y **`pruebas/correr.mjs`**
+  (una, `--grupo faseN|varios|alreves`, `--todas`, `--desde`, `--saltar`, `--paralelo` = al revés | punta a punta; una a la vez por carril, con
+  candado; las del Super Admin al final de su fase; tabla y `resumen.json` con las ✓). Ayudantes en `pruebas/lib/` (`entorno.cjs`, `g6-comun.cjs`,
+  `stub-traductor.cjs`, `compa7d-familias.sql`), `pruebas/q.sh`.
+- **Sin secretos (el repo es público):** las pruebas leen todo de `$PRUEBAS_SALIDA/secretos.env` (fuera del repo; `servir.sh` genera al azar
+  `AUTH_SECRET`, `BARRIDO_TOKEN`, `DATOS_SECRET`, `STRIPE_WEBHOOK_SECRET`, WhatsApp, la llave del QR, la de Telnyx y los cuatro `REVISION_CODIGO_*`;
+  `base.sh` la contraseña de la base y de Garage). Teléfonos solo 555 (el `570-554-…` de 1i pasó a `570-555-7747`; los de `publica` también),
+  correos `@example.com`, sin rutas de la máquina. Guardián **`pruebaSinSecretos`**; grep del diff antes de cada commit (hex/base64 largos,
+  `sk_`, `-----BEGIN`, `secret=`, `/tmp/claude`, `/home/user`): solo huellas públicas y datos de prueba marcados `GUARDIAN-OK`.
+- **Guardianes:** `sinProntoEnTienda` partido en **`sinEnConstruccion`** (falla siempre; `Pronto.tsx` borrado; las secciones del Super Admin
+  pendientes —hoy `mkt`— solo avisan hasta `TOLATINO_FASE=9`) y **`revisionVeCiudadAbierta`** (cuentas de revisión, su negocio y los probadores de
+  la beta en una ciudad que la semilla abre; `beta` cuenta sola cuando 9i lo agregue); **`launchConDestino`**, **`e2eEnElRepo`** (excepciones con
+  motivo: `evt6b`, `servir8d`, `servir8h`, `orden9a`, `sop7b-8f`, `usr1l-8d`, `bench8c-run`); `pedidoHorasOpcionales` ampliado. `alreves9a` **28/28**. `qrFirmado`, `compaUnSoloProveedor` y
+  `traduccionPropia` ya no miran las pruebas al revés (inyectan el defecto a propósito).
+- **Arreglo de la app:** el detalle de un pedido sin hora de respuesta decía «Si no respondes antes de las null» (lo cazó `pednull`).
+- **Semilla `0049_base_nueva.sql`** (solo sandbox): Ana, Juan y Lucía en una base nueva y los bloques de 0044/0045/0046 repetidos; las líneas del
+  pedido de El Fogón (0040). Probada en una base nueva (`tl9a-nueva-db`: 6 push, 3 testers, el caso de Lucía, 60 posiciones, 1 Admin) y dos veces.
+- **Pruebas viejas al día:** planes2n, pedidos2c, pednull (su propio pedido), usr1l, noc4c, pagos2d (ya no borra pagos, devoluciones, disputas,
+  tarjetas ni cuentas de cobro de toda la base), ayuda2i y cit3e (tampoco borran todas las solicitudes ni la cola), ayu4if, ayu4z, ayu4f, ayu4g,
+  ayu4m, noc4d, res4s y evt6d (con El Compa encendido entran por la hoja o con `?de=compa`), las colas cruzadas por `subject_kind` (antes
+  mezclaban casos de otras colas), adm4eg/adm4ig/adm4ne/sop7b (su cola, no la lista general de cientos), barr (el barrido ya tiene más de 60
+  tareas), dep4c, ins4e, correo2q, cuenta2h; alreves5a/5b/5c/5e/5f/6b apuntan al texto y a la última definición de hoy.
+- **LAUNCH auditada:** 535 pendientes por el Anexo A. **9a-V (89):** 56 hechas con su evidencia en la línea, 33 con lo que falta en su bloque
+  (9n 14, 9l 6, 9m 5, 9b 3, 9o/9i/9r/9k/9q 1 c/u). **9a-D (63):** 36 cerradas con su decisión (REVISION «9a»), **25 a `docs/DESPUES-DE-ABRIR.md`**
+  (DA-01…DA-25), 2 abiertas (→ 9p, → 9v). **9a-P (13):** 12 hechas, 1 → 9n (semilla de Noche). Las 3 viñetas sueltas de «Plan Pro» son casillas.
+  **Hoy: 409 pendientes, todas con destino** (9b 70, 9c 7, 9d 11, 9e 3, 9f 9, 9g 8, 9h 2, 9i 4, 9j 9, 9k 19, 9l 29, 9m 30, 9n 65, 9o 6, 9p 18,
+  9q 25, 9r 29, 9s 38, 9t 5, 9u 11, 9v 4, Paquete 9-4 4, Paquete 9-5 2); 104 marcadas en 9a. Dos hallazgos del CI (capturas de Android que
+  pierden el emulador; humo de Android inestable en modo avión) y la regresión roja → 9b.
+**Probado:** `orden9a` = `node pruebas/correr.mjs --todas` en la base local, una a la vez: **169/198 en verde, 6 397 ✓ (96 min)**; las 39 al revés
+en verde (1 431 ✓). Volviendo a correr solo las 29 rojas: **pasan em4e y renta4f** (dependen del orden) → **171/198**. **Quedan 27 rojas** (salida
+real en `$PRUEBAS_SALIDA/res/<nombre>.out`; destino **9b**, LAUNCH «Fase 9 · 9a»):
+- fases 1–2, la pantalla cambió y no volvieron a correr desde el 5–6 nov: admin1i, cat1m, rec1j, lic, rec («Timeout»), rec2 (espera «Mandarme el
+  código», que ya no está en Recuperar), menu2a-f (espera «Agotar»), free2b (espera «Free: N de N pedidos»), cit3b («mañana 10:00 y 10:30 ocupadas»);
+- datos acumulados o cuentas compartidas: adm2i («Transacciones: 3729 en 90 días» no coincide con la cifra de la pantalla), plan4f («cancelado ·
+  cobrado en total $298»; la tarjeta de Marisol la cambian otras pruebas), adm4ne («Devolver desde el Super Admin funciona en una noche»), adm4y
+  («se ve la salida cancelada por el negocio»), wal8g («el certificado nuevo … versión 4 reemplaza al anterior»), sop7b («Colas › Soporte · casos
+  también lo muestra»), adm7i («Soporte de Allentown (Sofía) no abre una conversación de Hazleton»), compa7d, fich8i («Idioma y cuenta» del
+  Repartidor; la cuenta de revisión SÍ entra con su código al azar), evt6i (no ve «Aceptar y pagar»), disp2r («evidencia: línea de tiempo»), adm6j
+  («la hora del recordatorio sale de Configuración (8 PM)»: a esa hora la configuración tope es 20);
+- dependen del orden (pasaron solas en esta sesión): cit3e, ayu4g, noc4b, tra4y, vis4ie; y msg2p («una sola automática cada 12 h»), ya de 9b.
+`node guardianes/run.mjs` limpio; `tsc` 0. Sin migración. **No hecho en 9a:** la regresión en el CI y las 27 rojas (9b).
+- **Sigue:** 9b.

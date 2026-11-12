@@ -3,7 +3,7 @@
 Bloques **9a → 9v** en tres grupos. Migraciones desde **0133** (la última confirmada es `0132_tiendas_fichas.sql`, 8i) hasta **0145**, una por bloque
 del grupo A; los grupos B y C toman **la siguiente libre** el día que corren (como en la Fase 8: nada asume números contiguos, `migrar.sh` aplica en
 orden de nombre). Semillas de pruebas desde **0049** (la última confirmada es `0048_revision.sql`); **ninguna semilla corre contra producción** (regla
-13, decisión I, guardián `semilla`). Nada de este archivo se ha construido. Alcance = fila 9 de `docs/PLAN.md` (L215): «Super Admin completo
+13, decisión I, guardián `semilla`). Construido: 9a (12 nov); lo demás, todavía no. Alcance = fila 9 de `docs/PLAN.md` (L215): «Super Admin completo
 (Analítica, CMS, Crecimiento, Ciudades, Sistema) · legales por estado · exportar mis datos · landing de acceso anticipado y QR de calle (puede ir antes)
 · **producción encendida** (servidores EE. UU., Cloudflare, dominio) · respaldos y manual de incidentes probados · `LAUNCH-CHECKLIST.md` en cero ·
 **apertura en las 5 ciudades** · guardianes: todos».
@@ -407,6 +407,10 @@ de lo compuesto + `docs/ayuda/` ES/EN + PROGRESS, REVISION y LAUNCH al día + co
 ### Grupo A · se construye ya en el sandbox, sin nada del fundador (encadenado, decisión AB)
 
 ### 9a · Orden antes de cerrar: las pruebas al repo, las viejas al día y la LAUNCH auditada contra lo servido — Sonnet/medium
+**Estado (12 nov): HECHO** salvo la regresión entera en verde (29 de 198 rojas en la corrida completa; su lista y su destino, 9b, en PROGRESS
+«Fase 9 · 9a» y en LAUNCH «Fase 9 · 9a»). Pruebas en `pruebas/` (159 de punta a punta, 39 al revés, `servir/`, `correr.mjs`), semilla `0049`,
+guardianes `pruebaSinSecretos`, `sinEnConstruccion`, `revisionVeCiudadAbierta`, `launchConDestino`, `e2eEnElRepo` (`alreves9a` 28/28), LAUNCH con
+destino en cada línea y `docs/DESPUES-DE-ABRIR.md`. Sin migración.
 **Necesita:** nada. **Va primero:** las pruebas de punta a punta viven fuera del repo (§0) y la auditoría de LAUNCH ordena todo lo demás.
 **Datos:** ninguna migración. Arreglo de las semillas 0044–0046 en una base nueva (L1239, L1265: crean ellas mismas las cuentas de las que dependen).
 **Pruebas al repo:** `pruebas/e2e/{nombre}.cjs` (las ~220 de punta a punta: `adm*`, `com5*`, `evt6*`, `compa7*`, `app8a`, `push8c`…), `pruebas/alreves/`

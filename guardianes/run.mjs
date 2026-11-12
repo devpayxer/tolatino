@@ -6465,6 +6465,9 @@ const guardianes = {
       servir8d: "no es una prueba: el servidor de 8d es el perfil «completo» de pruebas/servir/servir.sh",
       servir8h: "no es una prueba: el servidor de 8h es el perfil «completo» de pruebas/servir/servir.sh",
       orden9a: "no es un archivo: es toda la regresión (node pruebas/correr.mjs --todas)",
+      "sop7b-8f": "es sop7b (la versión al día de 8f se subió con ese nombre)",
+      "usr1l-8d": "es usr1l (la versión al día de 8d se subió con ese nombre)",
+      "bench8c-run": "una medición de velocidad, no una prueba: no se subió (la velocidad entra en la tubería de 9b)",
     };
     if (!existsSync(PR)) return falla(G, PR, 0, "falta docs/PROGRESS.md");
     const hay = new Set(["e2e", "alreves"].flatMap((d) => (existsSync(`pruebas/${d}`) ? readdirSync(`pruebas/${d}`) : []).map((f) => f.replace(/\.(cjs|mjs|sh)$/, ""))));

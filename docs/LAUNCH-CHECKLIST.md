@@ -1392,3 +1392,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **Humo de Android inestable (Cáscaras, corrida 43106680850, intento 1):** solo la app «cliente»: `navigator.onLine` = true en
       modo avión, logcat «red para la WebView: sí» al abrir y ningún evento online/offline; el intento 2 pasó. Probable: el modo avión todavía no
       quedó puesto cuando abre la primera app. Una prueba inestable se arregla, no se reintenta. (9a, 11 nov)
+- [ ] **→ 9b** · **La regresión entera en verde (`orden9a`):** la corrida completa del 12 nov (`node pruebas/correr.mjs --todas`, una a la vez) dio
+      **169/198 en verde (6 397 ✓)**; volviendo a correr solo las rojas pasaron 2 más (em4e, renta4f: dependen del orden). Quedan **27 rojas**, por
+      tres causas: (1) pruebas de las fases 1–2 que nunca volvieron a correr y cuya pantalla cambió (admin1i, cat1m, rec1j, lic, rec, rec2,
+      menu2a-f, free2b, cit3b); (2) datos acumulados de la base local o cuentas compartidas entre pruebas (adm2i, plan4f, adm4ne, adm4y, wal8g,
+      sop7b, adm7i, compa7d, fich8i, evt6i, disp2r) y la hora del día (adm6j); (3) dependen del orden (pasaron solas en esta sesión: cit3e, ayu4g,
+      noc4b, tra4y, vis4ie) y msg2p (ya era de 9b). 9b: cada prueba con sus propios datos (como pednull, ayuda2i, rsvp9a), una base nueva por
+      corrida en el CI con la semilla 0049, y la regresión en la tubería. Salida de cada una en PROGRESS «Fase 9 · 9a». (9a, 12 nov)
