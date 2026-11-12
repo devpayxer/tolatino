@@ -294,7 +294,9 @@ const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;
   console.log('13 · Horas de silencio: una respuesta tardía no sale de noche; una a tiempo sí');
   const zonas = ['Pacific/Kiritimati', 'Asia/Tokyo', 'Asia/Kolkata', 'Europe/London', 'America/New_York', 'Pacific/Honolulu', 'America/Los_Angeles', 'Australia/Sydney', 'Europe/Moscow', 'America/Sao_Paulo'];
   const hora = (z) => Number(new Intl.DateTimeFormat('en-US', { timeZone: z, hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
-  const noche = zonas.find((z) => hora(z) >= 22 || hora(z) < 7), dia = zonas.find((z) => hora(z) >= 8 && hora(z) <= 20);
+  // 9b-1 · Con margen: la noche de 11 PM a 5:59 AM y el día de 9 AM a 7:59 PM. Antes valía cualquier hora de 10 PM a 6:59 AM y la parte 17
+  // (minutos después) encontró a Tokio ya a las 7 AM: la respuesta tardía salió. Con estas 10 zonas siempre hay una en cada ventana.
+  const noche = zonas.find((z) => hora(z) >= 23 || hora(z) < 6), dia = zonas.find((z) => hora(z) >= 9 && hora(z) < 20);
   ok(!!noche && !!dia, `una zona de noche (${noche}) y una de día (${dia})`);
   const ciu0 = sql(`select home_city_id from users where id = '${MU}'`), tz0 = sql(`select timezone from cities where id = 'rdg'`);
   sql(`update users set home_city_id = 'rdg' where id = '${MU}'`); sql(`update cities set timezone = '${noche}' where id = 'rdg'`);
