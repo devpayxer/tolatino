@@ -2,6 +2,10 @@
 // matrícula; «No cuidaron bien a mi niño» → directo a To'Latino con prioridad y el aviso de ChildLine; «No me dejan cancelar» con foto)
 // y reseña verificada (preguntas por rubro, dato de la inscripción, «Lo que importa»; Niños sin fotos ni el nombre del niño).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos', GYM = 'power-gym-hzl';
@@ -44,7 +48,7 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   const I1 = await inscribir(m, EDU, CIU); await confirmar(edu, EDU, I1);
   sql(`update operations set status_detail = 'started', details = details || jsonb_build_object('starts_on', (current_date - 3)::text) where number = '${I1}'`);
   ok(sql(`select status || ':' || status_detail from operations where number = '${I1}'`) === 'confirmed:started', `${I1}: en curso, matrícula cobrada`);
-  await m.goto(`${B}/insc/${I1}`); await clic(m.getByRole('button', { name: 'Ayuda con la inscripción' })); await m.waitForURL(/\/insc\/I-\d+\/ayuda$/);
+  await m.goto(`${B}/insc/${I1}`); await clic(m.getByRole('button', { name: 'Ayuda con la inscripción' })); await m.waitForURL(/\/insc\/I-\d+\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 5, 'Educación: 5 motivos');
   ok(!!(await vis(f.getByText('No me dieron el certificado prometido'))), 'motivo «No me dieron el certificado prometido»');
@@ -66,14 +70,14 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   await (await vis(det.locator('textarea'))).fill('Tienes razón: te devolvemos los $20 de los libros.');
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(I1, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|2000') === 'answered|alt|2000', 'la escuela propone $20');
-  await m.goto(`${B}/insc/${I1}/ayuda`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
+  await m.goto(`${B}/insc/${I1}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $20' }));
   ok(await espera(() => sql(`select p.status || ':' || p.amount_cents || ':' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I1}'`), 'partially_refunded:5500:2000') === 'partially_refunded:5500:2000', 'aceptó: $20 exactos devueltos de la matrícula');
 
   // ── Niños: «No cuidaron bien a mi niño» → directo a To'Latino, con ChildLine ──
   const N1 = await inscribir(m, NIN, GUARD, { hijo: { nombre: 'Valentina', edad: 4 } }); await confirmar(nin, NIN, N1);
   sql(`update operations set status_detail = 'started' where number = '${N1}'`);
-  await m.goto(`${B}/insc/${N1}/ayuda`); const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(`${B}/insc/${N1}/ayuda?de=compa`); const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
   await clic(g.getByRole('button', { name: 'No cuidaron bien a mi niño', exact: true }));
   ok(!!(await vis(m.getByText(/ChildLine de Pennsylvania: 1-800-932-0313/))), 'el aviso fijo: 911 y ChildLine');
   await (await vis(g.getByLabel('Qué pasó'))).fill('La recogí y nadie sabía dónde estaba; la encontraron sola en el patio.');
@@ -88,7 +92,7 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   const M1 = await inscribir(m, GYM, MEMB); await confirmar(gym, GYM, M1);
   await m.goto(`${B}/insc/${M1}`); await clic(m.getByRole('button', { name: 'Cancelar mi membresía' })); await clic(m.getByRole('button', { name: 'Sí, cancelar' }));
   await espera(() => sql(`select status_detail from operations where number = '${M1}'`), 'cancel_req');
-  await m.goto(`${B}/insc/${M1}/ayuda`); const h = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await h.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(`${B}/insc/${M1}/ayuda?de=compa`); const h = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await h.getByText('¿Qué pasó?').first().waitFor();
   await clic(h.getByRole('button', { name: 'No me dejan cancelar', exact: true })); ok(!!(await vis(h.getByText('Fotos · obligatorias'))), '«No me dejan cancelar»: foto obligatoria');
   await (await vis(h.getByLabel('Qué pasó'))).fill('Pedí la baja en la app y en la recepción me dicen que tengo que pagar tres meses más.');
   await h.locator('input[type="file"]').first().setInputFiles(FOTO); await h.getByRole('button', { name: 'Quitar foto' }).first().waitFor({ state: 'attached' });

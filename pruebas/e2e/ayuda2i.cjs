@@ -17,7 +17,15 @@ const HOJA = /^(Algo no está bien|Algo no salió bien)$/;
 const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(HOJA); if (await r.count()) { await clic(r); await p.waitForURL(/de=compa/); } };
 (async () => {
   // Dos pedidos terminados recientes de Marisol (uno para el flujo, otro para vencer a las 24 h).
-  const [n1, n2] = sql(`select number from operations where user_id = ${MARISOL} and kind = 'order' and status = 'done' and business_id = '${BIZ}' and not exists (select 1 from help_requests h where h.operation_id = operations.id) order by id desc limit 2`).split('\n');
+  // 9a · Sus propios dos pedidos terminados (antes tomaba los dos últimos de la base, que cambian con las otras pruebas): pagados en el local,
+  // con un plato cada uno, de hace 2 horas.
+  const nuevo = () => { const k = require('crypto').randomUUID();
+    const n = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, pay_mode, subtotal_cents, tax_cents, total_cents, sent_at, done_at, client_key, is_test)
+      values (nextval('operations_order_seq')::text, 'order', 'hzl', '${BIZ}', ${MARISOL}, 'done', 'picked_up', 'pickup', 'local', 650, 39, 689, now() - interval '3 hours', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
+    sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, x.price_cents, x.price_cents, 6 from operations o, items x where o.client_key = '${k}' and x.business_id = '${BIZ}' and x.removed_at is null and x.status = 'live' order by x.id limit 1`);
+    sql(`insert into operation_events (operation_id, kind, actor, actor_id) select id, 'sent', 'user', user_id from operations where client_key = '${k}'`);
+    return n; };
+  const n1 = nuevo(), n2 = nuevo();
   const limpiar = () => sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open' and subject_kind = 'help_request' and subject_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.number in ('${n1}', '${n2}'))`);
   sql(`update operations set done_at = now() - interval '2 hours' where number in ('${n1}', '${n2}')`);
   const b = await chromium.launch(); const err = [];

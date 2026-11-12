@@ -1,6 +1,10 @@
 // 4g-2 · Ayuda con la visita (Hogar) y con la cita (Auto): motivos del rubro, foto obligatoria, devolución de lo cobrado
 // del estimado (no solo el depósito), propuesta aceptada, y «que lo revisen otra vez» aceptado por el taller.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', H = 'plomeria-rodriguez', A = 'taller-hermanos-pena', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -23,7 +27,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   const r = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(r, '5705550211');
   for (const p of [m, t, r]) { p.on('pageerror', e => err.push(e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); }
   // ── Hogar ──
-  await m.goto(B + `/cita/${CH}`); await clic(m.getByRole('button', { name: 'Ayuda con la visita' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/cita/${CH}`); await clic(m.getByRole('button', { name: 'Ayuda con la visita' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(m.getByText('Ayuda con la visita').first())) && !!(await vis(f.getByText(/Solo se devuelve lo que se cobró de más/))), 'hogar: Ayuda con la visita · solo se devuelve lo cobrado de más');
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 7, 'hogar: 7 motivos (franja, cobró más, quedó mal, dañó, otra persona, depósito, otra cosa)');
@@ -47,12 +51,12 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await t.screenshot({ path: OUT + 'y2-panel-ayuda-d.png', fullPage: true });
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(CH, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|4000') === 'answered|alt|4000', 'el negocio propone $40');
-  await m.goto(B + `/cita/${CH}/ayuda`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
+  await m.goto(B + `/cita/${CH}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $40' }));
   ok(await espera(() => sql(`select p.status || '|' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.amount_cents = ${est}`), 'partially_refunded|4000') === 'partially_refunded|4000', 'aceptó: $40 devueltos de lo cobrado del estimado');
   await m.getByText('TERMINADA').first().waitFor(); ok(true, 'hogar: terminada');
   // ── Auto ──
-  await m.goto(B + `/cita/${CA}/ayuda`); const f2 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f2.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(B + `/cita/${CA}/ayuda?de=compa`); const f2 = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f2.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(f2.getByText('Nada se hace ni se cobra sin tu OK.'))) && !!(await vis(f2.getByText('No me dieron las piezas viejas'))), 'auto: motivos del taller');
   await clic(f2.getByText('Dañaron algo del carro')); ok(!!(await vis(f2.getByText('Fotos · obligatorias'))), 'dañaron algo: foto obligatoria');
   await (await vis(f2.getByLabel('Qué pasó'))).fill('Al recoger el carro tenía un rayón nuevo en la puerta del chofer.');
@@ -65,7 +69,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await clic(d2.getByText('Tiene razón', { exact: true })); await (await vis(d2.locator('textarea'))).fill('Tráelo el lunes y lo pulimos sin cargo.');
   await clic(d2.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(CA, "h.status || '|' || h.decision"), 'answered|ok') === 'answered|ok', 'el taller acepta');
-  await m.goto(B + `/cita/${CA}/ayuda`); await m.getByText('ACEPTÓ').first().waitFor(); await clic(m.getByRole('button', { name: 'Entendido' }));
+  await m.goto(B + `/cita/${CA}/ayuda?de=compa`); await m.getByText('ACEPTÓ').first().waitFor(); await clic(m.getByRole('button', { name: 'Entendido' }));
   ok(await espera(() => AY(CA, 'h.status'), 'resolved') === 'resolved', 'auto: terminada con «Entendido»');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
   await b.close(); console.log('OK ayu4g');

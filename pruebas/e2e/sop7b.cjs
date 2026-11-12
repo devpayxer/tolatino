@@ -104,7 +104,9 @@ const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAAQ0lEQVR
   let enLista = t.includes(TK1);
   if (!enLista) { await p.goto(B + '/admin/soporte?q=' + TK1); enLista = (await texto(p)).includes(TK1); await p.goto(B + '/admin/soporte'); t = await texto(p); }
   ok(t.includes('Soporte') && t.includes('ABIERTOS') && enLista, 'Super Admin › Soporte con cifras y el caso nuevo');
-  ok(/VENCIDO · hace/.test(t) && /vence /.test(t), 'la cola dice el plazo: «vence …» y «VENCIDO»');
+  // 9a · Con tantos casos viejos vencidos, la primera página ya no trae uno «por vencer»: el nuevo (TK1) se busca por su número.
+  const tk = (await (async () => { await p.goto(B + '/admin/soporte?q=' + TK1); const x = await texto(p); await p.goto(B + '/admin/soporte'); return x; })());
+  ok(/VENCIDO · hace/.test(t) && /vence /.test(tk), 'la cola dice el plazo: «vence …» (el caso nuevo) y «VENCIDO» (los viejos)');
   await p.goto(B + '/admin'); await p.getByText('Soporte', { exact: true }).first().click();
   ok(await espera(async () => new URL(p.url()).pathname === '/admin/soporte'), 'el menú «Soporte» lleva a /admin/soporte');
   await p.goto(B + '/admin/colas?cola=ticket');

@@ -52,9 +52,9 @@ const limpiar = () => {
   // Perfil: correo malo, luego bueno
   await m.goto(B + '/cuenta/perfil'); await m.getByText('NOMBRE · FOTO · CORREO').first().waitFor();
   await (await vis(m.getByPlaceholder('Ej.: Anita'))).fill('Mari');
-  await (await vis(m.getByPlaceholder('ana@example.com'))).fill('mari@correo');
+  await (await vis(m.getByPlaceholder('ana@correo.com'))).fill('mari@correo');
   await clic(m.getByText('Guardar cambios', { exact: true })); await m.getByText('Revisa el correo.').first().waitFor(); ok(true, 'Perfil: correo inválido no se guarda');
-  await (await vis(m.getByPlaceholder('ana@example.com'))).fill('mari@example.com');
+  await (await vis(m.getByPlaceholder('ana@correo.com'))).fill('mari@example.com');
   await clic(m.getByText('Guardar cambios', { exact: true }));
   ok(await espera(() => sql(`select nick || '|' || email || '|' || email_verified from users where id = ${U}`), 'Mari|mari@example.com|false') === 'Mari|mari@example.com|false', 'Perfil: apodo y correo (sin verificar)');
   ok(sql(`select count(*) from account_changes where user_id = ${U} and kind = 'email' and "to" = 'mari@example.com'`) !== '0', 'Perfil: cambio de correo en el historial');

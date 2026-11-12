@@ -27,7 +27,7 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   let f = fv(); ok(/sincontrato/.test(f) && /guarderia/.test(f) && /gratis1/.test(f) && /membresia/.test(f) && /visita/.test(f) && /24h/.test(f), `filtros derivados (24h se conserva): ${f}`);
   ok(tj().eta?.es === 'Sin contrato · cancela cuando quieras' && tj().fee?.es === '$25 al mes · sin cuota de inscripción', `tarjeta: ${tj().eta?.es} | ${tj().fee?.es}`);
   ok(tj('cuerpo-en-balance').eta?.es === 'Contrato de 6 meses · cancelar antes cuesta $50' && !/sincontrato/.test(fv('cuerpo-en-balance')), `con contrato: ${tj('cuerpo-en-balance').eta?.es}`);
-  ok(/^Inscripción de equipos hasta el \d+ \w+$/.test(tj(LIGA).eta?.es ?? '') && tj(LIGA).fee?.es === '$450 por equipo · depósito $100', `liga: ${tj(LIGA).eta?.es} | ${tj(LIGA).fee?.es}`);
+  ok(/^(Inscripción de equipos hasta el \d+ \w+|Quedan \d+ lugares)$/.test(tj(LIGA).eta?.es ?? '') /* 9a: con pocos lugares la tarjeta dice cuántos quedan */ && tj(LIGA).fee?.es === '$450 por equipo · depósito $100', `liga: ${tj(LIGA).eta?.es} | ${tj(LIGA).fee?.es}`);
   ok(/visita/.test(fv('hazleton-bowl')), 'un lugar de visita (sin herramienta) conserva sus filtros');
   // La base no deja «sin contrato» con penalidad.
   let mal = false; try { sql(`update insc_settings set contract_m = 0, cancel_fee_cents = 5000 where business_id = '${NEG}'`); } catch { mal = true; } ok(mal, 'la base no deja «sin contrato» con penalidad (check)');

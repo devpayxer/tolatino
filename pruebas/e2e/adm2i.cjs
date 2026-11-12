@@ -31,7 +31,8 @@ const limpiar = () => { sql(`update post_comments set status = 'visible' where s
   await a.goto(B + '/admin/contenido?q=Mofongo'); await a.getByText(/Mofongo/).first().waitFor(); ok(true, 'Contenido: búsqueda');
   // Transacciones
   await clic(a.getByText('Transacciones', { exact: true })); await a.waitForURL(/\/admin\/transacciones/); await a.getByText('HOY', { exact: true }).first().waitFor();
-  const tot = Number(sql(`select count(*) from operations where kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit') and sent_at > now() - interval '90 days'`));
+  // 9a · Transacciones cuenta también boletos y eventos privados (6c, 6i): la misma lista que lib/admin-tx.ts.
+  const tot = Number(sql(`select count(*) from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') and o.sent_at > now() - interval '90 days'`));
   ok(!!(await vis(a.getByText(`${tot} EN 90 DÍAS`))), `Transacciones: ${tot} en 90 días`);
   await a.screenshot({ path: OUT + 'a2-tx.png', fullPage: true });
   await clic(a.getByText('Terminado', { exact: true })); await a.waitForURL(/st=done/); ok(!(await vis(a.getByText('CANCELADO', { exact: true }))), 'filtro Terminado');

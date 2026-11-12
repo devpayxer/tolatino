@@ -2,6 +2,10 @@
 // en la ficha, Ayuda con la noche («Cobraron más cover» pide foto; «No me descontaron el depósito» → el local propone → aceptar = se
 // devuelve exacto por Stripe; «Me sentí inseguro» va directo a To'Latino con prioridad) y el bloque de ayuda en el panel.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', NEG = 'la-terraza-night', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -50,7 +54,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   ok(!!(await vis(m.getByText('Cobraron más cover').first())), 'la tarjeta de la reseña: «Cobraron más cover»');
 
   // ── Ayuda: cobraron más cover (foto obligatoria) ──
-  await m.goto(`${B}/noche/${L}/ayuda`);
+  await m.goto(`${B}/noche/${L}/ayuda?de=compa`);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(f.getByText('Ayuda con la noche').first())), 'título «Ayuda con la noche»');
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 8, 'noche: 8 motivos');
@@ -66,7 +70,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
 
   // ── Ayuda: no me descontaron el depósito → el local propone $50 → aceptar = devolución exacta ──
   const DEV0 = Number(sql(`select p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${M}' and p.kind = 'deposit'`));
-  await m.goto(`${B}/noche/${M}/ayuda`); await f.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(`${B}/noche/${M}/ayuda?de=compa`); await f.getByText('¿Qué pasó?').first().waitFor();
   await clic(f.getByText('No me descontaron el depósito', { exact: true }));
   await (await vis(f.getByLabel('Qué pasó'))).fill('Pagué la cuenta completa y no me descontaron los $50 del depósito.');
   await f.locator('input[type="file"]').first().setInputFiles(FOTO); await f.getByRole('button', { name: 'Quitar foto' }).first().waitFor({ state: 'attached' });
@@ -82,12 +86,12 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await t.screenshot({ path: OUT + 'n4d-panel-ayuda-d.png', fullPage: true });
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(M, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|5000') === 'answered|alt|5000', 'el local propone $50');
-  await m.goto(`${B}/noche/${M}/ayuda`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
+  await m.goto(`${B}/noche/${M}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $50' }));
   ok(await espera(() => sql(`select (p.refunded_cents - ${DEV0})::text || '|' || p.status from payments p join operations o on o.id = p.operation_id where o.number = '${M}' and p.kind = 'deposit'`), '5000|refunded') === '5000|refunded', 'aceptó: el depósito de $50 devuelto exacto por Stripe');
 
   // ── Ayuda: me sentí inseguro → directo a To'Latino ──
-  await m.goto(`${B}/noche/${I}/ayuda`); await f.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(`${B}/noche/${I}/ayuda?de=compa`); await f.getByText('¿Qué pasó?').first().waitFor();
   await clic(f.getByRole('button', { name: 'Me sentí inseguro', exact: true }));
   ok(!!(await vis(f.getByText(/llama al 911 primero/))), 'el 911 primero');
   await (await vis(f.getByLabel('Qué pasó'))).fill('Hubo una pelea en la puerta y nadie de seguridad hizo nada.');

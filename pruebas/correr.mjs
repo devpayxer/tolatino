@@ -47,8 +47,11 @@ if (flag("--lista") || !args.length) {
 }
 
 let sel;
-if (flag("--todas")) sel = grupos.flatMap((g) => catalogo.filter((t) => t.grupo === g));
-else if (opt("--grupo")) { const gs = opt("--grupo").split(","); for (const g of gs) if (!grupos.includes(g)) { console.error(`grupo desconocido: ${g} (${grupos.join(", ")})`); process.exit(2); } sel = gs.flatMap((g) => catalogo.filter((t) => t.grupo === g)); }
+/* Dentro de una fase, las del Super Admin de esa fase (adm…, ana…, tx…) van al final: cierran la fase y algunas leen lo que dejaron las
+   demás (adm4eg el caso de ayu4f, adm4ne las colas de noc4c), como cuando se construyeron. */
+const enOrden = (ts) => [...ts.filter((t) => !/^(adm|ana|tx)\d/.test(t.nombre)), ...ts.filter((t) => /^(adm|ana|tx)\d/.test(t.nombre))];
+if (flag("--todas")) sel = grupos.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g)));
+else if (opt("--grupo")) { const gs = opt("--grupo").split(","); for (const g of gs) if (!grupos.includes(g)) { console.error(`grupo desconocido: ${g} (${grupos.join(", ")})`); process.exit(2); } sel = gs.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g))); }
 else {
   const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo"].includes(args[i - 1]));
   sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\.(cjs|mjs|sh)$/, "")) ?? (console.error(`no existe: ${n}`), process.exit(2)));

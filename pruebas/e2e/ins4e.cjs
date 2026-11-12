@@ -48,12 +48,12 @@ async function inscribir(p, neg, svc, o = {}) {
   sql(`update waitlist_entries set status = 'left' where status in ('waiting', 'offered')`);
   sql(`update class_groups set seats_booked = 0 where business_id in ('${EDU}', '${NIN}', '${GYM}')`);
   const G1 = sql(`select id from class_groups where item_id = ${CIU} and status in ('open','started') order by starts_on limit 1`);
-  sql(`update class_groups set status = 'open', starts_on = current_date + 20, ends_on = current_date + 80, seats_total = 12, seats_outside = 0 where id = ${G1}`);
+  sql(`update class_groups set status = 'open', starts_on = current_date + 20, ends_on = current_date + 80, seats_total = 12 + seats_booked, seats_outside = 0 where id = ${G1}`);
   let G2 = sql(`select id from class_groups where item_id = ${CIU} and id <> ${G1} and label->>'es' = 'Prueba Sáb 9 AM' limit 1`);
   if (!G2) G2 = sql(`insert into class_groups (business_id, city_id, item_id, label, starts_on, ends_on, dows, start_min, dur_min, seats_total) select business_id, city_id, item_id, '{\"es\":\"Prueba Sáb 9 AM\",\"en\":\"Prueba Sat 9 AM\"}', current_date + 27, current_date + 87, '{6}', 540, 120, 10 from class_groups where id = ${G1} returning id`).split('\n')[0];
-  sql(`update class_groups set status = 'open', starts_on = current_date + 27, seats_total = 10, seats_outside = 0, seats_booked = 0 where id = ${G2}`);
+  sql(`update class_groups set status = 'open', starts_on = current_date + 27, ends_on = case when ends_on is null then null else greatest(ends_on, current_date + 90) end, seats_total = 10, seats_outside = 0, seats_booked = 0 where id = ${G2}`);
   const GC = sql(`select id from class_groups where item_id = ${CONV} and status in ('open','started') order by starts_on limit 1`);
-  sql(`update class_groups set status = 'open', starts_on = current_date + 5, seats_total = 10, seats_outside = 0 where id = ${GC}`);
+  sql(`update class_groups set status = 'open', starts_on = current_date + 5, ends_on = case when ends_on is null then null else greatest(ends_on, current_date + 60) end, seats_total = 10 + seats_booked, seats_outside = 0 where id = ${GC}`);
   sql(`update items set svc_attrs = svc_attrs || '{\"g1\":true}'::jsonb where id = ${CONV}`);
   sql(`update care_openings set openings = 3 where business_id = '${NIN}' and removed_at is null`);
   sql(`update users set first_name = coalesce(nullif(first_name, ''), 'Prueba') where phone in ('+15705550299', '+15705550288', '+15705550122')`);

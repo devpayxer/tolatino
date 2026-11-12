@@ -30,6 +30,8 @@ const barrer = () => fetch(B + '/api/interno/barrido', { method: 'POST', headers
   ok(sql(`select o.status || '|' || p.status from operations o join payments p on p.operation_id = o.id where o.number = '${N}'`) === 'expired|released', `${N}: vencido y LIBERADO por el barrido, sin abrir ninguna página`);
   ok(sql(`select count(*) from notifications where user_id = '${MAR}' and body like '%${N.slice(2)}%' or (user_id = '${MAR}' and title like 'Sin respuesta%' and created_at > now() - interval '1 minute')`) !== '0', 'y a la clienta le llegó el aviso');
   const r3 = await fetch(B + '/api/interno/barrido', { method: 'POST' }); ok(r3.status === 404, 'sin token: 404');
-  ok(sql(`select count(*) from system_jobs where name like 'barrido.%' and last_error is null and last_run_at > now() - interval '2 minutes'`) === '15', 'las 15 tareas corrieron sin error (system_jobs)');
+  // 9a · El barrido creció (15 tareas en 2c; hoy más de 60): todas las que corrieron en este barrido, sin error.
+  const [corrieron, conError] = sql(`select count(*) || '|' || count(*) filter (where last_error is not null) from system_jobs where name like 'barrido.%' and last_run_at > now() - interval '2 minutes'`).split('|');
+  ok(Number(corrieron) >= 15 && conError === '0', `las ${corrieron} tareas del barrido corrieron sin error (system_jobs)`);
   console.log('OK barr');
 })().catch((e) => { console.error(e); process.exit(1); });

@@ -58,7 +58,7 @@ const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first(
   ok(Number(sql(`select count(*) from audit_entries where action = 'inm.vivienda_justa.frenada' and target_id = '${INM}'`)) === a0 + 1, 'la frase queda en la auditoría');
   const QV = sql(`select id from queue_items where queue = 'vivienda' and subject_kind = 'business' and subject_id = '${INM}' and status = 'open'`);
   ok(/^\d+$/.test(QV), `abrió el caso en Colas › Vivienda justa (${QV})`);
-  await ad.goto(B + '/admin/colas'); ok(await ve(ad.getByText(/Vivienda justa · Rentas Hazleton Latino/)), 'la lista de Colas: «Vivienda justa · Rentas Hazleton Latino»');
+  await ad.goto(B + '/admin/colas?cola=' + sql(`select queue from queue_items where id = ${QV}`)); ok(await ve(ad.getByText(/Vivienda justa · Rentas Hazleton Latino/)), 'la cola Vivienda justa: «Vivienda justa · Rentas Hazleton Latino»'); // 9a: en su cola (la general tiene cientos)
   ok(await ve(ad.getByText(/texto(s)? frenado(s)? en 30 días · «no niños» · nada se publicó/)), 'con la última frase y «nada se publicó»');
   await ad.goto(B + `/admin/colas?cola=vivienda&caso=${QV}`); await ad.getByText(/^(CADA TEXTO FRENADO|LAS ÚLTIMAS \d+)$/).first().waitFor();
   const nF = sql(`select count(*) from audit_entries where action = 'inm.vivienda_justa.frenada' and target_id = '${INM}' and at > now() - interval '30 days'`);

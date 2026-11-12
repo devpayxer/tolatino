@@ -7,6 +7,10 @@
 // IDOR con otra cuenta en cada acción nueva (se repite la llamada del servidor con la sesión de otra persona) y el Super Admin. Deja los datos
 // como estaban (eventos de prueba cancelados, boletos anulados, Configuración y avisos restaurados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto');
 const jsQR = require(ENT.rec('jsqr/package/dist/jsQR.js'));
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
@@ -399,7 +403,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
 
     // ── 11 · Ayuda con la orden B- (directo a To'Latino) → Colas › Soporte → resolver y devolver ──
     await p1.goto(B + `/eventos/orden/${O1}`); await clic(btn(p1, 'Ayuda con esta orden')); await clic(p1.getByText('Un problema con el pago', { exact: true }));
-    await p1.waitForURL(/\/ayuda$/);
+    await p1.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(p1);
     ok(await contiene(p1, 'Ayuda con el pago') && await contiene(p1, 'Me cobraron dos veces') && await contiene(p1, 'LO REVISA TO’LATINO'), 'APP-EVT-AYUDA-PAGO: motivos de boletos y «LO REVISA TO’LATINO»');
     await clic(p1.getByRole('button', { name: 'Me cobraron dos veces', exact: true }));
     await (await vis(p1.getByLabel('Qué pasó'))).fill('Me salen dos cargos de esta orden en el estado de cuenta.');
@@ -431,7 +435,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
       await pa.goto(B + '/admin/transacciones?tab=bol');
       ok(await contiene(pa, `Boletos ${O1}`) && !(await texto(pa)).includes(`Boletos ${OC}`), 'Transacciones › Boletos: la orden con sus devoluciones; la cortesía (sin dinero) no sale');
       await ca.close(); }
-    await p1.goto(B + `/eventos/orden/${O1}/ayuda`); ok(await contiene(p1, 'RESPUESTA DE TO’LATINO'), 'el cliente ve la respuesta de To’Latino en su ayuda');
+    await p1.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`); ok(await contiene(p1, 'RESPUESTA DE TO’LATINO'), 'el cliente ve la respuesta de To’Latino en su ayuda');
 
     // ── 12 · Escritorio (1360): la orden, las hojas, el boleto, recibir, la ficha con lista de espera y el panel ──
     const cd = await ctx(1360, 900), pd = await cd.newPage(); await entrar(pd, C1);
@@ -447,15 +451,15 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     const c2d = await ctx(1360, 900), p2d = await c2d.newPage(); await entrar(p2d, C2);
     await p2d.goto(B + TOKD); await p2d.screenshot({ path: OUT + 'e6d-recibir-d.png', fullPage: true });
     await p2d.goto(B + `/eventos/${E2v.SLUG}?fecha=${E2v.F}`); await p2d.screenshot({ path: OUT + 'e6d-ficha-espera-d.png', fullPage: true });
-    await p2d.goto(B + `/eventos/orden/${O1}/ayuda`); ok((await p2d.goto(B + `/eventos/orden/${O1}/ayuda`)).status() === 404, 'escritorio: otra cuenta no abre la ayuda de C1 (404)');
+    await p2d.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`); ok((await p2d.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`)).status() === 404, 'escritorio: otra cuenta no abre la ayuda de C1 (404)');
     await p2d.goto(B + '/cuenta/boletos'); await p2d.screenshot({ path: OUT + 'e6d-mis-d.png', fullPage: true });
     await p2.goto(B + '/cuenta/boletos'); await p2.screenshot({ path: OUT + 'e6d-mis-m.png', fullPage: true });
     await pn.goto(B + `/panel/${NEG}/eventos?det=evt:${EV}`); await pn.screenshot({ path: OUT + 'e6d-panel-ficha-d.png', fullPage: true });
     const cnm = await ctx(390, 844, true), pnm = await cnm.newPage(); await entrar(pnm, TERRAZA);
     await pnm.goto(B + `/panel/${NEG}/eventos?det=evt:${EV}`); await pnm.screenshot({ path: OUT + 'e6d-panel-ficha-m.png', fullPage: true });
     await pnm.goto(B + `/panel/${NEG}/eventos?det=evt:${E2v.id}`); await pnm.screenshot({ path: OUT + 'e6d-panel-espera-m.png', fullPage: true });
-    await p1.goto(B + `/eventos/orden/${O1}/ayuda`); await p1.screenshot({ path: OUT + 'e6d-ayuda-estado-m.png', fullPage: true });
-    await p1.goto(B + `/eventos/orden/${O1}/ayuda`); await pd.goto(B + `/eventos/orden/${O1}/ayuda`); await pd.screenshot({ path: OUT + 'e6d-ayuda-estado-d.png', fullPage: true });
+    await p1.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`); await p1.screenshot({ path: OUT + 'e6d-ayuda-estado-m.png', fullPage: true });
+    await p1.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`); await pd.goto(B + `/eventos/orden/${O1}/ayuda?de=compa`); await pd.screenshot({ path: OUT + 'e6d-ayuda-estado-d.png', fullPage: true });
     ok(true, 'capturas de teléfono (390) y escritorio (1360) en cap/e6d-*');
     console.log(`\n${n} ✓ · evt6d`);
   } finally {

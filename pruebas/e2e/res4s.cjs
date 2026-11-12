@@ -3,6 +3,10 @@
 // apartado recogido → Ayuda con la compra (no guardaron el apartado) → sin respuesta en 24 h pasa a To'Latino; reseña de tienda.
 // Antes: merc4p (deja un pedido del mercado terminado y cobrado con tarjeta).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', M = 'supermercado-la-cosecha', T = 'boutique-yaritza', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -44,7 +48,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await m.screenshot({ path: OUT + 's2-importa-merc-m.png', fullPage: true });
 
   // ── 2. Ayuda con el pedido: el peso no cuadra (foto obligatoria) → el mercado devuelve $2 a la tarjeta ──
-  await m.goto(B + `/mercado/${MO}/ayuda`); const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
+  await m.goto(B + `/mercado/${MO}/ayuda?de=compa`); const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok(await espera(m.getByText('Ayuda con el pedido').first()) && await espera(f.getByText(/Compararemos tus fotos con la foto de la balanza/)), 'ayuda con el pedido: se compara con la foto de la balanza');
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 7, '7 motivos del mercado');
   await clic(f.getByText('El peso no me cuadra')); ok(await espera(f.getByText(/obligatoria/)), 'peso: la foto es obligatoria');
@@ -78,7 +82,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await clic(m.getByRole('button', { name: 'Continuar' })); await clic(m.getByRole('button', { name: 'Apartar', exact: true })); await m.waitForURL(/\/apartado\/A-\d+/); const AP = m.url().split('/apartado/')[1];
   await ht.goto(B + `/panel/${T}/hoy?det=apt:${AP}`); await clic(ht.getByRole('button', { name: 'Lo tengo · guárdalo' })); await ht.waitForTimeout(600);
   await ht.goto(B + `/panel/${T}/hoy?det=apt:${AP}`); await clic(ht.getByRole('button', { name: 'Lo recogió' })); await ht.getByText('Listo: recogido.').first().waitFor();
-  await m.goto(B + `/apartado/${AP}`); await clic(m.getByRole('button', { name: 'Ayuda con la compra' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/apartado/${AP}`); await clic(m.getByRole('button', { name: 'Ayuda con la compra' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
   ok((await g.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 6, 'ayuda con la compra: 6 motivos de la tienda');
   await clic(g.getByText('Talla o artículo equivocado')); await (await vis(g.getByLabel('Qué pasó'))).fill('Aparté la S y en la bolsa venía una M; quiero cambiarla.');
@@ -86,7 +90,7 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
   await m.screenshot({ path: OUT + 's5-ayuda-tienda-m.png', fullPage: true }); await m.locator('[data-screen-label="Ayuda con la cita · barra"]').getByRole('button', { name: 'Enviar solicitud' }).click(); await m.getByText('PENDIENTE').first().waitFor();
   ok(AY(AP, "h.reason || '|' || h.wants") === 'talla|reponer', 'guardada: talla · cambiarlo');
   sql(`update help_requests set created_at = now() - interval '25 hours' where operation_id = (select id from operations where number = '${AP}')`);
-  await m.goto(B + `/apartado/${AP}/ayuda`); await m.waitForTimeout(500);
+  await m.goto(B + `/apartado/${AP}/ayuda?de=compa`); await m.waitForTimeout(500);
   ok(AY(AP, 'h.status') === 'escalated' && sql(`select count(*) from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id join operations o on o.id = h.operation_id where q.queue = 'sop' and o.number = '${AP}' and q.status = 'open'`) === '1', 'sin respuesta en 24 h: pasa a To’Latino (cola de ayuda)');
   await m.goto(B + `/n/${T}/resena?pedido=${AP}`); ok(await espera(m.getByText('TU APARTADO · DATO DEL APARTADO')) && await espera(m.getByText('¿LA TALLA O MEDIDA CORRECTA?')), 'reseña de la tienda: dato del apartado y preguntas');
   await clic(m.getByRole('button', { name: '4 ★', exact: true }));

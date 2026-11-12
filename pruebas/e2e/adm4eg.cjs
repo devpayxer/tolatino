@@ -39,7 +39,7 @@ const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos';
   const QC = sql(`select q.id from queue_items q join help_requests h on q.subject_kind = 'help_request' and h.id::text = q.subject_id where q.queue = 'cuidado' and q.status = 'open' and h.business_id = '${NIN}' order by q.id desc limit 1`);
   ok(/^\d+$/.test(QC), `la ayuda «No cuidaron bien a mi niño» abrió un caso en «Cuidado de niños» (${QC})`);
   ok(sql(`select count(*) from queue_items q where q.queue = 'sop' and q.subject_id = (select subject_id from queue_items where id = ${QC})`) === '0', 'no se duplica en «Ayuda con pedidos y citas»');
-  await ad.goto(B + '/admin/colas'); ok(await espera(ad.getByText(/Cuidado de niños · Guardería Mis Angelitos/).first()), 'sale primero en Colas');
+  await ad.goto(B + '/admin/colas?cola=cuidado'); ok(await espera(ad.getByText(/Cuidado de niños · Guardería Mis Angelitos/).first()), 'sale en su cola'); // 9a: la lista general tiene cientos
   await ad.goto(B + `/admin/colas?cola=cuidado&caso=${QC}`); await ad.getByText('INSCRIPCIÓN').first().waitFor();
   ok(await espera(ad.getByText(/No cuidaron bien a su niño/).first()), 'el caso dice el motivo con su nombre');
   ok(!(await ad.content()).includes('Valentina'), 'el caso no muestra los datos del niño sin pedirlos');

@@ -18,7 +18,7 @@ const restaurar = () => { try { sql(`update users set email = nullif('${prev.ema
   const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true })).newPage(); globalThis.__p = [m];
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });
   await entrar(m, '5705550122'); await m.goto(B + '/cuenta/perfil'); await m.getByText('CORREO').first().waitFor();
-  await (await vis(m.getByPlaceholder('ana@example.com'))).fill(EMAIL); await clic(m.getByRole('button', { name: 'Guardar cambios' }));
+  await (await vis(m.getByPlaceholder('ana@correo.com'))).fill(EMAIL); await clic(m.getByRole('button', { name: 'Guardar cambios' }));
   await m.getByText('Confirma tu correo').first().waitFor(); ok(sql(`select email::text || '|' || email_verified from users where id = ${MARI}`) === `${EMAIL}|false`, 'correo guardado sin verificar');
   await clic(m.getByText('Mandar el enlace', { exact: true })); await m.getByText('Abrir el enlace', { exact: true }).first().waitFor();
   ok(sql(`select status from email_outbox where tpl = 'verify' and user_id = ${MARI} order by id desc limit 1`) === 'pruebas', 'el correo de confirmar queda en modo pruebas (no sale)');

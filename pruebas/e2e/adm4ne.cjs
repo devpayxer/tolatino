@@ -45,8 +45,10 @@ const NEG = 'la-terraza-night';
   const QN = sql(`select id from queue_items where queue = 'noid' and subject_id = '${NEG}' and status = 'open'`);
   const QM = sql(`select id from queue_items where queue = 'mesa' and subject_id = '${NEG}' and status = 'open'`);
   ok(!!QN && !!QM, `las dos colas se abrieron solas (noid ${QN}, mesa ${QM})`);
-  await ad.goto(B + '/admin/colas'); 
-  ok(await espera(ad.getByText(/Sin identificación · La Terraza/).first()) && await espera(ad.getByText(/Mesas no respetadas · La Terraza/).first()), 'las dos salen en la lista de Colas');
+  // 9a · En la lista general (cientos de casos abiertos en la base local) pueden no caber en la primera página: cada una en su cola.
+  await ad.goto(B + '/admin/colas?cola=noid'); const v1 = await espera(ad.getByText(/Sin identificación · La Terraza/).first());
+  await ad.goto(B + '/admin/colas?cola=mesa'); const v2 = await espera(ad.getByText(/Mesas no respetadas · La Terraza/).first());
+  ok(v1 && v2, 'las dos salen en su cola');
   await ad.goto(B + `/admin/colas?cola=noid&caso=${QN}`); await ad.getByText('CADA NOCHE').first().waitFor();
   ok(await espera(ad.getByText('EN 30 NOCHES').first()) && await espera(ad.getByText(/No entró: sin identificación/).first()), 'el caso lista cada noche «sin identificación»');
   ok(await espera(ad.getByText(/devuelto \$20/).first()), 'y lo devuelto desde Transacciones');

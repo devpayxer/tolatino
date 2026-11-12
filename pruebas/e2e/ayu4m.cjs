@@ -2,6 +2,10 @@
 // el paciente, el consultorio y To'Latino; nadie más, ni por /medios), avisos neutros de Salud, «Que corrijan el cobro a mi
 // seguro», Pro «Ofreció algo que no podía por ley» → licencias a revisión + aviso de la Fiscalía, borrado de fotos a 90 días.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
+// siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
+// Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
+const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(/^(Algo no está bien|Algo no salió bien)$/); if (await r.count()) { await r.first().click(); await p.waitForURL(/de=compa/); } else if (!/de=compa/.test(p.url())) await p.goto(p.url() + (p.url().includes('?') ? '&' : '?') + 'de=compa'); };
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = 'centro-medico-quisqueya', P = 'bufete-almonte', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const MARISOL = "(select id from users where phone = '+15705550122')";
@@ -33,7 +37,7 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   const ofi = await mk({ viewport: { width: 1360, height: 900 } }, '5705550166'), otro = await mk({ viewport: { width: 1360, height: 900 } }, '5705550277');
   const anon = await mk({ viewport: { width: 390, height: 844 } }, null), adm = await mk({ viewport: { width: 1360, height: 900 } }, '5705550199');
   // ── Salud ──
-  await m.goto(B + `/cita/${CS}`); await clic(m.getByRole('button', { name: 'Ayuda con la cita' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/cita/${CS}`); await clic(m.getByRole('button', { name: 'Ayuda con la cita' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const f = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await f.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(f.getByText(/Nada se cobra en To’Latino: lo que se devuelve, lo devuelve el consultorio/))), 'salud: nada se cobra en la app; devuelve el consultorio');
   ok((await f.locator('[data-screen-label="Ayuda con la cita · qué pasó"]').getByRole('button').count()) === 7 && !!(await vis(f.getByText('No había intérprete'))), 'salud: 7 motivos (cobro, seguro, no aceptaron, intérprete, espera, trato, otra)');
@@ -70,13 +74,13 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   await clic(det.getByRole('button', { name: 'Enviar respuesta' }));
   ok(await espera(() => AY(CS, "h.status || '|' || h.decision"), 'answered|ok') === 'answered|ok', 'el consultorio acepta');
   ok(await espera(() => sql(`select count(*) from notifications where tpl = 'sal_help_reply' and created_at > now() - interval '5 minutes'`), '1') === '1', 'aviso neutro al paciente («Respondieron tu solicitud»)');
-  await m.goto(B + `/cita/${CS}/ayuda`); await verV(m.getByText('Corrigen el cobro a tu seguro'));
+  await m.goto(B + `/cita/${CS}/ayuda?de=compa`); await verV(m.getByText('Corrigen el cobro a tu seguro'));
   ok(!!(await vis(m.getByText('Te mandan la factura corregida en 10 días.'))), 'paciente: corrigen el cobro · factura corregida en 10 días');
   await m.screenshot({ path: OUT + 'n3-ayuda-salud-estado-m.png', fullPage: true });
   await clic(m.getByRole('button', { name: 'Entendido' }));
   ok(await espera(() => AY(CS, 'h.status'), 'resolved') === 'resolved', 'terminada');
   // ── Pro ──
-  await m.goto(B + `/cita/${CP}`); await clic(m.getByRole('button', { name: 'Ayuda con el trámite' })); await m.waitForURL(/\/ayuda$/);
+  await m.goto(B + `/cita/${CP}`); await clic(m.getByRole('button', { name: 'Ayuda con el trámite' })); await m.waitForURL(/\/ayuda(\?|$)/); await pasarHoja(m);
   const g = m.locator('[data-pantalla="APP-NEG-CITA-AYUDA"]'); await g.getByText('¿Qué pasó?').first().waitFor();
   ok(!!(await vis(m.getByText('Ayuda con el trámite').first())) && !!(await vis(g.getByText(/Total por escrito: \$/))), 'pro: Ayuda con el trámite · el total por escrito');
   await clic(g.getByText('Ofreció algo que no podía hacer por ley'));
@@ -94,7 +98,7 @@ const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
   // ── Borrado a los 90 días ──
   sql(`update help_requests set resolved_at = now() - interval '91 days' where operation_id = (select id from operations where number = '${CS}')`);
   await new Promise((r) => setTimeout(r, 61_000));
-  await m.goto(B + `/cita/${CS}`); await m.goto(B + `/cita/${CS}/ayuda`);
+  await m.goto(B + `/cita/${CS}`); await m.goto(B + `/cita/${CS}/ayuda?de=compa`);
   ok(await espera(() => sql(`select status || '|' || url || '|' || (purged_at is not null)::text from media where id = '${fm[0]}'`), 'removed|privado/borrada|true') === 'removed|privado/borrada|true', 'a los 90 días de cerrada la foto se borra del almacenamiento');
   ok(await st(m, U) === 404, 'y ya no se ve ni para el paciente');
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));
