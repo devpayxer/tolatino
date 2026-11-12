@@ -27,7 +27,8 @@ const pedir = async (m, lines) => {
   sql(`update operations set status = 'cancelled' where kind = 'market_order' and user_id = ${MAR} and status in ('pending', 'confirmed')`);
   sql(`update items set sold_out = false where business_id = '${M}'`);
   sql(`update retail_settings set slot_cap = 6, sub_default = 'call' where business_id = '${M}'`);
-  sql(`update payment_methods set is_default = (stripe_pm_id = 'pm_sim_visa_4242_d5f820de') where user_id = ${MAR} and status = 'active'`);
+  // 9b-1 · La tarjeta de Marisol (la guarda si no la tiene) en vez del id de una tarjeta de una base vieja.
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const mk = async (o, tel) => { const p = await (await b.newContext(o)).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); }); await entrar(p, tel); return p; };
   const m = await mk({ ...devices['iPhone 13'] }, '5705550122'), h = await mk({ viewport: { width: 1360, height: 900 } }, '5705550288');

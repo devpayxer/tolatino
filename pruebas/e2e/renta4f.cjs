@@ -12,6 +12,8 @@ const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++
 const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
 const espera = async (f, m) => { for (let i = 0; i < 40; i++) { if (f()) return ok(true, m); await new Promise((r) => setTimeout(r, 250)); } ok(false, m); };
 const MARISOL = "(select id from users where phone = '+15705550122')";
+// 9b-1 · Las dos tarjetas de Marisol (la buena y la que el banco rechaza): se guardan si no las tiene (una base nueva no las tenía).
+{ const T = require('../lib/negocio-nuevo.cjs').tarjeta; T('5705550122', '0002', { predeterminada: false }); T('5705550122', '4242'); }
 const PM_OK = sql(`select stripe_pm_id from payment_methods where user_id = ${MARISOL} and stripe_pm_id like 'pm_sim_visa_4242_%' order by created_at limit 1`), PM_NO = sql(`select stripe_pm_id from payment_methods where user_id = ${MARISOL} and stripe_pm_id like 'pm_sim_visa_0002_%' order by created_at desc limit 1`);
 const R = (n, col) => sql(`select ${col} from rentals r join operations o on o.id = r.operation_id where o.number = '${n}'`);
 const P = (n) => sql(`select string_agg(p.kind || ':' || p.status || ':' || p.amount_cents || ':' || p.fee_cents, ',' order by p.id) from payments p join operations o on o.id = p.operation_id where o.number = '${n}'`);

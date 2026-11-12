@@ -13,6 +13,8 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
 const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
 const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); if (x === v) return x; await new Promise((r) => setTimeout(r, 250)); } return x; };
 (async () => {
+  // 9b-1 · La licencia verificada de Luis la hace svc4h3: si no está, se corre ANTES de abrir la ficha, que trae a quién atiende al cargar (antes se daba por hecho que ya había corrido).
+  require('../lib/requiere.cjs').requiere('svc4h3', () => sql(`select l.id from licenses l join business_members bm on bm.id = l.member_id where l.business_id = 'centro-medico-quisqueya' and bm.display_name like 'Luis Fernández%' and l.status = 'valid' limit 1`), { que: 'la licencia verificada de Luis Fernández (PA-C)' });
   const b = await chromium.launch(); const err = [];
   const mk = async (vp) => { const p = await (await b.newContext({ viewport: vp })).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|maplibre|tiles/i.test(x.text())) err.push('console ' + x.text()); }); return p; };
   const m = await mk({ width: 390, height: 844 }), d = await mk({ width: 1360, height: 900 });

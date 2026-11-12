@@ -74,6 +74,11 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
+          # 9b-1 · 4 GB y 3 núcleos (por defecto 2 GB): el WebView avisaba «tile memory limits exceeded» y una app se cerró sola a los 10 s.
+          ram-size: 4096M
+          cores: 3
+          # Como en tiendas.yml: sin Vulkan en el emulador (la WebView dibuja con GLES; con gfxstream + Vulkan de SwiftShader el emulador se caía).
+          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           disable-animations: true
           script: bash apps/mobile/scripts/humo-android.sh apps/mobile/android/app/build/outputs/apk capturas-android
       - uses: actions/upload-artifact@v4

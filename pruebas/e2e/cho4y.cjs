@@ -3,8 +3,11 @@
 // 15 min avisa a cada pasajero y al negocio UNA sola vez.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
-const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', V = 'van-express-nyc', SVC = '870';
+const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', V = 'van-express-nyc';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
+// 9b-1 · Los servicios de Van Express por su nombre (antes los ids 870 y 872 de una base vieja: en una base nueva son otros).
+const svcVan = (n) => sql(`select id from items where business_id = 'van-express-nyc' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);
+const SVC = svcVan('Hazleton → Washington Heights');
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };

@@ -51,6 +51,7 @@ const reset = () => {
 };
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   reset();
   // Re-corrida: el servidor deja 20 fotos privadas por hora por persona; las de corridas anteriores se corren 2 h atrás.
   sql(`update media set created_at = created_at - interval '2 hours' where private and created_at > now() - interval '1 hour' and uploaded_by in (select id from users where phone in ('+15705550122', '+15705550299', '+15705550288'))`);

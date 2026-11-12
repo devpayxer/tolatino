@@ -2,6 +2,8 @@
 // pagaste, precio cerrado) que no se edita, preguntas por rubro, ≤2 ★ → la reseña no devuelve dinero, marcas en la tarjeta y
 // «Lo que importa» en la ficha.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', F = 'salon-imperial', V = 'van-express-nyc';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -13,8 +15,8 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
 const MARISOL = "(select id from users where phone = '+15705550122')";
 (async () => {
   sql(`update reviews set status = 'removed' where user_id = ${MARISOL} and business_id in ('${F}', '${V}')`);
-  const FN = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${F}' and kind = 'party' and status = 'done' order by id desc limit 1`);
-  const VN = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${V}' and kind = 'trip' and status = 'done' order by id desc limit 1`);
+  const FN = requiere('fie4v', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${F}' and kind = 'party' and status = 'done' order by id desc limit 1`), { que: 'una fiesta terminada' });
+  const VN = requiere('tra4y', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${V}' and kind = 'trip' and status = 'done' order by id desc limit 1`), { que: 'un viaje terminado' });
   ok(!!FN && !!VN, `fiesta terminada ${FN} y viaje terminado ${VN}`);
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');

@@ -26,6 +26,7 @@ const decidir = async (p, plantilla, cta) => { await clic(p.getByText(plantilla,
 // Botón de una fila de Negocios 360° (la fila que tiene el título y el botón).
 const enFila = (p, titulo, boton) => p.getByText(titulo, { exact: true }).first().locator(`xpath=ancestor::*[.//*[normalize-space(text())='${boton}']][1]`).getByText(boton, { exact: true }).first();
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // ── Punto de partida conocido ──
   sql(`update queue_items set status = 'decided', decision = 'prueba', decided_at = now() where queue = 'vivienda' and status = 'open'`);
   sql(`update sanctions set lifted_at = now(), lift_reason = 'Prueba 4ig' where target_kind = 'business' and target_id = '${INM}' and reason like 'Vivienda justa:%' and lifted_at is null`);

@@ -7,6 +7,8 @@
 // de otro negocio (cada llamada nueva repetida) · otro restaurante (El Fogón) que Sabor no ve · Super Admin › Transacciones › Evento privado ·
 // Mi cuenta · Configuración. Deja los datos como estaban (solicitudes de prueba cerradas, avisos y ajustes restaurados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · El SMS que se espera sale de la regla del servidor (de noche, lo que no es crítico espera: «silencio»).
+const { smsEsperado } = require('../lib/negocio-nuevo.cjs');
 const { chromium } = require('playwright'); const { execSync } = require('child_process'); const crypto = require('crypto');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
@@ -105,7 +107,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     // 25 × $26 + decoración $80 = $730; impuesto 6 % = $43.80; total $773.80; depósito 25 % = $193.45
     ok(await esperaV(() => sql(`select q.version || '|' || q.subtotal_cents || '|' || q.tax_cents || '|' || q.total_cents || '|' || q.deposit_cents || '|' || q.cancel_h from private_event_quotes q join operations o on o.id = q.operation_id where o.number = '${E1}' order by q.version desc limit 1`), '1|73000|4380|77380|19345|72') === '1|73000|4380|77380|19345|72', 'propuesta v1 calculada por la base: subtotal $730, impuesto $43.80, total $773.80, depósito 25 % $193.45, cancelar gratis 72 h');
     ok(op(E1) === 'change_proposed|quote', 'la solicitud: TE MANDARON SU PROPUESTA');
-    ok(sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'evp_propuesta' and ref_id = '${E1}' order by id desc limit 1`) === 'pruebas', 'aviso evp_propuesta con SMS (modo pruebas)');
+    ok(sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'evp_propuesta' and ref_id = '${E1}' order by id desc limit 1`) === smsEsperado('evp_propuesta'), 'aviso evp_propuesta con SMS (modo pruebas)');
     ok(sqlErr(`update private_event_quotes set deposit_cents = 1 where operation_id = (select id from operations where number = '${E1}')`).includes('solo de inserción'), 'la base: una propuesta no se cambia (solo inserción)');
     ok(sqlErr(`insert into private_event_quotes (operation_id, business_id, city_id, version, kind, starts_at, duration_min, party_size, lines, subtotal_cents, tax_bp, tax_cents, total_cents, deposit_pct, deposit_cents, cancel_h, valid_until) select id, business_id, city_id, 1, 'quote', scheduled_at, 180, 25, '[{"l":{"es":"x"},"q":1,"unit":100}]', 0, 0, 0, 0, 0, 0, 0, now() from operations where number = '${E1}'`).includes('nombre'), 'la base: una línea sin nombre no entra');
     await hp.goto(B + `/panel/${SAB}/hoy?det=evp:${E1}`); await contiene(hp, 'TUS PROPUESTAS');
@@ -154,7 +156,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     ok(sql(`select s.status || '|' || s.captured_cents || '|' || s.destination || '|' || s.fee_cents from sim_intents s join payments p on p.stripe_payment_intent = s.id join operations o on o.id = p.operation_id where o.number = '${E1}'`) === `succeeded|22790|acct_sim_${SAB}|1823`, 'el simulador: capturado al restaurante (cuenta conectada) con la comisión evp 8 % ($18.23)');
     ok(op(E1) === 'confirmed|' && sql(`select total_cents || '|' || deposit_cents || '|' || party_size from operations where number = '${E1}'`) === '91160|22790|30', 'la solicitud: CONFIRMADO con el total, el depósito y las personas de la v2');
     ok(sqlErr(`insert into private_event_acceptances (quote_id, operation_id, kind, user_id) select q.id, q.operation_id, 'quote', '${U1}' from private_event_quotes q join operations o on o.id = q.operation_id where o.number = '${E1}' and q.version = 2`).length > 0, 'la base: la misma propuesta no se acepta dos veces');
-    ok(sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'evp_ok' and ref_id = '${E1}' order by id desc limit 1`) === 'pruebas', 'aviso evp_ok con SMS');
+    ok(sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'evp_ok' and ref_id = '${E1}' order by id desc limit 1`) === smsEsperado('evp_ok'), 'aviso evp_ok con SMS');
     await t2.close();
     ok(await contiene(m, 'Depósito cobrado: $227.90') && await contiene(m, 'Lo que acordaron'), 'cliente: CONFIRMADO · «Depósito cobrado: $227.90» y lo acordado');
     await m.screenshot({ path: OUT + 'e6i-confirmado-m.png', fullPage: true });
@@ -210,7 +212,7 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
     await hp.screenshot({ path: OUT + 'e6i-panel-cancelar-d.png', fullPage: true });
     await clic(btn(hp, 'Sí, cancelar y devolver')); await contiene(hp, 'recibe su depósito completo');
     ok(await esperaV(() => pago(E3), `refunded|${dep3}|${dep3}`) === `refunded|${dep3}|${dep3}` && sql(`select r.initiated_by from refunds r join payments p on p.id = r.payment_id join operations o on o.id = p.operation_id where o.number = '${E3}'`) === 'business', 'el restaurante cancela a 20 h: devolución COMPLETA (initiated_by business)');
-    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'evp_cancelado_negocio' and ref_id = '${E3}'`) === 'pruebas', 'aviso evp_cancelado_negocio con SMS');
+    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'evp_cancelado_negocio' and ref_id = '${E3}'`) === smsEsperado('evp_cancelado_negocio'), 'aviso evp_cancelado_negocio con SMS');
     await m2.goto(B + `/privado/${E3}`); ok(await contiene(m2, 'canceló el evento') && await contiene(m2, 'Se nos dañó la cocina.'), 'cliente: «… canceló el evento» con el motivo');
 
     // ── 10 · Propuesta vencida: la pantalla y la base la rechazan ──

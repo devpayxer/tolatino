@@ -68,3 +68,7 @@ fi
 # ── Migraciones y semilla de pruebas (migrar.sh: cada una una sola vez; la semilla solo si cambió) ──
 bash "$RAIZ/packages/db/migrar.sh" "$RAIZ/pruebas/fakecompose.sh" x
 SEMILLA_DIR="$RAIZ/infra/pruebas/semilla" bash "$RAIZ/packages/db/migrar.sh" --semilla-pruebas "$RAIZ/pruebas/fakecompose.sh" x
+# 9b-1 · El Centro de ayuda (docs/ayuda → help_articles / help_chunks), como lo hace el despliegue del sandbox (infra/pruebas/deploy.sh, 3c-bis).
+# Sin esto, una base nueva no tenía ni un artículo y la ayuda, El Compa y sus pruebas (ayu7a, compa7c…) fallaban. Idempotente (sha256).
+node "$RAIZ/scripts/ayuda/indexar.mjs" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt > /dev/null
+echo "[base] centro de ayuda indexado ($(echo "select count(*) from help_articles where status = 'live'" | docker exec -i "$DB_CONT" psql -h 127.0.0.1 -U tolatino -d tolatino -qAt) artículos)"

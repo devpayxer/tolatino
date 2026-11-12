@@ -89,7 +89,15 @@ for par in $APPS; do
   adb logcat -d -s Capacitor:* Capacitor/Console:* TLCascara:* chromium:E AndroidRuntime:E > "$OUT/$s-logcat.txt" 2>&1 || true
   # Sin «cmd | grep -q» con pipefail (grep -q corta el tubo y el SIGPIPE se lee como fallo): se lee entero y se busca después.
   pid=$(adb shell pidof "$id" | tr -d '\r' || true)
-  if [ -z "$pid" ]; then echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"; fallo=1; continue; fi
+  # 9b-1 · Si la app no está, se dice POR QUÉ (Cáscaras 43149361486: el Repartidor no estaba a los 10 s y el logcat filtrado no lo explicaba):
+  # el registro de fallos, lo que dijo el sistema del proceso (murió, lo mató la memoria) y la memoria del emulador.
+  if [ -z "$pid" ]; then
+    echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"
+    { echo "== crash"; adb logcat -d -b crash 2>&1 | tail -40; echo "== sistema"; adb logcat -d 2>&1 | grep -E "ActivityManager|lowmemorykiller|am_proc_died|am_kill|has died|Killing|FATAL" | tail -40
+      echo "== memoria"; adb shell cat /proc/meminfo 2>&1 | head -5; } > "$OUT/$s-por-que.txt" 2>&1
+    sed "s/^/$s · por qué · /" "$OUT/$s-por-que.txt" | tail -60
+    fallo=1; continue
+  fi
   grep "Loading app at\|TLCascara\|Capacitor/Console.*\(rror\|Uncaught\)\|AndroidRuntime" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
   # Lo primero que la cáscara le contó a la WebView, con el modo avión ya puesto, es «no» (y nunca «sí» antes de un cambio de red).
   primera=$(grep -m1 -o "red para la WebView: \(sí\|no\)" "$OUT/$s-logcat.txt" || true)

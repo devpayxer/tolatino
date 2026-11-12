@@ -67,19 +67,20 @@ cdp() { # $1 = id de la app, resto = argumentos de cdp.mjs
   adb forward --remove-all > /dev/null 2>&1; adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null 2>&1 || { echo "SIN_REENVIO"; return 1; }
   timeout 60 node "$CDP" 9222 "$@" 2> "$DIAG/cdp-ultimo.err" || { echo "CDP_FALLO $(tail -c 300 "$DIAG/cdp-ultimo.err" | tr '\n' ' ')"; return 1; }
 }
-# Abre la app de cero y espera a que su WebView exponga DevTools (hasta 40 s).
+# Abre la app de cero y espera a que su WebView exponga DevTools (hasta 90 s: después de levantar el emulador otra vez, la primera tarda).
 abrir() { # $1 = id
-  local id="$1" pid i
+  local id="$1" pid i t=""
   adb shell am force-stop "$id" > /dev/null 2>&1 || true
-  timeout 60 adb shell am start -W -n "$id/com.tolatino.cascara.MainActivity" > /dev/null 2>&1 || return 1
-  for i in $(seq 1 40); do
+  timeout 60 adb shell am start -W -n "$id/com.tolatino.cascara.MainActivity" > /dev/null 2>&1 || { echo "  · am start falló"; return 1; }
+  for i in $(seq 1 90); do
     pid=$(pid_de "$id")
     if [ -n "$pid" ] && timeout 10 adb shell cat /proc/net/unix 2> /dev/null | grep -q "webview_devtools_remote_$pid"; then
       # La página tiene que haber cargado (no about:blank) antes de pedirle nada.
-      cdp "$id" titulo 2> /dev/null | grep -q '"url":"http' && return 0
+      t=$(cdp "$id" titulo 2> /dev/null); grep -q '"url":"http' <<< "$t" && return 0
     fi
     sleep 1
   done
+  echo "  · pid: ${pid:-ninguno} · lo último de DevTools: ${t:0:200}"
   return 1
 }
 entrar() { # $1 = id, $2 = teléfono → "ok" o el motivo
@@ -114,5 +115,7 @@ while read -r app sabor id tel tomas; do
   adb shell am force-stop "$id" > /dev/null 2>&1 || true
 done <<< "$LISTA"
 diagnostico "final" > /dev/null
+# Los volcados del emulador (si se cayó), para mirarlos en el artefacto.
+[ -d /tmp/android-runner ] && cp -r /tmp/android-runner "$DIAG/android-runner" 2> /dev/null || true
 echo "capturas de Android: $bien bien, $mal mal, emulador levantado de nuevo $revividas vez/veces"
 [ "$mal" -eq 0 ] && [ "$bien" -gt 0 ]

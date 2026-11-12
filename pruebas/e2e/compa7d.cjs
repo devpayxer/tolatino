@@ -28,6 +28,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   trip: (x) => `/viaje/${x}/ayuda`, night: (x) => `/noche/${x}/ayuda`, enrollment: (x) => `/insc/${x}/ayuda`, visit: (x) => `/vis/${x}/ayuda`, private_event: (x) => `/privado/${x}/ayuda`, tickets: (x) => `/eventos/orden/${x}/ayuda` };
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // ── Preparar: todo encendido, sin pausas, límites holgados, tope de Configuración ──
   sql(`update feature_flags set enabled = true where key like 'compa.%'`);
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7d' where lifted_at is null`);

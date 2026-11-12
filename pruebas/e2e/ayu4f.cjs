@@ -34,6 +34,7 @@ async function inscribir(p, neg, svc, o = {}) {
 }
 async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=insc:${num}`); await clic(p.getByRole('button', { name: 'Confirmar', exact: true })); await espera(() => sql(`select status from operations where number = '${num}'`), 'confirmed'); }
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   sql(`update operations set status = 'cancelled', cancelled_by = 'system' where kind = 'enrollment' and status in ('pending', 'change_proposed', 'confirmed') and business_id in ('${EDU}', '${NIN}', '${GYM}')`);
   sql(`update class_groups set seats_booked = 0 where business_id in ('${EDU}', '${NIN}', '${GYM}')`);
   sql(`update class_groups set status = 'open', seats_total = 12 where item_id = ${CIU} and label->>'es' not like 'Prueba%'`);
@@ -72,7 +73,9 @@ async function confirmar(p, neg, num) { await p.goto(`${B}/panel/${neg}/hoy?det=
   ok(await espera(() => AY(I1, "h.status || '|' || h.decision || '|' || h.offer_cents"), 'answered|alt|2000') === 'answered|alt|2000', 'la escuela propone $20');
   await m.goto(`${B}/insc/${I1}/ayuda?de=compa`); await m.getByText('TE PROPONEN UN CAMBIO').first().waitFor();
   await clic(m.getByRole('button', { name: 'Aceptar $20' }));
-  ok(await espera(() => sql(`select p.status || ':' || p.amount_cents || ':' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I1}'`), 'partially_refunded:5500:2000') === 'partially_refunded:5500:2000', 'aceptó: $20 exactos devueltos de la matrícula');
+  // 9b-1 · La matrícula cobrada sale del cobro (antes «5500» fijo: el precio en una base vieja; en la semilla es $50).
+  const MAT = sql(`select p.amount_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I1}'`);
+  ok(await espera(() => sql(`select p.status || ':' || p.amount_cents || ':' || p.refunded_cents from payments p join operations o on o.id = p.operation_id where o.number = '${I1}'`), `partially_refunded:${MAT}:2000`) === `partially_refunded:${MAT}:2000`, `aceptó: $20 exactos devueltos de la matrícula (cobrada: ${MAT} centavos)`);
 
   // ── Niños: «No cuidaron bien a mi niño» → directo a To'Latino, con ChildLine ──
   const N1 = await inscribir(m, NIN, GUARD, { hijo: { nombre: 'Valentina', edad: 4 } }); await confirmar(nin, NIN, N1);

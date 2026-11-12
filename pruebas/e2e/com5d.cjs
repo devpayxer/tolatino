@@ -207,7 +207,7 @@ const saludImg = () => { try { return JSON.parse(execSync('curl -s -m 3 localhos
   const fila = adA.locator('div', { has: adA.getByText('10 publicaciones al día', { exact: true }) }).filter({ has: adA.getByRole('button', { name: 'Cambiar' }) }).last();
   await clic(fila.getByRole('button', { name: 'Cambiar' }));
   await adA.getByLabel('PUBLICACIONES AL DÍA').fill('2'); await clic(adA.getByText('Mucho spam', { exact: true })); await clic(adA.getByRole('button', { name: 'Guardar' }));
-  ok(await espera(() => sql(`select value::text from platform_config where key = 'com_lim_publicaciones'`) === '2') && sql(`select count(*) from audit_entries where action = 'moderacion.limite'`) !== '0', 'el admin cambia el límite (con motivo y auditoría)');
+  ok(await espera(() => sql(`select value::text from platform_config where key = 'com_lim_publicaciones'`) === '2') && sql(`select count(*) from audit_entries where action = 'config.cambiar' and target_id = 'com_lim_publicaciones' and at > now() - interval '5 minutes'`) !== '0', 'el admin cambia el límite (con motivo y auditoría: desde 5i es «config.cambiar»; «moderacion.limite» solo seguía en una base vieja)');
   const r5 = rp[4].p, R5 = rp[4].id;
   pub(R5, 'Primera del día sobre el parque', '1 hours'); sql(`update com_posts set created_at = now() where author_user_id = '${R5}' and body like 'Primera del día%'`);
   pub(R5, 'Segunda del día sobre la escuela', '1 hours'); sql(`update com_posts set created_at = now() where author_user_id = '${R5}' and body like 'Segunda del día%'`);

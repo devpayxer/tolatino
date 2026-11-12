@@ -11,6 +11,8 @@
 // dinero; cierre de la noche; Super Admin › Modo puerta y ESCANEOS del boleto; Mi cuenta «Usado · entraste a las …». Deja los datos como
 // estaban (eventos de prueba cancelados, porteros de prueba quitados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · El SMS que se espera sale de la regla del servidor (de noche, lo que no es crítico espera: «silencio»).
+const { smsEsperado } = require('../lib/negocio-nuevo.cjs');
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto'); const fs = require('fs');
 const { S, B, sql, sqlErr, api, apiRaw, entrar, uid, firmar, otraLlave } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/';
@@ -166,7 +168,7 @@ function videoQR(t, file) {
     const K1 = await invitar(pm, NEG, EV1, 'Ana Portera', P1, false);
     ok(K1 && sql(`select status || '|' || scope || '|' || event_ids::text || '|' || phone_last4 from door_staff where invite_code = '${K1}'`) === `invited|events|{${EV1}}|${P1.slice(-4)}`, `el dueño invita a Ana (solo este evento): código ${K1} de 7 días; la base guarda «··${P1.slice(-4)}», el teléfono cifrado y su huella`);
     ok(sql(`select count(*) from door_staff where invite_code = '${K1}' and phone_enc is not null and phone_hash ~ '^[a-f0-9]{64}$' and position('${P1}' in encode(phone_enc, 'escape')) = 0`) === '1', 'el teléfono del portero no está en claro en la base');
-    ok(await espera(async () => sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'puerta_invitado' and created_at > now() - interval '2 minutes' order by id desc limit 1`) === 'pruebas'), 'a Ana le llega el aviso con el código (SMS en modo pruebas)');
+    ok(await espera(async () => sql(`select sms_status from notifications where user_id = '${U1}' and tpl = 'puerta_invitado' and created_at > now() - interval '2 minutes' order by id desc limit 1`) === smsEsperado('puerta_invitado')), 'a Ana le llega el aviso con el código (SMS en modo pruebas)');
     ok(await contiene(pm, `Código ${K1}: le llegó por SMS. Vale 7 días`) && await contiene(pm, 'INVITADO'), 'el panel muestra el código y a Ana como INVITADO');
     await pm.screenshot({ path: OUT + 'e6g-panel-porteros-390.png', fullPage: true });
     const K2 = await invitar(pn, NEG, EV1, 'Beto Portero', P2, true);

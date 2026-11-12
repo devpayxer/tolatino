@@ -7,6 +7,8 @@
 // IDOR con otra cuenta en cada acción nueva (se repite la llamada del servidor con la sesión de otra persona) y el Super Admin. Deja los datos
 // como estaban (eventos de prueba cancelados, boletos anulados, Configuración y avisos restaurados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · El SMS que se espera sale de la regla del servidor (de noche, lo que no es crítico espera: «silencio»).
+const { smsEsperado } = require('../lib/negocio-nuevo.cjs');
 // 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
 // siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
 // Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
@@ -52,6 +54,7 @@ const accion = (re) => [...acciones].reverse().find((x) => re.test(x.body));
 const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url, { headers: { 'next-action': cap.a, 'content-type': 'text/plain;charset=UTF-8', origin: B, accept: 'text/x-component' }, data: body ?? cap.body })).text());
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   const ADMID = uid(ADM), U1 = uid(C1), U2 = uid(C2), U3 = uid(C3), UY = uid(YESENIA);
   const PREFS = Object.fromEntries([U1, U2, U3, UY].map((u) => [u, sql(`select notif_prefs::text from users where id = '${u}'`)]));
   const limpiar = () => {
@@ -139,7 +142,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(!!capTransfer, 'se tiene la llamada del servidor de «Enviar boleto» (para repetirla con otra cuenta)');
     // Aviso a C2 (tiene cuenta): en la app y por SMS (modo pruebas) con el enlace.
     const N2 = sql(`select href || '|' || sms_status from notifications where user_id = '${U2}' and tpl = 'bol_transfer_in' order by id desc limit 1`).split('|');
-    ok(/^\/eventos\/recibir\/[A-Za-z0-9_-]{32}$/.test(N2[0]) && N2[1] === 'pruebas', 'C2 recibe el aviso «Te mandaron un boleto» con el enlace (SMS en modo pruebas)');
+    ok(/^\/eventos\/recibir\/[A-Za-z0-9_-]{32}$/.test(N2[0]) && N2[1] === smsEsperado('bol_transfer_in'), 'C2 recibe el aviso «Te mandaron un boleto» con el enlace (SMS en modo pruebas)');
     const TOKEN1 = N2[0].split('/').pop();
     // Admin: el QR viejo ya no entra.
     {
@@ -325,7 +328,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     // Sin cuenta: el SMS va a phone_messages cifrado (nunca el número en claro).
     await pn.fill('input[placeholder="Ej. DJ Cri Cri + 1"]', 'Invitada sin cuenta'); await pn.fill('input[placeholder="10 dígitos"]', SIN_CUENTA); await clic(btn(pn, 'Dar cortesía'));
     ok(await contiene(pn, 'Cortesía lista'), 'cortesía a un teléfono sin cuenta');
-    ok(sql(`select sms_status || '|' || (body like '%/eventos/recibir/%') || '|' || (body like '%${SIN_CUENTA}%') from phone_messages where tpl = 'bol_cortesia' order by id desc limit 1`) === 'pruebas|true|false', 'el SMS a un teléfono sin cuenta queda en phone_messages (modo pruebas) con el enlace; el número solo cifrado');
+    ok(sql(`select sms_status || '|' || (body like '%/eventos/recibir/%') || '|' || (body like '%${SIN_CUENTA}%') from phone_messages where tpl = 'bol_cortesia' order by id desc limit 1`) === `${smsEsperado('bol_cortesia')}|true|false`, 'el SMS a un teléfono sin cuenta queda en phone_messages (modo pruebas) con el enlace; el número solo cifrado');
     // Sin teléfono + el tope de Configuración.
     sql(`insert into platform_config (key, value, updated_by) values ('evt_cortesias_max', '3', '${ADMID}') on conflict (key) do update set value = excluded.value`);
     await pn.fill('input[placeholder="Ej. DJ Cri Cri + 1"]', 'Tercera'); await pn.fill('input[placeholder="10 dígitos"]', ''); await clic(btn(pn, 'Dar cortesía'));
@@ -369,7 +372,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     ok(sql(`select status from waitlist where user_id = '${U2}' and event_date_id = ${E2v.F}`) === 'offered' && sql(`select status from waitlist where user_id = '${U3}' and event_date_id = ${E2v.F}`) === 'waiting', 'se liberó un lugar: una sola oferta, a C2 (la primera); C3 sigue esperando');
     const HW = sql(`select hold_id || '|' || round(extract(epoch from offer_expires_at - now()) / 60) from waitlist where user_id = '${U2}' and event_date_id = ${E2v.F}`).split('|');
     ok(Number(HW[1]) >= 29 && Number(HW[1]) <= 30 && sql(`select user_id || '|' || status || '|' || held_n from ticket_holds h join ticket_stock s on s.ticket_type_id = ${T_UNO} where h.id = '${HW[0]}'`) === `${U2}|held|1`, 'la oferta es un apartado a nombre de C2 por 30 min (Configuración)');
-    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'espera_lugar' order by id desc limit 1`) === 'pruebas', 'a C2 le llega «Se liberó un lugar» (SMS, modo pruebas)');
+    ok(sql(`select sms_status from notifications where user_id = '${U2}' and tpl = 'espera_lugar' order by id desc limit 1`) === smsEsperado('espera_lugar'), 'a C2 le llega «Se liberó un lugar» (SMS, modo pruebas)');
     { const cy = await ctx(390, 844, true), py = await cy.newPage(); await entrar(py, YESENIA); tarjeta(YESENIA, '4242');
       await py.goto(B + `/eventos/${E2v.SLUG}?fecha=${E2v.F}`);
       ok(await contiene(py, 'LISTA DE ESPERA') && !(await contiene(py, 'QUEDAN 1', 1500)), 'el público no ve el lugar liberado: es de la lista');

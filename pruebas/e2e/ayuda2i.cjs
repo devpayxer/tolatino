@@ -16,6 +16,7 @@ const HOJA = /^(Algo no está bien|Algo no salió bien)$/;
 // 7d · Con El Compa encendido, «Ayuda con …» abre primero su hoja; «Algo no está bien» lleva al formulario de siempre (?de=compa).
 const pasarHoja = async (p) => { await p.waitForLoadState('networkidle'); const r = p.getByText(HOJA); if (await r.count()) { await clic(r); await p.waitForURL(/de=compa/); } };
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // Dos pedidos terminados recientes de Marisol (uno para el flujo, otro para vencer a las 24 h).
   // 9a · Sus propios dos pedidos terminados (antes tomaba los dos últimos de la base, que cambian con las otras pruebas): pagados en el local,
   // con un plato cada uno, de hace 2 horas.

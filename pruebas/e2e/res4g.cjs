@@ -1,6 +1,8 @@
 // 4g-1 · Reseña de Hogar y Auto: verificada con la visita/cita, dato de la visita (no se edita), preguntas por rubro,
 // ≤2 ★ → Ayuda con la visita, y los chips en la tarjeta de la ficha.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', H = 'plomeria-rodriguez', A = 'taller-hermanos-pena';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
@@ -13,8 +15,8 @@ const MARISOL = "(select id from users where phone = '+15705550122')";
 (async () => {
   sql(`update reviews set status = 'removed' where user_id = ${MARISOL} and business_id in ('${H}', '${A}') and status <> 'removed'`);
   sql(`select reviews_stats('${H}'); select reviews_stats('${A}')`);
-  const CH = sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${H}' and o.kind = 'appointment' and o.status = 'done' and exists (select 1 from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') and exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'arrived') order by o.id desc limit 1`);
-  const CA = sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${A}' and o.kind = 'appointment' and o.status = 'done' and exists (select 1 from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') order by o.id desc limit 1`);
+  const CH = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${H}' and o.kind = 'appointment' and o.status = 'done' and exists (select 1 from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') and exists (select 1 from operation_events e where e.operation_id = o.id and e.kind = 'arrived') order by o.id desc limit 1`), { que: 'una visita del Hogar terminada con su estimado aprobado' });
+  const CA = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${A}' and o.kind = 'appointment' and o.status = 'done' and exists (select 1 from estimate_lines l where l.operation_id = o.id and l.decision = 'ok') order by o.id desc limit 1`), { que: 'una cita del taller terminada con su estimado aprobado' });
   ok(!!CH && !!CA, `visitas terminadas: ${CH} (hogar) y ${CA} (auto)`);
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');

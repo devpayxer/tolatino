@@ -1,6 +1,8 @@
 // 4m-1 · Reseña de Doctores y Profesionales: dato de la cita (seguro aceptado, pagaste / total por escrito), preguntas por
 // rubro, filtro de datos de salud o del caso, ≤2 ★ → Ayuda, chips y «Lo que importa en Salud / en un trámite».
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 const { chromium, devices } = require('playwright'); const { execSync } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', S = 'centro-medico-quisqueya', P = 'bufete-almonte';
 const MARISOL = "(select id from users where phone = '+15705550122')";
@@ -14,9 +16,9 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
 (async () => {
   sql(`update reviews set status = 'removed' where user_id = ${MARISOL} and business_id in ('${S}', '${P}') and status <> 'removed'`);
   // Una cita de Salud terminada (con su seguro aceptado) y un trámite contratado y terminado.
-  const CS = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${S}' and kind = 'appointment' order by id desc limit 1`);
+  const CS = requiere('sal4j', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${S}' and kind = 'appointment' order by id desc limit 1`), { que: 'una cita de Salud' });
   sql(`update operations set status = 'done', done_at = now(), details = jsonb_set(jsonb_set(details, '{seguro,acepta}', 'true'), '{precio}', '{\"es\": \"\$0 · CON TU SEGURO\", \"en\": \"\$0 · WITH YOUR INSURANCE\"}') where number = '${CS}'`);
-  const CP = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${P}' and status = 'done' and status_detail = 'done' order by id desc limit 1`);
+  const CP = requiere('pro4l2', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${P}' and status = 'done' and status_detail = 'done' order by id desc limit 1`), { que: 'un trámite terminado' });
   sql(`update operations set done_at = now() where number = '${CP}'`);
   ok(!!CS && !!CP, `cita de Salud ${CS} y trámite ${CP} terminados`);
   const b = await chromium.launch(); const err = [];

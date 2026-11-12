@@ -21,8 +21,10 @@ const foto = async (p, boton) => { const fc = p.waitForEvent('filechooser'); awa
 (async () => {
   for (const x of ['plomeria-rodriguez']) { sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated) values ('${x}', 'acct_sim_${x}', 'enabled', true, true, '[]'::jsonb, '7788', true) on conflict (business_id) do nothing`); sql(`insert into delivery_settings (business_id, pay_card) values ('${x}', true) on conflict (business_id) do update set pay_card = true`); }
   limpiar();
-  const A = crear(T, 80, 8900, { rubro: 'auto', svc: { es: 'Diagnóstico con escáner', en: 'Scan diagnosis' }, veh: { t: '2016 honda CR-V', size: 's', mi: 84200 }, w: 'deja', luces: ['abs'], piezas: true }, 30);
-  const C = crear(H, 229, 8900, { rubro: 'hogar', svc: { es: 'Visita y diagnóstico', en: 'Visit and diagnosis' }, casa: { dir: '112 W Oak St, 18201', tenure: 'dueno' }, win: 0, area: 'bano', acceso: 'casa' }, 120);
+  // 9b-1 · El servicio por su nombre (antes los ids 80 y 229 de una base vieja: en una base nueva son otros servicios de otros negocios).
+  const SVC = (biz, es) => sql(`select id from items where business_id = '${biz}' and name->>'es' = '${es}' and removed_at is null order by id limit 1`);
+  const A = crear(T, SVC(T, 'Diagnóstico con escáner'), 8900, { rubro: 'auto', svc: { es: 'Diagnóstico con escáner', en: 'Scan diagnosis' }, veh: { t: '2016 honda CR-V', size: 's', mi: 84200 }, w: 'deja', luces: ['abs'], piezas: true }, 30);
+  const C = crear(H, SVC(H, 'Visita y diagnóstico'), 8900, { rubro: 'hogar', svc: { es: 'Visita y diagnóstico', en: 'Visit and diagnosis' }, casa: { dir: '112 W Oak St, 18201', tenure: 'dueno' }, win: 0, area: 'bano', acceso: 'casa' }, 120);
   sql(`update operations set details = jsonb_set(details, '{win}', to_jsonb((extract(hour from scheduled_at at time zone 'America/New_York') * 60 + 120)::int)) where number = '${C}'`);
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); globalThis.__p = [m]; await entrar(m, '5705550122');

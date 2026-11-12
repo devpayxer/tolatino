@@ -1,6 +1,8 @@
 // 4g-2 · Ayuda con la visita (Hogar) y con la cita (Auto): motivos del rubro, foto obligatoria, devolución de lo cobrado
 // del estimado (no solo el depósito), propuesta aceptada, y «que lo revisen otra vez» aceptado por el taller.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs');
 // 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
 // siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
 // Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
@@ -17,8 +19,9 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
 const MARISOL = "(select id from users where phone = '+15705550122')";
 const AY = (n, col) => sql(`select ${col} from help_requests h join operations o on o.id = h.operation_id where o.number = '${n}'`);
 (async () => {
-  const CH = sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${H}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and exists (select 1 from payments p where p.operation_id = o.id and p.kind = 'estimate' and p.status = 'captured' and p.refunded_cents = 0) and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`);
-  const CA = sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${A}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`);
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
+  const CH = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${H}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and exists (select 1 from payments p where p.operation_id = o.id and p.kind = 'estimate' and p.status = 'captured' and p.refunded_cents = 0) and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`), { que: 'una visita del Hogar terminada con su estimado cobrado y sin ayuda' });
+  const CA = requiere('est4d', () => sql(`select o.number from operations o where o.user_id = ${MARISOL} and o.business_id = '${A}' and o.kind = 'appointment' and o.status = 'done' and o.done_at > now() - interval '6 days' and not exists (select 1 from help_requests h where h.operation_id = o.id) order by o.id desc limit 1`), { que: 'una cita del taller terminada y sin ayuda' });
   ok(!!CH && !!CA, `visita ${CH} (hogar, con estimado cobrado) y cita ${CA} (auto)`);
   const est = Number(sql(`select max(p.amount_cents) from payments p join operations o on o.id = p.operation_id where o.number = '${CH}' and p.status = 'captured'`));
   const b = await chromium.launch(); const err = [];

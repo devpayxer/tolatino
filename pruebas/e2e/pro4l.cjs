@@ -36,7 +36,8 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
   await verV(m.getByText(/Confirman la hora en unos/)); ok(true, `${num}: «Confirman la hora… No se ha cobrado nada.»`);
   const op = sql(`select id from operations where number = '${num}'`);
   ok(sql(`select details->>'modo' || '|' || pay_mode || '|' || coalesce(customer_note, '') from operations where id = ${op}`) === 'video|local|', 'cita: por video, pago en la oficina, sin nota en operations');
-  ok(sql(`select reason || '|' || (position('USCIS' in convert_from(note_enc, 'LATIN1')) = 0)::text from op_private where operation_id = ${op}`) === 'carta|true', 'op_private: situación «carta» y la nota CIFRADA');
+  // 9b-1 · Lo cifrado se busca como bytes: convert_from(…, 'LATIN1') fallaba al azar cuando el cifrado traía un byte 0 (inestable).
+  ok(sql(`select reason || '|' || (position(convert_to('USCIS', 'UTF8') in note_enc) = 0)::text from op_private where operation_id = ${op}`) === 'carta|true', 'op_private: situación «carta» y la nota CIFRADA');
   const av = sql(`select body from notifications where ref_id = '${num}' and tpl = 'biz_pro_cita' order by id desc limit 1`);
   ok(av && !/inmigraci|USCIS|carta/i.test(av), `aviso a la oficina sin el trámite: «${av}»`);
   // Panel

@@ -2,6 +2,8 @@
 // el paciente, el consultorio y To'Latino; nadie más, ni por /medios), avisos neutros de Salud, «Que corrijan el cobro a mi
 // seguro», Pro «Ofreció algo que no podía por ley» → licencias a revisión + aviso de la Fiscalía, borrado de fotos a 90 días.
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+// 9b-1 · Lo que hace otra prueba se pide con requiere (si no está en la base, se corre esa prueba): ya no depende del orden.
+const { requiere } = require('../lib/requiere.cjs'); // (y sin ayuda pedida: la de una corrida anterior ya la tiene)
 // 9a · 7d: con El Compa encendido, «Ayuda con …» abre primero su hoja; la razón «Algo no salió bien / no está bien» lleva al formulario de
 // siempre (?de=compa). Ir directo a /ayuda?de=compa es «ya pasé por la hoja».
 // Con la operación todavía viva la hoja no trae esa razón (Cancelar, Otra hora, Otra cosa): ahí se sigue como «ya pasé por la hoja».
@@ -20,8 +22,11 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
 const AY = (num, col) => sql(`select ${col} from help_requests h join operations o on o.id = h.operation_id where o.number = '${num}'`);
 const st = (p, u) => p.evaluate(async (u) => (await fetch(u)).status, u);
 (async () => {
-  const CS = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${S}' and status = 'done' order by id desc limit 1`);
-  const CP = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${P}' and status = 'done' and status_detail = 'done' order by id desc limit 1`);
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
+  // 9b-1 · Una cita de Salud (la hace sal4j) que termina aquí, como en res4m (antes tomaba «la última terminada», que dejaba res4m).
+  const CS = requiere('sal4j', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${S}' and kind = 'appointment' and not exists (select 1 from help_requests h where h.operation_id = operations.id) order by id desc limit 1`), { que: 'una cita de Salud' });
+  sql(`update operations set status = 'done', done_at = now(), details = jsonb_set(jsonb_set(details, '{seguro,acepta}', 'true'), '{precio}', '{\"es\": \"\$0 · CON TU SEGURO\", \"en\": \"\$0 · WITH YOUR INSURANCE\"}') where number = '${CS}' and status <> 'done'`);
+  const CP = requiere('pro4l2', () => sql(`select number from operations where user_id = ${MARISOL} and business_id = '${P}' and status = 'done' and status_detail = 'done' and not exists (select 1 from help_requests h where h.operation_id = operations.id) order by id desc limit 1`), { que: 'un trámite terminado' });
   for (const n of [CS, CP]) {
     sql(`update media set owner_kind = 'user', owner_id = 'x' where owner_kind = 'help' and owner_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.number = '${n}')`);
     sql(`delete from queue_items where subject_kind = 'help_request' and subject_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.number = '${n}')`);

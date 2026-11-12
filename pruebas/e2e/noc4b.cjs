@@ -27,7 +27,9 @@ const barrer = () => execSync(`curl -s -X POST -H 'x-barrido-token: ${ENT.TOK}' 
   // Pestaña «Esta noche» (o el día que abre).
   const tabN = await vis(p.getByRole('tab', { name: /Esta noche|Mañana|^El / }).or(p.getByRole('button', { name: /^(Esta noche|Mañana \w+|El \w+)$/ })).first());
   ok(!!tabN, 'pestaña de la noche'); await tabN.click();
-  await p.getByText('ESTA NOCHE', { exact: true }).or(p.getByText('MAÑANA', { exact: false })).first().waitFor();
+  // 9b-1 · La primera VISIBLE: cuando el local no abre hoy (miércoles), la primera coincidencia de «MAÑANA» en el DOM estaba oculta y la prueba
+  // solo pasaba en las noches que abre (dependía del día).
+  await p.getByText('ESTA NOCHE', { exact: true }).or(p.getByText('MAÑANA', { exact: false })).filter({ visible: true }).first().waitFor();
   ok(!!(await vis(p.getByText(/^\$10 hasta las 11 PM, \$15 después\. Se paga en la puerta\./).first())), 'la Entrada sigue al cover de esta noche');
   ok(!!(await vis(p.getByText('Gratis hasta las 11 PM con tu nombre en la lista. Después, cover de $15.').first())), 'la Lista a su hora');
   ok(!!(await vis(p.getByText('Mínimo $150').first())) && !!(await vis(p.getByText(/HASTA 6 PERSONAS · DEPÓSITO \$50/).first())), 'mesa: mínimo, personas y depósito');

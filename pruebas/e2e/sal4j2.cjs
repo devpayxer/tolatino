@@ -27,13 +27,20 @@ async function pedir(m, nota) {
   const mk = async (vp) => { const p = await (await b.newContext({ viewport: vp })).newPage(); p.on('pageerror', (e) => err.push(e.message)); p.on('console', (x) => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|maplibre|tiles/i.test(x.text())) err.push('console ' + x.text()); }); return p; };
   const m = await mk({ width: 390, height: 844 }), d = await mk({ width: 1360, height: 900 });
   const MU = sql(`select id from users where phone = '+15705550122'`);
+  // 9b-1 · Su seguro, como en sal4j (antes lo daba por hecho: sal4i lo cambia a Highmark al final y, según el orden, quedaba ese).
+  sql(`update user_insurances set removed_at = now() where user_id = '${MU}' and removed_at is null`);
+  sql(`insert into user_insurances (user_id, kind, insurer, plan, member_last4, for_whom, is_default) values ('${MU}', 'medicaid', 'medicaid', 'upmcfy', '4471', 'yo', true)`);
   // Una nota vieja (cita cancelada hace 31 días): el primer barrido la borra.
-  const vieja = sql(`select o.id from operations o join op_private p on p.operation_id = o.id where o.user_id = '${MU}' order by o.id limit 1`);
-  if (vieja) sql(`update operations set status = 'cancelled', cancelled_by = 'admin', cancelled_at = now() - interval '31 days', updated_at = now() - interval '31 days' where id = ${vieja}`);
+  // 9b-1 · Su propia cita vieja con nota (antes tomaba «la primera con nota» de Marisol, que en una base nueva no existía o ya estaba borrada).
+  const vieja = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, details, subtotal_cents, total_cents, deposit_cents, pay_mode, sent_at, cancelled_at, cancelled_by, client_key, is_test, updated_at)
+    values ('C-' || nextval('operations_appt_seq'), 'appointment', 'hzl', '${S}', '${MU}', 'cancelled', '{}'::jsonb, 0, 0, 0, 'local', now() - interval '32 days', now() - interval '31 days', 'admin', gen_random_uuid(), true, now() - interval '31 days') returning id`).split('\n')[0];
+  sql(`insert into op_private (operation_id, reason, note_enc) values (${vieja}, 'chequeo', decode(repeat('ab', 40), 'hex')) /* 40 bytes como un cifrado (la base pide 29–1400) */`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'admin' where user_id = '${MU}' and kind = 'appointment' and status in ('pending','confirmed','change_proposed')`);
   await entrar(m, '5705550122'); await entrar(d, '5705550244');
   const N1 = await pedir(m, 'Me duele la garganta');
-  if (vieja) ok(await espera(() => sql(`select (note_enc is null)::text from op_private where operation_id = ${vieja}`), 'true') === 'true', 'nota de una cita terminada hace 31 días: borrada por el barrido');
+  // El barrido de citas borra notas a lo sumo una vez por minuto por proceso (citas-flujo.ts): se le da hasta 75 s, llamándolo cada 5 s.
+  { let borrada = false; for (let i = 0; i < 15 && !borrada; i++) { execSync(`curl -s -o /dev/null -X POST -H 'x-barrido-token: ${ENT.TOK}' ${B}/api/interno/barrido`); borrada = sql(`select (note_enc is null)::text from op_private where operation_id = ${vieja}`) === 'true'; if (!borrada) await new Promise((r) => setTimeout(r, 5000)); }
+    ok(borrada, 'nota de una cita terminada hace 31 días: borrada por el barrido'); }
   // ── Panel: lo que ve el consultorio ──
   await d.goto(B + `/panel/${S}/hoy?det=cita:${N1}`); await verV(d.getByText('No aceptamos su seguro'));
   ok(!!(await vis(d.getByText(/Medicaid · UPMC for You · ••• 4471/))), 'panel: SEGURO «Medicaid · UPMC for You · ••• 4471»');

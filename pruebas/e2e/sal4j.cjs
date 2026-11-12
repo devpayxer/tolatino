@@ -41,7 +41,8 @@ const verV = async (l) => { for (let i = 0; i < 60; i++) { if (await vis(l)) ret
   await m.screenshot({ path: OUT + 'j4-salud-cita-pend-m.png', fullPage: true });
   const op = sql(`select id from operations where number = '${num}'`);
   ok(sql(`select coalesce(customer_note, '') || '|' || (details::text like '%tos%')::text || '|' || pay_mode || '|' || deposit_cents from operations where id = ${op}`) === '|false|local|0', 'operations: sin nota, sin texto de la nota, pago en el consultorio, depósito 0');
-  ok(sql(`select reason || '|' || (note_enc is not null)::text || '|' || (position('tos' in convert_from(note_enc, 'LATIN1')) = 0)::text from op_private where operation_id = ${op}`) === 'chequeo|true|true', 'op_private: motivo «chequeo» y la nota CIFRADA (el texto no aparece)');
+  // 9b-1 · Lo cifrado se busca como bytes: convert_from(…, 'LATIN1') fallaba al azar cuando el cifrado traía un byte 0 (inestable).
+  ok(sql(`select reason || '|' || (note_enc is not null)::text || '|' || (position(convert_to('tos', 'UTF8') in note_enc) = 0)::text from op_private where operation_id = ${op}`) === 'chequeo|true|true', 'op_private: motivo «chequeo» y la nota CIFRADA (el texto no aparece)');
   ok(sql(`select details->'seguro'->>'acepta' || '|' || (details->'seguro'->>'last4') from operations where id = ${op}`) === 'true|4471', 'la cita copia el seguro (aceptado, solo 4471)');
   const av = sql(`select body from notifications where ref_id = '${num}' and tpl = 'biz_sal_cita' order by id desc limit 1`);
   ok(av && !/Quisqueya|Consulta|\btos\b|Marisol/i.test(av), `aviso al consultorio neutro: «${av}»`);

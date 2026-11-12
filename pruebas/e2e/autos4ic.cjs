@@ -196,7 +196,8 @@ const CARGOS = `update dealer_settings s set doc_fee_cents = x.f, derived_on = n
   ok(await espera(() => sql(`select count(*) from vehicle_listings where status <> 'sold' and doc_fee_cents > 35000`) === '0' && sql(`select doc_fee_cents from dealer_settings where business_id = '${NEG}'`) === '35000' && totalesBien()),
     'los cargos que pasaban bajan a $350 y el total en la puerta de todos los carros se recalcula');
   ok(sql(`select otd_cents from vehicle_listings where vin = '2HGFC2F56GATL0001'`) === String(puerta(1190000, 35000)), `Civic: en la puerta ${puerta(1190000, 35000) / 100}`);
-  ok(Number(sql(`select count(*) from audit_entries where action = 'autos.cargo.tope' and reason = 'Ajuste anual de PA verificado'`)) >= 1 && Number(sql(`select count(*) from audit_entries where action = 'autos.cargo.bajado_al_tope' and target_id = '${NEG}'`)) >= 1, 'el cambio y cada dealer bajado quedan en la auditoría');
+  // 9b-1 · Desde 5i el tope es un valor de Configuración: su cambio queda como «config.cambiar» (antes «autos.cargo.tope», que solo seguía en una base vieja).
+  ok(Number(sql(`select count(*) from audit_entries where action = 'config.cambiar' and target_id = 'dealer_doc_fee_cap_cents' and reason = 'Ajuste anual de PA verificado' and at > now() - interval '5 minutes'`)) >= 1 && Number(sql(`select count(*) from audit_entries where action = 'autos.cargo.bajado_al_tope' and target_id = '${NEG}' and at > now() - interval '5 minutes'`)) >= 1, 'el cambio y cada dealer bajado quedan en la auditoría');
   // Lo dejamos como estaba (tope $477, cargo $399) y el barrido lo pone al día.
   sql(`update platform_config set value = '47700' where key = 'dealer_doc_fee_cap_cents'`);
   sql(CARGOS);

@@ -5,6 +5,8 @@
 --     de siempre lo hizo dueño la prueba rec2 (reclamo con código, 5 nov); en una base recién sembrada Pedro no existía y Sabor Dominicano no
 --     tenía dueño: esas pruebas fallaban en el primer paso. rec2 ahora reclama un negocio propio de la corrida.
 --   · Kelvin (+1 570 555 0177, ya en la semilla) es el dueño de Multiservicios La Patria (licencias, 1k: lic) por la misma razón.
+--   · Luis (+1 570 555 0166, ya en la semilla) es el dueño de Bufete Almonte (lo reclamó rec1j el 5 nov): las pruebas de Profesionales
+--     (pro4l, pro4l2, svc4h2) entran a su panel con él, y sin una persona que reciba citas el bufete no tenía horas para pedir en línea.
 --   · Sabor Dominicano cobra con tarjeta: su cuenta de cobro del simulador (como las de 0015…0026 para los otros negocios). En el sandbox de
 --     siempre la conectó pagos2d (2d); en una base nueva, las pruebas que corren antes (din2o, avisos, pedidos con tarjeta) no la tenían.
 -- Solo si el negocio NO tiene dueño (en el sandbox de siempre ya lo tiene y no cambia nada). Nada se borra.
@@ -17,7 +19,7 @@ on conflict (phone) do nothing;
 do $$
 declare x record; u users;
 begin
-  for x in select * from (values ('sabor-dominicano', '+15705550133'), ('multiservicios-la-patria', '+15705550177')) v(negocio, tel) loop
+  for x in select * from (values ('sabor-dominicano', '+15705550133'), ('multiservicios-la-patria', '+15705550177'), ('bufete-almonte', '+15705550166')) v(negocio, tel) loop
     select * into u from users where phone = x.tel;
     if u.id is null or not exists (select 1 from businesses where id = x.negocio and owner_user_id is null and status = 'active') then continue; end if;
     -- Lo mismo que hace «Aplicar cambio» de un reclamo (admin/acciones-colas.ts, decidirReclamo): miembro dueño con todo el panel y owner_user_id.
@@ -34,6 +36,12 @@ end $$;
 insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
 select 'sabor-dominicano', 'acct_sim_sabor-dominicano', 'enabled', true, true, '[]'::jsonb, '6789', true
  where exists (select 1 from businesses where id = 'sabor-dominicano')
+on conflict (business_id) do nothing;
+
+-- Boutique Yaritza cobra con tarjeta (0019: «update delivery_settings set pay_card = true»): en una base nueva la tienda no tenía su fila de
+-- Pedidos y el update no hacía nada, así que el plan de pagos (layaway) no salía en su ficha. La fila, con la tarjeta encendida.
+insert into delivery_settings (business_id, pay_card)
+select 'boutique-yaritza', true where exists (select 1 from businesses where id = 'boutique-yaritza' and is_demo)
 on conflict (business_id) do nothing;
 
 -- Las respuestas de Sabor Dominicano que 0007 firmó con Pedro cuando todavía no existía (reply_by quedó vacío).

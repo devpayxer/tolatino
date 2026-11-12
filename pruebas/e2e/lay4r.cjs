@@ -20,8 +20,9 @@ const PAYS = (n) => sql(`select string_agg(p.kind || case when p.kind = 'balance
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and kind = 'hold' and status in ('pending', 'change_proposed', 'confirmed')`);
   sql(`update layaway_plans set status = 'cancelled' where status in ('pending', 'active', 'late') and operation_id in (select id from operations where user_id = ${MARISOL})`);
   sql(`update retail_settings set layaway = true, lay_down_pct = 20, lay_payments = 4, lay_every_days = 14, lay_cancel_pct = 10 where business_id = '${T}'`);
-  sql(`update delivery_settings set pay_card = true where business_id = '${T}'`);
-  sql(`update payment_methods set is_default = (stripe_pm_id = 'pm_sim_visa_4242_d5f820de') where user_id = ${MARISOL}`);
+  sql(`insert into delivery_settings (business_id) values ('${T}') on conflict (business_id) do nothing`); /* 9b-1 · la fila de la tienda (en una base nueva no la tenía) */ sql(`update delivery_settings set pay_card = true where business_id = '${T}'`);
+  // 9b-1 · La tarjeta de Marisol (la guarda si no la tiene) en vez del id de una tarjeta de una base vieja.
+  require('../lib/negocio-nuevo.cjs').tarjeta('5705550122');
   const b = await chromium.launch(); const err = [];
   const mc = await b.newContext({ ...devices['iPhone 13'] }), m = await mc.newPage(); await entrar(m, '5705550122');
   const h = await (await b.newContext({ viewport: { width: 1360, height: 900 } })).newPage(); await entrar(h, '5705550299');

@@ -107,6 +107,8 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   // Buscar › Noche: la tarjeta con el cover de esta noche.
   barrer();
   await p.goto(`${B}/c/noche`); await p.waitForLoadState('networkidle');
+  // 9b-1 · La categoría va por páginas (3 en una base nueva): se busca la tarjeta del local página por página (antes: solo la primera).
+  for (let i = 0; i < 6 && !(await vis(p.getByText(/cover \$15 · 18\+/).first())); i++) { const sig = await vis(p.getByText('Siguiente', { exact: true })); if (!sig) break; await sig.click(); await p.waitForLoadState('networkidle'); await p.waitForTimeout(400); }
   ok(!!(await vis(p.getByText(/cover \$15 · 18\+/).first())), 'la tarjeta de la categoría dice el cover de esta noche');
   await p.screenshot({ path: OUT + 'n4a-categoria-m.png' });
   ok(err.length === 0, 'sin errores en el navegador' + (err.length ? ': ' + err.join(' | ') : ''));

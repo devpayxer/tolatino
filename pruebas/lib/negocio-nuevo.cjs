@@ -85,4 +85,30 @@ async function entrarComo(p, tel, { nombre = 'Vecino', apellido = 'Prueba' } = {
   if (!v.nombre) { const r = await api('/api/cuenta/perfil', { nombre, apellido }); if (!r.ok) throw new Error('sin nombre ' + JSON.stringify(r)); }
   return v;
 }
-module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, medios, PUERTO_MEDIOS, sql };
+/* La tarjeta guardada (del simulador de pagos: pm_sim_<marca>_<últimos 4>_<8 hex>; 0002 = el banco la rechaza) de alguien, ACTIVA. Si no
+   la tiene, se la guarda como lo hace «Guardar tarjeta» (pago/acciones.ts: marca, últimos 4, vence, simulada). Con predeterminada, queda como la
+   de siempre. Antes las pruebas apuntaban a ids de tarjetas de una base vieja (pm_sim_visa_4242_d5f820de) que una base nueva no tiene.
+   La de 4242 de Marisol es la misma que ya usaban cit3c, silla3d y vi4b. Devuelve el stripe_pm_id. */
+const SUFIJO = { '4242': 'c13c3c00', '0002': '7725ac2e' };
+function tarjeta(tel, l4 = '4242', { predeterminada = true } = {}) {
+  const u = `(select id from users where phone = '+1${tel}')`, pm = `pm_sim_visa_${l4}_${SUFIJO[l4] ?? '0b9b1000'}`;
+  sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, simulated) select ${u}, '${pm}', 'visa', '${l4}', '12/30', false, true
+       where not exists (select 1 from payment_methods where user_id = ${u} and stripe_pm_id = '${pm}')`);
+  sql(`update payment_methods set status = 'active' where user_id = ${u} and stripe_pm_id = '${pm}'`);
+  if (predeterminada) sql(`update payment_methods set is_default = (stripe_pm_id = '${pm}') where user_id = ${u}`);
+  return pm;
+}
+/* El tope de «Ayuda con …»: 5 solicitudes por persona en 24 h (lib/ayuda.ts y lib/ayuda-cita.ts). Marisol abre ayudas en ~12 pruebas de la
+   regresión (pedidos, citas, inscripciones, fiestas, viajes, boletos, El Compa…): en una sola corrida pasaba el tope y la sexta prueba veía
+   «Abriste muchas solicitudes hoy». Antes de abrir la suya, cada prueba corre 1 día hacia atrás las de ESA persona de las últimas 24 h (solo
+   created_at, que es lo único que mira el tope; nada se borra ni cambia de estado). El tope en sí todavía no tiene su prueba (LAUNCH, 9b). */
+function sinTopeDeAyuda(tel) {
+  sql(`update help_requests set created_at = created_at - interval '1 day' where user_id = (select id from users where phone = '+1${tel}') and created_at > now() - interval '1 day'`);
+}
+/* El estado del SMS que la app le pone AHORA a un aviso de esa plantilla en modo pruebas, con la regla del servidor (lib/avisos.ts): lo
+   crítico (y biz_req) siempre sale («pruebas»); lo demás, entre las 10 PM y las 7 AM de Hazleton, espera («silencio»). Antes las pruebas
+   esperaban «pruebas» siempre y fallaban de noche. (Quien apagó las horas de silencio en sus preferencias no entra aquí.) */
+function smsEsperado(tpl) {
+  return sql(`select case when grp = 'crit' or key = 'biz_req' or extract(hour from now() at time zone 'America/New_York') between 7 and 21 then 'pruebas' else 'silencio' end from notif_templates where key = '${tpl}'`);
+}
+module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, smsEsperado, medios, PUERTO_MEDIOS, sql };

@@ -18,6 +18,9 @@ const st = (num) => sql(`select status || coalesce(':' || status_detail, '') fro
 const booked = (g) => Number(sql(`select seats_booked from class_groups where id = ${g}`));
 const EDU = 'ingles-para-todos', NIN = 'guarderia-mis-angelitos', GYM = 'power-gym-hzl';
 const CIU = sql(`select id from items where business_id = '${EDU}' and name->>'es' = 'Preparación para ciudadanía' and removed_at is null`);
+// 9b-1 · El curso como lo prueba esta prueba: matrícula de $55 y plan de 3 pagos (antes lo daba por hecho: era lo que dejaba edu4a, que
+// en una base nueva corre después y además empieza poniéndolo en $50 sin plan).
+sql(`update items set deposit_cents = 5500, svc_attrs = svc_attrs || '{"dep":5500,"plan_n":3}'::jsonb where id = ${CIU}`);
 const CONV = sql(`select id from items where business_id = '${EDU}' and name->>'es' = 'Conversación' and removed_at is null`);
 const GUARD = sql(`select id from items where business_id = '${NIN}' and svc_kind = 'semana' and removed_at is null limit 1`);
 const MEMB = sql(`select id from items where business_id = '${GYM}' and name->>'es' = 'Membresía sin contrato' and removed_at is null`);
@@ -151,7 +154,9 @@ async function inscribir(p, neg, svc, o = {}) {
   await clic(nin.getByRole('button', { name: 'Confirmar', exact: true }));
   ok(await espera(() => st(N1) === 'confirmed'), 'la guardería confirma');
   ok(sql(`select count(*) from notifications n where n.ref_id = '${N1}' and (n.body::text ilike '%Valentina%' or n.title::text ilike '%Valentina%')`) === '0', 'ningún aviso lleva el nombre del niño');
-  ok(Number(bandaAntes) === 11, 'la banda de edad bajó un cupo (4 bandas × 3 → 11)');
+  // 9b-1 · Las bandas de edad salen de la base (antes «4» fijo: una base vieja tenía la de nin4b; la semilla trae 3).
+  const bandas = Number(sql(`select count(*) from care_openings where business_id = '${NIN}' and removed_at is null`));
+  ok(Number(bandaAntes) === bandas * 3 - 1, `la banda de edad bajó un cupo (${bandas} bandas × 3 → ${bandas * 3 - 1})`);
 
   // 8 · Membresía: inscribirse $0 → confirmar → «Cancelar mi membresía» = baja pedida → el gimnasio confirma → constancia.
   const M1 = await inscribir(cli, GYM, MEMB);

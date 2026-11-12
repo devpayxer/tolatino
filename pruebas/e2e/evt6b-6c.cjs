@@ -52,9 +52,13 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
   const fecha = (id) => sql(`select id from event_dates where event_id = ${id} order by starts_at limit 1`);
   const slug = (id) => sql(`select slug from events where id = ${id}`);
   const ahora = Number(sql(`select (extract(hour from now() at time zone 'America/New_York') * 60 + extract(minute from now() at time zone 'America/New_York'))::int`));
-  ok(ahora < 1290, `la prueba corre antes de las 9:30 PM de Hazleton (ahora ${Math.floor(ahora / 60)}:${String(ahora % 60).padStart(2, '0')})`);
-  const NOCHE = evento(PARR, 'comunidad', 'Rosario en la plaza', 0, Math.min(1410, ahora + 120), Math.min(1410, ahora + 120) + 90, 'rsvp', { cap: 40, pmax: 4 });
-  const PUERTAS = evento(PARR, 'comunidad', 'Charla en la puerta', 0, ahora + 25, ahora + 100, 'rsvp', { cap: 20, pmax: 2, doors: 30 });
+  // 9b-1 · Sin depender de la hora (antes: «la prueba corre antes de las 9:30 PM de Hazleton» y fallaba de noche). Los dos eventos de HOY
+  // se crean a una hora cualquiera y después su fecha se pone respecto al reloj del servidor: la noche de hoy (local_date = hoy en Hazleton)
+  // empieza en 2 h y la charla en 25 min con las puertas ya abiertas. Pasada la medianoche de la noche, el evento sigue siendo de su noche.
+  console.log(`  (hora de Hazleton: ${Math.floor(ahora / 60)}:${String(ahora % 60).padStart(2, '0')})`);
+  const mover = (id, desde, dur, puertas) => sql(`update event_dates set starts_at = now() + interval '${desde} minutes', doors_at = now() + interval '${desde - puertas} minutes', ends_at = now() + interval '${desde + dur} minutes', local_date = (now() at time zone 'America/New_York')::date where event_id = ${id}`);
+  const NOCHE = evento(PARR, 'comunidad', 'Rosario en la plaza', 0, 1200, 1290, 'rsvp', { cap: 40, pmax: 4 }); mover(NOCHE, 120, 90, 30);
+  const PUERTAS = evento(PARR, 'comunidad', 'Charla en la puerta', 0, 600, 675, 'rsvp', { cap: 20, pmax: 2, doors: 30 }); mover(PUERTAS, 25, 75, 30);
   const R = evento('sabor-dominicano', 'comida', 'Sancocho de prueba', 1, 780, 960, 'rsvp', { cap: 5, pmax: 6 });
   const BASE = evento(PARR, 'comunidad', 'Cupo de cuatro', 4, 600, 660, 'rsvp', { cap: 4, pmax: 2 });
   const FERIAS = Array.from({ length: 14 }, (_, i) => evento(PARR, 'comunidad', `Feria ${String(i + 1).padStart(2, '0')}`, 3 + i, 600, 720, 'free'));

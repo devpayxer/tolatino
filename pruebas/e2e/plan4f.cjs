@@ -16,7 +16,8 @@ const hoy = () => sql(`select (now() at time zone 'America/New_York')::date`);
   limpiar();
   sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select ${MARISOL}, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false where not exists (select 1 from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null)`);
   sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', true from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null) limit 1`);
-  sql(`update payment_methods set status = 'active', is_default = (stripe_pm_id = 'pm_sim_visa_4242_c13c3c00') where user_id = ${MARISOL} and stripe_pm_id in ('pm_sim_visa_4242_c13c3c00', 'pm_sim_visa_0002_7725ac2e')`);
+  // 9b-1 · Sus dos tarjetas (la buena, predeterminada, y la que el banco rechaza): las guarda si no las tiene (una base nueva no las tenía).
+  { const T = require('../lib/negocio-nuevo.cjs').tarjeta; T('5705550122', '0002', { predeterminada: false }); T('5705550122', '4242'); }
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); globalThis.__p = [m]; await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

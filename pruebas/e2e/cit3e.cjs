@@ -53,6 +53,7 @@ const ayuda = (n, cols) => sql(`select ${cols} from help_requests h where h.oper
 const limpiarAyuda = () => sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'sop' and status = 'open' and subject_kind = 'help_request' and subject_id in (select h.id::text from help_requests h join operations o on o.id = h.operation_id where o.user_id = ${MARISOL} and o.business_id = '${BIZ}')`);
 const terminar = (n) => sql(`update operations set status = 'done', status_detail = 'done', done_at = now(), updated_at = now() where number = '${n}'`);
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   limpiar(); limpiarAyuda();
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(m, '5705550122');

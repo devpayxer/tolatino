@@ -18,6 +18,7 @@ const espera = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f(); 
 const MARISOL = "(select id from users where phone = '+15705550122')";
 const AY = (n, col) => sql(`select ${col} from help_requests h join operations o on o.id = h.operation_id where o.number = '${n}'`);
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // Tres noches de Marisol en La Terraza (de la prueba 4nc): una lista que entró, una mesa con depósito cobrado y otra para «inseguro».
   const L = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${NEG}' and kind = 'night' and details->>'k' = 'lista' and status = 'done' and status_detail = 'entro' order by id desc limit 1`);
   const M = sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' and p.status = 'captured' where o.user_id = ${MARISOL} and o.business_id = '${NEG}' and o.kind = 'night' and o.status = 'done' order by o.id desc limit 1`);

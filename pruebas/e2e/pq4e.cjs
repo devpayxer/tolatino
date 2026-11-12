@@ -59,7 +59,7 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   ok(!!(await vis(m.getByText(/NO HACE ESTE TRABAJO/))) && !!(await vis(m.getByText(/\$1,200–\$1,600 · VISITA GRATIS · 2–3 DÍAS/))), 'compara: rango, visita, días · el otro no lo hace');
   await m.screenshot({ path: OUT + 'q3-pq-compara-m.png', fullPage: true });
   // Reserva la visita de Plomería Rodríguez
-  await clic(m.getByRole('button', { name: /Plomería Rodríguez/ })); await m.waitForURL(/of=232&pre=Q-/);
+  await clic(m.getByRole('button', { name: /Plomería Rodríguez/ })); await m.waitForURL(new RegExp(`of=${sql(`select id from items where business_id = 'plomeria-rodriguez' and name->>'es' = 'Cambiar tubería' and removed_at is null order by id limit 1`)}&pre=Q-`)); // 9b-1 · el id del servicio, no el 232 de una base vieja
   const hj = m.locator('[data-screen-label="Servicio · opciones"]'); await hj.waitFor();
   await clic(hj.getByRole('button', { name: /Elegir franja|Elegir día y hora/ })); await m.waitForURL(/\/visita\?.*pre=Q-/);
   const bh = m.locator('[data-screen-label="APP-NEG-HOGAR-BOOKING · móvil"]'); await bh.getByText(`Con tu presupuesto ${Q}`).waitFor(); ok(true, 'Booking de la visita con tu presupuesto');
@@ -78,7 +78,7 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   const rid = sql(`insert into service_requests (number, mode, user_id, city_id, category_id, rubro, home_id, form, respond_by, status, valid_until) values ('${Q2}', 'pq', ${MARISOL}, 'hzl', 'NEG-HOGAR', 'hogar', '${casa}', '{"svc":{"es":"Cambiar tubería","en":"Repipe"},"k":"pres","nota":"Repipe del baño","casa":{"dir":"112 W Oak St, 18201"}}'::jsonb, now() + interval '40 hours', 'answered', now() + interval '7 days') returning id`).split('\n')[0];
   const otroId = sql(`select t.business_id from request_targets t join service_requests r on r.id = t.request_id where r.number = '${Q}' and t.business_id <> '${H}'`);
   sql(`insert into request_targets (request_id, business_id, item_id, sort, status, reply, answered_at) values (${rid}, '${H}', 232, 0, 'rng', '{"lo":120000,"hi":150000}'::jsonb, now()), (${rid}, '${otroId}', (select id from items where business_id = '${otroId}' and svc_kind = 'pres' and removed_at is null limit 1), 1, 'sent', null, null)`);
-  await m.goto(B + `/n/${H}/visita?s=232&pre=${Q2}`); await m.locator('[data-screen-label="APP-NEG-HOGAR-BOOKING · móvil"]').getByText(`Con tu presupuesto ${Q2}`).waitFor();
+  await m.goto(B + `/n/${H}/visita?s=${sql(`select id from items where business_id = 'plomeria-rodriguez' and name->>'es' = 'Cambiar tubería' and removed_at is null order by id limit 1`)}&pre=${Q2}`); await m.locator('[data-screen-label="APP-NEG-HOGAR-BOOKING · móvil"]').getByText(`Con tu presupuesto ${Q2}`).waitFor();
   await barra.getByRole('button', { name: 'Continuar' }).click(); await bh.getByText('LLEGA ENTRE').waitFor(); await ESPERA(m);
   await bh.locator('[role="radio"]:not([aria-disabled="true"])').filter({ hasText: /\d (AM|PM)–\d+ (AM|PM)/ }).nth(1).click();
   await barra.getByRole('button', { name: 'Continuar' }).click(); await bh.getByText('CÓMO SE COBRA').waitFor();

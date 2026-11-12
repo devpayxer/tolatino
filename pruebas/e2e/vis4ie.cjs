@@ -21,7 +21,9 @@ const MES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct
 const diaL = (ymd) => { const d = new Date(`${ymd}T12:00:00Z`); return `${DOW[d.getUTCDay()]} ${d.getUTCDate()} ${MES[d.getUTCMonth()]}`; };
 const horaL = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 12 || 12}${mm ? `:${String(mm).padStart(2, '0')}` : ''} ${h < 12 ? 'AM' : 'PM'}`; };
 const INM = 'rentas-hazleton-latino', DL = 'autos-el-cibao', FE = 'parroquia-santa-maria', CONS = 'consejeria-familiar-shalom';
-const P1 = '1139', P2 = '1140', P3 = '1141';
+// 9b-1 · Las tres casas de la semilla por su nombre (antes los ids 1139–1141 de una base vieja).
+const casa = (n) => sql(`select id from items where business_id = 'rentas-hazleton-latino' and name->>'es' = '${n}' and removed_at is null order by id limit 1`);
+const P1 = casa('2 cuartos · 312 Alter St'), P2 = casa('3 cuartos · casa · 90 W Diamond Ave'), P3 = casa('Estudio · 15 E Broad St');
 // El cuarto de pruebas de Rentas Hazleton Latino (lo crea inm4ib y lo retira al volver a correr): se toma el último y se revive abajo.
 const CUARTO = sql(`select pl.item_id from property_listings pl where pl.business_id = 'rentas-hazleton-latino' and pl.kind = 'cuarto' and not pl.addr_public order by pl.item_id desc limit 1`);
 // De la semilla (nunca de otra prueba, que los retira al volver a correr): catecismo, bautizo («Pedir fecha») y consejería.
