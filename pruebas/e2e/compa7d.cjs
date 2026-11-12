@@ -97,7 +97,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   const fuente = h.locator('a[data-fuente]').last(); await fuente.waitFor({ timeout: 15000 });
   ok(await fuente.getAttribute('href') === '/ayuda/reservar-mesa' && /SEGÚN EL CENTRO DE AYUDA/.test(await fuente.innerText()), `fuente «${(await fuente.innerText()).slice(0, 60)}» → /ayuda/reservar-mesa`);
   const cpR = sql(`select number from compa_conversations where user_id = '${MU}' order by id desc limit 1`);
-  ok(sql(`select surface || '|' || (operation_id is not null) || '|' || business_id from compa_conversations where number = '${cpR}'`) === 'help_sheet|true|barberia-el-primo', `${cpR}: hoja, ligada a la cita y su negocio`);
+  ok(sql(`select surface || '|' || (operation_id is not null) || '|' || business_id from compa_conversations where number = '${cpR}'`) === `help_sheet|true|${sql(`select business_id from operations where number = '${fc.num}'`)}`, `${cpR}: hoja, ligada a la cita y su negocio`); // 9b-1 · el negocio de ESA cita (antes «barberia-el-primo» fijo: la cita que quedaba en una base vieja)
   await pr.waitForTimeout(700); await pr.screenshot({ path: OUT + 'e7d-fuente-390.png' });
   await fuente.click(); await pr.waitForURL(/\/ayuda\/reservar-mesa$/); await pr.locator('h1').filter({ hasText: /Reservar mesa/ }).first().waitFor();
   ok(true, 'el enlace de la fuente abre el artículo del Centro de ayuda');
@@ -245,7 +245,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   sql(`insert into compa_pauses (scope, city_id, use, reason, paused_by) values ('city', 'hzl', 'neighbor', 'prueba compa7d', '${uid(ADM)}')`); await iguales('Hazleton en pausa');
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7d' where lifted_at is null`);
   const fb = fam.find((f) => f.kind === 'appointment');
-  sql(`insert into compa_pauses (scope, business_id, reason, paused_by) values ('business', 'barberia-el-primo', 'prueba compa7d', '${uid(ADM)}')`);
+  sql(`insert into compa_pauses (scope, business_id, reason, paused_by) values ('business', (select business_id from operations where number = '${fb.num}'), 'prueba compa7d', '${uid(ADM)}')`); // 9b-1 · el negocio de la cita que se usa
   { const p = await como(fb.tel); await p.goto(B + AYUDA.appointment(fb.num)); await p.waitForLoadState('networkidle'); ok(!(await p.locator(HOJA).count()) && norm(await texto(p)) === antes.appointment, 'Barbería El Primo en pausa: su cita sin hoja, la misma pantalla de antes'); }
   { const f = fam.find((x) => x.kind === 'market_order'); const p = await como(f.tel); await p.goto(B + AYUDA.market_order(f.num)); ok(!!(await p.locator(HOJA).count()), 'otro negocio (sin pausa) sí abre la hoja'); }
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7d' where lifted_at is null`);

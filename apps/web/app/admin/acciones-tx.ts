@@ -7,6 +7,7 @@ import { devolverPago } from "@/lib/cobros";
 import { db, tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
 import { rutaAdmin, type RutaAdmin } from "@/lib/ruta";
+import { hoyEn } from "../../lib/fecha-local";
 
 export async function exportarTx(filtros: Record<string, string>): Promise<ResAdm & { archivo?: string; nombre?: string }> {
   const s = await staff();
@@ -14,7 +15,7 @@ export async function exportarTx(filtros: Record<string, string>): Promise<ResAd
   const f = leerFiltrosTx(filtros && typeof filtros === "object" ? filtros : {});
   const filas = await filasExportTx(s, f);
   await tx((c) => auditar(c, { actor: s.id, action: "transacciones.exportar", targetKind: "report", targetId: "tx", after: { reporte: "Transacciones", filas: filas.length, formato: "CSV" }, reason: "Exportar desde Transacciones" }));
-  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(["#", "Fecha", "Tipo", "Negocio", "Cliente", "Total", "Estado"], filas), nombre: `tolatino-transacciones-${new Date().toISOString().slice(0, 10)}.csv` };
+  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(["#", "Fecha", "Tipo", "Negocio", "Cliente", "Total", "Estado"], filas), nombre: `tolatino-transacciones-${hoyEn()}.csv` };
 }
 
 /* ADM-TX · Devolver dinero de un pedido pagado con tarjeta (total o parcial). Permiso tx:aprobar, en tus ciudades; el

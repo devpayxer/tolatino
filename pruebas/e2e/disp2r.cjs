@@ -20,8 +20,8 @@ const webhook = async (ev) => { const cuerpo = JSON.stringify(ev), t = Math.floo
     sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, 1650, 1650, 6 from operations o, items x where o.client_key = '${k}' and x.business_id = '${BIZ}' and x.removed_at is null order by x.id limit 1`);
     for (const [ev, h] of [['sent', 3], ['accepted', 2.9], ['ready', 2.5], ['picked_up', 2]]) sql(`insert into operation_events (operation_id, kind, actor, actor_id, at) select id, '${ev}', '${ev === 'sent' || ev === 'picked_up' ? 'user' : 'business'}', '${ev === 'sent' || ev === 'picked_up' ? "' || user_id || '" : BIZ}', now() - interval '${h} hours' from operations where client_key = '${k}'`);
     const pi = `pi_sim_disp2r_${n}_${k.slice(0, 8)}`;
-    const id = sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, fee_cents, refunded_cents, status, card_brand, card_last4, captured_at, simulated, seq)
-      select id, user_id, business_id, city_id, 'full', 'card', '${pi}', 1749, 81, 0, 'captured', 'visa', '4242', now() - interval '2 hours', true, 1 from operations where client_key = '${k}' returning id`).split('\n')[0];
+    const id = sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, held_cents, fee_cents, refunded_cents, status, card_brand, card_last4, captured_at, simulated, seq)
+      select id, user_id, business_id, city_id, 'full', 'card', '${pi}', 1749, 1749, 81, 0, 'captured', 'visa', '4242', now() - interval '2 hours', true, 1 from operations where client_key = '${k}' returning id`).split('\n')[0];
     return [id, num, pi]; };
   const P1 = pedido(1), P2 = pedido(2), st2 = 'captured';
   const n0 = Number(sql(`select count(*) from notifications where tpl = 'biz_dispute' and user_id = ${PEDRO}`)), e0 = Number(sql(`select count(*) from notifications where tpl = 'biz_dispute_end' and user_id = ${PEDRO}`));

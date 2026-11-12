@@ -1389,9 +1389,23 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Probable: el emulador o la WebView mueren después de la vuelta en español (memoria de swiftshader) o se pierde el reenvío del puerto; además
       `capturas-android.sh` aborta por `set -e` en vez de decir qué falló. Las capturas de la tienda hechas con la web (`capturas.mjs`) nunca
       llegaron a correr en el CI con los últimos arreglos. (9a, 11 nov)
-- [ ] **→ 9b** · **Humo de Android inestable (Cáscaras, corrida 43106680850, intento 1):** solo la app «cliente»: `navigator.onLine` = true en
+      **9b-1 (12 nov), sigue en rojo:** `capturas-android.sh` ya no aborta: toma por toma (✓/✗ con el motivo), reenvío de DevTools por llamada
+      con el pid de ese momento, la app abierta de nuevo y con su sesión en cada idioma, el emulador vuelto a levantar si se va (máx. 2) y un
+      diagnóstico en `capturas-android/diagnostico` (adb, memoria, disco, kernel, el logcat entero, los volcados). Tres corridas en el CI:
+      43149359125 (4 GB, 3 núcleos) el emulador se fue al abrir la primera app; 43152342224 (4 GB, sin Vulkan) al navegar la primera;
+      43154886642 (memoria por defecto, sin Vulkan) **4 de 6 capturas en español** y después la app y el emulador se fueron. En las tres: 10–11 GB
+      libres, 75 GB de disco libres, sin OOM en el kernel, sin volcado de fallo y el logcat corta solo: el proceso del emulador (qemu) desaparece
+      mientras la WebView carga páginas reales (el humo, con páginas locales, pasa). Falta: probar otra imagen (API 33 o 35), fijar una versión
+      del emulador (`emulator-build`) o `-gpu guest`, y bajar el peso de las páginas en la cáscara de pruebas.
+- [x] **→ 9b** · **Humo de Android inestable (Cáscaras, corrida 43106680850, intento 1):** solo la app «cliente»: `navigator.onLine` = true en
       modo avión, logcat «red para la WebView: sí» al abrir y ningún evento online/offline; el intento 2 pasó. Probable: el modo avión todavía no
       quedó puesto cuando abre la primera app. Una prueba inestable se arregla, no se reintenta. (9a, 11 nov)
+      **Hecho (9b-1, 12 nov):** `humo-android.sh` ya no espera 3 s: antes de abrir cada app pone el modo avión y espera a que el sistema diga
+      que no hay red (`cmd connectivity airplane-mode` = enabled y `dumpsys connectivity` «Active default network: none», hasta 60 s; si no,
+      falla diciéndolo) y comprueba que lo PRIMERO que la cáscara le dice a la WebView es «red para la WebView: no». Si una app no está, dice
+      por qué (registro de fallos, lo que dijo el sistema, la memoria). Emulador con 4 GB, 3 núcleos y sin Vulkan. Cáscaras **43152344555 en
+      verde** en `claude/vibrant-franklin-krutwa` (3613f94): las cuatro apps «modo avión: enabled · Active default network: none (1–4 s)» y
+      «red para la WebView: no»; la 43149361486 (antes de subir la memoria) había visto a la del Repartidor cerrarse sola a los 10 s.
 - [ ] **→ 9b** · **La regresión entera en verde (`orden9a`):** la corrida completa del 12 nov (`node pruebas/correr.mjs --todas`, una a la vez) dio
       **169/198 en verde (6 397 ✓)**; volviendo a correr solo las rojas pasaron 2 más (em4e, renta4f: dependen del orden). Quedan **27 rojas**, por
       tres causas: (1) pruebas de las fases 1–2 que nunca volvieron a correr y cuya pantalla cambió (admin1i, cat1m, rec1j, lic, rec, rec2,
@@ -1399,3 +1413,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sop7b, adm7i, compa7d, fich8i, evt6i, disp2r) y la hora del día (adm6j); (3) dependen del orden (pasaron solas en esta sesión: cit3e, ayu4g,
       noc4b, tra4y, vis4ie) y msg2p (ya era de 9b). 9b: cada prueba con sus propios datos (como pednull, ayuda2i, rsvp9a), una base nueva por
       corrida en el CI con la semilla 0049, y la regresión en la tubería. Salida de cada una en PROGRESS «Fase 9 · 9a». (9a, 12 nov)
+
+## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
+- [ ] **→ 9b** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
+      ahora corre un día hacia atrás la hora de las ayudas de esa persona antes de abrir otra (`sinTopeDeAyuda`), así que nada comprueba que la
+      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov)
+- [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
+      (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)

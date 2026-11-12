@@ -1,4 +1,5 @@
 import "server-only";
+import { hoyEn } from "./fecha-local";
 import { valor } from "./config";
 import { db } from "./db";
 import { bi, dinero, diaCorto, hora, mesCorto, repL, spanL, sumarDias, type Bi, type Boleto, type Entrada, type FormatoEvt, type FormatoKey, type HorarioDia, type Mesa, type Repite } from "./evt-comun";
@@ -35,7 +36,7 @@ type FilaT = {
 type Dias = { hoy: string; vie: string; dom: string };
 async function diasCiudad(ciudad: string): Promise<Dias> {
   const r = (await db().query<{ hoy: string; dow: number }>(`select to_char(now() at time zone timezone, 'YYYY-MM-DD') as hoy, extract(dow from now() at time zone timezone)::int as dow from cities where id = $1`, [ciudad])).rows[0];
-  const hoy = r?.hoy ?? new Date().toISOString().slice(0, 10), dow = r?.dow ?? 0;
+  const hoy = r?.hoy ?? hoyEn(), dow = r?.dow ?? 0;
   const dom = sumarDias(hoy, (7 - dow) % 7), vie = dow === 0 || dow >= 5 ? hoy : sumarDias(dom, -2);
   return { hoy, vie, dom };
 }

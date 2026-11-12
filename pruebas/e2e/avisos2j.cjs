@@ -27,7 +27,7 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente'); globalThis.__p = [m];
   await entrar(m, '5705550122');
   const pedir = async (lines) => {
-    await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })), lines);
+    await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })) || localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })), lines); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
     await m.goto(B + '/n/' + BIZ + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
     await m.waitForURL(/\/pedido\/\d+$/); return m.url().split('/').pop();
   };
@@ -36,8 +36,8 @@ const restaurar = () => { try { sql(`update business_hours set ranges='[["11:00"
   ok(await espera(() => sql(`select count(*) from notifications where user_id = ${PEDRO} and tpl = 'biz_req' and ref_id = '${n1}'`), '1') === '1', 'el negocio recibe «Nueva solicitud» (biz_req)');
   // Panel acepta → aviso al cliente
   const d = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); watch(d, 'panel'); globalThis.__p.push(d);
-  await entrar(d, '5705550133'); await d.goto(B + P + '/hoy'); await d.getByText(`Pedido #${n1} · Pickup`).first().waitFor();
-  const fila = d.locator('div', { has: d.getByText(`Pedido #${n1} · Pickup`, { exact: true }) }).filter({ has: d.getByText('Aceptar', { exact: true }) }).last();
+  await entrar(d, '5705550133'); await d.goto(B + P + '/hoy'); await d.getByText(new RegExp(`^Pedido #${n1} · Pickup$`)).first().waitFor();
+  const fila = d.locator('div', { has: d.getByText(new RegExp(`^Pedido #${n1} · Pickup$`)) }).filter({ has: d.getByText('Aceptar', { exact: true }) }).last();
   await fila.getByText('Aceptar', { exact: true }).click(); await d.getByText('Marisol ya lo ve en su pedido.').waitFor();
   ok(await espera(() => sql(`select tpl || '|' || sms_status || '|' || (body like 'Sabor Dominicano aceptó tu pedido #${n1}. Listo a las %') from notifications where user_id = ${MARISOL} and ref_id = '${n1}'`), `ord_ok|${smsEsperado('ord_ok', `${MARISOL}`)}|true`) === `ord_ok|${smsEsperado('ord_ok', `${MARISOL}`)}|true`, 'aceptar → aviso ord_ok con el texto lleno; SMS «en modo pruebas»');
   // Preferencia apagada → SMS apagado (la bandeja igual)

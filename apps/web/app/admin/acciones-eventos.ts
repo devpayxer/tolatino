@@ -7,6 +7,7 @@ import { auditar, requerir } from "@/lib/admin";
 import { db, tx } from "@/lib/db";
 import { decidirEvento, ocultarEvento, organizadorPaso, type Decision } from "@/lib/evt-revision";
 import type { ResAdm } from "./acciones-colas";
+import { hoyEn } from "../../lib/fecha-local";
 
 const no = (mensaje: string): ResAdm => ({ ok: false, mensaje });
 const motivoOk = (m: unknown) => (typeof m === "string" ? m.replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim().slice(0, 500) : "");
@@ -92,7 +93,7 @@ export async function liqCsv(st: string | null, q: string): Promise<ResAdm & { a
   const L = await import("@/lib/evt-liquidacion"), { csv } = await import("@/lib/csv");
   const d = await L.liquidacionesAdmin(s, st, String(q ?? ""));
   await tx((c) => auditar(c, { actor: s.id, action: "evento.liquidaciones_exportar", targetKind: "report", targetId: "liquidaciones", after: { filas: d.filas.length }, reason: "Exportar liquidaciones de eventos" }));
-  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(L.CSV_LIQ, L.liquidacionesCsv(d.filas)), nombre: `tolatino-liquidaciones-eventos-${new Date().toISOString().slice(0, 10)}.csv` };
+  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(L.CSV_LIQ, L.liquidacionesCsv(d.filas)), nombre: `tolatino-liquidaciones-eventos-${hoyEn()}.csv` };
 }
 
 /* 6e · Colas › «Organizadores que cancelan»: bloquear la publicación (evt:retirar; avisa con el motivo y se puede apelar) o cerrar como

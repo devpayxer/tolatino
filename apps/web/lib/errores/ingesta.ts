@@ -80,7 +80,7 @@ export async function recibirError(e: Entrada): Promise<Recibido> {
   const fp = huellaError({ app: clave, plataforma, tipo, titulo, cuadros: s.cuadros, stackNativo: stack });
   const eq = equipo(ua);
   const release = app ? String(app.build) : (process.env.TOLATINO_COMMIT ?? "local").replace(/[^a-f0-9a-z]/gi, "").slice(0, 12) || "local";
-  const dia = new Date().toISOString().slice(0, 10), sesion = hmac(`errores:${dia}:${e.dev ?? e.ip ?? "?"}`).slice(0, 32);
+  const dia = new Date().toISOString().slice(0, 10) /* GUARDIAN-OK hoyEnLaCiudad: sal del día para la huella de la sesión, no una fecha que vea nadie */, sesion = hmac(`errores:${dia}:${e.dev ?? e.ip ?? "?"}`).slice(0, 32);
   const prueba = process.env.TOLATINO_ENTORNO !== "produccion";
   try {
     const id = await tx(async (c) => {

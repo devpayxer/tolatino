@@ -1,4 +1,5 @@
 import "server-only";
+import { hoyEn } from "./fecha-local";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { comision } from "./cobros";
@@ -285,7 +286,7 @@ export async function planVista(userId: string, numero: string): Promise<PlanVis
   const proximas: PlanVista["proximas"] = [];
   if (p.st !== "cancelled") {
     let f = p.st === "paused" ? null : p.next;
-    if (!f && p.st === "paused") f = siguienteVisita(addD(new Date().toISOString().slice(0, 10), 0), p.dow, p.nth, p.meses);
+    if (!f && p.st === "paused") f = siguienteVisita(addD(hoyEn(), 0), p.dow, p.nth, p.meses);
     for (let k = 0; f && k < 4; k++) {
       const cita = (await db().query<{ n: string }>(`select number as n from operations where kind = 'appointment' and details->>'plan' = $1 and (scheduled_at at time zone $3)::date = $2::date and status <> 'cancelled'`, [numero, f, p.tz])).rows[0]?.n ?? null;
       proximas.push({ fecha: f, cita }); f = siguienteVisita(f, p.dow, p.nth, p.meses);

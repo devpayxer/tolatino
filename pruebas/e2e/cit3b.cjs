@@ -32,6 +32,8 @@ const limpiar = () => {
 };
 (async () => {
   limpiar();
+  // 9b-1 · Las dos tarjetas de Marisol que usa (la que el banco rechaza y la buena): se guardan si no las tiene (una base nueva no las tenía).
+  { const T = require('../lib/negocio-nuevo.cjs').tarjeta; T('5705550122', '0002', { predeterminada: false }); T('5705550122', '4242'); }
   const b = await chromium.launch(); const err = [];
   const ctxM = await b.newContext({ ...devices['iPhone 13'] }); const m = await ctxM.newPage();
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

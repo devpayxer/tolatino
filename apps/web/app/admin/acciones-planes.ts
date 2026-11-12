@@ -5,6 +5,7 @@ import { auditar, staff, type Staff } from "@/lib/admin";
 import { db, tx } from "@/lib/db";
 import { anularSuscripcion, darCortesia, extenderPrueba, quitarCortesia, reintentarCobro } from "@/lib/suscripcion";
 import type { ResAdm } from "./acciones-colas";
+import { hoyEn } from "../../lib/fecha-local";
 
 async function negocioMio(s: Staff, negocio: string) {
   const r = (await db().query<{ city: string }>(`select city_id as city from businesses where id = $1 and (cardinality($2::text[]) = 0 or city_id = any($2::text[]))`, [String(negocio ?? ""), s.cities])).rows[0];
@@ -68,5 +69,5 @@ export async function ingresosCsv(): Promise<ResAdm & { archivo?: string; nombre
   const filas: string[][] = [...d.semanas.map((w) => [`Semana del ${w.ini}`, m(w.fee), m(w.pro), String(w.n)]), ["Total 8 semanas", m(d.semanas.reduce((a, w) => a + w.fee, 0)), m(d.semanas.reduce((a, w) => a + w.pro, 0)), String(d.semanas.reduce((a, w) => a + w.n, 0))],
     [], ["Categoría (90 días)", "Comisiones", "", ""], ...d.categorias.map((k) => [k.cat, m(k.fee), "", ""])];
   await tx((c) => auditar(c, { actor: s.id, action: "plan.ingresos_exportar", targetKind: "report", targetId: "ingresos", after: { filas: filas.length }, reason: "Exportar ingresos" }));
-  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(["Periodo", "Comisiones (USD)", "Pro (USD)", "Cobros con tarjeta"], filas), nombre: `tolatino-ingresos-${new Date().toISOString().slice(0, 10)}.csv` };
+  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo: csv(["Periodo", "Comisiones (USD)", "Pro (USD)", "Cobros con tarjeta"], filas), nombre: `tolatino-ingresos-${hoyEn()}.csv` };
 }

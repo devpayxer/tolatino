@@ -22,7 +22,7 @@ const st = (n) => sql(`select status||'|'||coalesce(stage,'-') from operations w
   await entrar(m, '5705550122');
   // Pedir desde el carrito guardado (el flujo de la ficha ya se probó en el 2b)
   const pedir = async (lines) => {
-    await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })), lines);
+    await m.goto(B + '/n/' + BIZ); await m.evaluate((l) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: l } })), lines); await m.evaluate(() => localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' }))); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
     await m.goto(B + '/n/' + BIZ + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
     await m.waitForURL(/\/pedido\/\d+$/); return m.url().split('/').pop();
   };

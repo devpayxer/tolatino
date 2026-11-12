@@ -4,6 +4,7 @@ import { db } from "./db";
 import { herramientaEdu } from "./edu";
 import { fechaCorta, type Bi } from "./inscripciones-comun";
 import { esLiga, esMembresia, kindDepDe, usdD, type HerrDep } from "./deporte-comun";
+import { hoyEn } from "./fecha-local";
 
 /* Deporte (Fase 4 · bloque 4ec). Plan: docs/diseno/plan/fase4-edu-ninos-deporte.md §2, §4ec y §5. Diseño: dash2-cat.js L473–487
    (Liga e inscripciones · Membresías y contrato), apply L238–249 (tarjeta y filtros), neg-deporte-kind.js conL L30.
@@ -30,7 +31,7 @@ export async function herramientaDeporte(negocio: string, c: Q = db()): Promise<
     contrato: b.con ?? 0, salir: b.cxl ?? 0, inscripcion: b.ins ?? 0, guarderia: b.guard ?? fv.includes("guarderia"), esp: b.esp ?? fv.includes("esp"),
     mes: mes ? { id: mes.id, cents: mes.cents, g1: mes.g1 } : null, dia: dia ? { id: dia.id, cents: dia.cents } : null,
     temporada: temp ? { id: temp.id, cents: temp.cents, dep: temp.mat, team: !!T?.team, sem: temp.sem, grupo: g ? { id: g.id, libres: g.libres, inicio: g.inicio } : null } : null,
-    hasta: b.hasta, sueltos: b.sueltos ?? fv.includes("sueltos"), cancha: cancha ? { id: cancha.id, cents: cancha.cents } : null, edu, hoy: edu?.hoy ?? new Date().toISOString().slice(0, 10),
+    hasta: b.hasta, sueltos: b.sueltos ?? fv.includes("sueltos"), cancha: cancha ? { id: cancha.id, cents: cancha.cents } : null, edu, hoy: edu?.hoy ?? hoyEn(),
   };
 }
 

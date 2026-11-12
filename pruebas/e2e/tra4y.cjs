@@ -19,6 +19,7 @@ const DOW = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const pay = (n) => sql(`select o.status || '|' || p.status || '|' || p.amount_cents || '|' || p.refunded_cents from operations o join payments p on p.operation_id = o.id where o.number = '${n}'`);
 const run = (id) => sql(`select seats_booked || '|' || status from trip_runs where id = ${id}`);
 (async () => {
+  require('../lib/negocio-nuevo.cjs').direccion('5705550122'); // 9b-1 · su dirección de casa (la que «¿Dónde te recogen?» propone)
   // Limpieza: nada vivo de la van de pruebas anteriores; salidas limpias.
   const vivos = `select id from operations where business_id = '${V}' and kind = 'trip' and status in ('pending', 'change_proposed', 'confirmed')`;
   sql(`update run_seats set status = 'cancelled' where operation_id in (${vivos})`);
@@ -135,9 +136,10 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await w.goto(B + `/panel/${V}/hoy?det=viaje:${V4}`); await clic(w.getByRole('button', { name: 'Abordó' })); await w.getByText(/Marcado: abordó/).first().waitFor();
   ok(sql(`select status from run_seats where run_id = ${R3} and operation_id = (select id from operations where number = '${V4}')`) === 'boarded', 'Abordó');
   await w.goto(B + `/panel/${V}/hoy?det=salida:${R3}`); await w.screenshot({ path: OUT + 'y9-panel-salida-d.png', fullPage: true });
-  await clic(w.getByRole('button', { name: 'Salió' })); await w.getByText(/va en camino/).first().waitFor();
+  // 9b-1 · «Salió» y «Llegó» exactos: la reseña de un viaje («Salió casi a la hora…», de res4z) también es un botón y se tomaba primero.
+  await clic(w.getByRole('button', { name: 'Salió', exact: true })); await w.getByText(/va en camino/).first().waitFor();
   await m.goto(B + `/viaje/${V4}`); ok(await espera(m.getByText('EN CAMINO')), 'el cliente: EN CAMINO');
-  await w.goto(B + `/panel/${V}/hoy?det=salida:${R3}`); await clic(w.getByRole('button', { name: 'Llegó' })); await w.getByText(/reseña a cada pasajero/).first().waitFor();
+  await w.goto(B + `/panel/${V}/hoy?det=salida:${R3}`); await clic(w.getByRole('button', { name: 'Llegó', exact: true })); await w.getByText(/reseña a cada pasajero/).first().waitFor();
   ok(sql(`select status from operations where number = '${V4}'`) === 'done' && run(R3).endsWith('|arrived'), 'Llegó: el viaje terminó');
   await m.goto(B + `/viaje/${V4}`); ok(await espera(m.getByText('LLEGASTE')), 'el cliente: LLEGASTE');
   await m.screenshot({ path: OUT + 'y10-llegaste-m.png', fullPage: true });
@@ -161,8 +163,8 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await clic(m.getByRole('button', { name: 'Continuar' })); const V8 = await enviar(m);
   ok(pay(V8) === 'pending|held|42000|0', `${V8}: van completa, retenido $420`);
   await w.goto(B + `/panel/${V}/hoy?det=viaje:${V8}`); await clic(w.getByRole('button', { name: 'Confirmar', exact: true })); await w.getByText(/Confirmado/).first().waitFor();
-  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V8}`); await clic(w.getByRole('button', { name: 'Salió' })); await w.getByText(/va en camino/).first().waitFor();
-  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V8}`); await clic(w.getByRole('button', { name: 'Llegó' })); await w.getByText(/reseña/).first().waitFor();
+  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V8}`); await clic(w.getByRole('button', { name: 'Salió', exact: true })); await w.getByText(/va en camino/).first().waitFor();
+  await w.goto(B + `/panel/${V}/hoy?det=viaje:${V8}`); await clic(w.getByRole('button', { name: 'Llegó', exact: true })); await w.getByText(/reseña/).first().waitFor();
   ok(await esperaV(() => pay(V8), 'done|captured|42000|0') === 'done|captured|42000|0', 'van completa: confirmada, salió, llegó (cobrado $420)');
 
   // ── Mi cuenta ──

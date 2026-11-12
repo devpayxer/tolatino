@@ -1,4 +1,5 @@
 import "server-only";
+import { hoyEn } from "./fecha-local";
 import { centroSQL, DENTRO, PUNTO_PUBLICO, radioSQL, type Punto } from "./punto";
 import { db } from "./db";
 import { foto, slugCat } from "./directorio";
@@ -120,7 +121,7 @@ export const conFoto = <X extends { photo: string | null }>(x: X) => ({ ...x, ph
    ciudad se recalculan sus filtros de fechas (una vez por ciudad y día por proceso). */
 const FIESTAS_HOY = new Map<string, string>();
 async function fechasFiestas(ciudad: string) {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyEn();   // 9b-1 · la medianoche de la ciudad, no la de UTC (antes se recalculaba a las 7 u 8 PM)
   if (FIESTAS_HOY.get(ciudad) === hoy) return;
   FIESTAS_HOY.set(ciudad, hoy);
   await (await import("./fiestas")).refrescarFiestasCiudad(ciudad).catch(() => FIESTAS_HOY.delete(ciudad));
@@ -128,7 +129,7 @@ async function fechasFiestas(ciudad: string) {
 /* Transporte (4w): «Disponible hoy» vence a medianoche; la primera vista del día en la ciudad lo recalcula. */
 const TRANS_HOY = new Map<string, string>();
 async function hoyTrans(ciudad: string) {
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = hoyEn();
   if (TRANS_HOY.get(ciudad) === hoy) return;
   TRANS_HOY.set(ciudad, hoy);
   await (await import("./transporte")).refrescarTransCiudad(ciudad).catch(() => TRANS_HOY.delete(ciudad));

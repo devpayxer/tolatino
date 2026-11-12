@@ -109,7 +109,9 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     await pc.goto(B + '/cuenta/avisos');
     ok(await contiene(pc, 'EVENTOS') && await contiene(pc, 'Boletos y cambios') && await contiene(pc, 'Recordatorios') && await contiene(pc, 'Eventos que guardas') && await contiene(pc, 'Siempre te llega'), 'Mi cuenta › Avisos › Eventos: tres interruptores y lo que siempre llega');
     const h12 = `${hora % 12 || 12} ${hora < 12 ? 'AM' : 'PM'}`;
-    ok(await contiene(pc, `DESDE LAS ${h12}`), `la hora del recordatorio sale de Configuración (${h12})`);
+    // 9b-1 · Configuración se lee con una caché de 15 s: si la hora cambió hace un momento (fuera de las 10 AM), se recarga hasta 20 s.
+    { let v = false; for (let i = 0; i < 10 && !v; i++) { if (i) { await new Promise((r) => setTimeout(r, 2000)); await pc.goto(B + '/cuenta/avisos'); } v = await contiene(pc, `DESDE LAS ${h12}`); }
+      ok(v, `la hora del recordatorio sale de Configuración (${h12})`); }
     const tog = async (t) => clic(pc.getByText(t, { exact: true }).locator('xpath=ancestor::*[.//*[@role="switch"]][1]').locator('[role="switch"]').first());
     await tog('Recordatorios'); await tog('Boletos y cambios');
     ok(await espera(() => sql(`select coalesce(notif_prefs->>'evtR', '') || coalesce(notif_prefs->>'evt', '') from users where id = '${U1}'`) === 'falsefalse'), 'apagados y guardados en la cuenta');

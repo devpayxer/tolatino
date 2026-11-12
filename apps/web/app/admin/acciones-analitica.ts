@@ -6,6 +6,7 @@ import { auditar, staff } from "@/lib/admin";
 import { csv } from "@/lib/csv";
 import { tx } from "@/lib/db";
 import type { ResAdm } from "./acciones-colas";
+import { hoyEn } from "../../lib/fecha-local";
 
 const TOPE = 50_000;
 const NOMBRES: Record<string, string> = { biz: "Negocios", audit: "Historial", nosup: "Búsquedas sin oferta" };
@@ -40,5 +41,5 @@ export async function exportar(tipo: "biz" | "audit" | "nosup"): Promise<ResAdm 
     await auditar(c, { actor: s.id, action: "analitica.exportar", targetKind: "report", targetId: tipo, after: { reporte: NOMBRES[tipo], formato: "CSV" }, reason: "Exportar desde Analítica" });
     return out;
   });
-  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo, nombre: `tolatino-${tipo}-${new Date().toISOString().slice(0, 10)}.csv` };
+  return { ok: true, mensaje: "Descargado. Quedó en la auditoría.", archivo, nombre: `tolatino-${tipo}-${hoyEn()}.csv` };
 }

@@ -6553,6 +6553,24 @@ const guardianes = {
     if (!/flexWrap: 'wrap'/.test(est)) falla(G, PC, 0, "la fila de etiquetas de PostCard no se envuelve (flexWrap: 'wrap'): con tres etiquetas largas la página se corre de lado en un teléfono");
   },
 
+  /* 9b-1 · «Hoy» es el día de la ciudad, nunca el de UTC. `new Date().toISOString().slice(0, 10)` da la fecha de Greenwich: en Hazleton, de las 7 u
+     8 PM a la medianoche ya es mañana (wal8g lo cazó de noche: un certificado que vence en 10 días decía 11; los filtros «Libre este sábado» y
+     «Disponible hoy» de las categorías se recalculaban a las 7 PM y no a la medianoche). Se usa hoyEn() de lib/fecha-local.ts (la zona de la
+     ciudad) o la fecha que da la base («now() at time zone c.timezone»). Excepción con GUARDIAN-OK y su motivo. Al revés (alreves9b1): volver a
+     poner la fecha de UTC en la categoría o en el vencimiento del certificado. */
+  hoyEnLaCiudad() {
+    const G = "hoyEnLaCiudad";
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      readFileSync(f, "utf8").split("\n").forEach((l, i) => {
+        if (/GUARDIAN-OK/.test(l) || /^\s*(\/\/|\/\*|\*)/.test(l)) return;
+        if (/new Date\(\)\.toISOString\(\)\.slice\(0, ?10\)/.test(l)) falla(G, f, i + 1, "«hoy» en UTC: usa hoyEn() (lib/fecha-local.ts) o la fecha de la base en la zona de la ciudad");
+        if (/\.vence\.toISOString\(\)\.slice\(0, ?10\)/.test(l)) falla(G, f, i + 1, "un vencimiento guardado como día de UTC: usa hoyEn(zona, fecha)");
+      });
+    }
+    if (!existsSync("apps/web/lib/fecha-local.ts") || !/timeZone: zona/.test(readFileSync("apps/web/lib/fecha-local.ts", "utf8"))) falla(G, "apps/web/lib/fecha-local.ts", 0, "hoyEn tiene que formatear en la zona que recibe");
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

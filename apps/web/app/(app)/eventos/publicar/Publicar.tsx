@@ -11,6 +11,7 @@ import { useEffect, useState, type ComponentType, type CSSProperties } from "rea
 import { subirFoto } from "@/lib/subir-foto";
 import { bi, diaCorto, hora, sumarDias, type Bi, type FormatoEvt } from "@/lib/evt-comun";
 import { publicarEvento } from "./acciones";
+import { hoyEn } from "@/lib/fecha-local";
 
 type N = "Icon" | "Button" | "Chip" | "OrderTracker" | "EventCard";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +55,7 @@ export function Publicar({ v }: { v: VistaPub }) {
   useEffect(() => { let b: Partial<F> = {}; try { b = JSON.parse(localStorage.getItem(DK) ?? "{}") ?? {}; } catch { /* sin almacenamiento */ }
     const org = v.orgs.length === 1 ? v.orgs[0]!.id : b.org && v.orgs.some((o) => o.id === b.org) ? b.org : null; setF({ ...F0, ...b, org }); }, [v.orgs]);
   const up = (o: Partial<F>) => setF((x) => { const n = { ...x, ...o }; try { localStorage.setItem(DK, JSON.stringify(n)); } catch { /* sin almacenamiento */ } return n; });
-  const O = v.orgs.find((o) => o.id === f.org) ?? null, Fs = O?.formatos ?? [], F = Fs.find((x) => x.key === f.fmt) ?? null, hoy = O?.hoy ?? new Date().toISOString().slice(0, 10);
+  const O = v.orgs.find((o) => o.id === f.org) ?? null, Fs = O?.formatos ?? [], F = Fs.find((x) => x.key === f.fmt) ?? null, hoy = O?.hoy ?? hoyEn();
   const dia = sumarDias(hoy, f.dia), ages = F?.ages ?? [0, 18, 21];
   const faltan = () => {
     const m: string[] = [];

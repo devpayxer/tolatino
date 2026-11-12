@@ -66,6 +66,26 @@ update events e set status = 'changes', reviewed_at = now(), reviewed_by = a.id,
   from (select u.id from users u join staff_members s on s.user_id = u.id where u.phone = '+15705550199' and s.role = 'admin' and s.status = 'active') a
  where e.status = 'review' and e.approved_at is null and e.reviewed_at is null and e.business_id = 'sabor-dominicano' and e.title->>'es' = 'Festival del Sancocho';
 
+-- Lo que una migración arregló en los datos que YA estaban (en el sandbox de siempre, la semilla corrió antes) y que en una base nueva no
+-- alcanza: aquí las migraciones corren primero y la semilla después, con la forma vieja. Se repite lo mismo, solo donde falta:
+--   · 0099: los vecinos con la edad confirmada son adultos (sin esto, los 15 vecinos de 0032 no existían para Mensajes: «No encontramos esta
+--     conversación»);
+update community_profiles set adult = true where adult is null and adult_ok_at is not null;
+--   · 0071: los filtros de fecha de Fiestas con sus claves nuevas (0001 los crea con las viejas, d:2/d:3/d:9, que la app ya no calcula: «Libre
+--     este sábado» no filtraba y salía «Libre el 3 oct»);
+update filter_options set key = 'd:sab', label = '{"es":"Libre este sábado","en":"Free this Saturday"}'::jsonb where category_id = 'NEG-FIESTA' and key = 'd:2'
+  and not exists (select 1 from filter_options where category_id = 'NEG-FIESTA' and key = 'd:sab');
+update filter_options set key = 'd:dom', label = '{"es":"Libre este domingo","en":"Free this Sunday"}'::jsonb where category_id = 'NEG-FIESTA' and key = 'd:3'
+  and not exists (select 1 from filter_options where category_id = 'NEG-FIESTA' and key = 'd:dom');
+update filter_options set key = 'd:sab2', label = '{"es":"Libre el sábado siguiente","en":"Free the following Saturday"}'::jsonb where category_id = 'NEG-FIESTA' and key = 'd:9'
+  and not exists (select 1 from filter_options where category_id = 'NEG-FIESTA' and key = 'd:sab2');
+update businesses set filter_values = array(select x from unnest(filter_values) x where x not in ('d:2', 'd:3', 'd:9'))
+ where category_id = 'NEG-FIESTA' and filter_values && array['d:2', 'd:3', 'd:9'];
+--   · el idioma de las respuestas a reseñas (las de 0007 nacieron sin él);
+update reviews set reply_lang = 'es' where reply is not null and reply_lang is null;
+--   · lo retenido de un pago es lo cobrado cuando no se dijo otra cosa.
+update payments set held_cents = amount_cents where held_cents is null;
+
 -- Las respuestas de Sabor Dominicano que 0007 firmó con Pedro cuando todavía no existía (reply_by quedó vacío).
 update reviews set reply_by = (select id from users where phone = '+15705550133')
  where business_id = 'sabor-dominicano' and reply is not null and reply_by is null;

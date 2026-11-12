@@ -120,9 +120,34 @@ const EQUIPO = { '5705550188': ['Beto', 'admin', '{}'], '5705550693': ['Lucía',
 function equipo(...tels) {
   for (const t of tels) {
     const [nom, rol, ci] = EQUIPO[t] ?? (() => { throw new Error(`equipo: ${t} no es del equipo de prueba`); })();
-    sql(`insert into users (phone, first_name, last_name, home_city_id, lang, is_test) values ('+1${t}', '${nom}', 'Prueba', 'hzl', 'es', true) on conflict (phone) do nothing`);
+    sql(`insert into users (phone, first_name, last_name, home_city_id, lang, is_test) values ('+1${t}', '${nom}', 'Prueba', 'hzl', 'es', true) on conflict (phone) do update set first_name = coalesce(users.first_name, excluded.first_name), last_name = coalesce(users.last_name, excluded.last_name)`);
     sql(`insert into staff_members (user_id, role, cities, status, added_by) select u.id, '${rol}', '${ci}', 'active', (select id from users where phone = '+15705550199') from users u where u.phone = '+1${t}'
          on conflict (user_id) do update set role = excluded.role, cities = excluded.cities, status = 'active'`);
   }
 }
-module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, smsEsperado, equipo, medios, PUERTO_MEDIOS, sql };
+/* Una dirección guardada y PREDETERMINADA (como «Mis direcciones»: la de casa) para quien la prueba usa: lo que la reserva o el pedido
+   proponen solos («¿Dónde te recogen?»). Antes se daba por hecho la que otra prueba le había guardado a Marisol. Si ya tiene una activa
+   predeterminada, no se toca; si tiene activas sin predeterminada, la más vieja pasa a serlo; si no tiene ninguna, se guarda «casa». */
+function direccion(tel) {
+  const u = `(select id from users where phone = '+1${tel}')`;
+  if (sql(`select count(*) from user_addresses where user_id = ${u} and removed_at is null and is_default`) !== '0') return;
+  const vieja = sql(`select id from user_addresses where user_id = ${u} and removed_at is null order by created_at limit 1`);
+  if (vieja) { sql(`update user_addresses set is_default = true, updated_at = now() where id = '${vieja}'`); return; }
+  sql(`insert into user_addresses (user_id, label, street, apt, zip, city_id, is_default, geo, geo_quality) values (${u}, 'casa', '420 N Wyoming St', 'Apt 2', '18201', 'hzl', true, st_geogfromtext('POINT(-75.97818 40.95560)'), 'numero')`);
+}
+/* Los topes del día de la Comunidad (publicaciones, comentarios, votos, conversaciones, reportes por persona: lib/moderacion.ts, limiteDia, desde
+   la medianoche de su ciudad). Las mismas cuentas (Yaritza, Héctor, Marisol…) escriben en com5a…com5h, evt6… y El Compa: en una corrida entera
+   llegaban al tope y la última prueba veía «Llegaste a 10 publicaciones hoy». Antes de escribir, lo que ESA persona escribió hoy pasa a ayer
+   (solo created_at, que es lo único que cuenta el tope; sin disparar los triggers de lo publicado, como compa7d). El tope en sí lo prueba com5d. */
+function sinTopesComunidad(...tels) {
+  for (const tel of tels) {
+    const u = `(select id from users where phone = '+1${tel}')`;
+    sql(`set session_replication_role = replica;
+      update com_posts set created_at = created_at - interval '1 day' where author_user_id = ${u} and created_at > now() - interval '1 day';
+      update com_comments set created_at = created_at - interval '1 day' where author_user_id = ${u} and created_at > now() - interval '1 day';
+      update com_votes set created_at = created_at - interval '1 day' where user_id = ${u} and created_at > now() - interval '1 day';
+      update dm_threads set created_at = created_at - interval '1 day' where started_by = ${u} and created_at > now() - interval '1 day';
+      update content_reports set created_at = created_at - interval '1 day' where reporter_user_id = ${u} and created_at > now() - interval '1 day'`);
+  }
+}
+module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };

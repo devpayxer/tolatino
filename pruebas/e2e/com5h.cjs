@@ -33,6 +33,7 @@ const comentario = (p, t) => p.locator('[data-screen-label="Publicación · come
 const verTr = (l) => l.locator('[data-tr="ver"]');
 
 (async () => {
+  require('../lib/negocio-nuevo.cjs').sinTopesComunidad(A, BB, C, Y); // 9b-1 · los topes del día de quienes escriben aquí (ver lib)
   const RA = uid(A), RB = uid(BB), RC = uid(C), RY = uid(Y), IDS = [RA, RB, RC, RY];
   const TOPE0 = sql(`select value #>> '{}' from platform_config where key = 'com_traduccion_hora'`) || '60';
   const limpiar = () => {

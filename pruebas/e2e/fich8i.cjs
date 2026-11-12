@@ -152,8 +152,10 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
     ok(/revision_acotada: una cuenta de revisión no paga con tarjeta/.test(sqlFalla(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, simulated) values ('${uid}', 'pm_sim_visa_4242_0000aaaa', 'visa', '4242', '12/30', true)`) ?? ''), 'la base no le deja guardar una tarjeta');
     // La pasarela: comprar un boleto con una tarjeta nueva (sin guardar) → la pasarela lo frena y lo anota; guardarla → el servidor lo rechaza.
     const pagarBoleto = async (guardar) => {
-      await pr.goto(B + '/eventos/jueves-de-bachata-en-vivo-2/boletos?fecha=1'); await pr.waitForLoadState('networkidle');
-      await pr.locator('[data-tipo="15"] >> text="+"').first().click();
+      // 9b-1 · El evento de la semilla por su título (antes el slug «…-2», la fecha 1 y el tipo 15 de una base vieja).
+      const EV = sql(`select e.slug || '|' || (select d.id from event_dates d where d.event_id = e.id and d.status = 'scheduled' and d.listable and d.starts_at > now() order by d.starts_at limit 1) || '|' || (select t.id from ticket_types t where t.event_id = e.id order by t.id limit 1) from events e where e.title->>'es' = 'Jueves de Bachata en Vivo' and e.status = 'live' order by e.id limit 1`).split('|');
+      await pr.goto(B + `/eventos/${EV[0]}/boletos?fecha=${EV[1]}`); await pr.waitForLoadState('networkidle');
+      await pr.locator(`[data-tipo="${EV[2]}"] >> text="+"`).first().click();
       await boton(pr, 'Continuar').filter({ visible: true }).first().click(); await pr.waitForURL(/\/eventos\/pagar\//, { timeout: 20000 });
       await pr.getByText(/^(Elegir|Choose|Tu tarjeta)$/).filter({ visible: true }).first().click();
       const add = pr.getByText('Agregar tarjeta de crédito o débito'); if (await add.count()) await add.click();

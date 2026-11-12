@@ -10,6 +10,9 @@ const casos = [
   ['parametroCiudadDelSelector', SH, 'const v = sp.get("ciudad"); if (v === "" || v === "pedir") {', 'const v = sp.get("ciudad"); if (v !== null) {'],
   // etiquetasSeEnvuelven: la fila de etiquetas de PostCard sin envolver
   ['etiquetasSeEnvuelven', 'packages/ui/src/ds/community/PostCard.js', "      flexWrap: 'wrap',\n      alignItems: 'center',\n      gap: 5,\n      rowGap: 6,", "      alignItems: 'center',\n      gap: 5,"],
+  // hoyEnLaCiudad: «hoy» o un vencimiento en UTC
+  ['hoyEnLaCiudad', 'apps/web/lib/categoria.ts', '  const hoy = hoyEn();\n  if (TRANS_HOY', '  const hoy = new Date().toISOString().slice(0, 10);\n  if (TRANS_HOY'],
+  ['hoyEnLaCiudad', 'apps/web/lib/pases/certificado.ts', '  const vence = hoyEn(undefined, d.vence);', '  const vence = d.vence.toISOString().slice(0, 10);'],
 ];
 const crear = [];
 let bien = 0, total = 0;

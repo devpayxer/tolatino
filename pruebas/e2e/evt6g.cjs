@@ -76,7 +76,8 @@ function videoQR(t, file) {
   };
   limpiar();
   for (const u of Object.keys(PREFS)) sql(`update users set notif_prefs = coalesce(notif_prefs, '{}'::jsonb) || '{"quiet": false}'::jsonb where id = '${u}'`);
-  const tarjeta = (tel) => { const u = uid(tel); sql(`update payment_methods set is_default = false where user_id = '${u}'`); sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, status, simulated) values ('${u}', 'pm_sim_visa_4242_${crypto.createHash('md5').update(RUN + tel).digest('hex').slice(0, 8)}', 'visa', '4242', '12/30', true, 'active', true) on conflict (stripe_pm_id) do update set is_default = true, status = 'active'`); };
+  // 9b-1 · Una tarjeta por persona y últimos 4 (antes una nueva en cada corrida: Marisol llegó a 11 y la lista de la app muestra 10).
+  const tarjeta = (tel) => { const u = uid(tel); sql(`update payment_methods set is_default = false where user_id = '${u}'`); sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, status, simulated) values ('${u}', 'pm_sim_visa_4242_${crypto.createHash('md5').update(tel).digest('hex').slice(0, 8)}', 'visa', '4242', '12/30', true, 'active', true) on conflict (stripe_pm_id) do update set is_default = true, status = 'active'`); };
   // Eventos de prueba publicados que empiezan en 1 h (la puerta abre 2 h antes de las puertas: se puede abrir ya).
   const HNY = Number(sql(`select extract(hour from now() at time zone 'America/New_York')::int * 60 + extract(minute from now() at time zone 'America/New_York')::int`));
   const H0 = Math.min(1320, HNY + 60);

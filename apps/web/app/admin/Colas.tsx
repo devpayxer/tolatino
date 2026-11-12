@@ -16,6 +16,7 @@ import { compaHilo } from "./acciones-compa";
 import { copilotoSugerir } from "./acciones-copiloto";
 import type { BorradorCopiloto } from "@/lib/compa/copiloto";
 import { uuid } from "@/lib/uuid";
+import { hoyEn } from "@/lib/fecha-local";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const A = UI as unknown as Record<"QueueCard" | "AdminNote" | "AdminList" | "ReasonConfirm" | "Button", ComponentType<any>>;
@@ -181,7 +182,7 @@ export function Colas({ casos, conteo, vencidos, total, visibles, caso, puedeApr
     }
     if (k.queue === "lic" && "licencia" in k && k.licencia && n) {
       const l = k.licencia, est = ({ valid: ["Verificada", "var(--tl-open-text)"], expired: ["Vencida", "var(--tl-danger)"], not_found: ["No aparece", "var(--tl-danger)"], revoked: ["No aparece", "var(--tl-danger)"] } as Record<string, [string, string]>)[l.status] ?? ["Por verificar", "var(--tl-pro-ink)"];
-      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }, ...(l.status === "valid" && l.next ? [{ k: "PRÓXIMA REVISIÓN", v: new Date(`${l.next}T12:00:00Z`).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), fg: l.next < new Date().toISOString().slice(0, 10) ? "var(--tl-danger)" : "var(--tl-pro-ink)" }] : [])] });
+      cuerpoB.push({ type: "kv", cols: 2, items: [{ k: "LICENCIA", v: l.title }, { k: "PUEDE", v: l.can }, { k: "NÚMERO", v: l.number ? `${l.label} ${l.number}` : "No lo dio" }, { k: "ESTADO HOY", v: est[0], fg: est[1] }, { k: "ÚLTIMA REVISIÓN", v: l.checked ? new Date(l.checked).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric" }) : "—" }, { k: "REGISTRO", v: l.site }, ...(l.status === "valid" && l.next ? [{ k: "PRÓXIMA REVISIÓN", v: new Date(`${l.next}T12:00:00Z`).toLocaleDateString("es-US", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }), fg: l.next < hoyEn() ? "var(--tl-danger)" : "var(--tl-pro-ink)" }] : [])] });
       cuerpoB.push({ type: "note", tone: "info", t: "Verifícala en el registro oficial del estado. Lo que decidas se ve en la ficha «Licencia» del negocio.", cta: "Abrir registro", onCta: () => window.open(l.url, "_blank", "noopener") });
       acts = [
         { l: "Verificada", v: "action", icon: "verified", onClick: () => run(() => decidirLicencia(k.id, "valid", ""), () => ir({ caso: null })) },

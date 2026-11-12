@@ -13,7 +13,7 @@ const restaurar = () => { sql(`update business_hours set ranges='[["11:00","21:0
   sql(`update platform_config set value='${usados + 1}' where key='free_ops_cap'`);
   const b = await chromium.launch(); const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage();
   await m.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(m, '/api/cuenta/codigo', { telefono: '5705550122' }); await api(m, '/api/cuenta/verificar', { telefono: '5705550122', codigo: a.codigoPrueba });
-  const cart = (id, ch = {}) => m.evaluate(([id, ch]) => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id, ch, q: 1, nt: '', k: {} }] } })), [id, ch]);
+  const cart = (id, ch = {}) => m.evaluate(([id, ch]) => { localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' })); localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id, ch, q: 1, nt: '', k: {} }] } })); }, [id, ch]); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
   // Free: el plato 9 (Tostones) no está entre los 5 primeros → el servidor no lo acepta aunque venga en el carrito
   await m.goto(B + N); await cart('9'); await m.goto(B + N + '/pagar');
   ok(await m.getByText('Tu pedido está vacío').isVisible(), 'Free: un plato fuera de los 5 se cae del carrito');

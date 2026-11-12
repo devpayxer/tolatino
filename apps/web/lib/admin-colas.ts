@@ -1,4 +1,5 @@
 import "server-only";
+import { hoyEn } from "./fecha-local";
 import { FOTO_AYUDA_SQL } from "./ayuda-cita";
 const MOTIVO_CHAT: Record<string, string> = { spam: "Spam o publicidad", off: "Ofensivo o amenaza", pii: "Pide datos o dinero", otro: "Otra cosa", compa: "Una respuesta de El Compa" };
 export const MOTIVO_DM: Record<string, string> = { acoso: "Acoso o amenazas", spam: "Spam o ventas", priv: "Pide o comparte datos privados", otro: "Otra cosa" };
@@ -147,7 +148,7 @@ function subCom(n: number, reason: string | null, flag: string | null) {
   return [rep, flag ? `Regla: ${REGLA_L[r!] ?? r} · ${d.join("|").slice(0, 80)}` : ""].filter(Boolean).join(" · ") || "Reporte";
 }
 /* 4ig · Licencias: por verificar (nueva o cambiada) o, si ya estaba verificada, su revisión por vencer (14 días) o vencida (el barrido las abre). */
-export function licEstado(st: string | null, next: string | null, hoy = new Date().toISOString().slice(0, 10)) {
+export function licEstado(st: string | null, next: string | null, hoy = hoyEn()) {
   if (st !== "valid" || !next) return "por verificar";
   const d = new Date(`${next}T12:00:00Z`).toLocaleDateString("es-US", { day: "numeric", month: "short", timeZone: "UTC" });
   return next < hoy ? `revisión vencida desde el ${d}` : `revisión por vencer · ${d}`;

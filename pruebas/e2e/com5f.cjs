@@ -20,7 +20,7 @@ const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++
 const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
 const espera = async (f, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
-const contiene = (p, t) => espera(async () => (await texto(p)).includes(t));
+const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), ms);
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);
 const TAG = '[c5f]';
 const ADM = '5705550199', ADM2 = '5705550188', V = ['5705550751', '5705550752', '5705550753', '5705550754', '5705550755'], D2 = '5705550761', D3 = '5705550762';
@@ -246,7 +246,9 @@ const tarjeta = (p, t) => p.locator('[data-screen-label="Publicación · comenta
   ok(await espera(() => sql(`select name->>'es' || '/' || (name->>'en') from ranks where level = 2`) === 'Vecino/Neighbor'), 'nombre de vuelta: Vecino / Neighbor');
 
   // ── 13 · Perfil con insignias (Ramón) · Invitar: código NOMBRE-N → la cuenta nueva por el enlace queda como invitada ──
-  await pp.goto(B + `/comunidad/v/${RR}`); ok(await contiene(pp, 'INSIGNIAS') && await contiene(pp, 'Top del mes') && await contiene(pp, 'Avisos de la ciudad'), 'perfil de Ramón: insignias (Top del mes, Avisos de la ciudad…)');
+  // 9b-1 · Se recarga hasta 30 s: la insignia del cierre del mes llega después (antes una sola carga; a veces todavía no estaba).
+  { let v = false; for (let i = 0; i < 6 && !v; i++) { await pp.goto(B + `/comunidad/v/${RR}`); v = await contiene(pp, 'INSIGNIAS', 2000) && await contiene(pp, 'Top del mes', 2000) && await contiene(pp, 'Avisos de la ciudad', 2000); if (!v) await new Promise((r) => setTimeout(r, 3000)); }
+    ok(v, 'perfil de Ramón: insignias (Top del mes, Avisos de la ciudad…)'); }
   await pp.screenshot({ path: OUT + 'c5f-perfil-insignias-m.png', fullPage: true });
   await pp.goto(B + '/cuenta/invitar'); const CODE = sql(`select code from referral_codes where user_id = '${RP}'`);
   ok(/^PAOLA-\d+[A-Z]?$/.test(CODE) && await contiene(pp, CODE), `Invita vecinos: tu código ${CODE}`);

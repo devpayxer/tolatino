@@ -1,6 +1,7 @@
 import "server-only";
 import { generateKeyPairSync, X509Certificate } from "node:crypto";
 import type { PoolClient } from "pg";
+import { hoyEn } from "../fecha-local";
 import { auditar } from "../admin";
 import { valores } from "../config";
 import { db } from "../db";
@@ -63,7 +64,7 @@ export async function revisarCertificado(archivo: Buffer): Promise<{ ok: true; x
   if (!d.x.checkIssued(inter) || !d.x.verify(inter.publicKey)) return { ok: false, msg: "El intermedio no firmó este certificado." };
   const pem = Buffer.from(`${llave.toString("utf8").trim()}\n${pemDe(der)}${pemDe(inter.raw)}`);
   llave.fill(0);
-  const vence = d.vence.toISOString().slice(0, 10);
+  const vence = hoyEn(undefined, d.vence);   // 9b-1 · el día en Hazleton (antes UTC: de noche «vence en 11 días» por uno de 10)
   return { ok: true, x: { pem, vence, meta: { pass_type_id: d.tipo, equipo: d.equipo, emisor: (/CN=([^\n]+)/.exec(inter.subject)?.[1] ?? "").slice(0, 80), certificado: d.huella.slice(0, 16), vence } } };
 }
 /* 2b · Guardar (dentro de la transacción de quien sube, que ya revisó el permiso y el código) y retirar la solicitud. */

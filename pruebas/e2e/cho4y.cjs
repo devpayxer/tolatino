@@ -56,10 +56,11 @@ const DOW = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
   await h.screenshot({ path: OUT + 'c2-chofer-salida-m.png', fullPage: true });
   await clic(h.getByRole('button', { name: 'Abordó' })); await h.getByText(/^Abordó\.$/).first().waitFor().catch(() => {});
   ok(await esperaV(() => sql(`select status from run_seats where run_id = ${R} and operation_id = (select id from operations where number = '${V1}')`), 'boarded') === 'boarded', 'Abordó desde el teléfono del chofer');
-  await clic(h.getByRole('button', { name: 'Salió' }));
+  // 9b-1 · «Salió» y «Llegó» exactos: la reseña de un viaje («Salió casi a la hora…», de res4z) también es un botón y se tomaba primero.
+  await clic(h.getByRole('button', { name: 'Salió', exact: true }));
   ok(await esperaV(() => sql(`select status from trip_runs where id = ${R}`), 'departed') === 'departed', 'Salió');
   await m.goto(B + `/viaje/${V1}`); ok(await espera(m.getByText('EN CAMINO')), 'la clienta ve EN CAMINO');
-  await h.goto(B + `/repartidor?s=${R}`); await clic(h.getByRole('button', { name: 'Llegó' }));
+  await h.goto(B + `/repartidor?s=${R}`); await clic(h.getByRole('button', { name: 'Llegó', exact: true }));
   ok(await esperaV(() => sql(`select status from operations where number = '${V1}'`), 'done') === 'done', 'Llegó: el viaje terminó');
   // Otra persona no ve la salida
   const y = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); await entrar(y, '5705550299');

@@ -20,6 +20,7 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
 const DOW = ['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'];
 const pay = (n) => sql(`select o.status || '|' || coalesce(p.status, '-') || '|' || coalesce(p.amount_cents, 0) || '|' || coalesce(p.refunded_cents, 0) from operations o left join payments p on p.operation_id = o.id and p.kind = 'full' where o.number = '${n}'`);
 (async () => {
+  require('../lib/negocio-nuevo.cjs').direccion('5705550122'); // 9b-1 · su dirección de casa (la que «¿Dónde te recogen?» propone)
   const MAR = sql(`select id from users where phone = '+15705550122'`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where kind = 'trip' and status in ('pending', 'change_proposed') and (user_id = '${MAR}' or business_id in ('${E}', '${MU}'))`);
   sql(`update operations set status = 'done' where kind = 'trip' and status = 'confirmed' and business_id in ('${E}', '${MU}')`);
@@ -124,8 +125,9 @@ const pay = (n) => sql(`select o.status || '|' || coalesce(p.status, '-') || '|'
   await m.goto(B + `/viaje/${M4}`); ok(await espera(m.getByText('NO LO HACEN')), '«No lo hacemos»: NO LO HACEN');
 
   // ── 8. La mudanza confirmada: salió · llegó ──
-  await r.goto(B + `/panel/${MU}/hoy?det=viaje:${M1}`); await clic(r.getByRole('button', { name: 'Salió' })); await r.getByText(/va en camino/).first().waitFor();
-  await r.goto(B + `/panel/${MU}/hoy?det=viaje:${M1}`); await clic(r.getByRole('button', { name: 'Llegó' })); await r.getByText(/reseña/).first().waitFor();
+  // 9b-1 · «Salió» y «Llegó» exactos: la reseña de un viaje («Salió casi a la hora…», de res4z) también es un botón y se tomaba primero.
+  await r.goto(B + `/panel/${MU}/hoy?det=viaje:${M1}`); await clic(r.getByRole('button', { name: 'Salió', exact: true })); await r.getByText(/va en camino/).first().waitFor();
+  await r.goto(B + `/panel/${MU}/hoy?det=viaje:${M1}`); await clic(r.getByRole('button', { name: 'Llegó', exact: true })); await r.getByText(/reseña/).first().waitFor();
   ok(sql(`select status from operations where number = '${M1}'`) === 'done', 'mudanza: salió y llegó');
   await m.goto(B + `/viaje/${M1}`); ok(await espera(m.getByText('LLEGASTE')), 'el cliente: LLEGASTE');
 

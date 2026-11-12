@@ -4243,3 +4243,34 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
   de AAGUID el día de la apertura).
 - **La regresión entera es `node pruebas/correr.mjs --todas`** en el sandbox local, una prueba a la vez. Decidí no meterla todavía en el CI (es 9b,
   con la matriz de 9 dispositivos).
+
+### 9b-1 · La regresión entera en verde en una base NUEVA, en cualquier orden y dos veces seguidas (12 nov)
+
+**Qué mirar en el teléfono (cuatro arreglos de la app que salieron de la regresión):**
+- **Recomendar desde una ciudad «pronto»:** en una ciudad que todavía no abre, «Recomienda un negocio de Allentown» abre el formulario con Allentown
+  (antes se abría la ventana de elegir ciudad y la recomendación caía en Hazleton). Guardián `parametroCiudadDelSelector`.
+- **Novedades de un negocio en el teléfono:** una publicación con FIJADO · OFERTA · «EN HOY EN EL BARRIO · QUEDAN 22 H» ya no empuja la página de lado
+  (medía 429 px en un teléfono de 390); las etiquetas bajan a una segunda línea si no caben. Guardián `etiquetasSeEnvuelven`.
+- **«Hoy» es el de Hazleton, no el de Greenwich:** de 7–8 PM a medianoche el servidor usaba la fecha de UTC en varios lugares: el certificado de
+  Wallet decía «vence en 11 días» por uno de 10, los filtros «Libre este sábado» (Fiestas) y «Disponible hoy» (Transporte) se recalculaban a las
+  7 PM en vez de a la medianoche, los CSV del Super Admin salían con la fecha de mañana y una licencia «vencida» se pintaba un día antes. Ahora todo
+  sale de `hoyEn()` (la zona de la ciudad). Guardián `hoyEnLaCiudad`.
+- **Semilla del sandbox (solo pruebas, `0050`):** en un sandbox recién sembrado, Sabor Dominicano no tenía dueño (Pedro), los eventos de la semilla
+  de la Parroquia, la Cantina, El Palacio, Welly Cruz e Inglés para Todos no salían en /eventos (sin el módulo Eventos o esperando una aprobación que
+  nadie podía dar) y Boutique Yaritza no ofrecía el plan de pagos. Ahora un sandbox nuevo nace como el de siempre.
+
+**Decisiones (decidí X; si prefieres Y, se cambia):**
+- **Pruebas que necesitan lo que hace otra** (una visita del Hogar terminada con su estimado, una fiesta terminada, la licencia verificada de Luis,
+  los casos de la cola…): decidí que lo pidan en voz alta (`requiere`): si la base no lo tiene, se corre la prueba que lo hace, de punta a punta,
+  antes de seguir. Así no dependen del orden ni de lo que dejó otra corrida. Si prefieres que cada una lo arme con SQL (más rápido, menos real),
+  se cambia.
+- **Los topes de un día** (5 «Ayuda con…» por persona, 10 publicaciones de la Comunidad…): las mismas cuentas de prueba escriben en muchas pruebas y
+  una corrida entera los pasaba. Decidí que, antes de escribir, cada prueba corra un día hacia atrás SOLO la hora de lo que esa misma persona
+  escribió hoy (nada se borra). El tope de la Comunidad lo prueba com5d; **el de «Ayuda con…» todavía no tiene su prueba** (quedó en LAUNCH, 9b).
+- **SMS de noche:** de 10 PM a 7 AM lo que no es crítico espera («silencio»). Decidí que las pruebas pregunten a la misma regla del servidor qué
+  esperar (antes esperaban «enviado» siempre y fallaban de noche).
+- **Eventos «de hoy» en las pruebas:** decidí ponerles la hora respecto al reloj del servidor (empiezan en 1 o 2 h, en la noche de hoy aunque pase la
+  medianoche) en vez de exigir que la prueba corra antes de las 9:30 PM.
+- **`correr.mjs --barajar [semilla]`:** el orden al azar (o el de una semilla para repetirlo) para cazar lo que depende del orden.
+- **Base nueva = Centro de ayuda indexado:** `pruebas/servir/base.sh` hace lo mismo que el despliegue del sandbox (indexa `docs/ayuda`); sin eso El
+  Compa y la ayuda no tenían artículos.

@@ -12,6 +12,9 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', FOTO = ENT.rec('fotos') + '/portada.jpg';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+// 9b-1 · Los eventos de la semilla 0035 por su título (antes los ids 2, 3, 7, 11 y 12 de una base vieja: en una base nueva son 1, 2, 6, 10 y 11).
+const evId = (t) => sql(`select id from events where title->>'es' = '${t}' and status in ('live', 'paused') order by id limit 1`);
+const EJ = evId('Jueves de Bachata en Vivo'), EK = evId('Karaoke latino · entrada libre'), ES = evId('Sancocho del domingo en familia'), ET = evId('Taller gratis: inglés para tu entrevista de trabajo'), EP = evId('Comedia dominicana · Noche de risa');
 const sqlA = (q) => new Promise((res) => exec(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, (e, so, se) => res(e ? 'ERR ' + se : so.trim())));
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
@@ -38,7 +41,7 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     sql(`update event_organizers set blocked_at = null, blocked_by = null, blocked_reason = null where business_id = 'el-palacio-show' and blocked_reason like '%[e6b %'`);
     sql(`update businesses set modules_on = array(select distinct x from unnest(modules_on || array['eventos']) x), modules_off = modules_off - 'eventos' where id = 'la-terraza-night'`);
     sql(`update businesses set modules_on = array_remove(modules_on, 'eventos') where id = '${CASA}' and not exists (select 1 from events e where e.business_id = '${CASA}' and e.title->>'es' not like '%[e6b %')`);
-    sql(`update rsvps set status = 'cancelled' where status = 'going' and event_id in (2, 3, 7, 11)`);
+    sql(`update rsvps set status = 'cancelled' where status = 'going' and event_id in (${EJ}, ${EK}, ${ES}, ${ET})`);
     sql(`delete from geo_streets where county = 'prueba'`);
     sql(`delete from favorites where kind = 'event' and target_id in (select id::text from events where title->>'es' like '%[e6b %')`);
   };
@@ -72,7 +75,7 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
   const DIR_CASA = sql(`select address from businesses where id = '${CASA}'`).replace(/, Hazleton PA$/, '');
   sql(`insert into favorites (user_id, kind, target_id, created_at) values ('${uid(JUAN)}', 'event', '${R}', now() - interval '2 hours') on conflict do nothing`);
   sql(`insert into business_posts (business_id, city_id, kind, title, body, link_kind, event_id, audience, publish_at) values ('sabor-dominicano', 'hzl', 'novedad', 'Ven al sancocho ${TAG}', '', 'event', ${R}, 'all', now())`);
-  sql(`insert into items (business_id, module, name, price_cents, svc_kind, section_id, svc_attrs, sort) values ('la-terraza-night', 'svc', '{"es":"Noche especial ${TAG}","en":""}', 1500, 'evento', 318, '{"event_id":"2"}', 99)`);
+  sql(`insert into items (business_id, module, name, price_cents, svc_kind, section_id, svc_attrs, sort) values ('la-terraza-night', 'svc', '{"es":"Noche especial ${TAG}","en":""}', 1500, 'evento', (select id from item_sections where business_id = 'la-terraza-night' and name->>'es' = 'Esta noche' order by id limit 1), '{"event_id":"${EJ}"}', 99)`);
   sql(`insert into geo_streets (name, norm, l_from, l_to, r_from, r_to, zip_l, zip_r, county, geom) values ('N Wyoming St', dir_abrev('N Wyoming St'), 401, 499, 400, 498, '18201', '18201', 'prueba', st_geomfromtext('LINESTRING(-75.9782 40.9540, -75.9782 40.9570)', 4326))`);
   sql('analyze event_dates');
   const b = await chromium.launch(); const err = [];
@@ -115,12 +118,12 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     const nd = await nueva(1360, 900); await nd.goto(B + '/eventos/esta-noche'); await nd.waitForTimeout(500); await nd.screenshot({ path: OUT + 'e6b-noche-d.png' });
 
     // ── 3 · La ficha oscura (fiesta) y la clara (comida); JSON-LD ──
-    await ad.goto(B + `/eventos/${slug(2)}`);
+    await ad.goto(B + `/eventos/${slug(EJ)}`);
     ok(await ad.locator('[data-tema="oscuro"]').count() === 1 && await contiene(ad, 'Line-up') && await contiene(ad, 'QUEDAN'), 'fiesta o show: ficha oscura, line-up, boletos con lo que queda (6c)');
     const ld = JSON.parse(await ad.locator('script[type="application/ld+json"]').innerText());
     ok(ld['@type'] === 'Event' && ld.location?.name && ld.organizer?.name === 'La Terraza Night Club', 'schema.org/Event en la ficha pública');
     await ad.screenshot({ path: OUT + 'e6b-ficha-oscura-d.png', fullPage: true });
-    await am.goto(B + `/eventos/${slug(2)}`); await am.waitForTimeout(500); await am.screenshot({ path: OUT + 'e6b-ficha-oscura-m.png', fullPage: true });
+    await am.goto(B + `/eventos/${slug(EJ)}`); await am.waitForTimeout(500); await am.screenshot({ path: OUT + 'e6b-ficha-oscura-m.png', fullPage: true });
     await clic(am.getByRole('button', { name: 'Boletos', exact: true })); ok(await espera(async () => /\/boletos\?fecha=/.test(am.url())), 'con boletos: «Boletos» abre la compra (6c)');
 
     // ── 4 · Guardar (corazón): sin sesión → entrar → vuelve → Guardados › Eventos ──
@@ -171,7 +174,7 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
 
     // ── 6 · Lo oculto, en revisión, de un organizador bloqueado y con el módulo apagado o pausado nunca sale ──
     sql(`insert into event_organizers (business_id, city_id, blocked_at, blocked_by, blocked_reason) values ('el-palacio-show', 'hzl', now(), '${ADMID}', 'prueba ${TAG}') on conflict (business_id) do update set blocked_at = now(), blocked_by = excluded.blocked_by, blocked_reason = excluded.blocked_reason, verified_at = null`);
-    ok(sql(`select bool_or(listable)::text from event_dates where event_id in (12, ${PALACIO})`) === 'false', 'organizador bloqueado: la base quita listable de todas sus fechas');
+    ok(sql(`select bool_or(listable)::text from event_dates where event_id in (${EP}, ${PALACIO})`) === 'false', 'organizador bloqueado: la base quita listable de todas sus fechas');
     await am.goto(B + '/eventos');
     const tx = await texto(am);
     ok(!tx.includes('Oculto por To Latino') && !tx.includes('Esperando revision') && !tx.includes('Show de organizador bloqueado') && !tx.includes('Comedia dominicana'), 'lista: nada oculto, en revisión ni de un organizador bloqueado');
@@ -179,34 +182,34 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     await am.goto(B + '/buscar?q=revision'); ok(!(await texto(am)).includes('Esperando revision'), 'Buscar no encuentra lo que está en revisión');
     await am.goto(B + '/buscar?q=comedia'); ok(!(await texto(am)).includes('Comedia dominicana · Noche'), 'Buscar no encuentra lo de un organizador bloqueado');
     sql(`update event_organizers set blocked_at = null, blocked_by = null, blocked_reason = null where business_id = 'el-palacio-show'`);
-    ok(sql(`select listable::text from event_dates where event_id = 12`) === 'true', 'al desbloquear vuelve a salir (la base lo recalcula)');
+    ok(sql(`select listable::text from event_dates where event_id = ${EP}`) === 'true', 'al desbloquear vuelve a salir (la base lo recalcula)');
     // Interruptor del módulo en el panel (La Terraza)
     const tp = await nueva(390, 844); await entrar(tp, TERRAZA);
     await tp.goto(B + '/panel/la-terraza-night/eventos');
     ok(await contiene(tp, 'Eventos en To’Latino') && await contiene(tp, 'Encendido'), 'panel › Eventos: el interruptor del módulo, encendido');
     await clic(tp.getByRole('switch', { name: 'Eventos en To’Latino' }));
-    ok(await espera(() => sql(`select bool_or(listable)::text from event_dates where event_id in (2, 3)`) === 'false'), 'apagado: sus fechas dejan de ser listables');
+    ok(await espera(() => sql(`select bool_or(listable)::text from event_dates where event_id in (${EJ}, ${EK})`) === 'false'), 'apagado: sus fechas dejan de ser listables');
     await tp.screenshot({ path: OUT + 'e6b-panel-modulo-m.png', fullPage: true });
     await am.goto(B + '/eventos'); ok(!(await texto(am)).includes('Jueves de Bachata'), '… y no salen en Eventos');
-    ok((await am.goto(B + `/eventos/${slug(2)}`)).status() === 404, '… ni su ficha');
+    ok((await am.goto(B + `/eventos/${slug(EJ)}`)).status() === 404, '… ni su ficha');
     await tp.reload(); await clic(tp.getByRole('switch', { name: 'Eventos en To’Latino' }));
-    ok(await espera(() => sql(`select listable::text from event_dates where event_id = 2`) === 'true'), 'encendido otra vez: vuelven a salir');
+    ok(await espera(() => sql(`select listable::text from event_dates where event_id = ${EJ}`) === 'true'), 'encendido otra vez: vuelven a salir');
     await tp.goto(B + '/panel/la-terraza-night/vendes'); ok(await contiene(tp, 'Eventos') && await contiene(tp, 'ENCENDIDO'), 'Lo que vendes › Eventos con su estado');
     // Pausa del Super Admin
     const sa = await nueva(1360, 900); await entrar(sa, ADM);
     await sa.goto(B + '/admin/negocios/la-terraza-night?tab=cont');
     await clic(sa.getByText('Pausar Eventos')); await clic(sa.getByText('Eventos engañosos', { exact: true })); await clic(sa.getByRole('button', { name: 'Confirmar', exact: true }));
-    ok(await espera(() => sql(`select (modules_off ? 'eventos')::text from businesses where id = 'la-terraza-night'`) === 'true') && sql(`select listable::text from event_dates where event_id = 2`) === 'false', 'Super Admin › Pausar Eventos: sus eventos dejan de salir');
+    ok(await espera(() => sql(`select (modules_off ? 'eventos')::text from businesses where id = 'la-terraza-night'`) === 'true') && sql(`select listable::text from event_dates where event_id = ${EJ}`) === 'false', 'Super Admin › Pausar Eventos: sus eventos dejan de salir');
     await tp.goto(B + '/panel/la-terraza-night/eventos'); ok(await contiene(tp, 'PAUSADO POR TO’LATINO') && await contiene(tp, 'Eventos engañosos'), 'el panel dice «PAUSADO POR TO’LATINO» con el motivo');
     await sa.reload(); await clic(sa.getByText('Reanudar').last()); { const t = await vis(sa.locator('textarea')); await t.fill('Revisado, todo en orden'); } await clic(sa.getByRole('button', { name: 'Confirmar', exact: true }));
-    ok(await espera(() => sql(`select listable::text from event_dates where event_id = 2`) === 'true'), 'Reanudar: vuelven a salir');
+    ok(await espera(() => sql(`select listable::text from event_dates where event_id = ${EJ}`) === 'true'), 'Reanudar: vuelven a salir');
 
     // ── 7 · Ficha del negocio › Eventos, Inicio › Esta semana, Buscar › Eventos, Ciudad ──
     await am.goto(B + '/n/la-terraza-night?tab=evt');
     ok(await contiene(am, 'Próximos eventos') && await contiene(am, 'Jueves de Bachata'), 'Ficha › Eventos: sus fechas vivas (réplica)');
     await am.screenshot({ path: OUT + 'e6b-tab-m.png', fullPage: true });
     await ad.goto(B + '/n/la-terraza-night?tab=evt'); await ad.waitForTimeout(400); await ad.screenshot({ path: OUT + 'e6b-tab-d.png', fullPage: true });
-    await clic(ad.locator('[data-evento="2"]')); ok(await espera(() => ad.url().includes(`/eventos/${slug(2)}`)), 'la tarjeta abre la ficha del evento');
+    await clic(ad.locator(`[data-evento="${EJ}"]`)); ok(await espera(() => ad.url().includes(`/eventos/${slug(EJ)}`)), 'la tarjeta abre la ficha del evento');
     await am.goto(B + '/'); ok(await contiene(am, 'Esta semana') && await contiene(am, 'Rosario en la plaza') && !(await texto(am)).includes('Oculto por To Latino'), 'Inicio › Esta semana (sin lo oculto)');
     await am.screenshot({ path: OUT + 'e6b-inicio-m.png', fullPage: true });
     await ad.goto(B + '/'); await ad.waitForTimeout(400); await ad.screenshot({ path: OUT + 'e6b-inicio-d.png', fullPage: true });
@@ -215,12 +218,12 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     await ad.goto(B + '/buscar?q=feria&tab=evt'); ok(await contiene(ad, 'Feria 01') && await contiene(ad, 'Este fin de semana'), 'Buscar › pestaña Eventos con sus chips');
     await ad.screenshot({ path: OUT + 'e6b-buscar-d.png', fullPage: true });
     await ad.goto(B + '/buscar?q=feria&tab=evt&ef=d0'); ok(await contiene(ad, 'No hay eventos con ese filtro.'), 'Buscar › Eventos · Hoy: «No hay eventos con ese filtro.»');
-    await ad.goto(B + '/?ciudad=1'); ok(await espera(async () => /\d+ negocios · \d+ eventos/.test(await texto(ad))), 'Ciudad: «N negocios · M eventos» en el radio');
+    await ad.goto(B + '/ciudad'); /* 9b-1 · la ventana de ciudad se abre con /ciudad (→ /?ciudad); «?ciudad=1» ya no: un id de ciudad es de la página */ ok(await espera(async () => /\d+ negocios · \d+ eventos/.test(await texto(ad))), 'Ciudad: «N negocios · M eventos» en el radio');
 
     // ── 8 · Noche: la noche especial abre su evento ──
     await am.goto(B + '/n/la-terraza-night?tab=svc');
     ok(await contiene(am, `Noche especial ${TAG}`), 'Noche: la noche especial con su evento en vivo sale en la ficha');
-    await clic(am.getByRole('button', { name: 'Ver evento' })); ok(await espera(() => am.url().includes(`/eventos/${slug(2)}`)), '«Ver evento» abre la ficha del evento');
+    await clic(am.getByRole('button', { name: 'Ver evento' })); ok(await espera(() => am.url().includes(`/eventos/${slug(EJ)}`)), '«Ver evento» abre la ficha del evento');
     sql(`update events set hidden_at = now(), hidden_by = '${ADMID}', hidden_reason = 'prueba ${TAG}' where id = 2`);
     await am.goto(B + '/n/la-terraza-night?tab=svc'); ok(!(await texto(am)).includes(`Noche especial ${TAG}`), 'con el evento oculto, la noche especial no sale');
     sql(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = 2`);

@@ -54,7 +54,8 @@ const firmaBuena = (t) => { const m = /^TL1\.([a-f0-9]{8})\.(\d+)\.(\d+)\.(\d+)\
   };
   limpiar();
   // Tarjetas guardadas del simulador (4242 aprobada; 0002 rechazada).
-  const tarjeta = (tel, l4) => { const u = uid(tel); sql(`update payment_methods set is_default = false where user_id = '${u}'`); sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, status, simulated) values ('${u}', 'pm_sim_visa_${l4}_${crypto.createHash('md5').update(RUN + tel + l4).digest('hex').slice(0, 8)}', 'visa', '${l4}', '12/30', true, 'active', true) on conflict (stripe_pm_id) do update set is_default = true, status = 'active'`); };
+  // 9b-1 · Una tarjeta por persona y últimos 4 (antes una nueva en cada corrida: Marisol llegó a 11 y la lista de la app muestra 10).
+  const tarjeta = (tel, l4) => { const u = uid(tel); sql(`update payment_methods set is_default = false where user_id = '${u}'`); sql(`insert into payment_methods (user_id, stripe_pm_id, brand, last4, exp, is_default, status, simulated) values ('${u}', 'pm_sim_visa_${l4}_${crypto.createHash('md5').update(tel + l4).digest('hex').slice(0, 8)}', 'visa', '${l4}', '12/30', true, 'active', true) on conflict (stripe_pm_id) do update set is_default = true, status = 'active'`); };
   // Evento de prueba de La Terraza: General (3) · Último (1) · Mesa de pista (1, 4 entradas, depósito $40) · Detalle solo con mesa ($35).
   const tk = JSON.stringify([{ id: 'gen', n: { es: `General ${TAG}`, en: 'General' }, s: { es: '', en: '' }, p: 1500, cap: 3, off: false }, { id: 'ult', n: { es: 'Último boleto', en: 'Last ticket' }, s: { es: '', en: '' }, p: 2000, cap: 1, off: false }]);
   const mt = JSON.stringify([{ id: 'pista', z: { es: 'Mesa · Pista', en: 'Table · Dance floor' }, seats: 4, min: 12000, dep: 4000, cap: 1 }]);

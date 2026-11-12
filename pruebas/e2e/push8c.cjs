@@ -88,7 +88,7 @@ const PUENTE = (token) => `if (window === window.top) {
   };
   const pedir = async (m) => {
     const B = /^https?:\/\//.test(m.url()) ? new URL(m.url()).origin : 'http://localhost:3100';
-    await m.goto(B + '/n/' + BIZ); await m.evaluate(() => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '16', ch: {}, q: 1, nt: '', k: {} }] } })));
+    await m.goto(B + '/n/' + BIZ); await m.evaluate(() => localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '16', ch: {}, q: 1, nt: '', k: {} }] } }))); await m.evaluate(() => localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'pickup' }))); /* 9b-1 · Pickup a propósito: sin elegir, sale el primer modo del negocio (Delivery si otra prueba lo encendió) */
     await m.goto(B + '/n/' + BIZ + '/pagar'); await m.locator('[data-screen-label="Checkout · barra"]').getByText(/Enviar pedido/).click();
     await m.waitForURL(/\/pedido\/\d+$/); return m.url().split('/').pop();
   };
