@@ -11,11 +11,19 @@ const PEDRO = "(select id from users where phone='+15705550133')";
 const webhook = async (ev) => { const cuerpo = JSON.stringify(ev), t = Math.floor(Date.now() / 1000), sig = crypto.createHmac('sha256', ENT.sec('STRIPE_WEBHOOK_SECRET')).update(`${t}.${cuerpo}`).digest('hex');
   const r = await fetch(B + '/api/stripe/webhook', { method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': `t=${t},v1=${sig}` }, body: cuerpo }); return { st: r.status, j: await r.json().catch(() => ({})) }; };
 (async () => {
-  // Base local de pruebas: cobros de prueba limpios de disputas anteriores (la app nunca borra).
-  sql(`delete from queue_items where queue = 'disputa'`); sql(`delete from disputes`); sql(`update payments set failure_code = null where failure_code like 'dispute%'`);
-  const P1 = sql(`select p.id || '|' || o.number from payments p join operations o on o.id = p.operation_id where p.business_id = '${BIZ}' and p.status = 'captured' order by p.id desc limit 1`).split('|');
-  const P2 = sql(`select p.id || '|' || o.number || '|' || p.stripe_payment_intent from payments p join operations o on o.id = p.operation_id where p.business_id = '${BIZ}' and p.id <> ${P1[0]} order by p.id desc limit 1`).split('|');
-  const st2 = sql(`select status from payments where id = ${P2[0]}`); sql(`update payments set status = 'captured', captured_at = coalesce(captured_at, now()) where id = ${P2[0]}`);
+  // 9b-1 · Sus propios dos pedidos pagados con tarjeta (antes: borraba TODAS las disputas y sus casos de la base y tomaba «el último cobro» de
+  // Sabor Dominicano, que en una base nueva no existía y en la vieja era de otra prueba, sin «El negocio lo aceptó» en su línea de tiempo).
+  // Dos pedidos de Marisol, terminados, con su línea, sus eventos (enviado → aceptado → listo → recogido) y su cobro capturado del simulador.
+  const pedido = (n) => { const k = crypto.randomUUID();
+    const num = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, pay_mode, subtotal_cents, tax_cents, total_cents, sent_at, done_at, client_key, is_test)
+      values (nextval('operations_order_seq')::text, 'order', 'hzl', '${BIZ}', (select id from users where phone = '+15705550122'), 'done', 'picked_up', 'pickup', 'app', 1650, 99, 1749, now() - interval '3 hours', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
+    sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, 1650, 1650, 6 from operations o, items x where o.client_key = '${k}' and x.business_id = '${BIZ}' and x.removed_at is null order by x.id limit 1`);
+    for (const [ev, h] of [['sent', 3], ['accepted', 2.9], ['ready', 2.5], ['picked_up', 2]]) sql(`insert into operation_events (operation_id, kind, actor, actor_id, at) select id, '${ev}', '${ev === 'sent' || ev === 'picked_up' ? 'user' : 'business'}', '${ev === 'sent' || ev === 'picked_up' ? "' || user_id || '" : BIZ}', now() - interval '${h} hours' from operations where client_key = '${k}'`);
+    const pi = `pi_sim_disp2r_${n}_${k.slice(0, 8)}`;
+    const id = sql(`insert into payments (operation_id, user_id, business_id, city_id, kind, method, stripe_payment_intent, amount_cents, fee_cents, refunded_cents, status, card_brand, card_last4, captured_at, simulated, seq)
+      select id, user_id, business_id, city_id, 'full', 'card', '${pi}', 1749, 81, 0, 'captured', 'visa', '4242', now() - interval '2 hours', true, 1 from operations where client_key = '${k}' returning id`).split('\n')[0];
+    return [id, num, pi]; };
+  const P1 = pedido(1), P2 = pedido(2), st2 = 'captured';
   const n0 = Number(sql(`select count(*) from notifications where tpl = 'biz_dispute' and user_id = ${PEDRO}`)), e0 = Number(sql(`select count(*) from notifications where tpl = 'biz_dispute_end' and user_id = ${PEDRO}`));
   const b = await chromium.launch(); const err = [];
   const a = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p = [a];

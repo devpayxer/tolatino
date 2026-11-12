@@ -1,0 +1,43 @@
+-- Semilla de pruebas · 9b-1 · Los dueños que la base del sandbox tenía desde el 5 nov y que una base NUEVA no tiene. SOLO SANDBOX (decisión I;
+-- regla 13). Las semillas ya confirmadas no se editan: esta las completa (como 0049).
+--   · Pedro Prueba (+1 570 555 0133, ficción 555) es el dueño de Sabor Dominicano: lo da por hecho la semilla 0007 (firma las respuestas a las
+--     reseñas de Sabor Dominicano con su id) y lo dan por hecho ~40 pruebas del panel (menú, pedidos, mensajes, planes, Free/Pro). En el sandbox
+--     de siempre lo hizo dueño la prueba rec2 (reclamo con código, 5 nov); en una base recién sembrada Pedro no existía y Sabor Dominicano no
+--     tenía dueño: esas pruebas fallaban en el primer paso. rec2 ahora reclama un negocio propio de la corrida.
+--   · Kelvin (+1 570 555 0177, ya en la semilla) es el dueño de Multiservicios La Patria (licencias, 1k: lic) por la misma razón.
+--   · Sabor Dominicano cobra con tarjeta: su cuenta de cobro del simulador (como las de 0015…0026 para los otros negocios). En el sandbox de
+--     siempre la conectó pagos2d (2d); en una base nueva, las pruebas que corren antes (din2o, avisos, pedidos con tarjeta) no la tenían.
+-- Solo si el negocio NO tiene dueño (en el sandbox de siempre ya lo tiene y no cambia nada). Nada se borra.
+begin;
+
+insert into users (phone, phone_verified_at, first_name, last_name, home_city_id) values
+  ('+15705550133', now(), 'Pedro', 'Prueba', 'hzl')
+on conflict (phone) do nothing;
+
+do $$
+declare x record; u users;
+begin
+  for x in select * from (values ('sabor-dominicano', '+15705550133'), ('multiservicios-la-patria', '+15705550177')) v(negocio, tel) loop
+    select * into u from users where phone = x.tel;
+    if u.id is null or not exists (select 1 from businesses where id = x.negocio and owner_user_id is null and status = 'active') then continue; end if;
+    -- Lo mismo que hace «Aplicar cambio» de un reclamo (admin/acciones-colas.ts, decidirReclamo): miembro dueño con todo el panel y owner_user_id.
+    update business_members set kind = 'owner', panel_access = '{all}', updated_at = now()
+     where business_id = x.negocio and user_id = u.id and status = 'active';
+    if not found then
+      insert into business_members (business_id, user_id, kind, display_name, phone, panel_access, status)
+      values (x.negocio, u.id, 'owner', trim(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, '')), u.phone, '{all}', 'active');
+    end if;
+    update businesses set owner_user_id = u.id, updated_at = now() where id = x.negocio and owner_user_id is null;
+  end loop;
+end $$;
+
+insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, requirements, bank_last4, simulated)
+select 'sabor-dominicano', 'acct_sim_sabor-dominicano', 'enabled', true, true, '[]'::jsonb, '6789', true
+ where exists (select 1 from businesses where id = 'sabor-dominicano')
+on conflict (business_id) do nothing;
+
+-- Las respuestas de Sabor Dominicano que 0007 firmó con Pedro cuando todavía no existía (reply_by quedó vacío).
+update reviews set reply_by = (select id from users where phone = '+15705550133')
+ where business_id = 'sabor-dominicano' and reply is not null and reply_by is null;
+
+commit;

@@ -6525,6 +6525,34 @@ const guardianes = {
     for (const f of codigo) if (/^apps\/web\/.*\.tsx?$/.test(f) && f !== C && /'revision'/.test(sinComent(f)) && /otp_codes/.test(sinComent(f)) && /insert into otp_codes/.test(sinComent(f))) falla(G, f, 0, "solo pedirCodigo crea códigos del canal revision");
   },
 
+  /* 9b-1 · Un parámetro de la URL que lee el marco de la app (AppShell) no se come el mismo parámetro de una página. «?ciudad» (vacío) y
+     «?ciudad=pedir» abren el selector de ciudad (los manda /ciudad); /recomendar?ciudad=<id> es la ciudad «pronto» de donde viene el vecino
+     (CiudadPronto). AppShell miraba solo que existiera (sp.has) y se comía el id: abría la ventana y la recomendación caía en otra ciudad.
+     Regla: si alguna pantalla de la app arma un enlace «?ciudad=${…}» (un valor), AppShell solo reacciona a "" y "pedir", nunca a cualquiera.
+     Al revés (alreves9b1): volver a sp.has("ciudad"); comparar con otro valor que no sea "" o "pedir". */
+  parametroCiudadDelSelector() {
+    const G = "parametroCiudadDelSelector", SH = "apps/web/app/(app)/AppShell.tsx";
+    if (!existsSync(SH)) return falla(G, SH, 0, "falta AppShell.tsx");
+    const conValor = codigo.filter((f) => /^apps\/web\/app\/.*\.tsx?$/.test(f) && /[?&]ciudad=\$\{/.test(sinComent(f)));
+    if (!conValor.length) return;
+    const t = sinComent(SH);
+    if (/sp\.has\(\s*["']ciudad["']\s*\)/.test(t)) falla(G, SH, 0, `AppShell abre el selector con sp.has("ciudad") y se come el ?ciudad=<id> de ${conValor.join(", ")}: solo "" y "pedir"`);
+    const usa = /const (\w+) = sp\.get\(\s*["']ciudad["']\s*\);\s*if \(\1 === "" \|\| \1 === "pedir"\)/.test(t);
+    if (!usa) falla(G, SH, 0, `AppShell: el selector se abre solo con ?ciudad (vacío) o ?ciudad=pedir (const v = sp.get("ciudad"); if (v === "" || v === "pedir")), no con el id que manda ${conValor.join(", ")}`);
+  },
+
+  /* 9b-1 · Una fila de etiquetas de largo variable no empuja la página de lado. La de PostCard (rango · lugar · resuelto · FIJADO · OFERTA ·
+     «EN HOY EN EL BARRIO · QUEDAN 22 H» · editado) era flex sin envolver con cada etiqueta flex: none: en un teléfono de 390 px medía 429 y la
+     página entera se corría (nov2g lo cazó: el clic caía bajo la barra de arriba). La fila se envuelve (flexWrap: 'wrap'); nov2g además mira que
+     la página no sea más ancha que el teléfono. Al revés (alreves9b1): quitar el flexWrap de la fila. */
+  etiquetasSeEnvuelven() {
+    const G = "etiquetasSeEnvuelven", PC = "packages/ui/src/ds/community/PostCard.js";
+    if (!existsSync(PC)) return falla(G, PC, 0, "falta PostCard.js");
+    const t = sinComent(PC), i = t.search(/parts\.length \?\s*React\.createElement\("div", \{/), est = i < 0 ? "" : t.slice(i, t.indexOf("}", t.indexOf("style:", i)) + 1);
+    if (i < 0) return falla(G, PC, 0, "no encontré la fila de etiquetas (parts) de PostCard");
+    if (!/flexWrap: 'wrap'/.test(est)) falla(G, PC, 0, "la fila de etiquetas de PostCard no se envuelve (flexWrap: 'wrap'): con tres etiquetas largas la página se corre de lado en un teléfono");
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

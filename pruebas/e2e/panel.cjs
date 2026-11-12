@@ -1,12 +1,12 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 const { chromium } = require('playwright');
 const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/';
-const TEL = process.env.TEL || '5705557747', BIZ = process.env.BIZ || 'barberia-7747', B = 'http://localhost:3100';
-const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
-  const u = new URL(r.request().url());
-  const body = await new Promise((ok) => require('http').get({ host: '127.0.0.1', port: 3902, path: u.pathname.replace(/^\/medios/, ''), headers: { host: 'medios.web.garage' } }, (res) => { const c = []; res.on('data', (x) => c.push(x)); res.on('end', () => ok({ s: res.statusCode, b: Buffer.concat(c) })); }));
-  return r.fulfill({ status: body.s, body: body.b, contentType: 'image/jpeg' });
-});
+// 9b-1 · Su propio negocio recién publicado por /publica (antes `barberia-7747`, que solo existía en una base vieja). TEL/BIZ del
+// entorno todavía mandan (para mirar un negocio dado).
+const { publicarBarberia, medios } = require('../lib/negocio-nuevo.cjs');
+const B = 'http://localhost:3100';
+let TEL = process.env.TEL, BIZ = process.env.BIZ;
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓ ' + m); };
 const entrar = async (p) => {
   await p.goto(B + '/entrar');
   const j = (u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
@@ -16,6 +16,7 @@ const entrar = async (p) => {
 };
 (async () => {
   const b = await chromium.launch(); const err = [];
+  if (!TEL || !BIZ) { const N = await publicarBarberia(b); TEL = N.tel; BIZ = N.id; console.log('negocio nuevo:', BIZ); }
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const m = await b.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
   await medios(m);
@@ -92,7 +93,7 @@ const entrar = async (p) => {
   await q.goto(B + '/panel/' + BIZ + '/hoy'); await q.locator('text=Nada pendiente').waitFor(); await q.waitForTimeout(300);
   await q.screenshot({ path: OUT + 'h17-hoy-d.png', fullPage: true });
   // Otro usuario no entra
-  const o = await b.newContext(); const op = await o.newPage(); await op.goto(B + '/panel/' + BIZ); console.log('sin cuenta →', op.url());
-  console.log('errores:', err.length ? err : 'ninguno');
+  const o = await b.newContext(); const op = await o.newPage(); await op.goto(B + '/panel/' + BIZ); ok(/\/entrar/.test(op.url()), 'sin cuenta, el panel manda a entrar: ' + op.url());
+  ok(!err.length, 'sin errores en la página: ' + (err.join(' · ') || 'ninguno'));
   await b.close();
 })().catch(e => { console.error('FALLO', e.message); process.exit(1); });

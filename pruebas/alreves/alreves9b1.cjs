@@ -1,0 +1,38 @@
+// Prueba al revés de los guardianes de 9b-1 (las clases de bug que cazó la regresión en una base nueva). Se inyecta el defecto, el guardián
+// debe fallar con SU mensaje ([nombre]); se restaura. «crear»: se crea el archivo, se corre y se borra.
+const ENT = require('../lib/entorno.cjs'); // rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
+const R = ENT.RAIZ;
+const SH = 'apps/web/app/(app)/AppShell.tsx';
+const casos = [
+  // parametroCiudadDelSelector: el marco se come el ?ciudad=<id> de /recomendar
+  ['parametroCiudadDelSelector', SH, 'const v = sp.get("ciudad"); if (v === "" || v === "pedir") {', 'const v = sp.get("ciudad"); if (sp.has("ciudad")) {'],
+  ['parametroCiudadDelSelector', SH, 'const v = sp.get("ciudad"); if (v === "" || v === "pedir") {', 'const v = sp.get("ciudad"); if (v !== null) {'],
+  // etiquetasSeEnvuelven: la fila de etiquetas de PostCard sin envolver
+  ['etiquetasSeEnvuelven', 'packages/ui/src/ds/community/PostCard.js', "      flexWrap: 'wrap',\n      alignItems: 'center',\n      gap: 5,\n      rowGap: 6,", "      alignItems: 'center',\n      gap: 5,"],
+];
+const crear = [];
+let bien = 0, total = 0;
+const correr = (g, env = {}) => {
+  try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe', env: { ...process.env, ...env } }); return [false, '']; }
+  catch (e) { const l = String(e.stderr).split('\n').find((x) => x.trim().startsWith(`[${g}]`)) ?? ''; return [!!l, l]; }
+};
+const informe = (g, que, [falla, out]) => { total++; console.log(`  ${falla ? '✓' : '✗'} ${g} al revés (${que})${out ? ' → ' + out.trim().slice(0, 170) : ''}`); if (falla) bien++; };
+for (const [g, f, a, b, env] of casos) {
+  const ruta = path.join(R, f);
+  if (!fs.existsSync(ruta)) { total++; console.log(`  ✗ ${g}: no existe ${f}`); continue; }
+  const orig = fs.readFileSync(ruta, 'utf8');
+  if (!orig.includes(a)) { total++; console.log(`  ✗ ${g}: no encontré el texto a cambiar en ${f}: ${a.slice(0, 70)}`); continue; }
+  fs.writeFileSync(ruta, orig.replace(a, () => b));
+  let r; try { r = correr(g, env); } finally { fs.writeFileSync(ruta, orig); }
+  informe(g, f.split('/').pop(), r);
+}
+for (const [g, f, c] of crear) {
+  const ruta = path.join(R, f), dir = path.dirname(ruta), nuevo = !fs.existsSync(dir);
+  fs.mkdirSync(dir, { recursive: true }); fs.writeFileSync(ruta, c);
+  let r; try { r = correr(g); } finally { fs.unlinkSync(ruta); if (nuevo) try { fs.rmdirSync(dir); } catch { /* no vacía */ } }
+  informe(g, `crear ${f.split('/').pop()}`, r);
+}
+let limpio = true; try { execSync('node guardianes/run.mjs', { cwd: R, stdio: 'pipe' }); } catch (e) { limpio = false; console.log(String(e.stderr).slice(0, 600)); }
+console.log(`\n${bien}/${total} defectos cazados · guardianes limpios después: ${limpio ? 'sí' : 'NO'}`);
+process.exit(bien === total && limpio ? 0 : 1);

@@ -465,8 +465,10 @@ function PostCard({
   })) : null), parts.length ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
+      flexWrap: 'wrap',
       alignItems: 'center',
       gap: 5,
+      rowGap: 6,
       minWidth: 0,
       font: '600 12.5px/1.3 Manrope,sans-serif',
       whiteSpace: 'nowrap'

@@ -36,6 +36,9 @@ const limpiar = () => {
   await m.goto(B + `/n/${BIZ}?tab=nov`); const TN = m.locator('[data-screen-label="Ficha · novedades"]');
   await TN.getByText('Mofongo de chicharrón a $10 hoy').first().waitFor();
   ok(!!(await vis(TN.getByText('FIJADO'))), 'la oferta fijada va primero');
+  // 9b-1 · Con FIJADO · OFERTA · «EN HOY EN EL BARRIO · QUEDAN N H» la página no se corre de lado (medía 429 px en un teléfono de 390).
+  const anchos = await m.evaluate(() => [document.documentElement.scrollWidth, Math.round(visualViewport.width)]);
+  ok(anchos[0] <= anchos[1] + 1, `Novedades cabe en el teléfono (sin moverse de lado): ${anchos[0]} ≤ ${anchos[1]} px`);
   ok(Number(await espera(() => sql(`select count(*) from post_views where post_id = ${post('Mofongo de chicharrón a $10 hoy')} and viewer like 'u:%'`), '1')) >= 1, 'la vista se cuenta (una por persona y día)');
   // Votar + y quitar
   const oferta = TN.locator('[data-screen-label="Novedades · publicación"]').filter({ hasText: 'Mofongo de chicharrón a $10 hoy' });

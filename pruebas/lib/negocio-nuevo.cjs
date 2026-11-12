@@ -1,0 +1,88 @@
+// 9b-1 · Un negocio NUEVO publicado por el flujo real de /publica (vecino → dueño → «PUBLICADA»), para las pruebas que necesitan «un negocio
+// recién publicado desde la app» con su dueño (admin1i, rec1j, panel, fich8i). Antes usaban `barberia-7747`, que solo existía en la base vieja
+// de una máquina (la hizo una corrida de publica.cjs del 5 nov): en una base nueva no estaba y las cuatro fallaban. Ahora cada corrida hace el
+// suyo, con un teléfono 555 libre (el repo es público), y nada depende del orden ni de lo que dejó otra prueba.
+const ENT = require('./entorno.cjs');
+const { execSync } = require('child_process');
+const B = ENT.B, FP = ENT.rec('fotos') + '/';
+const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
+// Las fotos (/medios/…) las sirve Garage en el puerto web de la base de la corrida (base.sh: PRUEBAS_WEB_PUERTO, 3902 por defecto).
+const PUERTO_MEDIOS = Number(process.env.PRUEBAS_WEB_PUERTO || 3902);
+const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
+  const u = new URL(r.request().url());
+  const body = await new Promise((ok) => require('http').get({ host: '127.0.0.1', port: PUERTO_MEDIOS, path: u.pathname.replace(/^\/medios/, ''), headers: { host: 'medios.web.garage' } }, (res) => { const c = []; res.on('data', (x) => c.push(x)); res.on('end', () => ok({ s: res.statusCode, b: Buffer.concat(c) })); }).on('error', () => ok({ s: 502, b: Buffer.alloc(0) })));
+  return r.fulfill({ status: body.s, body: body.b, contentType: 'image/jpeg' });
+});
+// Un teléfono 570-555-XXXX sin cuenta y sin un negocio «barberia-XXXX» (el nombre del negocio sale de los últimos 4).
+const telLibre = (pre = '570555') => {
+  for (let i = 0; i < 200; i++) {
+    const t = pre + String(Math.floor(Math.random() * 10000)).padStart(4, '0');
+    if (sql(`select count(*) from users where phone = '+1${t}'`) === '0' && sql(`select count(*) from businesses where id like 'barberia-${t.slice(-4)}%'`) === '0') return t;
+  }
+  throw new Error('no hay un teléfono 555 libre');
+};
+/* Publica una barbería con el flujo de /publica (como publica.cjs) y devuelve { id, tel, nombre, uid }. */
+async function publicarBarberia(browser, { tel = telLibre(), nombre: dueno = 'Mario', apellido = 'Peña' } = {}) {
+  const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  await medios(ctx);
+  const p = await ctx.newPage();
+  const nombre = 'Barbería ' + tel.slice(-4);
+  await p.goto(B + '/publica'); await p.getByText('Publica tu negocio en 5 minutos').waitFor();
+  await p.getByPlaceholder('(570) 555-0134').fill(tel);
+  await p.getByText('Enviarme el código').click();
+  const cod = await p.locator('[data-modo-pruebas] b').textContent({ timeout: 8000 });
+  await p.getByPlaceholder('······').fill(cod.trim());
+  await p.getByText('Verificar').click();
+  await p.getByText('¿Cómo te llamas?').waitFor();
+  await p.getByPlaceholder('Rafael').fill(dueno); await p.getByPlaceholder('Núñez').fill(apellido);
+  await p.getByText('Seguir', { exact: true }).last().click();
+  await p.getByText('¿Qué tipo de negocio tienes?').waitFor({ timeout: 10000 });
+  await p.getByText('Belleza', { exact: true }).first().click(); await p.locator('text=/¿QUÉ HACES/').waitFor({ timeout: 8000 });
+  await p.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] span:has-text("Barbería")').first().click().catch(async () => { await p.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] div[style*="flex-wrap"] > *').first().click(); });
+  await p.getByPlaceholder('Ej.: Barbería Don Fello').fill(nombre); await p.waitForTimeout(600);
+  await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);
+  for (let i = 0; i < 6; i++) {
+    if (!(await p.locator('text=RESPONDE LO QUE FALTA').count())) break;
+    const grupos = p.locator('[data-screen-label^="ONB-NEG-C1"] > div'); const n = await grupos.count();
+    for (let g = 0; g < n; g++) { const opc = grupos.nth(g).locator('div[role=button], span[style*="border-radius: 999px"], div[style*="cursor: pointer"]').first(); if (await opc.count()) await opc.click().catch(() => {}); await p.waitForTimeout(120); }
+  }
+  await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);
+  await p.locator('button, span, div').filter({ hasText: /^Seguir · / }).last().click(); await p.waitForTimeout(900);
+  const dir = p.getByPlaceholder('312 N Wyoming St'); if (await dir.count()) await dir.fill('412 N Wyoming St');
+  await p.waitForTimeout(400);
+  await p.getByText('Seguir', { exact: true }).last().click(); await p.waitForTimeout(900);
+  await p.locator('input[type=file]').nth(1).setInputFiles([FP + 'portada.jpg', FP + 'galeria.png']);
+  await p.waitForFunction(() => document.querySelectorAll('[aria-label="Quitar foto"]').length === 2, null, { timeout: 20000 });
+  await p.waitForTimeout(800);
+  await p.locator('text=/^Publicar · /').last().click();
+  await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
+  await ctx.close();
+  const fila = sql(`select b.id || '|' || u.id from businesses b join users u on u.id = b.owner_user_id where u.phone = '+1${tel}' order by b.created_at desc limit 1`);
+  if (!fila) throw new Error(`publicarBarberia: no quedó el negocio de ${tel}`);
+  const [id, uid] = fila.split('|');
+  // La prueba entra después con el mismo teléfono: sin la espera entre códigos (solo los códigos de ESTE teléfono, nunca los de otros).
+  sql(`delete from otp_codes where phone = '+1${tel}'`);
+  return { id, tel, nombre, uid };
+}
+/* Un negocio SIN dueño (como los que siembra el sandbox), copia de uno de la semilla con otro id, otro nombre y su propio teléfono 555: para
+   reclamarlo («Recuperar tu negocio») sin tocar los de la semilla, que otras pruebas usan con su dueño. Devuelve { id, nombre, tel }. */
+function negocioSinDueno(base = 'bufete-almonte', prefijo = 'Reclamo') {
+  const tel = telLibre(), n = tel.slice(-4), id = `${base.split('-')[0]}-reclamo-${n}`, nombre = `${prefijo} ${n}`;
+  sql(`insert into businesses (id, city_id, category_id, subcategory_ids, name, status, origin, address, geo, phone, founded_year, about, filter_values, category_attrs, service_radius_mi, works_from_home, is_demo)
+       select '${id}', city_id, category_id, subcategory_ids, '${nombre}', 'active', 'self', address, geo, '+1${tel}', founded_year, about, filter_values, category_attrs, service_radius_mi, works_from_home, false
+         from businesses where id = '${base}'`);
+  if (sql(`select count(*) from businesses where id = '${id}' and owner_user_id is null`) !== '1') throw new Error(`negocioSinDueno: no se creó ${id}`);
+  return { id, nombre, tel };
+}
+/* Entra con un teléfono (código del modo pruebas) y, si la cuenta es nueva, le pone nombre por /api/cuenta/perfil (como el paso «¿Cómo te
+   llamas?»). Borra solo los códigos de ESE teléfono (la espera entre códigos), nunca los de los demás. */
+async function entrarComo(p, tel, { nombre = 'Vecino', apellido = 'Prueba' } = {}) {
+  await p.goto(B + '/entrar');
+  sql(`delete from otp_codes where phone = '+1${tel}'`);
+  const api = (u, x) => p.evaluate(async ([u, x]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(x) })).json(), [u, x]);
+  const a = await api('/api/cuenta/codigo', { telefono: tel }); if (!a.codigoPrueba) throw new Error('sin código ' + JSON.stringify(a));
+  const v = await api('/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); if (!v.ok) throw new Error('no entró ' + JSON.stringify(v));
+  if (!v.nombre) { const r = await api('/api/cuenta/perfil', { nombre, apellido }); if (!r.ok) throw new Error('sin nombre ' + JSON.stringify(r)); }
+  return v;
+}
+module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, medios, PUERTO_MEDIOS, sql };

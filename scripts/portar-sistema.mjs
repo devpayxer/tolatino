@@ -141,6 +141,12 @@ for (const src of archivos) {
     t = t.replace("  onMenu,\n  chip,", "  onMenu,\n  menuLabel = 'Opciones',\n  chip,");
     t = t.replace("    onClick: onMenu,\n", "    onClick: onMenu,\n    ...btn(onMenu, menuLabel),\n");
     if (t === antes || (t.match(/\.\.\.btn\(/g) || []).length !== 6 || !t.includes("menuLabel = 'Opciones'")) throw new Error("parche PostCard: el origen cambió, revisar");
+    // 9b-1 · La fila de etiquetas (rango · lugar · resuelto · etiquetas · editado) se envuelve cuando no cabe: con FIJADO · OFERTA ·
+    // «EN HOY EN EL BARRIO · QUEDAN 22 H» medía 429 px en un teléfono de 390 y la página entera se corría de lado (nov2g; guardián
+    // etiquetasSeEnvuelven). Cada etiqueta sigue en una sola línea.
+    const fila = "  })) : null), parts.length ? /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      alignItems: 'center',\n      gap: 5,\n      minWidth: 0,";
+    if (!t.includes(fila)) throw new Error("parche PostCard (fila de etiquetas): el origen cambió, revisar");
+    t = t.replace(fila, "  })) : null), parts.length ? /*#__PURE__*/React.createElement(\"div\", {\n    style: {\n      display: 'flex',\n      flexWrap: 'wrap',\n      alignItems: 'center',\n      gap: 5,\n      rowGap: 6,\n      minWidth: 0,");
   }
 
   // Thread: el «⋯» de un comentario y de una respuesta era <span> con onClick, sin rol ni teclado (arreglado a mano en 5b; 6c

@@ -17,9 +17,26 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 APPS=$(node -e 'const A=require(process.argv[1]);console.log(A.apps.map(a=>[a.sabor,a.android,a.islas[0]??"",a.plugins.includes("TLLocal")].join(":")).join(" "))' "$DIR/../apps.json")
 adb wait-for-device
 for par in $APPS; do s=${par%%:*}; adb install -r "$APK/$s/debug/app-$s-debug.apk" > /dev/null; done
-adb shell cmd connectivity airplane-mode enable || adb shell settings put global airplane_mode_on 1
-sleep 3
 fallo=0
+# 9b-1 · Modo avión DE VERDAD antes de abrir cada app (Cáscaras 43106680850, intento 1: la primera app abrió con «red para la WebView: sí»
+# porque 3 s después de pedir el modo avión el emulador todavía tenía su red por defecto). No se espera un tiempo fijo ni se reintenta: se
+# espera hasta que el sistema diga que no hay red por defecto (`dumpsys connectivity`: «Active default network: none», lo mismo que lee
+# la cáscara con getActiveNetwork) y el modo avión está puesto (`cmd connectivity airplane-mode` → enabled), hasta 60 s; si no, falla y lo dice.
+sin_red() { # $1 = para qué
+  local i d="" m=""
+  adb shell cmd connectivity airplane-mode enable > /dev/null 2>&1 || adb shell settings put global airplane_mode_on 1
+  for i in $(seq 1 60); do
+    m=$(adb shell cmd connectivity airplane-mode 2> /dev/null | tr -d '\r')
+    d=$(adb shell dumpsys connectivity 2> /dev/null | tr -d '\r' | grep -m1 "Active default network:" || true)
+    [ "$m" = enabled ] && [ "$d" = "Active default network: none" ] && break
+    sleep 1
+  done
+  echo "$1 · modo avión: $m · ${d:-sin dato} ($i s)"
+  if [ "$m" != enabled ] || [ "$d" != "Active default network: none" ]; then
+    echo "✗ $1: el emulador sigue con red en modo avión"; adb shell dumpsys connectivity 2> /dev/null | tr -d '\r' | grep -E "Active default|NetworkAgentInfo" | head -10
+    fallo=1; return 1
+  fi
+}
 # El marco de otro origen: "false" o la lista de lo que alcanza. El marco principal: el puente sí, ningún objeto Java abierto a todos.
 marco() { # $1 = app, $2 = dónde
   local r; r=$(node "$DIR/cdp.mjs" 9222 eval "$(cat "$DIR/humo/marco-ajeno.js")")
@@ -64,6 +81,7 @@ llave() { # $1 = app
 }
 for par in $APPS; do
   IFS=: read -r s id isla tllocal <<< "$par"
+  sin_red "$s" || continue
   adb logcat -c || true
   adb shell am start -W -n "$id/com.tolatino.cascara.MainActivity" > /dev/null
   sleep 10
@@ -73,6 +91,9 @@ for par in $APPS; do
   pid=$(adb shell pidof "$id" | tr -d '\r' || true)
   if [ -z "$pid" ]; then echo "✗ $s: la app se cerró"; tail -40 "$OUT/$s-logcat.txt"; fallo=1; continue; fi
   grep "Loading app at\|TLCascara\|Capacitor/Console.*\(rror\|Uncaught\)\|AndroidRuntime" "$OUT/$s-logcat.txt" | head -12 | sed "s/^/$s · logcat · /" || true
+  # Lo primero que la cáscara le contó a la WebView, con el modo avión ya puesto, es «no» (y nunca «sí» antes de un cambio de red).
+  primera=$(grep -m1 -o "red para la WebView: \(sí\|no\)" "$OUT/$s-logcat.txt" || true)
+  [ "$primera" = "red para la WebView: no" ] || { echo "✗ $s: en modo avión la cáscara le dijo a la WebView «${primera:-nada}»"; fallo=1; }
   adb forward --remove-all; adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid" > /dev/null
   t=$(node "$DIR/cdp.mjs" 9222 titulo); echo "$s · $t"
   grep -q '"titulo":"Sin señal' <<< "$t" || { echo "✗ $s: sin red no abre la página local «Sin señal»"; fallo=1; }

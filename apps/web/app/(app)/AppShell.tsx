@@ -39,7 +39,10 @@ export function AppShell({ lang, t, yo, ciudad, children }: { lang: "es" | "en";
   const [sel, setSel] = useState<{ pedir: boolean } | null>(null);
   const [ancla, setAncla] = useState<{ left: number; top: number } | null>(null);
   const clic = useRef<DOMRect | null>(null);
-  useEffect(() => { if (sp.has("ciudad")) { setSel({ pedir: sp.get("ciudad") === "pedir" }); const q = new URLSearchParams(sp.toString()); q.delete("ciudad"); router.replace(q.size ? `${ruta}?${q}` : ruta, { scroll: false }); } }, [sp, ruta, router]);
+  // 9b-1 · Solo «?ciudad» (vacío) y «?ciudad=pedir» son del selector (los manda /ciudad). Un id de ciudad es de la página: «Recomienda un
+  // negocio de Allentown» abre /recomendar?ciudad=alw (CiudadPronto) y el selector se lo comía (abría la ventana y la recomendación caía en
+  // la ciudad de siempre). Guardián parametroCiudadDelSelector.
+  useEffect(() => { const v = sp.get("ciudad"); if (v === "" || v === "pedir") { setSel({ pedir: v === "pedir" }); const q = new URLSearchParams(sp.toString()); q.delete("ciudad"); router.replace(q.size ? `${ruta}?${q}` : ruta, { scroll: false }); } }, [sp, ruta, router]);
   const abrir = () => {
     const r = clic.current;
     if (r) setAncla({ left: Math.max(16, Math.min(r.left - 1, window.innerWidth - 780 - 16)), top: r.bottom + 8 });
