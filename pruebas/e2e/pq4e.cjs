@@ -80,7 +80,8 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   sql(`insert into request_targets (request_id, business_id, item_id, sort, status, reply, answered_at) values (${rid}, '${H}', 232, 0, 'rng', '{"lo":120000,"hi":150000}'::jsonb, now()), (${rid}, '${otroId}', (select id from items where business_id = '${otroId}' and svc_kind = 'pres' and removed_at is null limit 1), 1, 'sent', null, null)`);
   await m.goto(B + `/n/${H}/visita?s=${sql(`select id from items where business_id = 'plomeria-rodriguez' and name->>'es' = 'Cambiar tubería' and removed_at is null order by id limit 1`)}&pre=${Q2}`); await m.locator('[data-screen-label="APP-NEG-HOGAR-BOOKING · móvil"]').getByText(`Con tu presupuesto ${Q2}`).waitFor();
   await barra.getByRole('button', { name: 'Continuar' }).click(); await bh.getByText('LLEGA ENTRE').waitFor(); await ESPERA(m);
-  await bh.locator('[role="radio"]:not([aria-disabled="true"])').filter({ hasText: /\d (AM|PM)–\d+ (AM|PM)/ }).nth(1).click();
+  // 9b-1 · La última franja libre (antes la SEGUNDA: a media tarde quedan pocas y la prueba fallaba según la hora); la primera puede ser la de la visita de arriba.
+  await bh.locator('[role="radio"]:not([aria-disabled="true"])').filter({ hasText: /\d (AM|PM)–\d+ (AM|PM)/ }).last().click();
   await barra.getByRole('button', { name: 'Continuar' }).click(); await bh.getByText('CÓMO SE COBRA').waitFor();
   await barra.getByRole('button', { name: /Enviar solicitud|Confirmar/ }).click(); await m.waitForURL(/\/cita\/C-\d+/);
   ok(sql(`select status from request_targets where request_id = ${rid} and business_id = '${otroId}'`) === 'closed', `el que no había respondido (${otro}) se cerró`);

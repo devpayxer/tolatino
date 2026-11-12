@@ -24,6 +24,9 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   const vivos = `select id from operations where business_id = '${V}' and kind = 'trip' and status in ('pending', 'change_proposed', 'confirmed')`;
   sql(`update run_seats set status = 'cancelled' where operation_id in (${vivos})`);
   sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where id in (${vivos})`);
+  // 9b-1 · Y los asientos que quedaron en salidas FUTURAS de la van (abordados en «Llegó», de una reserva ya cerrada): sin esto cada corrida en la
+  // misma base gastaba dos días y a la tercera no quedaban salidas limpias en la semana que existe («no hay días con las salidas limpias»).
+  sql(`set session_replication_role = replica; update run_seats set status = 'cancelled' where status in ('held', 'confirmed', 'boarded') and run_id in (select id from trip_runs where business_id = '${V}' and run_at > now())`);
   sql(`update trip_runs set seats_outside = 0, seats_booked = 0, status = 'scheduled', late_until = null where business_id = '${V}' and run_at > now() - interval '3 hours'`);
   // Salidas que una corrida anterior movió a la 1:30 PM: se mandan lejos al pasado (no chocan con la de esta corrida).
   sql(`update trip_runs set status = 'cancelled', run_at = run_at - interval '400 days' - make_interval(mins => id::int) where business_id = '${V}' and extract(minute from run_at at time zone 'America/New_York') = 30 and run_at > now() - interval '3 days'`);

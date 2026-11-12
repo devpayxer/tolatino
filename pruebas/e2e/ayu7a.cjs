@@ -85,7 +85,8 @@ const P = 'pagar-con-tarjeta';
   c = await esc(); p = await c.newPage(); await entrar(p, VECINO);
   await p.goto(B + '/cuenta');
   const navAyuda = p.locator('[data-screen-label="Mi cuenta · navegación"]').getByText('Ayuda', { exact: true });
-  ok(await navAyuda.count() > 0, 'Mi cuenta (escritorio): «Ayuda» en la navegación');
+  await navAyuda.first().waitFor({ timeout: 15000 }).catch(() => {}); // 9b-1 · contaba antes de que la página terminara de pintar (en rojo 1 de 6 corridas)
+  ok(await navAyuda.count() > 0, `Mi cuenta (escritorio): «Ayuda» en la navegación${await navAyuda.count() ? '' : ` (url ${p.url()})`}`);
   await navAyuda.first().click(); ok(await espera(async () => p.url().endsWith('/ayuda')), 'la navegación lleva al centro');
   await p.screenshot({ path: OUT + 'e7a-centro-1360.png' });
   await p.goto(B + '/ayuda/comprar-boletos');
