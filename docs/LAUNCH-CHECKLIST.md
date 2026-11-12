@@ -1417,6 +1417,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sop7b, adm7i, compa7d, fich8i, evt6i, disp2r) y la hora del día (adm6j); (3) dependen del orden (pasaron solas en esta sesión: cit3e, ayu4g,
       noc4b, tra4y, vis4ie) y msg2p (ya era de 9b). 9b: cada prueba con sus propios datos (como pednull, ayuda2i, rsvp9a), una base nueva por
       corrida en el CI con la semilla 0049, y la regresión en la tubería. Salida de cada una en PROGRESS «Fase 9 · 9a». (9a, 12 nov)
+      **9b-1 (12 nov), sigue abierta:** en bases nuevas, B3 **199/199 (7 120 ✓)**; A 196, B1 198, B2 197, C 198 y D 198 de 199; F parada en
+      171/199 por costo. Cada roja arreglada en su raíz y comprobada sola en verde (tabla en PROGRESS «Fase 9 · 9b-1»). Falta lo que pide esta
+      línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
 - [ ] **→ 9b** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
@@ -1440,3 +1443,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       después de tres corridas (5/5), pero **no se repitió otra corrida entera** sobre la misma base con los arreglos. beta8f salió en rojo
       una vez en B5 («Recibimos tu reporte · TK-…» no apareció tras «Enviar»; sola, en la misma base, pasa): causa sin encontrar. Para 9b-2:
       una base nueva por corrida en el CI, y una corrida repetida a propósito para cazar lo que no se limpia. (9b-1, 12 nov)
+- [ ] **→ 9b** · **(9b-2) La corrida de confirmación de 9b-1 en el CI:** `--todas` dos veces seguidas en verde sobre una base nueva y una
+      `--barajar` (con su semilla). En la máquina quedó: 199/199 una vez (B3) y 198/199 en C y D, con las rojas arregladas y comprobadas solas
+      (noc4c, noc4d, compa7h 3/3 al final); no se hizo ninguna corrida `--barajar` entera. Por costo no se siguió repitiendo aquí. Las
+      pruebas atadas a la hora salieron una por cada franja del día en que se corrió (4:45 AM dlvsrv, 6 AM evt6g, media tarde pq4e, 6 PM
+      noc4c, 7 AM de Tokio compa7h): el CI debería correr a dos horas distintas del día. (9b-1, 12 nov)

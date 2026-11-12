@@ -4302,3 +4302,7 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
   cuenta2h ahora la devuelve a Hazleton y adm7i comprueba los dos lados: la de Hazleton no la abre; una de Allentown sí, con su lectura.
 - **com5c en una base nueva:** las cuentas de la semilla tienen menos de 24 h y la regla «la mitad el primer día» aplica (la app estaba bien).
   Decidí que la prueba use una cuenta con días y compruebe además la mitad (antes ninguna prueba la comprobaba).
+- **Pruebas atadas a la hora del día** (dlvsrv, evt6g/noc4c a las 6 AM, pq4e, noc4c a las 6 PM, compa7h con la zona de noche): decidí que cada
+  una fije su hora respecto al reloj de la corrida (abre 3 h antes, el corte 1 h después, la noche con margen) en vez de saltarse franjas.
+- **La corrida de confirmación (dos enteras seguidas y una barajada) pasa al CI de 9b-2**, por costo (pedido del fundador): aquí quedó 199/199
+  una vez en base nueva y 198/199 en otras dos, con cada roja arreglada y comprobada sola (PROGRESS y LAUNCH «Fase 9 · 9b-1»).

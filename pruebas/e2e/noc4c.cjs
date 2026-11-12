@@ -71,6 +71,10 @@ async function reservar(p, svc, { pax = 2, card = true } = {}) {
   await cli.goto(`${B}/noche/${M1}`); await cli.getByText('MESA CONFIRMADA').first().waitFor();
   ok(!!(await vis(cli.getByText('CÓDIGO PARA LA PUERTA'))), 'mesa confirmada: el cliente ve su código');
   // Cancelar antes del corte → devolución completa.
+  // 9b-1 · El corte 1 h DESPUÉS de ahora (como el de «después del corte», al revés): la primera noche abierta es esta noche y a las 6 PM su corte
+  // (6 h antes de llegar) ya había pasado; la hoja decía que el depósito se quedaba (corrida F del 12 nov). La app estaba bien.
+  sql(`update operations set details = details || jsonb_build_object('cut', (extract(epoch from (now() at time zone 'America/New_York') - (night_date + time '12:00')) / 60)::int + 60) where number = '${M1}'`);
+  await cli.reload(); await cli.getByText('MESA CONFIRMADA').first().waitFor();
   await clic(cli.getByRole('button', { name: 'Cancelar la reserva' }));
   ok(!!(await vis(cli.getByText(/te devolvemos \$50/))), 'la hoja dice la regla que aplica (antes del corte)');
   await clic(cli.getByRole('button', { name: 'Sí, cancelar' }));

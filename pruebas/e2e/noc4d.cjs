@@ -20,6 +20,9 @@ const AY = (n, col) => sql(`select ${col} from help_requests h join operations o
 (async () => {
   require('../lib/negocio-nuevo.cjs').sinTopeDeAyuda('5705550122'); // 9b-1 · el tope de 5 ayudas al día de Marisol (ver lib)
   // Tres noches de Marisol en La Terraza (de la prueba 4nc): una lista que entró, una mesa con depósito cobrado y otra para «inseguro».
+  // 9b-1 · Las tres noches las hace noc4c: si en esta base no están (base nueva, otro orden, o noc4c falló), se corre noc4c antes.
+  const { requiere } = require('../lib/requiere.cjs');
+  requiere('noc4c', () => sql(`select (select count(*) from operations where user_id = ${MARISOL} and business_id = '${NEG}' and kind = 'night' and details->>'k' = 'lista' and status = 'done' and status_detail = 'entro') > 0 and (select count(*) from operations where user_id = ${MARISOL} and business_id = '${NEG}' and kind = 'night' and status = 'cancelled' and cancelled_by = 'business') > 0`) === 't' ? 'si' : '', { que: 'las noches de noc4c' });
   const L = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${NEG}' and kind = 'night' and details->>'k' = 'lista' and status = 'done' and status_detail = 'entro' order by id desc limit 1`);
   const M = sql(`select o.number from operations o join payments p on p.operation_id = o.id and p.kind = 'deposit' and p.status = 'captured' where o.user_id = ${MARISOL} and o.business_id = '${NEG}' and o.kind = 'night' and o.status = 'done' order by o.id desc limit 1`);
   const I = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${NEG}' and kind = 'night' and status = 'cancelled' and cancelled_by = 'business' order by id desc limit 1`);

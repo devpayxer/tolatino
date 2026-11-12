@@ -1363,3 +1363,53 @@ real en `$PRUEBAS_SALIDA/res/<nombre>.out`; destino **9b**, LAUNCH «Fase 9 · 9
 - dependen del orden (pasaron solas en esta sesión): cit3e, ayu4g, noc4b, tra4y, vis4ie; y msg2p («una sola automática cada 12 h»), ya de 9b.
 `node guardianes/run.mjs` limpio; `tsc` 0. Sin migración. **No hecho en 9a:** la regresión en el CI y las 27 rojas (9b).
 - **Sigue:** 9b.
+
+## Fase 9 · 9b-1 — la regresión entera en verde en una base nueva, dos veces seguidas y en otro orden (12 nov)
+**Hecho (rama `claude/vibrant-franklin-krutwa`):**
+- **El punto de partida, medido:** una base NUEVA (`base.sh`: migraciones + todas las semillas del sandbox) con las pruebas como las dejó 9a:
+  **134/198 en verde** (64 rojas; en la base vieja eran 27). Las causas, por familia:
+  - **Datos que solo existían en la base vieja:** `barberia-7747` (admin1i, panel, rec1j, fich8i), Pedro dueño de Sabor Dominicano y su cuenta de
+    cobro (≈40 pruebas del panel), el dueño de La Patria y del Bufete (lic, pro4l, pro4l2, svc4h2), las tarjetas de Marisol con ids de otra base,
+    su dirección de casa, Beto/Lucía/Sofía del equipo, la licencia de Luis (sal4i), las filas de ajustes que creaba un panel.
+  - **Ids fijos de la base vieja** (servicios, la sección 318, los eventos 2/3/7/11/12, el tipo de boleto 15): ahora por nombre o por título.
+  - **Lo que hace otra prueba:** `pruebas/lib/requiere.cjs` lo pide en voz alta y, si no está, corre la prueba que lo hace.
+  - **La hora y el día:** horas de silencio del SMS, eventos «de hoy», el local que no abre hoy, las salidas de 48 h, la cita de «mañana», la
+    caché de 15 s, el barrido de notas de 1 por minuto; y en la aceptación: el negocio que deja de tomar pedidos 15 min antes de cerrar (dlvsrv)
+    y la noche de Noche/Puerta que cambia a las 6 AM (`lejosDelCambioDeNoche`).
+  - **Topes de un día de las mismas cuentas** (`sinTopeDeAyuda`, `sinTopesComunidad`) y la cuenta de menos de 24 h que tiene la mitad (com5c).
+  - **Pantallas y textos que cambiaron** (free2b, autos4ic, com5d, disp2r, avisos2j, evt6b-6c, msg2p) e **inestables de verdad** (sal4j y pro4l
+    buscaban texto en lo cifrado con `convert_from(…, 'LATIN1')`).
+  - **Lo que una prueba deja y la siguiente hereda:** cuenta2h dejaba a Marisol en Allentown (adm7i), rep2l borraba al repartidor de la cuenta
+    de revisión (fich8i), menu2a-f dejaba «Res guisada» agotada y adm2i contaba las cortesías (segunda corrida en la misma base).
+- **Arreglos de la app (cada clase con su guardián y su caso al revés en `alreves9b1`, 13/13):**
+  - `?ciudad=<id>` de Recomendar (`parametroCiudadDelSelector`); la fila de etiquetas de PostCard (`etiquetasSeEnvuelven`); «hoy» en UTC en el
+    servidor (`hoyEnLaCiudad`, `lib/fecha-local.ts`).
+  - **Repartidor sin equipo sin camino a Borrar mi cuenta** (Apple 5.1.1(v)): las filas de cuenta también en ese estado
+    (`borrarCuentaEnCadaApp` ampliado). Lo destapó fich8i.
+  - **Error 418 de hidratación en «hace N min»** (17 pantallas del cliente con `Date.now()` al pintar): `lib/ahora.tsx` (`useAhora`, el
+    instante del servidor en la raíz) (`ahoraDeLaHidratacion`). Lo destapó adm7i en /soporte.
+  - **La Puerta ofrecía «Entró 1» en una reserva terminada** y el servidor lo rechazaba (`listaPuertaCoherente`). Lo destapó evt6g.
+  - **Los bloques del panel se desmontaban** cuando aparecía otro arriba (las plantillas del estimado): se perdía lo escrito en «QUÉ ES» y el
+    foco (`bloquesConLlave`, `llavesDeBloques` en `packages/ui`). Lo destapó est4d, 1 de cada 3 corridas.
+- **adm7i NO era un fallo de seguridad:** Sofía (Soporte de Allentown) abría la conversación de Marisol porque cuenta2h la había dejado en
+  Allentown; con una de Hazleton el servidor responde «Esa conversación no existe» y no anota lectura. adm7i ahora comprueba los dos lados.
+- **Semilla `0050_duenos_base_nueva.sql`** (solo sandbox), **`base.sh` indexa el Centro de ayuda**, **`correr.mjs --barajar [semilla]`**,
+  ayudantes en `pruebas/lib/negocio-nuevo.cjs`. Sin migración.
+- **Android en el CI:** humo de Cáscaras en verde (43152344555) y capturas de las fichas en verde (43162239412, `-gpu guest`).
+**Probado (corridas enteras, `node pruebas/correr.mjs --todas`, una a la vez, servidor de :3100 construido con el commit de cada una):**
+| corrida (12 nov, UTC) | base | resultado | rojas (causa → arreglo) |
+|---|---|---|---|
+| A 08:01 (cd2971e) | nueva | 196/199 · 7 038 ✓ | com5c (cuenta de <24 h), adm7i (418 en /soporte), dlvsrv (4:45 AM) |
+| B1 09:55 | nueva | 198/199 · 7 070 ✓ | evt6g (la Puerta ofrecía «Entró 1» en una mesa terminada) |
+| B2 11:52 | nueva | 197/199 · 7 070 ✓ | est4d (bloques del panel), evt6i (50 s con la máquina cargada) |
+| **B3 13:45 (8c0ee26)** | **nueva** | **199/199 · 7 120 ✓ · 104 min** | — |
+| B4 15:29 | la de B3 (2.ª vez) | 197/199 · 7 107 ✓ | menu2a-f, adm2i (lo que dejaba la corrida anterior) |
+| B5 17:13 | la de B3 (3.ª vez) | 194/199 · 6 988 ✓ | pq4e (hora), tra4y + adm4y (días gastados), ayu7a (ancho), beta8f (sin causa) |
+| C 18:58 (872ce01) | nueva | 198/199 · 7 096 ✓ | compa7d (tope de 1 centavo) |
+| D 20:41 (05cd5ca) | nueva | 198/199 · 7 113 ✓ | compa7h (Tokio pasó a las 7 AM a mitad de la prueba) |
+| F 22:26 (5e138d6) | nueva | parada en 171/199 (169 ✓, 2 ✗) por costo | noc4c (corte de esta noche ya pasado a las 6 PM), noc4d (dependía de noc4c) |
+
+Cada roja se arregló en su raíz y se volvió a correr SOLA en verde (las de F: noc4c, noc4d y compa7h 3/3, 276 ✓). **No hubo dos corridas
+enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmación pasa al CI de 9b-2 (LAUNCH «Fase 9 · 9b-1»).
+`node guardianes/run.mjs` limpio; `tsc` 0.
+- **Sigue:** 9b-2 (la regresión en el CI, por grupos, cada uno con su base nueva) y lo de LAUNCH «Fase 9 · 9b-1».
