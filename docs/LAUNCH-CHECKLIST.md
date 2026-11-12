@@ -1383,7 +1383,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9p** · **Analítica › Apps · enlaces que abren la app o la web:** espera los enlaces universales (8b). (8i, 11 nov)
 
 ## Fase 9 · 9a (las pruebas al repo y la LAUNCH con destino; 11 nov)
-- [ ] **→ 9b** · **CI «capturas de las fichas» (Tiendas, corrida 43106676848, `pruebas` b7e65b3, `capturas=si`):** el paso «adb exec-out
+- [x] **→ 9b** · **CI «capturas de las fichas» (Tiendas, corrida 43106676848, `pruebas` b7e65b3, `capturas=si`):** el paso «adb exec-out
       screencap de cada app» falla igual en los dos intentos: cliente ES 6/6 capturas, y la primera llamada CDP de EN (`cdp.mjs 9222 eval
       document.cookie=…`) recibe ECONNREFUSED 127.0.0.1:9222; en el intento 1 el emulador ya no estaba («could not connect to TCP port 5554»).
       Probable: el emulador o la WebView mueren después de la vuelta en español (memoria de swiftshader) o se pierde el reenvío del puerto; además
@@ -1397,6 +1397,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       libres, 75 GB de disco libres, sin OOM en el kernel, sin volcado de fallo y el logcat corta solo: el proceso del emulador (qemu) desaparece
       mientras la WebView carga páginas reales (el humo, con páginas locales, pasa). Falta: probar otra imagen (API 33 o 35), fijar una versión
       del emulador (`emulator-build`) o `-gpu guest`, y bajar el peso de las páginas en la cáscara de pruebas.
+      **Hecho (9b-1, 12 nov):** con `-gpu guest` (la WebView dibuja dentro del emulador, sin el traductor de OpenGL del runner) y la toma
+      que antes comprueba emulador vivo y app con proceso: Tiendas **43162239412 en verde** (a2c2c73, `capturas=si`), «capturas de Android:
+      12 bien, 0 mal, emulador levantado de nuevo 0 vez/veces» (cliente ES 6/6 incluida «5-boletos», donde antes se caía, y EN 6/6); los
+      demás trabajos (Android ×4, iOS ×4, JWKS, islas) también en verde.
 - [x] **→ 9b** · **Humo de Android inestable (Cáscaras, corrida 43106680850, intento 1):** solo la app «cliente»: `navigator.onLine` = true en
       modo avión, logcat «red para la WebView: sí» al abrir y ningún evento online/offline; el intento 2 pasó. Probable: el modo avión todavía no
       quedó puesto cuando abre la primera app. Una prueba inestable se arregla, no se reintenta. (9a, 11 nov)
