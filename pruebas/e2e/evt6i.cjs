@@ -218,11 +218,16 @@ const op = (num) => sql(`select status || '|' || coalesce(status_detail, '') fro
 
     // ── 10 · Propuesta vencida: la pantalla y la base la rechazan ──
     await pedir(m2, { p: 15, dias: 9, hora: '7 PM', ext: [] }); await m2.waitForURL(/\/privado\/EP-\d+/, { timeout: 20000 }); const E4 = m2.url().match(/EP-\d+/)[0];
-    sql(`update operations set scheduled_at = now() + interval '50 seconds' where number = '${E4}'`); // la propuesta vale hasta el evento (nunca después)
+    // 9b-1 · La propuesta vale hasta el evento (nunca después). Antes el evento quedaba a 50 s desde aquí y con la máquina cargada mandar la
+    // propuesta y abrirla tardaba más: la página ya llegaba vencida, sin «Aceptar y pagar». Ahora vence DESPUÉS de que el cliente la tiene abierta.
+    // (valid_until lo pone la base al mandarla: least(plazo, el evento), migración 0114.)
+    sql(`update operations set scheduled_at = now() + interval '10 minutes' where number = '${E4}'`);
     await hp.goto(B + `/panel/${SAB}/hoy?det=evp:${E4}`); await clic(btn(hp, 'Mandar propuesta'));
     await llenar(hp.getByLabel('QUÉ INCLUYE · EL CLIENTE LO VE'), 'Buffet y refrescos.'); await clic(btn(hp, 'Mandar al cliente')); await contiene(hp, 'ya tiene tu propuesta');
-    tarjeta(U2, '4242'); await m2.goto(B + `/privado/${E4}`); await contiene(m2, 'TE MANDARON SU PROPUESTA');
-    await new Promise((r) => setTimeout(r, 52000));
+    tarjeta(U2, '4242'); await m2.goto(B + `/privado/${E4}`); ok(await contiene(m2, 'TE MANDARON SU PROPUESTA') && !!(await vis(btn(m2, /Aceptar y pagar/))), 'la propuesta abierta, con «Aceptar y pagar», antes de que venza');
+    // La propuesta vence (valid_until = el evento al mandarla): se adelanta a 5 s, ya con la página abierta (sin los triggers: solo la prueba).
+    sql(`set session_replication_role = replica; update private_event_quotes set valid_until = now() + interval '5 seconds' where operation_id = (select id from operations where number = '${E4}')`);
+    await new Promise((r) => setTimeout(r, 8000));
     await clic(btn(m2, /Aceptar y pagar/));
     ok(await contiene(m2, 'ya venció') && sql(`select count(*) from payments p join operations o on o.id = p.operation_id where o.number = '${E4}'`) === '0', 'propuesta vencida: «ya venció», no se cobra nada');
     ok(sqlErr(`insert into private_event_acceptances (quote_id, operation_id, kind, user_id) select q.id, q.operation_id, 'quote', '${U2}' from private_event_quotes q join operations o on o.id = q.operation_id where o.number = '${E4}'`).includes('venció'), 'la base: aceptar una propuesta vencida → error');
