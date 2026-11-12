@@ -255,7 +255,9 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   { const p = await como(fb.tel); await p.goto(B + AYUDA.appointment(fb.num)); await p.waitForLoadState('networkidle'); ok(!(await p.locator(HOJA).count()) && norm(await texto(p)) === antes.appointment, 'Barbería El Primo en pausa: su cita sin hoja, la misma pantalla de antes'); }
   { const f = fam.find((x) => x.kind === 'market_order'); const p = await como(f.tel); await p.goto(B + AYUDA.market_order(f.num)); ok(!!(await p.locator(HOJA).count()), 'otro negocio (sin pausa) sí abre la hoja'); }
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba compa7d' where lifted_at is null`);
-  cfg('compa_tope_mes_cents', 1); await iguales('al tope');
+  // 9b-1 · Al tope = lo gastado del mes ≥ el tope (lib/compa/tope.ts alTope). Con el tope en 1 centavo dependía de que las pruebas de antes ya
+  // hubieran gastado 1 centavo este mes: en una base nueva no siempre (en rojo 1 de 7 corridas, la hoja salía). Con 0 está al tope siempre.
+  cfg('compa_tope_mes_cents', 0); await iguales('al tope');
   { const p = await como(MARISOL); await p.goto(B + '/soporte/compa'); await p.getByText('Una cita o reservación').waitFor();
     await p.locator('[data-pantalla="APP-COMPA"] input').fill('¿cómo reservo una mesa?'); await p.locator('[data-pantalla="APP-COMPA"] input').press('Enter');
     await p.locator('a[data-fuente]').last().waitFor({ timeout: 15000 });
