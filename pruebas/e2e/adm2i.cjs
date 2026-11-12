@@ -32,7 +32,9 @@ const limpiar = () => { sql(`update post_comments set status = 'visible' where s
   // Transacciones
   await clic(a.getByText('Transacciones', { exact: true })); await a.waitForURL(/\/admin\/transacciones/); await a.getByText('HOY', { exact: true }).first().waitFor();
   // 9a · Transacciones cuenta también boletos y eventos privados (6c, 6i): la misma lista que lib/admin-tx.ts.
-  const tot = Number(sql(`select count(*) from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') and o.sent_at > now() - interval '90 days'`));
+  // 9b-1 · Sin las cortesías (boletos sin cobro, 6d): no son dinero. En una base nueva todavía no había ninguna y la cifra coincidía; en la
+  // segunda corrida (con las cortesías de evt6*) no.
+  const tot = Number(sql(`select count(*) from operations o join businesses b on b.id = o.business_id join users u on u.id = o.user_id where o.kind in ('order', 'table', 'appointment', 'plan', 'rental', 'hold', 'market_order', 'party', 'trip', 'night', 'enrollment', 'visit', 'tickets', 'private_event') and o.sent_at > now() - interval '90 days' and not (o.kind = 'tickets' and o.pay_mode = 'none')`));
   ok(!!(await vis(a.getByText(`${tot} EN 90 DÍAS`))), `Transacciones: ${tot} en 90 días`);
   await a.screenshot({ path: OUT + 'a2-tx.png', fullPage: true });
   await clic(a.getByText('Terminado', { exact: true })); await a.waitForURL(/st=done/); ok(!(await vis(a.getByText('CANCELADO', { exact: true }))), 'filtro Terminado');
