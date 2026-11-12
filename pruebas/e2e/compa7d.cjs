@@ -220,7 +220,13 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   await pg.waitForURL(/\/cuenta\/ajustes$/, { timeout: 15000 }); ok(true, 'Mi cuenta › Cambiar mi teléfono → «Te abro Mi cuenta…» y abre Ajustes');
 
   console.log('8 · El formulario abierto desde la hoja: help_requests.origin = compa');
-  const ORD = sql(`select number from operations where user_id = '${MU}' and kind = 'order' and status = 'done' and not exists (select 1 from help_requests h where h.operation_id = operations.id) and number <> '${fam.find((f) => f.kind === 'order').num}' and ready_at is not null and respond_by is not null and exists (select 1 from operation_lines l where l.operation_id = operations.id) order by id desc limit 1`);
+  // 9b-1 · Un pedido terminado de Marisol sin ayuda (que no sea el de la familia): si la base no tiene otro, se hace uno (como ayuda2i).
+  let ORD = sql(`select number from operations where user_id = '${MU}' and kind = 'order' and status = 'done' and not exists (select 1 from help_requests h where h.operation_id = operations.id) and number <> '${fam.find((f) => f.kind === 'order').num}' and ready_at is not null and respond_by is not null and exists (select 1 from operation_lines l where l.operation_id = operations.id) order by id desc limit 1`);
+  if (!ORD) { const k = require('crypto').randomUUID();
+    ORD = sql(`insert into operations (number, kind, city_id, business_id, user_id, status, stage, mode, pay_mode, subtotal_cents, tax_cents, total_cents, sent_at, respond_by, ready_at, done_at, client_key, is_test)
+      values (nextval('operations_order_seq')::text, 'order', 'hzl', 'sabor-dominicano', '${MU}', 'done', 'picked_up', 'pickup', 'local', 650, 39, 689, now() - interval '3 hours', now() - interval '170 minutes', now() - interval '150 minutes', now() - interval '2 hours', '${k}', true) returning number`).split('\n')[0];
+    sql(`insert into operation_lines (operation_id, item_id, name, qty, unit_price_cents, line_total_cents, tax_pct) select o.id, x.id, x.name, 1, x.price_cents, x.price_cents, 6 from operations o, items x where o.client_key = '${k}' and x.business_id = 'sabor-dominicano' and x.removed_at is null and x.status = 'live' order by x.id limit 1`);
+    sql(`insert into operation_events (operation_id, kind, actor, actor_id) select id, 'sent', 'user', user_id from operations where client_key = '${k}'`); }
   sql(`update operations set done_at = now() - interval '2 hours' where number = '${ORD}'`);
   await pr.goto(B + `/pedido/${ORD}/ayuda`); h = pr.locator(HOJA); await h.waitFor();
   await h.getByText('Algo no está bien', { exact: true }).click();
@@ -267,7 +273,7 @@ const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/$
   await pa.goto(B + `/admin/compa?tab=conv&buscar=${cpR}`); await pa.getByText(cpR).first().click();
   await pa.waitForURL(new RegExp(`cp=${cpR}`)); await pa.getByText('QUIÉN LA LEYÓ').waitFor();
   const ta = await texto(pa);
-  ok(ta.includes('¿cómo reservo una mesa?') && /El equipo solo lee lo que el vecino habló con El Compa/.test(ta) && /Hoja de ayuda/.test(ta) && /Barbería El Primo/.test(ta), 'la ficha: QUIÉN · NEGOCIO · DÓNDE, el hilo y la nota del equipo');
+  ok(ta.includes('¿cómo reservo una mesa?') && /El equipo solo lee lo que el vecino habló con El Compa/.test(ta) && /Hoja de ayuda/.test(ta) && ta.includes(sql(`select b.name from operations o join businesses b on b.id = o.business_id where o.number = '${fc.num}'`)), 'la ficha: QUIÉN · NEGOCIO · DÓNDE, el hilo y la nota del equipo'); // 9b-1 · el negocio de ESA cita
   ok(+sql(`select count(*) from compa_reads where conversation_id = (select id from compa_conversations where number = '${cpR}')`) === lecturas0 + 1 && sql(`select staff_id from compa_reads order by id desc limit 1`) === uid(ADM), 'la lectura quedó anotada (compa_reads) con quién la abrió');
   await pa.waitForTimeout(700); await pa.screenshot({ path: OUT + 'e7d-admin-ficha-1360.png', fullPage: true });
   const pa3 = await como(ADM); await pa3.goto(B + `/admin/compa?cp=${cpR}`); await pa3.getByText('QUIÉN LA LEYÓ').waitFor(); await pa3.waitForTimeout(700); await pa3.screenshot({ path: OUT + 'e7d-admin-ficha-390.png', fullPage: true });

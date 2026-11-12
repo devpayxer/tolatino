@@ -89,6 +89,14 @@ entrar() { # $1 = id, $2 = teléfono → "ok" o el motivo
   cdp "$1" eval "(async()=>{const h={'content-type':'application/json'};const a=await (await fetch('/api/cuenta/codigo',{method:'POST',headers:h,body:JSON.stringify({telefono:'$2'})})).json();if(!a.codigoPrueba)return 'sin código';const b=await (await fetch('/api/cuenta/verificar',{method:'POST',headers:h,body:JSON.stringify({telefono:'$2',codigo:a.codigoPrueba})})).json();return b.ok?'ok':'no entró'})()"
 }
 
+# Abre la app de cero, entra con el número de prueba y pone el idioma (una vez por idioma y cada vez que la app o el emulador se van).
+preparar() { # $1 = id, $2 = teléfono, $3 = idioma
+  local r
+  abrir "$1" || return 1
+  r=$(entrar "$1" "$2"); echo "$1 $3 · entrar: $r"; [ "$r" = '"ok"' ] || return 1
+  r=$(cdp "$1" eval "document.cookie='tl_lang=$3; path=/; max-age=86400';document.cookie.includes('tl_lang=$3')"); [ "$r" = true ] || { echo "  · idioma: $r"; return 1; }
+}
+
 # El logcat entero mientras corre (el del emulador que se va no se puede leer después): uno por cada vez que se levanta.
 seguir_logcat() { nohup adb logcat -v time > "$DIAG/logcat-$revividas.txt" 2>&1 & }
 asegurar || { diagnostico "sin-emulador-al-empezar"; echo "✗ no hay emulador"; exit 1; }
@@ -99,16 +107,23 @@ while read -r app sabor id tel tomas; do
   IFS=, read -ra T <<< "$tomas"
   for idioma in es en; do
     asegurar || { falla "$app $idioma: sin emulador (se saltan ${#T[@]} tomas)"; continue; }
-    abrir "$id" || { falla "$app $idioma: la app no abrió su WebView"; diagnostico "$app-$idioma-no-abre"; continue; }
-    r=$(entrar "$id" "$tel"); echo "$app $idioma · entrar: $r"
-    [ "$r" = '"ok"' ] || { falla "$app $idioma: no entró ($r)"; continue; }
-    r=$(cdp "$id" eval "document.cookie='tl_lang=$idioma; path=/; max-age=86400';document.cookie.includes('tl_lang=$idioma')")
-    [ "$r" = true ] || { falla "$app $idioma: no se pudo poner el idioma ($r)"; continue; }
+    # 9b-1 · 43154886642: la app se cerró en «5-boletos» y el emulador se fue un segundo después; «en» empezó con el emulador vivo y se
+    # quedó esperando una WebView que ya no iba a abrir. Si no abre y el emulador se fue, se levanta de nuevo (hasta 2) y se abre otra vez.
+    if ! preparar "$id" "$tel" "$idioma"; then
+      vivo || { revivir && asegurar && preparar "$id" "$tel" "$idioma"; } || { falla "$app $idioma: la app no abrió su WebView"; diagnostico "$app-$idioma-no-abre"; continue; }
+    fi
     n=0
     for par in "${T[@]}"; do
       nombre=${par%%=*}; ruta=${par#*=}; n=$((n + 1)); png="$OUT/$app/$idioma/$n-$nombre.png"
       mkdir -p "$OUT/$app/$idioma"
-      if ! vivo; then falla "$app $idioma $n-$nombre: el emulador se fue"; revivir && abrir "$id" && entrar "$id" "$tel" > /dev/null && cdp "$id" eval "document.cookie='tl_lang=$idioma; path=/; max-age=86400'" > /dev/null || break; fi
+      # Antes de cada toma: el emulador vivo y la app con su proceso. Si se fue cualquiera de los dos, se dice (✗ de esta vuelta, con su
+      # diagnóstico) y se levanta lo que haga falta para las tomas que siguen; la toma misma no se repite.
+      if ! vivo || [ -z "$(pid_de "$id")" ]; then
+        if vivo; then falla "$app $idioma $n-$nombre: la app se cerró antes de la toma"; else falla "$app $idioma $n-$nombre: el emulador se fue"; fi
+        diagnostico "$app-$idioma-$n"
+        { vivo || revivir; } && preparar "$id" "$tel" "$idioma" || break
+        continue
+      fi
       r=$(cdp "$id" ir "$ruta") || { falla "$app $idioma $n-$nombre: no navegó ($r)"; continue; }
       t=$(cdp "$id" titulo) || { falla "$app $idioma $n-$nombre: no leyó la página ($t)"; continue; }
       timeout 60 adb exec-out screencap -p > "$png" 2> /dev/null

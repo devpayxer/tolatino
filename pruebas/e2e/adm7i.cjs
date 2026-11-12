@@ -265,8 +265,11 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
 
   console.log('9 · La PURGA con el reloj: 12 meses → solo cifras; cuenta borrada → a los 30 días; la base no deja reescribir');
   // Una conversación vieja (13 meses) cerrada, con su pregunta sin saber, su marca y su paso a una persona; otra de 11 meses.
-  const tv = await compa(pm, { op: 'turno', texto: 'kumquats qwv azul' });
+  // 9b-1 · Antes decía «kumquats qwv azul»: con el Centro de ayuda indexado (una base nueva ya lo trae), «azul» encuentra «Tu ubicación durante
+  // la entrega» (el punto azul) y El Compa SÍ contestaba: sin «no supo» la comprobación de la purga salía vacía. Ahora el texto no se parece a nada.
+  const tv = await compa(pm, { op: 'turno', texto: 'kumquats qwv zzx' });
   const tn = await compa(pm, { op: 'turno', texto: 'kumquats qwv jbk' });
+  ok(tv.tipo === 'no_se' && tn.tipo === 'no_se', 'las dos conversaciones de la purga son «no supo» (con su pregunta guardada)');
   const viejo = tv.conversacion, nuevo = tn.conversacion;
   sql(`insert into compa_reviews (conversation_id, city_id, staff_id, reason, note) select id, city_id, '${AU}', 'wrong_info', 'Nota de prueba de la purga.' from compa_conversations where number = '${viejo}'`);
   sql(`update compa_conversations set closed_at = now(), outcome = 'self_resolved' where number in ('${viejo}', '${nuevo}') and closed_at is null`);
@@ -281,7 +284,7 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
   ok(+sql(`select coalesce(sum(conversaciones), 0) from compa_analitica_dia`) === antesView, 'la analítica cuenta lo mismo (solo cifras)');
   await pa.goto(B + `/admin/compa?cp=${viejo}`); await pa.getByText('QUIÉN LA LEYÓ').waitFor();
   T = await texto(pa);
-  ok(/El texto se borró el .* por la retención/.test(T) && T.includes('(borrado por la retención)') && !T.includes('kumquats qwv azul'), 'la ficha: «El texto se borró… por la retención» y el hilo sin texto');
+  ok(/El texto se borró el .* por la retención/.test(T) && T.includes('(borrado por la retención)') && !T.includes('kumquats qwv zzx'), 'la ficha: «El texto se borró… por la retención» y el hilo sin texto');
   ok(!T.includes('Marcar respuesta incorrecta'), 'una purgada no se marca');
   await pa.screenshot({ path: OUT + 'e7i-purgada-1360.png', fullPage: true });
   // Con la retención en 6 meses, la de 11 también.

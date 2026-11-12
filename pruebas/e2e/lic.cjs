@@ -19,7 +19,7 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p
   await o.goto(B + '/panel/' + BIZ + '/pagina/lic'); await o.getByText('TUS LICENCIAS', { exact: true }).first().waitFor();
   // 9b-1 · Solo si todavía no tiene la de CPA (la segunda corrida ya la tiene: su título dice lo mismo que el botón de agregarla).
   if (require('../lib/negocio-nuevo.cjs').sql(`select count(*) from licenses where business_id = '${BIZ}' and kind = 'cpa' and status <> 'withdrawn'`) === '0') { await t(o, 'Contador público (CPA)').click(); await o.locator('text=Enviada. To’Latino la verifica en 72 h.').waitFor(); await o.waitForTimeout(800); }
-  const campo = o.locator('input[placeholder="Como sale en tu licencia"]').last(); await campo.fill('PA-123456');
+  const campo = o.locator('input[placeholder="Como sale en tu licencia"]').last(); await campo.fill('PA-' + String(Date.now()).slice(-6)); /* 9b-1 · un número nuevo en cada corrida: con el mismo de la vez anterior no hay cambio y no sale «Guardar» */
   await shot(o, 'k4-panel-lic-m.png');
   await t(o, 'Guardar').click(); await o.locator('text=Enviado. To’Latino lo revisa en 72 h.').waitFor();
   // Admin verifica desde la cola

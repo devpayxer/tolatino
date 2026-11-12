@@ -224,9 +224,9 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     await am.goto(B + '/n/la-terraza-night?tab=svc');
     ok(await contiene(am, `Noche especial ${TAG}`), 'Noche: la noche especial con su evento en vivo sale en la ficha');
     await clic(am.getByRole('button', { name: 'Ver evento' })); ok(await espera(() => am.url().includes(`/eventos/${slug(EJ)}`)), '«Ver evento» abre la ficha del evento');
-    sql(`update events set hidden_at = now(), hidden_by = '${ADMID}', hidden_reason = 'prueba ${TAG}' where id = 2`);
+    sql(`update events set hidden_at = now(), hidden_by = '${ADMID}', hidden_reason = 'prueba ${TAG}' where id = ${EJ}`);
     await am.goto(B + '/n/la-terraza-night?tab=svc'); ok(!(await texto(am)).includes(`Noche especial ${TAG}`), 'con el evento oculto, la noche especial no sale');
-    sql(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = 2`);
+    sql(`update events set hidden_at = null, hidden_by = null, hidden_reason = null where id = ${EJ}`);
 
     // ── 9 · Novedad con «Ver evento» → Hoy en el barrio ──
     await am.goto(B + '/comunidad/hoy'); ok(await contiene(am, 'EVENTO · VER EVENTO') && await contiene(am, 'Ven al sancocho'), 'Hoy en el barrio: «EVENTO · VER EVENTO»');
@@ -279,7 +279,12 @@ const PARR = 'parroquia-santa-maria', CASA = 'taquiza-don-chuy';
     sql(`update rsvps set hold_until = now() - interval '1 minute' where event_id = ${PUERTAS} and status = 'going'`);
     barrido();
     ok(sql(`select status from rsvps where event_id = ${PUERTAS} and user_id = '${uid(C3)}'`) === 'expired' && sql(`select rsvp_n || '|' || going_n from event_dates where event_id = ${PUERTAS}`) === '0|2', 'pasadas las puertas + rsvp_guarda_min: el RSVP vence, el lugar se libera (van sigue contando)');
-    ok(sql(`select count(*) from notifications where user_id = '${uid(JUAN)}' and tpl = 'evt_guardado_cerca' and ref_id = '${R}'`) === '1', '«Un evento que guardaste es mañana» a quien lo guardó y no va');
+    // 9b-1 · «El día antes» sale desde la hora de Configuración (evt_recordatorio_hora, 10 AM; mínimo 6 AM): antes de esa hora no sale todavía.
+    // La prueba espera lo que dice la regla a la hora del servidor (antes: siempre «sí», y de madrugada fallaba).
+    { const hNY = Number(sql(`select extract(hour from now() at time zone 'America/New_York')::int`)), hCfg = Number(sql(`select cfg_int('evt_recordatorio_hora')`));
+      const n = sql(`select count(*) from notifications where user_id = '${uid(JUAN)}' and tpl = 'evt_guardado_cerca' and ref_id = '${R}'`);
+      if (hNY >= hCfg) ok(n === '1', '«Un evento que guardaste es mañana» a quien lo guardó y no va');
+      else ok(n === '0', `«Un evento que guardaste es mañana»: a las ${hNY} h todavía no (sale desde las ${hCfg} h)`); }
     ok(!err.length, `sin errores en la consola (${err.length})`);
   } finally {
     if (err.length) console.log(err.slice(0, 8).join('\n'));

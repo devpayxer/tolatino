@@ -378,20 +378,23 @@ jobs:
       # al abrir la primera app (4 GB, 3 núcleos) y 43152342224 al navegar la primera (4 GB, 3 núcleos, sin Vulkan), con 11 GB libres, sin OOM
       # y sin volcado de fallo. Sigue sin Vulkan (-feature -Vulkan), vuelve a la memoria por defecto del perfil, y capturas-android.sh guarda el
       # logcat entero mientras corre, el disco y el kernel, y lo vuelve a levantar si se va (TL_EMU_OPCIONES). Todo en capturas-android/diagnostico.
+      # 43154886642 (memoria por defecto, sin Vulkan): 4 de 6 en ES; en «5-boletos» la WebView avisó «tile memory limits exceeded», la app se
+      # cerró y el emulador se fue un segundo después (sin OOM, 75 GB de disco). Ahora la WebView dibuja DENTRO del emulador (-gpu guest), sin
+      # pasar por el traductor de OpenGL del runner, que es lo que se cae con ella.
       - name: Memoria antes del emulador (los daemons del build fuera)
         run: |
           pkill -f KotlinCompileDaemon || true; pkill -f GradleDaemon || true
           free -m; df -h / /tmp "$HOME" | sort -u; ps -eo pid,rss,comm --sort=-rss | head -8
       - name: Emulador (Pixel 6, 1080×2400) · adb exec-out screencap de cada app
         uses: reactivecircus/android-emulator-runner@v2
-        env: { TL_EMU_OPCIONES: "-no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim" }
+        env: { TL_EMU_OPCIONES: "-no-window -gpu guest -feature -Vulkan -no-snapshot -noaudio -no-boot-anim" }
         with:
           api-level: 34
           arch: x86_64
           target: google_apis
           profile: pixel_6
           disable-animations: true
-          emulator-options: -no-window -gpu swiftshader_indirect -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
+          emulator-options: -no-window -gpu guest -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           script: bash scripts/tiendas/capturas-android.sh apps/mobile/android/app/build/outputs/apk capturas-android
       - name: Sondeo · ¿el servidor contesta por HTTPS? (si no, ningún token sale del runner)
         id: s

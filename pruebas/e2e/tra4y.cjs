@@ -32,7 +32,13 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });
   // Abre la reserva una vez para que existan las salidas de la semana; elige días 2 y 3 desde hoy.
   await m.goto(B + `/n/${V}/viaje?s=${SVC}`); await m.getByText('PASAJEROS').first().waitFor().catch(() => {});
-  const d2 = sql(`select ((now() at time zone 'America/New_York')::date + 2)::text`), d3 = sql(`select ((now() at time zone 'America/New_York')::date + 3)::text`);
+  // 9b-1 · Días SIN pasajeros de otra corrida (antes siempre «pasado mañana» y el día siguiente: la segunda corrida del mismo día encontraba la
+  // salida de las 7 PM con los asientos y la cancelación de la primera y reservaba en otra). d2: el primer día desde pasado mañana con la
+  // de la 1 PM y la de las 7 PM sin asientos vivos; d3: el siguiente con la de la 1 PM sin asientos vivos.
+  const limpio = (ymd, h) => `exists (select 1 from trip_runs r where r.item_id = ${SVC} and r.status = 'scheduled' and (r.run_at at time zone 'America/New_York')::date = ${ymd} and extract(hour from r.run_at at time zone 'America/New_York') = ${h} and not exists (select 1 from run_seats x where x.run_id = r.id and x.status in ('held', 'confirmed', 'boarded')))`;
+  const dia = (desde, horas) => sql(`select d::date::text from generate_series((now() at time zone 'America/New_York')::date + ${desde}, (now() at time zone 'America/New_York')::date + 13, interval '1 day') d where ${horas.map((h) => limpio('d::date', h)).join(' and ')} order by d limit 1`);
+  const d2 = dia(2, [13, 19]), d3 = d2 ? sql(`select d::date::text from generate_series('${d2}'::date + 1, (now() at time zone 'America/New_York')::date + 13, interval '1 day') d where ${limpio('d::date', 13)} order by d limit 1`) : '';
+  if (!d2 || !d3) throw new Error(`no hay días con las salidas limpias en las próximas dos semanas (d2 ${d2}, d3 ${d3})`);
   const runDe = (ymd, h) => sql(`select id from trip_runs where item_id = ${SVC} and (run_at at time zone 'America/New_York')::date = '${ymd}' and extract(hour from run_at at time zone 'America/New_York') = ${h}`);
   const R1 = runDe(d2, 13), R2 = runDe(d2, 19), R3 = runDe(d3, 13);
   ok(R1 && R2 && R3, `salidas de la ruta: ${d2} 1 PM (${R1}), 7 PM (${R2}) y ${d3} 1 PM (${R3})`);
@@ -145,16 +151,20 @@ const run = (id) => sql(`select seats_booked || '|' || status from trip_runs whe
   await m.screenshot({ path: OUT + 'y10-llegaste-m.png', fullPage: true });
 
   // ── 10. El negocio cancela una salida: devolución completa a todos (cobrado → devuelto, retenido → liberado) ──
-  await reservar(m, d2, '7:00 PM', 1, false); const V6 = await enviar(m);
+  // 9b-1 · La de mañana a las 7 PM (antes la de pasado mañana): el panel Hoy muestra las salidas confirmadas de las próximas 48 h, así que
+  // «pasado mañana a las 7 PM» solo se veía después de las 7 PM y la prueba fallaba el resto del día.
+  const dM = sql(`select ((now() at time zone 'America/New_York')::date + 1)::text`), RM = runDe(dM, 19);
+  sql(`update trip_runs set seats_outside = 0, status = 'scheduled', late_until = null where id = ${RM}`);
+  await reservar(m, dM, '7:00 PM', 1, false); const V6 = await enviar(m);
   await w.goto(B + `/panel/${V}/hoy?det=viaje:${V6}`); await clic(w.getByRole('button', { name: 'Confirmar', exact: true })); await w.getByText(/Confirmado/).first().waitFor();
   await esperaV(() => pay(V6).split('|')[1], 'captured');
-  await reservar(y, d2, '7:00 PM', 1, false); const V7 = await enviar(y);
-  await w.goto(B + `/panel/${V}/hoy?det=salida:${R2}`); await clic(w.getByRole('button', { name: 'Cancelar la salida' }));
+  await reservar(y, dM, '7:00 PM', 1, false); const V7 = await enviar(y);
+  await w.goto(B + `/panel/${V}/hoy?det=salida:${RM}`); await clic(w.getByRole('button', { name: 'Cancelar la salida' }));
   await (await vis(w.getByPlaceholder(/la van se dañó/))).fill('Se dañó la van');
   await clic(w.getByRole('button', { name: 'Sí, cancelar y devolver' })); await w.getByText(/todos reciben su dinero/).first().waitFor();
   ok(await esperaV(() => pay(V6), 'cancelled|refunded|4500|4500') === 'cancelled|refunded|4500|4500', `${V6} (confirmado): devolución completa`);
   ok(await esperaV(() => pay(V7).split('|').slice(0, 2).join('|'), 'cancelled|released') === 'cancelled|released', `${V7} (pendiente): liberado`);
-  ok(run(R2) === '0|cancelled', 'la salida queda cancelada sin asientos');
+  ok(run(RM) === '0|cancelled', 'la salida queda cancelada sin asientos');
   await m.goto(B + `/viaje/${V6}`); ok(await espera(m.getByText(/Se dañó la van/)), 'el cliente ve el motivo');
 
   // ── 11. Vehículo completo: recogida en su dirección, precio cerrado $420 ──

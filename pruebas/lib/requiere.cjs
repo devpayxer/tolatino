@@ -9,10 +9,12 @@ const { execFileSync } = require('child_process');
 const path = require('path');
 const ENT = require('./entorno.cjs');
 const corridas = new Set();
-function requiere(nombre, consulta, { siempre = false, que = '' } = {}) {
+// `veces`: lo que pide un umbral (p. ej. 3 noches con «no entró» para abrir una cola) puede necesitar correr la prueba más de una vez.
+function requiere(nombre, consulta, { siempre = false, que = '', veces = 1 } = {}) {
   let v = siempre ? '' : consulta();
   if (v) return v;
-  if (!corridas.has(nombre)) {
+  for (let vez = 0; vez < veces && !v; vez++) {
+    if (vez === 0 && corridas.has(nombre)) { v = consulta(); continue; }
     corridas.add(nombre);
     console.log(`… ${que || 'lo que necesita'} no está: se corre ${nombre} (lo hace de punta a punta)`);
     let out = '';
@@ -24,8 +26,9 @@ function requiere(nombre, consulta, { siempre = false, que = '' } = {}) {
       throw new Error(`requiere: ${nombre} falló, así que no hay ${que || 'lo que esta prueba necesita'}`);
     }
     console.log(out.split('\n').filter(Boolean).slice(-4).map((l) => `  [${nombre}] ${l}`).join('\n'));
+    v = consulta();
   }
-  v = consulta();
+  v = v || consulta();
   if (!v) throw new Error(`requiere: después de ${nombre} sigue sin haber ${que || 'lo que esta prueba necesita'}`);
   return v;
 }
