@@ -108,6 +108,7 @@ async function reservar(p, svc, { pax = 2, card = true } = {}) {
   ok(await espera(() => st(M4) === 'cancelled' && pay(M4) === 'captured:5000:0'), 'cancelar después del corte → el depósito se queda con el local');
 
   // 6 · La puerta esta noche: la lista entra; la mesa «no entró sin identificación»; «pasó la noche» a las 6 AM.
+  await require('../lib/negocio-nuevo.cjs').lejosDelCambioDeNoche(); // 9b-1 · todo lo de esta parte en la misma noche (cambia a las 6 AM)
   const hoy = sql(`select ((now() at time zone 'America/New_York') - interval '6 hours')::date`);
   sql(`update operations set night_date = '${hoy}'::date where number = '${L1}'`);
   const M5 = await reservar(cli, MESA, { pax: 2 });

@@ -404,14 +404,16 @@ export async function listaEnLaPuerta(negocio: string, q: string): Promise<FilaL
   const t = String(q ?? "").replace(/\s+/g, " ").trim().slice(0, 40), cod = /^\d{4}$/.test(t) ? t : null, nom = !cod && t.length >= 2 ? `%${t.toLowerCase().replace(/[%_\\]/g, "")}%` : null;
   const r = (await db().query<{ numero: string; fn: string | null; ln: string | null; k: string; svc: Bi; pax: number; entraron: number; llega: number }>(
     `select o.number as numero, u.first_name as fn, u.last_name as ln, o.details->>'k' as k, o.details->'svc' as svc, o.party_size as pax,
-            coalesce((o.details->>'in_n')::int, 0) as entraron, (o.details->>'arrive')::int as llega
+            case when o.status = 'done' then o.party_size else coalesce((o.details->>'in_n')::int, 0) end as entraron, (o.details->>'arrive')::int as llega
        from operations o join users u on u.id = o.user_id
       where o.business_id = $1 and o.kind = 'night' and o.night_date = $2::date and o.status in ('confirmed', 'done') and coalesce(o.status_detail, '') not in ('nollegaron', 'noid')
         and ($3::text is null or o.door_code = $3) and ($4::text is null or unaccent(lower(coalesce(u.first_name, '') || ' ' || coalesce(u.last_name, ''))) like unaccent($4))
-      order by (coalesce((o.details->>'in_n')::int, 0) >= o.party_size), (o.details->>'arrive')::int, o.id limit 60`, [negocio, x.hoy, cod, nom])).rows;
+      order by (o.status = 'done' or coalesce((o.details->>'in_n')::int, 0) >= o.party_size), (o.details->>'arrive')::int, o.id limit 60`, [negocio, x.hoy, cod, nom])).rows;
   return r.map((z) => ({ numero: z.numero, nombre: [z.fn?.trim().split(" ")[0], z.ln ? `${z.ln.trim().slice(0, 1).toUpperCase()}.` : ""].filter(Boolean).join(" ") || "Cliente",
     k: z.k, svc: z.svc, pax: z.pax, entraron: Math.min(z.entraron, z.pax), llega: hNoche(z.llega) }));
 }
+/* 9b-1 · Una reserva ya terminada («done»: entró, o la noche se cerró) sale en la lista como completa: antes contaba solo in_n y la puerta
+   ofrecía «Entró 1» en una mesa que ya había llegado; el servidor lo rechazaba («Esta reserva ya cambió…»). */
 /* Entran k más de la lista o de la mesa (nunca más de los que son). Dentro de la transacción de la puerta (que registra el escaneo). */
 export async function marcarLlegada(c: PoolClient, negocio: string, numero: string, k: number, actorId: string): Promise<{ ok: true; op: string; k: number; entraron: number; de: number } | { ok: false; msg: Bi }> {
   if (!NUM_N.test(numero)) return no("Esa reserva no existe.", "That booking does not exist.");

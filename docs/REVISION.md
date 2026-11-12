@@ -4274,3 +4274,25 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
 - **`correr.mjs --barajar [semilla]`:** el orden al azar (o el de una semilla para repetirlo) para cazar lo que depende del orden.
 - **Base nueva = Centro de ayuda indexado:** `pruebas/servir/base.sh` hace lo mismo que el despliegue del sandbox (indexa `docs/ayuda`); sin eso El
   Compa y la ayuda no tenían artículos.
+
+**Qué mirar en el teléfono (de la corrida de aceptación, 12 nov):**
+- **Repartidor sin equipo:** en la app To'Latino Repartidor, quien todavía no entró a un equipo (o salió del último) ve la pantalla del código
+  del negocio sin barra de abajo y, hasta hoy, sin ningún camino a su cuenta: no podía borrarla desde la app (Apple 5.1.1(v)). Ahora, debajo de
+  «Entraste con …», salen las mismas filas que en Perfil: **Idioma y cuenta** (Mi cuenta › Ajustes › Borrar mi cuenta), **Reportar un problema
+  de la app** e **Ir a To'Latino**. Captura `f8i-repartidor-sin-equipo-390.png`. Guardián `borrarCuentaEnCadaApp` (los dos estados).
+- **«Hace 5 min» sin parpadeo:** Soporte, Avisos, Mensajes, el panel (Equipo, El Compa, Mensajes) y el Super Admin (Colas, Contenido, Hoy,
+  Catálogo, ficha del negocio y del usuario, Usuarios, Soporte, Apps › Beta). Si el minuto cambiaba entre que el servidor pintaba la página y el
+  teléfono la abría, React la volvía a pintar entera (error 418). Ahora no, y esos «hace N min» se actualizan solos cada 30 s mientras la
+  pantalla está abierta (antes se quedaban como al abrirla). Guardián `ahoraDeLaHidratacion`.
+
+**Decisiones de la aceptación (decidí X; si prefieres Y, se cambia):**
+- **Repartidor sin equipo:** decidí poner las TRES filas de Perfil (cuenta, reportar un problema, ir a To'Latino) y no solo «Idioma y cuenta»:
+  quien no tiene equipo también puede tener un problema con la app. Si prefieres solo la de la cuenta, se quita.
+- **Tiempos relativos que se mueven solos (cada 30 s):** decidí que «hace N min» siga el reloj mientras la pantalla está abierta. Si prefieres que
+  se quede como al abrir, es una línea en `lib/ahora.tsx`.
+- **adm7i («Sofía, Soporte de Allentown, abre una conversación de Hazleton») NO era un fallo de seguridad:** lo comprobé en la base. cuenta2h
+  dejaba a Marisol (Hazleton) en Allentown al terminar; su conversación de El Compa nacía en Allentown y Sofía la abría con razón, con su lectura
+  anotada. Con una de Hazleton: «Esa conversación no existe» y ninguna lectura (el servidor filtra por las ciudades del rol en la consulta).
+  cuenta2h ahora la devuelve a Hazleton y adm7i comprueba los dos lados: la de Hazleton no la abre; una de Allentown sí, con su lectura.
+- **com5c en una base nueva:** las cuentas de la semilla tienen menos de 24 h y la regla «la mitad el primer día» aplica (la app estaba bien).
+  Decidí que la prueba use una cuenta con días y compruebe además la mitad (antes ninguna prueba la comprobaba).

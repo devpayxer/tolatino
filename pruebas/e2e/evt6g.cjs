@@ -12,7 +12,7 @@
 // estaban (eventos de prueba cancelados, porteros de prueba quitados).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
 // 9b-1 · El SMS que se espera sale de la regla del servidor (de noche, lo que no es crítico espera: «silencio»).
-const { smsEsperado } = require('../lib/negocio-nuevo.cjs');
+const { smsEsperado, lejosDelCambioDeNoche } = require('../lib/negocio-nuevo.cjs');
 const { chromium } = require('playwright'); const { execSync, exec } = require('child_process'); const crypto = require('crypto'); const fs = require('fs');
 const { S, B, sql, sqlErr, api, apiRaw, entrar, uid, firmar, otraLlave } = require('../lib/g6-comun.cjs');
 const OUT = S + '/cap/';
@@ -340,12 +340,16 @@ function videoQR(t, file) {
     await a2.screenshot({ path: OUT + 'e6g-puerta-lista-390.png', fullPage: true });
 
     // ── 10 · Lista de la noche (Noche · 4nc) por el código de 4 cifras ──
+    await lejosDelCambioDeNoche(); // 9b-1 · la reserva y «Entró» en la misma noche (cambia a las 6 AM)
     const NUM = 'N-' + sql(`select nextval('night_seq')`), COD = String(1000 + (parseInt(RUN.slice(-3), 36) % 8999));
     sql(`insert into operations (number, kind, city_id, business_id, user_id, status, scheduled_at, duration_min, buffer_min, customer_note, details, party_size, night_date, door_code, subtotal_cents, total_cents, deposit_cents, pay_mode, confirmed_at, client_key, is_test)
          values ('${NUM}', 'night', 'hzl', '${NEG}', '${uid(C1)}', 'confirmed', now(), 60, 0, '${TAG}', '{"k":"lista","svc":{"es":"Lista de la noche","en":"Tonight list"},"arrive":600,"in_n":0}'::jsonb, 4, ((now() at time zone 'America/New_York') - interval '6 hours')::date, '${COD}', 0, 0, 0, 'none', now(), gen_random_uuid(), true)`);
     await a1.goto(B + `/puerta/s/${SA}?t=noche`);
     await (await vis(a1.getByLabel('Nombre o código de 4 números'))).fill(COD);
-    ok(await contiene(a1, 'ENTRARON 0 DE 4') && !(await texto(a1)).includes(COD + ' '), 'Lista de la noche: el código de 4 cifras la encuentra (y la pantalla nunca muestra el código)');
+    // 9b-1 · Hasta que la búsqueda deja SOLO esa reserva: antes la lista entera de esta noche (otras de Marisol, de otras pruebas) seguía en
+    // pantalla un momento y «Entró 1» tocaba la primera fila, que no era la de la prueba.
+    const soloUna = async () => { let k = 0; const l = btn(a1, /^Entró 1$/); for (let i = 0; i < await l.count(); i++) if (await l.nth(i).isVisible()) k++; return k === 1; };
+    ok(await espera(async () => (await texto(a1)).includes('ENTRARON 0 DE 4') && await soloUna()) && !(await texto(a1)).includes(COD + ' '), 'Lista de la noche: el código de 4 cifras la encuentra, sola (y la pantalla nunca muestra el código)');
     await clic(btn(a1, 'Entró 1'));
     ok(await contiene(a1, 'ENTRARON 1 DE 4'), '«Entró 1» → ENTRARON 1 DE 4');
     await clic(btn(a1, 'Entraron 3'));

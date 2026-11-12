@@ -150,4 +150,11 @@ function sinTopesComunidad(...tels) {
       update content_reports set created_at = created_at - interval '1 day' where reporter_user_id = ${u} and created_at > now() - interval '1 day'`);
   }
 }
-module.exports = { publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };
+/* 9b-1 · «La noche» de Noche y de la Puerta cambia a las 6 AM de Hazleton (lib/noche.ts, NOCHE_SQL). Una prueba que pone una reserva en «esta
+   noche» y la marca segundos después fallaba si entre las dos daban las 6 («Esto se marca la noche de la reserva»: evt6g a las 5:59 AM). Si
+   faltan menos de `margen` segundos para las 6 AM, espera a que pasen. */
+async function lejosDelCambioDeNoche(margen = 240) {
+  const s = Number(sql(`select extract(epoch from (date_trunc('day', (now() at time zone 'America/New_York') - interval '6 hours') + interval '30 hours') - (now() at time zone 'America/New_York'))::int`));
+  if (s < margen) { console.log(`  (faltan ${s} s para las 6 AM, cuando cambia la noche: se espera)`); await new Promise((r) => setTimeout(r, (s + 5) * 1000)); }
+}
+module.exports = { lejosDelCambioDeNoche, publicarBarberia, negocioSinDueno, entrarComo, telLibre, tarjeta, sinTopeDeAyuda, sinTopesComunidad, smsEsperado, equipo, direccion, medios, PUERTO_MEDIOS, sql };

@@ -6592,6 +6592,19 @@ const guardianes = {
       }
     }
   },
+  /* 9b-1 · La lista de la noche en la Puerta no ofrece lo que el servidor va a rechazar: trae reservas «confirmed» y «done», y marcarLlegada solo
+     acepta «confirmed». Una «done» (ya entró, o la noche se cerró) cuenta como completa (entraron = personas) para que no salga «Entró 1»;
+     antes la puerta lo ofrecía en una mesa terminada y al tocarlo decía «Esta reserva ya cambió…» (evt6g tocó esa fila). Al revés
+     (alreves9b1): volver a contar solo in_n. */
+  listaPuertaCoherente() {
+    const G = "listaPuertaCoherente", F = "apps/web/lib/noche-reservas.ts";
+    if (!existsSync(F)) return falla(G, F, 0, "falta lib/noche-reservas.ts");
+    const t = sinComent(F), q = /export async function listaEnLaPuerta[\s\S]*?\n\}/.exec(t)?.[0] ?? "";
+    if (!q) return falla(G, F, 0, "falta listaEnLaPuerta");
+    if (/o\.status in \([^)]*'done'/.test(q) && !/case when o\.status = 'done' then o\.party_size else coalesce\(\(o\.details->>'in_n'\)::int, 0\) end as entraron/.test(q))
+      falla(G, F, 0, "la lista de la noche trae reservas «done» pero cuenta solo in_n: la puerta ofrece «Entró 1» y el servidor lo rechaza");
+  },
+
   /* 9b-1 · Un tiempo relativo («hace 5 min», «hace 2 h», «hace 3 días») en un componente del cliente sale del MISMO «ahora» en el servidor y en
      la hidratación: useAhora() de lib/ahora.tsx (la raíz pone <AhoraProvider t={Date.now()}>). Con Date.now() en cada lado, cuando el minuto
      cambiaba entre el HTML del servidor y la hidratación React daba el error 418 y volvía a pintar la página (adm7i lo vio en /soporte). Falla:
