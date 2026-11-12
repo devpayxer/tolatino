@@ -6322,7 +6322,11 @@ const guardianes = {
     const CAMINO = {
       cliente: [["apps/web/app/(app)/cuenta/ajustes/Ajustes.tsx", /\/cuenta\/ajustes\/borrar/], ["apps/web/app/(app)/cuenta/ajustes/privacidad/Privacidad.tsx", /router\.push\("\/cuenta\/ajustes\/borrar"\)/]],
       negocio: [["apps/web/app/panel/Panel.tsx", /\{ icon: "shield", t: E2\("Mi cuenta y ajustes", "My account and settings"\)[^\n]*onClick: \(\) => c\.nav\("\/cuenta\/ajustes"\) \}/], ["apps/web/app/panel/Panel.tsx", /navIt\(false, "shield", E2\("Mi cuenta y ajustes", "My account and settings"\), \(\) => router\.push\("\/cuenta\/ajustes"\)\)/]],
-      delivery: [["apps/web/app/repartidor/Repartidor.tsx", /onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/]],
+      // 9b-1 · En TODOS los estados de la entrada, no solo en Perfil: sin equipo (antes de entrar a uno o después de salir del último) no hay
+      // barra de abajo ni Perfil, y la cuenta de revisión que perdía su equipo no llegaba a Borrar mi cuenta (fich8i en una base nueva).
+      delivery: [["apps/web/app/repartidor/Repartidor.tsx", /const filasCuenta: Fila\[\] = \[\s*\{[^\n]*onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/],
+        ["apps/web/app/repartidor/Repartidor.tsx", /\} else if \(!eq && !det\) \{(?:(?!\} else if \(det\))[\s\S])*B\.push\(\{ type: "rows", items: filasCuenta \}\)/],
+        ["apps/web/app/repartidor/Repartidor.tsx", /\} else \{\s*B\.push\(\{ type: "head", t: nombre,(?:(?!\n  \}\n)[\s\S])*B\.push\(\{ type: "rows", items: filasCuenta \}\)/]],
       checkin: [["apps/web/app/(puerta)/puerta/Inicio.tsx", /key: "cuenta", icon: "shield"[^\n]*onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/], ["apps/web/app/(puerta)/puerta/Puerta.tsx", /key: "cuenta", icon: "shield"[^\n]*onClick: \(\) => router\.push\("\/cuenta\/ajustes"\)/]],
     };
     for (const a of A.apps) {

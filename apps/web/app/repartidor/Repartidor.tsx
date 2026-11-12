@@ -122,6 +122,15 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     return { key: x.run, icon: "truck", t: `${hora(x.m)} · ${nmB(x.svc)}`, s: `${x.negocio} · ${n} ${n === 1 ? E2("pasajero", "passenger") : E2("pasajeros", "passengers")}${sub ? E2(` · ${sub} abordaron`, ` · ${sub} boarded`) : ""}`,
       tag: x.st === "departed" ? E2("EN CAMINO", "ON THE WAY") : x.tarde != null ? E2(`TARDE · ${hora(x.tarde)}`, `LATE · ${hora(x.tarde)}`) : x.dia === hoyNY() ? E2("HOY", "TODAY") : E2("MAÑANA", "TOMORROW"),
       tone: x.st === "departed" ? "signal" : x.tarde != null ? "action" : "neutral", chev: true, onClick: () => ir(`?s=${x.run}`) }; };
+  // 8i · 9b-1 · Mi cuenta (idioma, privacidad y Borrar mi cuenta), «Reportar un problema de la app» e «Ir a To’Latino»: en Perfil y TAMBIÉN sin
+  // equipo (quien todavía no entra a uno, o salió del último, no tiene barra de abajo ni Perfil; sin esto no llegaba a borrar su cuenta desde la
+  // app: Apple 5.1.1(v), guardián borrarCuentaEnCadaApp).
+  const filasCuenta: Fila[] = [
+    { icon: "language", t: E2("Idioma y cuenta", "Language and account"), s: E2("Mi cuenta de To’Latino: idioma, privacidad y borrar tu cuenta.", "My To’Latino account: language, privacy and deleting your account."), onClick: () => router.push("/cuenta/ajustes") },
+    // 8f · Reportar un problema de la APP (no de una entrega: ese va al negocio desde el pedido). Lo ve el equipo de To’Latino.
+    { icon: "warning", t: E2("Reportar un problema de la app", "Report an app problem"), s: E2("Algo no funciona en la app: lo ve el equipo de To’Latino.", "Something is not working in the app: the To’Latino team sees it."), onClick: () => router.push("/soporte/reportar") },
+    { icon: "home", t: E2("Ir a To’Latino", "Go to To’Latino"), onClick: () => router.push("/") },
+  ];
   if (sal) {
     // Chofer · la salida: pasajeros con Abordó / No llegó; Va tarde · Salió · Llegó (los mismos pasos del panel).
     const x = sal;
@@ -145,6 +154,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     B.push({ type: "chips", k: E2("¿CÓMO REPARTES?", "HOW DO YOU DELIVER?"), items: VEH.map(([k, a, b]) => ({ l: es ? a : b, v: veh === k ? "selected" : "filter", onClick: () => setVeh(k) })) });
     B.push({ type: "acts", items: [{ l: pend ? E2("Entrando…", "Joining…") : E2("Entrar al equipo", "Join the team"), v: "primary", icon: "check", off: pend || cod.length !== 6, onClick: () => run(() => repAceptar(cod, veh), E2("Listo: ya eres parte del equipo.", "Done: you are on the team.")) }] });
     B.push({ type: "note", tone: "ink", icon: "shield", t: E2(`Entraste con ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. El código solo sirve con el teléfono que te invitó el negocio.`, `Signed in as ${tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3")}. The code only works with the phone the business invited.`) });
+    B.push({ type: "rows", items: filasCuenta });
   } else if (det) {
     // DLV-PEDIDOS · detalle con el paso que sigue (botón grande).
     const x = det, cash = x.efectivo != null, vivo = x.status === "confirmed";
@@ -221,12 +231,7 @@ export function Repartidor({ es, t, p, nombre, tel, equipos, entregas, ganancias
     B.push({ type: "head", t: nombre, s: tel.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3") });
     B.push({ type: "rows", k: E2("TUS EQUIPOS", "YOUR TEAMS"), items: equipos.map((e): Fila => ({ key: e.id, icon: "store", t: e.negocio.nombre, s: `${(VEH.find((v) => v[0] === e.vehiculo) ?? VEH[2]!)[es ? 1 : 2]}${e.enLinea ? E2(" · en línea", " · online") : ""}`, chev: false,
       acts: [{ l: E2("Salir del equipo", "Leave team"), v: "secondary", onClick: () => { if (window.confirm(E2(`¿Salir del equipo de ${e.negocio.nombre}?`, `Leave ${e.negocio.nombre}'s team?`))) run(() => repSalir(e.id), E2("Saliste del equipo.", "You left the team.")); } }] })) });
-    B.push({ type: "rows", items: [
-      { icon: "language", t: E2("Idioma y cuenta", "Language and account"), s: E2("Mi cuenta de To’Latino: idioma, privacidad y borrar tu cuenta.", "My To’Latino account: language, privacy and deleting your account."), onClick: () => router.push("/cuenta/ajustes") },
-      // 8f · Reportar un problema de la APP (no de una entrega: ese va al negocio desde el pedido). Lo ve el equipo de To’Latino.
-      { icon: "warning", t: E2("Reportar un problema de la app", "Report an app problem"), s: E2("Algo no funciona en la app: lo ve el equipo de To’Latino.", "Something is not working in the app: the To’Latino team sees it."), onClick: () => router.push("/soporte/reportar") },
-      { icon: "home", t: E2("Ir a To’Latino", "Go to To’Latino"), onClick: () => router.push("/") },
-    ] });
+    B.push({ type: "rows", items: filasCuenta });
   }
   // El error de la última acción, debajo del encabezado (en el detalle va junto a los botones).
   if (err && !det) { const i = B.findIndex((b) => b.type === "head"); B.splice(i + 1, 0, { type: "note", tone: "danger", icon: "warning", t: err }); }

@@ -132,6 +132,20 @@ const env = ENT.env; // los secretos de la corrida (pruebas/servir/servir.sh)
       if (w === 390) await p.screenshot({ path: `${OUT}f8i-borrar-${app}-390.png` });
       await p.context().close();
     }
+    // 9b-1 · Sin equipo (antes de entrar a uno o después de salir del último) el Repartidor no tiene barra ni Perfil: «Idioma y cuenta» también
+    // está ahí. Con la cuenta de revisión fuera de su equipo un momento (se devuelve enseguida, también si algo falla).
+    const DRV = `(select id from users where phone = '+1${REV.delivery}')`;
+    sql(`update delivery_drivers set status = 'removed' where user_id = ${DRV} and business_id = 'revision-tolatino'`);
+    try {
+      const p = await pagina('borrar-delivery-sin-equipo', 390, rotulo('delivery', 'ios'));
+      await entrarRev(p, 'delivery');
+      await p.goto(B + '/repartidor'); await p.waitForLoadState('networkidle');
+      ok(/CÓDIGO DEL NEGOCIO|BUSINESS CODE/.test(await texto(p)), 'delivery sin equipo · /repartidor pide el código del negocio (sin barra ni Perfil)');
+      await p.screenshot({ path: `${OUT}f8i-repartidor-sin-equipo-390.png`, fullPage: true });
+      await p.locator('[role=button], button, a, div').filter({ hasText: /^(Idioma y cuenta|Language and account)/ }).last().click();
+      ok(await espera(() => /\/cuenta\/ajustes$/.test(new URL(p.url()).pathname)), 'delivery sin equipo · «Idioma y cuenta» lleva a Mi cuenta › Ajustes (Borrar mi cuenta)');
+      await p.context().close();
+    } finally { sql(`update delivery_drivers set status = 'active' where user_id = ${DRV} and business_id = 'revision-tolatino'`); }
 
     console.log('4 · Cuentas de revisión: acotadas');
     const pr = await pagina('rev', 390);

@@ -17,7 +17,9 @@ const restaurar = () => { try { sql(`update delivery_settings set delivery=false
   sql(`update businesses set modules_off = modules_off - 'delivery' where id='${BIZ}'`);
   sql(`update items set sold_out = false, stock_day = null where business_id='${BIZ}'`); sql(`update menu_settings set pause_until = null where business_id='${BIZ}'`);
   sql(`update operations set respond_by = now() - interval '1 minute' where user_id = ${MARISOL} and status = 'pending'`);
-  sql(`update operations set driver_id = null where driver_id is not null`); sql(`update trip_runs set driver_id = null where driver_id is not null`); sql(`delete from delivery_drivers`);
+  sql(`update operations set driver_id = null where driver_id is not null`); sql(`update trip_runs set driver_id = null where driver_id is not null`); sql(`delete from delivery_drivers where user_id not in (select user_id from review_accounts)`);
+  // 9b-1 · Sin tocar al repartidor de la cuenta de revisión (semilla 0048): antes se borraban TODOS y, en una corrida entera, fich8i encontraba
+  // a la cuenta de revisión del Repartidor sin equipo.
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_|net::/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   // 1 · El dueño invita a Juan desde Entrega

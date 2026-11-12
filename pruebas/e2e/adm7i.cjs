@@ -24,6 +24,9 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
 (async () => {
   require('../lib/negocio-nuevo.cjs').equipo('5705550693', '5705550694'); // 9b-1 · el equipo de prueba que esta prueba usa (antes lo creaba otra prueba)
   const AU = uid(ADM), MU = uid(MARI), DU = uid(DUENO);
+  // 9b-1 · Marisol vive en Hazleton (semilla): su conversación es de Hazleton y Sofía (Soporte de Allentown) no la puede abrir. En la corrida entera
+  // cuenta2h la dejaba en Allentown y su conversación nacía allá (Sofía la abría con razón). Se pide en voz alta.
+  sql(`update users set home_city_id = 'hzl' where id = '${MU}'`);
   // ── Preparar: todo encendido, sin pausas, límites holgados; lo que dejó una corrida anterior de esta prueba se quita (solo esta base) ──
   sql(`update feature_flags set enabled = true where key like 'compa.%'`);
   sql(`update compa_pauses set lifted_at = now(), lifted_by = '${AU}', lift_reason = 'prueba adm7i' where lifted_at is null`);
@@ -148,10 +151,19 @@ const boton = (p, t) => p.locator('button, [role=button]').filter({ hasText: t i
   // Solo lectura y Soporte de otra ciudad, con la petición real.
   const rlm = await repetir(pl, marcarReq, marcarReq.body.replace(CP, sql(`select number from compa_conversations where city_id = 'hzl' and number <> '${CP}' order by id desc limit 1`)));
   ok(/marcar es de Admin y Soporte/.test(rlm), 'Solo lectura repitiendo «Marcar»: rechazado');
+  ok(sql(`select city_id from compa_conversations where number = '${CP}'`) === 'hzl' && sql(`select cities::text from staff_members where user_id = '${uid(SOFIA)}'`) === '{alw}', `${CP} es de Hazleton y Sofía es Soporte solo de Allentown`);
   const ps = await como(SOFIA, 1360), rs0 = reads();
   await ps.goto(B + `/admin/compa?cp=${CP}`); await ps.waitForTimeout(800);
   T = await texto(ps);
   ok(T.includes('Esa conversación no existe') && !T.includes('kumquats') && reads() === rs0, 'Soporte de Allentown (Sofía) no abre una conversación de Hazleton y no queda lectura');
+  // 9b-1 · Y la de SU ciudad sí la abre, con su lectura anotada (el alcance no es un «no» para todo).
+  sql(`update users set home_city_id = 'alw' where id = '${MU}'`);
+  const tA = await compa(pm, { op: 'turno', texto: '¿Hay kumquats de Allentown zxq?' });
+  sql(`update users set home_city_id = 'hzl' where id = '${MU}'`);
+  const lecA = () => +sql(`select count(*) from compa_reads r join compa_conversations c on c.id = r.conversation_id where c.number = '${tA.conversacion}' and r.staff_id = '${uid(SOFIA)}'`);
+  ok(sql(`select city_id from compa_conversations where number = '${tA.conversacion}'`) === 'alw' && lecA() === 0, `${tA.conversacion} es de Allentown, sin lecturas de Sofía`);
+  await ps.goto(B + `/admin/compa?cp=${tA.conversacion}`); await ps.getByText('QUIÉN LA LEYÓ').waitFor();
+  ok((await texto(ps)).includes('kumquats de Allentown') && lecA() === 1, `Sofía abre ${tA.conversacion} (Allentown) y queda su lectura`);
   const rsm = await repetir(ps, marcarReq, marcarReq.body.replace(CP, sql(`select number from compa_conversations where city_id = 'hzl' and number <> '${CP}' and not exists (select 1 from compa_reviews r where r.conversation_id = compa_conversations.id and r.cleared_at is null) order by id desc limit 1`)));
   ok(/Esa conversación no existe/.test(rsm), 'Sofía repitiendo «Marcar» sobre una de Hazleton: «no existe»');
   const pdy = await como(DAYANA, 390);

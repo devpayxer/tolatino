@@ -13,6 +13,9 @@ const casos = [
   // hoyEnLaCiudad: «hoy» o un vencimiento en UTC
   ['hoyEnLaCiudad', 'apps/web/lib/categoria.ts', '  const hoy = hoyEn();\n  if (TRANS_HOY', '  const hoy = new Date().toISOString().slice(0, 10);\n  if (TRANS_HOY'],
   ['hoyEnLaCiudad', 'apps/web/lib/pases/certificado.ts', '  const vence = hoyEn(undefined, d.vence);', '  const vence = d.vence.toISOString().slice(0, 10);'],
+  // borrarCuentaEnCadaApp: el Repartidor sin equipo (sin barra ni Perfil) vuelve a quedarse sin camino a Borrar mi cuenta; o Perfil lo pierde
+  ['borrarCuentaEnCadaApp', 'apps/web/app/repartidor/Repartidor.tsx', 'the business invited.`) });\n    B.push({ type: "rows", items: filasCuenta });\n  } else if (det) {', 'the business invited.`) });\n  } else if (det) {'],
+  ['borrarCuentaEnCadaApp', 'apps/web/app/repartidor/Repartidor.tsx', '    B.push({ type: "rows", items: filasCuenta });\n  }\n', '  }\n'],
   // pruebaQueComprueba: la corrida vuelve a contar en verde una prueba sin ninguna ✓, o una prueba que solo imprime
   ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada,', 'ok: codigo === 0,'],
 ];

@@ -10,13 +10,15 @@ const clic = async (l) => { for (let i = 0; i < 20; i++) { const x = await vis(l
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 const UID = execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "select id from users where phone in ('+15705550122','+15705558123') limit 1"`).toString().trim();
 const U = `'${UID}'::uuid`;
-const limpiar = () => {
+// 9b-1 · Al empezar, Marisol en Allentown (la prueba la cambia a Hazleton en «Mi ciudad»); al terminar (bien o mal) VUELVE a Hazleton, su ciudad de
+// la semilla. Antes se quedaba en Allentown y todo lo que venía después la tenía ahí (adm7i veía su conversación de El Compa en Allentown).
+const limpiar = (ciudad = 'hzl') => {
   sql(`update users set phone = '+15705550122' where phone = '+15705558123'`);
-  sql(`update users set nick = null, email = null, email_verified = false, notif_prefs = '{}', delete_at = null, delete_reason = null, lang = 'es', home_city_id = 'alw', home_city_changed_at = now() - interval '40 days' where id = ${U}`);
+  sql(`update users set nick = null, email = null, email_verified = false, notif_prefs = '{}', delete_at = null, delete_reason = null, lang = 'es', home_city_id = '${ciudad}', home_city_changed_at = ${ciudad === 'hzl' ? 'null' : "now() - interval '40 days'"} where id = ${U}`);
   sql(`delete from favorites where user_id = ${U}`); sql(`delete from job_applications where user_id = ${U}`);
 };
 (async () => {
-  limpiar();
+  limpiar('alw');
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'tel'); globalThis.__p = [m];
