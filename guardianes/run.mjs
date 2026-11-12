@@ -6571,6 +6571,24 @@ const guardianes = {
     if (!existsSync("apps/web/lib/fecha-local.ts") || !/timeZone: zona/.test(readFileSync("apps/web/lib/fecha-local.ts", "utf8"))) falla(G, "apps/web/lib/fecha-local.ts", 0, "hoyEn tiene que formatear en la zona que recibe");
   },
 
+  /* 9b-1 · Una prueba comprueba algo. 13 pruebas de las fases 1–2 (an1n, ciudad, ciudad2, ciudad3, lic, mapa, menu2a, menu2a-adm, menu2a-f, nov1,
+     publica, rev1, usr1l) solo imprimían lo que veían («precio guardado: 1250», «errores: […]») y la corrida las contaba en verde con «0 ✓»: un
+     error en la página o un precio mal guardado no las ponía en rojo. Ahora cada una lo comprueba (ok(…) → «  ✓ …»), correr.mjs pone en rojo la
+     que termina sin ninguna ✓, y aquí: cada prueba de pruebas/e2e y pruebas/alreves escribe «✓» en algún lado. Al revés (alreves9b1): quitar la
+     regla de correr.mjs. */
+  pruebaQueComprueba() {
+    const G = "pruebaQueComprueba", CO = "pruebas/correr.mjs";
+    if (!existsSync(CO) || !/const sinNada = codigo === 0 && checks === 0;/.test(readFileSync(CO, "utf8")) || !/ok: codigo === 0 && !sinNada/.test(readFileSync(CO, "utf8")))
+      falla(G, CO, 0, "correr.mjs tiene que poner en rojo la prueba que termina sin ninguna comprobación (✓)");
+    for (const d of ["e2e", "alreves"]) {
+      if (!existsSync(`pruebas/${d}`)) continue;
+      for (const f of readdirSync(`pruebas/${d}`)) {
+        if (!/\.(cjs|mjs|sh)$/.test(f)) continue;
+        if (!readFileSync(`pruebas/${d}/${f}`, "utf8").includes("✓")) falla(G, `pruebas/${d}/${f}`, 0, "la prueba no escribe ninguna comprobación (✓): imprimir lo que ve no es probarlo");
+      }
+    }
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

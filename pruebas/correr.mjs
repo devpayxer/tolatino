@@ -93,8 +93,11 @@ const correrUna = (t) => new Promise((ok) => {
   p.on("close", (codigo) => {
     clearTimeout(reloj); w.end();
     const checks = (texto.match(/^\s*✓/gm) ?? []).length, malas = (texto.match(/^\s*✗/gm) ?? []).length;
-    const error = codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
-    const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
+    // 9b-1 · Una prueba que termina sin ninguna comprobación (✓) no está en verde: 13 de la fase 1–2 solo imprimían lo que veían y la corrida
+    // las contaba en verde con «0 ✓» (lic, menu2a…). Ahora cada una comprueba; si una vuelve a no comprobar nada, es roja.
+    const sinNada = codigo === 0 && checks === 0;
+    const error = sinNada ? "terminó sin ninguna comprobación (✓): no se sabe si probó algo" : codigo === 0 ? "" : (texto.split("\n").reverse().find((l) => /ASSERT|Error|✗|Timeout|falla|fallo/i.test(l)) ?? texto.trim().split("\n").pop() ?? "").trim().slice(0, 220);
+    const r = { nombre: t.nombre, grupo: t.grupo, ok: codigo === 0 && !sinNada, codigo, checks, malas, seg: Math.round((Date.now() - ini) / 1000), error, salida: out };
     console.log(`${r.ok ? "✓" : "✗"} ${t.nombre.padEnd(16)} ${String(checks).padStart(4)} ✓ ${String(r.seg).padStart(5)} s${r.ok ? "" : `  · ${error}`}`);
     ok(r);
   });

@@ -13,8 +13,9 @@ const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l
 const espera = async (f, m) => { for (let i = 0; i < 40; i++) { if (f()) return ok(true, m); await new Promise((r) => setTimeout(r, 250)); } ok(false, m); };
 const MARISOL = "(select id from users where phone = '+15705550122')";
 // 9b-1 · Las dos tarjetas de Marisol (la buena y la que el banco rechaza): se guardan si no las tiene (una base nueva no las tenía).
-{ const T = require('../lib/negocio-nuevo.cjs').tarjeta; T('5705550122', '0002', { predeterminada: false }); T('5705550122', '4242'); }
-const PM_OK = sql(`select stripe_pm_id from payment_methods where user_id = ${MARISOL} and stripe_pm_id like 'pm_sim_visa_4242_%' order by created_at limit 1`), PM_NO = sql(`select stripe_pm_id from payment_methods where user_id = ${MARISOL} and stripe_pm_id like 'pm_sim_visa_0002_%' order by created_at desc limit 1`);
+// 9b-1 · Las de ESTA prueba (ids fijos del ayudante) y la predeterminada es UNA sola entre todas las de Marisol: antes «la primera 4242» era la
+// que otra prueba guardó y el cambio de predeterminada solo tocaba estas dos, así que la del ayudante seguía predeterminada (apartaba con ella).
+const { tarjeta } = require('../lib/negocio-nuevo.cjs'); const PM_NO = tarjeta('5705550122', '0002', { predeterminada: false }), PM_OK = tarjeta('5705550122', '4242');
 const R = (n, col) => sql(`select ${col} from rentals r join operations o on o.id = r.operation_id where o.number = '${n}'`);
 const P = (n) => sql(`select string_agg(p.kind || ':' || p.status || ':' || p.amount_cents || ':' || p.fee_cents, ',' order by p.id) from payments p join operations o on o.id = p.operation_id where o.number = '${n}'`);
 const STOCK = (nm) => sql(`select stock_left from items where business_id = '${D}' and module = 'renta' and name->>'es' = '${nm}'`);
@@ -23,7 +24,7 @@ const limpiar = () => {
   sql(`update rentals set damage_status = 'waived' where user_id = ${MARISOL} and damage_status in ('asked', 'disputed')`);
   sql(`update queue_items set status = 'decided', decision = 'prueba' where queue = 'renta' and status = 'open'`);
   sql(`update items set stock_left = stock_par, sell = true where business_id = '${D}' and module = 'renta'`);
-  sql(`update payment_methods set status = 'active', is_default = (stripe_pm_id = '${PM_OK}') where user_id = ${MARISOL} and stripe_pm_id in ('${PM_OK}', '${PM_NO}')`);
+  sql(`update payment_methods set status = 'active' where user_id = ${MARISOL} and stripe_pm_id in ('${PM_OK}', '${PM_NO}')`); sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_OK}') where user_id = ${MARISOL}`);
 };
 (async () => {
   limpiar();
@@ -134,7 +135,7 @@ const limpiar = () => {
   ok(R(T3, 'r.damage_status') === 'charged' && P(T3).includes('security:captured:2500'), 'aceptó: $25 del depósito, el resto liberado');
 
   // ── 8. La tarjeta no pasa al recoger → cambia la tarjeta → pasa ──
-  sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_NO}') where user_id = ${MARISOL} and stripe_pm_id in ('${PM_OK}', '${PM_NO}')`);
+  sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_NO}') where user_id = ${MARISOL}`);
   await apartar('Lavadora a presión'); const T4 = await confirmarApartar();
   ok(R(T4, 'r.payment_method') === PM_NO, 'apartada con la tarjeta que el banco rechaza');
   await panelDet(T4); await clic(h.getByRole('button', { name: 'La recogió' })); await h.getByText(/no pasó: no se cobró nada/).first().waitFor();
@@ -156,7 +157,7 @@ const limpiar = () => {
   ok(P(T4).endsWith('security:released:10000:0'), 'devuelta a tiempo: depósito liberado completo');
 
   // ── 9. Vence a las 48 h y ya no la necesito ──
-  sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_OK}') where user_id = ${MARISOL} and stripe_pm_id in ('${PM_OK}', '${PM_NO}')`);
+  sql(`update payment_methods set is_default = (stripe_pm_id = '${PM_OK}') where user_id = ${MARISOL}`);
   await apartar('Máquina de lavar alfombras'); const T5 = await confirmarApartar(); ok(STOCK('Máquina de lavar alfombras') === '1', 'alfombras: quedan 1');
   sql(`update rentals set expires_at = now() - interval '1 minute' where operation_id = (select id from operations where number = '${T5}')`);
   await m.goto(B + `/renta/${T5}`); await m.getByText('VENCIDA').first().waitFor();

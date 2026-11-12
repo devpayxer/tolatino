@@ -13,8 +13,12 @@ const casos = [
   // hoyEnLaCiudad: «hoy» o un vencimiento en UTC
   ['hoyEnLaCiudad', 'apps/web/lib/categoria.ts', '  const hoy = hoyEn();\n  if (TRANS_HOY', '  const hoy = new Date().toISOString().slice(0, 10);\n  if (TRANS_HOY'],
   ['hoyEnLaCiudad', 'apps/web/lib/pases/certificado.ts', '  const vence = hoyEn(undefined, d.vence);', '  const vence = d.vence.toISOString().slice(0, 10);'],
+  // pruebaQueComprueba: la corrida vuelve a contar en verde una prueba sin ninguna ✓, o una prueba que solo imprime
+  ['pruebaQueComprueba', 'pruebas/correr.mjs', 'ok: codigo === 0 && !sinNada,', 'ok: codigo === 0,'],
 ];
-const crear = [];
+const crear = [
+  ['pruebaQueComprueba', 'pruebas/e2e/zz9b1solomira.cjs', "console.log('precio guardado:', 1250);\n"],
+];
 let bien = 0, total = 0;
 const correr = (g, env = {}) => {
   try { execSync(`node guardianes/run.mjs --solo ${g}`, { cwd: R, stdio: 'pipe', env: { ...process.env, ...env } }); return [false, '']; }

@@ -20,6 +20,9 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   await entrar(d, '5705550133');
   await d.goto(B + `/panel/${BIZ}/pagina/nov`); await d.waitForTimeout(1200); await shot(d, 'n2-panel.png', true);
   await d.goto(B + `/panel/${BIZ}/pagina/nov?det=nov:new`); await d.waitForTimeout(1200); await shot(d, 'n3-editor.png', true);
-  console.log('errores', err);
+  // 9b-1 · Lo que antes solo se imprimía ahora se comprueba (una prueba sin ✓ ya no cuenta como verde, pruebas/correr.mjs).
+  ok(await m.goto(B + `/n/${BIZ}?tab=nov`).then((r) => r.ok()), 'la pestaña Novedades de la ficha abre');
+  ok(await d.goto(B + `/panel/${BIZ}/pagina/nov`).then((r) => r.ok()), 'Novedades en el panel abre');
+  ok(!err.length, `sin errores en las páginas (${err.join(' | ').slice(0, 300) || 'ninguno'})`);
   await b.close();
 })().catch(e => { console.error(e); process.exit(1); });

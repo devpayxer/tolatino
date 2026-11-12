@@ -76,7 +76,10 @@ const hoy = () => sql(`select (now() at time zone 'America/New_York')::date`);
   await h.screenshot({ path: OUT + 'l4-panel-planes-d.png', fullPage: true });
   // ── Cancelar ──
   await clic(m.getByRole('button', { name: 'Cancelar el plan' })); await clic(m.getByRole('button', { name: 'Sí, cancelar' }));
-  await m.getByText('CANCELADO').first().waitFor(); ok(!!(await vis(m.getByText(/Cobrado en total: \$298/))), 'cancelado · cobrado en total $298');
+  await m.getByText('CANCELADO').first().waitFor();
+  // 9b-1 · El segundo cobro (el del período pendiente) puede llegar a la pantalla un instante después de «CANCELADO»: se espera el texto (10 s).
+  { let T = ''; for (let i = 0; i < 40 && !/Cobrado en total: \$298/.test(T); i++) { T = (await m.innerText('body')).replace(/\s+/g, ' '); if (!/Cobrado en total: \$298/.test(T)) await m.waitForTimeout(250); }
+    ok(/Cobrado en total: \$298/.test(T), `cancelado · cobrado en total $298 (${(T.match(/Cobrado en total: \$[\d.,]+/) ?? ['sin el total'])[0]})`); }
   ok(sql(`select count(*) from operations where kind = 'appointment' and details->>'plan' = '${P}' and status = 'confirmed'`) === '0', 'cancelar: no quedan visitas');
   sql(`update plan_subscriptions set next_charge_on = '${hoy()}' where operation_id = (select id from operations where number = '${P}')`);
   await m.goto(B + `/plan/${P}`); await m.waitForTimeout(300);

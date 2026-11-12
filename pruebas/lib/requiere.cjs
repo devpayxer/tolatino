@@ -22,6 +22,8 @@ function requiere(nombre, consulta, { siempre = false, que = '', veces = 1 } = {
       out = execFileSync('node', [path.join(ENT.RAIZ, 'pruebas', 'e2e', `${nombre}.cjs`)], { cwd: ENT.RAIZ, env: process.env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024, timeout: 15 * 60_000 });
     } catch (e) {
       out = `${e.stdout ?? ''}${e.stderr ?? ''}`;
+      // La salida entera de la que falló, al lado de las demás (aquí solo van las últimas líneas).
+      try { const f = path.join(ENT.S, 'res', `requiere-${nombre}-${Date.now()}.out`); require('fs').mkdirSync(path.dirname(f), { recursive: true }); require('fs').writeFileSync(f, out); console.log(`  [${nombre}] salida entera: ${f}`); } catch { /* sin carpeta de salida */ }
       console.log(out.split('\n').filter(Boolean).slice(-15).map((l) => `  [${nombre}] ${l}`).join('\n'));
       throw new Error(`requiere: ${nombre} falló, así que no hay ${que || 'lo que esta prueba necesita'}`);
     }

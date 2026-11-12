@@ -27,6 +27,10 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(450); await p
   await a.goto(B + '/admin/colas?cola=lic'); await a.getByText('Licencia · ' + (await (async () => require('../lib/negocio-nuevo.cjs').sql(`select name from businesses where id = '${BIZ}'`))()), { exact: true }).first().click(); /* 9b-1 · el caso de ESTE negocio, no «el primero» */ await a.locator('text=ESTADO HOY').waitFor(); await shot(a, 'k5-cola-lic-d.png');
   await t(a, 'Verificada').click(); await a.locator('text=Listo. Quedó en la auditoría.').waitFor();
   await a.goto(B + '/admin/negocios/' + BIZ + '?tab=vende'); await a.locator('text=/SU HERRAMIENTA/').waitFor(); await shot(a, 'k6-360-vende-d.png');
-  await vd.goto(B + '/n/' + BIZ + '/licencia'); const n = await vd.locator('text=/VERIFICADA POR TO’LATINO/').count(); console.log('verificadas en la ficha:', n); await shot(vd, 'k7-licencia-despues-d.png');
-  console.log('errores:', err.length ? err : 'ninguno'); await b.close();
+  await vd.goto(B + '/n/' + BIZ + '/licencia'); const n = await vd.locator('text=/VERIFICADA POR TO’LATINO/').count(); await shot(vd, 'k7-licencia-despues-d.png');
+  // 9b-1 · Antes solo lo imprimía (la corrida la contaba «en verde con 0 ✓»): ahora se comprueba.
+  const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
+  ok(n >= 1, `la ficha dice «VERIFICADA POR TO’LATINO» (${n})`);
+  ok(require('../lib/negocio-nuevo.cjs').sql(`select count(*) from licenses where business_id = '${BIZ}' and kind = 'cpa' and status = 'valid' and verified_at > now() - interval '10 minutes'`) !== '0', 'la de CPA quedó válida y verificada ahora en la base');
+  ok(!err.length, `sin errores en las páginas (${err.join(' | ').slice(0, 300) || 'ninguno'})`); await b.close();
 })().catch(e => { console.error('FALLO', e.message.split('\n')[0]); process.exit(1); });

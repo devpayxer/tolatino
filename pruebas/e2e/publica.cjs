@@ -1,13 +1,10 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); }; // 9b-1 · antes solo imprimía: la corrida la contaba «en verde con 0 ✓»
 const { chromium } = require('playwright');
 // 9a · Teléfonos de prueba siempre en 555 (el repo es público: nunca un número que pueda ser de alguien).
 const TEL = '5705556' + String(Date.now()).slice(-3), TEL2 = '5705556' + String((Date.now() + 500) % 1000).padStart(3, '0');
 const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/';
-const medios = (ctx) => ctx.route('**/medios/**', async (r) => {
-  const u = new URL(r.request().url());
-  const body = await new Promise((ok) => require('http').get({ host: '127.0.0.1', port: 3902, path: u.pathname.replace(/^\/medios/, ''), headers: { host: 'medios.web.garage' } }, (res) => { const c = []; res.on('data', (x) => c.push(x)); res.on('end', () => ok({ s: res.statusCode, b: Buffer.concat(c) })); }));
-  return r.fulfill({ status: body.s, body: body.b, contentType: 'image/jpeg' });
-});
+const { medios } = require('../lib/negocio-nuevo.cjs'); // 9b-1 · el puerto de Garage de ESTA corrida (antes 3902 fijo)
 const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), span:has-text("Seguir"), div[role=button]:has-text("Seguir")').last(); await b.click(); await p.waitForTimeout(700); };
 (async () => {
   const b = await chromium.launch(); const err = [];
@@ -55,17 +52,17 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   // F1: una foto falsa (debe rechazarse) y dos reales
   const inputs = p.locator('input[type=file]');
   await inputs.nth(1).setInputFiles(FP + 'falsa.jpg'); await p.waitForTimeout(1500);
-  console.log('falsa rechazada:', await p.locator('text=/no parece una foto/').count());
+  ok(await p.locator('text=/no parece una foto/').count() >= 1, 'la foto falsa se rechaza («no parece una foto»)');
   await inputs.nth(1).setInputFiles([FP + 'portada.jpg', FP + 'galeria.png']);
   await p.locator('text=TUS FOTOS · LA PRIMERA ES LA PORTADA').waitFor({ timeout: 15000 });
   await p.waitForFunction(() => document.querySelectorAll('[aria-label="Quitar foto"]').length === 2, null, { timeout: 20000 });
-  console.log('fotos subidas:', await p.locator('[aria-label="Quitar foto"]').count());
+  ok(await p.locator('[aria-label="Quitar foto"]').count() === 2, 'las dos fotos reales subieron');
   await p.waitForTimeout(1200);
   await p.screenshot({ path: OUT + 'p5-f1.png' });
   await p.locator('text=/^Publicar · /').last().click();
   await p.getByText('PUBLICADA').first().waitFor({ timeout: 15000 });
   await p.waitForTimeout(800);
-  console.log('publicada:', p.url());
+  ok(true, `publicada: «PUBLICADA» (${new URL(p.url()).pathname})`);
   await p.screenshot({ path: OUT + 'p6-h1.png', fullPage: true });
   // Escritorio: un negocio nuevo con otra cuenta, para ver el riel y la página en vivo
   const d = await b.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 });
@@ -78,6 +75,7 @@ const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), sp
   await q.locator('[data-screen-label="ONB-NEG-B1 · tu negocio"] div[style*="flex-wrap"] > *').first().click();
   await q.getByPlaceholder('Ej.: Barbería Don Fello').fill('Fonda Doña Lucía'); await q.waitForTimeout(600);
   await q.screenshot({ path: OUT + 'p7-desk-b1.png' });
-  console.log('errores', JSON.stringify(err));
+  ok(await q.getByPlaceholder('Ej.: Barbería Don Fello').inputValue() === 'Fonda Doña Lucía', 'escritorio: el paso B1 con el nombre del negocio');
+  ok(!err.length, `sin errores en las páginas (${err.join(' | ').slice(0, 300) || 'ninguno'})`);
   await b.close();
 })().catch(e => { console.error('FALLO', e.message); process.exit(1); });

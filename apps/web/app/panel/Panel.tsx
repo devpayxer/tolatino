@@ -117,7 +117,7 @@ export type Ctx = {
   d: DatosPanel; es: boolean; E2: (a: string, b: string) => string; desk: boolean; w: number; detCol: boolean;
   go: (sec: Ruta["sec"], sub?: string | null) => void; det: (id: string) => void; closeDet: () => void; ruta: Ruta;
   toast: (t: string) => void; run: (f: () => Promise<Res>, ok?: string | ((r: any) => string | undefined), after?: (r: any) => void) => void;
-  form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any>) => void; pending: boolean;
+  form: <T>(key: string, base: T) => Form<T>; ui: Record<string, any>; setUi: (p: Record<string, any> | ((z: Record<string, any>) => Record<string, any>)) => void; pending: boolean;
   pickFiles: (multi: boolean, cb: (f: File[]) => void) => void; modoPruebas: boolean; menu?: MenuPanel;
   /* 8i · ¿Se puede comprar Pro aquí? En la web sí; dentro de las apps de las tiendas, no (Apple 3.1.3(f), Pagos de Google; guardián
      sinCompraDigitalEnApp): ningún botón ni enlace para comprarlo, solo el estado del plan. Lo decide el servidor (lib/tiendas/reglas.ts). */
@@ -132,7 +132,9 @@ export function Panel({ cpa, cpaAuto, d, lang, ruta, modoPruebas, compraPro, men
   const w = useAncho(), desk = w >= 1024;
   const [forms, setForms] = useState<Record<string, any>>({});
   const [ui, setUiS] = useState<Record<string, any>>({ dayOpen: -1, gSel: -1, sheet: null, allTasks: false });
-  const setUi = useCallback((p: Record<string, any>) => setUiS((z) => ({ ...z, ...p })), []);
+  // 9b-1 · También con una función (sobre lo ÚLTIMO que hay, no sobre lo que había al dibujar): dos cambios seguidos a la misma lista (escribir
+  // el precio y tocar «Mano de obra +») no se pisan.
+  const setUi = useCallback((p: Record<string, any> | ((z: Record<string, any>) => Record<string, any>)) => setUiS((z) => ({ ...z, ...(typeof p === "function" ? p(z) : p) })), []);
   const [toastT, setToastT] = useState<string | null>(null);
   const tt = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useCallback((t: string) => { if (tt.current) clearTimeout(tt.current); setToastT(t); tt.current = setTimeout(() => setToastT(null), 2600); }, []);

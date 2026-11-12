@@ -175,7 +175,11 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth <
     sql(`update dm_threads set created_at = now() where a_user_id = least('${RA}'::uuid, '${s}'::uuid) and b_user_id = greatest('${RA}'::uuid, '${s}'::uuid) and started_by = '${RA}'`);
   }
   ok(sql(`select count(*) from dm_threads where started_by = '${RA}' and created_at > now() - interval '24 hours'`) === '10', 'A ya empezó 10 conversaciones hoy');
-  const S11 = SEM[10];
+  // 9b-1 · La 11.ª tiene que ser una conversación NUEVA: SEM[10] ya podía tener una con A (otra prueba, u otra corrida: el insert de arriba
+  // no toca la que ya existía). Se toma una semilla sin conversación con A; si ninguna queda libre, la prueba lo dice.
+  const S11 = sql(`select u.id from users u where u.phone between '+15705557001' and '+15705557099' and u.id <> '${RA}' and u.id::text <> all ('{${SEM.slice(0, 10).join(',')}}'::text[])
+    and not exists (select 1 from dm_threads t where t.a_user_id = least('${RA}'::uuid, u.id) and t.b_user_id = greatest('${RA}'::uuid, u.id)) order by u.phone limit 1`);
+  if (!S11) throw new Error('ASSERT queda una semilla sin conversación con A (para la 11.ª)');
   sql(`insert into follows (follower_user_id, target_kind, target_id) values ('${S11}', 'user', '${RA}') on conflict do nothing`);
   await ap.goto(B + '/comunidad/mensajes/' + S11); await ap.getByLabel('Tu mensaje').waitFor();
   await ap.getByLabel('Tu mensaje').fill('Hola vecino, una pregunta'); await ap.getByLabel('Enviar').click();

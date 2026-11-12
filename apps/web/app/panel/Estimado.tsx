@@ -47,7 +47,14 @@ export function estimadoArmar(c: Ctx, x: CitaPanel, xtra = false): Bloque[] {
   // La foto de cada línea vive aparte (estF_<k>): la subida termina cuando quiere y no pisa la lista.
   const L: Draft[] = (xtra ? [(c.ui.xtD as Draft | undefined) ?? nueva()] : ((c.ui.estL as Draft[] | undefined) ?? [])).map((d) => { const f = c.ui[`estF_${d.k}`] as { foto: string; fotoU: string } | null | undefined; return f === undefined ? d : { ...d, foto: f?.foto ?? null, fotoU: f?.fotoU ?? null }; });
   const i: number | null = xtra ? 0 : (c.ui.estI as number | null | undefined) ?? null;
-  const set = (j: number, p: Partial<Draft>) => xtra ? c.setUi({ xtD: { ...L[0]!, ...p } }) : c.setUi({ estL: L.map((d, k) => (k === j ? { ...d, ...p } : d)) });
+  // 9b-1 · Cada cambio va sobre la lista ÚLTIMA (no la de cuando se dibujó): con la máquina cargada, escribir el precio y tocar «Mano de obra +»
+  // enseguida guardaba la línea sin el precio (est4d: $142.50 en vez de $269.70). La foto vive aparte (estF_<k>) y no se toca aquí.
+  const set = (j: number, p: Partial<Draft> | ((d: Draft) => Partial<Draft>)) => c.setUi((z) => {
+    const parche = (d: Draft) => ({ ...d, ...(typeof p === "function" ? p(d) : p) });
+    if (xtra) return { xtD: parche((z.xtD as Draft | undefined) ?? L[0]!) };
+    const ul = (z.estL as Draft[] | undefined) ?? [];
+    return { estL: ul.map((d, k) => (k === j ? parche(d) : d)) };
+  });
   const tpl = (c.ui.estTpl as Plantilla[] | undefined) ?? [], cls = c.ui.estCls as string | undefined;
   const tot = (d: Draft) => { const p = cents(d.pc), lab = Math.round(d.h * x.rate); return p + lab + Math.round((p * x.taxBp) / 10000); };
   const out: Bloque[] = [{ type: "group", k: xtra ? E2("ALGO MÁS · PREGÚNTALE ANTES DE HACERLO", "SOMETHING ELSE · ASK BEFORE DOING IT") : x.rubro === "hogar" ? E2("PRECIO COMPLETO · LÍNEA POR LÍNEA", "FULL PRICE · LINE BY LINE") : E2("ESTIMADO · LÍNEA POR LÍNEA", "ESTIMATE · LINE BY LINE") }];
@@ -69,7 +76,7 @@ export function estimadoArmar(c: Ctx, x: CitaPanel, xtra = false): Bloque[] {
     out.push({ type: "field", area: true, rows: 2, max: 240, k: E2("POR QUÉ · LA MEDIDA O EL CÓDIGO", "WHY · THE MEASUREMENT OR THE CODE"), val: d.why, count: `${d.why.length}/240`, ph: E2("Ej.: Quedan 2 mm; el mínimo seguro es 3 mm.", "E.g.: 2 mm left; the safe minimum is 3 mm."), onChange: (v) => set(i, { why: v.slice(0, 240), whyEn: undefined }) });
     out.push({ type: "field", k: x.rubro === "hogar" ? E2("MATERIAL", "MATERIAL") : E2("PIEZA", "PART"), val: d.pn, max: 60, ph: E2("Ej.: Pastillas de cerámica", "E.g.: Ceramic pads"), onChange: (v) => set(i, { pn: v.slice(0, 60), pnEn: undefined }) });
     out.push({ type: "field", k: E2("PRECIO DE LA PIEZA · DÓLARES", "PART PRICE · DOLLARS"), val: d.pc, pre: "$", im: "decimal", ph: "0", onChange: (v) => set(i, { pc: v.replace(/[^\d.]/g, "").slice(0, 8) }) });
-    out.push({ type: "step", t: E2("Mano de obra", "Labor"), s: `${E2("Horas", "Hours")} × ${money(x.rate)} ${E2("la hora (Tu herramienta)", "per hour (Your tools)")}`, v: `${d.h} h`, onM: () => set(i, { h: Math.max(0, Math.round((d.h - 0.5) * 10) / 10) }), onP: () => set(i, { h: Math.min(200, Math.round((d.h + 0.5) * 10) / 10) }) });
+    out.push({ type: "step", t: E2("Mano de obra", "Labor"), s: `${E2("Horas", "Hours")} × ${money(x.rate)} ${E2("la hora (Tu herramienta)", "per hour (Your tools)")}`, v: `${d.h} h`, onM: () => set(i, (u) => ({ h: Math.max(0, Math.round((u.h - 0.5) * 10) / 10) })), onP: () => set(i, (u) => ({ h: Math.min(200, Math.round((u.h + 0.5) * 10) / 10) })) });
     out.push({ type: "photos", k: d.urg === "now" || xtra ? E2("FOTO · OBLIGATORIA: EL CLIENTE LA VE", "PHOTO · REQUIRED: THE CLIENT SEES IT") : E2("FOTO · OPCIONAL", "PHOTO · OPTIONAL"), count: `${d.fotoU ? 1 : 0}/1`, cols: 3,
       items: d.fotoU ? [{ key: d.fotoU, bg: `url("${d.fotoU}")`, onClick: () => c.setUi({ [`estF_${d.k}`]: null }) }] : [],
       addL: E2("Tomar o subir foto", "Take or upload photo"), onAdd: d.fotoU ? undefined : () => c.pickFiles(false, async (fs) => { const r = await subirFoto(fs[0]!); if (r.ok && r.id && r.url) c.setUi({ [`estF_${d.k}`]: { foto: r.id, fotoU: r.url } }); else c.toast(r.mensaje ? r.mensaje[es ? "es" : "en"] : E2("No se pudo subir la foto.", "Couldn’t upload the photo.")); }) });

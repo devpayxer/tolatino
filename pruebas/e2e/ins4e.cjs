@@ -189,10 +189,12 @@ async function inscribir(p, neg, svc, o = {}) {
 
   // 10 · Tres familias por el último cupo (clase sin matrícula): pasa una.
   sql(`update class_groups set seats_total = seats_outside + seats_booked + 1 where id = ${GC}`);
-  const P = [cli, p2, p3];
+  const P = [cli, p2, p3], GCL = sql(`select label->>'es' from class_groups where id = ${GC}`);
   for (const p of P) {
     await p.goto(`${B}/n/${EDU}/inscribirme?svc=${CONV}`); await p.getByText('NOTA · OPCIONAL').first().waitFor();
-    await clic(p.getByRole('button', { name: 'Continuar' })); const r = await vis(p.locator('button[role="radio"]:not([disabled])')); await r.click();
+    // 9b-1 · El grupo del último cupo (GC) por su nombre, no «el primer horario que se pueda»: en una base nueva el primero era «Sáb 11 AM»
+    // (con 3 lugares libres) y las tres familias entraban ahí: ninguna quedaba en GC.
+    await clic(p.getByRole('button', { name: 'Continuar' })); const r = await vis(p.locator('button[role="radio"]:not([disabled])').filter({ hasText: GCL })); if (!r) throw new Error(`ASSERT el horario ${GCL} (el del último cupo) se puede elegir`); await r.click();
     await clic(p.getByRole('button', { name: 'Continuar' })); await p.getByText('BUENO SABER').first().waitFor();
   }
   await Promise.all(P.map(async (p) => { const x = await vis(p.getByRole('button', { name: 'Enviar solicitud' })); await x.click(); }));

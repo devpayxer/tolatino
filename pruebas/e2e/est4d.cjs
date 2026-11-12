@@ -97,7 +97,11 @@ const foto = async (p, boton) => { const fc = p.waitForEvent('filechooser'); awa
   await ht.getByLabel('MATERIAL', { exact: true }).fill('Válvula Moen');
   await ht.getByLabel('PRECIO DE LA PIEZA · DÓLARES', { exact: true }).fill('120');
   for (let i = 0; i < 3; i++) await clic(ht.getByRole('button', { name: 'Mano de obra +' }));
-  await foto(h, ht.getByText('Tomar o subir foto')); await h.waitForTimeout(500);
+  await foto(h, ht.getByText('Tomar o subir foto'));
+  // 9b-1 · Antes de mandar: la foto subida (1/1) y el total con la pieza, la mano de obra y el impuesto que se escribieron (con la máquina
+  // cargada, un cambio pisaba al otro y la línea salía sin el precio de la pieza; se arregló en Estimado.tsx: cada cambio va sobre lo último).
+  await ht.getByText('1/1', { exact: true }).first().waitFor({ timeout: 20000 });
+  ok(/TOTAL\s*\$269\.70/.test((await ht.innerText()).replace(/\s+/g, ' ')), 'el resumen antes de mandar: $120 + 1.5 h × $95 + 6 % = $269.70');
   await h.screenshot({ path: OUT + 'h5-panel-precio-d.png', fullPage: true });
   await clic(ht.getByRole('button', { name: 'Mandar al cliente' }));
   ok(await espera(() => det(C), 'confirmed|est') === 'confirmed|est', 'precio completo mandado');

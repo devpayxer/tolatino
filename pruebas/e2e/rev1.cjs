@@ -26,6 +26,8 @@ const op = (n, c) => sql(`select ${c} from operations where number='${n}'`);
   await d.goto(B + `/n/${BIZ}?tab=rev`); await d.waitForTimeout(1500); await shot(d, 'g5-tab-d.png', true);
   await d.goto(B + `/n/${BIZ}`); await d.waitForTimeout(800); const e2 = await vis(d.locator('[data-screen-label="Resumen desktop · reseñas"]')); await e2.scrollIntoViewIfNeeded(); await e2.screenshot({ path: OUT + 'g6-resumen-d.png' });
   await d.goto(B + `/n/${BIZ}/resena`); await d.waitForTimeout(800); await shot(d, 'g7-escribir-d.png', true);
-  console.log('errores', err);
+  // 9b-1 · Lo que antes solo se imprimía ahora se comprueba (una prueba sin ✓ ya no cuenta como verde, pruebas/correr.mjs).
+  { const T = await d.locator('body').innerText(); ok(T.includes('Escribir reseña') && T.includes('TU CALIFICACIÓN'), 'escribir una reseña abre (escritorio): «Escribir reseña» y «TU CALIFICACIÓN»'); }
+  ok(!err.length, `sin errores en las páginas (${err.join(' | ').slice(0, 300) || 'ninguno'})`);
   await b.close();
 })().catch(e => { console.error(e); process.exit(1); });

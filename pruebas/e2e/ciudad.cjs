@@ -1,4 +1,5 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
+const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); }; // 9b-1 · antes solo imprimía: la corrida la contaba «en verde con 0 ✓»
 const { chromium } = require('playwright');
 const OUT = ENT.S + '/cap/';
 (async () => {
@@ -11,7 +12,7 @@ const OUT = ENT.S + '/cap/';
   p.on('console', x => { if (x.type() === 'error' && !/teselas|Failed to load resource/.test(x.text())) errores.push('m console: ' + x.text()); });
   await p.goto('http://localhost:3100/');
   await p.getByText('5 MI', { exact: true }).click();
-  await p.getByText('¿Dónde buscas?').waitFor();
+  await p.getByText('¿Dónde buscas?').waitFor(); ok(true, 'teléfono: «5 MI» abre «¿Dónde buscas?»');
   await p.waitForTimeout(900);
   await p.screenshot({ path: OUT + 'm1-sheet.png' });
   // North End + 10 mi
@@ -40,7 +41,7 @@ const OUT = ENT.S + '/cap/';
   await p.getByPlaceholder('(570) 555-0142').fill('5705550199');
   await p.screenshot({ path: OUT + 'm6-pedir.png' });
   await p.getByText('Avísame', { exact: true }).last().click();
-  await p.getByText('Anotamos').waitFor({ timeout: 5000 });
+  await p.getByText('Anotamos').waitFor({ timeout: 5000 }); ok(true, 'pedir la ciudad sin cuenta: «Anotamos»');
   await p.screenshot({ path: OUT + 'm7-pedido-listo.png' });
   // Elegir Allentown → Pronto
   await p.getByRole('button', { name: 'Volver' }).click();
@@ -55,7 +56,7 @@ const OUT = ENT.S + '/cap/';
   q.on('pageerror', e => errores.push('d: ' + e.message));
   await q.goto('http://localhost:3100/negocios');
   await q.getByText(/Hazleton, PA/).first().click();
-  await q.getByText('¿Dónde buscas?').waitFor();
+  await q.getByText('¿Dónde buscas?').waitFor(); ok(true, 'escritorio: el selector abre desde Negocios');
   await q.waitForTimeout(900);
   await q.screenshot({ path: OUT + 'd1-pop.png' });
   await q.getByText('The Heights', { exact: true }).click();
@@ -72,6 +73,7 @@ const OUT = ENT.S + '/cap/';
   await q.getByText('Ver Reading').last().click();
   await q.waitForTimeout(1500);
   await q.screenshot({ path: OUT + 'd5-pronto.png', fullPage: true });
-  console.log('errores:', JSON.stringify(errores, null, 1));
+  ok(/Reading/.test(await q.locator('body').innerText()), 'escritorio: «Ver Reading» lleva a Reading');
+  ok(!errores.length, `sin errores en las páginas (${errores.join(' | ').slice(0, 300) || 'ninguno'})`);
   await b.close();
 })().catch(e => { console.error('FALLO', e.message); process.exit(1); });
