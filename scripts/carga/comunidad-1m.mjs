@@ -120,7 +120,7 @@ const HILO = await meta("hilo");
 await medir("hilo-500", { linea: "L588", presupuesto: 60, que: "hilo de 500 comentarios en 20 raíces" }, async (i) => { if (!HILO) throw new Error("no está el hilo de 500 (carga_meta)"); const r = await hil.hilo(HILO, VS[i % VS.length], null, "top"); if (!r) throw new Error("el hilo no salió"); return r; });
 // Publicaciones de otros (la app no deja votar lo propio: «Lo tuyo lo votan los demás»).
 const POSTS = (await q(`select x.id::text from carga_p x join com_posts p on p.id = x.id where x.c = 'hzl' and p.status = 'visible' and p.author_user_id <> all($1::uuid[]) order by x.k desc limit 60`, [VS])).map((x) => x.id);
-await medir("votar", { linea: "L588", presupuesto: 30, que: "votar una publicación (contadores)" }, (i) => hil.votar(VS[(i * 7) % VS.length], "post", POSTS[i % POSTS.length], i % 2 ? 1 : -1, null));
+await medir("votar", { linea: "L588", presupuesto: 30, veces: 100, que: "votar una publicación (contadores)" }, (i) => hil.votar(VS[(i * 7) % VS.length], "post", POSTS[i % POSTS.length], i % 2 ? 1 : -1, null));
 await medir("encuesta-100k", { linea: "L590", presupuesto: null, veces: 1, calentar: 0, que: "cerrar una encuesta de 100 mil votos y avisar a todos (avisarMuchos)" }, () => hil.barrerEncuestas());
 
 const vec = await app("lib/vecinos.ts"), msj = await app("lib/mensajes-vecinos.ts");

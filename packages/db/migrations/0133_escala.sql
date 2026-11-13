@@ -419,11 +419,22 @@ begin
   insert into com_rangos_ciudad (city_id, rank_level, vecinos, monedas)
   select u.home_city_id, coalesce(cp.rank_level, 1), count(*)::int, coalesce(sum(greatest(cp.coins, 0)), 0)
     from community_profiles cp join users u on u.id = cp.user_id where u.home_city_id is not null group by 1, 2;
+  -- Activos por rango: la misma regla que com_activos_por_rango (publicaron o comentaron EN la ciudad; votaron, por su ciudad), de una pasada
+  -- para todas las ciudades por período (llamarla por ciudad y período eran 15 pasadas: 19 s con 1 M de vecinos en la carga).
   delete from com_activos_cache;
   foreach d in array array[7, 30, 90] loop
     insert into com_activos_cache (city_id, dias, rango, activos)
-    select c.id, d, a.rango, a.activos from cities c cross join lateral com_activos_por_rango(array[c.id], ((now() at time zone 'America/New_York')::date - (d - 1))::timestamp at time zone 'America/New_York') a;
-    end loop;
+    select a.c, d, coalesce(cp.rank_level, 1)::smallint, count(*)::int
+      from (select city_id as c, author_user_id as u from com_posts
+             where author_kind = 'user' and status <> 'deleted' and created_at >= ((now() at time zone 'America/New_York')::date - (d - 1))::timestamp at time zone 'America/New_York'
+            union select city_id, author_user_id from com_comments
+             where status <> 'deleted' and created_at >= ((now() at time zone 'America/New_York')::date - (d - 1))::timestamp at time zone 'America/New_York'
+            union select x.home_city_id, v.user_id from com_votes v join users x on x.id = v.user_id
+             where v.created_at >= ((now() at time zone 'America/New_York')::date - (d - 1))::timestamp at time zone 'America/New_York') a
+      left join community_profiles cp on cp.user_id = a.u
+     where a.c is not null and a.u is not null
+     group by 1, 3;
+  end loop;
   delete from com_recomendados_cache;
   insert into com_recomendados_cache (city_id, business_id, votos, vecinos)
   select city_id, b, votos, vecinos from (

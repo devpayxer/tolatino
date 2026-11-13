@@ -46,7 +46,7 @@ if (!process.argv.includes("--sin-generar")) {
     insert into tickets (code, event_id, event_date_id, city_id, ticket_type_id, operation_id, holder_user_id, holder_name, admits, kind, price_cents, fee_cents, status, created_at)
     select ${CODIGO("g")}, ${g0.event_id}, ${g0.id}, 'hzl', (select min(id) from ticket_types where event_id = ${g0.event_id}), ${OP},
            (select id from users where phone like '+1999%' order by phone limit 1 offset (g % 1000)), 'Invitado Carga ' || g, 1, 'paid', 2500, 250, 'valid', now() - make_interval(mins => g % 10000)
-      from generate_series($1::int, $2::int) g`, 50_000);
+      from generate_series($1::int, $2::int) g on conflict (code) do nothing`, 50_000);
   // ── La fecha del paquete sin conexión: hoy, 10 mil boletos (el presupuesto de 6h es para un paquete de 10 mil) ──
   const g1 = await uno(`insert into event_dates (event_id, city_id, starts_at, ends_at, doors_at, local_date, day_index, status, geom, listable, sold_n)
     select e.id, e.city_id, now() + interval '100 minutes', now() + interval '6 hours', now() + interval '1 hour', (now() at time zone 'America/New_York')::date, 0, 'scheduled', e.geom, true, ${PAQ}
@@ -55,14 +55,14 @@ if (!process.argv.includes("--sin-generar")) {
   await porLotes("boletos de la fecha del paquete", PAQ, `
     insert into tickets (code, event_id, event_date_id, city_id, ticket_type_id, operation_id, holder_name, admits, kind, price_cents, fee_cents, status, created_at)
     select ${CODIGO("(g + 60000)")}, ${g1.event_id}, ${g1.id}, 'hzl', (select min(id) from ticket_types where event_id = ${g1.event_id}), ${OP}, 'Persona Paquete ' || g, 1, 'paid', 2500, 250, 'valid', now()
-      from generate_series($1::int, $2::int) g`, 50_000);
+      from generate_series($1::int, $2::int) g on conflict (code) do nothing`, 50_000);
   // ── El resto de los 5 M de boletos en las fechas que ya pasaron y las próximas ──
   await generar("fechas para boletos", [`drop table if exists carga_f`, `create unlogged table carga_f as select row_number() over (order by id) as k, id, event_id, city_id, (select min(t.id) from ticket_types t where t.event_id = d.event_id) as tt from event_dates d where exists (select 1 from events e where e.id = d.event_id and e.slug like '%-carga-%')`, `create index on carga_f (k)`, `analyze carga_f`]);
   const nf = (await uno(`select count(*)::int as n from carga_f`)).n;
   await porLotes("boletos", Math.max(0, BOL - GRANDE), `
     insert into tickets (code, event_id, event_date_id, city_id, ticket_type_id, operation_id, holder_name, admits, kind, price_cents, fee_cents, status, created_at)
     select ${CODIGO("(g + 100000)")}, f.event_id, f.id, f.city_id, f.tt, ${OP}, 'Persona ' || g, 1, 'paid', 2500, 250, case when g % 3 = 0 then 'used' else 'valid' end, now() - make_interval(mins => g % 100000)
-      from generate_series($1::int, $2::int) g join carga_f f on f.k = 1 + (g::bigint * 7) % ${nf}`, 500_000);
+      from generate_series($1::int, $2::int) g join carga_f f on f.k = 1 + (g::bigint * 7) % ${nf} on conflict (code) do nothing`, 500_000);
   await analizar();
 }
 
