@@ -31,7 +31,6 @@ jobs:
       DATABASE_URL: postgres://tolatino:carga@127.0.0.1:5432/tolatino
       PRUEBAS_DB_CONT: carga-db
       CARGA_ESCALA: ${{ inputs.escala }}
-      CARGA_SALIDA: ${{ runner.temp }}/carga
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -39,6 +38,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      - run: echo "CARGA_SALIDA=$RUNNER_TEMP/carga" >> "$GITHUB_ENV"
       - name: Postgres 16 + PostGIS desechable (datos en /mnt, que tiene el espacio)
         run: |
           sudo mkdir -p /mnt/pg && sudo chown 999:999 /mnt/pg
