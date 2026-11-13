@@ -57,6 +57,9 @@ const abrir = async (c, ruta) => {
   await p.goto(BASE + ruta, { waitUntil: "load", timeout: 45000 });
   await p.addStyleTag({ content: CSS });
   await p.evaluate(() => document.fonts?.ready);
+  // En el CI (máquina lenta) las imágenes locales llegaban a veces después de la captura: se espera a que todas terminen de cargar (o fallar) y a que la red calle.
+  await p.waitForLoadState("networkidle", { timeout: 10000 }).catch(() => {});
+  await p.waitForFunction(() => [...document.images].every((i) => i.complete), null, { timeout: 10000 }).catch(() => {});
   await p.waitForTimeout(1500);
   return p;
 };
