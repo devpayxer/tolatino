@@ -1,6 +1,6 @@
 # Super Admin · Contenido y Transacciones
 
-_Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Escritorio y teléfono. Acotado a las ciudades de quien mira. Versión: 6
+_Pantallas: `/admin/contenido` (ADM-CONT) y `/admin/transacciones` (ADM-TX). Escritorio y teléfono. Acotado a las ciudades de quien mira. Versión: 13
 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Contenido
@@ -66,6 +66,8 @@ nov 2026. Audiencia: equipo. Tema: equipo._
   la ubicación la vuelve a poner el sistema (centro del barrio o de la ciudad, nunca la de la persona) y se desfija. Una **recomendación** o
   un hilo con negocios recomendados **no se mueve** (va con su negocio): se oculta con el motivo. Queda en la auditoría.
 - Las cifras y el tiempo de Contenido salen de la base; los plazos (minutos para editar, días para apelar) de **Sistema › Configuración**.
+- Arriba, **PUBLICACIONES**, comentarios y reseñas son totales que el sistema vuelve a contar **cada 10 minutos** (contarlos en cada vista era
+  muy lento con millones); **REPORTES ABIERTOS**, **OCULTOS**, Hoy en el barrio y «Ocultar los N reportados» se cuentan al momento.
 
 ## Transacciones
 - **Qué es:** pedidos, reservaciones y citas de los **últimos 90 días**. Cifras: hoy (y lo pedido hoy), lo retenido ahora, pedidos
@@ -105,3 +107,4 @@ Content lists reviews, business updates, update comments and job posts in your c
 orders and table reservations from the last 90 days with daily and 90-day figures, tabs, status filters, search and a CSV export
 (formula-safe, audited). Orders, reservations and appointments are paid at the store, on delivery or by card in the app; each charge
 shows its status (held · charged · released · refunded) and Refund (with a reason) returns up to what was charged.
+- On **Content**, the posts, comments and reviews totals at the top are recounted **every 10 minutes**; open reports, hidden, Today and «Hide the N reported» are counted right away.

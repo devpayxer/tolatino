@@ -68,6 +68,14 @@ const PARTES: Record<TipoCont, string> = {
         from com_comments c join users u on u.id = c.author_user_id left join businesses b on b.id = c.business_id where c.status <> 'deleted'`,
 };
 const COLS = "(k, id, biz, bname, who, uid, rango, inv, oficial, text, extra, up, dn, at, hidden, why, rep, pin, lock, city_id)";
+/* 9b-3 · A escala (1 M de publicaciones y 5 M de comentarios en la carga), una UNION de todo ordenada por «con reporte» y fecha juntaba y
+   ordenaba TODO en cada vista. Ahora cada tipo aporta dos trozos: lo reportado (desde los reportes abiertos, que son pocos) y lo más nuevo sin
+   reporte (por el índice de fecha, ya filtrado y desde el cursor, con un tope de una página + 1); la página sale de juntar esos trozos. Es la
+   misma lista y el mismo orden: lo de una página está siempre dentro de los trozos. */
+const REPORTE: Record<TipoCont, { kind: string; col: string } | null> = {
+  rev: { kind: "review", col: "r.id" }, nov: { kind: "post", col: "p.id" }, cm: { kind: "comment", col: "c.id" }, vac: null,
+  pub: { kind: "com_post", col: "p.id" }, ccm: { kind: "com_comment", col: "c.id" },
+};
 export async function listaContenido(s: Staff, f: FiltrosCont) {
   const tipos: TipoCont[] = f.tab === "pub" ? ["pub"] : f.tab === "ccm" ? ["ccm"] : f.tab === "rev" ? ["rev"] : f.tipo ? [f.tipo] : (Object.keys(PARTES) as TipoCont[]);
   const w: string[] = ["(cardinality($1::text[]) = 0 or x.city_id = any($1::text[]))"], v: unknown[] = [s.cities];
@@ -75,32 +83,53 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
   if (f.q) add(`(x.text ilike $? or x.who ilike $? or x.bname ilike $?)`, `%${f.q.replace(/[%_\\]/g, (m) => `\\${m}`)}%`);
   if (f.ciudad) add("x.city_id = $?", f.ciudad);
   if (f.estado) w.push(f.estado === "hid" ? "x.hidden" : "not x.hidden");
-  if (f.rep) w.push("x.rep > 0");
   if (f.neg) w.push("x.dn > 0");
   if (f.top) w.push("x.up - x.dn >= 10");
   if (f.autor) add("x.uid = $?", f.autor);
   if (f.rango) add("coalesce(x.rango, 1) >= $?::int", f.rango);
   if (f.inv) w.push("x.inv");
-  const base = `with x${COLS} as (${tipos.map((t) => PARTES[t]).join("\nunion all\n")}) select * from x where ${w.join(" and ")}`;
-  const wc = [...v];
-  let cur = "";
-  if (f.c) { const [r, at, k, id] = f.c.split("|"); wc.push(Number(r), at, k, id); cur = ` where ((y.rep > 0)::int, y.at, y.k, y.id) < ($${wc.length - 3}::int, $${wc.length - 2}::timestamptz, $${wc.length - 1}::text, $${wc.length}::text)`; }
+  // El cursor (con reporte, fecha, tipo, id): dentro de cada trozo, para que su tope cuente desde ahí.
+  let cur = "", rCur = 1;
+  if (f.c) { const [r, at, k, id] = f.c.split("|"); rCur = Number(r); v.push(rCur, at, k, id); cur = ` and ((x.rep > 0)::int, x.at, x.k, x.id) < ($${v.length - 3}::int, $${v.length - 2}::timestamptz, $${v.length - 1}::text, $${v.length}::text)`; }
+  const LIM = POR_PAGINA_CONT + 1, trozos: string[] = [];
+  for (const t of tipos) {
+    const R = REPORTE[t], base = PARTES[t];
+    const abierto = R ? `exists (select 1 from content_reports cr where cr.target_kind = '${R.kind}' and cr.target_id = ${R.col}::text and cr.status = 'open')` : "false";
+    // Lo reportado: los que tienen un reporte abierto (desde content_reports_abiertos_idx). Solo si el cursor todavía está en esa parte.
+    if (R && rCur === 1) trozos.push(`(select * from (${base} and ${R.col} in (select cr.target_id::bigint from content_reports cr where cr.target_kind = '${R.kind}' and cr.status = 'open' and cr.target_id ~ '^[0-9]{1,18}$')) x${COLS}
+      where ${w.join(" and ")}${cur} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+    // Lo demás: lo más nuevo sin reporte, por fecha.
+    if (!f.rep) trozos.push(`(select * from (${base} and not ${abierto}) x${COLS} where ${w.join(" and ")}${cur} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+  }
   const [L, cab, ciu] = await Promise.all([
-    db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
+    trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
               (y.rep > 0)::int || '|' || to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') || '|' || y.k || '|' || y.id as cur
-         from (${base}) y left join cities ci on ci.id = y.city_id${cur} order by (y.rep > 0)::int desc, y.at desc, y.k desc, y.id desc limit ${POR_PAGINA_CONT + 1}`, wc),
+         from (${trozos.join("\nunion all\n")}) y left join cities ci on ci.id = y.city_id order by (y.rep > 0)::int desc, y.at desc, y.k desc, y.id desc limit ${LIM}`, v) : Promise.resolve({ rows: [] as FilaCont[] }),
+    // Las cifras de arriba: los totales del conteo por ciudad (el barrido lo rehace cada 10 min); reportes, ocultos, Hoy y el lote, al momento.
     db().query<{ rev: number; pub: number; ccm: number; rep: number; hid: number; hoy: number; lote: number }>(
-      `with x${COLS} as (${Object.values(PARTES).join("\nunion all\n")}) select count(*) filter (where k = 'rev')::int as rev, count(*) filter (where k = 'pub')::int as pub,
-              count(*) filter (where k = 'ccm')::int as ccm, count(*) filter (where rep > 0)::int as rep, count(*) filter (where hidden)::int as hid,
-              count(*) filter (where k in ('pub', 'ccm') and rep > 0 and not hidden)::int as lote,
+      `select coalesce((select sum(total) from content_counts_cache where k = 'rev' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as rev,
+              coalesce((select sum(total) from content_counts_cache where k = 'pub' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as pub,
+              coalesce((select sum(total) from content_counts_cache where k = 'ccm' and (cardinality($1::text[]) = 0 or city_id = any($1::text[]))), 0)::int as ccm,
+              (select count(distinct (cr.target_kind, cr.target_id))::int from content_reports cr where cr.status = 'open' and cr.target_kind in ('review', 'post', 'comment', 'com_post', 'com_comment')
+                  and (cardinality($1::text[]) = 0 or cr.city_id = any($1::text[]) or cr.city_id is null)) as rep,
+              (select count(*)::int from com_posts p where p.status = 'hidden' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[])))
+                + (select count(*)::int from com_comments c where c.status = 'hidden' and (cardinality($1::text[]) = 0 or c.city_id = any($1::text[])))
+                + (select count(*)::int from reviews r where r.status = 'hidden' and (cardinality($1::text[]) = 0 or r.city_id = any($1::text[])))
+                + (select count(*)::int from business_posts p where p.status <> 'removed' and p.hidden_at is not null and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as hid,
               (select count(*)::int from business_posts p where p.status = 'live' and p.hidden_at is null and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'
-                  and post_en_hoy(p) and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as hoy
-         from x where cardinality($1::text[]) = 0 or x.city_id = any($1::text[])`, [s.cities]),
+                  and post_en_hoy(p) and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))) as hoy,
+              (select count(*)::int from (select distinct cr.target_kind, cr.target_id from content_reports cr where cr.status = 'open' and cr.target_kind in ('com_post', 'com_comment') and cr.target_id ~ '^[0-9]{1,18}$') r
+                  where (r.target_kind = 'com_post' and exists (select 1 from com_posts p where p.id = r.target_id::bigint and p.status = 'visible' and (cardinality($1::text[]) = 0 or p.city_id = any($1::text[]))))
+                     or (r.target_kind = 'com_comment' and exists (select 1 from com_comments c where c.id = r.target_id::bigint and c.status = 'visible' and (cardinality($1::text[]) = 0 or c.city_id = any($1::text[]))))) as lote`, [s.cities]),
     // Todas las ciudades de quien mira: las abiertas o con algo escrito son filtro; todas son destino de «Mover de ciudad».
     db().query<{ id: string; name: string; filtro: boolean }>(`select id, name, status = 'on' or exists (select 1 from com_posts p where p.city_id = cities.id) as filtro from cities where cardinality($1::text[]) = 0 or id = any($1::text[]) order by name`, [s.cities]),
   ]);
   const filas = L.rows.slice(0, POR_PAGINA_CONT);
   return { filas, sig: L.rows.length > POR_PAGINA_CONT ? filas[filas.length - 1]!.cur : null, cab: cab.rows[0]!, ciudades: ciu.rows.filter((x) => x.filtro), destinos: ciu.rows };
+}
+/* 9b-3 · El barrido: los totales de Contenido (content_counts_cache) cada 10 minutos. */
+export async function contenidoAlDia(): Promise<number> {
+  return (await db().query<{ n: number }>(`select contenido_al_dia() as n`)).rows[0]?.n ?? 0;
 }
 export type ListaCont = Awaited<ReturnType<typeof listaContenido>>;
 

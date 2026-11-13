@@ -18,6 +18,7 @@
 --   como antes), sin bloquear a quien busca (CONCURRENTLY).
 -- · com_analitica_dia_cache: Analítica › Comunidad lee un derivado por ciudad y día (com_analitica_resumir) en vez de la vista que agregaba toda la
 --   historia en cada vista; el barrido lo rehace cada 10 min para los últimos 40 días. Índice de la primera respuesta por publicación.
+-- · Super Admin › Contenido: índices por fecha y de ocultos, y content_counts_cache (los totales, cada 10 min).
 -- · jit = off en la base (consultas cortas; el JIT sumaba ~100 ms a consultas de 5 ms con costos mal estimados).
 -- Idempotente: se puede aplicar dos veces. Nada de lo que es de una persona se borra.
 begin;
@@ -344,6 +345,41 @@ begin
   return com_analitica_resumir((now() at time zone 'America/New_York')::date - 40);
 end $$;
 select com_analitica_resumir('2000-01-01');
+
+-- ── Super Admin › Contenido a escala: la lista toma de cada tipo lo más nuevo por fecha (índices por fecha) y lo reportado desde los reportes
+--    abiertos (pocos); los totales (publicaciones, comentarios, reseñas) salen de un conteo por ciudad que el barrido rehace cada 10 min (contar 6 M
+--    de filas en cada vista tardaba segundos); lo oculto, con índices parciales. ──
+create index if not exists com_posts_creado_idx on com_posts (created_at desc) where status <> 'deleted';
+create index if not exists com_comments_creado_idx on com_comments (created_at desc) where status <> 'deleted';
+create index if not exists reviews_creado_idx on reviews (created_at desc) where status <> 'removed';
+create index if not exists com_posts_ocultos_idx on com_posts (city_id) where status = 'hidden';
+create index if not exists com_comments_ocultos_idx on com_comments (city_id) where status = 'hidden';
+create table if not exists content_counts_cache (
+  city_id      text not null references cities (id),
+  k            text not null check (k in ('pub', 'ccm', 'rev')),
+  total        integer not null check (total >= 0),
+  refreshed_at timestamptz not null default now(),
+  primary key (city_id, k)
+);
+create or replace function contenido_contar() returns integer language plpgsql as $$
+declare n integer;
+begin
+  delete from content_counts_cache;
+  with ins as (
+    insert into content_counts_cache (city_id, k, total)
+    select city_id, 'pub', count(*)::int from com_posts where status <> 'deleted' group by 1
+    union all select city_id, 'ccm', count(*)::int from com_comments where status <> 'deleted' group by 1
+    union all select city_id, 'rev', count(*)::int from reviews where status <> 'removed' and city_id is not null group by 1
+    returning 1)
+  select count(*) into n from ins;
+  return n;
+end $$;
+create or replace function contenido_al_dia() returns integer language plpgsql as $$
+begin
+  if exists (select 1 from content_counts_cache where refreshed_at > now() - interval '10 minutes') then return 0; end if;
+  return contenido_contar();
+end $$;
+select contenido_contar();
 
 -- ── El vocabulario de búsqueda: se refresca sin bloquear y se anota cuándo ──
 create or replace function refrescar_busqueda() returns void language plpgsql as $$
