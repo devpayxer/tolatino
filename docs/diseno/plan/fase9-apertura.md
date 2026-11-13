@@ -632,6 +632,16 @@ propio (L385, L599); retiros del fabricante por VIN con datos públicos de NHTSA
 y movimientos** (L773, L936); Mis boletos guarda todos los próximos (L896); tapar números de seguro social y tarjetas en Mensajes como Soporte (L1063);
 sesiones con «Este iPhone · To'Latino 1.0 (12)» (L1181); la búsqueda por voz con su aviso en Privacidad y su interruptor (L95); **`Pronto.tsx` borrado**
 y ninguna pantalla «En construcción» (L45, L1375).
+**Direcciones como DoorDash/Uber, para todo EE. UU. (decisión AC):** (1) autocompletar mientras se escribe desde nuestra base (calle, número,
+ciudad, estado, código postal), en ≤ 100 ms, por índice trigram/GIN y prefijo, sin salir a terceros; (2) «Usar mi ubicación»: GPS → dirección más
+cercana (geocodificación inversa propia, GIST); (3) pin ajustable en el mapa propio antes de guardar («la puerta está aquí»), el punto queda en la
+dirección para el Repartidor; (4) precisión por casa: puntos de dirección de OpenAddresses y de los condados/estados que los publican, y el rango de
+TIGER como respaldo interpolado; (5) cobertura nacional: `infra/direcciones/generar.sh` carga los ~3,200 condados (TIGER ADDRFEAT + PLACE + ZCTA) por
+estado, en paralelo y reanudable, en un volumen aparte; refresco cada 90 días; (6) mapa base de EE. UU. propio (teselas de OpenStreetMap servidas por
+nosotros). Lo mismo en Mis direcciones, el checkout con delivery, Publica tu negocio, el panel (dirección del negocio) y el Super Admin (corregir el
+punto de un negocio). **Guardianes:** `direccionSinTerceros` (ninguna llamada a Google/Mapbox/Here en el código), `autocompletarRapido` (presupuesto de
+velocidad); punta a punta **`dir9m`**: escribir «123 N Wyo» en Hazleton y una dirección de California, Texas y Nueva York → sugerencias reales; GPS
+simulado → dirección; mover el pin → se guarda el punto. **Ayuda:** `direcciones`.
 **Guardianes:** `sinEnConstruccion` (9a), `rutasVivas`, `mensajesEnVivo` (sin preguntar cada 5 s); punta a punta **`vec9m`** (cada pieza a 390 y 1360,
 ES y EN; un mensaje llega al otro teléfono en ≤ 1 s).
 **Ayuda:** la de cada pieza (`mi-cuenta`, `mensajes`, `buscar`, `mapa`, `pagos-y-movimientos`).
