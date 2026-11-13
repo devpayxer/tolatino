@@ -15,7 +15,10 @@ const hoy = () => sql(`select (now() at time zone 'America/New_York')::date`);
 (async () => {
   limpiar();
   sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select ${MARISOL}, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false where not exists (select 1 from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null)`);
-  sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', true from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null) limit 1`);
+  sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', false from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null) limit 1`);
+  // 9b-3 · La casa de la prueba es la de 112 W Oak St aunque otra prueba le haya dejado otra casa a Marisol (fi4b la guarda desde la hoja).
+  sql(`update user_homes set is_default = false where user_id = ${MARISOL} and removed_at is null`);
+  sql(`update user_homes h set is_default = true, kind = 'casa' from user_addresses a where a.id = h.address_id and h.user_id = ${MARISOL} and h.removed_at is null and a.street = '112 W Oak St' and a.removed_at is null`);
   // 9b-1 · Sus dos tarjetas (la buena, predeterminada, y la que el banco rechaza): las guarda si no las tiene (una base nueva no las tenía).
   { const T = require('../lib/negocio-nuevo.cjs').tarjeta; T('5705550122', '0002', { predeterminada: false }); T('5705550122', '4242'); }
   const b = await chromium.launch(); const err = [];

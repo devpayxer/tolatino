@@ -18,7 +18,7 @@ const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const cfg = (k, v) => sql(v == null ? `delete from platform_config where key = '${k}'` : `insert into platform_config (key, value, note) values ('${k}', to_jsonb(${v}), 'prueba compa7f') on conflict (key) do update set value = excluded.value`);
 const flag = (k, on) => sql(`update feature_flags set enabled = ${on} where key = '${k}'`);
-const norm = (t) => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+const { norm } = require('../lib/sin-reloj.cjs'); // 9b-3 · sin la hora, el saludo ni el día (la foto de antes y la de después)
 const NEG = 'sabor-dominicano', FREE = 'locales-centro', DUENO = '5705550133', MARI = '5705550122', HECTOR = '5705550288', ROSA = '5705550691', JUAN = '5705550444', YESE = '5705550433', ADM = '5705550199';
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
 const HOY = `extract(dow from now() at time zone 'America/New_York')::int`;

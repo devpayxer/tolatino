@@ -34,6 +34,11 @@ const casos = [
   ['saldoAlDia', 'apps/web/lib/admin-gam.ts', `                   + (select coalesce(sum(e.delta), 0) from coin_entries e join users u on u.id = e.user_id
                        where e.created_at > t.t and u.home_city_id is not null and ($1::text[] = '{}' or u.home_city_id = any($1)))
 `, ''],
+  // fotoSinReloj: compa7e vuelve a normalizar a mano (la hora en punto rompe la comparación), o el normalizador deja de quitar la hora
+  ['fotoSinReloj', 'pruebas/e2e/compa7e.cjs', "const { norm } = require('../lib/sin-reloj.cjs');", "const norm = (t) => t.replace(/\\d+/g, '#').replace(/\\s+/g, ' ').trim();"],
+  ['fotoSinReloj', 'pruebas/lib/sin-reloj.cjs', ".replace(HORA, 'HORA')", ''],
+  // precondicionPropia: pre4e vuelve a crear su casa solo si Marisol no tiene ninguna
+  ['precondicionPropia', 'pruebas/e2e/pre4e.cjs', 'not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null)', 'not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null)'],
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos
   ['pruebasIndependientes', 'pruebas/correr.mjs', '  if (t.carril === "e2e") cerrarVentanas();\n', ''],
   ['pruebasIndependientes', 'pruebas/correr.mjs', "delete from otp_codes where created_at > now() - interval '1 minute';\\n", ''],

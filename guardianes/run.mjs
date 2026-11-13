@@ -6858,6 +6858,32 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Dos fotos de la misma página se comparan sin el reloj: compa7e comparaba el texto con solo los números como «#» y falló al pasar las
+     12:00 entre las dos («12 PM» → «12:01 PM»). Una prueba que normaliza números a mano usa pruebas/lib/sin-reloj.cjs. Al revés: alreves9b3. */
+  fotoSinReloj() {
+    const G = "fotoSinReloj", L = "pruebas/lib/sin-reloj.cjs";
+    if (!existsSync(L)) return falla(G, L, 0, "falta el normalizador sin reloj de las pruebas");
+    const l = readFileSync(L, "utf8");
+    for (const x of ["HORA", "SALUDO", "DIA"]) if (!new RegExp(`\\.replace\\(${x},`).test(l)) falla(G, L, 0, `norm() no quita ${x.toLowerCase()} antes de los números`);
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      const m = /\.replace\(\/\\d\+\/g, ['"]#['"]\)/.exec(t);
+      if (m) falla(G, f, t.slice(0, m.index).split("\n").length, "normaliza los números a mano: la hora («12 PM» / «12:01 PM») y el saludo quedan; usa norm de pruebas/lib/sin-reloj.cjs");
+    }
+  },
+
+  /* 9b-3 · El punto de partida de una prueba es SU fila, no «la persona no tiene ninguna»: pre4e creaba la casa de 112 W Oak St solo si Marisol no
+     tenía casa; barajada, fi4b le dejaba otra antes y el pre-estimado del Hogar no se podía enviar. Un insert de preparación cuyo «not exists» solo
+     mira a la persona (user_id y removed_at) sobre la misma tabla falla. Al revés: alreves9b3. */
+  precondicionPropia() {
+    const G = "precondicionPropia";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/insert into (\w+)[^`]*?not exists \(select 1 from \1 where user_id = [^ ]+ and removed_at is null\)/g))
+        falla(G, f, t.slice(0, m.index).split("\n").length, `prepara ${m[1]} solo si la persona no tiene ninguna: otra prueba pudo dejarle otra; pregunta por la fila de esta prueba y hazla la de por omisión`);
+    }
+  },
+
   /* 9b-3 · Cada prueba de punta a punta empieza sin las ventanas de un minuto que dejó la anterior (la espera entre códigos de un teléfono, los
      topes compartidos, las búsquedas de la puerta): barajadas, una prueba que entraba con la misma cuenta justo después de otra recibía «Espera unos
      segundos» (admin1i). Al revés: alreves9b3. */

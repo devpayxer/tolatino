@@ -15,9 +15,11 @@ const MARISOL = "(select id from users where phone = '+15705550122')";
 const limpiar = () => { sql(`update service_requests set status = 'cancelled' where user_id = ${MARISOL} and status in ('sent', 'answered')`); sql(`update operations set status = 'cancelled', cancelled_by = 'system', cancelled_at = now() where user_id = ${MARISOL} and business_id in ('${T}','${H}') and status in ('pending', 'change_proposed', 'confirmed')`); };
 (async () => {
   limpiar();
-  sql(`insert into user_vehicles (user_id, year, make, model, mileage, veh_type, size, tire_size, is_default) select ${MARISOL}, 2016, 'honda', 'CR-V', 84200, 's', 's', '225/65R17', true where not exists (select 1 from user_vehicles where user_id = ${MARISOL} and removed_at is null)`);
+  sql(`insert into user_vehicles (user_id, year, make, model, mileage, veh_type, size, tire_size, is_default) select ${MARISOL}, 2016, 'honda', 'CR-V', 84200, 's', 's', '225/65R17', false where not exists (select 1 from user_vehicles where user_id = ${MARISOL} and make = 'honda' and model = 'CR-V' and removed_at is null)`);
+  // 9b-3 · El vehículo de la prueba es la CR-V aunque otra prueba le haya dejado otro a Marisol.
+  sql(`update user_vehicles set is_default = (make = 'honda' and model = 'CR-V' and id = (select v.id from user_vehicles v where v.user_id = ${MARISOL} and v.make = 'honda' and v.model = 'CR-V' and v.removed_at is null order by v.id limit 1)) where user_id = ${MARISOL} and removed_at is null`);
   sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select ${MARISOL}, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false where not exists (select 1 from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null)`);
-  sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', true from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null) limit 1`);
+  sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', false from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null) limit 1`);
   sql(`update user_homes set tenure = 'dueno' where user_id = ${MARISOL} and removed_at is null`);
   // 9b-3 · La de siempre es la CASA de 112 W Oak St (otra prueba podía dejar otra como predeterminada y el pre-estimado del Hogar no se mandaba).
   sql(`update user_homes set is_default = false where user_id = ${MARISOL} and removed_at is null`);
@@ -100,6 +102,11 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   const fc2 = m.waitForEvent('filechooser'); await clic(m.getByRole('button', { name: /^Foto$/ })); await (await fc2).setFiles(FOTO);
   await m.getByRole('button', { name: 'Quitar foto' }).first().waitFor({ state: 'attached' });
   await m.screenshot({ path: OUT + 'p5-preest-hogar-m.png', fullPage: true });
+  // 9b-3 · Si el formulario no queda listo (barajada del CI: el botón siguió apagado 30 s), la prueba dice qué le falta según la página.
+  const env = m.getByRole('button', { name: 'Enviar para pre-estimado' }).first();
+  for (let i = 0; i < 40 && (await env.getAttribute('aria-disabled')) === 'true'; i++) await m.waitForTimeout(250);
+  const apagado = (await env.getAttribute('aria-disabled')) === 'true';
+  ok(!apagado, apagado ? 'Hogar: el botón sigue apagado: ' + `Hogar: «${(await m.getByText('TE FALTA', { exact: false }).first().locator('..').innerText().catch(() => '?')).replace(/\s+/g, ' ')}» (casa por omisión: ${sql(`select coalesce(string_agg(a.street || ' ' || h.is_default || ' ' || coalesce(st_distance(a.geo, b.geo)::int::text, '?') || ' m de ' || coalesce(b.service_radius_mi::text, '20') || ' mi', ' · '), 'ninguna') from user_homes h join user_addresses a on a.id = h.address_id join businesses b on b.id = '${H}' where h.user_id = ${MARISOL} and h.removed_at is null and a.removed_at is null`)})` : 'Hogar: con la casa, dónde es, la foto y lo que pasa, el botón de enviar se enciende');
   await clic(m.getByRole('button', { name: 'Enviar para pre-estimado' })); await m.waitForURL(/\/pre\/P-\d+/);
   const P3 = m.url().split('/pre/')[1];
   const h = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); globalThis.__p.push(h); h.on('pageerror', e => err.push('hogar ' + e.message)); await entrar(h, '5705550222');

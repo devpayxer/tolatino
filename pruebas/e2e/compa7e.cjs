@@ -17,7 +17,7 @@ const espera = async (f, ms = 15000) => { const t = Date.now(); while (Date.now(
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const cfg = (k, v) => sql(v == null ? `delete from platform_config where key = '${k}'` : `insert into platform_config (key, value, note) values ('${k}', to_jsonb(${v}), 'prueba compa7e') on conflict (key) do update set value = excluded.value`);
 const flag = (k, on) => sql(`update feature_flags set enabled = ${on} where key = '${k}'`);
-const norm = (t) => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+const { norm } = require('../lib/sin-reloj.cjs'); // 9b-3 · sin la hora, el saludo ni el día (la foto de antes y la de después)
 const DUENO = '5705550133', JUAN = '5705550444', ADM = '5705550199', MOD = '5705550691', NEG = 'sabor-dominicano';
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
 const DUENO_L = 'Eso lo ve el dueño del negocio: tu parte del panel no lo incluye.';

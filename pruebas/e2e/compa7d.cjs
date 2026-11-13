@@ -23,7 +23,7 @@ const reservaPendiente = (u) => sql(`with o as (insert into operations (number, 
   values ('R-' || nextval('operations_table_seq'), 'table', 'hzl', 'sabor-dominicano', '${u}', 'pending', now() + interval '1 day', 90, 2, '{\"area\":\"salon\"}', 'none', now() + interval '1 hour', gen_random_uuid(), true) returning id, number)
   select id || '|' || number from o`).split('|');
 const flag = (k, on) => sql(`update feature_flags set enabled = ${on} where key = '${k}'`);
-const norm = (t) => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+const { norm } = require('../lib/sin-reloj.cjs'); // 9b-3 · sin la hora, el saludo ni el día (la foto de antes y la de después)
 const HOJA = '[data-hoja-compa]';
 const AYUDA = { appointment: (x) => `/cita/${x}/ayuda`, order: (x) => `/pedido/${x}/ayuda`, market_order: (x) => `/mercado/${x}/ayuda`, hold: (x) => `/apartado/${x}/ayuda`, party: (x) => `/fiesta/${x}/ayuda`,
   trip: (x) => `/viaje/${x}/ayuda`, night: (x) => `/noche/${x}/ayuda`, enrollment: (x) => `/insc/${x}/ayuda`, visit: (x) => `/vis/${x}/ayuda`, private_event: (x) => `/privado/${x}/ayuda`, tickets: (x) => `/eventos/orden/${x}/ayuda` };

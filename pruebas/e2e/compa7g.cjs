@@ -24,7 +24,7 @@ const ACT = Object.fromEntries(Object.entries(MAN).map(([id, v]) => [v.exportedN
 const accion = (p, name, args) => p.evaluate(async ([id, args]) => (await fetch(location.pathname + location.search, { method: 'POST', headers: { 'Next-Action': id, 'Content-Type': 'text/plain;charset=UTF-8', Accept: 'text/x-component' }, body: JSON.stringify(args) })).text(), [ACT[name], args]);
 const ADM = '5705550199', DAY = '5705550677', OMAR = '5705550688', MARI = '5705550122', LEC = '5705550693', ALT = '5705550694';
 const uid = (t) => sql(`select id from users where phone = '+1${t}'`);
-const norm = (t) => t.replace(/\d+/g, '#').replace(/\s+/g, ' ').trim();
+const { norm } = require('../lib/sin-reloj.cjs'); // 9b-3 · sin la hora, el saludo ni el día (la foto de antes y la de después)
 const NOTA = 'NOTA-INTERNA: el negocio admitió el doble cobro de 8842 y Omar lo revisa mañana temprano';
 const UUIDRE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/;
 
