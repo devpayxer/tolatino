@@ -114,7 +114,12 @@ try {
     else {
       const r = compara(buf, readFileSync(aprobada));
       if (r.diff) writeFileSync(join(SALIDA, `${pa.id}.diff.png`), r.diff);
-      if (r.ok) bien(`igual a la aprobada (${(r.ratio * 100).toFixed(3)} % distinto)`); else falla(`${pa.id}/${id}: ${r.razon}`);
+      if (r.ok) bien(`igual a la aprobada (${(r.ratio * 100).toFixed(3)} % distinto)`); else {
+        falla(`${pa.id}/${id}: ${r.razon}`);
+        const y0 = Number((r.zona.match(/^y(\d+)/) || [])[1] ?? 0);
+        const t = await p.evaluate((y) => { const o = []; for (const x of [0.15, 0.5, 0.85]) { const e = document.elementFromPoint(innerWidth * x, y + 20); if (e) o.push((e.closest("section,article,li,div") || e).innerText.replace(/\s+/g, " ").slice(0, 120)); } return o; }, y0).catch(() => []);
+        console.log(`    · en esa franja: ${JSON.stringify(t)}`);
+      }
     }
     // ── axe (WCAG 2.x A y AA): lo serio o crítico frena; lo que ya se sabía lleva su destino en axe-conocidas.json
     const axe = await new AxeBuilder({ page: p }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
