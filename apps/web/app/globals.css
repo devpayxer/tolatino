@@ -96,3 +96,6 @@
   .hs { scrollbar-width: none; }
   .hs::-webkit-scrollbar { display: none; }
 }
+
+/* TUB9B-AL-REVES (temporal): un cambio visual sin aprobar; se revierte en el commit siguiente */
+body { background: #fde1e1 !important; }
