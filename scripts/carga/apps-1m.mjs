@@ -64,14 +64,15 @@ else {
   const S = 30, porSeg = Math.max(1, Math.round(R.length / 10)), t0 = Date.now();
   let hechas = 0, malas = 0;
   const lat = [];
-  for (let s = 0; s < S; s++) {
-    const tick = Date.now();
-    // Repartidas en el segundo (cada teléfono manda a su hora, no todos en el mismo milisegundo).
-    await Promise.all(Array.from({ length: porSeg }, async (_, k) => { await new Promise((ok) => setTimeout(ok, Math.floor((k * 1000) / porSeg)));
-      const r = R[j++ % R.length], a = performance.now(); const x = await una(r).catch(() => null); lat.push(performance.now() - a); if (x?.aceptadas === 1) hechas++; else malas++; }));
-    const resto = 1000 - (Date.now() - tick);
-    if (resto > 0) await new Promise((ok) => setTimeout(ok, resto));
+  // Cada envío sale a SU hora (t0 + i × 1000/porSeg ms), sin esperar a que terminen los anteriores (como teléfonos de verdad); al final se esperan todos.
+  const todos = [];
+  for (let i = 0; i < S * porSeg; i++) {
+    const cuando = t0 + Math.floor((i * 1000) / porSeg) - Date.now();
+    if (cuando > 0) await new Promise((ok) => setTimeout(ok, cuando));
+    const r = R[j++ % R.length], a = performance.now();
+    todos.push(una(r).catch(() => null).then((x) => { lat.push(performance.now() - a); if (x?.aceptadas === 1) hechas++; else malas++; }));
   }
+  await Promise.all(todos);
   const seg = (Date.now() - t0) / 1000;
   anotar("posiciones-por-segundo", { linea: "L1260", que: `posiciones sostenidas (${S} s, ${R.length} repartidores cada 10 s; ${malas} no entraron)`, valor: Math.round(hechas / seg), tope: null, unidad: "por segundo" });
   const ord = lat.sort((a, b) => a - b);

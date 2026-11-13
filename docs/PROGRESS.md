@@ -1449,3 +1449,33 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
 - **No cerrado:** la confirmación a mano (43406644136) salió roja: «dos veces seguidas» 1 roja (compa7e en la segunda vuelta) y «barajada» ~15 rojas
   por orden; pasa a 9b-3 (LAUNCH «→ 9b · (9b-2) La corrida de confirmación»).
 - **Sigue:** 9b-3 (escala 1M, migración 0133, topes compartidos), la confirmación del CI en verde y lo de LAUNCH «Fase 9 · 9b-2».
+
+## Fase 9 · 9b-3 — la escala 1M, los topes compartidos y las pruebas que no dependen del orden (13 nov)
+- **Hecho (rama `claude/vibrant-franklin-krutwa`):**
+  - **Migración `0133_escala.sql`:** `rate_counters` (unlogged; `tope_sumar`, `corte_estado` / `corte_resultado`, `topes_purgar`); avisos `tl_config` (NOTIFY) en
+    platform_config, config_keys, feature_flags, cities, mod_rules, mod_terms y synonyms; **`app_events` particionada por mes** (BRIN por partición, partición por omisión
+    que `app_events_mes` reparte; la tabla se copia y se cambia de nombre en la misma transacción, con sus vistas) + **`app_events_dia`** + `eventos_retener_meses` (13);
+    `refrescar_busqueda` CONCURRENTLY + `search_vocab_refreshed_at` (el barrido, cada hora); derivados que el barrido rehace cada 10 min: `com_analitica_dia_cache`,
+    `content_counts_cache`, `com_rangos_ciudad`, `com_activos_cache`, `com_recomendados_cache`; índices por fecha y parciales (Contenido, ocultos, sancionados, la
+    primera respuesta de una publicación); **`jit = off`** en la base. Aplicada dos veces (la segunda no cambia nada) en local y en cada CI.
+  - **Topes compartidos** (`lib/topes.ts`): errores (global, por teléfono, por conexión; descartados en 24 h), Wallet por dirección, la posición del repartidor (una por
+    segundo por token) y los corta-circuitos del traductor y de la moderación de fotos. **Configuración al instante** en todos los procesos (`lib/cambios-config.ts`).
+  - **Guardianes nuevos:** `topeCompartido`, `copiaQueSeOlvida`, `consultaUnaVez` (un CTE con una función nuestra sin `materialized`), `pruebasIndependientes`;
+    **`parametroSinTipo`** deduce los tipos de cada `$n` desde las migraciones (L176); **`ordenSinTexto`** a todo el código (L1052, 50 consultas arregladas). Al revés:
+    `alreves9b3` 16/16 (y al día alreves5a, 5i, 6b, 6d, 6f, 8f).
+  - **La carga** (`scripts/carga/`: `comunidad-1m`, `eventos-1m`, `apps-1m`, `compa-1m`, `analitica-1m`, `correr.mjs`): genera en una base desechable y **mide el código
+    real de la app** (los módulos de `apps/web/lib` cargados con jiti), con su p50/p95 contra el presupuesto de cada fase y el `EXPLAIN ANALYZE` de la consulta más lenta
+    de lo que pasa del presupuesto; lo que la app contesta con «no» cuenta como error. Corre en GitHub Actions (flujo a mano **«Carga 1M»**, `.github/workflows/carga.yml`):
+    Postgres 16 + PostGIS como el sandbox, 1 M de vecinos y ~33 M de filas, sin máquina aparte.
+  - **Lo que la carga sacó y se arregló aquí** (cada uno con su medida antes → después): la lista de Eventos 1,3 s (las fechas por ventanas en orden; la cuenta por
+    evento; sin JIT); el muro 840 ms (las 21 primero con `= any(array(…))`; el radio por ventanas); Analítica › Comunidad 7 s → derivado; Contenido 24,7 s (lo
+    reportado desde los reportes, lo nuevo por fecha, totales cada 10 min; comparada contra la versión de antes, igual); la búsqueda de la ayuda 60 → 2 ms
+    (`materialized`); el embudo 438 ms (una pasada); Recomendados 580 ms (candidatos del resumen); Gamificación 1,8 s; Usuarios 900 ms; la Tabla 250 ms; Hoy 72 ms.
+  - **Pruebas que no dependen del orden ni de la vuelta anterior:** el corredor cierra entre una prueba y otra las ventanas de un minuto (la espera de 30 s entre
+    códigos, `rate_counters`, búsquedas de la puerta); cada prueba dice su punto de partida o pide la que lo hace (com5g, adm6j, correo2q, rep2l, rev2g, renov4d,
+    pre4e, msg2p, compa7f, fic4id, tra4w, dep4c), noc4a acepta «anoche» pasadas las 6 AM, compa7e toma su foto de antes en cada modo, com5h comprueba el corte
+    compartido. Ninguna se reintenta. **Semilla del sandbox `0051_eventos_modulo.sql`**: los negocios de la semilla con eventos tienen el módulo Eventos encendido
+    (en una base nueva La Terraza no lo tenía y sus eventos daban 404: evt6e, evt6g, fich8i).
+  - **Ayuda:** `admin-configuracion` (topes entre todos los servidores; meses de la analítica), `admin-analitica` y `admin-contenido` (cifras cada 10 minutos).
+- **Medido (escala 1, flujo «Carga 1M»):** TABLA_CARGA
+- **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda) y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q y 9r con su porqué.

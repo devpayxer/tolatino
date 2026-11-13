@@ -135,6 +135,8 @@ await medir("revisar-al-escribir", { linea: "L627", presupuesto: 50, que: "revis
   (i) => tx((c) => mod.revisarAlEscribir(c, { kind: "com_post", id: POSTS[i % POSTS.length], autor: VS[i % VS.length], ciudad: HZL, texto: "Publicación de carga: ¿alguien sabe dónde arreglan un carro cerca del centro?" })));
 await medir("red-de-cuentas", { linea: "L627", presupuesto: 5000, veces: 3, calentar: 0, que: "redDeCuentas (votos de 7 días; tarea del barrido)" }, () => mod.redDeCuentas());
 
+// Lo que el barrido rehace cada 10 min (sin servidor en la carga no corre solo): se rehace aquí, medido, antes de medir lo que lo lee.
+await medir("barrido-comunidad", { linea: "L631", presupuesto: 10000, veces: 1, calentar: 0, que: "barrido: resúmenes de la Comunidad (rangos, activos, candidatos de Recomendados)" }, () => q(`select com_cifras_resumir()`));
 const hoy = await app("lib/hoy.ts"), port = await app("lib/comunidad-portada.ts");
 await medir("hoy", { linea: "L631", presupuesto: 40, que: "Hoy en el barrio de Hazleton" }, () => hoy.hoyEnElBarrio(HZL, null, null, PT));
 await medir("recomendados", { linea: "L631", presupuesto: 50, que: "recomendados por vecinos (180 días)" }, (i) => port.recomendadosPorVecinos(HZL, VS[i % VS.length]));
@@ -149,6 +151,7 @@ const ADM = (await uno(`select user_id::text as id from staff_members where stat
 const S = STAFF(ADM);
 const gam = await app("lib/admin-gam.ts"), cont = await app("lib/admin-contenido.ts"), ana = await app("lib/admin-analitica.ts"), usr = await app("lib/admin-usuarios.ts"), avi = await app("lib/avisos.ts");
 await medir("en-circulacion", { linea: "L665", presupuesto: 300, veces: 10, que: "Super Admin › Gamificación (EN CIRCULACIÓN por ciudad)" }, () => gam.gamificacion(S, { tab: "coin" }));
+await q(`select contenido_contar()`);
 await medir("contenido", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido (UNION de 6 tipos con cursor)" }, () => cont.listaContenido(S, cont.leerFiltrosCont({})));
 await medir("contenido-totales", { linea: "L701", presupuesto: 10000, veces: 1, calentar: 0, que: "barrido: recontar los totales de Contenido (contenido_contar)" }, () => q(`select contenido_contar()`));
 await medir("contenido-reportados", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido › «Con reporte»" }, () => cont.listaContenido(S, cont.leerFiltrosCont({ rep: "1" })));
