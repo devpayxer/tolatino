@@ -4306,3 +4306,19 @@ importantes abajo). Cada una es «decidí X; si prefieres Y, se cambia».
   una fije su hora respecto al reloj de la corrida (abre 3 h antes, el corte 1 h después, la noche con margen) en vez de saltarse franjas.
 - **La corrida de confirmación (dos enteras seguidas y una barajada) pasa al CI de 9b-2**, por costo (pedido del fundador): aquí quedó 199/199
   una vez en base nueva y 198/199 en otras dos, con cada roja arreglada y comprobada sola (PROGRESS y LAUNCH «Fase 9 · 9b-1»).
+
+### 9b-2 · La tubería completa en el CI (13 nov)
+**Qué es (en sencillo):** cada vez que se sube un cambio, una máquina de GitHub lo revisa sola: tipos, guardianes, seguridad (Semgrep y dependencias), las 160
+pruebas de punta a punta en una base nueva, y las 6 pantallas clave en 9 dispositivos (iPhone SE, 15, Pro Max, Pixel, Galaxy, iPad y escritorio de 1024, 1280 y
+1440) con captura comparada contra la aprobada, accesibilidad (axe) y velocidad. Un trabajo final («tubería») solo da verde si todo lo anterior dio verde.
+- **Qué mirar:** en GitHub › Actions › «CI», la corrida **43392515329** (todo en verde) y la **43405265633** (la que se frenó a propósito: pinté con el color de acción el
+  fondo de las pantallas y las 9 capturas salieron rojas, de 9 % a 37 % distintas; ya está revertido). No hay nada nuevo en la app: no cambió ninguna pantalla.
+- **Decisión que tomé (si prefieres otra, se cambia):** las capturas ya no se comparan en lo que cambia solo con la hora o el día («Abierto hasta 9 PM», «Quedan
+  22 h», los eventos de esta semana, la lista «Abierto ahora»): esas zonas se pintan de gris en las dos imágenes. Sin eso, la misma pantalla salía roja según
+  la hora a la que corría el CI. Lo demás (un botón movido, un color, una tarjeta distinta) sigue frenando con el 0,5 % de tolerancia.
+- **Cuando salga una captura roja a propósito** (rediseñaste algo): la corrida «a mano» con `aprobar=si` guarda las nuevas como aprobadas (artefacto); entran por
+  commit tras tu OK. Un cambio de diseño no aprobado no pasa.
+- **Pruebas que tenían un fallo propio (la app estaba bien):** evt6d veía «máx. 1 por persona» porque la prueba anterior dejaba esa Configuración 15 s en el servidor;
+  noc4c, noc4d y cit3c fallaban después de las 11 PM de Nueva York (a esa hora a la noche de hoy le queda una sola hora y la cita de dentro de una hora ya es de mañana);
+  publica y an1n elegían un teléfono «nuevo» que a veces ya tenía cuenta. Las cuatro, arregladas en su raíz.
+- **Seguridad:** Semgrep y `pnpm audit` en verde, sin hallazgos nuevos.

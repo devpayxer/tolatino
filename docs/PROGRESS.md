@@ -1413,3 +1413,37 @@ Cada roja se arregló en su raíz y se volvió a correr SOLA en verde (las de F:
 enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmación pasa al CI de 9b-2 (LAUNCH «Fase 9 · 9b-1»).
 `node guardianes/run.mjs` limpio; `tsc` 0.
 - **Sigue:** 9b-2 (la regresión en el CI, por grupos, cada uno con su base nueva) y lo de LAUNCH «Fase 9 · 9b-1».
+
+## Fase 9 · 9b-2 — la tubería completa en el CI (13 nov)
+- **Hecho:** `ci.yml` con los trabajos `verificar` (tipos · build · guardianes · contrato con Stripe · base nueva), `seguridad` (`pnpm audit` y Semgrep con las
+  reglas de `semgrep/`), `web` (un solo build para todos), `regresion` (las pruebas al revés en un carril y TODA la punta a punta en otro, en el orden de las
+  fases y una a la vez sobre una base nueva: repartida por grupos fallaban 30 de 199 por datos heredados, no por la app), `dispositivos` (los 9: iPhone SE, 15, 15 Pro
+  Max, Pixel, Galaxy, iPad y escritorio 1024 · 1280 · 1440, WebKit y Chromium: capturas aprobadas de `pruebas/visual/`, axe WCAG AA y presupuesto de velocidad),
+  `confirmacion` (a mano, `confirmar=si`) y `tuberia`, que solo da verde si todo lo anterior dio verde y nada se saltó. A mano: `alcance` (todo · pantallas ·
+  regresion), `solo` (una o varias pruebas por nombre, para afinar una roja sin esperar 80 min), `aprobar`, `medir`, `confirmar`. Programado a dos horas del día.
+- **Guardianes nuevos:** `tuberiaVisual`, `tuberiaAccesibilidad`, `tuberiaSeguridad`, `tuberiaVelocidad`, `tuberiaNoSeSalta` (con `pruebas/alreves/alreves9b2.cjs`
+  y `tub9b.cjs`).
+- **Causas de CI y de pruebas (no de la app) que salieron y se arreglaron en su raíz:**
+  - **Capturas que cambian solas con la hora o el día** («Abierto hasta 9 PM», «Listo a las 8:48», «Quedan 22 h», los eventos de esta semana, una lista
+    «Abierto ahora» que crece): `comparar.cjs` pinta del mismo gris, en las dos imágenes, lo que cambia con la hora (por el texto) y las secciones que
+    `pantallas.json` nombra (`titulos`, `desde`); lo demás se compara igual (0,5 %). Antes fallaban 1 a 5 pantallas por dispositivo según la hora de la corrida.
+    Cuando una difiere, el registro dice la franja y las zonas tapadas (el CI no deja bajar las imágenes).
+  - **evt6d compraba un solo boleto:** evt6c deja la Configuración `evt_boletos_por_orden_max = 1` y la borra, pero el servidor la guarda 15 s; evt6d empezaba antes
+    y veía «MÁX. 1 POR PERSONA». evt6c espera a que caduque y evt6d espera a que el contador marque cada toque (y dice lo que veía si no).
+  - **noc4c / noc4d / cit3c de noche:** pasadas las 11 PM de Nueva York a la noche de hoy le queda una sola hora («Otra hora» se apaga) y la cita de dentro de una
+    hora cae mañana (Hoy no la trae). La app estaba bien; las pruebas toman la noche con 2 horas y comprueban Hoy solo si es el mismo día.
+  - **publica y an1n:** el teléfono «nuevo» salía de la hora y a veces era el de una cuenta ya creada: `pruebas/lib/telefono-libre.cjs` elige uno sin cuenta.
+  - **disp9b:** la primera visita a `/eventos` en frío pasó de 30 s en WebKit (iPad): 90 s.
+  - Python 3.12 para la moderación de fotos, historia completa del repo para las pruebas al revés, la cola de cada roja en el registro del CI.
+- **Probado (CI, rama `claude/vibrant-franklin-krutwa`, workflow «CI», a mano):**
+  | corrida | qué | resultado |
+  |---|---|---|
+  | 43352981241 (0d48e08) | regresión | 158/160 (an1n, evt6d) |
+  | 43363905986 | todo | 156/160 + 5 dispositivos con capturas distintas por la hora |
+  | 43381789310 | todo | 159/160 · 5 714 ✓ (solo publica: teléfono repetido) · 9 dispositivos en verde |
+  | **43392515329** | **todo** | **corrida completa en verde: 43392515329** (tipos · build · guardianes, Semgrep + `pnpm audit`, al revés 42/42, 160/160 · 5 719 ✓ en 81 min de punta a punta, 9 dispositivos, `tuberia`) |
+  | 43404378080 | pantallas (cambio con un color a pelo) | frenada por `tokens` en «verificar» (el guardián cazó el hex antes que la captura) |
+  | **43405265633** | pantallas (fondo de `main` y `[data-screen-label]` con `--tl-action`) | **corrida frenada por un cambio visual sin aprobar: 43405265633** (9 de 9 dispositivos rojos, de 8,9 % a 36,9 % de la pantalla distinta; `tuberia` en rojo) |
+  El cambio visual se revirtió en el commit siguiente; `apps/` queda igual que antes de la prueba.
+- **Seguridad:** Semgrep (reglas propias) y `pnpm audit --audit-level high` en verde en todas las corridas; sin hallazgos nuevos.
+- **Sigue:** 9b-3 (escala 1M, migración 0133, topes compartidos) y lo de LAUNCH «Fase 9 · 9b-2».
