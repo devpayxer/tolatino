@@ -209,12 +209,15 @@ const vencerYa = (where) => sql(`alter table coupon_redemptions disable trigger 
 
   // ── 10 · El admin ajusta ± (auditado; nunca negativo) y Monedas en el Super Admin ──
   await ad.goto(B + `/admin/usuarios/${L}?tab=comunidad&sub=pym`) /* 5i: Puntos y monedas es una sub-pestaña */; await ad.getByText('MONEDAS · SIN VALOR EN DINERO').waitFor();
-  await clic(ad.getByRole('button', { name: 'Ajustar monedas' })); await clic(ad.getByText('Restar', { exact: true })); await ad.getByLabel('CANTIDAD').fill('200');
+  // 9b-3 · Lo que se resta es el saldo que tiene + 100 (no un 200 fijo): «dos veces seguidas» en el CI falló aquí una vez sin decir con cuánto
+  // estaba la persona. Si no está en 100, la línea lo dice con su libro de monedas.
+  const L0 = coins(L), libroL = () => sql(`select coalesce(string_agg(reason_key || ' ' || delta, ', ' order by id), 'vacío') from coin_entries where user_id = '${L}'`);
+  await clic(ad.getByRole('button', { name: 'Ajustar monedas' })); await clic(ad.getByText('Restar', { exact: true })); await ad.getByLabel('CANTIDAD').fill(String(L0 + 100));
   await clic(ad.getByText('Error del sistema', { exact: true })); await clic(ad.getByRole('button', { name: 'Aplicar' }));
-  ok(await contiene(ad, 'El ajuste deja las monedas en negativo.') && coins(L) === 100, 'restar 200 de 100 → no (nunca negativo)');
+  ok(await contiene(ad, 'El ajuste deja las monedas en negativo.') && coins(L) === L0, `restar ${L0 + 100} de ${L0} → no (nunca negativo)${L0 === 100 ? '' : ` · su libro: ${libroL()}`}`);
   await clic(ad.getByText('Sumar', { exact: true })); await ad.getByLabel('CANTIDAD').fill('25'); await clic(ad.getByRole('button', { name: 'Aplicar' }));
-  ok(await espera(() => coins(L) === 125) && sql(`select count(*) from audit_entries where action = 'gam.monedas.ajustar' and target_id = '${L}' and reason = 'Error del sistema'`) === '1'
-    && await espera(() => sql(`select count(*) from notifications where user_id = '${L}' and tpl = 'gam_monedas_ajuste'`) === '1'), 'sumar 25 con motivo → 125, auditoría y aviso a la persona');
+  ok(await espera(() => coins(L) === L0 + 25) && sql(`select count(*) from audit_entries where action = 'gam.monedas.ajustar' and target_id = '${L}' and reason = 'Error del sistema'`) === '1'
+    && await espera(() => sql(`select count(*) from notifications where user_id = '${L}' and tpl = 'gam_monedas_ajuste'`) === '1'), `sumar 25 con motivo → ${L0 + 25}, auditoría y aviso a la persona`);
   await ad.goto(B + `/admin/usuarios/${L}?tab=comunidad&sub=pym`) /* 5i: Puntos y monedas es una sub-pestaña */; await ad.getByText('MONEDAS · MOVIMIENTOS').waitFor();
   ok(await contiene(ad, 'Ajuste del equipo: Error del sistema'), 'el 360° lista el ajuste con el motivo');
   await ad.screenshot({ path: OUT + 'c5g-admin-u360-monedas-d.png', fullPage: true });
