@@ -158,24 +158,21 @@ jobs:
       - uses: actions/upload-artifact@v4
         with: { name: web, path: "${{ runner.temp }}/web.tgz", retention-days: 1, compression-level: 0 }
 
+  # Dos carriles: las pruebas al revés (tocan archivos del repo y corren los guardianes) y TODA la punta a punta en una sola base y en el orden de
+  # las fases, UNA a la vez. No se reparte por grupos: las pruebas se heredan datos (las de la fase 4 dependen de las de la 2, com5g del plan que deja
+  # free2b…); repartidas en trabajos con base propia fallaron 30 de 199 en la primera corrida (13 nov) por eso, no por la app.
   regresion:
     name: punta a punta · ${{ matrix.nombre }}
     needs: web
     if: ${{ (inputs.alcance || 'todo') != 'pantallas' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
         include:
           - { nombre: "al revés", args: "--grupo alreves" }
-          - { nombre: "fases 1 · 3 · 5", args: "--grupo fase1,fase3,fase5" }
-          - { nombre: "fase 2", args: "--grupo fase2" }
-          - { nombre: "fase 4 (1 de 3)", args: "--grupo fase4 --parte 1/3" }
-          - { nombre: "fase 4 (2 de 3)", args: "--grupo fase4 --parte 2/3" }
-          - { nombre: "fase 4 (3 de 3)", args: "--grupo fase4 --parte 3/3" }
-          - { nombre: "fases 6 · 7", args: "--grupo fase6,fase7" }
-          - { nombre: "fases 8 · 9 y varios", args: "--grupo fase8,fase9,varios" }
+          - { nombre: "todas las fases", args: "--grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }
     steps:
       # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
@@ -186,14 +183,8 @@ jobs:
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
-      - name: Regresión · ${{ matrix.nombre }} (base nueva)
+      - name: Regresión de ${{ matrix.nombre }} en base nueva
         run: node pruebas/correr.mjs ${{ matrix.args }}
-      - name: Confirmación · el mismo grupo otra vez en la MISMA base (lo que una corrida no limpia)
-        if: ${{ inputs.confirmar == 'si' }}
-        run: node pruebas/correr.mjs ${{ matrix.args }}
-      - name: Confirmación · el mismo grupo barajado
-        if: ${{ inputs.confirmar == 'si' }}
-        run: node pruebas/correr.mjs ${{ matrix.args }} --barajar
       - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
         if: always()
         run: |
@@ -202,6 +193,35 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: "regresion-${{ strategy.job-index }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
+
+  # La confirmación de 9b-1 (solo a mano, confirmar=si): toda la punta a punta DOS veces seguidas sobre la misma base (lo que una corrida no limpia) y,
+  # en otra base, una vez barajada (lo que depende del orden). Cada una en su trabajo: juntas pasarían de las 6 horas que da GitHub.
+  confirmacion:
+    name: confirmación · ${{ matrix.nombre }}
+    needs: web
+    if: ${{ inputs.confirmar == 'si' && (inputs.alcance || 'todo') != 'pantallas' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nombre: "dos veces seguidas", repetir: true }
+          - { nombre: "barajada", barajar: true }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/entorno-pruebas
+      - name: Primera pasada
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.barajar && '--barajar' || '' }}
+      - name: Segunda pasada, en la MISMA base
+        if: ${{ matrix.repetir }}
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios
 
   dispositivos:
     name: dispositivo · ${{ matrix.id }}
@@ -249,7 +269,7 @@ jobs:
 
   tuberia:
     name: la tubería completa (todo en verde, nada saltado)
-    needs: [verificar, seguridad, regresion, dispositivos]
+    needs: [verificar, seguridad, regresion, dispositivos, confirmacion]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -257,11 +277,12 @@ jobs:
         env:
           RESULTADOS: ${{ toJSON(needs) }}
           ALCANCE: ${{ inputs.alcance || 'todo' }}
+          CONFIRMAR: ${{ inputs.confirmar }}
         run: |
           echo "$RESULTADOS" | node -e '
             const n = JSON.parse(require("fs").readFileSync(0, "utf8")), a = process.env.ALCANCE; let mal = 0;
             for (const [k, v] of Object.entries(n)) {
-              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos");
+              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos") || (k === "confirmacion" && process.env.CONFIRMAR !== "si");
               const ok = v.result === "success" || (v.result === "skipped" && parcial);
               console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? " (a propósito: alcance " + a + ")" : ""));
               if (!ok) mal++;

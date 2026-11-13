@@ -6717,7 +6717,9 @@ const guardianes = {
     if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
     if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
     const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
-    for (const g of ["alreves", "fase1,fase3,fase5", "fase2", "fase4 --parte 1/3", "fase4 --parte 2/3", "fase4 --parte 3/3", "fase6,fase7", "fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la regresión (los 11 grupos de pruebas/correr.mjs --lista) tiene que estar en la matriz`);
+    for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}"`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la punta a punta va en UN trabajo, en el orden de las fases (las pruebas se heredan datos; repartida en trabajos con base propia fallaban 30 de 199) y las pruebas al revés en el suyo`);
+    if (/--parte/.test(rg)) falla(G, Y, 0, "la regresión no se reparte con --parte: las pruebas de una fase dependen de las anteriores");
+    if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
   },
 
   idioma() {

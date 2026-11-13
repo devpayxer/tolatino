@@ -26,7 +26,8 @@ const casos = [
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
   ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos]', 'needs: [verificar, regresion, dispositivos]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
-  ['tuberiaNoSeSalta', Y, '- { nombre: "fase 2", args: "--grupo fase2" }\n', ''],
+  ['tuberiaNoSeSalta', Y, 'fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }', 'fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }'],
+  ['tuberiaNoSeSalta', Y, 'timeout-minutes: 300\n', 'timeout-minutes: 300\n    # --parte 1/3\n'],
   ['tuberiaVisual', Y, '    timeout-minutes: 40\n', '    timeout-minutes: 40\n    continue-on-error: true\n'],
 ];
 // borrar: la captura aprobada de una pantalla en un dispositivo (el CI la tomaría como «nueva» y el guardián la echa en falta)

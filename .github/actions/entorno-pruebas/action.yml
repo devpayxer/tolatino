@@ -29,6 +29,9 @@ runs:
         (cd pruebas/herramientas && npx playwright install --with-deps ${{ inputs.navegadores }} > /dev/null)
         echo "NODE_PATH=$GITHUB_WORKSPACE/pruebas/herramientas/node_modules" >> "$GITHUB_ENV"
         echo "PRUEBAS_SALIDA=$RUNNER_TEMP/salida" >> "$GITHUB_ENV"
+    - name: Una segunda dirección de esta máquina (llave8d prueba una página que NO es localhost, sin contexto seguro)
+      shell: bash
+      run: sudo ip addr add 192.0.2.2/32 dev lo
     - name: Una base NUEVA (migraciones + semilla del sandbox + ayuda) y Garage
       shell: bash
       run: bash pruebas/servir/base.sh
