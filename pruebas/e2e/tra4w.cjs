@@ -36,7 +36,9 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
   // «No sale»
   await clic(h.getByRole('switch').first());
   ok(await esperaV(() => sql(`select status from trip_runs where id = ${run}`), 'cancelled') === 'cancelled', '«No sale»: la salida queda cancelada');
-  await clic(h.getByRole('switch').first());
+  // 9b-3 · Se vuelve a prender LA MISMA salida: la que quedó apagada (antes «el primer interruptor», que al apagar la única salida de hoy pasaba a
+  // ser el de otra; barajada, a la hora de la corrida, apagaba otra salida en vez de prender esta).
+  await clic(h.getByRole('switch', { checked: false }).first());
   ok(await esperaV(() => sql(`select status from trip_runs where id = ${run}`), 'scheduled') === 'scheduled', 'y vuelve a salir');
   // Maletas y maleta extra
   await clic(h.getByRole('button', { name: '3', exact: true }));

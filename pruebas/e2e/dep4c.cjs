@@ -56,6 +56,8 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   ok(await espera(() => sql(`select price_cents from items where business_id = '${NEG}' and name->>'es' = 'Pase de un día'`) === '1100'), 'pase de un día $11');
   await clic(p.getByRole('switch', { name: 'Primera visita gratis' }));
   ok(await espera(() => !/gratis1/.test(fv())), 'sin primera visita gratis → sin el filtro');
+  // 9b-3 · El segundo toque espera a que el interruptor diga «apagado» (el primero terminó de guardarse); antes podía caer mientras se guardaba.
+  for (let i = 0; i < 40 && (await p.getByRole('switch', { name: 'Primera visita gratis' }).getAttribute('aria-checked')) !== 'false'; i++) await p.waitForTimeout(250);
   await clic(p.getByRole('switch', { name: 'Primera visita gratis' }));
   ok(await espera(() => /gratis1/.test(fv())), 'primera visita gratis otra vez');
 

@@ -113,6 +113,8 @@ const FIJA = 'Gracias por escribir a Sabor Dominicano. Ahora estamos cerrados; t
   const rj = await repetir(pj, guardarReq, JSON.stringify([NEG, { enabled: false, nota: { es: 'te hago 50 %', en: '' } }]));
   ok(/Las respuestas automáticas las cambia/.test(rj) && sql(`select enabled::text || (owner_note->>'es') from compa_business_settings where business_id = '${NEG}'`).startsWith('trueLos sábados'), 'Juan (dueño de otro negocio) con la acción real: rechazada y nada cambia');
   const py = await como(YESE);
+  // 9b-3 · Yesenia administra Locales del Centro (antes lo dejaba inm4ib, que barajada podía correr después): dicho aquí.
+  sql(`insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select '${FREE}', u.id, 'owner', 'Yesenia Batista', '{"es":"Prueba","en":"Test"}'::jsonb, 'active', false, '{all}', 2020, 9, true from users u where u.phone = '+1${YESE}' and not exists (select 1 from business_members m where m.business_id = '${FREE}' and m.user_id = u.id)`);
   await py.goto(B + `/panel/${FREE}/compa`); await py.getByText('RESPUESTAS AUTOMÁTICAS').waitFor();
   const ty = await texto(py);
   ok(/El Compa contesta a tus clientes cuando tú no puedes/.test(ty) && /Ver Pro/.test(ty) && !/El Compa contesta por ti/.test(ty), 'un negocio Free ve el candado «El Compa contesta a tus clientes cuando tú no puedes» con «Ver Pro»');

@@ -4,7 +4,7 @@
 // zona y su dirección exacta NO está en el HTML. Venta: «estimada». Dealer: en la puerta = otd_cents, el pago con APR, meses y enganche,
 // la línea del salvage. Free y las tres categorías con su cifra. La prueba deja la base como estaba (se puede volver a correr).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
-const { chromium } = require('playwright'); const { execSync } = require('child_process');
+const { chromium } = require('playwright'); const { execSync } = require('child_process'); const { requiere } = require('../lib/requiere.cjs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
@@ -16,7 +16,8 @@ const hora = (m) => { const h = Math.floor(m / 60), mm = m % 60; return `${h % 1
 const DIA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 (async () => {
   // El carro salvage de prueba (oculto por el equipo en 4ic) se muestra solo durante la prueba.
-  const salv = sql(`select i.id from vehicle_listings v join items i on i.id = v.item_id where v.business_id = 'autos-el-cibao' and v.title = 'salvage' and i.removed_at is null limit 1`);
+  // 9b-3 · El carro salvage lo crea autos4ic de punta a punta: si no está (otro orden, base nueva), se corre (antes se daba por hecho).
+  const salv = requiere('autos4ic', () => sql(`select i.id from vehicle_listings v join items i on i.id = v.item_id where v.business_id = 'autos-el-cibao' and v.title = 'salvage' and i.removed_at is null limit 1`), { que: 'el carro salvage de autos-el-cibao' });
   const salvSt = salv ? sql(`select status from items where id = ${salv}`) : '';
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })).newPage(); m.on('pageerror', (e) => err.push(e.message));
