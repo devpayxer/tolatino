@@ -112,7 +112,7 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
     const O1 = await comprar(p1, SLUG, F, [[T_GEN, 3]], true);
     const T1 = sql(`select string_agg(code, ',' order by id) from tickets where operation_id = (select id from operations where number = '${O1}') and ticket_type_id is not null`).split(',');
     const MESA = sql(`select code from tickets where operation_id = (select id from operations where number = '${O1}') and table_id is not null`);
-    ok(T1.length === 3 && MESA && pago(O1) === 'captured|12000|0', `C1 compró ${O1}: 3 generales + mesa + extra = $120 cobrados`);
+    ok(T1.length === 3 && MESA && pago(O1) === 'captured|12000|0', `C1 compró ${O1}: 3 generales + mesa + extra = $120 cobrados (pago ${pago(O1)}, boletos ${T1.length}, mesa ${MESA ? 'sí' : 'no'})`);
     ok(await contiene(p1, 'Transferir boletos') && await contiene(p1, 'Ayuda con esta orden') && await contiene(p1, 'POLÍTICA DE ESTE EVENTO'), 'la orden: «Transferir boletos», «Ayuda con esta orden» y la política con sus plazos (Configuración)');
     await p1.screenshot({ path: OUT + 'e6d-orden-m.png', fullPage: true });
     // El QR de antes de transferir (para probar que queda anulado).

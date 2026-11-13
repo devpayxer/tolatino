@@ -29,6 +29,10 @@ on:
         type: choice
         options: ["no", "si"]
         default: "no"
+      solo:
+        description: "Regresión (a mano): solo estas pruebas, por nombre y separadas por espacio (para afinar una roja sin esperar 70 min); vacío = todo"
+        type: string
+        default: ""
       confirmar:
         description: "Regresión: cada grupo dos veces seguidas en la misma base y otra vez barajado"
         type: choice
@@ -184,7 +188,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
       - name: Regresión de ${{ matrix.nombre }} en base nueva
-        run: node pruebas/correr.mjs ${{ matrix.args }}
+        run: node pruebas/correr.mjs ${{ (inputs.solo != '' && matrix.nombre != 'al revés') && inputs.solo || matrix.args }}
       - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
         if: always()
         run: |
