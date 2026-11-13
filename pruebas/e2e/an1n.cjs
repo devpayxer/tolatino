@@ -17,7 +17,7 @@ const shot = async (p, n, full = true) => { await p.waitForTimeout(500); await p
   await v.goto(B + '/c/comida'); await v.waitForLoadState('networkidle'); await v.goto(B + '/n/sabor-dominicano'); await v.waitForLoadState('networkidle');
   await v.goto(B + '/buscar?q=pupusas'); await v.waitForLoadState('networkidle');
   const dev = (await cv.cookies()).find((c) => c.name === 'tl_dev')?.value; ok(!!dev, 'cookie del dispositivo (tl_dev)');
-  const r = await entrar(v, '570555' + String(1000 + Date.now() % 9000)); ok(r.nuevo === true, 'entra con un número nuevo (cuenta nueva) · respuesta ' + JSON.stringify({ nuevo: r.nuevo, error: r.error, ok: r.ok, claves: Object.keys(r || {}) }));
+  const r = await entrar(v, require('../lib/telefono-libre.cjs').telefonoLibre('5705556')); ok(r.nuevo === true, 'entra con un número nuevo (cuenta nueva) · respuesta ' + JSON.stringify({ nuevo: r.nuevo, error: r.error, ok: r.ok, claves: Object.keys(r || {}) }));
   await v.waitForTimeout(800);
   const evs = sql(`select string_agg(name, ', ' order by id) from app_events where device = '${dev}'`); ok(/buscar/.test(evs), `eventos del dispositivo (${evs})`);
   ok(+sql(`select count(*) from device_days where device = '${dev}'`) >= 1, 'día activo del dispositivo');

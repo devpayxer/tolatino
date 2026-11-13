@@ -2,7 +2,8 @@ const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y sec
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); }; // 9b-1 · antes solo imprimía: la corrida la contaba «en verde con 0 ✓»
 const { chromium } = require('playwright');
 // 9a · Teléfonos de prueba siempre en 555 (el repo es público: nunca un número que pueda ser de alguien).
-const TEL = '5705556' + String(Date.now()).slice(-3), TEL2 = '5705556' + String((Date.now() + 500) % 1000).padStart(3, '0');
+const { telefonoLibre } = require('../lib/telefono-libre.cjs'); // 9b-2 · uno sin cuenta (antes salía de la hora y a veces caía en una cuenta ya creada)
+const TEL = telefonoLibre('5705556'); const TEL2 = telefonoLibre('5705556', (Number(TEL.slice(-3)) + 1) % 1000);
 const OUT = ENT.S + '/cap/', FP = ENT.rec('fotos') + '/';
 const { medios } = require('../lib/negocio-nuevo.cjs'); // 9b-1 · el puerto de Garage de ESTA corrida (antes 3902 fijo)
 const seguir = async (p) => { const b = p.locator('button:has-text("Seguir"), span:has-text("Seguir"), div[role=button]:has-text("Seguir")').last(); await b.click(); await p.waitForTimeout(700); };
