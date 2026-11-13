@@ -114,8 +114,8 @@ const guardianes = {
       if (/TOLATINO_ENTORNO\s*[:=]\s*["']?produccion/.test(t) && /seed|semilla/i.test(t)) falla("semilla", f, 0, "semilla configurada contra producción");
       // La semilla de pruebas solo la puede invocar el despliegue del sandbox (y la define migrar.sh). El CI la aplica en una
       // base desechable (proyecto «ci») para probar que se puede volver a aplicar.
-      // 8i · Y el job «capturas» de tiendas.yml (también una base desechable del CI, para las capturas de las fichas).
-      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/(ci|tiendas)\.yml$)/.test(f))
+      // 8i · Y el job «capturas» de tiendas.yml (también una base desechable del CI, para las capturas de las fichas). 9b-3 · Y la carga (carga.yml): otra base desechable del CI.
+      if (/(--semilla-pruebas|infra\/pruebas\/semilla)/.test(t) && !/^(infra\/pruebas\/|packages\/db\/migrar\.sh$|scripts\/semilla\/|guardianes\/|\.github\/workflows\/(ci|tiendas|carga)\.yml$)/.test(f))
         falla("semilla", f, 0, "la semilla de pruebas se llama desde fuera del sandbox");
     }
   },

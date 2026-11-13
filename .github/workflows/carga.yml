@@ -1,0 +1,65 @@
+name: Carga 1M
+# 9b-3 · La escala (PLAN §5, fase9-apertura §4 9b): una base DESECHABLE en el runner de GitHub (Postgres 16 + PostGIS, como el sandbox) con
+# migraciones y la semilla del sandbox; scripts/carga genera 1 M de vecinos y ~25 M de filas (5 M de comentarios, 5 M de boletos, 5 M de avisos,
+# 5 M de mensajes de El Compa, 5 M de eventos de la analítica) y mide el código REAL de la app contra el presupuesto de cada fase. Solo a mano:
+# no toca el sandbox ni producción y no gasta una máquina aparte. La tabla queda en el registro y en el artefacto «carga».
+on:
+  workflow_dispatch:
+    inputs:
+      partes:
+        description: "Qué partes (separadas por espacio): comunidad eventos apps compa analitica; vacío = todas"
+        type: string
+        default: ""
+      escala:
+        description: "Escala (1 = 1 M de vecinos; 0.01 para probar el guion)"
+        type: string
+        default: "1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: carga-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  carga:
+    name: carga · escala ${{ inputs.escala }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      DATABASE_URL: postgres://tolatino:carga@127.0.0.1:5432/tolatino
+      PRUEBAS_DB_CONT: carga-db
+      CARGA_ESCALA: ${{ inputs.escala }}
+      CARGA_SALIDA: ${{ runner.temp }}/carga
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Postgres 16 + PostGIS desechable (datos en /mnt, que tiene el espacio)
+        run: |
+          sudo mkdir -p /mnt/pg && sudo chown 999:999 /mnt/pg
+          docker run -d --name carga-db -p 5432:5432 -e POSTGRES_USER=tolatino -e POSTGRES_PASSWORD=carga -e POSTGRES_DB=tolatino \
+            -e PGDATA=/var/lib/postgresql/data/pg -v /mnt/pg:/var/lib/postgresql/data --shm-size=2g postgis/postgis:16-3.5 \
+            -c shared_buffers=3GB -c effective_cache_size=10GB -c work_mem=32MB -c maintenance_work_mem=1GB -c max_wal_size=16GB \
+            -c checkpoint_timeout=30min -c random_page_cost=1.1 -c max_connections=100
+          for i in $(seq 1 60); do docker exec carga-db pg_isready -h 127.0.0.1 -U tolatino -d tolatino && break; sleep 2; done
+      - name: Migraciones, semilla del sandbox y el Centro de ayuda
+        run: |
+          bash packages/db/migrar.sh pruebas/fakecompose.sh x
+          SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas pruebas/fakecompose.sh x
+          node scripts/ayuda/indexar.mjs | docker exec -i carga-db psql -h 127.0.0.1 -v ON_ERROR_STOP=1 -U tolatino -d tolatino -qAt
+      - name: La carga (generar y medir)
+        run: node scripts/carga/correr.mjs ${{ inputs.partes }}
+      - name: La tabla y el espacio usado
+        if: always()
+        run: |
+          cat "$CARGA_SALIDA/tabla.md" 2>/dev/null || true
+          docker exec carga-db psql -h 127.0.0.1 -U tolatino -d tolatino -qAt -c "select pg_size_pretty(pg_database_size('tolatino'))" || true
+          df -h / /mnt || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: carga, path: "${{ runner.temp }}/carga", retention-days: 14, if-no-files-found: ignore }
