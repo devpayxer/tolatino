@@ -116,7 +116,9 @@ async function reservar(m, svc, persona, nDia, conTarjeta) {
   sql(`update operations set scheduled_at = now() + interval '60 minutes' where number = '${L.numero}'`);
   await m.goto(B + `/cita/${L.numero}`); await m.getByRole('button', { name: 'Voy tarde' }).click(); await m.locator('[data-screen-label="Cita · voy tarde"]').getByRole('button', { name: '10 min' }).click();
   await m.getByText(/llegas 10 min tarde/).first().waitFor(); ok(nt('biz_cita_tarde', L.numero) === '1' && op(L.numero, "details->>'late'") === '10', 'voy tarde: 10 min, aviso al negocio');
-  await d.goto(B + `/panel/${BIZ}/hoy`); await d.getByText(/LLEGA 10 MIN TARDE/).first().waitFor(); ok(true, 'Hoy muestra LLEGA 10 MIN TARDE');
+  // 9b-2 · «Hoy» es el día del negocio: pasadas las 11 PM de Nueva York la cita de dentro de una hora cae mañana y Hoy no la trae (la app está bien).
+  if (sql(`select (now() at time zone 'America/New_York')::date = ((now() + interval '60 minutes') at time zone 'America/New_York')::date`) === 't') { await d.goto(B + `/panel/${BIZ}/hoy`); await d.getByText(/LLEGA 10 MIN TARDE/).first().waitFor(); ok(true, 'Hoy muestra LLEGA 10 MIN TARDE'); }
+  else console.log('  · Hoy no se comprueba: a esta hora la cita de dentro de una hora cae mañana (se corre de día en el CI programado)');
   // 9. Clientes › Citas y Mi cuenta
   await d.goto(B + `/panel/${BIZ}/clientes`); await d.getByText('Todas las citas que te piden', { exact: false }).waitFor();
   ok(!!(await vis(d.getByText(`Cita #${T.numero}`))), 'Clientes: lista de citas');

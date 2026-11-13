@@ -17,8 +17,9 @@ const st = (num) => sql(`select status || coalesce(':' || status_detail, '') fro
 const LISTA = sql(`select id from items where business_id = '${NEG}' and svc_kind = 'lista' and removed_at is null limit 1`);
 const MESA = sql(`select id from items where business_id = '${NEG}' and svc_kind = 'mesa' and name->>'es' = 'Mesa en la terraza' and removed_at is null limit 1`);
 const VIP = sql(`select id from items where business_id = '${NEG}' and svc_kind = 'vip' and removed_at is null limit 1`);
+// 9b-2 · horasMin: «Otra hora» pide una hora más que la elegida; a las 11 PM esta noche solo queda una y el botón se apaga (la app está bien): se pasa a la noche que sigue.
 // La primera noche con horas libres (hoy o la que sigue) y su etiqueta en la tira de días.
-async function reservar(p, svc, { pax = 2, card = true } = {}) {
+async function reservar(p, svc, { pax = 2, card = true, horasMin = 1 } = {}) {
   await p.goto(`${B}/n/${NEG}/noche?s=${svc}&p=${pax}`); await p.getByText('¿CUÁNTOS VAN?').first().waitFor();
   await clic(p.getByRole('button', { name: 'Continuar' }));
   const dias = p.getByRole('radio').filter({ hasNot: p.locator('[aria-disabled="true"]') });
@@ -27,7 +28,7 @@ async function reservar(p, svc, { pax = 2, card = true } = {}) {
     if (!/^[A-ZÁÉÍÓÚ]{3} \d+$/.test(lab)) continue;
     await clic(p.getByRole('radio', { name: lab, exact: true }));
     const horas = await p.locator('[role="radio"][aria-label$=" PM"]:not([aria-disabled="true"]), [role="radio"][aria-label$=" AM"]:not([aria-disabled="true"])').evaluateAll((L) => L.map((e) => e.getAttribute('aria-label')));
-    if (horas.length) { await clic(p.getByRole('radio', { name: horas[0], exact: true })); elegido = true; break; }
+    if (horas.length >= horasMin) { await clic(p.getByRole('radio', { name: horas[0], exact: true })); elegido = true; break; }
   }
   void dias; if (!elegido) throw new Error('sin noche con horas');
   await clic(p.getByRole('button', { name: 'Continuar' }));
@@ -92,7 +93,7 @@ async function reservar(p, svc, { pax = 2, card = true } = {}) {
   ok(await espera(() => st(M3) === 'expired:sin_respuesta' && pay(M3) === 'released:5000:0'), 'vence sin respuesta → depósito liberado');
 
   // 5 · Otra hora → el cliente la acepta → se cobra.
-  const M4 = await reservar(cli, MESA, { pax: 2 });
+  const M4 = await reservar(cli, MESA, { pax: 2, horasMin: 2 });
   await neg.goto(`${B}/panel/${NEG}/hoy?det=noche:${M4}`); await neg.getByText('SI CONFIRMAS, QUEDAN').first().waitFor();
   await clic(neg.getByRole('button', { name: 'Otra hora' }));
   await neg.getByText('¿A QUÉ HORA SÍ TIENES MESA?').first().waitFor();
