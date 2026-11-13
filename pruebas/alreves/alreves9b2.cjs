@@ -24,7 +24,7 @@ const casos = [
   ['tuberiaVelocidad', Y, '{ id: escritorio-1280, velocidad: true }', '{ id: escritorio-1280 }'],
   ['tuberiaVelocidad', Y, "${{ inputs.medir == 'si' && '--medir' || '' }}", '--medir'],
   // tuberiaNoSeSalta: «tuberia» sin una parte, saltando lo saltado, un grupo de la regresión fuera de la matriz, un continue-on-error
-  ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos]', 'needs: [verificar, regresion, dispositivos]'],
+  ['tuberiaNoSeSalta', Y, 'needs: [verificar, seguridad, regresion, dispositivos, confirmacion]', 'needs: [verificar, regresion, dispositivos, confirmacion]'],
   ['tuberiaNoSeSalta', Y, 'const ok = v.result === "success" || (v.result === "skipped" && parcial);', 'const ok = v.result !== "failure";'],
   ['tuberiaNoSeSalta', Y, 'fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }', 'fase1,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios" }'],
   ['tuberiaNoSeSalta', Y, 'timeout-minutes: 300\n', 'timeout-minutes: 300\n    # --parte 1/3\n'],
