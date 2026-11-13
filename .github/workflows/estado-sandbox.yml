@@ -1,0 +1,23 @@
+# Mira el sandbox desde fuera (el entorno de Claude no llega a la IP): respuesta de las rutas principales y la página /estado/
+# con el último despliegue y las últimas líneas del registro. Solo lectura. A mano o cada 6 h.
+name: Estado del sandbox
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+permissions:
+  contents: read
+jobs:
+  mirar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Rutas
+        run: |
+          for p in / /api/salud /negocios /admin /estado/; do
+            curl -s -o /dev/null -m 30 -w "$p %{http_code} %{time_total}s\n" "http://2.31.196.167$p" || echo "$p sin respuesta"
+          done
+      - name: Página de estado
+        run: curl -s -m 30 http://2.31.196.167/estado/ | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -40
+      - name: Salud
+        run: curl -s -m 30 http://2.31.196.167/api/salud | head -c 2000; echo
