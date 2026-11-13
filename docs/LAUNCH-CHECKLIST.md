@@ -94,7 +94,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   /buscar); vista previa al pasar el cursor (escritorio). — _9a (11 nov): hechas: Eventos y Vecinos en Buscar, «Pregúntale al barrio» (app/(app)/buscar/Buscar.tsx; com5e, evt6b-6c). Falta la pestaña «Platos y servicios», el desplegable del encabezado de escritorio y la vista previa al pasar el cursor._
 - [ ] **→ 9m** · **Buscar con la voz** usa el reconocimiento del propio navegador (Safari/Chrome lo procesan en servidores de
   Apple/Google). Revisar con el fundador si se acepta o se construye uno propio antes de producción.
-- [ ] **→ 9b** · **Vocabulario de búsqueda (`search_vocab`)** se refresca en cada despliegue; con negocios nuevos todos los días
+- [x] **→ 9b** · **Vocabulario de búsqueda (`search_vocab`)** se refresca en cada despliegue; con negocios nuevos todos los días — **✓ 9b-3 (13 nov):** el barrido lo refresca cada hora sin bloquear a quien busca (`buscar_al_dia`, CONCURRENTLY) y anota `search_vocab_refreshed_at` en platform_config (0133).
   hace falta refrescarlo cada hora (trabajo programado, con el resto de procesos). — _9a (11 nov): refrescar_busqueda() corre en cada despliegue y semilla (packages/db/migrar.sh); no está en el barrido: falta el refresco cada hora (derivados cacheados de 9b)._
 
 ## Panel del negocio · base (bloque 1h, 5 nov 2026)
@@ -173,7 +173,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Decisiones tomadas sin el diseño (confirmar con el fundador):** texto del aviso al dueño actual en su panel
   (R2), las 3 plantillas de «Rechazar», el detalle del caso en «Cambios sensibles» (compuesto con piezas del admin). — **✓ 9a (11 nov):** textos del aviso al dueño (R2), las 3 plantillas de Rechazar y el detalle de Cambios sensibles (REVISION 9a).
 - [ ] **→ 9g** · **«Llamar» desde una semilla** abre el teléfono pero aún no se cuenta (la tabla `contact_taps` ya admite `seed_id`).
-- [ ] **→ 9b** · **Guardián de tipos de parámetros SQL:** el error «inconsistent types deduced for parameter» salió dos veces
+- [x] **→ 9b** · **Guardián de tipos de parámetros SQL:** el error «inconsistent types deduced for parameter» salió dos veces — **✓ 9b-3 (13 nov):** `parametroSinTipo` deduce el tipo de cada `$n` sin «::» desde las migraciones (lista de un insert, `set col = $n`, `col = $n`) y falla si recibe dos tipos; al revés en `alreves9b3`.
   (mismo `$n` usado como texto y uuid). Hoy lo caza la prueba punta a punta; falta un guardián estático.
 
 ## Usuarios 360° (bloque 1l, 5 nov 2026)
@@ -204,7 +204,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   analítica.
 
 ## Analítica propia (bloque 1n, 6 nov 2026)
-- [ ] **→ 9b** · **Escala:** `app_events` sin particiones (BRIN por fecha); particionar por mes y resúmenes diarios cuando crezca
+- [x] **→ 9b** · **Escala:** `app_events` sin particiones (BRIN por fecha); particionar por mes y resúmenes diarios cuando crezca — **✓ 9b-3 (13 nov):** 0133: `app_events` particionada por mes (BRIN en cada partición, partición por omisión que `app_events_mes` reparte), `app_events_dia` (resumen por día, ciudad, nombre, app y plataforma) y la retención `eventos_retener_meses` (13, lo que dicen las tiendas): el barrido resume el mes y suelta su partición. Medido con 5 M de eventos (PROGRESS 9b-3).
   (necesita trabajos programados). Política de cuánto tiempo se guardan los eventos (privacidad): decidir y programar.
 - [ ] **→ 9g** · **Pestañas del diseño pendientes:** Dinero (MRR, conversión a Pro, devoluciones, ticket promedio), Comunidad y
   eventos, vecinos por rango, reportes por mil operaciones y tickets: con sus módulos. Envío semanal de reportes por
@@ -682,8 +682,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `ugc_translations` (derivadas) para que no quede el texto traducido. (5h, 7 nov)
 - [ ] **→ 9o** · **5h · Límite sin cuenta:** es por cookie del dispositivo (se puede borrar); el costo lo acota la caché (cada texto se traduce una
       vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov)
-- [ ] **→ 9b** · **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
-      corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov)
+- [x] **→ 9b** · **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
+      corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov) — **✓ 9b-3 (13 nov):** `lib/topes.ts` (`estadoCorte` / `resultadoCorte` sobre `rate_counters`): uno para todos los procesos, sobrevive a un reinicio y, pasado el minuto, una sola prueba lo vuelve a abrir (com5h lo comprueba). También el de la moderación de fotos. Guardián `topeCompartido`.
 - [ ] **→ 9c** · **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
       de CI (y un traductor de prueba en CI). (5h, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9m** · **5h · El Compa con «Ver traducción»** cuando llegue su fase (ayuda `ver-traduccion.md` lista). (5h, 7 nov) — _9a (11 nov): El Compa ya existe (7c–7f); falta que responda sobre «Ver traducción» (el artículo de ayuda ver-traduccion no está en docs/ayuda)._
@@ -696,8 +696,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **5i · Fuera de Configuración todavía:** el corte de las 6 PM de Noche (Preguntas #3, se copia en cada reserva), los plazos de 4g-3
       (pre-estimado 24 h, presupuesto 48 h, emergencia 15 min, apartado 48 h), `free_ops_cap` (Planes) y «Me lo devolvieron» (4if, no
       existe). Decidir si entran al catálogo. (5i, 8 nov)
-- [ ] **→ 9b** · **5i · Configuración en varios servidores:** la app guarda el valor 15 s por proceso (`lib/config.ts`); lo que decide la base
-      (`cfg_int`) es al instante. Con réplicas en producción, un cambio tarda hasta 15 s en llegar a todas. (5i, 8 nov)
+- [x] **→ 9b** · **5i · Configuración en varios servidores:** la app guarda el valor 15 s por proceso (`lib/config.ts`); lo que decide la base
+      (`cfg_int`) es al instante. Con réplicas en producción, un cambio tarda hasta 15 s en llegar a todas. (5i, 8 nov) — **✓ 9b-3 (13 nov):** la base avisa cada cambio de platform_config, config_keys, feature_flags, cities, mod_rules, mod_terms y synonyms por NOTIFY (`tl_config`, 0133) y cada proceso olvida su copia al momento (`lib/cambios-config.ts`); los 15 s quedan de respaldo. Guardián `copiaQueSeOlvida`.
 - [ ] **→ 9b** · **5i · Velocidad con 1 M:** Contenido (una consulta UNION de 6 tipos con cursor), Analítica › Comunidad (vistas que agregan desde las
       tablas; si pasa del presupuesto, pasar a un derivado por ciudad y día que rehace el barrido) y el resumen diario (500 personas por
       vuelta del barrido) no se midieron en la base de carga. (5i, 8 nov)
@@ -1049,10 +1049,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `chat_threads.compa_pending_until` (ya existe) y el barrido; `compa_auto_espera_min` queda bloqueada en Configuración hasta entonces. (7f, 11 nov)
 - [x] **7f · WhatsApp y SMS en las respuestas automáticas** (POR DÓNDE): 7h. Hoy solo el chat de To'Latino (`channels` = {app}). (7f, 11 nov)
       — 7h (11 nov): POR DÓNDE con WhatsApp y SMS, solo con el número del negocio conectado en Super Admin › El Compa › Canales (`compa7h`).
-- [ ] **→ 9b** · **7f · «order by» sobre `id::text`** (clase): en Postgres `select id::text … order by id` ordena el texto (100 antes que 98). Cazado en 7f
+- [x] **→ 9b** · **7f · «order by» sobre `id::text`** (clase): en Postgres `select id::text … order by id` ordena el texto (100 antes que 98). Cazado en 7f
       (arreglado en lib/compa y lib/mensajes, guardián `ordenSinTexto` solo ahí); quedan ~45 consultas en otros módulos (p. ej. `change_proposals
       … order by id desc limit 1` en citas, fiestas, noche, inscripciones, visitas y viajes; listas de secciones e ítems; `payments` en ayuda-cita
-      y layaway). Arreglarlas y ampliar el guardián a todo el código (tarea sugerida en la sesión). (7f, 11 nov)
+      y layaway). Arreglarlas y ampliar el guardián a todo el código (tarea sugerida en la sesión). (7f, 11 nov) — **✓ 9b-3 (13 nov):** `ordenSinTexto` revisa todo `apps/web/lib` y `apps/web/app`; las 50 consultas que ordenaban el texto del id, arregladas (califican la columna); al revés en `alreves9b3`.
 - [ ] **→ 9q** · **7f · Calidad con el modelo real:** la batería (`scripts/compa/bateria/`) debe sumar preguntas de clientes a un negocio cerrado (horario,
       menú, cómo pedir, descuentos, «¿hay mesa?», inyecciones en la nota del dueño y en una FAQ, inglés y spanglish) y borradores de «Sugerir
       respuesta». Con el simulador, una pregunta de precio contesta los tres primeros del menú (no el que preguntaron): con Haiku debería elegir.
@@ -1232,8 +1232,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vez. MetricKit entrega los cierres al abrir de nuevo (iOS 15+). (8f, 11 nov)
 - [ ] **→ 9r** · **Privacidad en las tiendas:** declarar «Datos de diagnóstico / Crash data» (sin vincular a la persona, sin rastreo) en `PrivacyInfo.xcprivacy`
       (`NSPrivacyCollectedDataTypes`, desde `generar.mjs`) y en las etiquetas de App Store y la sección de seguridad de datos de Play (8i). (8f, 11 nov)
-- [ ] **→ 9b** · **Tope de errores con varios procesos:** el tope por minuto vive en la memoria de cada proceso; en producción con varios procesos (o
-      máquinas) se multiplica. Pasar a un contador compartido o a Cloudflare (límite por IP en `/api/errores`) en la Fase 9. (8f, 11 nov)
+- [x] **→ 9b** · **Tope de errores con varios procesos:** el tope por minuto vive en la memoria de cada proceso; en producción con varios procesos (o
+      máquinas) se multiplica. Pasar a un contador compartido o a Cloudflare (límite por IP en `/api/errores`) en la Fase 9. (8f, 11 nov) — **✓ 9b-3 (13 nov):** el tope global, por teléfono y por conexión van a `rate_counters` (`dentroDelTope`), compartidos; lo descartado se cuenta en las últimas 24 h (Sistema › Apps). Cloudflare delante queda para 9o.
 - [ ] **→ 9o** · **Vuelta atrás por «Errores en vivo»:** en producción, un pico en la web servida debe volver al despliegue anterior y, en las apps, pausar el
       lanzamiento por fases por la API de las tiendas (Fase 9). Hoy avisa a los Admins. (8f, 11 nov)
 - [x] **La semilla 0045 en una base nueva** no crea testers ni el caso de ejemplo si todavía no existen esas cuentas (las crean otras semillas o las
@@ -1299,11 +1299,11 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9r** · **Dentro de la app iOS (Capacitor):** el botón abre el .pkpass con un enlace firmado de 10 minutos en la vista del sistema (Safari), porque
       el WebView no muestra «Agregar a Wallet». Probar en TestFlight; si no basta, un plugin nativo pequeño con `PKAddPassesViewController`
       (versión nueva de la app, revisada). (8g, 11 nov)
-- [ ] **→ 9b** · **Los límites del servicio web** (pase_ws_por_minuto por dirección) viven en la memoria de cada proceso; con varios procesos, contador
+- [x] **→ 9b** · **Los límites del servicio web** (pase_ws_por_minuto por dirección) viven en la memoria de cada proceso; con varios procesos, contador
       compartido. El de registros por teléfono por hora está en la base. Detrás de Cloudflare, la dirección es `CF-Connecting-IP` (hoy
-      `x-real-ip` de nginx). (8g, 11 nov)
-- [ ] **→ 9b** · **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
-      2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov)
+      `x-real-ip` de nginx). (8g, 11 nov) — **✓ 9b-3 (13 nov):** `permitido()` cuenta en `rate_counters` (compartido); la dirección detrás de Cloudflare (`CF-Connecting-IP`) queda para 9o con el resto de Cloudflare.
+- [ ] **→ 9l** · **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
+      2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov) — _9b-3 (13 nov): no se midió (los avisos a Apple necesitan APNs de verdad); con los avisos listos (9l)_
 - [ ] **→ 9c** · **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8d (entrar con Face ID o huella: llaves de acceso; 11 nov)
@@ -1427,10 +1427,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._
 - [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
-- [ ] **→ 9b** · **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
+- [ ] **→ 9j** · **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
       free2b, rep2l): el último pedido es 15 min antes de cerrar, así que de 11:44 PM a medianoche (hora de Hazleton) «Enviar pedido» se apaga y
       fallarían. dlvsrv tenía lo mismo con 06:00–05:00 (falló a las 4:45 AM en la corrida del 12 nov) y ya abre 3 h antes de la hora de la
-      corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov)
+      corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov) — _9b-3 (13 nov): no se pasaron a la forma de dlvsrv; el CI corre a las 8:17 y 20:43 UTC (3:17 AM y 3:43 PM de Hazleton), lejos de las 11:44 PM. Con Sistema (9j)_
 - [ ] **→ 9n** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
       fuera del alcance de esa app (`apps/mobile/apps.json`: solo `/panel` y lo común). Comprobar en la cáscara qué ve (¿se abre fuera?) y que
       llegue a Mi cuenta › Ajustes › Borrar mi cuenta, como ya llega el Repartidor sin equipo (9b-1). Hoy `borrarCuentaEnCadaApp` solo mira el

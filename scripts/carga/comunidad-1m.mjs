@@ -91,9 +91,9 @@ if (!process.argv.includes("--sin-generar")) {
       from generate_series($1::int, $2::int) g join dm_threads t on t.id = (select min(id) from dm_threads) + (g % ${DM})`, 500_000);
   // ── Hoy (business_posts) y cupones ──
   await porLotes("novedades (Hoy)", n(200_000), `
-    insert into business_posts (business_id, city_id, kind, title, body, status, publish_at, ends_at, audience)
+    insert into business_posts (business_id, city_id, kind, title, body, status, publish_at, ends_at, audience, created_at)
     select 'carga-' || (1 + g % ${NEG}), 'hzl', (array['hoy','aviso','novedad'])[1 + g % 3], 'Novedad ' || g, 'Hoy tenemos sancocho', 'live', now() - make_interval(secs => (g::bigint * 37) % 15552000),
-           now() + interval '1 day' - make_interval(secs => (g::bigint * 37) % 15552000), 'all'
+           now() + interval '1 day' - make_interval(secs => (g::bigint * 37) % 15552000), 'all', now() - make_interval(secs => (g::bigint * 37) % 15552000)
       from generate_series($1::int, $2::int) g`);
   await generar("cupones", [`insert into coupons (business_id, city_id, title, cost_coins, monthly_stock, valid_days, status, created_at)
      select 'carga-' || g, 'hzl', jsonb_build_object('es', 'Cupón de carga ' || g, 'en', 'Load coupon ' || g), 80 + (g % 50) * 10, 100, 30, 'live', now() - make_interval(days => g % 60) from generate_series(1, ${n(5_000)}) g`]);
@@ -119,7 +119,7 @@ await medir("muro-siguiendo", { linea: "L603", presupuesto: 50, que: "muro «Sig
 const HILO = await meta("hilo");
 await medir("hilo-500", { linea: "L588", presupuesto: 60, que: "hilo de 500 comentarios en 20 raíces" }, async (i) => { if (!HILO) throw new Error("no está el hilo de 500 (carga_meta)"); const r = await hil.hilo(HILO, VS[i % VS.length], null, "top"); if (!r) throw new Error("el hilo no salió"); return r; });
 // Publicaciones de otros (la app no deja votar lo propio: «Lo tuyo lo votan los demás»).
-const POSTS = (await q(`select x.id::text from carga_p x join com_posts p on p.id = x.id where x.c = 'hzl' and p.author_user_id <> all($1::uuid[]) order by x.k desc limit 60`, [VS])).map((x) => x.id);
+const POSTS = (await q(`select x.id::text from carga_p x join com_posts p on p.id = x.id where x.c = 'hzl' and p.status = 'visible' and p.author_user_id <> all($1::uuid[]) order by x.k desc limit 60`, [VS])).map((x) => x.id);
 await medir("votar", { linea: "L588", presupuesto: 30, que: "votar una publicación (contadores)" }, (i) => hil.votar(VS[(i * 7) % VS.length], "post", POSTS[i % POSTS.length], i % 2 ? 1 : -1, null));
 await medir("encuesta-100k", { linea: "L590", presupuesto: null, veces: 1, calentar: 0, que: "cerrar una encuesta de 100 mil votos y avisar a todos (avisarMuchos)" }, () => hil.barrerEncuestas());
 

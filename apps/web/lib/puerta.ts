@@ -304,13 +304,14 @@ async function filas(ctx: CtxPuerta, f: FiltroF, es: boolean): Promise<FilaPuert
   if (k === "boletos") wR.push("false");
   const cur = f.antes && /^[^|]{0,80}\|[tr]\|\d{1,18}$/.test(f.antes) ? f.antes.split("|") : null;
   const curW = cur ? `where (z.orden, z.kind, z.id::bigint) > (${p(cur[0])}, ${p(cur[1] === "t" ? "ticket" : "rsvp")}, ${p(cur[2])}::bigint)` : "";
+  // 9b-3 · La orden (operations) solo se une si se busca por número de orden: con 50 mil boletos en una fecha, unirla en cada búsqueda costaba un tercio.
   const r = (await db().query<FilaPuerta & { orden: string; fn: string | null; ln: string | null; hn: string | null; cn: string | null; tipoB: Bi | null; mesaB: Bi | null; otro: string | null }>(
     `select * from (
        select 'ticket' as kind, t.id::text as id, t.code, t.admits as de, coalesce(x.entered_n, 0) as entraron, coalesce(x.inside_n, 0) as adentro,
               case when exists (select 1 from ticket_transfers z where z.ticket_id = t.id and z.status = 'pending' and z.kind = 'transfer') then 'pending' else t.status end as estado,
               t.kind = 'comp' as cortesia, u.first_name as fn, u.last_name as ln, t.holder_name as hn, t.comp_name as cn, tt.name as "tipoB", et.zone as "mesaB",
               lower(coalesce(t.comp_name, t.holder_name, u.first_name, '')) as orden, null::text as otro
-         from tickets t join operations o on o.id = t.operation_id left join users u on u.id = t.holder_user_id
+         from tickets t ${f.orden ? "join operations o on o.id = t.operation_id" : ""} left join users u on u.id = t.holder_user_id
          left join ticket_types tt on tt.id = t.ticket_type_id left join event_tables et on et.id = t.table_id
          left join ticket_entries x on x.ticket_id = t.id and x.event_date_id = $2::bigint
         where t.event_id = $1::bigint and t.status in ('valid', 'used', 'void', 'refunded')

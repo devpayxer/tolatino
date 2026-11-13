@@ -4322,3 +4322,26 @@ pruebas de punta a punta en una base nueva, y las 6 pantallas clave en 9 disposi
   noc4c, noc4d y cit3c fallaban después de las 11 PM de Nueva York (a esa hora a la noche de hoy le queda una sola hora y la cita de dentro de una hora ya es de mañana);
   publica y an1n elegían un teléfono «nuevo» que a veces ya tenía cuenta. Las cuatro, arregladas en su raíz.
 - **Seguridad:** Semgrep y `pnpm audit` en verde, sin hallazgos nuevos.
+
+### 9b-3 · La escala (1 M de vecinos) y las pruebas que no dependen del orden (13 nov)
+**Qué es (en sencillo):** una máquina de GitHub arma una base de prueba con 1 millón de vecinos, 1 millón de publicaciones, 5 millones de comentarios, 1 millón
+de fechas de eventos, 5 millones de boletos, 5 millones de avisos, 5 millones de mensajes de El Compa y 5 millones de eventos de la analítica, y mide cuánto tarda
+cada pantalla «caliente» con el código de la app tal cual. Lo que pasaba de su presupuesto se arregló aquí. No cambia ninguna pantalla.
+- **Qué mirar:** GitHub › Actions › «Carga 1M» (la tabla queda al final del registro y en PROGRESS «Fase 9 · 9b-3»). Y en «CI», la confirmación (dos veces seguidas y
+  barajada) en verde.
+- **Decisiones que tomé (si prefieres otra, se cambia):**
+  - **Algunas cifras del Super Admin se ponen al día cada 10 minutos** en vez de contarse en cada vista (con millones de filas tardaban segundos): Analítica ›
+    Comunidad; los totales de arriba de Contenido (publicaciones, comentarios, reseñas); vecinos por rango y EN CIRCULACIÓN de Gamificación. Lo que se actúa
+    (reportes abiertos, ocultos, el lote) sigue al momento. Lo dicen sus ayudas.
+  - **«Recomendados por vecinos»** elige entre los 50 negocios con más votos de la ciudad (resumen cada 10 min) y los vuelve a ordenar con los bloqueos de quien
+    mira. Quedar fuera de los 50 y entrar a los 5 de alguien exigiría que esa persona bloqueara a casi todos los que recomiendan a los de arriba.
+  - **Los eventos de la analítica se guardan 13 meses** (lo que ya dicen las fichas de las tiendas): después el barrido los resume por día y ciudad y suelta los de
+    cada persona. Se cambia en Configuración › Apps («Analítica · meses que se guarda cada evento»).
+  - **Los topes por minuto se cuentan entre todos los servidores juntos** (errores, Wallet, la posición del repartidor) y los corta-circuitos del traductor y de
+    la moderación de fotos son de todos: un servidor que se reinicia no «olvida» que el traductor está caído; pasado el minuto, una prueba lo vuelve a abrir.
+  - **Configuración, interruptores y ciudades se ven al momento en todos los servidores** (antes, hasta 15–60 s en cada uno).
+  - **La base corre sin JIT** (la compilación de Postgres le sumaba ~100 ms a consultas de 5 ms).
+  - **Semilla del sandbox 0051:** los negocios de la semilla con eventos tienen el módulo Eventos encendido (en una base nueva La Terraza quedaba apagada y sus
+    eventos no salían en ningún lado).
+- **Pruebas:** las que dependían del orden ahora dicen su punto de partida (o piden la prueba que lo hace) y el corredor cierra entre una y otra las esperas de un
+  minuto (la espera de 30 s entre códigos de un teléfono). Ninguna se reintenta.

@@ -106,7 +106,14 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
     if (R && rCur === 1) trozos.push(`(select * from (${base} and ${R.col} in (select cr.target_id::bigint from content_reports cr where cr.target_kind = '${R.kind}' and cr.status = 'open' and cr.target_id ~ '^[0-9]{1,18}$')) x${COLS}
       where ${w.join(" and ")}${curR} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
     // Lo demás: lo más nuevo sin reporte, por fecha.
-    if (!f.rep) trozos.push(`(select * from (${base} and not ${abierto}) x${COLS} where ${w.join(" and ")}${curN} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+    // El orden completo (fecha, tipo, id en texto) no lo da el índice de fecha: primero la fecha de la fila LIM por ese índice (solo fecha) y después
+    // las que llegan hasta ahí (con sus empates), ordenadas del todo. Sin esto Postgres ordenaba la tabla entera (1,3 s con 5 M de comentarios).
+    if (!f.rep) {
+      const fuente = `(${base} and not ${abierto})`, w2 = `${w.join(" and ")}${curN}`.replace(/\bx\./g, "x2.");
+      trozos.push(`(select * from ${fuente} x${COLS} where ${w.join(" and ")}${curN}
+        and x.at >= coalesce((select x2.at from ${fuente} x2${COLS} where ${w2} order by x2.at desc offset ${LIM - 1} limit 1), '-infinity'::timestamptz)
+        order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+    }
   }
   const [L, cab, ciu] = await Promise.all([
     trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,
