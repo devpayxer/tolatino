@@ -4,9 +4,15 @@
 const { PNG } = require('pngjs');
 const pixelmatch = require('pixelmatch');
 const UMBRAL = 0.15, MAXIMO = 0.005;
-function compara(actual, aprobada) {
+// «zonas»: rectángulos (en píxeles de la captura) que cambian solos con la hora o los datos del día («Abierto hasta 9 PM», «Listo a las 8:48», los eventos de
+// esta semana): se pintan del mismo gris en las DOS imágenes antes de comparar. Todo lo demás se compara igual.
+function tapar(png, zonas) {
+  for (const [x0, y0, w, h] of zonas || []) for (let y = Math.max(0, y0); y < Math.min(png.height, y0 + h); y++) for (let x = Math.max(0, x0); x < Math.min(png.width, x0 + w); x++) { const i = (y * png.width + x) * 4; png.data[i] = png.data[i + 1] = png.data[i + 2] = 128; png.data[i + 3] = 255; }
+}
+function compara(actual, aprobada, zonas) {
   const a = PNG.sync.read(actual), b = PNG.sync.read(aprobada);
   if (a.width !== b.width || a.height !== b.height) return { ok: false, razon: `otro tamaño (${a.width}×${a.height}, la aprobada ${b.width}×${b.height})`, ratio: 1, diff: null };
+  tapar(a, zonas); tapar(b, zonas);
   const diff = new PNG({ width: a.width, height: a.height });
   const n = pixelmatch(a.data, b.data, diff.data, a.width, a.height, { threshold: UMBRAL });
   const ratio = n / (a.width * a.height);

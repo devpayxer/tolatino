@@ -70,6 +70,8 @@ const VITALS = () => {
   ver("layout-shift", (e) => { if (!e.hadRecentInput) window.__v.cls += e.value; });
   ver("longtask", (e) => { window.__v.tbt += Math.max(0, e.duration - 50); });
 };
+// Texto que depende de la hora: «9 PM», «8:48», «abierto», «cerrado», «hoy», «hace 3 min», «quedan 22 h», «vie 13 nov», «+0 por día».
+const HORA_RE = "(\\b\\d{1,2}(:\\d{2})?\\s?(AM|PM)\\b|^(abierto|cerrado|abre|cierra|hoy|ahora|ayer|mañana)\\b|\\bhasta\\b|\\bhace\\s\\d|\\bquedan\\b|\\b(lun|mar|mié|jue|vie|sáb|dom)\\.?\\s\\d|por día|\\blisto a las\\b)";
 const mediana = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 
 const fallos = [], resumen = [];
@@ -110,12 +112,19 @@ try {
     if (pa.cuenta && /\/entrar/.test(p.url())) { falla(`${pa.id}: la sesión no entró (terminó en /entrar)`); await p.close(); continue; }
     // ── Captura
     const aprobada = join(RAIZ, "pruebas/visual", pa.id, `${id}.png`);
+    // Lo que cambia solo con la hora o el día (horarios, «abierto hasta», eventos de la semana) se tapa en las dos imágenes: ver comparar.cjs. pa.titulos: secciones enteras por su título.
+    const zonas = await p.evaluate(([re, titulos]) => {
+      const R = new RegExp(re, "i"), out = [], W = innerWidth, H = innerHeight, poner = (el) => { const r = el.getBoundingClientRect(); const x = Math.max(0, Math.floor(r.left)), y = Math.max(0, Math.floor(r.top)); const w = Math.min(W, Math.ceil(r.right)) - x, h = Math.min(H, Math.ceil(r.bottom)) - y; if (w > 0 && h > 0) out.push([x, y, w, h]); };
+      for (const el of document.querySelectorAll("body *")) { if (el.children.length) continue; if (R.test((el.textContent || "").trim())) poner(el); }
+      for (const t of titulos) for (const el of document.querySelectorAll("body *")) { if (el.children.length || (el.textContent || "").trim().toLowerCase() !== t.toLowerCase()) continue; const c = el.closest("section") || el.parentElement?.parentElement; if (c) poner(c); }
+      return out;
+    }, [HORA_RE, pa.titulos || []]);
     const buf = await p.screenshot({ type: "png", animations: "disabled", caret: "hide" });
     writeFileSync(join(SALIDA, `${pa.id}.png`), buf);
     if (flag("--aprobar")) { mkdirSync(dirname(aprobada), { recursive: true }); writeFileSync(aprobada, buf); bien(`captura aprobada escrita (${(buf.length / 1024).toFixed(0)} KB)`); }
     else if (!existsSync(aprobada)) falla(`${pa.id}/${id}: captura nueva sin aprobar (pruebas/visual/${pa.id}/${id}.png no existe: se aprueba en docs/REVISION.md y entra por commit)`);
     else {
-      const r = compara(buf, readFileSync(aprobada));
+      const r = compara(buf, readFileSync(aprobada), zonas);
       if (r.diff) writeFileSync(join(SALIDA, `${pa.id}.diff.png`), r.diff);
       if (r.ok) bien(`igual a la aprobada (${(r.ratio * 100).toFixed(3)} % distinto)`); else {
         falla(`${pa.id}/${id}: ${r.razon}`);
