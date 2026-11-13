@@ -1477,5 +1477,71 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
     compartido. Ninguna se reintenta. **Semilla del sandbox `0051_eventos_modulo.sql`**: los negocios de la semilla con eventos tienen el módulo Eventos encendido
     (en una base nueva La Terraza no lo tenía y sus eventos daban 404: evt6e, evt6g, fich8i).
   - **Ayuda:** `admin-configuracion` (topes entre todos los servidores; meses de la analítica), `admin-analitica` y `admin-contenido` (cifras cada 10 minutos).
-- **Medido (escala 1, flujo «Carga 1M»):** TABLA_CARGA
-- **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda) y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q y 9r con su porqué.
+- **Medido (escala 1, flujo «Carga 1M»; p95 salvo lo que dice otra unidad):** 58/63 y 57/63 dentro del presupuesto en dos corridas iguales sobre el mismo
+  código (la segunda con un `checkpoint` después de generar). Lo que falla en las dos: la Tabla y «mi lugar» (→ 9m) y el p95 de las posiciones durante el
+  ritmo (→ 9t). Lo que falla en una: votar (cola), la búsqueda por nombre de la puerta (→ 9n), subir 500 escaneos (→ 9r) y el barrido de la Comunidad (→ 9m):
+  son de una sola vuelta o están en el borde, y el runner comparte disco y CPU con la base (LAUNCH «Fase 9 · 9b-3»).
+  | medida | línea | presupuesto | carga 43457199398 | carga 43460154153 |
+  |---|---|---|---|---|
+  | muro-top | L578 | 50 ms | ✓ 6 ms | ✓ 8,1 ms |
+  | muro-nuevo | L578 | 50 ms | ✓ 6,3 ms | ✓ 5,6 ms |
+  | muro-pagina-6 | L578 | 50 ms | ✓ 3,9 ms | ✓ 3,6 ms |
+  | muro-5-millas | L578 | 50 ms | ✓ 6,7 ms | ✓ 6,6 ms |
+  | muro-siguiendo | L603 | 50 ms | ✓ 37,1 ms | ✓ 5 ms |
+  | hilo-500 | L588 | 60 ms | ✓ 4,3 ms | ✓ 3,8 ms |
+  | votar | L588 | 30 ms | ✗ 60,1 ms | ✓ 14,3 ms |
+  | encuesta-100k | L590 | — | ✓ 6941,1 ms | ✓ 4138 ms |
+  | mensajes | L603 | 50 ms | ✓ 2,7 ms | ✓ 6,4 ms |
+  | seguidores | L603 | 50 ms | ✓ 3,1 ms | ✓ 2,8 ms |
+  | siguiendo | L603 | 50 ms | ✓ 2,9 ms | ✓ 2,7 ms |
+  | auto-ocultar | L627 | 30 ms | ✓ 1 ms | ✓ 2,5 ms |
+  | revisar-al-escribir | L627 | 50 ms | ✓ 0,7 ms | ✓ 0,8 ms |
+  | red-de-cuentas | L627 | 5000 ms | ✓ 1,5 ms | ✓ 1,8 ms |
+  | barrido-comunidad | L631 | 10000 ms | ✓ 8552,3 ms | ✗ 10751,5 ms |
+  | hoy | L631 | 40 ms | ✓ 15,6 ms | ✓ 16,8 ms |
+  | recomendados | L631 | 50 ms | ✓ 14,3 ms | ✓ 13,5 ms |
+  | tabla | L648 | 40 ms | ✗ 89,3 ms | ✗ 84,7 ms |
+  | tabla-corta | L648 | 40 ms | ✗ 85,8 ms | ✗ 86,3 ms |
+  | cupones | L665 | 50 ms | ✓ 9,6 ms | ✓ 10 ms |
+  | mis-canjes | L665 | 50 ms | ✓ 0,5 ms | ✓ 0,6 ms |
+  | en-circulacion | L665 | 300 ms | ✓ 224,1 ms | ✓ 202,8 ms |
+  | contenido | L701 | 80 ms | ✓ 75,4 ms | ✓ 76,6 ms |
+  | contenido-totales | L701 | 10000 ms | ✓ 1253,3 ms | ✓ 1283,9 ms |
+  | contenido-reportados | L701 | 80 ms | ✓ 60,3 ms | ✓ 75,7 ms |
+  | contenido-p2 | L701 | 80 ms | ✓ 76,2 ms | ✓ 71,4 ms |
+  | analitica-comunidad-al-dia | L701 | 10000 ms | ✓ 1031,3 ms | ✓ 2260 ms |
+  | analitica-comunidad | L701 | 300 ms | ✓ 2,4 ms | ✓ 1,8 ms |
+  | resumen-diario | L701 | 30000 ms | ✓ 2,2 ms | ✓ 1,4 ms |
+  | usuarios-p1 | L193 | 80 ms | ✓ 50 ms | ✓ 48 ms |
+  | usuarios-p100 | L193 | 80 ms | ✓ 48,8 ms | ✓ 55,8 ms |
+  | categoria-p1 | L76 | 50 ms | ✓ 33,4 ms | ✓ 30,6 ms |
+  | categoria-p50 | L76 | 50 ms | ✓ 34,6 ms | ✓ 32,9 ms |
+  | eventos-lista | L747 | 50 ms | ✓ 11,4 ms | ✓ 13,4 ms |
+  | eventos-lista-p6 | L747 | 50 ms | ✓ 5,3 ms | ✓ 5,3 ms |
+  | eventos-finde | L851 | 50 ms | ✓ 13,7 ms | ✓ 14,9 ms |
+  | evento-ficha | L747 | 40 ms | ✓ 2,2 ms | ✓ 2,3 ms |
+  | puerta-escanear | L869 | 150 ms | ✓ 5,6 ms | ✓ 8 ms |
+  | puerta-buscar-nombre | L869 | 150 ms | ✓ 131 ms | ✗ 159,9 ms |
+  | paquete | L898 | 1000 ms | ✓ 251,9 ms | ✓ 239,4 ms |
+  | paquete-tamano | L898 | 1024 KB | ✓ 165 KB | ✓ 165 KB |
+  | paquete-50k | L898 | — | ✓ 1232,4 ms | ✓ 1209,8 ms |
+  | subir-500 | L898 | 2000 ms | ✓ 1348,7 ms | ✗ 2217,1 ms |
+  | avisar | L1210 | 30 ms | ✓ 1,5 ms | ✓ 1,8 ms |
+  | mis-avisos | L1210 | 50 ms | ✓ 0,5 ms | ✓ 0,6 ms |
+  | posicion | L1260 | 30 ms | ✓ 3,9 ms | ✓ 3,6 ms |
+  | posiciones-por-segundo | L1260 | — | ✓ 189 por segundo | ✓ 200 por segundo |
+  | posiciones-p95-en-ritmo | L1260 | 30 ms | ✗ 2860,4 ms | ✗ 673,2 ms |
+  | posiciones-que-faltaron | L1260 | 10 por segundo de menos | ✗ 11 por segundo de menos | ✓ 0 por segundo de menos |
+  | ayuda-buscar | 7d | 30 ms | ✓ 4,9 ms | ✓ 5,1 ms |
+  | compa-contexto | 7c | 50 ms | ✓ 1 ms | ✓ 0,9 ms |
+  | compa-conversaciones | 7i | 80 ms | ✓ 15,7 ms | ✓ 15,2 ms |
+  | compa-ficha | 7i | 80 ms | ✓ 22,3 ms | ✓ 7,1 ms |
+  | particiones | L207 | — | ✓ 17 particiones | ✓ 17 particiones |
+  | embudo-30d | L207 | 300 ms | ✓ 217,2 ms | ✓ 261,7 ms |
+  | embudo-7d | L207 | 300 ms | ✓ 51,9 ms | ✓ 64,9 ms |
+  | analitica-gente | L207 | 300 ms | ✓ 71,6 ms | ✓ 65 ms |
+  | analitica-apps | L207 | 300 ms | ✓ 50,8 ms | ✓ 56,9 ms |
+  | al-dia | L207 | 5000 ms | ✓ 55,7 ms | ✓ 57,8 ms |
+  | retencion | L207 | 30000 ms | ✓ 542,5 ms | ✓ 567,2 ms |
+  | resumen-dia | L207 | — | ✓ 661 filas | ✓ 630 filas |
+- **No cerrado o con destino:** ver LAUNCH «→ 9b» (lo que queda), «Fase 9 · 9b-3» y las líneas movidas a 9c, 9g, 9j, 9l, 9m, 9n, 9o, 9q, 9r y 9t con su porqué.

@@ -73,7 +73,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   (APP-NEG-HOGAR-EMERGENCIA). Las de Doctores y Profesionales sí están (filtran la lista). — **✓ 9a (11 nov):** Emergencia 24/7 de Hogar construida en 4e (app/(app)/emergencia, lib/solicitudes.ts vencerEmergencias; plantillas em_ok, em_nadie, em_tomada); prueba em4e.
 - [x] **Negocios — secciones ocultas hasta tener datos reales:** «Hoy en el barrio» (módulo Novedades) y
   «Recomendados por vecinos» (el prototipo lo calculaba como reseñas ÷ 4; necesita el dato real de las reseñas). — **✓ 9a (11 nov):** «Hoy en el barrio» (5e, lib/hoy.ts; com5e) y «Recomendados por vecinos» con el dato real (app/(app)/negocios/Negocios.tsx).
-- [ ] **→ 9b** · **Paginación numerada (excepción a «paginación por cursor»):** el diseño pide «Página 2 de 5» y números; la
+- [x] **→ 9b** · **Paginación numerada (excepción a «paginación por cursor»):** el diseño pide «Página 2 de 5» y números; la — **✓ 9b-3 (13 nov):** con 20 mil negocios en Hazleton en las 17 categorías (~1 200 en Comida, el umbral de esta línea): página 1 p95 33 / 31 ms y página 50 p95 35 / 33 ms (presupuesto 50; cargas 43457199398 / 43460154153). Se queda con páginas numeradas; si una categoría de una ciudad pasa de ~1 200 negocios, se vuelve a medir.
   lista de una categoría en una ciudad es acotada, así que va con OFFSET y tope de 100 páginas. Revisar con datos
   reales antes de la fase 9 (si una categoría pasa de ~1 000 negocios en una ciudad, pasar a cursor).
 - [ ] **→ 9m** · **Chips largos en BusinessCard:** textos largos (p. ej. «Coordinación del día $900 · boda completa…») se
@@ -190,7 +190,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **Decisiones tomadas sin el diseño (confirmar con el fundador):** textos de Mi cuenta y de Recomendar para la
   persona silenciada o advertida; textos al entrar (suspendida, borrándose, dispositivo bloqueado); «Silencio» y
   «Bloquear publicación» frenan Recomendar (no hay Comunidad todavía); no se sanciona ni borra a alguien del equipo. — **✓ 9a (11 nov):** textos de silencio, advertencia, suspensión y dispositivo bloqueado; desde 5c «Silencio» y «Bloquear publicación» también frenan la Comunidad; nadie del equipo se sanciona ni se borra (REVISION 9a).
-- [ ] **→ 9b** · **Lista de Usuarios con OFFSET** (14 por página, tope 100 páginas) y conteos con `count(*)`: cambiar a cursor
+- [x] **→ 9b** · **Lista de Usuarios con OFFSET** (14 por página, tope 100 páginas) y conteos con `count(*)`: cambiar a cursor — **✓ 9b-3 (13 nov):** con 1 M de cuentas: página 1 p95 50 / 48 ms y página 100 p95 49 / 56 ms (presupuesto 80 del Super Admin; cargas 43457199398 / 43460154153). Antes 900 ms: los dueños y los sancionados se cuentan sin mirar a cada persona (índice parcial de sancionados) y, sin filtros, el total es el de arriba. Se queda con páginas (tope 100).
   cuando haga falta.
 
 ## Catálogo (bloque 1m, 6 nov 2026)
@@ -575,8 +575,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       ni GPS) sin revisión automática. (5a, 7 nov) — **✓ 9a (11 nov):** listas spam, hate, migra, estafa, autolesión y la moderación de imágenes propia (5d: lib/moderacion.ts, lib/moderacion-img.ts, services/moderacion-img); prueba com5d.
 - [x] **5a · Límites de la Comunidad en Configuración:** — **Hecho en 5i:** `config_keys` (0105) con límites y auditoría; día local desde 5d. 10 publicaciones en 24 h (5 la primera día) son constantes de `lib/comunidad.ts`;
       pasan a `config_keys` con «día local» en 5i. (5a, 7 nov)
-- [ ] **→ 9b** · **5a · Velocidad con 1 M publicaciones** (`scripts/carga/comunidad-1m.mjs`, p95 ≤ 50 ms del muro): no se corrió; en la base del sandbox el
-      plan usa `com_posts_hot_idx` sin ordenar aparte (comprobado con `EXPLAIN`). (5a, 7 nov)
+- [x] **→ 9b** · **5a · Velocidad con 1 M publicaciones** (`scripts/carga/comunidad-1m.mjs`, p95 ≤ 50 ms del muro): no se corrió; en la base del sandbox el
+      plan usa `com_posts_hot_idx` sin ordenar aparte (comprobado con `EXPLAIN`). (5a, 7 nov) — **✓ 9b-3 (13 nov):** muro de Hazleton p95 Lo mejor 6,0 / 8,1 ms, Lo nuevo 6,3 / 5,6, sexta página por cursor 3,9 / 3,6, a 5 millas 6,7 / 6,6 (presupuesto 50; cargas 43457199398 / 43460154153; antes 840 ms: las 21 primero con «= any(array(…))» y el radio por ventanas).
 - [ ] **→ Paquete 9-4** · **5a · Foto de portada del muro de registro:** el prototipo usa una foto de Pexels; va sin foto hasta que el fundador elija una propia. (5a, 7 nov)
 - [x] **5a · Admin › Contenido pagina con `offset`** — **Hecho en 5i:** cursor (← →), sin offset. (venía de 2i); pasa a cursor con el resto de Contenido en 5i. (5a, 7 nov)
 - [x] **5b · Avisos de la Comunidad sin grupo ni interruptor propio:** — **Hecho en 5i:** grupo `community`, «Respuestas y votos», «Mensajes de vecinos» y resumen diario en Mi cuenta › Avisos. las plantillas `com_*` van en el grupo `tx` sin preferencia que las apague
@@ -585,10 +585,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       marcado «HOOK 5f» en `votar` y `meSirvio` de `lib/comunidad-hilo.ts`. Los mensajes no prometen puntos. (5b, 7 nov) — **✓ 9a (11 nov):** votos, «Me sirvió» y respuestas dan puntos (5f; ya no queda «HOOK 5f» en lib/comunidad-hilo.ts); prueba com5f.
 - [x] **5b · Comentario: reportar, bloquear y editar:** el menú del comentario hoy trae Borrar (lo propio) y «Esta me sirvió más» (quien
       preguntó). Reportar llega en 5d, bloquear y silenciar en 5c; editar un comentario (30 min, `com_edits`) no está en el prototipo: decidir. (5b, 7 nov) — **✓ 9a (11 nov):** reportar (5d) y bloquear (5c) en el menú del comentario; editar un comentario (com_edits) existe en la base y lib/comunidad.ts.
-- [ ] **→ 9b** · **5b · Velocidad del hilo con 1 M publicaciones y 5 M comentarios** (hilo de 500 comentarios en 20 raíces ≤ 60 ms; votar ≤ 30 ms): no se
-      corrió; en el sandbox las raíces salen de `com_comments_hilo_idx` sin ordenar aparte (`EXPLAIN` en `com5b`). (5b, 7 nov)
-- [ ] **→ 9b** · **5b · Resultado de encuestas muy grandes:** `avisarMuchos` escribe de 1,000 en 1,000 en una consulta; medir con una encuesta de 100 mil
-      votos antes de abrir. (5b, 7 nov)
+- [ ] **→ 9t** · **5b · Velocidad del hilo con 1 M publicaciones y 5 M comentarios** (hilo de 500 comentarios en 20 raíces ≤ 60 ms; votar ≤ 30 ms): no se
+      corrió; en el sandbox las raíces salen de `com_comments_hilo_idx` sin ordenar aparte (`EXPLAIN` en `com5b`). (5b, 7 nov) — _9b-3 (13 nov): el hilo de 500 comentarios p95 4,3 / 3,8 ms (≤ 60) pasa en las dos corridas. Votar: p50 6,7 / 5,8 ms y p95 60 / 14 ms (≤ 30; cargas 43457199398 / 43460154153): una de dos corridas con cola. El runner de GitHub comparte disco y CPU con la base; se vuelve a medir votar en la máquina de producción antes de encenderla (9t)_
+- [x] **→ 9b** · **5b · Resultado de encuestas muy grandes:** `avisarMuchos` escribe de 1,000 en 1,000 en una consulta; medir con una encuesta de 100 mil
+      votos antes de abrir. (5b, 7 nov) — **✓ 9b-3 (13 nov):** cerrar una encuesta de 100 mil votos y avisar a todos (avisarMuchos): 6,9 s / 4,1 s en una vuelta del barrido (sin presupuesto escrito; cargas 43457199398 / 43460154153).
 - [ ] **→ 9c** · **5b · Punta a punta en 9 dispositivos:** `com5b` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz de CI. (5b, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5c · Reportar a una persona** desde su perfil (hueco #4; hecho en 5d) y **«Abrir caso de red de cuentas»** (hecho en 5i) desde Usuarios 360° › Comunidad: van
       con la cola `repUsr` de 5d. (5c, 7 nov)
@@ -600,8 +600,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (SSE) antes de abrir. (5c, 7 nov)
 - [x] **5c · «10 conversaciones nuevas al día»** ~~cuenta 24 h corridas~~ — hecho en 5d: todos los límites de la Comunidad cuentan el día
       local de la ciudad, con la mitad el primer día de la cuenta (`lib/moderacion.ts` limiteDia; valores en Contenido › Auto-moderación).
-- [ ] **→ 9b** · **5c · Velocidad** de Mensajes y listas de seguidores con 1 M de vecinos (índices `dm_threads_a/b_idx`, `follows_seguidos_idx`): no
-      se corrió la base de carga. (5c, 7 nov)
+- [x] **→ 9b** · **5c · Velocidad** de Mensajes y listas de seguidores con 1 M de vecinos (índices `dm_threads_a/b_idx`, `follows_seguidos_idx`): no
+      se corrió la base de carga. (5c, 7 nov) — **✓ 9b-3 (13 nov):** Siguiendo en el muro p95 37 / 5,0 ms, Mensajes 2,7 / 6,4, seguidores 3,1 / 2,8, siguiendo 2,9 / 2,7 (presupuesto de lista 50; cargas 43457199398 / 43460154153).
 - [ ] **→ 9c** · **5c · Punta a punta en 9 dispositivos:** `com5c` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la
       matriz de CI. (5c, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9s** · **5c · Revisión de seguridad con abogado:** 18+ por declaración (COPPA si algún día se abre a 13–17), retención de mensajes
@@ -624,13 +624,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       desde «Entrar» (con el código por SMS, sin sesión). (5d, 7 nov)
 - [ ] **→ 9s** · **5d · NCMEC (abuso infantil):** protocolo de preservación y reporte al CyberTipline (18 U.S.C. § 2258A) con abogado; hoy un Admin
       oculta y preserva a mano. (5d, 7 nov)
-- [ ] **→ 9b** · **5d · Velocidad de moderación con 1 M:** `autoOcultar` (reportes de un contenido), `revisarAlEscribir` (parecidos con pg_trgm sobre lo
-      de la persona en 24 h) y `redDeCuentas` (votos de 7 días) no se midieron en la base de carga. (5d, 7 nov)
+- [x] **→ 9b** · **5d · Velocidad de moderación con 1 M:** `autoOcultar` (reportes de un contenido), `revisarAlEscribir` (parecidos con pg_trgm sobre lo
+      de la persona en 24 h) y `redDeCuentas` (votos de 7 días) no se midieron en la base de carga. (5d, 7 nov) — **✓ 9b-3 (13 nov):** autoOcultar p95 1,0 / 2,5 ms (≤ 30), revisarAlEscribir 0,7 / 0,8 (≤ 50), redDeCuentas 1,5 / 1,8 (cargas 43457199398 / 43460154153).
 - [ ] **→ 9c** · **5d · Punta a punta en 9 dispositivos:** `com5d` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz
       de CI. (5d, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
-- [ ] **→ 9b** · **5e · Velocidad de Hoy y de Recomendados con 1 M:** `hoyEnElBarrio` (índice `business_posts_hoy_idx`, presupuesto ≤ 40 ms) y
+- [x] **→ 9b** · **5e · Velocidad de Hoy y de Recomendados con 1 M:** `hoyEnElBarrio` (índice `business_posts_hoy_idx`, presupuesto ≤ 40 ms) y
       `recomendadosPorVecinos` (agrega 180 días por ciudad en cada vista de Negocios) no se midieron en la base de carga; si no cumple,
-      Recomendados pasa a derivado cacheado (con 5f). (5e, 7 nov)
+      Recomendados pasa a derivado cacheado (con 5f). (5e, 7 nov) — **✓ 9b-3 (13 nov):** Hoy p95 15,6 / 16,8 ms (≤ 40; antes 72: solo las novedades de negocios Pro con Novedades antes de la regla) y Recomendados 14,3 / 13,5 ms (≤ 50; antes 580: candidatos de com_recomendados_cache que el barrido rehace cada 10 min; cargas 43457199398 / 43460154153). El tiempo de ese barrido va aparte (Fase 9 · 9b-3, abajo).
 - [ ] **→ 9l** · **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
       1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov) — _9b-3 (13 nov): no se midió en la carga (la carga no arma negocios con decenas de miles de seguidores); va con los avisos listos (9l)._
 - [ ] **→ 9c** · **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
@@ -645,9 +645,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `board_closures_premios` → `mon_premios_mes` (una vez por persona y mes); la migración 0103 acreditó los meses ya cerrados. Probado en `com5g`.
 - [x] **5f · Reporte de canjes en «Cerrar el mes»** (paso 4): hoy dice 0 canjes porque los cupones llegan en 5g; conectar al libro de cupones. (5f, 7 nov)
       — **Hecho en 5g:** `board_closures_reporte` cuenta los canjes del mes de la ciudad (`canjes`, `canjes_usados`) al cerrar.
-- [ ] **→ 9b** · **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
+- [ ] **→ 9m** · **5f · Velocidad de la Tabla y del rango con 1 M de publicaciones** (`scripts/carga/comunidad-1m.mjs`, presupuesto Tabla ≤ 40 ms): la
       Tabla usa índices `(city_id, month, puntos desc, user_id)` y cursor; «mi lugar» cuenta los de delante (índice), y `pts_rango` mira la
-      escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov)
+      escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov) — _9b-3 (13 nov): con 580 mil vecinos con puntos en UNA ciudad, la Tabla p95 89 / 85 ms y «mi lugar» 86 / 86 (presupuesto 40; cargas 43457199398 / 43460154153). La lista sale del índice (~5 ms); lo que tarda es contar a los de delante de quien mira (580 mil entradas del índice). Antes 250 ms (sin unir con users, dos cuentas por rango). Para bajarlo del todo: un histograma de puntos por ciudad y mes que mantenga la base, o el lugar calculado por el barrido con el aviso de que se pone al día; se decide con lo diferido del vecino (9m)_
 - [x] **5f · Notificación «Subiste de rango» en la app (push):** (hecho en 8c: va por push con la misma regla) hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
 - [ ] **→ 9c** · **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9n** · **5f · Condiciones de los rangos editables** (además del nombre): hoy el admin cambia nombres, valores de las reglas y el tope; los
@@ -662,9 +662,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **5g · Abogado:** monedas sin valor en dinero y cupones (leyes de tarjetas de regalo y de bienes no reclamados; premios del mes sin
       compra = no es sorteo); Términos de la Comunidad con «Sin valor en dinero · no se compran, no se venden, no se transfieren, no vencen».
       (5g, 7 nov)
-- [ ] **→ 9b** · **5g · Velocidad con 1 M:** cupones de una ciudad (`coupons_ciudad_idx` + un conteo del mes por cupón, 20 por página), mis cupones y
+- [x] **→ 9b** · **5g · Velocidad con 1 M:** cupones de una ciudad (`coupons_ciudad_idx` + un conteo del mes por cupón, 20 por página), mis cupones y
       movimientos (cursor por id), EN CIRCULACIÓN del Super Admin (suma de `community_profiles.coins` por ciudad: si pasa del presupuesto,
-      cachearla por ciudad). Medir en la base de carga. (5g, 7 nov)
+      cachearla por ciudad). Medir en la base de carga. (5g, 7 nov) — **✓ 9b-3 (13 nov):** cupones de la ciudad p95 9,6 / 10 ms, mis cupones 0,5 / 0,6; EN CIRCULACIÓN y vecinos por rango, de com_rangos_ciudad (cada 10 min): Gamificación p95 224 / 203 ms (≤ 300; antes 1,8 s; cargas 43457199398 / 43460154153).
 - [ ] **→ 9c** · **5g · Monedas y cupones en los 9 dispositivos:** `com5g` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
       de CI. (5g, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5g · Push de los avisos de monedas y cupones** (hecho en 8c) (`gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*`): hoy en la campana, sin SMS. (5g, 7 nov)
@@ -698,9 +698,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       existe). Decidir si entran al catálogo. (5i, 8 nov)
 - [x] **→ 9b** · **5i · Configuración en varios servidores:** la app guarda el valor 15 s por proceso (`lib/config.ts`); lo que decide la base
       (`cfg_int`) es al instante. Con réplicas en producción, un cambio tarda hasta 15 s en llegar a todas. (5i, 8 nov) — **✓ 9b-3 (13 nov):** la base avisa cada cambio de platform_config, config_keys, feature_flags, cities, mod_rules, mod_terms y synonyms por NOTIFY (`tl_config`, 0133) y cada proceso olvida su copia al momento (`lib/cambios-config.ts`); los 15 s quedan de respaldo. Guardián `copiaQueSeOlvida`.
-- [ ] **→ 9b** · **5i · Velocidad con 1 M:** Contenido (una consulta UNION de 6 tipos con cursor), Analítica › Comunidad (vistas que agregan desde las
+- [x] **→ 9b** · **5i · Velocidad con 1 M:** Contenido (una consulta UNION de 6 tipos con cursor), Analítica › Comunidad (vistas que agregan desde las
       tablas; si pasa del presupuesto, pasar a un derivado por ciudad y día que rehace el barrido) y el resumen diario (500 personas por
-      vuelta del barrido) no se midieron en la base de carga. (5i, 8 nov)
+      vuelta del barrido) no se midieron en la base de carga. (5i, 8 nov) — **✓ 9b-3 (13 nov):** Contenido p95 75 / 77 ms, segunda página 76 / 71, «Con reporte» 60 / 76 (≤ 80; antes 24,7 s); totales del barrido 1,3 s; Analítica › Comunidad 2,4 / 1,8 ms (de com_analitica_dia_cache; rehacerlo 1,0 / 2,3 s); resumen diario 2,2 / 1,4 ms (cargas 43457199398 / 43460154153).
 - [x] **→ después de abrir (DA-09)** · **5i · Rango del negocio** (§6 #23): no se construye hasta que se diseñe la ficha. (5i, 8 nov) — _9a (11 nov): el rango del negocio (§6 #23 de la Fase 5) espera el diseño de la ficha. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **5i · Resumen diario por push o correo:** (push hecho en 8c; el correo sigue pendiente) hoy llega a la campana (la app con push llega con Capacitor). (5i, 8 nov)
 - [ ] **→ 9c** · **5i · Super Admin de la Fase 5 en los 9 dispositivos:** `adm5i` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de
@@ -744,8 +744,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       la base). Mirarlo en el sandbox con un RSVP de un evento de mañana. (6b, 10 nov) — **✓ 9a (11 nov):** prueba nueva pruebas/e2e/rsvp9a.cjs (13 ✓): antes de la hora no sale; desde la hora sale una vez a quien va (no a quien canceló, ni a un RSVP de menos de 1 h, ni para pasado mañana) y se ve en Avisos a 390 y 1360.
 - [x] **6b · Mi cuenta › Avisos › Eventos (grupo `events` en notif_prefs):** _hecho en 6j (10 nov): grupo `events` con Boletos y cambios · Recordatorios · Eventos que guardas; lo crítico no se apaga._ llega con 6j; hoy los avisos de RSVP y de evento guardado no
       se pueden apagar por grupo. (6b, 10 nov)
-- [ ] **→ 9b** · **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
-      con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov)
+- [x] **→ 9b** · **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
+      con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov) — **✓ 9b-3 (13 nov):** lista de Hazleton p95 11,4 / 13,4 ms, sexta página 5,3 / 5,3, ficha 2,2 / 2,3 (≤ 50 / 40; antes 1,3 s: las fechas por ventanas en orden y sin JIT; cargas 43457199398 / 43460154153).
 - [ ] **→ 9h** · **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov)
 - [ ] **→ 9c** · **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
@@ -848,8 +848,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **→ después de abrir (DA-16)** · **6f · Cancelar o mover UN día de un evento de varios días:** no se puede (se cancela entero); con pases, devolver la parte de un día
       necesita una regla de devolución parcial. (6f, 10 nov) — _9a (11 nov): cancelar o mover un solo día de un evento de varios días (necesita devolución parcial). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6f · Cambio de artista de una fecha con SMS:** hoy va en la app (sin SMS, §6 #7); el prototipo decía SMS. (6f, 10 nov) — **✓ 9a (11 nov):** el cambio de artista va en la app, sin SMS (§6 #7 de la Fase 6) (REVISION 9a).
-- [ ] **→ 9b** · **6f · Velocidad con la base de carga:** la lista deduplica la serie con un anti-join por fila sobre (event_id, starts_at); medir p95 con
-      `scripts/carga/eventos-1m.mjs` (series de 52 fechas incluidas) junto con 6b. (6f, 10 nov)
+- [x] **→ 9b** · **6f · Velocidad con la base de carga:** la lista deduplica la serie con un anti-join por fila sobre (event_id, starts_at); medir p95 con
+      `scripts/carga/eventos-1m.mjs` (series de 52 fechas incluidas) junto con 6b. (6f, 10 nov) — **✓ 9b-3 (13 nov):** este fin de semana (series de 52 fechas, sin repetir la serie) p95 13,7 / 14,9 ms (≤ 50; cargas 43457199398 / 43460154153).
 - [ ] **→ 9c** · **6f · Eventos en los 9 dispositivos:** `evt6f` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6f, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **6f · Texto viejo del editor:** «La venta en la app abre pronto» (6a) sigue en el editor de boletos aunque la venta ya existe (6c); lo
       prueba `evt6a`: cambiar el texto y la prueba juntos. (6f, 10 nov) — **✓ 9a (11 nov):** el texto viejo ya no está en el código y evt6a lo prueba («se venden en la app cuando el evento sale publicado»; 66 ✓).
@@ -866,8 +866,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ Paquete 9-5** · **6g · Cámara en teléfonos reales:** _hecho en 6j (10 nov): señal «Entró dos veces» por persona en Confianza › Fraude._ probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
       BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
 - [ ] **→ 9c** · **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
-- [ ] **→ 9b** · **6g · Velocidad con la base de carga:** escaneo en línea local p50 21 ms / p95 26 ms (40 boletos, sin carga); medir ≤ 150 ms ida y vuelta con
-      50 k boletos en una fecha (`scripts/carga/eventos-1m.mjs`) y la búsqueda por nombre (hoy `like` dentro de la fecha, sin índice de trigramas). (6g, 10 nov)
+- [ ] **→ 9n** · **6g · Velocidad con la base de carga:** escaneo en línea local p50 21 ms / p95 26 ms (40 boletos, sin carga); medir ≤ 150 ms ida y vuelta con
+      50 k boletos en una fecha (`scripts/carga/eventos-1m.mjs`) y la búsqueda por nombre (hoy `like` dentro de la fecha, sin índice de trigramas). (6g, 10 nov) — _9b-3 (13 nov): escaneo en línea p95 5,6 / 8,0 ms (≤ 150) con 50 mil boletos en la fecha; la búsqueda por nombre p95 131 / 160 ms (presupuesto 150; cargas 43457199398 / 43460154153): recorre los 50 mil con sus nombres. Se dejó de unir la orden; falta un índice de trigramas sobre el nombre (del boleto y de la cuenta, hoy en dos tablas), con la Puerta en lo diferido del negocio (9n)_
 - [x] **→ después de abrir (DA-17)** · **6g · Foto en una incidencia:** no se construyó (riesgo de fotos de identificaciones); si el fundador la quiere, foto privada como Ayuda con
       un filtro de documentos. (6g, 10 nov) — _9a (11 nov): foto en una incidencia de la Puerta (riesgo de fotos de identificaciones). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **→ después de abrir (DA-18)** · **6g · Chat rápido entre porteros** («cerramos VIP», apps-delivery-checkin CHK-EQUIPO): no se construyó; Equipo muestra quién está en cada
@@ -895,8 +895,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       antes de llegar». (6h, 10 nov)
 - [ ] **→ 9m** · **6h · Mis boletos guarda solo los boletos abiertos** una vez con señal; guardar todos los próximos al abrir Mis boletos (con su QR) queda
       pendiente (pide firmar todos los QR al listar). (6h, 10 nov)
-- [ ] **→ 9b** · **6h · Velocidad con la base de carga:** paquete de 10 k boletos ≤ 1 s y ≤ 1 MB comprimido, subir 500 escaneos ≤ 2 s, validar sin conexión
-      ≤ 50 ms en un Pixel emulado (`scripts/carga/eventos-1m.mjs`). Hoy medido solo con los datos del e2e (11 boletos). (6h, 10 nov)
+- [ ] **→ 9r** · **6h · Velocidad con la base de carga:** paquete de 10 k boletos ≤ 1 s y ≤ 1 MB comprimido, subir 500 escaneos ≤ 2 s, validar sin conexión
+      ≤ 50 ms en un Pixel emulado (`scripts/carga/eventos-1m.mjs`). Hoy medido solo con los datos del e2e (11 boletos). (6h, 10 nov) — _9b-3 (13 nov): paquete de 10 mil boletos p95 252 / 239 ms y 165 KB (≤ 1 s y 1 MB); el de 50 mil, 1,2 s y 812 KB; subir 500 escaneos 1,35 s / 2,2 s (≤ 2 s; una sola vuelta, la segunda corrida pasó del tope; cargas 43457199398 / 43460154153). Falta volver a medir la subida y validar sin conexión ≤ 50 ms en un Pixel emulado, con las tiendas de verdad (9r)_
 - [x] **→ después de abrir (DA-20)** · **6h · Red entre teléfonos de la puerta sin internet** (LAN / Bluetooth) y **QR que cambia cada pocos segundos** (anti-captura): no se
       construyen (§6 #10). Sin señal, dos porteros no se ven: el duplicado se resuelve al subir. (6h, 10 nov) — _9a (11 nov): red entre teléfonos de la puerta y QR rotativo (§3.9). En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **6h · Señales de duplicados en Confianza › Fraude** («boletos duplicados»): las incidencias automáticas «Entró dos veces (sin conexión)»
@@ -1207,9 +1207,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9l** · **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
       credenciales del servicio de push de Google); el resto es real (service worker, permiso, cifrado, VAPID, descifrar, mostrar, tocar). Probar
       una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov) — _9b-3 (13 nov): con los avisos listos (9l)._
-- [ ] **→ 9b** · **Presupuesto de velocidad en la base de carga** (`scripts/carga/apps-1m.mjs`, máquina aparte): aquí, 10 000 avisos por la tubería real en
+- [x] **→ 9b** · **Presupuesto de velocidad en la base de carga** (`scripts/carga/apps-1m.mjs`, máquina aparte): aquí, 10 000 avisos por la tubería real en
       la base local: avisar() con el push encolado, media 4,98 ms (p95 6,3 ms); el trabajador entregó 10 000 en 49,8 s al simulador (tope
-      `push_por_minuto` 10 000; los 50 de más salieron el minuto siguiente); 0 duplicados. Falta APNs p95 ≤ 2 s contra Apple. (8c, 11 nov)
+      `push_por_minuto` 10 000; los 50 de más salieron el minuto siguiente); 0 duplicados. Falta APNs p95 ≤ 2 s contra Apple. (8c, 11 nov) — **✓ 9b-3 (13 nov):** con 5 M de avisos en la base: avisar() con el push encolado p95 1,5 / 1,8 ms y la bandeja 0,5 / 0,6 ms (cargas 43457199398 / 43460154153). APNs p95 ≤ 2 s contra Apple, con las tiendas de verdad (9r).
 - [x] **Íconos de la web instalada:** `public/assets/app/icono-*.png` salen del logo del sistema sobre `--tl-action` (el mismo dibujo que el
       ícono de la app To'Latino); se generaron una vez con sharp. Si el ícono de la app cambia, regenerarlos. (8c, 11 nov) — **✓ 9a (11 nov):** nota para el día que cambie el ícono (regenerarlos con sharp); sin cambio.
 - [ ] **→ 9c** · **En los 9 dispositivos:** `push8c` corre en 390 y 1360 en local; falta la matriz de CI. (8c, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
@@ -1257,9 +1257,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       tiene luz). Si choca, la Puerta en iPhone se queda sin linterna (como hoy en Safari). (8e, 11 nov)
 - [ ] **→ 9r** · **Fijar la pantalla en Android real:** si «Fijar apps» está apagado en Ajustes, `startLockTask` puede no hacer nada en algunos teléfonos;
       la Puerta lo dice. Probar en 2–3 marcas. (8e, 11 nov)
-- [ ] **→ 9b** · **Ritmo y carga:** guardar una posición ≤ 30 ms y 200 por segundo sostenidas (2 000 repartidores cada 10 s) en la base de carga
+- [ ] **→ 9t** · **Ritmo y carga:** guardar una posición ≤ 30 ms y 200 por segundo sostenidas (2 000 repartidores cada 10 s) en la base de carga
       (`scripts/carga/apps-1m.mjs`, máquina aparte); SSE de la ruta ≤ 1 s. Aquí: 64 comprobaciones funcionales, sin medida de carga. El tope de una
-      llamada por segundo por token vive en la memoria de cada proceso (como el de errores): con varios procesos, contador compartido. (8e, 11 nov)
+      llamada por segundo por token vive en la memoria de cada proceso (como el de errores): con varios procesos, contador compartido. (8e, 11 nov) — _9b-3 (13 nov): una posición p95 3,9 / 3,6 ms (≤ 30) y el ritmo sostenido 189 / 200 por segundo (2 000 repartidores cada 10 s, 11 / 0 de menos). El p95 DURANTE el ritmo fue 2 860 / 673 ms (tope 30; cargas 43457199398 / 43460154153): un solo proceso de Node con 10 conexiones y la base en la misma máquina de 4 núcleos del runner. Se mide de nuevo con la app y la base en su sitio (varios procesos, la base aparte) antes de encender producción (9t)_
 - [ ] **→ 9p** · **Teselas en las capturas:** en local no corre el servidor de teselas; las capturas de los mapas se ven sin calles. Rehacerlas en el sandbox
       con el dominio. (8e, 11 nov)
 - [x] **La semilla 0046 en una base nueva** no crea las entregas de ejemplo si todavía no existen Juan (+1 570 555 0144) y Héctor (+1 570 555 0210)
@@ -1480,3 +1480,13 @@ en el momento. Se marca solo cuando está hecho de verdad.
       un cambio visual sin aprobar, así que el primer cambio de diseño lo va a frenar a propósito. (9b-2, 13 nov)
 - [ ] **→ 9r** · **XCUITest de iOS más hondo en el job macOS (L1171, L1360) y `EXPLAIN` de las consultas calientes contra la base de carga:** no son de 9b-2
       (CI web); quedan para 9b-3 junto con la escala. (9b-2, 13 nov) — _9b-3 (13 nov): los `EXPLAIN` de las consultas calientes contra la base de carga ya están (`scripts/carga`, flujo «Carga 1M»: el plan de la más lenta de cada medida que pasa del presupuesto); el XCUITest, con las tiendas de verdad (9r)._
+
+## Fase 9 · 9b-3 (la escala 1M y los topes compartidos; 13 nov)
+- [ ] **→ 9m** · **El barrido de la Comunidad con 1 M de vecinos** (`com_cifras_resumir`: rangos por ciudad, activos por rango en 7/30/90 días y candidatos de
+      Recomendados, cada 10 min) tardó 8,6 s y 10,8 s en una sola vuelta (cargas 43457199398 / 43460154153; tope propio 10 s; antes 19 s solo los activos).
+      No bloquea a nadie (corre aparte y la pantalla lee el resultado), pero con más ciudades crece: hacerlo por partes (solo lo que cambió desde la vuelta
+      anterior) con lo diferido del vecino. (9b-3, 13 nov)
+- [ ] **→ 9t** · **Lo de una sola vuelta varía en el runner de GitHub** (la base y la carga en la misma máquina de 4 núcleos, disco compartido): entre dos corridas
+      iguales, la subida de 500 escaneos 1,35 → 2,2 s, el barrido 8,6 → 10,8 s, el ritmo de posiciones 2 860 → 673 ms. Antes de encender producción, correr
+      `scripts/carga` contra una base del tamaño de la de producción (la misma máquina que se contrate) y dejar ahí los presupuestos de las líneas movidas
+      a 9t. (9b-3, 13 nov)
