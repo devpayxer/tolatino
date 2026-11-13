@@ -6884,6 +6884,18 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · La fila que una prueba elige es la que la página muestra: tra4w tomaba «la próxima salida» de trip_runs sin mirar si el servicio seguía
+     vivo y con esa hora (lib/transporte.ts salidasDe lo mira); en la segunda vuelta seguida quedaba la salida de un servicio quitado, la página no la
+     mostraba y el «+» bajaba otra. Una consulta de prueba que elige una salida (trip_runs … limit 1) filtra como salidasDe. Al revés: alreves9b3. */
+  salidaComoLaPagina() {
+    const G = "salidaComoLaPagina";
+    for (const f of readdirSync("pruebas/e2e").filter((y) => y.endsWith(".cjs")).map((y) => `pruebas/e2e/${y}`)) {
+      const t = readFileSync(f, "utf8");
+      for (const m of t.matchAll(/`[^`]*\bfrom trip_runs\b[^`]*\blimit 1\b[^`]*`/g))
+        if (!/removed_at is null/.test(m[0]) || !/svc_attrs->'sal'/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, "elige una salida sin filtrar como la página (servicio vivo y a una hora que todavía tiene: lib/transporte.ts salidasDe)");
+    }
+  },
+
   /* 9b-3 · Cada prueba de punta a punta empieza sin las ventanas de un minuto que dejó la anterior (la espera entre códigos de un teléfono, los
      topes compartidos, las búsquedas de la puerta): barajadas, una prueba que entraba con la misma cuenta justo después de otra recibía «Espera unos
      segundos» (admin1i). Al revés: alreves9b3. */

@@ -39,6 +39,8 @@ const casos = [
   ['fotoSinReloj', 'pruebas/lib/sin-reloj.cjs', ".replace(HORA, 'HORA')", ''],
   // precondicionPropia: pre4e vuelve a crear su casa solo si Marisol no tiene ninguna
   ['precondicionPropia', 'pruebas/e2e/pre4e.cjs', 'not exists (select 1 from user_homes h where h.user_id = ${MARISOL} and h.address_id = user_addresses.id and h.removed_at is null)', 'not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null)'],
+  // salidaComoLaPagina: tra4w vuelve a elegir la próxima salida sin mirar si el servicio sigue vivo
+  ['salidaComoLaPagina', 'pruebas/e2e/tra4w.cjs', "and i.removed_at is null and i.svc_kind = 'asiento'", "and i.svc_kind = 'asiento'"],
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos
   ['pruebasIndependientes', 'pruebas/correr.mjs', '  if (t.carril === "e2e") cerrarVentanas();\n', ''],
   ['pruebasIndependientes', 'pruebas/correr.mjs', "delete from otp_codes where created_at > now() - interval '1 minute';\\n", ''],

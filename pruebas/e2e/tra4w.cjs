@@ -26,7 +26,12 @@ const esperaV = async (f, v) => { let x; for (let i = 0; i < 40; i++) { x = f();
   ok(await espera(h.getByText('Salidas y asientos')) && await espera(h.getByText(/asientos libres (hoy|mañana)/)), 'Lo que vendes: «Salidas y asientos» con su resumen');
   await h.goto(B + `/panel/${F}/vendes/herramienta`); await espera(h.getByText(/SALIDAS DE (HOY|MAÑANA)|PRÓXIMAS SALIDAS/));
   await h.screenshot({ path: OUT + 't1-herramienta-d.png', fullPage: true });
-  const run = sql(`select r.id from trip_runs r join items i on i.id = r.item_id where r.business_id = '${F}' and r.run_at > now() and r.status = 'scheduled' order by r.run_at limit 1`);
+  // 9b-3 · La salida es la PRIMERA que la herramienta muestra (lib/transporte.ts salidasDe): de un servicio por asiento vivo y a una hora que el servicio
+  // todavía tiene. Una salida que quedó de una hora quitada (la vuelta anterior) no sale en la página y la prueba esperaba que bajara (dos veces seguidas).
+  const run = sql(`select r.id from trip_runs r join items i on i.id = r.item_id join businesses b on b.id = r.business_id join cities ci on ci.id = b.city_id
+    where r.business_id = '${F}' and r.run_at > now() and r.status = 'scheduled' and i.removed_at is null and i.svc_kind = 'asiento'
+      and coalesce(i.svc_attrs->'sal', '[]'::jsonb) @> to_jsonb(extract(hour from r.run_at at time zone ci.timezone)::int)
+    order by r.run_at, i.sort, i.id limit 1`);
   const quedan0 = Number(sql(`select seats_total - seats_outside - seats_booked from trip_runs where id = ${run}`));
   // Vendidos en la oficina: + baja lo que queda.
   const paso = h.locator('text=VENDIDOS EN LA OFICINA').first(); await paso.waitFor();
