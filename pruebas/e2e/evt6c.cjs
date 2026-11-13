@@ -199,6 +199,7 @@ const firmaBuena = (t) => { const m = /^TL1\.([a-f0-9]{8})\.(\d+)\.(\d+)\.(\d+)\
     await p1.goto(B + `/eventos/${SLUG}/boletos?fecha=${F}`); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`)); await clic(p1.locator(`[data-tipo="${T_GEN}"] >> text="+"`));
     ok(await contiene(p1, 'MÁX. 1 POR PERSONA'), 'el tope por orden sale de Configuración (evt_boletos_por_orden_max = 1)');
     sql(`delete from platform_config where key = 'evt_boletos_por_orden_max'`);
+    await sleep(16000); // 9b-2 · la Configuración se guarda 15 s en el servidor: sin esto la prueba que sigue (evt6d) veía «MÁX. 1 POR PERSONA» y compraba un solo boleto
     // ── 12 · Cobros apagado y Free bloquean la venta ──
     sql(`update stripe_accounts set charges_enabled = false where business_id = '${NEG}'`);
     await p2.goto(B + `/eventos/${SLUG}?fecha=${F}`);

@@ -113,12 +113,14 @@ try {
     // ── Captura
     const aprobada = join(RAIZ, "pruebas/visual", pa.id, `${id}.png`);
     // Lo que cambia solo con la hora o el día (horarios, «abierto hasta», eventos de la semana) se tapa en las dos imágenes: ver comparar.cjs. pa.titulos: secciones enteras por su título.
-    const zonas = await p.evaluate(([re, titulos]) => {
+    const zonas = await p.evaluate(([re, titulos, desde]) => {
       const R = new RegExp(re, "i"), out = [], W = innerWidth, H = innerHeight, poner = (el) => { const r = el.getBoundingClientRect(); const x = Math.max(0, Math.floor(r.left)), y = Math.max(0, Math.floor(r.top)); const w = Math.min(W, Math.ceil(r.right)) - x, h = Math.min(H, Math.ceil(r.bottom)) - y; if (w > 0 && h > 0) out.push([x, y, w, h]); };
       for (const el of document.querySelectorAll("body *")) { if (el.children.length) continue; if (R.test((el.textContent || "").trim())) poner(el); }
       for (const t of titulos) for (const el of document.querySelectorAll("body *")) { if (el.children.length || (el.textContent || "").trim().toLowerCase() !== t.toLowerCase()) continue; const c = el.closest("section") || el.parentElement?.parentElement; if (c) poner(c); }
+      // pa.desde: desde esa sección hasta el fondo de la pantalla (si crece una lista, lo de abajo se corre: no es un cambio de diseño).
+      if (desde) for (const el of document.querySelectorAll("body *")) { if (el.children.length || (el.textContent || "").trim().toLowerCase() !== desde.toLowerCase()) continue; const c = el.closest("section") || el.parentElement?.parentElement; if (c) { const r = c.getBoundingClientRect(); const x = Math.max(0, Math.floor(r.left)), y = Math.max(0, Math.floor(r.top)); out.push([x, y, Math.min(W, Math.ceil(r.right)) - x, H - y]); } }
       return out;
-    }, [HORA_RE, pa.titulos || []]);
+    }, [HORA_RE, pa.titulos || [], pa.desde || null]);
     const buf = await p.screenshot({ type: "png", animations: "disabled", caret: "hide" });
     writeFileSync(join(SALIDA, `${pa.id}.png`), buf);
     if (flag("--aprobar")) { mkdirSync(dirname(aprobada), { recursive: true }); writeFileSync(aprobada, buf); bien(`captura aprobada escrita (${(buf.length / 1024).toFixed(0)} KB)`); }

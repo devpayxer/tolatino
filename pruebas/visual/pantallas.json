@@ -9,7 +9,8 @@
         "Hoy en el barrio",
         "Abierto ahora",
         "Esta semana"
-      ]
+      ],
+      "desde": "Abierto ahora"
     },
     {
       "id": "ficha",

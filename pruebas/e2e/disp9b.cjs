@@ -20,7 +20,7 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
     const m = await b.newContext(opts); const p = await m.newPage(); mira(p, que);
     // Cada pantalla: carga, ancho real = el del dispositivo, sin desborde horizontal, con contenido.
     const ver = async (ruta, nombre) => {
-      await p.goto(B + ruta, { waitUntil: 'load' }); await p.waitForTimeout(900);
+      await p.goto(B + ruta, { waitUntil: 'load', timeout: 90000 }); // 9b-2 · la primera visita a una ruta en frío pasó de 30 s en WebKit del CI await p.waitForTimeout(900);
       const r = await p.evaluate(() => ({ w: window.innerWidth, sw: document.documentElement.scrollWidth, t: (document.body.innerText || '').trim().length, h: document.body.scrollHeight }));
       // Un teléfono sin «viewport» en la pestaña en blanco da 980; con la app el ancho es el del dispositivo.
       ok(Math.abs(r.w - ancho) <= 1, `${nombre}: el ancho de la pantalla es el del dispositivo (${r.w} de ${ancho})`);
