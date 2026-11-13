@@ -60,6 +60,7 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
   const where = w.length ? w.join(" and ") : "true";
   const orden = f.orden === "new" ? "u.created_at desc, u.id" : "u.last_seen_at desc nulls last, u.id";
   const cab = s.cities.length ? "u.home_city_id = any($1::text[])" : "cardinality($1::text[]) = 0";
+  const sinFiltros = w.length === (s.cities.length ? 1 : 0);
   const [filas, total, k] = await Promise.all([
     db().query<{ id: string; nombre: string | null; phone: string; photo: string | null; zona: string | null; ciudad: string | null; estado: string; dueno: boolean; staff: string | null; creado: string; visto: string | null }>(
       `select u.id, ${NOMBRE} as nombre, u.phone, u.photo_url as photo, z.name->>'es' as zona, c.name as ciudad, ${ESTADO_USR} as estado, ${DUENO} as dueno,
@@ -67,11 +68,17 @@ export async function listaUsuarios(s: Staff, f: FiltrosUsr) {
               u.created_at as creado, u.last_seen_at as visto
          from users u left join cities c on c.id = u.home_city_id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id
         where ${where} order by ${orden} limit ${POR_PAGINA} offset ${(f.pag - 1) * POR_PAGINA}`, p),
-    db().query<{ n: number }>(`select count(*)::int as n from users u where ${where}`, p),
+    // Sin filtros (solo las ciudades de quien mira), el total es el de arriba: no se cuenta dos veces el millón.
+    sinFiltros ? Promise.resolve(null) : db().query<{ n: number }>(`select count(*)::int as n from users u where ${where}`, p),
+    // 9b-3 · Las cifras de arriba sin mirar a cada persona: con 1 M de vecinos, «¿es dueño?» y el estado fila por fila tardaban 900 ms. Dueños =
+    // los distintos dueños de negocios; con sanción = las cuentas que no están activas (índice parcial) más las advertidas, sin repetir.
     db().query<{ n: number; duenos: number; sanc: number }>(
-      `select count(*)::int as n, count(*) filter (where ${DUENO})::int as duenos, count(*) filter (where ${ESTADO_USR} <> 'ok')::int as sanc from users u where ${cab}`, [s.cities]),
+      `select (select count(*)::int from users u where ${cab}) as n,
+              (select count(distinct b.owner_user_id)::int from businesses b join users u on u.id = b.owner_user_id where b.status <> 'merged' and ${cab}) as duenos,
+              (select count(*)::int from (select u.id from users u where u.status in ('muted', 'suspended', 'banned') and cuenta_estado(u.status, u.status_until) <> 'active' and ${cab}
+                                           union select u.id from users u join sanctions x on x.target_kind = 'user' and x.target_id = u.id::text and x.kind = 'adv' and x.lifted_at is null where ${cab}) z) as sanc`, [s.cities]),
   ]);
-  return { filas: filas.rows.map((x) => ({ ...x, phone: telefonoBonito(x.phone) })), total: total.rows[0]?.n ?? 0, cab: k.rows[0] ?? { n: 0, duenos: 0, sanc: 0 } };
+  return { filas: filas.rows.map((x) => ({ ...x, phone: telefonoBonito(x.phone) })), total: (total ? total.rows[0]?.n : k.rows[0]?.n) ?? 0, cab: k.rows[0] ?? { n: 0, duenos: 0, sanc: 0 } };
 }
 
 /* El 360° de una persona: su cuenta, sus negocios, lo que hizo el equipo, sus dispositivos y lo que reportó. */

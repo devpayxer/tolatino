@@ -351,9 +351,15 @@ export async function comunidadAnalitica(s: Staff, dias: number) {
               coalesce(sum(a.preguntas), 0)::int as preguntas, coalesce(sum(a.resueltas), 0)::int as resueltas, coalesce(sum(a.reportes), 0)::int as reportes
          from cities ci left join com_analitica_dia_cache a on a.city_id = ci.id and a.dia >= ${DESDE}
         where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.publicaciones), 0) > 0 order by ci.name`, [s.cities, dias]),
-    db().query<{ rango: number; activos: number; nombre: string | null }>(
-      `select a.rango::int as rango, a.activos, r.name->>'es' as nombre from com_activos_por_rango($1::text[], (${DESDE})::timestamp at time zone 'America/New_York') a
-         left join ranks r on r.level = a.rango order by a.rango`, [s.cities, dias]),
+    // 9b-3 · 7 · 30 · 90 días: del resumen por ciudad (com_activos_cache, cada 10 min; juntar a todos los que publicaron, comentaron o votaron
+    // tardaba 1,3 s con 1 M de vecinos). Otro período, en el momento.
+    [7, 30, 90].includes(dias)
+      ? db().query<{ rango: number; activos: number; nombre: string | null }>(
+        `select a.rango::int as rango, sum(a.activos)::int as activos, r.name->>'es' as nombre from com_activos_cache a left join ranks r on r.level = a.rango
+          where a.dias = $2 and ${scope("a.city_id")} group by a.rango, r.name order by a.rango`, [s.cities, dias])
+      : db().query<{ rango: number; activos: number; nombre: string | null }>(
+        `select a.rango::int as rango, a.activos, r.name->>'es' as nombre from com_activos_por_rango($1::text[], (${DESDE})::timestamp at time zone 'America/New_York') a
+           left join ranks r on r.level = a.rango order by a.rango`, [s.cities, dias]),
     db().query<{ negocio: string; ciudad: string; canjes: number; usados: number; monedas: number }>(
       `select k.negocio, ci.name as ciudad, sum(k.canjes)::int as canjes, sum(k.usados)::int as usados, sum(k.monedas)::int as monedas
          from com_canjes_negocio_dia k join cities ci on ci.id = k.city_id where k.dia >= ${DESDE} and ${scope("k.city_id")}
@@ -478,4 +484,9 @@ export async function appsAnalitica(s: Staff, dias: number) {
 /* 9b-3 · El barrido: el derivado de Analítica › Comunidad (com_analitica_dia_cache, 0133) se rehace cada 10 min para los últimos 40 días. */
 export async function comunidadAlDia(): Promise<number> {
   return (await db().query<{ n: number }>(`select com_analitica_al_dia() as n`)).rows[0]?.n ?? 0;
+}
+
+/* 9b-3 · El barrido: los resúmenes de la Comunidad (rangos y monedas por ciudad, activos por rango, candidatos de Recomendados) cada 10 minutos. */
+export async function comunidadCifrasAlDia(): Promise<number> {
+  return (await db().query<{ n: number }>(`select com_cifras_al_dia() as n`)).rows[0]?.n ?? 0;
 }

@@ -26,6 +26,11 @@ export async function hoyEnElBarrio(ciudad: string, cat: string | null, cursor: 
               max(p.publish_at) over (partition by p.business_id) as ult
          from business_posts p join businesses b on b.id = p.business_id
         where p.city_id = $1 and p.status = 'live' and p.hidden_at is null and p.hoy_off_at is null and p.publish_at > now() - interval '24 hours'
+          -- 9b-3 · Antes de la regla (post_en_hoy, una función que mira el negocio por cada novedad), solo las de negocios Pro con Novedades: con
+          -- miles de novedades del día en la ciudad la regla corría en cada una (50 ms en la carga). La que decide sigue siendo post_en_hoy.
+          and p.id = any(array(select p2.id from business_posts p2 join businesses b2 on b2.id = p2.business_id join business_stats_cache s2 on s2.business_id = b2.id
+                                where p2.city_id = $1 and p2.status = 'live' and p2.hidden_at is null and p2.hoy_off_at is null and p2.publish_at > now() - interval '24 hours'
+                                  and s2.plan = 'pro' and 'nov' = any(b2.modules_on)))
           and post_en_hoy(p) and ($2::text is null or b.category_id = $2::text)),
      x as (select * from v where rn <= 3)
      select x.business_id as id, b.name as nombre,

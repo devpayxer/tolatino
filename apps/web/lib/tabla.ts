@@ -47,10 +47,11 @@ export async function tabla(viewer: string, ciudad: string, mes: Mes, tab: Pesta
               exists (select 1 from user_blocks ub where ub.removed_at is null and ub.kind = 'block' and ((ub.user_id = $3::uuid and ub.target_user_id = mb.user_id) or (ub.user_id = mb.user_id and ub.target_user_id = $3::uuid))) as oculto
          from monthly_boards mb join users u on u.id = mb.user_id left join community_profiles cp on cp.user_id = mb.user_id left join zones z on z.city_id = u.home_city_id and z.id = u.zone_id
         where ${w.join(" and ")} order by mb.${col} desc, mb.user_id limit ${POR_PAGINA_TABLA + 1}`, v),
-    // Mi lugar: los que van delante (con el mismo orden de la tabla) + 1.
+    // Mi lugar: los que van delante (con el mismo orden de la tabla) + 1. 9b-3: solo del índice de la Tabla (sin unir con users, que no filtraba nada:
+    // 250 ms con 460 mil vecinos en la carga).
     db().query<{ v: number; excluido: boolean; pos: number }>(
       `select mb.${col} as v, mb.excluded as excluido,
-              (select count(*)::int from monthly_boards o join users ou on ou.id = o.user_id where o.city_id = $1 and o.month = $2::date and not o.excluded and o.${col} > 0
+              (select count(*)::int from monthly_boards o where o.city_id = $1 and o.month = $2::date and not o.excluded and o.${col} > 0
                  and (o.${col} > mb.${col} or (o.${col} = mb.${col} and o.user_id < mb.user_id))) + 1 as pos
          from monthly_boards mb join users u on u.id = mb.user_id where mb.city_id = $1 and mb.month = $2::date and mb.user_id = $3::uuid`, [ciudad, m, viewer]),
     db().query<{ frozen: boolean; closed: boolean }>(`select true as frozen, closed_at is not null as closed from board_closures where city_id = $1 and month = $2::date`, [ciudad, m]),

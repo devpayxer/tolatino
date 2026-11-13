@@ -3038,7 +3038,7 @@ const guardianes = {
     if (!existsSync(A) || !existsSync(K)) return;
     const b = cuerpoFn(sinComent(A), "comunidadAnalitica");
     if (!b) return falla(G, A, 0, "falta comunidadAnalitica");
-    const OK = new Set(["com_analitica_dia", "com_analitica_dia_cache", "com_canjes_negocio_dia", "com_activos_por_rango", "cities", "ranks"]); // 9b-3: el derivado por ciudad y día (0133)
+    const OK = new Set(["com_analitica_dia", "com_analitica_dia_cache", "com_activos_cache", "com_canjes_negocio_dia", "com_activos_por_rango", "cities", "ranks"]); // 9b-3: el derivado por ciudad y día (0133)
     for (const [, t] of b.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK.has(t)) falla(G, A, 0, `comunidadAnalitica lee «${t}»: solo las vistas sin personas de 0105`);
     const P = /\b(user_id|author_user_id|reporter_user_id|promoter_user_id|first_name|last_name|phone|nick|photo_url|email)\b/;
     if (P.test(b)) falla(G, A, 0, `comunidadAnalitica pide «${P.exec(b)[0]}»: nunca personas`);

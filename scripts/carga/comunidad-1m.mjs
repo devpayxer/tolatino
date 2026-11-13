@@ -25,13 +25,14 @@ if (!process.argv.includes("--sin-generar")) {
     `create index on carga_v (k)`, `analyze carga_v`]);
   const nv = (await uno(`select count(*)::int as n from carga_v`)).n;
 
-  // ── Negocios de carga (una categoría con muchos en Hazleton: la lista numerada de L76) ──
+  // ── Negocios de carga: 20 mil en Hazleton repartidos en las 17 categorías (~1 200 por categoría: el umbral de L76 para dejar la página numerada) ──
   await porLotes("negocios", NEG, `
-    insert into businesses (id, city_id, category_id, name, status, geo, subcategory_ids, created_at)
-    select 'carga-' || g, 'hzl', 'NEG-FOOD', 'Negocio de carga ' || g, 'active', st_setsrid(st_makepoint(-75.97 + (g % 100) / 5000.0, 40.95 + (g / 100 % 100) / 5000.0), 4326)::geography,
-           (select coalesce(subcategory_ids, '{}') from businesses where category_id = 'NEG-FOOD' and subcategory_ids is not null limit 1), now() - make_interval(days => g % 400)
-      from generate_series($1::int, $2::int) g on conflict do nothing`);
-  await generar("negocios: estadísticas", `insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count) select id, case when random() < 0.2 then 'pro' else 'free' end, random() < 0.5, 3.5 + random() * 1.5, (random() * 80)::int from businesses where id like 'carga-%' on conflict do nothing`);
+    insert into businesses (id, city_id, category_id, name, status, geo, subcategory_ids, created_at, modules_on)
+    select 'carga-' || g, 'hzl', k.cat, 'Negocio de carga ' || g, 'active', st_setsrid(st_makepoint(-75.97 + (g % 100) / 5000.0, 40.95 + (g / 100 % 100) / 5000.0), 4326)::geography,
+           coalesce((select subcategory_ids from businesses where category_id = k.cat and subcategory_ids is not null limit 1), '{}'), now() - make_interval(days => g % 400), case when g % 5 = 0 then array['nov'] else '{}'::text[] end
+      from generate_series($1::int, $2::int) g
+      cross join lateral (select (select array_agg(id order by id) from categories)[1 + g % (select count(*)::int from categories)] as cat) k on conflict do nothing`);
+  await generar("negocios: estadísticas", `insert into business_stats_cache (business_id, plan, verified, rating_avg, review_count) select id, case when substr(id, 7)::int % 5 = 0 then 'pro' else 'free' end, random() < 0.5, 3.5 + random() * 1.5, (random() * 80)::int from businesses where id like 'carga-%' on conflict do nothing`);
   // ── Publicaciones: 70 % Hazleton, en su ciudad, un año hacia atrás; los contadores ya calculados ──
   await porLotes("publicaciones", P, `
     insert into com_posts (city_id, author_kind, author_user_id, geom, kind, topic, body, lang, publish_at, created_at, status, up_n, down_n, score, comments_n, hot, last_activity_at, business_id, hidden_by, hidden_reason, hidden_at)
@@ -91,8 +92,8 @@ if (!process.argv.includes("--sin-generar")) {
   // ── Hoy (business_posts) y cupones ──
   await porLotes("novedades (Hoy)", n(200_000), `
     insert into business_posts (business_id, city_id, kind, title, body, status, publish_at, ends_at, audience)
-    select 'carga-' || (1 + g % ${NEG}), 'hzl', (array['hoy','aviso','novedad'])[1 + g % 3], 'Novedad ' || g, 'Hoy tenemos sancocho', 'live', now() - make_interval(secs => (g::bigint * 37) % 2592000),
-           now() + interval '1 day' - make_interval(secs => (g::bigint * 37) % 2592000), 'all'
+    select 'carga-' || (1 + g % ${NEG}), 'hzl', (array['hoy','aviso','novedad'])[1 + g % 3], 'Novedad ' || g, 'Hoy tenemos sancocho', 'live', now() - make_interval(secs => (g::bigint * 37) % 15552000),
+           now() + interval '1 day' - make_interval(secs => (g::bigint * 37) % 15552000), 'all'
       from generate_series($1::int, $2::int) g`);
   await generar("cupones", [`insert into coupons (business_id, city_id, title, cost_coins, monthly_stock, valid_days, status, created_at)
      select 'carga-' || g, 'hzl', jsonb_build_object('es', 'Cupón de carga ' || g, 'en', 'Load coupon ' || g), 80 + (g % 50) * 10, 100, 30, 'live', now() - make_interval(days => g % 60) from generate_series(1, ${n(5_000)}) g`]);
@@ -117,7 +118,8 @@ await medir("muro-5-millas", { linea: "L578", presupuesto: 50, que: "muro a 5 mi
 await medir("muro-siguiendo", { linea: "L603", presupuesto: 50, que: "muro «Siguiendo» de quien sigue a 10" }, (i) => com.muro(VS[i % VS.length], HZL, PT, { ...F0, tab: "sig" }, null));
 const HILO = await meta("hilo");
 await medir("hilo-500", { linea: "L588", presupuesto: 60, que: "hilo de 500 comentarios en 20 raíces" }, async (i) => { if (!HILO) throw new Error("no está el hilo de 500 (carga_meta)"); const r = await hil.hilo(HILO, VS[i % VS.length], null, "top"); if (!r) throw new Error("el hilo no salió"); return r; });
-const POSTS = (await q(`select id::text from carga_p where c = 'hzl' order by k desc limit 60`)).map((x) => x.id);
+// Publicaciones de otros (la app no deja votar lo propio: «Lo tuyo lo votan los demás»).
+const POSTS = (await q(`select x.id::text from carga_p x join com_posts p on p.id = x.id where x.c = 'hzl' and p.author_user_id <> all($1::uuid[]) order by x.k desc limit 60`, [VS])).map((x) => x.id);
 await medir("votar", { linea: "L588", presupuesto: 30, que: "votar una publicación (contadores)" }, (i) => hil.votar(VS[(i * 7) % VS.length], "post", POSTS[i % POSTS.length], i % 2 ? 1 : -1, null));
 await medir("encuesta-100k", { linea: "L590", presupuesto: null, veces: 1, calentar: 0, que: "cerrar una encuesta de 100 mil votos y avisar a todos (avisarMuchos)" }, () => hil.barrerEncuestas());
 
@@ -150,7 +152,8 @@ await medir("en-circulacion", { linea: "L665", presupuesto: 300, veces: 10, que:
 await medir("contenido", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido (UNION de 6 tipos con cursor)" }, () => cont.listaContenido(S, cont.leerFiltrosCont({})));
 await medir("contenido-totales", { linea: "L701", presupuesto: 10000, veces: 1, calentar: 0, que: "barrido: recontar los totales de Contenido (contenido_contar)" }, () => q(`select contenido_contar()`));
 await medir("contenido-reportados", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido › «Con reporte»" }, () => cont.listaContenido(S, cont.leerFiltrosCont({ rep: "1" })));
-await medir("contenido-p2", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido, segunda página (cursor)" }, async () => { const a = await cont.listaContenido(S, cont.leerFiltrosCont({})); return a.sig ? cont.listaContenido(S, { ...cont.leerFiltrosCont({}), c: a.sig }) : a; });
+const SIG = (await cont.listaContenido(S, cont.leerFiltrosCont({}))).sig;
+if (SIG) await medir("contenido-p2", { linea: "L701", presupuesto: 80, que: "Super Admin › Contenido, segunda página (cursor)" }, () => cont.listaContenido(S, { ...cont.leerFiltrosCont({}), c: SIG }));
 await medir("analitica-comunidad-al-dia", { linea: "L701", presupuesto: 10000, veces: 1, calentar: 0, que: "barrido: rehacer Analítica › Comunidad de los últimos 40 días (com_analitica_resumir)" }, () => q(`select com_analitica_resumir((now() at time zone 'America/New_York')::date - 40)`));
 await medir("analitica-comunidad", { linea: "L701", presupuesto: 300, veces: 5, que: "Analítica › Comunidad (30 días)" }, () => ana.comunidadAnalitica(S, 30));
 await medir("resumen-diario", { linea: "L701", presupuesto: 30000, veces: 1, calentar: 0, que: "resumen diario de la Comunidad (una vuelta del barrido)" }, () => avi.resumenComunidad());
@@ -158,8 +161,9 @@ const FU = usr.leerFiltros({});
 await medir("usuarios-p1", { linea: "L193", presupuesto: 80, veces: 10, que: "Super Admin › Usuarios, página 1 (OFFSET y conteos)" }, () => usr.listaUsuarios(S, FU));
 await medir("usuarios-p100", { linea: "L193", presupuesto: 80, veces: 10, que: "Super Admin › Usuarios, página 100" }, () => usr.listaUsuarios(S, { ...FU, pag: 100 }));
 const cat = await app("lib/categoria.ts");
+const NEGC = (await uno(`select count(*)::int as n from businesses where city_id = 'hzl' and category_id = 'NEG-FOOD' and status = 'active'`)).n;
 const pedido = (pagina) => ({ punto: { ...PT, rad: 30 }, cat: "NEG-FOOD", sub: null, filtros: [], orden: cat.ORDENES?.[0] ?? "rec", pagina });
-await medir("categoria-p1", { linea: "L76", presupuesto: 50, veces: 10, que: `Comida de Hazleton (${NEG.toLocaleString("es-US")} negocios), página 1` }, () => cat.resultados(pedido(1)));
+await medir("categoria-p1", { linea: "L76", presupuesto: 50, veces: 10, que: `Comida de Hazleton (${NEGC.toLocaleString("es-US")} negocios), página 1` }, () => cat.resultados(pedido(1)));
 await medir("categoria-p50", { linea: "L76", presupuesto: 50, veces: 10, que: "Comida de Hazleton, página 50 (OFFSET)" }, () => cat.resultados(pedido(50)));
 anotar("comunidad-filas", { linea: "-", que: "filas generadas", valor: (await uno(`select (select count(*) from users)::int + (select count(*) from com_posts)::int + (select count(*) from com_comments)::int as n`)).n, unidad: "filas" });
 

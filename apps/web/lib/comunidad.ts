@@ -147,6 +147,24 @@ export async function miPerfil(userId: string) {
 export type MiPerfil = Awaited<ReturnType<typeof miPerfil>>;
 
 /* El muro de una ciudad para una persona. `cursor` = el que devolvió la página anterior. */
+/* 9b-3 · Las publicaciones del muro dentro del radio: ventanas de 300 en el orden del muro (por su índice, que para en la ventana), quedándose
+   con las que están en el radio, hasta juntar una página + 1. */
+async function enElRadio(w: string[], v: unknown[], orden: string, top: boolean, centro: string, radio: number): Promise<string[]> {
+  const K = 300, ids: string[] = [];
+  let ca: string | null = null, cb: string | null = null;
+  for (let vuelta = 0; vuelta < 40 && ids.length <= POR_PAGINA; vuelta++) {
+    const vv = [...v, radio], ww = [...w];
+    if (ca && cb) { vv.push(ca, cb); ww.push(top ? `(p.hot, p.id) < ($${vv.length - 1}::float8, $${vv.length}::bigint)` : `(p.publish_at, p.id) < ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`); }
+    const r = await db().query<{ id: string; k: string; cerca: boolean }>(
+      `select p.id::text, ${top ? "p.hot::text" : `to_char(p.publish_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`} as k, st_dwithin(p.geom, ${centro}, $${v.length + 1}) as cerca
+         from com_posts p where ${ww.join(" and ")} order by ${orden} limit ${K}`, vv);
+    for (const x of r.rows) if (x.cerca && ids.length <= POR_PAGINA) ids.push(x.id);
+    if (r.rows.length < K) break;
+    [ca, cb] = [r.rows.at(-1)!.k, r.rows.at(-1)!.id];
+  }
+  return ids;
+}
+
 export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filtros, cursor: string | null) {
   const v: unknown[] = [viewer], w: string[] = ["p.status = 'visible'", "p.publish_at <= now()", sinBloqueos("p.author_user_id", "$1"),
     "not exists (select 1 from com_hidden_for h where h.user_id = $1 and h.target_kind = 'post' and h.target_id = p.id)"];
@@ -154,7 +172,9 @@ export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filt
   if (f.tab === "sig") w.push("p.author_user_id in (select f.target_id::uuid from follows f where f.follower_user_id = $1 and f.target_kind = 'user')");
   else { v.push(ciudad); w.push(`p.city_id = $${v.length}`); }
   if (f.kind) { v.push(f.kind); w.push(`p.kind = $${v.length}`); }
-  if (centro) { v.push(f.dist * 1609.34); w.push(`st_dwithin(p.geom, ${centro}, $${v.length})`); }
+  // 9b-3 · El radio no va al WHERE: con él, Postgres creía que quedaban pocas y juntaba y ordenaba todas las del radio (93 ms con 100 mil
+  // publicaciones en la carga). Se mira en cada fila de una ventana en orden (ver abajo).
+  const radio = centro ? f.dist * 1609.34 : null;
   const fijadaArriba = f.tab === "todo" && !f.kind;
   if (fijadaArriba) w.push("not coalesce(p.pinned_until > now(), false)");
   const top = f.orden === "top";
@@ -166,9 +186,14 @@ export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filt
   const orden = top ? "p.hot desc, p.id desc" : "p.publish_at desc, p.id desc";
   const [L, F] = await Promise.all([
     // 9b-3 · Primero las 21 publicaciones (solo com_posts y sus índices), después lo demás de esas 21: con todo junto, el plan armaba negocio,
-    // barrio y fotos de CADA publicación del radio antes de ordenar (385 ms con 5 mil publicaciones a 5 millas en la carga).
-    db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
-                       where p.id in (select p.id from com_posts p where ${w.join(" and ")} order by ${orden} limit ${POR_PAGINA + 1}) order by ${orden}`, v),
+    // barrio y fotos de CADA publicación del radio antes de ordenar (385 ms con 5 mil publicaciones a 5 millas en la carga). «= any(array(…))»: las 21
+    // se calculan primero (con «in (…)» el plan hacía un hash de las 21 y recorría el millón de publicaciones con sus uniones: 840 ms).
+    radio == null
+      ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
+                       where p.id = any(array(select p.id from com_posts p where ${w.join(" and ")} order by ${orden} limit ${POR_PAGINA + 1})) order by ${orden}`, v)
+      : enElRadio(w, v, orden, top, centro!, radio).then((ids) => ids.length
+        ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS} where p.id = any($2::bigint[]) and ${sinBloqueos("p.author_user_id", "$1")} order by ${orden}`, [viewer, ids])
+        : { rows: [] as Fila[] }),
     fijadaArriba && !cursor
       ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
            where p.city_id = $2 and p.pinned_until > now() and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}

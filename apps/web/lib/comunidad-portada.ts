@@ -12,15 +12,19 @@ type Bi = { es: string; en: string };
    lo de quien bloqueó o silenció (de ida y vuelta); sin cuenta, `viewer` es null y no hay bloqueos. Sale solo el negocio y cuántos. */
 export type Recomendado = { id: string; nombre: string; vecinos: number; votos: number; rating: number | null; resenas: number; destacada: boolean };
 export async function recomendadosPorVecinos(ciudad: string, viewer: string | null, n = 5): Promise<Recomendado[]> {
+  // 9b-3 · Solo entre los 50 negocios con más votos de la ciudad (com_recomendados_cache, el barrido cada 10 min), recalculados aquí con los
+  // bloqueos de quien mira; sin resumen todavía, entre todos. Agregar 180 días de la ciudad en cada vista tardaba 450 ms con 1 M de vecinos.
+  // Quedar fuera de los 50 y entrar a los 5 de alguien exigiría que esa persona bloqueara a casi todos los que recomiendan a los de arriba.
+  const cand = `(not exists (select 1 from com_recomendados_cache k where k.city_id = $1) or %s in (select k.business_id from com_recomendados_cache k where k.city_id = $1))`;
   const r = await db().query<Recomendado>(
     `with r as (
        select p.business_id as b, p.author_user_id as u, greatest(p.up_n, 0) as up, coalesce(p.featured_until > now(), false) as dest from com_posts p
         where p.city_id = $1 and p.kind = 'recomendacion' and p.status = 'visible' and p.publish_at <= now() and p.publish_at > now() - interval '180 days'
-          and p.author_kind = 'user' and ${sinBloqueos("p.author_user_id", "$2::uuid")}
+          and p.author_kind = 'user' and ${sinBloqueos("p.author_user_id", "$2::uuid")} and ${cand.replace("%s", "p.business_id")}
        union all
        select c.business_id, c.author_user_id, greatest(c.up_n, 0), false from com_comments c join com_posts p on p.id = c.post_id and p.status = 'visible'
         where c.city_id = $1 and c.business_id is not null and c.status = 'visible' and c.created_at > now() - interval '180 days'
-          and ${sinBloqueos("c.author_user_id", "$2::uuid")})
+          and ${sinBloqueos("c.author_user_id", "$2::uuid")} and ${cand.replace("%s", "c.business_id")})
      select id, nombre, vecinos, votos, rating, resenas, destacada from (
        select r.b as id, b.name as nombre, count(distinct r.u)::int as vecinos, sum(r.up)::int as votos, bs.rating_avg::float8 as rating, coalesce(bs.review_count, 0)::int as resenas,
               bool_or(r.dest) as destacada, row_number() over (order by sum(r.up) desc, count(distinct r.u) desc, b.name) as rn

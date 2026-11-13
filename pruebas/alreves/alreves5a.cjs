@@ -11,7 +11,7 @@ const casos = [
   ['ubicacionDeBarrio', 'packages/db/migrations/0097_comunidad_base.sql', "raise exception 'la ubicación de una publicación la pone la base (centro del barrio)';", 'null;'],
   ['bloqueoMutuo', 'apps/web/lib/comunidad.ts', 'where p.id = $2::bigint and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}', 'where p.id = $2::bigint and p.publish_at <= now()'],
   ['bloqueoMutuo', 'apps/web/lib/comunidad.ts', " or (ub.kind = 'block' and ub.user_id = ${autor} and ub.target_user_id = ${viewer})", ''],
-  ['feedConCursor', 'apps/web/lib/comunidad.ts', 'order by ${orden} limit ${POR_PAGINA + 1}) order by', 'order by ${orden} limit ${POR_PAGINA + 1} offset 20) order by'],
+  ['feedConCursor', 'apps/web/lib/comunidad.ts', 'order by ${orden} limit ${POR_PAGINA + 1})) order by', 'order by ${orden} limit ${POR_PAGINA + 1} offset 20)) order by'],
   ['feedConCursor', 'packages/db/migrations/0097_comunidad_base.sql', "on com_posts (city_id, hot desc, id desc) where status = 'visible'", "on com_posts (city_id, hot desc)"],
   ['comunidadSoloConCuenta', 'apps/web/app/(app)/comunidad/sesion.ts', 'if (!u?.first_name) redirect(`/entrar?volver=${encodeURIComponent(volver)}`);', 'if (!u?.first_name) throw new Error("x");'],
   ['comunidadSoloConCuenta', 'apps/web/app/(app)/comunidad/p/[id]/page.tsx', '  const s = await conCuenta(`/comunidad/p/${encodeURIComponent(id)}`);\n  const orden', '  const h0 = await hilo(id, "x", null);\n  const s = await conCuenta(`/comunidad/p/${encodeURIComponent(id)}`);\n  const orden'],

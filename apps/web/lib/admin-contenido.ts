@@ -89,17 +89,24 @@ export async function listaContenido(s: Staff, f: FiltrosCont) {
   if (f.rango) add("coalesce(x.rango, 1) >= $?::int", f.rango);
   if (f.inv) w.push("x.inv");
   // El cursor (con reporte, fecha, tipo, id): dentro de cada trozo, para que su tope cuente desde ahí.
-  let cur = "", rCur = 1;
-  if (f.c) { const [r, at, k, id] = f.c.split("|"); rCur = Number(r); v.push(rCur, at, k, id); cur = ` and ((x.rep > 0)::int, x.at, x.k, x.id) < ($${v.length - 3}::int, $${v.length - 2}::timestamptz, $${v.length - 1}::text, $${v.length}::text)`; }
+  // En lo reportado el cursor compara (fecha, tipo, id) dentro de esa parte; en lo demás, si el cursor todavía está en lo reportado, entra todo
+  // (va después), y si no, (fecha, tipo, id) con «fecha ≤» para que el índice de fecha empiece ahí (comparar «con reporte» fila por fila lo recorría entero).
+  let curR = "", curN = "", rCur = 1;
+  if (f.c) {
+    const [r, at, k, id] = f.c.split("|"); rCur = Number(r); v.push(at, k, id);
+    const t = `(x.at, x.k, x.id) < ($${v.length - 2}::timestamptz, $${v.length - 1}::text, $${v.length}::text)`;
+    curR = ` and ${t}`;
+    curN = rCur === 1 ? "" : ` and x.at <= $${v.length - 2}::timestamptz and ${t}`;
+  }
   const LIM = POR_PAGINA_CONT + 1, trozos: string[] = [];
   for (const t of tipos) {
     const R = REPORTE[t], base = PARTES[t];
     const abierto = R ? `exists (select 1 from content_reports cr where cr.target_kind = '${R.kind}' and cr.target_id = ${R.col}::text and cr.status = 'open')` : "false";
     // Lo reportado: los que tienen un reporte abierto (desde content_reports_abiertos_idx). Solo si el cursor todavía está en esa parte.
     if (R && rCur === 1) trozos.push(`(select * from (${base} and ${R.col} in (select cr.target_id::bigint from content_reports cr where cr.target_kind = '${R.kind}' and cr.status = 'open' and cr.target_id ~ '^[0-9]{1,18}$')) x${COLS}
-      where ${w.join(" and ")}${cur} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+      where ${w.join(" and ")}${curR} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
     // Lo demás: lo más nuevo sin reporte, por fecha.
-    if (!f.rep) trozos.push(`(select * from (${base} and not ${abierto}) x${COLS} where ${w.join(" and ")}${cur} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
+    if (!f.rep) trozos.push(`(select * from (${base} and not ${abierto}) x${COLS} where ${w.join(" and ")}${curN} order by x.at desc, x.k desc, x.id desc limit ${LIM})`);
   }
   const [L, cab, ciu] = await Promise.all([
     trozos.length ? db().query<FilaCont>(`select y.k, y.id, y.biz, y.bname, y.who, y.uid, y.rango, y.inv, y.oficial, ci.name as ciudad, y.text, y.extra, y.up, y.dn, to_char(y.at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at, y.hidden, y.why, y.rep, y.pin, y.lock,

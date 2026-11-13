@@ -19,6 +19,7 @@
 -- · com_analitica_dia_cache: Analítica › Comunidad lee un derivado por ciudad y día (com_analitica_resumir) en vez de la vista que agregaba toda la
 --   historia en cada vista; el barrido lo rehace cada 10 min para los últimos 40 días. Índice de la primera respuesta por publicación.
 -- · Super Admin › Contenido: índices por fecha y de ocultos, y content_counts_cache (los totales, cada 10 min).
+-- · com_rangos_ciudad, com_activos_cache, com_recomendados_cache: cifras de la Comunidad que agregaban a todos en cada vista (cada 10 min).
 -- · jit = off en la base (consultas cortas; el JIT sumaba ~100 ms a consultas de 5 ms con costos mal estimados).
 -- Idempotente: se puede aplicar dos veces. Nada de lo que es de una persona se borra.
 begin;
@@ -352,6 +353,9 @@ select com_analitica_resumir('2000-01-01');
 create index if not exists com_posts_creado_idx on com_posts (created_at desc) where status <> 'deleted';
 create index if not exists com_comments_creado_idx on com_comments (created_at desc) where status <> 'deleted';
 create index if not exists reviews_creado_idx on reviews (created_at desc) where status <> 'removed';
+create index if not exists business_posts_creado_idx on business_posts (created_at desc) where status <> 'removed';
+create index if not exists post_comments_creado_idx on post_comments (created_at desc) where status <> 'removed';
+create index if not exists job_postings_creado_idx on job_postings (created_at desc) where status <> 'removed';
 create index if not exists com_posts_ocultos_idx on com_posts (city_id) where status = 'hidden';
 create index if not exists com_comments_ocultos_idx on com_comments (city_id) where status = 'hidden';
 create table if not exists content_counts_cache (
@@ -380,6 +384,69 @@ begin
   return contenido_contar();
 end $$;
 select contenido_contar();
+
+-- ── Las cifras de la Comunidad que agregaban a todos en cada vista (carga de 9b-3, 1 M de vecinos): vecinos y monedas por rango y ciudad
+--    (Gamificación: 1,8 s), activos por rango en 7 · 30 · 90 días (Analítica › Comunidad: 1,3 s) y los candidatos de «Recomendados por vecinos»
+--    (los 50 negocios con más votos de cada ciudad en 180 días: 450 ms). El barrido las rehace cada 10 minutos (com_cifras_al_dia). Sin personas. ──
+create table if not exists com_rangos_ciudad (
+  city_id      text not null references cities (id),
+  rank_level   smallint not null,
+  vecinos      integer not null check (vecinos >= 0),
+  monedas      bigint not null check (monedas >= 0),
+  refreshed_at timestamptz not null default now(),
+  primary key (city_id, rank_level)
+);
+create table if not exists com_activos_cache (
+  city_id      text not null references cities (id),
+  dias         smallint not null check (dias in (7, 30, 90)),
+  rango        smallint not null,
+  activos      integer not null check (activos >= 0),
+  refreshed_at timestamptz not null default now(),
+  primary key (city_id, dias, rango)
+);
+create table if not exists com_recomendados_cache (
+  city_id      text not null references cities (id),
+  business_id  text not null references businesses (id),
+  votos        integer not null,
+  vecinos      integer not null,
+  refreshed_at timestamptz not null default now(),
+  primary key (city_id, business_id)
+);
+create or replace function com_cifras_resumir() returns integer language plpgsql as $$
+declare d integer;
+begin
+  delete from com_rangos_ciudad;
+  insert into com_rangos_ciudad (city_id, rank_level, vecinos, monedas)
+  select u.home_city_id, coalesce(cp.rank_level, 1), count(*)::int, coalesce(sum(greatest(cp.coins, 0)), 0)
+    from community_profiles cp join users u on u.id = cp.user_id where u.home_city_id is not null group by 1, 2;
+  delete from com_activos_cache;
+  foreach d in array array[7, 30, 90] loop
+    insert into com_activos_cache (city_id, dias, rango, activos)
+    select c.id, d, a.rango, a.activos from cities c cross join lateral com_activos_por_rango(array[c.id], ((now() at time zone 'America/New_York')::date - (d - 1))::timestamp at time zone 'America/New_York') a;
+    end loop;
+  delete from com_recomendados_cache;
+  insert into com_recomendados_cache (city_id, business_id, votos, vecinos)
+  select city_id, b, votos, vecinos from (
+    select r.city_id, r.b, sum(r.up)::int as votos, count(distinct r.u)::int as vecinos, row_number() over (partition by r.city_id order by sum(r.up) desc, count(distinct r.u) desc) as rn
+      from (select p.city_id, p.business_id as b, p.author_user_id as u, greatest(p.up_n, 0) as up from com_posts p
+             where p.kind = 'recomendacion' and p.status = 'visible' and p.publish_at <= now() and p.publish_at > now() - interval '180 days' and p.author_kind = 'user' and p.business_id is not null
+            union all
+            select c.city_id, c.business_id, c.author_user_id, greatest(c.up_n, 0) from com_comments c join com_posts p on p.id = c.post_id and p.status = 'visible'
+             where c.business_id is not null and c.status = 'visible' and c.created_at > now() - interval '180 days') r
+      join businesses b on b.id = r.b and b.status = 'active' and b.city_id = r.city_id
+     group by r.city_id, r.b) t
+   where rn <= 50;
+  return (select count(*) from com_rangos_ciudad)::int + (select count(*) from com_activos_cache)::int + (select count(*) from com_recomendados_cache)::int;
+end $$;
+create or replace function com_cifras_al_dia() returns integer language plpgsql as $$
+begin
+  if exists (select 1 from com_rangos_ciudad where refreshed_at > now() - interval '10 minutes') then return 0; end if;
+  return com_cifras_resumir();
+end $$;
+select com_cifras_resumir();
+
+-- ── Super Admin › Usuarios: las cuentas sancionadas, por índice parcial (contarlas fila por fila tardaba 900 ms con 1 M) ──
+create index if not exists users_sancionados_idx on users (status) where status in ('muted', 'suspended', 'banned');
 
 -- ── El vocabulario de búsqueda: se refresca sin bloquear y se anota cuándo ──
 create or replace function refrescar_busqueda() returns void language plpgsql as $$
