@@ -177,7 +177,9 @@ jobs:
           - { nombre: "fases 6 · 7", args: "--grupo fase6,fase7" }
           - { nombre: "fases 8 · 9 y varios", args: "--grupo fase8,fase9,varios" }
     steps:
+      # Historia completa: las pruebas al revés de 8a leen versiones viejas de archivos con «git show <sha>».
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: pnpm/action-setup@v4
         with: { version: 10.28.0 }
       - uses: actions/setup-node@v4

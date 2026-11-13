@@ -15,10 +15,16 @@ runs:
     - name: La web construida en su sitio
       shell: bash
       run: tar xzf "$RUNNER_TEMP/web/web.tgz" -C "$GITHUB_WORKSPACE"
+    # Python 3.12 fijo: el del runner cambia y onnxruntime 1.23.2 (la moderación de fotos, requirements.txt) no tiene paquete para los nuevos.
+    - uses: actions/setup-python@v5
+      with: { python-version: "3.12" }
+    - name: Pillow para las fotos de prueba (recursos.sh)
+      shell: bash
+      run: python3 -m pip install -q pillow
     - name: Herramientas de las pruebas (versiones exactas) y navegadores
       shell: bash
       run: |
-        sudo apt-get update -qq && sudo apt-get install -y -qq psmisc python3-pil > /dev/null
+        sudo apt-get update -qq && sudo apt-get install -y -qq psmisc > /dev/null
         npm ci --ignore-scripts --prefix pruebas/herramientas > /dev/null
         (cd pruebas/herramientas && npx playwright install --with-deps ${{ inputs.navegadores }} > /dev/null)
         echo "NODE_PATH=$GITHUB_WORKSPACE/pruebas/herramientas/node_modules" >> "$GITHUB_ENV"

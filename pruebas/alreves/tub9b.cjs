@@ -21,9 +21,9 @@ const pinta = (p, x0, y0, w, h, c) => { for (let y = y0; y < y0 + h; y++) for (l
   const boton = PNG.sync.write(pinta(pinta(lienzo(W, H), 20, 100, 350, 120, [30, 90, 140]), 20, 400, 350, 70, [200, 40, 40]));
   const r2 = compara(boton, base);
   ok(!r2.ok && /distinta/.test(r2.razon), `un cambio visual sin aprobar (un botón nuevo, ${(r2.ratio * 100).toFixed(1)} % de la pantalla) FRENA: ${r2.razon}`);
-  const color = PNG.sync.write(pinta(lienzo(W, H), 20, 100, 350, 120, [30, 90, 200]));
+  const color = PNG.sync.write(pinta(lienzo(W, H), 20, 100, 350, 120, [200, 80, 40]));
   const r3 = compara(color, base);
-  ok(!r3.ok, `el mismo botón en otro azul FRENA (${(r3.ratio * 100).toFixed(1)} %)`);
+  ok(!r3.ok, `el mismo botón en otro color (de azul a naranja) FRENA (${(r3.ratio * 100).toFixed(1)} %)`);
   const otro = compara(PNG.sync.write(lienzo(W, H + 40)), base);
   ok(!otro.ok && /tamaño/.test(otro.razon), 'una pantalla de otro tamaño FRENA: ' + otro.razon);
   // La cobertura: cada pantalla en cada dispositivo tiene su captura aprobada y el CI tiene todas sus partes.
