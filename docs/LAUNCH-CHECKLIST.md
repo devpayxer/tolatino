@@ -1448,3 +1448,29 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (noc4c, noc4d, compa7h 3/3 al final); no se hizo ninguna corrida `--barajar` entera. Por costo no se siguió repitiendo aquí. Las
       pruebas atadas a la hora salieron una por cada franja del día en que se corrió (4:45 AM dlvsrv, 6 AM evt6g, media tarde pq4e, 6 PM
       noc4c, 7 AM de Tokio compa7h): el CI debería correr a dos horas distintas del día. (9b-1, 12 nov)
+
+## Fase 9 · 9b-2 (la tubería en el CI; 13 nov)
+- [ ] **→ 9c** · **axe `color-contrast` (serio) en las seis pantallas clave** (inicio 13 nodos, ficha 24, mi cuenta 23, panel hoy 8, admin hoy 13; en buscar solo en tres dispositivos):
+      textos chicos (9,5–10 px, en mayúsculas y con espacio entre letras) en gris sobre fondo claro que no llegan a 4,5:1. Es del sistema de diseño
+      (tokens), no de una pantalla. Entra en `pruebas/visual/axe-conocidas.json` con destino 9c; cuando 9c lo arregle se borra de esa lista y el CI
+      lo vigila. (9b-2, 13 nov)
+- [ ] **→ 9c** · **axe `scrollable-region-focusable` (serio) en inicio y ficha:** la fila de categorías/pestañas con `overflow-x-auto` (`div[role="tablist"]`
+      en la ficha) no se alcanza con el teclado. Mismo trato que el anterior. (9b-2, 13 nov)
+- [ ] **→ 9b** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
+      (admin hoy), contra 0,1 que es lo bueno; el presupuesto de esas dos pantallas es lo medido con margen (0,4 y 1,2) para que el CI no mienta. 9b-3
+      busca qué se mueve (contenido que llega después y empuja) y baja el presupuesto a 0,1 en `pruebas/velocidad/presupuesto.json`. El LCP (80–350 ms)
+      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov)
+- [ ] **→ 9b** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
+      282 consultas con `${...}` dentro del SQL, ~210 con fragmentos fijos por convención (`PCT`, `ISO(…)`, `scope(…)`, `cfgSql(…)`) y 73 armadas con
+      variables locales (`where`, `orden`, `col`, `fm`, `w.join(" and ")`…). Revisadas por encima, todas salen de constantes o de listas fijas del
+      código, pero no hay una prueba de flujo de datos: en 9b-3, auditar las 73 una por una (modo taint de Semgrep desde los parámetros de las
+      acciones: 50 hallazgos de partida) y pasar la regla a taint con `nosemgrep` y su porqué en cada una que lo merezca. (9b-2, 13 nov)
+- [ ] **→ 9b** · **Las pruebas de punta a punta por dispositivo son `disp9b` (recorrido de 4 personas, ancho real, sin desborde, sin errores) en los 9
+      dispositivos; el resto de la regresión corre con el dispositivo por defecto (teléfono 390 y escritorio 1360).** `correr.mjs --dispositivo <id>`
+      ya cambia cualquier prueba (`pruebas/lib/dispositivo-precarga.cjs`), pero correr las 199 en cada uno de los 9 (≈ 15 h de máquina) no se hizo: se
+      vuelve a decidir con la lista de pruebas que de verdad dependen del ancho (las de «teléfono» y «escritorio» a la vez). (9b-2, 13 nov)
+- [ ] **→ 9c** · **Cuando el fundador cierre su diseño, las 54 capturas aprobadas se vuelven a aprobar** (corrida a mano `aprobar=si`, se mira cada una y
+      entran por commit); y las pantallas nuevas entran en `pruebas/visual/pantallas.json` con su presupuesto de velocidad y sus capturas. El CI frena
+      un cambio visual sin aprobar, así que el primer cambio de diseño lo va a frenar a propósito. (9b-2, 13 nov)
+- [ ] **→ 9b** · **XCUITest de iOS más hondo en el job macOS (L1171, L1360) y `EXPLAIN` de las consultas calientes contra la base de carga:** no son de 9b-2
+      (CI web); quedan para 9b-3 junto con la escala. (9b-2, 13 nov)
