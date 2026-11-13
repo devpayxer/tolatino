@@ -1,4 +1,77 @@
 {
-  "comentario": "9b-2 · Presupuesto de velocidad por pantalla (Web Vitals de laboratorio, Chromium sin limitar red ni CPU, mediana de 3): LCP en ms, CLS sin unidad, TBT en ms. Perfil teléfono = Pixel 7 · escritorio = 1280. Una pantalla que pasa de su presupuesto frena el CI; el presupuesto solo se sube con una línea en docs/REVISION.md.",
-  "pantallas": {}
+  "comentario": "9b-2 · Presupuesto de velocidad por pantalla (Web Vitals de laboratorio, Chromium sin limitar red ni CPU, fotos de fuera cortadas, mediana de 3): LCP en ms, CLS sin unidad, TBT en ms. Perfil teléfono = Pixel 7 · escritorio = 1280. Una pantalla que pasa de su presupuesto frena el CI; el presupuesto solo se sube con una línea en docs/REVISION.md. Lo bueno de Google es LCP 2500 · CLS 0,1 · TBT 200: donde hoy se pasa del CLS (medido el 13 nov: mi-cuenta 0,261 y admin-hoy 0,889 en escritorio) el presupuesto es lo medido con margen y baja a 0,1 en 9b (LAUNCH «presupuesto-velocidad»).",
+  "pantallas": {
+    "inicio": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      }
+    },
+    "ficha": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      }
+    },
+    "buscar": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 0.15,
+        "tbt": 200
+      }
+    },
+    "mi-cuenta": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 0.4,
+        "tbt": 200
+      }
+    },
+    "panel-hoy": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      }
+    },
+    "admin-hoy": {
+      "telefono": {
+        "lcp": 2500,
+        "cls": 0.1,
+        "tbt": 200
+      },
+      "escritorio": {
+        "lcp": 2500,
+        "cls": 1.2,
+        "tbt": 200
+      }
+    }
+  }
 }

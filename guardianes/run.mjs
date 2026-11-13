@@ -6637,6 +6637,89 @@ const guardianes = {
     if (!existsSync(RZ) || !/<AhoraProvider t=\{Date\.now\(\)\}>\{children\}/.test(sinComent(RZ))) falla(G, RZ, 0, "la raíz tiene que envolver la app con <AhoraProvider t={Date.now()}> (lib/ahora.tsx)");
   },
 
+  /* 9b-2 · La tubería completa del CI (PLAN §5). Los cuatro guardianes que faltaban comprueban que cada parte EXISTE en .github/workflows/ci.yml y que no se
+     puede saltar: ningún continue-on-error, ningún «if» que apague la parte en un push, y el trabajo «tuberia» (el que se exige en la rama) depende de todas
+     y cuenta lo saltado como rojo. Al revés (alreves9b2): quitar un trabajo, un dispositivo, el paso de axe, el de Semgrep o el presupuesto de una pantalla. */
+  tuberiaVisual() {
+    const G = "tuberiaVisual", Y = ".github/workflows/ci.yml", PA = "pruebas/visual/pantallas.json", CO = "pruebas/visual/comparar.cjs", RU = "pruebas/visual/correr.mjs";
+    const IDS = ["iphone-se", "iphone-15", "iphone-15-pro-max", "pixel", "galaxy", "ipad", "escritorio-1024", "escritorio-1280", "escritorio-1440"];
+    for (const f of [Y, PA, CO, RU, "pruebas/lib/dispositivos.cjs"]) if (!existsSync(f)) return falla(G, f, 0, "falta");
+    const y = readFileSync(Y, "utf8"), d = /\n  dispositivos:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    if (!d) return falla(G, Y, 0, "falta el trabajo «dispositivos» (los 9 dispositivos con capturas)");
+    for (const id of IDS) if (!d.includes(id)) falla(G, Y, 0, `el dispositivo ${id} no está en la matriz de «dispositivos»`);
+    if (/continue-on-error/.test(y)) falla(G, Y, 0, "continue-on-error en el CI: una parte que falla no puede dejar pasar");
+    const comp = /- name: Capturas contra las aprobadas[\s\S]*?run: (.*)/.exec(d)?.[1] ?? "";
+    if (!/pruebas\/visual\/correr\.mjs --dispositivo \$\{\{ matrix\.id \}\}$/.test(comp.trim())) falla(G, Y, 0, "el paso «Capturas contra las aprobadas» tiene que correr pruebas/visual/correr.mjs --dispositivo <id> a secas (sin --aprobar)");
+    if (!/inputs\.aprobar != 'si'/.test(d) || !/inputs\.aprobar == 'si'/.test(d)) falla(G, Y, 0, "aprobar capturas solo a mano (workflow_dispatch aprobar=si), nunca en un push");
+    const t = readFileSync(CO, "utf8"), um = /UMBRAL = ([\d.]+), MAXIMO = ([\d.]+)/.exec(t);
+    if (!um || +um[1] > 0.3 || +um[2] > 0.02) falla(G, CO, 0, "la tolerancia de la comparación se aflojó (UMBRAL ≤ 0,3 y MAXIMO ≤ 2 % de la pantalla)");
+    const r = readFileSync(RU, "utf8");
+    if (!/captura nueva sin aprobar/.test(r)) falla(G, RU, 0, "una captura que no está aprobada tiene que fallar («captura nueva sin aprobar»)");
+    const pan = JSON.parse(readFileSync(PA, "utf8")).pantallas ?? [];
+    if (pan.length < 6) falla(G, PA, 0, "el conjunto inicial son 6 pantallas clave (inicio, ficha, buscar, mi cuenta, panel hoy, admin hoy)");
+    for (const x of pan) for (const id of IDS) if (!existsSync(`pruebas/visual/${x.id}/${id}.png`)) falla(G, `pruebas/visual/${x.id}/${id}.png`, 0, "falta la captura aprobada (se genera con la corrida aprobar=si, se aprueba en docs/REVISION.md y entra por commit)");
+  },
+
+  tuberiaAccesibilidad() {
+    const G = "tuberiaAccesibilidad", Y = ".github/workflows/ci.yml", RU = "pruebas/visual/correr.mjs", HE = "pruebas/herramientas/package.json", CN = "pruebas/visual/axe-conocidas.json";
+    for (const f of [Y, RU, HE, CN]) if (!existsSync(f)) return falla(G, f, 0, "falta");
+    const r = readFileSync(RU, "utf8"), he = JSON.parse(readFileSync(HE, "utf8")).dependencies ?? {};
+    if (!/AxeBuilder/.test(r) || !/wcag2aa/.test(r) || !/"serious"/.test(r) || !/"critical"/.test(r)) falla(G, RU, 0, "axe tiene que correr con las etiquetas WCAG A/AA y frenar lo serio y lo crítico");
+    if (!/falla\(`\$\{pa\.id\}: axe /.test(r)) falla(G, RU, 0, "una violación seria o crítica que no está en axe-conocidas.json tiene que fallar");
+    if (!/^\d+\.\d+\.\d+$/.test(he["@axe-core/playwright"] ?? "")) falla(G, HE, 0, "@axe-core/playwright con versión EXACTA (sin ^ ni ~)");
+    const y = readFileSync(Y, "utf8");
+    if (!/pruebas\/visual\/correr\.mjs --dispositivo/.test(y)) falla(G, Y, 0, "el CI no corre pruebas/visual/correr.mjs (axe va dentro)");
+    const lc = existsSync("docs/LAUNCH-CHECKLIST.md") ? readFileSync("docs/LAUNCH-CHECKLIST.md", "utf8") : "";
+    for (const k of JSON.parse(readFileSync(CN, "utf8")).conocidas ?? []) {
+      if (!/^9[b-v]$/.test(k.destino ?? "")) falla(G, CN, 0, `${k.regla}: una violación conocida lleva su destino (9c…9v)`);
+      if (!lc.includes(k.regla)) falla(G, CN, 0, `${k.regla}: una violación conocida tiene que estar en docs/LAUNCH-CHECKLIST.md`);
+    }
+  },
+
+  tuberiaSeguridad() {
+    const G = "tuberiaSeguridad", Y = ".github/workflows/ci.yml", SG = "semgrep/tolatino.yml";
+    for (const f of [Y, SG]) if (!existsSync(f)) return falla(G, f, 0, "falta");
+    const y = readFileSync(Y, "utf8"), j = /\n  seguridad:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    if (!j) return falla(G, Y, 0, "falta el trabajo «seguridad» (Semgrep + dependencias)");
+    if (!/pnpm audit --audit-level high/.test(j)) falla(G, Y, 0, "«seguridad» tiene que correr pnpm audit --audit-level high");
+    if (!/semgrep==\d+\.\d+\.\d+/.test(j)) falla(G, Y, 0, "Semgrep con versión EXACTA (semgrep==x.y.z)");
+    if (!/semgrep" scan --config semgrep\/ --error/.test(j)) falla(G, Y, 0, "«seguridad» tiene que correr semgrep scan --config semgrep/ --error (un hallazgo rompe el CI)");
+    if (/^\s+if:/m.test(j) || /continue-on-error/.test(j)) falla(G, Y, 0, "«seguridad» no se puede apagar: ni «if» ni continue-on-error");
+    const t = readFileSync(SG, "utf8");
+    for (const id of ["tolatino-sql-con-texto-interpolado", "tolatino-html-crudo", "tolatino-proceso-con-texto-interpolado", "tolatino-secreto-en-el-codigo"]) if (!t.includes(`id: ${id}`)) falla(G, SG, 0, `falta la regla ${id}`);
+    if (/severity: (INFO|WARNING)/.test(t)) falla(G, SG, 0, "las reglas propias son ERROR: un aviso no frena el CI");
+  },
+
+  tuberiaVelocidad() {
+    const G = "tuberiaVelocidad", Y = ".github/workflows/ci.yml", PR = "pruebas/velocidad/presupuesto.json", PA = "pruebas/visual/pantallas.json";
+    for (const f of [Y, PR, PA]) if (!existsSync(f)) return falla(G, f, 0, "falta");
+    const y = readFileSync(Y, "utf8"), pre = JSON.parse(readFileSync(PR, "utf8")).pantallas ?? {}, pan = JSON.parse(readFileSync(PA, "utf8")).pantallas ?? [];
+    const paso = /- name: Velocidad \(Web Vitals[\s\S]*?run: (.*)/.exec(y)?.[1] ?? "";
+    if (!/pruebas\/visual\/correr\.mjs --dispositivo \$\{\{ matrix\.id \}\} --velocidad/.test(paso)) falla(G, Y, 0, "falta el paso de velocidad (correr.mjs --velocidad) en «dispositivos»");
+    if (!/inputs\.medir == 'si' && '--medir' \|\| ''/.test(paso) || /^\s*--medir/.test(paso)) falla(G, Y, 0, "--medir (sin fallar) solo a mano con medir=si, nunca fijo");
+    if (!/matrix\.velocidad/.test(y) || !/id: pixel, velocidad: true/.test(y) || !/id: escritorio-1280, velocidad: true/.test(y)) falla(G, Y, 0, "la velocidad se mide en un teléfono (pixel) y un escritorio (escritorio-1280)");
+    for (const x of pan) for (const perfil of ["telefono", "escritorio"]) {
+      const l = pre[x.id]?.[perfil];
+      if (!l || ![l.lcp, l.cls, l.tbt].every((n) => typeof n === "number" && n >= 0)) falla(G, PR, 0, `${x.id}: falta el presupuesto (${perfil}: lcp, cls, tbt)`);
+      else if ((l.lcp > 4000 || l.cls > 0.25 || l.tbt > 600) && !new RegExp(`presupuesto-velocidad:${x.id}\\b`).test(existsSync("docs/LAUNCH-CHECKLIST.md") ? readFileSync("docs/LAUNCH-CHECKLIST.md", "utf8") : "")) falla(G, PR, 0, `${x.id} (${perfil}): el presupuesto pasa de lo que Google llama «malo» (LCP 4 s, CLS 0,25, TBT 600 ms) y no tiene su línea «presupuesto-velocidad:${x.id}» en docs/LAUNCH-CHECKLIST.md`);
+    }
+  },
+
+  /* 9b-2 · El trabajo «tuberia» es el que cierra la tubería: depende de todas las partes, corre siempre y cuenta lo saltado como rojo. */
+  tuberiaNoSeSalta() {
+    const G = "tuberiaNoSeSalta", Y = ".github/workflows/ci.yml";
+    if (!existsSync(Y)) return falla(G, Y, 0, "falta ci.yml");
+    const y = readFileSync(Y, "utf8"), j = /\n  tuberia:\n[\s\S]*$/.exec(y)?.[0] ?? "";
+    if (!j) return falla(G, Y, 0, "falta el trabajo «tuberia» (cierra el CI)");
+    for (const n of ["verificar", "seguridad", "regresion", "dispositivos"]) if (!new RegExp(`needs: \\[[^\\]]*\\b${n}\\b`).test(j)) falla(G, Y, 0, `«tuberia» no depende de «${n}»`);
+    if (!/if: always\(\)/.test(j)) falla(G, Y, 0, "«tuberia» tiene que correr siempre (if: always()) para ver lo que falló");
+    if (!/v\.result === "success"/.test(j)) falla(G, Y, 0, "«tuberia» solo da verde con «success»");
+    if (!/on:[\s\S]*?push:[\s\S]*?branches: \[main\]/.test(y) || !/\n  pull_request:/.test(y) || !/schedule:/.test(y)) falla(G, Y, 0, "el CI corre en push a main, en pull_request y programado");
+    if (!/- cron: "\d+ \d+ \* \* \*"\n\s+- cron: "\d+ \d+ \* \* \*"/.test(y)) falla(G, Y, 0, "el CI se programa a dos horas distintas del día");
+    const rg = /\n  regresion:\n[\s\S]*?(?=\n  [a-z]+:\n|$)/.exec(y)?.[0] ?? "";
+    for (const g of ["alreves", "fase1,fase3,fase5", "fase2", "fase4 --parte 1/3", "fase4 --parte 2/3", "fase4 --parte 3/3", "fase6,fase7", "fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la regresión (los 11 grupos de pruebas/correr.mjs --lista) tiene que estar en la matriz`);
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;
