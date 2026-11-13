@@ -38,7 +38,8 @@ const restaurar = () => { try { sql(`update users set email = nullif('${prev.ema
   // reservación confirmada
   // 9b-3 · Una reservación futura de Marisol en Sabor Dominicano: la hace rsv2e de punta a punta (antes se daba por hecho que ya había corrido).
   const rn = requiere('rsv2e', () => sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'table' and scheduled_at > now() order by id desc limit 1`), { que: 'una reservación futura de Marisol' });
-  sql(`update operations set status = 'pending', status_detail = null, cancelled_at = null where number = '${rn}'`);
+  // 9b-3 · Pendiente de verdad: sin respuesta y con tiempo para contestar (la de rsv2e podía venir ya contestada o vencida).
+  sql(`update operations set status = 'pending', status_detail = null, cancelled_at = null, answered_at = null, confirmed_at = null, respond_by = now() + interval '30 minutes' where number = '${rn}'`);
   await p.goto(B + `/panel/${BIZ}/clientes?t=rsv&det=rsv:${rn}`); await clic(p.locator('[data-screen-label="Panel v2 · detalle"]').getByRole('button', { name: 'Confirmar' })); await p.waitForTimeout(1500);
   ok(sql(`select count(*) from email_outbox where tpl = 'receipt_table' and user_id = ${MARI} and created_at > now() - interval '1 minute'`) === '1', 'confirmación de mesa por correo');
   // Recibos apagado: no llega

@@ -178,10 +178,18 @@ const verTr = (l) => l.locator('[data-tr="ver"]');
     await clic(comentario(bp, 'tire place').getByRole('button', { name: 'Reintentar' }));
     await bp.waitForTimeout(800);
     ok(await comentario(bp, 'tire place').locator('[data-tr="error"]').count() === 1 && (await stubN()).translate === 0, 'corta-circuito: 5 fallas seguidas → no lo vuelve a llamar por un minuto (el stub no recibe nada)');
-    servidor(STUB); // reinicia el proceso (el corta-circuito vive en su memoria)
+    // 9b-3 · El corta-circuito es COMPARTIDO (rate_counters): lo ven todos los procesos de la app y sobrevive a un reinicio. Pasado el minuto,
+    // la siguiente llamada prueba una vez y, si responde, lo cierra.
+    ok(sql(`select count(*) from rate_counters where scope = 'corte' and key_hash = 'traductor'`) === '1', 'el corte está en la base (lo ven todos los procesos de la app)');
+    servidor(STUB); // otro proceso (reinicio): el corte sigue
+    await bp.goto(B + '/comunidad/p/' + Q); await comentario(bp, 'tire place').waitFor();
+    await (await vis(verTr(comentario(bp, 'tire place')))).click(); await bp.waitForTimeout(800);
+    ok((await stubN()).translate === 0, 'después de reiniciar, el corte sigue: el stub no recibe nada');
+    sql(`update rate_counters set window_start = now() - interval '61 seconds' where scope = 'corte' and key_hash = 'traductor'`); // pasó el minuto
     await bp.goto(B + '/comunidad/p/' + Q); await comentario(bp, 'tire place').waitFor();
     await (await vis(verTr(comentario(bp, 'tire place')))).click();
-    ok(await contiene(bp, '[stub→es] Also check the tire place'), 'de vuelta: traduce');
+    ok(await contiene(bp, '[stub→es] Also check the tire place'), 'de vuelta: pasado el minuto, una prueba traduce y cierra el corte');
+    ok(sql(`select count(*) from rate_counters where scope in ('corte', 'corte_fallas') and key_hash = 'traductor'`) === '0', 'el corte quedó cerrado en la base');
 
     // ── 9 · Límite por persona: con el tope en lo que ya usó, la siguiente se rechaza con el motivo ──
     const usadas = sql(`select n from ugc_translation_uses where who = 'u:${RB}'`);
