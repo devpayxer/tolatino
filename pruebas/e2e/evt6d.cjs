@@ -96,7 +96,12 @@ const repetir = async (ctx, cap, body) => (await (await ctx.request.post(cap.url
   // Comprar por la pantalla (boletos → pagar con la tarjeta del simulador → la orden).
   const comprar = async (p, slug, fecha, clics, mesa) => {
     await p.goto(B + `/eventos/${slug}/boletos?fecha=${fecha}`);
-    for (const [tipo, k] of clics) for (let i = 0; i < k; i++) await clic(p.locator(`[data-tipo="${tipo}"] >> text="+"`));
+    for (const [tipo, k] of clics) for (let i = 1; i <= k; i++) {
+      await clic(p.locator(`[data-tipo="${tipo}"] >> text="+"`));
+      // 9b-2 · Esperar a que el contador marque lo tocado (en el CI el segundo toque llegaba antes de que se pintara el primero y se perdía).
+      const listo = await p.waitForFunction(([t, n]) => [...document.querySelectorAll(`[data-tipo="${t}"] *`)].some((e) => !e.children.length && e.textContent.trim() === String(n)), [tipo, i], { timeout: 8000 }).then(() => true, () => false);
+      if (!listo) throw new Error(`el contador del boleto ${tipo} no marcó ${i} tras el toque · pantalla: ${(await p.locator(`[data-tipo="${tipo}"]`).innerText()).replace(/\s+/g, ' ')} · ${(await p.locator('body').innerText()).replace(/\s+/g, ' ').slice(0, 300)}`);
+    }
     if (mesa) { await clic(p.locator('[role="radio"]', { hasText: 'Mesa · Pista' })); await clic(p.locator('[role="checkbox"]', { hasText: 'Detalle de cumpleaños' })); }
     await clic(btn(p, 'Continuar')); await p.waitForURL(/\/eventos\/pagar\//);
     await clic(btn(p, /^Pagar \$/)); await p.waitForURL(/\/eventos\/orden\/B-/, { timeout: 20000 });
