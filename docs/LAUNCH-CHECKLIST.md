@@ -1448,6 +1448,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (noc4c, noc4d, compa7h 3/3 al final); no se hizo ninguna corrida `--barajar` entera. Por costo no se siguió repitiendo aquí. Las
       pruebas atadas a la hora salieron una por cada franja del día en que se corrió (4:45 AM dlvsrv, 6 AM evt6g, media tarde pq4e, 6 PM
       noc4c, 7 AM de Tokio compa7h): el CI debería correr a dos horas distintas del día. (9b-1, 12 nov)
+      **9b-2 (13 nov):** el CI ya corre la regresión entera en verde una vez sobre base nueva (43392515329, 160/160) y está programado a dos
+      horas del día. La **confirmación** (`confirmar=si`, corrida 43406644136) salió **roja en sus dos carriles**: «dos veces seguidas» con 1 roja en la
+      segunda vuelta (compa7e: «Hazleton en pausa: /panel/sabor-dominicano/hoy idéntica a la de antes», datos que dejó la primera vuelta) y «barajada»
+      con ~15 rojas por orden (pruebas que dan por hecho lo que dejó otra: código de entrada pedido hace <30 s, umbral de Configuración, filas de
+      anoche). Es de las pruebas, no de la app, pero no se da por cerrado: queda para 9b-3 (independizar esas pruebas del orden y de lo que dejó la
+      vuelta anterior) con su guardián.
 
 ## Fase 9 · 9b-2 (la tubería en el CI; 13 nov)
 - [ ] **→ 9c** · **axe `color-contrast` (serio) en las seis pantallas clave** (inicio 13 nodos, ficha 24, mi cuenta 23, panel hoy 8, admin hoy 13; en buscar solo en tres dispositivos):

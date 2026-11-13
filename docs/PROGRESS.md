@@ -1446,4 +1446,6 @@ enteras seguidas en verde ni la corrida `--barajar`**: por costo, la confirmaci�
   | **43405265633** | pantallas (fondo de `main` y `[data-screen-label]` con `--tl-action`) | **corrida frenada por un cambio visual sin aprobar: 43405265633** (9 de 9 dispositivos rojos, de 8,9 % a 36,9 % de la pantalla distinta; `tuberia` en rojo) |
   El cambio visual se revirtió en el commit siguiente; `apps/` queda igual que antes de la prueba.
 - **Seguridad:** Semgrep (reglas propias) y `pnpm audit --audit-level high` en verde en todas las corridas; sin hallazgos nuevos.
-- **Sigue:** 9b-3 (escala 1M, migración 0133, topes compartidos) y lo de LAUNCH «Fase 9 · 9b-2».
+- **No cerrado:** la confirmación a mano (43406644136) salió roja: «dos veces seguidas» 1 roja (compa7e en la segunda vuelta) y «barajada» ~15 rojas
+  por orden; pasa a 9b-3 (LAUNCH «→ 9b · (9b-2) La corrida de confirmación»).
+- **Sigue:** 9b-3 (escala 1M, migración 0133, topes compartidos), la confirmación del CI en verde y lo de LAUNCH «Fase 9 · 9b-2».
