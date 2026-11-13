@@ -11,6 +11,9 @@
      --saltar a,b         no corre esas
      --paralelo           las al revés (tocan archivos del repo y corren los guardianes) en un carril y las de punta a punta (la base y
                           :3100) en otro: los dos carriles no se pisan. Dentro de cada carril, SIEMPRE una a la vez. Por defecto: todo en fila.
+     --dispositivo <id>   9b-2 · corre con ese dispositivo (iphone-se, iphone-15, iphone-15-pro-max, pixel, galaxy, ipad, escritorio-1024/-1280/-1440):
+                          pone PRUEBAS_DISPOSITIVO y la precarga pruebas/lib/dispositivo-precarga.cjs cambia cada contexto del navegador
+     --parte <i>/<n>      9b-2 · solo la parte i de n de la selección (reparto por posición, el mismo en cada corrida): un grupo grande, en n trabajos
      --tiempo <min>       tiempo máximo por prueba (25 por defecto)
      --barajar [semilla]  9b-1 · las corre en otro orden (al azar, o el de esa semilla para repetirlo): saca a la luz las que dependen del orden.
                           Las al revés siguen primero; las de punta a punta, todas mezcladas (sin fases). La semilla se imprime al empezar.
@@ -55,7 +58,7 @@ const enOrden = (ts) => [...ts.filter((t) => !/^(adm|ana|tx)\d/.test(t.nombre)),
 if (flag("--todas")) sel = grupos.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g)));
 else if (opt("--grupo")) { const gs = opt("--grupo").split(","); for (const g of gs) if (!grupos.includes(g)) { console.error(`grupo desconocido: ${g} (${grupos.join(", ")})`); process.exit(2); } sel = gs.flatMap((g) => enOrden(catalogo.filter((t) => t.grupo === g))); }
 else {
-  const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo", "--barajar"].includes(args[i - 1]));
+  const nombres = args.filter((a, i) => !a.startsWith("--") && !["--desde", "--saltar", "--tiempo", "--barajar", "--dispositivo", "--parte"].includes(args[i - 1]));
   sel = nombres.map((n) => catalogo.find((t) => t.nombre === n.replace(/\.(cjs|mjs|sh)$/, "")) ?? (console.error(`no existe: ${n}`), process.exit(2)));
 }
 if (flag("--barajar")) {
@@ -68,12 +71,20 @@ if (flag("--barajar")) {
 }
 if (opt("--desde")) { const i = sel.findIndex((t) => t.nombre === opt("--desde")); if (i < 0) { console.error(`--desde: ${opt("--desde")} no está en la selección`); process.exit(2); } sel = sel.slice(i); }
 if (opt("--saltar")) { const fuera = new Set(opt("--saltar").split(",")); sel = sel.filter((t) => !fuera.has(t.nombre)); }
+if (opt("--parte")) {
+  const m = /^(\d+)\/(\d+)$/.exec(opt("--parte") ?? ""); if (!m || +m[1] < 1 || +m[1] > +m[2]) { console.error("--parte <i>/<n> (1 ≤ i ≤ n)"); process.exit(2); }
+  sel = sel.filter((_, k) => k % +m[2] === +m[1] - 1);
+}
 const TIEMPO = Number(opt("--tiempo") ?? 25) * 60_000;
 
 /* Playwright: el del repo si lo hay; si no, el global (npm root -g). */
 let NODE_PATH = process.env.NODE_PATH ?? "";
 try { execSync("node -e \"require.resolve('playwright')\"", { cwd: RAIZ, stdio: "ignore" }); } catch { NODE_PATH = [NODE_PATH, execSync("npm root -g", { encoding: "utf8" }).trim()].filter(Boolean).join(":"); }
 const ENV = { ...process.env, NODE_PATH, PRUEBAS_SALIDA: SALIDA };
+if (opt("--dispositivo")) {
+  ENV.PRUEBAS_DISPOSITIVO = opt("--dispositivo");
+  ENV.NODE_OPTIONS = `${process.env.NODE_OPTIONS ?? ""} --require ${join(RAIZ, "pruebas/lib/dispositivo-precarga.cjs")}`.trim();
+}
 
 mkdirSync(RES, { recursive: true });
 if (flag("--servir")) execSync(`bash ${JSON.stringify(join(RAIZ, "pruebas/servir/servir.sh"))} completo`, { stdio: "inherit", env: ENV });

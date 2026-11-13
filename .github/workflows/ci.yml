@@ -1,8 +1,46 @@
 name: CI
+# 9b-2 · La tubería completa (PLAN §3.4, §5): tipos · build · guardianes (verificar) · seguridad (Semgrep + dependencias) · la regresión entera de punta a
+# punta por grupos, cada uno con su base nueva (regresion) · los 9 dispositivos con capturas aprobadas, axe y velocidad (dispositivos) · y «tuberia», que
+# solo da verde si todo lo anterior dio verde. «alcance» (solo a mano) deja correr una parte mientras se afina; en push, pull_request y programado
+# siempre es «todo». «aprobar=si» escribe las capturas como las aprobadas (artefacto; entran por commit, ver docs/REVISION.md). «confirmar=si» vuelve
+# a correr cada grupo sobre la MISMA base y otra vez barajado (la confirmación de 9b-1). Programado a dos horas distintas del día: las pruebas
+# atadas a la hora salieron una por franja (4:45 AM, 6 AM, media tarde, 6 PM, 7 AM de Tokio).
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "17 8 * * *"
+    - cron: "43 20 * * *"
+  workflow_dispatch:
+    inputs:
+      alcance:
+        description: "Qué corre (a mano): todo · pantallas (9 dispositivos, capturas, axe, velocidad) · regresion"
+        type: choice
+        options: [todo, pantallas, regresion]
+        default: todo
+      aprobar:
+        description: "Escribir las capturas de esta corrida como las aprobadas (artefacto visual-aprobadas-*)"
+        type: choice
+        options: ["no", "si"]
+        default: "no"
+      medir:
+        description: "Velocidad: solo imprimir las cifras (para fijar el presupuesto), sin fallar"
+        type: choice
+        options: ["no", "si"]
+        default: "no"
+      confirmar:
+        description: "Regresión: cada grupo dos veces seguidas en la misma base y otra vez barajado"
+        type: choice
+        options: ["no", "si"]
+        default: "no"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   verificar:
@@ -82,3 +120,145 @@ jobs:
           SEMILLA_DIR=infra/pruebas/semilla bash packages/db/migrar.sh --semilla-pruebas $C
           test "$(Q "select count(*) from photo_reports")" = "3"
           test "$(Q "select count(*) from media where status = 'visible'")" -gt 1000
+
+  seguridad:
+    name: seguridad · Semgrep (reglas propias) · dependencias
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - name: Dependencias (nada alto ni crítico)
+        run: pnpm audit --audit-level high
+      - name: Semgrep con las reglas de semgrep/ (SQL armado con texto, HTML crudo, procesos con texto, secretos)
+        run: |
+          python3 -m venv "$RUNNER_TEMP/sg" && "$RUNNER_TEMP/sg/bin/pip" install -q semgrep==1.185.0
+          "$RUNNER_TEMP/sg/bin/semgrep" scan --config semgrep/ --error --metrics=off --disable-version-check apps packages services scripts
+
+  web:
+    name: web · build una vez para todos los grupos
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @tolatino/web build
+      - name: Empaquetar con tar (conserva los enlaces de pnpm; sin la caché del build)
+        run: |
+          cd apps/web && cp -r .next/static .next/standalone/apps/web/.next/ && cp -r public .next/standalone/apps/web/
+          cd ../.. && tar czf "$RUNNER_TEMP/web.tgz" --exclude='apps/web/.next/cache' apps/web/.next
+      - uses: actions/upload-artifact@v4
+        with: { name: web, path: "${{ runner.temp }}/web.tgz", retention-days: 1, compression-level: 0 }
+
+  regresion:
+    name: punta a punta · ${{ matrix.nombre }}
+    needs: web
+    if: ${{ (inputs.alcance || 'todo') != 'pantallas' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { nombre: "al revés", args: "--grupo alreves" }
+          - { nombre: "fases 1 · 3 · 5", args: "--grupo fase1,fase3,fase5" }
+          - { nombre: "fase 2", args: "--grupo fase2" }
+          - { nombre: "fase 4 (1 de 3)", args: "--grupo fase4 --parte 1/3" }
+          - { nombre: "fase 4 (2 de 3)", args: "--grupo fase4 --parte 2/3" }
+          - { nombre: "fase 4 (3 de 3)", args: "--grupo fase4 --parte 3/3" }
+          - { nombre: "fases 6 · 7", args: "--grupo fase6,fase7" }
+          - { nombre: "fases 8 · 9 y varios", args: "--grupo fase8,fase9,varios" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/entorno-pruebas
+      - name: Regresión · ${{ matrix.nombre }} (base nueva)
+        run: node pruebas/correr.mjs ${{ matrix.args }}
+      - name: Confirmación · el mismo grupo otra vez en la MISMA base (lo que una corrida no limpia)
+        if: ${{ inputs.confirmar == 'si' }}
+        run: node pruebas/correr.mjs ${{ matrix.args }}
+      - name: Confirmación · el mismo grupo barajado
+        if: ${{ inputs.confirmar == 'si' }}
+        run: node pruebas/correr.mjs ${{ matrix.args }} --barajar
+      - name: Lo que dejó cada prueba (sin secretos, solo res y el registro del servidor)
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/subir" && cp -r "$RUNNER_TEMP/salida/res" "$RUNNER_TEMP/subir/res" 2>/dev/null || true
+          cp "$RUNNER_TEMP/salida/server.log" "$RUNNER_TEMP/subir/" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "regresion-${{ strategy.job-index }}", path: "${{ runner.temp }}/subir", retention-days: 7, if-no-files-found: ignore }
+
+  dispositivos:
+    name: dispositivo · ${{ matrix.id }}
+    needs: web
+    if: ${{ (inputs.alcance || 'todo') != 'regresion' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        id: [iphone-se, iphone-15, iphone-15-pro-max, pixel, galaxy, ipad, escritorio-1024, escritorio-1280, escritorio-1440]
+        include:
+          # La velocidad (LCP y TBT) solo se mide en Chromium: un teléfono (Pixel) y un escritorio (1280).
+          - { id: pixel, velocidad: true }
+          - { id: escritorio-1280, velocidad: true }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10.28.0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/entorno-pruebas
+      - name: Punta a punta en el dispositivo (disp9b)
+        run: node pruebas/correr.mjs disp9b --dispositivo ${{ matrix.id }}
+      - name: Capturas contra las aprobadas y axe (WCAG AA)
+        if: ${{ always() && inputs.aprobar != 'si' }}
+        run: node pruebas/visual/correr.mjs --dispositivo ${{ matrix.id }}
+      - name: Capturas NUEVAS (se aprueban en docs/REVISION.md y entran por commit)
+        if: ${{ always() && inputs.aprobar == 'si' }}
+        run: node pruebas/visual/correr.mjs --dispositivo ${{ matrix.id }} --aprobar
+      - name: Velocidad (Web Vitals de laboratorio contra pruebas/velocidad/presupuesto.json)
+        if: ${{ always() && matrix.velocidad }}
+        run: node pruebas/visual/correr.mjs --dispositivo ${{ matrix.id }} --velocidad ${{ inputs.medir == 'si' && '--medir' || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: "pantallas-${{ matrix.id }}", path: "${{ runner.temp }}/salida/visual/${{ matrix.id }}", retention-days: 7, if-no-files-found: ignore }
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && inputs.aprobar == 'si' }}
+        with: { name: "visual-aprobadas-${{ matrix.id }}", path: "pruebas/visual/*/${{ matrix.id }}.png", retention-days: 14, if-no-files-found: error }
+
+  tuberia:
+    name: la tubería completa (todo en verde, nada saltado)
+    needs: [verificar, seguridad, regresion, dispositivos]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cada parte terminó en verde (una parte saltada cuenta como roja, salvo en una corrida parcial a mano)
+        env:
+          RESULTADOS: ${{ toJSON(needs) }}
+          ALCANCE: ${{ inputs.alcance || 'todo' }}
+        run: |
+          echo "$RESULTADOS" | node -e '
+            const n = JSON.parse(require("fs").readFileSync(0, "utf8")), a = process.env.ALCANCE; let mal = 0;
+            for (const [k, v] of Object.entries(n)) {
+              const parcial = (a === "pantallas" && k === "regresion") || (a === "regresion" && k === "dispositivos");
+              const ok = v.result === "success" || (v.result === "skipped" && parcial);
+              console.log((ok ? "✓ " : "✗ ") + k + " · " + v.result + (v.result === "skipped" && parcial ? " (a propósito: alcance " + a + ")" : ""));
+              if (!ok) mal++;
+            }
+            if (mal) process.exit(1);
+          '

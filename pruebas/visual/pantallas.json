@@ -1,0 +1,11 @@
+{
+  "comentario": "9b-2 · Las pantallas clave de la tubería (capturas aprobadas, axe y velocidad). cuenta = teléfono de prueba (555) que entra antes; null = sin sesión. El resto de pantallas entra aquí cuando el fundador cierre su diseño.",
+  "pantallas": [
+    { "id": "inicio", "ruta": "/", "cuenta": null },
+    { "id": "ficha", "ruta": "/n/sabor-dominicano", "cuenta": null },
+    { "id": "buscar", "ruta": "/buscar", "cuenta": null },
+    { "id": "mi-cuenta", "ruta": "/cuenta", "cuenta": "5705550122" },
+    { "id": "panel-hoy", "ruta": "/panel", "cuenta": "5705550133" },
+    { "id": "admin-hoy", "ruta": "/admin", "cuenta": "5705550199" }
+  ]
+}

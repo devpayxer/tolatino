@@ -1,0 +1,1 @@
+{ "comentario": "9b-2 · Violaciones de axe (serias o críticas) que ya existían en el diseño y NO se arreglaron en el acto: cada una con su destino (9c = accesibilidad del sistema de diseño) y su línea en docs/LAUNCH-CHECKLIST.md. Nada nuevo entra aquí sin esa línea (guardián tuberiaAccesibilidad). Una violación que NO está aquí frena el CI.", "conocidas": [] }

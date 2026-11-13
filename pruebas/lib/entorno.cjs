@@ -27,8 +27,14 @@ for (const [k, v] of Object.entries(leer(SECRETOS))) if (process.env[k] === unde
 const falta = (k) => { throw new Error(`falta ${k}: corre primero «bash pruebas/servir/servir.sh» (escribe ${SECRETOS})`); };
 const sec = (k) => process.env[k] || falta(k);
 
+// 9b-2 · El dispositivo de esta corrida (PRUEBAS_DISPOSITIVO: iphone-se, iphone-15, iphone-15-pro-max, pixel, galaxy, ipad, escritorio-1024,
+// escritorio-1280, escritorio-1440; ver dispositivos.cjs). Sin variable: null = teléfono 390 y escritorio 1360 como siempre. Las pruebas no tienen que
+// leerlo: pruebas/lib/dispositivo-precarga.cjs (la pone correr.mjs --dispositivo) ya cambia cada contexto; esto es para las nuevas.
+const DISPOSITIVO = process.env.PRUEBAS_DISPOSITIVO || null;
+
 module.exports = {
-  RAIZ, S, REC, SECRETOS,
+  RAIZ, S, REC, SECRETOS, DISPOSITIVO,
+  get DISP() { return DISPOSITIVO ? require('./dispositivos.cjs').de(DISPOSITIVO) : null; },
   OUT: path.join(S, 'cap') + '/',
   B: process.env.PRUEBAS_URL || 'http://localhost:3100',
   DB: process.env.PRUEBAS_DB_CONT || 'tlprueba-db-1',

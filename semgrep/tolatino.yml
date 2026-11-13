@@ -1,0 +1,59 @@
+# 9b-2 · Reglas propias de Semgrep para ESTE código (PLAN §5, guardián tuberiaSeguridad). Pocas y reales: cada una es una clase que ya nos
+# ha costado o que abre una puerta (consulta SQL armada con texto, HTML crudo en React, procesos con texto de afuera, secretos en el código).
+# Correr: semgrep scan --config semgrep/ --error --metrics=off apps packages services scripts
+# Una línea que de verdad es segura se marca en su propia línea con «// nosemgrep: <regla>» y el porqué (nunca el archivo entero).
+rules:
+  - id: tolatino-sql-con-texto-interpolado
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      Texto que viene de afuera (búsqueda, formulario, URL, cuerpo) dentro del TEXTO de una consulta SQL por ${...}: inyección SQL. Los
+      valores van como parámetros ($1, $2…) en el arreglo. Lo único que se interpola son fragmentos fijos del propio código (constantes,
+      listas de columnas, el número de un parámetro). Si es de verdad un fragmento elegido entre opciones fijas, ponle
+      «// nosemgrep: tolatino-sql-con-texto-interpolado» en la línea y el porqué.
+    patterns:
+      - pattern-either:
+          - pattern: $DB.query(`...${$S}...`, ...)
+          - pattern: $DB.query(`...${$S}...`)
+      - metavariable-regex:
+          metavariable: $S
+          regex: ^(texto|text|q|query|busqueda|search|termino|term|nombre|name|input|body|formData|params|searchParams|req|request|(input|body|params|data|formData|searchParams|req|request|entrada|datos)\..+|.*\.get\(.+\)|.*\.(texto|busqueda|search|termino))$
+    paths:
+      include: ["**/apps/**", "**/packages/**", "**/services/**"]
+      exclude: ["**/node_modules/**", "**/*.test.*"]
+  - id: tolatino-html-crudo
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      dangerouslySetInnerHTML mete HTML sin pasar por React: con texto de una persona es XSS. Lo único permitido es el JSON-LD de la ficha,
+      que sale de JSON.stringify(...) con el «<» escapado (.replace(/</g, "\\u003c")). Todo lo demás se pinta como texto.
+    patterns:
+      - pattern: <$T ... dangerouslySetInnerHTML={...} ... />
+      - pattern-not: |
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify($X).replace(/</g, "\\u003c") }} />
+    paths:
+      include: ["**/apps/**", "**/packages/**"]
+      exclude: ["**/node_modules/**"]
+  - id: tolatino-proceso-con-texto-interpolado
+    languages: [typescript, javascript]
+    severity: ERROR
+    message: >-
+      exec/execSync/spawn con shell y ${...} en el comando: el texto entra al shell (inyección de comandos). En el código de la app los
+      procesos llevan el programa y los argumentos por separado (execFile / spawn con arreglo), sin shell.
+    pattern-either:
+      - pattern: $CP.exec(`...${$X}...`, ...)
+      - pattern: $CP.execSync(`...${$X}...`, ...)
+      - pattern: exec(`...${$X}...`, ...)
+      - pattern: execSync(`...${$X}...`, ...)
+    paths:
+      include: ["**/apps/**", "**/packages/**", "**/services/**"]
+      exclude: ["**/node_modules/**"]
+  - id: tolatino-secreto-en-el-codigo
+    languages: [generic]
+    severity: ERROR
+    message: >-
+      Parece un secreto escrito en el código (el repo es PÚBLICO). Los secretos viven en los secretos del entorno, nunca aquí; en las pruebas
+      se generan al azar (pruebas/servir/servir.sh). Si es un valor público (una huella, un identificador), ponle «GUARDIAN-OK» en la línea.
+    pattern-regex: (?i)\b(sk_live_|sk_test_|whsec_|AKIA|ghp_|github_pat_|xox[bp]-|AIza)[A-Za-z0-9_\-]{16,}
+    paths:
+      exclude: ["**/node_modules/**", "**/docs/diseno/**", "**/*.lock", "**/pnpm-lock.yaml", "**/package-lock.json", "**/semgrep/**", "**/contrato-*/**", "**/guardianes/**"]

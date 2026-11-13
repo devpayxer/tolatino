@@ -1,0 +1,4 @@
+{
+  "comentario": "9b-2 · Presupuesto de velocidad por pantalla (Web Vitals de laboratorio, Chromium sin limitar red ni CPU, mediana de 3): LCP en ms, CLS sin unidad, TBT en ms. Perfil teléfono = Pixel 7 · escritorio = 1280. Una pantalla que pasa de su presupuesto frena el CI; el presupuesto solo se sube con una línea en docs/REVISION.md.",
+  "pantallas": {}
+}
