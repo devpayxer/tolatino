@@ -21,3 +21,5 @@ jobs:
         run: curl -s -m 30 http://2.31.196.167/estado/ | sed -e 's/<[^>]*>//g' | grep -v '^\s*$' | tail -40
       - name: Salud
         run: curl -s -m 30 http://2.31.196.167/api/salud | head -c 2000; echo
+      - name: Diagnóstico del último despliegue
+        run: curl -s -m 30 http://2.31.196.167/estado/diag.txt | head -120
