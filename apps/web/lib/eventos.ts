@@ -44,3 +44,9 @@ export async function actividad(userId: string | null, ciudad: string | null, ct
     console.error("[actividad]", e instanceof Error ? e.message : e);
   }
 }
+
+/* 9b-3 · El barrido: los meses de app_events (particiones) de ahora y los dos siguientes, el resumen por día (app_events_dia) de ayer y hoy, y
+   los meses que pasaron eventos_retener_meses se resumen y se sueltan (después solo quedan las cifras). Todo en la base (0133). */
+export async function analiticaAlDia(): Promise<number> {
+  return (await db().query<{ n: number }>(`select app_events_al_dia() as n`)).rows[0]?.n ?? 0;
+}

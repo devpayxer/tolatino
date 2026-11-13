@@ -1,7 +1,7 @@
 # Super Admin: Configuración · Super Admin: Settings
 
 _Pantallas: **Super Admin › Sistema › Configuración** (`/admin/sistema/configuracion`; pestañas Equipo y permisos · Configuración). Teléfono y
-escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 11 nov 2026. Audiencia: equipo. Tema: equipo._
+escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 13 nov 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
 - Junta en un solo lugar los **plazos y límites de la plataforma** que antes vivían escritos en el código: los de la Comunidad y los de
@@ -33,7 +33,8 @@ escritorio. Ver: permiso de Sistema. Cambiar: **solo un Admin**. Versión: 11 no
 | Fila SOLO LECTURA | «Todavía no se cambia aquí: …» con el motivo. |
 | No eres Admin | Ves los valores; «Solo un Admin cambia la configuración.» |
 | Límites del día y traducciones | También se cambian en Contenido › Auto-moderación: es el mismo valor y la misma auditoría. |
-| Varios servidores | Cada uno ve el valor nuevo en 15 segundos como mucho. |
+| Varios servidores | Todos ven el valor nuevo al momento: la base les avisa del cambio. Si un servidor perdió ese aviso (se reinició la conexión), lo ve en 15 segundos como mucho. |
+| Topes por minuto (errores, Wallet, la posición del repartidor) | Se cuentan entre todos los servidores juntos: un tope de 600 por minuto son 600 en total, no 600 en cada servidor. |
 
 ## Preguntas frecuentes
 - **¿Bajar los minutos para editar afecta lo ya publicado?** Desde ese momento, solo se edita lo que esté dentro del plazo nuevo.
@@ -105,6 +106,13 @@ minuto** aguanta antes de contestar «espera» sin revisar más (10–1000, **60
 Y las **fichas y cuentas de revisión**: cuántas veces por hora una cuenta de revisión puede pedir su código fijo (1–30, **10**) y cuántas veces por día
 se pueden subir las fichas como borrador a las tiendas (1–20, **6**). Ver «Super Admin: fichas de las tiendas y cuentas de revisión».
 
+Y la **analítica**: cuántos **meses se guarda cada evento** (1–36, **13**, lo que dicen las fichas de las tiendas). Pasado ese tiempo el barrido
+resume el mes por día y ciudad y suelta los eventos uno por uno: las cifras de Analítica siguen, lo de cada persona no. Si lo cambias, cambia
+también el inventario de datos de las tiendas (Sistema › Apps).
+
+Los **topes por minuto** de esta sección (errores por minuto y por teléfono, pedidos de Wallet por dirección) se cuentan **entre todos los
+servidores juntos**, y lo descartado por el tope de errores se cuenta en las últimas 24 horas (Sistema › Apps).
+
 **English:** the **Apps** section shows each app's minimum and notice build per platform; they are changed in **System › Apps**, which also
 checks that the notice build stays above the minimum. Also in **Apps**: the **driver location during a delivery** (how often, minimum distance, **days kept** — 14 by default, max 90 —, whether the
 **customer sees the map** from pickup, the **impossible speed** and when a position is stale). A delivery route is opened in **Transactions ›
@@ -119,5 +127,8 @@ many **rejected attempts per minute** it takes before answering «wait» (60) an
   because a screen tells people the number. The dealer fee cap is changed in Catalog (it also lowers dealers above it).
 - **How to use:** tap the value → new whole number → reason → **Save**. Applies now in every city; logged before → after with the reason.
 - **Each case:** out of bounds → refused («Between 5 min and 1,440 min»), the database also refuses it; not a whole number → refused;
-  read only → says why; not Admin → view only. Other servers see the change within 15 seconds.
+  read only → says why; not Admin → view only. Every server sees the change right away (the database tells them); one that missed that
+  notice sees it within 15 seconds. Per-minute caps (errors, Wallet, the driver's position) are counted across all servers together. In
+  **Apps**, **months each analytics event is kept** (1–36, **13**, what the store listings say): after that the sweep summarizes the month by
+  day and city and drops the individual events; if you change it, change the stores' data inventory too.
 - **FAQ:** lowering the edit minutes applies from now on; to go back, type the factory value.

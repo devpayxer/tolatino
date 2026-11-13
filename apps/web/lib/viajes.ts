@@ -342,7 +342,7 @@ export async function viajeCliente(userId: string, numero: string, que: "cancela
       return ok1;
     }
     if (o.status !== "change_proposed") return ya;
-    const p = (await c.query<{ id: string; run: string | null; ymd: string; m: number }>(`select id::text, proposed->>'run' as run, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; run: string | null; ymd: string; m: number }>(`select id::text, proposed->>'run' as run, proposed->>'ymd' as ymd, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return ya;
     if (que === "nogracias") {
       await soltarAsientos(c, o.id);

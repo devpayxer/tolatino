@@ -119,11 +119,11 @@ export async function apartar(userId: string, f: ApartarIn, entorno: string, ip:
     // Los artículos bloqueados en orden: dos personas a la vez por las últimas unidades → una se las lleva.
     const I = (await c.query<{ id: string; n: Bi; p: number; tax: number; mode: string; left: number; k: string | null }>(
       `select id::text, name as n, price_cents as p, tax_pct::float as tax, stock_mode as mode, stock_left as left, shop_kind as k from items
-        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by id for update`, [f.negocio, [...new Set(L.map((l) => l.item))]])).rows;
+        where business_id = $1 and id = any($2::bigint[]) and module = 'shop' and removed_at is null and sell and not in_store_only and age_min = 0 and status = 'live' order by items.id for update`, [f.negocio, [...new Set(L.map((l) => l.item))]])).rows;
     if (I.length !== new Set(L.map((l) => l.item)).size) return no("Algo de tu apartado ya no está en la tienda. Revísalo.", "Something in your hold is no longer in the store. Check it.");
     // Tallas: si el artículo tiene tallas, la talla es obligatoria y se reserva (una talla en 0 no se aparta).
     const V = (await c.query<{ id: string; item: string; label: string; left: number }>(
-      `select id::text, item_id::text as item, label, stock_left as left from item_variants where item_id = any($1::bigint[]) and removed_at is null order by id for update`, [I.map((x) => x.id)])).rows;
+      `select id::text, item_id::text as item, label, stock_left as left from item_variants where item_id = any($1::bigint[]) and removed_at is null order by item_variants.id for update`, [I.map((x) => x.id)])).rows;
     for (const l of L) {
       const it = I.find((x) => x.id === l.item)!, vs = V.filter((v) => v.item === l.item);
       if (vs.length) {

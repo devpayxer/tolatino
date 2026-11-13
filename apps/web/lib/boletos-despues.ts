@@ -298,7 +298,7 @@ async function anotarDevolucion(c: Q, x: { op: string; pid: string; city: string
     [x.pid, x.k.total, x.motivo.slice(0, 300), x.por, x.actor, x.idem])).rows[0]!.id;
   for (const b of x.k.boletos) await c.query(`insert into ticket_refund_lines (refund_id, operation_id, ticket_id, city_id, amount_cents, fee_kept_cents, fee_waived_cents) values ($1::bigint, $2::bigint, $3::bigint, $4, $5, $6, $7)`, [rf, x.op, b.id, x.city, b.devuelve, b.queda, b.cede]);
   if (x.k.extras) {
-    const L = (await c.query<{ id: string; t: number }>(`select id::text, line_total_cents as t from operation_lines where id = any($1::bigint[]) order by id`, [x.k.extras.ids])).rows;
+    const L = (await c.query<{ id: string; t: number }>(`select id::text, line_total_cents as t from operation_lines where id = any($1::bigint[]) order by operation_lines.id`, [x.k.extras.ids])).rows;
     let cargo = x.k.extras.cargo;
     for (const l of L) {
       const q = Math.min(cargo, l.t); cargo -= q;

@@ -23,7 +23,7 @@ export async function transPublico(negocio: string): Promise<TransPublico | null
        from businesses b join cities ci on ci.id = b.city_id left join business_stats_cache st on st.business_id = b.id where b.id = $1 and b.status = 'active'`, [negocio])).rows[0];
   if (!b || b.cat !== "NEG-TRANS" || (b.off ?? {}).svc) return null;
   const k = await kindTrans(negocio);
-  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]);
+  const S = await db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]);
   const I = await db().query<Omit<SvcTrans, "prox">>(
     `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.svc_kind, 'priv') as k,
             coalesce((select array_agg(x::int order by x::int) from jsonb_array_elements_text(coalesce(i.svc_attrs->'sal', '[]'::jsonb)) x), '{}') as sal,

@@ -1,15 +1,18 @@
 import "server-only";
+import { alCambiarConfig } from "../cambios-config";
 import { huella as hmac } from "../cifrado";
 import { leerRotulo } from "../app-nativa-comun";
 import { valores } from "../config";
 import { db, tx } from "../db";
+import { dentroDelTope, sumaReciente, sumarTope } from "../topes";
 import { huellaError, simbolizar } from "./huella";
 import { familiaRuta, normalizar, taparError } from "./tapar";
 
 /* 8f · Recibir un error de la web o de una app, o un cierre nativo de la vez anterior (fase8-apps.md §4 8f). Es una puerta SIN SESIÓN, así que:
    - Tamaño: el cuerpo se corta a 32 KB (la ruta lo revisa antes de leerlo); cada campo tiene su tope ANTES de tapar.
    - Límite: por minuto, en todo el sistema (errores_por_minuto), por teléfono o navegador (cookie tl_dev; errores_por_dispositivo) y por
-     conexión (4× eso). En memoria del proceso (lo que se pasa se descarta y se cuenta); la base no recibe nada de lo descartado.
+     conexión (4× eso). Compartido entre los procesos (lib/topes.ts, rate_counters; 9b-3): lo que se pasa se descarta y se cuenta (últimas
+     24 h); ninguna tabla de errores recibe nada de lo descartado.
    - Solo se guardan campos conocidos (tipo, nombre, mensaje, stack, ruta); lo demás que mande el teléfono se ignora. Nunca el valor de un campo,
      la URL, la persona ni la operación: todo pasa por taparError() y la ruta queda en su familia. La sesión es una huella que cambia cada día.
    - Un cierre o error nativo solo se acepta de una app (rótulo TLApp); de la web, solo «js» y «red».
@@ -17,26 +20,20 @@ import { familiaRuta, normalizar, taparError } from "./tapar";
 export type Entrada = { ua: string | null; dev: string | null; ip: string | null; cuerpo: unknown };
 export type Recibido = { ok: true; grupo: string } | { ok: false; por: "apagado" | "limite" | "invalido" | "error" };
 
-const ventana = { min: 0, global: 0, por: new Map<string, number>(), descartados: 0, desde: Date.now() };
-/* Lo descartado por el tope desde que arrancó este proceso (Super Admin › Salud lo dice). */
-export const descartados = () => ({ n: ventana.descartados, desde: new Date(ventana.desde).toISOString() });
+/* Lo descartado por el tope en las últimas 24 h, entre todos los procesos (Super Admin › Sistema › Apps lo dice). */
+export const descartados = async () => ({ n: await sumaReciente("errores_descartados", "todo", 24), desde: new Date(Date.now() - 86_400_000).toISOString() });
 
-function permitir(dev: string | null, ip: string | null, lim: { global: number; dev: number }): boolean {
-  const m = Math.floor(Date.now() / 60_000);
-  if (ventana.min !== m) { ventana.min = m; ventana.global = 0; ventana.por.clear(); }
-  const kd = dev ? `d:${dev}` : null, ki = ip ? `i:${ip}` : "i:?";
-  if (ventana.global >= lim.global || (kd && (ventana.por.get(kd) ?? 0) >= lim.dev) || (ventana.por.get(ki) ?? 0) >= lim.dev * 4 || ventana.por.size > 100_000) {
-    ventana.descartados++;
-    return false;
-  }
-  ventana.global++;
-  if (kd) ventana.por.set(kd, (ventana.por.get(kd) ?? 0) + 1);
-  ventana.por.set(ki, (ventana.por.get(ki) ?? 0) + 1);
-  return true;
+/* Primero lo de quien manda (su teléfono y su conexión: si insiste, sigue afuera); solo lo que pasa eso cuenta para el tope de todo el sistema. */
+async function permitir(dev: string | null, ip: string | null, lim: { global: number; dev: number }): Promise<boolean> {
+  const ok = (!dev || await dentroDelTope("errores_dev", dev, lim.dev)) && await dentroDelTope("errores_ip", ip ?? "?", lim.dev * 4)
+    && await dentroDelTope("errores", "todo", lim.global);
+  if (!ok) await sumarTope("errores_descartados", "todo").catch(() => undefined);
+  return ok;
 }
 
-let interruptor: { at: number; on: boolean } | null = null;
+let interruptor: { at: number; on: boolean } | null = null, escucha = false;
 async function encendido(): Promise<boolean> {
+  if (!escucha) { escucha = true; alCambiarConfig(() => { interruptor = null; }); }
   if (interruptor && Date.now() - interruptor.at < 15_000) return interruptor.on;
   const on = (await db().query<{ enabled: boolean }>(`select enabled from feature_flags where key = 'app.errores'`).catch(() => ({ rows: [] as { enabled: boolean }[] }))).rows[0]?.enabled === true;
   interruptor = { at: Date.now(), on };
@@ -60,7 +57,7 @@ export function equipo(ua: string): { os: string | null; modelo: string | null }
 export async function recibirError(e: Entrada): Promise<Recibido> {
   if (!(await encendido())) return { ok: false, por: "apagado" };
   const lim = await valores("errores_por_minuto", "errores_por_dispositivo");
-  if (!permitir(e.dev, e.ip, { global: lim.errores_por_minuto, dev: lim.errores_por_dispositivo })) return { ok: false, por: "limite" };
+  if (!(await permitir(e.dev, e.ip, { global: lim.errores_por_minuto, dev: lim.errores_por_dispositivo }))) return { ok: false, por: "limite" };
   const b = (e.cuerpo && typeof e.cuerpo === "object" ? e.cuerpo : {}) as Record<string, unknown>;
   const tipo = String(b.tipo ?? "");
   if (!TIPOS.has(tipo)) return { ok: false, por: "invalido" };

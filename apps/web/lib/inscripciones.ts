@@ -465,7 +465,7 @@ export async function inscCliente(userId: string, numero: string, que: QueInsc):
       return { ok: true };
     }
     if (o.status !== "change_proposed") return ya;
-    const p = (await c.query<{ id: string; v: Record<string, unknown> }>(`select id::text, proposed as v from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; v: Record<string, unknown> }>(`select id::text, proposed as v from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return ya;
     if (que === "nogracias") {
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
@@ -718,7 +718,7 @@ export async function vencerInsc(f: { negocio?: string; userId?: string; numero?
       `update waitlist_entries w set status = 'expired', updated_at = now() where w.status = 'offered' and w.offered_until < now()${f.negocio ? " and w.business_id = $1" : ""}
        returning w.business_id as biz, w.item_id::text as item, w.group_id::text as grupo, w.band_id::text as banda`, f.negocio ? [f.negocio] : [])).rows;
     for (const o of O) {
-      const sig = (await db().query<{ id: string }>(`select id::text from waitlist_entries where item_id = $1::bigint and group_id is not distinct from $2::bigint and band_id is not distinct from $3::bigint and status = 'waiting' order by id limit 1`, [o.item, o.grupo, o.banda])).rows[0];
+      const sig = (await db().query<{ id: string }>(`select id::text from waitlist_entries where item_id = $1::bigint and group_id is not distinct from $2::bigint and band_id is not distinct from $3::bigint and status = 'waiting' order by waitlist_entries.id limit 1`, [o.item, o.grupo, o.banda])).rows[0];
       if (sig) await ofrecerCupo(o.biz, sig.id, null).catch(() => undefined);
     }
     n += O.length;
@@ -822,7 +822,7 @@ export async function inscDetalle(negocio: string, numero: string, actorId: stri
     nota = await (await import("./ninos-privado")).leerNotaFe(o.id, negocio);
     if (nota) { notaPrivada = true; await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'insc.ver_nota_fe', 'operation', $2, $3, null, null)`, [actorId, o.num, o.city]); }
   }
-  const historial = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
+  const historial = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by operation_events.at, id`, [o.id])).rows;
   let otros: InscDetalle["otros"] = [];
   if (o.status === "pending" && o.det.group_id) {
     const x = (await contexto(db(), negocio))!, s = await servicio(db(), negocio, String(o.det.item_id));

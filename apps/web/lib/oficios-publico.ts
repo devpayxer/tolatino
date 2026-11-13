@@ -31,7 +31,7 @@ export async function oficiosPublico(negocio: string, userId: string | null): Pr
   const rubro: Rubro = b.cat === "NEG-AUTO" ? "auto" : "hogar", mods = b.mods ?? [], off = b.off ?? {};
   if (!mods.includes("svc") || off.svc) return null;
   const [S, I, T, P, U] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     db().query<OficioPub>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, coalesce(i.svc_kind, 'fijo') as k, i.price_cents as cents, i.duration_min as dur,
               i.svc_attrs as a, i.svc_opts as opts, i.photos[1] as foto

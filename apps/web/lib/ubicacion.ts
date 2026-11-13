@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "./cambios-config";
 import { cookies } from "next/headers";
 import { db } from "./db";
 import { millas, type LL } from "./mapa-geo";
@@ -15,9 +16,10 @@ export type Ciudad = {
 };
 export type Ubicacion = Punto & { c: Ciudad; ctr: string; gps: boolean; porDefecto: boolean };
 
-let cache: { at: number; ciudades: Ciudad[] } | null = null;
-/* Ciudades y barrios (60 s en memoria: el Super Admin abre o cierra una ciudad y se ve en un minuto). */
+let cache: { at: number; ciudades: Ciudad[] } | null = null, escucha = false;
+/* Ciudades y barrios (en memoria; 9b-3: un cambio en cities la olvida al momento en todos los procesos, lib/cambios-config.ts; 60 s de respaldo). */
 export async function ciudades(): Promise<Ciudad[]> {
+  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
   if (cache && Date.now() - cache.at < 60_000) return cache.ciudades;
   const [c, z] = await Promise.all([
     db().query<Omit<Ciudad, "zonas">>(

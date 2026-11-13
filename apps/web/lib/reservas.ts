@@ -102,7 +102,7 @@ async function ocupacion(c: Q, x: Ctx, ymd: string, sin?: { op?: string | null; 
 }
 async function bloqueos(c: Q, x: Ctx, desde: string, hasta: string) {
   const r = await (c as ReturnType<typeof db>).query<{ day: string; period: string; area: string; id: string }>(
-    `select day::text, period, area, id::text from reservation_blocks where business_id = $1 and removed_at is null and day between $2::date and $3::date order by day, id`, [x.id, desde, hasta]);
+    `select day::text, period, area, id::text from reservation_blocks where business_id = $1 and removed_at is null and day between $2::date and $3::date order by reservation_blocks.day, reservation_blocks.id`, [x.id, desde, hasta]);
   return r.rows;
 }
 

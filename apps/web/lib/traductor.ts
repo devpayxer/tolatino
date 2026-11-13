@@ -6,37 +6,32 @@ import "server-only";
    - Límite de 3 s por traducción (1.5 s para detectar el idioma al publicar: publicar no espera al traductor).
    - Corta-circuito: 5 fallas seguidas → 60 s sin llamarlo (abierto); luego deja pasar una prueba (medio abierto): si falla, otros
      60 s; si responde, se cierra. Mientras está abierto, «Ver traducción» dice «La traducción no está disponible ahora.» al instante
-     y publicar usa el idioma de la app. Vive en la memoria de cada proceso de la app.
+     y publicar usa el idioma de la app. 9b-3: COMPARTIDO entre los procesos de la app (lib/topes.ts, rate_counters): una sola prueba a la
+     vez en todo el sistema, y las fallas de todos cuentan juntas.
    - Nada inventado: si el servicio no responde o responde algo raro, es una falla, no un texto. */
+import { corteAbierto, estadoCorte, resultadoCorte } from "./topes";
 import type { LangTr } from "./traduccion-comun";
 
 export const MOTOR = "libretranslate";
 export const LIMITE_MS = 3000, LIMITE_DETECTAR_MS = 1500, FALLAS_PARA_CORTAR = 5, CORTE_MS = 60_000;
 const base = () => (process.env.TRADUCTOR_URL ?? "").replace(/\/+$/, "");
 
-const corta = { fallas: 0, abiertoHasta: 0, medio: false };
 export class SinTraductor extends Error {}
 
-function falla() {
-  if (corta.medio || ++corta.fallas >= FALLAS_PARA_CORTAR) { corta.abiertoHasta = Date.now() + CORTE_MS; corta.fallas = 0; }
-  corta.medio = false;
-}
+const falla = () => resultadoCorte("traductor", false, FALLAS_PARA_CORTAR);
 
 async function llamar(ruta: "/translate" | "/detect", cuerpo: Record<string, string>, ms: number): Promise<unknown> {
   const b = base();
   if (!b) throw new SinTraductor("sin TRADUCTOR_URL");
-  if (corta.abiertoHasta) {
-    if (Date.now() < corta.abiertoHasta) throw new SinTraductor("corta-circuito abierto");
-    corta.abiertoHasta = 0; corta.medio = true; // pasó el minuto: una prueba
-  }
+  if ((await estadoCorte("traductor", CORTE_MS)) === "abierto") throw new SinTraductor("corta-circuito abierto"); // «prueba»: pasó el minuto, este llama
   try {
     const r = await fetch(b + ruta, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpo), signal: AbortSignal.timeout(ms), cache: "no-store" });
     if (!r.ok) throw new Error(`traductor ${r.status}`);
     const j = (await r.json()) as unknown;
-    corta.fallas = 0; corta.medio = false;
+    await resultadoCorte("traductor", true, FALLAS_PARA_CORTAR);
     return j;
   } catch {
-    falla();
+    await falla();
     throw new SinTraductor("el traductor no respondió");
   }
 }
@@ -46,7 +41,7 @@ export async function traducirTexto(texto: string, de: LangTr, a: LangTr): Promi
   const t0 = Date.now();
   const j = (await llamar("/translate", { q: texto, source: de, target: a, format: "text" }, LIMITE_MS)) as { translatedText?: unknown } | null;
   const out = typeof j?.translatedText === "string" ? j.translatedText.trim() : "";
-  if (!out) { falla(); throw new SinTraductor("respuesta vacía"); }
+  if (!out) { await falla(); throw new SinTraductor("respuesta vacía"); }
   return { texto: out.slice(0, 4000), ms: Date.now() - t0 };
 }
 
@@ -70,7 +65,7 @@ export const idiomaTexto = (detectado: LangTr | null, app: string | null | undef
 
 /* Para el Super Admin: ¿responde? (2 s, sin tocar el corta-circuito). Nunca un «sí» sin haber preguntado. */
 export async function saludTraductor(): Promise<{ configurado: boolean; ok: boolean; ms: number | null; idiomas: string[]; cortado: boolean }> {
-  const b = base(), cortado = Date.now() < corta.abiertoHasta;
+  const b = base(), cortado = await corteAbierto("traductor", CORTE_MS);
   if (!b) return { configurado: false, ok: false, ms: null, idiomas: [], cortado };
   const t0 = Date.now();
   try {

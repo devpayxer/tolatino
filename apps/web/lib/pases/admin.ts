@@ -27,7 +27,7 @@ export async function pasesDeBoleto(s: Staff, code: string): Promise<PaseAdm[]> 
       where t.code = $1 and (cardinality($2::text[]) = 0 or p.city_id = any($2::text[])) order by p.id`, [code, s.cities])).rows;
   if (!P.length) return [];
   const L = (await db().query<{ id: string; pid: string; a: string; d: string | null; at: string }>(
-    `select id::text, pass_id::text as pid, action as a, detail as d, ${ISO("at")} as at from pass_log where pass_id = any($1::bigint[]) order by id desc limit 60`, [P.map((x) => x.id)])).rows;
+    `select id::text, pass_id::text as pid, action as a, detail as d, ${ISO("at")} as at from pass_log where pass_id = any($1::bigint[]) order by pass_log.id desc limit 60`, [P.map((x) => x.id)])).rows;
   return P.map((p) => ({ ...p, log: L.filter((l) => l.pid === p.id).slice(0, 20).map(({ id, a, d, at }) => ({ id, a, d, at })) }));
 }
 

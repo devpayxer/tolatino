@@ -41,7 +41,7 @@ export async function fePublica(negocio: string): Promise<FePublica | null> {
   const h = (await herramientaFe(negocio))!;
   // Una consulta por cosa, sin N+1: secciones, servicios a la venta, grupos del catecismo y sellos verificados.
   const [S, I, L] = await Promise.all([
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     (b.off ?? {}).svc ? Promise.resolve({ rows: [] as (Omit<SvcFePub, "grupos" | "forma" | "don"> & { k: string | null; fe: string | null })[] }) : db().query<Omit<SvcFePub, "grupos" | "forma" | "don"> & { k: string | null; fe: string | null }>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.svc_kind as k, i.svc_attrs->>'fe' as fe, i.price_cents as cents,
               i.svc_attrs->'dur' as dur, coalesce(i.svc_attrs->'inc', '[]'::jsonb) as inc, coalesce(i.svc_attrs->'no', '[]'::jsonb) as no, i.photos[1] as foto

@@ -46,7 +46,7 @@ export async function saludApps(f: FiltroErrores): Promise<SaludApps> {
         order by g.last_seen desc, g.id desc limit 31`, [app, estado, tipo, cur?.[1] ?? null, cur?.[2] ?? null]),
   ]);
   const filas = g.rows.slice(0, 30);
-  const d = descartados();
+  const d = await descartados();
   return {
     kpis: { ...k.rows[0]!, descartados: d.n, desde: d.desde },
     sinCierre: s.rows.map((x) => ({ app: x.app, plat: x.plat, sesiones: x.sesiones, conCierre: x.con, pct: x.sesiones > 0 ? Math.max(0, Math.round(1000 * (1 - x.con / x.sesiones)) / 10) : null })),

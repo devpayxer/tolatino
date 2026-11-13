@@ -27,7 +27,7 @@ export const QUEDAN_SQL = (i: string, tz: string) => `(case when ${i}.stock_mode
 export async function menuPanel(negocio: string, mod: "menu" | "shop" = "menu"): Promise<MenuPanel> {
   const tz = `(select c.timezone from cities c join businesses b on b.city_id = c.id where b.id = $1)`;
   const [s, i, g, c, b] = await Promise.all([
-    db().query<MSec>(`select id::text, name, visible, avail, av, sort from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, id`, [negocio, mod]),
+    db().query<MSec>(`select id::text, name, visible, avail, av, sort from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, item_sections.id`, [negocio, mod]),
     db().query<MItem & { agotado: boolean; quedan: number }>(
       `select i.id::text, i.section_id::text as sec, i.name, i.descr as "desc", i.price_cents as cents, i.tax_pct::float as tax, i.photos, i.sell, i.channels as ch,
               ${AGOTADO_SQL("i", tz)} as agotado, i.sold_out_until as "agoU", i.stock_mode as stk, ${QUEDAN_SQL("i", tz)} as quedan, i.stock_par as par,
@@ -36,7 +36,7 @@ export async function menuPanel(negocio: string, mod: "menu" | "shop" = "menu"):
               case when i.module = 'shop' then jsonb_build_object('k', coalesce(i.shop_kind, 'unid'), 'ebt', i.ebt, 'edad', i.age_min, 'tienda', i.in_store_only, 'label', i.size_label,
                 'tallas', coalesce((select jsonb_agg(jsonb_build_object('id', v.id::text, 'label', v.label, 'stock', v.stock_left) order by v.sort, v.id) from item_variants v where v.item_id = i.id and v.removed_at is null), '[]'::jsonb)) end as shop
          from items i where i.business_id = $1 and i.module = $2 and i.removed_at is null order by i.sort, i.id`, [negocio, mod]),
-    db().query<MGrp & { max_pick: number }>(`select id::text, name, required, max_pick, options from option_groups where business_id = $1 and removed_at is null order by id`, [negocio]),
+    db().query<MGrp & { max_pick: number }>(`select id::text, name, required, max_pick, options from option_groups where business_id = $1 and removed_at is null order by option_groups.id`, [negocio]),
     db().query<{ last_min: number; pause_until: string | null; pause_kind: string | null; busy_min: number; low_alert: number }>(
       `select last_min, case when pause_until > now() then pause_until end as pause_until, case when pause_until > now() then pause_kind end as pause_kind, busy_min, low_alert from menu_settings where business_id = $1`, [negocio]),
     db().query<{ off: Record<string, { reason?: string }> }>(`select modules_off as off from businesses where id = $1`, [negocio]),

@@ -25,7 +25,7 @@ const casos = [
   ['cortesiaSinDinero', D, "      if (ya + q > k0.max) throw no(", "      if (false) throw no("],
   ['cortesiaSinDinero', D, "      if (sel.some((b) => b.st !== \"valid\" || b.kind !== \"paid\")) throw no(\"Uno de esos boletos ya se canceló", "      if (sel.some((b) => b.st !== \"valid\")) throw no(\"Uno de esos boletos ya se canceló"],
   // listaDeEsperaEnOrden
-  ['listaDeEsperaEnOrden', ES, "where event_date_id = $1::bigint and status = 'waiting' order by created_at, id limit 200", "where event_date_id = $1::bigint and status = 'waiting' order by party limit 200"],
+  ['listaDeEsperaEnOrden', ES, "where event_date_id = $1::bigint and status = 'waiting' order by created_at, waitlist.id limit 200", "where event_date_id = $1::bigint and status = 'waiting' order by party limit 200"],
   ['listaDeEsperaEnOrden', ES, "    await c.query(`select pg_advisory_xact_lock(hashtext('espera:' || $1))`, [fecha]);\n", ""],
   ['listaDeEsperaEnOrden', BO, "  // 6d · Lo que se liberó es primero para la lista de espera (en orden); lo que nadie de la fila puede usar queda para todos.\n  await primeroLaFila(fecha);\n", ""],
   ['listaDeEsperaEnOrden', BO, "    if (h.wl && (h.st === \"expired\" || !h.vivo)) throw no(", "    if (false) throw no("],

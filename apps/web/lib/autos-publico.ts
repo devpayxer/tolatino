@@ -52,7 +52,7 @@ export async function autosPublica(negocio: string): Promise<AutosPublica | null
          from vehicle_listings v join items i on i.id = v.item_id
         where v.business_id = $1 and v.status in ('lot', 'pending') and v.otd_cents is not null and i.removed_at is null and i.status = 'live' and i.sell
         order by (v.status = 'lot') desc, i.sort, i.id limit ${TOPE_CARROS_FICHA}`, [negocio]),
-    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [negocio]),
+    db().query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [negocio]),
     (b.off ?? {}).svc ? Promise.resolve({ rows: [] as SvcAutoPub[] }) : db().query<SvcAutoPub>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, i.photos[1] as foto
          from items i where i.business_id = $1 and i.module = 'svc' and i.removed_at is null and i.sell and i.status = 'live' and not i.is_extra

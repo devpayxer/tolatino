@@ -10,6 +10,7 @@ import { armarPkpass, isoEnZona, type Bi, type ContenidoPase } from "./apple";
 import { avisarPase } from "./apns-pase";
 import { credenciales, encendidos, imagenes, URL_APNS_PASE, URL_GOOGLE, URL_GOOGLE_OAUTH } from "./credenciales";
 import { enlaceGuardar, idClase, idObjeto, sincronizar } from "./google";
+import { dentroDelTope } from "../topes";
 
 /* 8g · El boleto en Apple Wallet y Google Wallet (fase8-apps.md §4 8g). El servidor decide todo; la pantalla solo muestra el botón.
    - EMITIR: solo quien tiene el boleto, con el boleto vivo (válido, o usado que todavía entra otro día), sin transferencia pendiente y sin
@@ -230,15 +231,10 @@ export async function paseAlDia(p: FilaPase, siModificado: string | null): Promi
   return { status: 200, archivo, modificado };
 }
 
-/* Límite por dirección (pase_ws_por_minuto) del servicio web: en memoria, por minuto. */
-const ventana = { min: 0, por: new Map<string, number>() };
+/* Límite por dirección (pase_ws_por_minuto) del servicio web: por minuto, compartido entre los procesos (lib/topes.ts, 9b-3). */
 export async function permitido(ip: string | null): Promise<boolean> {
-  const m = Math.floor(Date.now() / 60_000), lim = (await valores("pase_ws_por_minuto")).pase_ws_por_minuto, k = ip || "?";
-  if (ventana.min !== m) { ventana.min = m; ventana.por.clear(); }
-  const n = (ventana.por.get(k) ?? 0) + 1;
-  if (ventana.por.size > 100_000) return false;
-  ventana.por.set(k, n);
-  return n <= lim;
+  const lim = (await valores("pase_ws_por_minuto")).pase_ws_por_minuto;
+  return dentroDelTope("pase_ws", ip || "?", lim);
 }
 
 /* ── El trabajador: avisos a los teléfonos (Apple) y objetos de Google al día ── */

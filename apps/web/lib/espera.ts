@@ -30,7 +30,7 @@ export async function ofrecer(fecha: string): Promise<number> {
     const v = await filaVenta(c, fecha);
     if (!v || estadoDe(v) !== "abierta") return [];
     const W = (await c.query<{ id: string; uid: string; party: number }>(
-      `select id::text, user_id::text as uid, party from waitlist where event_date_id = $1::bigint and status = 'waiting' order by created_at, id limit 200`, [fecha])).rows;
+      `select id::text, user_id::text as uid, party from waitlist where event_date_id = $1::bigint and status = 'waiting' order by created_at, waitlist.id limit 200`, [fecha])).rows;
     const out: { wid: string; uid: string; hold: string; title: Bi; dia: string; h0: number }[] = [];
     for (const w of W) {
       const T = (await c.query<{ id: string; p: number; n: Bi; quedan: number }>(

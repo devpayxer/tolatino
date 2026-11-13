@@ -178,7 +178,7 @@ export async function platoCuenta(negocio: string, itemId: string, delta: number
 export async function platoMover(negocio: string, itemId: string, dir: number): Promise<Res> {
   if (!ID.test(itemId)) return no("Ese plato no existe.", "That item doesn’t exist.");
   return hacer(negocio, async (c, a) => {
-    const L = (await c.query<{ id: string }>(`select id::text from items where business_id = $1 and section_id = (select section_id from items where id = $2::bigint and business_id = $1) and removed_at is null order by sort, id for update`, [a.negocio.id, itemId])).rows.map((x) => x.id);
+    const L = (await c.query<{ id: string }>(`select id::text from items where business_id = $1 and section_id = (select section_id from items where id = $2::bigint and business_id = $1) and removed_at is null order by sort, items.id for update`, [a.negocio.id, itemId])).rows.map((x) => x.id);
     const i = L.indexOf(itemId), j = i + (dir < 0 ? -1 : 1);
     if (i < 0 || j < 0 || j >= L.length) return null;
     [L[i], L[j]] = [L[j]!, L[i]!];
@@ -261,7 +261,7 @@ export async function categoriaVisible(negocio: string, secId: string, visible: 
 export async function categoriaMover(negocio: string, secId: string, dir: number): Promise<Res> {
   if (!ID.test(secId)) return no("Esa categoría no existe.", "That category doesn’t exist.");
   return hacer(negocio, async (c, a) => {
-    const L = (await c.query<{ id: string }>(`select id::text from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, id for update`, [a.negocio.id, await moduloDe(c, a.negocio.id)])).rows.map((x) => x.id);
+    const L = (await c.query<{ id: string }>(`select id::text from item_sections where business_id = $1 and module = $2 and removed_at is null order by sort, item_sections.id for update`, [a.negocio.id, await moduloDe(c, a.negocio.id)])).rows.map((x) => x.id);
     const i = L.indexOf(secId), j = i + (dir < 0 ? -1 : 1);
     if (i < 0 || j < 0 || j >= L.length) return null;
     [L[i], L[j]] = [L[j]!, L[i]!];

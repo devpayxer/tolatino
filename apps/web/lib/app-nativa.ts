@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "./cambios-config";
 import { headers } from "next/headers";
 import { auditar, type Staff } from "./admin";
 import { cambiarConfig, valores, type ClaveConfig } from "./config";
@@ -22,8 +23,9 @@ export const claveMin = (a: ClaveApp, p: Plataforma) => `app_min_build_${a}_${p}
 export const claveAviso = (a: ClaveApp, p: Plataforma) => `app_aviso_build_${a}_${p}` as ClaveConfig;
 export const flagCascara = (a: ClaveApp) => `app.cascara.${a}`;
 
-let flags: { at: number; m: Map<string, boolean> } | null = null;
+let flags: { at: number; m: Map<string, boolean> } | null = null, escucha = false;
 async function encendidas(): Promise<Map<string, boolean>> {
+  if (!escucha) { escucha = true; alCambiarConfig(() => { flags = null; }); }
   if (flags && Date.now() - flags.at < 15_000) return flags.m;
   const r = await db().query<{ key: string; enabled: boolean }>(`select key, enabled from feature_flags where key like 'app.cascara.%'`);
   flags = { at: Date.now(), m: new Map(r.rows.map((x) => [x.key, x.enabled])) };

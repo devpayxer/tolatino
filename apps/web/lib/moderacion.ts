@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "./cambios-config";
 import type { PoolClient } from "pg";
 import { db, tx } from "./db";
 import { sinBloqueo, sinBloqueos } from "./comunidad";
@@ -32,7 +33,9 @@ const fecha = (iso: string | null, es: boolean) => iso ? new Date(iso).toLocaleD
 /* ── Reglas ── */
 export type Reglas = Record<ReglaKey, { on: boolean; p: Record<string, number> }>;
 let cacheR: { at: number; r: Reglas } | null = null;
+let escucha = false;
 export async function reglasMod(c: Q = db()): Promise<Reglas> {
+  if (!escucha) { escucha = true; alCambiarConfig(olvidarReglas); }
   if (cacheR && Date.now() - cacheR.at < 15_000) return cacheR.r;
   const r = (await c.query<{ key: ReglaKey; enabled: boolean; params: Record<string, number> }>(`select key, enabled, params from mod_rules`)).rows;
   const out = Object.fromEntries(r.map((x) => [x.key, { on: x.enabled, p: x.params ?? {} }])) as Reglas;
@@ -111,6 +114,7 @@ type Termino = { kind: "odio" | "estafa" | "migra" | "autolesion"; re: RegExp; t
 let cacheT: { at: number; t: Termino[] } | null = null;
 const norm = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 async function terminos(c: Q): Promise<Termino[]> {
+  if (!escucha) { escucha = true; alCambiarConfig(olvidarReglas); }
   if (cacheT && Date.now() - cacheT.at < 30_000) return cacheT.t;
   const r = (await c.query<{ kind: Termino["kind"]; term: string }>(`select kind, term from mod_terms where enabled`)).rows;
   const t = r.map((x) => ({ kind: x.kind, term: x.term, re: new RegExp(`(^|[^a-z0-9])${norm(x.term).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+")}($|[^a-z0-9])`) }));

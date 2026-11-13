@@ -135,7 +135,7 @@ export function SistemaAppsBeta({ d, editar }: { d: DatosBeta; editar: boolean }
     B.push({ type: "kpis", cols: desk ? "repeat(5,minmax(0,1fr))" : "repeat(2,minmax(0,1fr))", items: [
       { k: "GRUPOS ABIERTOS", v: String(s.kpis.grupos), s: "nuevos o vistos", bg: s.kpis.grupos ? "var(--tl-ink)" : undefined, fg: s.kpis.grupos ? "var(--tl-white)" : undefined },
       { k: "NUEVOS · 24 H", v: String(s.kpis.nuevos24) }, { k: "ERRORES · 24 H", v: String(s.kpis.eventos24) }, { k: "ALERTAS · 24 H", v: String(s.kpis.alertas24), s: "errores en vivo" },
-      { k: "DESCARTADOS", v: String(s.kpis.descartados), s: `por el tope · desde ${cuando(s.kpis.desde)}` }] });
+      { k: "DESCARTADOS", v: String(s.kpis.descartados), s: "por el tope · últimas 24 h (todos los servidores)" }] });
     B.push({ type: "group", k: "SESIONES SIN CIERRE · 7 DÍAS (APROXIMADO)" });
     B.push(s.sinCierre.length ? { type: "rows", cols: desk ? "repeat(4,minmax(0,1fr))" : "1fr", items: s.sinCierre.map((x): Fila => ({ key: `${x.app}-${x.plat}`, icon: "phone", t: `${APP[x.app] ?? x.app} · ${PLAT[x.plat] ?? x.plat}`,
       r: x.pct == null ? "—" : `${x.pct} %`, s: `${x.sesiones} ${x.sesiones === 1 ? "sesión" : "sesiones"} · ${x.conCierre} ${x.conCierre === 1 ? "teléfono" : "teléfonos"} con un cierre`, chev: false })) }

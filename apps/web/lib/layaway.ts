@@ -238,7 +238,7 @@ export async function reembolsarPlan(opId: string): Promise<{ objetivo: number; 
     `select lp.id::text, lp.fee_kept_cents as kept from layaway_plans lp where lp.operation_id = $1::bigint and lp.status = 'cancelled'`, [opId])).rows[0];
   if (!p) return { objetivo: 0, devuelto: 0 };
   const P = (await db().query<{ id: string; amount: number; refunded: number }>(
-    `select id::text, amount_cents as amount, refunded_cents as refunded from payments where operation_id = $1::bigint and kind in ('deposit', 'balance') and status in ('captured', 'partially_refunded', 'refunded') order by id desc`, [opId])).rows;
+    `select id::text, amount_cents as amount, refunded_cents as refunded from payments where operation_id = $1::bigint and kind in ('deposit', 'balance') and status in ('captured', 'partially_refunded', 'refunded') order by payments.id desc`, [opId])).rows;
   // El cargo se toma primero de lo cobrado en la app; lo que sobre del cargo sale de lo pagado en la tienda.
   const cobrado = P.reduce((s, x) => s + x.amount, 0), objetivo = Math.max(0, cobrado - p.kept);
   let falta = objetivo - P.reduce((s, x) => s + x.refunded, 0), devuelto = 0;

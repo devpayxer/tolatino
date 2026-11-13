@@ -1,23 +1,26 @@
 import "server-only";
+import { estadoCorte, resultadoCorte } from "./topes";
 
 /* 5d · Cliente del servicio propio de moderación de imágenes (services/moderacion-img; regla `img`). Solo la red interna
-   (MODERACION_IMG_URL). Nunca bloquea una subida: 3 s de límite y, si falla, corta 30 s sin volver a intentar (corta-circuito).
+   (MODERACION_IMG_URL). Nunca bloquea una subida: 3 s de límite y, si falla, corta 30 s sin volver a intentar (corta-circuito, compartido
+   entre los procesos de la app desde 9b-3: lib/topes.ts; pasado el corte, un solo proceso prueba).
    Si no responde, el resultado es «sin_servicio» y la foto se queda en revisión manual (cerrado, nunca abierto: nada se publica
    sin revisar). La prueba de la app usa un servicio de mentira solo en pruebas; aquí no hay resultados inventados. */
 export type ResultadoImg = { estado: "ok" | "marcada" | "sin_servicio"; desnudez: number | null; ms: number | null };
 const URL_SVC = () => (process.env.MODERACION_IMG_URL ?? "").replace(/\/+$/, "");
-let cortadoHasta = 0;
+const CORTE_MS = 30_000;
 
 export async function revisarImagen(datos: Buffer, umbral: number): Promise<ResultadoImg> {
   const base = URL_SVC();
-  if (!base || Date.now() < cortadoHasta) return { estado: "sin_servicio", desnudez: null, ms: null };
+  if (!base || (await estadoCorte("moderacion_img", CORTE_MS)) === "abierto") return { estado: "sin_servicio", desnudez: null, ms: null };
   try {
     const r = await fetch(`${base}/clasificar`, { method: "POST", body: new Uint8Array(datos), headers: { "content-type": "application/octet-stream" }, signal: AbortSignal.timeout(3000) });
     const j = (await r.json().catch(() => null)) as { ok?: boolean; desnudez?: number; ms?: number } | null;
     if (!r.ok || !j?.ok || typeof j.desnudez !== "number") throw new Error(`servicio ${r.status}`);
+    await resultadoCorte("moderacion_img", true, 1);
     return { estado: j.desnudez >= umbral ? "marcada" : "ok", desnudez: j.desnudez, ms: j.ms ?? null };
   } catch {
-    cortadoHasta = Date.now() + 30_000;
+    await resultadoCorte("moderacion_img", false, 1);
     return { estado: "sin_servicio", desnudez: null, ms: null };
   }
 }

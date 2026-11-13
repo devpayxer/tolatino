@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "./cambios-config";
 import { auditar } from "./admin";
 import { db, tx } from "./db";
 
@@ -59,6 +60,7 @@ export type ClaveConfig =
   // 8c · Push (0126; se cambian en Sistema › Integraciones › Push)
   | "push_ttl_h" | "push_reintentos" | "push_lote" | "push_por_minuto" | "push_inactivo_dias"
   // 8f · Errores, «Reportar un problema» y el programa beta (0127)
+  | "eventos_retener_meses" // 9b-3 · cuánto se guarda cada evento de la analítica (0133)
   | "errores_retener_dias" | "errores_por_minuto" | "errores_por_dispositivo" | "errores_pico_n" | "reporte_logs_kb" | "beta_agitar" | "apk_enlace_horas"
   // 8e · La ruta en vivo del repartidor (0128)
   | "ubic_cada_s" | "ubic_min_m" | "ubic_retener_dias" | "ubic_cliente_desde" | "ubic_vel_max_mps" | "ubic_vieja_s"
@@ -75,7 +77,10 @@ type Bi = { es: string; en: string };
 const TTL_MS = 15_000;
 let cache: { at: number; m: Map<string, number> } | null = null;
 
+let escucha = false;
 async function mapa(): Promise<Map<string, number>> {
+  // 9b-3: cada cambio en la base la olvida al momento en todos los procesos (lib/cambios-config.ts); los 15 s son el respaldo.
+  if (!escucha) { escucha = true; alCambiarConfig(olvidarConfig); }
   if (cache && Date.now() - cache.at < TTL_MS) return cache.m;
   const r = await db().query<{ key: string; v: number }>(`select key, cfg_int(key) as v from config_keys`);
   cache = { at: Date.now(), m: new Map(r.rows.map((x) => [x.key, x.v])) };

@@ -360,7 +360,7 @@ export async function decidirOtraHora(userId: string, numero: string, acepta: bo
     await lockV(c, String(o0.det.alt_group_id ?? o0.biz));
     const o = await leer(c, "o.user_id = $1 and o.number = $2", [userId, numero], true);
     if (!o || o.status !== "change_proposed") return yaCambio();
-    const p = (await c.query<{ id: string; v: { group_id: string | null; dia: string; min: number; at: string } }>(`select id::text, proposed as v from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; v: { group_id: string | null; dia: string; min: number; at: string } }>(`select id::text, proposed as v from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return yaCambio();
     if (!acepta) {
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);
@@ -632,7 +632,7 @@ export async function visDetalle(negocio: string, numero: string, actorId: strin
       await db().query(`insert into audit_entries (actor_kind, actor_id, action, target_kind, target_id, city_id, before, after) values ('user', $1, 'vis.ver_direccion', 'operation', $2, $3, null, null)`, [actorId, o.num, o.city]);
     }
   }
-  const historial = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by at, id`, [o.id])).rows;
+  const historial = (await db().query<{ at: string; kind: string; note: Bi | null }>(`select at::text, kind, note from operation_events where operation_id = $1::bigint order by operation_events.at, id`, [o.id])).rows;
   let otras: HoraVis[] = [];
   if (o.status === "pending") {
     const x = await contexto(db(), negocio), it = x ? await itemDe(db(), x, String(o.det.item_id)) : null;

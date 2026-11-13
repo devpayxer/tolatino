@@ -30,6 +30,50 @@ const ultimaFn = (nombre) => { let b = ""; for (const x of readdirSync("packages
 const catalogoConfig = () => { const out = []; for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) { const t = readFileSync(`packages/db/migrations/${x}`, "utf8"); if (!/insert into config_keys/.test(t)) continue; for (const m of t.matchAll(/^\s*\('([a-z0-9_]+)', (-?\d+), (-?\d+), (-?\d+), '\{/gm)) out.push({ k: m[1], a: +m[2], b: +m[3], d: +m[4], f: `packages/db/migrations/${x}` }); } return out; };
 /* El cuerpo de un método de Java (desde su firma hasta la llave que lo cierra, contando llaves). */
 const cuerpoJava = (t, nombre) => { const i = t.search(new RegExp(`\\b\\w+ ${nombre}\\([^)]*\\)\\s*\\{`)); if (i < 0) return ""; let n = 0; for (let j = t.indexOf("{", i); j < t.length; j++) { if (t[j] === "{") n++; else if (t[j] === "}" && --n === 0) return t.slice(i, j + 1); } return t.slice(i); };
+/* 9b-3 · Tipo de cada columna (tabla → columna → tipo) según las migraciones, para parametroSinTipo. */
+let _tipos = null;
+const normTipo = (t) => { t = t.toLowerCase().replace(/\(.*?\)/g, "").replace(/\s+/g, " ").trim();
+  return ({ int: "integer", int4: "integer", int8: "bigint", int2: "smallint", bool: "boolean", varchar: "text", "character varying": "text", "timestamp with time zone": "timestamptz", float8: "double precision", serial: "integer", bigserial: "bigint" })[t] ?? t; };
+function tiposDeColumnas() {
+  if (_tipos) return _tipos;
+  _tipos = new Map();
+  const col = (tb, c, ty) => { if (/^(primary|unique|check|foreign|constraint|exclude|like)$/i.test(c)) return; (_tipos.get(tb) ?? _tipos.set(tb, new Map()).get(tb)).set(c, normTipo(ty)); };
+  const TIPO = "((?:timestamp with time zone|double precision|character varying|[a-z_0-9]+)(?:\\s*\\([^)]*\\))?(?:\\[\\])?)";
+  for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql")).sort()) {
+    const t = readFileSync(`packages/db/migrations/${x}`, "utf8").replace(/--.*$/gm, "");
+    for (const m of t.matchAll(/create (?:unlogged )?table (?:if not exists )?(\w+)\s*\(([\s\S]*?)\n\)/gi)) {
+      for (const l of m[2].split("\n")) { const c = new RegExp(`^\\s*(\\w+)\\s+${TIPO}`, "i").exec(l); if (c) col(m[1], c[1], c[2]); }
+    }
+    for (const m of t.matchAll(new RegExp(`alter table (?:if exists )?(\\w+) add column (?:if not exists )?(\\w+) ${TIPO}`, "gi"))) col(m[1], m[2], m[3]);
+  }
+  return _tipos;
+}
+/* Los tipos que cada $n sin «::» recibe en una consulta (lo que Postgres deduciría). */
+function deducirParametros(q, tipos) {
+  const out = new Map(), pon = (n, ty) => { if (ty) (out.get(n) ?? out.set(n, new Set()).get(n)).add(ty); };
+  const ins = /\binsert into (\w+)\s*(?:as \w+\s*)?\(([^)]*)\)\s*values\s*\(/i.exec(q);
+  const upd = /\bupdate (\w+)(?:\s+(?:as\s+)?(?!set\b)(\w+))?\s+set\b/i.exec(q);
+  const sel = /\bfrom (\w+)(?:\s+(?:as\s+)?(?!where\b|join\b|left\b|order\b|group\b|limit\b|on\b|inner\b|cross\b|for\b)(\w+))?/i.exec(q);
+  const base = ins ? { tb: ins[1], al: null } : upd ? { tb: upd[1], al: upd[2] ?? null } : sel ? { tb: sel[1], al: sel[2] ?? null } : null;
+  const cols = base ? tipos.get(base.tb) : null;
+  if (ins && cols) {
+    // La lista de valores, partida por comas de primer nivel.
+    let i = ins.index + ins[0].length, d = 1, cur = "";
+    const vals = [];
+    for (; i < q.length; i++) { const ch = q[i]; if (ch === "(") d++; if (ch === ")") d--; if (d === 0) break; if (ch === "," && d === 1) { vals.push(cur.trim()); cur = ""; } else cur += ch; }
+    vals.push(cur.trim());
+    const nombres = ins[2].split(",").map((x) => x.trim());
+    vals.forEach((v, k) => { const p = /^\$(\d+)$/.exec(v); if (p && nombres[k]) pon(p[1], cols.get(nombres[k])); });
+  }
+  if (cols) {
+    // Una columna sin tabla delante solo se resuelve si la consulta nombra UNA tabla (con subconsultas o joins, «id» puede ser de otra).
+    const una = [...q.matchAll(/\b(?:from|join|update|into)\s+(\w+)/gi)].length === 1;
+    const ref = (a, c) => ((!a && una) || (a && (a === base.al || a === base.tb) && !new RegExp(`\\b(?:from|join)\\s+\\w+\\s+(?:as\\s+)?${a}\\b`, "i").test(q.replace(base.tb + " " + (base.al ?? ""), "")))) ? cols.get(c) : null;
+    for (const m of q.matchAll(/(?:\b(\w+)\.)?\b(\w+)\s*(?:=|<>|<=|>=|<|>)\s*\$(\d+)(?![\d:])/g)) pon(m[3], ref(m[1], m[2]));
+    for (const m of q.matchAll(/\$(\d+)(?![\d:])\s*(?:=|<>|<=|>=|<|>)\s*(?:\b(\w+)\.)?\b(\w+)\b(?!\s*\()/g)) pon(m[1], ref(m[2], m[3]));
+  }
+  return out;
+}
 const cuerpoFn = (t, nombre) => { const i = t.search(new RegExp(`\\n(?:export )?(?:async )?function ${nombre}\\(`)); if (i < 0) return ""; const j = t.indexOf("\n}", i + 1); return t.slice(i, j < 0 ? undefined : j + 2); };
 
 const guardianes = {
@@ -557,6 +601,18 @@ const guardianes = {
     for (const f of codigo) {
       if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
       readFileSync(f, "utf8").split("\n").forEach((l, i) => { if (/(?<!time zone )\$\d+\s*[-+]\s*interval/.test(l)) falla("parametroSinTipo", f, i + 1, "parámetro de SQL sin tipo junto a un interval: escribe $n::timestamptz (o ::date)"); });
+    }
+    /* 9b-3 (LAUNCH L176) · «inconsistent types deduced for parameter $n» (salió dos veces; lo cazaba solo la punta a punta si alguien pasaba por
+       ahí): el MISMO $n sin tipo en dos lugares de una consulta que le dan tipos distintos (una columna uuid y otra text). Los tipos salen de las
+       migraciones (create table / add column); se deduce el tipo de cada $n sin «::» en: la lista de un insert (su columna), «set col = $n» y
+       «col = $n» / «$n = col» sobre una columna de la tabla de la consulta (sin alias o con el suyo). Dos tipos distintos → falla. */
+    const tipos = tiposDeColumnas();
+    for (const f of codigo) {
+      if (!/^apps\/web\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/`[^`]*`/g)) {
+        for (const [n, ts] of deducirParametros(m[0], tipos)) if (ts.size > 1) falla("parametroSinTipo", f, t.slice(0, m.index).split("\n").length, `$${n} sin tipo recibe ${[...ts].join(" y ")} en la misma consulta (Postgres: «inconsistent types deduced»): escribe $${n}::tipo en cada uso o usa dos parámetros`);
+      }
     }
   },
 
@@ -3261,7 +3317,7 @@ const guardianes = {
     const G = "listaDeEsperaEnOrden", E = "apps/web/lib/espera.ts", B = "apps/web/lib/boletos.ts", M = "packages/db/migrations/0109_boletos_comprador.sql", R = "apps/web/lib/barrido.ts";
     if (!existsSync(E)) return falla(G, E, 0, "falta lib/espera.ts");
     const of = cuerpoFn(sinComent(E), "ofrecer");
-    if (!/status = 'waiting' order by created_at, id/.test(of)) falla(G, E, 0, "ofrecer: en orden de llegada (created_at, id)");
+    if (!/status = 'waiting' order by created_at, (?:waitlist\.)?id\b/.test(of)) falla(G, E, 0, "ofrecer: en orden de llegada (created_at, id)");
     if (!/pg_advisory_xact_lock\(hashtext\('espera:' \|\| \$1\)\)/.test(of)) falla(G, E, 0, "ofrecer: un candado por fecha");
     if (!/sold_n \+ held_n \+ \$3 <= quantity/.test(of) || !/waitlist_id\)/.test(of)) falla(G, E, 0, "ofrecer: la oferta es un apartado (update condicional) con waitlist_id");
     if (existsSync(M)) { const w = ultimaFn("waitlist_antes"); if (!/new\.created_at\) is distinct from \(old\.event_date_id, old\.event_id, old\.city_id, old\.user_id, old\.party, old\.created_at\)/.test(w) && !/old\.created_at\) then\s*raise exception 'el lugar en la lista de espera no cambia'/.test(w)) falla(G, M, 0, "la base no deja cambiar el lugar en la fila (created_at)"); }
@@ -4757,7 +4813,7 @@ const guardianes = {
 
   ordenSinTexto() {
     const G = "ordenSinTexto";
-    for (const x of codigo.filter((f) => /^apps\/web\/lib\/(compa\/[^/]+|mensajes)\.ts$/.test(f))) {
+    for (const x of codigo.filter((f) => /^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f))) {
       for (const q of sinComent(x).match(/`[^`]*`/g) ?? []) {
         const sel = /^`\s*select\s+([\s\S]*?)\s+from\s/i.exec(q);
         if (!sel) continue;
@@ -5588,7 +5644,8 @@ const guardianes = {
     if (!/valores\("errores_por_minuto", "errores_por_dispositivo"\)/.test(f)) falla(G, I, 0, "los topes salen de Configuración (errores_por_minuto / errores_por_dispositivo)");
     if (!/if \(!\(await encendido\(\)\)\) return/.test(f)) falla(G, I, 0, "el interruptor app.errores se mira primero");
     const p = cuerpoFn(i, "permitir");
-    if (!/ventana\.global >= lim\.global/.test(p) || !/>= lim\.dev\b/.test(p) || !/>= lim\.dev \* 4/.test(p) || !/ventana\.por\.size > 100_000/.test(p)) falla(G, I, 0, "permitir(): tope global, por teléfono, por conexión y memoria acotada");
+    // 9b-3: los tres topes van al contador compartido (lib/topes.ts, rate_counters), no a la memoria del proceso (guardián topeCompartido).
+    if (!/dentroDelTope\("errores", "todo", lim\.global\)/.test(p) || !/dentroDelTope\("errores_dev", dev, lim\.dev\)/.test(p) || !/dentroDelTope\("errores_ip", ip \?\? "\?", lim\.dev \* 4\)/.test(p)) falla(G, I, 0, "permitir(): tope global, por teléfono y por conexión, compartidos (dentroDelTope)");
     if (!/if \(\(tipo === "cierre" \|\| tipo === "nativo"\) && !app\) return/.test(f)) falla(G, I, 0, "un cierre nativo solo de una app");
     // Lo que corre sobre 16 KB sin sesión no puede ser cuadrático: el correo solo desde el comienzo de una palabra y con topes (sin eso, 16 KB de
     // letras costaban ~300 ms), y un cuadro de stack largo no se intenta (dos «.+?» seguidos).
@@ -6720,6 +6777,56 @@ const guardianes = {
     for (const g of ["alreves", "fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios"]) if (!rg.includes(`--grupo ${g}"`)) falla(G, Y, 0, `la regresión no corre «--grupo ${g}»: toda la punta a punta va en UN trabajo, en el orden de las fases (las pruebas se heredan datos; repartida en trabajos con base propia fallaban 30 de 199) y las pruebas al revés en el suyo`);
     if (/--parte/.test(rg)) falla(G, Y, 0, "la regresión no se reparte con --parte: las pruebas de una fase dependen de las anteriores");
     if (!/\n  confirmacion:\n[\s\S]*?inputs\.confirmar == 'si'/.test(y)) falla(G, Y, 0, "falta el trabajo «confirmacion» (dos veces seguidas y barajada, a mano con confirmar=si)");
+  },
+
+  /* 9b-3 · Ningún tope por minuto (o por segundo) ni corta-circuito en la memoria de un proceso de la app (LAUNCH L685, L699, L1235, L1302): con
+     varias réplicas cada una contaba y cortaba por su cuenta (el tope se multiplicaba). Todo pasa por lib/topes.ts (rate_counters, 0133). Caza:
+     la ventana del minuto hecha con la hora del proceso, un «…Hasta = Date.now() + …» (corte en memoria), un contador de fallas de primer nivel y
+     un Map<string, number> de primer nivel que se suma de a uno o guarda la última hora de alguien. Solo el servidor (lo de «use client» vive en
+     un teléfono). Al revés: alreves9b3. */
+  topeCompartido() {
+    const G = "topeCompartido", T = "apps/web/lib/topes.ts", M = "packages/db/migrations/0133_escala.sql";
+    if (!existsSync(T) || !existsSync(M)) return falla(G, T, 0, "falta el contador compartido (lib/topes.ts y 0133)");
+    const m = readFileSync(M, "utf8");
+    if (!/create unlogged table if not exists rate_counters \(/.test(m) || !/on conflict \(scope, key_hash, window_start\) do update set n = r\.n \+ excluded\.n\s+returning n/.test(m)) falla(G, M, 0, "rate_counters (unlogged) y tope_sumar: sumar y leer en UNA sentencia");
+    if (!/huella\(`tope:\$\{k\}`\)/.test(sinComent(T))) falla(G, T, 0, "la clave de un tope es una huella, nunca el dato (dirección, teléfono, token)");
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f) || f === T) continue;
+      const t = sinComent(f);
+      if (/^\s*["']use client["']/.test(t)) continue;
+      const lin = (i) => t.slice(0, i).split("\n").length;
+      for (const x of t.matchAll(/Date\.now\(\)\s*\/\s*60_?000\b/g)) {
+        // El minuto como llave de un intento de cobro (suscripcion.ts: «el mismo minuto y tarjeta = el mismo intento») no es un tope.
+        if (/cobrarPeriodo\(/.test(t.split("\n")[lin(x.index) - 1])) continue;
+        falla(G, f, lin(x.index), "una ventana por minuto con la hora del proceso: el tope va a lib/topes.ts (dentroDelTope), compartido entre procesos");
+      }
+      for (const x of t.matchAll(/\b\w*(?:[Hh]asta|[Cc]orte|[Aa]bierto)\w*\s*=\s*Date\.now\(\)\s*\+/g)) falla(G, f, lin(x.index), "un corta-circuito en la memoria del proceso: va a lib/topes.ts (estadoCorte / resultadoCorte)");
+      for (const x of t.matchAll(/^(?:const|let)\s+\w+\s*=\s*\{[^}\n]*\bfallas\s*:\s*0/gm)) falla(G, f, lin(x.index), "un contador de fallas en la memoria del proceso: va a lib/topes.ts");
+      for (const x of t.matchAll(/^(?:const|let)\s+(\w+)\s*=\s*(?:\{[^}\n]*)?new Map<string,\s*number>/gm)) {
+        const n = x[1];
+        if (new RegExp(`\\b${n}(?:\\.\\w+)?\\.set\\([^;\n]*(?:\\?\\?\\s*0\\)\\s*\\+\\s*1|Date\\.now\\(\\)|\\bahora\\b)`).test(t)) falla(G, f, lin(x.index), `«${n}» cuenta o guarda la hora de cada quien en la memoria del proceso: es un tope; va a lib/topes.ts`);
+      }
+    }
+  },
+
+  /* 9b-3 · Lo que un proceso guarda en memoria de lo que el Super Admin cambia (Configuración, interruptores, ciudades, reglas y términos de
+     moderación, sinónimos) se olvida al momento en TODOS los procesos: la base avisa (NOTIFY tl_config, 0133) y lib/cambios-config.ts llama a cada
+     olvido registrado. Una copia con hora que lee una de esas tablas sin registrarse con alCambiarConfig tardaba 15–60 s en verse en cada réplica
+     (y las pruebas que cambian Configuración dependían del orden: la «barajada» de 9b-2). Al revés: alreves9b3. */
+  copiaQueSeOlvida() {
+    const G = "copiaQueSeOlvida", M = "packages/db/migrations/0133_escala.sql", TABLAS = ["platform_config", "config_keys", "feature_flags", "cities", "mod_rules", "mod_terms", "synonyms"];
+    if (!existsSync(M)) return falla(G, M, 0, "falta 0133");
+    const m = readFileSync(M, "utf8");
+    for (const t of TABLAS) if (!new RegExp(`create trigger \\w+ after insert or update or delete on ${t} for each statement execute function config_avisar\\(\\)`).test(m)) falla(G, M, 0, `${t} no avisa sus cambios (config_avisar)`);
+    if (!/perform pg_notify\('tl_config'/.test(m)) falla(G, M, 0, "config_avisar() avisa por el canal tl_config");
+    for (const f of codigo) {
+      if (!/^apps\/web\/lib\/.*\.ts$/.test(f) || f === "apps/web/lib/cambios-config.ts") continue;
+      const t = sinComent(f);
+      if (!/Date\.now\(\)\s*-\s*\w+\.at\s*[<>]/.test(t)) continue;           // una copia con hora
+      const lee = TABLAS.filter((x) => new RegExp(`\\bfrom ${x}\\b`).test(t));
+      if (!lee.length) continue;
+      if (!/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
+    }
   },
 
   idioma() {

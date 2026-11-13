@@ -110,7 +110,7 @@ export async function gente(c: Q, x: Ctx): Promise<Persona[]> {
 }
 
 async function servicios(c: Q, x: Ctx, G: Persona[]) {
-  const S = await c.query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [x.id]);
+  const S = await c.query<{ id: string; name: Bi }>(`select id::text, name from item_sections where business_id = $1 and module = 'svc' and removed_at is null order by sort, item_sections.id`, [x.id]);
   const I = await c.query<Omit<ServicioPub, "hacen">>(
       `select i.id::text, i.section_id::text as sec, i.name, coalesce(i.descr, '{"es":"","en":""}'::jsonb) as desc, i.price_cents as cents, coalesce(i.duration_min, 30) as dur,
               i.price_from as desde, i.svc_opts as opts, i.is_extra as extra, i.photos[1] as foto

@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "./cambios-config";
 import { db } from "./db";
 import { CTE, COLUMNAS, DESDE, FOTO, conFoto, POR_PAGINA, type Resultado } from "./categoria";
 import type { Punto } from "./punto";
@@ -21,9 +22,10 @@ const INT = new Map(DATOS.intenciones.map((i) => [i.key, i]));
 const stem = (w: string) => (w.length > 5 && w.endsWith("es") ? w.slice(0, -2) : w.length > 4 && w.endsWith("s") ? w.slice(0, -1) : w);
 
 type Dic = { syn: Map<string, string[]>; frases: [string, string][]; intenciones: [string, string][] };
-let cache: { at: number; dic: Dic } | null = null;
+let cache: { at: number; dic: Dic } | null = null, escucha = false;
 /* Sinónimos, frases e intenciones activos (60 s en memoria: cambian solo cuando el admin los edita). */
 async function diccionario(): Promise<Dic> {
+  if (!escucha) { escucha = true; alCambiarConfig(() => { cache = null; }); }
   if (cache && Date.now() - cache.at < 60_000) return cache.dic;
   const r = await db().query<{ term: string; kind: string; target: string }>(
     `select lower(term) as term, target_kind as kind, lower(target) as target from synonyms where active and target_kind in ('query', 'filter')`);
@@ -242,3 +244,9 @@ export async function registrar(ciudad: string, userId: string | null, q: string
 
 export const ejemplos = DATOS.ejemplos;
 export const slugDe = (cortoEs: string) => slugCat(cortoEs);
+
+/* 9b-3 · El vocabulario de «¿Quisiste decir…?» (search_vocab): el barrido lo refresca si pasó una hora (search_vocab_refreshed_at en
+   platform_config), sin bloquear a quien busca. Devuelve true si refrescó. */
+export async function vocabularioAlDia(): Promise<boolean> {
+  return (await db().query<{ r: boolean }>(`select buscar_al_dia() as r`)).rows[0]?.r ?? false;
+}

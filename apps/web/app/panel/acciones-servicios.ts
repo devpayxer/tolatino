@@ -124,7 +124,7 @@ export async function servicioQuitar(negocio: string, itemId: string): Promise<R
 }
 export async function servicioMover(negocio: string, itemId: string, dir: number): Promise<Res> {
   return hacer(negocio, async (c, a) => {
-    const L = (await c.query<{ id: string; sec: string | null; extra: boolean }>(`select id::text, section_id::text as sec, is_extra as extra from items where business_id = $1 and module = 'svc' and removed_at is null order by sort, id`, [a.negocio.id])).rows;
+    const L = (await c.query<{ id: string; sec: string | null; extra: boolean }>(`select id::text, section_id::text as sec, is_extra as extra from items where business_id = $1 and module = 'svc' and removed_at is null order by sort, items.id`, [a.negocio.id])).rows;
     const i = L.findIndex((x) => x.id === String(itemId));
     if (i < 0) return no("Ese servicio no existe.", "That service does not exist.");
     let j = i + (dir < 0 ? -1 : 1);

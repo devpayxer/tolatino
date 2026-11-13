@@ -339,7 +339,7 @@ export async function fiestaCliente(userId: string, numero: string, que: QueFies
       return { ok: true };
     }
     if (o.status !== "change_proposed") return ya;
-    const p = (await c.query<{ id: string; m: number }>(`select id::text, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by id desc limit 1`, [o.id])).rows[0];
+    const p = (await c.query<{ id: string; m: number }>(`select id::text, (proposed->>'m')::int as m from change_proposals where operation_id = $1::bigint and side = 'business' and status = 'open' order by change_proposals.id desc limit 1`, [o.id])).rows[0];
     if (!p) return ya;
     if (que === "nogracias") {
       await c.query(`update change_proposals set status = 'declined', answered_at = now() where id = $1`, [p.id]);

@@ -1,4 +1,5 @@
 import "server-only";
+import { alCambiarConfig } from "../cambios-config";
 import { createECDH, createPrivateKey, type KeyObject } from "node:crypto";
 import { db } from "../db";
 import { ENTORNO } from "../entorno";
@@ -71,8 +72,9 @@ export async function fcmListo(): Promise<boolean> {
 
 /* Los interruptores por canal (feature_flags push.*), con 15 s de caché como Configuración. Uno que no existe = apagado. */
 export type Proveedor = "apns" | "fcm" | "webpush" | "sim";
-let canales: { at: number; on: Set<Proveedor> } | null = null;
+let canales: { at: number; on: Set<Proveedor> } | null = null, escucha = false;
 export async function canalesEncendidos(): Promise<Set<Proveedor>> {
+  if (!escucha) { escucha = true; alCambiarConfig(() => { canales = null; }); }
   if (canales && Date.now() - canales.at < 15_000) return canales.on;
   const r = await db().query<{ key: string }>(`select key from feature_flags where key in ('push.webpush', 'push.apns', 'push.fcm') and enabled`).catch(() => ({ rows: [] as { key: string }[] }));
   const on = new Set<Proveedor>(r.rows.map((x) => x.key.slice(5) as Proveedor));
