@@ -51,7 +51,9 @@ export async function porLotes(nombre, total, sql, lote = 250_000) {
 /* Lo que un paso de la generación le deja a la medición (la fecha grande, el hilo de 500…), por si se mide otra vez con --sin-generar. */
 export async function guardarMeta(k, v) { await q(`create table if not exists carga_meta (k text primary key, v text not null)`); await q(`insert into carga_meta (k, v) values ($1, $2) on conflict (k) do update set v = excluded.v`, [k, String(v)]); }
 export async function meta(k) { return (await q(`select v from carga_meta where k = $1`, [k]).catch(() => []))[0]?.v ?? null; }
-export async function analizar() { const t = Date.now(); await q("vacuum analyze"); console.log(`[carga] vacuum analyze: ${((Date.now() - t) / 1000).toFixed(1)} s`); }
+/* Después de generar: estadísticas al día y un checkpoint, para medir con la base asentada (si no, el checkpoint de los millones de filas recién
+   escritas caía en medio de una medida y la volvía una medida del disco del runner, no de la consulta). */
+export async function analizar() { const t = Date.now(); await q("vacuum analyze"); await q("checkpoint"); console.log(`[carga] vacuum analyze y checkpoint: ${((Date.now() - t) / 1000).toFixed(1)} s`); }
 
 /* Las consultas que hace la app mientras se mide (para el plan de la más lenta). */
 let captura = null;
