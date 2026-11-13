@@ -2441,7 +2441,8 @@ const guardianes = {
     }
     if (!existsSync(L)) return;
     const b = cuerpoFn(sinComent(L), "eventosCiudad");
-    if (!/\(d\.starts_at, d\.id\) > \(\$\$\{v\.length - 1\}::timestamptz, \$\$\{v\.length\}::bigint\)/.test(b) || !/order by d\.starts_at, d\.id limit \$\{POR_PAGINA_EVT \+ 1\}/.test(b)) falla(G, L, 0, "eventosCiudad debe seguir con cursor (starts_at, id), en ese orden, y pedir una de más");
+    // 9b-3: elige sus fechas por ventanas en orden (starts_at, id) desde el cursor y junta una de más (ids.length <= POR_PAGINA_EVT).
+    if (!/\(d\.starts_at, d\.id\) > \(\$\$\{vv\.length - 1\}::timestamptz, \$\$\{vv\.length\}::bigint\)/.test(b) || !/order by d\.starts_at, d\.id limit \$\{K\}/.test(b) || !/ids\.length <= POR_PAGINA_EVT/.test(b)) falla(G, L, 0, "eventosCiudad debe seguir con cursor (starts_at, id), en ese orden, y pedir una de más");
     if (!/export const POR_PAGINA_EVT = 20;/.test(readFileSync(L, "utf8"))) falla(G, L, 0, "20 eventos por página");
     if (existsSync(M) && !/create index if not exists event_dates_lista_idx on event_dates \(city_id, starts_at, id\) where listable;/.test(readFileSync(M, "utf8"))) falla(G, M, 0, "falta el índice (city_id, starts_at, id) where listable");
   },
@@ -3037,7 +3038,7 @@ const guardianes = {
     if (!existsSync(A) || !existsSync(K)) return;
     const b = cuerpoFn(sinComent(A), "comunidadAnalitica");
     if (!b) return falla(G, A, 0, "falta comunidadAnalitica");
-    const OK = new Set(["com_analitica_dia", "com_canjes_negocio_dia", "com_activos_por_rango", "cities", "ranks"]);
+    const OK = new Set(["com_analitica_dia", "com_analitica_dia_cache", "com_canjes_negocio_dia", "com_activos_por_rango", "cities", "ranks"]); // 9b-3: el derivado por ciudad y día (0133)
     for (const [, t] of b.matchAll(/\b(?:from|join)\s+([a-z_]+)/g)) if (!OK.has(t)) falla(G, A, 0, `comunidadAnalitica lee «${t}»: solo las vistas sin personas de 0105`);
     const P = /\b(user_id|author_user_id|reporter_user_id|promoter_user_id|first_name|last_name|phone|nick|photo_url|email)\b/;
     if (P.test(b)) falla(G, A, 0, `comunidadAnalitica pide «${P.exec(b)[0]}»: nunca personas`);
@@ -6826,6 +6827,19 @@ const guardianes = {
       const lee = TABLAS.filter((x) => new RegExp(`\\bfrom ${x}\\b`).test(t));
       if (!lee.length) continue;
       if (!/alCambiarConfig\(/.test(t)) falla(G, f, 0, `guarda en memoria lo que lee de ${lee.join(", ")} y no lo olvida al cambiar (alCambiarConfig de lib/cambios-config.ts)`);
+    }
+  },
+
+  /* 9b-3 · Una función NUESTRA (de las migraciones) en un «with x as (select f(…))» se evalúa una vez solo si el CTE dice «materialized»: si no,
+     Postgres lo mete en la consulta y llama a la función en cada fila donde se usa (la búsqueda de la ayuda armaba la consulta con sus sinónimos
+     dos veces por trozo: 60 ms en la carga, 2 ms con «materialized»). Al revés: alreves9b3. */
+  consultaUnaVez() {
+    const G = "consultaUnaVez", fns = new Set();
+    for (const x of readdirSync("packages/db/migrations").filter((y) => y.endsWith(".sql"))) for (const m of readFileSync(`packages/db/migrations/${x}`, "utf8").matchAll(/create or replace function (\w+)\(/g)) fns.add(m[1]);
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/\bwith (\w+) as (materialized )?\(\s*select (\w+)\(/gi)) if (fns.has(m[3]) && !m[2]) falla(G, f, t.slice(0, m.index).split("\n").length, `«with ${m[1]} as (select ${m[3]}(…))»: escribe «as materialized» (si no, ${m[3]} corre en cada fila)`);
     }
   },
 

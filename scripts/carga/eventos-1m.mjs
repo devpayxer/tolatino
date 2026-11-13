@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { analizar, anotar, app, candado, fin, generar, guardarMeta, medir, meta, n, porLotes, q, uno } from "./lib/comun.mjs";
 
 await candado();
-const EV = n(20_000), FECHAS = 52, BOL = n(5_000_000), GRANDE = n(50_000);
+const EV = n(20_000), FECHAS = 52, BOL = n(5_000_000), GRANDE = n(50_000), PAQ = n(10_000);
 const tpl = await uno(`select e.id, e.business_id as b from events e where e.entry = 'tickets' and e.status = 'live' and e.approved_at is not null and e.kind = 'single'
                          and exists (select 1 from ticket_types t where t.event_id = e.id) order by e.id limit 1`);
 if (!tpl) { console.error("[carga] la semilla no trae un evento publicado con boletos"); process.exit(2); }
@@ -47,13 +47,22 @@ if (!process.argv.includes("--sin-generar")) {
     select ${CODIGO("g")}, ${g0.event_id}, ${g0.id}, 'hzl', (select min(id) from ticket_types where event_id = ${g0.event_id}), ${OP},
            (select id from users where phone like '+1999%' order by phone limit 1 offset (g % 1000)), 'Invitado Carga ' || g, 1, 'paid', 2500, 250, 'valid', now() - make_interval(mins => g % 10000)
       from generate_series($1::int, $2::int) g`, 50_000);
+  // ── La fecha del paquete sin conexión: hoy, 10 mil boletos (el presupuesto de 6h es para un paquete de 10 mil) ──
+  const g1 = await uno(`insert into event_dates (event_id, city_id, starts_at, ends_at, doors_at, local_date, day_index, status, geom, listable, sold_n)
+    select e.id, e.city_id, now() + interval '100 minutes', now() + interval '6 hours', now() + interval '1 hour', (now() at time zone 'America/New_York')::date, 0, 'scheduled', e.geom, true, ${PAQ}
+      from events e where e.slug like '%-carga-2' limit 1 returning id, event_id`);
+  await guardarMeta("fecha_paquete", g1.id);
+  await porLotes("boletos de la fecha del paquete", PAQ, `
+    insert into tickets (code, event_id, event_date_id, city_id, ticket_type_id, operation_id, holder_name, admits, kind, price_cents, fee_cents, status, created_at)
+    select ${CODIGO("(g + 60000)")}, ${g1.event_id}, ${g1.id}, 'hzl', (select min(id) from ticket_types where event_id = ${g1.event_id}), ${OP}, 'Persona Paquete ' || g, 1, 'paid', 2500, 250, 'valid', now()
+      from generate_series($1::int, $2::int) g`, 50_000);
   // ── El resto de los 5 M de boletos en las fechas que ya pasaron y las próximas ──
   await generar("fechas para boletos", [`drop table if exists carga_f`, `create unlogged table carga_f as select row_number() over (order by id) as k, id, event_id, city_id, (select min(t.id) from ticket_types t where t.event_id = d.event_id) as tt from event_dates d where exists (select 1 from events e where e.id = d.event_id and e.slug like '%-carga-%')`, `create index on carga_f (k)`, `analyze carga_f`]);
   const nf = (await uno(`select count(*)::int as n from carga_f`)).n;
   await porLotes("boletos", Math.max(0, BOL - GRANDE), `
     insert into tickets (code, event_id, event_date_id, city_id, ticket_type_id, operation_id, holder_name, admits, kind, price_cents, fee_cents, status, created_at)
     select ${CODIGO("(g + 100000)")}, f.event_id, f.id, f.city_id, f.tt, ${OP}, 'Persona ' || g, 1, 'paid', 2500, 250, case when g % 3 = 0 then 'used' else 'valid' end, now() - make_interval(mins => g % 100000)
-      from generate_series($1::int, $2::int) g join carga_f f on f.k = 1 + (g * 7) % ${nf}`, 500_000);
+      from generate_series($1::int, $2::int) g join carga_f f on f.k = 1 + (g::bigint * 7) % ${nf}`, 500_000);
   await analizar();
 }
 
@@ -85,12 +94,17 @@ else {
   await medir("puerta-buscar-nombre", { linea: "L869", presupuesto: 150, que: "buscar por nombre en la puerta (like dentro de la fecha)" }, (i) => pta.buscar(ctx, `Carga ${4000 + i * 37}`, true));
   await q(`delete from platform_config where key = 'puerta_buscar_min' and note = 'carga'`);
   let tam = 0;
-  await medir("paquete", { linea: "L898", presupuesto: 1000, veces: 5, calentar: 1, que: `paquete sin conexión (${GRANDE.toLocaleString("es-US")} boletos)` }, async () => {
-    const r = await paq.armarPaquete(ctx, null, null, true, true);
+  const P1 = await meta("fecha_paquete"), ab1 = P1 ? await pta.abrirPuerta(DUENO, P1, "Carga paquete", null, null) : null;
+  const ctxP = ab1?.ok ? await pta.accesoPuerta(DUENO, ab1.sesion) : null;
+  if (!ctxP) anotar("paquete", { linea: "L898", que: "no se pudo abrir la puerta de la fecha del paquete", valor: 1, tope: 0, unidad: "error" });
+  else await medir("paquete", { linea: "L898", presupuesto: 1000, veces: 5, calentar: 1, que: `paquete sin conexión (${PAQ.toLocaleString("es-US")} boletos)` }, async () => {
+    const r = await paq.armarPaquete(ctxP, null, null, true, true);
     if (!r.ok) throw new Error(JSON.stringify(r.msg ?? r));
     tam = Buffer.from(r.c, "base64").length;
   });
-  anotar("paquete-tamano", { linea: "L898", que: "tamaño del paquete cifrado y comprimido", valor: Math.round(tam / 1024), tope: 1024, unidad: "KB" });
+  if (ctxP) anotar("paquete-tamano", { linea: "L898", que: `tamaño del paquete cifrado y comprimido (${PAQ.toLocaleString("es-US")} boletos)`, valor: Math.round(tam / 1024), tope: 1024, unidad: "KB" });
+  // Y el de la fecha grande (5 veces lo del presupuesto), solo anotado.
+  await medir("paquete-50k", { linea: "L898", presupuesto: null, veces: 3, calentar: 1, que: `paquete sin conexión de la fecha grande (${GRANDE.toLocaleString("es-US")} boletos)` }, () => paq.armarPaquete(ctx, null, null, true, true));
   const lote = (await uno(`select cfg_int('puerta_sync_lote') as n`)).n;
   const C = await q(`select id::text, qr_ver as ver, admits from tickets where event_date_id = $1::bigint and status = 'valid' order by id desc limit 500`, [G.fecha]);
   const escaneos = await Promise.all(C.map(async (b) => ({ id: randomUUID(), at: Date.now() - 60_000, tipo: "qr", qr: await qr.firmarQR({ id: b.id, fecha: G.fecha, ver: b.ver, admits: b.admits }), dir: "in", res: "valid", entro: true })));

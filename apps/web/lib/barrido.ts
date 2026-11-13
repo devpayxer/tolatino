@@ -131,7 +131,7 @@ export async function barridoCentral(): Promise<ResultadoBarrido> {
         ["tiendas", async () => (await import("./tiendas/tuberia")).barrerTiendas()],
         // 9b-3 · La escala: los meses de la analítica (particiones), su resumen por día y su retención (eventos_retener_meses); el vocabulario de
         // búsqueda cada hora; los contadores compartidos de los topes (rate_counters) de más de un día.
-        ["analitica", async () => (await import("./eventos")).analiticaAlDia()],
+        ["analitica", async () => (await import("./eventos")).analiticaAlDia()], ["analiticaComunidad", async () => (await import("./admin-analitica")).comunidadAlDia()],
         ["buscarVocab", async () => (await import("./buscar")).vocabularioAlDia()],
         ["topes", async () => (await import("./topes")).purgarTopes()],
         ["evtCancelaciones", () => cxs.barrerCancelaciones()], ["evtLiquidar", () => liq.liquidar()], ["evtLiquidacionesReparar", () => liq.repararLiquidaciones()], ["evtAjustes", () => liq.revertirDeudas()],

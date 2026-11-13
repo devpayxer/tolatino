@@ -164,6 +164,8 @@ const KEYS = ['com_editar_min', 'com_resumen_hora'];
     ok(n9.length === Number(r9) && n9.slice(0, 5).every((x) => t9.includes(x)), `lista › rango 9 o más = SQL (${r9})`);
 
     // ── 8 · Analítica › Comunidad contra SQL (sin personas) ──
+    // 9b-3 · Analítica › Comunidad lee el derivado por ciudad y día (0133) que el barrido rehace cada 10 min: aquí se rehace como lo hace él.
+    sql(`select com_analitica_resumir((now() at time zone 'America/New_York')::date - 40)`);
     await ad.goto(B + '/admin/analitica?tab=com&p=30');
     const D = `(now() at time zone 'America/New_York')::date - 29`;
     const pubs = Number(sql(`select count(*) from com_posts p join cities ci on ci.id = p.city_id where p.status <> 'deleted' and p.author_kind = 'user' and (p.created_at at time zone ci.timezone)::date >= ${D}`));

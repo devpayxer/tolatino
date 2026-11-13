@@ -16,8 +16,16 @@
 --   suelta su partición. Después solo quedan las cifras (app_events_dia).
 -- · search_vocab_refreshed_at (platform_config): el vocabulario de «¿Quisiste decir…?» se refresca cada hora en el barrido (y en cada despliegue,
 --   como antes), sin bloquear a quien busca (CONCURRENTLY).
+-- · com_analitica_dia_cache: Analítica › Comunidad lee un derivado por ciudad y día (com_analitica_resumir) en vez de la vista que agregaba toda la
+--   historia en cada vista; el barrido lo rehace cada 10 min para los últimos 40 días. Índice de la primera respuesta por publicación.
+-- · jit = off en la base (consultas cortas; el JIT sumaba ~100 ms a consultas de 5 ms con costos mal estimados).
 -- Idempotente: se puede aplicar dos veces. Nada de lo que es de una persona se borra.
 begin;
+
+-- ── Sin JIT: la compilación JIT de Postgres se dispara con planes de costo alto (estimaciones de miles de filas que en verdad son pocas) y le
+--    sumaba ~100 ms a consultas de 5 ms (la cuenta de la lista de Eventos en la carga de 9b-3). Para una app de consultas cortas no paga nunca.
+--    Vale para las conexiones nuevas de esta base. ──
+do $$ begin execute format('alter database %I set jit = off', current_database()); end $$;
 
 -- ── Contador compartido ──
 create unlogged table if not exists rate_counters (
@@ -272,6 +280,70 @@ begin
   end loop;
   return sueltas;
 end $$;
+
+-- ── Analítica › Comunidad: el derivado por ciudad y día (la vista de 0105 agregaba TODA la historia en cada vista: 7 s con 5 mil publicaciones
+--    en la carga de 9b-3; con 1 M no termina). La misma lógica, solo desde un día; la rehace el barrido cada 10 min para los últimos 40 días
+--    (lo de antes ya no cambia: una pregunta que se resuelve después de 40 días no mueve su día). Sin personas (guardián analiticaSinPersonas). ──
+-- La primera respuesta de cada publicación (la vista la busca por publicación): índice por publicación y hora.
+create index if not exists com_comments_post_hora_idx on com_comments (post_id, created_at) where status <> 'deleted';
+create table if not exists com_analitica_dia_cache (
+  city_id text not null references cities (id),
+  dia date not null,
+  publicaciones integer not null, preguntas integer not null, resueltas integer not null, con_respuesta integer not null, min_primera numeric not null,
+  comentarios integer not null, reportes integer not null, apelaciones_levantadas integer not null, apelaciones_decididas integer not null,
+  monedas_emitidas integer not null, monedas_canjeadas integer not null, monedas_devueltas integer not null, canjes integer not null, canjes_usados integer not null,
+  refreshed_at timestamptz not null default now(),
+  primary key (city_id, dia)
+);
+create or replace function com_analitica_resumir(desde date) returns integer language plpgsql as $$
+declare n integer; t0 timestamptz := (desde - 1)::timestamp at time zone 'UTC';
+begin
+  delete from com_analitica_dia_cache where dia >= desde;
+  with p as (
+    select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, count(*) as publicaciones, count(*) filter (where x.kind = 'pregunta') as preguntas,
+           count(*) filter (where x.kind = 'pregunta' and x.solved_at is not null) as resueltas,
+           count(*) filter (where x.kind = 'pregunta' and r.primera is not null) as con_respuesta,
+           coalesce(sum(extract(epoch from r.primera - x.created_at) / 60) filter (where x.kind = 'pregunta'), 0) as min_primera
+      from com_posts x join cities ci on ci.id = x.city_id
+      left join lateral (select min(c.created_at) as primera from com_comments c where c.post_id = x.id and c.status <> 'deleted' and c.author_user_id is distinct from x.author_user_id) r on true
+     where x.status <> 'deleted' and x.author_kind = 'user' and x.created_at >= t0 group by 1, 2),
+  c as (select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, count(*) as comentarios
+          from com_comments x join cities ci on ci.id = x.city_id where x.status <> 'deleted' and x.created_at >= t0 group by 1, 2),
+  r as (select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, count(*) as reportes
+          from content_reports x join cities ci on ci.id = x.city_id where x.target_kind in ('com_post', 'com_comment') and x.created_at >= t0 group by 1, 2),
+  a as (select x.city_id, (x.decided_at at time zone ci.timezone)::date as dia, count(*) filter (where x.status = 'lifted') as levantadas, count(*) as decididas
+          from appeals x join cities ci on ci.id = x.city_id where x.status <> 'open' and x.decided_at >= t0 group by 1, 2),
+  m as (select x.city_id, (x.created_at at time zone ci.timezone)::date as dia,
+               coalesce(sum(x.delta) filter (where x.reason_key in ('welcome', 'premio_mes')), 0) as monedas_emitidas,
+               coalesce(-sum(x.delta) filter (where x.reason_key = 'canje'), 0) as monedas_canjeadas,
+               coalesce(sum(x.delta) filter (where x.reason_key = 'devolucion'), 0) as monedas_devueltas
+          from coin_entries x join cities ci on ci.id = x.city_id where x.created_at >= t0 group by 1, 2),
+  k as (select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, count(*) as canjes, count(*) filter (where x.status = 'used') as usados
+          from coupon_redemptions x join cities ci on ci.id = x.city_id where x.created_at >= t0 group by 1, 2),
+  d as (select city_id, dia from p union select city_id, dia from c union select city_id, dia from r union select city_id, dia from a
+        union select city_id, dia from m union select city_id, dia from k),
+  ins as (
+    insert into com_analitica_dia_cache (city_id, dia, publicaciones, preguntas, resueltas, con_respuesta, min_primera, comentarios, reportes, apelaciones_levantadas,
+                                         apelaciones_decididas, monedas_emitidas, monedas_canjeadas, monedas_devueltas, canjes, canjes_usados)
+    select d.city_id, d.dia,
+           coalesce(p.publicaciones, 0)::int, coalesce(p.preguntas, 0)::int, coalesce(p.resueltas, 0)::int, coalesce(p.con_respuesta, 0)::int, coalesce(p.min_primera, 0)::numeric,
+           coalesce(c.comentarios, 0)::int, coalesce(r.reportes, 0)::int, coalesce(a.levantadas, 0)::int, coalesce(a.decididas, 0)::int,
+           coalesce(m.monedas_emitidas, 0)::int, coalesce(m.monedas_canjeadas, 0)::int, coalesce(m.monedas_devueltas, 0)::int, coalesce(k.canjes, 0)::int, coalesce(k.usados, 0)::int
+      from d left join p using (city_id, dia) left join c using (city_id, dia) left join r using (city_id, dia) left join a using (city_id, dia)
+      left join m using (city_id, dia) left join k using (city_id, dia)
+     where d.dia >= desde
+    returning 1)
+  select count(*) into n from ins;
+  return n;
+end $$;
+-- El barrido: los últimos 40 días cada 10 minutos; la primera vez (tabla vacía), toda la historia.
+create or replace function com_analitica_al_dia() returns integer language plpgsql as $$
+begin
+  if not exists (select 1 from com_analitica_dia_cache) then return com_analitica_resumir('2000-01-01'); end if;
+  if exists (select 1 from com_analitica_dia_cache where refreshed_at > now() - interval '10 minutes') then return 0; end if;
+  return com_analitica_resumir((now() at time zone 'America/New_York')::date - 40);
+end $$;
+select com_analitica_resumir('2000-01-01');
 
 -- ── El vocabulario de búsqueda: se refresca sin bloquear y se anota cuándo ──
 create or replace function refrescar_busqueda() returns void language plpgsql as $$

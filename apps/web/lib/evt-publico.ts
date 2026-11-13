@@ -61,9 +61,13 @@ const DESDE_T = `from event_dates d join events e on e.id = d.event_id join busi
 /* Lo vivo: listable, que no haya terminado. El rango de starts_at usa el índice (city_id, starts_at, id) where listable. */
 const VIVO = `d.listable and d.starts_at > now() - interval '18 hours' and d.ends_at > now()`;
 /* 6f · Una serie o un evento de varios días sale UNA vez en las listas: su primera fecha viva (dentro del mismo filtro de fecha, si hay).
-   Una consulta: un anti-join por fila sobre (event_id, starts_at); el cursor (starts_at, id) sigue igual. */
+   Una consulta: un anti-join por fila sobre (event_id, starts_at); el cursor (starts_at, id) sigue igual. Lo usan las listas de una ventana corta
+   (hoy, la semana, una búsqueda); la lista de la ciudad (eventosCiudad) elige sus fechas por ventanas (9b-3, ver allí). */
 const PRIMERA = (filtroP = "") => `not exists (select 1 from event_dates p where p.event_id = d.event_id and p.listable and p.starts_at > now() - interval '18 hours' and p.ends_at > now()${filtroP ? ` and ${filtroP}` : ""}
   and (p.starts_at, p.id) < (d.starts_at, d.id))`;
+/* «Esta fecha es la primera viva de su evento» como columna (una búsqueda por el índice (event_id, starts_at) que para en la primera). */
+const ES_PRIMERA = (filtroP = "") => `d.id = (select p.id from event_dates p where p.event_id = d.event_id and p.listable and p.starts_at > now() - interval '18 hours' and p.ends_at > now()${filtroP ? ` and ${filtroP}` : ""}
+  order by p.starts_at, p.id limit 1)`;
 const enP = (f: string | null) => (f ? f.replace(/\bd\.local_date\b/g, "p.local_date") : "");
 const EN_RADIO = (centro: string, rad: string) => `(d.geom is null or st_dwithin(d.geom, ${centro}, ${rad} * 1609.34))`;
 
@@ -105,12 +109,33 @@ export async function eventosCiudad(p: Punto, f: { d: FiltroFecha; t: string }, 
   const ff = filtroFecha(f.d, D, v), ft = filtroTipo(f.t, G.map((g) => g.key), v);
   if (ff) w.push(ff);
   if (ft) w.push(ft);
-  w.push(PRIMERA(enP(ff)));
-  const wc = [...w], vc = [...v];
-  if (cursor && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,6})?Z\|\d{1,18}$/.test(cursor)) { const [a, b] = cursor.split("|"); v.push(a, b); w.push(`(d.starts_at, d.id) > ($${v.length - 1}::timestamptz, $${v.length}::bigint)`); }
+  // 9b-3 · Las fechas de la página se eligen por VENTANAS de 400 en orden (starts_at, id), quedándose con la primera viva de cada evento, hasta
+  // juntar 21; después se arma la tarjeta solo de esas. Con todo en una consulta, el plan juntaba y ordenaba todas las fechas vivas de la ciudad
+  // con su evento y su negocio antes de quedarse con 21 (1,3 s con 1 M de fechas en la carga). Con el LIMIT de la ventana, Postgres recorre el
+  // índice (city_id, starts_at, id) en orden y para.
+  const K = 400, ids: string[] = [];
+  let ca: string | null = null, cb: string | null = null;
+  if (cursor && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d{1,6})?Z\|\d{1,18}$/.test(cursor)) [ca, cb] = cursor.split("|") as [string, string];
+  // En el WHERE va solo lo que es el índice (listable, ciudad, desde cuándo y el cursor): así el plan lo recorre en orden y para en la ventana.
+  // Lo demás (que no haya terminado, el radio, el día y el tipo) se mira en cada fila, y la «primera» solo en las que pasan.
+  const resto = [`d.ends_at > now()`, EN_RADIO(centro, R), ...(ff ? [ff] : []), ...(ft ? [ft] : [])].join(" and ");
+  for (let vuelta = 0; vuelta < 40 && ids.length <= POR_PAGINA_EVT; vuelta++) {
+    const vv = [...v], ww = [`d.listable`, `d.city_id = $2`, `d.starts_at > now() - interval '18 hours'`];
+    if (ca && cb) { vv.push(ca, cb); ww.push(`(d.starts_at, d.id) > ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`); }
+    const r = await db().query<{ id: string; at: string; primera: boolean }>(
+      `select d.id::text, to_char(d.starts_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as at, case when ${resto} then ${ES_PRIMERA(enP(ff))} else false end as primera
+         from event_dates d join events e on e.id = d.event_id, (select $1::uuid as quien) q where ${ww.join(" and ")} order by d.starts_at, d.id limit ${K}`, vv);
+    for (const x of r.rows) if (x.primera && ids.length <= POR_PAGINA_EVT) ids.push(x.id);
+    if (r.rows.length < K) break;
+    [ca, cb] = [r.rows.at(-1)!.at, r.rows.at(-1)!.id];
+  }
   const [L, T] = await Promise.all([
-    db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where ${w.join(" and ")} order by d.starts_at, d.id limit ${POR_PAGINA_EVT + 1}`, v),
-    cursor ? Promise.resolve(null) : db().query<{ n: number }>(`select count(*)::int as n from (select 1 ${DESDE_T} where ${wc.join(" and ")} limit 1000) x, (select $1::uuid as quien) q`, vc),
+    ids.length ? db().query<FilaT>(`select ${COLS_T(centro)} ${DESDE_T} where d.id = any($2::bigint[]) order by d.starts_at, d.id`, [viewer, ids]) : Promise.resolve({ rows: [] as FilaT[] }),
+    // Cuántos eventos (hasta 1000): uno por evento de la ciudad que tenga una fecha viva en el filtro (una búsqueda por evento en el índice
+    // (event_id, starts_at) que para en la primera).
+    cursor ? Promise.resolve(null) : db().query<{ n: number }>(
+      `select count(*)::int as n from (select 1 from events e cross join lateral (select 1 from event_dates d where d.event_id = e.id and ${w.join(" and ")} limit 1) x
+         where e.city_id = $2 limit 1000) y, (select $1::uuid as quien) q`, v),
   ]);
   const filas = L.rows.slice(0, POR_PAGINA_EVT);
   return { items: filas.map((x) => tarjeta(x, es, D)), mas: L.rows.length > POR_PAGINA_EVT ? filas.at(-1)!.cur : null, total: T?.rows[0]?.n ?? 0 };

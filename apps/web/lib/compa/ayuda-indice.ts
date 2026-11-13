@@ -57,7 +57,9 @@ export async function buscarAyuda(texto: string, lang: Lang, aud: Audiencia[], n
   const q = String(texto ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 120);
   if (q.length < 2) return [];
   const una = async (l: Lang, modo: "and" | "or") => (await db().query<Hallado & { rank: number }>(
-    `with q as (select ayuda_consulta($1, $2, $5) as tq),
+  // 9b-3 · «materialized»: la consulta (con sus sinónimos, una función) se arma UNA vez; sin esto Postgres la volvía a armar en cada trozo, dos
+  // veces (60 ms por búsqueda en la carga; ahora la consulta entera tarda lo que la búsqueda en el índice).
+    `with q as materialized (select ayuda_consulta($1, $2, $5) as tq),
           t as (select c.slug, c.heading, c.body, c.lang, ts_rank_cd(c.tsv, q.tq) as rank,
                        row_number() over (partition by c.slug order by ts_rank_cd(c.tsv, q.tq) desc, c.ord) as k
                   from help_chunks c, q
@@ -82,7 +84,7 @@ export async function trozosCompa(texto: string, lang: Lang, aud: Audiencia[], n
   const q = String(texto ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 120);
   if (q.length < 2 || !aud.length) return [];
   const una = async (l: Lang, modo: "and" | "or") => (await db().query<Trozo>(
-    `with q as (select ayuda_consulta($1, $2, $5) as tq)
+    `with q as materialized (select ayuda_consulta($1, $2, $5) as tq)
      select c.slug, a.title, c.heading, c.body, c.lang, ts_rank_cd(c.tsv, q.tq)::float8 as rank
        from help_chunks c join help_articles a on a.slug = c.slug, q
       where q.tq is not null and c.tsv @@ q.tq and c.lang = $2 and c.audience = any($3::text[]) and a.status = 'live' and a.audience = any($3::text[])

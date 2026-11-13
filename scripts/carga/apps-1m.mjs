@@ -66,7 +66,9 @@ else {
   const lat = [];
   for (let s = 0; s < S; s++) {
     const tick = Date.now();
-    await Promise.all(Array.from({ length: porSeg }, async () => { const r = R[j++ % R.length], a = performance.now(); const x = await una(r).catch(() => null); lat.push(performance.now() - a); if (x?.aceptadas === 1) hechas++; else malas++; }));
+    // Repartidas en el segundo (cada teléfono manda a su hora, no todos en el mismo milisegundo).
+    await Promise.all(Array.from({ length: porSeg }, async (_, k) => { await new Promise((ok) => setTimeout(ok, Math.floor((k * 1000) / porSeg)));
+      const r = R[j++ % R.length], a = performance.now(); const x = await una(r).catch(() => null); lat.push(performance.now() - a); if (x?.aceptadas === 1) hechas++; else malas++; }));
     const resto = 1000 - (Date.now() - tick);
     if (resto > 0) await new Promise((ok) => setTimeout(ok, resto));
   }

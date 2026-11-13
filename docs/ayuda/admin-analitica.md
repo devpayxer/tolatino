@@ -1,6 +1,6 @@
 # Super Admin: Analítica · Super Admin: Analytics
 
-_Pantallas: ADM-ANALIT (`/admin/analitica`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 7 nov
+_Pantallas: ADM-ANALIT (`/admin/analitica`), teléfono y escritorio. Para el equipo de To'Latino (y El Compa como copiloto del equipo). Versión: 13 nov
 2026. Audiencia: equipo. Tema: equipo._
 
 ## Qué hace
@@ -41,7 +41,8 @@ Pestaña **Comunidad** (7 · 30 · 90 días; días locales de cada ciudad): **pu
 levantadas** (de las decididas), **monedas emitidas** (bienvenida y premios) y **canjeadas** (y las devueltas por códigos vencidos),
 **canjes** y **canjes por negocio**, **vecinos activos por rango** (publicaron, comentaron o votaron) y **por ciudad**. Solo cifras: sale
 de vistas por ciudad y día que no tienen personas; nunca quién publicó, votó o canjeó. Lo de la cuenta oficial no cuenta como publicación
-de vecinos.
+de vecinos. **Las cifras se ponen al día cada 10 minutos** (un resumen por ciudad y día que el sistema rehace solo para los últimos 40 días; lo
+que pasó hace más tiempo ya no cambia): algo que se publicó hace un momento puede tardar hasta 10 minutos en sumarse.
 
 ## Qué se cuenta y qué no
 | Se guarda | No se guarda |
@@ -128,3 +129,4 @@ The **El Compa and Support** tab (7, 30 or 90 days) reads two views without peop
 conversations, solved alone, to a person, AI spend, AI wait (period average and the worst day's p95), fallbacks to the rules, didn't know and
 flagged; Support cases, deadline met, first reply (average and the worst day's p90), «Was it solved?», by topic and by city. Never names, phones,
 CP- or TK- numbers or text.
+- **Community** numbers are refreshed every 10 minutes (a per-city, per-day summary the system rebuilds for the last 40 days; older days no longer change): something posted a moment ago can take up to 10 minutes to count.

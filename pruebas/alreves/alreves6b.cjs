@@ -16,8 +16,8 @@ const casos = [
   ['eventosSoloListables', NP, "and exists (select 1 from event_dates d where d.event_id = e.id and d.listable and d.ends_at > now())", "and exists (select 1 from event_dates d where d.event_id = e.id and d.ends_at > now())"],
   ['eventosSoloListables', RS, "f.kind = 'event' and d.listable", "f.kind = 'event'"],
   // eventosConCursor (nuevo)
-  ['eventosConCursor', EP, "order by d.starts_at, d.id limit ${POR_PAGINA_EVT + 1}`, v)", "order by d.starts_at, d.id limit ${POR_PAGINA_EVT + 1} offset 0`, v)"],
-  ['eventosConCursor', EP, "w.push(`(d.starts_at, d.id) > ($${v.length - 1}::timestamptz, $${v.length}::bigint)`)", "w.push(`d.starts_at > $${v.length - 1}::timestamptz and $${v.length}::bigint > 0`)"],
+  ['eventosConCursor', EP, "order by d.starts_at, d.id limit ${K}`, vv)", "order by d.starts_at, d.id limit ${K} offset 0`, vv)"],
+  ['eventosConCursor', EP, "ww.push(`(d.starts_at, d.id) > ($${vv.length - 1}::timestamptz, $${vv.length}::bigint)`)", "ww.push(`d.starts_at > $${vv.length - 1}::timestamptz and $${vv.length}::bigint > 0`)"],
   ['eventosConCursor', EP, "export const POR_PAGINA_EVT = 20;", "export const POR_PAGINA_EVT = 200;"],
   ['eventosConCursor', EV, "const verMas = async () => {", "const saltar = (n: number) => `offset ${n}`; void saltar;\n  const verMas = async () => {"],
   // rsvpConCupo (nuevo)

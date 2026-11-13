@@ -26,7 +26,7 @@ const casos = [
   ['aforoPorDia', L, '(e as { constraint?: string }).constraint === "event_day_stock_cupo") return { ok: false, msg: { es: "Un día', '(e as { constraint?: string }).constraint === "otro") return { ok: false, msg: { es: "Un día'],
   ['aforoPorDia', S6, "/* Barrido: las series", "export async function subirAforo(f: string) { await db().query(`update event_day_stock set capacity = capacity + 10 where event_date_id = $1`, [f]); }\n/* Barrido: las series"],
   // serieUnaVezEnLista
-  ['serieUnaVezEnLista', P, "  w.push(PRIMERA(enP(ff)));\n", ""],
+  ['serieUnaVezEnLista', P, "then ${ES_PRIMERA(enP(ff))} else false end", "then true else false end"],
   ['serieUnaVezEnLista', P, " and ${EN_RADIO(centro, R)} and ${PRIMERA(\"p.local_date = $3::date\")}", " and ${EN_RADIO(centro, R)}"],
   ['serieUnaVezEnLista', P, "e.business_id = $2 and ${PRIMERA()} order by", "e.business_id = $2 order by"],
   ['serieUnaVezEnLista', P, "and (p.starts_at, p.id) < (d.starts_at, d.id))`;", "and p.starts_at < d.starts_at)`;"],

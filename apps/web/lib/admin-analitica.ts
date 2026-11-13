@@ -39,12 +39,16 @@ export async function gente(s: Staff, dias: number) {
 /* Embudo del directorio en el período: personas (cuenta o dispositivo) que buscaron o abrieron una categoría, que
    abrieron una ficha y que tocaron Llamar, WhatsApp o Cómo llegar. Eventos propios, sin robots. */
 export async function embudo(s: Staff, dias: number) {
+  // 9b-3 · Una sola pasada por los eventos del período (las particiones de esos meses), solo de los cuatro nombres del embudo, y «quién» como
+  // uuid (la cuenta o, sin cuenta, el dispositivo): antes eran tres pasadas sobre todos los eventos con «quién» convertido a texto (410 ms con
+  // 5 M de eventos en la carga).
   const r = await db().query<{ paso: string; n: number }>(
-    `with e as (select coalesce(user_id::text, device::text) as quien, name from app_events
-                 where at > now() - make_interval(days => $2) and ${scope("city_id")} and coalesce(user_id::text, device::text) is not null)
-     select 'buscar' as paso, count(distinct quien)::int as n from e where name in ('buscar', 'ver_categoria')
-     union all select 'ficha', count(distinct quien)::int from e where name = 'ver_ficha'
-     union all select 'contactar', count(distinct quien)::int from e where name = 'contactar'`, [s.cities, dias]);
+    `with e as (select coalesce(user_id, device) as quien, name from app_events
+                 where at > now() - make_interval(days => $2) and name in ('buscar', 'ver_categoria', 'ver_ficha', 'contactar') and ${scope("city_id")}
+                   and coalesce(user_id, device) is not null)
+     select x.paso, x.n from (select count(distinct quien) filter (where name in ('buscar', 'ver_categoria'))::int as b, count(distinct quien) filter (where name = 'ver_ficha')::int as f,
+                                     count(distinct quien) filter (where name = 'contactar')::int as c from e) t
+       cross join lateral (values ('buscar', t.b), ('ficha', t.f), ('contactar', t.c)) as x(paso, n)`, [s.cities, dias]);
   const m = Object.fromEntries(r.rows.map((x) => [x.paso, x.n]));
   return { buscar: m.buscar ?? 0, ficha: m.ficha ?? 0, contactar: m.contactar ?? 0 };
 }
@@ -341,11 +345,11 @@ export async function comunidadAnalitica(s: Staff, dias: number) {
               coalesce(sum(a.reportes), 0)::int as reportes, coalesce(sum(a.apelaciones_levantadas), 0)::int as levantadas, coalesce(sum(a.apelaciones_decididas), 0)::int as decididas,
               coalesce(sum(a.monedas_emitidas), 0)::int as emitidas, coalesce(sum(a.monedas_canjeadas), 0)::int as canjeadas, coalesce(sum(a.monedas_devueltas), 0)::int as devueltas,
               coalesce(sum(a.canjes), 0)::int as canjes, coalesce(sum(a.canjes_usados), 0)::int as usados
-         from com_analitica_dia a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
+         from com_analitica_dia_cache a where a.dia >= ${DESDE} and ${scope("a.city_id")}`, [s.cities, dias]),
     db().query<{ ciudad: string; publicaciones: number; comentarios: number; preguntas: number; resueltas: number; reportes: number }>(
       `select ci.name as ciudad, coalesce(sum(a.publicaciones), 0)::int as publicaciones, coalesce(sum(a.comentarios), 0)::int as comentarios,
               coalesce(sum(a.preguntas), 0)::int as preguntas, coalesce(sum(a.resueltas), 0)::int as resueltas, coalesce(sum(a.reportes), 0)::int as reportes
-         from cities ci left join com_analitica_dia a on a.city_id = ci.id and a.dia >= ${DESDE}
+         from cities ci left join com_analitica_dia_cache a on a.city_id = ci.id and a.dia >= ${DESDE}
         where ${scope("ci.id")} group by ci.id, ci.name having ci.id = any(array(select id from cities where status = 'on')) or coalesce(sum(a.publicaciones), 0) > 0 order by ci.name`, [s.cities, dias]),
     db().query<{ rango: number; activos: number; nombre: string | null }>(
       `select a.rango::int as rango, a.activos, r.name->>'es' as nombre from com_activos_por_rango($1::text[], (${DESDE})::timestamp at time zone 'America/New_York') a
@@ -469,4 +473,9 @@ export async function appsAnalitica(s: Staff, dias: number) {
       `select app, plat, count(*)::int as n from app_events where name = 'app_abrir' and app is not null and at > now() - make_interval(days => $2) and ${scope("city_id")} group by 1, 2 order by 1, 2`, [s.cities, dias]),
   ]);
   return { instalaciones: inst.rows, versiones: vers.rows, avisos: push.rows, errores: err.rows, aperturas: abre.rows };
+}
+
+/* 9b-3 · El barrido: el derivado de Analítica › Comunidad (com_analitica_dia_cache, 0133) se rehace cada 10 min para los últimos 40 días. */
+export async function comunidadAlDia(): Promise<number> {
+  return (await db().query<{ n: number }>(`select com_analitica_al_dia() as n`)).rows[0]?.n ?? 0;
 }

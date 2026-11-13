@@ -17,7 +17,7 @@ if (!process.argv.includes("--sin-generar") && !(await meta("analitica"))) {
     select t, (t at time zone 'America/New_York')::date, v.c, case when g % 3 = 0 then null else v.id end, case when g % 3 = 0 then md5(g::text)::uuid end,
            (array['ver_categoria','ver_ficha','buscar','contactar','ver_evento','app_abrir','compa_abrir','ver_ficha'])[1 + g % 8], (g % 5000)::text,
            case when g % 8 = 5 then (array['cliente','negocio','delivery','checkin'])[1 + g % 4] end, case when g % 8 = 5 then (array['ios','android'])[1 + g % 2] end
-      from generate_series($1::int, $2::int) g join carga_v v on v.k = 1 + (g * 7) % ${nv}
+      from generate_series($1::int, $2::int) g join carga_v v on v.k = 1 + (g::bigint * 7) % ${nv}
       cross join lateral (select now() - make_interval(secs => ((g::bigint * 7919) % 34000000)::int) as t) x`, 500_000);
   await guardarMeta("analitica", EVT);
   await analizar();

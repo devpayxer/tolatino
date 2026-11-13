@@ -28,7 +28,7 @@ const casos = [
   ['configConLimites', CF, '    await auditar(c, { actor, action: "config.cambiar"', '    void (c, { actor, action: "config.cambiar"'],
   ['configConLimites', AC, '  if (!s || s.role !== "admin" || !s.puede("sys", "editar")) return', '  if (!s || !s.puede("sys", "ver")) return'],
   // analiticaSinPersonas
-  ['analiticaSinPersonas', AN, 'from com_analitica_dia a where a.dia >= ${DESDE}', 'from com_analitica_dia a join users u on u.home_city_id = a.city_id where a.dia >= ${DESDE}'],
+  ['analiticaSinPersonas', AN, 'from com_analitica_dia_cache a where a.dia >= ${DESDE}', 'from com_analitica_dia_cache a join users u on u.home_city_id = a.city_id where a.dia >= ${DESDE}'],
   ['analiticaSinPersonas', AN, "`select k.negocio, ci.name as ciudad,", "`select k.negocio, (select author_user_id from com_posts limit 1) as autor, ci.name as ciudad,"],
   ['analiticaSinPersonas', AN, 'from com_activos_por_rango($1::text[],', 'from com_posts p, com_activos_por_rango($1::text[],'],
   ['analiticaSinPersonas', K, 'select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, x.business_id, b.name as negocio,', 'select x.city_id, (x.created_at at time zone ci.timezone)::date as dia, x.business_id, x.user_id, b.name as negocio,'],

@@ -165,7 +165,10 @@ export async function muro(viewer: string, ciudad: string, punto: Punto, f: Filt
   }
   const orden = top ? "p.hot desc, p.id desc" : "p.publish_at desc, p.id desc";
   const [L, F] = await Promise.all([
-    db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS} where ${w.join(" and ")} order by ${orden} limit ${POR_PAGINA + 1}`, v),
+    // 9b-3 · Primero las 21 publicaciones (solo com_posts y sus índices), después lo demás de esas 21: con todo junto, el plan armaba negocio,
+    // barrio y fotos de CADA publicación del radio antes de ordenar (385 ms con 5 mil publicaciones a 5 millas en la carga).
+    db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
+                       where p.id in (select p.id from com_posts p where ${w.join(" and ")} order by ${orden} limit ${POR_PAGINA + 1}) order by ${orden}`, v),
     fijadaArriba && !cursor
       ? db().query<Fila>(`select ${COLS(centro)} from com_posts p ${JOINS}
            where p.city_id = $2 and p.pinned_until > now() and p.status = 'visible' and p.publish_at <= now() and ${sinBloqueos("p.author_user_id", "$1")}

@@ -14,8 +14,8 @@ if (!process.argv.includes("--sin-generar") && !(await meta("compa"))) {
     insert into compa_conversations (number, use, channel, surface, user_id, city_id, lang, outcome, ai, turns_n, started_at, updated_at, closed_at, is_test)
     select 'CP-' || lpad((10000000 + g)::text, 8, '0'), (array['neighbor','neighbor','owner','copilot'])[1 + g % 4], 'app', (array['support_page','help_sheet','panel','business_chat'])[1 + g % 4],
            v.id, v.c, 'es', case when g % 50 = 0 then 'open' else (array['self_resolved','action_done','handed_off'])[1 + g % 3] end, true, 5,
-           now() - make_interval(secs => (g * 13) % 31536000), now() - make_interval(secs => (g * 13) % 31536000), case when g % 50 = 0 then null else now() - make_interval(secs => (g * 13) % 31536000) end, true
-      from generate_series($1::int, $2::int) g join carga_v v on v.k = 1 + (g * 7) % ${nv}`);
+           now() - make_interval(secs => (g::bigint * 13) % 31536000), now() - make_interval(secs => (g::bigint * 13) % 31536000), case when g % 50 = 0 then null else now() - make_interval(secs => (g::bigint * 13) % 31536000) end, true
+      from generate_series($1::int, $2::int) g join carga_v v on v.k = 1 + (g::bigint * 7) % ${nv}`);
   await porLotes("mensajes", MSJ, `
     insert into compa_messages (conversation_id, city_id, sender, user_id, text, engine, at)
     select c.id, c.city_id, case when g % 2 = 0 then 'user' else 'compa' end, case when g % 2 = 0 then c.user_id end,

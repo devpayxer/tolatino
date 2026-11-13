@@ -28,6 +28,8 @@ const casos = [
   ['parametroSinTipo', LL, 'where id = $2), $3, $4, $5::inet', 'where id = $2), $2, $4, $5::inet'],
   // ordenSinTexto: «order by id» sobre «id::text» fuera de El Compa y Mensajes (los extras de un evento: 100 antes que 98)
   ['ordenSinTexto', BO, 'not off order by sort, event_addons.id`', 'not off order by sort, id`'],
+  // consultaUnaVez: la consulta de la ayuda vuelve a armarse en cada trozo
+  ['consultaUnaVez', 'apps/web/lib/compa/ayuda-indice.ts', '`with q as materialized (select ayuda_consulta($1, $2, $5) as tq),', '`with q as (select ayuda_consulta($1, $2, $5) as tq),'],
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos
   ['pruebasIndependientes', 'pruebas/correr.mjs', '  if (t.carril === "e2e") cerrarVentanas();\n', ''],
   ['pruebasIndependientes', 'pruebas/correr.mjs', "delete from otp_codes where created_at > now() - interval '1 minute';\\n", ''],
