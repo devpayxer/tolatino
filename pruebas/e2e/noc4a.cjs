@@ -49,7 +49,8 @@ const espera = async (f, ms = 8000) => { const t = Date.now(); while (Date.now()
   ok(/fila/.test(fv()), 'filtro «Fila corta»');
   // A los 61 minutos deja de ser «ahora» (barrido).
   sql(`update noche_settings set line_at = now() - interval '61 minutes' where business_id = '${NEG}'`);
-  barrer(); t = tj(); ok(t.fee && /^Fila a las .+: ~10 min$/.test(t.fee.es) && !/ahora/.test(t.fee.es), `a los 61 min: ${t.fee.es}`);
+  // 9b-3 · Si hace menos de una hora que dieron las 6 AM, la fila de hace 61 min fue ANOCHE (la noche cambia a las 6 AM): la app lo dice así.
+  barrer(); t = tj(); ok(t.fee && /^Fila (anoche )?a las .+: ~10 min$/.test(t.fee.es) && !/ahora/.test(t.fee.es), `a los 61 min: ${t.fee.es}`);
   // Edad 18+, sin lista.
   await p.reload(); await p.getByText('EDAD MÍNIMA').waitFor();
   await (await vis(p.getByRole('button', { name: '18+', exact: true }))).click();

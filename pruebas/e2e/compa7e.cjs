@@ -248,10 +248,16 @@ const DUENO_L = 'Eso lo ve el dueño del negocio: tu parte del panel no lo inclu
     ['Hazleton en pausa', () => sql(`insert into compa_pauses (scope, city_id, use, reason, paused_by) values ('city', 'hzl', null, 'prueba compa7e', '${uid(ADM)}')`), () => sql(`update compa_pauses set lifted_at = now(), lifted_by = '${uid(ADM)}', lift_reason = 'prueba' where city_id = 'hzl' and lifted_at is null`)],
     ['al tope', () => cfg('compa_tope_mes_cents', 0), () => cfg('compa_tope_mes_cents', null)],
   ];
+  // 9b-3 · La foto de «antes» se toma justo antes de cada modo (no una sola al empezar): en la segunda vuelta sobre la misma base, lo que dejó la
+  // primera (pedidos que el barrido vence, citas que pasan) cambiaba Hoy entre la foto del comienzo y la del último modo, sin que El Compa tuviera que
+  // ver. Si difiere, dice dónde.
+  const donde = (a, b) => { let i = 0; while (i < a.length && a[i] === b[i]) i++; return `antes «…${a.slice(Math.max(0, i - 60), i + 80)}…» · ahora «…${b.slice(Math.max(0, i - 60), i + 80)}…»`; };
+  void ref;
   for (const [nom, apagar, encender] of modos) {
+    const antes = await foto(pd);
     apagar(); await new Promise((r) => setTimeout(r, 1500));
     const f = await foto(pd);
-    for (const x of PAGS) ok(f[x] === ref[x], `${nom}: /panel/${NEG}${x || ' (Tu página)'} idéntica a la de antes`);
+    for (const x of PAGS) ok(f[x] === antes[x], `${nom}: /panel/${NEG}${x || ' (Tu página)'} idéntica a la de antes${f[x] === antes[x] ? '' : ` (${donde(antes[x], f[x])})`}`);
     await pd.goto(B + `/panel/${NEG}/compa`); await pd.getByText('El Compa no está disponible ahora').waitFor();
     ok(!(await pd.getByRole('textbox', { name: 'TU PREGUNTA' }).count()) && (await pd.getByText('Ayuda y Soporte', { exact: true }).count()) >= 1, `${nom}: la sección dice «El Compa no está disponible ahora» y lleva a Ayuda y Soporte (sin preguntar)`);
     const c0 = sql(`select count(*) from compa_conversations where user_id = '${DU}'`), m0 = nCompa(DU);

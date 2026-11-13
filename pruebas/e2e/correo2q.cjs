@@ -1,12 +1,12 @@
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
-const { chromium } = require('playwright'); const { execSync } = require('child_process');
+const { chromium } = require('playwright'); const { execSync } = require('child_process'); const { requiere } = require('../lib/requiere.cjs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100', BIZ = 'sabor-dominicano';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`).toString().trim();
 const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })).json(), [u, b]);
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const MARI = "(select id from users where phone='+15705550122')";
 const EMAIL = 'marisol.prueba@example.com';
 const prev = { email: sql(`select coalesce(email::text, '') from users where id = ${MARI}`), verif: sql(`select email_verified from users where id = ${MARI}`), prefs: sql(`select notif_prefs::text from users where id = ${MARI}`) };
@@ -36,7 +36,8 @@ const restaurar = () => { try { sql(`update users set email = nullif('${prev.ema
   ok(sql(`select status || '|' || tpl from email_outbox where idem_key = 'rcpt-ord-${op}'`) === 'pruebas|receipt_order', 'recibo del pedido en la bandeja');
   ok(sql(`select subject from email_outbox where idem_key = 'rcpt-ord-${op}'`).startsWith(`Recibo de tu pedido #${num}`), 'asunto del recibo');
   // reservación confirmada
-  const rn = sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'table' and scheduled_at > now() order by id desc limit 1`);
+  // 9b-3 · Una reservación futura de Marisol en Sabor Dominicano: la hace rsv2e de punta a punta (antes se daba por hecho que ya había corrido).
+  const rn = requiere('rsv2e', () => sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'table' and scheduled_at > now() order by id desc limit 1`), { que: 'una reservación futura de Marisol' });
   sql(`update operations set status = 'pending', status_detail = null, cancelled_at = null where number = '${rn}'`);
   await p.goto(B + `/panel/${BIZ}/clientes?t=rsv&det=rsv:${rn}`); await clic(p.locator('[data-screen-label="Panel v2 · detalle"]').getByRole('button', { name: 'Confirmar' })); await p.waitForTimeout(1500);
   ok(sql(`select count(*) from email_outbox where tpl = 'receipt_table' and user_id = ${MARI} and created_at > now() - interval '1 minute'`) === '1', 'confirmación de mesa por correo');

@@ -6829,6 +6829,17 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Cada prueba de punta a punta empieza sin las ventanas de un minuto que dejó la anterior (la espera entre códigos de un teléfono, los
+     topes compartidos, las búsquedas de la puerta): barajadas, una prueba que entraba con la misma cuenta justo después de otra recibía «Espera unos
+     segundos» (admin1i). Al revés: alreves9b3. */
+  pruebasIndependientes() {
+    const G = "pruebasIndependientes", C = "pruebas/correr.mjs";
+    if (!existsSync(C)) return falla(G, C, 0, "falta el corredor de las pruebas");
+    const t = sinComent(C), f = cuerpoFn(t, "cerrarVentanas");
+    if (!/if \(t\.carril === "e2e"\) cerrarVentanas\(\);/.test(t)) falla(G, C, 0, "cada prueba de punta a punta empieza con cerrarVentanas()");
+    for (const x of ["delete from otp_codes where created_at > now\\(\\) - interval '1 minute'", "delete from rate_counters", "delete from door_searches"]) if (!new RegExp(x).test(f)) falla(G, C, 0, `cerrarVentanas() no cierra «${x.replace(/\\/g, "")}»`);
+  },
+
   idioma() {
     for (const f of codigo) {
       if (!/layout\.tsx$/.test(f)) continue;

@@ -93,7 +93,19 @@ if (sel.some((t) => t.carril === "e2e")) {
   catch { console.error("✗ nadie responde en :3100. Primero: bash pruebas/servir/base.sh && bash pruebas/servir/servir.sh (o --servir)"); process.exit(2); }
 }
 
+/* 9b-3 · Entre una prueba y la siguiente, las ventanas de UN MINUTO que dejó la anterior se cierran: la espera de 30 s entre códigos de un
+   teléfono (otp_codes de hace menos de un minuto), los topes compartidos (rate_counters) y las búsquedas de la puerta por minuto. Cada prueba es
+   otra sesión: en la «barajada» de 9b-2 una prueba que entraba como el admin justo después de otra recibía «Espera unos segundos» (admin1i).
+   No toca nada más (los datos de cada prueba siguen siendo suyos). Guardián pruebasIndependientes. */
+const DB = process.env.PRUEBAS_DB_CONT || "tlprueba-db-1";
+function cerrarVentanas() {
+  try {
+    execSync(`docker exec -i ${DB} psql -U tolatino -d tolatino -qAt`, { input: "delete from otp_codes where created_at > now() - interval '1 minute';\ndelete from rate_counters;\ndelete from door_searches where at > now() - interval '1 minute';\n", stdio: ["pipe", "ignore", "ignore"], timeout: 20_000 });
+  } catch { /* sin base local (solo al revés): nada que cerrar */ }
+}
+
 const correrUna = (t) => new Promise((ok) => {
+  if (t.carril === "e2e") cerrarVentanas();
   const ini = Date.now(), out = join(RES, `${t.nombre}.out`), w = createWriteStream(out);
   const [cmd, cargs] = t.tipo === "sh" ? ["bash", [t.archivo]] : ["node", [t.archivo]];
   const p = spawn(cmd, cargs, { cwd: RAIZ, env: ENV, stdio: ["ignore", "pipe", "pipe"] });
@@ -136,5 +148,5 @@ writeFileSync(join(RES, "resumen.json"), JSON.stringify({ fecha: new Date().toIS
 console.log(`\n${bien.length}/${res.length} en verde · ${total} comprobaciones (✓) · ${Math.round((Date.now() - inicio) / 60000)} min`);
 if (mal.length) { console.log(`En rojo (${mal.length}):`); for (const r of mal) console.log(`  ✗ ${r.nombre} (código ${r.codigo}) · ${r.error}\n    ${r.salida}`); }
 /* 9b-2 · En el CI no hay a dónde mirar después (el almacén de artefactos no siempre se puede bajar): la cola de cada roja va al registro. */
-if (mal.length && process.env.CI) for (const r of mal) { try { const t = readFileSync(r.salida, "utf8").trimEnd().split("\n").slice(-30); console.log(`\n── cola de ${r.nombre} ──\n${t.map((l) => l.slice(0, 400)).join("\n")}`); } catch { /* sin salida */ } }
+if (mal.length && process.env.CI) for (const r of mal) { try { const t = readFileSync(r.salida, "utf8").trimEnd().split("\n").slice(-50); console.log(`\n── cola de ${r.nombre} ──\n${t.map((l) => l.slice(0, 400)).join("\n")}`); } catch { /* sin salida */ } }
 process.exit(mal.length ? 1 : 0);

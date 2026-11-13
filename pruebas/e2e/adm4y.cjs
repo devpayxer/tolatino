@@ -9,7 +9,7 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
 const espera = async (l) => { for (let i = 0; i < 40; i++) { if (await vis(l)) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
-const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 (async () => {
   // 9b-1 · Los viajes que esta prueba mira en Transacciones los hacen tra4y (la mitad cobrada, la salida que cancela el negocio) y tra4y2 (la caja
   // con rastreo, la mudanza con su precio cerrado). Se corren siempre antes (requiere): así son los últimos de la lista, en una base nueva o en

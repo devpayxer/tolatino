@@ -17,7 +17,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const espera = async (f, ms = 10000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 250)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const contiene = (p, t) => espera(async () => (await texto(p)).includes(t));
@@ -94,7 +94,11 @@ const vencerYa = (where) => sql(`alter table coupon_redemptions disable trigger 
   ok(sql(`select count(*) from audit_entries where action = 'cupon.crear' and target_id = 'barberia-el-primo' and after->>'cupon' = '${CID}'`) === '1', 'queda en la auditoría del negocio');
   await ro.goto(B + '/panel/barberia-el-primo/pagina/cup'); ok(await contiene(ro, 'POR APROBAR'), 'el panel lo muestra «POR APROBAR»');
   await ro.screenshot({ path: OUT + 'c5g-panel-cupones-m.png', fullPage: true });
-  const ye = await tel(); await entrar(ye, YES); await ye.goto(B + '/panel/locales-centro/pagina/cup');
+  const ye = await tel(); await entrar(ye, YES);
+  // 9b-3 · Su punto de partida, dicho aquí (antes lo dejaba inm4ib, que en otro orden corría DESPUÉS): Yesenia administra Locales del Centro y es Free.
+  sql(`insert into business_members (business_id, user_id, kind, display_name, role, status, show_on_page, panel_access, since_year, sort, same_as_business_hours) select 'locales-centro', u.id, 'owner', 'Yesenia Batista', '{"es":"Prueba","en":"Test"}'::jsonb, 'active', false, '{all}', 2020, 9, true from users u where u.phone = '+1${YES}' and not exists (select 1 from business_members m where m.business_id = 'locales-centro' and m.user_id = u.id)`);
+  sql(`insert into business_stats_cache (business_id, plan) values ('locales-centro', 'free') on conflict (business_id) do update set plan = 'free'`);
+  await ye.goto(B + '/panel/locales-centro/pagina/cup');
   ok(await contiene(ye, 'Ofrece cupones por monedas') && await contiene(ye, 'Ver Pro'), 'un negocio Free ve el candado (Cupones por monedas es de Pro)');
   await ye.screenshot({ path: OUT + 'c5g-panel-free-m.png' });
   await n1.goto(B + '/comunidad/monedas'); await n1.getByText('Cámbialas por cupones').waitFor();

@@ -19,7 +19,7 @@ const espera = async (f, ms = 15000) => { const t = Date.now(); while (Date.now(
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), ms);
 const vis = async (l) => { const k = await l.count(); for (let i = 0; i < k; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const btn = (p, t) => p.locator('button, [role="button"]', { hasText: t });
 const RUN = Date.now().toString(36), TAG = `[w8g ${RUN}]`;
 const ADM = '5705550199', C1 = '5705550122', C2 = '5705550299', TERRAZA = '5705550366', NEG = 'la-terraza-night', PAR = 'parroquia-santa-maria';

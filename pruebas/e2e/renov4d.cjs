@@ -19,6 +19,11 @@ const crear = (pm, st = 'confirmed') => {
   return { n, op, pi };
 };
 (async () => {
+  // 9b-3 · Su punto de partida, dicho aquí: Plomería Rodríguez cobra con tarjeta (cuenta de cobro simulada y «Tarjeta en la app»). Antes lo dejaba
+  // otra prueba del Hogar; barajada, renov4d iba antes y la retención no se podía renovar.
+  sql(`insert into stripe_accounts (business_id, stripe_account_id, status, charges_enabled, payouts_enabled, simulated) values ('${H}', 'acct_sim_${H}', 'enabled', true, true, true)
+       on conflict (business_id) do update set charges_enabled = true, payouts_paused = false`);
+  sql(`insert into delivery_settings (business_id, pay_card) values ('${H}', true) on conflict (business_id) do update set pay_card = true`);
   const bueno = crear('pm_sim_visa_4242'), malo = crear('pm_sim_visa_0002'), cx = crear('pm_sim_visa_4242', 'cancelled');
   const b = await chromium.launch(); const p = await (await b.newContext()).newPage(); await entrar(p, '5705550222');
   await p.goto(B + `/panel/${H}/hoy`); await p.waitForTimeout(500);

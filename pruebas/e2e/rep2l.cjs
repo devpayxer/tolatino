@@ -6,7 +6,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); console.log('  ✓', m); };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 24; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const espera = async (f, v) => { for (let i = 0; i < 40; i++) { if (f() === v) return v; await new Promise((r) => setTimeout(r, 250)); } return f(); };
 const MARISOL = "(select id from users where phone='+15705550122')", JUAN_TEL = '5705550144';
 const op = (n, c = "status||'|'||coalesce(stage,'-')") => sql(`select ${c} from operations where number='${n}'`);
@@ -49,6 +49,8 @@ const restaurar = () => { try { sql(`update delivery_settings set delivery=false
   // 4 · Marisol pide a domicilio, efectivo al recibir
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); watch(m, 'cliente'); globalThis.__p.push(m);
   await entrar(m, '5705550122');
+  // 9b-3 · Su punto de partida, dicho aquí: la dirección «Casa» de Marisol (antes la dejaban em4e, fi4b o plan4f si corrían antes).
+  sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select u.id, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false from users u where u.phone = '+15705550122' and not exists (select 1 from user_addresses a where a.user_id = u.id and a.label = 'casa' and a.removed_at is null)`);
   const pedir = async () => {
     await m.goto(B + '/n/' + BIZ); await m.evaluate(() => { localStorage.setItem('tl-carrito-v1', JSON.stringify({ 'sabor-dominicano': { at: Date.now(), lines: [{ id: '7', ch: {}, q: 1, nt: '', k: {} }] } })); localStorage.setItem('tl-modo-v1', JSON.stringify({ 'sabor-dominicano': 'delivery' })); });
     await m.goto(B + '/n/' + BIZ + '/pagar'); await m.getByText(/Casa · /).first().waitFor();

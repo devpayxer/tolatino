@@ -38,6 +38,10 @@ on:
         type: choice
         options: ["no", "si"]
         default: "no"
+      semilla:
+        description: "Confirmación barajada: la semilla del orden (para repetir una corrida); vacío = al azar"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -222,7 +226,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: ./.github/actions/entorno-pruebas
       - name: Primera pasada
-        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.barajar && '--barajar' || '' }}
+        run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios ${{ matrix.barajar && format('--barajar {0}', inputs.semilla) || '' }}
       - name: Segunda pasada, en la MISMA base
         if: ${{ matrix.repetir }}
         run: node pruebas/correr.mjs --grupo fase1,fase2,fase3,fase4,fase5,fase6,fase7,fase8,fase9,varios

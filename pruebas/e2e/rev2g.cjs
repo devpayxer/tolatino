@@ -25,6 +25,9 @@ const limpiar = () => {
   sql(`update reviews set helpful_count = (select count(*) from review_helpful h where h.review_id = reviews.id) where business_id = '${BIZ}'`);
   const NUM = sql(`select number from operations where user_id = ${MARISOL} and business_id = '${BIZ}' and kind = 'order' and status = 'done' and mode = 'pickup' and done_at > now() - interval '30 days' order by done_at desc limit 1`);
   ok(!!NUM, `pedido terminado para reseñar: #${NUM}`);
+  // 9b-3 · El dato del pedido («llegó N min tarde») sale de su hora prometida (la de listo): el pedido más reciente que dejó OTRA prueba no
+  // siempre la tenía (barajada salió sin «late»). Se le pone aquí, como la tiene un pedido de verdad.
+  sql(`update operations set ready_at = coalesce(scheduled_at, ready_at, done_at - interval '15 minutes') where number = '${NUM}' and business_id = '${BIZ}'`);
   const n0 = Number(sql(`select review_count from business_stats_cache where business_id = '${BIZ}'`));
   const b = await chromium.launch(); const err = [];
   const watch = (p, tag) => { p.on('pageerror', e => err.push(tag + ' ' + e.message)); p.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push(tag + ' console ' + x.text()); }); };

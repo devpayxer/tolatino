@@ -18,7 +18,7 @@ let n = 0; const ok = (x, m) => { if (!x) throw new Error('ASSERT ' + m); n++; c
 const espera = async (f, ms = 20000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
 const dormir = (ms) => new Promise((r) => setTimeout(r, ms));
 const vis = async (l) => { const k = await l.count(); for (let i = 0; i < k; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await dormir(250); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await dormir(250); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const BIZ = 'sabor-dominicano', P = '/panel/' + BIZ, DUENO = '5705550133', JUAN = '5705550144', MARI = '5705550122', HECTOR = '5705550210', ADM = '5705550199', BARB = '5705550166', BOLETO = '5705550201';
 const U = (tel) => `(select id from users where phone = '+1${tel}')`;
 const uid = (tel) => sql(`select id from users where phone = '+1${tel}'`);

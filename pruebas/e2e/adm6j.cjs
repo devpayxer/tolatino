@@ -14,7 +14,7 @@
 // 10 Usuarios 360° › Actividad, Negocios 360° › Eventos, Analítica › Eventos (contra SQL, sin personas), Notificaciones › Solo Eventos.
 // 11 Sin permiso: un vecino no abre el catálogo. Deja todo como estaba (eventos de prueba cancelados, configuración y avisos de fábrica).
 const ENT = require('../lib/entorno.cjs'); // 9a · rutas del repo, salida y secretos de la corrida (nunca en el repo)
-const { chromium } = require('playwright'); const { execSync } = require('child_process');
+const { chromium } = require('playwright'); const { execSync } = require('child_process'); const { requiere } = require('../lib/requiere.cjs');
 const OUT = ENT.S + '/cap/', B = 'http://localhost:3100';
 const sql = (q) => execSync(`docker exec ${ENT.DB} psql -U tolatino -d tolatino -At -c "${q.replace(/"/g, '\\"').replace(/\$/g, '\\$')}"`, { stdio: ['pipe', 'pipe', 'pipe'] }).toString().trim();
 const sqlFalla = (q) => { try { sql(q); return null; } catch (e) { return String(e.stderr || e.message); } };
@@ -22,7 +22,7 @@ const api = (p, u, b) => p.evaluate(async ([u, b]) => (await fetch(u, { method: 
 const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from otp_codes'); const a = await api(p, '/api/cuenta/codigo', { telefono: tel }); await api(p, '/api/cuenta/verificar', { telefono: tel, codigo: a.codigoPrueba }); };
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const vis = async (l) => { const k = await l.count(); for (let i = 0; i < k; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 40; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const espera = async (f, ms = 12000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const contiene = (p, t, ms) => espera(async () => (await texto(p)).includes(t), ms);
@@ -209,12 +209,15 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     sql(`update event_genres set label = '${GEN0}'::jsonb where key = 'tipico'`);
 
     // ── 9 · Confianza › Fraude › Eventos ──
+    // 9b-3 · Su punto de partida, dicho aquí: al menos una compra de boletos de verdad (una orden desde un dispositivo). Antes contaba con las
+    // ráfagas que dejaban las compras de evt6c–evt6e corridas ANTES; barajada, adm6j iba primero y no había ninguna (0 con 50, 4 y 2).
+    requiere('evt6c', () => sql(`select count(*) from ticket_holds where status = 'converted' and device is not null and created_at > now() - interval '30 days'`) !== '0' ? '1' : '', { que: 'una compra de boletos desde un dispositivo' });
     const antes = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
     sql(`insert into platform_config (key, value) values ('evt_senal_ordenes_n', '50') on conflict (key) do update set value = excluded.value`);
     const con50 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
-    sql(`update platform_config set value = '2' where key = 'evt_senal_ordenes_n'`);
-    const con2 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
-    ok(con50 === 0 && con2 >= antes && antes > 0, `el umbral de Configuración se lee en la base al decidir (ráfaga con 50: ${con50}; con 4: ${antes}; con 2: ${con2})`);
+    sql(`update platform_config set value = '1' where key = 'evt_senal_ordenes_n'`);
+    const con1 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
+    ok(con50 === 0 && con1 >= antes && con1 > 0, `el umbral de Configuración se lee en la base al decidir (ráfaga con 50: ${con50}; con 4: ${antes}; con 1: ${con1})`);
     sql(`delete from platform_config where key = 'evt_senal_ordenes_n'`);
     await ad.goto(B + '/admin/confianza?tab=fraud');
     ok(await contiene(ad, 'EVENTOS Y BOLETOS · 30 DÍAS'), 'Confianza › Fraude › EVENTOS Y BOLETOS');

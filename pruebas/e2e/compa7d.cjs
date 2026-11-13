@@ -14,7 +14,7 @@ const entrar = async (p, tel) => { await p.goto(B + '/entrar'); sql('delete from
 let n = 0; const ok = (c, m) => { if (!c) throw new Error('ASSERT ' + m); n++; console.log('  ✓', m); };
 const espera = async (f, ms = 12000) => { const t = Date.now(); while (Date.now() - t < ms) { if (await f()) return true; await new Promise((r) => setTimeout(r, 300)); } return false; };
 const vis = async (l) => { const n = await l.count(); for (let i = 0; i < n; i++) if (await l.nth(i).isVisible()) return l.nth(i); return null; };
-const clic = async (l) => { for (let i = 0; i < 20; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l); };
+const clic = async (l) => { for (let i = 0; i < 20; i++) { const x = await vis(l); if (x) return x.click(); await new Promise((r) => setTimeout(r, 250)); } throw new Error('no visible: ' + l + ' · la página dice: ' + (await l.page().locator('body').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 300)); };
 const texto = async (p) => (await p.innerText('body')).replace(/\s+/g, ' ');
 const cfg = (k, v) => sql(v == null ? `delete from platform_config where key = '${k}'` : `insert into platform_config (key, value, note) values ('${k}', to_jsonb(${v}), 'prueba compa7d') on conflict (key) do update set value = excluded.value`);
 const MARISOL = '5705550122', YARITZA = '5705550299', ADM = '5705550199', DAYANA = '5705550677';
