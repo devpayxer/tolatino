@@ -130,7 +130,7 @@ try {
         falla(`${pa.id}/${id}: ${r.razon}`);
         const y0 = Number((r.zona.match(/^y(\d+)/) || [])[1] ?? 0);
         const t = await p.evaluate((y) => { const o = []; for (const x of [0.15, 0.5, 0.85]) { const e = document.elementFromPoint(innerWidth * x, y + 20); if (e) o.push((e.closest("section,article,li,div") || e).innerText.replace(/\s+/g, " ").slice(0, 120)); } return o; }, y0).catch(() => []);
-        console.log(`    · en esa franja: ${JSON.stringify(t)}`);
+        console.log(`    · en esa franja: ${JSON.stringify(t)} · zonas tapadas: ${zonas.length} ${JSON.stringify(zonas.slice(0, 12))} · pantalla ${p.viewportSize()?.width}x${p.viewportSize()?.height}`);
       }
     }
     // ── axe (WCAG 2.x A y AA): lo serio o crítico frena; lo que ya se sabía lleva su destino en axe-conocidas.json
