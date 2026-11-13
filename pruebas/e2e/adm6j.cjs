@@ -211,13 +211,16 @@ const KEYS = ['evt_recordatorio_hora', 'evt_senal_ordenes_n'];
     // ── 9 · Confianza › Fraude › Eventos ──
     // 9b-3 · Su punto de partida, dicho aquí: al menos una compra de boletos de verdad (una orden desde un dispositivo). Antes contaba con las
     // ráfagas que dejaban las compras de evt6c–evt6e corridas ANTES; barajada, adm6j iba primero y no había ninguna (0 con 50, 4 y 2).
-    requiere('evt6c', () => sql(`select count(*) from ticket_holds where status = 'converted' and device is not null and created_at > now() - interval '30 days'`) !== '0' ? '1' : '', { que: 'una compra de boletos desde un dispositivo' });
+    // (el umbral mínimo es 2: alguien que compró dos veces desde el mismo teléfono; evt6e lo hace con sus tres compradores).
+    const rafagaCon2 = () => sql(`select count(*) from ticket_holds h where h.status = 'converted' and h.device is not null and h.created_at > now() - interval '30 days'
+      and (select count(*) from ticket_holds x where x.device = h.device and x.status = 'converted' and x.created_at between h.created_at - make_interval(mins => cfg_int('evt_senal_ordenes_min')) and h.created_at) >= 2`);
+    requiere('evt6e', () => rafagaCon2() !== '0' ? '1' : '', { que: 'dos compras de boletos desde un mismo teléfono' });
     const antes = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
     sql(`insert into platform_config (key, value) values ('evt_senal_ordenes_n', '50') on conflict (key) do update set value = excluded.value`);
     const con50 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
-    sql(`update platform_config set value = '1' where key = 'evt_senal_ordenes_n'`);
-    const con1 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
-    ok(con50 === 0 && con1 >= antes && con1 > 0, `el umbral de Configuración se lee en la base al decidir (ráfaga con 50: ${con50}; con 4: ${antes}; con 1: ${con1})`);
+    sql(`update platform_config set value = '2' where key = 'evt_senal_ordenes_n'`);
+    const con2 = Number(sql(`select count(*) from evt_senales where kind = 'rafaga'`));
+    ok(con50 === 0 && con2 >= antes && con2 > 0, `el umbral de Configuración se lee en la base al decidir (ráfaga con 50: ${con50}; con 4: ${antes}; con 2: ${con2})`);
     sql(`delete from platform_config where key = 'evt_senal_ordenes_n'`);
     await ad.goto(B + '/admin/confianza?tab=fraud');
     ok(await contiene(ad, 'EVENTOS Y BOLETOS · 30 DÍAS'), 'Confianza › Fraude › EVENTOS Y BOLETOS');
