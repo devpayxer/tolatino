@@ -396,6 +396,8 @@ create table if not exists com_rangos_ciudad (
   refreshed_at timestamptz not null default now(),
   primary key (city_id, rank_level)
 );
+-- EN CIRCULACIÓN (Super Admin › Gamificación › Monedas) = el resumen + lo que entró al libro de monedas desde entonces: exacto sin sumar 1 M de saldos.
+create index if not exists coin_entries_fecha_idx on coin_entries (created_at);
 create table if not exists com_activos_cache (
   city_id      text not null references cities (id),
   dias         smallint not null check (dias in (7, 30, 90)),

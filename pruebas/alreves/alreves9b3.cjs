@@ -30,6 +30,10 @@ const casos = [
   ['ordenSinTexto', BO, 'not off order by sort, event_addons.id`', 'not off order by sort, id`'],
   // consultaUnaVez: la consulta de la ayuda vuelve a armarse en cada trozo
   ['consultaUnaVez', 'apps/web/lib/compa/ayuda-indice.ts', '`with q as materialized (select ayuda_consulta($1, $2, $5) as tq),', '`with q as (select ayuda_consulta($1, $2, $5) as tq),'],
+  // saldoAlDia: EN CIRCULACIÓN vuelve a salir solo del resumen del barrido (10 min atrás)
+  ['saldoAlDia', 'apps/web/lib/admin-gam.ts', `                   + (select coalesce(sum(e.delta), 0) from coin_entries e join users u on u.id = e.user_id
+                       where e.created_at > t.t and u.home_city_id is not null and ($1::text[] = '{}' or u.home_city_id = any($1)))
+`, ''],
   // pruebasIndependientes: el corredor deja de cerrar las ventanas de un minuto entre pruebas, o deja de cerrar la espera entre códigos
   ['pruebasIndependientes', 'pruebas/correr.mjs', '  if (t.carril === "e2e") cerrarVentanas();\n', ''],
   ['pruebasIndependientes', 'pruebas/correr.mjs', "delete from otp_codes where created_at > now() - interval '1 minute';\\n", ''],

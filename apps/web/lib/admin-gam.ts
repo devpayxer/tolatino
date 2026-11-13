@@ -92,9 +92,17 @@ const MES_CIUDAD = (col: string) => `(select date_trunc('month', now() at time z
 async function monedasAdm(s: Staff): Promise<GamMonedas> {
   const cs = s.cities;
   const [K, E, X, D, R, L] = await Promise.all([
-    // 9b-3 · EN CIRCULACIÓN y los vecinos por rango salen del resumen por ciudad (com_rangos_ciudad, cada 10 min): sumar 1 M de perfiles en cada
-    // vista tardaba 1,8 s en la carga.
-    db().query<{ n: number }>(`select coalesce(sum(monedas), 0)::int as n from com_rangos_ciudad where ($1::text[] = '{}' or city_id = any($1))`, [cs]),
+    // 9b-3 · EN CIRCULACIÓN, exacto sin sumar 1 M de saldos en cada vista (1,8 s en la carga): el resumen por ciudad (com_rangos_ciudad, cada 10 min)
+    // + lo que entró al libro de monedas desde ese resumen (el saldo es la suma del libro) + quien no tiene ciudad, en vivo. Sin resumen, en vivo.
+    db().query<{ n: number }>(
+      `select (case when t.t is null
+                then (select coalesce(sum(cp.coins), 0) from community_profiles cp join users u on u.id = cp.user_id where cp.coins > 0 and ($1::text[] = '{}' or u.home_city_id = any($1)))
+                else (select coalesce(sum(x.monedas), 0) from com_rangos_ciudad x where ($1::text[] = '{}' or x.city_id = any($1)))
+                   + (select coalesce(sum(e.delta), 0) from coin_entries e join users u on u.id = e.user_id
+                       where e.created_at > t.t and u.home_city_id is not null and ($1::text[] = '{}' or u.home_city_id = any($1)))
+                   + (select coalesce(sum(cp.coins), 0) from users u join community_profiles cp on cp.user_id = u.id where $1::text[] = '{}' and u.home_city_id is null and cp.coins > 0)
+               end)::int as n
+         from (select max(r.refreshed_at) as t from com_rangos_ciudad r) t`, [cs]),
     db().query<{ n: number }>(`select coalesce(sum(e.delta), 0)::int as n from coin_entries e where e.delta > 0 and e.reason_key in ('welcome', 'premio_mes', 'ajuste') and ($1::text[] = '{}' or e.city_id = any($1)) and e.created_at >= ${MES_CIUDAD("e.city_id")}`, [cs]),
     db().query<{ k: number; n: number }>(`select count(*)::int as k, coalesce(sum(r.cost_coins), 0)::int as n from coupon_redemptions r where r.status <> 'expired' and ($1::text[] = '{}' or r.city_id = any($1)) and r.created_at >= ${MES_CIUDAD("r.city_id")}`, [cs]),
     db().query<{ n: number }>(`select coalesce(sum(e.delta), 0)::int as n from coin_entries e where e.reason_key = 'devolucion' and ($1::text[] = '{}' or e.city_id = any($1)) and e.created_at >= ${MES_CIUDAD("e.city_id")}`, [cs]),

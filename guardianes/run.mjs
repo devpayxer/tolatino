@@ -6843,6 +6843,21 @@ const guardianes = {
     }
   },
 
+  /* 9b-3 · Un saldo que se muestra como «ahora» no sale solo de un resumen del barrido: EN CIRCULACIÓN leía com_rangos_ciudad (cada 10 min) y el
+     Super Admin veía 1,015 monedas cuando había otras (com5g en la confirmación del CI). Cada consulta que suma las monedas del resumen le suma
+     también lo que entró al libro (coin_entries) desde su refreshed_at. Al revés: alreves9b3. */
+  saldoAlDia() {
+    const G = "saldoAlDia", RES = { com_rangos_ciudad: { col: "monedas", libro: "coin_entries" } };
+    for (const f of codigo) {
+      if (!/^apps\/web\/(lib|app)\/.*\.tsx?$/.test(f)) continue;
+      const t = sinComent(f);
+      for (const m of t.matchAll(/`[^`]*`/g)) for (const [tab, r] of Object.entries(RES)) {
+        if (!new RegExp(`\\b${tab}\\b`).test(m[0]) || !new RegExp(`sum\\([^)]*\\b${r.col}\\b`).test(m[0])) continue;
+        if (!new RegExp(`\\b${r.libro}\\b`).test(m[0]) || !/refreshed_at/.test(m[0])) falla(G, f, t.slice(0, m.index).split("\n").length, `suma ${r.col} de ${tab} (el resumen del barrido) sin lo que entró a ${r.libro} desde su refreshed_at: el número se queda atrás hasta 10 min`);
+      }
+    }
+  },
+
   /* 9b-3 · Cada prueba de punta a punta empieza sin las ventanas de un minuto que dejó la anterior (la espera entre códigos de un teléfono, los
      topes compartidos, las búsquedas de la puerta): barajadas, una prueba que entraba con la misma cuenta justo después de otra recibía «Espera unos
      segundos» (admin1i). Al revés: alreves9b3. */
