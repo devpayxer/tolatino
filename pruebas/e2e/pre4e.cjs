@@ -19,6 +19,9 @@ const limpiar = () => { sql(`update service_requests set status = 'cancelled' wh
   sql(`insert into user_addresses (user_id, label, street, zip, geo, geo_quality, city_id, is_default) select ${MARISOL}, 'casa', '112 W Oak St', '18201', ST_SetSRID(ST_MakePoint(-75.9775, 40.9584), 4326)::geography, 'numero', 'hzl', false where not exists (select 1 from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null)`);
   sql(`insert into user_homes (user_id, address_id, kind, tenure, is_default) select ${MARISOL}, id, 'casa', 'dueno', true from user_addresses where user_id = ${MARISOL} and street = '112 W Oak St' and removed_at is null and not exists (select 1 from user_homes where user_id = ${MARISOL} and removed_at is null) limit 1`);
   sql(`update user_homes set tenure = 'dueno' where user_id = ${MARISOL} and removed_at is null`);
+  // 9b-3 · La de siempre es la CASA de 112 W Oak St (otra prueba podía dejar otra como predeterminada y el pre-estimado del Hogar no se mandaba).
+  sql(`update user_homes set is_default = false where user_id = ${MARISOL} and removed_at is null`);
+  sql(`update user_homes h set is_default = true, kind = 'casa' from user_addresses a where a.id = h.address_id and h.user_id = ${MARISOL} and h.removed_at is null and a.street = '112 W Oak St' and a.removed_at is null`);
   const b = await chromium.launch(); const err = [];
   const m = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); globalThis.__p = [m]; await entrar(m, '5705550122');
   m.on('pageerror', e => err.push(e.message)); m.on('console', x => { if (x.type() === 'error' && !/Failed to load|404|pexels|ERR_/.test(x.text())) err.push('console ' + x.text()); });

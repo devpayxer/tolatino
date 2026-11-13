@@ -80,6 +80,8 @@ const limpiar = () => { try { sql(`update chat_threads set blocked_at = null, bl
   ok(sql(`select count(*) from audit_entries where action = 'mensajes.bloquear' and at > now() - interval '1 minute'`) !== '0', 'bloquear queda en la auditoría');
   // 8) desde un pedido: contexto
   limpiar(); const num = sql(`select number from operations where user_id = ${MARI} and business_id = '${BIZ}' and kind = 'order' order by id desc limit 1`);
+  // 9b-3 · «Escribir al negocio» sale en un pedido EN CURSO: el último de Marisol podía estar terminado por otra prueba (barajada). Se le pone en curso.
+  sql(`update operations set status = 'confirmed', stage = 'preparing', done_at = null where number = '${num}' and business_id = '${BIZ}' and kind = 'order'`);
   await m.goto(B + `/pedido/${num}`); await clic(m.getByRole('button', { name: 'Escribir al negocio' }));
   await m.waitForURL(/op=/); await m.getByPlaceholder(/Escribe a/).fill('Sobre mi pedido'); await m.getByRole('button', { name: 'Enviar' }).click(); await m.getByText('Sobre mi pedido').first().waitFor();
   ok(sql(`select context->>'es' from chat_threads where id = ${TH}`) === `Pedido #${num}`, 'contexto: el pedido');

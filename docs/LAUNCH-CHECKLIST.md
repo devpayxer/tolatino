@@ -211,7 +211,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
   correo (interruptor del diseño): con las notificaciones.
 - [ ] **→ 9g** · **Embudo:** el diseño termina en «El negocio aceptó»; en la Fase 1 termina en «Contactaron» (Llamar, WhatsApp,
   Cómo llegar). Confirmar el texto con el fundador. Etiquetas cortas porque el componente de barras corta las largas.
-- [ ] **→ 9b** · **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte.
+- [ ] **→ 9g** · **Grabación de sesiones (rrweb, con consentimiento)** y Web Vitals propios (HERRAMIENTAS §2 y §4): bloque aparte. — _9b-3 (13 nov): no es de la escala; va con la Analítica completa (9g)._
 - [ ] **→ 9e** · **Aviso de privacidad** que diga qué mide To'Latino (sin terceros): con las páginas legales (Fase 9).
 
 ## Menú (bloque 2a, 6 nov 2026)
@@ -563,10 +563,10 @@ en el momento. Se marca solo cuando está hecho de verdad.
       solas. Decidir si se extiende a todas (es una línea en `CATS_LIC_4I`). (4ig, 7 nov) — _9a (11 nov): decisión pendiente: extender la vuelta automática a revisión a todas las categorías con licencia (una línea en CATS_LIC_4I, lib/licencias.ts)._
 - [ ] **→ 9s** · **4ig · Colas › Vivienda justa:** protocolo escrito con abogado (cuándo un texto frenado es error de buena fe y cuándo advertencia; qué se
       revisa en una declaración de vivienda para mayores bajo HOPA) y la escalera después de la advertencia (hoy suspender va por Negocios 360°). (4ig, 7 nov)
-- [ ] **→ 9b** · **4ig · Punta a punta en 9 dispositivos y en CI:** la CI de GitHub corre tipos, build, guardianes, contrato con Stripe, firma SES, imagen
+- [ ] **→ 9c** · **4ig · Punta a punta en 9 dispositivos y en CI:** la CI de GitHub corre tipos, build, guardianes, contrato con Stripe, firma SES, imagen
       del sandbox, migraciones dos veces y la semilla dos veces; **no** corre las pruebas de punta a punta con Playwright ni en 9 dispositivos. Las
       pruebas del grupo (`fe4ia`, `inm4ib`, `autos4ic`, `fic4id`, `vis4ie`, `ayu4if`, `adm4ig`) corren en local en teléfono 390 y escritorio
-      1360. Falta la matriz de 9 dispositivos en la CI. (4ig, 7 nov)
+      1360. Falta la matriz de 9 dispositivos en la CI. (4ig, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 - [ ] **→ 9s** · **5a · Comunidad, abogado (§3):** Sección 230 y Términos de la Comunidad versionados con las reglas del barrio; protocolo de material de
       abuso infantil (NCMEC, preservación); acoso (18 Pa.C.S. § 2709); difamación en recomendaciones; avisos de operativos de inmigración. (5a, 7 nov)
@@ -589,7 +589,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       corrió; en el sandbox las raíces salen de `com_comments_hilo_idx` sin ordenar aparte (`EXPLAIN` en `com5b`). (5b, 7 nov)
 - [ ] **→ 9b** · **5b · Resultado de encuestas muy grandes:** `avisarMuchos` escribe de 1,000 en 1,000 en una consulta; medir con una encuesta de 100 mil
       votos antes de abrir. (5b, 7 nov)
-- [ ] **→ 9b** · **5b · Punta a punta en 9 dispositivos:** `com5b` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz de CI. (5b, 7 nov)
+- [ ] **→ 9c** · **5b · Punta a punta en 9 dispositivos:** `com5b` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz de CI. (5b, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5c · Reportar a una persona** desde su perfil (hueco #4; hecho en 5d) y **«Abrir caso de red de cuentas»** (hecho en 5i) desde Usuarios 360° › Comunidad: van
       con la cola `repUsr` de 5d. (5c, 7 nov)
 - [x] **5c · Monedas de bienvenida (+100):** el gancho está marcado «HOOK 5g» en `bienvenida()`; las acredita 5g a quien tiene
@@ -602,8 +602,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       local de la ciudad, con la mitad el primer día de la cuenta (`lib/moderacion.ts` limiteDia; valores en Contenido › Auto-moderación).
 - [ ] **→ 9b** · **5c · Velocidad** de Mensajes y listas de seguidores con 1 M de vecinos (índices `dm_threads_a/b_idx`, `follows_seguidos_idx`): no
       se corrió la base de carga. (5c, 7 nov)
-- [ ] **→ 9b** · **5c · Punta a punta en 9 dispositivos:** `com5c` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la
-      matriz de CI. (5c, 7 nov)
+- [ ] **→ 9c** · **5c · Punta a punta en 9 dispositivos:** `com5c` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la
+      matriz de CI. (5c, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9s** · **5c · Revisión de seguridad con abogado:** 18+ por declaración (COPPA si algún día se abre a 13–17), retención de mensajes
       privados y lectura solo con reporte (Términos y Privacidad lo deben decir). (5c, 7 nov)
 - [ ] **→ 9s** · **5d · Abogado: Sección 230 y DMCA §512.** Términos de la Comunidad con las reglas, la moderación de buena fe y la apelación; **agente
@@ -613,28 +613,28 @@ en el momento. Se marca solo cuando está hecho de verdad.
       AGPL-3.0 sobre pesos entrenados con su código). Confirmar con abogado o cambiar de modelo antes de producción. (5d, 7 nov)
 - [ ] **→ Paquete 9-4** · **5d · Revisar las listas de términos** (odio · estafa · inmigración · autolesión, ES/EN; semilla corta en 0100) con el fundador y con
       vecinos de cada ciudad: palabras locales, falsos positivos («ice», «migra»). (5d, 7 nov)
-- [ ] **→ 9b** · **5d · Imagen del servicio de fotos sin construir aquí:** Docker Hub respondió 429 desde este entorno; se probó el servicio con el
+- [ ] **→ 9o** · **5d · Imagen del servicio de fotos sin construir aquí:** Docker Hub respondió 429 desde este entorno; se probó el servicio con el
       mismo código y las mismas versiones fijadas (ruedas de PyPI para Python 3.12 verificadas) fuera de Docker. Confirmar que `deploy.sh`
-      lo levanta en el sandbox y medir memoria junto con el traductor de 5h (§6 #24). (5d, 7 nov) — _9a (11 nov): el servicio de moderación tiene su perfil en el compose y deploy.sh lo levanta (systemd-run tolatino-moderacion); falta medir su memoria junto con el traductor en el sandbox._
+      lo levanta en el sandbox y medir memoria junto con el traductor de 5h (§6 #24). (5d, 7 nov) — _9a (11 nov): el servicio de moderación tiene su perfil en el compose y deploy.sh lo levanta (systemd-run tolatino-moderacion); falta medir su memoria junto con el traductor en el sandbox._ — _9b-3 (13 nov): el CI la corre con su venv de Python (9b-2); la imagen del contenedor se arma y se prueba con la producción como código (9o)._
 - [x] **→ después de abrir (DA-08)** · **5d · Fotos: violencia y texto promocional** no tienen modelo (NudeNet solo mide desnudez); hoy los decide una persona en Medios
       marcados. Solo las fotos de la Comunidad pasan por el modelo; reseñas y negocios siguen con el reporte de vecinos. (5d, 7 nov) — _9a (11 nov): un modelo de violencia y texto promocional en fotos; hoy decide una persona en Medios marcados. En `docs/DESPUES-DE-ABRIR.md`._
-- [ ] **→ 9b** · **5d · No se probó el modelo con una foto de desnudez real** (solo fotos limpias y el servicio caído); probar el umbral 0.6 con un
-      juego de fotos de prueba aprobado antes de abrir. (5d, 7 nov)
+- [ ] **→ 9q** · **5d · No se probó el modelo con una foto de desnudez real** (solo fotos limpias y el servicio caído); probar el umbral 0.6 con un
+      juego de fotos de prueba aprobado antes de abrir. (5d, 7 nov) — _9b-3 (13 nov): con los proveedores y los datos reales del sandbox (9q)._
 - [ ] **→ 9n** · **5d · Apelar una suspensión o un baneo:** la persona no puede entrar, así que hoy lo pide por Soporte; falta la pantalla de apelar
       desde «Entrar» (con el código por SMS, sin sesión). (5d, 7 nov)
 - [ ] **→ 9s** · **5d · NCMEC (abuso infantil):** protocolo de preservación y reporte al CyberTipline (18 U.S.C. § 2258A) con abogado; hoy un Admin
       oculta y preserva a mano. (5d, 7 nov)
 - [ ] **→ 9b** · **5d · Velocidad de moderación con 1 M:** `autoOcultar` (reportes de un contenido), `revisarAlEscribir` (parecidos con pg_trgm sobre lo
       de la persona en 24 h) y `redDeCuentas` (votos de 7 días) no se midieron en la base de carga. (5d, 7 nov)
-- [ ] **→ 9b** · **5d · Punta a punta en 9 dispositivos:** `com5d` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz
-      de CI. (5d, 7 nov)
+- [ ] **→ 9c** · **5d · Punta a punta en 9 dispositivos:** `com5d` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta sumarlo a la matriz
+      de CI. (5d, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9b** · **5e · Velocidad de Hoy y de Recomendados con 1 M:** `hoyEnElBarrio` (índice `business_posts_hoy_idx`, presupuesto ≤ 40 ms) y
       `recomendadosPorVecinos` (agrega 180 días por ciudad en cada vista de Negocios) no se midieron en la base de carga; si no cumple,
       Recomendados pasa a derivado cacheado (con 5f). (5e, 7 nov)
-- [ ] **→ 9b** · **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
-      1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov)
-- [ ] **→ 9b** · **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
-      matriz de CI. (5e, 7 nov)
+- [ ] **→ 9l** · **5e · Aviso «Hoy en un negocio que sigues» a muchos seguidores:** el barrido escribe a todos los seguidores de un golpe (lotes de
+      1,000); con negocios de decenas de miles de seguidores hace falta repartirlo en varias pasadas y medirlo. Push real llega con la app. (5e, 7 nov) — _9b-3 (13 nov): no se midió en la carga (la carga no arma negocios con decenas de miles de seguidores); va con los avisos listos (9l)._
+- [ ] **→ 9c** · **5e · Hoy y la cuenta oficial en los 9 dispositivos:** `com5e` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la
+      matriz de CI. (5e, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5e · Puntos y Tabla sin la cuenta oficial:** hecho en 5f: el libro y la Tabla piden una persona (`user_id not null references
       users`), `pts_sumar` rechaza sin persona, lo oficial no da puntos y toda lectura va unida a `users` (guardián `oficialNoEsPersona`
       ampliado, probado al revés; e2e `com5f`). (5f, 7 nov)
@@ -649,7 +649,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Tabla usa índices `(city_id, month, puntos desc, user_id)` y cursor; «mi lugar» cuenta los de delante (índice), y `pts_rango` mira la
       escalera con `limit n`. Medir en la base de carga aparte y anotar las cifras. (5f, 7 nov)
 - [x] **5f · Notificación «Subiste de rango» en la app (push):** (hecho en 8c: va por push con la misma regla) hoy queda en la campana (sin SMS, `gam_*`); el push llega con la app. (5f, 7 nov)
-- [ ] **→ 9b** · **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov)
+- [ ] **→ 9c** · **5f · Puntos y Tabla en los 9 dispositivos:** `com5f` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta en la matriz de CI. (5f, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9n** · **5f · Condiciones de los rangos editables** (además del nombre): hoy el admin cambia nombres, valores de las reglas y el tope; los
       puntos mínimos y las condiciones viven en `ranks.min_points` / `ranks.cond` y se cambian con migración. Si el fundador los quiere en
       Gamification, se agregan con vista previa y auditoría. (5f, 7 nov)
@@ -665,16 +665,16 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **5g · Velocidad con 1 M:** cupones de una ciudad (`coupons_ciudad_idx` + un conteo del mes por cupón, 20 por página), mis cupones y
       movimientos (cursor por id), EN CIRCULACIÓN del Super Admin (suma de `community_profiles.coins` por ciudad: si pasa del presupuesto,
       cachearla por ciudad). Medir en la base de carga. (5g, 7 nov)
-- [ ] **→ 9b** · **5g · Monedas y cupones en los 9 dispositivos:** `com5g` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
-      de CI. (5g, 7 nov)
+- [ ] **→ 9c** · **5g · Monedas y cupones en los 9 dispositivos:** `com5g` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
+      de CI. (5g, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **5g · Push de los avisos de monedas y cupones** (hecho en 8c) (`gam_monedas*`, `gam_cupon_usado`, `biz_cupon_*`): hoy en la campana, sin SMS. (5g, 7 nov)
 - [x] **5g · Analítica › Comunidad:** — **Hecho en 5i** (vistas por ciudad y día, sin personas). monedas emitidas y canjeadas, canjes por negocio (por ciudad, sin personas) — bloque 5i. (5g, 7 nov)
-- [ ] **→ 9b** · **5h · LibreTranslate real en el sandbox:** aquí solo se probó con un traductor de mentira (los modelos de argos-net.com están
+- [ ] **→ 9q** · **5h · LibreTranslate real en el sandbox:** aquí solo se probó con un traductor de mentira (los modelos de argos-net.com están
       bloqueados en la red de la sesión de trabajo). En el sandbox: que `tolatino-traductor` baje los modelos y quede arriba, Auto-moderación
       «RESPONDE», tiempos reales de `/translate` y `/detect` (presupuesto: traducir ≤ 3 s; detectar ≤ 1.5 s) y la memoria con moderacion-img
-      en el cx33 (§6 #24). (5h, 7 nov) — _9a (11 nov): el traductor tiene su perfil y sus modelos en el compose (traductor-modelos) y deploy.sh lo levanta; falta comprobar en el sandbox los tiempos reales (≤ 3 s, ≤ 1,5 s) y la memoria con moderacion-img._
-- [ ] **→ 9b** · **5h · Calidad del traductor:** comparar 200 textos reales ES↔EN (Comunidad y reseñas) contra una referencia antes de abrir; si no
-      alcanza, el fundador decide un traductor pago (§6 #15). (5h, 7 nov)
+      en el cx33 (§6 #24). (5h, 7 nov) — _9a (11 nov): el traductor tiene su perfil y sus modelos en el compose (traductor-modelos) y deploy.sh lo levanta; falta comprobar en el sandbox los tiempos reales (≤ 3 s, ≤ 1,5 s) y la memoria con moderacion-img._ — _9b-3 (13 nov): con los proveedores reales del sandbox (9q)._
+- [ ] **→ 9q** · **5h · Calidad del traductor:** comparar 200 textos reales ES↔EN (Comunidad y reseñas) contra una referencia antes de abrir; si no
+      alcanza, el fundador decide un traductor pago (§6 #15). (5h, 7 nov) — _9b-3 (13 nov): con los proveedores reales del sandbox (9q)._
 - [ ] **→ 9s** · **5h · Abogado:** LibreTranslate es **AGPL-3.0** (lo corremos sin modificar como servicio aparte; revisar §13 si algún día se
       modifica o se expone) y las licencias de cada modelo Argos (es→en, en→es) y de MiniSBD. Aviso en los Términos: «traducción
       automática; vale el original». (5h, 7 nov)
@@ -684,8 +684,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vez por idioma). En producción, límite por IP en Cloudflare para la acción. (5h, 7 nov)
 - [ ] **→ 9b** · **5h · Corta-circuito compartido:** hoy vive en la memoria de cada proceso de la app; con varias réplicas en producción, cada una
       corta por su cuenta (aceptable; anotar si se quiere uno común). (5h, 7 nov)
-- [ ] **→ 9b** · **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
-      de CI (y un traductor de prueba en CI). (5h, 7 nov)
+- [ ] **→ 9c** · **5h · «Ver traducción» en los 9 dispositivos:** `com5h` corre en teléfono 390 y escritorio 1360 en el sandbox local; falta la matriz
+      de CI (y un traductor de prueba en CI). (5h, 7 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9m** · **5h · El Compa con «Ver traducción»** cuando llegue su fase (ayuda `ver-traduccion.md` lista). (5h, 7 nov) — _9a (11 nov): El Compa ya existe (7c–7f); falta que responda sobre «Ver traducción» (el artículo de ayuda ver-traduccion no está en docs/ayuda)._
 
 - [ ] **→ 9n** · **5i · Plazos de la Fase 4 en SOLO LECTURA:** `sp_seguro_guardar_h`, `sp_total_escrito_dias`, `sp_notas_purga_dias`, `ayuda_negocio_h`,
@@ -703,8 +703,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
       vuelta del barrido) no se midieron en la base de carga. (5i, 8 nov)
 - [x] **→ después de abrir (DA-09)** · **5i · Rango del negocio** (§6 #23): no se construye hasta que se diseñe la ficha. (5i, 8 nov) — _9a (11 nov): el rango del negocio (§6 #23 de la Fase 5) espera el diseño de la ficha. En `docs/DESPUES-DE-ABRIR.md`._
 - [x] **5i · Resumen diario por push o correo:** (push hecho en 8c; el correo sigue pendiente) hoy llega a la campana (la app con push llega con Capacitor). (5i, 8 nov)
-- [ ] **→ 9b** · **5i · Super Admin de la Fase 5 en los 9 dispositivos:** `adm5i` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de
-      CI. (5i, 8 nov)
+- [ ] **→ 9c** · **5i · Super Admin de la Fase 5 en los 9 dispositivos:** `adm5i` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de
+      CI. (5i, 8 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **5i · Textos del Super Admin en inglés:** el Super Admin está en español (como el resto del admin); las etiquetas de Configuración
       ya traen ES/EN en `config_keys`. (5i, 8 nov)
 
@@ -728,7 +728,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       se conectan cuando haya página pública (6b). (6a, 9 nov)
 - [x] **6a · Fotos locales:** en local `/medios/…` no se sirve (lo sirve Caddy en el sandbox): carteles y fotos salen grises en las capturas
       locales. Verlos en el sandbox. (6a, 9 nov) — **✓ 9a (11 nov):** solo en local (/medios lo sirve el sandbox); nota, sin cambio.
-- [ ] **→ 9b** · **6a · Eventos en los 9 dispositivos:** `evt6a` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6a, 9 nov)
+- [ ] **→ 9c** · **6a · Eventos en los 9 dispositivos:** `evt6a` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6a, 9 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6a · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (los avisos y el panel sí ES/EN). (6a, 9 nov)
 - [x] **6a · Catálogo de formatos y géneros editable desde el Super Admin (hueco #8):** _hecho en 6j (10 nov): Super Admin › Eventos y boletos › Catálogo (formatos, categorías y géneros con vista previa, auditoría; apagar no borra)._ hoy vive en la base (0106) y se lee de ahí; el editor
       del catálogo llega en 6j. (6a, 9 nov)
@@ -747,7 +747,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9b** · **6b · Presupuesto de velocidad con la base de carga (1 M de fechas):** la lista usa el índice (city_id, starts_at, id) where listable
       con cursor; falta medir p95 con `scripts/carga/eventos-1m.mjs` (plan §7). (6b, 10 nov)
 - [ ] **→ 9h** · **6b · Eventos en el sitemap:** las fichas se indexan (metadatos, canónico y schema.org/Event), pero no hay sitemap de eventos. (6b, 10 nov)
-- [ ] **→ 9b** · **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov)
+- [ ] **→ 9c** · **6b · Eventos en los 9 dispositivos:** `evt6b` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6b, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6b · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (ficha › últimos RSVP, Pausar Eventos). (6b, 10 nov)
 
 ## Fase 6 · 6c (boletos, mesas, extras y códigos)
@@ -784,7 +784,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       mano y un parche quitado fallan)._
 - [ ] **→ 9c** · **6c · `QtyStepper` del sistema sin rol ni teclado** (los «+» y «−» son `div`): lo usan el menú y la pantalla de boletos; parche
       de accesibilidad como el de Button. (6c, 10 nov)
-- [ ] **→ 9b** · **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov)
+- [ ] **→ 9c** · **6c · Eventos en los 9 dispositivos:** `evt6c` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6c, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6c · Textos del Super Admin de boletos en inglés:** como el resto del admin, en español. (6c, 10 nov)
 
 ## Fase 6 · 6d (después de comprar: transferir, cancelar, cortesías, lista de espera, ayuda B-)
@@ -850,7 +850,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **6f · Cambio de artista de una fecha con SMS:** hoy va en la app (sin SMS, §6 #7); el prototipo decía SMS. (6f, 10 nov) — **✓ 9a (11 nov):** el cambio de artista va en la app, sin SMS (§6 #7 de la Fase 6) (REVISION 9a).
 - [ ] **→ 9b** · **6f · Velocidad con la base de carga:** la lista deduplica la serie con un anti-join por fila sobre (event_id, starts_at); medir p95 con
       `scripts/carga/eventos-1m.mjs` (series de 52 fechas incluidas) junto con 6b. (6f, 10 nov)
-- [ ] **→ 9b** · **6f · Eventos en los 9 dispositivos:** `evt6f` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6f, 10 nov)
+- [ ] **→ 9c** · **6f · Eventos en los 9 dispositivos:** `evt6f` corre en teléfono 390 y escritorio 1360 en local; falta la matriz de CI. (6f, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **6f · Texto viejo del editor:** «La venta en la app abre pronto» (6a) sigue en el editor de boletos aunque la venta ya existe (6c); lo
       prueba `evt6a`: cambiar el texto y la prueba juntos. (6f, 10 nov) — **✓ 9a (11 nov):** el texto viejo ya no está en el código y evt6a lo prueba («se venden en la app cuando el evento sale publicado»; 66 ✓).
 
@@ -865,7 +865,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       teléfono a la app (kiosco) si el negocio lo quiere: no se construyó. (6g, 10 nov) _Kiosco hecho en 8e (11 nov): «Fijar la Puerta en esta pantalla» (Android) y la ayuda de Acceso guiado (iPhone)._
 - [ ] **→ Paquete 9-5** · **6g · Cámara en teléfonos reales:** _hecho en 6j (10 nov): señal «Entró dos veces» por persona en Confianza › Fraude._ probada con la cámara falsa de Chromium (jsQR en el Worker). Falta el iPhone del fundador (Safari: sin
       BarcodeDetector → jsQR) y un Android (BarcodeDetector), con poca luz y la linterna. (6g, 10 nov)
-- [ ] **→ 9b** · **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov)
+- [ ] **→ 9c** · **6g · La Puerta en los 9 dispositivos:** `evt6g` corre en teléfono 390 y escritorio 1360 en local; falta la matriz del CI. (6g, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9b** · **6g · Velocidad con la base de carga:** escaneo en línea local p50 21 ms / p95 26 ms (40 boletos, sin carga); medir ≤ 150 ms ida y vuelta con
       50 k boletos en una fecha (`scripts/carga/eventos-1m.mjs`) y la búsqueda por nombre (hoy `like` dentro de la fecha, sin índice de trigramas). (6g, 10 nov)
 - [x] **→ después de abrir (DA-17)** · **6g · Foto en una incidencia:** no se construyó (riesgo de fotos de identificaciones); si el fundador la quiere, foto privada como Ayuda con
@@ -941,7 +941,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9n** · **6j · Ajustar el cupo de un RSVP desde el Super Admin:** hoy solo boletos, mesas y aforo del día (el cupo del RSVP lo cambia el organizador). (6j, 10 nov)
 - [ ] **→ 9g** · **6j · Analítica › Eventos con la base de carga:** las vistas `evt_analitica_dia` / `evt_asistencia_dia` agregan en cada consulta; con 1 M de
       fechas y 5 M de boletos medirlas y, si pasan del presupuesto, materializarlas por día (refresco en el barrido). (6j, 10 nov)
-- [ ] **→ 9b** · **6j · Super Admin de Eventos en los 9 dispositivos:** `adm6j` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de CI. (6j, 10 nov)
+- [ ] **→ 9c** · **6j · Super Admin de Eventos en los 9 dispositivos:** `adm6j` corre en escritorio 1360 y teléfono 390 en local; falta la matriz de CI. (6j, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9f** · **6j · Textos del Super Admin de Eventos en inglés:** como el resto del admin, en español (las etiquetas de Configuración y las plantillas sí ES/EN). (6j, 10 nov)
 - [x] **6j · Avisos viejos con «{evento}» en el título:** se arregló al mandar (guardián avisoTituloLleno); lo que ya estaba en las bandejas del
       sandbox queda como estaba (no se reescribe). En producción no hay avisos viejos. (6j, 10 nov) — **✓ 9a (11 nov):** solo en las bandejas del sandbox; en producción no hay avisos viejos.
@@ -971,7 +971,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9h** · **7a · Centro de ayuda público para buscadores:** los artículos de vecinos no entran a un sitemap todavía (las páginas de equipo y negocio ya
       dicen noindex). Con la web pública (Fase 9). (7a, 10 nov)
 - [ ] **→ 9f** · **7a · Editar la ayuda desde el Super Admin:** hoy el repo es la fuente y el Super Admin solo pausa (§6 #12); el editor llega con el CMS. (7a, 10 nov)
-- [ ] **→ 9b** · **7a · Centro de ayuda en los 9 dispositivos:** `ayu7a` corre en 390 y 1360 en local; falta la matriz de CI. (7a, 10 nov)
+- [ ] **→ 9c** · **7a · Centro de ayuda en los 9 dispositivos:** `ayu7a` corre en 390 y 1360 en local; falta la matriz de CI. (7a, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 7 · 7b (Soporte: casos con To'Latino)
 - [ ] **→ 9l** · **7b · Correo entrante de Soporte** (§6 #16): no se construye en esta fase; los casos entran por la app (y por WhatsApp en 7h). Una cuenta
@@ -986,7 +986,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       caso y en Colas › Ayuda con pedidos y citas (`compa7g`).
 - [x] **7b · Analítica de Soporte** (`soporte_analitica_dia`: casos por tema, primera respuesta, SLA cumplido, «¿Se resolvió?») y Mi cuenta ›
       Avisos › Soporte: en 7i. Hoy las cifras salen en Super Admin › Soporte. (7b, 10 nov) — **✓ 9a (11 nov):** Analítica de Soporte (soporte_analitica_dia, 7i) y Mi cuenta › Avisos › Soporte; prueba adm7i.
-- [ ] **→ 9b** · **7b · Soporte en los 9 dispositivos:** `sop7b` corre en 390 y 1360 en local; falta la matriz de CI. (7b, 10 nov)
+- [ ] **→ 9c** · **7b · Soporte en los 9 dispositivos:** `sop7b` corre en 390 y 1360 en local; falta la matriz de CI. (7b, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9n** · **7b · Asignar un caso a una persona concreta** (hoy: tomarlo uno mismo, «Tomar el siguiente caso» o «Pasar a Finanzas / un Admin», que lo
       deja sin asignar para ese rol). Elegir a quién desde la ficha, con la lista del equipo activo. (7b, 10 nov)
 
@@ -1022,7 +1022,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       pasen a la matriz de CI. (7d, 10 nov) — **✓ 9a (11 nov):** ayuda2i, cit3e, ayu4if y ayu4z pasan con El Compa encendido: entran por la hoja («Algo no está bien / no salió bien») o con ?de=compa.
 - [x] **7d · Super Admin › Usuarios 360° › El Compa** (cifras por persona) y «Marcar respuesta incorrecta», Resumen y Negocios de `ADM-COMPA`:
       con el Super Admin completo de El Compa (7i). La ficha con el hilo y las lecturas anotadas ya están (7d). (7d, 10 nov) — **✓ 9a (11 nov):** Usuarios 360° › El Compa y «Marcar respuesta incorrecta» (app/admin/ElCompaAdmin.tsx, 7i); prueba adm7i.
-- [ ] **→ 9b** · **7d · El Compa en los 9 dispositivos:** `compa7d` corre en 390 y 1360 en local; falta la matriz de CI. (7d, 10 nov)
+- [ ] **→ 9c** · **7d · El Compa en los 9 dispositivos:** `compa7d` corre en 390 y 1360 en local; falta la matriz de CI. (7d, 10 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **7d · Pantalla de un pedido sin hora de «listo» o de respuesta** (`lib/pedir.ts` `pedidoDe` falla con `ready_at` o `respond_by` nulos): la
       semilla 0041 repara el pedido de la 0040; pedidos de prueba hechos a mano siguen fallando. Hacer la pantalla tolerante. (7d, 10 nov) — **✓ 9a (11 nov):** pednull crea su propio pedido sin horas y pasa (15 ✓); cazó que el detalle del panel decía «antes de las null» → arreglado (app/panel/Pedidos.tsx) y el guardián pedidoHorasOpcionales lo vigila.
 
@@ -1034,7 +1034,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [x] **7e · Respuestas automáticas en Panel › El Compa** (Pro, `lockB` para Free, «Pruébalo como cliente», «Lo que contestó El Compa»): 7f. Hoy
       la sección es solo el asistente y su cabecera no las menciona. (7e, 11 nov) — 7f (11 nov): hechas, y la cabecera dice «…y, con Pro, contesta a
       tus clientes cuando tú no puedes.».
-- [ ] **→ 9b** · **7e · El Compa del panel en los 9 dispositivos:** `compa7e` corre en 390 y 1360 en local; falta la matriz de CI. (7e, 11 nov)
+- [ ] **→ 9c** · **7e · El Compa del panel en los 9 dispositivos:** `compa7e` corre en 390 y 1360 en local; falta la matriz de CI. (7e, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9q** · **7e · Calidad con el modelo real:** la batería (`scripts/compa/bateria/`) debe sumar preguntas del panel (dueño y miembro con partes,
       ES/EN, «llévame a…», dinero, transferir el negocio) cuando haya llave. Con el simulador la respuesta es la guía o el primer trozo de ayuda;
       con Haiku debería elegir el trozo útil. (7e, 11 nov)
@@ -1057,9 +1057,9 @@ en el momento. Se marca solo cuando está hecho de verdad.
       menú, cómo pedir, descuentos, «¿hay mesa?», inyecciones en la nota del dueño y en una FAQ, inglés y spanglish) y borradores de «Sugerir
       respuesta». Con el simulador, una pregunta de precio contesta los tres primeros del menú (no el que preguntaron): con Haiku debería elegir.
       El idioma del cliente se adivina por sus palabras (y si no, el de su cuenta). (7f, 11 nov)
-- [ ] **→ 9b** · **7f · En los 9 dispositivos:** `compa7f` corre en 390 y 1360 en local; falta la matriz de CI. La prueba vieja de Mensajes (`msg2p`) pasa con
+- [ ] **→ 9c** · **7f · En los 9 dispositivos:** `compa7f` corre en 390 y 1360 en local; falta la matriz de CI. La prueba vieja de Mensajes (`msg2p`) pasa con
       El Compa apagado y al tope; con las respuestas automáticas encendidas en Sabor Dominicano su paso «cerrado → la fija» no pasa tal cual
-      (contesta El Compa, que es el cambio): en CI debe correr con El Compa apagado o apagarlas antes. (7f, 11 nov)
+      (contesta El Compa, que es el cambio): en CI debe correr con El Compa apagado o apagarlas antes. (7f, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [ ] **→ 9m** · **7f · Mensajes no tapa lo que escribe el cliente al negocio** (2p): un número de seguro social (9 dígitos) llega tal cual al negocio; El
       Compa sí lo tapa en lo suyo. ¿Tapar en Mensajes también (como Soporte)? Decisión del fundador. (7f, 11 nov)
 - [x] **7f · «Marcar respuesta incorrecta»** en una respuesta automática (Super Admin › El Compa › ficha) y analítica de respuestas automáticas: 7i.
@@ -1082,7 +1082,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9s** · **7g · Para el abogado y Privacidad:** el texto de un caso de Soporte (tapado, sin teléfono ni correo) y las notas internas del equipo se
       procesan con Anthropic en EE. UU. cuando el equipo pide un borrador (la ayuda `privacidad-de-el-compa` ya lo dice). Va con la retención cero
       y el aviso de IA de 7c. (7g, 11 nov)
-- [ ] **→ 9b** · **7g · En los 9 dispositivos:** `compa7g` corre en 390 y 1360 en local; falta la matriz de CI. (7g, 11 nov)
+- [ ] **→ 9c** · **7g · En los 9 dispositivos:** `compa7g` corre en 390 y 1360 en local; falta la matriz de CI. (7g, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Pedidos sin hora de listo o de respuesta (10 nov)
 - [x] **Un pedido con `ready_at` o `respond_by` vacíos tumbaba con un 500 la página del pedido del cliente y TODA la pantalla Hoy del panel**
@@ -1121,7 +1121,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       mensajes. Agregar un tope global por minuto con alerta antes de encender SMS. (7h, 11 nov)
 - [ ] **→ 9s** · **7h · Para el abogado:** TCPA / 10DLC (consentimiento: el canal se enciende en Mi cuenta; STOP/HELP), política de WhatsApp Business
       (ventana de 24 h, opt-in, IA que se presenta) y el aviso de que el texto pasa por Telnyx/Meta y por el proveedor de IA. (7h, 11 nov)
-- [ ] **→ 9b** · **7h · En los 9 dispositivos:** `compa7h` corre en 390 y 1360 en local; falta la matriz de CI. (7h, 11 nov)
+- [ ] **→ 9c** · **7h · En los 9 dispositivos:** `compa7h` corre en 390 y 1360 en local; falta la matriz de CI. (7h, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 7 · 7i (Super Admin completo de El Compa y Soporte; cierre de la Fase 7)
 - [ ] **→ 9d** · **7i · Borrado definitivo de una cuenta (D5) completo:** la purga de 7i vacía a los 30 días las conversaciones con El Compa, los casos de
@@ -1136,7 +1136,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       de conversaciones, pasarlas a una tabla de cifras diarias que llene el barrido. (7i, 11 nov)
 - [x] **7i · «Plazo cumplido» de un caso reabierto:** la vista compara la primera respuesta con el plazo vigente del caso (un caso reabierto
       tiene plazo nuevo). Si hace falta el plazo original, guardarlo aparte al abrir. (7i, 11 nov) — **✓ 9a (11 nov):** «Plazo cumplido» compara con el plazo vigente del caso (REVISION 9a).
-- [ ] **→ 9b** · **7i · En los 9 dispositivos:** `adm7i` corre en 390 y 1360 en local; falta la matriz de CI y la corrida de CI de 0124 / 0043. (7i, 11 nov)
+- [ ] **→ 9c** · **7i · En los 9 dispositivos:** `adm7i` corre en 390 y 1360 en local; falta la matriz de CI y la corrida de CI de 0124 / 0043. (7i, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **7i · «Traducir con El Compa» y «Tómale foto a tu lista»** siguen como decidió el plan (§6 #9, #10): «Traducir» con el traductor propio y la
       foto de la lista sin construir; cambiarlo es decisión del fundador. (7i, 11 nov) — **✓ 9a (11 nov):** como decidió el plan (§6 #9, #10 de la Fase 7) (REVISION 9a).
 
@@ -1160,22 +1160,22 @@ en el momento. Se marca solo cuando está hecho de verdad.
       (`puenteSoloNuestroOrigen`); (2) las cuatro de iOS se cerraban al abrir (SplashScreen pide `LaunchScreen.storyboard`; `cascaraArrancaIos`);
       (3) en Android la página local no se hidrataba y la isla no abría ni tenía TLLocal (con `server.url`, Capacitor no sirve el origen local:
       lo sirve `MainActivity`; `islaCoherente`); (4) el humo daba por buena la isla en cualquier página. (8a, 11 nov)
-- [ ] **→ 9b** · **El JS de Capacitor en el origen local de Android** se toma por reflexión de `Bridge.getJSInjector()` (privado; Capacitor 8.6.0 fijo).
-      Al subir Capacitor, revisar que siga: si falta, las islas caen a su respaldo web y el humo lo dice («tllocal»: false). (8a, 11 nov)
+- [ ] **→ 9r** · **El JS de Capacitor en el origen local de Android** se toma por reflexión de `Bridge.getJSInjector()` (privado; Capacitor 8.6.0 fijo).
+      Al subir Capacitor, revisar que siga: si falta, las islas caen a su respaldo web y el humo lo dice («tllocal»: false). (8a, 11 nov) — _9b-3 (13 nov): con las tiendas de verdad (9r)._
 - [ ] **→ 9p** · **La red en la WebView** (11 nov, `senalHonesta`): en Android `RedWebView` le cuenta la red a la WebView (`ACCESS_NETWORK_STATE`, normal) y
       el humo lo prueba en modo avión; las islas dicen «hay señal» solo si nuestro servidor responde (`lib/nativo/senal.ts`). Pendiente: (1) iOS
       no se tocó — WKWebView sigue la red del sistema solo, pero el simulador no tiene modo avión: probarlo en un iPhone real con `nat8a`;
       (2) con el dominio (Paquete 8-0), comprobar en el emulador que con red la isla del Repartidor sí dice «Hay señal» (hoy el servidor no
       responde por HTTPS y la isla dice, con razón, «Sin señal»); (3) `setNetworkAvailable` apaga la Network Information API de la WebView
       (`navigator.connection`): nadie la usa hoy; si alguien la necesita, que la lea del lado nativo. (8a, 11 nov) — _9a (11 nov): (2) con el dominio, la isla del Repartidor con red dice «Hay señal»; (1) iOS en un iPhone real va con 9r; (3) es una nota._
-- [ ] **→ 9b** · **Humo de iOS más hondo:** hoy solo «abre y sigue viva» (y lo que escribe Capacitor). Falta en el simulador: la isla, TLLocal y el marco
-      ajeno sin puente (el portero `TLBridgeViewController` solo lo vigila el guardián). Va con el XCUITest de `nat8a`. (8a, 11 nov)
+- [ ] **→ 9r** · **Humo de iOS más hondo:** hoy solo «abre y sigue viva» (y lo que escribe Capacitor). Falta en el simulador: la isla, TLLocal y el marco
+      ajeno sin puente (el portero `TLBridgeViewController` solo lo vigila el guardián). Va con el XCUITest de `nat8a`. (8a, 11 nov) — _9b-3 (13 nov): XCUITest más hondo con las tiendas de verdad (9r); el CI de 9b es web._
 - [ ] **→ 9p** · **`nat8a` completo en emulador y simulador** cuando haya dominio: modo avión al abrir → isla de la Puerta con la lista firmada guardada en
       TLLocal; otra cuenta en el mismo teléfono no ve nada; un iframe de otro origen (Stripe Elements) no alcanza el puente (en iOS, el portero
       `TLBridgeViewController`). XCUITest mínimo en el job de iOS. (8a, 11 nov)
 - [ ] **→ 9p** · **App-Bound Domains en iOS** (`limitsNavigationsToAppBoundDomains`): declarado y apagado; encenderlo solo después de probar la hoja de Stripe
       y su 3-D Secure en el simulador. (8a, 11 nov)
-- [ ] **→ 9b** · **Islas más livianas:** hoy se copia todo `/_next/static` (≈6 MB por app); copiar solo los trozos que usan las islas. (8a, 11 nov)
+- [ ] **→ 9r** · **Islas más livianas:** hoy se copia todo `/_next/static` (≈6 MB por app); copiar solo los trozos que usan las islas. (8a, 11 nov) — _9b-3 (13 nov): con las tiendas de verdad (9r)._
 - [x] **→ después de abrir (DA-25)** · **La isla de la Puerta en la app sube la cola sola** (hoy la sube la puerta en línea, con la misma cola del llavero): necesitaría un token de
       la sesión de puerta y CORS desde el origen local. (8a, 11 nov) — _9a (11 nov): la isla de la Puerta sube su cola sola (token de la sesión de puerta y CORS desde el origen local). En `docs/DESPUES-DE-ABRIR.md`._
 - [ ] **→ 9m** · **Mi cuenta › Ajustes › Privacidad** con «Este iPhone · To'Latino 1.0 (12)» en cada sesión (hoy lo dice Usuarios 360°). (8a, 11 nov)
@@ -1184,8 +1184,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9j** · **El llavero:** lectura por el CI con OIDC y aviso de llaves que vencen (barrido) — tubería de las tiendas. (8a, 11 nov)
 - [x] **Imagen del sandbox en local:** `docker build` no corrió aquí (corepack no sale a npm desde dentro de Docker en esta máquina); la
       instalación congelada sin `apps/mobile` se probó aparte con pnpm. El CI la construye en cada push. (8a, 11 nov) — **✓ 9a (11 nov):** el CI construye la imagen en cada push (.github/workflows/ci.yml); en local no hace falta.
-- [ ] **→ 9b** · **Presupuesto de velocidad de las apps** (tocar el ícono → primer pintado ≤ 1.5 s; isla ≤ 400 ms): medir en emulador y simulador. (8a, 11 nov)
-- [ ] **→ 9b** · **En los 9 dispositivos:** `app8a` corre en 390 y 1360 en local; falta la matriz de CI. (8a, 11 nov)
+- [ ] **→ 9r** · **Presupuesto de velocidad de las apps** (tocar el ícono → primer pintado ≤ 1.5 s; isla ≤ 400 ms): medir en emulador y simulador. (8a, 11 nov) — _9b-3 (13 nov): se mide en emulador y simulador con las tiendas de verdad (9r); la carga de 9b-3 mide la base._
+- [ ] **→ 9c** · **En los 9 dispositivos:** `app8a` corre en 390 y 1360 en local; falta la matriz de CI. (8a, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8c (avisos push propios: Web Push, APNs y FCM; push primero, SMS de respaldo; 11 nov)
 - [ ] **→ 9p** · **Web Push en el iPhone del fundador (W, paso 1):** necesita el dominio con HTTPS (Paquete 8-0). En el sandbox por HTTP en la IP los
@@ -1204,15 +1204,15 @@ en el momento. Se marca solo cuando está hecho de verdad.
       atenderlo en el service worker necesita una ruta propia (las acciones del servidor no se llaman desde ahí). (8c, 11 nov)
 - [x] **Silencio de noche:** lo que no es crítico no sale por push entre 10 PM y 7 AM (como el SMS), ni se manda a las 7. Alternativa a decidir:
       mandarlo «sin sonido» (iOS `passive`). (8c, 11 nov) — **✓ 9a (11 nov):** lo no crítico no sale por push de 10 PM a 7 AM, como el SMS (REVISION 9a); «sin sonido» queda como alternativa.
-- [ ] **→ 9b** · **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
+- [ ] **→ 9l** · **Web Push en Chromium de verdad:** la prueba `push8c` reemplaza `PushManager.subscribe` en la página (el Chromium de Playwright no tiene
       credenciales del servicio de push de Google); el resto es real (service worker, permiso, cifrado, VAPID, descifrar, mostrar, tocar). Probar
-      una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov)
+      una vez en un Chrome y un Safari reales con el dominio. (8c, 11 nov) — _9b-3 (13 nov): con los avisos listos (9l)._
 - [ ] **→ 9b** · **Presupuesto de velocidad en la base de carga** (`scripts/carga/apps-1m.mjs`, máquina aparte): aquí, 10 000 avisos por la tubería real en
       la base local: avisar() con el push encolado, media 4,98 ms (p95 6,3 ms); el trabajador entregó 10 000 en 49,8 s al simulador (tope
       `push_por_minuto` 10 000; los 50 de más salieron el minuto siguiente); 0 duplicados. Falta APNs p95 ≤ 2 s contra Apple. (8c, 11 nov)
 - [x] **Íconos de la web instalada:** `public/assets/app/icono-*.png` salen del logo del sistema sobre `--tl-action` (el mismo dibujo que el
       ícono de la app To'Latino); se generaron una vez con sharp. Si el ícono de la app cambia, regenerarlos. (8c, 11 nov) — **✓ 9a (11 nov):** nota para el día que cambie el ícono (regenerarlos con sharp); sin cambio.
-- [ ] **→ 9b** · **En los 9 dispositivos:** `push8c` corre en 390 y 1360 en local; falta la matriz de CI. (8c, 11 nov)
+- [ ] **→ 9c** · **En los 9 dispositivos:** `push8c` corre en 390 y 1360 en local; falta la matriz de CI. (8c, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8f (programa beta, «Reportar un problema», errores y cierres propios, Sistema › Apps completo; 11 nov)
 - [ ] **→ 9r** · **TestFlight interno de verdad:** hoy contra el simulador de App Store Connect (`scripts/tiendas-sim`) y el contrato (`scripts/contrato-tiendas`,
@@ -1238,12 +1238,12 @@ en el momento. Se marca solo cuando está hecho de verdad.
       lanzamiento por fases por la API de las tiendas (Fase 9). Hoy avisa a los Admins. (8f, 11 nov)
 - [x] **La semilla 0045 en una base nueva** no crea testers ni el caso de ejemplo si todavía no existen esas cuentas (las crean otras semillas o las
       pruebas); los builds y los grupos de errores sí. (8f, 11 nov) — **✓ 9a (11 nov):** la semilla 0049 crea a Ana, Juan y Lucía si faltan y repite los bloques idempotentes de 0044, 0045 y 0046; probada en una base nueva (6 teléfonos de push, 3 testers, el caso de Lucía, 60 posiciones) y dos veces.
-- [ ] **→ 9b** · **En los 9 dispositivos:** `beta8f` corre en 390 y 1360 en local; falta la matriz de CI. (8f, 11 nov)
+- [ ] **→ 9c** · **En los 9 dispositivos:** `beta8f` corre en 390 y 1360 en local; falta la matriz de CI. (8f, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 - [x] **El registro de la web vive en la memoria de la pestaña:** una navegación con recarga completa (Panel › Más usa una recarga) lo empieza de
       nuevo, así que un reporte desde el panel en el navegador trae pocas pantallas. En las apps vive en el nativo y sobrevive. Pasarlo a
       `sessionStorage` (solo familias de pantalla) si el equipo lo echa de menos. (8f, 11 nov) — **✓ 9a (11 nov):** el registro de la web vive en la memoria de la pestaña (REVISION 9a); sessionStorage si el equipo lo echa de menos.
-- [ ] **→ 9b** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
-      distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov)
+- [ ] **→ 9j** · **Mapas de fuente y CPU:** cada proceso guarda hasta 12 mapas abiertos; un atacante dentro del tope por minuto puede obligar a abrir mapas
+      distintos (cada uno cuesta leer y decodificar ~1 MB). Medir en la base de carga y, si hace falta, simbolizar en un trabajador aparte. (8f, 11 nov) — _9b-3 (13 nov): el tope por minuto ya es compartido (rate_counters); medir la CPU de simbolizar y, si hace falta, un trabajador aparte, con Sistema › Salud (9j)._
 
 ## Fase 8 · 8e (lo nativo de cada app: la ruta del Repartidor, la Puerta, el boleto, compartir, «Escanear cupón»; 11 nov)
 - [ ] **→ 9r** · **La ruta en un teléfono real:** Android (servicio en primer plano con la pantalla apagada horas, batería, Doze) e iPhone (modo de fondo,
@@ -1270,7 +1270,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       Repartidor (y To'Latino «al usar») en `PrivacyInfo.xcprivacy` y en la sección de seguridad de datos de Play; en Play, la **declaración de
       ubicación en segundo plano** no aplica (no se pide ACCESS_BACKGROUND_LOCATION) pero sí la de **servicio en primer plano de tipo ubicación**
       (video corto del flujo). (8i, 11 nov)
-- [ ] **→ 9b** · **En los 9 dispositivos:** `app8e` corre en 390 y 1360 en local; falta la matriz de CI. (8e, 11 nov)
+- [ ] **→ 9c** · **En los 9 dispositivos:** `app8e` corre en 390 y 1360 en local; falta la matriz de CI. (8e, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8g (el boleto en Apple Wallet y Google Wallet; 11 nov)
 - [ ] **→ 9p** · **Solo después del Paquete 8-0 (dominio con HTTPS):** el iPhone del fundador NO puede agregar un pase desde el sandbox por HTTP en la IP:
@@ -1304,7 +1304,7 @@ en el momento. Se marca solo cuando está hecho de verdad.
       `x-real-ip` de nginx). (8g, 11 nov)
 - [ ] **→ 9b** · **Ritmo:** un escaneo en la puerta marca el boleto «usado» y eso actualiza su pase (un aviso a cada teléfono que lo sigue). En una noche de
       2 000 personas con Wallet son 2 000 avisos a APNs en una hora: medir en la base de carga junto con el push (8c). (8g, 11 nov)
-- [ ] **→ 9b** · **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov)
+- [ ] **→ 9c** · **En los 9 dispositivos:** `wal8g` corre en 390 y 1360 en local; falta la matriz de CI. (8g, 11 nov) — _9b-3 (13 nov): corre en el CI en cada corrida (la regresión entera, teléfono 390 y escritorio 1360; 43392515329) y el recorrido `disp9b` en los 9 dispositivos; correr cada prueba en los 9 se decide en 9c con la lista de las que dependen del ancho (L1474)._
 
 ## Fase 8 · 8d (entrar con Face ID o huella: llaves de acceso; 11 nov)
 - [ ] **→ 9p** · **Solo después del Paquete 8-0 (dominio con HTTPS):** las llaves no se pueden usar en el sandbox por HTTP en la IP (el navegador no da WebAuthn
@@ -1357,8 +1357,8 @@ en el momento. Se marca solo cuando está hecho de verdad.
 - [ ] **→ 9p** · **Capturas definitivas:** el job «capturas» de tiendas.yml (workflow_dispatch con capturas=si) las hace con la semilla en una base desechable del
       CI; las fotos de la semilla viven en el almacén del sandbox, así que en el CI salen sin foto. Con el dominio con HTTPS, rehacerlas contra el sandbox
       (o subir las fotos de la semilla al almacén del job) y revisarlas a ojo antes de la Fase 9; en la Fase 9, con negocios reales que den permiso (§6 #23). (8i, 11 nov)
-- [ ] **→ 9b** · **Capturas de iPhone en el simulador real** (`xcrun simctl io booted screenshot` navegando con XCUITest): hoy las de Apple salen de WebKit con
-      el rótulo de la app en 1320×2868; la cáscara de iOS solo se captura en su humo (Cáscaras). Hace falta XCUITest para navegar dentro de la app. (8i, 11 nov)
+- [ ] **→ 9r** · **Capturas de iPhone en el simulador real** (`xcrun simctl io booted screenshot` navegando con XCUITest): hoy las de Apple salen de WebKit con
+      el rótulo de la app en 1320×2868; la cáscara de iOS solo se captura en su humo (Cáscaras). Hace falta XCUITest para navegar dentro de la app. (8i, 11 nov) — _9b-3 (13 nov): con las tiendas de verdad (9r)._
 - [ ] **→ 9u** · **Tamaños de captura del día del envío:** Apple pide hoy 6.9" (APP_IPHONE_67, 1320×2868) y Google teléfono (1080×2400 aquí); volver a leerlo. (8i, 11 nov)
 - [ ] **→ 9r** · **Data safety por la API:** Google tiene `applications.dataSafety` (el mismo CSV; probado contra el simulador del descubrimiento oficial). Es una
       declaración legal del dueño: el servidor no la manda sola. Decidir con el fundador si la sube Claude (con su OK) o la importa él. Los ids
@@ -1422,19 +1422,19 @@ en el momento. Se marca solo cuando está hecho de verdad.
       línea para cerrarla: dos corridas enteras seguidas en verde y una `--barajar` → la corrida de confirmación va al CI de 9b-2.
 
 ## Fase 9 · 9b-1 (la regresión entera en una base nueva; 12 nov)
-- [ ] **→ 9b** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
+- [ ] **→ 9m** · **El tope de «Ayuda con …» (5 por persona en 24 h, `lib/ayuda.ts` y `lib/ayuda-cita.ts`) no tiene su prueba:** la regresión
       ahora corre un día hacia atrás la hora de las ayudas de esa persona antes de abrir otra (`sinTopeDeAyuda`), así que nada comprueba que la
-      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov)
+      sexta del día se rechace con «Abriste muchas solicitudes hoy». Además es un número fijo en el código (no sale de Configuración). (9b-1, 12 nov) — _9b-3 (13 nov): la prueba del sexto pedido del día y el número en Configuración, con lo diferido del vecino (9m)._
 - [ ] **→ 9b** · **La regresión de punta a punta tarda ~1 h 40 min una a la vez** (y más con las que piden a otra con `requiere`): para el CI
       (9b-2) va por grupos en paralelo, cada grupo con su base nueva. (9b-1, 12 nov)
 - [ ] **→ 9b** · **Pruebas con el negocio abierto «00:00–23:59»** (push8c, app8e, pagos2d, pedidos2c, avisos2j, menu2b, compa7h, compa7f,
       free2b, rep2l): el último pedido es 15 min antes de cerrar, así que de 11:44 PM a medianoche (hora de Hazleton) «Enviar pedido» se apaga y
       fallarían. dlvsrv tenía lo mismo con 06:00–05:00 (falló a las 4:45 AM en la corrida del 12 nov) y ya abre 3 h antes de la hora de la
       corrida, como nov2g y dlv2f4. Falta pasar las otras a esa forma (un ayudante en `pruebas/lib`). (9b-1, 12 nov)
-- [ ] **→ 9b** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
+- [ ] **→ 9n** · **Negocios sin negocio:** quien entra a la app To'Latino Negocios sin tener un negocio va de `/panel` a `/publica`, que está
       fuera del alcance de esa app (`apps/mobile/apps.json`: solo `/panel` y lo común). Comprobar en la cáscara qué ve (¿se abre fuera?) y que
       llegue a Mi cuenta › Ajustes › Borrar mi cuenta, como ya llega el Repartidor sin equipo (9b-1). Hoy `borrarCuentaEnCadaApp` solo mira el
-      panel con negocio. (9b-1, 12 nov)
+      panel con negocio. (9b-1, 12 nov) — _9b-3 (13 nov): con lo diferido del negocio (9n)._
 - [ ] **→ 9b** · **(9b-2) Pruebas que no aguantan repetirse en la misma base:** corriendo `--todas` 2 y 3 veces seguidas sobre una base (12 nov,
       corridas B4 197/199 y B5 194/199 en `tl9b1acc5`), salieron en rojo por lo que dejaba la corrida anterior: menu2a-f («Res guisada» quedaba
       agotada), adm2i (contaba las cortesías de evt6*), tra4y y adm4y (cada corrida gastaba dos días de salidas y a la tercera no quedaban en la
@@ -1462,21 +1462,21 @@ en el momento. Se marca solo cuando está hecho de verdad.
       lo vigila. (9b-2, 13 nov)
 - [ ] **→ 9c** · **axe `scrollable-region-focusable` (serio) en inicio y ficha:** la fila de categorías/pestañas con `overflow-x-auto` (`div[role="tablist"]`
       en la ficha) no se alcanza con el teclado. Mismo trato que el anterior. (9b-2, 13 nov)
-- [ ] **→ 9b** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
+- [ ] **→ 9c** · **presupuesto-velocidad:mi-cuenta y presupuesto-velocidad:admin-hoy (escritorio 1280):** el CLS medido en el CI es 0,261 (mi cuenta) y 0,889
       (admin hoy), contra 0,1 que es lo bueno; el presupuesto de esas dos pantallas es lo medido con margen (0,4 y 1,2) para que el CI no mienta. 9b-3
       busca qué se mueve (contenido que llega después y empuja) y baja el presupuesto a 0,1 en `pruebas/velocidad/presupuesto.json`. El LCP (80–350 ms)
-      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov)
-- [ ] **→ 9b** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
+      y el TBT (0) son de laboratorio sin red ni CPU limitadas y con las fotos de fuera cortadas: lo de campo (RUM) llega con 9g. (9b-2, 13 nov) — _9b-3 (13 nov): no se buscó qué se mueve en 9b-3 (la escala de la base primero); va con el sistema de diseño en 9c, que toca esas pantallas._
+- [ ] **→ 9o** · **Semgrep `tolatino-sql-con-texto-interpolado` solo ve nombres de afuera** (`texto`, `q`, `body.x`, `searchParams.get(...)`…): el código tiene
       282 consultas con `${...}` dentro del SQL, ~210 con fragmentos fijos por convención (`PCT`, `ISO(…)`, `scope(…)`, `cfgSql(…)`) y 73 armadas con
       variables locales (`where`, `orden`, `col`, `fm`, `w.join(" and ")`…). Revisadas por encima, todas salen de constantes o de listas fijas del
       código, pero no hay una prueba de flujo de datos: en 9b-3, auditar las 73 una por una (modo taint de Semgrep desde los parámetros de las
-      acciones: 50 hallazgos de partida) y pasar la regla a taint con `nosemgrep` y su porqué en cada una que lo merezca. (9b-2, 13 nov)
-- [ ] **→ 9b** · **Las pruebas de punta a punta por dispositivo son `disp9b` (recorrido de 4 personas, ancho real, sin desborde, sin errores) en los 9
+      acciones: 50 hallazgos de partida) y pasar la regla a taint con `nosemgrep` y su porqué en cada una que lo merezca. (9b-2, 13 nov) — _9b-3 (13 nov): no se auditó en 9b-3; va con la revisión de seguridad de la producción (9o)._
+- [ ] **→ 9c** · **Las pruebas de punta a punta por dispositivo son `disp9b` (recorrido de 4 personas, ancho real, sin desborde, sin errores) en los 9
       dispositivos; el resto de la regresión corre con el dispositivo por defecto (teléfono 390 y escritorio 1360).** `correr.mjs --dispositivo <id>`
       ya cambia cualquier prueba (`pruebas/lib/dispositivo-precarga.cjs`), pero correr las 199 en cada uno de los 9 (≈ 15 h de máquina) no se hizo: se
-      vuelve a decidir con la lista de pruebas que de verdad dependen del ancho (las de «teléfono» y «escritorio» a la vez). (9b-2, 13 nov)
+      vuelve a decidir con la lista de pruebas que de verdad dependen del ancho (las de «teléfono» y «escritorio» a la vez). (9b-2, 13 nov) — _9b-3 (13 nov): se decide en 9c con la lista de pruebas que dependen del ancho._
 - [ ] **→ 9c** · **Cuando el fundador cierre su diseño, las 54 capturas aprobadas se vuelven a aprobar** (corrida a mano `aprobar=si`, se mira cada una y
       entran por commit); y las pantallas nuevas entran en `pruebas/visual/pantallas.json` con su presupuesto de velocidad y sus capturas. El CI frena
       un cambio visual sin aprobar, así que el primer cambio de diseño lo va a frenar a propósito. (9b-2, 13 nov)
-- [ ] **→ 9b** · **XCUITest de iOS más hondo en el job macOS (L1171, L1360) y `EXPLAIN` de las consultas calientes contra la base de carga:** no son de 9b-2
-      (CI web); quedan para 9b-3 junto con la escala. (9b-2, 13 nov)
+- [ ] **→ 9r** · **XCUITest de iOS más hondo en el job macOS (L1171, L1360) y `EXPLAIN` de las consultas calientes contra la base de carga:** no son de 9b-2
+      (CI web); quedan para 9b-3 junto con la escala. (9b-2, 13 nov) — _9b-3 (13 nov): los `EXPLAIN` de las consultas calientes contra la base de carga ya están (`scripts/carga`, flujo «Carga 1M»: el plan de la más lenta de cada medida que pasa del presupuesto); el XCUITest, con las tiendas de verdad (9r)._
